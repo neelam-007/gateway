@@ -1,18 +1,13 @@
 package com.l7tech.console.action;
 
-import com.l7tech.console.panels.*;
-import com.l7tech.console.tree.*;
-import com.l7tech.console.tree.policy.PolicyTreeModel;
-import com.l7tech.console.tree.policy.PolicyTree;
+import com.l7tech.console.panels.PolicyEditorPanel;
+import com.l7tech.console.panels.WorkSpacePanel;
+import com.l7tech.console.tree.ServiceNode;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.WindowManager;
-import com.l7tech.objectmodel.EntityHeader;
-import com.l7tech.objectmodel.EntityType;
-import com.l7tech.objectmodel.FindException;
 import com.l7tech.service.PublishedService;
 
 import javax.swing.*;
-import java.awt.*;
 
 /**
  * The <code>ServicePolicyPropertiesAction</code> invokes the.

@@ -3,11 +3,17 @@ package com.l7tech.console.tree.policy;
 
 import com.l7tech.console.action.*;
 import com.l7tech.console.tree.AbstractTreeNode;
+import com.l7tech.console.util.WindowManager;
 import com.l7tech.policy.assertion.Assertion;
+import com.l7tech.policy.assertion.composite.CompositeAssertion;
 
 import javax.swing.*;
+import javax.swing.tree.DefaultTreeModel;
+import javax.swing.tree.DefaultMutableTreeNode;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
+import java.util.Enumeration;
 
 /**
  * Class AssertionTreeNode.
@@ -56,11 +62,11 @@ public abstract class AssertionTreeNode extends AbstractTreeNode {
         Action vp = new ValidatePolicyAction((AssertionTreeNode)getRoot());
         list.add(vp);
 
-        Action mu = new AssertionMoveUpAction();
+        Action mu = new AssertionMoveUpAction(this);
         mu.setEnabled(canMoveUp());
         list.add(mu);
 
-        Action md = new AssertionMoveDownAction();
+        Action md = new AssertionMoveDownAction(this);
         md.setEnabled(canMoveDown());
         list.add(md);
 
@@ -73,7 +79,8 @@ public abstract class AssertionTreeNode extends AbstractTreeNode {
      * @return true if the node can move up, false otherwise
      */
     public boolean canMoveUp() {
-        return getParent() != null && getParent() != getRoot();
+        return
+          getParent() != null && getPreviousSibling() != null;
     }
 
     /**
@@ -82,8 +89,32 @@ public abstract class AssertionTreeNode extends AbstractTreeNode {
      * @return true if the node can move up, false otherwise
      */
     public boolean canMoveDown() {
-        return false;
+        return getNextSibling() != null;
     }
+
+    /**
+     * Swap the position of this node with the target
+     * node.
+     */
+    public void swap(AssertionTreeNode target) {
+        JTree tree = WindowManager.getInstance().getPolicyTree();
+        DefaultTreeModel model = (DefaultTreeModel)tree.getModel();
+        DefaultMutableTreeNode parent = (DefaultMutableTreeNode)this.getParent();
+        int indexThis = parent.getIndex(this);
+        int indexThat = parent.getIndex(target);
+        parent.insert(this, indexThat);
+        parent.insert(target, indexThis);
+        model.nodeStructureChanged(parent);
+        // todo: do this with tree model listener
+        List newChildren = new ArrayList();
+        CompositeAssertion ca = (CompositeAssertion)((AssertionTreeNode)parent).asAssertion();
+        for (Enumeration e = parent.children(); e.hasMoreElements();){
+            AssertionTreeNode an = (AssertionTreeNode)e.nextElement();
+            newChildren.add(an.asAssertion());
+        }
+        ca.setChildren(newChildren);
+    }
+
 
     /**
      * Does the assertion node accepts the abstract tree node

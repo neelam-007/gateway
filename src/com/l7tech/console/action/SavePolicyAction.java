@@ -1,19 +1,16 @@
 package com.l7tech.console.action;
 
 import com.l7tech.console.logging.ErrorManager;
-import com.l7tech.console.tree.ServiceNode;
 import com.l7tech.console.tree.policy.AssertionTreeNode;
-import com.l7tech.console.tree.policy.PolicyTreeModel;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.WindowManager;
-import com.l7tech.console.MainWindow;
-import com.l7tech.service.PublishedService;
-import com.l7tech.policy.wsp.WspWriter;
 import com.l7tech.policy.assertion.Assertion;
+import com.l7tech.policy.wsp.WspWriter;
+import com.l7tech.service.PublishedService;
 
 import javax.swing.*;
-import java.util.logging.Level;
 import java.io.ByteArrayOutputStream;
+import java.util.logging.Level;
 
 
 /**
@@ -68,8 +65,9 @@ public class SavePolicyAction extends BaseAction {
         }
         try {
             JTree tree = WindowManager.getInstance().getPolicyTree();
-            PolicyTreeModel model = (PolicyTreeModel)tree.getModel();
-            PublishedService svc = model.getService();
+            PublishedService svc = (PublishedService)tree.getClientProperty("service");
+            if (svc == null)
+                throw new IllegalArgumentException("No edited service specified");
             Assertion rootAssertion = ((AssertionTreeNode)node.getRoot()).asAssertion();
             ByteArrayOutputStream bo = new ByteArrayOutputStream();
             WspWriter.writePolicy(rootAssertion, bo);

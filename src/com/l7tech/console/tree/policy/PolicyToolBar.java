@@ -92,11 +92,13 @@ public class PolicyToolBar extends JToolBar {
     private Action getAssertionMoveUpAction() {
         if (assertionMoveUpAction != null)
             return assertionMoveUpAction;
-        assertionMoveUpAction = new AssertionMoveUpAction() {
+        assertionMoveUpAction = new AssertionMoveUpAction(null) {
             /**
              * Invoked when an action occurs.
              */
             public void performAction() {
+                node = lastAssertionNode;
+                super.performAction();
             }
         };
 
@@ -107,11 +109,13 @@ public class PolicyToolBar extends JToolBar {
     private Action getAssertionMoveDownAction() {
         if (assertionMoveDownAction != null)
             return assertionMoveDownAction;
-        assertionMoveDownAction = new AssertionMoveDownAction() {
+        assertionMoveDownAction = new AssertionMoveDownAction(null) {
             /**
              * Invoked when an action occurs.
              */
             public void performAction() {
+                node = lastAssertionNode;
+                super.performAction();
             }
         };
 
@@ -164,6 +168,9 @@ public class PolicyToolBar extends JToolBar {
             public void run() {
                 getAddAssertionAction().setEnabled(lastAssertionNode.accept(lastPaletteNode));
                 getDeleteAssertionAction().setEnabled(lastAssertionNode.canDelete());
+                getAssertionMoveDownAction().setEnabled(lastAssertionNode.canMoveDown());
+                getAssertionMoveUpAction().setEnabled(lastAssertionNode.canMoveUp());
+
             }
         });
     }

@@ -1,5 +1,6 @@
 package com.l7tech.console.action;
 
+import com.l7tech.console.tree.policy.AssertionTreeNode;
 
 
 /**
@@ -10,6 +11,12 @@ package com.l7tech.console.action;
  * @version 1.0
  */
 public class AssertionMoveUpAction extends BaseAction {
+    protected AssertionTreeNode node;
+
+    public AssertionMoveUpAction(AssertionTreeNode node) {
+        this.node = node;
+    }
+
     /**
      * @return the action name
      */
@@ -38,5 +45,6 @@ public class AssertionMoveUpAction extends BaseAction {
      * without explicitly asking for the AWT event thread!
      */
     public void performAction() {
+        node.swap((AssertionTreeNode)node.getPreviousSibling());
     }
 }

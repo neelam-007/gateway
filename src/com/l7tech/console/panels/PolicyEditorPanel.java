@@ -1,29 +1,27 @@
 package com.l7tech.console.panels;
 
+import com.l7tech.console.action.PolicyIdentityViewAction;
 import com.l7tech.console.action.SavePolicyAction;
 import com.l7tech.console.action.ValidatePolicyAction;
-import com.l7tech.console.action.PolicyIdentityViewAction;
-import com.l7tech.console.tree.policy.*;
 import com.l7tech.console.tree.FilteredTreeModel;
 import com.l7tech.console.tree.NodeFilter;
+import com.l7tech.console.tree.policy.*;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.WindowManager;
-import com.l7tech.policy.*;
-import com.l7tech.policy.assertion.Assertion;
-import com.l7tech.policy.assertion.identity.SpecificUser;
+import com.l7tech.policy.PolicyValidator;
+import com.l7tech.policy.PolicyValidatorResult;
 import com.l7tech.service.PublishedService;
 
 import javax.swing.*;
-import javax.swing.tree.TreeNode;
+import javax.swing.event.TreeModelListener;
+import javax.swing.event.TreeModelEvent;
 import javax.swing.text.EditorKit;
+import javax.swing.tree.TreeNode;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.StringReader;
-import java.io.StringWriter;
 import java.util.Iterator;
-import java.util.Set;
-import java.util.Collection;
 
 /**
  * The class represnts the policy editor
@@ -60,13 +58,13 @@ public class PolicyEditorPanel extends JPanel {
 
     private JComponent getPolicyTreePane(WindowManager windowManager) {
         policyTree = windowManager.getPolicyTree();
+        policyTree.putClientProperty("service", service);
         PolicyTreeModel model = PolicyTreeModel.make(service);
         rootAssertion = (AssertionTreeNode)model.getRoot();
         policyTree.setModel(new FilteredTreeModel((TreeNode)model.getRoot()));
         policyTree.setName(service.getName());
         JScrollPane scrollPane = new JScrollPane(policyTree);
         return scrollPane;
-
     }
 
     private JComponent getMessagePane() {
@@ -151,8 +149,6 @@ public class PolicyEditorPanel extends JPanel {
                                 }
                                 return true;
                             }
-
-
                         });
                     } else {
                         fm.clearFilter();
@@ -183,5 +179,4 @@ public class PolicyEditorPanel extends JPanel {
     private void overWriteMessageArea(String s) {
         messagesTextPane.setText(s);
     }
-
 }
