@@ -32,7 +32,8 @@ CREATE TABLE identity_provider (
   name varchar(128) NOT NULL default '',
   description text default '',
   type bigint NOT NULL default '0',
-  properties text
+  properties text,
+  UNIQUE (name)
 );
 
 --
