@@ -17,6 +17,7 @@ import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.xml.MessageNotSoapException;
 import com.l7tech.common.xml.TestDocuments;
+import com.l7tech.common.message.Message;
 import com.l7tech.policy.assertion.credential.CredentialFormat;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.assertion.credential.http.HttpBasic;
@@ -233,6 +234,9 @@ public class WssDecoratorTest extends TestCase {
     }
 
     public void testGoogleProblem() throws Exception {
+        TestDocument doc = getGoogleTestDocument();
+        Message msg = new Message(doc.c.message);
+        assertTrue(msg.isSoap());
         runTest(getGoogleTestDocument());
     }
 
