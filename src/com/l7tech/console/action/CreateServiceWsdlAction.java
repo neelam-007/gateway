@@ -73,7 +73,7 @@ public class CreateServiceWsdlAction extends BaseAction implements ConnectionLis
      */
     protected String iconResource() {
         // todo: find better icon
-        return "com/l7tech/console/resources/services16.png";
+        return "com/l7tech/console/resources/policy16.gif";
     }
 
     /** Actually perform the action.

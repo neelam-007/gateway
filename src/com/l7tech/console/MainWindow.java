@@ -82,6 +82,7 @@ public class MainWindow extends JFrame {
     private Action disconnectAction = null;
     private Action toggleStatusBarAction = null;
     private Action publishServiceAction = null;
+    private Action createServiceAction = null;
 
 
     private JPanel frameContentPane = null;
@@ -281,6 +282,7 @@ public class MainWindow extends JFrame {
             editMenu = new JMenu();
             editMenu.setText(resapplication.getString("Edit"));
             editMenu.add(getPublishServiceAction());
+            editMenu.add(getCreateServiceAction());
             editMenu.addSeparator();
             editMenu.add(getNewInternalUserAction());
             editMenu.add(getNewInternalGroupAction());
@@ -429,16 +431,26 @@ public class MainWindow extends JFrame {
         if (publishServiceAction != null) {
             return publishServiceAction;
         }
-        publishServiceAction = new PublishServiceAction() {
-            /** specify the resource name for this action */
-            protected String iconResource() {
-                return "com/l7tech/console/resources/services16.png";
-            }
-        };
+        publishServiceAction = new PublishServiceAction();
         publishServiceAction.setEnabled(false);
         this.addConnectionListener((PublishServiceAction)publishServiceAction);
         return publishServiceAction;
     }
+
+
+    /**
+       * @return the <code>Action</code> for the create service
+       */
+      private Action getCreateServiceAction() {
+          if (createServiceAction != null) {
+              return createServiceAction;
+          }
+          createServiceAction = new CreateServiceWsdlAction();
+          createServiceAction.setEnabled(false);
+          this.addConnectionListener((CreateServiceWsdlAction)createServiceAction);
+          return createServiceAction;
+      }
+
 
     private Action getNewInternalUserAction() {
         if (newInernalUserAction != null) return newInernalUserAction;
