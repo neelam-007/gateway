@@ -45,8 +45,8 @@ public class SoapMessageProcessingServlet extends HttpServlet {
 
         // TODO: SOAP-with-attachments!
 
-        BufferedReader protRespReader = null;
-        PrintWriter respWriter = null;
+        BufferedInputStream protRespStream = null;
+        OutputStream respStream = null;
         try {
             try {
                 AssertionStatus stat = MessageProcessor.getInstance().processMessage( sreq, sresp );
@@ -56,14 +56,14 @@ public class SoapMessageProcessingServlet extends HttpServlet {
                 } else if ( stat != AssertionStatus.NONE ) {
                     sendFault( sreq, hresponse, stat.getSoapFaultCode(), stat.getMessage() );
                 } else {
-                    protRespReader = new BufferedReader( sresp.getProtectedResponseReader() );
-                    respWriter = hresponse.getWriter();
+                    protRespStream = new BufferedInputStream( sresp.getProtectedResponseStream() );
+                    respStream = hresponse.getOutputStream();
 
-                    char[] buf = new char[4096];
+                    byte[] buf = new byte[4096];
                     int num;
 
-                    while ( ( num = protRespReader.read( buf ) ) != -1 )
-                        respWriter.write( buf, 0, num );
+                    while ( ( num = protRespStream.read( buf ) ) != -1 )
+                        respStream.write( buf, 0, num );
                 }
 
             } catch ( PolicyAssertionException pae ) {
@@ -76,8 +76,8 @@ public class SoapMessageProcessingServlet extends HttpServlet {
         } catch ( SOAPException se ) {
             _log.error( se );
         } finally {
-            if ( protRespReader != null ) protRespReader.close();
-            if ( respWriter != null ) respWriter.close();
+            if ( protRespStream != null ) protRespStream.close();
+            if ( respStream != null ) respStream.close();
         }
     }
 

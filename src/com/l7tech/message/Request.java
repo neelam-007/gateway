@@ -45,9 +45,7 @@ public interface Request extends Message {
     public static final String PARAM_HTTP_SERVER_PROTOCOL   = PREFIX_HTTP + ".server-protocol";
     public static final String PARAM_HTTP_SERVER_PORT       = PREFIX_HTTP + ".server-port";
 
-
-
-    Reader getRequestReader() throws IOException;
+    InputStream getRequestStream() throws IOException;
 
     PrincipalCredentials getPrincipalCredentials();
 

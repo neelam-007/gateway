@@ -24,10 +24,10 @@ public class SoapRequest extends XmlMessageAdapter implements SoapMessage, XmlRe
      */
     public synchronized Document getDocument() throws SAXException, IOException {
         if ( _document == null )
-            if ( _requestReader == null )
+            if ( _requestStream == null )
                 throw new IllegalStateException( "No Document or Reader yet!" );
             else {
-                parse( _requestReader );
+                parse( _requestStream );
             }
 
         return _document;
@@ -39,14 +39,14 @@ public class SoapRequest extends XmlMessageAdapter implements SoapMessage, XmlRe
      * @return The Reader from the request, if any.
      * @throws IOException
      */
-    public Reader getRequestReader() throws IOException {
-        if ( _requestReader == null ) {
+    public InputStream getRequestStream() throws IOException {
+        if ( _requestStream == null ) {
             if ( _transportMetadata instanceof HttpTransportMetadata ) {
                 HttpTransportMetadata htm = (HttpTransportMetadata)_transportMetadata;
-                _requestReader = htm.getRequest().getReader();
+                _requestStream = htm.getRequest().getInputStream();
             }
         }
-        return _requestReader;
+        return _requestStream;
     }
 
     /** Returns the PrincipalCredentials associated with this request.  Could be null! */
@@ -77,5 +77,5 @@ public class SoapRequest extends XmlMessageAdapter implements SoapMessage, XmlRe
 
     protected boolean _authenticated;
     protected PrincipalCredentials _principalCredentials;
-    protected Reader _requestReader;
+    protected InputStream _requestStream;
 }

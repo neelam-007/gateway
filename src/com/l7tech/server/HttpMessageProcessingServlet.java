@@ -51,18 +51,18 @@ public class HttpMessageProcessingServlet extends HttpServlet {
         HttpTransportMetadata htm = new HttpTransportMetadata( request, response );
         SoapRequest sreq = new SoapRequest( htm );
         SoapResponse sresp = new SoapResponse( htm );
-        BufferedReader reqReader = null;
-        PrintWriter respWriter = null;
+        BufferedInputStream reqStream = null;
+        OutputStream respStream = null;
         try {
             MessageProcessor.getInstance().processMessage( sreq, sresp );
 
-            reqReader = new BufferedReader( sresp.getResponseReader() );
-            respWriter = response.getWriter();
+            reqStream = new BufferedInputStream( sresp.getProtectedResponseStream() );
+            respStream = response.getOutputStream();
 
-            char[] buf = new char[4096];
+            byte[] buf = new byte[4096];
             int num;
-            while ( ( num = reqReader.read( buf ) ) != -1 )
-                respWriter.write( buf, 0, num );
+            while ( ( num = reqStream.read( buf ) ) != -1 )
+                respStream.write( buf, 0, num );
         } catch ( PolicyAssertionException pae ) {
             // TODO: Detect authentication failure and send challenge!
             _log.error( pae );
@@ -70,8 +70,8 @@ public class HttpMessageProcessingServlet extends HttpServlet {
             // TODO: Barf a SOAP Fault
             _log.error( mpe );
         } finally {
-            if ( reqReader != null ) reqReader.close();
-            if ( respWriter != null ) respWriter.close();
+            if ( reqStream != null ) reqStream.close();
+            if ( respStream != null ) respStream.close();
         }
     }
 

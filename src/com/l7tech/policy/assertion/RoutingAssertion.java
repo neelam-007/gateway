@@ -9,21 +9,25 @@ package com.l7tech.policy.assertion;
 import com.l7tech.message.Request;
 import com.l7tech.message.Response;
 import com.l7tech.proxy.datamodel.PendingRequest;
+import com.l7tech.service.PublishedService;
+import com.l7tech.service.Wsdl;
 
-import java.io.Serializable;
+import java.io.*;
+import java.util.*;
+
+import org.apache.commons.httpclient.*;
+import org.apache.commons.httpclient.methods.PostMethod;
+import org.apache.log4j.Category;
+
+import javax.wsdl.*;
 
 /**
  * @author alex
  */
 public class RoutingAssertion extends Assertion implements Cloneable, Serializable {
-    public RoutingAssertion(String protectedServiceUrl) {
-        this();
-        this.protectedServiceUrl = protectedServiceUrl;
-    }
-
-    /** Default constructor, for Hibernate only, don't call! */
     public RoutingAssertion() {
         super();
+        _connectionManager = new MultiThreadedHttpConnectionManager();
     }
 
     public Object clone() throws CloneNotSupportedException {
@@ -32,11 +36,11 @@ public class RoutingAssertion extends Assertion implements Cloneable, Serializab
     }
 
     public String getProtectedServiceUrl() {
-        return protectedServiceUrl;
+        return _protectedServiceUrl;
     }
 
     public void setProtectedServiceUrl( String protectedServiceUrl ) {
-        this.protectedServiceUrl = protectedServiceUrl;
+        this._protectedServiceUrl = protectedServiceUrl;
     }
 
     /**
@@ -47,8 +51,38 @@ public class RoutingAssertion extends Assertion implements Cloneable, Serializab
      * @throws PolicyAssertionException if some error preventing the execution of the PolicyAssertion has occurred.
      */
     public AssertionStatus checkRequest( Request request, Response response ) throws PolicyAssertionException {
-        // TODO ANY DAY NOW!
-        return AssertionStatus.NOT_YET_IMPLEMENTED;
+      	HttpClient client = new HttpClient( _connectionManager );
+        // TODO: Fix URL
+
+        PostMethod postMethod = null;
+
+        try {
+            PublishedService service = (PublishedService)request.getParameter( Request.PARAM_SERVICE );
+            Port wsdlPort = service.getWsdlPort( request );
+
+            if ( wsdlPort == null ) {
+                String err = "WSDL " + service.getWsdlUrl() + " has no Port!";
+                _log.error( err );
+                return AssertionStatus.FAILED;
+            }
+
+            postMethod = new PostMethod( _protectedServiceUrl );
+
+            postMethod.setRequestBody( request.getRequestStream() );
+            client.executeMethod( postMethod );
+            InputStream responseStream = postMethod.getResponseBodyAsStream();
+            response.setProtectedResponseStream( responseStream );
+
+            return AssertionStatus.NONE;
+        } catch ( WSDLException we ) {
+            _log.error( we );
+            return AssertionStatus.FAILED;
+        } catch ( IOException ioe ) {
+            _log.warn( ioe );
+            return AssertionStatus.FAILED;
+        } finally {
+            if ( postMethod != null ) postMethod.releaseConnection();
+        }
     }
 
     /** Client-side doesn't know or care about server-side routing. */
@@ -56,5 +90,8 @@ public class RoutingAssertion extends Assertion implements Cloneable, Serializab
         return AssertionStatus.NOT_APPLICABLE;
     }
 
-    protected String protectedServiceUrl;
+    protected String _protectedServiceUrl;
+
+    protected transient MultiThreadedHttpConnectionManager _connectionManager;
+    protected transient Category _log = Category.getInstance( getClass() );
 }

@@ -18,16 +18,16 @@ public class SoapResponse extends XmlMessageAdapter implements SoapMessage, XmlR
         super(tm);
     }
 
-    public synchronized void setProtectedResponseReader(Reader reader) {
-        _responseReader = reader;
+    public synchronized void setProtectedResponseStream( InputStream stream ) {
+        _responseStream = stream;
     }
 
-    public synchronized Reader getProtectedResponseReader() {
-        return _responseReader;
+    public synchronized InputStream getProtectedResponseStream() {
+        return _responseStream;
     }
 
     public synchronized Document getDocument() throws IOException, SAXException {
-        parse( getProtectedResponseReader() );
+        parse( getProtectedResponseStream() );
         return _document;
     }
 
@@ -66,7 +66,6 @@ public class SoapResponse extends XmlMessageAdapter implements SoapMessage, XmlR
     }
 
     protected List _assertionResults = Collections.EMPTY_LIST;
-    protected Reader _responseReader;
-    protected Writer _responseWriter;
+    protected InputStream _responseStream;
     protected boolean _authMissing;
 }

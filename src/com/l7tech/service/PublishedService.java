@@ -7,12 +7,16 @@
 package com.l7tech.service;
 
 import com.l7tech.policy.assertion.Assertion;
+import com.l7tech.policy.wsp.WspReader;
 import com.l7tech.objectmodel.imp.NamedEntityImp;
+import com.l7tech.message.Request;
 
-import javax.wsdl.WSDLException;
+import javax.wsdl.*;
 import java.io.*;
 import java.net.URL;
 import java.net.MalformedURLException;
+import java.util.Iterator;
+import java.util.Map;
 
 import org.xml.sax.InputSource;
 
@@ -20,10 +24,8 @@ import org.xml.sax.InputSource;
  * @author alex
  */
 public class PublishedService extends NamedEntityImp {
-    public Assertion getRootAssertion() {
-        if ( _rootAssertion == null ) {
-            // TODO: Parse the policy
-        }
+    public synchronized Assertion getRootAssertion() {
+        if ( _rootAssertion == null ) _rootAssertion = WspReader.parse( getPolicyXml() );
         return _rootAssertion;
     }
 
@@ -31,13 +33,13 @@ public class PublishedService extends NamedEntityImp {
         return _wsdlUrl;
     }
 
-    public void setWsdlUrl( String wsdlUrl ) throws MalformedURLException {
+    public synchronized void setWsdlUrl( String wsdlUrl ) throws MalformedURLException {
         if ( _wsdlUrl != null && !_wsdlUrl.equals(wsdlUrl) ) _wsdlXml = null;
         _wsdlUrl = wsdlUrl;
         new URL( wsdlUrl );
     }
 
-    public String getWsdlXml() throws IOException {
+    public synchronized String getWsdlXml() throws IOException {
         if ( _wsdlXml == null ) {
             URL url = null;
             try {
@@ -63,11 +65,12 @@ public class PublishedService extends NamedEntityImp {
         return _wsdlXml;
     }
 
-    public void setWsdlXml( String wsdlXml ) {
+    public synchronized void setWsdlXml( String wsdlXml ) {
         _wsdlXml = wsdlXml;
+        _parsedWsdl = null;
     }
 
-    public Wsdl parsedWsdl() throws WSDLException {
+    public synchronized Wsdl getParsedWsdl() throws WSDLException {
         if ( _parsedWsdl == null ) {
             try {
                 String cachedWsdl = getWsdlXml();
@@ -77,6 +80,27 @@ public class PublishedService extends NamedEntityImp {
             }
         }
         return _parsedWsdl;
+    }
+
+    public synchronized Port getWsdlPort( Request request ) throws WSDLException {
+        // TODO: Get the right port for this request, rather than just the first one!
+        if ( _wsdlPort == null ) {
+            Iterator services = getParsedWsdl().getServices().iterator();
+            Service wsdlService;
+            Port wsdlPort = null;
+
+            while ( wsdlPort == null && services.hasNext() ) {
+                wsdlService = (Service)services.next();
+                Map ports = wsdlService.getPorts();
+                if ( ports == null ) continue;
+
+                Iterator portKeys = ports.keySet().iterator();
+                if ( portKeys.hasNext() ) wsdlPort = (Port)portKeys.next();
+            }
+            _wsdlPort = wsdlPort;
+        }
+
+        return _wsdlPort;
     }
 
     public String getPolicyXml() {
@@ -119,5 +143,6 @@ public class PublishedService extends NamedEntityImp {
     protected String _urn;
 
     protected transient Wsdl _parsedWsdl;
+    protected transient Port _wsdlPort;
     protected transient Assertion _rootAssertion;
 }

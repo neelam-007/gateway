@@ -17,8 +17,8 @@ import java.util.Iterator;
  * @author alex
  */
 public interface Response extends Message {
-    void setProtectedResponseReader( Reader reader );
-    Reader getProtectedResponseReader();
+    void setProtectedResponseStream( InputStream stream );
+    InputStream getProtectedResponseStream();
 
     void addResult( AssertionResult result );
     Iterator results();
