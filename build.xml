@@ -26,6 +26,9 @@
       <property name="ear"        value="${app.name}.ear"/>
     -->
 
+    <taskdef name="xmltask" classname="com.oopsconsultancy.xmltask.ant.XmlTask"/>
+
+
     <!-- project classpath -->
     <path id="project.class.path">
         <pathelement location="src"/>
@@ -51,26 +54,6 @@
         <property name="javadoc.home" value="${doc.root}/javadoc"/>
     </target>
 
-    <!--
-        Note regarding the generation of client stub for the admin service.
-        The client stubs will be checked in CVS for now. In the future, we might want
-        to generate the stubs as part of an ant task. How this would work is described below.
-
-        1. Generation of the wsdl from the ws class (map to ant task)
-        java org.apache.axis.wsdl.Java2WSDL -o identity.wsdl -n "http://www.layer7-tech.com/adminService/identity" -l"http://ssg.layer7-tech.com/identities" com.l7tech.adminservice.identities.IdentityWS
-        (prereq - the com.l7tech.adminservice.* packages should be compiled)
-
-        2. take the resulting wsdl file identity.wsdl and create the proxy classes
-        java org.apache.axis.wsdl.WSDL2Java -o . -d Application -Nhttp://www.layer7-tech.com/adminService/identity com.l7tech.clientstub.identities identity.wsdl
-
-	<target name="adminServiceClientStub">
-		<javac srcdir="src" destdir="todo" classpathref="todo" debug="on">
-			<include name="src/com/l7tech/adminservice/identities/IdentityAdmin.java"/>
-  		</javac>
-            <Axis-java2wsdl>
-            <Axis-wsdl2java>
-        </target>
-    -->
 
     <!--
       ** config dist target. The "dist" target depends on this target.
@@ -124,6 +107,17 @@
     <target name="deploy" depends="init-dev">
         <antcall target="package">
         </antcall>
+
+        <!-- configure the server.xml file to include the datasource -->
+        <move file="${tomcat.home}/conf/server.xml" tofile="${tomcat.home}/conf/server.xml_old"/>
+        <xmltask source="${tomcat.home}/conf/server.xml_old" dest="${tomcat.home}/conf/server.xml">
+            <!-- remove the section if it already existed -->
+            <remove path="//Context[@path='/${app.name}']"/>
+            <remove path="//Context[@path='/${app.name}.war']"/>
+            <!-- add the section -->
+            <insert path="Server/Service[@name='Tomcat-Standalone']/Engine/Host" file="${src.root}/etc/tomcat-serverxml-fragment-mysql.xml"/>
+        </xmltask>
+
 
         <!--
         <delete dir="${tomcat.home}/webapps/${app.name}"/>
