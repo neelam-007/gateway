@@ -163,6 +163,7 @@
             <test name="com.l7tech.adminws.translation.TypeTranslatorTest" haltonfailure="no"/>
             <test name="com.l7tech.proxy.datamodel.SsgManagerTest" haltonfailure="no"/>
             <test name="com.l7tech.proxy.FunctionalTest" haltonfailure="no"/>
+            <test name="com.l7tech.service.WsdlTest" haltonfailure="no"/>
             <!--
               ** add tests here **
               -->
