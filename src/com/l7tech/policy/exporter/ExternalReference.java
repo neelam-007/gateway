@@ -19,7 +19,19 @@ import java.util.ArrayList;
  * $Id$<br/>
  */
 public abstract class ExternalReference {
+    /**
+     * Adds a child element to the passed references element that contains the xml
+     * form of this reference object. Used by the policy exporter when serializing
+     * references to xml format.
+     * @param referencesParentElement
+     */
     public abstract void serializeToRefElement(Element referencesParentElement);
+
+    /**
+     * Checks whether or not an external reference can be mapped on this local
+     * system without administrator interaction.
+     */
+    public abstract boolean verifyReference();
 
     /**
      * Parse references from an exported policy's exp:References element.

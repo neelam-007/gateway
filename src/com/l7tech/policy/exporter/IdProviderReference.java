@@ -85,6 +85,15 @@ public class IdProviderReference extends ExternalReference {
         refEl.appendChild(propsEl);
     }
 
+    /**
+     * Checks whether or not an external reference can be mapped on this local
+     * system without administrator interaction.
+     */
+    public boolean verifyReference() {
+        // todo
+        return true;
+    }
+
     public boolean equals(Object o) {
         if (this == o) return true;
         if (!(o instanceof IdProviderReference)) return false;

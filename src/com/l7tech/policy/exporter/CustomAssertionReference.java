@@ -62,6 +62,15 @@ public class CustomAssertionReference extends ExternalReference {
         return (customAssertionName != null ? customAssertionName.hashCode() : 0);
     }
 
+    /**
+     * Checks whether or not an external reference can be mapped on this local
+     * system without administrator interaction.
+     */
+    public boolean verifyReference() {
+        // todo
+        return true;
+    }
+
     private String customAssertionName;
     public static final String REF_EL_NAME = "CustomAssertionReference";
     public static final String ASSNAME_EL_NAME = "CustomAssertionName";

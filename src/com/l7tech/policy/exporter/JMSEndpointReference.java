@@ -137,6 +137,15 @@ public class JMSEndpointReference extends ExternalReference {
         return result;
     }
 
+    /**
+     * Checks whether or not an external reference can be mapped on this local
+     * system without administrator interaction.
+     */
+    public boolean verifyReference() {
+        // todo
+        return true;
+    }
+
     private final Logger logger = Logger.getLogger(IdProviderReference.class.getName());
 
     private long oid;
