@@ -41,25 +41,25 @@ public class DefaultGatewayPolicies {
 
     private DefaultGatewayPolicies() {
         credentialSources = new OneOrMoreAssertion(Arrays.asList(new Assertion[] {
-                                new AllAssertion(Arrays.asList(new Assertion[] {
-                                    // SSL required for cleartext credential sources
-                                    new SslAssertion(),
-                                    new OneOrMoreAssertion(Arrays.asList(new Assertion[] {
-                                        new HttpBasic(),
-                                        new WssBasic(),
-                                    }))
-                                })),
-                                // All other credential sources
-                                new HttpClientCert(),
-                                new HttpDigest(),
-                                new RequestWssX509Cert(),
-                                new SecureConversation(),
-                            } ));
+            // All credential sources, in descending order of preference
+            new SecureConversation(),
+            new RequestWssX509Cert(),
+            new HttpClientCert(),
+            new HttpDigest(),
+            new AllAssertion(Arrays.asList(new Assertion[] {
+                // SSL required for cleartext credential sources
+                new SslAssertion(SslAssertion.REQUIRED),
+                new OneOrMoreAssertion(Arrays.asList(new Assertion[] {
+                    new WssBasic(),
+                    new HttpBasic(),
+                }))
+            }))
+        } ));
 
         certBasedCredentialSources = new OneOrMoreAssertion(Arrays.asList(new Assertion[] {
             // Certificate-based credential sources only
-            new HttpClientCert(),
-            new RequestWssX509Cert()
+            new RequestWssX509Cert(),
+            new HttpClientCert()
         }));
 
         IdentityProviderConfigManager ipcm = (IdentityProviderConfigManager)Locator.getDefault().lookup(IdentityProviderConfigManager.class);
