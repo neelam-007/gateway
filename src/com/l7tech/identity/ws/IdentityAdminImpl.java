@@ -3,6 +3,8 @@ package com.l7tech.identity.ws;
 import com.l7tech.objectmodel.*;
 import com.l7tech.identity.*;
 import com.l7tech.identity.internal.InternalUserManagerServer;
+import com.l7tech.identity.cert.ClientCertManagerImp;
+import com.l7tech.identity.cert.ClientCertManager;
 import com.l7tech.common.util.Locator;
 import com.l7tech.common.protocol.SecureSpanConstants;
 import com.l7tech.logging.LogManager;
@@ -330,6 +332,9 @@ public class IdentityAdminImpl implements IdentityAdmin {
         }
     }
 
+    /**
+     * @deprecated
+     */
     public String getUserCert(long identityProviderConfigId, String userId)
                                 throws RemoteException, FindException, CertificateEncodingException {
         // currently, this is only supported in the internal user manager
@@ -344,12 +349,31 @@ public class IdentityAdminImpl implements IdentityAdmin {
         return encodedcert;
     }
 
+    /**
+     * @deprecated
+     */
     public void revokeCert(long identityProviderConfigId, String userId) throws RemoteException, UpdateException {
         // currently, this is only supported in the internal user manager
         // therefore, let this cast throw if it does
         InternalUserManagerServer userManager =
-                (InternalUserManagerServer)retrieveUserManagerAndBeginTransaction(identityProviderConfigId);
+               (InternalUserManagerServer)retrieveUserManagerAndBeginTransaction(identityProviderConfigId);
         userManager.revokeCert(userId);
+    }
+
+    public String getUserCert(User user) throws RemoteException, FindException, CertificateEncodingException {
+        // get cert from internal CA
+        ClientCertManager manager = (ClientCertManager)Locator.getDefault().lookup(ClientCertManager.class);
+        Certificate cert = manager.getUserCert(user);
+        if (cert == null) return null;
+        sun.misc.BASE64Encoder encoder = new sun.misc.BASE64Encoder();
+        String encodedcert = encoder.encode(cert.getEncoded());
+        return encodedcert;
+    }
+
+    public void revokeCert(User user) throws RemoteException, UpdateException {
+        // revoke the cert in internal CA
+        ClientCertManager manager = (ClientCertManager)Locator.getDefault().lookup(ClientCertManager.class);
+        manager.revokeUserCert(user);
     }
 
     public void testIdProviderConfig(IdentityProviderConfig identityProviderConfig)

@@ -125,6 +125,14 @@ public class IdentityAdminImpl extends RemoteService implements IdentityAdmin {
         delegate.revokeCert(idProvCfgId, userId);
     }
 
+    public String getUserCert(User user) throws RemoteException, FindException, CertificateEncodingException {
+        return delegate.getUserCert(user);
+    }
+
+    public void revokeCert(User user) throws RemoteException, UpdateException {
+        delegate.revokeCert(user);
+    }
+
     public void testIdProviderConfig(IdentityProviderConfig cfg) throws RemoteException,
                                             InvalidIdProviderCfgException {
         delegate.testIdProviderConfig(cfg);
