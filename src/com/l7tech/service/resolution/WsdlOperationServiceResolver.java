@@ -39,6 +39,28 @@ public abstract class WsdlOperationServiceResolver extends NameValueServiceResol
         return values.toArray();
     }
 
+    /**
+     * a set of distinct parameters for this service
+     * @param candidateService object from which to extract parameters from
+     * @return a Set containing distinct strings
+     */
+    public Set getDistinctParameters(PublishedService candidateService) {
+        Set out = new HashSet();        
+        try {
+            Wsdl wsdl = candidateService.parsedWsdl();
+            Iterator operations = wsdl.getBindingOperations().iterator();
+            BindingOperation operation;
+            while (operations.hasNext()) {
+                operation = (BindingOperation)operations.next();
+                String value = getTargetValue(wsdl.getDefinition(), operation);
+                if (value != null) out.add(value);
+            }
+        } catch ( WSDLException we ) {
+            logger.log(Level.SEVERE, null, we);
+        }
+        return out;
+    }
+
     protected abstract String getTargetValue( Definition def, BindingOperation operation );
     private Logger logger = LogManager.getInstance().getSystemLogger();
 }
