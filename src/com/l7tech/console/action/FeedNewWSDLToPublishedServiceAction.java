@@ -84,12 +84,10 @@ public class FeedNewWSDLToPublishedServiceAction extends NodeAction {
             }
         } catch (WSDLException e) {
             logger.log(Level.WARNING, "invalid wsdl", e);
-            JOptionPane.showMessageDialog(mw, "Invalid WSDL. Consult log for more information.");
-            return;
+            throw new RuntimeException("Invalid WSDL. Consult log for more information.", e);
         } catch (RemoteException e) {
             logger.log(Level.WARNING, "cannot resolve wsdl", e);
-            JOptionPane.showMessageDialog(mw, "Error resolving WSDL. Consult log for more information.");
-            return;
+            throw new RuntimeException("Error resolving WSDL. Consult log for more information.", e);
         }
         try {
             svc.setWsdlUrl(response);
@@ -103,24 +101,24 @@ public class FeedNewWSDLToPublishedServiceAction extends NodeAction {
             }
         } catch (MalformedURLException e) {
             logger.log(Level.WARNING, "invalid url", e);
-            JOptionPane.showMessageDialog(mw, "Invalid URL");
+            throw new RuntimeException("Invalid URL", e);
         } catch (RemoteException e) {
             logger.log(Level.WARNING, "cannot change wsdl", e);
-            JOptionPane.showMessageDialog(mw, "Error Changing WSDL. Consult log for more information.");
+            throw new RuntimeException("Error Changing WSDL. Consult log for more information.", e);
         } catch (UpdateException e) {
             logger.log(Level.WARNING, "cannot change wsdl", e);
-            JOptionPane.showMessageDialog(mw, "Error Changing WSDL. Consult log for more information.");
+            throw new RuntimeException("Error Changing WSDL. Consult log for more information.", e);
         } catch (SaveException e) {
             logger.log(Level.WARNING, "cannot change wsdl", e);
-            JOptionPane.showMessageDialog(mw, "Error Changing WSDL. Consult log for more information.");
+            throw new RuntimeException("Error Changing WSDL. Consult log for more information.", e);
         } catch (VersionException e) {
             logger.log(Level.WARNING, "version mismatch", e);
-            JOptionPane.showMessageDialog(mw, "The service's version number is no longer valid. Perhaps " +
-                                              "another administrator has changed the service since you loaded it?");
+            throw new RuntimeException("The service's version number is no longer valid. Perhaps " +
+                                       "another administrator has changed the service since you loaded it?", e);
         } catch (ResolutionParameterTooLongException e) {
             logger.log(Level.WARNING, "resolution parameter too long", e);
-            JOptionPane.showMessageDialog(mw, "The WSDL contains resolution parameters that are too long. " +
-                                              "Consult log for more information.");
+            throw new RuntimeException("The WSDL contains resolution parameters that are too long. " +
+                                       "Consult log for more information.", e);
         }
     }
 }
