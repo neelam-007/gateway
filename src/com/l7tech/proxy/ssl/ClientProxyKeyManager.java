@@ -33,13 +33,13 @@ public class ClientProxyKeyManager implements X509KeyManager {
 
     public PrivateKey getPrivateKey(String s) {
         try {
-            log.info("ClientProxyKeyManager: getClientCertPrivateKey for " + s);
+            log.log(Level.FINER, "ClientProxyKeyManager: getClientCertPrivateKey for " + s);
             // Find our current request
             Ssg ssg = CurrentRequest.getPeerSsg();
             if (ssg == null)
                 throw new IllegalStateException("No peer Gateway is available in this thread");
             PrivateKey pk = SsgKeyStoreManager.getClientCertPrivateKey(ssg);
-            log.info("Returning PrivateKey: " + (pk == null ? "NULL" : "<it's a real key; numbers not shown>"));
+            log.log(Level.FINE, "Returning PrivateKey: " + (pk == null ? "NULL" : "<it's a real key; numbers not shown>"));
             return pk;
         } catch (NoSuchAlgorithmException e) {
             log.log(Level.SEVERE, "Unable to obtain client certificate private key", e);
@@ -57,7 +57,7 @@ public class ClientProxyKeyManager implements X509KeyManager {
     }
 
     public X509Certificate[] getCertificateChain(String s) {
-        log.info("ClientProxyKeyManager: getCertificateChain for " + s);
+        log.log(Level.FINER, "ClientProxyKeyManager: getCertificateChain for " + s);
         Ssg ssg = CurrentRequest.getPeerSsg();
         if (ssg == null)
             throw new IllegalStateException("No peer Gateway is available in this thread");
@@ -70,12 +70,12 @@ public class ClientProxyKeyManager implements X509KeyManager {
         }
         log.info("Found " + certs.length + " client certificates with Gateway " + ssg);
         if (certs.length < 1) {
-            log.info("*** About to return NULL certificate array..");
+            log.log(Level.FINE, "*** About to return NULL certificate array");
             return null;
         }
         for (int i = 0; i < certs.length; i++) {
             X509Certificate cert = certs[i];
-            log.info("Cert #" + i + " subject=" + cert.getSubjectDN());
+            log.log(Level.FINER, "Cert #" + i + " subject=" + cert.getSubjectDN());
         }
         return certs;
     }
@@ -93,7 +93,7 @@ public class ClientProxyKeyManager implements X509KeyManager {
     }
 
     public String chooseClientAlias(String[] strings, Principal[] principals, Socket socket) {
-        log.info("ClientProxyKeyManager: Gateway is asking for our client certificate");
+        log.log(Level.FINER, "ClientProxyKeyManager: Gateway is asking for our client certificate");
         Ssg ssg = CurrentRequest.getPeerSsg();
         if (ssg == null)
             throw new IllegalStateException("No peer Gateway is available in this thread");
@@ -101,7 +101,7 @@ public class ClientProxyKeyManager implements X509KeyManager {
         try {
             if (SsgKeyStoreManager.isClientCertAvailabile(ssg)) {
                 SsgKeyStoreManager.getClientCertPrivateKey(ssg); // make sure key is recoverable
-                log.info("Will present client cert for hostname " + hostname);
+                log.log(Level.FINE, "Will present client cert for hostname " + hostname);
                 return hostname;
             }
         } catch (KeyStoreCorruptException e) {
@@ -110,12 +110,12 @@ public class ClientProxyKeyManager implements X509KeyManager {
         } catch (NoSuchAlgorithmException e) {
             throw new RuntimeException(e); // can't happen
         } catch (BadCredentialsException e) {
-            log.info("Private key for client cert for Gateway " + ssg + " is currently unrecoverable; won't bother to present this cert");
+            log.log(Level.FINE, "Private key for client cert for Gateway " + ssg + " is currently unrecoverable; won't bother to present this cert");
             return null;
         } catch (OperationCanceledException e) {
             throw new RuntimeException(e);
         }
-        log.info("No client cert found for this connection to hostname " + hostname);
+        log.log(Level.FINE, "No client cert found for this connection to hostname " + hostname);
         return null;
     }
 }
