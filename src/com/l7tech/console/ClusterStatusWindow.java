@@ -7,8 +7,10 @@ import com.l7tech.console.table.ClusterStatusTableSorter;
 import com.l7tech.console.table.LogTableModel;
 import com.l7tech.cluster.GatewayStatus;
 import com.l7tech.cluster.ClusterInfo;
+import com.l7tech.cluster.ClusterStatusAdmin;
 import com.l7tech.console.icons.ArrowIcon;
 import com.l7tech.common.gui.util.ImageCache;
+import com.l7tech.common.util.Locator;
 
 import javax.swing.*;
 import javax.swing.table.*;
@@ -159,14 +161,6 @@ public class ClusterStatusWindow extends JFrame {
         jPanel1 = new javax.swing.JPanel();
         jLabel1 = new javax.swing.JLabel();
         jPanel8 = new javax.swing.JPanel();
-        //jTable1 = new javax.swing.JTable();
-        jLabel3 = new javax.swing.JLabel();
-        //jScrollPane1 = new javax.swing.JScrollPane();
-
-        msgTable3 = new javax.swing.JTable();
-        jPanel5 = new javax.swing.JPanel();
-
-        jLabel2 = new javax.swing.JLabel();
 
         jSplitPane1.setOrientation(javax.swing.JSplitPane.VERTICAL_SPLIT);
         jSplitPane1.setResizeWeight(0.5);
@@ -318,16 +312,7 @@ public class ClusterStatusWindow extends JFrame {
             return clusterStatusTableSorter;
         }
 
-         Object[][] rows = new Object [][]{
-/*                    {new Integer(1), "SSG1", new Integer(20), new Integer(5), new Double(1.5), "1 days 2 hrs 16 mins", "192.128.1.100"},
-                    {new Integer(1), "SSG2", new Integer(23), new Integer(10), new Double(1.8), "2 days 10 hrs 3 mins", "192.128.1.101"},
-                    {new Integer(0), "SSG3", new Integer(0), new Integer(0), new Double(0), "0", "192.128.1.102"},
-                    {new Integer(1), "SSG4", new Integer(17), new Integer(3), new Double(1.1), "2 hrs 10 mins", "192.128.2.10"},
-                    {new Integer(1), "SSG5", new Integer(18), new Integer(8), new Double(2.1), "6 days 8 hrs 55 mins", "192.128.2.11"},
-                    {new Integer(1), "SSG6", new Integer(22), new Integer(5), new Double(0.8), "7 hrs 23 mins", "192.128.3.1"},
-                    {new Integer(0), "SSG7", new Integer(0), new Integer(0), new Double(0), "0", "192.128.3.2"},
-                    {new Integer(0), "SSG8", new Integer(0), new Integer(0), new Double(0), "0", "192.128.3.3"}*/
-            };
+         Object[][] rows = new Object [][]{};
 
         String[] cols = new String[]{
             "Status", "Gateway", "Load Sharing %", "Request Failure%", "Load Avg", "Uptime", "IP Address"
@@ -433,47 +418,28 @@ public class ClusterStatusWindow extends JFrame {
 
         uptimeString += Long.toString(minutes_remain) + " mins ";
 
-//        serverUpTime.setText(END_SPACE + SERVER_UP_TIME_PREFIX + uptimeString);
- //       lastMinuteServerLoad.setText(LAST_MINUTE_SERVER_LOAD_PREFIX + Double.toString(metrics.getLoad1()) + END_SPACE);
-
         return uptimeString;
     }
 
-    Vector getClusterStatusDummyData(){
+    Vector getClusterStatusDummyData() {
+        ClusterStatusAdmin clusterStatusService = (ClusterStatusAdmin) Locator.getDefault().lookup(ClusterStatusAdmin.class);
+        if (clusterStatusService == null) throw new IllegalStateException("cannot obtain ClusterStatusAdmin remote reference");
 
-     Vector dummyData = new Vector();
+        ClusterInfo[] cluster = clusterStatusService.getClusterStatus();
+        if (cluster != null) {
+            System.out.println("Number of node is: " + cluster.length);
+        }
 
-        ClusterInfo  c1 = new ClusterInfo();
-        c1.setName("SSG1"); c1.setAddress("192.128.1.100"); c1.setAvgLoad(1.5); c1.setUptime(1072746384);
-        GatewayStatus node1 = new GatewayStatus(c1, 1,  20, 5);
+        Vector dummyData = new Vector();
 
-        ClusterInfo  c2 = new ClusterInfo();
-        c2.setName("SSG2"); c2.setAddress("192.128.1.101"); c2.setAvgLoad(1.8); c2.setUptime(1072656394);
-        GatewayStatus node2 = new GatewayStatus(c2, 1,  23, 10);
-
-        ClusterInfo  c3 = new ClusterInfo();
-        c3.setName("SSG3"); c3.setAddress("192.128.1.102"); c3.setAvgLoad(0); c3.setUptime(1072746404);
-        GatewayStatus node3 = new GatewayStatus(c3, 0,  0, 0);
-
-        ClusterInfo  c4 = new ClusterInfo();
-        c4.setName("SSG4"); c4.setAddress("192.128.2.10"); c4.setAvgLoad(1.1); c4.setUptime(1072776414);
-        GatewayStatus node4 = new GatewayStatus(c4, 1,  17, 3);
-
-        ClusterInfo  c5 = new ClusterInfo();
-        c5.setName("SSG5"); c5.setAddress("192.128.2.11"); c5.setAvgLoad(2.1); c5.setUptime(1072746484);
-        GatewayStatus node5 = new GatewayStatus(c5, 1,  18, 8);
-
-        ClusterInfo  c6 = new ClusterInfo();
-        c6.setName("SSG6"); c6.setAddress("192.128.3.1"); c6.setAvgLoad(0.8); c6.setUptime(1072736464);
-        GatewayStatus node6 = new GatewayStatus(c6, 1,  22, 5);
-
-        ClusterInfo  c7 = new ClusterInfo();
-        c7.setName("SSG7"); c7.setAddress("192.128.3.2"); c7.setAvgLoad(0); c7.setUptime(1072808010);
-        GatewayStatus node7 = new GatewayStatus(c7, 0,  0, 0);
-
-        ClusterInfo  c8 = new ClusterInfo();
-        c8.setName("SSG8"); c8.setAddress("192.128.3.3"); c8.setAvgLoad(0); c8.setUptime(1072808325);
-        GatewayStatus node8 = new GatewayStatus(c8, 0,  0, 0);
+        GatewayStatus node1 = new GatewayStatus(cluster[0], 1,  20, 5);
+        GatewayStatus node2 = new GatewayStatus(cluster[1], 1,  23, 10);
+        GatewayStatus node3 = new GatewayStatus(cluster[2], 0,  0, 0);
+        GatewayStatus node4 = new GatewayStatus(cluster[3], 1,  17, 3);
+        GatewayStatus node5 = new GatewayStatus(cluster[4], 1,  18, 8);
+        GatewayStatus node6 = new GatewayStatus(cluster[5], 1,  22, 5);
+        GatewayStatus node7 = new GatewayStatus(cluster[6], 0,  0, 0);
+        GatewayStatus node8 = new GatewayStatus(cluster[7], 0,  0, 0);
 
         dummyData.add(node1);
         dummyData.add(node2);
@@ -488,22 +454,16 @@ public class ClusterStatusWindow extends JFrame {
     }
 
     private javax.swing.JLabel jLabel1;
-    private javax.swing.JLabel jLabel2;
-    private javax.swing.JLabel jLabel3;
     private javax.swing.JLabel jLabel4;
 
     private javax.swing.JPanel mainPane;
     private javax.swing.JPanel jPanel1;
     private javax.swing.JPanel jPanel2;
     private javax.swing.JPanel jPanel3;
-    private javax.swing.JPanel jPanel5;
     private javax.swing.JPanel jPanel8;
-//    private javax.swing.JScrollPane jScrollPane1;
     private javax.swing.JScrollPane jScrollPane2;
     private javax.swing.JSplitPane jSplitPane1;
-//    private javax.swing.JTable jTable1;
     private javax.swing.JTable jTable2;
-    private javax.swing.JTable msgTable3;
 
     private javax.swing.JMenuBar clusterWindowMenuBar;
     private javax.swing.JMenu fileMenu;
