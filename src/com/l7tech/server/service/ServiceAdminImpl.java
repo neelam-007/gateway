@@ -62,7 +62,7 @@ public class ServiceAdminImpl extends RemoteService implements ServiceAdmin {
             byte[] body = null;
             if (ret == 200) {
                 body = get.getResponseBody();
-                return new String(body);
+                return new String(body, get.getResponseCharSet());
             } else {
                 String msg = "The URL " + url + " is returning code " + ret;
                 logger.info(msg);
