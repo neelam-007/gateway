@@ -155,10 +155,12 @@ public class XpathBasedAssertionPropertiesDialog extends JDialog {
                 // then save it in assertion
                 JTextField xpathTextField = messageViewerToolBar.getxpathField();
                 String xpath = xpathTextField.getText();
-                if (isEncryption && xpath.equals("/soapenv:Envelope")) {
-                    // dont allow encryption of entire envelope
-                    JOptionPane.showMessageDialog(okButton, "The path " + xpath + " is not valid for XML encryption",
-                      "XPath Error", JOptionPane.ERROR_MESSAGE);
+                XpathFeedBack res = getFeedBackMessage(xpathTextField);
+                if (res != XpathFeedBack.OK) {
+                    if (xpath == null || xpath.equals("")) {
+                        xpath = "[empty]";
+                    }
+                    JOptionPane.showMessageDialog(okButton, "The path " + xpath + " is not valid (" + res.getShortMessage() + ").");
                 } else {
                     if (xpath == null || "".equals(xpath.trim())) {
                         xmlSecAssertion.setXpathExpression(null);
@@ -493,7 +495,7 @@ public class XpathBasedAssertionPropertiesDialog extends JDialog {
 //                processFeedBack(feedBack, xpathField);
         }
 
-        private XpathFeedBack getFeedBackMessage(JTextField xpathField) {
+        /*private XpathFeedBack getFeedBackMessage(JTextField xpathField) {
             String xpath = xpathField.getText();
             if (xpath == null) return XpathFeedBack.EMPTY;
             xpath = xpath.trim();
@@ -514,7 +516,7 @@ public class XpathBasedAssertionPropertiesDialog extends JDialog {
                 log.log(Level.WARNING, e.getMessage(), e);
                 return new XpathFeedBack(-1, xpath, "XPath expression error '" + xpath + "'", null);
             }
-        }
+        }*/
 
         private void processFeedBack(XpathFeedBack feedBack, JTextField xpathField) {
             if (feedBack == XpathFeedBack.OK || feedBack == XpathFeedBack.EMPTY) {
@@ -551,6 +553,29 @@ public class XpathBasedAssertionPropertiesDialog extends JDialog {
         }
 
     };
+
+    private XpathFeedBack getFeedBackMessage(JTextField xpathField) {
+        String xpath = xpathField.getText();
+        if (xpath == null) return XpathFeedBack.EMPTY;
+        xpath = xpath.trim();
+        if (xpath.length() < 1) return XpathFeedBack.EMPTY;
+        if (isEncryption && xpath.equals("/soapenv:Envelope")) {
+            return new XpathFeedBack(-1, xpath, "The path " + xpath + " is not valid for XML encryption", null);
+        }
+        try {
+            testEvaluator.evaluate(xpath);
+            return XpathFeedBack.OK;
+        } catch (XPathSyntaxException e) {
+            log.log(Level.FINE, e.getMessage(), e);
+            return new XpathFeedBack(e.getPosition(), xpath, e.getMessage(), e.getMultilineMessage());
+        } catch (JaxenException e) {
+            log.log(Level.FINE, e.getMessage(), e);
+            return new XpathFeedBack(-1, xpath, e.getMessage(), e.getMessage());
+        } catch (RuntimeException e) { // sometimes NPE, sometimes NFE
+            log.log(Level.WARNING, e.getMessage(), e);
+            return new XpathFeedBack(-1, xpath, "XPath expression error '" + xpath + "'", null);
+        }
+    }
 
 
     private static class XpathFeedBack {
