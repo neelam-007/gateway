@@ -94,6 +94,7 @@ public class ServerHttpRoutingAssertion extends ServerRoutingAssertion {
             throw new PolicyAssertionException("Only XML Requests are supported by ServerRoutingAssertion!");
 
         PostMethod postMethod = null;
+        InputStream is = null;
 
         try {
             try {
@@ -243,14 +244,27 @@ public class ServerHttpRoutingAssertion extends ServerRoutingAssertion {
                             request.getMultipartBoundary());
 
                     if(request.getMultipartReader().isAtLeastOneAttachmentParsed()){
+                        is = null;
+                        if(request.getMultipartReader().getFileCache() != null) {
 
-                        byte[] dataBuf = new byte[request.getMultipartReader().getRawAttachmentsSize()];
-                        byte[] data = request.getMultipartReader().getRawAttachments();
-                        for(int i=0; i < dataBuf.length; i++) {
-                            dataBuf[i] = data[i];
+                            // close the connection for writing data to the temp file before opening the file for read operation
+                            request.getMultipartReader().closeFileCache();
+
+                            // read raw attachments from a temp file
+                            is = new FileInputStream(request.getMultipartReader().getFileCacheName());
+
+                        } else {
+
+                            // read raw attachments from memory
+                            byte[] dataBuf = new byte[request.getMultipartReader().getRawAttachmentsSize()];
+                            byte[] data = request.getMultipartReader().getRawAttachments();
+                            for(int i=0; i < dataBuf.length; i++) {
+                                dataBuf[i] = data[i];
+                            }
+                            is = new ByteArrayInputStream(dataBuf);
                         }
-                        ByteArrayInputStream bais = new ByteArrayInputStream(dataBuf);
-                        PushbackInputStream pushbackInputStream = new PushbackInputStream(bais, MultipartMessageReader.SOAP_PART_BUFFER_SIZE);
+
+                        PushbackInputStream pushbackInputStream = new PushbackInputStream(is, MultipartMessageReader.SOAP_PART_BUFFER_SIZE);
                         pushbackInputStream.unread(sb.toString().getBytes());
                         postMethod.setRequestBody(pushbackInputStream);
 
@@ -283,6 +297,26 @@ public class ServerHttpRoutingAssertion extends ServerRoutingAssertion {
                 response.setParameter(Response.PARAM_HTTP_STATUS, new Integer(status));
 
                 request.setRoutingStatus(RoutingStatus.ROUTED);
+
+                 if(is != null) {
+                     is.close();
+                     is =null;
+                }
+
+                final String fileToDelete = request.getMultipartReader().getFileCacheName();
+
+                // remove the cache file (attachments) after request is sent
+                Thread t = new Thread(new Runnable() {
+                    public void run() {
+                        try {
+                            Runtime.getRuntime().exec("rm " + fileToDelete);
+                        } catch (IOException e) {
+                            logger.warning("Cannot delete the cache file: " + fileToDelete);
+                        }
+                    }
+                });
+
+                t.start();
 
             } catch (WSDLException we) {
                 logger.log(Level.SEVERE, null, we);

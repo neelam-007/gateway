@@ -1,10 +1,8 @@
 package com.l7tech.common.util;
 
-import org.w3c.dom.Document;
+import com.l7tech.server.ServerConfig;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.PushbackInputStream;
+import java.io.*;
 import java.util.*;
 import java.util.logging.Logger;
 
@@ -15,7 +13,7 @@ import java.util.logging.Logger;
  */
 public class MultipartMessageReader {
 
-    public static final int ATTACHMENTS_BUFFER_SIZE = 1000000;
+    public static final int ATTACHMENTS_BUFFER_SIZE = 100000;
     public static final int SOAP_PART_BUFFER_SIZE = 10000;
     private boolean atLeastOneAttachmentParsed;
     private String multipartBoundary;
@@ -24,6 +22,9 @@ public class MultipartMessageReader {
     private final Logger logger = Logger.getLogger(getClass().getName());
     private byte[] attachmentsRawData = new byte[ATTACHMENTS_BUFFER_SIZE];
     int writeIndex = 0;
+    String fileCacheId = null;
+    FileOutputStream fileCache = null;
+    String fileCacheName = null;
 
     public MultipartMessageReader(InputStream inputStream, String multipartBoundary) {
         pushbackInputStream = new PushbackInputStream(inputStream, SOAP_PART_BUFFER_SIZE);
@@ -47,6 +48,29 @@ public class MultipartMessageReader {
             return false;
         }
         return true;
+    }
+
+    public String getFileCacheId() {
+        return fileCacheId;
+    }
+
+    public void setFileCacheId(String fileCacheId) {
+        this.fileCacheId = fileCacheId;
+    }
+
+    public FileOutputStream getFileCache() {
+        return fileCache;
+    }
+
+    public String getFileCacheName() {
+        return fileCacheName;
+    }
+
+    public void closeFileCache() throws IOException {
+        if(fileCache != null) {
+            fileCache.close();
+            fileCache = null;
+        }
     }
 
     /**
@@ -289,17 +313,23 @@ public class MultipartMessageReader {
         return part;
     }
 
-    private void addLineDelimiter() {
+    private void addLineDelimiter() throws IOException {
+
+        byte[] delimiter = new byte[2];
+        delimiter[0] = 0x0d;  // CR
+        delimiter[1] = 0x0a;  // LF
+
+        if(fileCache != null) writeDataToFileCache(delimiter);
 
         if(writeIndex + 4 > attachmentsRawData.length) {
-            throw new RuntimeException("The size of attachment(s) exceeds the buffer size. Unable to handle the request.");
+             writeDataToFileCache(delimiter);
         } else {
-            attachmentsRawData[writeIndex++] = 0x0d;     // CR
-            attachmentsRawData[writeIndex++] = 0x0a;     // LF
+            attachmentsRawData[writeIndex++] = delimiter[0];     // CR
+            attachmentsRawData[writeIndex++] = delimiter[1];     // LF
         }
     }
 
-    private void storeRawHeader(String line) {
+    private void storeRawHeader(String line) throws IOException {
 
         if(line == null) {
             throw new IllegalArgumentException("The header line cannot be NULL");
@@ -307,16 +337,23 @@ public class MultipartMessageReader {
 
         byte[] rawHeader = line.getBytes();
 
+        if(fileCache != null) {
+            writeDataToFileCache(line.getBytes());
+            addLineDelimiter();
+        }
+
         // check if there is enough room
-        if(writeIndex + rawHeader.length + 2 > attachmentsRawData.length) {
-            throw new RuntimeException("The size of attachment(s) exceeds the buffer size. Unable to handle the request.");
-        }
+        if(writeIndex + rawHeader.length + 4 > attachmentsRawData.length) {
+            writeDataToFileCache(line.getBytes());
+            addLineDelimiter();
+        } else {
 
-        for(int i=0; i < rawHeader.length; i++) {
-            attachmentsRawData[writeIndex++] = rawHeader[i];
-        }
+            for(int i=0; i < rawHeader.length; i++) {
+                attachmentsRawData[writeIndex++] = rawHeader[i];
+            }
 
-        addLineDelimiter();
+            addLineDelimiter();
+        }
     }
 
     private int storeRawPartContent() throws IOException {
@@ -327,6 +364,8 @@ public class MultipartMessageReader {
         int startIndex = -1;
         int endIndex = -1;
         int oldWriteIndex = writeIndex;
+
+        if(fileCache != null) storeRawPartContentToFileCache(null);
 
         // looking for the multipart boundary
         do {
@@ -346,7 +385,7 @@ public class MultipartMessageReader {
                         endIndex = writeIndex;
 
                         // check if the multipart boundary found between the first <CR><LF> and the second <CR><LF>
-                        if(isMultipartBoundaryFound(startIndex, endIndex)) {
+                        if(isMultipartBoundaryFound(attachmentsRawData, startIndex, endIndex)) {
                             boundaryFound = true;
                             break;
                         } else {
@@ -363,15 +402,139 @@ public class MultipartMessageReader {
                     crSeen = false;
                 }
             }
-        } while((writeIndex < attachmentsRawData.length - 4) && (d != -1));
+        } while((writeIndex < attachmentsRawData.length) && (d != -1));
 
-        if(!boundaryFound && (d == -1)) {
-            throw new RuntimeException("The size of attachment(s) exceeds the buffer size. Unable to handle the request.");
+        if(!boundaryFound && (d != -1)) {
+            return storeRawPartContentToFileCache(attachmentsRawData);
+        } else {
+            return (writeIndex - oldWriteIndex);
         }
-        return (writeIndex - oldWriteIndex);
     }
 
-    private boolean isMultipartBoundaryFound(int startIndex, int endIndex) {
+    private void writeDataToFileCache(byte[] data) throws IOException {
+
+        writeDataToFileCache(data, 0, data.length);
+    }
+
+    private void writeDataToFileCache(byte[] data, int off, int len) throws IOException {
+
+        if(fileCache == null) {
+            if(fileCacheId == null) throw new RuntimeException("File name is NULL. Cannot create file for storing the raw attachments.");
+
+            String propsPath = null;
+            String propsKey = "ssg.etc";
+            try {
+
+                propsPath = ServerConfig.getInstance().getProperty(propsKey);
+                if (propsPath != null && propsPath.length() > 0) {
+                    File f = new File(propsPath);
+                    if (!f.exists()) {
+                        String errorMsg = "The directory " + propsPath + "is required for caching the big attachments but not found. Please ensure the SecureSpan gateway is properly installed.";
+                        logger.warning(errorMsg);
+                        throw new RuntimeException(errorMsg);
+                    }
+
+                    fileCacheName = propsPath + "/req-att-" + fileCacheId;
+                    fileCache = new FileOutputStream(fileCacheName, true);
+                } else {
+
+                    String errorMsg = "The property " + propsKey + " is not defined. Please ensure the SecureSpan gateway is properly configured.";
+                    logger.warning(errorMsg);
+                    throw new RuntimeException(errorMsg);
+                }
+            } catch (FileNotFoundException e) {
+                throw new RuntimeException("Unable to create a new file " + propsPath + fileCacheId);
+            }
+        }
+
+        fileCache.write(data, off, len);
+    }
+
+    private int storeRawPartContentToFileCache(byte[] data) throws IOException {
+
+        int count;
+
+        // write data to the file
+        writeDataToFileCache(data);
+        count = data.length;
+
+        // store the remaining data of the attachment part (if any)
+        // looking for the multipart boundary
+        int d;
+        boolean crSeen = false;
+        boolean boundaryFound = false;
+        byte[] buf = new byte[1024];
+        int startIndex = -1;
+        int endIndex = -1;
+        int index = 0;
+
+        // read the first byte
+        d = pushbackInputStream.read();
+
+        // store the byte
+        buf[index++] = (byte) d;
+
+        while(!boundaryFound && (d != -1)) {
+
+            while((index < buf.length - 4) && (d != -1)) {
+                // looking for <CR>
+                if(d == 0x0d) {
+                    crSeen = true;
+                } else if (d == 0x0a) {
+                    // if <CR><LF> sequenece found
+                    if(crSeen) {
+
+                        if(startIndex >= 0) {
+                            endIndex = index;
+
+                            // check if the multipart boundary found between the first <CR><LF> and the second <CR><LF>
+                            if(isMultipartBoundaryFound(buf, startIndex, endIndex)) {
+                                boundaryFound = true;
+                                count += index;
+                                writeDataToFileCache(buf, 0, index);
+                                break;
+                            } else {
+                                // reset the indices
+                                startIndex = endIndex;
+                                endIndex = -1;
+                            }
+
+                        } else {
+                            startIndex = index;
+                        }
+
+                        // reset flas
+                        crSeen = false;
+                    }
+                }
+                // read the next byte
+                d = pushbackInputStream.read();
+
+                // store the byte
+                buf[index++] = (byte) d;
+            }
+            writeDataToFileCache(buf, 0, index);
+
+            // update count
+            count += index;
+
+            //reset indices
+            index = 0;
+            startIndex = -1;
+            endIndex = -1;
+
+            // read the next byte
+            d = pushbackInputStream.read();
+
+            // store the byte
+            buf[index++] = (byte) d;
+        }
+
+        return count;
+    }
+
+
+    private boolean isMultipartBoundaryFound(byte[] data, int startIndex, int endIndex) {
 
         // check if the length of the two objects are the same
         if((multipartBoundary.length()) + 2 != (endIndex - startIndex - 4)) return false;
@@ -379,7 +542,7 @@ public class MultipartMessageReader {
         StringBuffer sb = new StringBuffer();
         // convert the byte stream to string
         for(int i=0; i < endIndex - startIndex; i++ ) {
-            sb.append((char)attachmentsRawData[startIndex+i]);
+            sb.append((char)data[startIndex+i]);
         }
 
         if(sb.toString().trim().startsWith("--" + multipartBoundary)) {

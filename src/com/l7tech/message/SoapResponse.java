@@ -48,7 +48,7 @@ public abstract class SoapResponse extends XmlMessageAdapter implements SoapMess
             // TODO: Encoding?
             InputStream protectedResponseStream = getProtectedResponseStream();
             if ( protectedResponseStream != null ) {
-                _responseXml = getMessageXml(protectedResponseStream);
+                _responseXml = getMessageXml(protectedResponseStream, null);
             }
         }
         return _responseXml;

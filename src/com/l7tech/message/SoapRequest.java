@@ -83,7 +83,7 @@ public abstract class SoapRequest extends XmlMessageAdapter implements SoapMessa
             _requestXml = XmlUtil.nodeToString(_document);
         } else if ( _requestXml == null ) {
             // multipart/related; type="text/xml"; boundary="----=Multipart-SOAP-boundary=----"
-            _requestXml = getMessageXml(getRequestInputStream());
+            _requestXml = getMessageXml(getRequestInputStream(), getId().toString());
         }
         return _requestXml;
     }

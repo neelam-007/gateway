@@ -55,10 +55,12 @@ public abstract class XmlMessageAdapter extends MessageAdapter implements XmlMes
      * and of course without attachments.
      * <p>
      * @param is the underlying input stream for the message
+     * @param id the String representation of the request id (or response Id - not supported yet) for forming part
+     *           of the file name for storing the raw attachments if buffer limit exceeded.
      * @return the XML as a String
      * @throws IOException if a multipart message has an invalid format, or the content cannot be read
      */
-    protected String getMessageXml(InputStream is) throws IOException {
+    protected String getMessageXml(InputStream is, String id) throws IOException {
         String ctype = (String)getParameter(Message.PARAM_HTTP_CONTENT_TYPE);
         MultipartUtil.HeaderValue contentTypeHeader = MultipartUtil.parseHeader(XmlUtil.CONTENT_TYPE + ": " + ctype);
 
@@ -73,6 +75,7 @@ public abstract class XmlMessageAdapter extends MessageAdapter implements XmlMes
                 String innerType = MultipartUtil.unquote((String)contentTypeHeader.getParam(XmlUtil.MULTIPART_TYPE));
                 if (innerType.startsWith(XmlUtil.TEXT_XML)) {
                     multipartReader = new MultipartMessageReader(is, multipartBoundary);
+                    multipartReader.setFileCacheId(id);
 
                     MultipartUtil.Part part = multipartReader.getSoapPart();
                     if (!part.getHeader(XmlUtil.CONTENT_TYPE).getValue().equals(innerType)) throw new IOException("Content-Type of first part doesn't match type of Multipart header");
