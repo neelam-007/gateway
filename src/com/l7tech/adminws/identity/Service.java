@@ -18,6 +18,7 @@ import java.util.logging.Level;
 public class Service {
 
     public static final String VERSION = "20030529";
+    public static final String SERVICE_DEPENDENT_URL_PORTION = "/services/identityAdmin";
 
     public Service() {
     }

@@ -17,6 +17,8 @@ import java.util.logging.Level;
  */
 public class Service {
 
+    public static final String SERVICE_DEPENDENT_URL_PORTION = "/services/serviceAdmin";
+
     public Service() {
     }
 
@@ -124,7 +126,6 @@ public class Service {
     // ************************************************
 
     private ServiceManager getServiceManagerAndBeginTransaction() throws java.rmi.RemoteException {
-
         try {
             PersistenceContext.getCurrent().beginTransaction();
             if (serviceManagerInstance == null) {
@@ -175,30 +176,6 @@ public class Service {
             throw new java.rmi.RemoteException("Exception in Locator.getDefault().lookup: "+ e.getMessage(), e);
         }
     }
-
-    /*
-    public static void main (String[] args) throws Exception {
-        Service me = new Service();
-        System.out.println(me.resolveWsdlTarget("http://192.168.0.2:8080/simplewsdl.xml"));
-    }
-
-    private PublishedService createTestPubService() {
-        PublishedService out = new PublishedService();
-        out.setName("service name");
-        out.setOid(132);
-        out.setPolicyXml("<this is not really xml>");
-        out.setWsdlXml("<this is not really xml>");
-        return out;
-    }
-
-    private com.l7tech.objectmodel.EntityHeader[] createTestHeaders() {
-        com.l7tech.objectmodel.EntityHeader[] out = new com.l7tech.objectmodel.EntityHeader[3];
-        out[0] = new com.l7tech.objectmodel.EntityHeader(1, EntityType.SERVICE, "name", "description");
-        out[1] = new com.l7tech.objectmodel.EntityHeader(2, EntityType.SERVICE, "name", "description");
-        out[2] = new com.l7tech.objectmodel.EntityHeader(3, EntityType.SERVICE, "name", "description");
-        return out;
-    }
-    */
 
     private com.l7tech.service.ServiceManager serviceManagerInstance = null;
 }
