@@ -159,7 +159,7 @@ public class XpathBasedAssertionPropertiesDialog extends JDialog {
         } catch (JaxenException e) {
             log.fine(e.getMessage());
             return false;
-        } catch (NullPointerException e) {
+        } catch (RuntimeException e) { // sometimes NPE, sometimes NFE
             log.fine(e.getMessage());
             return false;
         }
