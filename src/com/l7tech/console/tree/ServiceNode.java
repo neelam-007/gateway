@@ -13,6 +13,7 @@ import javax.swing.*;
 import javax.swing.tree.MutableTreeNode;
 import java.io.StringReader;
 import java.rmi.RemoteException;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
@@ -35,9 +36,8 @@ public class ServiceNode extends EntityHeaderNode {
      * construct the <CODE>ServiceNode</CODE> instance for
      * a given entity header.
      *
-     * @param e  the EntityHeader instance, must represent published service
-     * @exception IllegalArgumentException
-     *                   thrown if unexpected type
+     * @param e the EntityHeader instance, must represent published service
+     * @throws IllegalArgumentException thrown if unexpected type
      */
     public ServiceNode(EntityHeader e)
       throws IllegalArgumentException {
@@ -68,31 +68,41 @@ public class ServiceNode extends EntityHeaderNode {
      * @return actions appropriate to the node
      */
     public Action[] getActions() {
+        List actions = new ArrayList();
+
         DisableServiceAction da = new DisableServiceAction(this);
-        da.setEnabled(false);
-        EnableServiceAction ea = new EnableServiceAction(this);
-        ea.setEnabled(false);
+        if (da.isAuthorized()) {
+            actions.add(da);
+            da.setEnabled(false);
+            EnableServiceAction ea = new EnableServiceAction(this);
+            ea.setEnabled(false);
+            actions.add(ea);
 
-        try {
-            boolean disabled = getPublishedService().isDisabled();
-            da.setEnabled(!disabled);
-            ea.setEnabled(disabled);
-        } catch (Exception e) {
-            log.log(Level.WARNING, "Error retrieving service", e);
+            try {
+                boolean disabled = getPublishedService().isDisabled();
+                da.setEnabled(!disabled);
+                ea.setEnabled(disabled);
+            } catch (Exception e) {
+                log.log(Level.WARNING, "Error retrieving service", e);
 
+            }
         }
+        actions.add(new EditServicePolicyAction(this));
+        actions.add(new ViewServiceWsdlAction(this));
 
-        return new Action[]{
-            new EditServicePolicyAction(this),
-            new ViewServiceWsdlAction(this),
-            new EditServiceNameAction(this),
-            ea,
-            da,
-            new DeleteServiceAction(this)};
+        final EditServiceNameAction editServiceNameAction = new EditServiceNameAction(this);
+        if (editServiceNameAction.isAuthorized()) {
+            actions.add(editServiceNameAction);
+        }
+        final DeleteServiceAction deleteServiceAction = new DeleteServiceAction(this);
+        if (deleteServiceAction.isAuthorized()) {
+            actions.add(deleteServiceAction);
+        }
+        return (Action[])actions.toArray(new Action[]{});
     }
 
     /**
-     *Test if the node can be deleted. Default is <code>true</code>
+     * Test if the node can be deleted. Default is <code>true</code>
      *
      * @return true if the node can be deleted, false otherwise
      */
@@ -130,7 +140,7 @@ public class ServiceNode extends EntityHeaderNode {
         } catch (Exception e) {
             ErrorManager.getDefault().
               notify(Level.SEVERE, e,
-              "Error loading service elements"+getEntityHeader().getOid());
+                "Error loading service elements" + getEntityHeader().getOid());
         }
     }
 

@@ -4,8 +4,8 @@ import com.l7tech.console.action.AddAssertionAction;
 import com.l7tech.console.action.AssertionMoveDownAction;
 import com.l7tech.console.action.AssertionMoveUpAction;
 import com.l7tech.console.action.DeleteAssertionAction;
-import com.l7tech.console.event.ConnectionEvent;
-import com.l7tech.console.event.ConnectionListener;
+import com.l7tech.console.security.LogonEvent;
+import com.l7tech.console.security.LogonListener;
 import com.l7tech.console.tree.AbstractTreeNode;
 
 import javax.swing.*;
@@ -20,18 +20,18 @@ import javax.swing.event.TreeSelectionListener;
 import javax.swing.tree.TreeModel;
 import javax.swing.tree.TreePath;
 import java.awt.*;
-import java.awt.event.FocusListener;
-import java.awt.event.FocusEvent;
 import java.awt.event.FocusAdapter;
+import java.awt.event.FocusEvent;
+import java.awt.event.FocusListener;
 import java.util.logging.Logger;
 
 /**
  * The policy toolbar with toolbar actions and listeners.
- * 
+ *
  * @author <a href="mailto:emarceta@layer7-tech.com>Emil Marceta</a>
  * @version 1.0
  */
-public class PolicyToolBar extends JToolBar implements ConnectionListener {
+public class PolicyToolBar extends JToolBar implements LogonListener {
     static Logger log = Logger.getLogger(PolicyToolBar.class.getName());
     public static final String NAME = "policy.toolbar";
     private AssertionMoveUpAction assertionMoveUpAction;
@@ -51,11 +51,11 @@ public class PolicyToolBar extends JToolBar implements ConnectionListener {
 
     /**
      * register the toolbar with the palette assertion tree.
-     * 
+     *
      * @param tree the assertion tree
      */
     public void registerPaletteTree(JTree tree) {
-        if (assertionPalette !=null) {
+        if (assertionPalette != null) {
             assertionPalette.removeTreeSelectionListener(assertionPaletteListener);
             assertionPalette.removeFocusListener(assertionPaletteFocusListener);
         }
@@ -66,20 +66,20 @@ public class PolicyToolBar extends JToolBar implements ConnectionListener {
 
     /**
      * register the toolbar with the policy editor tree.
-     * 
+     *
      * @param tree the assertion tree
      */
     public void registerPolicyTree(JTree tree) {
         tree.addTreeSelectionListener(policyTreeListener);
         tree.getModel().addTreeModelListener(policyTreeModelListener);
         rootAssertionNode = (AssertionTreeNode)tree.getModel().getRoot();
-        lastAssertionNode  = rootAssertionNode;
+        lastAssertionNode = rootAssertionNode;
         updateActions();
     }
 
     /**
      * register the toolbar with the policy editor tree.
-     * 
+     *
      * @param tree the assertion tree
      */
     public void unregisterPolicyTree(JTree tree) {
@@ -156,7 +156,7 @@ public class PolicyToolBar extends JToolBar implements ConnectionListener {
         return assertionMoveUpAction;
     }
 
-    private Action getAssertionMoveDownAction() {
+    private AssertionMoveDownAction getAssertionMoveDownAction() {
         if (assertionMoveDownAction != null)
             return assertionMoveDownAction;
         assertionMoveDownAction = new AssertionMoveDownAction(null) {
@@ -171,7 +171,7 @@ public class PolicyToolBar extends JToolBar implements ConnectionListener {
         return assertionMoveDownAction;
     }
 
-    private Action getAddAssertionAction() {
+    private AddAssertionAction getAddAssertionAction() {
         if (addAssertionAction != null)
             return addAssertionAction;
         addAssertionAction = new AddAssertionAction() {
@@ -192,7 +192,7 @@ public class PolicyToolBar extends JToolBar implements ConnectionListener {
     }
 
 
-    private Action getDeleteAssertionAction() {
+    private DeleteAssertionAction getDeleteAssertionAction() {
         if (deleteAssertionAction != null)
             return deleteAssertionAction;
         deleteAssertionAction = new DeleteAssertionAction() {
@@ -259,6 +259,7 @@ public class PolicyToolBar extends JToolBar implements ConnectionListener {
             lastPaletteNode = null;
             updateActions();
         }
+
         public void focusGained(FocusEvent e) {
             TreePath path = assertionPalette.getSelectionPath();
             if (path == null) {
@@ -308,20 +309,21 @@ public class PolicyToolBar extends JToolBar implements ConnectionListener {
               updateActions();
           }
       };
-  /**
+
+    /**
      * Invoked on connection event
-     * 
+     *
      * @param e describing the connection event
      */
-    public void onConnect(ConnectionEvent e) {
+    public void onLogon(LogonEvent e) {
     }
 
     /**
      * Invoked on disconnect
-     * 
+     *
      * @param e describing the dosconnect event
      */
-    public void onDisconnect(ConnectionEvent e) {
+    public void onLogoff(LogonEvent e) {
 
         Runnable r = new Runnable() {
             public void run() {

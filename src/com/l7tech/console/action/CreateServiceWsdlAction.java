@@ -4,7 +4,9 @@ import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.common.xml.Wsdl;
 import com.l7tech.console.MainWindow;
-import com.l7tech.console.event.*;
+import com.l7tech.console.event.WizardAdapter;
+import com.l7tech.console.event.WizardEvent;
+import com.l7tech.console.event.WizardListener;
 import com.l7tech.console.panels.*;
 import com.l7tech.console.tree.AbstractTreeNode;
 import com.l7tech.console.tree.ServicesTree;
@@ -45,11 +47,11 @@ import java.util.logging.Logger;
 /**
  * The <code>PublishServiceAction</code> action invokes the pubish
  * service wizard.
- * 
+ *
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  * @version 1.0
  */
-public class CreateServiceWsdlAction extends SecureAction implements ConnectionListener {
+public class CreateServiceWsdlAction extends SecureAction {
     static final Logger log = Logger.getLogger(CreateServiceWsdlAction.class.getName());
 
     public CreateServiceWsdlAction() {
@@ -88,13 +90,7 @@ public class CreateServiceWsdlAction extends SecureAction implements ConnectionL
         SwingUtilities.invokeLater(new Runnable() {
             public void run() {
                 WsdlDefinitionPanel defPanel =
-                  new WsdlDefinitionPanel(
-                    new WsdlMessagesPanel(
-                      new WsdlPortTypePanel(
-                        new WsdlPortTypeBindingPanel(
-                          new WsdlServicePanel(null))
-                      )
-                    ));
+                  new WsdlDefinitionPanel(new WsdlMessagesPanel(new WsdlPortTypePanel(new WsdlPortTypeBindingPanel(new WsdlServicePanel(null)))));
                 WsdlCreateOverviewPanel p = new WsdlCreateOverviewPanel(defPanel);
                 JFrame f = TopComponents.getInstance().getMainWindow();
                 Wizard w = new WsdlCreateWizard(f, p);
@@ -112,7 +108,7 @@ public class CreateServiceWsdlAction extends SecureAction implements ConnectionL
     private WizardListener wizardListener = new WizardAdapter() {
         /**
          * Invoked when the wizard has finished.
-         * 
+         *
          * @param we the event describing the wizard finish
          */
         public void wizardFinished(WizardEvent we) {
@@ -132,8 +128,8 @@ public class CreateServiceWsdlAction extends SecureAction implements ConnectionL
                 final String serviceAddress = getServiceAddress(def);
                 service.setWsdlUrl(serviceAddress);
                 RoutingAssertion ra = null;
-                if (serviceAddress !=null) {
-                   ra = new HttpRoutingAssertion(serviceAddress);
+                if (serviceAddress != null) {
+                    ra = new HttpRoutingAssertion(serviceAddress);
                 } else {
                     ra = new HttpRoutingAssertion();
                 }
@@ -175,7 +171,7 @@ public class CreateServiceWsdlAction extends SecureAction implements ConnectionL
 
         /**
          * Invoked when the wizard has been cancelled.
-         * 
+         *
          * @param e the event describinng the wizard cancel
          */
         public void wizardCanceled(WizardEvent e) {
@@ -208,7 +204,7 @@ public class CreateServiceWsdlAction extends SecureAction implements ConnectionL
 
     /**
      * determine the soap address of the first service/port
-     * 
+     *
      * @param def the WSDL definition model
      * @return the soap address as String
      * @throws IllegalArgumentException if the soap address is not found
@@ -233,13 +229,5 @@ public class CreateServiceWsdlAction extends SecureAction implements ConnectionL
             }
         }
         throw new IllegalArgumentException("missing SOAP address port definition");
-    }
-
-    public void onConnect(ConnectionEvent e) {
-        setEnabled(true);
-    }
-
-    public void onDisconnect(ConnectionEvent e) {
-        setEnabled(false);
     }
 }

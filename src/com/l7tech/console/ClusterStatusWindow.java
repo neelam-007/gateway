@@ -1,29 +1,28 @@
 package com.l7tech.console;
 
-import com.l7tech.console.util.*;
-import com.l7tech.console.panels.StatisticsPanel;
-import com.l7tech.console.panels.EditGatewayNameDialog;
-import com.l7tech.console.table.ClusterStatusTableSorter;
-import com.l7tech.cluster.GatewayStatus;
 import com.l7tech.cluster.ClusterStatusAdmin;
-import com.l7tech.console.util.ArrowIcon;
-import com.l7tech.console.event.ConnectionListener;
-import com.l7tech.console.event.ConnectionEvent;
-import com.l7tech.console.action.Actions;
+import com.l7tech.cluster.GatewayStatus;
 import com.l7tech.common.gui.util.ImageCache;
 import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.common.util.Locator;
-import com.l7tech.service.ServiceAdmin;
+import com.l7tech.console.action.Actions;
+import com.l7tech.console.panels.EditGatewayNameDialog;
+import com.l7tech.console.panels.StatisticsPanel;
+import com.l7tech.console.security.LogonEvent;
+import com.l7tech.console.security.LogonListener;
+import com.l7tech.console.table.ClusterStatusTableSorter;
+import com.l7tech.console.util.*;
 import com.l7tech.objectmodel.DeleteException;
+import com.l7tech.service.ServiceAdmin;
 
 import javax.swing.*;
 import javax.swing.table.*;
-import java.util.*;
-import java.util.logging.Logger;
 import java.awt.*;
 import java.awt.event.*;
-import java.text.SimpleDateFormat;
 import java.rmi.RemoteException;
+import java.text.SimpleDateFormat;
+import java.util.*;
+import java.util.logging.Logger;
 
 
 /*
@@ -34,7 +33,7 @@ import java.rmi.RemoteException;
  * $Id$
  */
 
-public class ClusterStatusWindow extends JFrame implements ConnectionListener {
+public class ClusterStatusWindow extends JFrame implements LogonListener {
 
     public static final int STATUS_TABLE_NODE_STATUS_COLUMN_INDEX = 0;
     public static final int STATUS_TABLE_NODE_NAME_COLUMN_INDEX = 1;
@@ -78,18 +77,20 @@ public class ClusterStatusWindow extends JFrame implements ConnectionListener {
     private Icon downArrowIcon = new ArrowIcon(1);
     private boolean canceled;
 
-    /** Resource bundle with default locale */
+    /**
+     * Resource bundle with default locale
+     */
     private ResourceBundle dsnDialogResources = null;
 
     /**
      * Constructor
      *
-     * @param title  The window title
+     * @param title The window title
      */
     public ClusterStatusWindow(final String title) {
         super(title);
         ImageIcon imageIcon =
-                new ImageIcon(ImageCache.getInstance().getIcon(RESOURCE_PATH + "/layer7_logo_small_32x32.png"));
+          new ImageIcon(ImageCache.getInstance().getIcon(RESOURCE_PATH + "/layer7_logo_small_32x32.png"));
         setIconImage(imageIcon.getImage());
         setBounds(0, 0, 850, 600);
         setJMenuBar(getClusterWindowMenuBar());
@@ -134,7 +135,7 @@ public class ClusterStatusWindow extends JFrame implements ConnectionListener {
     /**
      * Return the frameContentPane property value
      *
-     * @return  JPanel
+     * @return JPanel
      */
     private JPanel getJFrameContentPane() {
         if (frameContentPane == null) {
@@ -149,7 +150,7 @@ public class ClusterStatusWindow extends JFrame implements ConnectionListener {
     /**
      * Return the clusterWindowMenuBar property value
      *
-     * @return  JMenubar
+     * @return JMenubar
      */
     private JMenuBar getClusterWindowMenuBar() {
         if (clusterWindowMenuBar == null) {
@@ -163,7 +164,7 @@ public class ClusterStatusWindow extends JFrame implements ConnectionListener {
     /**
      * Return fileMenu property value
      *
-     * @return  JMenu
+     * @return JMenu
      */
     private JMenu getFileMenu() {
         if (fileMenu == null) {
@@ -179,7 +180,7 @@ public class ClusterStatusWindow extends JFrame implements ConnectionListener {
     /**
      * Return helpMenu propery value
      *
-     * @return  JMenu
+     * @return JMenu
      */
     private JMenu getHelpMenu() {
         if (helpMenu != null) return helpMenu;
@@ -196,7 +197,7 @@ public class ClusterStatusWindow extends JFrame implements ConnectionListener {
     /**
      * Return exitMenuItem property value
      *
-     * @return  JMenuItem
+     * @return JMenuItem
      */
     private JMenuItem getExitMenuItem() {
         if (exitMenuItem != null) return exitMenuItem;
@@ -218,7 +219,7 @@ public class ClusterStatusWindow extends JFrame implements ConnectionListener {
     /**
      * Return mainPane property value
      *
-     * @return  JPanel
+     * @return JPanel
      */
     private JPanel getMainPane() {
         if (mainPane != null) return mainPane;
@@ -252,7 +253,7 @@ public class ClusterStatusWindow extends JFrame implements ConnectionListener {
                 if (selectedRowIndex >= 0) {
                     Object o = getClusterStatusTable().getValueAt(selectedRowIndex, STATUS_TABLE_NODE_STATUS_COLUMN_INDEX);
                     if (o instanceof Integer) {
-                        Integer nodeStatus = (Integer) o;
+                        Integer nodeStatus = (Integer)o;
                         if (nodeStatus.intValue() == 0) {
                             canDelete = true;
                         }
@@ -299,7 +300,7 @@ public class ClusterStatusWindow extends JFrame implements ConnectionListener {
     /**
      * Return messagePane property value
      *
-     * @return  JPanel
+     * @return JPanel
      */
     private JPanel getMessagePane() {
 
@@ -320,7 +321,7 @@ public class ClusterStatusWindow extends JFrame implements ConnectionListener {
     /**
      * Return updateTimeStamp property value
      *
-     * @return  JLabel
+     * @return JLabel
      */
     private JLabel getLastUpdateLabel() {
         if (updateTimeStamp != null) return updateTimeStamp;
@@ -335,7 +336,7 @@ public class ClusterStatusWindow extends JFrame implements ConnectionListener {
     /**
      * Return clusterStatusTable property value
      *
-     * @return  JTable
+     * @return JTable
      */
     private JTable getClusterStatusTable() {
 
@@ -367,7 +368,7 @@ public class ClusterStatusWindow extends JFrame implements ConnectionListener {
         clusterStatusTable.getColumnModel().getColumn(STATUS_TABLE_NODE_ID_COLUMN_INDEX).setMaxWidth(0);
         clusterStatusTable.getColumnModel().getColumn(STATUS_TABLE_NODE_ID_COLUMN_INDEX).setPreferredWidth(0);
 
-        ColumnHeaderTooltips htt = new ColumnHeaderTooltips ();
+        ColumnHeaderTooltips htt = new ColumnHeaderTooltips();
         htt.setToolTip(clusterStatusTable.getColumnModel().getColumn(STATUS_TABLE_NODE_NAME_COLUMN_INDEX), "Gateway name. Updated every " + GatewayStatus.REFRESH_INTERVAL + " seconds");
         htt.setToolTip(clusterStatusTable.getColumnModel().getColumn(STATUS_TABLE_LOAD_SHARING_COLUMN_INDEX), "% of load calculated with data collected in the past 60 seconds. " + "Updated every " + GatewayStatus.REFRESH_INTERVAL + " seconds");
         htt.setToolTip(clusterStatusTable.getColumnModel().getColumn(STATUS_TABLE_REQUEST_ROUTED_COLUMN_INDEX), "% of routed requests calculated with data collected in the past 60 seconds. " + "Updated every " + GatewayStatus.REFRESH_INTERVAL + " seconds");
@@ -376,53 +377,51 @@ public class ClusterStatusWindow extends JFrame implements ConnectionListener {
         htt.setToolTip(clusterStatusTable.getColumnModel().getColumn(STATUS_TABLE_SERVER_UPTIME_COLUMN_INDEX), "Duration since gateway is up. Updated every " + GatewayStatus.REFRESH_INTERVAL + " seconds");
         clusterStatusTable.getTableHeader().addMouseMotionListener(htt);
 
-        clusterStatusTable.getColumnModel().getColumn(STATUS_TABLE_NODE_NAME_COLUMN_INDEX).setCellRenderer(
-                new DefaultTableCellRenderer() {
-                    private Icon connectIcon =
-                            new ImageIcon(ImageCache.getInstance().getIcon(MainWindow.RESOURCE_PATH + "/connect2.gif"));
-                    private Icon disconnectIcon =
-                            new ImageIcon(ImageCache.getInstance().getIcon(MainWindow.RESOURCE_PATH + "/disconnect.gif"));
-                    private Icon unknownStatusIcon =
-                            new ImageIcon(ImageCache.getInstance().getIcon(MainWindow.RESOURCE_PATH + "/unknownstatus.gif"));
+        clusterStatusTable.getColumnModel().getColumn(STATUS_TABLE_NODE_NAME_COLUMN_INDEX).setCellRenderer(new DefaultTableCellRenderer() {
+            private Icon connectIcon =
+              new ImageIcon(ImageCache.getInstance().getIcon(MainWindow.RESOURCE_PATH + "/connect2.gif"));
+            private Icon disconnectIcon =
+              new ImageIcon(ImageCache.getInstance().getIcon(MainWindow.RESOURCE_PATH + "/disconnect.gif"));
+            private Icon unknownStatusIcon =
+              new ImageIcon(ImageCache.getInstance().getIcon(MainWindow.RESOURCE_PATH + "/unknownstatus.gif"));
 
-                    public Component getTableCellRendererComponent(JTable table,
-                                                                   Object value,
-                                                                   boolean isSelected,
-                                                                   boolean hasFocus,
-                                                                   int row, int column) {
-                        super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
-                        setIcon(null);
+            public Component getTableCellRendererComponent(JTable table,
+                                                           Object value,
+                                                           boolean isSelected,
+                                                           boolean hasFocus,
+                                                           int row, int column) {
+                super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
+                setIcon(null);
 
-                        Object s = clusterStatusTable.getValueAt(row, 0);
+                Object s = clusterStatusTable.getValueAt(row, 0);
 
-                        if (s.toString().equals("1")) {
-                            this.setIcon(connectIcon);
-                        } else if (s.toString().equals("0")) {
-                            this.setIcon(disconnectIcon);
-                        } else {
-                            this.setIcon(unknownStatusIcon);
-                        }
-                        return this;
-                    }
-                });
+                if (s.toString().equals("1")) {
+                    this.setIcon(connectIcon);
+                } else if (s.toString().equals("0")) {
+                    this.setIcon(disconnectIcon);
+                } else {
+                    this.setIcon(unknownStatusIcon);
+                }
+                return this;
+            }
+        });
 
-        clusterStatusTable.getColumnModel().getColumn(STATUS_TABLE_SERVER_UPTIME_COLUMN_INDEX).setCellRenderer(
-                new DefaultTableCellRenderer() {
+        clusterStatusTable.getColumnModel().getColumn(STATUS_TABLE_SERVER_UPTIME_COLUMN_INDEX).setCellRenderer(new DefaultTableCellRenderer() {
 
-                    public Component getTableCellRendererComponent(JTable table,
-                                                                   Object value,
-                                                                   boolean isSelected,
-                                                                   boolean hasFocus,
-                                                                   int row, int column) {
-                        super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
-                        this.setHorizontalAlignment(SwingConstants.TRAILING);
-                        if (value instanceof Long) {
-                            this.setText(convertUptimeToString(((Long) value).longValue()));
-                        }
+            public Component getTableCellRendererComponent(JTable table,
+                                                           Object value,
+                                                           boolean isSelected,
+                                                           boolean hasFocus,
+                                                           int row, int column) {
+                super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
+                this.setHorizontalAlignment(SwingConstants.TRAILING);
+                if (value instanceof Long) {
+                    this.setText(convertUptimeToString(((Long)value).longValue()));
+                }
 
-                        return this;
-                    }
-                });
+                return this;
+            }
+        });
 
         for (int i = 0; i < clusterStatusTable.getColumnModel().getColumnCount(); i++) {
             clusterStatusTable.getColumnModel().getColumn(i).setHeaderRenderer(iconHeaderRenderer);
@@ -437,7 +436,7 @@ public class ClusterStatusWindow extends JFrame implements ConnectionListener {
     /**
      * Return helpTopicsMenuItem property value
      *
-     * @return  JMenuItem
+     * @return JMenuItem
      */
     private JMenuItem getHelpTopicsMenuItem() {
         if (helpTopicsMenuItem != null) return helpTopicsMenuItem;
@@ -459,7 +458,7 @@ public class ClusterStatusWindow extends JFrame implements ConnectionListener {
     /**
      * Return statisticsPane property value
      *
-     * @return  StatisticsPanel
+     * @return StatisticsPanel
      */
     private StatisticsPanel getStatisticsPane() {
         if (statisticsPane != null) return statisticsPane;
@@ -471,7 +470,7 @@ public class ClusterStatusWindow extends JFrame implements ConnectionListener {
     /**
      * Return clusterStatusTableSorter property value
      *
-     * @return  ClusterStatusTableSorter
+     * @return ClusterStatusTableSorter
      */
     private ClusterStatusTableSorter getClusterStatusTableModel() {
 
@@ -500,17 +499,17 @@ public class ClusterStatusWindow extends JFrame implements ConnectionListener {
      * Initialize the object references of the remote services
      */
     private void initAdminConnection() {
-        serviceManager = (ServiceAdmin) Locator.getDefault().lookup(ServiceAdmin.class);
+        serviceManager = (ServiceAdmin)Locator.getDefault().lookup(ServiceAdmin.class);
         if (serviceManager == null) throw new IllegalStateException("Cannot obtain ServiceManager remote reference");
 
-        clusterStatusAdmin = (ClusterStatusAdmin) Locator.getDefault().lookup(ClusterStatusAdmin.class);
+        clusterStatusAdmin = (ClusterStatusAdmin)Locator.getDefault().lookup(ClusterStatusAdmin.class);
         if (clusterStatusAdmin == null) throw new RuntimeException("Cannot obtain ClusterStatusAdmin remote reference");
 
     }
 
     /**
-     *  Add a mouse listener to the Table to trigger a table sort
-     *  when a column heading is clicked in the JTable.
+     * Add a mouse listener to the Table to trigger a table sort
+     * when a column heading is clicked in the JTable.
      */
     public void addMouseListenerToHeaderInTable(JTable table) {
 
@@ -523,8 +522,8 @@ public class ClusterStatusWindow extends JFrame implements ConnectionListener {
                 int column = tableView.convertColumnIndexToModel(viewColumn);
                 if (e.getClickCount() == 1 && column != -1) {
 
-                    ((ClusterStatusTableSorter) tableView.getModel()).sortData(column, true);
-                    ((ClusterStatusTableSorter) tableView.getModel()).fireTableDataChanged();
+                    ((ClusterStatusTableSorter)tableView.getModel()).sortData(column, true);
+                    ((ClusterStatusTableSorter)tableView.getModel()).fireTableDataChanged();
                     tableView.getTableHeader().resizeAndRepaint();
                 }
             }
@@ -536,7 +535,7 @@ public class ClusterStatusWindow extends JFrame implements ConnectionListener {
     /**
      * Convert the server uptime from milliseconds to String
      *
-     * @param uptime  Server uptime in milliseconds
+     * @param uptime Server uptime in milliseconds
      * @return String  The string representation of the uptime
      */
     private String convertUptimeToString(long uptime) {
@@ -580,7 +579,7 @@ public class ClusterStatusWindow extends JFrame implements ConnectionListener {
         if (currentNodeList == null) return cs;
 
         for (Iterator i = currentNodeList.keySet().iterator(); i.hasNext();) {
-            GatewayStatus su = (GatewayStatus) currentNodeList.get(i.next());
+            GatewayStatus su = (GatewayStatus)currentNodeList.get(i.next());
 
             if (su.getLastUpdateTimeStamp() == su.getSecondLastUpdateTimeStamp()) {
                 su.incrementTimeStampUpdateFailureCount();
@@ -616,7 +615,7 @@ public class ClusterStatusWindow extends JFrame implements ConnectionListener {
     /**
      * Update the total request count for the cluster
      *
-     * @param newCount  The new value of the total request count
+     * @param newCount The new value of the total request count
      */
     private void updateClusterRequestCounterCache(long newCount) {
 
@@ -641,7 +640,7 @@ public class ClusterStatusWindow extends JFrame implements ConnectionListener {
 
         for (int i = 0; i < clusterRequestCounterCache.size() - 1; i++, index--) {
 
-            totalCount += ((Long) clusterRequestCounterCache.get(index)).longValue() - ((Long) clusterRequestCounterCache.get(index - 1)).longValue();
+            totalCount += ((Long)clusterRequestCounterCache.get(index)).longValue() - ((Long)clusterRequestCounterCache.get(index - 1)).longValue();
         }
 
         return totalCount;
@@ -650,7 +649,7 @@ public class ClusterStatusWindow extends JFrame implements ConnectionListener {
     /**
      * Create a refresh timer for retrieving the cluster status periodically.
      *
-     * @return  Timer  The refresh timer
+     * @return Timer  The refresh timer
      */
     private javax.swing.Timer getStatusRefreshTimer() {
 
@@ -679,7 +678,7 @@ public class ClusterStatusWindow extends JFrame implements ConnectionListener {
 
         // save the number of selected message
         if (selectedRowIndexOld >= 0) {
-            nodeIdSelected = (String) getClusterStatusTable().getValueAt(selectedRowIndexOld, STATUS_TABLE_NODE_NAME_COLUMN_INDEX);
+            nodeIdSelected = (String)getClusterStatusTable().getValueAt(selectedRowIndexOld, STATUS_TABLE_NODE_NAME_COLUMN_INDEX);
         } else {
             nodeIdSelected = null;
         }
@@ -727,7 +726,7 @@ public class ClusterStatusWindow extends JFrame implements ConnectionListener {
     }
 
     /**
-     *  Clean up the resources of the cluster status window when the window is closed.
+     * Clean up the resources of the cluster status window when the window is closed.
      */
     public void dispose() {
         getStatusRefreshTimer().stop();
@@ -737,7 +736,7 @@ public class ClusterStatusWindow extends JFrame implements ConnectionListener {
     /**
      * Initialize the resources when the connection to the cluster is established.
      */
-    public void onConnect(ConnectionEvent e) {
+    public void onLogon(LogonEvent e) {
         initAdminConnection();
         initCaches();
         getStatusRefreshTimer().start();
@@ -748,13 +747,13 @@ public class ClusterStatusWindow extends JFrame implements ConnectionListener {
     /**
      * Clean up the resources when the connection to the cluster went down.
      */
-    public void onDisconnect(ConnectionEvent e) {
+    public void onLogoff(LogonEvent e) {
         cleanUp();
     }
 
     private void cleanUp() {
         getStatusRefreshTimer().stop();
-        if(!getLastUpdateLabel().getText().trim().endsWith("[Disconnected]")) {
+        if (!getLastUpdateLabel().getText().trim().endsWith("[Disconnected]")) {
             getLastUpdateLabel().setText(getLastUpdateLabel().getText().trim() + " [Disconnected]   ");
         }
 
@@ -768,7 +767,7 @@ public class ClusterStatusWindow extends JFrame implements ConnectionListener {
     /**
      * Return the flag indicating whether the job has been cancelled or not.
      *
-     * @return  true if the job is cancelled, false otherwise.
+     * @return true if the job is cancelled, false otherwise.
      */
     public boolean isCanceled() {
         return canceled;
@@ -789,7 +788,7 @@ public class ClusterStatusWindow extends JFrame implements ConnectionListener {
         Vector cs = new Vector();
 
         for (Iterator i = currentNodeList.keySet().iterator(); i.hasNext();) {
-            GatewayStatus su = (GatewayStatus) currentNodeList.get(i.next());
+            GatewayStatus su = (GatewayStatus)currentNodeList.get(i.next());
             su.setStatus(GatewayStatus.NODE_STATUS_UNKNOWN);
             cs.add(su);
         }
@@ -803,7 +802,7 @@ public class ClusterStatusWindow extends JFrame implements ConnectionListener {
      * Set the row of the node status table which is currenlty selected by the user. This function
      * is called after an update on the table is done.
      *
-     * @param nodeId  The node Id of the row being selected.
+     * @param nodeId The node Id of the row being selected.
      */
     public void setSelectedRow(String nodeId) {
         if (nodeId != null) {
@@ -821,7 +820,7 @@ public class ClusterStatusWindow extends JFrame implements ConnectionListener {
     }
 
     /**
-     *  This customized renderer can render objects of the type TextandIcon
+     * This customized renderer can render objects of the type TextandIcon
      */
     TableCellRenderer iconHeaderRenderer = new DefaultTableCellRenderer() {
         public Component getTableCellRendererComponent(JTable table, Object value,
@@ -837,7 +836,7 @@ public class ClusterStatusWindow extends JFrame implements ConnectionListener {
                 }
             }
 
-            setText((String) value);
+            setText((String)value);
 
             if (getClusterStatusTableModel().getSortedColumn() == column) {
 
@@ -875,15 +874,14 @@ public class ClusterStatusWindow extends JFrame implements ConnectionListener {
 
             // save the number of selected message
             if (selectedRowIndexOld >= 0) {
-                nodeNameSelected = (String) getClusterStatusTable().getValueAt(selectedRowIndexOld, STATUS_TABLE_NODE_NAME_COLUMN_INDEX);
+                nodeNameSelected = (String)getClusterStatusTable().getValueAt(selectedRowIndexOld, STATUS_TABLE_NODE_NAME_COLUMN_INDEX);
 
                 // ask user to confirm                 // Make sure
-                if ((JOptionPane.showConfirmDialog(
-                        getClusterStatusWindow(),
-                        "Are you sure you want to delete " +
-                        nodeNameSelected + "?",
-                        "Delete Stale Node",
-                        JOptionPane.YES_NO_OPTION)) == JOptionPane.YES_OPTION) {
+                if ((JOptionPane.showConfirmDialog(getClusterStatusWindow(),
+                  "Are you sure you want to delete " +
+                  nodeNameSelected + "?",
+                  "Delete Stale Node",
+                  JOptionPane.YES_NO_OPTION)) == JOptionPane.YES_OPTION) {
 
                     SwingUtilities.invokeLater(new Runnable() {
                         public void run() {
@@ -892,31 +890,31 @@ public class ClusterStatusWindow extends JFrame implements ConnectionListener {
                                 logger.warning("ClusterStatusAdmin service is not available. Cannot delete the node: " + nodeNameSelected);
 
                                 JOptionPane.
-                                        showMessageDialog(getClusterStatusWindow(),
-                                                dsnDialogResources.getString("delete.stale.node.error.connection.lost"),
-                                                dsnDialogResources.getString("delete.stale.node.error.title"),
-                                                JOptionPane.ERROR_MESSAGE);
+                                  showMessageDialog(getClusterStatusWindow(),
+                                    dsnDialogResources.getString("delete.stale.node.error.connection.lost"),
+                                    dsnDialogResources.getString("delete.stale.node.error.title"),
+                                    JOptionPane.ERROR_MESSAGE);
                                 return;
                             }
 
                             try {
-                                clusterStatusAdmin.removeStaleNode((String) getClusterStatusTable().getValueAt(selectedRowIndexOld, STATUS_TABLE_NODE_ID_COLUMN_INDEX));
+                                clusterStatusAdmin.removeStaleNode((String)getClusterStatusTable().getValueAt(selectedRowIndexOld, STATUS_TABLE_NODE_ID_COLUMN_INDEX));
 
                             } catch (DeleteException e) {
                                 logger.warning("Cannot delete the node: " + nodeNameSelected);
                                 JOptionPane.
-                                        showMessageDialog(getClusterStatusWindow(),
-                                                dsnDialogResources.getString("delete.stale.node.error.delete"),
-                                                dsnDialogResources.getString("delete.stale.node.error.title"),
-                                                JOptionPane.ERROR_MESSAGE);
+                                  showMessageDialog(getClusterStatusWindow(),
+                                    dsnDialogResources.getString("delete.stale.node.error.delete"),
+                                    dsnDialogResources.getString("delete.stale.node.error.title"),
+                                    JOptionPane.ERROR_MESSAGE);
 
                             } catch (RemoteException e) {
                                 logger.warning("Remote Exception. Cannot delete the node: " + nodeNameSelected);
                                 JOptionPane.
-                                        showMessageDialog(getClusterStatusWindow(),
-                                                dsnDialogResources.getString("delete.stale.node.error.remote.exception"),
-                                                dsnDialogResources.getString("delete.stale.node.error.title"),
-                                                JOptionPane.ERROR_MESSAGE);
+                                  showMessageDialog(getClusterStatusWindow(),
+                                    dsnDialogResources.getString("delete.stale.node.error.remote.exception"),
+                                    dsnDialogResources.getString("delete.stale.node.error.title"),
+                                    JOptionPane.ERROR_MESSAGE);
                             }
                         }
                     });
@@ -946,8 +944,8 @@ public class ClusterStatusWindow extends JFrame implements ConnectionListener {
 
             // save the number of selected message
             if (selectedRowIndexOld >= 0) {
-                nodeName = (String) getClusterStatusTable().getValueAt(selectedRowIndexOld, STATUS_TABLE_NODE_NAME_COLUMN_INDEX);
-                nodeId = (String) getClusterStatusTable().getValueAt(selectedRowIndexOld, STATUS_TABLE_NODE_ID_COLUMN_INDEX);
+                nodeName = (String)getClusterStatusTable().getValueAt(selectedRowIndexOld, STATUS_TABLE_NODE_NAME_COLUMN_INDEX);
+                nodeId = (String)getClusterStatusTable().getValueAt(selectedRowIndexOld, STATUS_TABLE_NODE_ID_COLUMN_INDEX);
 
                 EditGatewayNameDialog dialog = new EditGatewayNameDialog(getClusterStatusWindow(), clusterStatusAdmin, nodeId, nodeName);
                 dialog.show();

@@ -1,6 +1,8 @@
 package com.l7tech.console.action;
 
-import com.l7tech.console.event.*;
+import com.l7tech.console.event.EntityEvent;
+import com.l7tech.console.event.EntityListener;
+import com.l7tech.console.event.EntityListenerAdapter;
 import com.l7tech.console.panels.PublishServiceWizard;
 import com.l7tech.console.tree.AbstractTreeNode;
 import com.l7tech.console.tree.ServiceNode;
@@ -19,11 +21,11 @@ import java.util.logging.Logger;
 /**
  * The <code>PublishServiceAction</code> action invokes the pubish
  * service wizard.                                             l
- * 
+ *
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  * @version 1.0
  */
-public class PublishServiceAction extends SecureAction implements ConnectionListener {
+public class PublishServiceAction extends SecureAction {
     static final Logger log = Logger.getLogger(PublishServiceAction.class.getName());
 
     public PublishServiceAction() {
@@ -68,7 +70,7 @@ public class PublishServiceAction extends SecureAction implements ConnectionList
     private EntityListener listener = new EntityListenerAdapter() {
         /**
          * Fired when an new entity is added.
-         * 
+         *
          * @param ev event describing the action
          */
         public void entityAdded(final EntityEvent ev) {
@@ -82,7 +84,7 @@ public class PublishServiceAction extends SecureAction implements ConnectionList
                     DefaultTreeModel model = (DefaultTreeModel)tree.getModel();
                     final AbstractTreeNode sn = TreeNodeFactory.asTreeNode(eh);
                     model.insertNodeInto(sn, root, root.getInsertPosition(sn));
-                    
+
                     tree.setSelectionPath(new TreePath(sn.getPath()));
                     SwingUtilities.invokeLater(new Runnable() {
                         public void run() {
@@ -96,11 +98,4 @@ public class PublishServiceAction extends SecureAction implements ConnectionList
         }
     };
 
-    public void onConnect(ConnectionEvent e) {
-        setEnabled(true);
-    }
-
-    public void onDisconnect(ConnectionEvent e) {
-        setEnabled(false);
-    }
 }

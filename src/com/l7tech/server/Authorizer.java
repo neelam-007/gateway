@@ -50,11 +50,11 @@ public abstract class Authorizer {
     }
 
     /**
-     * Determine the roles (groups) for hte given subject
+     * Determine the roles (groups) for the given subject
      *
      * @param subject the subject
      * @return the set of user roles for the given subject
-     * @throws RuntimeException if
+     * @throws RuntimeException o nerror retrieving user roles
      */
     public abstract Set getUserRoles(Subject subject) throws RuntimeException;
 

@@ -1,12 +1,13 @@
 package com.l7tech.console.action;
 
+import com.l7tech.console.MainWindow;
 import com.l7tech.console.logging.ErrorManager;
 import com.l7tech.console.panels.WorkSpacePanel;
 import com.l7tech.console.poleditor.PolicyEditorPanel;
 import com.l7tech.console.tree.ServiceNode;
 import com.l7tech.console.tree.policy.PolicyTree;
 import com.l7tech.console.util.TopComponents;
-import com.l7tech.console.MainWindow;
+import com.l7tech.identity.Group;
 import com.l7tech.objectmodel.FindException;
 
 import javax.swing.*;
@@ -15,7 +16,7 @@ import java.util.logging.Level;
 /**
  * The <code>ServicePolicyPropertiesAction</code> invokes the service
  * policy editor.
- * 
+ *
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  * @version 1.0
  */
@@ -25,7 +26,7 @@ public class EditServicePolicyAction extends NodeAction {
     /**
      * default constructor. invoke the policy validate if
      * specified.
-     * 
+     *
      * @param node the service node
      * @param b    true validate the policy, false
      */
@@ -36,7 +37,7 @@ public class EditServicePolicyAction extends NodeAction {
 
     /**
      * default constructor. invoke the node validate
-     * 
+     *
      * @param node the service node
      */
     public EditServicePolicyAction(ServiceNode node) {
@@ -97,11 +98,20 @@ public class EditServicePolicyAction extends NodeAction {
         } catch (FindException e) {
             // refresh the service list
             JOptionPane.showMessageDialog(null, "Unable to retrieve service. " +
-                                                "Try refreshing Services tree.");
+              "Try refreshing Services tree.");
         } catch (Exception e) {
             ErrorManager.getDefault().
               notify(Level.SEVERE, e, "Unable to retrieve service properties " + serviceNode.getName());
         }
     }
 
+    /**
+     * Return the required roles for this action, one of the roles. The base
+     * implementatoinm requires the strongest admin role.
+     *
+     * @return the list of roles that are allowed to carry out the action
+     */
+    protected String[] requiredRoles() {
+        return new String[]{Group.ADMIN_GROUP_NAME, Group.OPERATOR_GROUP_NAME};
+    }
 }

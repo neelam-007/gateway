@@ -5,13 +5,12 @@ import com.l7tech.common.gui.util.ImageCache;
 import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.common.util.Locator;
 import com.l7tech.console.action.*;
-import com.l7tech.console.event.ConnectionAdapter;
-import com.l7tech.console.event.ConnectionEvent;
-import com.l7tech.console.event.ConnectionListener;
 import com.l7tech.console.event.WeakEventListenerList;
 import com.l7tech.console.panels.*;
 import com.l7tech.console.poleditor.PolicyEditorPanel;
-import com.l7tech.console.security.ClientCredentialManager;
+import com.l7tech.console.security.LogonEvent;
+import com.l7tech.console.security.LogonListener;
+import com.l7tech.console.security.SecurityProvider;
 import com.l7tech.console.tree.*;
 import com.l7tech.console.tree.identity.IdentitiesRootNode;
 import com.l7tech.console.tree.identity.IdentityProvidersTree;
@@ -47,7 +46,7 @@ import java.util.logging.Logger;
 
 /**
  * The console main window <CODE>MainWindow</CODE> class.
- * 
+ *
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  */
 public class MainWindow extends JFrame {
@@ -96,8 +95,8 @@ public class MainWindow extends JFrame {
     private Action disconnectAction = null;
     private Action toggleStatusBarAction = null;
     private Action togglePolicyMessageArea = null;
-    private Action publishServiceAction = null;
-    private Action createServiceAction = null;
+    private PublishServiceAction publishServiceAction = null;
+    private CreateServiceWsdlAction createServiceAction = null;
     private Action toggleGatewayLogWindowAction = null;
     private Action toggleClusterStatusWindowAction = null;
     private JPanel frameContentPane = null;
@@ -123,11 +122,11 @@ public class MainWindow extends JFrame {
     public static final String NAME = "main.window"; // registered
     private EventListenerList listenerList = new WeakEventListenerList();
     // cached credential manager
-    private ClientCredentialManager credentialManager;
-    private Action newInernalUserAction;
-    private Action newInernalGroupAction;
-    private Action newLDAPProviderAction;
-    private Action newPKIProviderAction;
+    private SecurityProvider securityProvider;
+    private NewInternalUserAction newInernalUserAction;
+    private NewGroupAction newInernalGroupAction;
+    private NewLdapProviderAction newLDAPProviderAction;
+    private NewFederatedIdentityProviderAction newPKIProviderAction;
     private HomeAction homeAction = new HomeAction();
     Action monitorAction = null;
     private ClusterStatusWindow clusterStatusWindow = null;
@@ -144,6 +143,7 @@ public class MainWindow extends JFrame {
     private JMenuItem saveMenuItem;
     private ValidatePolicyAction validatePolicyAction;
     private ExportPolicyToFileAction exportPolicyAction;
+    private ImportPolicyFromFileAction importPolicyAction;
     private SavePolicyAction savePolicyAction;
     private static MainWindow singleMainWindow = null;
 
@@ -166,20 +166,20 @@ public class MainWindow extends JFrame {
 
     /**
      * add the ConnectionListener
-     * 
+     *
      * @param listener the ConnectionListener
      */
-    public void addConnectionListener(ConnectionListener listener) {
-        listenerList.add(ConnectionListener.class, listener);
+    public void addLogonListener(LogonListener listener) {
+        listenerList.add(LogonListener.class, listener);
     }
 
     /**
      * remove the the ConnectionListener
-     * 
+     *
      * @param listener the ConnectionListener
      */
-    public void removeConnectionListener(ConnectionListener listener) {
-        listenerList.remove(ConnectionListener.class, listener);
+    public void removeLogonListener(LogonListener listener) {
+        listenerList.remove(LogonListener.class, listener);
     }
 
     /**
@@ -187,10 +187,10 @@ public class MainWindow extends JFrame {
      * notification on this event type (connection event).
      */
     private void fireConnected() {
-        ConnectionEvent event = new ConnectionEvent(this, ConnectionEvent.CONNECTED);
-        EventListener[] listeners = listenerList.getListeners(ConnectionListener.class);
+        LogonEvent event = new LogonEvent(this, LogonEvent.LOGON);
+        EventListener[] listeners = listenerList.getListeners(LogonListener.class);
         for (int i = 0; i < listeners.length; i++) {
-            ((ConnectionListener)listeners[i]).onConnect(event);
+            ((LogonListener)listeners[i]).onLogon(event);
         }
     }
 
@@ -199,16 +199,16 @@ public class MainWindow extends JFrame {
      * notification on this event type (connection event).
      */
     private void fireDisconnected() {
-        ConnectionEvent event = new ConnectionEvent(this, ConnectionEvent.DISCONNECTED);
-        EventListener[] listeners = listenerList.getListeners(ConnectionListener.class);
+        LogonEvent event = new LogonEvent(this, LogonEvent.LOGOFF);
+        EventListener[] listeners = listenerList.getListeners(LogonListener.class);
         for (int i = 0; i < listeners.length; i++) {
-            ((ConnectionListener)listeners[i]).onDisconnect(event);
+            ((LogonListener)listeners[i]).onLogoff(event);
         }
     }
 
     /**
      * Return the ConnectMenuItem property value.
-     * 
+     *
      * @return JMenuItem
      */
     private JMenuItem getConnectMenuItem() {
@@ -225,7 +225,7 @@ public class MainWindow extends JFrame {
 
     /**
      * Return the DisconnectMenuItem property value.
-     * 
+     *
      * @return JMenuItem
      */
     private JMenuItem getDisconnectMenuItem() {
@@ -247,7 +247,7 @@ public class MainWindow extends JFrame {
 
     /**
      * Return the menuItemPref property value.
-     * 
+     *
      * @return JMenuItem
      */
     private JMenuItem getMenuItemPreferences() {
@@ -266,7 +266,7 @@ public class MainWindow extends JFrame {
 
     /**
      * Return the ExitMenuItem property value.
-     * 
+     *
      * @return JMenuItem
      */
     private JMenuItem getExitMenuItem() {
@@ -285,7 +285,7 @@ public class MainWindow extends JFrame {
 
     /**
      * Return the helpTopicsMenuItem property value.
-     * 
+     *
      * @return JMenuItem
      */
     private JMenuItem getHelpTopicsMenuItem() {
@@ -304,7 +304,7 @@ public class MainWindow extends JFrame {
 
     /**
      * Return the fileMenu property value.
-     * 
+     *
      * @return JMenu
      */
     private JMenu getFileMenu() {
@@ -352,7 +352,7 @@ public class MainWindow extends JFrame {
 
     private JMenuItem getImportMenuItem() {
         if (importMenuItem == null) {
-            importMenuItem = new JMenuItem(new ImportPolicyFromFileAction());
+            importMenuItem = new JMenuItem(getImportPolicyAction());
             importMenuItem.setEnabled(false);
             Icon icon = new ImageIcon(cl.getResource(RESOURCE_PATH + "/saveTemplate.gif"));
             importMenuItem.setIcon(icon);
@@ -383,6 +383,14 @@ public class MainWindow extends JFrame {
         return exportPolicyAction;
     }
 
+    private BaseAction getImportPolicyAction() {
+        if (importPolicyAction == null) {
+            importPolicyAction = new ImportPolicyFromFileAction();
+            importPolicyAction.setEnabled(false);
+        }
+        return exportPolicyAction;
+    }
+
     private JMenuItem getSaveMenuItem() {
         if (saveMenuItem == null) {
             saveMenuItem = new JMenuItem(getSaveAction());
@@ -405,7 +413,7 @@ public class MainWindow extends JFrame {
 
     /**
      * Return the editMenu property value.
-     * 
+     *
      * @return JMenu
      */
     private JMenu getEditMenu() {
@@ -445,7 +453,7 @@ public class MainWindow extends JFrame {
 
             newProviderSubMenu.setText("Create Identity Provider");
             newProviderSubMenu.setIcon(new ImageIcon(ImageCache.getInstance().getIcon("com/l7tech/console/resources/providers16.gif")));
-           
+
             newProviderSubMenu.add(getNewProviderAction());
             newProviderSubMenu.add(getNewFederatedIdentityProviderAction());
         }
@@ -454,7 +462,7 @@ public class MainWindow extends JFrame {
 
     /**
      * Return the viewMenu property value.
-     * 
+     *
      * @return JMenu
      */
     private JMenu getViewMenu() {
@@ -489,7 +497,7 @@ public class MainWindow extends JFrame {
 
     /**
      * Return the helpMenu property value.
-     * 
+     *
      * @return JMenu
      */
     private JMenu getHelpMenu() {
@@ -509,7 +517,7 @@ public class MainWindow extends JFrame {
 
     /**
      * create the Action (the component that is used by several controls)
-     * 
+     *
      * @return the connect <CODE>Action</CODE> implementation
      */
     private Action getConnectAction() {
@@ -534,7 +542,7 @@ public class MainWindow extends JFrame {
 
     /**
      * create the Action (the component that is used by several controls)
-     * 
+     *
      * @return the disconnect <CODE>Action</CODE> implementation
      */
     private Action getDisconnectAction() {
@@ -565,13 +573,13 @@ public class MainWindow extends JFrame {
     /**
      * @return the <code>Action</code> for the publish service
      */
-    private Action getPublishServiceAction() {
+    private PublishServiceAction getPublishServiceAction() {
         if (publishServiceAction != null) {
             return publishServiceAction;
         }
         publishServiceAction = new PublishServiceAction();
         publishServiceAction.setEnabled(false);
-        this.addConnectionListener((PublishServiceAction)publishServiceAction);
+        this.addLogonListener((PublishServiceAction)publishServiceAction);
         return publishServiceAction;
     }
 
@@ -579,148 +587,68 @@ public class MainWindow extends JFrame {
     /**
      * @return the <code>Action</code> for the create service
      */
-    private Action getCreateServiceAction() {
+    private CreateServiceWsdlAction getCreateServiceAction() {
         if (createServiceAction != null) {
             return createServiceAction;
         }
         createServiceAction = new CreateServiceWsdlAction();
         createServiceAction.setEnabled(false);
-        this.addConnectionListener((CreateServiceWsdlAction)createServiceAction);
+        this.addLogonListener((CreateServiceWsdlAction)createServiceAction);
         return createServiceAction;
     }
 
 
-    private Action getNewInternalUserAction() {
+    private NewInternalUserAction getNewInternalUserAction() {
         if (newInernalUserAction != null) return newInernalUserAction;
-        newInernalUserAction = new NewInternalUserAction(null) {
-
-            /**
-             * specify the resource name for this action
-             */
-             public String getName() {
-               return "Create Internal User";
-            }
-
-            protected String iconResource() {
-                return "com/l7tech/console/resources/user16.png";
-            }
-
-            ConnectionListener listener = new ConnectionListener() {
-                public void onConnect(ConnectionEvent e) {
-                    setEnabled(true);
-                }
-
-                public void onDisconnect(ConnectionEvent e) {
-                    setEnabled(false);
-                }
-            };
-
-            {
-                MainWindow.this.addConnectionListener(listener);
-            }
-        };
+        newInernalUserAction = new NewInternalUserAction(null);
+        MainWindow.this.addLogonListener(newInernalUserAction);
         newInernalUserAction.setEnabled(false);
         return newInernalUserAction;
     }
 
-    private Action getNewInternalGroupAction() {
+    private NewGroupAction getNewInternalGroupAction() {
         if (newInernalGroupAction != null) return newInernalGroupAction;
-        newInernalGroupAction = new NewGroupAction(null) {
-
-            /**
-             * specify the resource name for this action
-             */
-            public String getName() {
-                return "Create Internal Group";
-            }
-
-            protected String iconResource() {
-                return "com/l7tech/console/resources/group16.png";
-            }
-
-            ConnectionListener listener = new ConnectionListener() {
-                public void onConnect(ConnectionEvent e) {
-                    setEnabled(true);
-                }
-
-                public void onDisconnect(ConnectionEvent e) {
-                    setEnabled(false);
-                }
-            };
-
-            {
-                MainWindow.this.addConnectionListener(listener);
-            }
-        };
+        newInernalGroupAction = new NewGroupAction(null);
+        MainWindow.this.addLogonListener(newInernalGroupAction);
         newInernalGroupAction.setEnabled(false);
         return newInernalGroupAction;
     }
 
-    private Action getNewFederatedIdentityProviderAction() {
-         if (newPKIProviderAction != null) return newPKIProviderAction;
-         newPKIProviderAction = new NewFederatedIdentityProviderAction(null) {
-             /**
-              * specify the resource name for this action
-              */
-             protected String iconResource() {
-                 return "com/l7tech/console/resources/providers16.gif";
-             }
+    private NewFederatedIdentityProviderAction getNewFederatedIdentityProviderAction() {
+        if (newPKIProviderAction != null) return newPKIProviderAction;
+        newPKIProviderAction = new NewFederatedIdentityProviderAction(null) {
+            public void onLogon(LogonEvent e) {
+                super.onLogon(e);
+                final DefaultMutableTreeNode root =
+                  (DefaultMutableTreeNode)getIdentitiesTree().getModel().getRoot();
+                node = (AbstractTreeNode)root;
+            }
 
-             ConnectionListener listener = new ConnectionListener() {
-                 public void onConnect(ConnectionEvent e) {
-                     setEnabled(true);
-                     final DefaultMutableTreeNode root =
-                       (DefaultMutableTreeNode)getIdentitiesTree().getModel().getRoot();
-                     node = (AbstractTreeNode)root;
-                 }
+        };
 
-                 public void onDisconnect(ConnectionEvent e) {
-                     setEnabled(false);
-                 }
-             };
+        MainWindow.this.addLogonListener(newPKIProviderAction);
+        newPKIProviderAction.setEnabled(false);
+        return newPKIProviderAction;
+    }
 
-             {
-                 MainWindow.this.addConnectionListener(listener);
-             }
-         };
-         newPKIProviderAction.setEnabled(false);
-         return newPKIProviderAction;
-     }
-
-    private Action getNewProviderAction() {
+    private NewLdapProviderAction getNewProviderAction() {
         if (newLDAPProviderAction != null) return newLDAPProviderAction;
         newLDAPProviderAction = new NewLdapProviderAction(null) {
-            /**
-             * specify the resource name for this action
-             */
-            protected String iconResource() {
-                return "com/l7tech/console/resources/providers16.gif";
-            }
-
-            ConnectionListener listener = new ConnectionListener() {
-                public void onConnect(ConnectionEvent e) {
-                    setEnabled(true);
-                    final DefaultMutableTreeNode root =
-                      (DefaultMutableTreeNode)getIdentitiesTree().getModel().getRoot();
-                    node = (AbstractTreeNode)root;
-                }
-
-                public void onDisconnect(ConnectionEvent e) {
-                    setEnabled(false);
-                }
-            };
-
-            {
-                MainWindow.this.addConnectionListener(listener);
+            public void onLogon(LogonEvent e) {
+                super.onLogon(e);
+                final DefaultMutableTreeNode root =
+                  (DefaultMutableTreeNode)getIdentitiesTree().getModel().getRoot();
+                node = (AbstractTreeNode)root;
             }
         };
+        MainWindow.this.addLogonListener(newLDAPProviderAction);
         newLDAPProviderAction.setEnabled(false);
         return newLDAPProviderAction;
     }
 
     /**
      * create the Action (the component that is used by several controls)
-     * 
+     *
      * @return the <CODE>Action</CODE> implementation that refreshes the tree
      */
     private Action getRefreshAction() {
@@ -730,14 +658,24 @@ public class MainWindow extends JFrame {
 
         refreshAction =
           new AbstractAction(atext, icon) {
-              ConnectionListener listener = new ConnectionAdapter() {
-                  public void onDisconnect(ConnectionEvent e) {
+              LogonListener listener = new LogonListener() {
+                  public void onLogon(LogonEvent e) {
                       setEnabled(false);
                   }
+
+                  /**
+                   * Invoked on logoff
+                   *
+                   * @param e describing the logoff event
+                   */
+                  public void onLogoff(LogonEvent e) {
+                      setEnabled(false);
+                  }
+
               };
 
               {
-                  MainWindow.this.addConnectionListener(listener);
+                  MainWindow.this.addLogonListener(listener);
                   FocusListener fl = getActionsFocusListener();
                   getIdentitiesTree().addFocusListener(fl);
                   getServicesTree().addFocusListener(fl);
@@ -752,13 +690,13 @@ public class MainWindow extends JFrame {
               public void actionPerformed(ActionEvent event) {
                   final KeyboardFocusManager kbm = KeyboardFocusManager.getCurrentKeyboardFocusManager();
                   final Component c = kbm.getFocusOwner();
-                  log.finest("the focus owner is "+c.getClass());
+                  log.finest("the focus owner is " + c.getClass());
                   if (c instanceof Refreshable) {
 
                       try {
                           Refreshable r = (Refreshable)c;
                           if (r.canRefresh()) {
-                              log.finest("Invoke refresh on "+c.getClass());
+                              log.finest("Invoke refresh on " + c.getClass());
                               r.refresh();
                           }
                       } finally {
@@ -801,13 +739,13 @@ public class MainWindow extends JFrame {
             public void focusLost(FocusEvent e) {
                 Component c = e.getOppositeComponent();
                 if (c == null) {
-                    log.finest("focusLost, no component in focus setting refreshAction to "+false);
+                    log.finest("focusLost, no component in focus setting refreshAction to " + false);
                     refreshAction.setEnabled(false);
                     return;
                 }
 
                 boolean enable = c instanceof Refreshable && ((Refreshable)c).canRefresh();
-                log.finest("focusLost "+ c.getClass() +" setting refreshAction to "+enable);
+                log.finest("focusLost " + c.getClass() + " setting refreshAction to " + enable);
                 refreshAction.setEnabled(enable);
             }
         };
@@ -818,7 +756,7 @@ public class MainWindow extends JFrame {
 
     /**
      * create the Action (the component that is used by several controls)
-     * 
+     *
      * @return the <CODE>Action</CODE> implementation that toggles the status bar
      */
     private Action getToggleStatusBarToggleAction() {
@@ -854,7 +792,7 @@ public class MainWindow extends JFrame {
 
     /**
      * create the Action (the component that is used by several controls)
-     * 
+     *
      * @return the <CODE>Action</CODE> implementation that toggles the  policy message area
      */
     private Action getPolicyMessageAreaToggle() {
@@ -897,7 +835,7 @@ public class MainWindow extends JFrame {
     /**
      * create the Action (the component that is used by several
      * controls) that returns the 'find' action.
-     * 
+     *
      * @return the find <CODE>Action</CODE>
      */
     private Action getFindAction() {
@@ -916,7 +854,7 @@ public class MainWindow extends JFrame {
 
     /**
      * create the Action (the component that is used by several controls)
-     * 
+     *
      * @return the <CODE>Action</CODE> implementation that invokes the
      *         preferences dialog
      */
@@ -944,7 +882,7 @@ public class MainWindow extends JFrame {
 
     /**
      * create the Action (the component that is used by several controls)
-     * 
+     *
      * @return the <CODE>Action</CODE> implementation that invokes the
      *         remove node action
      */
@@ -968,7 +906,7 @@ public class MainWindow extends JFrame {
     /**
      * enable or disable menus and buttons, depending on the
      * connection status
-     * 
+     *
      * @param connected true if connected, false otherwise
      */
     private void toggleConnectedMenus(boolean connected) {
@@ -982,7 +920,7 @@ public class MainWindow extends JFrame {
 
     /**
      * Return the JFrameContentPane property value.
-     * 
+     *
      * @return JPanel
      */
     private JPanel getFrameContentPane() {
@@ -1000,7 +938,7 @@ public class MainWindow extends JFrame {
 
     /**
      * Return the jJPanelEditor property value.
-     * 
+     *
      * @return JPanel
      */
     private JPanel getMainSplitPaneRight() {
@@ -1019,7 +957,7 @@ public class MainWindow extends JFrame {
 
     /**
      * Return the palette tree view property value.
-     * 
+     *
      * @return JTree
      */
     private JTree getAssertionPaletteTree() {
@@ -1050,7 +988,7 @@ public class MainWindow extends JFrame {
 
     /**
      * Return the JTreeView property value.
-     * 
+     *
      * @return JTree
      */
     private JTree getServicesTree() {
@@ -1152,7 +1090,7 @@ public class MainWindow extends JFrame {
 
     /**
      * Return the MainJMenuBar property value.
-     * 
+     *
      * @return JMenuBar
      */
     private JMenuBar getMainJMenuBar() {
@@ -1188,7 +1126,7 @@ public class MainWindow extends JFrame {
                 clusterStatusWindow = null;
             }
         });
-        addConnectionListener(clusterStatusWindow);
+        addLogonListener(clusterStatusWindow);
         Utilities.centerOnScreen(clusterStatusWindow);
         return clusterStatusWindow;
     }
@@ -1207,7 +1145,7 @@ public class MainWindow extends JFrame {
             }
 
         });
-        addConnectionListener(gatewayLogWindow);
+        addLogonListener(gatewayLogWindow);
         Utilities.centerOnScreen(gatewayLogWindow);
         return gatewayLogWindow;
     }
@@ -1217,7 +1155,7 @@ public class MainWindow extends JFrame {
             return;
         getLogMenuItem().setSelected(false);
         gatewayLogWindow.dispose();
-        removeConnectionListener(gatewayLogWindow);
+        removeLogonListener(gatewayLogWindow);
         gatewayLogWindow = null;
     }
 
@@ -1314,17 +1252,17 @@ public class MainWindow extends JFrame {
     private ArrayList weakListenerListWorkAround = new ArrayList();
 
     private void enableActionWhileConnected(final Action item) {
-        ConnectionListener myListener = new ConnectionListener() {
-            public void onConnect(ConnectionEvent e) {
+        LogonListener myListener = new LogonListener() {
+            public void onLogon(LogonEvent e) {
                 item.setEnabled(true);
             }
 
-            public void onDisconnect(ConnectionEvent e) {
+            public void onLogoff(LogonEvent e) {
                 item.setEnabled(false);
             }
         };
         weakListenerListWorkAround.add(myListener); // bind lifecycle to lifespan of MainWindow instance
-        addConnectionListener(myListener);
+        addLogonListener(myListener);
     }
 
     private Action getClusterStatusWindowAction() {
@@ -1354,7 +1292,7 @@ public class MainWindow extends JFrame {
 
     /**
      * Return the mainJSplitPaneTop property value.
-     * 
+     *
      * @return JSplitPane
      */
     private JSplitPane getMainSplitPane() {
@@ -1402,7 +1340,7 @@ public class MainWindow extends JFrame {
 
     /**
      * Return the MainPane property value.
-     * 
+     *
      * @return JPanel
      */
     private JPanel getMainPane() {
@@ -1417,7 +1355,7 @@ public class MainWindow extends JFrame {
 
     /**
      * Return the StatusBarPane property value.
-     * 
+     *
      * @return JPanel
      */
     private JPanel getStatusBarPane() {
@@ -1459,7 +1397,7 @@ public class MainWindow extends JFrame {
 
     /**
      * Return the StatusMsgLeft property value.
-     * 
+     *
      * @return JLabel
      */
     private JLabel getStatusMsgLeft() {
@@ -1472,7 +1410,7 @@ public class MainWindow extends JFrame {
 
     /**
      * Return the StatusMsgRight property value.
-     * 
+     *
      * @return JLabel
      */
     private JLabel getStatusMsgRight() {
@@ -1484,7 +1422,7 @@ public class MainWindow extends JFrame {
 
     /**
      * Return the ToolBarPane property value.
-     * 
+     *
      * @return JToolBar
      */
     private JToolBar getToolBarPane() {
@@ -1533,21 +1471,21 @@ public class MainWindow extends JFrame {
 
     /**
      * Return the ToolBarPane property value.
-     * 
+     *
      * @return JToolBar
      */
     public PolicyToolBar getPolicyToolBar() {
         if (policyToolBar != null) return policyToolBar;
         policyToolBar = new PolicyToolBar();
         policyToolBar.registerPaletteTree(getAssertionPaletteTree());
-        addConnectionListener(policyToolBar);
+        addLogonListener(policyToolBar);
         return policyToolBar;
     }
 
 
     /**
      * Return the TreeJPanel property value.
-     * 
+     *
      * @return JPanel
      */
     private JPanel getMainLeftPanel() {
@@ -1635,7 +1573,7 @@ public class MainWindow extends JFrame {
 
     /**
      * The disconnect handler.
-     * 
+     *
      * @param event ActionEvent
      */
     private void disconnectHandler(ActionEvent event) throws ActionVetoException {
@@ -1660,7 +1598,7 @@ public class MainWindow extends JFrame {
 
     /**
      * update the actions, menus, buttons for the selected node.
-     * 
+     *
      * @param node currently selected node
      */
     private void updateActions(AbstractTreeNode node) {
@@ -1701,7 +1639,7 @@ public class MainWindow extends JFrame {
         prefs.addPropertyChangeListener(new PropertyChangeListener() {
             /**
              * This method gets called when a property is changed.
-             * 
+             *
              * @param evt A PropertyChangeEvent object describing the
              *            event source and the property that has changed.
              */
@@ -1711,13 +1649,13 @@ public class MainWindow extends JFrame {
                 MainWindow.this.setInactivitiyTimeout(prefs.getInactivityTimeout());
             }
         });
-        credentialManager =
-          (ClientCredentialManager)Locator.getDefault().lookup(ClientCredentialManager.class);
-        if (credentialManager == null) {
-            log.log(Level.WARNING, "Cannot obtain current credential manager");
+        securityProvider =
+          (SecurityProvider)Locator.getDefault().lookup(SecurityProvider.class);
+        if (securityProvider == null) {
+            log.log(Level.WARNING, "Cannot obtain current SSM security provider");
         } else {
-            log.log(Level.FINEST, "Registering the connection listener " + credentialManager.getClass());
-            addConnectionListener(credentialManager);
+            log.log(Level.FINEST, "Registering the connection listener " + securityProvider.getClass());
+            addLogonListener(securityProvider);
         }
 
 
@@ -1942,7 +1880,7 @@ public class MainWindow extends JFrame {
 
     /**
      * set the inactivity timeout value
-     * 
+     *
      * @param newTimeout new inactivity timeout
      */
     private void setInactivitiyTimeout(int newTimeout) {
@@ -1972,7 +1910,7 @@ public class MainWindow extends JFrame {
 
     /**
      * set the look and feel
-     * 
+     *
      * @param lookAndFeel a string specifying the name of the class that implements
      *                    the look and feel
      */
@@ -2016,7 +1954,7 @@ public class MainWindow extends JFrame {
 
     /**
      * is this console connected?
-     * 
+     *
      * @return true if connected,false otherwise
      */
     private boolean isConnected() {
@@ -2061,7 +1999,7 @@ public class MainWindow extends JFrame {
 
         int startIndex = getStatusMsgLeft().getText().indexOf(CONNECTION_PREFIX);
         if (startIndex > 0) {
-            String nodeName = getStatusMsgLeft().getText().substring(startIndex+CONNECTION_PREFIX.length(), getStatusMsgLeft().getText().length() - 1);
+            String nodeName = getStatusMsgLeft().getText().substring(startIndex + CONNECTION_PREFIX.length(), getStatusMsgLeft().getText().length() - 1);
 
             if (nodeName.equals(oldName)) {
                 // update the node name only when the nodeName mataches with the oldName
@@ -2113,7 +2051,7 @@ public class MainWindow extends JFrame {
                   log.log(Level.WARNING, "Cannot get the node name", e);
               }
 
-              if(nodeName == null) {
+              if (nodeName == null) {
                   nodeName = "unknown";
               }
 

@@ -4,6 +4,7 @@ import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.console.event.*;
 import com.l7tech.console.logging.ErrorManager;
 import com.l7tech.console.panels.*;
+import com.l7tech.console.security.LogonEvent;
 import com.l7tech.console.tree.AbstractTreeNode;
 import com.l7tech.console.tree.TreeNodeFactory;
 import com.l7tech.console.tree.identity.IdentityProvidersTree;
@@ -96,8 +97,8 @@ public class NewFederatedIdentityProviderAction extends NewProviderAction {
         public void wizardFinished(WizardEvent we) {
 
             // update the provider
-            Wizard w = (Wizard) we.getSource();
-            final IdentityProviderConfig iProvider = (IdentityProviderConfig) w.getCollectedInformation();
+            Wizard w = (Wizard)we.getSource();
+            final IdentityProviderConfig iProvider = (IdentityProviderConfig)w.getCollectedInformation();
 
             if (iProvider != null) {
 
@@ -133,14 +134,14 @@ public class NewFederatedIdentityProviderAction extends NewProviderAction {
             }
             SwingUtilities.invokeLater(new Runnable() {
                 public void run() {
-                    EntityHeader eh = (EntityHeader) ev.getEntity();
-                    JTree tree = (JTree) TopComponents.getInstance().getComponent(IdentityProvidersTree.NAME);
+                    EntityHeader eh = (EntityHeader)ev.getEntity();
+                    JTree tree = (JTree)TopComponents.getInstance().getComponent(IdentityProvidersTree.NAME);
                     if (tree == null) {
                         log.log(Level.WARNING, "Unable to reach the identity tree.");
                         return;
                     }
                     if (tree.hasBeenExpanded(new TreePath(node.getPath()))) {
-                        DefaultTreeModel model = (DefaultTreeModel) tree.getModel();
+                        DefaultTreeModel model = (DefaultTreeModel)tree.getModel();
 
                         final AbstractTreeNode newChildNode = TreeNodeFactory.asTreeNode(eh);
                         model.insertNodeInto(newChildNode, node, node.getInsertPosition(newChildNode));
@@ -153,4 +154,9 @@ public class NewFederatedIdentityProviderAction extends NewProviderAction {
             });
         }
     };
+
+    public void onLogoff(LogonEvent e) {
+        setEnabled(false);
+        node = null;
+    }
 }

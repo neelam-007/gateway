@@ -8,7 +8,7 @@ package com.l7tech.server;
 
 import com.l7tech.common.security.TrustedCertAdmin;
 import com.l7tech.common.util.Locator;
-import com.l7tech.console.security.ClientCredentialManager;
+import com.l7tech.console.security.SecurityProvider;
 import com.l7tech.console.util.Preferences;
 import com.l7tech.identity.IdentityAdmin;
 import com.l7tech.identity.IdentityProviderConfigManager;
@@ -24,14 +24,14 @@ import java.security.PrivilegedExceptionAction;
  */
 public abstract class SsgAdminSession {
     protected SsgAdminSession() throws Exception {
-        this(new String[] { });
+        this(new String[]{});
     }
 
-    protected SsgAdminSession( String[] args ) throws Exception {
-        if ( args.length >= 1 ) {
-            System.setProperty( Preferences.SERVICE_URL, args[0] );
+    protected SsgAdminSession(String[] args) throws Exception {
+        if (args.length >= 1) {
+            System.setProperty(Preferences.SERVICE_URL, args[0]);
 
-            if ( args.length >= 3 ) {
+            if (args.length >= 3) {
                 _adminlogin = args[1];
                 _adminpass = args[2];
             }
@@ -42,7 +42,7 @@ public abstract class SsgAdminSession {
         /* so it is visible in help/about */
         prefs.updateSystemProperties();
         System.setProperty("com.l7tech.common.locator.properties",
-                           "/com/l7tech/console/resources/services.properties");
+          "/com/l7tech/console/resources/services.properties");
     }
 
     public Object doIt() throws Exception {
@@ -50,20 +50,20 @@ public abstract class SsgAdminSession {
 
         PrivilegedExceptionAction action = new PrivilegedExceptionAction() {
             public Object run() throws Exception {
-                ClientCredentialManager ccm = getCredentialManager();
-                ccm.login( new PasswordAuthentication( _adminlogin, _adminpass.toCharArray() ) );
+                SecurityProvider ccm = getCredentialManager();
+                ccm.getAuthenticationProvider().login(new PasswordAuthentication(_adminlogin, _adminpass.toCharArray()));
                 return doSomething();
             }
         };
 
-        return Subject.doAs( current, action );
+        return Subject.doAs(current, action);
     }
 
     protected abstract Object doSomething() throws Exception;
 
-    private static ClientCredentialManager getCredentialManager() {
-        ClientCredentialManager credentialManager =
-                (ClientCredentialManager) Locator.getDefault().lookup(ClientCredentialManager.class);
+    private static SecurityProvider getCredentialManager() {
+        SecurityProvider credentialManager =
+          (SecurityProvider)Locator.getDefault().lookup(SecurityProvider.class);
         if (credentialManager == null) { // bug
             throw new IllegalStateException("No credential manager configured in services");
         }
@@ -71,9 +71,9 @@ public abstract class SsgAdminSession {
     }
 
     protected ServiceAdmin getServiceAdmin() {
-        if ( _serviceAdmin == null ) {
+        if (_serviceAdmin == null) {
             _serviceAdmin =
-                    (ServiceAdmin) Locator.getDefault().lookup(ServiceAdmin.class);
+              (ServiceAdmin)Locator.getDefault().lookup(ServiceAdmin.class);
             if (_serviceAdmin == null) { // bug
                 throw new IllegalStateException("No ServiceAdmin configured in services");
             }
@@ -82,9 +82,9 @@ public abstract class SsgAdminSession {
     }
 
     protected IdentityAdmin getIdentityAdmin() {
-        if ( _identityAdmin == null ) {
+        if (_identityAdmin == null) {
             _identityAdmin =
-                (IdentityAdmin) Locator.getDefault().lookup(IdentityAdmin.class);
+              (IdentityAdmin)Locator.getDefault().lookup(IdentityAdmin.class);
             if (_identityAdmin == null) { // bug
                 throw new IllegalStateException("No ServiceAdmin configured in services");
             }
@@ -93,17 +93,17 @@ public abstract class SsgAdminSession {
     }
 
     protected TrustedCertAdmin getTrustedCertAdmin() {
-        if ( _trustedCertAdmin == null ) {
+        if (_trustedCertAdmin == null) {
             _trustedCertAdmin = (TrustedCertAdmin)Locator.getDefault().lookup(TrustedCertAdmin.class);
-            if ( _trustedCertAdmin == null ) throw new IllegalStateException( "No TrustedCertAdmin configured in services");
+            if (_trustedCertAdmin == null) throw new IllegalStateException("No TrustedCertAdmin configured in services");
         }
         return _trustedCertAdmin;
     }
 
     protected IdentityProviderConfigManager getIdentityProviderConfigManager() {
-        if ( _identityProviderConfigManager == null ) {
-            _identityProviderConfigManager = (IdentityProviderConfigManager)Locator.getDefault().lookup( IdentityProviderConfigManager.class );
-            if ( _identityProviderConfigManager == null ) {
+        if (_identityProviderConfigManager == null) {
+            _identityProviderConfigManager = (IdentityProviderConfigManager)Locator.getDefault().lookup(IdentityProviderConfigManager.class);
+            if (_identityProviderConfigManager == null) {
                 throw new IllegalStateException("No IdentityProviderConfigManager configured in services");
             }
         }

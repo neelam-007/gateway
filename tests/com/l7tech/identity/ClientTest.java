@@ -1,7 +1,7 @@
 package com.l7tech.identity;
 
 import com.l7tech.common.util.Locator;
-import com.l7tech.console.security.ClientCredentialManager;
+import com.l7tech.console.security.SecurityProvider;
 import junit.extensions.TestSetup;
 import junit.framework.Test;
 import junit.framework.TestCase;
@@ -14,10 +14,9 @@ import java.net.PasswordAuthentication;
  * Layer 7 Technologies, inc.
  * User: flascelles
  * Date: Jun 19, 2003
- *
+ * <p/>
  * Tests WS for identity. Requires the actual WS to be deployed at http://localhost:8080/ssg/services/identityAdmin
  * and a valid admin account with the following credentials "ssgadmin", "ssgadminpasswd".
- *
  */
 public class ClientTest extends TestCase {
 
@@ -33,11 +32,12 @@ public class ClientTest extends TestCase {
              * test setup that deletes the stub data store; will trigger
              * store recreate
              * sets the environment
+             *
              * @throws Exception on error deleting the stub data store
              */
             protected void setUp() throws Exception {
                 System.setProperty("com.l7tech.common.locator.properties",
-                        "/com/l7tech/console/resources/services.properties");
+                  "/com/l7tech/console/resources/services.properties");
             }
 
             protected void tearDown() throws Exception {
@@ -51,7 +51,7 @@ public class ClientTest extends TestCase {
     public void testFinds() throws Exception {
         // IdentityService me = new Client();
         IdentityAdmin me =
-                (IdentityAdmin)Locator.getDefault().lookup(IdentityAdmin.class);
+          (IdentityAdmin)Locator.getDefault().lookup(IdentityAdmin.class);
         if (me == null) throw new IllegalStateException("cannot obtain identity service reference");
         // test echo
         System.out.println(me.echoVersion());
@@ -102,9 +102,9 @@ public class ClientTest extends TestCase {
     public static void main(String[] args) throws Exception {
         System.setProperty("javax.net.ssl.trustStore", System.getProperties().getProperty("user.home") + File.separator + ".l7tech" + File.separator + "trustStore");
         System.setProperty("javax.net.ssl.trustStorePassword", "password");
-        ClientCredentialManager credsManager = (ClientCredentialManager)Locator.getDefault().lookup(ClientCredentialManager.class);
+        SecurityProvider credsManager = (SecurityProvider)Locator.getDefault().lookup(SecurityProvider.class);
         PasswordAuthentication creds = new PasswordAuthentication("ssgadmin", "ssgadminpasswd".toCharArray());
-        credsManager.login(creds);
+        credsManager.getAuthenticationProvider().login(creds);
 
         ClientTest toto = new ClientTest();
         toto.testFinds();

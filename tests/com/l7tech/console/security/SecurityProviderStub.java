@@ -11,7 +11,7 @@ import java.net.PasswordAuthentication;
  *
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  */
-public class ClientCredentialManagerStub extends ClientCredentialManager {
+public class SecurityProviderStub extends SecurityProvider {
     /**
      * Stub mode login. Set the new credenitals with what was passed
      */

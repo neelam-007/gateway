@@ -186,18 +186,29 @@ public abstract class RemoteService implements Remote, ProxyAccessor {
      *         roles; false if not or the user has not been authenticated
      */
     protected boolean isUserInRole(String[] roles) {
+        Subject subject = getCurrentSubject();
+        if (subject == null) {
+            return false;
+        }
+        return Authorizer.getAuthorizer().isSubjectInRole(subject, roles);
+    }
+
+    /**
+     * Get the current <code>Subject</code> that carries out the remote operation
+     *
+     * @return the current subject or <b>null</b>
+     * @throws IllegalStateException if the operation is invoked in wrong time (i.e. service
+     *                               not started)
+     */
+    protected Subject getCurrentSubject() throws IllegalStateException {
         try {
             ClientSubject clientSubject = (ClientSubject)ServerContext.getServerContextElement(ClientSubject.class);
-            if (clientSubject == null) {
-                return false;
-            }
-            Subject subject = clientSubject.getClientSubject();
-            if (subject == null) {
-                return false;
-            }
-            return Authorizer.getAuthorizer().isSubjectInRole(subject, roles);
+            if (clientSubject == null) return null;
+            return clientSubject.getClientSubject();
         } catch (ServerNotActiveException e) {
-            throw new RuntimeException(e);
+            IllegalStateException ise = new IllegalStateException();
+            ise.initCause(e);
+            throw ise;
         }
     }
 

@@ -1,24 +1,23 @@
 package com.l7tech.console.security;
 
-import com.l7tech.remote.jini.lookup.ServiceLookup;
-import com.l7tech.common.util.Locator;
 import com.l7tech.common.VersionException;
 import com.l7tech.common.protocol.SecureSpanConstants;
+import com.l7tech.common.util.Locator;
+import com.l7tech.identity.IdentityAdmin;
+import com.l7tech.remote.jini.lookup.ServiceLookup;
 
 import javax.security.auth.login.LoginException;
 import java.net.PasswordAuthentication;
-import java.rmi.RemoteException;
 import java.rmi.ConnectException;
-
-import com.l7tech.console.event.ConnectionEvent;
-import com.l7tech.identity.IdentityAdmin;
+import java.rmi.RemoteException;
 
 /**
- * Default <code>ClientCredentialManager</code> implementaiton that validates
- * the credentials against the live SSG.
+ * Default SSM <code>SecurityProvider</code> implementaiton that is a central security
+ * component in SSM.
+ *
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  */
-public class ClientCredentialManagerImpl extends ClientCredentialManager {
+public class SecurityProviderImpl extends SecurityProvider {
     private ServiceLookup serviceLookup;
 
     /**
@@ -44,13 +43,15 @@ public class ClientCredentialManagerImpl extends ClientCredentialManager {
 
     /**
      * Invoked on disconnect
+     *
      * @param e describing the dosconnect event
      */
-    public void onDisconnect(ConnectionEvent e) {
+    public void onLogoff(LogonEvent e) {
         logger.finer("Disconnect message received, invalidating service lookup reference");
         resetCredentials();
         // invalidate lookup
         serviceLookup = null;
         Locator.recycle();
     }
+
 }

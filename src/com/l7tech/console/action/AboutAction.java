@@ -10,7 +10,7 @@ import com.l7tech.console.AboutBox;
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  * @version 1.0
  */
-public class AboutAction extends SecureAction {
+public class AboutAction extends BaseAction {
     /**
      * @return the action name
      */
@@ -32,9 +32,10 @@ public class AboutAction extends SecureAction {
         return "com/l7tech/console/resources/About16.gif";
     }
 
-    /** Actually perform the action.
+    /**
+     * Actually perform the action.
      * This is the method which should be called programmatically.
-
+     * <p/>
      * note on threading usage: do not access GUI components
      * without explicitly asking for the AWT event thread!
      */

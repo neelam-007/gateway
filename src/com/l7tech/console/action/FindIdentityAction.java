@@ -21,17 +21,17 @@ import java.util.logging.Logger;
 /**
  * The <code>FindIdentityAction</code> action invokes the searche identity
  * dialog.
- * 
+ *
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  * @version 1.0
  */
-public class FindIdentityAction extends SecureAction {
+public class FindIdentityAction extends BaseAction {
     static final Logger log = Logger.getLogger(FindIdentityAction.class.getName());
     FindIdentitiesDialog.Options options = new FindIdentitiesDialog.Options();
-    
+
     private static
-       ResourceBundle resapplication =
-         java.util.ResourceBundle.getBundle("com.l7tech.console.resources.console");
+    ResourceBundle resapplication =
+      java.util.ResourceBundle.getBundle("com.l7tech.console.resources.console");
 
     /**
      * create the action with the default find dialog options
@@ -94,7 +94,7 @@ public class FindIdentityAction extends SecureAction {
 
     /**
      * instantiate the dialog for given AbstractTreeNode
-     * 
+     *
      * @param header the principal instance to edit
      */
     private void showEditDialog(long providerId, EntityHeader header) {
@@ -106,8 +106,8 @@ public class FindIdentityAction extends SecureAction {
         IdentityProviderConfig config = null;
         try {
             config = Registry.getDefault().getIdentityAdmin().findIdentityProviderConfigByPrimaryKey(providerId);
-        } catch ( Exception e ) {
-            log.log( Level.WARNING, "Couldn't find Identity Provider " + providerId, e );
+        } catch (Exception e) {
+            log.log(Level.WARNING, "Couldn't find Identity Provider " + providerId, e);
             return;
         }
         if (config == null) return;

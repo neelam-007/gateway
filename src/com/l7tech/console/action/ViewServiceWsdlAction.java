@@ -2,15 +2,12 @@ package com.l7tech.console.action;
 
 import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.common.gui.widgets.ContextMenuTextField;
-import com.l7tech.console.event.ConnectionEvent;
-import com.l7tech.console.event.ConnectionListener;
 import com.l7tech.console.tree.ServiceNode;
 import com.l7tech.console.util.TopComponents;
+import com.l7tech.identity.Group;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.service.PublishedService;
 import org.syntax.jedit.JEditTextArea;
-import org.syntax.jedit.TextAreaDefaults;
-import org.syntax.jedit.DefaultInputHandler;
 import org.syntax.jedit.SyntaxDocument;
 import org.syntax.jedit.tokenmarker.XMLTokenMarker;
 
@@ -29,7 +26,7 @@ import java.util.logging.Logger;
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  * @version 1.0
  */
-public class ViewServiceWsdlAction extends SecureAction implements ConnectionListener {
+public class ViewServiceWsdlAction extends SecureAction {
     static final Logger log = Logger.getLogger(ViewServiceWsdlAction.class.getName());
     private ServiceNode serviceNode;
 
@@ -62,9 +59,10 @@ public class ViewServiceWsdlAction extends SecureAction implements ConnectionLis
         return "com/l7tech/console/resources/xmlsignature.gif";
     }
 
-    /** Actually perform the action.
+    /**
+     * Actually perform the action.
      * This is the method which should be called programmatically.
-
+     * <p/>
      * note on threading usage: do not access GUI components
      * without explicitly asking for the AWT event thread!
      */
@@ -87,7 +85,7 @@ public class ViewServiceWsdlAction extends SecureAction implements ConnectionLis
         private JEditTextArea wsdlTextArea;
 
         private WsdlViewDialog(PublishedService ps) throws IOException {
-            super( "View " + ps.getName() + " WSDL");
+            super("View " + ps.getName() + " WSDL");
             setIconImage(TopComponents.getInstance().getMainWindow().getIconImage());
             wsdlTextArea = new JEditTextArea();
             wsdlTextArea.setDocument(new SyntaxDocument());
@@ -120,18 +118,19 @@ public class ViewServiceWsdlAction extends SecureAction implements ConnectionLis
                 }
             });
             pack();
-            final int labelWidth = (int)(l.getSize().getWidth()+20);
+            final int labelWidth = (int)(l.getSize().getWidth() + 20);
             setSize(Math.max(600, labelWidth), 600);
             Utilities.centerOnScreen(this);
         }
     }
 
-
-    public void onConnect(ConnectionEvent e) {
-            setEnabled(true);
-    }
-
-    public void onDisconnect(ConnectionEvent e) {
-            setEnabled(false);
+    /**
+     * Return the required roles for this action, one of the roles. The base
+     * implementatoinm requires the strongest admin role.
+     *
+     * @return the list of roles that are allowed to carry out the action
+     */
+    protected String[] requiredRoles() {
+        return new String[]{Group.ADMIN_GROUP_NAME, Group.OPERATOR_GROUP_NAME};
     }
 }

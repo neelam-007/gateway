@@ -1,29 +1,28 @@
 package com.l7tech.console.action;
 
 import com.l7tech.console.MainWindow;
+import com.l7tech.console.panels.FindIdentitiesDialog;
+import com.l7tech.console.panels.WorkSpacePanel;
 import com.l7tech.console.tree.AbstractTreeNode;
 import com.l7tech.console.tree.identity.IdentityProvidersTree;
-import com.l7tech.console.panels.WorkSpacePanel;
-import com.l7tech.console.panels.FindIdentitiesDialog;
-import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
 
 import javax.swing.*;
-import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.event.HyperlinkEvent;
 import javax.swing.event.HyperlinkListener;
 import javax.swing.text.html.HTMLDocument;
+import javax.swing.tree.DefaultMutableTreeNode;
 import java.awt.*;
 import java.io.IOException;
 import java.net.URL;
 
 /**
  * The <code>HomeAction</code> displays the dds the new user.
- * 
+ *
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  * @version 1.0
  */
-public class HomeAction extends SecureAction {
+public class HomeAction extends BaseAction {
     private WorkSpacePanel wpanel;
     private ClassLoader cl = getClass().getClassLoader();
 
@@ -105,20 +104,20 @@ public class HomeAction extends SecureAction {
                         new NewInternalUserAction(null).actionPerformed(null);
                     } else if (ADD_GROUP.equals(url)) {
                         new NewGroupAction(null).actionPerformed(null);
-                    }  else if (SEARCH_ID_PROVIDER.equals(url)) {
+                    } else if (SEARCH_ID_PROVIDER.equals(url)) {
                         FindIdentitiesDialog.Options options = new FindIdentitiesDialog.Options();
                         options.enableDeleteAction();
                         options.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
                         new FindIdentityAction(options).actionPerformed(null);
                     } else if (ADD_LDAP_ID_PROVIDER.equals(url)) {
                         final DefaultMutableTreeNode root =
-                                (DefaultMutableTreeNode) getIdentitiesTree().getModel().getRoot();
-                        AbstractTreeNode node = (AbstractTreeNode) root;
+                          (DefaultMutableTreeNode)getIdentitiesTree().getModel().getRoot();
+                        AbstractTreeNode node = (AbstractTreeNode)root;
                         new NewLdapProviderAction(node).actionPerformed(null);
                     } else if (ADD_FEDERATED_ID_PROVIDER.equals(url)) {
                         final DefaultMutableTreeNode root =
-                                (DefaultMutableTreeNode) getIdentitiesTree().getModel().getRoot();
-                        AbstractTreeNode node = (AbstractTreeNode) root;
+                          (DefaultMutableTreeNode)getIdentitiesTree().getModel().getRoot();
+                        AbstractTreeNode node = (AbstractTreeNode)root;
                         new NewFederatedIdentityProviderAction(node).actionPerformed(null);
                     }
                 }

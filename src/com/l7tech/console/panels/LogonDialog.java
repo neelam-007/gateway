@@ -11,8 +11,8 @@ import com.l7tech.common.util.KeystoreUtils;
 import com.l7tech.common.util.Locator;
 import com.l7tech.console.MainWindow;
 import com.l7tech.console.action.ImportCertificateAction;
-import com.l7tech.console.event.ConnectionEvent;
-import com.l7tech.console.security.ClientCredentialManager;
+import com.l7tech.console.security.LogonEvent;
+import com.l7tech.console.security.SecurityProvider;
 import com.l7tech.console.text.FilterDocument;
 import com.l7tech.console.util.History;
 import com.l7tech.console.util.Preferences;
@@ -44,7 +44,7 @@ import java.util.logging.Logger;
 
 /**
  * This class is the SSG console Logon dialog.
- * 
+ *
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  */
 public class LogonDialog extends JDialog {
@@ -109,7 +109,7 @@ public class LogonDialog extends JDialog {
 
     /**
      * Create a new LogonDialog
-     * 
+     *
      * @param parent the parent Frame. May be <B>null</B>
      */
     public LogonDialog(Frame parent) {
@@ -428,7 +428,7 @@ public class LogonDialog extends JDialog {
      * the dialog.
      * If actionCommand is an ActionEvent, getCommandString() is
      * called, otherwise toString() is used to get the action command.
-     * 
+     *
      * @param actionCommand may be null
      */
     private void windowAction(String actionCommand) {
@@ -464,8 +464,8 @@ public class LogonDialog extends JDialog {
             serviceURL = serverURL + Preferences.SERVICE_URL_SUFFIX;
 
             parentContainer.setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
-            final ClientCredentialManager credentialManager = getCredentialManager();
-            credentialManager.onDisconnect(new ConnectionEvent(this, ConnectionEvent.DISCONNECTED));
+            final SecurityProvider securityProvider = getCredentialManager();
+            securityProvider.onLogoff(new LogonEvent(this, LogonEvent.LOGOFF));
 
             // fla change: remember this url even if the login wont be successfull (requirement #729)
             serverUrlHistory.add(serverURL);
@@ -488,10 +488,10 @@ public class LogonDialog extends JDialog {
 
                   public Object construct() {
                       try {
-                          credentialManager.login(authentication);
+                          securityProvider.getAuthenticationProvider().login(authentication);
                       } catch (Exception e) {
                           if (!Thread.currentThread().isInterrupted()) {
-                            memoException = e;
+                              memoException = e;
                           }
                       }
                       if (!Thread.currentThread().isInterrupted() && memoException == null) {
@@ -522,7 +522,7 @@ public class LogonDialog extends JDialog {
                               logonListener.onAuthFailure();
                           }
                           if (!progressDialog.isCancelled()) {
-                            show();
+                              show();
                           }
                       }
                   }
@@ -539,8 +539,8 @@ public class LogonDialog extends JDialog {
 
     /**
      * invoke logon dialog
-     * 
-     * @param frame 
+     *
+     * @param frame
      */
     public static void logon(JFrame frame, LogonListener listener) {
         final LogonDialog dialog = new LogonDialog(frame);
@@ -584,9 +584,9 @@ public class LogonDialog extends JDialog {
         super.show();
     }
 
-    private static ClientCredentialManager getCredentialManager() {
-        ClientCredentialManager credentialManager =
-          (ClientCredentialManager)Locator.getDefault().lookup(ClientCredentialManager.class);
+    private static SecurityProvider getCredentialManager() {
+        SecurityProvider credentialManager =
+          (SecurityProvider)Locator.getDefault().lookup(SecurityProvider.class);
         if (credentialManager == null) { // bug
             throw new IllegalStateException("No credential manager configured in services");
         }
@@ -596,7 +596,7 @@ public class LogonDialog extends JDialog {
 
     /**
      * verify that the service is avaialble at the given url
-     * 
+     *
      * @param serviceUrl service url
      * @return true if service available, false otherwise
      */
@@ -767,7 +767,7 @@ public class LogonDialog extends JDialog {
 
     /**
      * extract the protocol://host:port part of the URL
-     * 
+     *
      * @param serviceUrl the full service URL
      * @return the protocol://host:port part if parsed successfully or the
      *         passed parameter if parsing was unsuccessful
@@ -833,7 +833,7 @@ public class LogonDialog extends JDialog {
 
     /**
      * validate the username and the gateway url
-     * 
+     *
      * @return true validated, false othwerwise
      */
     private boolean isInputValid() {
@@ -860,8 +860,8 @@ public class LogonDialog extends JDialog {
     /**
      * todo: refactor exception handling
      * handle the logon throwable. Unwrap the exception
-     * 
-     * @param e 
+     *
+     * @param e
      */
     private static void handleLogonThrowable(Throwable e, LogonDialog dialog, String serviceUrl) {
         if (dialog.sslHostNameMismatchUserNotified) return;
@@ -872,11 +872,11 @@ public class LogonDialog extends JDialog {
             String msg = null;
             if (versionex.getExpectedVersion() != null && versionex.getReceivedVersion() != null) {
                 msg = MessageFormat.format(dialog.resources.getString("logon.version.mismatch2"),
-                                            new Object[]{
-                                                "'" + versionex.getReceivedVersion() + "'",
-                                                "'" + versionex.getExpectedVersion() + "'",
-                                                BuildInfo.getProductVersion() + " build " + BuildInfo.getBuildNumber()
-                                            });
+                  new Object[]{
+                      "'" + versionex.getReceivedVersion() + "'",
+                      "'" + versionex.getExpectedVersion() + "'",
+                      BuildInfo.getProductVersion() + " build " + BuildInfo.getBuildNumber()
+                  });
             } else {
                 msg = MessageFormat.format(dialog.resources.getString("logon.version.mismatch"),
                   new Object[]{BuildInfo.getProductVersion() + " build " + BuildInfo.getBuildNumber()});
@@ -917,7 +917,7 @@ public class LogonDialog extends JDialog {
     public static interface LogonListener {
         /**
          * invoked on successful authentication
-         * 
+         *
          * @param id the id of the authenticated user
          */
         void onAuthSuccess(String id);

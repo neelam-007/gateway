@@ -3,15 +3,17 @@ package com.l7tech.identity;
 import com.l7tech.identity.ldap.LdapIdentityProviderConfig;
 import com.l7tech.objectmodel.*;
 
+import javax.security.auth.Subject;
 import java.rmi.Remote;
 import java.rmi.RemoteException;
-import java.security.cert.CertificateEncodingException;
+import java.security.AccessControlException;
 import java.security.cert.Certificate;
+import java.security.cert.CertificateEncodingException;
 import java.util.Set;
 
 /**
  * Class IdentityAdmin.
- * 
+ *
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  *         <p/>
  *         Interface for the remote administration of the identity types.
@@ -74,6 +76,7 @@ public interface IdentityAdmin extends Remote {
      * will also revoke user's password if internal user
      */
     void revokeCert(User user) throws RemoteException, UpdateException, ObjectNotFoundException;
+
     void recordNewUserCert(User user, Certificate cert) throws RemoteException, UpdateException;
 
     void testIdProviderConfig(IdentityProviderConfig cfg)
@@ -83,4 +86,16 @@ public interface IdentityAdmin extends Remote {
 
     Set getUserHeaders(long providerId, String groupId) throws RemoteException, FindException;
 
+    /**
+     * Determine the roles for the given subject.
+     *
+     * @param subject the subject for which to get roles for
+     * @return the <code>Set</code> of roles (groups) the subject is memeber of
+     * @throws RemoteException        on remote invocation error
+     * @throws AccessControlException if the current subject is not allowed to perform the operation.
+     *                                The invocation tests whether the current subject  (the subject carrying out the operaton)
+     *                                has privileges to perform the operation. The operators are not allowed to perform this operation
+     *                                except for themselves.
+     */
+    Set getRoles(Subject subject) throws RemoteException, AccessControlException;
 }

@@ -17,7 +17,7 @@ import java.util.logging.Logger;
  * The class represents an <code>AbstractTreeNode</code> specialization
  * element that represents the identity providers and SAML providers
  * elements root.
- * 
+ *
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  * @version 1.1
  */
@@ -37,7 +37,7 @@ public class IdentitiesRootNode extends AbstractTreeNode {
 
     /**
      * Returns true if the receiver is a leaf.
-     * 
+     *
      * @return true if leaf, false otherwise
      */
     public boolean isLeaf() {
@@ -91,11 +91,17 @@ public class IdentitiesRootNode extends AbstractTreeNode {
      * @return actions appropriate to the node
      */
     public Action[] getActions() {
-        return new Action[]{
-            new NewFederatedIdentityProviderAction(this),
-            new NewLdapProviderAction(this),
-            //     new NewSamlProviderAction(this),
-            new RefreshTreeNodeAction(this)};
+        final NewFederatedIdentityProviderAction nwfpa = new NewFederatedIdentityProviderAction(this);
+        List actions = new ArrayList();
+        if (nwfpa.isAuthorized()) {
+            actions.add(nwfpa);
+        }
+        final NewLdapProviderAction nlpa = new NewLdapProviderAction(this);
+        if (nlpa.isAuthorized()) {
+            actions.add(nlpa);
+        }
+        actions.add(new RefreshTreeNodeAction(this));
+        return (Action[])actions.toArray(new Action[]{});
     }
 
     /**
@@ -107,7 +113,7 @@ public class IdentitiesRootNode extends AbstractTreeNode {
 
     /**
      * subclasses override this method specifying the resource name
-     * 
+     *
      * @param open for nodes that can be opened, can have children
      */
     protected String iconResource(boolean open) {

@@ -1,11 +1,11 @@
 package com.l7tech.console;
 
 import com.l7tech.common.gui.util.ImageCache;
-import com.l7tech.console.event.ConnectionEvent;
-import com.l7tech.console.event.ConnectionListener;
-import com.l7tech.console.panels.LogPanel;
-import com.l7tech.console.util.TopComponents;
 import com.l7tech.console.action.Actions;
+import com.l7tech.console.panels.LogPanel;
+import com.l7tech.console.security.LogonEvent;
+import com.l7tech.console.security.LogonListener;
+import com.l7tech.console.util.TopComponents;
 
 import javax.swing.*;
 import java.awt.*;
@@ -20,7 +20,7 @@ import java.util.ResourceBundle;
  * $Id$
  */
 
-public class GatewayLogWindow extends JFrame implements ConnectionListener {
+public class GatewayLogWindow extends JFrame implements LogonListener {
 
     public static final String RESOURCE_PATH = "com/l7tech/console/resources";
     private javax.swing.JLabel gatewayLogTitle = null;
@@ -34,41 +34,41 @@ public class GatewayLogWindow extends JFrame implements ConnectionListener {
     private JPanel frameContentPane = null;
     private LogPanel logPane = null;
     private static
-            ResourceBundle resapplication =
-            java.util.ResourceBundle.getBundle("com.l7tech.console.resources.console");
+    ResourceBundle resapplication =
+      java.util.ResourceBundle.getBundle("com.l7tech.console.resources.console");
 
     /**
      * Constructor
      *
-     * @param title  The window title
+     * @param title The window title
      */
     public GatewayLogWindow(final String title) {
         super(title);
         ImageIcon imageIcon =
-                new ImageIcon(ImageCache.getInstance().getIcon(RESOURCE_PATH + "/layer7_logo_small_32x32.png"));
+          new ImageIcon(ImageCache.getInstance().getIcon(RESOURCE_PATH + "/layer7_logo_small_32x32.png"));
         setIconImage(imageIcon.getImage());
         setBounds(0, 0, 850, 600);
         setJMenuBar(getClusterWindowMenuBar());
         getContentPane().setLayout(new BorderLayout());
         getContentPane().add(getJFrameContentPane(), BorderLayout.CENTER);
-        
+
         Actions.setEscKeyStrokeDisposes(this);
 
         // exitMenuItem listener
         getExitMenuItem().
-                addActionListener(new ActionListener() {
-                    public void actionPerformed(ActionEvent e) {
-                        exitMenuEventHandler();
-                    }
-                });
+          addActionListener(new ActionListener() {
+              public void actionPerformed(ActionEvent e) {
+                  exitMenuEventHandler();
+              }
+          });
 
         // HelpTopics listener
         getHelpTopicsMenuItem().
-                addActionListener(new ActionListener() {
-                    public void actionPerformed(ActionEvent e) {
-                        TopComponents.getInstance().getMainWindow().showHelpTopics(e);
-                    }
-                });
+          addActionListener(new ActionListener() {
+              public void actionPerformed(ActionEvent e) {
+                  TopComponents.getInstance().getMainWindow().showHelpTopics(e);
+              }
+          });
 
         pack();
 
@@ -86,7 +86,7 @@ public class GatewayLogWindow extends JFrame implements ConnectionListener {
     /**
      * Return frameContentPane property value
      *
-     * @return  JPanel
+     * @return JPanel
      */
     private JPanel getJFrameContentPane() {
         if (frameContentPane == null) {
@@ -101,7 +101,7 @@ public class GatewayLogWindow extends JFrame implements ConnectionListener {
     /**
      * Return clusterWindowMenuBar property value
      *
-     * @return  JMenuBar
+     * @return JMenuBar
      */
     private JMenuBar getClusterWindowMenuBar() {
         if (clusterWindowMenuBar == null) {
@@ -115,7 +115,7 @@ public class GatewayLogWindow extends JFrame implements ConnectionListener {
     /**
      * Return fileMenu property value
      *
-     * @return  JMenu
+     * @return JMenu
      */
     private JMenu getFileMenu() {
         if (fileMenu == null) {
@@ -131,7 +131,7 @@ public class GatewayLogWindow extends JFrame implements ConnectionListener {
     /**
      * Return helpMenu property value
      *
-     * @return  JMenu
+     * @return JMenu
      */
     private JMenu getHelpMenu() {
         if (helpMenu != null) return helpMenu;
@@ -148,7 +148,7 @@ public class GatewayLogWindow extends JFrame implements ConnectionListener {
     /**
      * Return helpTopicsMenuItem property value
      *
-     * @return  JMenuItem
+     * @return JMenuItem
      */
     private JMenuItem getHelpTopicsMenuItem() {
         if (helpTopicsMenuItem == null) {
@@ -164,7 +164,7 @@ public class GatewayLogWindow extends JFrame implements ConnectionListener {
     /**
      * Return exitMenuItem property value
      *
-     * @return  JMenuItem
+     * @return JMenuItem
      */
     private JMenuItem getExitMenuItem() {
         if (exitMenuItem == null) {
@@ -180,7 +180,7 @@ public class GatewayLogWindow extends JFrame implements ConnectionListener {
     /**
      * Return mainPane property value
      *
-     * @return  JPanel
+     * @return JPanel
      */
     private JPanel getMainPane() {
         if (mainPane != null) return mainPane;
@@ -209,7 +209,7 @@ public class GatewayLogWindow extends JFrame implements ConnectionListener {
     /**
      * Return logPane property value
      *
-     * @return  LogPanel
+     * @return LogPanel
      */
     public LogPanel getLogPane() {
         if (logPane != null) return logPane;
@@ -221,14 +221,14 @@ public class GatewayLogWindow extends JFrame implements ConnectionListener {
     /**
      * Intialization when the connection to the server is established.
      */
-    public void onConnect(ConnectionEvent e) {
+    public void onLogon(LogonEvent e) {
         getLogPane().onConnect();
     }
 
     /**
      * Clean up the resources when the connection to the server went down.
      */
-    public void onDisconnect(ConnectionEvent e) {
+    public void onLogoff(LogonEvent e) {
         getLogPane().onDisconnect();
     }
 

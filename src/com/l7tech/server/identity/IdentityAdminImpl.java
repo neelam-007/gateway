@@ -9,17 +9,21 @@ import com.l7tech.identity.internal.InternalUser;
 import com.l7tech.identity.ldap.LdapIdentityProviderConfig;
 import com.l7tech.objectmodel.*;
 import com.l7tech.remote.jini.export.RemoteService;
+import com.l7tech.server.Authorizer;
 import com.l7tech.server.identity.ldap.LdapConfigTemplateManager;
 import com.sun.jini.start.LifeCycle;
 import net.jini.config.ConfigurationException;
 
+import javax.security.auth.Subject;
 import java.io.IOException;
 import java.rmi.RemoteException;
+import java.security.AccessControlException;
 import java.security.SecureRandom;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateEncodingException;
 import java.sql.SQLException;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -27,24 +31,24 @@ import java.util.logging.Logger;
 /**
  * Server side implementation of the IdentityAdmin interface.
  * This was originally used with the Axis layer
- *
+ * <p/>
  * <br/><br/>
  * Layer 7 Technologies, inc.<br/>
  * User: flascelles<br/>
  * Date: May 26, 2003
  */
 public class IdentityAdminImpl extends RemoteService implements IdentityAdmin {
-    public IdentityAdminImpl( String[] options, LifeCycle lifeCycle ) throws ConfigurationException, IOException {
-        super( options, lifeCycle );
+    public IdentityAdminImpl(String[] options, LifeCycle lifeCycle) throws ConfigurationException, IOException {
+        super(options, lifeCycle);
     }
 
     public static final String SERVICE_DEPENDENT_URL_PORTION = "/services/identityAdmin";
 
     /**
      * Returns a version string. This can be compared to version on client-side.
-     * 
+     *
      * @return value to be compared with the client side value of Service.VERSION;
-     * @throws RemoteException 
+     * @throws RemoteException
      */
     public String echoVersion() throws RemoteException {
         return SecureSpanConstants.ADMIN_PROTOCOL_VERSION;
@@ -52,7 +56,7 @@ public class IdentityAdminImpl extends RemoteService implements IdentityAdmin {
 
     /**
      * @return Array of entity headers for all existing id provider config
-     * @throws RemoteException 
+     * @throws RemoteException
      */
     public EntityHeader[] findAllIdentityProviderConfig() throws RemoteException, FindException {
         try {
@@ -65,7 +69,7 @@ public class IdentityAdminImpl extends RemoteService implements IdentityAdmin {
 
     /**
      * @return Array of entity headers for all existing id provider config
-     * @throws RemoteException 
+     * @throws RemoteException
      */
     public EntityHeader[] findAllIdentityProviderConfigByOffset(int offset, int windowSize)
       throws RemoteException, FindException {
@@ -79,7 +83,7 @@ public class IdentityAdminImpl extends RemoteService implements IdentityAdmin {
 
     /**
      * @return An identity provider config object
-     * @throws RemoteException 
+     * @throws RemoteException
      */
     public IdentityProviderConfig findIdentityProviderConfigByPrimaryKey(long oid)
       throws RemoteException, FindException {
@@ -126,9 +130,10 @@ public class IdentityAdminImpl extends RemoteService implements IdentityAdmin {
 
     /**
      * Delete all users of the identity provider given the identity provider Id
-     *
+     * <p/>
      * Must be called in a transaction!
-     * @param ipoid  The identity provider id
+     *
+     * @param ipoid The identity provider id
      * @throws RemoteException
      * @throws DeleteException
      */
@@ -145,9 +150,10 @@ public class IdentityAdminImpl extends RemoteService implements IdentityAdmin {
 
     /**
      * Delete all groups of the identity provider given the identity provider Id
-     *
+     * <p/>
      * Must be called in a transaction!
-     * @param ipoid  The identity provider id
+     *
+     * @param ipoid The identity provider id
      * @throws RemoteException
      * @throws DeleteException
      */
@@ -163,9 +169,10 @@ public class IdentityAdminImpl extends RemoteService implements IdentityAdmin {
 
     /**
      * Delete all virtual groups of the identity provider given the identity provider Id
-     *
+     * <p/>
      * Must be called in a transaction!
-     * @param ipoid  The identity provider id
+     *
+     * @param ipoid The identity provider id
      * @throws RemoteException
      * @throws DeleteException
      */
@@ -188,7 +195,7 @@ public class IdentityAdminImpl extends RemoteService implements IdentityAdmin {
 
             final IdentityProviderConfig ipc = manager.findByPrimaryKey(oid);
 
-            if(ipc.type() == IdentityProviderType.FEDERATED) {
+            if (ipc.type() == IdentityProviderType.FEDERATED) {
                 deleteAllUsers(oid);
                 deleteAllGroups(oid);
                 deleteAllVirtualGroups(oid);
@@ -240,7 +247,7 @@ public class IdentityAdminImpl extends RemoteService implements IdentityAdmin {
       throws RemoteException, FindException {
         try {
             IdentityProvider provider = IdentityProviderFactory.getProvider(identityProviderConfigId);
-            if ( provider == null ) throw new FindException("IdentityProvider could not be found");
+            if (provider == null) throw new FindException("IdentityProvider could not be found");
             if (types != null) {
                 for (int i = 0; i < types.length; i++) {
                     types[i] = EntityType.fromValue(types[i].getVal());
@@ -258,7 +265,7 @@ public class IdentityAdminImpl extends RemoteService implements IdentityAdmin {
       throws RemoteException, FindException {
         try {
             IdentityProvider provider = IdentityProviderFactory.getProvider(identityProviderConfigId);
-            if ( provider == null ) throw new FindException("IdentityProvider could not be found");
+            if (provider == null) throw new FindException("IdentityProvider could not be found");
             UserManager userManager = provider.getUserManager();
 
             return userManager.findByPrimaryKey(userId);
@@ -268,10 +275,10 @@ public class IdentityAdminImpl extends RemoteService implements IdentityAdmin {
         }
     }
 
-    public User findUserByLogin( long idProvCfgId, String login ) throws RemoteException, FindException {
+    public User findUserByLogin(long idProvCfgId, String login) throws RemoteException, FindException {
         try {
             IdentityProvider provider = IdentityProviderFactory.getProvider(idProvCfgId);
-            if ( provider == null ) throw new FindException("IdentityProvider could not be found");
+            if (provider == null) throw new FindException("IdentityProvider could not be found");
             UserManager userManager = provider.getUserManager();
 
             return userManager.findByLogin(login);
@@ -289,7 +296,7 @@ public class IdentityAdminImpl extends RemoteService implements IdentityAdmin {
             if (userManager == null) throw new RemoteException("Cannot retrieve the UserManager");
             User user = userManager.findByPrimaryKey(userId);
             if (user == null) {
-                throw new ObjectNotFoundException(" User "+userId);
+                throw new ObjectNotFoundException(" User " + userId);
             }
             userManager.delete(user);
             logger.info("Deleted User: " + user.getLogin());
@@ -317,7 +324,7 @@ public class IdentityAdminImpl extends RemoteService implements IdentityAdmin {
         try {
             enforceAdminRole();
             IdentityProvider provider = IdentityProviderFactory.getProvider(identityProviderConfigId);
-            if ( provider == null ) throw new FindException("IdentityProvider could not be found");
+            if (provider == null) throw new FindException("IdentityProvider could not be found");
             UserManager userManager = provider.getUserManager();
             user.setProviderId(identityProviderConfigId);
 
@@ -373,7 +380,7 @@ public class IdentityAdminImpl extends RemoteService implements IdentityAdmin {
     public Group findGroupByPrimaryKey(long cfgid, String groupId) throws RemoteException, FindException {
         try {
             IdentityProvider provider = IdentityProviderFactory.getProvider(cfgid);
-            if ( provider == null ) throw new FindException("IdentityProvider could not be found");
+            if (provider == null) throw new FindException("IdentityProvider could not be found");
             GroupManager groupManager = provider.getGroupManager();
 
             return groupManager.findByPrimaryKey(groupId);
@@ -398,7 +405,7 @@ public class IdentityAdminImpl extends RemoteService implements IdentityAdmin {
             try {
                 endTransaction();
             } catch (TransactionException e) {
-                 try {
+                try {
                     rollbackTransaction();
                 } catch (TransactionException e1) {
                     logger.log(Level.WARNING, "exception rolling back", e1);
@@ -415,7 +422,7 @@ public class IdentityAdminImpl extends RemoteService implements IdentityAdmin {
         try {
             enforceAdminRole();
             IdentityProvider provider = IdentityProviderFactory.getProvider(identityProviderConfigId);
-            if ( provider == null ) throw new FindException("IdentityProvider could not be found");
+            if (provider == null) throw new FindException("IdentityProvider could not be found");
             GroupManager groupManager = provider.getGroupManager();
             group.setProviderId(identityProviderConfigId);
 
@@ -471,7 +478,7 @@ public class IdentityAdminImpl extends RemoteService implements IdentityAdmin {
             // internal users should have their password "revoked" along with their cert
 
             IdentityProvider provider = IdentityProviderFactory.getProvider(user.getProviderId());
-            if ( provider == null ) throw new FindException("IdentityProvider could not be found");
+            if (provider == null) throw new FindException("IdentityProvider could not be found");
 
             if (IdentityProviderType.INTERNAL.equals(provider.getConfig().type())) {
                 logger.finest("Cert revoked - invalidating user's password.");
@@ -507,7 +514,7 @@ public class IdentityAdminImpl extends RemoteService implements IdentityAdmin {
         try {
             enforceAdminRole();
             // revoke the cert in internal CA
-            ClientCertManager manager = (ClientCertManager) Locator.getDefault().lookup(ClientCertManager.class);
+            ClientCertManager manager = (ClientCertManager)Locator.getDefault().lookup(ClientCertManager.class);
             manager.recordNewUserCert(user, cert);
         } finally {
             try {
@@ -519,6 +526,7 @@ public class IdentityAdminImpl extends RemoteService implements IdentityAdmin {
     }
 
     private static SecureRandom secureRandom = null;
+
     private synchronized SecureRandom getSecureRandom() {
         if (secureRandom != null) return secureRandom;
         return secureRandom = new SecureRandom();
@@ -528,11 +536,11 @@ public class IdentityAdminImpl extends RemoteService implements IdentityAdmin {
       throws RemoteException, InvalidIdProviderCfgException {
         try {
             getIdProvCfgMan().test(identityProviderConfig);
-        } catch ( InvalidIdProviderCfgException e ) {
+        } catch (InvalidIdProviderCfgException e) {
             throw e;
-        } catch ( RemoteException e ) {
+        } catch (RemoteException e) {
             throw e;
-        } catch ( Throwable t ) {
+        } catch (Throwable t) {
             logger.log(Level.INFO, "Identity Provider test failed because an exception was thrown", t);
             throw new InvalidIdProviderCfgException(t);
         } finally {
@@ -558,6 +566,41 @@ public class IdentityAdminImpl extends RemoteService implements IdentityAdmin {
 
     public LdapIdentityProviderConfig[] getLdapTemplates() throws FindException {
         return ldapTemplateManager.getTemplates();
+    }
+
+    /**
+     * Determine the roles for the given subject.
+     *
+     * @param subject the subject for which to get roles for
+     * @return the <code>Set</code> of roles (groups) the subject is memeber of
+     * @throws java.rmi.RemoteException on remote invocation error
+     * @throws java.security.AccessControlException
+     *                                  if the current subject is not allowed to perform the operation.
+     *                                  The invocation tests whether the current subject  (the subject carrying out the operaton)
+     *                                  has privileges to perform the operation. The operators are not allowed to perform this operation
+     *                                  except for themselves.
+     */
+    public Set getRoles(Subject subject) throws RemoteException, AccessControlException {
+        if (subject == null) {
+            throw new IllegalArgumentException();
+        }
+
+        final Subject currentSubject = getCurrentSubject();
+        if (currentSubject == null) {
+            return Collections.EMPTY_SET;
+        }
+        final Authorizer authorizer = Authorizer.getAuthorizer();
+        if (authorizer.isSubjectInRole(currentSubject, new String[]{Group.ADMIN_GROUP_NAME})) {  //admin can ask everything
+            return authorizer.getUserRoles(subject);
+        } else if (authorizer.isSubjectInRole(currentSubject, new String[]{Group.OPERATOR_GROUP_NAME})) { // operator only self
+            if (subject.equals(currentSubject)) {
+                return authorizer.getUserRoles(subject);
+            } else {
+                throw new AccessControlException("Access denied, accessing subject " + subject);
+            }
+        }
+
+        throw new AccessControlException("Access denied, accessing subject " + subject);
     }
 
     // ************************************************
@@ -591,7 +634,7 @@ public class IdentityAdminImpl extends RemoteService implements IdentityAdmin {
         }
     }
 
-    private void endTransaction() throws TransactionException{
+    private void endTransaction() throws TransactionException {
         try {
             PersistenceContext context = PersistenceContext.getCurrent();
             //context.flush();
@@ -606,7 +649,7 @@ public class IdentityAdminImpl extends RemoteService implements IdentityAdmin {
         }
     }
 
-    private void rollbackTransaction() throws TransactionException{
+    private void rollbackTransaction() throws TransactionException {
         try {
             PersistenceContext context = PersistenceContext.getCurrent();
 
@@ -626,7 +669,7 @@ public class IdentityAdminImpl extends RemoteService implements IdentityAdmin {
         UserManager ret = null;
         try {
             IdentityProvider provider = IdentityProviderFactory.getProvider(cfgid);
-            if ( provider == null ) throw new FindException("IdentityProvider could not be found");
+            if (provider == null) throw new FindException("IdentityProvider could not be found");
             ret = provider.getUserManager();
         } catch (FindException e) {
             logger.log(Level.SEVERE, null, e);
@@ -640,7 +683,7 @@ public class IdentityAdminImpl extends RemoteService implements IdentityAdmin {
         GroupManager ret = null;
         try {
             IdentityProvider provider = IdentityProviderFactory.getProvider(cfgid);
-            if ( provider == null ) throw new FindException("IdentityProvider could not be found");
+            if (provider == null) throw new FindException("IdentityProvider could not be found");
             ret = provider.getGroupManager();
         } catch (FindException e) {
             logger.log(Level.SEVERE, null, e);

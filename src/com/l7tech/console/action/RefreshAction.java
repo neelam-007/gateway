@@ -1,6 +1,7 @@
 package com.l7tech.console.action;
 
 import com.l7tech.console.tree.AbstractTreeNode;
+import com.l7tech.identity.Group;
 
 import java.util.logging.Logger;
 
@@ -43,5 +44,15 @@ public abstract class RefreshAction extends NodeAction {
      */
     protected String iconResource() {
         return "com/l7tech/console/resources/Refresh16.gif";
+    }
+
+    /**
+     * Return the required roles for this action, one of the roles. The base
+     * implementatoinm requires the strongest admin role.
+     *
+     * @return the list of roles that are allowed to carry out the action
+     */
+    protected String[] requiredRoles() {
+        return new String[]{Group.ADMIN_GROUP_NAME, Group.OPERATOR_GROUP_NAME};
     }
 }
