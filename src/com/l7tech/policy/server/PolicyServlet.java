@@ -85,7 +85,7 @@ public class PolicyServlet extends AuthenticatableHttpServlet {
     protected void doPost(HttpServletRequest req, HttpServletResponse res) throws ServletException, IOException {
         try {
             // check content type
-            if (!req.getContentType().startsWith("text/html")) {
+            if (!req.getContentType().startsWith("text/xml")) {
                 logger.warning("Bad content type " + req.getContentType());
                 generateFaultAndSendAsResponse(res, "content type not supported", req.getContentType());
                 return;
