@@ -211,6 +211,18 @@ public class WssDecoratorTest extends TestCase {
                                 new Element[] { c.message.getDocumentElement() });
     }
 
+    public TestDocument getSignedEnvelopeTestDocument() throws Exception {
+        Context c = new Context();
+        return new TestDocument(c,
+                                TestDocuments.getEttkClientCertificate(),
+                                TestDocuments.getEttkClientPrivateKey(),
+                                TestDocuments.getDotNetServerCertificate(),
+                                TestDocuments.getDotNetServerPrivateKey(),
+                                false,
+                                new Element[0],
+                                new Element[] { c.message.getDocumentElement() });
+    }
+
     public void testSkilessRecipientCert() throws Exception {
         runTest(getSkilessRecipientCertTestDocument());
     }

@@ -91,6 +91,11 @@ public class WssRoundTripTest extends TestCase {
                                                wssDecoratorTest.getEncryptedBodySignedEnvelopeTestDocument()));
     }
 
+    public void testSignedEnvelope() throws Exception {
+        runRoundTripTest(new NamedTestDocument("EncryptedBodySignedEnvelope",
+                                               wssDecoratorTest.getSignedEnvelopeTestDocument()));
+    }
+
     public void testEncryptionOnly() throws Exception {
         runRoundTripTest(new NamedTestDocument("EncryptionOnly",
                                                wssDecoratorTest.getEncryptionOnlyTestDocument()));
