@@ -478,7 +478,7 @@ EOF
 	}
 
         # 6. inform user that the script is done
-        print "INFO: If <$setkey> script ever being invoked by <$0> and error occurs, you just need to re-run <$setkey>\n";
+        print "INFO: If <$setkey> script being invoked by <$0> and error occurs, you just need to re-run <$setkey>\n";
 	print "MANUAL TASK: MySQL - Re-start database service (as </etc/my.cnf> has just been configured by this script), then create ssg database, and ssg database tables if applicable:\n";
         print "---(1)  re-start MySQL datbase service and purge database (if existed)\n";
 	print "------# service mysql stop\n";
@@ -496,6 +496,7 @@ EOF
 	print "------or\n";
         print "------# mysql -p<database root user password> ssg < /ssg/etc/sql/ssg.sql\n";
 	print "note 1: if it is not the first node of the cluster database - base on the </etc/my.cnf>, SSG database will be replicating after you've started mysql on node 2; SSG database and tables will be created by the replicator as well, so you don't need to manually creating SSG database and tables on node 2\n";
+        print "MANUAL TASK: After you are satisfied with the installation, you now can delete any backup files that install.pl have backed up during the installation - /etc/sysconfig/network-scripts/*.bckup_*; /etc/sysconfig/*.bckup_*; /etc/hosts.bckup_*; /etc/my.cnf.bckup_*\n"; 
         print "INFO: <$0> script done\n"; 
 }
 	
