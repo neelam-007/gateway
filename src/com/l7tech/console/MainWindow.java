@@ -68,7 +68,7 @@ public class MainWindow extends JFrame {
      */
     private static
     ResourceBundle resapplication =
-      java.util.ResourceBundle.getBundle("com.l7tech.console.resources.console");
+            java.util.ResourceBundle.getBundle("com.l7tech.console.resources.console");
 
     private JMenuBar mainJMenuBar = null;
     private JMenu fileMenu = null;
@@ -80,8 +80,8 @@ public class MainWindow extends JFrame {
     private JMenuItem disconnectMenuItem = null;
     private JMenuItem exitMenuItem = null;
     private JMenuItem menuItemPref = null;
-    private JCheckBoxMenuItem logMenuItem = null;
-    private JCheckBoxMenuItem statMenuItem = null;
+    private JMenuItem logMenuItem = null;
+    private JMenuItem statMenuItem = null;
     private JMenuItem manageJmsEndpointsMenuItem = null;
     private JMenuItem helpTopicsMenuItem = null;
 
@@ -167,7 +167,7 @@ public class MainWindow extends JFrame {
         ConnectionEvent event = new ConnectionEvent(this, ConnectionEvent.CONNECTED);
         EventListener[] listeners = listenerList.getListeners(ConnectionListener.class);
         for (int i = 0; i < listeners.length; i++) {
-            ((ConnectionListener)listeners[i]).onConnect(event);
+            ((ConnectionListener) listeners[i]).onConnect(event);
         }
     }
 
@@ -179,7 +179,7 @@ public class MainWindow extends JFrame {
         ConnectionEvent event = new ConnectionEvent(this, ConnectionEvent.DISCONNECTED);
         EventListener[] listeners = listenerList.getListeners(ConnectionListener.class);
         for (int i = 0; i < listeners.length; i++) {
-            ((ConnectionListener)listeners[i]).onDisconnect(event);
+            ((ConnectionListener) listeners[i]).onDisconnect(event);
         }
     }
 
@@ -318,6 +318,10 @@ public class MainWindow extends JFrame {
             editMenu.add(getManageJmsEndpointsMenuItem());
             int mnemonic = editMenu.getText().toCharArray()[0];
             editMenu.setMnemonic(mnemonic);
+
+            editMenu.addSeparator();
+            editMenu.add(getStatMenuItem());
+            editMenu.add(getLogMenuItem());
         }
         return editMenu;
     }
@@ -343,12 +347,6 @@ public class MainWindow extends JFrame {
         jcm = new JCheckBoxMenuItem(getToggleStatusBarToggleAction());
         jcm.setSelected(preferences.isStatusBarBarVisible());
         viewMenu.add(jcm);
-
-        viewMenu.addSeparator();
-
-        viewMenu.add(getStatMenuItem());
-        viewMenu.add(getLogMenuItem());
-        //viewMenu.add(new ConsoleAction());
 
         viewMenu.addSeparator();
 
@@ -411,16 +409,16 @@ public class MainWindow extends JFrame {
         String atext = resapplication.getString("ConnectMenuItem_text");
         Icon icon = new ImageIcon(cl.getResource(RESOURCE_PATH + "/connect2.gif"));
         connectAction =
-          new AbstractAction(atext, icon) {
-              /**
-               * Invoked when an action occurs.
-               * 
-               * @param event the event that occured
-               */
-              public void actionPerformed(ActionEvent event) {
-                  activateLogonDialog();
-              }
-          };
+                new AbstractAction(atext, icon) {
+                    /**
+                     * Invoked when an action occurs.
+                     *
+                     * @param event the event that occured
+                     */
+                    public void actionPerformed(ActionEvent event) {
+                        activateLogonDialog();
+                    }
+                };
         connectAction.putValue(Action.SHORT_DESCRIPTION, atext);
         return connectAction;
     }
@@ -435,20 +433,20 @@ public class MainWindow extends JFrame {
         String atext = resapplication.getString("CloseButton_text");
         Icon icon = new ImageIcon(cl.getResource(RESOURCE_PATH + "/disconnect.gif"));
         disconnectAction =
-          new AbstractAction(atext, icon) {
-              /**
-               * Invoked when an action occurs.
-               * 
-               * @param event the event that occured
-               */
-              public void actionPerformed(ActionEvent event) {
-                  try {
-                      disconnectHandler(event);
-                  } catch (ActionVetoException e) {
-                      // action vetoed
-                  }
-              }
-          };
+                new AbstractAction(atext, icon) {
+                    /**
+                     * Invoked when an action occurs.
+                     *
+                     * @param event the event that occured
+                     */
+                    public void actionPerformed(ActionEvent event) {
+                        try {
+                            disconnectHandler(event);
+                        } catch (ActionVetoException e) {
+                            // action vetoed
+                        }
+                    }
+                };
         disconnectAction.putValue(Action.SHORT_DESCRIPTION, atext);
         return disconnectAction;
     }
@@ -462,7 +460,7 @@ public class MainWindow extends JFrame {
         }
         publishServiceAction = new PublishServiceAction();
         publishServiceAction.setEnabled(false);
-        this.addConnectionListener((PublishServiceAction)publishServiceAction);
+        this.addConnectionListener((PublishServiceAction) publishServiceAction);
         return publishServiceAction;
     }
 
@@ -476,7 +474,7 @@ public class MainWindow extends JFrame {
         }
         createServiceAction = new CreateServiceWsdlAction();
         createServiceAction.setEnabled(false);
-        this.addConnectionListener((CreateServiceWsdlAction)createServiceAction);
+        this.addConnectionListener((CreateServiceWsdlAction) createServiceAction);
         return createServiceAction;
     }
 
@@ -552,8 +550,8 @@ public class MainWindow extends JFrame {
                 public void onConnect(ConnectionEvent e) {
                     setEnabled(true);
                     final DefaultMutableTreeNode root =
-                      (DefaultMutableTreeNode)getIdentitiesTree().getModel().getRoot();
-                    node = (AbstractTreeNode)root;
+                            (DefaultMutableTreeNode) getIdentitiesTree().getModel().getRoot();
+                    node = (AbstractTreeNode) root;
                 }
 
                 public void onDisconnect(ConnectionEvent e) {
@@ -580,83 +578,83 @@ public class MainWindow extends JFrame {
         Icon icon = new ImageIcon(cl.getResource(RESOURCE_PATH + "/Refresh16.gif"));
 
         final TreeSelectionListener treeCanRefreshSelectionListener =
-          new TreeSelectionListener() {
-              private final JTree assertionPalette = getAssertionPaletteTree();
-              private final JTree services = getServicesTree();
-              private final JTree identitites = getIdentitiesTree();
+                new TreeSelectionListener() {
+                    private final JTree assertionPalette = getAssertionPaletteTree();
+                    private final JTree services = getServicesTree();
+                    private final JTree identitites = getIdentitiesTree();
 
-              public void valueChanged(TreeSelectionEvent e) {
-                  Object o = e.getSource();
-                  if (o == assertionPalette || o == identitites || o == services) {
-                      TreePath path = e.getNewLeadSelectionPath();
-                      if (path == null) return;
-                      AbstractTreeNode n = (AbstractTreeNode)path.getLastPathComponent();
-                      refreshAction.setEnabled(n.canRefresh());
-                  } else {
-                      log.warning("Received unexpected selection path from " + o.getClass());
-                  }
-              }
-          };
+                    public void valueChanged(TreeSelectionEvent e) {
+                        Object o = e.getSource();
+                        if (o == assertionPalette || o == identitites || o == services) {
+                            TreePath path = e.getNewLeadSelectionPath();
+                            if (path == null) return;
+                            AbstractTreeNode n = (AbstractTreeNode) path.getLastPathComponent();
+                            refreshAction.setEnabled(n.canRefresh());
+                        } else {
+                            log.warning("Received unexpected selection path from " + o.getClass());
+                        }
+                    }
+                };
 
         getServicesTree().addTreeSelectionListener(treeCanRefreshSelectionListener);
         getAssertionPaletteTree().addTreeSelectionListener(treeCanRefreshSelectionListener);
         getIdentitiesTree().addTreeSelectionListener(treeCanRefreshSelectionListener);
 
         refreshAction =
-          new AbstractAction(atext, icon) {
-              final JTree[] trees = new JTree[]{getAssertionPaletteTree(), getServicesTree(), getIdentitiesTree()};
+                new AbstractAction(atext, icon) {
+                    final JTree[] trees = new JTree[]{getAssertionPaletteTree(), getServicesTree(), getIdentitiesTree()};
 
 
-              ConnectionListener listener = new ConnectionListener() {
-                  public void onConnect(ConnectionEvent e) {
-                      // setEnabled(true);
-                  }
+                    ConnectionListener listener = new ConnectionListener() {
+                        public void onConnect(ConnectionEvent e) {
+                            // setEnabled(true);
+                        }
 
-                  public void onDisconnect(ConnectionEvent e) {
-                      setEnabled(false);
-                  }
-              };
+                        public void onDisconnect(ConnectionEvent e) {
+                            setEnabled(false);
+                        }
+                    };
 
-              {
-                  MainWindow.this.addConnectionListener(listener);
-              }
+                    {
+                        MainWindow.this.addConnectionListener(listener);
+                    }
 
-              /**
-               * Invoked when an action occurs.
-               * 
-               * @param event the event that occured
-               * @see Action#removePropertyChangeListener
-               */
-              public void actionPerformed(ActionEvent event) {
-                  //todo: consider reworking this, by pushing more of this into
-                  // the node itself em.
-                  for (int i = 0; i < trees.length; i++) {
-                      final JTree tree = trees[i];
-                      TreePath path = tree.getSelectionPath();
-                      if (path != null) {
-                          AbstractTreeNode n = (AbstractTreeNode)path.getLastPathComponent();
-                          final Action[] actions = n.getActions(RefreshAction.class);
-                          if (actions.length == 0) {
-                              log.warning("No refresh action found");
-                          } else {
-                              refreshAction.setEnabled(false);
-                              Runnable runnable = new Runnable() {
-                                  public void run() {
-                                      try {
-                                          ((NodeAction)actions[0]).setTree(tree);
-                                          ActionManager.getInstance().invokeAction(actions[0]);
-                                      } finally {
-                                          refreshAction.setEnabled(true);
-                                      }
-                                  }
-                              };
-                              SwingUtilities.invokeLater(runnable);
-                              break;
-                          }
-                      }
-                  }
-              }
-          };
+                    /**
+                     * Invoked when an action occurs.
+                     *
+                     * @param event the event that occured
+                     * @see Action#removePropertyChangeListener
+                     */
+                    public void actionPerformed(ActionEvent event) {
+                        //todo: consider reworking this, by pushing more of this into
+                        // the node itself em.
+                        for (int i = 0; i < trees.length; i++) {
+                            final JTree tree = trees[i];
+                            TreePath path = tree.getSelectionPath();
+                            if (path != null) {
+                                AbstractTreeNode n = (AbstractTreeNode) path.getLastPathComponent();
+                                final Action[] actions = n.getActions(RefreshAction.class);
+                                if (actions.length == 0) {
+                                    log.warning("No refresh action found");
+                                } else {
+                                    refreshAction.setEnabled(false);
+                                    Runnable runnable = new Runnable() {
+                                        public void run() {
+                                            try {
+                                                ((NodeAction) actions[0]).setTree(tree);
+                                                ActionManager.getInstance().invokeAction(actions[0]);
+                                            } finally {
+                                                refreshAction.setEnabled(true);
+                                            }
+                                        }
+                                    };
+                                    SwingUtilities.invokeLater(runnable);
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                };
         refreshAction.setEnabled(false);
         refreshAction.putValue(Action.SHORT_DESCRIPTION, atext);
         return refreshAction;
@@ -675,26 +673,26 @@ public class MainWindow extends JFrame {
         String aDesc = resapplication.getString("toggle.status.bar.action.desc");
 
         toggleStatusBarAction =
-          new AbstractAction(atext) {
-              /**
-               * Invoked when an action occurs.
-               * 
-               * @param event the event that occured
-               * @see Action#removePropertyChangeListener
-               */
-              public void actionPerformed(ActionEvent event) {
-                  JCheckBoxMenuItem item = (JCheckBoxMenuItem)event.getSource();
-                  final boolean selected = item.isSelected();
-                  getStatusBarPane().setVisible(selected);
-                  try {
-                      Preferences p = Preferences.getPreferences();
-                      p.seStatusBarVisible(selected);
-                      p.store();
-                  } catch (IOException e) {
-                      // ignore
-                  }
-              }
-          };
+                new AbstractAction(atext) {
+                    /**
+                     * Invoked when an action occurs.
+                     *
+                     * @param event the event that occured
+                     * @see Action#removePropertyChangeListener
+                     */
+                    public void actionPerformed(ActionEvent event) {
+                        JCheckBoxMenuItem item = (JCheckBoxMenuItem) event.getSource();
+                        final boolean selected = item.isSelected();
+                        getStatusBarPane().setVisible(selected);
+                        try {
+                            Preferences p = Preferences.getPreferences();
+                            p.seStatusBarVisible(selected);
+                            p.store();
+                        } catch (IOException e) {
+                            // ignore
+                        }
+                    }
+                };
         toggleStatusBarAction.putValue(Action.SHORT_DESCRIPTION, aDesc);
         return toggleStatusBarAction;
     }
@@ -711,31 +709,31 @@ public class MainWindow extends JFrame {
         String aDesc = resapplication.getString("toggle.policy.msg.action.desc");
 
         togglePolicyMessageArea =
-          new AbstractAction(atext) {
-              /**
-               * Invoked when an action occurs.
-               * 
-               * @param event the event that occured
-               * @see Action#removePropertyChangeListener
-               */
-              public void actionPerformed(ActionEvent event) {
-                  JCheckBoxMenuItem item = (JCheckBoxMenuItem)event.getSource();
-                  final boolean selected = item.isSelected();
-                  final WorkSpacePanel cw = TopComponents.getInstance().getCurrentWorkspace();
-                  final JComponent c = cw.getComponent();
-                  if (c != null && c instanceof PolicyEditorPanel) {
-                      PolicyEditorPanel pe = (PolicyEditorPanel)c;
-                      pe.setMessageAreaVisible(selected);
-                  }
-                  try {
-                      Preferences p = Preferences.getPreferences();
-                      p.setPolicyMessageAreaVisible(selected);
-                      p.store();
-                  } catch (IOException e) {
-                      // ignore
-                  }
-              }
-          };
+                new AbstractAction(atext) {
+                    /**
+                     * Invoked when an action occurs.
+                     *
+                     * @param event the event that occured
+                     * @see Action#removePropertyChangeListener
+                     */
+                    public void actionPerformed(ActionEvent event) {
+                        JCheckBoxMenuItem item = (JCheckBoxMenuItem) event.getSource();
+                        final boolean selected = item.isSelected();
+                        final WorkSpacePanel cw = TopComponents.getInstance().getCurrentWorkspace();
+                        final JComponent c = cw.getComponent();
+                        if (c != null && c instanceof PolicyEditorPanel) {
+                            PolicyEditorPanel pe = (PolicyEditorPanel) c;
+                            pe.setMessageAreaVisible(selected);
+                        }
+                        try {
+                            Preferences p = Preferences.getPreferences();
+                            p.setPolicyMessageAreaVisible(selected);
+                            p.store();
+                        } catch (IOException e) {
+                            // ignore
+                        }
+                    }
+                };
         togglePolicyMessageArea.putValue(Action.SHORT_DESCRIPTION, aDesc);
         return togglePolicyMessageArea;
     }
@@ -772,18 +770,18 @@ public class MainWindow extends JFrame {
         String atext = resapplication.getString("Preferences_MenuItem_text");
         Icon icon = new ImageIcon(cl.getResource(RESOURCE_PATH + "/preferences.gif"));
         prefsAction =
-          new AbstractAction(atext, icon) {
-              /**
-               * Invoked when an action occurs.
-               */
-              public void actionPerformed(ActionEvent event) {
-                  PreferencesDialog dialog = new PreferencesDialog(MainWindow.this, false, isConnected());
-                  dialog.pack();
-                  Utilities.centerOnScreen(dialog);
-                  dialog.setResizable(false);
-                  dialog.setVisible(true);
-              }
-          };
+                new AbstractAction(atext, icon) {
+                    /**
+                     * Invoked when an action occurs.
+                     */
+                    public void actionPerformed(ActionEvent event) {
+                        PreferencesDialog dialog = new PreferencesDialog(MainWindow.this, false, isConnected());
+                        dialog.pack();
+                        Utilities.centerOnScreen(dialog);
+                        dialog.setResizable(false);
+                        dialog.setVisible(true);
+                    }
+                };
         prefsAction.putValue(Action.SHORT_DESCRIPTION, atext);
         return prefsAction;
     }
@@ -799,13 +797,13 @@ public class MainWindow extends JFrame {
         String atext = resapplication.getString("Delete_MenuItem_text");
         Icon icon = new ImageIcon(cl.getResource(RESOURCE_PATH + "/Delete16.gif"));
         removeNodeAction =
-          new AbstractAction(atext, icon) {
-              /**
-               * Invoked when an action occurs.
-               */
-              public void actionPerformed(ActionEvent event) {
-              }
-          };
+                new AbstractAction(atext, icon) {
+                    /**
+                     * Invoked when an action occurs.
+                     */
+                    public void actionPerformed(ActionEvent event) {
+                    }
+                };
         removeNodeAction.putValue(Action.SHORT_DESCRIPTION, atext);
         removeNodeAction.setEnabled(false);
         return removeNodeAction;
@@ -869,7 +867,7 @@ public class MainWindow extends JFrame {
      * @return JTree
      */
     private JTree getAssertionPaletteTree() {
-        JTree tree = (JTree)TopComponents.getInstance().getComponent(AssertionsTree.NAME);
+        JTree tree = (JTree) TopComponents.getInstance().getComponent(AssertionsTree.NAME);
         if (tree != null)
             return tree;
         tree = new AssertionsTree();
@@ -885,7 +883,7 @@ public class MainWindow extends JFrame {
      * @return JTree
      */
     private JTree getIdentitiesTree() {
-        JTree tree = (JTree)TopComponents.getInstance().getComponent(IdentityProvidersTree.NAME);
+        JTree tree = (JTree) TopComponents.getInstance().getComponent(IdentityProvidersTree.NAME);
         if (tree != null) return tree;
         tree = new IdentityProvidersTree();
         tree.setShowsRootHandles(true);
@@ -900,7 +898,7 @@ public class MainWindow extends JFrame {
      * @return JTree
      */
     private JTree getServicesTree() {
-        JTree tree = (JTree)TopComponents.getInstance().getComponent(ServicesTree.NAME);
+        JTree tree = (JTree) TopComponents.getInstance().getComponent(ServicesTree.NAME);
         if (tree != null)
             return tree;
 
@@ -933,10 +931,10 @@ public class MainWindow extends JFrame {
 
         String rootTitle = "Services @ ";
         rootTitle +=
-          Preferences.getPreferences().getString(Preferences.SERVICE_URL);
+                Preferences.getPreferences().getString(Preferences.SERVICE_URL);
         DefaultTreeModel servicesTreeModel = new FilteredTreeModel(null);
         final AbstractTreeNode servicesRootNode =
-          new ServicesFolderNode(Registry.getDefault().getServiceManager(), rootTitle);
+                new ServicesFolderNode(Registry.getDefault().getServiceManager(), rootTitle);
         servicesTreeModel.setRoot(servicesRootNode);
 
         getServicesTree().setRootVisible(true);
@@ -944,55 +942,55 @@ public class MainWindow extends JFrame {
         TreePath initialPath = new TreePath(servicesRootNode.getPath());
 
         TreeSelectionListener treeSelectionListener =
-          new TreeSelectionListener() {
-              private final JTree assertionPalette =
-                assertionPaletteTree;
-              private final JTree services = getServicesTree();
+                new TreeSelectionListener() {
+                    private final JTree assertionPalette =
+                            assertionPaletteTree;
+                    private final JTree services = getServicesTree();
 
-              public void valueChanged(TreeSelectionEvent e) {
-                  Object o = e.getSource();
-                  if (o == assertionPalette) {
-                      if (!isRemovePath(e)) {
-                          log.finer("Clearing selection services");
-                          services.clearSelection();
-                      }
-                  } else if (o == services) {
-                      if (!isRemovePath(e)) {
-                          log.finer("Clearing selection assertions palette");
-                          assertionPalette.clearSelection();
-                      }
-                  } else {
-                      log.warning("Received unexpected selection path from " + o.getClass());
-                  }
-              }
+                    public void valueChanged(TreeSelectionEvent e) {
+                        Object o = e.getSource();
+                        if (o == assertionPalette) {
+                            if (!isRemovePath(e)) {
+                                log.finer("Clearing selection services");
+                                services.clearSelection();
+                            }
+                        } else if (o == services) {
+                            if (!isRemovePath(e)) {
+                                log.finer("Clearing selection assertions palette");
+                                assertionPalette.clearSelection();
+                            }
+                        } else {
+                            log.warning("Received unexpected selection path from " + o.getClass());
+                        }
+                    }
 
-              private boolean isRemovePath(TreeSelectionEvent e) {
-                  TreePath[] paths = e.getPaths();
-                  for (int i = 0; i < paths.length; i++) {
-                      if (!e.isAddedPath(i)) {
-                          return true;
-                      }
-                  }
-                  return false;
-              }
+                    private boolean isRemovePath(TreeSelectionEvent e) {
+                        TreePath[] paths = e.getPaths();
+                        for (int i = 0; i < paths.length; i++) {
+                            if (!e.isAddedPath(i)) {
+                                return true;
+                            }
+                        }
+                        return false;
+                    }
 
-          };
+                };
         getServicesTree().addTreeSelectionListener(treeSelectionListener);
         assertionPaletteTree.addTreeSelectionListener(treeSelectionListener);
 
         getMainSplitPaneRight().removeAll();
         GridBagConstraints constraints
-          = new GridBagConstraints(0, // gridx
-            0, // gridy
-            1, // widthx
-            1, // widthy
-            1.0, // weightx
-            1.0, // weigthy
-            GridBagConstraints.NORTH, // anchor
-            GridBagConstraints.BOTH, //fill
-            new Insets(0, 0, 0, 0), // inses
-            0, // padx
-            0); // pady
+                = new GridBagConstraints(0, // gridx
+                        0, // gridy
+                        1, // widthx
+                        1, // widthy
+                        1.0, // weightx
+                        1.0, // weigthy
+                        GridBagConstraints.NORTH, // anchor
+                        GridBagConstraints.BOTH, //fill
+                        new Insets(0, 0, 0, 0), // inses
+                        0, // padx
+                        0); // pady
         getMainSplitPaneRight().add(getWorkSpacePanel(), constraints);
     }
 
@@ -1033,7 +1031,7 @@ public class MainWindow extends JFrame {
                 clusterStatusWindow = null;
             }
         });
-
+        Utilities.centerOnScreen(clusterStatusWindow);
         return clusterStatusWindow;
     }
 
@@ -1052,7 +1050,7 @@ public class MainWindow extends JFrame {
 
         });
         addConnectionListener(gatewayLogWindow);
-
+        Utilities.centerOnScreen(gatewayLogWindow);
         return gatewayLogWindow;
     }
 
@@ -1104,18 +1102,13 @@ public class MainWindow extends JFrame {
 
         String actionName = resapplication.getString("toggle.gateway.log.display.action.name");
         String actionDesc = resapplication.getString("toggle.gateway.log.display.action.desc");
+        Icon icon = new ImageIcon(cl.getResource(RESOURCE_PATH + "/ServerLogs.gif"));
 
-        toggleGatewayLogWindowAction =
-          new AbstractAction(actionName) {
-              public void actionPerformed(ActionEvent event) {
-                  JCheckBoxMenuItem item = (JCheckBoxMenuItem)event.getSource();
-                  if (item.isSelected()) {
-                      getGatewayLogWindow().show();
-                  } else {
-                      destroyGatewayLogWindow();
-                  }
-              }
-          };
+        toggleGatewayLogWindowAction = new AbstractAction(actionName, icon) {
+            public void actionPerformed(ActionEvent event) {
+                getGatewayLogWindow().show();
+            }
+        };
         toggleGatewayLogWindowAction.putValue(Action.SHORT_DESCRIPTION, actionDesc);
         toggleGatewayLogWindowAction.setEnabled(false);
         enableActionWhileConnected(toggleGatewayLogWindowAction);
@@ -1129,9 +1122,13 @@ public class MainWindow extends JFrame {
 
     private void enableActionWhileConnected(final Action item) {
         ConnectionListener myListener = new ConnectionListener() {
-            public void onConnect(ConnectionEvent e) { item.setEnabled(true); }
+            public void onConnect(ConnectionEvent e) {
+                item.setEnabled(true);
+            }
 
-            public void onDisconnect(ConnectionEvent e) { item.setEnabled(false); }
+            public void onDisconnect(ConnectionEvent e) {
+                item.setEnabled(false);
+            }
         };
         weakListenerListWorkAround.add(myListener); // bind lifecycle to lifespan of MainWindow instance
         addConnectionListener(myListener);
@@ -1142,52 +1139,44 @@ public class MainWindow extends JFrame {
 
         String actionName = resapplication.getString("toggle.cluster.status.display.action.name");
         String actionDesc = resapplication.getString("toggle.cluster.status.display.action.desc");
+        Icon icon = new ImageIcon(cl.getResource(RESOURCE_PATH + "/ClusterServers.gif"));
 
-        toggleClusterStatusWindowAction =
-          new AbstractAction(actionName) {
-              /**
-               * Invoked when an action occurs.
-               * 
-               * @param event the event that occured
-               * @see Action#removePropertyChangeListener
-               */
-              public void actionPerformed(ActionEvent event) {
-                  JCheckBoxMenuItem item = (JCheckBoxMenuItem)event.getSource();
-                  if (item.isSelected()) {
-                      getClusterStatusWindow().show();
-                  } else {
-                      if (clusterStatusWindow != null) {
-                          clusterStatusWindow.dispose();
-                          clusterStatusWindow = null;
-                      }
-                  }
-              }
+        toggleClusterStatusWindowAction = new AbstractAction(actionName, icon) {
+            /**
+             * Invoked when an action occurs.
+             *
+             * @param event the event that occured
+             * @see Action#removePropertyChangeListener
+             */
+            public void actionPerformed(ActionEvent event) {
+                getClusterStatusWindow().show();
+            }
 
-              ConnectionListener listener = new ConnectionListener() {
-                  public void onConnect(ConnectionEvent e) {
-                      setEnabled(true);
-                      if (getStatMenuItem().isSelected()) {
-                          if (clusterStatusWindow != null) {
-                              clusterStatusWindow.onConnect();
-                          }
-                      }
-                  }
+            ConnectionListener listener = new ConnectionListener() {
+                public void onConnect(ConnectionEvent e) {
+                    setEnabled(true);
+                    if (getStatMenuItem().isSelected()) {
+                        if (clusterStatusWindow != null) {
+                            clusterStatusWindow.onConnect();
+                        }
+                    }
+                }
 
-                  public void onDisconnect(ConnectionEvent e) {
-                      setEnabled(false);
-                      if (getStatMenuItem().isSelected()) {
-                          if (clusterStatusWindow != null) {
-                              clusterStatusWindow.onDisconnect();
-                          }
-                      }
-                  }
-              };
+                public void onDisconnect(ConnectionEvent e) {
+                    setEnabled(false);
+                    if (getStatMenuItem().isSelected()) {
+                        if (clusterStatusWindow != null) {
+                            clusterStatusWindow.onDisconnect();
+                        }
+                    }
+                }
+            };
 
-              {
-                  MainWindow.this.addConnectionListener(listener);
-              }
+            {
+                MainWindow.this.addConnectionListener(listener);
+            }
 
-          };
+        };
         toggleClusterStatusWindowAction.putValue(Action.SHORT_DESCRIPTION, actionDesc);
         toggleClusterStatusWindowAction.setEnabled(false);
         return toggleClusterStatusWindowAction;
@@ -1267,9 +1256,9 @@ public class MainWindow extends JFrame {
             statusBarPane.setLayout(new BorderLayout());
             statusBarPane.setDoubleBuffered(true);
             Border border =
-              BorderFactory.
-              createCompoundBorder(getStatusMsgLeft().getBorder(),
-                BorderFactory.createEmptyBorder(2, 2, 2, 2));
+                    BorderFactory.
+                    createCompoundBorder(getStatusMsgLeft().getBorder(),
+                            BorderFactory.createEmptyBorder(2, 2, 2, 2));
 
             getStatusMsgLeft().setBorder(border);
 
@@ -1280,7 +1269,7 @@ public class MainWindow extends JFrame {
             getStatusMsgRight().setBorder(border);
             rightPanel.add(getStatusMsgRight(), BorderLayout.WEST);
             progressBar =
-              (ProgressBar)TopComponents.getInstance().getComponent(ProgressBar.NAME);
+                    (ProgressBar) TopComponents.getInstance().getComponent(ProgressBar.NAME);
             if (progressBar == null) {
                 progressBar = new ProgressBar(0, 100, 20);
                 TopComponents.getInstance().registerComponent(ProgressBar.NAME, progressBar);
@@ -1337,31 +1326,31 @@ public class MainWindow extends JFrame {
 
         JButton b = toolBarPane.add(getConnectAction());
         b.setFont(new Font("Dialog", 1, 10));
-        b.setText((String)getConnectAction().getValue(Action.NAME));
+        b.setText((String) getConnectAction().getValue(Action.NAME));
         b.setMargin(new Insets(0, 0, 0, 0));
         b.setHorizontalTextPosition(SwingConstants.RIGHT);
 
         b = toolBarPane.add(getDisconnectAction());
         b.setFont(new Font("Dialog", 1, 10));
-        b.setText((String)getDisconnectAction().getValue(Action.NAME));
+        b.setText((String) getDisconnectAction().getValue(Action.NAME));
         b.setMargin(new Insets(0, 0, 0, 0));
         b.setHorizontalTextPosition(SwingConstants.RIGHT);
 
         b = toolBarPane.add(getRefreshAction());
         b.setFont(new Font("Dialog", 1, 10));
-        b.setText((String)getRefreshAction().getValue(Action.NAME));
+        b.setText((String) getRefreshAction().getValue(Action.NAME));
         b.setMargin(new Insets(0, 0, 0, 0));
         b.setHorizontalTextPosition(SwingConstants.RIGHT);
 
         b = toolBarPane.add(homeAction);
         b.setFont(new Font("Dialog", 1, 10));
-        b.setText((String)homeAction.getValue(Action.NAME));
+        b.setText((String) homeAction.getValue(Action.NAME));
         b.setMargin(new Insets(0, 0, 0, 0));
         b.setHorizontalTextPosition(SwingConstants.RIGHT);
 
         b = toolBarPane.add(getPreferencesAction());
         b.setFont(new Font("Dialog", 1, 10));
-        b.setText((String)getPreferencesAction().getValue(Action.NAME));
+        b.setText((String) getPreferencesAction().getValue(Action.NAME));
         b.setMargin(new Insets(0, 0, 0, 0));
         b.setHorizontalTextPosition(SwingConstants.RIGHT);
 
@@ -1405,9 +1394,9 @@ public class MainWindow extends JFrame {
         int mInc = js.getVerticalScrollBar().getUnitIncrement();
         // some arbitrary text to set the unit increment to the
         // height of one line instead of default value
-        int vInc = (int)getStatusMsgLeft().getPreferredSize().getHeight();
+        int vInc = (int) getStatusMsgLeft().getPreferredSize().getHeight();
         js.getVerticalScrollBar().setUnitIncrement(Math.max(mInc, vInc));
-        int hInc = (int)getStatusMsgLeft().getPreferredSize().getWidth();
+        int hInc = (int) getStatusMsgLeft().getPreferredSize().getWidth();
         js.getHorizontalScrollBar().setUnitIncrement(Math.max(mInc, hInc));
 
         final JSplitPane sections = new JSplitPane(JSplitPane.VERTICAL_SPLIT);
@@ -1455,9 +1444,9 @@ public class MainWindow extends JFrame {
         mInc = js.getVerticalScrollBar().getUnitIncrement();
         // some arbitrary text to set the unit increment to the
         // height of one line instead of default value
-        vInc = (int)getStatusMsgLeft().getPreferredSize().getHeight();
+        vInc = (int) getStatusMsgLeft().getPreferredSize().getHeight();
         js.getVerticalScrollBar().setUnitIncrement(Math.max(mInc, vInc));
-        hInc = (int)getStatusMsgLeft().getPreferredSize().getWidth();
+        hInc = (int) getStatusMsgLeft().getPreferredSize().getWidth();
         js.getHorizontalScrollBar().setUnitIncrement(Math.max(mInc, hInc));
         sections.setBottomComponent(js);
         sections.setDividerSize(10);
@@ -1558,7 +1547,7 @@ public class MainWindow extends JFrame {
             }
         });
         credentialManager =
-          (ClientCredentialManager)Locator.getDefault().lookup(ClientCredentialManager.class);
+                (ClientCredentialManager) Locator.getDefault().lookup(ClientCredentialManager.class);
         if (credentialManager == null) {
             log.log(Level.WARNING, "Cannot obtain current credential manager");
         } else {
@@ -1569,36 +1558,36 @@ public class MainWindow extends JFrame {
 
         // exitMenuItem listener
         getExitMenuItem().
-          addActionListener(new ActionListener() {
-              public void actionPerformed(ActionEvent e) {
-                  exitMenuEventHandler(e);
-              }
-          });
+                addActionListener(new ActionListener() {
+                    public void actionPerformed(ActionEvent e) {
+                        exitMenuEventHandler(e);
+                    }
+                });
 
         // HelpTopics listener
         getHelpTopicsMenuItem().
-          addActionListener(new ActionListener() {
-              public void actionPerformed(ActionEvent e) {
-                  showHelpTopics();
-              }
-          });
+                addActionListener(new ActionListener() {
+                    public void actionPerformed(ActionEvent e) {
+                        showHelpTopics();
+                    }
+                });
 
         // look and feel listener
         PropertyChangeListener l =
-          new PropertyChangeListener() {
-              /**
-               * This method gets called when a property is changed.
-               */
-              public void propertyChange(final PropertyChangeEvent evt) {
-                  if ("lookAndFeel".equals(evt.getPropertyName())) {
-                      SwingUtilities.invokeLater(new Runnable() {
-                          public void run() {
-                              SwingUtilities.updateComponentTreeUI(MainWindow.this);
-                          }
-                      });
-                  }
-              }
-          };
+                new PropertyChangeListener() {
+                    /**
+                     * This method gets called when a property is changed.
+                     */
+                    public void propertyChange(final PropertyChangeEvent evt) {
+                        if ("lookAndFeel".equals(evt.getPropertyName())) {
+                            SwingUtilities.invokeLater(new Runnable() {
+                                public void run() {
+                                    SwingUtilities.updateComponentTreeUI(MainWindow.this);
+                                }
+                            });
+                        }
+                    }
+                };
         UIManager.addPropertyChangeListener(l);
     }
 
@@ -1620,7 +1609,7 @@ public class MainWindow extends JFrame {
         setJMenuBar(getMainJMenuBar());
         setTitle(resapplication.getString("SSG"));
         ImageIcon imageIcon =
-          new ImageIcon(ImageCache.getInstance().getIcon(RESOURCE_PATH + "/layer7_logo_small_32x32.png"));
+                new ImageIcon(ImageCache.getInstance().getIcon(RESOURCE_PATH + "/layer7_logo_small_32x32.png"));
         setIconImage(imageIcon.getImage());
         getContentPane().setLayout(new BorderLayout());
         getContentPane().add(getFrameContentPane(), BorderLayout.CENTER);
@@ -1651,8 +1640,8 @@ public class MainWindow extends JFrame {
             Dimension lastWindowSize = prefs.getLastWindowSize();
             Point lastWindowLocation = prefs.getLastWindowLocation();
             if (lastScreenSize != null &&
-              lastScreenSize.width >= curScreenSize.width &&
-              lastScreenSize.height >= curScreenSize.height) {
+                    lastScreenSize.width >= curScreenSize.width &&
+                    lastScreenSize.height >= curScreenSize.height) {
                 if (lastWindowLocation != null) {
                     this.setLocation(lastWindowLocation);
                     posWasSet = true;
@@ -1698,15 +1687,15 @@ public class MainWindow extends JFrame {
             //Make sure the URL exists.
             if (url == null) {
                 JOptionPane.showMessageDialog(null,
-                  "Help URL is missing",
-                  "Bad HelpSet Path ",
-                  JOptionPane.WARNING_MESSAGE);
+                        "Help URL is missing",
+                        "Bad HelpSet Path ",
+                        JOptionPane.WARNING_MESSAGE);
             }
         } catch (HelpSetException hex) {
             JOptionPane.showMessageDialog(null,
-              helpsetName + " is not available",
-              "Warning",
-              JOptionPane.WARNING_MESSAGE);
+                    helpsetName + " is not available",
+                    "Warning",
+                    JOptionPane.WARNING_MESSAGE);
             log.log(Level.SEVERE, helpsetName + " file was not found. " + hex.toString());
         }
     }
@@ -1714,69 +1703,69 @@ public class MainWindow extends JFrame {
     // -------------- inactivitiy timeout (close your eyes) -------------------
     final Timer
 
-      inactivityTimer =
-      new Timer(60 * 1000 * 20,
-        new ActionListener() {
-            long lastStamp = System.currentTimeMillis();
+            inactivityTimer =
+            new Timer(60 * 1000 * 20,
+                    new ActionListener() {
+                        long lastStamp = System.currentTimeMillis();
 
-            /**
-             * Invoked when an action occurs.
-             */
-            public void actionPerformed(ActionEvent e) {
+                        /**
+                         * Invoked when an action occurs.
+                         */
+                        public void actionPerformed(ActionEvent e) {
 
-                long now = System.currentTimeMillis();
-                double inactive = (now - lastStamp);
-                if (Math.round(inactive / inactivityTimer.getDelay()) >= 1) { // match
-                    inactivityTimer.stop(); // stop timer
-                    MainWindow.this.getStatusMsgRight().
-                      setText("inactivity timeout expired; disconnecting...");
-                    // make sure it is invoked on event dispatching thread
-                    SwingUtilities.invokeLater(new Runnable() {
-                        public void run() {
-                            try {
-                                MainWindow.this.disconnectHandler(null);
-                            } catch (ActionVetoException e1) {
-                                // swallow, cannot happen from here
+                            long now = System.currentTimeMillis();
+                            double inactive = (now - lastStamp);
+                            if (Math.round(inactive / inactivityTimer.getDelay()) >= 1) { // match
+                                inactivityTimer.stop(); // stop timer
+                                MainWindow.this.getStatusMsgRight().
+                                        setText("inactivity timeout expired; disconnecting...");
+                                // make sure it is invoked on event dispatching thread
+                                SwingUtilities.invokeLater(new Runnable() {
+                                    public void run() {
+                                        try {
+                                            MainWindow.this.disconnectHandler(null);
+                                        } catch (ActionVetoException e1) {
+                                            // swallow, cannot happen from here
+                                        }
+                                    }
+                                });
                             }
                         }
+
+                        // AWT event listener
+                        private final
+                        AWTEventListener listener =
+                                new AWTEventListener() {
+                                    public void eventDispatched(AWTEvent e) {
+                                        lastStamp = System.currentTimeMillis();
+                                        // MainWindow.this.log.debug("listener invoked");
+                                    }
+                                };
+                        // all events we know about
+                        long mask =
+                                AWTEvent.COMPONENT_EVENT_MASK |
+                                AWTEvent.CONTAINER_EVENT_MASK |
+                                AWTEvent.FOCUS_EVENT_MASK |
+                                AWTEvent.KEY_EVENT_MASK |
+                                AWTEvent.MOUSE_EVENT_MASK |
+                                AWTEvent.MOUSE_MOTION_EVENT_MASK |
+                                AWTEvent.WINDOW_EVENT_MASK |
+                                AWTEvent.ACTION_EVENT_MASK |
+                                AWTEvent.ADJUSTMENT_EVENT_MASK |
+                                AWTEvent.ITEM_EVENT_MASK |
+                                AWTEvent.TEXT_EVENT_MASK |
+                                AWTEvent.INPUT_METHOD_EVENT_MASK |
+                                AWTEvent.PAINT_EVENT_MASK |
+                                AWTEvent.INVOCATION_EVENT_MASK |
+                                AWTEvent.HIERARCHY_EVENT_MASK |
+                                AWTEvent.HIERARCHY_BOUNDS_EVENT_MASK;
+
+                        // dynamic initializer, register listener
+                        {
+                            MainWindow.this.getToolkit().
+                                    addAWTEventListener(listener, mask);
+                        }
                     });
-                }
-            }
-
-            // AWT event listener
-            private final
-            AWTEventListener listener =
-              new AWTEventListener() {
-                  public void eventDispatched(AWTEvent e) {
-                      lastStamp = System.currentTimeMillis();
-                      // MainWindow.this.log.debug("listener invoked");
-                  }
-              };
-            // all events we know about
-            long mask =
-              AWTEvent.COMPONENT_EVENT_MASK |
-              AWTEvent.CONTAINER_EVENT_MASK |
-              AWTEvent.FOCUS_EVENT_MASK |
-              AWTEvent.KEY_EVENT_MASK |
-              AWTEvent.MOUSE_EVENT_MASK |
-              AWTEvent.MOUSE_MOTION_EVENT_MASK |
-              AWTEvent.WINDOW_EVENT_MASK |
-              AWTEvent.ACTION_EVENT_MASK |
-              AWTEvent.ADJUSTMENT_EVENT_MASK |
-              AWTEvent.ITEM_EVENT_MASK |
-              AWTEvent.TEXT_EVENT_MASK |
-              AWTEvent.INPUT_METHOD_EVENT_MASK |
-              AWTEvent.PAINT_EVENT_MASK |
-              AWTEvent.INVOCATION_EVENT_MASK |
-              AWTEvent.HIERARCHY_EVENT_MASK |
-              AWTEvent.HIERARCHY_BOUNDS_EVENT_MASK;
-
-            // dynamic initializer, register listener
-            {
-                MainWindow.this.getToolkit().
-                  addAWTEventListener(listener, mask);
-            }
-        });
 
     // -------------- inactivitiy timeout end (open your eyes) -------------------
 
@@ -1824,14 +1813,14 @@ public class MainWindow extends JFrame {
 
         // if same look and feel quick exit
         if (lookAndFeel.
-          equals(UIManager.getLookAndFeel().getClass().getName())) {
+                equals(UIManager.getLookAndFeel().getClass().getName())) {
             return;
         }
 
         try {
             Object lafObject =
-              Class.forName(lookAndFeel).newInstance();
-            UIManager.setLookAndFeel((LookAndFeel)lafObject);
+                    Class.forName(lookAndFeel).newInstance();
+            UIManager.setLookAndFeel((LookAndFeel) lafObject);
         } catch (Exception e) {
             lfSet = false;
         }
@@ -1866,9 +1855,9 @@ public class MainWindow extends JFrame {
     }
 
 
-    public JCheckBoxMenuItem getLogMenuItem() {
+    public JMenuItem getLogMenuItem() {
         if (logMenuItem != null) return logMenuItem;
-        logMenuItem = new JCheckBoxMenuItem(getGatewayLogWindowAction());
+        logMenuItem = new JMenuItem(getGatewayLogWindowAction());
 
         return logMenuItem;
     }
@@ -1881,22 +1870,22 @@ public class MainWindow extends JFrame {
         return manageJmsEndpointsMenuItem;
     }
 
-    public JCheckBoxMenuItem getStatMenuItem() {
+    public JMenuItem getStatMenuItem() {
 
         if (statMenuItem != null) return statMenuItem;
-        statMenuItem = new JCheckBoxMenuItem(getClusterStatusWindowAction());
+        statMenuItem = new JMenuItem(getClusterStatusWindowAction());
 
         return statMenuItem;
     }
 
     public void updateNodeNameInStatusMessage(String nodeName) {
-        getStatusMsgLeft().setText(connectionContext + getNodeNameMsg(nodeName));        
+        getStatusMsgLeft().setText(connectionContext + getNodeNameMsg(nodeName));
     }
 
     private String getNodeNameMsg(String nodeName) {
 
         String nodeNameMsg = "";
-        if(nodeName != null) {
+        if (nodeName != null) {
             nodeNameMsg = " [connected to node: " + nodeName + "]";
         }
         return nodeNameMsg;
@@ -1904,58 +1893,58 @@ public class MainWindow extends JFrame {
 
     private
     LogonDialog.LogonListener logonListenr =
-      new LogonDialog.LogonListener() {
-          /* invoked on authentication success */
-          public void onAuthSuccess(String id) {
+            new LogonDialog.LogonListener() {
+                /* invoked on authentication success */
+                public void onAuthSuccess(String id) {
 
-              String statusMessage = id;
-              connectionContext = "";
+                    String statusMessage = id;
+                    connectionContext = "";
 
-              /* set the preferences */
-              try {
-                  Preferences prefs = Preferences.getPreferences();
-                  connectionContext = " @ " + prefs.getString(Preferences.SERVICE_URL);
-                  if (prefs.rememberLoginId()) {
-                      prefs.putProperty(Preferences.LAST_LOGIN_ID, id);
-                      prefs.store();
-                  }
-              } catch (IOException e) {
-                  log.log(Level.WARNING, "onAuthSuccess()", e);
-              }
+                    /* set the preferences */
+                    try {
+                        Preferences prefs = Preferences.getPreferences();
+                        connectionContext = " @ " + prefs.getString(Preferences.SERVICE_URL);
+                        if (prefs.rememberLoginId()) {
+                            prefs.putProperty(Preferences.LAST_LOGIN_ID, id);
+                            prefs.store();
+                        }
+                    } catch (IOException e) {
+                        log.log(Level.WARNING, "onAuthSuccess()", e);
+                    }
 
-              ClusterStatusAdmin clusterStatusAdmin = (ClusterStatusAdmin) Locator.getDefault().lookup(ClusterStatusAdmin.class);
-              if (clusterStatusAdmin == null) throw new RuntimeException("Cannot obtain ClusterStatusAdmin remote reference");
+                    ClusterStatusAdmin clusterStatusAdmin = (ClusterStatusAdmin) Locator.getDefault().lookup(ClusterStatusAdmin.class);
+                    if (clusterStatusAdmin == null) throw new RuntimeException("Cannot obtain ClusterStatusAdmin remote reference");
 
-              String nodeName = "";
-              try {
-                   nodeName = clusterStatusAdmin.getSelfNodeName();
-              } catch (RemoteException e) {
-                  log.log(Level.WARNING, "Cannot get the node name", e);
-              }
+                    String nodeName = "";
+                    try {
+                        nodeName = clusterStatusAdmin.getSelfNodeName();
+                    } catch (RemoteException e) {
+                        log.log(Level.WARNING, "Cannot get the node name", e);
+                    }
 
-              statusMessage += connectionContext;
-              statusMessage += getNodeNameMsg(nodeName);
+                    statusMessage += connectionContext;
+                    statusMessage += getNodeNameMsg(nodeName);
 
-              getStatusMsgLeft().setText(statusMessage);
-              initalizeWorkspace();
-              int timeout = 0;
-              timeout = Preferences.getPreferences().getInactivityTimeout();
+                    getStatusMsgLeft().setText(statusMessage);
+                    initalizeWorkspace();
+                    int timeout = 0;
+                    timeout = Preferences.getPreferences().getInactivityTimeout();
 
-              final int fTimeout = timeout;
-              SwingUtilities.invokeLater(new Runnable() {
-                  public void run() {
-                      MainWindow.this.
-                        setInactivitiyTimeout(fTimeout);
-                      MainWindow.this.fireConnected();
-                  }
-              });
-              toggleConnectedMenus(true);
-              homeAction.actionPerformed(null);
-          }
+                    final int fTimeout = timeout;
+                    SwingUtilities.invokeLater(new Runnable() {
+                        public void run() {
+                            MainWindow.this.
+                                    setInactivitiyTimeout(fTimeout);
+                            MainWindow.this.fireConnected();
+                        }
+                    });
+                    toggleConnectedMenus(true);
+                    homeAction.actionPerformed(null);
+                }
 
-          /* invoked on authentication failure */
-          public void onAuthFailure() {
-              ;
-          }
-      };
+                /* invoked on authentication failure */
+                public void onAuthFailure() {
+                    ;
+                }
+            };
 }

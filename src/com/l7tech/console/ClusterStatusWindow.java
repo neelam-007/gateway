@@ -426,7 +426,7 @@ public class ClusterStatusWindow extends JFrame {
         if (helpTopicsMenuItem != null) return helpTopicsMenuItem;
 
         helpTopicsMenuItem = new JMenuItem();
-        helpTopicsMenuItem.setText(resapplication.getString("Help_TopicsMenuItem_text"));
+        helpTopicsMenuItem.setText(resapplication.getString("Help_TopicsMenuItem_text_name"));
         int mnemonic = helpTopicsMenuItem.getText().toCharArray()[0];
         helpTopicsMenuItem.setMnemonic(mnemonic);
         helpTopicsMenuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_F1, 0));

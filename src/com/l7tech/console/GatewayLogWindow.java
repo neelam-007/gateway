@@ -1,18 +1,16 @@
 package com.l7tech.console;
 
 import com.l7tech.common.gui.util.ImageCache;
-import com.l7tech.console.panels.LogPanel;
-import com.l7tech.console.util.Registry;
-import com.l7tech.console.util.TopComponents;
-import com.l7tech.console.event.ConnectionListener;
 import com.l7tech.console.event.ConnectionEvent;
-
+import com.l7tech.console.event.ConnectionListener;
+import com.l7tech.console.panels.LogPanel;
+import com.l7tech.console.util.TopComponents;
 
 import javax.swing.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.KeyEvent;
-import java.awt.event.ActionListener;
 import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.event.KeyEvent;
 import java.util.ResourceBundle;
 
 /*
@@ -152,7 +150,7 @@ public class GatewayLogWindow extends JFrame implements ConnectionListener {
     private JMenuItem getHelpTopicsMenuItem() {
         if (helpTopicsMenuItem == null) {
             helpTopicsMenuItem = new JMenuItem();
-            helpTopicsMenuItem.setText(resapplication.getString("Help_TopicsMenuItem_text"));
+            helpTopicsMenuItem.setText(resapplication.getString("Help_TopicsMenuItem_text_name"));
             int mnemonic = helpTopicsMenuItem.getText().toCharArray()[0];
             helpTopicsMenuItem.setMnemonic(mnemonic);
             helpTopicsMenuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_F1, 0));
