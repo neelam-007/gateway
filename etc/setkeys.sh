@@ -32,8 +32,12 @@ esac
 if $cygwin; then
     TOMCAT_HOME=`cygpath --path --unix $TOMCAT_HOME`
 fi
+if  `$JAVA_HOME/bin/java -version 2>&1|grep 1.5`; then
+	KEYSTORE_TYPOE=PKCS12
+else
+	KEYSTORE_TYPE=BCPKCS12
+fi
 
-KEYSTORE_TYPE=BCPKCS12
 WAR_FILE="$TOMCAT_HOME/webapps/ROOT.war"
 SERVER_XML_FILE="$TOMCAT_HOME/conf/server.xml"
 WEBAPPS_ROOT="$TOMCAT_HOME/webapps/ROOT"
@@ -183,7 +187,7 @@ else
 fi
 
 # GENERATE THE KEYSTORES & CERTS
-java -classpath "$CP" $setKeysClassname $HOST_NAME "$KEYSTORE_DIR" $CA_KEYSTORE_PASSWORD $SSL_KEYSTORE_PASSWORD $KEYSTORE_TYPE
+$JAVA_HOME/bin/java -classpath "$CP" $setKeysClassname $HOST_NAME "$KEYSTORE_DIR" $CA_KEYSTORE_PASSWORD $SSL_KEYSTORE_PASSWORD $KEYSTORE_TYPE
 
 # Edit the server.xml file so that the appropriate keystore location and paswords are remembered
 KS_QUOTED_SLASHES=${SSL_KEYSTORE_FILE//\//\\\/}
