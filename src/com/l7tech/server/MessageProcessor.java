@@ -57,6 +57,8 @@ public class MessageProcessor {
                         response.setPolicyViolated(true);
                         throw new PolicyAssertionException("Wrong policy version " + requestorVersion);
                     }
+                } else {
+                    _log.info("Requestor did not provide policy id.");
                 }
 
                 // run the policy
