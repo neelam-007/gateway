@@ -35,7 +35,16 @@ my @list=(
 	net_back_ip   => "--Private Network Config - Node Private IP; back_route, ifcfg-eth0 IPADDR (eg. 10.0.0.8)                     ",
 	net_back_mask => "--Private Network Config - Private Network Mask; back_route netmask, ifcfg-eth0 NETMASK (eg. 255.255.255.0)  ",
 	net_back_rt   => "--Private Network Config - Private Gateway; back_route gw (eg. 10.0.0.1)                                     ",
-        net_back_net  => "--Private Network Config - Node private Network; back_route -net                                             "
+        net_back_net  => "--Private Network Config - Node private Network; back_route -net                                             ",
+        tserver_cnt   => "Number of time servers - preferably in geographical disparate locations (0 to 4)                             ",
+        tserver_ip1   => "--Time server number 1 IP (eg. 128.101.101.101)                                                              ",
+        tserver_mask1 => "----Time server number 1 mask (eg. 255.255.255.255)                                                          ",
+        tserver_ip2   => "--Time server number 2 IP (eg. 207.200.81.113)                                                               ",
+        tserver_mask2 => "----Time server number 2 mask (eg. 255.255.255.255)                                                          ",
+        tserver_ip3   => "--Time server number 3 IP (eg. 199.240.130.1)                                                                ",
+        tserver_mask3 => "----Time server number 3 mask (eg. 255.255.255.255)                                                          ",
+        tserver_ip4   => "--Time server number 4 IP (eg. 216.204.156.2)                                                                ",
+	tserver_mask4 => "----Time server number 4 mask (eg. 255.255.255.255)                                                          "
 );
 
 my %Conf=();
@@ -55,6 +64,8 @@ my $cluster_hostname_file = "/ssg/etc/conf/cluster_hostname";
 my $hosts_file = "/etc/hosts";
 my $network_file = "/etc/sysconfig/network";
 my $dbconfig = "/ssg/etc/conf/hibernate.properties";
+my $ntp_config = "/etc/ntp.conf";
+my $ntp_step_tickers = "/etc/ntp/step-tickers";
 
 # then change the local files as appropriate
 
@@ -456,7 +467,110 @@ EOF
 	print "INFO: Changing owner user/group to $user_name/$group_name for $dbfaildetect_file\n";
         system ("chown $user_name.$group_name $dbfaildetect_file");
 
-	# 5. gen keys?  (keys should be generated only after hostname/cluster hostname confirmed)
+        # 5. time servers configuration
+	my $ntp_update_proc = 0;
+	if (($Conf{"tserver_cnt"} > 0) 
+		&& (-e $ntp_config)
+		&& (-e $ntp_step_tickers) 
+		&& ($Conf{"tserver_ip1"} ne '') 
+		&& ($Conf{"tserver_mask1"} ne '')) {
+		$ntp_update_proc = 1;
+	}
+
+        if ($ntp_update_proc == 1) {
+		print "INFO: $ntp_config existed, now backup $ntp_config to $ntp_config.bckup_$pid\n";
+		rename($ntp_config, "$ntp_config.bckup_$pid");
+	}
+        if ($ntp_update_proc == 1) {
+                print "INFO: $ntp_step_tickers existed, now backup $ntp_step_tickers to $ntp_step_tickers.bckup_$pid\n";
+                rename($ntp_step_tickers, "$ntp_step_tickers.bckup_$pid");
+        }
+
+	if ($ntp_update_proc == 1){
+		open (NTP_CONF_FILE, ">$ntp_config") or die "Can't open $ntp_config!\n";
+		print NTP_CONF_FILE <<EOF;
+server 127.127.1.0 # local clock
+fudge 127.127.1.0 stratum 10 
+driftfile /etc/ntp/drift
+restrict default ignore
+restrict 127.0.0.0 mask 255.0.0.0
+authenticate no
+EOF
+		open (NTP_TICKERS_FILE, ">$ntp_step_tickers") or die "Can't open $ntp_step_tickers!\n";
+
+		if (($Conf{"tserver_cnt"} >= 1) && ($Conf{"tserver_ip1"} ne '') && ($Conf{"tserver_mask1"} ne '')) {
+                	print NTP_CONF_FILE <<EOF;
+server $Conf{"tserver_ip1"}
+restrict $Conf{"tserver_ip1"} mask $Conf{"tserver_mask1"} nomodify notrap noquery
+EOF
+			print NTP_TICKERS_FILE <<EOF;
+$Conf{"tserver_ip1"}
+EOF
+                	print "INFO: Network Time Protocol (ntp) - time server 1 - $ntp_config updated with content of $Conf{tserver_ip1}\n";
+                        print "INFO: Network Time Protocol (ntp) - time server 1 - $ntp_step_tickers updated with content of $Conf{tserver_mask1}\n";
+		}
+
+                if (($Conf{"tserver_cnt"} >= 2) && ($Conf{"tserver_ip2"} ne '') && ($Conf{"tserver_mask2"} ne '')) {
+                        print NTP_CONF_FILE <<EOF;
+server $Conf{"tserver_ip2"}
+restrict $Conf{"tserver_ip2"} mask $Conf{"tserver_mask1"} nomodify notrap noquery
+EOF
+                        print NTP_TICKERS_FILE <<EOF;
+$Conf{"tserver_ip2"}
+EOF
+
+                        print "INFO: Network Time Protocol (ntp) - time server 2 - $ntp_config updated with content of $Conf{tserver_ip2}\n";
+                        print "INFO: Network Time Protocol (ntp) - time server 2 - $ntp_step_tickers updated with content of $Conf{tserver_mask2}\n";
+                }
+
+                if (($Conf{"tserver_cnt"} >= 3) && ($Conf{"tserver_ip3"} ne '') && ($Conf{"tserver_mask3"} ne '')) {
+                        print NTP_CONF_FILE <<EOF;
+server $Conf{"tserver_ip3"}
+restrict $Conf{"tserver_ip3"} mask $Conf{"tserver_mask1"} nomodify notrap noquery
+EOF
+                        print NTP_TICKERS_FILE <<EOF;
+$Conf{"tserver_ip3"}
+EOF
+                        print "INFO: Network Time Protocol (ntp) - time server 3 - $ntp_config updated with content of $Conf{tserver_ip3}\n";
+                        print "INFO: Network Time Protocol (ntp) - time server 3 - $ntp_step_tickers updated with content of $Conf{tserver_mask3}\n";
+                }
+
+                if (($Conf{"tserver_cnt"} >= 4) && ($Conf{"tserver_ip4"} ne '') && ($Conf{"tserver_mask4"} ne '')) {
+                        print NTP_CONF_FILE <<EOF;
+server $Conf{"tserver_ip4"}
+restrict $Conf{"tserver_ip4"} mask $Conf{"tserver_mask4"} nomodify notrap noquery
+EOF
+                        print NTP_TICKERS_FILE <<EOF;
+$Conf{"tserver_ip4"}
+EOF
+                        print "INFO: Network Time Protocol (ntp) - time server 4 - $ntp_config updated with content of $Conf{tserver_ip4}\n";
+                        print "INFO: Network Time Protocol (ntp) - time server 4 - $ntp_step_tickers updated with content of $Conf{tserver_mask4}\n";
+                }
+
+		close NTP_CONF_FILE;
+		close NTP_TICKERS_FILE;
+		chmod 0644, "$ntp_config";
+		chmod 0644, "$ntp_step_tickers";
+       		print "INFO: Network Time Protocol (ntp) - $ntp_config updated\n";
+		print "INFO: Network Time Protocol (ntp) - $ntp_step_tickers updated\n";
+		system ("chown ntp.ntp $ntp_config");
+		system ("chown ntp.ntp $ntp_step_tickers");
+		print "INFO: Network Time Protocol - Restarting ntpd (synchronization will take some time, ***please wait...***)\n";
+		system ("/sbin/service ntpd restart");
+		system ("/sbin/service ntpd status");
+                print "INFO: Please ignore any \"shutting down ntpd [FAILED]\" (result depends on whether ntpd has been started initially), we are only interested in \"synchronizing with time server\" and \"starting ntpd processes\" are [OK]\n";
+		print "INFO: Network Time Protocol - ntpd is configured to be started during system boot-up (chkconfig) at init levels 3,4,5\n";
+		system ("chkconfig --level 345 ntpd on");
+		system ("chkconfig --list ntpd");
+	
+	} else {
+		print "WARNING: SecureSpan Gateway (TM) requires time being sychronized for Federated Identity Provider (SAML) running properly.\n";
+		print "ERROR: Network Time Protocol (ntp) not installed/configured. Please install and configure\n";
+		print "MANUAL TASK: Please install ntp, and configure <$ntp_config> and <$ntp_step_tickers>, and (service ntpd start).\n";  
+		print "MANUAL TASK: Please have ntpd started at boot time - (chkconfig ntpd on).\n"; 
+	}
+
+	# 6. gen keys?  (keys should be generated only after hostname/cluster hostname confirmed)
 	if (($Conf{gc_cluster} eq "n") || ($Conf{gc_cluster} eq "y" && $Conf{gc_firstnode} eq "y")) {
 		# gen the keys, otherwise copy them
 		print "Invoke $setkey script to generate keys\n";
@@ -496,7 +610,7 @@ EOF
 	print "------or\n";
         print "------# mysql -p<database root user password> ssg < /ssg/etc/sql/ssg.sql\n";
 	print "note 1: if it is not the first node of the cluster database - base on the </etc/my.cnf>, SSG database will be replicating after you've started mysql on node 2; SSG database and tables will be created by the replicator as well, so you don't need to manually creating SSG database and tables on node 2\n";
-        print "MANUAL TASK: After you are satisfied with the installation, you now can delete any backup files that install.pl have backed up during the installation - /etc/sysconfig/network-scripts/*.bckup_*; /etc/sysconfig/*.bckup_*; /etc/hosts.bckup_*; /etc/my.cnf.bckup_*\n"; 
+        print "MANUAL TASK: After you are satisfied with the installation, you now can delete any backup files that install.pl have backed up during the installation - /etc/sysconfig/network-scripts/*.bckup_*; /etc/sysconfig/*.bckup_*; /etc/hosts.bckup_*; /etc/my.cnf.bckup_*; /etc/ntp.conf.bckup_*; /etc/ntp/step-tickers.bckup_*\n"; 
         print "INFO: <$0> script done\n"; 
 }
 	
@@ -530,7 +644,14 @@ REPEAT_PARAM:
 			|| ($Conf{dc_cluster} eq 'y' && $f ne "dc_cluster" && ($f eq "dblocal" || $f eq "dbhostname")) #if database cluster, omit standalone database prompts
 			|| ($Conf{dblocal} eq 'y' && $f eq "dbhostname") #if local database, omit remote database prompt
 			|| ($Conf{net_front} eq 'n' && $f =~ /net_front_(.*)/) #if no net_front, omit net_front prompts
-			|| ($Conf{net_back} eq 'n' && $f =~ /net_back_(.*)/) ){ #if no net_back, omit net_back prompts
+			|| ($Conf{net_back} eq 'n' && $f =~ /net_back_(.*)/) #if no net_back, omit net_back prompts
+                        || ($Conf{tserver_cnt} == 0 && ($f =~ /tserver_ip(.*)/ || $f =~ /tserver_mask(.*)/)) #if no time servers, omit tserver prompts 
+
+                        || ($Conf{tserver_cnt} == 1 && ($f =~ /tserver_ip[2-4]/ || $f =~ /tserver_mask[2-4]/)) #if 1 time server, omit tserver prompts for 2-4 
+
+                        || ($Conf{tserver_cnt} == 2 && ($f =~ /tserver_ip[3-4]/ || $f =~ /tserver_mask[3-4]/)) #if 2 time servers, omit tserver prompt for 3-4 
+
+                        || ($Conf{tserver_cnt} == 3 && ($f =~ /tserver_ip4/ || $f =~ /tserver_mask4/)) ) { #if 3 time servers, omit tserver prompt for 4 
 			$Conf{$f}=''; #purge omit values in case they are set by prior installation (reinstall)
 			next NEXT_PARAM;
 		} else { 
@@ -618,6 +739,8 @@ DESCRIPTION
     * $hosts_file
     * $network_file
     * $dbconfig
+    * $ntp_config
+    * $ntp_step_tickers
 
     Base on input parameters, this script may grant database access for MySQL database:
     * GRANT ALL ON ssg.* to <db username>@\'%\' identified by \'<db user password>\';
