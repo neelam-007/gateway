@@ -100,11 +100,9 @@ public class TypeTranslator {
         com.l7tech.identity.User ret = new com.l7tech.identity.internal.imp.UserImp();
         ret.setEmail(svcUser.getEmail());
         ret.setFirstName(svcUser.getFirstName());
-
         Collection groups = headerArrayToCollection(svcUser.getGroups());
-        ret.getGroups().addAll(groups);
-        ret.getGroupHeaders().addAll(groups);
-
+        ret.setGroups(groups);
+        ret.setGroupHeaders(groups);
         ret.setLastName(svcUser.getLastName());
         ret.setLogin(svcUser.getLogin());
         ret.setOid(svcUser.getOid());
@@ -127,12 +125,10 @@ public class TypeTranslator {
         if (svcGroup == null) return null;
         com.l7tech.identity.Group ret = new com.l7tech.identity.internal.imp.GroupImp();
         ret.setDescription(svcGroup.getDescription());
-
         Collection col = headerArrayToCollection(svcGroup.getMembers());
         // add it both places (just in case)
-        ret.getMembers().addAll(col);
-        ret.getMemberHeaders().addAll(col);
-
+        ret.setMembers(col);
+        ret.setMemberHeaders(col);
         ret.setName(svcGroup.getName());
         ret.setOid(svcGroup.getOid());
         return ret;
