@@ -20,6 +20,10 @@ public class InternalIdentityProviderClient implements com.l7tech.identity.Ident
         this.config = config;
     }
 
+    public IdentityProviderConfig getConfig() {
+        return config;
+    }
+
     public UserManager getUserManager() {
         if (config != null) {
             return new InternalUserManagerClient(config.getOid());
