@@ -16,48 +16,81 @@ import java.util.*;
  * @version $Revision$
  */
 public abstract class NameValueServiceResolver extends ServiceResolver {
-    protected synchronized void doSetServices( Set services ) {
+    public synchronized void setServices( Set services ) {
         Iterator i = services.iterator();
-        _valueToServiceSetMap = new HashMap();
+        _valueToServiceMapMap = new HashMap();
         PublishedService service;
         Object[] values;
-        Set serviceSet;
+        Map serviceMap;
+        Long oid;
         while ( i.hasNext() ) {
             service = (PublishedService)i.next();
+            oid = new Long( service.getOid() );
             values = getTargetValues( service );
             for (int j = 0; j < values.length; j++) {
                 Object value = values[j];
-                serviceSet = getServiceSet(value);
-                serviceSet.add( service );
+                serviceMap = getServiceMap(value);
+                serviceMap.put( oid, service );
             }
         }
+    }
+
+    public synchronized void serviceCreated( PublishedService service ) {
+        Object[] values = getTargetValues( service );
+        Object value;
+        Map serviceMap;
+        Long oid = new Long( service.getOid() );
+        for (int i = 0; i < values.length; i++) {
+            value = values[i];
+            serviceMap = getServiceMap( value );
+            serviceMap.put( oid, service );
+        }
+    }
+
+    public synchronized void serviceDeleted( PublishedService service ) {
+        Object[] values = getTargetValues( service );
+        Object value;
+        Map serviceMap;
+        Long oid = new Long( service.getOid() );
+        for (int i = 0; i < values.length; i++) {
+            value = values[i];
+            serviceMap = getServiceMap( value );
+            serviceMap.remove( oid );
+        }
+    }
+
+    public synchronized void serviceUpdated( PublishedService service ) {
+        serviceDeleted( service );
+        serviceCreated( service );
     }
 
     protected abstract String getParameterName();
     protected abstract Object[] getTargetValues( PublishedService service );
     protected abstract Object getRequestValue( Request request ) throws ServiceResolutionException;
 
-    protected synchronized Set getServiceSet( Object value ) {
-        Set serviceSet = (Set)_valueToServiceSetMap.get(value);
-        if ( serviceSet == null ) {
-            serviceSet = new HashSet();
-            _valueToServiceSetMap.put( value, serviceSet );
+    protected synchronized Map getServiceMap( Object value ) {
+        Map serviceMap = (Map)_valueToServiceMapMap.get(value);
+        if ( serviceMap == null ) {
+            serviceMap = new HashMap();
+            _valueToServiceMapMap.put( value, serviceMap );
         }
-        return serviceSet;
+        return serviceMap;
     }
 
     protected synchronized Set doResolve( Request request, Set set ) throws ServiceResolutionException {
         Object value = getRequestValue(request);
-        Set serviceSet = getServiceSet( value );
-        if ( serviceSet.isEmpty() ) return serviceSet;
+        Map serviceMap = getServiceMap( value );
+        if ( serviceMap.isEmpty() ) return Collections.EMPTY_SET;
 
-        Iterator i = serviceSet.iterator();
+        Iterator i = serviceMap.keySet().iterator();
         PublishedService service;
         Set resultSet = null;
         Object[] targetValues;
+        Long oid;
 
         while ( i.hasNext() ) {
-            service = (PublishedService)i.next();
+            oid = (Long)i.next();
+            service = (PublishedService)serviceMap.get( oid );
             targetValues = getTargetValues(service);
             Object targetValue;
             for ( int j = 0; j < targetValues.length; j++ ) {
@@ -74,5 +107,5 @@ public abstract class NameValueServiceResolver extends ServiceResolver {
         return resultSet;
     }
 
-    protected Map _valueToServiceSetMap;
+    protected Map _valueToServiceMapMap;
 }

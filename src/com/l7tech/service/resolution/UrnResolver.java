@@ -26,7 +26,7 @@ public class UrnResolver extends WsdlOperationServiceResolver {
         return Request.PARAM_SOAP_URN;
     }
 
-    protected String doGetValue( BindingOperation operation ) {
+    protected String getTargetValue( BindingOperation operation ) {
         BindingInput input = operation.getBindingInput();
         Iterator eels = input.getExtensibilityElements().iterator();
         ExtensibilityElement ee;

@@ -8,9 +8,9 @@ package com.l7tech.service.resolution;
 
 import com.l7tech.message.Request;
 import com.l7tech.service.ServiceListener;
-import com.l7tech.service.PublishedService;
 
-import java.util.*;
+import java.util.Collections;
+import java.util.Set;
 
 /**
  * @author alex
@@ -24,25 +24,7 @@ public abstract class ServiceResolver implements Comparable, ServiceListener {
      * Sets the <code>Set</code> of services in the system.  Concrete implementations should implement doSetServices and invalidate any caches based on this Set whenever it is called.
      * @param services A Set of all the services in the system.
      */
-    public synchronized void setServices( Set services ) {
-        _services = services;
-        doSetServices(services);
-    }
-
-    public synchronized void serviceDeleted( PublishedService service ) {
-        _services.remove( service );
-        doSetServices( _services );
-    }
-
-    public synchronized void serviceUpdated( PublishedService service ) {
-        doSetServices( _services );
-    }
-
-    public synchronized void serviceCreated( PublishedService service ) {
-        _services.add( service );
-        doSetServices( _services );
-    }
-
+    public abstract void setServices( Set services );
 
     public synchronized Set resolve( Request request, Set set ) throws ServiceResolutionException {
         if ( set == null ) return Collections.EMPTY_SET;
@@ -50,7 +32,6 @@ public abstract class ServiceResolver implements Comparable, ServiceListener {
         return doResolve( request, set );
     }
 
-    protected abstract void doSetServices( Set services );
     protected abstract Set doResolve( Request request, Set set ) throws ServiceResolutionException;
     public abstract int getSpeed();
 
@@ -68,6 +49,4 @@ public abstract class ServiceResolver implements Comparable, ServiceListener {
         else
             return -1;
     }
-
-    protected Set _services;
 }
