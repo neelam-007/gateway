@@ -21,7 +21,7 @@ import java.awt.event.ActionEvent;
  */
 public class AboutBox extends JDialog {
     public AboutBox() {
-        super(Gui.getInstance().getFrame(), "About " + Gui.APP_NAME);
+        super(Gui.getInstance().getFrame(), "About the " + Gui.APP_NAME);
         setModal(true);
         Container pane = getContentPane();
         pane.setLayout(new GridBagLayout());

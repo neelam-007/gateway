@@ -11,11 +11,16 @@ import com.l7tech.proxy.gui.util.IconManager;
 import com.l7tech.proxy.util.JavaVersionChecker;
 import snoozesoft.systray4j.*;
 
+import javax.help.DefaultHelpBroker;
+import javax.help.HelpBroker;
+import javax.help.HelpSet;
+import javax.help.HelpSetException;
 import javax.swing.*;
 import javax.swing.plaf.metal.MetalTheme;
 import java.awt.*;
 import java.awt.event.*;
 import java.net.URL;
+import java.util.MissingResourceException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -25,7 +30,7 @@ import java.util.logging.Logger;
 public class Gui {
     private static final Logger log = Logger.getLogger( Gui.class.getName() );
     public static final String RESOURCE_PATH = "com/l7tech/proxy/resources";
-    public static final String HELP_PATH = "com/l7tech/proxy/resources/helpset/proxy.hs";
+    public static final String HELP_PATH = "com/l7tech/proxy/resources/helpset/SecureSpan_Bridge_Help_System.hs";
     public static final String APP_NAME = "SecureSpan Bridge";
 
     private static final String KUNSTSTOFF_CLASSNAME = "com.incors.plaf.kunststoff.KunststoffLookAndFeel";
@@ -46,7 +51,8 @@ public class Gui {
     private static final String MENU_WINDOW = "Window";
     private static final String MENU_MESSAGES = "Message Window";
     private static final String MENU_HELP = "Help";
-    private static final String MENU_HELP_ABOUT = "About " + APP_NAME;
+    private static final String MENU_HELP_ABOUT = "About";
+    private static final String MENU_HELP_HELP = "Help System";
     private JCheckBoxMenuItem showMessages;
     private SsgListPanel ssgListPanel;
     private SsgManager ssgManager = null;
@@ -355,6 +361,12 @@ public class Gui {
         aboutMenuItem.setMnemonic( KeyEvent.VK_A );
         aboutMenuItem.addActionListener( menuActionListener );
         aboutMenu.add( aboutMenuItem );
+        final JMenuItem helpMenuItem = new JMenuItem( MENU_HELP_HELP );
+        helpMenuItem.setMnemonic(( KeyEvent.VK_H ));
+        helpMenuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_F1, 0));
+        helpMenuItem.addActionListener( menuActionListener );
+        aboutMenu.add( helpMenuItem );
+
         menus.add( aboutMenu );
 
         Utilities.removeToolTipsFromMenuItems(menus);
@@ -376,6 +388,8 @@ public class Gui {
             }
         } else if ( MENU_HELP_ABOUT.equals( e.getActionCommand() ) ) {
             new AboutBox().show();
+        } else if ( MENU_HELP_HELP.equals( e.getActionCommand() ) ) {
+            showHelpTopics(e);
         }
     }
 
@@ -444,5 +458,45 @@ public class Gui {
         d.pack();
         Utilities.centerOnScreen( d );
         d.show();
+    }
+
+    /**
+     * The "Help Topics".
+     * This procedure adds the JavaHelp to PMC application.
+     */
+    public void showHelpTopics(ActionEvent e) {
+        HelpSet hs = null;
+        URL url = null;
+        HelpBroker javaHelpBroker = null;
+        String helpsetName = "SSB Help";
+
+        try {
+            // Find the helpSet URL file.
+            ClassLoader cl = getClass().getClassLoader();
+            url = cl.getResource(HELP_PATH);
+            hs = new HelpSet(cl, url);
+            javaHelpBroker = hs.createHelpBroker();
+            Object source = e.getSource();
+
+            if (source instanceof Window) {
+                ((DefaultHelpBroker)javaHelpBroker).setActivationWindow((Window)source);
+            }
+            javaHelpBroker.setDisplayed(true);
+
+        } catch (MissingResourceException ex) {
+            //Make sure the URL exists.
+            if (url == null) {
+                JOptionPane.showMessageDialog(frame,
+                  "Help URL is missing",
+                  "Bad HelpSet Path ",
+                  JOptionPane.WARNING_MESSAGE);
+            }
+        } catch (HelpSetException hex) {
+            JOptionPane.showMessageDialog(frame,
+              helpsetName + " is not available",
+              "Warning",
+              JOptionPane.WARNING_MESSAGE);
+            log.log(Level.SEVERE, helpsetName + " file was not found. " + hex.toString());
+        }
     }
 }
