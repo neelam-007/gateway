@@ -77,7 +77,7 @@ class SenderVouchesHelper {
 
         try {
             doc.getDocumentElement().setAttribute("Id", "SamlTicket");
-            SoapMsgSigner.signEnvelope(doc, signerInfo.getPrivate(), signerInfo.getCertificate());
+            SoapMsgSigner.signEnvelope(doc, signerInfo.getPrivate(), signerInfo.getCertificateChain());
             Element secElement = SoapUtil.getOrMakeSecurityElement(soapMessage);
             SoapUtil.importNode(soapMessage, doc, secElement);
             NodeList list = secElement.getElementsByTagNameNS(NS_SAML, "Assertion");
@@ -99,7 +99,7 @@ class SenderVouchesHelper {
     void signEnvleope()
       throws IOException, SAXException, SignatureException {
         try {
-            SoapMsgSigner.signEnvelope(soapMessage, signerInfo.getPrivate(), signerInfo.getCertificate());
+            SoapMsgSigner.signEnvelope(soapMessage, signerInfo.getPrivate(), signerInfo.getCertificateChain());
         } catch (Exception e) {
             SignatureException ex = new SignatureException("error signing the saml ticket");
             ex.initCause(e);
@@ -135,7 +135,7 @@ class SenderVouchesHelper {
         assertion.setMinorVersion(new BigInteger("0"));
         assertion.setMajorVersion(new BigInteger("1"));
         assertion.setAssertionID(Long.toHexString(System.currentTimeMillis()));
-        assertion.setIssuer(signerInfo.getCertificate().getSubjectDN().getName());
+        assertion.setIssuer(signerInfo.getCertificateChain()[0].getSubjectDN().getName()); // TODO is it OK to use the first cert in the chain?
         assertion.setIssueInstant(now);
 
         ConditionsType ct = ConditionsType.Factory.newInstance();

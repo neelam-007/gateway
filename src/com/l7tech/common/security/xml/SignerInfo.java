@@ -13,7 +13,7 @@ import java.util.NoSuchElementException;
 public class SignerInfo {
 
     private PrivateKey privateKey;
-    private X509Certificate certificate;
+    private X509Certificate[] certificateChain;
 
     /**
      * Create the <code>SignerInfo</code> from the private key and certificate retrieved
@@ -34,8 +34,8 @@ public class SignerInfo {
             throw new IllegalArgumentException();
         }
 
-        X509Certificate cert = (X509Certificate)keyStore.getCertificate(keyAlias);
-        if (cert == null) {
+        X509Certificate[] certs = (X509Certificate[])keyStore.getCertificateChain(keyAlias);
+        if (certs == null || certs.length == 0) {
             throw new NoSuchElementException("No certificate for alias '"+keyAlias+"' in keystore");
         }
         char[] pwd = password !=null ? password.toCharArray() : new char[] {};
@@ -50,7 +50,7 @@ public class SignerInfo {
         } else {
             throw new IllegalArgumentException("Expected private key, received :"+key.getClass()+"\n"+key);
         }
-        return new SignerInfo(pk, cert);
+        return new SignerInfo(pk, certs);
     }
 
     /**
@@ -58,11 +58,11 @@ public class SignerInfo {
      * The public key is retrieved from the certificate.
      * 
      * @param privateKey the private key.
-     * @param certificate  the public key.
+     * @param certificateChain the certificate chain; the first element contains the relevant public key.
      */
-    public SignerInfo(PrivateKey privateKey, X509Certificate certificate) {
+    public SignerInfo(PrivateKey privateKey, X509Certificate[] certificateChain) {
         this.privateKey = privateKey;
-        this.certificate = certificate;
+        this.certificateChain = certificateChain;
     }
 
     /**
@@ -71,7 +71,7 @@ public class SignerInfo {
      * @return a reference to the public key.
      */
     public PublicKey getPublic() {
-        return certificate.getPublicKey();
+        return certificateChain[0].getPublicKey();
     }
 
     /**
@@ -88,7 +88,7 @@ public class SignerInfo {
      *
      * @return a reference to the certificate.
      */
-    public X509Certificate getCertificate() {
-        return certificate;
+    public X509Certificate[] getCertificateChain() {
+        return certificateChain;
     }
 }

@@ -9,9 +9,10 @@ package com.l7tech.proxy.ssl;
 import com.l7tech.proxy.datamodel.CurrentRequest;
 import com.l7tech.proxy.datamodel.Ssg;
 import com.l7tech.proxy.datamodel.SsgKeyStoreManager;
-import com.l7tech.proxy.datamodel.exceptions.ServerCertificateUntrustedException;
 import com.l7tech.proxy.datamodel.exceptions.KeyStoreCorruptException;
+import com.l7tech.proxy.datamodel.exceptions.ServerCertificateUntrustedException;
 import com.l7tech.proxy.util.ClientLogger;
+import com.l7tech.common.util.CertUtils;
 import sun.security.x509.X500Name;
 
 import javax.net.ssl.X509TrustManager;
@@ -87,40 +88,12 @@ public class ClientProxyTrustManager implements X509TrustManager {
         if (trustedCert == null)
             throw new ServerCertificateUntrustedException("We have not yet discovered this Gateway's server certificate");
 
-        for (int i = 0; i < x509Certificates.length; i++) {
-            X509Certificate cert = x509Certificates[i];
-            cert.checkValidity(); // will abort if this throws
-            if (i + 1 < x509Certificates.length) {
-                try {
-                    cert.verify(x509Certificates[i + 1].getPublicKey());
-                } catch (Exception e) {
-                    log.error("Unable to verify signature in peer certificate chain", e);
-                    // This is a serious problem with the cert chain presented by the peer.  Do a full abort.
-                    throw new CertificateException("Unable to verify signature in peer certificate chain: " + e);
-                }
-            }
-
-            Principal trustedDN = trustedCert.getSubjectDN();
-            if (cert.getIssuerDN().equals(trustedDN)) {
-                try {
-                    cert.verify(trustedCert.getPublicKey());
-                    log.info("Peer certificate was signed by a trusted Gateway.");
-                    return;
-                } catch (Exception e) {
-                    log.error("Unable to verify peer certificate with trusted cert", e);
-                    // Server SSL cert might have changed.  Attempt to reimport it
-                    throw new ServerCertificateUntrustedException("Unable to verify peer certificate with trusted cert: " + e);
-                }
-            } else if (cert.getSubjectDN().equals(trustedDN)) {
-                if (cert.equals(trustedCert)) {
-                    log.info("Peer certificate exactly matched that of a trusted Gateway.");
-                    return;
-                }
-            }
+        try {
+            CertUtils.verifyCertificateChain( x509Certificates, trustedCert );
+            log.info("Peer certificate was signed by a trusted Gateway.");
+        } catch ( CertificateException e ) {
+            log.warn(e.getMessage());
+            throw e;
         }
-
-        // We probably just havne't talked to this Ssg before.  Trigger a reimport of the certificate.
-        log.warn("Couldn't find trusted certificate in peer's certificate chain.");
-        throw new ServerCertificateUntrustedException("Couldn't find trusted certificate in peer's certificate chain");
     }
 }

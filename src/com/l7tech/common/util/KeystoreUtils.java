@@ -9,6 +9,8 @@ import java.security.*;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Properties;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -149,11 +151,12 @@ public class KeystoreUtils {
      * @return the <code>SignerInfo</code> instance
      */
     public SignerInfo getSignerInfo() throws IOException {
-        X509Certificate cert = null;
         byte[] buf = KeystoreUtils.getInstance().readSSLCert();
         ByteArrayInputStream bais = new ByteArrayInputStream(buf);
+        X509Certificate[] certChain;
         try {
-            cert = (X509Certificate)CertificateFactory.getInstance("X.509").generateCertificate(bais);
+            Collection certChainC = CertificateFactory.getInstance("X.509").generateCertificates(bais);
+            certChain = (X509Certificate[])new ArrayList(certChainC).toArray( new X509Certificate[0] );
         } catch (CertificateException e) {
             String msg = "cannot generate cert from cert file";
             logger.severe(msg);
@@ -172,7 +175,7 @@ public class KeystoreUtils {
             ioe.initCause(e);
             throw ioe;
         }
-        return new SignerInfo(pkey, cert);
+        return new SignerInfo(pkey, certChain);
     }
 
     private static class SingletonHolder {

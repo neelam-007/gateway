@@ -77,7 +77,8 @@ public class ClientXmlRequestSecurity extends ClientAssertion {
         try {
             userPrivateKey = SsgKeyStoreManager.getClientCertPrivateKey(ssg);
             userCert = SsgKeyStoreManager.getClientCert(ssg);
-            final SignerInfo si = new SignerInfo(userPrivateKey, userCert);
+            X509Certificate ssgCert = SsgKeyStoreManager.getServerCert(ssg);
+            final SignerInfo si = new SignerInfo(userPrivateKey, new X509Certificate[] { userCert, ssgCert });
             // decorate request with session info and seq nr
             request.setSession(session);
             long sessId = session.getId();

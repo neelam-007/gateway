@@ -6,14 +6,19 @@
 
 package com.l7tech.common.util;
 
+import com.l7tech.proxy.datamodel.exceptions.ServerCertificateUntrustedException;
+
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.security.cert.X509Certificate;
 import java.security.cert.CertificateEncodingException;
+import java.security.cert.CertificateException;
+import java.security.cert.CertificateExpiredException;
 import java.security.NoSuchAlgorithmException;
 import java.security.PublicKey;
 import java.security.MessageDigest;
+import java.security.Principal;
 import java.security.interfaces.RSAPublicKey;
 import java.security.interfaces.DSAPublicKey;
 import java.security.interfaces.DSAParams;
@@ -128,5 +133,51 @@ public class CertUtils {
     /** Convert a null object into "N/A", otherwise toString */
     private static String nullNa(Object o) {
         return o == null ? "N/A" : o.toString();
+    }
+
+    /**
+     * Verifies that each cert in the specified certificate chain is signed by the next certificate
+     * in the chain, and that at least one is <em>signed by or identical to</em> trustedCert.
+     * 
+     * @param chain An array of one or more {@link X509Certificate}s to check
+     * @param trustedCert A trusted {@link X509Certificate} to check the chain against
+     * @throws CertificateException if the chain is invalid or not trusted for any reason
+     * @throws CertificateExpiredException if one of the certs in the chain has expired
+     */
+    public static void verifyCertificateChain( X509Certificate[] chain,
+                                               X509Certificate trustedCert ) throws CertificateException,
+                                                                                    CertificateExpiredException {
+
+        Principal trustedDN = trustedCert.getSubjectDN();
+
+        for (int i = 0; i < chain.length; i++) {
+            X509Certificate cert = chain[i];
+            cert.checkValidity(); // will abort if this throws
+            if (i + 1 < chain.length) {
+                try {
+                    cert.verify(chain[i + 1].getPublicKey());
+                } catch (Exception e) {
+                    // This is a serious problem with the cert chain presented by the peer.  Do a full abort.
+                    throw new CertificateException("Unable to verify signature in peer certificate chain: " + e);
+                }
+            }
+
+            if (cert.getIssuerDN().equals(trustedDN)) {
+                try {
+                    cert.verify(trustedCert.getPublicKey());
+                    return; // success
+                } catch (Exception e) {
+                    // Server SSL cert might have changed.  Attempt to reimport it
+                    throw new ServerCertificateUntrustedException("Unable to verify peer certificate with trusted cert: " + e);
+                }
+            } else if (cert.getSubjectDN().equals(trustedDN)) {
+                if (cert.equals(trustedCert)) {
+                    return; // success
+                }
+            }
+        }
+
+        // We probably just havne't talked to this Ssg before.  Trigger a reimport of the certificate.
+        throw new ServerCertificateUntrustedException("Couldn't find trusted certificate in peer's certificate chain");
     }
 }

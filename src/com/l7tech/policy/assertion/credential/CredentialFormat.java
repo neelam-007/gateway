@@ -31,16 +31,26 @@ public class CredentialFormat {
     /**
      * The credentials are a client's certificate
      */
-    public static final CredentialFormat CLIENTCERT = new CredentialFormat( "Client Certificate" );
-    public static final CredentialFormat CLIENTCERT_X509_ASN1_DER = new CredentialFormat( "ASN.1 DER-encoded X.509 Client Certificate" );
+    public static final CredentialFormat CLIENTCERT = new CredentialFormat( "Client Certificate", true );
+    public static final CredentialFormat CLIENTCERT_X509_ASN1_DER = new CredentialFormat( "ASN.1 DER-encoded X.509 Client Certificate", true );
 
     public String toString() {
         return "<CredentialFormat name='" + _name + "'/>";
     }
 
-    protected CredentialFormat( String name ) {
-        _name = name;
+    public boolean isClientCert() {
+        return _clientCert;
     }
 
-    protected String _name;
+    private CredentialFormat( String name ) {
+        this(name, false);
+    }
+
+    private CredentialFormat( String name, boolean clientCert ) {
+        _name = name;
+        _clientCert = clientCert;
+    }
+
+    private String _name;
+    private boolean _clientCert;
 }

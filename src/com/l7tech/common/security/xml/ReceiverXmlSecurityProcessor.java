@@ -25,7 +25,6 @@ class ReceiverXmlSecurityProcessor extends SecurityProcessor {
     static Logger logger = Logger.getLogger(ReceiverXmlSecurityProcessor.class.getName());
 
     private Key decryptionKey;
-    private Session session;
 
     /**
      * Create the new instance with the signer information, session, optional
@@ -40,7 +39,6 @@ class ReceiverXmlSecurityProcessor extends SecurityProcessor {
      */
     ReceiverXmlSecurityProcessor(Session session, Key key, ElementSecurity[] elements) {
         super(elements);
-        this.session = session;
         this.decryptionKey = key;
 
     }
@@ -63,7 +61,7 @@ class ReceiverXmlSecurityProcessor extends SecurityProcessor {
         boolean envelopeProcessed = false;
 
         try {
-            X509Certificate documentCertificate = null;
+            X509Certificate[] documentCertificates = null;
             for (int i = 0; i < elements.length && !envelopeProcessed; i++) {
                 ElementSecurity elementSecurity = elements[i];
                 envelopeProcessed = ElementSecurity.isEnvelope(elementSecurity);
@@ -96,7 +94,7 @@ class ReceiverXmlSecurityProcessor extends SecurityProcessor {
                 // verifiy element signature
 
                 // verify that this cert is signed with the root cert of this ssg
-                documentCertificate = SoapMsgSigner.validateSignature(document, element);
+                documentCertificates = SoapMsgSigner.validateSignature(document, element);
                 logger.fine("signature of response message verified");
 
                 if (elementSecurity.isEncryption()) { //element security is required
@@ -110,7 +108,7 @@ class ReceiverXmlSecurityProcessor extends SecurityProcessor {
                 }
                 logger.fine("response message element decrypted");
             }
-            return new Result(document, documentCertificate);
+            return new Result(document, documentCertificates);
         } catch (JaxenException e) {
             throw new SecurityProcessorException("XPath error", e);
         } catch (SignatureNotFoundException e) {

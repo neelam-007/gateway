@@ -119,19 +119,19 @@ public abstract class SecurityProcessor {
      * The class represents the result of the security operation
      */
     public static class Result {
-        protected Document document;
-        protected X509Certificate certificate;
+        private Document document;
+        private X509Certificate[] certificateChain;
 
         /**
          * create the result instance with the resulting document and
          * certificate
          *
          * @param document the document, result of the processing
-         * @param certificate the certificate that was associated with the operation
+         * @param certificateChain the certificate that was associated with the operation
          */
-        Result(Document document, X509Certificate certificate) {
+        Result(Document document, X509Certificate[] certificateChain) {
             this.document = document;
-            this.certificate = certificate;
+            this.certificateChain = certificateChain;
         }
 
         /** @return the result document */
@@ -140,14 +140,14 @@ public abstract class SecurityProcessor {
         }
 
         /**
-         * The certificate that is assoctaed with the operation. In the case
-         * of signing this will ocntain the signing cert, in the verify case
-         * it contains the extracted cert
+         * The certificate chain that is associated with the operation. In the case
+         * of signing this will contain the signing certs, in the verify case
+         * it contains the extracted certs
          *
-         * @return the certificate that was associated with the operaiton
+         * @return the certificate chain that was associated with the operaiton
          */
-        public X509Certificate getCertificate() {
-            return certificate;
+        public X509Certificate[] getCertificateChain() {
+            return certificateChain;
         }
     }
     /**

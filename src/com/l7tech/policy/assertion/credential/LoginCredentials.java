@@ -6,6 +6,8 @@
 
 package com.l7tech.policy.assertion.credential;
 
+import java.security.cert.X509Certificate;
+
 /**
  * Stores a reference to a User and its associated credentials (i.e. password).
  *
@@ -20,6 +22,8 @@ public class LoginCredentials {
         _realm = realm;
         _format = format;
         _payload = payload;
+        if (format.isClientCert() && !(payload instanceof X509Certificate))
+            throw new IllegalArgumentException("Must provide a certificate when creating client cert credentials");
     }
 
     public LoginCredentials( String login, byte[] credentials, CredentialFormat format, String realm ) {

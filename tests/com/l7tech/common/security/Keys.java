@@ -138,7 +138,7 @@ public class Keys {
         Date notAfter = cal.getTime();
 
         X509Certificate certificate = generateSelfSignedCertificate(notBefore, notAfter, subject);
-        return new SignerInfo(keyPair.getPrivate(), certificate);
+        return new SignerInfo(keyPair.getPrivate(), new X509Certificate[] { certificate });
 
     }
 

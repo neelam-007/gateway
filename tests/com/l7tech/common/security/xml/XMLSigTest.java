@@ -45,10 +45,10 @@ public class XMLSigTest extends TestCase {
         // append SecureConversationToken
         SecureConversationTokenHandler.appendSessIdAndSeqNrToDocument(doc, 666, 777);
         // sign it
-        SoapMsgSigner.signEnvelope(doc, privateKey, cert);
+        SoapMsgSigner.signEnvelope(doc, privateKey, new X509Certificate[] { cert } );
 
         // validate the signature (will throw if doesn't validate)
-        X509Certificate cert2 = SoapMsgSigner.validateSignature(doc);
+        X509Certificate cert2 = SoapMsgSigner.validateSignature(doc)[0];
 
         assertTrue("OUTPUT CERT SAME AS INPUT ONE", cert.equals(cert2));
 
@@ -57,10 +57,10 @@ public class XMLSigTest extends TestCase {
         // append SecureConversationToken
         SecureConversationTokenHandler.appendSessIdAndSeqNrToDocument(doc, 666, 777);
         // sign it
-        SoapMsgSigner.signEnvelope(doc, privateKey, cert);
+        SoapMsgSigner.signEnvelope(doc, privateKey, new X509Certificate[] { cert });
 
         // validate the signature (will throw if doesn't validate)
-        cert2 = SoapMsgSigner.validateSignature(doc);
+        cert2 = SoapMsgSigner.validateSignature(doc)[0];
 
         assertTrue("OUTPUT CERT SAME AS INPUT ONE", cert.equals(cert2));
 
@@ -68,10 +68,10 @@ public class XMLSigTest extends TestCase {
         // append SecureConversationToken
         SecureConversationTokenHandler.appendSessIdAndSeqNrToDocument(doc, 666, 777);
         // sign it
-        SoapMsgSigner.signEnvelope(doc, privateKey, cert);
+        SoapMsgSigner.signEnvelope(doc, privateKey, new X509Certificate[] { cert });
 
         // validate the signature (will throw if doesn't validate)
-        cert2 = SoapMsgSigner.validateSignature(doc);
+        cert2 = SoapMsgSigner.validateSignature(doc)[0];
 
         assertTrue("OUTPUT CERT SAME AS INPUT ONE", cert.equals(cert2));
 
@@ -80,10 +80,10 @@ public class XMLSigTest extends TestCase {
         SecureConversationTokenHandler.appendSessIdAndSeqNrToDocument(doc, 666, 777);
         // sign it
 
-        SoapMsgSigner.signEnvelope(doc, privateKey, cert);
+        SoapMsgSigner.signEnvelope(doc, privateKey, new X509Certificate[] { cert });
 
         // validate the signature (will throw if doesn't validate)
-        cert2 = SoapMsgSigner.validateSignature(doc);
+        cert2 = SoapMsgSigner.validateSignature(doc)[0];
 
         assertTrue("OUTPUT CERT SAME AS INPUT ONE", cert.equals(cert2));
     }
@@ -105,9 +105,9 @@ public class XMLSigTest extends TestCase {
           
         // sign it
           
-        SoapMsgSigner.signElement(doc, toSign, "stock_symbol_signature", privateKey, cert);
+        SoapMsgSigner.signElement(doc, toSign, "stock_symbol_signature", privateKey, new X509Certificate[] { cert });
           // validate the signature (will throw if doesn't validate)
-        X509Certificate cert2 = SoapMsgSigner.validateSignature(doc, toSign);
+        X509Certificate cert2 = SoapMsgSigner.validateSignature(doc, toSign)[0];
 
         assertTrue("The signature verification failed", cert.equals(cert2));
     }
@@ -116,25 +116,25 @@ public class XMLSigTest extends TestCase {
         // get document
         Document doc = readDocFromString(simpleDocWithComplexTextEl);
         // sign it
-        SoapMsgSigner.signEnvelope(doc, privateKey, cert);
+        SoapMsgSigner.signEnvelope(doc, privateKey, new X509Certificate[] { cert });
 
         // serialize and deserialize
         doc = readDocFromString(serializeDoc(doc));
 
         // validate the signature (will throw if doesn't validate)
-        X509Certificate cert2 = SoapMsgSigner.validateSignature(doc);
+        X509Certificate cert2 = SoapMsgSigner.validateSignature(doc)[0];
         assertTrue("OUTPUT CERT SAME AS INPUT ONE", cert.equals(cert2));
 
         // same thing with trickyer doc
         doc = readDocFromString(simpleDocWithComplexTextEl2);
         // sign it
-        SoapMsgSigner.signEnvelope(doc, privateKey, cert);
+        SoapMsgSigner.signEnvelope(doc, privateKey, new X509Certificate[] { cert });
 
         // serialize and deserialize
         doc = readDocFromString(serializeDoc(doc));
 
         // validate the signature (will throw if doesn't validate)
-        cert2 = SoapMsgSigner.validateSignature(doc);
+        cert2 = SoapMsgSigner.validateSignature(doc)[0];
         assertTrue("OUTPUT CERT SAME AS INPUT ONE", cert.equals(cert2));
     }
 
@@ -146,7 +146,7 @@ public class XMLSigTest extends TestCase {
         Document doc = readDocFromString(simpleDoc);
 
         // sign it
-        SoapMsgSigner.signEnvelope(doc, privateKey, cert);
+        SoapMsgSigner.signEnvelope(doc, privateKey, new X509Certificate[] { cert });
 
         // append something AFTER the signature is made so that signature is no longer valid
         SecureConversationTokenHandler.appendSessIdAndSeqNrToDocument(doc, 666, 777);
@@ -175,13 +175,13 @@ public class XMLSigTest extends TestCase {
         SecureConversationTokenHandler.appendSessIdAndSeqNrToDocument(doc, 666, 777);
 
         // sign it
-        SoapMsgSigner.signEnvelope(doc, privateKey, cert);
+        SoapMsgSigner.signEnvelope(doc, privateKey, new X509Certificate[] { cert });
 
         // serialize and reparse
         Document doc2 = readDocFromString(serializeDoc(doc));
 
         // validate the signature (will throw if doesn't validate)
-        X509Certificate cert2 = SoapMsgSigner.validateSignature(doc2);
+        X509Certificate cert2 = SoapMsgSigner.validateSignature(doc2)[0];
 
         // can still get the cert out of it
         assertTrue("OUTPUT CERT SAME AS INPUT ONE", cert.equals(cert2));

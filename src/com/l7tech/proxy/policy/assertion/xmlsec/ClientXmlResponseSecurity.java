@@ -116,7 +116,7 @@ public class ClientXmlResponseSecurity extends ClientAssertion {
             X509Certificate caCert = SsgKeyStoreManager.getServerCert(request.getSsg());
             SecurityProcessor.Result result = verifier.processInPlace(doc);
 
-            final X509Certificate certificate = result.getCertificate();
+            final X509Certificate certificate = result.getCertificateChain()[0];
             if (certificate !=null) {
                 certificate.verify(caCert.getPublicKey());
             }
@@ -187,7 +187,7 @@ public class ClientXmlResponseSecurity extends ClientAssertion {
                 }
                 Element element = (Element)o;
                 // verifiy element signature
-                X509Certificate serverCert = null;
+                X509Certificate[] serverCertChain = null;
                 X509Certificate caCert = SsgKeyStoreManager.getServerCert(request.getSsg());
 
                 if (caCert == null)
@@ -195,8 +195,8 @@ public class ClientXmlResponseSecurity extends ClientAssertion {
 
                 try {
                     // verify that this cert is signed with the root cert of this ssg
-                    serverCert = SoapMsgSigner.validateSignature(doc, element);
-                    serverCert.verify(caCert.getPublicKey());
+                    serverCertChain = SoapMsgSigner.validateSignature(doc, element);
+                    serverCertChain[0].verify(caCert.getPublicKey());
                 } catch (SignatureNotFoundException e) {
                     throw new ResponseValidationException("Response from Gateway did not contain a signature as required by policy", e);
                 } catch (InvalidSignatureException e) {

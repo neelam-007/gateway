@@ -137,11 +137,11 @@ class SenderXmlSecurityProcessor extends SecurityProcessor {
                 }
                 // dsig
                 final String referenceId = SIGN_REFERENCE + signReferenceIdSuffix;
-                SoapMsgSigner.signElement(document, element, referenceId, signerInfo.getPrivate(), signerInfo.getCertificate());
+                SoapMsgSigner.signElement(document, element, referenceId, signerInfo.getPrivate(), signerInfo.getCertificateChain());
                 ++signReferenceIdSuffix;
                 logger.fine("signed element for XPath " + xpath.getExpression());
             }
-            return new Result(document, signerInfo.getCertificate());
+            return new Result(document, signerInfo.getCertificateChain());
         } catch (SignatureStructureException e) {
             SignatureException se = new SignatureException("Signing error");
             se.initCause(e);

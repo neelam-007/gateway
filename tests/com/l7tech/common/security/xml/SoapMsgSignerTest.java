@@ -92,7 +92,7 @@ public class SoapMsgSignerTest extends TestCase {
         ReceiverXmlSecurityProcessor foo = new ReceiverXmlSecurityProcessor(s, getKeyReq(), esecs );
         SecurityProcessor.Result bar = foo.processInPlace( testDoc ); // todo OMGWTFBBQ
         XmlUtil.documentToOutputStream( testDoc, System.out );
-        System.out.println( bar.getCertificate() );
+        System.out.println( bar.getCertificateChain() );
     }
 
     public void testValidateElements_Sign() throws Exception {
@@ -309,7 +309,7 @@ public class SoapMsgSignerTest extends TestCase {
         Element priceElement = (Element)d.getElementsByTagName( elementName ).item(0);
         if (encrypt)
             XmlMangler.encryptXml( priceElement, getKeyReq().getEncoded(), getSessionId(), "encref" + encref );
-        SoapMsgSigner.signElement( d, priceElement, "signref" + signref, getClientCertPrivateKey(), getClientCertificate() );
+        SoapMsgSigner.signElement( d, priceElement, "signref" + signref, getClientCertPrivateKey(), new X509Certificate[] { getClientCertificate() } );
     }
 
     private Document getCleartextDocument() throws Exception {

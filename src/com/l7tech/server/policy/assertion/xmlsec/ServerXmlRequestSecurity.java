@@ -2,20 +2,19 @@ package com.l7tech.server.policy.assertion.xmlsec;
 
 import com.l7tech.common.security.AesKey;
 import com.l7tech.common.security.xml.*;
-import com.l7tech.common.util.ExceptionUtils;
-import com.l7tech.common.util.SoapUtil;
+import com.l7tech.common.util.*;
+import com.l7tech.identity.User;
+import com.l7tech.identity.cert.ClientCertManager;
 import com.l7tech.logging.LogManager;
 import com.l7tech.message.Request;
 import com.l7tech.message.Response;
 import com.l7tech.message.SoapRequest;
 import com.l7tech.message.XmlRequest;
+import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.credential.CredentialFormat;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
-import com.l7tech.common.security.xml.ElementSecurity;
-import com.l7tech.common.security.xml.SecurityProcessor;
-import com.l7tech.common.security.xml.SecurityProcessorException;
 import com.l7tech.policy.assertion.xmlsec.XmlRequestSecurity;
 import com.l7tech.server.SessionManager;
 import com.l7tech.server.policy.assertion.ServerAssertion;
@@ -23,10 +22,13 @@ import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
 import sun.security.x509.X500Name;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.security.GeneralSecurityException;
 import java.security.Key;
 import java.security.SignatureException;
+import java.security.cert.CertificateException;
+import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -94,14 +96,67 @@ public class ServerXmlRequestSecurity implements ServerAssertion {
         try {
             SecurityProcessor.Result result = verifier.processInPlace(soapmsg);
 
-            // upload cert as credentials, if authenticated
-            if (xmlRequestSecurity.hasAuthenticationElement()) {
-                String certCN = null;
-                final X509Certificate cert = result.getCertificate();
-                X500Name x500name = new X500Name(cert.getSubjectX500Principal().getName());
-                certCN = x500name.getCommonName();
-                logger.finest("cert extracted from digital signature for user " + certCN);
-                request.setPrincipalCredentials(new LoginCredentials(certCN, null, CredentialFormat.CLIENTCERT, null, cert));
+            final X509Certificate[] xmlCertChain = result.getCertificateChain();
+            X500Name x500name = new X500Name(xmlCertChain[0].getSubjectX500Principal().getName());
+            String certCN = x500name.getCommonName();
+            logger.finest("cert extracted from digital signature for user " + certCN);
+
+            // Fix for Bug #723: Check that cert is valid and matches authenticated user
+            if (xmlRequestSecurity.hasAuthenticationElement() ) {
+                if ( request.isAuthenticated() ) {
+                    logger.fine( "Request was already authenticated but this XmlRequestSecurity is usable as a credential source" );
+                } else {
+                    // We don't care if there are previously-asserted credentials in the request
+                    logger.info( "Using credentials from certificate in signed XML request" );
+                    request.setPrincipalCredentials(new LoginCredentials(certCN, null, CredentialFormat.CLIENTCERT, null, xmlCertChain[0]));
+                }
+            }
+
+            if ( request.getPrincipalCredentials() == null ) {
+                String msg =  "XmlRequestSecurity unable to validate partial signature because " +
+                                "no credential source has been identified yet";
+                logger.warning( msg );
+                return AssertionStatus.FALSIFIED;
+            }
+
+            if ( request.isAuthenticated() ) {
+                User user = request.getUser();
+                if (user == null)
+                    throw new PolicyAssertionException( "Request authenticated but no user set" );
+
+                X509Certificate knownCert = null;
+                LoginCredentials pc = request.getPrincipalCredentials();
+                if ( pc.getFormat().isClientCert() ) {
+                    knownCert = (X509Certificate) request.getPrincipalCredentials().getPayload();
+                }
+
+                if (knownCert == null) {
+                    ClientCertManager ccm = (ClientCertManager)Locator.getDefault().lookup( ClientCertManager.class );
+                    try {
+                        knownCert = (X509Certificate)ccm.getUserCert( user );
+                        if ( knownCert == null ) {
+                            logger.log( Level.WARNING, "User '" + user.getLogin() + "' does not currently have a certificate" );
+                            return AssertionStatus.FALSIFIED;
+                        }
+                    } catch ( FindException e ) {
+                        logger.log( Level.WARNING, "Caught FindException retrieving cert for user " + user.getLogin(), e );
+                        return AssertionStatus.FALSIFIED;
+                    }
+                }
+
+                if ( !knownCert.equals( xmlCertChain[0] ) ) {
+                    logger.log( Level.WARNING,
+                                "XmlRequestSecurity signing certificate did not match previously issued certificate" );
+                    return AssertionStatus.FALSIFIED;
+                }
+
+                // FALLTHROUGH - authenticated user matches cert just fine
+            } else {
+                // Request has credentials (possibly because we found a signed envelope)
+                // but user has not yet been authenticated
+
+                X509Certificate rootCert = getRootCertificate();
+                CertUtils.verifyCertificateChain( xmlCertChain, rootCert );
             }
         } catch (SecurityProcessorException e) {
             // bad signature !
@@ -141,6 +196,14 @@ public class ServerXmlRequestSecurity implements ServerAssertion {
 
         return AssertionStatus.NONE;
 
+    }
+
+    private synchronized X509Certificate getRootCertificate() throws CertificateException, IOException {
+        if ( rootCertificate == null ) {
+            CertificateFactory certFactory = CertificateFactory.getInstance( "X.509" );
+            rootCertificate = (X509Certificate)certFactory.generateCertificate( new ByteArrayInputStream( KeystoreUtils.getInstance().readRootCert() ) );
+        }
+        return rootCertificate;
     }
 
 
@@ -211,6 +274,7 @@ public class ServerXmlRequestSecurity implements ServerAssertion {
 
     protected XmlRequestSecurity xmlRequestSecurity;
     private Logger logger = null;
+    private X509Certificate rootCertificate;
 
 
 }

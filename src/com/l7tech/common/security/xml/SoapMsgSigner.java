@@ -45,13 +45,13 @@ public final class SoapMsgSigner {
      * @param privateKey the private key of the signer if imlpements RSAPrivateKey signature method will be
      *                   http://www.w3.org/2000/09/xmldsig#rsa-sha1, if privateKey implements DSAPrivateKey, signature method will be
      *                   http://www.w3.org/2000/09/xmldsig#dsa-sha1.
-     * @param cert       the signer's cert
+     * @param certChain  the signer's cert chain
      * @throws com.ibm.xml.dsig.SignatureStructureException
      *          
      * @throws com.ibm.xml.dsig.XSignatureException
      *          
      */
-    public static void signEnvelope(Document soapMsg, PrivateKey privateKey, X509Certificate cert)
+    public static void signEnvelope(Document soapMsg, PrivateKey privateKey, X509Certificate[] certChain)
       throws SignatureStructureException, XSignatureException {
         // is the envelope already ided?
         String id = soapMsg.getDocumentElement().getAttribute(ID_ATTRIBUTE_NAME);
@@ -59,7 +59,7 @@ public final class SoapMsgSigner {
         if (id == null || id.length() < 1) {
             id = DEF_ENV_TAG;
         }
-        signElement(soapMsg, soapMsg.getDocumentElement(), id, privateKey, cert);
+        signElement(soapMsg, soapMsg.getDocumentElement(), id, privateKey, certChain);
     }
 
     /**
@@ -72,18 +72,18 @@ public final class SoapMsgSigner {
      * @param privateKey  the private key of the signer if imlpements RSAPrivateKey signature method will be
      *                    http://www.w3.org/2000/09/xmldsig#rsa-sha1, if privateKey implements DSAPrivateKey, signature method will be
      *                    http://www.w3.org/2000/09/xmldsig#dsa-sha1.
-     * @param cert        the signer's cert
+     * @param certChain        the signer's cert chain
      * @throws com.ibm.xml.dsig.SignatureStructureException
      *                                  
      * @throws com.ibm.xml.dsig.XSignatureException
      *                                  
      * @throws IllegalArgumentException if any of the parameters i <b>null</b>
      */
-    public static void signElement(Document document, final Element messagePart, String referenceId, PrivateKey privateKey, X509Certificate cert)
+    public static void signElement(Document document, final Element messagePart, String referenceId, PrivateKey privateKey, X509Certificate[] certChain)
       throws SignatureStructureException, XSignatureException {
 
         if (document == null || messagePart == null | referenceId == null ||
-          privateKey == null || cert == null) {
+          privateKey == null || certChain == null || certChain.length == 0) {
             throw new IllegalArgumentException();
         }
 
@@ -113,8 +113,8 @@ public final class SoapMsgSigner {
         // Include KeyInfo element in signature and embed cert into subordinate X509Data element
         KeyInfo keyInfo = new KeyInfo();
         KeyInfo.X509Data x509Data = new KeyInfo.X509Data();
-        x509Data.setCertificate(cert);
-        x509Data.setParameters(cert, true, true, true);
+        x509Data.setCertificate(certChain[0]);
+        x509Data.setParameters(certChain[0], true, true, true);
         keyInfo.setX509Data(new KeyInfo.X509Data[]{x509Data});
         keyInfo.insertTo(signatureElement, DS_PREFIX);
 
@@ -133,13 +133,13 @@ public final class SoapMsgSigner {
        * The validity of the signer's cert is NOT verified against the local root authority.
        *
        * @param soapMsg the soap message that potentially contains a digital signature
-       * @return the cert used as part of the message's signature (not checked against any authority) never null
+       * @return the cert chain used as part of the message's signature (not checked against any authority) never null
        * @throws com.l7tech.common.security.xml.SignatureNotFoundException
        *          if no signature is found in document
        * @throws com.l7tech.common.security.xml.InvalidSignatureException
        *          if the signature is invalid, not in an expected format or is missing information
        */
-      public static X509Certificate validateSignature(Document soapMsg)
+      public static X509Certificate[] validateSignature(Document soapMsg)
         throws SignatureNotFoundException, InvalidSignatureException {
         return validateSignature(soapMsg, soapMsg.getDocumentElement());
     }
@@ -150,13 +150,13 @@ public final class SoapMsgSigner {
      * 
      * @param soapMsg the soap message that potentially contains a digital signature
      * @param bodyElement the signed bodyElement
-     * @return the cert used as part of the message's signature (not checked against any authority) never null
+     * @return the cert chain used as part of the message's signature (not checked against any authority) never null
      * @throws com.l7tech.common.security.xml.SignatureNotFoundException
      *          if no signature is found in document
      * @throws com.l7tech.common.security.xml.InvalidSignatureException
      *          if the signature is invalid, not in an expected format or is missing information
      */
-    public static X509Certificate validateSignature(Document soapMsg, final Element bodyElement)
+    public static X509Certificate[] validateSignature(Document soapMsg, final Element bodyElement)
       throws SignatureNotFoundException, InvalidSignatureException {
         normalizeDoc(soapMsg);
 
@@ -194,10 +194,9 @@ public final class SoapMsgSigner {
         if (certs == null || certs.length < 1) {
             throw new InvalidSignatureException("Could not get X509 cert");
         }
-        X509Certificate cert = certs[0];
 
         // validate signature
-        PublicKey pubKey = cert.getPublicKey();
+        PublicKey pubKey = certs[0].getPublicKey();
         Validity validity = sigContext.verify(sigElement, pubKey);
 
         if (!validity.getCoreValidity()) {
@@ -219,7 +218,7 @@ public final class SoapMsgSigner {
                 // SUCCESS, RETURN THE CERT
                 // first, consume the signature bodyElement by removing it
                 sigElement.getParentNode().removeChild(sigElement);
-                return cert;
+                return certs;
             }
         }
         // if we get here, the envelope uri reference was not verified
