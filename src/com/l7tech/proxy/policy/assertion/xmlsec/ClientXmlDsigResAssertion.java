@@ -2,8 +2,17 @@ package com.l7tech.proxy.policy.assertion.xmlsec;
 
 import com.l7tech.proxy.policy.assertion.ClientAssertion;
 import com.l7tech.proxy.datamodel.PendingRequest;
+import com.l7tech.proxy.datamodel.SsgResponse;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
+import com.l7tech.xmlsig.SoapMsgSigner;
+import com.l7tech.xmlsig.SignatureNotFoundException;
+import com.l7tech.xmlsig.InvalidSignatureException;
+import com.ibm.xml.dsig.XSignatureException;
+import org.w3c.dom.Document;
+
+import javax.xml.soap.SOAPException;
+import java.security.cert.X509Certificate;
 
 /**
  * User: flascell
@@ -29,5 +38,32 @@ public class ClientXmlDsigResAssertion implements ClientAssertion {
      */
     public AssertionStatus decorateRequest(PendingRequest request) throws PolicyAssertionException {
         return AssertionStatus.NONE;
+    }
+
+    /**
+     * validate the signature of the response by the ssg server
+     * @param request
+     * @param response
+     * @return
+     * @throws PolicyAssertionException
+     */
+    AssertionStatus unDecorateReply(PendingRequest request, SsgResponse response) throws PolicyAssertionException {
+        SoapMsgSigner dsigHelper = new SoapMsgSigner();
+        Document doc = null;
+        //doc = response.getResponseAsSoapEnvelope();
+        // todo, get a document
+        X509Certificate cert = null;
+        try {
+            cert = dsigHelper.validateSignature(doc);
+        } catch (SignatureNotFoundException e) {
+            e.printStackTrace();  //To change body of catch statement use Options | File Templates.
+        } catch (InvalidSignatureException e) {
+            // todo
+        } catch (XSignatureException e) {
+            // todo
+        }
+        // todo, verify that this cert is signed with the root cert of this ssg which we should have access to
+        // return AssertionStatus.NONE;
+        return AssertionStatus.NOT_YET_IMPLEMENTED;
     }
 }
