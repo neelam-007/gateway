@@ -10,4 +10,15 @@ package com.l7tech.objectmodel;
  * @author alex
  */
 public class ObjectModelException extends Exception {
+    public ObjectModelException() {
+        super();
+    }
+
+    public ObjectModelException( String message ) {
+        super( message );
+    }
+
+    public ObjectModelException( String message, Throwable cause ) {
+        super( message, cause );
+    }
 }
