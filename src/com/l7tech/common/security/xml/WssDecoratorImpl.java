@@ -6,38 +6,38 @@
 
 package com.l7tech.common.security.xml;
 
+import com.ibm.xml.dsig.*;
+import com.ibm.xml.enc.AlgorithmFactoryExtn;
+import com.ibm.xml.enc.EncryptionContext;
+import com.ibm.xml.enc.KeyInfoResolvingException;
+import com.ibm.xml.enc.StructureException;
+import com.ibm.xml.enc.type.CipherData;
+import com.ibm.xml.enc.type.CipherValue;
+import com.ibm.xml.enc.type.EncryptedData;
+import com.ibm.xml.enc.type.EncryptionMethod;
+import com.l7tech.common.security.AesKey;
+import com.l7tech.common.security.JceProvider;
 import com.l7tech.common.util.CertUtils;
 import com.l7tech.common.util.HexUtils;
 import com.l7tech.common.util.SoapUtil;
+import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.xml.InvalidDocumentFormatException;
-import com.ibm.xml.dsig.*;
-import com.ibm.xml.dsig.Transform;
-
-import com.l7tech.common.security.JceProvider;
-import com.l7tech.common.security.AesKey;
-import com.ibm.xml.enc.type.*;
-import com.ibm.xml.enc.type.KeyInfo;
-import com.ibm.xml.enc.StructureException;
-import com.ibm.xml.enc.EncryptionContext;
-import com.ibm.xml.enc.AlgorithmFactoryExtn;
-import com.ibm.xml.enc.KeyInfoResolvingException;
-
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
 import javax.crypto.Cipher;
+import java.io.IOException;
 import java.security.GeneralSecurityException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.SecureRandom;
-import java.security.interfaces.RSAPrivateKey;
-import java.security.interfaces.DSAPrivateKey;
 import java.security.cert.CertificateEncodingException;
 import java.security.cert.X509Certificate;
+import java.security.interfaces.DSAPrivateKey;
+import java.security.interfaces.RSAPrivateKey;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.*;
-import java.io.IOException;
 
 /**
  * @author mike
@@ -352,11 +352,8 @@ public class WssDecoratorImpl implements WssDecorator {
 
         c.idToElementCache.put(id, element);
 
-        element.setAttributeNS(SoapUtil.WSU_NAMESPACE, "wsu:Id", id);
-
-        // todo use better logic to decide if wsu needs to be declared here
-        if (element.getAttribute("xmlns:wsu").length() < 1)
-            element.setAttribute("xmlns:wsu", SoapUtil.WSU_NAMESPACE);
+        String wsuPrefix = XmlUtil.getOrCreatePrefixForNamespace(element, SoapUtil.WSU_NAMESPACE, "wsu");
+        element.setAttributeNS(SoapUtil.WSU_NAMESPACE, wsuPrefix + ":Id", id);
 
         return id;
     }
@@ -365,9 +362,8 @@ public class WssDecoratorImpl implements WssDecorator {
         Document message = securityHeader.getOwnerDocument();
         Element timestamp = message.createElementNS(SoapUtil.WSU_NAMESPACE,
                                                     SoapUtil.TIMESTAMP_EL_NAME);
-        timestamp.setPrefix("wsu");
-        timestamp.setAttribute("xmlns:" + timestamp.getPrefix(), timestamp.getNamespaceURI());
         securityHeader.appendChild(timestamp);
+        timestamp.setPrefix(XmlUtil.getOrCreatePrefixForNamespace(timestamp, SoapUtil.WSU_NAMESPACE, "wsu"));
 
         Calendar now = Calendar.getInstance();
         timestamp.appendChild(makeTimestampChildElement(timestamp, SoapUtil.CREATED_EL_NAME, now.getTime()));
@@ -410,6 +406,9 @@ public class WssDecoratorImpl implements WssDecorator {
             SoapUtil.setSoapAttr(message, oldSecurity, SoapUtil.ACTOR_ATTR_NAME, SoapUtil.ACTOR_LAYER7_WRAPPED);
         }
 
-        return SoapUtil.makeSecurityElement(message);
+        Element securityHeader = SoapUtil.makeSecurityElement(message);
+        // Make sure wsu is declared to save duplication
+        XmlUtil.getOrCreatePrefixForNamespace(securityHeader, SoapUtil.WSU_NAMESPACE, "wsu");
+        return securityHeader;
     }
 }
