@@ -47,7 +47,7 @@ public class ExportPolicyToFileAction extends BaseAction {
      * @return the action name
      */
     public String getName() {
-        return "Export to File";
+        return "Export Policy";
     }
 
     /**
