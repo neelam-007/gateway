@@ -1,6 +1,5 @@
 package com.l7tech.console.panels;
 
-import com.l7tech.console.table.LogTableModel;
 import com.l7tech.console.table.StatisticsTableSorter;
 import com.l7tech.console.util.ArrowIcon;
 import com.l7tech.console.util.ColumnHeaderTooltips;
@@ -192,7 +191,12 @@ public class StatisticsPanel extends JPanel {
         String[] cols = {"Web Service Name", "Requests Attempted", "Authorized", "Routed", "Routed (last min.)"};
         String[][] rows = new String[][]{};
 
-        LogTableModel tableModel = new LogTableModel(rows, cols);
+        DefaultTableModel tableModel = new DefaultTableModel(rows, cols) {
+            public boolean isCellEditable(int row, int col) {
+                // the table cells are not editable
+                return false;
+            }
+        };
 
         statTableSorter = new StatisticsTableSorter(tableModel) {
             public Class getColumnClass(int columnIndex) {
@@ -218,14 +222,19 @@ public class StatisticsPanel extends JPanel {
             {"TOTAL", null, null, null},
         };
 
-        statTotalTableModel = new LogTableModel(rows, cols){
-           public Class getColumnClass(int columnIndex) {
+        statTotalTableModel = new DefaultTableModel(rows, cols) {
+            public Class getColumnClass(int columnIndex) {
                 Class dataType = java.lang.String.class;
                 // Only the value of the first column is a string, other columns contains numbers which should be aligned to the right
                 if (columnIndex > 0) {
                     dataType = java.lang.Number.class;
                 }
                 return dataType;
+            }
+
+            public boolean isCellEditable(int row, int col) {
+                // the table cells are not editable
+                return false;
             }
         };
         return statTotalTableModel;

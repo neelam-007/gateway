@@ -1,6 +1,5 @@
 package com.l7tech.console.panels;
 
-import com.l7tech.console.table.LogTableModel;
 import com.l7tech.console.table.FilteredLogTableSorter;
 import com.l7tech.console.util.ArrowIcon;
 import com.l7tech.common.gui.widgets.ContextMenuTextArea;
@@ -474,7 +473,12 @@ public class LogPanel extends JPanel {
         String[] cols = {"Message #", "Node", "Time", "Severity", "Message", "Class", "Method", "Request Id", "Node Id"};
         String[][] rows = new String[][]{};
 
-        logTableModel = new LogTableModel(rows, cols);
+        logTableModel = new DefaultTableModel(rows, cols) {
+            public boolean isCellEditable(int row, int col) {
+                // the table cells are not editable
+                return false;
+            }
+        };
 
         return logTableModel;
     }

@@ -4,7 +4,6 @@ import com.l7tech.console.util.*;
 import com.l7tech.console.panels.StatisticsPanel;
 import com.l7tech.console.panels.EditGatewayNameDialog;
 import com.l7tech.console.table.ClusterStatusTableSorter;
-import com.l7tech.console.table.LogTableModel;
 import com.l7tech.cluster.GatewayStatus;
 import com.l7tech.cluster.ClusterStatusAdmin;
 import com.l7tech.console.util.ArrowIcon;
@@ -470,8 +469,12 @@ public class ClusterStatusWindow extends JFrame implements ConnectionListener {
             "Status", "Gateway Node", "Load Sharing %", "Request Routed %", "Load Avg", "Uptime", "IP Address", "Node Id"
         };
 
-        clusterStatusTableSorter = new ClusterStatusTableSorter(new LogTableModel(rows, cols)) {
-        };
+        clusterStatusTableSorter = new ClusterStatusTableSorter(new DefaultTableModel(rows, cols) {
+            public boolean isCellEditable(int row, int col) {
+                // the table cells are not editable
+                return false;
+            }
+        });
 
         return clusterStatusTableSorter;
 
