@@ -147,6 +147,7 @@ public class MainWindow extends JFrame {
     private SavePolicyAction savePolicyAction;
     private static MainWindow singleMainWindow = null;
     private boolean disconnected = false;
+    private String ssgURL;
 
     /**
      * MainWindow constructor comment.
@@ -211,6 +212,14 @@ public class MainWindow extends JFrame {
 
     public boolean isDisconnected() {
         return disconnected;
+    }
+
+    /**
+     * The SSG URL this ssm is connected to (excluding the /ssg suffix).
+     * @return
+     */
+    public String ssgURL() {
+        return ssgURL;
     }
 
     /**
@@ -2031,8 +2040,8 @@ public class MainWindow extends JFrame {
     LogonDialog.LogonListener logonListenr =
       new LogonDialog.LogonListener() {
           /* invoked on authentication success */
-          public void onAuthSuccess(String id) {
-
+          public void onAuthSuccess(String id, String serverURL) {
+              ssgURL = serverURL;
               String statusMessage = id;
               connectionContext = "";
 

@@ -31,7 +31,7 @@ public class PublishNonSoapServiceAction extends SecureAction {
         final MainWindow mw = TopComponents.getInstance().getMainWindow();
         PublishNonSoapServiceWizard wiz = PublishNonSoapServiceWizard.getInstance(mw);
         wiz.pack();
-        //wiz.setSize(1000, 500);
+        wiz.setSize(800, 480);
         Utilities.centerOnScreen(wiz);
         wiz.setModal(true);
         wiz.setVisible(true);
