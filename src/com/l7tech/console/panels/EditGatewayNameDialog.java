@@ -229,7 +229,7 @@ public class EditGatewayNameDialog extends JDialog {
             JOptionPane.
                     showMessageDialog(this,
                             resources.getString("newGatewayNameField.error.empty"),
-                            resources.getString("newGatewayNameField.error.title"),
+                            resources.getString("newGatewayNameField.warning.title"),
                             JOptionPane.ERROR_MESSAGE);
             return false;
         }
@@ -246,8 +246,17 @@ public class EditGatewayNameDialog extends JDialog {
 
         if(clusterStatusAdmin == null) {
             logger.warning("ClusterStatusAdmin service is not available. Cannot rename the node: " + oldGatewayName);
+
+            JOptionPane.
+                    showMessageDialog(this,
+                            resources.getString("newGatewayNameField.error.connection.lost"),
+                            resources.getString("newGatewayNameField.error.title"),
+                            JOptionPane.ERROR_MESSAGE);
+            dispose();
             return;
         }
+
+        final JDialog thisDialog = this;
 
         SwingUtilities.invokeLater(new Runnable() {
             public void run() {
@@ -258,13 +267,26 @@ public class EditGatewayNameDialog extends JDialog {
 
                     // update the status message on the Main Window
                     Registry.getDefault().getComponentRegistry().getMainWindow().updateNodeNameInStatusMessage(newName);
-                    dispose();
 
                 } catch (UpdateException e) {
                     logger.warning("Cannot rename the node: " + oldGatewayName);
+                    JOptionPane.
+                            showMessageDialog(thisDialog,
+                                    resources.getString("newGatewayNameField.error.update"),
+                                    resources.getString("newGatewayNameField.error.title"),
+                                    JOptionPane.ERROR_MESSAGE);
+
                 } catch (RemoteException e) {
                     logger.warning("Remote Exception. Cannot rename the node: " + oldGatewayName);
+                    JOptionPane.
+                            showMessageDialog(thisDialog,
+                                    resources.getString("newGatewayNameField.error.remote.exception"),
+                                    resources.getString("newGatewayNameField.error.title"),
+                                    JOptionPane.ERROR_MESSAGE);
+                } finally {
+                    dispose();
                 }
+
             }
         });
     }
