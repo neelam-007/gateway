@@ -24,7 +24,7 @@ CREATE TABLE identity_provider (
   objectid number(38,0) NOT NULL PRIMARY KEY ,
   version int NOT NULL ,
   name varchar(128) NOT NULL ,
-  description clob ,
+  description varchar2(1024),
   type int NOT NULL ,
   properties clob,
   UNIQUE (name)
@@ -43,7 +43,7 @@ CREATE TABLE internal_group (
   objectid number(38,0) NOT NULL primary key ,
   version int NOT NULL ,
   name varchar(128) NOT NULL ,
-  description clob
+  description varchar2(1024)
 );
 
 alter table internal_group add unique ( name );
@@ -127,7 +127,7 @@ CREATE TABLE client_cert (
   objectid number(38,0) NOT NULL primary key ,
   provider number(38,0) NOT NULL ,
   login varchar(255) NOT NULL ,
-  cert clob DEFAULT NULL,
+  cert varchar2(1024) DEFAULT NULL,
   reset_counter int NOT NULL 
 );
 
@@ -198,7 +198,7 @@ drop table ssg_logs;
 CREATE TABLE ssg_logs (
   objectid number(38,0) NOT NULL ,
   nodeid varchar(18) NOT NULL ,
-  message clob,
+  message varchar2(1024),
   strlvl varchar(12),
   loggername varchar(128),
   millis number(38,0),
