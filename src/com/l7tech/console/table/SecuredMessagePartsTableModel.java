@@ -98,9 +98,6 @@ public class SecuredMessagePartsTableModel extends AbstractTableModel {
 
             final SecuredMessagePart securedMessagePart = (SecuredMessagePart)o;
 
-            if (encrypt != securedMessagePart.encrypt) return false;
-            if (keyLength != securedMessagePart.keyLength) return false;
-            if (algorithm != null ? !algorithm.equals(securedMessagePart.algorithm) : securedMessagePart.algorithm != null) return false;
             if (operation != null ? !operation.equals(securedMessagePart.operation) : securedMessagePart.operation != null) return false;
             if (xpathExpression != null ? !xpathExpression.equals(securedMessagePart.xpathExpression) : securedMessagePart.xpathExpression != null) return false;
 
@@ -111,9 +108,6 @@ public class SecuredMessagePartsTableModel extends AbstractTableModel {
             int result;
             result = (operation != null ? operation.hashCode() : 0);
             result = 29 * result + (xpathExpression != null ? xpathExpression.hashCode() : 0);
-            result = 29 * result + (encrypt ? 1 : 0);
-            result = 29 * result + (algorithm != null ? algorithm.hashCode() : 0);
-            result = 29 * result + keyLength;
             return result;
         }
     }
