@@ -50,16 +50,17 @@ else
     KEYSTORE_DIR="$TOMCAT_HOME/kstores"
 fi
 
-CA_KEYSTORE_FILE="$KEYSTORE_DIR/ca.ks"
-SSL_KEYSTORE_FILE="$KEYSTORE_DIR/ssl.ks"
-
 if $cygwin; then
 KEYSTORE_PROPERTIES_FILE=`cygpath --path --windows $KEYSTORE_PROPERTIES_FILE`
-KEYSTORE_DIR=`cygpath --path --windows $KEYSTORE_DIR`
+KEYSTORE_DIR=`cygpath --path --mixed $KEYSTORE_DIR`
 SERVER_XML_FILE=`cygpath --path --windows $SERVER_XML_FILE`
 WEBAPPS_ROOT=`cygpath --path --windows $WEBAPPS_ROOT`
 WAR_FILE=`cygpath --path --windows $WAR_FILE`
 fi
+
+CA_KEYSTORE_FILE="$KEYSTORE_DIR/ca.ks"
+SSL_KEYSTORE_FILE="$KEYSTORE_DIR/ssl.ks"
+
 
 # -----------------------------------------------------------------------------
 # FIND OUT WHAT THE USER WANTS TO DO
@@ -186,6 +187,7 @@ java -classpath "$CP" $setKeysClassname $HOST_NAME "$KEYSTORE_DIR" $CA_KEYSTORE_
 
 # Edit the server.xml file so that the appropriate keystore location and paswords are remembered
 KS_QUOTED_SLASHES=${SSL_KEYSTORE_FILE//\//\\\/}
+echo "KS_QUOTED_SLASHES = $KS_QUOTED_SLASHES"
 echo "Updating <$SERVER_XML_FILE>..."
 perl -pi.bak - "$SERVER_XML_FILE" <<!
 s/(keystoreFile)="[^"]*"/\1="${KS_QUOTED_SLASHES}"/;
