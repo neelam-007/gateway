@@ -48,7 +48,7 @@ public class MimeBodyTest extends TestCase {
     }
 
     public void testSimple() throws Exception {
-        MimeBody mm = makeMessage(MESS, CT);
+        MimeBody mm = makeMessage(MESS, MESS_CONTENT_TYPE);
 
         PartInfo rubyPart = mm.getPart(1);
         InputStream rubyStream = rubyPart.getInputStream(true);
@@ -83,7 +83,7 @@ public class MimeBodyTest extends TestCase {
     }
 
     public void testSimpleWithNoPreamble() throws Exception {
-        MimeBody mm = makeMessage(MESS2, CT2);
+        MimeBody mm = makeMessage(MESS2, MESS2_CONTENT_TYPE);
 
         PartInfo rubyPart = mm.getPart(1);
         InputStream rubyStream = rubyPart.getInputStream(true);
@@ -134,7 +134,7 @@ public class MimeBodyTest extends TestCase {
     }
 
     public void testStreamAllWithNoPreamble() throws Exception {
-        MimeBody mm = makeMessage(MESS2, CT2);
+        MimeBody mm = makeMessage(MESS2, MESS2_CONTENT_TYPE);
 
         InputStream bodyStream = mm.getEntireMessageBodyAsInputStream(true);
         byte[] body = HexUtils.slurpStream(bodyStream);
@@ -145,7 +145,7 @@ public class MimeBodyTest extends TestCase {
     }
 
     public void testStreamAllWithPreamble() throws Exception {
-        MimeBody mm = makeMessage(MESS, CT);
+        MimeBody mm = makeMessage(MESS, MESS_CONTENT_TYPE);
 
         InputStream bodyStream = mm.getEntireMessageBodyAsInputStream(true);
         byte[] body = HexUtils.slurpStream(bodyStream);
@@ -163,7 +163,7 @@ public class MimeBodyTest extends TestCase {
     }
 
     public void testStreamAllConsumedRubyPart() throws Exception {
-        MimeBody mm = makeMessage(MESS2, CT2);
+        MimeBody mm = makeMessage(MESS2, MESS2_CONTENT_TYPE);
 
         // Destroy body of ruby part
         HexUtils.slurpStream(mm.getPart(1).getInputStream(true));
@@ -177,7 +177,7 @@ public class MimeBodyTest extends TestCase {
     }
 
     public void testStreamAllWithAllStashed() throws Exception {
-        MimeBody mm = makeMessage(MESS, CT);
+        MimeBody mm = makeMessage(MESS, MESS_CONTENT_TYPE);
 
         mm.getPart(1).getInputStream(false);
 
@@ -195,7 +195,7 @@ public class MimeBodyTest extends TestCase {
     }
 
     public void testStreamAllWithFirstPartStashed() throws Exception {
-        MimeBody mm = makeMessage(MESS, CT);
+        MimeBody mm = makeMessage(MESS, MESS_CONTENT_TYPE);
 
         mm.getPart(0).getInputStream(false);
 
@@ -209,7 +209,7 @@ public class MimeBodyTest extends TestCase {
     }
 
     public void testLookupsByCid() throws Exception {
-        MimeBody mm = makeMessage(MESS, CT);
+        MimeBody mm = makeMessage(MESS, MESS_CONTENT_TYPE);
 
         PartInfo rubyPart = mm.getPartByContentId(MESS_RUBYCID);
         InputStream rubyStream = rubyPart.getInputStream(true);
@@ -259,7 +259,7 @@ public class MimeBodyTest extends TestCase {
     }
 
     public void testIterator() throws Exception {
-        MimeBody mm = makeMessage(MESS, CT);
+        MimeBody mm = makeMessage(MESS, MESS_CONTENT_TYPE);
 
         List parts = new ArrayList();
         for (PartIterator i = mm.iterator(); i.hasNext(); ) {
@@ -330,13 +330,16 @@ public class MimeBodyTest extends TestCase {
 
     public final String MESS_SOAPCID = "-76394136.15558";
     public final String MESS_RUBYCID = "-76392836.15558";
-    public static final String CT = "multipart/related; type=\"text/xml\"; boundary=\"----=Part_-763936460.407197826076299\"; start=\"-76394136.15558\"";
+    public static final String MESS_BOUNDARY = "----=Part_-763936460.407197826076299";
+    public static final String MESS_CONTENT_TYPE = "multipart/related; type=\"text/xml\"; boundary=\"" +
+            MESS_BOUNDARY+ "\"; start=\"-76394136.15558\"";
+    public static final String MESS_PAYLOAD_NS = "urn:EchoAttachmentsService";
     public static final String SOAP = "<?xml version=\"1.0\" encoding=\"utf-8\" ?>\n" +
             "<env:Envelope xmlns:xsd=\"http://www.w3.org/2001/XMLSchema\"\n" +
             "    xmlns:env=\"http://schemas.xmlsoap.org/soap/envelope/\"\n" +
             "    xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\">\n" +
             "  <env:Body>\n" +
-            "    <n1:echoOne xmlns:n1=\"urn:EchoAttachmentsService\"\n" +
+            "    <n1:echoOne xmlns:n1=\"" + MESS_PAYLOAD_NS + "\"\n" +
             "        env:encodingStyle=\"http://schemas.xmlsoap.org/soap/encoding/\">\n" +
             "      <file href=\"cid:-76392836.15558\"></file>\n" +
             "    </n1:echoOne>\n" +
@@ -379,7 +382,9 @@ public class MimeBodyTest extends TestCase {
             "\r\n" +
             "------=Part_-763936460.407197826076299--\r\n";
 
-    public static final String CT2 = "multipart/related; type=\"text/xml\"; boundary=\"----=Part_-763936460.00306951464153826\"; start=\"-76394136.13454\"";
+    public static final String MESS2_BOUNDARY = "----=Part_-763936460.00306951464153826";
+    public static final String MESS2_CONTENT_TYPE = "multipart/related; type=\"text/xml\"; boundary=\"" +
+            MESS2_BOUNDARY + "\"; start=\"-76394136.13454\"";
     public static final String MESS2 = "------=Part_-763936460.00306951464153826\r\n" +
             "Content-Transfer-Encoding: 8bit\r\n" +
             "Content-Type: text/xml; charset=utf-8\r\n" +

@@ -6,10 +6,13 @@
 
 package com.l7tech.skunkworks.message;
 
+import com.l7tech.common.mime.ContentTypeHeader;
+import com.l7tech.common.mime.NoSuchPartException;
+import com.l7tech.common.mime.PartInfo;
+import com.l7tech.common.mime.PartIterator;
+import com.l7tech.common.util.XmlUtil;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
-import com.l7tech.common.mime.*;
-import com.l7tech.common.util.XmlUtil;
 
 import java.io.IOException;
 
@@ -130,7 +133,7 @@ class XmlFacet extends MessageFacet {
                 try {
                     document = XmlUtil.parse(firstPart.getInputStream(false));
                 } catch (NoSuchPartException e) {
-                    throw new SAXException(e);
+                    throw new SAXException("Unable to parse XML: " + e);
                 }
             }
             firstPartValid = false; // Assume caller is going to run roughshod over document

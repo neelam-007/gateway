@@ -22,17 +22,19 @@ import java.util.logging.Logger;
  */
 public class ContentTypeHeader extends MimeHeader {
     private static final Logger logger = Logger.getLogger(ContentTypeHeader.class.getName());
-    public static final ContentTypeHeader XML_DEFAULT;
     public static final ContentTypeHeader OCTET_STREAM_DEFAULT;
+    public static final ContentTypeHeader TEXT_DEFAULT;
+    public static final ContentTypeHeader XML_DEFAULT;
     public static final String CHARSET = "charset";
-    public static final String DEFAULT_ENCODING_MIME = "utf-8";
+    public static final String DEFAULT_CHARSET_MIME = "utf-8";
 
     static {
         try {
-            XML_DEFAULT = parseValue("text/xml; charset=utf-8");
-            XML_DEFAULT.getEncoding();
             OCTET_STREAM_DEFAULT = parseValue("application/octet-stream");
             OCTET_STREAM_DEFAULT.getEncoding();
+            TEXT_DEFAULT = parseValue("text/plain; charset=UTF-8");
+            XML_DEFAULT = parseValue("text/xml; charset=UTF-8");
+            XML_DEFAULT.getEncoding();
         } catch (Throwable e) {
             throw new Error(e);
         }
@@ -246,7 +248,7 @@ public class ContentTypeHeader extends MimeHeader {
                     charsetValue = MimeUtility.mimeCharset(javaEncoding);
 
             if (charsetValue == null)
-                charsetValue = DEFAULT_ENCODING_MIME;
+                charsetValue = DEFAULT_CHARSET_MIME;
 
             os.write(MimeUtility.quote(charsetValue.toLowerCase(), HeaderTokenizer.MIME).getBytes(ENCODING));
         } else {
