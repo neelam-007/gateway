@@ -15,6 +15,8 @@ import java.util.Date;
  * AdminWS for consulting the server system log
  */
 public class Service {
+    public static final String SERVICE_DEPENDENT_URL_PORTION = "/services/loggingAdmin";
+
     public String[] getSystemLog(int offset, int size) throws RemoteException {
         LogRecord[] records = LogManager.getInstance().getRecorded(offset, size);
         return logRecordsToStrings(records);
