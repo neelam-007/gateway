@@ -43,7 +43,7 @@ class SenderVouchesHelper extends SamlAssertionHelper {
      * @throws SAXException 
      */
     Document createAssertion() throws IOException, SAXException, CertificateException {
-        Calendar now = Calendar.getInstance();
+        Calendar now = Calendar.getInstance(utcTimeZone);
         AssertionType assertion = getGenericAssertion( now );
         AuthenticationStatementType at = attachAuthenticationStatement(assertion, now);
 

@@ -38,10 +38,7 @@ import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.security.interfaces.DSAPrivateKey;
 import java.security.interfaces.RSAPrivateKey;
-import java.util.Calendar;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * Abstract superclass of specific Subject/ConfirmationMethod implementations
@@ -59,6 +56,7 @@ public abstract class SamlAssertionHelper {
         this.credentials = credentials;
         this.signerInfo = signer;
         this.soapMessage = soapDom;
+        utcTimeZone = TimeZone.getTimeZone("UTC");
     }
 
     /**
@@ -225,7 +223,7 @@ public abstract class SamlAssertionHelper {
         assertion.setIssueInstant(now);
 
         ConditionsType ct = ConditionsType.Factory.newInstance();
-        Calendar calendar = Calendar.getInstance();
+        Calendar calendar = Calendar.getInstance(utcTimeZone);
         calendar.set(Calendar.SECOND, 0);
         calendar.set(Calendar.MILLISECOND, 0);
         ct.setNotBefore(calendar);
@@ -305,10 +303,9 @@ public abstract class SamlAssertionHelper {
         return authStatement;
     }
 
-    static final int DEFAULT_EXPIRY_MINUTES = 5;
-
     protected SignerInfo signerInfo;
     protected Document soapMessage;
     protected SamlAssertionGenerator.Options options;
     protected LoginCredentials credentials;
+    protected final TimeZone utcTimeZone;
 }

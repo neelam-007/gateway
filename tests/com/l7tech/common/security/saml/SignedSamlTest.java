@@ -81,7 +81,6 @@ public class SignedSamlTest extends TestCase {
 
         LoginCredentials creds = new LoginCredentials(null, null, CredentialFormat.CLIENTCERT, RequestWssX509Cert.class, null, clientCertChain[0]);
         SamlAssertionGenerator.Options samlOptions = new SamlAssertionGenerator.Options();
-        samlOptions.setExpiryMinutes(80);
         samlOptions.setClientAddress(InetAddress.getLocalHost());
         Document doc = new DocumentImpl();
         SignerInfo si = new SignerInfo(caPrivateKey, caCertChain);

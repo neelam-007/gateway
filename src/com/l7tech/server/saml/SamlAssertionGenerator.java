@@ -98,11 +98,12 @@ public class SamlAssertionGenerator {
         }
 
         boolean includeGroupMembership;
-        int expiryMinutes;
+        int expiryMinutes = DEFAULT_EXPIRY_MINUTES;
         InetAddress clientAddress;
         boolean signEnvelope = true;
         boolean signAssertion = true;
 
     }
 
+    static final int DEFAULT_EXPIRY_MINUTES = 5;
 }

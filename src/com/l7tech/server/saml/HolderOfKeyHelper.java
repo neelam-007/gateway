@@ -19,7 +19,6 @@ import java.io.IOException;
 import java.net.InetAddress;
 import java.security.cert.CertificateException;
 import java.util.Calendar;
-import java.util.TimeZone;
 import java.util.logging.Logger;
 
 /**
@@ -58,7 +57,7 @@ public class HolderOfKeyHelper extends SamlAssertionHelper {
      * @throws SAXException
      */
     public Document createAssertion() throws IOException, SAXException, CertificateException {
-        Calendar now = Calendar.getInstance(TimeZone.getTimeZone("UTC"));
+        Calendar now = Calendar.getInstance(utcTimeZone);
 
         AssertionType assertion = getGenericAssertion( now );
         AuthenticationStatementType at = attachAuthenticationStatement(assertion, now);
