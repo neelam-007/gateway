@@ -191,7 +191,7 @@ public class JmsQueuesWindow extends JDialog {
                                                                           name + "?<br>" +
                                                                           "<center>This action cannot be undone." +
                                                                           "</center></html>",
-                                                                          "Remove Queue?",
+                                                                          "Remove JMS Queue?",
                                                                           0, JOptionPane.WARNING_MESSAGE,
                                                                           null, options, options[1]);
                                 if (result == 0) {
