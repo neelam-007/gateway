@@ -7,14 +7,14 @@
 package com.l7tech.identity.ldap;
 
 import com.l7tech.identity.*;
-import com.l7tech.objectmodel.*;
 import com.l7tech.logging.LogManager;
+import com.l7tech.objectmodel.*;
 
-import javax.naming.directory.*;
-import javax.naming.NamingException;
-import javax.naming.NamingEnumeration;
 import javax.naming.Name;
 import javax.naming.NameParser;
+import javax.naming.NamingEnumeration;
+import javax.naming.NamingException;
+import javax.naming.directory.*;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -169,6 +169,12 @@ public abstract class AbstractLdapGroupManagerServer implements GroupManager {
     }
 
     public boolean isMember(User user, Group group) throws FindException {
+        Set userHeaders = getUserHeaders( group );
+        for (Iterator i = userHeaders.iterator(); i.hasNext();) {
+            EntityHeader header = (EntityHeader) i.next();
+            String login = header.getName();
+            if ( login != null && login.equals( user.getLogin() ) ) return true;
+        }
         return false;
     }
 
@@ -185,7 +191,7 @@ public abstract class AbstractLdapGroupManagerServer implements GroupManager {
             AbstractLdapConstants constants = getConstants();
             User user;
 
-            if (dn.toLowerCase().indexOf(getConstants().groupNameAttribute().toLowerCase() + "=") >= 0) {
+            if (dn.toLowerCase().indexOf(getConstants().groupNameAttribute().toLowerCase() + "=") < 0) {
                 // It's an OU
 
                 String filter = "(objectclass=" + constants.userObjectClass() + ")";
@@ -204,7 +210,7 @@ public abstract class AbstractLdapGroupManagerServer implements GroupManager {
                     if (tmp != null) login = tmp.toString();
                     if (login != null && userdn != null) {
                         user = getUserManager().findByPrimaryKey(userdn);
-                        headers.add( new EntityHeader( user.getUniqueIdentifier(), EntityType.USER, user.getName(), null ) );
+                        headers.add( new EntityHeader( user.getUniqueIdentifier(), EntityType.USER, user.getLogin(), null ) );
                     }
                 }
             } else {
@@ -233,7 +239,6 @@ public abstract class AbstractLdapGroupManagerServer implements GroupManager {
             } catch ( NamingException ne ) {
                 throw new FindException( ne.getMessage(), ne );
             }
-
         }
     }
 
@@ -506,7 +511,15 @@ public abstract class AbstractLdapGroupManagerServer implements GroupManager {
         throw new SaveException( UNSUPPORTED );
     }
 
+    public String save( Group group, Set userHeaders ) throws SaveException {
+        throw new SaveException( UNSUPPORTED );
+    }
+
     public void update(Group group) throws UpdateException {
+        throw new UpdateException( UNSUPPORTED );
+    }
+
+    public void update(Group group, Set userHeaders) throws UpdateException {
         throw new UpdateException( UNSUPPORTED );
     }
 
