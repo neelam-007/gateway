@@ -6,8 +6,10 @@ import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.identity.UserManager;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.EntityHeader;
 
 import java.util.Collection;
+import java.rmi.RemoteException;
 
 /**
  * Layer 7 Technologies, inc.
@@ -42,13 +44,29 @@ public class IdentityProviderClient implements com.l7tech.identity.IdentityProvi
     public boolean isReadOnly() { return true; }
 
     public Collection search(EntityType[] types, String searchString) throws FindException {
-        throw new FindException("not implemented");
+        EntityHeader[] array = null;
+        try {
+            array = getStub().searchIdentities(config.getOid(), types, searchString);
+        } catch (RemoteException e) {
+            throw new FindException(e.getMessage(), e);
+        }
+        Collection output = new java.util.ArrayList();
+        for (int i = 0; i < array.length; i++) output.add(array[i]);
+        return output;
     }
 
     // ************************************************
     // PRIVATES
     // ************************************************
 
+    protected Client getStub() {
+        if (localStub == null) {
+            localStub = new Client();
+        }
+        return localStub;
+    }
+
+    protected Client localStub = null;
     private IdentityProviderConfig config;
     private UserManagerClient userManager;
     private GroupManagerClient groupManager;
