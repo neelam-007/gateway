@@ -59,6 +59,7 @@ public class ServerMemberOfGroup extends ServerIdentityAssertion implements Serv
             }
             GroupManager gman = getIdentityProvider().getGroupManager();
             if ( gman.isMember(user, targetGroup) ) {
+                logger.finest("membership established");
                 return AssertionStatus.NONE;
             } else {
                 logger.info("user not member of group");
