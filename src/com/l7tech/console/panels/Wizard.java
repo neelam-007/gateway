@@ -372,6 +372,7 @@ public class Wizard extends JDialog {
             public void wizardSelectionChanged(WizardEvent e) {
                 WizardStepPanel wp = (WizardStepPanel)e.getSource();
                 stepDescriptionTextPane.setText(wp.getDescription());
+                stepDescriptionTextPane.setCaretPosition(0);
             }
         });
         Dimension pd = stepDescriptionTextPane.getPreferredSize();
