@@ -1,7 +1,7 @@
 package com.l7tech.console.panels;
 
 import com.l7tech.common.gui.util.Utilities;
-import com.l7tech.console.action.UserPropertiesAction;
+import com.l7tech.console.action.GenericUserPropertiesAction;
 import com.l7tech.console.action.Actions;
 import com.l7tech.console.event.EntityEvent;
 import com.l7tech.console.event.EntityListener;
@@ -517,8 +517,8 @@ public class NewInternalUserDialog extends JDialog {
                                 header.setType(EntityType.USER);
                                 header.setName(user.getName());
                                 header.setStrId(user.getUniqueIdentifier());
-                                UserPropertiesAction ua =
-                                  new UserPropertiesAction((UserNode)TreeNodeFactory.asTreeNode(header));
+                                GenericUserPropertiesAction ua =
+                                  new GenericUserPropertiesAction((UserNode)TreeNodeFactory.asTreeNode(header));
                                 // only internal provider currently
                                 ua.setIdProvider(Registry.getDefault().getInternalProvider());
                                 ua.performAction();
