@@ -529,7 +529,7 @@ public class LdapIdentityProvider implements IdentityProvider {
         } else logger.finest("this ldap config was tested successfully");
     }
 
-    public void preSaveClientCert( User user, X509Certificate cert ) throws ClientCertManager.VetoSave {
+    public void preSaveClientCert( User user, X509Certificate[] certChain ) throws ClientCertManager.VetoSave {
         // ClientCertManagerImp's default rules are OK
     }
 

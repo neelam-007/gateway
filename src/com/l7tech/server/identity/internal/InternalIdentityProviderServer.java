@@ -257,7 +257,7 @@ public class InternalIdentityProviderServer extends PersistentIdentityProvider {
         }
     }
 
-    public void preSaveClientCert( User user, X509Certificate cert ) throws ClientCertManager.VetoSave {
+    public void preSaveClientCert( User user, X509Certificate[] certChain ) throws ClientCertManager.VetoSave {
         // ClientCertManagerImp's default rules are OK
     }
 
