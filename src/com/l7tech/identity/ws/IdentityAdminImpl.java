@@ -183,6 +183,7 @@ public class IdentityAdminImpl implements IdentityAdmin {
 
     public String saveUser(long identityProviderConfigId, User user)
                                     throws RemoteException, SaveException, UpdateException {
+        beginTransaction();
         try {
             IdentityProviderConfig cfg = getIdProvCfgMan().findByPrimaryKey(identityProviderConfigId);
             IdentityProvider provider = IdentityProviderFactory.makeProvider(cfg);
