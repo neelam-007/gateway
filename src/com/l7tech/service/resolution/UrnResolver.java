@@ -58,8 +58,8 @@ public class UrnResolver extends WsdlOperationServiceResolver {
                 String ns;
                 boolean gotBody = false;
                 int eventType = xpp.getEventType();
-                while (eventType != xpp.END_DOCUMENT) {
-                    if( eventType == xpp.START_TAG ) {
+                while (eventType != XmlPullParser.END_DOCUMENT) {
+                    if( eventType == XmlPullParser.START_TAG ) {
                         tag = xpp.getName();
                         if ( gotBody ) {
                             ns = xpp.getNamespace();
