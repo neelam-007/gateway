@@ -74,7 +74,7 @@ public class JmsQueuesWindow extends JDialog {
 
         p.add(new JLabel("Known JMS Queues:"),
           new GridBagConstraints(0, 0, 2, 1, 0.0, 0.0,
-            GridBagConstraints.CENTER,
+            GridBagConstraints.WEST,
             GridBagConstraints.NONE,
             new Insets(5, 5, 5, 5), 0, 0));
 
