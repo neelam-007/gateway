@@ -1,4 +1,19 @@
 #/bin/sh
+###########################################################################
+# This program will detect if a MySQL DB cluster on IP address X.X.X.X is up.
+# If it fails to connect to this DB cluster after Y tries, this script 
+# will attempt to perform an IP takeover of address X.X.X.X
+# IP takeover involves:
+#   a) an ifconfig alias on a certain interface
+#   b) a gratuitous ARP call
+# 
+#
+#
+# Property of Layer 7 Technologies
+#
+# by Jay Thorne - jthorne@layer7tech.com
+###########################################################################
+
 # programs used
 IFCONFIG="/sbin/ifconfig"
 GARP="/usr/local/bin/garp"
@@ -6,13 +21,13 @@ WGET="/usr/bin/wget"
 NC="/usr/bin/nc"
 # globals and configuration
 
-EMAIL="jthorne@layer7tech.com"
+EMAIL="support@layer7tech.com"
 
-HOST="10.0.0.25"
+DBHOST="10.7.7.77"
 # cluster IP addresss
 
 INTERFACE="eth0"
-INTERFACE_ALIAS="eth0:0"
+INTERFACE_ALIAS="$INTERFACE:MYSQLDB"
 # alias interface
 
 # file on server to get
@@ -64,18 +79,18 @@ failure() {
 
 doiptakeover() {
 	# FIXME: currently Defanged
-	echo "Taking over IP $HOST";
-	$IFCONFIG $INTERFACE_ALIAS $HOST
+	echo "Taking over IP $DBHOST";
+	$IFCONFIG $INTERFACE_ALIAS $DBHOST
 	echo "Sending gratuitous arp"
-	$GARP -i $INTERFACE -a $HOST
+	$GARP -i $INTERFACE -a $DBHOST
 	echo "echo 'SSG Failover' | mail -s 'SSG Failover' $EMAIL" 
 }
 
 doget() {
 	# grab a file from the tomcat using wget
 	# quiet, few retries, short timeout, configurable location
-	#if $WGET  -q -t $TRIES -T $WAIT http://$HOST:$PORT/$FILE ;  then 
-	if echo " " | $NC -w $WAIT -o /tmp/foo $HOST $PORT > /tmp/bar;  then 
+	#if $WGET  -q -t $TRIES -T $WAIT http://$DBHOST:$PORT/$FILE ;  then 
+	if echo " " | $NC -w $WAIT -o /tmp/foo $DBHOST $PORT > /tmp/bar;  then 
 		success
 	else 
 		RETVAL=$?
@@ -85,5 +100,3 @@ doget() {
 
 # after all those definitions now call the entry point.
 doget
-
-
