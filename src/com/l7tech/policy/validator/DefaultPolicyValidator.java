@@ -2,6 +2,7 @@ package com.l7tech.policy.validator;
 
 import com.l7tech.policy.*;
 import com.l7tech.policy.assertion.*;
+import com.l7tech.policy.assertion.composite.CompositeAssertion;
 import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.assertion.credential.CredentialSourceAssertion;
 import com.l7tech.policy.assertion.credential.http.HttpBasic;
@@ -107,6 +108,8 @@ public class DefaultPolicyValidator extends PolicyValidator {
             ValidatorFactory.getValidator(a).validate(result);
             if (isPreconditionAssertion(a)) {
                 processPrecondition(a);
+            } else if(isComposite(a)) {
+                processComposite((CompositeAssertion)a);
             } else if (isCrendentialSource(a)) {
                 processCredentialSource(a);
             } else if (isAccessControl(a)) {
@@ -303,6 +306,13 @@ public class DefaultPolicyValidator extends PolicyValidator {
             }
         }
 
+        private void processComposite(CompositeAssertion a) {
+            if (a instanceof AllAssertion && a.getChildren().isEmpty()) {
+                  result.addWarning(new PolicyValidatorResult.Warning(a,
+                      "This composite assertion does not contain any elements.", null));
+            }
+        }
+
         private void processUnknown() {
         }
 
@@ -318,9 +328,12 @@ public class DefaultPolicyValidator extends PolicyValidator {
             return a instanceof SpecificUser;
         }
 
-
         private boolean isCrendentialSource(Assertion a) {
             return a instanceof CredentialSourceAssertion;
+        }
+
+        private boolean isComposite(Assertion a) {
+            return a instanceof CompositeAssertion;
         }
 
         private boolean isPreconditionAssertion(Assertion a) {
