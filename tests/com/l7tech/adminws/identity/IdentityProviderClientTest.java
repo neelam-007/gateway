@@ -4,8 +4,17 @@ import com.l7tech.identity.*;
 import com.l7tech.adminws.ClientCredentialManager;
 import com.l7tech.util.Locator;
 import com.l7tech.objectmodel.DeleteException;
+import com.l7tech.objectmodel.EntityHeader;
+import com.l7tech.objectmodel.EntityType;
 
 import java.net.PasswordAuthentication;
+import java.util.Collection;
+import java.util.Iterator;
+import java.io.File;
+
+import org.apache.axis.client.Call;
+
+import javax.xml.namespace.QName;
 
 /**
  * User: flascell
@@ -14,6 +23,23 @@ import java.net.PasswordAuthentication;
  *
  */
 public class IdentityProviderClientTest {
+
+    public static String testEcho(Client testee) throws Exception {
+        return testee.echoVersion();
+    }
+
+    public static void testListAll(IdentityProviderClient testee) throws Exception {
+        System.out.println("READING ALL USERS");
+        Collection headers = testee.getUserManager().findAllHeaders();
+        for (Iterator i = headers.iterator(); i.hasNext();) {
+            EntityHeader header = (EntityHeader)i.next();
+            System.out.println(header);
+            User usr = testee.getUserManager().findByPrimaryKey(header.getStrId());
+            System.out.println(usr);
+        }
+        System.out.println("DONE READING USERS");
+    }
+
     public static void testCreateDeleteUser(IdentityProviderClient testee) throws Exception {
         System.out.println("creating user");
         User newuser = new User();
@@ -52,7 +78,37 @@ public class IdentityProviderClientTest {
         System.out.println("done testDeleteAdminUser");
     }
 
+    public static void testSearchIdentities(IdentityProviderClient testee) throws Exception {
+        String pattern = "j*";
+        System.out.println("SEARCHING USERS " + pattern);
+        Collection headers = testee.search(new EntityType[] {EntityType.GROUP, EntityType.USER}, pattern);
+        for (Iterator i = headers.iterator(); i.hasNext();) {
+            EntityHeader header = (EntityHeader)i.next();
+            System.out.println(header);
+            User usr = testee.getUserManager().findByPrimaryKey(header.getStrId());
+            System.out.println(usr);
+        }
+        System.out.println("DONE SEARCHING USERS");
+    }
+
+    public static void testAxisVersion() throws Exception {
+        Call call = (Call)(new org.apache.axis.client.Service()).createCall();
+        call.setTargetEndpointAddress(new java.net.URL("https://localhost:8443/ssg/services/Version"));
+        call.setUsername("ssgadmin");
+        call.setPassword("ssgadminpasswd");
+        call.setOperationName(new QName("", "getVersion"));
+        call.setReturnClass(String.class);
+        call.setMaintainSession(true);
+        for (int i = 0; i < (10*6); i++) {
+            call.invoke(new Object[]{});
+            //System.out.println((String)call.invoke(new Object[]{}));
+        }
+    }
+
     public static void main(String[] args) throws Exception {
+        System.setProperty("javax.net.ssl.trustStore", System.getProperties().getProperty("user.home") + File.separator + ".l7tech" + File.separator + "trustStore");
+        System.setProperty("javax.net.ssl.trustStorePassword", "password");
+
         ClientCredentialManager credsManager = (ClientCredentialManager)Locator.getDefault().lookup(ClientCredentialManager.class);
         PasswordAuthentication creds = new PasswordAuthentication("ssgadmin", "ssgadminpasswd".toCharArray());
         credsManager.login(creds);
@@ -65,10 +121,11 @@ public class IdentityProviderClientTest {
         internalProvider.initialize(cfg);
 
         // test create and delete
-        testCreateDeleteUser(internalProvider);
-
+        // testCreateDeleteUser(internalProvider);
         // test DeleteAdminUser
-        testDeleteAdminUser(internalProvider);
+        // testDeleteAdminUser(internalProvider);
+        testSearchIdentities(internalProvider);
+
 
         System.out.println("done");
         System.exit(0);
