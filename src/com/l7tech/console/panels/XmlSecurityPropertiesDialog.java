@@ -26,7 +26,6 @@ import com.l7tech.console.xmlviewer.util.DocumentUtilities;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.assertion.xmlsec.ElementSecurity;
 import com.l7tech.policy.assertion.xmlsec.XmlSecurityAssertion;
-import org.apache.xml.utils.NameSpace;
 import org.dom4j.Document;
 import org.dom4j.DocumentException;
 import org.xml.sax.SAXParseException;
@@ -230,6 +229,7 @@ public class XmlSecurityPropertiesDialog extends JDialog {
                 }
             }
         });
+        addButton.setEnabled(false);
 
         removeButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
@@ -238,7 +238,7 @@ public class XmlSecurityPropertiesDialog extends JDialog {
                 securedMessagePartsTableModel.removePart(p);
             }
         });
-
+        removeButton.setEnabled(false);
         helpButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 Actions.invokeHelp(XmlSecurityPropertiesDialog.this);
@@ -255,7 +255,7 @@ public class XmlSecurityPropertiesDialog extends JDialog {
             operationsTree.setRootVisible(false);
             operationsTree.setShowsRootHandles(true);
             operationsTree.setCellRenderer(wsdlTreeRenderer);
-            operationsTree.getSelectionModel().addTreeSelectionListener(treeSelectionListener);
+            operationsTree.getSelectionModel().addTreeSelectionListener(operationsSelectionListener);
             final ListSelectionModel selectionModel = securedItemsTable.getSelectionModel();
             selectionModel.addListSelectionListener(tableSelectionListener);
             selectionModel.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
@@ -324,6 +324,7 @@ public class XmlSecurityPropertiesDialog extends JDialog {
         ConfigurationProperties cp = new ConfigurationProperties();
         exchangerDocument = asExchangerDocument("<empty/>");
         messageViewer = new Viewer(cp.getViewer(), exchangerDocument, false);
+        messageViewer.addDocumentTreeSelectionListener(messageSelectionListener);
         messageViewerToolBar = new ViewerToolBar(cp.getViewer(), messageViewer);
         com.intellij.uiDesigner.core.GridConstraints gridConstraints = new com.intellij.uiDesigner.core.GridConstraints(0, 0, 1, 1, 0, 3, 7, 7, null, null, null);
         messageViewerToolbarPanel.add(messageViewerToolBar, gridConstraints);
@@ -463,7 +464,7 @@ public class XmlSecurityPropertiesDialog extends JDialog {
     };
 
     private final TreeSelectionListener
-      treeSelectionListener = new TreeSelectionListener() {
+      operationsSelectionListener = new TreeSelectionListener() {
           public void valueChanged(TreeSelectionEvent e) {
               TreePath path = e.getNewLeadSelectionPath();
               if (path == null) {
@@ -493,7 +494,7 @@ public class XmlSecurityPropertiesDialog extends JDialog {
                   if (sreq == null) {
                       addButton.setEnabled(false);
                   } else {
-                      addButton.setEnabled(true);
+                      // addButton.setEnabled(true);
                       try {
                           ByteArrayOutputStream bos = new ByteArrayOutputStream();
                           sreq.getSOAPMessage().writeTo(bos);
@@ -509,6 +510,18 @@ public class XmlSecurityPropertiesDialog extends JDialog {
           }
       };
 
+    private final TreeSelectionListener
+      messageSelectionListener = new TreeSelectionListener() {
+          public void valueChanged(TreeSelectionEvent e) {
+              Object o = messageViewerToolBar.getXpathComboBox().getEditor().getItem();
+              boolean validXpath = true;
+              if (o == null)
+                  validXpath = false;
+              else if ("".equals(o.toString())) validXpath = false;
+
+              addButton.setEnabled(e.getNewLeadSelectionPath() != null && validXpath);
+          }
+      };
 
     private final ListSelectionListener tableSelectionListener = new ListSelectionListener() {
         public void valueChanged(ListSelectionEvent e) {
@@ -518,9 +531,10 @@ public class XmlSecurityPropertiesDialog extends JDialog {
                 return;
             }
             String xe = (String)securedItemsTable.getModel().getValueAt(selectedRow, 1);
-
             messageViewerToolBar.getXpathComboBox().getEditor().setItem(xe);
-            removeButton.setEnabled(true);
+            final boolean selected = messageParts.isSelected();
+            removeButton.setEnabled(selected);
+            addButton.setEnabled(selected);
         }
     };
 
@@ -580,29 +594,6 @@ public class XmlSecurityPropertiesDialog extends JDialog {
         return null;
     }
 
-    private Binding getBinding(Message sreq) {
-        Iterator it = serviceWsdl.getBindings().iterator();
-        while (it.hasNext()) {
-            Binding binding = (Binding)it.next();
-            if (binding.getQName().getLocalPart().equals(sreq.getBinding())) {
-                return binding;
-            }
-        }
-
-        return null;
-    }
-
-    private NameSpace getOperationNamespace(BindingOperationTreeNode bnode) throws SOAPException {
-        Message req = forOperation(bnode.getOperation());
-        if (req == null) return null;
-        Iterator it = req.getSOAPMessage().getSOAPPart().getEnvelope().getBody().getChildElements();
-        if (!it.hasNext()) return null;
-        SOAPElement se = (SOAPElement)it.next();
-        final Name elementName = se.getElementName();
-        if (!elementName.getLocalName().equals(bnode.getOperation().getName())) return null;
-        NameSpace ns = new NameSpace(elementName.getPrefix(), elementName.getURI());
-        return ns;
-    }
 
     private XpathExpression xpathForOperation(BindingOperation bop) throws SOAPException {
         Message req = forOperation(bop);
@@ -691,8 +682,8 @@ public class XmlSecurityPropertiesDialog extends JDialog {
         final JTree _12;
         _12 = new JTree();
         operationsTree = _12;
-        _12.setShowsRootHandles(false);
         _12.setRootVisible(false);
+        _12.setShowsRootHandles(false);
         _11.setViewportView(_12);
         final JScrollPane _13;
         _13 = new JScrollPane();

@@ -24,6 +24,7 @@ import com.l7tech.console.xmlviewer.properties.ViewerProperties;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
+import javax.swing.event.TreeSelectionListener;
 import java.awt.*;
 
 /**
@@ -74,7 +75,7 @@ public class Viewer extends JPanel implements XDocumentListener {
         }
         document.addListener(this);
         JComponent c = tree;
-        
+
         if (scrollpane) {
             scrollPane = new JScrollPane(tree,
               JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED,
@@ -181,5 +182,23 @@ public class Viewer extends JPanel implements XDocumentListener {
      */
     public void setViewerEnabled(boolean enabled) {
         tree.setEnabled(enabled);
+    }
+
+    /**
+     * Adds a listener for document selection (TreeSelection) events.
+     *
+     * @param listener the new listener
+     */
+    public void addDocumentTreeSelectionListener(TreeSelectionListener listener) {
+        tree.addTreeSelectionListener(listener);
+    }
+
+    /**
+     * Removes a Document element selection (TreeSelection) event listener.
+     *
+     * @param listener the document listener
+     */
+    public void removeDocumentTreeSelectionListener(TreeSelectionListener listener) {
+        tree.removeTreeSelectionListener(listener);
     }
 }
