@@ -15,12 +15,14 @@ import com.l7tech.common.util.XmlUtil;
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  */
 public class TestDocuments {
-    public static final String TEST_SOAP_XML = "com/l7tech/service/resources/GetLastTradePriceSoapRequest.xml";
-    public static final String WSDL2PORTS = "com/l7tech/service/resources/xmltoday-delayed-quotes-2ports.wsdl";
-    public static final String WSDL = "com/l7tech/service/resources/StockQuoteService.wsdl";
-    public static final String WSDL_DOC_LITERAL = "com/l7tech/service/resources/GeoServe.wsdl";
-    public static final String WSDL_DOC_LITERAL2 = "com/l7tech/service/resources/QuoteService.wsdl";
-    public static final String WSDL2SERVICES = "com/l7tech/service/resources/xmltoday-delayed-quotes-2services.wsdl";
+    private static final String DIR = "com/l7tech/service/resources/";
+    public static final String TEST_SOAP_XML = DIR + "GetLastTradePriceSoapRequest.xml";
+    public static final String WSDL2PORTS = DIR + "xmltoday-delayed-quotes-2ports.wsdl";
+    public static final String WSDL = DIR + "StockQuoteService.wsdl";
+    public static final String WSDL_DOC_LITERAL = DIR + "GeoServe.wsdl";
+    public static final String WSDL_DOC_LITERAL2 = DIR + "QuoteService.wsdl";
+    public static final String WSDL2SERVICES = DIR + "xmltoday-delayed-quotes-2services.wsdl";
+    public static final String PLACEORDER_WITH_MAJESTY = DIR + "PlaceOrder_with_XmlRequestSecurity.xml";
 
     public Document getTestDocument(String resourcetoread)
       throws IOException, SAXException {
