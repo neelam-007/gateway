@@ -41,10 +41,8 @@ public class XmlSecurityFolderNode extends AbstractTreeNode {
      */
     protected void loadChildren() {
         int index = 0;
-        insert(new XmlSignatureReqNode(), index++);
-        insert(new XmlSignatureResNode(), index++);
-        insert(new XmlEncryptionReqNode(), index++);
-        insert(new XmlEncryptionResNode(), index++);
+        insert(new XmlRequestSecurityNode(), index++);
+        insert(new XmlResponseSecurityNode(), index++);
     }
 
     /**

@@ -43,9 +43,8 @@ public class AssertionTreeNodeFactory {
         assertionMap.put(HttpClientCert.class, HttpClientCertAssertionTreeNode.class);
         assertionMap.put(RoutingAssertion.class, RoutingAssertionTreeNode.class);
         assertionMap.put(TrueAssertion.class, AnonymousAssertionTreeNode.class);
-        assertionMap.put(XmlEncReqAssertion.class, XmlEncReqAssertionTreeNode.class);
-        assertionMap.put(XmlEncResAssertion.class, XmlEncResAssertionTreeNode.class);
-        assertionMap.put(XmlDsigResAssertion.class, XmlDsigResAssertionTreeNode.class);
+        assertionMap.put(XmlRequestSecurity.class, XmlRequestSecurityTreeNode.class);
+        assertionMap.put(XmlResponseSecurity.class, XmlResponseSecurityTreeNode.class);
     }
 
     /**
