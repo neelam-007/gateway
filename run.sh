@@ -78,11 +78,11 @@ case "$1" in
 		;;
 	console)
 		target="com.l7tech.console.Main";
-		exec $JAVA_HOME/bin/java ${target}
+		exec $JAVA_HOME/bin/java $JAVA_OPTS ${target}
 		;;
 	proxy)
 		target="com.l7tech.proxy.gui.Main";
-		exec $JAVA_HOME/bin/java ${target}
+		exec $JAVA_HOME/bin/java $JAVA_OPTS ${target}
 		;;
 esac 
     
