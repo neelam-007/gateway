@@ -2,6 +2,7 @@ package com.l7tech.console.action;
 
 import com.l7tech.console.MainWindow;
 import com.l7tech.console.tree.EntityHeaderNode;
+import com.l7tech.console.tree.AssertionsTree;
 import com.l7tech.console.util.WindowManager;
 
 import javax.swing.*;
@@ -58,7 +59,7 @@ public class DeleteEntityAction extends BaseAction {
         boolean deleted = Actions.deleteEntity(node);
         if (deleted) {
             JTree tree =
-              (JTree)WindowManager.getInstance().getComponent(MainWindow.ASSERTION_PALETTE);
+              (JTree)WindowManager.getInstance().getComponent(AssertionsTree.NAME);
             DefaultTreeModel model = (DefaultTreeModel)tree.getModel();
             model.removeNodeFromParent(node);
         }

@@ -53,6 +53,16 @@ public abstract class EntityHeaderNode extends AbstractTreeNode {
     }
 
     /**
+     *Test if the node can be deleted. Default for entites
+     * is <code>true</code>
+     *
+     * @return true if the node can be deleted, false otherwise
+     */
+    public boolean canDelete() {
+        return true;
+    }
+
+    /**
      * Returns the entity this node contains.
      *
      * @return the <code>EntityHeader</code>

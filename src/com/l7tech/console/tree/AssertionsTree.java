@@ -1,11 +1,9 @@
-package com.l7tech.console.tree.policy;
+package com.l7tech.console.tree;
 
-import com.l7tech.console.tree.AbstractTreeNode;
-import com.l7tech.console.tree.EntityTreeCellRenderer;
-import com.l7tech.console.util.PopUpMouseListener;
+import com.l7tech.console.action.DeleteEntityAction;
 
 import javax.swing.*;
-import javax.swing.tree.TreeNode;
+import javax.swing.tree.DefaultTreeModel;
 import javax.swing.tree.TreePath;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
@@ -13,19 +11,20 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 
 /**
- * Class PolicyTree is the extended <code>JTree</code> with addtional
+ * Class ServiceTree is the speciaqliced <code>JTree</code> that
+ * handles service
  *
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  */
-public class PolicyTree extends JTree {
+public class AssertionsTree extends JTree {
     /** component name */
-    public final static String NAME = "policy.tree";
+    public final static String NAME = "assertion.palette";
     /**
      * Create the new policy tree with the policy model.
      *
      * @param newModel
      */
-    public PolicyTree(PolicyTreeModel newModel) {
+    public AssertionsTree(DefaultTreeModel newModel) {
         super(newModel);
         initialize();
     }
@@ -33,7 +32,7 @@ public class PolicyTree extends JTree {
     /**
      * Create empty policy tree
      */
-    public PolicyTree() {
+    public AssertionsTree() {
         this(null);
     }
 
@@ -56,21 +55,33 @@ public class PolicyTree extends JTree {
             if (path == null) return;
             int keyCode = e.getKeyCode();
             if (keyCode == KeyEvent.VK_DELETE) {
-                TreeNode node =
-                  (TreeNode)path.getLastPathComponent();
+                AbstractTreeNode node =
+                  (AbstractTreeNode)path.getLastPathComponent();
                 if (node == null) return;
+                if (!node.canDelete()) return;
+                if (node instanceof EntityHeaderNode)
+                    new DeleteEntityAction((EntityHeaderNode)node).performAction();
+
             }
         }
     }
 
-    class TreeMouseListener extends PopUpMouseListener {
+    class TreeMouseListener extends MouseAdapter {
+        public void mousePressed(MouseEvent e) {
+            popUpMenuHandler(e);
+        }
+
+        public void mouseReleased(MouseEvent e) {
+            popUpMenuHandler(e);
+        }
+
         /**
          * Handle the mouse click popup when the Tree item is right clicked. The context sensitive
          * menu is displayed if the right click was over an item.
          *
          * @param mouseEvent
          */
-        protected void popUpMenuHandler(MouseEvent mouseEvent) {
+        private void popUpMenuHandler(MouseEvent mouseEvent) {
             JTree tree = (JTree)mouseEvent.getSource();
 
             if (mouseEvent.isPopupTrigger()) {

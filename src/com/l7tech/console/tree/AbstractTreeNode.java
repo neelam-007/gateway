@@ -133,7 +133,7 @@ public abstract class AbstractTreeNode extends DefaultMutableTreeNode {
     }
 
     /**
-     *Test if the node can be deleted. Default is <code>true</code>
+     *Test if the node can be deleted. Default is <code>false</code>
      *
      * @return true if the node can be deleted, false otherwise
      */

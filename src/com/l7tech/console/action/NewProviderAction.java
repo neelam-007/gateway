@@ -85,7 +85,7 @@ public class NewProviderAction extends NodeAction {
             SwingUtilities.invokeLater(new Runnable() {
                 public void run() {
                       EntityHeader eh = (EntityHeader)ev.getEntity();
-                    JTree tree = (JTree)WindowManager.getInstance().getComponent(MainWindow.ASSERTION_PALETTE);
+                    JTree tree = (JTree)WindowManager.getInstance().getComponent(AssertionsTree.NAME);
                     if (tree != null) {
                              TreeNode[] nodes = node.getPath();
                         TreePath nPath = new TreePath(nodes);

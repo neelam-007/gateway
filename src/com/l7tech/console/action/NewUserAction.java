@@ -84,7 +84,7 @@ public class NewUserAction extends NodeAction {
                     EntityHeader eh = (EntityHeader)ev.getEntity();
                     JTree tree =
                       (JTree)WindowManager.
-                      getInstance().getComponent(MainWindow.ASSERTION_PALETTE);
+                      getInstance().getComponent(AssertionsTree.NAME);
                     if (tree != null) {
                             TreeNode[] nodes = node.getPath();
                         TreePath nPath = new TreePath(nodes);

@@ -96,7 +96,6 @@ public class MainWindow extends JFrame {
     private final ClassLoader cl = getClass().getClassLoader();
 
     private JMenu gotoMenu;
-    public static final String ASSERTION_PALETTE = "assertion.palette";
     public static final String TITLE = "SSG console";
     public static final String NAME = "main.window"; // registered
     private JTree policyTree;
@@ -516,7 +515,6 @@ public class MainWindow extends JFrame {
           new AbstractAction(atext, icon) {
               /** Invoked when an action occurs.*/
               public void actionPerformed(ActionEvent event) {
-                  JTree tree = getAssertionPaletteTree();
               }
           };
         removeNodeAction.putValue(Action.SHORT_DESCRIPTION, atext);
@@ -575,17 +573,11 @@ public class MainWindow extends JFrame {
      */
     private JTree getAssertionPaletteTree() {
         JTree tree =
-          (JTree)WindowManager.getInstance().getComponent(ASSERTION_PALETTE);
+          (JTree)WindowManager.getInstance().getComponent(AssertionsTree.NAME);
         if (tree != null)
             return tree;
-
-        tree = new JTree();
-        tree.setShowsRootHandles(true);
-        tree.setLargeModel(true);
-        tree.setCellRenderer(new EntityTreeCellRenderer());
-        tree.putClientProperty("JTree.lineStyle", "Angled");
-        tree.setModel(null);
-        WindowManager.getInstance().registerComponent(ASSERTION_PALETTE, tree);
+        tree = new AssertionsTree();
+        WindowManager.getInstance().registerComponent(AssertionsTree.NAME, tree);
         return tree;
     }
 
@@ -752,7 +744,7 @@ public class MainWindow extends JFrame {
             getStatusMsgRight().setBorder(border);
             rightPanel.add(getStatusMsgRight(), BorderLayout.WEST);
 
-            progressBar = new ProgressBar(0,100,20);
+            progressBar = new ProgressBar(0, 100, 20);
             WindowManager.getInstance().registerComponent(ProgressBar.NAME, progressBar);
             // a bit of a hack here , set the size to the size of "disconnected" label
             progressBar.setPreferredSize(getStatusMsgLeft().getPreferredSize());
@@ -1006,37 +998,6 @@ public class MainWindow extends JFrame {
     }
 
     /**
-     * Select the node with the given name
-     * @param name trhe node name
-     */
-    private void selectNodeByName(String name) {
-        TreeNode node =
-          TreeNodeActions.
-          nodeByName(name,
-            (DefaultMutableTreeNode)getAssertionPaletteTree().getModel().getRoot());
-        if (node != null) {
-            TreePath path = new TreePath(((DefaultMutableTreeNode)node).getPath());
-            getAssertionPaletteTree().setSelectionPath(path);
-        }
-
-    }
-
-    /**
-     * remove the node from the MW and from the tree
-     *
-     * @param node   the node to remove
-     */
-    private void removeNode(EntityTreeNode node) {
-        // store the parent node to use as a panel for later
-        EntityTreeNode parentNode = (EntityTreeNode)node.getParent();
-        if (!TreeNodeActions.deleteNode(node)) return;
-
-        // node deleted now change selection to parent
-        TreePath tPath = new TreePath(parentNode.getPath());
-        getAssertionPaletteTree().getSelectionModel().setSelectionPath(tPath);
-    }
-
-    /**
      * update the actions, menus, buttons for the selected node.
      *
      * @param node   currently selected node
@@ -1063,62 +1024,6 @@ public class MainWindow extends JFrame {
      */
     private void exitMenuEventHandler(ActionEvent event) {
         this.dispose();
-    }
-
-    /**
-     * Handle the mouse click popup when the Tree item is right clicked. The context sensitive
-     * menu is displayed if the right click was over an item.
-     *
-     * @param mouseEvent
-     */
-    public void jTreePopUpEventHandler(MouseEvent mouseEvent) {
-        JTree tree = (JTree)mouseEvent.getSource();
-
-        if (mouseEvent.isPopupTrigger()) {
-            int closestRow = tree.getClosestRowForLocation(mouseEvent.getX(), mouseEvent.getY());
-
-            if (closestRow != -1
-              && tree.getRowBounds(closestRow).contains(mouseEvent.getX(), mouseEvent.getY())) {
-                int[] rows = tree.getSelectionRows();
-                boolean found = false;
-
-                for (int i = 0; rows != null && i < rows.length; i++) {
-                    if (rows[i] == closestRow) {
-                        found = true;
-                        break;
-                    }
-                }
-                if (!found) {
-                    tree.setSelectionRow(closestRow);
-                }
-                AbstractTreeNode node = (AbstractTreeNode)tree.getLastSelectedPathComponent();
-
-                JPopupMenu menu = getTreeNodeJPopupMenu(node);
-                if (menu != null) {
-                    menu.show(mouseEvent.getComponent(), mouseEvent.getX(), mouseEvent.getY());
-                }
-            }
-        }
-        return;
-    }
-
-    /**
-     * Handle the <code>Jtree</code> will expand event
-     *
-     * @param event
-     */
-    public void jTreeViewWillExpandEventHandler(TreeExpansionEvent event)
-      throws ExpandVetoException {
-        ;
-    }
-
-    /**
-     * Handle the <code>Jtree</code> expanded event
-     *
-     * @param event
-     */
-    public void jTreeViewTreeExpandedEventHandler(TreeExpansionEvent event) {
-        ;
     }
 
     /**
@@ -1159,120 +1064,6 @@ public class MainWindow extends JFrame {
                   showHelpTopics();
               }
           });
-
-        final JTree ptree = getAssertionPaletteTree();
-        final JTree stree = getServicesTree();
-        // JTree listeners
-        TreeSelectionListener selectionListener =
-          new TreeSelectionListener() {
-              public void valueChanged(TreeSelectionEvent e) {
-                  if (TreeWorker.active()) {
-                      TreeWorker.stopWorker();
-                  }
-                  try {
-                      getContentPane().
-                        setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
-                      treeSelectionEventHandler(e);
-                  } catch (Exception ex) {
-                      log.log(Level.SEVERE, "main()", ex);
-                  } finally {
-                      getContentPane().
-                        setCursor(Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR));
-                  }
-              }
-          };
-        // ptree.addTreeSelectionListener(selectionListener);
-        stree.addTreeSelectionListener(selectionListener);
-
-        MouseListener mouseListener =
-          new MouseAdapter() {
-
-              public void mousePressed(MouseEvent e) {
-                  jTreePopUpEventHandler(e);
-              }
-
-              public void mouseReleased(MouseEvent e) {
-                  jTreePopUpEventHandler(e);
-              }
-          };
-
-        ptree.addMouseListener(mouseListener);
-        stree.addMouseListener(mouseListener);
-
-        TreeWillExpandListener willExpandListener =
-          new TreeWillExpandListener() {
-              /**
-               * Invoked whenever a node in the tree is about to be collapsed.
-               */
-              public void treeWillCollapse(TreeExpansionEvent event)
-                throws ExpandVetoException {
-                  ;
-              }
-
-              /**
-               * Invoked whenever a node in the tree is about to be expanded.
-               */
-              public void treeWillExpand(TreeExpansionEvent event)
-                throws ExpandVetoException {
-                  jTreeViewWillExpandEventHandler(event);
-              }
-          };
-        ptree.addTreeWillExpandListener(willExpandListener);
-        stree.addTreeWillExpandListener(willExpandListener);
-
-
-        TreeExpansionListener treeExpansionListener =
-          new TreeExpansionListener() {
-              /**
-               * Called whenever an item in the tree has been expanded.
-               */
-              public void treeExpanded(TreeExpansionEvent event) {
-                  jTreeViewTreeExpandedEventHandler(event);
-              }
-
-              /**
-               * Called whenever an item in the tree has been collapsed.
-               */
-              public void treeCollapsed(TreeExpansionEvent event) {
-                  TreeWorker.stopWorker();
-              }
-          };
-        ptree.addTreeExpansionListener(treeExpansionListener);
-        stree.addTreeExpansionListener(treeExpansionListener);
-
-        KeyListener keyListener =
-          new KeyAdapter() {
-              /** Invoked when a key has been pressed.*/
-              public void keyPressed(KeyEvent e) {
-                  TreePath path = ptree.getSelectionPath();
-                  if (path == null) return;
-                  int keyCode = e.getKeyCode();
-                  if (keyCode == KeyEvent.VK_DELETE) {
-
-                      AbstractTreeNode node =
-                        (AbstractTreeNode)path.getLastPathComponent();
-                      if (node == null) return;
-                      //removeNode(node);
-                  } else if (keyCode == KeyEvent.VK_BACK_SPACE) {
-                      AbstractTreeNode node =
-                        (AbstractTreeNode)path.getLastPathComponent();
-                      if (node == null) return;
-
-                      DefaultMutableTreeNode parent =
-                        (DefaultMutableTreeNode)node.getParent();
-                      if (parent == null) return;
-
-                      TreeNode[] nodes = parent.getPath();
-                      final TreePath nPath = new TreePath(nodes);
-                      if (!ptree.isExpanded(nPath)) {
-                          ptree.expandPath(nPath);
-                      }
-                      ptree.setSelectionPath(nPath);
-                  }
-              }
-          };
-        ptree.addKeyListener(keyListener);
-        stree.addKeyListener(keyListener);
     }
 
 

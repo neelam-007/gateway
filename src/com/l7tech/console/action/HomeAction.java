@@ -2,10 +2,7 @@ package com.l7tech.console.action;
 
 import com.l7tech.console.MainWindow;
 import com.l7tech.console.panels.WorkSpacePanel;
-import com.l7tech.console.tree.AbstractTreeNode;
-import com.l7tech.console.tree.GroupFolderNode;
-import com.l7tech.console.tree.TreeNodeActions;
-import com.l7tech.console.tree.UserFolderNode;
+import com.l7tech.console.tree.*;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.WindowManager;
 
@@ -94,7 +91,7 @@ public class HomeAction extends BaseAction {
                         SwingUtilities.invokeLater(new Runnable() {
                             public void run() {
                                 JTree tree =
-                                  (JTree)WindowManager.getInstance().getComponent(MainWindow.ASSERTION_PALETTE);
+                                  (JTree)WindowManager.getInstance().getComponent(AssertionsTree.NAME);
                                 if (tree != null) {
                                     AbstractTreeNode node =
                                       (AbstractTreeNode)TreeNodeActions.
@@ -109,7 +106,7 @@ public class HomeAction extends BaseAction {
                         SwingUtilities.invokeLater(new Runnable() {
                             public void run() {
                                 JTree tree =
-                                  (JTree)WindowManager.getInstance().getComponent(MainWindow.ASSERTION_PALETTE);
+                                  (JTree)WindowManager.getInstance().getComponent(AssertionsTree.NAME);
                                 if (tree != null) {
                                     AbstractTreeNode node =
                                       (AbstractTreeNode)TreeNodeActions.
