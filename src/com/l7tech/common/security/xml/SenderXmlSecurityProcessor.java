@@ -29,8 +29,8 @@ import java.util.logging.Logger;
   *      java.security.Key,
   *      com.l7tech.common.security.xml.ElementSecurity[])}
  */
-class Signer extends SecurityProcessor {
-    static Logger logger = Logger.getLogger(Signer.class.getName());
+class SenderXmlSecurityProcessor extends SecurityProcessor {
+    static Logger logger = Logger.getLogger(SenderXmlSecurityProcessor.class.getName());
     private SignerInfo signerInfo;
     private Session session;
     private Key encryptionKey;
@@ -47,7 +47,7 @@ class Signer extends SecurityProcessor {
      *                 if the encryption is requested.
      * @param elements the security elements
      */
-    Signer(SignerInfo si, Session session, Key key, ElementSecurity[] elements) {
+    SenderXmlSecurityProcessor(SignerInfo si, Session session, Key key, ElementSecurity[] elements) {
         super(elements);
         this.signerInfo = si;
         this.session = session;

@@ -47,7 +47,7 @@ public abstract class SecurityProcessor {
     }
 
     /**
-     * Factory method that creates the <code>Signer</code> security processor.
+     * Factory method that creates the <code>SenderXmlSecurityProcessor</code> security processor.
      *
      * @param session  contains sequence generator, key for encrypting elements
      * @param si       the signer info (private key, certificate)
@@ -57,11 +57,11 @@ public abstract class SecurityProcessor {
      * @return the signer security processor
      */
     public static SecurityProcessor getSigner(Session session, SignerInfo si, Key key, ElementSecurity[] elements) {
-        return new Signer(si, session, key, elements);
+        return new SenderXmlSecurityProcessor(si, session, key, elements);
     }
 
     /**
-     * Factory method that creates the <code>Verifier</code> security processor.
+     * Factory method that creates the <code>ReceiverXmlSecurityProcessor</code> security processor.
      *
      * @param session  contains sequence generator, key for encrypting elements
      * @param key      the decryption key (optional value)
@@ -70,7 +70,7 @@ public abstract class SecurityProcessor {
      * @return the signer security processor
      */
     public static SecurityProcessor getVerifier(Session session, Key key, ElementSecurity[] elements) {
-        return new Verifier(session, key, elements);
+        return new ReceiverXmlSecurityProcessor(session, key, elements);
     }
 
 

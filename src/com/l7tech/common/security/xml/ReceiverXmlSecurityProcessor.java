@@ -21,8 +21,8 @@ import java.security.cert.X509Certificate;
 import java.util.List;
 import java.util.logging.Logger;
 
-class Verifier extends SecurityProcessor {
-    static Logger logger = Logger.getLogger(Verifier.class.getName());
+class ReceiverXmlSecurityProcessor extends SecurityProcessor {
+    static Logger logger = Logger.getLogger(ReceiverXmlSecurityProcessor.class.getName());
 
     private Key decryptionKey;
     private Session session;
@@ -38,7 +38,7 @@ class Verifier extends SecurityProcessor {
      *                 if the encryption is requested.
      * @param elements the security elements
      */
-    Verifier(Session session, Key key, ElementSecurity[] elements) {
+    ReceiverXmlSecurityProcessor(Session session, Key key, ElementSecurity[] elements) {
         super(elements);
         this.session = session;
         this.decryptionKey = key;

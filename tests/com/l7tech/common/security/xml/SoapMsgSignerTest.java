@@ -76,7 +76,7 @@ public class SoapMsgSignerTest extends TestCase {
     public void testValidateSignatureElement() throws Exception {
         Document testDoc = getCleartextDocument();
         signAccountId( testDoc );
-//        Verifier foo = new Verifier();
+//        ReceiverXmlSecurityProcessor foo = new ReceiverXmlSecurityProcessor();
     }
 
 
