@@ -19,7 +19,7 @@ public class PolicyIdentityViewAction extends BaseAction {
      * @return the action name
      */
     public String getName() {
-        return "Identity view";
+        return "Identity View";
     }
 
     /**

@@ -45,7 +45,7 @@ public class SavePolicyTemplateAction extends BaseAction {
      * @return the action name
      */
     public String getName() {
-        return "Save template";
+        return "Save Template";
     }
 
     /**
