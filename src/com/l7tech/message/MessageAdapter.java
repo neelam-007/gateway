@@ -182,10 +182,6 @@ public abstract class MessageAdapter implements Message {
         return getMultipartMessage().getPartByContentId(contentId);
     }
 
-    public boolean isAdditionalUnreadPartsPossible() throws IOException {
-        return getMultipartMessage().isMorePartsPossible();
-    }
-
     /**
      * @return the outer content type of the request, or a default.  never null.
      */

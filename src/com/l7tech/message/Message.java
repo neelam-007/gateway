@@ -142,18 +142,6 @@ public interface Message {
     public PartInfo getPartByContentId(String contentId) throws IOException, NoSuchPartException;
 
     /**
-     * Quickly check if this message might have additional parts which have not yet been examined.
-     * For example, can be used after all expected parts have been retrieved with {@link #getPartByContentId(java.lang.String)}
-     * to very quickly check if additional unexpected parts are present without having to bother reading these
-     * known-to-be-unwanted extraneous parts.
-     *
-     * @return true if additional unread parts appear to be present; false if additional parts have been ruled out.
-     * @throws IOException if the mainInputStream cannot be read or a multipart message is not in valid MIME format
-     * @throws IOException if this message is multpart/related but does not have any parts
-     */ 
-    public boolean isAdditionalUnreadPartsPossible() throws IOException;
-
-    /**
      * @return the entire length of the current message body including any applied decorations,
      *         all attachments, and any MIME boundaries; but not including any HTTP or other headers
      *         that would accompany this message over wire.

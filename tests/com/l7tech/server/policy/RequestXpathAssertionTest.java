@@ -172,10 +172,6 @@ public class RequestXpathAssertionTest extends TestCase {
                 return null;
             }
 
-            public boolean isAdditionalUnreadPartsPossible() {
-                return false;
-            }
-
             public long getContentLength() {
                 return 0;
             }
