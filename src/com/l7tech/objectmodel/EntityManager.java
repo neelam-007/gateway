@@ -29,4 +29,9 @@ public interface EntityManager {
      * @return A <code>Collection</code> of EntityHeader objects.
      */
     public Collection findAll( int offset, int windowSize ) throws FindException;
+
+    /**
+     * Returns a collection of EntityHeaders objects whose name match the search criterion
+     */
+    public Collection search(String searchString) throws FindException;
 }
