@@ -130,6 +130,7 @@ public class WorkBenchPanel extends JPanel {
         try {
             htmlPane.setPage(url);
         } catch (IOException e) {
+            throw new RuntimeException(e);
         }
         return htmlPane;
 

@@ -87,7 +87,7 @@ public class MainWindow extends JFrame {
     private JLabel statusMsgRight = null;
 
     private JToolBar toolBarPane = null;
-    private JToolBar policyToolBarPane = null;
+    private JToolBar policyToolBar = null;
 
     private JTree paletteTreeView = null;
     private JTree servicesTreeView = null;
@@ -106,6 +106,10 @@ public class MainWindow extends JFrame {
     /** the panel listener broker */
     private final
     PanelListenerBroker listenerBroker = new PanelListenerBroker();
+    private Action addAssertionAction;
+    private Action assertionMoveUpAction;
+    private Action assertionMoveDownAction;
+    private Action deleteAssertionAction;
 
     /**
      * MainWindow constructor comment.
@@ -428,10 +432,8 @@ public class MainWindow extends JFrame {
           new GotoUsersAction() {
               /**
                * Invoked when an action occurs.
-               *
-               * @param event  the event that occured
                */
-              public void actionPerformed(ActionEvent event) {
+              public void performAction() {
                   selectNodeByName("Users");
               }
           };
@@ -451,10 +453,8 @@ public class MainWindow extends JFrame {
           new GotoGroupsAction() {
               /**
                * Invoked when an action occurs.
-               *
-               * @param event  the event that occured
                */
-              public void actionPerformed(ActionEvent event) {
+              public void performAction() {
                   selectNodeByName("Groups");
               }
           };
@@ -473,10 +473,8 @@ public class MainWindow extends JFrame {
           new GotoPoliciesAction() {
               /**
                * Invoked when an action occurs.
-               *
-               * @param event  the event that occured
                */
-              public void actionPerformed(ActionEvent event) {
+              public void performAction() {
                   selectNodeByName("Policies");
               }
           };
@@ -494,10 +492,8 @@ public class MainWindow extends JFrame {
           new GotoServicesAction() {
               /**
                * Invoked when an action occurs.
-               *
-               * @param event  the event that occured
                */
-              public void actionPerformed(ActionEvent event) {
+              public void performAction() {
                   selectNodeByName("Services");
               }
           };
@@ -516,10 +512,8 @@ public class MainWindow extends JFrame {
           new GotoProvidersAction() {
               /**
                * Invoked when an action occurs.
-               *
-               * @param event  the event that occured
                */
-              public void actionPerformed(ActionEvent event) {
+              public void performAction() {
                   selectNodeByName("Identity providers");
               }
           };
@@ -1001,21 +995,93 @@ public class MainWindow extends JFrame {
      * Return the ToolBarPane property value.
      * @return JToolBar
      */
-    private JToolBar getPolicyToolBarPane() {
-        if (policyToolBarPane != null) return policyToolBarPane;
+    private JToolBar getPolicyToolBar() {
+        if (policyToolBar != null) return policyToolBar;
 
-        policyToolBarPane = new JToolBar();
-        policyToolBarPane.setOrientation(JToolBar.VERTICAL);
-        policyToolBarPane.putClientProperty("JToolBar.isRollover", Boolean.TRUE);
-        policyToolBarPane.setFloatable(false);
-        JButton b = policyToolBarPane.add(getConnectAction());
+        policyToolBar = new JToolBar();
+        policyToolBar.addSeparator();
+        policyToolBar.setOrientation(JToolBar.VERTICAL);
+        policyToolBar.putClientProperty("JToolBar.isRollover", Boolean.TRUE);
+        policyToolBar.setFloatable(false);
+
+        JButton b = policyToolBar.add(getAddAssertionAction());
+        b.setEnabled(false);
         b.setMargin(new Insets(0, 0, 0, 0));
+        policyToolBar.addSeparator();
 
-        b = policyToolBarPane.add(getDisconnectAction());
+        b = policyToolBar.add(getAssertionMoveUpAction());
+        b.setEnabled(false);
         b.setMargin(new Insets(0, 0, 0, 0));
+        policyToolBar.addSeparator();
+
+        b = policyToolBar.add(getAssertionMoveDownAction());
+        b.setEnabled(false);
+        b.setMargin(new Insets(0, 0, 0, 0));
+        policyToolBar.addSeparator();
+
+        b = policyToolBar.add(getDeleteAssertionAction());
+        b.setEnabled(false);
+        b.setMargin(new Insets(0, 0, 0, 0));
+        policyToolBar.addSeparator();
+
+        return policyToolBar;
+    }
+
+    private Action getAssertionMoveUpAction() {
+        if (assertionMoveUpAction != null)
+            return assertionMoveUpAction;
+        assertionMoveUpAction = new AssertionMoveUpAction() {
+            /**
+             * Invoked when an action occurs.
+             */
+            public void performAction() {
+            }
+        };
+
+        return assertionMoveUpAction;
+
+    }
+
+    private Action getAssertionMoveDownAction() {
+        if (assertionMoveDownAction != null)
+            return assertionMoveDownAction;
+        assertionMoveDownAction = new AssertionMoveDownAction() {
+            /**
+             * Invoked when an action occurs.
+             */
+            public void performAction() {
+            }
+        };
+
+        return assertionMoveDownAction;
+
+    }
+
+    private Action getAddAssertionAction() {
+        if (addAssertionAction != null)
+            return addAssertionAction;
+        addAssertionAction = new AddAssertionAction() {
+            /**
+             * Invoked when an action occurs.
+             */
+            public void performAction() {
+            }
+        };
+        return addAssertionAction;
+    }
 
 
-        return policyToolBarPane;
+    private Action getDeleteAssertionAction() {
+        if (deleteAssertionAction != null)
+            return deleteAssertionAction;
+        deleteAssertionAction = new DeleteAssertionAction() {
+            /**
+             * Invoked when an action occurs.
+             */
+            public void performAction() {
+            }
+        };
+        return deleteAssertionAction;
     }
 
 
@@ -1065,7 +1131,7 @@ public class MainWindow extends JFrame {
 
         mainLeftJPanel = new JPanel(new BorderLayout());
         mainLeftJPanel.add(sections, BorderLayout.CENTER);
-        mainLeftJPanel.add(getPolicyToolBarPane(), BorderLayout.EAST);
+        mainLeftJPanel.add(getPolicyToolBar(), BorderLayout.EAST);
         return mainLeftJPanel;
     }
 
@@ -1838,11 +1904,6 @@ public class MainWindow extends JFrame {
     /** Hide or show the statusbar */
     public void viewStatusBar() {
         getStatusBarPane().setVisible(!(getStatusBarPane().isVisible()));
-    }
-
-    /** Hide or show the toolbar */
-    public void viewToolBar() {
-        getToolBarPane().setVisible(!(getToolBarPane().isVisible()));
     }
 
     /**

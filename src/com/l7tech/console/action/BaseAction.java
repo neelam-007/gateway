@@ -47,4 +47,22 @@ public abstract class BaseAction extends AbstractAction {
     public BaseAction(String name, Icon icon) {
         super(name, icon);
     }
+
+
+    /** Actually perform the action.
+     * This is the method which should be called programmatically.
+
+     * note on threading usage: do not access GUI components
+     * without explicitly asking for the AWT event thread!
+     */
+    public abstract void performAction();
+
+    /* Implementation of method of javax.swing.Action interface.
+    * Delegates the execution to performAction method.
+    *
+    * @param ev ignored
+    */
+    public void actionPerformed(java.awt.event.ActionEvent ev) {
+        performAction();
+    }
 }
