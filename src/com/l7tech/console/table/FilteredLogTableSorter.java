@@ -207,9 +207,7 @@ public class FilteredLogTableSorter extends FilteredLogTableModel {
      * @return Object  The value at the specified table coordinate.
      */
     public Object getValueAt(int row, int col) {
-
-        LogMessage msg = (LogMessage) filteredLogCache.get(((Integer) sortedData[row]).intValue());
-
+        LogMessage msg = getLogMessageAtRow(row);
         switch (col) {
             case LogPanel.LOG_MSG_NUMBER_COLUMN_INDEX:
                 return new Long(msg.getMsgNumber());
@@ -232,6 +230,10 @@ public class FilteredLogTableSorter extends FilteredLogTableModel {
             default:
                 throw new IllegalArgumentException("Bad Column");
         }
+    }
+
+    public LogMessage getLogMessageAtRow(int row) {
+        return (LogMessage) filteredLogCache.get(((Integer) sortedData[row]).intValue());
     }
 
     /**

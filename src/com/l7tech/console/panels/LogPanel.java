@@ -1,9 +1,15 @@
 package com.l7tech.console.panels;
 
+import com.l7tech.common.audit.AdminAuditRecord;
+import com.l7tech.common.audit.AuditRecord;
+import com.l7tech.common.audit.MessageSummaryAuditRecord;
+import com.l7tech.common.audit.SystemAuditRecord;
 import com.l7tech.common.gui.widgets.ContextMenuTextArea;
 import com.l7tech.common.util.Locator;
 import com.l7tech.console.table.FilteredLogTableSorter;
 import com.l7tech.console.util.ArrowIcon;
+import com.l7tech.logging.LogMessage;
+import com.l7tech.logging.SSGLogRecord;
 
 import javax.swing.*;
 import javax.swing.event.ChangeEvent;
@@ -102,21 +108,63 @@ public class LogPanel extends JPanel {
                         msg = "";
                         //if (getMsgTable().getModel().getValueAt(row, LOG_MSG_NUMBER_COLUMN_INDEX) != null)
                         //    msg = msg + "Message #: " + getMsgTable().getModel().getValueAt(row, LOG_MSG_NUMBER_COLUMN_INDEX).toString() + "\n";
-                        if (getMsgTable().getModel().getValueAt(row, LOG_NODE_NAME_COLUMN_INDEX) != null)
-                            msg = msg + "Node     : " + getMsgTable().getModel().getValueAt(row, LOG_NODE_NAME_COLUMN_INDEX).toString() + "\n";
-                        if (getMsgTable().getModel().getValueAt(row, LOG_TIMESTAMP_COLUMN_INDEX) != null)
-                            msg = msg + "Time     : " + getMsgTable().getModel().getValueAt(row, LOG_TIMESTAMP_COLUMN_INDEX).toString() + "\n";
-                        if (getMsgTable().getModel().getValueAt(row, LOG_SEVERITY_COLUMN_INDEX) != null)
-                            msg = msg + "Severity : " + getMsgTable().getModel().getValueAt(row, LOG_SEVERITY_COLUMN_INDEX).toString() + "\n";
-                        if ((getMsgTable().getModel().getValueAt(row, LOG_REQUEST_ID_COLUMN_INDEX) != null) &&
-                             (getMsgTable().getModel().getValueAt(row, LOG_REQUEST_ID_COLUMN_INDEX)).toString().length() > 0)
-                            msg = msg + "Request Id : " + getMsgTable().getModel().getValueAt(row, LOG_REQUEST_ID_COLUMN_INDEX).toString() + "\n";
-                        if (getMsgTable().getModel().getValueAt(row, LOG_MSG_DETAILS_COLUMN_INDEX) != null)
-                            msg = msg + "Message    : " + getMsgTable().getModel().getValueAt(row, LOG_MSG_DETAILS_COLUMN_INDEX).toString() + "\n";
-                        if (getMsgTable().getModel().getValueAt(row, LOG_JAVA_CLASS_COLUMN_INDEX) != null)
-                            msg = msg + "Class    : " + getMsgTable().getModel().getValueAt(row, LOG_JAVA_CLASS_COLUMN_INDEX).toString() + "\n";
-                        if (getMsgTable().getModel().getValueAt(row, LOG_JAVA_METHOD_COLUMN_INDEX) != null)
-                            msg = msg + "Method   : " + getMsgTable().getModel().getValueAt(row, LOG_JAVA_METHOD_COLUMN_INDEX).toString() + "\n";
+                        final TableModel model = getMsgTable().getModel();
+                        if (model.getValueAt(row, LOG_NODE_NAME_COLUMN_INDEX) != null)
+                            msg = msg + "Node       : " + model.getValueAt(row, LOG_NODE_NAME_COLUMN_INDEX).toString() + "\n";
+                        if (model.getValueAt(row, LOG_TIMESTAMP_COLUMN_INDEX) != null)
+                            msg = msg + "Time       : " + model.getValueAt(row, LOG_TIMESTAMP_COLUMN_INDEX).toString() + "\n";
+                        if (model.getValueAt(row, LOG_SEVERITY_COLUMN_INDEX) != null)
+                            msg = msg + "Severity   : " + model.getValueAt(row, LOG_SEVERITY_COLUMN_INDEX).toString() + "\n";
+                        if ((model.getValueAt(row, LOG_REQUEST_ID_COLUMN_INDEX) != null) &&
+                             (model.getValueAt(row, LOG_REQUEST_ID_COLUMN_INDEX)).toString().length() > 0)
+                            msg = msg + "Request Id : " + model.getValueAt(row, LOG_REQUEST_ID_COLUMN_INDEX).toString() + "\n";
+                        if (model.getValueAt(row, LOG_MSG_DETAILS_COLUMN_INDEX) != null)
+                            msg = msg + "Message    : " + model.getValueAt(row, LOG_MSG_DETAILS_COLUMN_INDEX).toString() + "\n";
+                        if (model.getValueAt(row, LOG_JAVA_CLASS_COLUMN_INDEX) != null)
+                            msg = msg + "Class      : " + model.getValueAt(row, LOG_JAVA_CLASS_COLUMN_INDEX).toString() + "\n";
+                        if (model.getValueAt(row, LOG_JAVA_METHOD_COLUMN_INDEX) != null)
+                            msg = msg + "Method     : " + model.getValueAt(row, LOG_JAVA_METHOD_COLUMN_INDEX).toString() + "\n";
+
+                        if (model instanceof FilteredLogTableSorter) {
+                            LogMessage lm = ((FilteredLogTableSorter)model).getLogMessageAtRow(row);
+                            SSGLogRecord rec = lm.getSSGLogRecord();
+
+                            // Add any SSGLogRecord-specific fields here
+
+                            if (rec instanceof AuditRecord) {
+                                AuditRecord arec = (AuditRecord)rec;
+                                msg += "\n";
+
+                                if (arec instanceof AdminAuditRecord) {
+                                    AdminAuditRecord aarec = (AdminAuditRecord)arec;
+                                    msg += "Event Type : Administrator Action" + "\n";
+                                    msg += "Admin user : " + aarec.getAdminLogin() + "\n";
+                                    msg += "Admin IP   : " + arec.getIpAddress() + "\n";
+                                    msg += "Entity type: " + aarec.getEntityClassname() + "\n";
+                                    msg += "Entity id  : " + aarec.getEntityOid() + "\n";
+                                    msg += "Action     : " + aarec.getAction() + "\n";
+                                } else if (arec instanceof MessageSummaryAuditRecord) {
+                                    MessageSummaryAuditRecord sum = (MessageSummaryAuditRecord)arec;
+                                    msg += "Event Type : Message Summary" + "\n";
+                                    msg += "Request ID : " + sum.getReqId() + "\n";
+                                    msg += "Client IP  : " + arec.getIpAddress() + "\n";
+                                    msg += "Service    : " + sum.getServiceName() + "\n";
+                                    msg += "Rqst Length: " + sum.getRequestContentLength() + "\n";
+                                    msg += "Resp Length: " + sum.getResponseContentLength() + "\n";
+                                    msg += "User ID    : " + sum.getUserId() + "\n";
+                                    msg += "User Name  : " + sum.getUserName() + "\n";
+                                } else if (arec instanceof SystemAuditRecord) {
+                                    SystemAuditRecord sys = (SystemAuditRecord)arec;
+                                    msg += "Event Type : System Message" + "\n";
+                                    msg += "Node IP    : " + arec.getIpAddress() + "\n";
+                                    msg += "Action     : " + sys.getAction() + "\n";
+                                    msg += "Component  : " + sys.getComponent() + "\n";
+                                } else {
+                                    msg += "Event Type : Unknown" + "\n";
+                                    msg += "IP Address : " + arec.getIpAddress() + "\n";
+                                }
+                            }
+                        }
 
                         // update the msg details field only if the content has changed.
                         if(!msg.equals(getMsgDetails().getText())){
