@@ -52,13 +52,14 @@ public class EditServiceRoutingURIAction extends NodeAction {
         }
         String prefix = ssgUrl + PublishedService.ROUTINGURI_PREFIX;
         String newURI = null;
-        String existingRoutingURI = null;
+        String previousRoutingURI = null;
         PublishedService svc = null;
         boolean updated = false;
         try {
             final ServiceNode serviceNode = ((ServiceNode)node);
             svc = serviceNode.getPublishedService();
-            existingRoutingURI = svc.getRoutingUri();
+            String existingRoutingURI = svc.getRoutingUri();
+            previousRoutingURI = existingRoutingURI;
             if (existingRoutingURI == null) existingRoutingURI = ""; //  should only happen for soap services
             if (existingRoutingURI.length() > PublishedService.ROUTINGURI_PREFIX.length()) {
                 existingRoutingURI = existingRoutingURI.substring(PublishedService.ROUTINGURI_PREFIX.length());
@@ -107,10 +108,10 @@ public class EditServiceRoutingURIAction extends NodeAction {
         } finally {
             // go back to previous value if something was aborted
             if (!updated && svc != null) {
-                if (existingRoutingURI.length() <= 0) {
-                    existingRoutingURI = null;
+                if (previousRoutingURI != null && previousRoutingURI.length() <= 0) {
+                    previousRoutingURI = null;
                 }
-                svc.setRoutingUri(existingRoutingURI);
+                svc.setRoutingUri(previousRoutingURI);
             }
         }
     }
