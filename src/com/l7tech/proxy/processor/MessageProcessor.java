@@ -100,8 +100,10 @@ public class MessageProcessor {
         for (int attempts = 0; attempts < MAX_TRIES; ++attempts) {
             try {
                 try {
-                    enforcePolicy(req);
-                    return obtainResponse(req);
+                    ClientAssertion rootassertion = enforcePolicy(req);
+                    SsgResponse res = obtainResponse(req);
+                    undecorateResponse(req, res, rootassertion);
+                    return res;
                 } catch (SSLException e) {
                     if (e.getCause() instanceof ClientProxySslException &&
                         e.getCause().getCause() instanceof UnrecoverableKeyException)
@@ -141,7 +143,7 @@ public class MessageProcessor {
      * @throws ClientCertificateException   if a client certificate was required but could not be obtained
      * @throws ServerCertificateUntrustedException  if the Ssg certificate needs to be (re)imported.
      */
-    private void enforcePolicy(PendingRequest req)
+    private ClientAssertion enforcePolicy(PendingRequest req)
             throws PolicyAssertionException, PolicyRetryableException, OperationCanceledException,
                    ClientCertificateException, ServerCertificateUntrustedException, BadCredentialsException
     {
@@ -178,6 +180,12 @@ public class MessageProcessor {
             }
             log.warn("Policy evaluated with an error: " + result + "; will attempt to continue anyway.");
         }
+        return policy;
+    }
+
+    private void undecorateResponse(PendingRequest req, SsgResponse res, ClientAssertion rootassertion) {
+        log.info("undecorating response...(todo)");
+        // todo
     }
 
     /**
