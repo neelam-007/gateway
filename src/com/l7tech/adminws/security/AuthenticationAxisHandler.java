@@ -11,10 +11,13 @@ import com.l7tech.identity.Group;
 import com.l7tech.identity.IdentityProviderConfigManager;
 import com.l7tech.logging.LogManager;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.PersistenceContext;
+import com.l7tech.objectmodel.ObjectModelException;
 import com.l7tech.util.Locator;
 
 import java.util.logging.Level;
 import java.util.Iterator;
+import java.sql.SQLException;
 
 /**
  * Layer 7 Technologies, inc.
@@ -179,16 +182,28 @@ public class AuthenticationAxisHandler extends org.apache.axis.handlers.BasicHan
     /**
      * returns null if user does not exist
      */
-    protected com.l7tech.identity.User findUserByLogin(String login) {
+    protected User findUserByLogin(String login) {
         try {
             if (identityProviderConfigManager == null) {
                 identityProviderConfigManager = (IdentityProviderConfigManager)Locator.getDefault().lookup(com.l7tech.identity.IdentityProviderConfigManager.class);
             }
-            return identityProviderConfigManager.getInternalIdentityProvider().getUserManager().findByLogin(login);
+            User output = identityProviderConfigManager.getInternalIdentityProvider().getUserManager().findByLogin(login);
+            PersistenceContext.getCurrent().close();
+            return output;
         } catch (FindException e) {
             // not throwing this on purpose, a FindException might just mean that the user does not exist,
             // in which case null is a valid answer
-            LogManager.getInstance().getSystemLogger().log(Level.SEVERE, null, e);
+            LogManager.getInstance().getSystemLogger().log(Level.SEVERE, "exception finding user by login", e);
+            return null;
+        } catch (SQLException e) {
+            // not throwing this on purpose, a FindException might just mean that the user does not exist,
+            // in which case null is a valid answer
+            LogManager.getInstance().getSystemLogger().log(Level.SEVERE, "exception closing context", e);
+            return null;
+        } catch (ObjectModelException e) {
+            // not throwing this on purpose, a FindException might just mean that the user does not exist,
+            // in which case null is a valid answer
+            LogManager.getInstance().getSystemLogger().log(Level.SEVERE, "exception closing context", e);
             return null;
         }
     }
