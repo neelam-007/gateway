@@ -1,14 +1,19 @@
 /* $Id$ */
 package com.l7tech.proxy.gui;
 
-import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.common.gui.ExceptionDialog;
-import com.l7tech.proxy.RequestInterceptor;
+import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.proxy.ClientProxy;
+import com.l7tech.proxy.RequestInterceptor;
 import com.l7tech.proxy.datamodel.SsgManager;
 import com.l7tech.proxy.gui.util.IconManager;
 import com.l7tech.proxy.util.JavaVersionChecker;
 import org.apache.log4j.Category;
+import snoozesoft.systray4j.SysTrayMenu;
+import snoozesoft.systray4j.SysTrayMenuIcon;
+import snoozesoft.systray4j.SysTrayMenuItem;
+import snoozesoft.systray4j.SysTrayMenuListener;
+import snoozesoft.systray4j.SysTrayMenuEvent;
 
 import javax.swing.*;
 import javax.swing.plaf.metal.MetalTheme;
@@ -16,7 +21,9 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
+import java.awt.*;
 import java.util.logging.Level;
+import java.net.URL;
 
 /**
  * Encapsulates the Client Proxy's user interface.
@@ -31,6 +38,7 @@ public class Gui {
 
     private static final String KUNSTSTOFF_CLASSNAME = "com.incors.plaf.kunststoff.KunststoffLookAndFeel";
     private static final String KUNSTSTOFF_THEME_CLASSNAME = "com.incors.plaf.kunststoff.themes.KunststoffDesktopTheme";
+    private static final String SYSTRAY_ICON = "com/l7tech/proxy/resources/logosm";
 
     private static Gui instance;
     private boolean started = false;
@@ -39,6 +47,7 @@ public class Gui {
     private MessageViewer messageViewer;
 
     static final String APP_NAME = "SecureSpan Agent";
+    private static final String SYSTRAY_TOOLTIP = "SecureSpan Agent";
     private static final String WINDOW_TITLE = APP_NAME;
     private static final String MESSAGE_WINDOW_TITLE = "Message Window";
     private static final String MENU_FILE = "File";
@@ -51,6 +60,7 @@ public class Gui {
     private SsgListPanel ssgListPanel;
     private SsgManager ssgManager = null;
     private ClientProxy clientProxy;
+    private SysTrayMenu sysTrayMenu = null;
 
     /** Get the singleton Gui. */
    public static Gui getInstance() {
@@ -125,6 +135,52 @@ public class Gui {
         } catch (Exception e) {
             log.warn(e);
         }
+
+        initSystemTray();
+    }
+
+    private void initSystemTray() {
+        if (!SysTrayMenu.isAvailable() || sysTrayMenu != null)
+            return;
+
+        URL si = getClass().getClassLoader().getResource(SYSTRAY_ICON + SysTrayMenuIcon.getExtension());
+        if (si == null)
+            return;
+
+        SysTrayMenuIcon systrayMenuIcon = new SysTrayMenuIcon(si);
+
+        systrayMenuIcon.setActionCommand("show");
+        SysTrayMenuListener systrayListener = new SysTrayMenuListener() {
+            public void iconLeftClicked(SysTrayMenuEvent e) { doShow(); }
+            public void iconLeftDoubleClicked(SysTrayMenuEvent e) { doShow(); }
+
+            public void menuItemSelected(SysTrayMenuEvent e) {
+                log.info("System tray menu item selected.  Command=" + e.getActionCommand());
+                if ("show".equals(e.getActionCommand())) {
+                    doShow();
+                } else if ("exit".equals(e.getActionCommand())) {
+                    Gui.this.closeFrame();
+                }
+            }
+
+            private void doShow() {
+                Gui.this.getFrame().show();
+                Gui.this.getFrame().setState(Frame.NORMAL);
+                Gui.this.getFrame().toFront();
+            }
+        };
+        systrayMenuIcon.addSysTrayMenuListener(systrayListener);
+
+        SysTrayMenuItem smExit = new SysTrayMenuItem("Exit", "exit");
+        smExit.addSysTrayMenuListener(systrayListener);
+        SysTrayMenuItem smShow = new SysTrayMenuItem("Show Agent window", "show");
+        smShow.addSysTrayMenuListener(systrayListener);
+
+        sysTrayMenu = new SysTrayMenu(systrayMenuIcon, SYSTRAY_TOOLTIP);
+        sysTrayMenu.addItem(smExit);
+        sysTrayMenu.addSeparator();
+        sysTrayMenu.addItem(smShow);
+        sysTrayMenu.showIcon();
     }
 
     /**
@@ -153,6 +209,8 @@ public class Gui {
             messageViewer.dispose();
             messageViewer = null;
         }
+        if (sysTrayMenu != null)
+            sysTrayMenu.hideIcon();
         frame.dispose();
         frame = null;
         started = false;
@@ -193,8 +251,19 @@ public class Gui {
             frame = new JFrame(WINDOW_TITLE);
             frame.setIconImage(IconManager.getAppImage());
             frame.addWindowListener(new WindowAdapter() {
+                public void windowIconified(WindowEvent e) {
+                    if (sysTrayMenu != null) {
+                        frame.hide();
+                        sysTrayMenu.showIcon();
+                    }
+                }
+
                 public void windowClosing(final WindowEvent e) {
-                    closeFrame();
+                    if (sysTrayMenu != null) {
+                        frame.hide();
+                        sysTrayMenu.showIcon();
+                    } else
+                        closeFrame();
                 }
             });
 
@@ -284,7 +353,11 @@ public class Gui {
         if (started)
             throw new IllegalStateException("Gui has already been started");
 
-        getFrame().show();
+        if (sysTrayMenu != null) {
+            getFrame().hide();
+            sysTrayMenu.showIcon();
+        } else
+            getFrame().show();
 
         if (getSsgListPanel().getNumSsgs() < 1)
             getSsgListPanel().getActionNewSsg().actionPerformed(new ActionEvent(this, 1, "NewDefault"));
