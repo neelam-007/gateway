@@ -1,57 +1,46 @@
 package com.l7tech.server.policy.assertion.xmlsec;
 
 import com.l7tech.common.security.xml.WssProcessor;
-import com.l7tech.common.util.KeystoreUtils;
+import com.l7tech.common.xml.XpathEvaluator;
 import com.l7tech.message.Request;
 import com.l7tech.message.Response;
 import com.l7tech.message.SoapRequest;
-import com.l7tech.message.XmlRequest;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.xmlsec.RequestWssIntegrity;
 import com.l7tech.server.policy.assertion.ServerAssertion;
+import org.jaxen.JaxenException;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
 
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.security.cert.CertificateException;
-import java.security.cert.CertificateFactory;
-import java.security.cert.X509Certificate;
+import java.util.Iterator;
+import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * XML Digital signature on the soap request sent from a requestor (probably proxy) to the ssg server. Also does XML
- * Encryption of the request's body if the assertion's property dictates it.
- * <p/>
- * On the server side, this must verify that the SoapRequest contains a valid xml d-sig for the entire envelope and
- * maybe decyphers the body.
- * On the proxy side, this must decorate a request with an xml d-sig and maybe encrypt the body.
- * <p/>
- * This extends ServerWssCredentialSource because once the validity of the signature if confirmed, the cert is used
- * as credentials.
+ * Enforces that a specific element in a request is signed.
  * <p/>
  * <br/><br/>
  * LAYER 7 TECHNOLOGIES, INC<br/>
- * <p/>
  * User: flascell<br/>
- * Date: Aug 26, 2003<br/>
- * $Id$
+ * Date: July 14, 2004<br/>
  */
 public class ServerRequestWssIntegrity implements ServerAssertion {
     public ServerRequestWssIntegrity(RequestWssIntegrity data) {
-        xmlRequestSecurity = data;
+        this.data = data;
     }
 
     public AssertionStatus checkRequest(Request request, Response response) throws IOException, PolicyAssertionException {
         if (!(request instanceof SoapRequest)) {
-            throw new PolicyAssertionException("This type of assertion is only supported with SOAP type of messages");
+            logger.info("This type of assertion is only supported with SOAP type of messages");
+            return AssertionStatus.BAD_REQUEST;
         }
         SoapRequest soapreq = (SoapRequest)request;
-        final WssProcessor.ProcessorResult wssResults = soapreq.getWssProcessorOutput();
+        WssProcessor.ProcessorResult wssResults = soapreq.getWssProcessorOutput();
         if (wssResults == null) {
-            throw new PolicyAssertionException("This request was not processed for WSS level security.");
+            throw new IOException("This request was not processed for WSS level security.");
         }
 
         // get the document
@@ -63,80 +52,41 @@ public class ServerRequestWssIntegrity implements ServerAssertion {
             return AssertionStatus.BAD_REQUEST;
         }
 
-        // TODO rewrite rewrite rewrite
-//        SecurityProcessor verifier =
-//                SecurityProcessor.createRecipientSecurityProcessor(wssResults,
-//                                                                   elements);
-        // TODO rewrite rewrite rewrite
-        // TODO rewrite rewrite rewrite
-        // TODO rewrite rewrite rewrite
-        // TODO rewrite rewrite rewrite
-        // TODO rewrite rewrite rewrite
-        // TODO rewrite rewrite rewrite
-        // TODO rewrite rewrite rewrite
-
-            // TODO rewrite rewrite
-            //SecurityProcessor.Result result = verifier.processInPlace(soapmsg);
-
-            // Handle unsuccessful results
-            /*
-            if (result.getType() == SecurityProcessor.Result.Type.NOT_APPLICABLE) {
-                logger.log(Level.INFO, "No XML security expected in this request");
-                return AssertionStatus.NONE;
-            } else if (result.getType() == SecurityProcessor.Result.Type.POLICY_VIOLATION) {
-                if (result.getThrowable() != null)
-                    logger.log(Level.INFO, result.getType().desc, result.getThrowable());
-                else
-                    logger.log(Level.INFO, result.getType().desc);
-                logger.info("Returning " + AssertionStatus.AUTH_REQUIRED.getMessage());
-                response.setAuthenticationMissing(true);
-                response.setPolicyViolated(true);
-                return AssertionStatus.AUTH_REQUIRED;
-            } else if ( result.getType() == SecurityProcessor.Result.Type.ERROR ) {
-                if (result.getThrowable() != null)
-                    logger.log( Level.WARNING, result.getType().desc, result.getThrowable() );
-                else
-                    logger.log( Level.WARNING, result.getType().desc );
-                return AssertionStatus.FAILED;
-            }*/
-
-            // TODO rewrite rewrite
-            // TODO rewrite rewrite
-            // TODO rewrite rewrite
-            // TODO rewrite rewrite
-            // TODO rewrite rewrite
-
-        // todo note, the routing should no longer use the non parsed payload
-        ((XmlRequest)request).setDocument(soapmsg);
-
-        return AssertionStatus.NONE;
-    }
-
-    private synchronized X509Certificate getRootCertificate() throws CertificateException, IOException {
-        if ( rootCertificate == null ) {
-            CertificateFactory certFactory = CertificateFactory.getInstance( "X.509" );
-            rootCertificate = (X509Certificate)certFactory.generateCertificate( new ByteArrayInputStream( KeystoreUtils.getInstance().readRootCert() ) );
-        }
-        return rootCertificate;
-    }
-
-    private Document extractDocumentFromRequest(Request req) throws PolicyAssertionException {
-        // try to get credentials out of the digital signature
-        Document soapmsg = null;
+        XpathEvaluator evaluator = XpathEvaluator.newEvaluator(soapmsg, data.getXpathExpression().getNamespaces());
+        List selectedNodes = null;
         try {
-            soapmsg = ((SoapRequest)req).getDocument();
-        } catch (SAXException e) {
-            logger.log(Level.SEVERE, "could not get request's xml document", e);
-            throw new PolicyAssertionException("cannot extract name from cert", e);
-        } catch (IOException e) {
-            logger.log(Level.SEVERE, "could not get request's xml document", e);
-            throw new PolicyAssertionException("cannot extract name from cert", e);
+            selectedNodes = evaluator.select(data.getXpathExpression().getExpression());
+        } catch (JaxenException e) {
+            // this is thrown when there is an error in the expression
+            // this is therefore a bad policy
+            throw new PolicyAssertionException(e);
         }
 
-        return soapmsg;
+        // the element is not there so there is nothing to check
+        if (selectedNodes.isEmpty()) {
+            logger.fine("The element " + data.getXpathExpression().getExpression() + " is not present in this request. " +
+                        "the assertion therefore succeeds.");
+            return AssertionStatus.NONE;
+        }
+
+        // to assert this, i must make sure that at least one of these nodes is part of the nodes
+        // that were signed as per attesting the wss processor
+        for (Iterator i = selectedNodes.iterator(); i.hasNext();) {
+            Object node = i.next();
+            WssProcessor.SignedElement[] toto = wssResults.getElementsThatWereSigned();
+            for (int j = 0; j < toto.length; j++) {
+                if (toto[j].asElement() == node) {
+                    // we got the bugger!
+                    logger.fine("The element " + data.getXpathExpression().getExpression() + " was found in this " +
+                            "request. and is part of the elements that were signed as per the wss processor.");
+                    return AssertionStatus.NONE;
+                }
+            }
+        }
+        logger.fine("The element was found in the request but does not appear to be signed. Returning FALSIFIED");
+        return AssertionStatus.FALSIFIED;
     }
 
-    protected RequestWssIntegrity xmlRequestSecurity;
-    private X509Certificate rootCertificate;
+    protected RequestWssIntegrity data;
     private final Logger logger = Logger.getLogger(getClass().getName());
 }
