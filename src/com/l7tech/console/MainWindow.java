@@ -1822,10 +1822,13 @@ public class MainWindow extends JFrame {
       new LogonDialog.LogonListener() {
           /* invoked on authentication success */
           public void onAuthSuccess(String id) {
-              getStatusMsgLeft().setText(id);
-              /* load user preferences and merge them with system props */
+              String s = "";
+              String statusMessage = id;
+
+              /* set the preferences */
               try {
                   Preferences prefs = Preferences.getPreferences();
+                  s =  " @ " +prefs.getString(Preferences.SERVICE_URL);
                   if (prefs.rememberLoginId()) {
                       prefs.putProperty(Preferences.LAST_LOGIN_ID, id);
                       prefs.store();
@@ -1833,6 +1836,8 @@ public class MainWindow extends JFrame {
               } catch (IOException e) {
                   log.log(Level.WARNING, "onAuthSuccess()", e);
               }
+              statusMessage += s;
+              getStatusMsgLeft().setText(statusMessage);
               initalizeWorkspace();
               int timeout = 0;
               try {
