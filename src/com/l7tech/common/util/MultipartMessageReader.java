@@ -250,7 +250,6 @@ public class MultipartMessageReader {
      */
     private MultipartUtil.Part parseMultipart(int lastPartPosition) throws IOException {
 
-        StringBuffer xml = new StringBuffer();
         MultipartUtil.Part part = null;
 
         if(lastPartPosition == 0) {
@@ -271,9 +270,11 @@ public class MultipartMessageReader {
                 if (headers) {
                     if (line.length() == 0) {
                         headers = false;
-                        part.setContentLength(storeRawContent());
+                        addLineDelimiter();
+                        part.setContentLength(storeRawPartContent());
                         break;
                     }
+                    storeRawHeader(line);
                     MultipartUtil.HeaderValue header = MultipartUtil.parseHeader(line);
                     part.headers.put(header.getName(), header);
                 }
@@ -289,20 +290,47 @@ public class MultipartMessageReader {
         return part;
     }
 
-    private int storeRawContent() throws IOException {
+    private void addLineDelimiter() {
+
+        if(writeIndex + 4 > attachmentsRawData.length) {
+            throw new RuntimeException("The size of attachment(s) exceeds the buffer size. Unable to handle the request.");
+        } else {
+            attachmentsRawData[writeIndex++] = 0x0d;     // CR
+            attachmentsRawData[writeIndex++] = 0x0a;     // LF
+        }
+    }
+
+    private void storeRawHeader(String line) {
+
+        if(line == null) {
+            throw new IllegalArgumentException("The header line cannot be NULL");
+        }
+
+        byte[] rawHeader = line.getBytes();
+
+        // check if there is enough room
+        if(writeIndex + rawHeader.length + 2 > attachmentsRawData.length) {
+            throw new RuntimeException("The size of attachment(s) exceeds the buffer size. Unable to handle the request.");
+        }
+
+        for(int i=0; i < rawHeader.length; i++) {
+            attachmentsRawData[writeIndex++] = rawHeader[i];
+        }
+
+        addLineDelimiter();
+    }
+
+    private int storeRawPartContent() throws IOException {
 
         int d;
-        byte[] boundary = new byte[256];
+        boolean boundaryFound = false;
         boolean crSeen = false;
-        boolean crlfSeqSeen = false;
         int startIndex = -1;
         int endIndex = -1;
         int oldWriteIndex = writeIndex;
 
-        d = pushbackInputStream.read();
-
         // looking for the multipart boundary
-        for(int i=0; i < attachmentsRawData.length && (d != -1);) {
+        do {
             d = pushbackInputStream.read();
 
             // store the byte
@@ -320,6 +348,7 @@ public class MultipartMessageReader {
 
                         // check if the multipart boundary found between the first <CR><LF> and the second <CR><LF>
                         if(isMultipartBoundaryFound(startIndex, endIndex)) {
+                            boundaryFound = true;
                             break;
                         } else {
                             // reset the indices
@@ -335,6 +364,10 @@ public class MultipartMessageReader {
                     crSeen = false;
                 }
             }
+        } while((writeIndex < attachmentsRawData.length - 4) && (d != -1));
+
+        if(!boundaryFound && (d == -1)) {
+            throw new RuntimeException("The size of attachment(s) exceeds the buffer size. Unable to handle the request.");
         }
         return (writeIndex - oldWriteIndex);
     }
@@ -366,7 +399,6 @@ public class MultipartMessageReader {
      */
     private MultipartUtil.Part parseMultipart(String cid) throws IOException {
 
-        StringBuffer xml = new StringBuffer();
         MultipartUtil.Part part = null;
         boolean partFound = false;
 
@@ -383,9 +415,11 @@ public class MultipartMessageReader {
                 if (headers) {
                     if (line.length() == 0) {
                         headers = false;
-                        part.setContentLength(storeRawContent());
+                        addLineDelimiter();
+                        part.setContentLength(storeRawPartContent());
                         break;
                     }
+                    storeRawHeader(line);
                     MultipartUtil.HeaderValue header = MultipartUtil.parseHeader(line);
                     part.headers.put(header.getName(), header);
                 }
