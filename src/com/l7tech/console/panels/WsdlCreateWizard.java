@@ -1,6 +1,7 @@
 package com.l7tech.console.panels;
 
 import com.ibm.wsdl.DefinitionImpl;
+import com.l7tech.common.gui.util.Utilities;
 
 import javax.swing.*;
 import javax.swing.border.EtchedBorder;
@@ -12,10 +13,15 @@ import javax.xml.namespace.QName;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 import java.io.StringWriter;
+
+import org.syntax.jedit.JEditTextArea;
+import org.syntax.jedit.tokenmarker.XMLTokenMarker;
 
 /**
  * The <code>Wizard</code> that drives the wizard step panels.
@@ -54,7 +60,7 @@ public class WsdlCreateWizard extends Wizard {
                         WSDLWriter wsdlWriter = fac.newWSDLWriter();
                         StringWriter writer = new StringWriter();
                         wsdlWriter.writeWSDL((Definition)wizardInput, writer);
-System.out.println(writer.toString());
+                        new RawWsdlDialog(writer.toString(), "wsdl title here....");
                     } catch (WSDLException e1) {
                         //
                     }
@@ -64,6 +70,32 @@ System.out.println(writer.toString());
         return buttonPreview;
     }
 
+    private class RawWsdlDialog extends JFrame {
+        private JEditTextArea wsdlTextArea;
+
+        private RawWsdlDialog(String wsdlString, String title) {
+            super(title);
+
+            wsdlTextArea = new JEditTextArea();
+            wsdlTextArea.setEditable(false);
+            wsdlTextArea.setTokenMarker(new XMLTokenMarker());
+            wsdlTextArea.setText(wsdlString);
+
+            JPanel panel = new JPanel(new BorderLayout());
+            panel.add(wsdlTextArea, BorderLayout.CENTER);
+
+            getContentPane().add(panel, BorderLayout.CENTER);
+
+            addWindowListener(new WindowAdapter() {
+                public void windowClosing(WindowEvent e) {
+                    dispose();
+                }
+            });
+            pack();
+            Utilities.centerOnScreen(this);
+            setVisible(true);
+        }
+    }
 
     /**
      *

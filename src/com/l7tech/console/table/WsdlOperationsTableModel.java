@@ -1,9 +1,7 @@
 package com.l7tech.console.table;
 
 import javax.swing.table.AbstractTableModel;
-import javax.wsdl.Definition;
-import javax.wsdl.PortType;
-import javax.wsdl.Operation;
+import javax.wsdl.*;
 import java.util.Iterator;
 import java.util.List;
 
@@ -69,7 +67,24 @@ public class WsdlOperationsTableModel extends AbstractTableModel {
         } else if (column == 2) {
             return "Output Message";
         }
-        throw new IndexOutOfBoundsException("column may be 1 or 0. received " + column);
+        throw new IndexOutOfBoundsException("column " + column);
+    }
+
+    /**
+     *  Returns the class for the <code>columnIndex</code>.
+     *
+     *  @param column  the column being queried
+     *  @return the corresponding class
+     */
+    public Class getColumnClass(int column) {
+        if (column == 0) {
+            return String.class;
+        } else if (column == 1) {
+            return Input.class;
+        } else if (column == 2) {
+            return Output.class;
+        }
+        throw new IndexOutOfBoundsException("column " + column);
     }
 
 
@@ -116,6 +131,9 @@ public class WsdlOperationsTableModel extends AbstractTableModel {
      */
     public void addOperation(Operation operation) {
         portType.addOperation(operation);
+        operation.setInput(definition.createInput());
+        operation.setOutput(definition.createOutput());
+
         this.fireTableStructureChanged();
     }
 
@@ -157,6 +175,39 @@ public class WsdlOperationsTableModel extends AbstractTableModel {
      */
     public boolean isCellEditable(int rowIndex, int columnIndex) {
         return true;
+    }
+
+    /**
+     *  This empty implementation is provided so users don't have to implement
+     *  this method if their data model is not editable.
+     *
+     *  @param  aValue   value to assign to cell
+     *  @param  rowIndex   row of cell
+     *  @param  columnIndex  column of cell
+     */
+    public void setValueAt(Object aValue, int rowIndex, int columnIndex) {
+        if (aValue == null) {
+            throw new IllegalArgumentException(" value == null ");
+        }
+        Operation op = getOperationAt(rowIndex);
+        if (columnIndex == 0) {
+            if (!(aValue instanceof String)) {
+                throw new IllegalArgumentException("Unsupported type "+aValue.getClass());
+            }
+            op.setName((String)aValue);
+        } else if (columnIndex == 1) {
+            if (!(aValue instanceof Message)) {
+                throw new IllegalArgumentException("Unsupported type "+aValue.getClass()+ " expected "+Message.class);
+            }
+            op.getInput().setMessage((Message)aValue);
+        } else if (columnIndex == 2) {
+            if (!(aValue instanceof Message)) {
+                throw new IllegalArgumentException("Unsupported type "+aValue.getClass() +" expected "+Message.class);
+            }
+            op.getOutput().setMessage((Message)aValue);
+        } else {
+            throw new IndexOutOfBoundsException("" + rowIndex + " > " + portType.getOperations().size());
+        }
     }
 
     /**

@@ -3,14 +3,12 @@ package com.l7tech.console.panels;
 import com.l7tech.console.table.WsdlOperationsTableModel;
 
 import javax.swing.*;
-import javax.swing.table.DefaultTableModel;
-import javax.wsdl.Definition;
-import javax.wsdl.PortType;
-import javax.wsdl.Operation;
+import javax.swing.table.DefaultTableCellRenderer;
+import javax.wsdl.*;
 import javax.xml.namespace.QName;
 import java.awt.*;
-import java.awt.event.ActionListener;
 import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.util.Map;
 
 /**
@@ -27,6 +25,7 @@ public class WsdlPortTypePanel extends WizardStepPanel {
     private JButton addOperationButton;
     private JButton removeOperatonButton;
     private Definition definition;
+    private JComboBox messagesComboBox = new JComboBox();
 
     public WsdlPortTypePanel(WizardStepPanel next) {
         super(next);
@@ -37,8 +36,10 @@ public class WsdlPortTypePanel extends WizardStepPanel {
     }
 
     private void initialize() {
-        portTypeNameField.setText("NewPortType");
         operationsTableScrollPane.getViewport().setBackground(operationsTable.getBackground());
+        operationsTable.setDefaultRenderer(Object.class,operationsTableCellRenderer);
+        operationsTable.setDefaultRenderer(Input.class,operationsTableCellRenderer);
+        operationsTable.setDefaultRenderer(Output.class,operationsTableCellRenderer);
         addOperationButton.addActionListener(addOperationActionListener);
         removeOperatonButton.setEnabled(false);
     }
@@ -86,7 +87,7 @@ public class WsdlPortTypePanel extends WizardStepPanel {
         Map portTypes = definition.getPortTypes();
         if (portTypes.isEmpty()) {
             portType = definition.createPortType();
-            portType.setQName(new QName("NewPortType"));
+            portType.setQName(new QName(portTypeNameField.getText()));
             portType.setUndefined(false);
             definition.addPortType(portType);
         } else {
@@ -94,6 +95,30 @@ public class WsdlPortTypePanel extends WizardStepPanel {
         }
         operationsModel = new WsdlOperationsTableModel(definition, portType);
         operationsTable.setModel(operationsModel);
+        Object[] messages = definition.getMessages().values().toArray();
+        messagesComboBox.setModel(new DefaultComboBoxModel(messages));
+        messagesComboBox.setRenderer(new DefaultListCellRenderer() {
+            public Component
+              getListCellRendererComponent(JList list,
+                                           Object value,
+                                           int index,
+                                           boolean isSelected,
+                                           boolean cellHasFocus) {
+                if (isSelected) {
+                    setBackground(list.getSelectionBackground());
+                    setForeground(list.getSelectionForeground());
+                } else {
+                    setBackground(list.getBackground());
+                    setForeground(list.getForeground());
+                }
+                QName qName = ((Message)value).getQName();
+                setText(WsdlCreateWizard.prefixedName(qName, definition));
+                return this;
+            }
+        });
+        operationsTable.setDefaultEditor(Output.class, new DefaultCellEditor(messagesComboBox));
+        operationsTable.setDefaultEditor(Input.class, new DefaultCellEditor(messagesComboBox));
+
     }
 
     /**
@@ -112,32 +137,82 @@ public class WsdlPortTypePanel extends WizardStepPanel {
     }
 
     private ActionListener
-       addOperationActionListener = new ActionListener() {
-           /**
-            * Invoked when an action occurs.
-            */
-           public void actionPerformed(ActionEvent e) {
-               String newOperationName = null;
-               boolean found = false;
-               while (!found) {
-                   newOperationName = "NewOperation" + operationsModel.getRowCount();
-                   found = true;
-                   int rows = operationsModel.getRowCount();
-                   for (int i = 0; i < rows; i++) {
-                       String name =
-                         (String)operationsModel.getValueAt(i, 0);
-                       if (name.equals(newOperationName)) {
-                           found = false;
-                           break;
-                       }
-                   }
-                   if (found) {
-                       operationsModel.addOperation(newOperationName);
-                       break;
-                   }
-               }
-           }
-       };
+      addOperationActionListener = new ActionListener() {
+          /**
+           * Invoked when an action occurs.
+           */
+          public void actionPerformed(ActionEvent e) {
+              String newOperationName = null;
+              boolean found = false;
+              while (!found) {
+                  newOperationName = "NewOperation" + operationsModel.getRowCount();
+                  found = true;
+                  int rows = operationsModel.getRowCount();
+                  for (int i = 0; i < rows; i++) {
+                      String name =
+                        (String)operationsModel.getValueAt(i, 0);
+                      if (name.equals(newOperationName)) {
+                          found = false;
+                          break;
+                      }
+                  }
+                  if (found) {
+                      operationsModel.addOperation(newOperationName);
+                      break;
+                  }
+              }
+          }
+      };
+
+    private
+    DefaultTableCellRenderer operationsTableCellRenderer
+      = new DefaultTableCellRenderer() {
+          /**
+           *
+           * Returns the default table cell renderer.
+           *
+           * @param table  the <code>JTable</code>
+           * @param value  the value to assign to the cell at
+           *			<code>[row, column]</code>
+           * @param isSelected true if cell is selected
+           * @param hasFocus true if cell has focus
+           * @param row  the row of the cell to render
+           * @param column the column of the cell to render
+           * @return the default table cell renderer
+           */
+          public Component
+            getTableCellRendererComponent(JTable table,
+                                          Object value,
+                                          boolean isSelected,
+                                          boolean hasFocus,
+                                          int row, int column) {
+              if (value instanceof Input) {
+                  Input in = (Input)value;
+                  renderMessage(table, in.getMessage(), isSelected);
+              } else if (value instanceof Output) {
+                  Output out = (Output)value;
+                  renderMessage(table, out.getMessage(), isSelected);
+              } else {
+                  super.getTableCellRendererComponent(
+                    table, value,
+                    isSelected, hasFocus, row, column);
+              }
+              return this;
+          }
+
+          private void renderMessage(JTable table, Message msg, boolean isSelected) {
+              String text = msg == null ? "" :
+                WsdlCreateWizard.prefixedName(msg.getQName(), definition);
+              if (isSelected) {
+                  setBackground(table.getSelectionBackground());
+                  setForeground(table.getSelectionForeground());
+              } else {
+                  setBackground(table.getBackground());
+                  setForeground(table.getForeground());
+              }
+              setText(text);
+          }
+      };
 
 
     {

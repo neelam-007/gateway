@@ -24,7 +24,7 @@ public class Wizard extends JDialog {
 
     /** Creates new wizard */
     public Wizard(Frame parent, WizardStepPanel panel) {
-        super(parent, true);
+        super(parent, false);
         this.startPanel = panel;
         currentPanel = startPanel;
         initComponents();

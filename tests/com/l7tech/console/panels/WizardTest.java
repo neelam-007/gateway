@@ -13,12 +13,14 @@ public class WizardTest extends JFrame {
 
     public static void main(String[] args) {
         WizardTest t = new WizardTest();
-        WsdlDefinitionPanel p =
+        WsdlDefinitionPanel defPanel =
           new WsdlDefinitionPanel(
             new WsdlMessagesPanel(
-              new WsdlPortTypePanel(null)
+              new WsdlPortTypePanel(
+                new WsdlPortTypeBindingPanel(null))
             )
           );
+        WsdlCreateOverviewPanel p = new WsdlCreateOverviewPanel(defPanel);
         Wizard w = new WsdlCreateWizard(t, p);
         w.pack();
         w.show();
@@ -29,6 +31,5 @@ public class WizardTest extends JFrame {
               }
           }
         );
-
     }
 }

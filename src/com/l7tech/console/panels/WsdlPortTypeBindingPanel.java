@@ -18,9 +18,15 @@ public class WsdlPortTypeBindingPanel extends WizardStepPanel {
 
     public WsdlPortTypeBindingPanel(WizardStepPanel next) {
         super(next);
+        initialize();
+    }
+
+    private void initialize() {
         setLayout(new BorderLayout());
-        /** Set content pane */
         add(mainPanel, BorderLayout.CENTER);
+        ComboBoxModel model =
+          new DefaultComboBoxModel(new String[] {"rpc", "document"});
+        portTypeBindingStyle.setModel(model);
     }
 
     /**
@@ -39,6 +45,13 @@ public class WsdlPortTypeBindingPanel extends WizardStepPanel {
      */
     public boolean isValid() {
         return true;
+    }
+
+    /**
+     * @return the wizard step label
+     */
+    public String getStepLabel() {
+        return "Bindings";
     }
 
     {
