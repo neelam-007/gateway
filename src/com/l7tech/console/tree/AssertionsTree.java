@@ -5,9 +5,13 @@ import com.l7tech.console.action.DeleteEntityAction;
 import com.l7tech.console.action.DeletePolicyTemplateAction;
 
 import javax.swing.*;
+import javax.swing.event.TreeWillExpandListener;
+import javax.swing.event.TreeExpansionEvent;
+import javax.swing.event.TreeExpansionListener;
 import javax.swing.tree.DefaultTreeModel;
 import javax.swing.tree.TreePath;
 import javax.swing.tree.TreeSelectionModel;
+import javax.swing.tree.ExpandVetoException;
 import java.awt.datatransfer.DataFlavor;
 import java.awt.datatransfer.Transferable;
 import java.awt.datatransfer.UnsupportedFlavorException;
@@ -15,6 +19,7 @@ import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.awt.*;
 import java.util.logging.Logger;
 
 /**
@@ -66,6 +71,8 @@ public class AssertionsTree extends JTree {
         setDragEnabled(true);
         setTransferHandler(new AssertionTransferHandler());
         getSelectionModel().setSelectionMode(TreeSelectionModel.SINGLE_TREE_SELECTION);
+        addTreeWillExpandListener(new AssertionsTreeWillExpandListener());
+        addTreeExpansionListener(new AssertionsTreeExpansionListener());
     }
 
     /**
@@ -207,6 +214,24 @@ public class AssertionsTree extends JTree {
                 return node;
             }
             throw new UnsupportedFlavorException(flavor);
+        }
+    }
+
+    private class AssertionsTreeWillExpandListener implements TreeWillExpandListener {
+        public void treeWillExpand(TreeExpansionEvent event) throws ExpandVetoException {
+            setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
+        }
+
+        public void treeWillCollapse(TreeExpansionEvent event) throws ExpandVetoException {
+        }
+    }
+
+    private class AssertionsTreeExpansionListener implements TreeExpansionListener {
+        public void treeExpanded(TreeExpansionEvent event) {
+            setCursor(Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR));
+        }
+
+        public void treeCollapsed(TreeExpansionEvent event) {
         }
     }
 }
