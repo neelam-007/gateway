@@ -15,6 +15,8 @@ public class AssertionStatus {
     static final int POLICY = 600;
     static final int MISC   = 1000;
 
+    public static final AssertionStatus UNDEFINED        = make( -1, "Undefined" );
+
     /** Assertion finished successfully */
     public static final AssertionStatus NONE              = make(           0, "No Error" );
     public static final AssertionStatus BAD_REQUEST       = make( CLIENT +  0, "Bad Request" );
@@ -31,7 +33,6 @@ public class AssertionStatus {
     /** Assertion not yet implemented. */
     public static final AssertionStatus NOT_YET_IMPLEMENTED = make( MISC + 0, "Not yet implemented!" );
     public static final AssertionStatus NOT_APPLICABLE      = make( MISC + 1, "Not applicable in this context" );
-    public static final AssertionStatus UNDEFINIED          = make( MISC + 999, "Undefined" );
 
     /** Generic catch-all status */
     public static final AssertionStatus SERVER_ERROR = make( SERVER + 0, "Internal Server Error" );
