@@ -9,6 +9,7 @@ import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.assertion.credential.CredentialFormat;
 import com.l7tech.policy.assertion.credential.PrincipalCredentials;
 import com.l7tech.policy.assertion.credential.http.HttpDigest;
+import com.l7tech.common.util.HexUtils;
 
 import javax.naming.Context;
 import javax.naming.NamingEnumeration;
@@ -16,7 +17,11 @@ import javax.naming.NamingException;
 import javax.naming.directory.*;
 import java.util.Collection;
 import java.util.TreeSet;
+import java.util.Map;
 import java.util.logging.Level;
+import java.util.logging.Logger;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 
 /**
  * Layer 7 Technologies, inc.
@@ -30,6 +35,13 @@ public class LdapIdentityProviderServer implements IdentityProvider {
         cfg = config;
         groupManager = new LdapGroupManagerServer(cfg);
         userManager = new LdapUserManagerServer(cfg);
+        logger = LogManager.getInstance().getSystemLogger();
+        try {
+            _md5 = MessageDigest.getInstance( "MD5" );
+        } catch (NoSuchAlgorithmException e) {
+            logger.log( Level.SEVERE, e.getMessage(), e );
+            throw new RuntimeException( e );
+        }
     }
 
     public IdentityProviderConfig getConfig() {
@@ -46,27 +58,66 @@ public class LdapIdentityProviderServer implements IdentityProvider {
 
     public boolean authenticate( PrincipalCredentials pc ) {
         if (!valid) {
-            LogManager.getInstance().getSystemLogger().log(Level.INFO, "invalid id provider asked to authenticate");
+            logger.log(Level.INFO, "invalid id provider asked to authenticate");
             return false;
         }
         User realUser = null;
         try {
             realUser = userManager.findByLogin(pc.getUser().getLogin());
         } catch (FindException e) {
-            LogManager.getInstance().getSystemLogger().log(Level.INFO, "invalid user", e);
+            logger.log(Level.INFO, "invalid user", e);
             return false;
         }
         if (realUser == null) {
-            LogManager.getInstance().getSystemLogger().log(Level.INFO, "invalid user");
+            logger.log(Level.INFO, "invalid user");
             return false;
         }
-        if ( pc.getFormat() == CredentialFormat.CLEARTEXT ) {
+
+        if (pc.getFormat() == CredentialFormat.CLEARTEXT) {
             // basic authentication
             boolean res = userManager.authenticateBasic(realUser.getName(), new String(pc.getCredentials()));
             if (res) pc.getUser().copyFrom(realUser);
             return res;
+        } else if (pc.getFormat() == CredentialFormat.DIGEST) {
+            String dbPassHash = realUser.getPassword();
+            byte[] credentials = pc.getCredentials();
+            Map authParams = (Map)pc.getPayload();
+            if (authParams == null) {
+                logger.log(Level.SEVERE, "No Digest authentication parameters found in PrincipalCredentials payload!");
+                return false;
+            }
+
+            String qop = (String)authParams.get(HttpDigest.PARAM_QOP);
+            String nonce = (String)authParams.get(HttpDigest.PARAM_NONCE);
+
+            String a2 = (String)authParams.get( HttpDigest.PARAM_METHOD ) + ":" +
+                        (String)authParams.get( HttpDigest.PARAM_URI );
+
+            String ha2 = HexUtils.encodeMd5Digest( _md5.digest( a2.getBytes() ) );
+
+            String serverDigestValue;
+            if (!HttpDigest.QOP_AUTH.equals(qop))
+                serverDigestValue = dbPassHash + ":" + nonce + ":" + ha2;
+            else {
+                String nc = (String)authParams.get( HttpDigest.PARAM_NC );
+                String cnonce = (String)authParams.get( HttpDigest.PARAM_CNONCE );
+
+                serverDigestValue = dbPassHash + ":" + nonce + ":" + nc + ":"
+                        + cnonce + ":" + qop + ":" + ha2;
+            }
+
+            String expectedResponse = HexUtils.encodeMd5Digest( _md5.digest( serverDigestValue.getBytes() ) );
+            String response = new String( credentials );
+
+            User authUser = pc.getUser();
+            if ( response.equals( expectedResponse ) ) {
+                authUser.copyFrom( realUser );
+                return true;
+            } else {
+                return false;
+            }
         } else {
-            LogManager.getInstance().getSystemLogger().log(Level.SEVERE, "Attempt to authenticate using unsupported method" + pc.getFormat());
+            logger.log(Level.SEVERE, "Attempt to authenticate using unsupported method" + pc.getFormat());
             throw new IllegalArgumentException( "Only cleartext credentials are currently supported!" );
         }
     }
@@ -85,7 +136,7 @@ public class LdapIdentityProviderServer implements IdentityProvider {
      */
     public Collection search(EntityType[] types, String searchString) throws FindException {
         if (!valid) {
-            LogManager.getInstance().getSystemLogger().log(Level.INFO, "invalid id provider asked for search");
+            logger.log(Level.INFO, "invalid id provider asked for search");
             throw new FindException("provider invalidated");
         }
         if (types == null || types.length < 1) throw new IllegalArgumentException("must pass at least one type");
@@ -144,7 +195,7 @@ public class LdapIdentityProviderServer implements IdentityProvider {
         }
         catch (NamingException e)
         {
-            LogManager.getInstance().getSystemLogger().log(Level.SEVERE, null, e);
+            logger.log(Level.SEVERE, null, e);
             throw new FindException(e.getMessage(), e);
         }
         return output;
@@ -162,4 +213,6 @@ public class LdapIdentityProviderServer implements IdentityProvider {
     private LdapGroupManagerServer groupManager = null;
     private LdapUserManagerServer userManager = null;
     private volatile boolean valid = true;
+    private Logger logger = null;
+    private MessageDigest _md5;
 }
