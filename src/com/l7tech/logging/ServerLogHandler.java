@@ -86,6 +86,7 @@ public class ServerLogHandler extends Handler {
         // we need an id near the end of the table, make a query using
         // the logrecords timestamps
         long timewarp = 1;
+        final long max_time_warp = 1000*3600*24*5; // assume there is nothing at all beyond 5 days old
         long recentTimeStamp = System.currentTimeMillis() - timewarp;
         boolean recentIdFound = false;
         long recendRecordId = -1;
@@ -105,8 +106,8 @@ public class ServerLogHandler extends Handler {
                 timewarp *= 10;
                 recentTimeStamp = System.currentTimeMillis() - timewarp;
             }
-            if (timewarp > 1000*3600*24*5) {
-                // assume there is nothing at all beyond 5 days old
+            if (timewarp > max_time_warp) {
+                // we just can't do this for ever
                 break;
             }
         }
@@ -123,10 +124,11 @@ public class ServerLogHandler extends Handler {
         int resB = countRecordsWithIdBiggerThan(idB, nodeId, context);
 
         // round up the data, this is tricky because it is a moving target
+        final long max_step = 500000;
         if (resB > maxSize && resA > maxSize) {
-            long range = idA - idB;
+            long step = idA - idB;
             idB = idA;
-            idA = idA + range;
+            idA = idA + step;
             resA = countRecordsWithIdBiggerThan(idA, nodeId, context);
             resB = countRecordsWithIdBiggerThan(idB, nodeId, context);
             int iterations = 1;
@@ -138,15 +140,17 @@ public class ServerLogHandler extends Handler {
                                     resB + " for " + idB + ")", null);
                     return Collections.EMPTY_LIST;
                 }
-                range *= 10;
+                step *= 10;
+                if (step > max_step) {
+                    step = max_step;
+                }
                 idB = idA;
-                idA = idA + range;
+                idA = idA + step;
                 resB = resA;
                 resA = countRecordsWithIdBiggerThan(idA, nodeId, context);
             }
         } else if (resB < maxSize && resA < maxSize) {
             long step = idA - idB;
-            final long max_step = 500000;
             idA = idB;
             idB = idB - step;
             resA = countRecordsWithIdBiggerThan(idA, nodeId, context);
