@@ -39,5 +39,5 @@ public class IdentityProviderConfigManagerClient implements com.l7tech.identity.
     // PRIVATES
     // ************************************************
 
-    // stub to the client-side of the web service
+    // todo, manage the stub to the client-side of the web service
 }
