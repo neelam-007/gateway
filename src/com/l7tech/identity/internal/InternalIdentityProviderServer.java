@@ -61,6 +61,7 @@ public class InternalIdentityProviderServer implements IdentityProvider {
 
                     if ( maybeCert == null ) {
                         _log.log( Level.SEVERE, "Request was supposed to contain a certificate, but does not" );
+                        return false;
                     } else {
                         dbCert = userManager.retrieveUserCert( login );
                         if ( dbCert == null ) {
