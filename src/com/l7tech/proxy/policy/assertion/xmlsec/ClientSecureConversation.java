@@ -32,6 +32,37 @@ public class ClientSecureConversation extends ClientAssertion {
         // nothing in assertion we need to remember
     }
 
+    public AssertionStatus decorateRequest(PendingRequest request)
+            throws BadCredentialsException, OperationCanceledException,
+            GeneralSecurityException, ClientCertificateException, IOException, SAXException,
+            KeyStoreCorruptException, HttpChallengeRequiredException, PolicyRetryableException,
+            PolicyAssertionException, InvalidDocumentFormatException
+    {
+        // Establish session, if possible
+        final String sessionId = request.getOrCreateSecureConversationId();
+        final byte[] sessionKey = request.getSecureConversationSharedSecret();
+
+        // Configure outbound decoration to use WS-SecureConversation
+        request.getPendingDecorations().put(this, new ClientDecorator() {
+            public AssertionStatus decorateRequest(PendingRequest request) {
+                WssDecorator.DecorationRequirements wssReqs = request.getWssRequirements();
+                wssReqs.setSignTimestamp(true);
+                wssReqs.setSecureConversationSession(new WssDecorator.DecorationRequirements.SecureConversationSession() {
+                    public String getId() {
+                        return sessionId;
+                    }
+
+                    public byte[] getSecretKey() {
+                        return sessionKey;
+                    }
+                });
+                return AssertionStatus.NONE;
+            }
+        });
+
+        return AssertionStatus.NONE;
+    }
+
     public AssertionStatus unDecorateReply(PendingRequest request, SsgResponse response)
             throws BadCredentialsException, OperationCanceledException, GeneralSecurityException,
             IOException, SAXException, ResponseValidationException, KeyStoreCorruptException,
@@ -83,37 +114,6 @@ public class ClientSecureConversation extends ClientAssertion {
 
     public String iconResource(boolean open) {
         return "com/l7tech/proxy/resources/tree/xmlencryption.gif";
-    }
-
-    public AssertionStatus decorateRequest(PendingRequest request)
-            throws BadCredentialsException, OperationCanceledException,
-            GeneralSecurityException, ClientCertificateException, IOException, SAXException,
-            KeyStoreCorruptException, HttpChallengeRequiredException, PolicyRetryableException,
-            PolicyAssertionException, InvalidDocumentFormatException
-    {
-        // Establish session, if possible
-        final String sessionId = request.getOrCreateSecureConversationId();
-        final byte[] sessionKey = request.getSecureConversationSharedSecret();
-
-        // Configure outbound decoration to use WS-SecureConversation
-        request.getPendingDecorations().put(this, new ClientDecorator() {
-            public AssertionStatus decorateRequest(PendingRequest request) {
-                WssDecorator.DecorationRequirements wssReqs = request.getWssRequirements();
-                wssReqs.setSignTimestamp(true);
-                wssReqs.setSecureConversationSession(new WssDecorator.DecorationRequirements.SecureConversationSession() {
-                    public String getId() {
-                        return sessionId;
-                    }
-
-                    public byte[] getSecretKey() {
-                        return sessionKey;
-                    }
-                });
-                return AssertionStatus.NONE;
-            }
-        });
-
-        return AssertionStatus.NONE;
     }
 
     private static final Logger log = Logger.getLogger(ClientSecureConversation.class.getName());
