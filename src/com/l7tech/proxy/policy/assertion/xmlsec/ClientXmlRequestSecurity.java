@@ -11,13 +11,19 @@ import com.l7tech.proxy.datamodel.Ssg;
 import com.l7tech.proxy.datamodel.SsgKeyStoreManager;
 import com.l7tech.proxy.datamodel.SsgResponse;
 import com.l7tech.proxy.policy.assertion.ClientAssertion;
+import com.l7tech.proxy.policy.assertion.credential.http.ClientHttpClientCert;
 import com.l7tech.proxy.datamodel.exceptions.OperationCanceledException;
 import com.l7tech.xmlsig.SoapMsgSigner;
+import com.l7tech.xmlsig.SecureConversationTokenHandler;
+import com.l7tech.xmlenc.XmlMangler;
 import org.w3c.dom.Document;
+import org.apache.log4j.Category;
 
 import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
+import java.security.GeneralSecurityException;
 import java.security.cert.X509Certificate;
+import java.io.IOException;
 
 /**
  * User: flascell
@@ -25,13 +31,13 @@ import java.security.cert.X509Certificate;
  * Time: 2:54:01 PM
  * $Id$
  *
- * XML Digital signature on the soap request sent from a requestor (probably proxy) to the ssg server
+ * XML Digital signature on the soap request sent from the proxy to the ssg server. Also does XML
+ * Encryption of the request's body if the assertion's property requires it.
  *
- * On the server side, this must verify that the SoapRequest contains a valid xml d-sig for the entire envelope.
- * On the proxy side, this must decorate a request with an xml d-sig
+ * On the server side, this must verify that the SoapRequest contains a valid xml d-sig for the entire envelope and
+ * maybe decyphers the body.
  *
- * This extends CredentialSourceAssertion because once the validity of the signature if confirmed, the cert is used
- * as credentials.
+ * On the proxy side, this must decorate a request with an xml d-sig and maybe encrypt the body.
  *
  * @author flascell
  */
@@ -48,6 +54,8 @@ public class ClientXmlRequestSecurity extends ClientAssertion {
      * @throws PolicyAssertionException if processing should not continue due to a serious error
      */
     public AssertionStatus decorateRequest(PendingRequest request) throws PolicyAssertionException {
+
+        // GET THE SOAP DOCUMENT
         Document soapmsg = null;
         try {
             soapmsg = request.getSoapEnvelope();
@@ -55,20 +63,18 @@ public class ClientXmlRequestSecurity extends ClientAssertion {
             throw new PolicyAssertionException("cannot get request document", e);
         }
 
-        Ssg ssg = request.getSsg();
-
+        // GET THE CLIENT CERT AND PRIVATE KEY
         // We must have credentials to get the private key
+        Ssg ssg = request.getSsg();
         if (!ssg.isCredentialsConfigured()) {
             request.setCredentialsWouldHaveHelped(true);
             return AssertionStatus.FAILED;
         }
-
         // We must have a client cert
         if (!SsgKeyStoreManager.isClientCertAvailabile(ssg)) {
             request.setClientCertWouldHaveHelped(true);
             return AssertionStatus.FAILED;
         }
-
         PrivateKey userPrivateKey = null;
         X509Certificate userCert = null;
         try {
@@ -82,9 +88,25 @@ public class ClientXmlRequestSecurity extends ClientAssertion {
             throw new PolicyAssertionException(e);
         }
 
-        // must we encrypt the body before signing the envelope?
+        // DECORATE REQUEST WITH SESSION INFO AND SEQ NR
+        long sessId = 0;
+        long seqNr = 0;
+        byte[] keyreq = null;
+        // todo, mike where to get those valu-ues?
+        SecureConversationTokenHandler.appendSessIdAndSeqNrToDocument(soapmsg, sessId, seqNr);
+
+        // ENCRYPTION
         if (data.isEncryption()) {
-            // todo, encryption of body
+            try {
+                XmlMangler.encryptXml(soapmsg, keyreq, Long.toString(sessId));
+            } catch (GeneralSecurityException e) {
+                throw new PolicyAssertionException("error encrypting document", e);
+            } catch (IOException e) {
+                throw new PolicyAssertionException("error encrypting document", e);
+            } catch (IllegalArgumentException e) {
+                throw new PolicyAssertionException("error encrypting document", e);
+            }
+            log.info("Encrypted request OK");
         }
 
         SoapMsgSigner dsigHelper = new SoapMsgSigner();
@@ -95,6 +117,7 @@ public class ClientXmlRequestSecurity extends ClientAssertion {
         } catch (XSignatureException e) {
             throw new PolicyAssertionException("error signing document", e);
         }
+        log.info("Signed request OK");
 
         request.setSoapEnvelope(soapmsg);
 
@@ -107,4 +130,5 @@ public class ClientXmlRequestSecurity extends ClientAssertion {
     }
 
     protected XmlRequestSecurity data;
+    private static final Category log = Category.getInstance(ClientHttpClientCert.class);
 }
