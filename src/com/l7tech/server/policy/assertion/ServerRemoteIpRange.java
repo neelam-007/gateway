@@ -24,15 +24,13 @@ import java.util.logging.Logger;
  */
 public class ServerRemoteIpRange implements ServerAssertion {
 
-    Auditor auditor = null;
-
     public ServerRemoteIpRange(RemoteIpRange rule) {
         this.rule = rule;
         calculateIPRange();
     }
 
     public AssertionStatus checkRequest(PolicyEnforcementContext context) throws IOException, PolicyAssertionException {
-        auditor = new Auditor(context.getAuditContext(), logger);
+        Auditor auditor = new Auditor(context.getAuditContext(), logger);
 
         // get remote address
         TcpKnob tcp = (TcpKnob)context.getRequest().getKnob(TcpKnob.class);
