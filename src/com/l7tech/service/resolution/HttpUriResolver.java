@@ -17,6 +17,8 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.logging.Logger;
 import java.util.logging.Level;
+import java.util.Set;
+import java.util.HashSet;
 
 /**
  * Resolves services based on the URI part of the WSDL's soap:address extensibility
@@ -67,6 +69,10 @@ public class HttpUriResolver extends NameValueServiceResolver {
 
     public int getSpeed() {
         return FAST;
+    }
+
+    public Set getDistinctParameters(PublishedService candidateService) {
+        throw new UnsupportedOperationException();
     }
 
     protected Logger logger = LogManager.getInstance().getSystemLogger();
