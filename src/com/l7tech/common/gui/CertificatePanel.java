@@ -10,7 +10,6 @@ import com.l7tech.console.table.TableUtil;
 
 import javax.swing.*;
 import javax.swing.table.AbstractTableModel;
-import javax.swing.table.DefaultTableCellRenderer;
 import java.awt.*;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -177,11 +176,6 @@ public class CertificatePanel extends JPanel {
     public void setCertificate(X509Certificate newCert) throws CertificateEncodingException, NoSuchAlgorithmException {
         cert = newCert;
         loadCertificateInfo();
-    }
-
-    /** Convert a null String into "N/A" */
-    private String nullNa(String s) {
-        return s == null ? "N/A" : s;
     }
 
     /** Convert a null object into "N/A", otherwise toString */
