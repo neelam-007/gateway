@@ -3,14 +3,20 @@ package com.l7tech.console.panels;
 import com.l7tech.console.table.LogTableModel;
 import com.l7tech.console.table.FilteredLogTableModel;
 import com.l7tech.console.MainWindow;
+import com.l7tech.console.util.Preferences;
 
 import javax.swing.*;
+import javax.swing.border.CompoundBorder;
+import javax.swing.border.Border;
 import javax.swing.table.*;
 import javax.swing.event.*;
 import java.awt.*;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.util.Dictionary;
 import java.util.Hashtable;
 import java.util.ResourceBundle;
+import java.io.IOException;
 
 
 /**
@@ -18,7 +24,7 @@ import java.util.ResourceBundle;
  * User: fpang
  * Date: Sep 12, 2003
  * Time: 4:12:07 PM
- * To change this template use Options | File Templates.
+ * This class implements the display for log messsgaes.
  */
 public class LogPanel extends JPanel {
 
@@ -32,6 +38,7 @@ public class LogPanel extends JPanel {
 
     private static ResourceBundle resapplication = java.util.ResourceBundle.getBundle("com.l7tech.console.resources.console");
     private final ClassLoader cl = getClass().getClassLoader();
+    private Border curBorder = null;
 
     private int msgFilterLevel = MSG_FILTER_LEVEL_WARNING;
     private JPanel selectPane = null;
@@ -50,11 +57,14 @@ public class LogPanel extends JPanel {
     private DefaultTableModel logTableModel = null;
     private FilteredLogTableModel logTableModelFilter = null;
 
+    /**
+     * Constructor
+     */
     public LogPanel() {
         setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
 
         setBorder(new javax.swing.border.LineBorder(new java.awt.Color(0, 0, 0)));
-        setMinimumSize(new Dimension(100, 150));
+        //setMinimumSize(new Dimension(600, 200));
 
         add(getMsgPane());
         add(getSelectPane());
@@ -93,19 +103,32 @@ public class LogPanel extends JPanel {
                 });
     }
 
+    /**
+     * Return the log message filter level.
+     * @return int msgFilterLevel - Message filter level.
+     */
     public int getMsgFilterLevel(){
         return msgFilterLevel;
     }
 
+    /**
+     * Retrieve logs from server and display the logs.
+     */
     public void showData(){
         ((FilteredLogTableModel)getMsgTable().getModel()).getLogs(msgFilterLevel);
+        setVisible(true);
     }
 
+    /**
+     * Return SelectPane property value
+     * @return JPanel
+     */
     private JPanel getSelectPane(){
         if(selectPane == null){
             selectPane = new JPanel();
         }
 
+        selectPane.setMinimumSize(new Dimension(500, 35));
         selectPane.setLayout(new FlowLayout(FlowLayout.LEFT));
         selectPane.add(getFilterPane());
         selectPane.add(getControlPane());
@@ -113,18 +136,26 @@ public class LogPanel extends JPanel {
         return selectPane;
     }
 
+    /**
+     * Return FilterPane property value
+     * @return JPanel
+     */
     private JPanel getFilterPane(){
         if(filterPane == null){
             filterPane = new JPanel();
         }
 
         filterPane.setLayout(new BorderLayout());
-        filterPane.add(getSlider());
+        filterPane.add(getFilterSlider());
 
         return filterPane;
     }
 
-    private JSlider getSlider(){
+    /**
+     * Return filterSlider property value
+     * @return JSlider
+     */
+    private JSlider getFilterSlider(){
         if(slider == null){
             slider = new JSlider(0, 160);
         }
@@ -187,6 +218,10 @@ public class LogPanel extends JPanel {
         return slider;
     }
 
+    /**
+     * Return ControlPane property value
+     * @return  JPanel
+     */
     private JPanel getControlPane(){
         if(controlPane == null){
              controlPane = new JPanel();
@@ -211,32 +246,42 @@ public class LogPanel extends JPanel {
         Refresh.setFont(new java.awt.Font("Dialog", 0, 11));
         String atext = resapplication.getString("Refresh_MenuItem_text");
         Refresh.setText(atext);
+        Refresh.setIconTextGap(1);
+        Refresh.setMargin(new java.awt.Insets(1, 3, 1, 3));
+       curBorder = Refresh.getBorder();
         Refresh.setBorder(null);
-        Icon icon = new ImageIcon(cl.getResource(MainWindow.RESOURCE_PATH + "/Refresh16.gif"));
+        Refresh.setRolloverEnabled(true);
+
+        ImageIcon icon = new ImageIcon(cl.getResource(MainWindow.RESOURCE_PATH + "/Refresh16.gif"));
+        //Refresh.setRolloverIcon(icon);
         Refresh.setIcon(icon);
         Refresh.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
-                RefreshActionPerformed(evt);
+                refreshActionPerformed(evt);
             }
         });
+        Refresh.addMouseListener(new MouseAdapter() {
+            public void mouseEntered(MouseEvent e) {
+                JButton src = (JButton) e.getSource();
+                src.setBorder(curBorder);
+                src.setToolTipText("Resync with the Gateway");
+                }
+            public void mouseExited(MouseEvent e) {
+                JButton src = (JButton) e.getSource();
+                src.setBorder(null);
+                src.setToolTipText(null);
+                }
+        });
+
         controlPane.add(Refresh);
-
-/*
-          logRefreshAction =
-          new AbstractAction(atext, icon) {
-
-              public void actionPerformed(ActionEvent event) {
-                  // todo: retrieve the logs from ssg
-              }
-          };
-        logRefreshAction.setEnabled(false);
-        logRefreshAction.putValue(Action.SHORT_DESCRIPTION, atext);
- */
-
 
         return controlPane;
     }
 
+    /**
+     * Return MsgTable property value
+     * @return JTable
+     */
     private JTable getMsgTable(){
         if(msgTable == null){
             msgTable = new JTable(getLogTableModelFilter(), getLogColumnModel());
@@ -249,6 +294,10 @@ public class LogPanel extends JPanel {
         return msgTable;
     }
 
+    /**
+     * Return MsgTablePane property value
+     * @return JScrollPane
+     */
     private JScrollPane getMsgTablePane(){
         if(msgTablePane == null){
             msgTablePane = new JScrollPane();
@@ -259,6 +308,10 @@ public class LogPanel extends JPanel {
         return msgTablePane;
     }
 
+    /**
+     * Return LogPaneTop property value
+     * @return JSplitPane
+     */
     private JSplitPane getLogPaneTop(){
         if(logPaneTop == null){
             logPaneTop = new JSplitPane();
@@ -270,6 +323,10 @@ public class LogPanel extends JPanel {
         return logPaneTop;
     }
 
+    /**
+     * Return MsgDetailsPane property value
+     * @return JScrollPane
+     */
     private JScrollPane getMsgDetailsPane(){
         if(msgDetailsPane == null){
             msgDetailsPane = new JScrollPane();
@@ -280,6 +337,10 @@ public class LogPanel extends JPanel {
         return msgDetailsPane;
     }
 
+    /**
+     * Return MsgDetails property value
+     * @return JTextArea
+     */
     private JTextArea getMsgDetails()
     {
         if(msgDetails == null){
@@ -292,6 +353,10 @@ public class LogPanel extends JPanel {
         return msgDetails;
     }
 
+    /**
+     * Return MsgPane property value
+     * @return JPanel
+     */
     private JPanel getMsgPane(){
         if(msgPane == null){
             msgPane = new JPanel();
@@ -305,7 +370,10 @@ public class LogPanel extends JPanel {
     }
 
 
-
+    /**
+     * Return LogColumnModel property value
+     * @return  DefaultTableColumnModel
+     */
     private DefaultTableColumnModel getLogColumnModel() {
         DefaultTableColumnModel columnModel = new DefaultTableColumnModel();
 
@@ -323,7 +391,10 @@ public class LogPanel extends JPanel {
         return columnModel;
     }
 
-
+    /**
+     * Return LogTableModelFilter property value
+     * @return FilteredLogTableModel
+     */
     private FilteredLogTableModel getLogTableModelFilter(){
         if(logTableModelFilter == null){
             logTableModelFilter = new FilteredLogTableModel();
@@ -332,11 +403,12 @@ public class LogPanel extends JPanel {
 
         return logTableModelFilter;
     }
+
     /**
      * create the table model with log fields
      *
-     * @return the <code>AbstractTableModel</code> for the
-     * log pane
+     * @return DefaultTableModel
+     *
      */
     private DefaultTableModel getLogTableModel() {
         if (logTableModel != null) {
@@ -352,7 +424,7 @@ public class LogPanel extends JPanel {
     }
 
 
-    private void RefreshActionPerformed(java.awt.event.ActionEvent evt) {
+    private void refreshActionPerformed(java.awt.event.ActionEvent evt) {
         ((FilteredLogTableModel) getMsgTable().getModel()).getLogs(getMsgFilterLevel());
     }
 
@@ -363,22 +435,6 @@ public class LogPanel extends JPanel {
         } else {
             hideMsgDetails();
         }
-    }
-
-    private void allActionPerformed(java.awt.event.ActionEvent evt) {
-        // Add your handling code here:
-    }
-
-    private void infoActionPerformed(java.awt.event.ActionEvent evt) {
-        // Add your handling code here:
-    }
-
-    private void warningActionPerformed(java.awt.event.ActionEvent evt) {
-        // Add your handling code here:
-    }
-
-    private void severeActionPerformed(java.awt.event.ActionEvent evt) {
-        // Add your handling code here:
     }
 
     private void hideMsgDetails() {

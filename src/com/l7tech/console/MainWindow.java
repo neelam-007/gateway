@@ -53,6 +53,7 @@ public class MainWindow extends JFrame {
     /** the path to JavaHelp helpset file */
     public static final String HELP_PATH = "com/l7tech/console/resources/helpset/secure_span_gateway_console_help.hs";
 
+    public static final int MAIN_SPLIT_PANE_DIVIDER_SIZE = 10;
     /** the resource bundle name */
     private static
     ResourceBundle resapplication =
@@ -69,7 +70,7 @@ public class MainWindow extends JFrame {
     private JMenuItem disconnectMenuItem = null;
     private JMenuItem exitMenuItem = null;
     private JMenuItem menuItemPref = null;
-
+    private JCheckBoxMenuItem logMenuItem = null;
     private JMenuItem helpTopicsMenuItem = null;
 
     private Action refreshAction = null;
@@ -316,9 +317,28 @@ public class MainWindow extends JFrame {
         viewMenu.add(item);
         viewMenu.addSeparator();
 
-        JCheckBoxMenuItem logItem = new JCheckBoxMenuItem(getShowLogToggleAction());
-        viewMenu.add(logItem);
-        logItem.setEnabled(false);
+        logMenuItem = new JCheckBoxMenuItem(getShowLogToggleAction());
+        viewMenu.add(logMenuItem);
+        logMenuItem.setEnabled(false);
+
+        addWindowListener(new WindowAdapter() {
+             /** Invoked when a window has been opened. */
+             public void windowOpened(WindowEvent e) {
+                logMenuItem.setSelected(Boolean.getBoolean("gateway.log.selected"));
+             }
+
+             /** Invoked when a window has been closed. */
+             public void windowClosed(WindowEvent e) {
+                 try {
+                     Preferences prefs = Preferences.getPreferences();
+                     boolean s = logMenuItem.isSelected();
+                      prefs.putProperty("gateway.log.selected", Boolean.toString(s));
+                 } catch (IOException e1) {
+                 } catch (NullPointerException e1) {
+                 }
+             }
+         });
+
 
         final JCheckBoxMenuItem jcm =
           new JCheckBoxMenuItem(getToggleStatusBarToggleAction());
@@ -572,19 +592,28 @@ public class MainWindow extends JFrame {
 
                         getLogPane().setVisible(item.isSelected());
                         if (item.isSelected()) {
-                            getLogPane().showData();
-                            getMainJSplitPane().setDividerLocation(700);
-                            getMainJSplitPane().setDividerSize(10);
+                            restoreLogPane();
                             validate();
                             repaint();
                         }
                         else{
+
+                            // store the current divider location
+                            try {
+                                Preferences prefs = Preferences.getPreferences();
+                                int l = mainJSplitPane.getDividerLocation();
+                                prefs.putProperty("main.log.split.divider.location", Integer.toString(l));
+                            } catch (IOException e1) {
+                            } catch (NullPointerException e1) {
+                            }
+
                             getMainJSplitPane().setDividerSize(0);
                         }
                     }
                 };
 
         toggleShowLogAction.putValue(Action.SHORT_DESCRIPTION, atext);
+
         return toggleShowLogAction;
     }
 
@@ -946,11 +975,11 @@ public class MainWindow extends JFrame {
 
             mainJSplitPane.setTopComponent(getMainJSplitPaneTop());
             mainJSplitPane.setBottomComponent(getLogPane());
-            // mainJSplitPane.setDividerLocation(mainJSplitPane.getSize().getHeight() * 0.5);
 
-            mainJSplitPane.setDividerLocation(700);
+            setMainJSplitPaneDividerLocation();
             mainJSplitPane.setDividerSize(0);
-        }
+
+            }
         return mainJSplitPane;
     }
 
@@ -1600,6 +1629,34 @@ public class MainWindow extends JFrame {
         return getDisconnectMenuItem().isEnabled();
     }
 
+    /**
+     * restore the log window
+     */
+    private void restoreLogPane(){
+        setMainJSplitPaneDividerLocation();
+        mainJSplitPane.setDividerSize(MAIN_SPLIT_PANE_DIVIDER_SIZE);
+
+        getLogPane().showData();
+    }
+
+    private void setMainJSplitPaneDividerLocation(){
+        try {
+            Preferences prefs = Preferences.getPreferences();
+            String s = prefs.getString("main.log.split.divider.location");
+            if (s != null) {
+                int l = Integer.parseInt(s);
+                mainJSplitPane.setDividerLocation(l);
+            } else {
+                //getMainJSplitPane().setDividerLocation(700);
+                mainJSplitPane.setDividerLocation(mainJSplitPane.getSize().getHeight() * 0.5);
+            }
+        } catch (IOException e1) {
+
+        } catch (NumberFormatException e1) {
+
+        }
+    }
+
     private
     LogonDialog.LogonListener logonListenr =
       new LogonDialog.LogonListener() {
@@ -1633,6 +1690,10 @@ public class MainWindow extends JFrame {
                     }
                 });
               toggleConnectedMenus(true);
+
+              if(logMenuItem.isSelected()){
+                  restoreLogPane();
+              }
               new HomeAction().actionPerformed(null);
           }
 
