@@ -17,9 +17,11 @@ public class LogMessage {
     private String msgClass = null;
     private String msgMethod = null;
     private String msgDetails = null;
+    private String nodeName = "";
 
     public LogMessage(String log){
 
+        //System.out.println(log);
         StringTokenizer st = new StringTokenizer(log, "|");
 
         int index = 0;
@@ -81,6 +83,13 @@ public class LogMessage {
         return msgDetails;
     }
 
+    public String getNodeName() {
+        return nodeName;
+    }
+
+    public void setNodeName(String nodeName) {
+        this.nodeName = nodeName;
+    }
 
     public static void main(String[] args) {
         LogMessage logRec = new LogMessage("11|20030917 13:07:36.281|INFO|com.l7tech.identity.internal.InternalIdentityProviderServer|authenticate|Couldn't find user with login admin");

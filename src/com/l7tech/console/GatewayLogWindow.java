@@ -1,14 +1,9 @@
 package com.l7tech.console;
 
 import com.l7tech.common.gui.util.ImageCache;
-import com.l7tech.common.util.Locator;
 import com.l7tech.console.panels.LogPanel;
 import com.l7tech.console.util.Registry;
-import com.l7tech.console.util.ClusterStatusWorker;
-import com.l7tech.console.util.ClusterInfoWorker;
-import com.l7tech.cluster.ClusterStatusAdmin;
-import com.l7tech.cluster.GatewayStatus;
-import com.l7tech.service.ServiceAdmin;
+
 
 import javax.swing.*;
 import java.awt.event.ActionEvent;
@@ -16,10 +11,6 @@ import java.awt.event.KeyEvent;
 import java.awt.event.ActionListener;
 import java.awt.*;
 import java.util.ResourceBundle;
-import java.util.Hashtable;
-import java.util.Vector;
-import java.util.Calendar;
-import java.text.SimpleDateFormat;
 
 /*
  * Copyright (C) 2003 Layer 7 Technologies Inc.
@@ -60,15 +51,9 @@ public class GatewayLogWindow extends JFrame {
                 });
 
         pack();
-        //todo: need to reorganize this -- remove it from LogPanel
+
         getLogPane().onConnect();
         getLogPane().refreshLogs();
-
-        initAdminConnection();
-        initCaches();
-
-        // refresh the status
-        refreshLogs();
     }
 
     /**
@@ -76,8 +61,6 @@ public class GatewayLogWindow extends JFrame {
      * @see ActionEvent for details
      */
     private void exitMenuEventHandler(ActionEvent event) {
-
-        //todo: stop the refresh timer here
 
         this.dispose();
     }
@@ -181,85 +164,16 @@ public class GatewayLogWindow extends JFrame {
 
     }
 
-    private javax.swing.Timer getLogRefreshTimer() {
-
-        if (logRefreshTimer != null) return logRefreshTimer;
-
-        // Create a refresh timer.
-        logRefreshTimer = new javax.swing.Timer(GatewayStatus.STATUS_REFRESH_TIMER, new ActionListener() {
-            public void actionPerformed(ActionEvent evt) {
-                refreshLogs();
-            }
-        });
-
-        return logRefreshTimer;
-    }
-
-    private void refreshLogs() {
-        getLogRefreshTimer().stop();
-
-        // create a worker thread to retrieve the cluster info
-        final ClusterInfoWorker infoWorker = new ClusterInfoWorker(clusterStatusAdmin, currentNodeList) {
-            public void finished() {
-
-                // Note: the get() operation is a blocking operation.
-                if (this.get() != null) {
-
-                    currentNodeList = getNewNodeList();
-/*
-                    updateClusterRequestCounterCache(this.getClusterRequestCount());
-
-                    Vector cs = prepareClusterStatusData();
-
-                    getClusterStatusTableModel().setData(cs);
-                    getClusterStatusTableModel().getRealModel().setRowCount(cs.size());
-                    getClusterStatusTableModel().fireTableDataChanged();
-*/
-
-                    SimpleDateFormat sdf = new SimpleDateFormat("MMM d yyyy hh:mm:ss aaa");
-                    getLogPane().setLastUpdateTime(("Last updated: " + sdf.format(Calendar.getInstance().getTime()) + "      "));
-                    getLogRefreshTimer().start();
-                }
-                else{
-                    if(isRemoteExceptionCaught()){
-                        // the connection to the cluster is down
-                        onDisconnect();
-                    }
-                }
-            }
-        };
-
-        infoWorker.start();
-    }
-
     public void dispose() {
-        getLogRefreshTimer().stop();
         super.dispose();
     }
 
     public void onConnect() {
-        initAdminConnection();
-        initCaches();
-//        getClusterConnectionStatusLabel().setText("");
-        getLogRefreshTimer().start();
+        getLogPane().onConnect();
     }
 
     public void onDisconnect() {
-//        getClusterConnectionStatusLabel().setText("      Error: Connection to the gateway cluster is down.");
-//        getClusterConnectionStatusLabel().setForeground(Color.red);
-        getLogRefreshTimer().stop();
-
-        serviceManager = null;
-        clusterStatusAdmin = null;
-    }
-
-     private void initAdminConnection() {
-        clusterStatusAdmin = (ClusterStatusAdmin) Locator.getDefault().lookup(ClusterStatusAdmin.class);
-        if (clusterStatusAdmin == null) throw new RuntimeException("Cannot obtain ClusterStatusAdmin remote reference");
-    }
-
-    private void initCaches() {
-        currentNodeList = new Hashtable();
+        getLogPane().onDisconnect();
     }
 
     private javax.swing.JLabel gatewayLogTitle;
@@ -274,9 +188,5 @@ public class GatewayLogWindow extends JFrame {
     private javax.swing.JMenuItem helpTopicsMenuItem;
     private JPanel frameContentPane;
     private LogPanel logPane;
-    private javax.swing.Timer logRefreshTimer;
-    private ClusterStatusAdmin clusterStatusAdmin;
-    private ServiceAdmin serviceManager;
-    private Hashtable currentNodeList;
 
 }

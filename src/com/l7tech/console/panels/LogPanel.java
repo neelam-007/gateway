@@ -2,6 +2,14 @@ package com.l7tech.console.panels;
 
 import com.l7tech.console.table.LogTableModel;
 import com.l7tech.console.table.FilteredLogTableModel;
+import com.l7tech.console.table.FilteredLogTableSorter;
+import com.l7tech.console.util.ClusterInfoWorker;
+import com.l7tech.console.util.LogsWorker;
+import com.l7tech.console.icons.ArrowIcon;
+import com.l7tech.cluster.ClusterStatusAdmin;
+import com.l7tech.common.util.Locator;
+import com.l7tech.logging.LogAdmin;
+import com.l7tech.logging.LogMessage;
 
 import javax.swing.*;
 import javax.swing.table.*;
@@ -10,6 +18,8 @@ import java.awt.*;
 
 import java.awt.event.ActionListener;
 import java.awt.event.ActionEvent;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.util.Dictionary;
 import java.util.Hashtable;
 import java.util.ResourceBundle;
@@ -51,12 +61,13 @@ public class LogPanel extends JPanel {
     private JTabbedPane msgDetailsPane = null;
     private JTextArea msgDetails = null;
     private JSlider slider = null;
-    private JCheckBox details = null;
     private JCheckBox autoRefresh = null;
     private DefaultTableModel logTableModel = null;
-    private FilteredLogTableModel logTableModelFilter = null;
+    private FilteredLogTableSorter logTableSorter = null;
     private JLabel msgTotal = null;
     private JLabel lastUpdateTimeLabel = null;
+    private Icon upArrowIcon = new ArrowIcon(0);
+    private Icon downArrowIcon = new ArrowIcon(1);
 
     /**
      * Constructor
@@ -119,12 +130,12 @@ public class LogPanel extends JPanel {
     }
 
     public void onConnect(){
-        getLogTableModelFilter().onConnect();
+        getFilteredLogTableSorter().onConnect();
     }
 
     public void onDisconnect(){
-        getLogTableModelFilter().onDisconnect();
-        stopRefreshTimer();
+        getFilteredLogTableSorter().onDisconnect();
+        getLogsRefreshTimer().stop();
         clearMsgTable();
     }
 
@@ -272,11 +283,13 @@ public class LogPanel extends JPanel {
     private JTable getMsgTable(){
         if(msgTable != null) return msgTable;
 
-        msgTable = new JTable(getLogTableModelFilter(), getLogColumnModel());
+        msgTable = new JTable(getFilteredLogTableSorter(), getLogColumnModel());
         msgTable.setShowHorizontalLines(false);
         msgTable.setShowVerticalLines(false);
         msgTable.getSelectionModel().setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         msgTable.setRowSelectionAllowed(true);
+
+        addMouseListenerToHeaderInTable(msgTable);
 
         return msgTable;
     }
@@ -363,12 +376,11 @@ public class LogPanel extends JPanel {
         columnModel.addColumn(new TableColumn(3, 400));
         columnModel.addColumn(new TableColumn(4, 0));   // min width is used
         columnModel.addColumn(new TableColumn(5, 0));   // min width is used
-        columnModel.getColumn(0).setHeaderValue(getLogTableModel().getColumnName(0));
-        columnModel.getColumn(1).setHeaderValue(getLogTableModel().getColumnName(1));
-        columnModel.getColumn(2).setHeaderValue(getLogTableModel().getColumnName(2));
-        columnModel.getColumn(3).setHeaderValue(getLogTableModel().getColumnName(3));
-        columnModel.getColumn(4).setHeaderValue(getLogTableModel().getColumnName(4));
-        columnModel.getColumn(5).setHeaderValue(getLogTableModel().getColumnName(5));
+
+        for(int i = 0; i < columnModel.getColumnCount(); i++){
+            columnModel.getColumn(i).setHeaderRenderer(iconHeaderRenderer);
+            columnModel.getColumn(i).setHeaderValue(getLogTableModel().getColumnName(i));
+        }
 
         String showMsgFlag = resapplication.getString("Show_Message_Number_Column");
         if ((showMsgFlag != null) && showMsgFlag.equals(new String("true"))){
@@ -397,13 +409,13 @@ public class LogPanel extends JPanel {
      * Return LogTableModelFilter property value
      * @return FilteredLogTableModel
      */
-    private FilteredLogTableModel getLogTableModelFilter(){
-        if(logTableModelFilter != null) return logTableModelFilter;
+    private FilteredLogTableSorter getFilteredLogTableSorter(){
+        if(logTableSorter != null) return logTableSorter;
 
-        logTableModelFilter = new FilteredLogTableModel();
-        logTableModelFilter.setRealModel(getLogTableModel());
+        logTableSorter = new FilteredLogTableSorter();
+        logTableSorter.setRealModel(getLogTableModel());
 
-        return logTableModelFilter;
+        return logTableSorter;
     }
 
     /**
@@ -434,12 +446,12 @@ public class LogPanel extends JPanel {
         String msgNumSelected = null;
 
         // save the number of selected message
-        if(selectedRowIndexOld >= 0) {
+        if (selectedRowIndexOld >= 0) {
             msgNumSelected = getMsgTable().getValueAt(selectedRowIndexOld, 0).toString();
         }
 
         // retrieve the new logs
-        ((FilteredLogTableModel) getMsgTable().getModel()).refreshLogs(getMsgFilterLevel(), this, msgNumSelected, autoRefresh.isSelected());
+        ((FilteredLogTableSorter) getMsgTable().getModel()).refreshLogs(getMsgFilterLevel(), this, msgNumSelected, autoRefresh.isSelected());
 
     }
 
@@ -468,6 +480,7 @@ public class LogPanel extends JPanel {
 
         if (msgFilterLevel != newFilterLevel) {
 
+            msgFilterLevel = newFilterLevel;
             // get the selected row index
             int selectedRowIndexOld = getMsgTable().getSelectedRow();
             String msgNumSelected = null;
@@ -477,8 +490,7 @@ public class LogPanel extends JPanel {
                 msgNumSelected = getMsgTable().getValueAt(selectedRowIndexOld, 0).toString();
             }
 
-            msgFilterLevel = newFilterLevel;
-            ((FilteredLogTableModel) getMsgTable().getModel()).applyNewMsgFilter(newFilterLevel);
+            ((FilteredLogTableSorter) getMsgTable().getModel()).applyNewMsgFilter(newFilterLevel);
 
             if (msgNumSelected != null) {
                 setSelectedRow(msgNumSelected);
@@ -488,11 +500,14 @@ public class LogPanel extends JPanel {
         }
     }
 
+
     public void clearMsgTable(){
-        ((FilteredLogTableModel)getMsgTable().getModel()).clearTable();
+       //todo: clear table
+        //((FilteredLogTableSorter)getMsgTable().getModel()).clearTable();
         getMsgDetails().setText("");
         msgTotal.setText(MSG_TOTAL_PREFIX + "0");
     }
+
 
     public javax.swing.Timer getLogsRefreshTimer() {
 
@@ -512,10 +527,66 @@ public class LogPanel extends JPanel {
          msgTotal.setText(MSG_TOTAL_PREFIX + msgTable.getRowCount());
     }
 
-    public void setLastUpdateTime(String updateTime){
-        SimpleDateFormat sdf = new SimpleDateFormat("MMM d yyyy HH:mm:ss aaa");
+    public void updateTimeStamp() {
+        SimpleDateFormat sdf = new SimpleDateFormat("MMM d yyyy hh:mm:ss aaa");
         getLastUpdateTimeLabel().setText("Last updated: " + sdf.format(Calendar.getInstance().getTime()) + "      ");
-
     }
 
+        // This customized renderer can render objects of the type TextandIcon
+    TableCellRenderer iconHeaderRenderer = new DefaultTableCellRenderer() {
+        public Component getTableCellRendererComponent(JTable table, Object value,
+                                                       boolean isSelected, boolean hasFocus, int row, int column) {
+            // Inherit the colors and font from the header component
+            if (table != null) {
+                JTableHeader header = table.getTableHeader();
+                if (header != null) {
+                    setForeground(header.getForeground());
+                    setBackground(header.getBackground());
+                    setFont(header.getFont());
+                    setHorizontalTextPosition(SwingConstants.LEFT);
+                }
+            }
+
+            setText((String) value);
+
+            if (getFilteredLogTableSorter().getSortedColumn() == column) {
+
+                if (getFilteredLogTableSorter().isAscending()) {
+                    setIcon(upArrowIcon);
+                } else {
+                    setIcon(downArrowIcon);
+                }
+            }
+            else{
+                setIcon(null);
+            }
+
+            setBorder(UIManager.getBorder("TableHeader.cellBorder"));
+            setHorizontalAlignment(JLabel.CENTER);
+            return this;
+        }
+    };
+
+    // Add a mouse listener to the Table to trigger a table sort
+    // when a column heading is clicked in the JTable.
+    public void addMouseListenerToHeaderInTable(JTable table) {
+
+        final JTable tableView = table;
+        tableView.setColumnSelectionAllowed(false);
+        MouseAdapter listMouseListener = new MouseAdapter() {
+            public void mouseClicked(MouseEvent e) {
+                TableColumnModel columnModel = tableView.getColumnModel();
+                int viewColumn = columnModel.getColumnIndexAtX(e.getX());
+                int column = tableView.convertColumnIndexToModel(viewColumn);
+                if (e.getClickCount() == 1 && column != -1) {
+
+                    ((FilteredLogTableSorter)tableView.getModel()).sortData(column, true);
+                    ((FilteredLogTableSorter)tableView.getModel()).fireTableDataChanged();
+                    tableView.getTableHeader().resizeAndRepaint();
+                }
+            }
+        };
+        JTableHeader th = tableView.getTableHeader();
+        th.addMouseListener(listMouseListener);
+    }
 }
