@@ -76,7 +76,7 @@ public class GuiCredentialManager implements CredentialManager {
         try {
             SwingUtilities.invokeAndWait(new Runnable() {
                 public void run() {
-                    Gui.errorMessage("Invalid username or password for SSG " + ssg);
+                    Gui.getInstance().errorMessage("Invalid username or password for SSG " + ssg);
                 }
             });
         } catch (InterruptedException e) {
