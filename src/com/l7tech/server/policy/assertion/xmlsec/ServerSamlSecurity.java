@@ -1,6 +1,7 @@
 package com.l7tech.server.policy.assertion.xmlsec;
 
 import com.l7tech.common.security.saml.InvalidAssertionException;
+import com.l7tech.common.util.XmlUtil;
 import com.l7tech.message.Request;
 import com.l7tech.message.Response;
 import com.l7tech.message.SoapRequest;
@@ -144,13 +145,13 @@ public class ServerSamlSecurity implements ServerAssertion {
      * @return the security element (never null)
      */
     private Element getAssertionElement(Document document)
-      throws NoSuchElementException {
+      throws NoSuchElementException, IOException {
         NodeList listSecurityElements = document.getElementsByTagNameNS(SAML_NS, ASSERTION_EL_NAME);
         if (listSecurityElements.getLength() > 0) {
             return (Element)listSecurityElements.item(0);
         }
 
-        throw new NoSuchElementException("Could not find security header in " + document);
+        throw new NoSuchElementException("No security header in message\n" + XmlUtil.nodeToFormattedString(document));
     }
 
     /**
