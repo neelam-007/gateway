@@ -110,7 +110,7 @@ public class XpathEvaluatorTest extends TestCase {
             // ok
         }
     }
-    // ancestor-or-self::book[@catdate="2000-12-31"]
+    
     /**
      * Test the namespace resolution, the namespace does not exist in the document
      *
