@@ -1,8 +1,6 @@
 package com.l7tech.console.util;
 
 import com.l7tech.console.jnlp.JNLPPreferences;
-import com.sun.net.ssl.HostnameVerifier;
-import com.sun.net.ssl.HttpsURLConnection;
 
 import java.awt.*;
 import java.beans.PropertyChangeEvent;
