@@ -27,6 +27,11 @@ public abstract class PersistenceManager {
             throw new IllegalStateException( "PersistenceManager can only be initialized once!");
     }
 
+    public static List find( PersistenceContext context, String query ) throws FindException {
+        checkInstance();
+        return _instance.doFind( context, query );
+    }
+
     public static List find( PersistenceContext context, String query, Object param, Class paramClass ) throws FindException {
         checkInstance();
         return _instance.doFind( context, query, param, paramClass );
@@ -35,6 +40,11 @@ public abstract class PersistenceManager {
     public static List find( PersistenceContext context, String query, Object[] params, Class[] paramClasses ) throws FindException {
         checkInstance();
         return _instance.doFind( context, query, params, paramClasses );
+    }
+
+    public static Entity findByPrimaryKey( PersistenceContext context, Class clazz, long oid ) throws FindException {
+        checkInstance();
+        return _instance.doFindByPrimaryKey( context, clazz, oid );
     }
 
     public static long save( PersistenceContext context, Entity obj ) throws SaveException {
@@ -80,6 +90,7 @@ public abstract class PersistenceManager {
     abstract void doBeginTransaction( PersistenceContext context ) throws TransactionException;
     abstract void doCommitTransaction( PersistenceContext context ) throws TransactionException;
     abstract void doRollbackTransaction( PersistenceContext context ) throws TransactionException;
+    abstract List doFind( PersistenceContext context, String query ) throws FindException;
     abstract List doFind( PersistenceContext context, String query, Object param, Class paramClass ) throws FindException;
     abstract List doFind( PersistenceContext context, String query, Object[] params, Class[] paramClasses ) throws FindException;
     abstract Entity doFindByPrimaryKey( PersistenceContext context, Class clazz, long oid ) throws FindException;
