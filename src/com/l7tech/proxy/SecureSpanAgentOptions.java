@@ -20,6 +20,7 @@ public class SecureSpanAgentOptions {
     private int gatewaySslPort = 8443;
     private int id = 0;
     private String keyStorePath = null;
+    private String trustStorePath = null;
     private Boolean useSslByDefault = null;
 
     /**
@@ -117,8 +118,12 @@ public class SecureSpanAgentOptions {
 
     /**
      * Get the pathname of the custom KeyStore file that will be used for this Agent.
-     * If no custom KeyStore is requested, the Agent will use the default KeyStore location ~/.l7tech/keyStoreNNN
+     * If no custom KeyStore path is requested, the Agent will use the default KeyStore location ~/.l7tech/keyNNN.p12
      * where ~ is the home directory of the user owning this process, and NNN is the ID of this SecureSpanAgent.
+     * <p>
+     * The KeyStore is in PKCS#12 format, and is only needed if you have a client certificate.  It holds the signed
+     * client certificate along with its corresponding private key.  The KeyStore is encrypted on disk with Triple-DES,
+     * using a key derived from the Password.
      * @return The path of the custom KeyStore file, or null if no custom KeyStore is being requested.
      */
     public String getKeyStorePath() {
@@ -127,12 +132,46 @@ public class SecureSpanAgentOptions {
 
     /**
      * Set the pathname of the custom KeyStore file that will be used for this Agent.
-     * If no custom KeyStore is requested, the Agent will use the default KeyStore location ~/.l7tech/keyStoreNNN
+     * If no custom KeyStore path is requested, the Agent will use the default KeyStore location ~/.l7tech/keyNNN.p12
      * where ~ is the home directory of the user owning this process, and NNN is the ID of this SecureSpanAgent.
+     * <p>
+     * The KeyStore is in PKCS#12 format, and is only needed if you have a client certificate.  It holds the signed
+     * client certificate along with its corresponding private key.  The KeyStore is encrypted on disk with Triple-DES,
+     * using a key derived from the Password.
      * @param keyStorePath The path of the custom KeyStore file, or null if you wish to use the default path.
      */
     public void setKeyStorePath(String keyStorePath) {
         this.keyStorePath = keyStorePath;
+    }
+
+    /**
+     * Get the pathname of the custom CertStore file that will be used for this Agent.
+     * if no custom CertStore path is requested, the Agent will use the default CertStore
+     * location ~/.l7tech/certsNNN.p12 where ~ is the home directory of the user owning this process, and NNN is the
+     * ID of this SecureSpanAgent.
+     * <p>
+     * The CertStore is in PKCS#12 format, and holds only public information including the Gateway's server
+     * certificate and a publicly readable copy of the signed client certificate (if any).  It is obscured on disk
+     * with Triple-DES using a constant key.
+     * @return The pah of the custom CertStore file, or null if no custom CertStore path is being requested.
+     */
+    public String getCertStorePath() {
+        return trustStorePath;
+    }
+
+    /**
+     * Set the pathname of the custom CertStore file that will be used for this Agent.
+     * if no custom CertStore path is requested, the Agent will use the default CertStore
+     * location ~/.l7tech/certsNNN.p12 where ~ is the home directory of the user owning this process, and NNN is the
+     * ID of this SecureSpanAgent.
+     * <p>
+     * The CertStore is in PKCS#12 format, and holds only public information including the Gateway's server
+     * certificate and a publicly readable copy of the signed client certificate (if any).  It is obscured on disk
+     * with Triple-DES using a constant key.
+     * @param certStorePath The pah of the custom CertStore file, or null if you wish to use the default path.
+     */
+    public void setCertStorePath(String certStorePath) {
+        this.trustStorePath = certStorePath;
     }
 
     /**

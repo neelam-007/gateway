@@ -81,6 +81,8 @@ public class SecureSpanAgentFactory {
             ssg.setSslPort(options.getGatewaySslPort());
         if (options.getKeyStorePath() != null)
             ssg.setKeyStorePath(options.getKeyStorePath());
+        if (options.getCertStorePath() != null)
+            ssg.setTrustStorePath(options.getCertStorePath());
         if (options.getUseSslByDefault() != null)
             ssg.setUseSslByDefault(options.getUseSslByDefault().booleanValue());
         CurrentRequest.setCurrentSsg(ssg);
