@@ -137,6 +137,7 @@ public class MessageProcessor {
             log.info("POST to SSG completed with HTTP status code " + status);
             Header policyUrlHeader = postMethod.getResponseHeader("PolicyUrl");
             if (policyUrlHeader != null) {
+                log.info("SSG response contained a PolicyUrl header");
                 // Have we already updated a policy while processing this request?
                 if (pendingRequest.isPolicyUpdated())
                     throw new ConfigurationException("Policy was updated, but SSG says it's still out-of-date");
@@ -152,16 +153,16 @@ public class MessageProcessor {
                     throw new ConfigurationException("SSG gave us an invalid Policy URL");
                 }
             }
-            if (status == 401) {
+            if (status == 401 || status == 500) {
+                Managers.getCredentialManager().notifyInvalidCredentials(ssg);
                 Managers.getCredentialManager().getCredentials(pendingRequest.getSsg());
-                if (!pendingRequest.isCredentialsUpdated()) {
-                    // Retry message processing a single time with possibly-shiny-and-new credentials
-                    pendingRequest.setCredentialsUpdated(true);
+                if (pendingRequest.getTimesCredentialsUpdated() < 2) {
+                    // Retry message processing with possibly-shiny-and-new credentials
+                    postMethod.releaseConnection(); // Free up our thread's HTTP client
+                    pendingRequest.incrementTimesCredentialsUpdated();
                     pendingRequest.reset();
                     return processMessage(pendingRequest);
                 }
-                if (policyUrlHeader == null)
-                    Managers.getCredentialManager().notifyInvalidCredentials(ssg);
             }
 
             Header contentType = postMethod.getResponseHeader("Content-Type");
