@@ -71,9 +71,8 @@ public class WssDecoratorImpl implements WssDecorator {
 
         c.wsseNS = decorationRequirements.getPreferredSecurityNamespace();
         c.wsuNS = decorationRequirements.getPreferredWSUNamespace();
-        Element securityHeader = createSecurityHeader(message,
-                                                      c.wsseNS,
-                                                      c.wsuNS);
+        Element securityHeader = createSecurityHeader(message, c.wsseNS, c.wsuNS,
+                                                      decorationRequirements.getSecurityHeaderActor());
         Set signList = decorationRequirements.getElementsToSign();
 
         // If we aren't signing the entire message, find extra elements to sign
@@ -754,17 +753,30 @@ public class WssDecoratorImpl implements WssDecorator {
         return element;
     }
 
-    private Element createSecurityHeader(Document message, String wsseNS, String wsuNs) throws InvalidDocumentFormatException {
+    private Element createSecurityHeader(Document message,
+                                         String wsseNS,
+                                         String wsuNs,
+                                         String actor) throws InvalidDocumentFormatException {
         // Wrap any existing header
-        Element oldSecurity = SoapUtil.getSecurityElement(message);
+        Element oldSecurity = SoapUtil.getSecurityElement(message, actor);
         if (oldSecurity != null) {
+            String error;
+            if (actor != null) {
+                error = "This message already has a security header for actor " + actor;
+            } else {
+                error = "This message already has a security header for the default actor";
+            }
+            logger.warning(error);
+            throw new InvalidDocumentFormatException(error);
+            /* WE NO LONGER SUPPORT THIS
             // todo -- support more than one layer of actor-wrapped security header
             SoapUtil.removeSoapAttr(oldSecurity, SoapUtil.ACTOR_ATTR_NAME);
             SoapUtil.removeSoapAttr(oldSecurity, SoapUtil.ROLE_ATTR_NAME);
             SoapUtil.setSoapAttr(message, oldSecurity, SoapUtil.ACTOR_ATTR_NAME, SoapUtil.ACTOR_LAYER7_WRAPPED);
+            */
         }
 
-        Element securityHeader = SoapUtil.makeSecurityElement(message, wsseNS);
+        Element securityHeader = SoapUtil.makeSecurityElement(message, wsseNS, actor);
         // Make sure wsu is declared to save duplication
         XmlUtil.getOrCreatePrefixForNamespace(securityHeader, wsuNs, "wsu");
         return securityHeader;
