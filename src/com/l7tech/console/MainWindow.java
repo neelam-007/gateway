@@ -21,6 +21,7 @@ import com.l7tech.cluster.ClusterStatusAdmin;
 import javax.help.HelpBroker;
 import javax.help.HelpSet;
 import javax.help.HelpSetException;
+import javax.help.DefaultHelpBroker;
 import javax.swing.*;
 import javax.swing.border.Border;
 import javax.swing.event.EventListenerList;
@@ -1542,7 +1543,7 @@ public class MainWindow extends JFrame {
         getHelpTopicsMenuItem().
           addActionListener(new ActionListener() {
               public void actionPerformed(ActionEvent e) {
-                  showHelpTopics();
+                  showHelpTopics(e);
               }
           });
 
@@ -1645,7 +1646,7 @@ public class MainWindow extends JFrame {
      * The "Help Topics".
      * This procedure adds the JavaHelp to PMC application.
      */
-    public void showHelpTopics() {
+    public void showHelpTopics(ActionEvent e) {
         HelpSet hs = null;
         URL url = null;
         HelpBroker javaHelpBroker = null;
@@ -1656,9 +1657,14 @@ public class MainWindow extends JFrame {
             url = cl.getResource(HELP_PATH);
             hs = new HelpSet(cl, url);
             javaHelpBroker = hs.createHelpBroker();
+            Object source = e.getSource();
+
+            if (source instanceof Window) {
+                ((DefaultHelpBroker)javaHelpBroker).setActivationWindow((Window)source);
+            }
             javaHelpBroker.setDisplayed(true);
 
-        } catch (MissingResourceException e) {
+        } catch (MissingResourceException ex) {
             //Make sure the URL exists.
             if (url == null) {
                 JOptionPane.showMessageDialog(MainWindow.this,

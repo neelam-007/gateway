@@ -227,17 +227,11 @@ public class Actions {
      * @param c the event source component
      */
     public static void invokeHelp(Component c) {
-        final KeyEvent ke =
-          new KeyEvent(c,
-            KeyEvent.KEY_PRESSED,
-            0,
-            0,
-            KeyEvent.VK_F1, KeyEvent.CHAR_UNDEFINED);
+        final ActionEvent ke = new ActionEvent(c, 0, "help");
 
         Runnable r = new Runnable() {
             public void run() {
-                KeyboardFocusManager.
-                  getCurrentKeyboardFocusManager().dispatchKeyEvent(ke);
+                TopComponents.getInstance().getMainWindow().showHelpTopics(ke);
             }
         };
         SwingUtilities.invokeLater(r);

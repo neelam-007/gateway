@@ -66,7 +66,7 @@ public class GatewayLogWindow extends JFrame implements ConnectionListener {
         getHelpTopicsMenuItem().
                 addActionListener(new ActionListener() {
                     public void actionPerformed(ActionEvent e) {
-                        TopComponents.getInstance().getMainWindow().showHelpTopics();
+                        TopComponents.getInstance().getMainWindow().showHelpTopics(e);
                     }
                 });
 

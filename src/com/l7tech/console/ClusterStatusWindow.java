@@ -448,7 +448,7 @@ public class ClusterStatusWindow extends JFrame implements ConnectionListener {
         helpTopicsMenuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_F1, 0));
         helpTopicsMenuItem.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
-                TopComponents.getInstance().getMainWindow().showHelpTopics();
+                TopComponents.getInstance().getMainWindow().showHelpTopics(e);
             }
         });
 
