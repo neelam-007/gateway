@@ -44,7 +44,7 @@ public class SsgManagerImpl extends SsgFinderImpl implements SsgManager {
                 XMLEncoder encoder = null;
                 try {
                     encoder = new XMLEncoder(fos);
-                    encoder.writeObject(ssgs);
+                    encoder.writeObject(ssgs); // TODO worry about locking SSGs while saving
                     encoder.close();
                     encoder = null;
                 } finally {

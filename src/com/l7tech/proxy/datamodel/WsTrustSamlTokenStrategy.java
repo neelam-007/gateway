@@ -11,6 +11,7 @@ import com.l7tech.common.security.token.UsernameToken;
 import com.l7tech.common.security.token.UsernameTokenImpl;
 import com.l7tech.common.util.CertUtils;
 import com.l7tech.common.util.HexUtils;
+import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.xml.saml.SamlAssertion;
 import com.l7tech.proxy.datamodel.exceptions.BadCredentialsException;
 import com.l7tech.proxy.datamodel.exceptions.KeyStoreCorruptException;
@@ -18,6 +19,7 @@ import com.l7tech.proxy.datamodel.exceptions.OperationCanceledException;
 import com.l7tech.proxy.ssl.ClientProxyTrustManager;
 import com.l7tech.proxy.ssl.SslPeer;
 import com.l7tech.proxy.util.TokenServiceClient;
+import org.w3c.dom.Element;
 
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.X509TrustManager;
@@ -75,6 +77,8 @@ public class WsTrustSamlTokenStrategy extends AbstractSamlTokenStrategy {
         final X509Certificate tokenServerCert = getTokenServerCert();
         final URL url = new URL(wsTrustUrl);
         SslPeer sslPeer = new SslPeer() {
+            private X509Certificate handshakeCert = null;
+
             public X509Certificate getServerCertificate() {
                 return tokenServerCert;
             }
@@ -91,12 +95,22 @@ public class WsTrustSamlTokenStrategy extends AbstractSamlTokenStrategy {
                 return url.getHost();
             }
 
+            public void storeLastSeenPeerCertificate(X509Certificate actualPeerCert) {
+                handshakeCert = actualPeerCert;
+            }
+
+            public X509Certificate getLastSeenPeerCertificate() {
+                return handshakeCert;
+            }
+
             public SSLContext getSslContext() {
                 return SSL_CONTEXT;
             }
         };
 
         UsernameToken usernameToken = new UsernameTokenImpl(getUsername(), getPassword());
+        Element utElm = usernameToken.asElement();
+        SoapUtil.setWsuId(utElm, SoapUtil.WSU_NAMESPACE, "UsernameToken-1");
         s = TokenServiceClient.obtainSamlAssertion(url,
                                                    sslPeer,
                                                    null,

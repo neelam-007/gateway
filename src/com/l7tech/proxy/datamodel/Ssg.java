@@ -65,6 +65,7 @@ public class Ssg implements Serializable, Cloneable, Comparable, SslPeer {
 
     private transient Set listeners = new HashSet(); // List of weak references to listeners
     private transient SsgRuntime runtime = new SsgRuntime(this);
+    private transient X509Certificate lastSeenPeerCertificate = null;
 
     /**
      * Get the {@link SsgRuntime} for this Ssg, providing access to behaviour, strategies, and transient settings.
@@ -576,6 +577,14 @@ public class Ssg implements Serializable, Cloneable, Comparable, SslPeer {
 
     public String getHostname() {
         return getSsgAddress();
+    }
+
+    public void storeLastSeenPeerCertificate(X509Certificate actualPeerCert) {
+        this.lastSeenPeerCertificate = actualPeerCert;
+    }
+
+    public X509Certificate getLastSeenPeerCertificate() {
+        return lastSeenPeerCertificate;
     }
 
     public SSLContext getSslContext() {

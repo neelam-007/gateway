@@ -12,10 +12,6 @@ import com.l7tech.proxy.ClientProxy;
 
 /**
  * Used to obtain datamodel classes.
- *
- * User: mike
- * Date: Jun 3, 2003
- * Time: 2:45:08 PM
  */
 public class Managers {
     private static CredentialManager credentialManager = null;

@@ -138,8 +138,10 @@ public class SsgKeyStoreManager {
         Ssg trusted = ssg.getTrustedGateway();
         if (trusted != null)
             return getClientCert(trusted);
-        if (ssg.isFederatedGateway())
-            throw new RuntimeException("Not supported for WS-Trust federation");
+        if (ssg.isFederatedGateway()) {
+            log.log(Level.FINE, "No client cert for Federated Gateway; returning null");
+            return null;
+        }
         try {
             X509Certificate cert = ssg.getRuntime().getCachedClientCert();
             if (cert != null) return cert;
@@ -548,7 +550,7 @@ public class SsgKeyStoreManager {
             if (cd.isUncheckablePassword()) {
                 // The username was known to the SSG, but at least one of the accounts with that username
                 // had an uncheckable password (either unavailable or hashed in an unsupported way).
-                Managers.getCredentialManager().notifySsgCertificateUntrusted(ssg, cd.getCertificate());
+                Managers.getCredentialManager().notifySslCertificateUntrusted("the Gateway " + ssg, cd.getCertificate());
             } else
                 throw new BadCredentialsException("The downloaded Gateway server certificate could not be verified with the current user name and password.");
         }

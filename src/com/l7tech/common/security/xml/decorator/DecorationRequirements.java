@@ -228,5 +228,5 @@ public class DecorationRequirements {
     private Date timestampCreatedDate = null;
     private int timestampTimeoutMillis = 0;
     private String securityHeaderActor = null;
-    private boolean includeSamlTokenInSignature;
+    private boolean includeSamlTokenInSignature = false;
 }

@@ -56,7 +56,9 @@ import java.security.GeneralSecurityException;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
 import java.security.UnrecoverableKeyException;
+import java.security.cert.CertificateEncodingException;
 import java.security.cert.CertificateException;
+import java.security.cert.X509Certificate;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.Map;
@@ -146,14 +148,20 @@ public class MessageProcessor {
                             succeeded = true;
                             return;
                         } catch (SSLException e) {
-                            if (context.getSsg().getTrustedGateway() != null) {
+                            if (context.getSsg().isFederatedGateway()) {
                                 SslPeer sslPeer = CurrentSslPeer.get();
-                                if (sslPeer == context.getSsg())
+                                if (sslPeer == null)
+                                    throw new IllegalStateException("SSL exception, but no SSL peer set for this thread");
+                                if (sslPeer == context.getSsg()) {
+                                    // We were talking to this Federated Gateway
                                     handleSslException(context.getSsg(), null, e);
-                                else if (sslPeer == context.getSsg().getTrustedGateway())
+                                } else if (sslPeer == context.getSsg().getTrustedGateway()) {
+                                    // We were talking to this Federated Gateway's Trusted Gateway
                                     handleSslException((Ssg)sslPeer, context.getFederatedCredentials(), e);
-                                else
-                                    throw new ConfigurationException("SSL handshake failed, but peer Gateway was neither the Trusted nor Federated Gateway.");
+                                } else {
+                                    // We were talking to something else, probably a token provider.
+                                    handleSslExceptionForWsTrustTokenService(ssg, sslPeer, e);
+                                }
                             } else
                                 handleSslException(context.getSsg(), context.getCredentialsForTrustedSsg(), e);
                             // FALLTHROUGH -- retry with new server certificate
@@ -200,8 +208,9 @@ public class MessageProcessor {
     }
 
     private void handleBadCredentialsException(Ssg ssg, PolicyApplicationContext context, BadCredentialsException e)
-      throws KeyStoreCorruptException, IOException, OperationCanceledException,
-            KeyStoreException, HttpChallengeRequiredException {
+      throws IOException, OperationCanceledException,
+            KeyStoreException, HttpChallengeRequiredException
+    {
         if (ssg.isChainCredentialsFromClient())
             throw new HttpChallengeRequiredException(e);
 
@@ -260,6 +269,24 @@ public class MessageProcessor {
         if (ksce != null)
             throw (KeyStoreCorruptException)ksce;
 
+        // Check for server cert untrusted, or server hostname mismatch
+        handleServerCertProblem("the Gateway " + ssg, e);
+
+        // We don't trust the server cert.  Perform certificate discovery and try again
+        SsgKeyStoreManager.installSsgServerCertificate(ssg, credentials); // might throw BadCredentialsException
+    }
+
+    /**
+     * If the given SSLException is a hostname mismatch or server cert untrusted, takes remedial action and returns.
+     * Otherwise, rethrows the SSLException.
+     * <p>
+     * If this returns, the caller should attempt to import the server cert.
+     *
+     * @param server the name of the SSL server we were trying to talk to, ie "the Gatway foo.bar.com"
+     * @param e the SSLException that was caught
+     * @throws SSLException if the exception could not be handled.
+     */
+    private static void handleServerCertProblem(String server, SSLException e) throws SSLException {
         // Was this server cert untrusted?
         Throwable scuet = ExceptionUtils.getCauseIfCausedBy(e, ServerCertificateUntrustedException.class);
         ServerCertificateUntrustedException scue = (ServerCertificateUntrustedException)scuet;
@@ -271,18 +298,51 @@ public class MessageProcessor {
                 // Notify user of the hostname mismatch and then abort this request
                 String wanted = hme.getWhatWasWanted();
                 String got = hme.getWhatWeGotInstead();
-                Managers.getCredentialManager().notifySsgHostnameMismatch(ssg,
+                Managers.getCredentialManager().notifySslHostnameMismatch(server,
                   wanted,
                   got);
-                throw e;
+                throw (SSLException)new SSLException("SSL hostname mismatch: " + e.getMessage()).initCause(e);
             }
 
             // not sure what happened; throw it up and abort the request
-            throw e;
+            throw (SSLException)new SSLException("SSL connection failure: " + e.getMessage()).initCause(e);
         }
 
-        // We don't trust the server cert.  Perform certificate discovery and try again
-        SsgKeyStoreManager.installSsgServerCertificate(ssg, credentials); // might throw BadCredentialsException
+        // Problem Solved.
+    }
+
+    private void handleSslExceptionForWsTrustTokenService(Ssg federatedSsg, SslPeer sslPeer, SSLException e)
+            throws SSLException, OperationCanceledException, CertificateEncodingException
+    {
+        WsTrustSamlTokenStrategy strat = federatedSsg.getWsTrustSamlTokenStrategy();
+        if (strat == null)
+            throw (SSLException)new SSLException("SSL connection failure, but no third-party WS-Trust configured: " + e.getMessage()).initCause(e);
+        String wstHostname = strat.getWsTrustUrl();
+        try {
+            wstHostname = new URL(wstHostname).getHost();
+        } catch (MalformedURLException e1) {
+            // fallthrough
+        }
+        if (wstHostname == null) wstHostname = "";
+        if (!wstHostname.equals(sslPeer.getHostname()))
+            throw (SSLException)new SSLException("SSL connection failure, but third-party WS-Trust was not the SSL peer: " + e.getMessage()).initCause(e);
+
+        final String serverName = "the WS-Trust server " + wstHostname;
+        handleServerCertProblem(serverName, e);
+
+        // Import the peer certificate
+        final X509Certificate peerCert = sslPeer.getLastSeenPeerCertificate();
+        if (peerCert == null)  // can't happen
+            throw (SSLException)new SSLException("SSL connection failure, but no peer certificate presented: " + e.getMessage()).initCause(e);
+
+        // Check if the user wants to trust this peer certificate
+        Managers.getCredentialManager().notifySslCertificateUntrusted(serverName, peerCert);
+
+        // They do; import it
+        strat.storeTokenServerCert(peerCert);
+
+        // Update SSGs
+        Managers.getCredentialManager().saveSsgChanges(federatedSsg);
     }
 
     /**

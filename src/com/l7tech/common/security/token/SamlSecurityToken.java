@@ -16,6 +16,7 @@ import java.util.Calendar;
 public interface SamlSecurityToken extends SigningSecurityToken {
     ConfirmationMethod HOLDER_OF_KEY = new ConfirmationMethod("Holder-of-key");
     ConfirmationMethod SENDER_VOUCHES = new ConfirmationMethod("Sender-vouches");
+    ConfirmationMethod BEARER_TOKEN = new ConfirmationMethod("Bearer token");
 
     X509Certificate getSubjectCertificate();
     X509Certificate getIssuerCertificate();
@@ -23,6 +24,9 @@ public interface SamlSecurityToken extends SigningSecurityToken {
     boolean isHolderOfKey();
 
     boolean isSenderVouches();
+
+    /** @return true if this assertion uses bearer token subject confirmation, or has no subject confirmation at all */
+    boolean isBearerToken();
 
     /**
      * @return the actual Confirmation Method used by this assertion, or null if it didn't have one.

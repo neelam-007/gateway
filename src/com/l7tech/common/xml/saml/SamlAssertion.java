@@ -67,6 +67,10 @@ public class SamlAssertion implements SamlSecurityToken {
         return SENDER_VOUCHES.equals(confirmationMethod);
     }
 
+    public boolean isBearerToken() {
+        return confirmationMethod == null || BEARER_TOKEN.equals(confirmationMethod);
+    }
+
     public ConfirmationMethod getConfirmationMethod() {
         return confirmationMethod;
     }

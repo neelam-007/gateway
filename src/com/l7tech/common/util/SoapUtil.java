@@ -936,4 +936,24 @@ public class SoapUtil {
         return element;
     }
 
+    /**
+     * Set the wsu:Id on the specified element.
+     *
+     * @param element  the element whose ID to set
+     * @param wsuNs    the wsu namespace URI to use
+     * @param id       the ID to set
+     */
+    public static void setWsuId(Element element, final String wsuNs, String id) {
+        // Check for special handling of dsig and xenc Ids
+        String ns = element.getNamespaceURI();
+        if (DIGSIG_URI.equals(ns) || XMLENC_NS.equals(ns)) {
+            // hack hack hack - xenc and dsig elements aren't allowed to use wsu:Id, due to their inflexible schemas.
+            // WSSE says they we required to (ab)use local namespace Id instead.
+            element.setAttribute("Id", id);
+        } else {
+            // do normal handling
+            String wsuPrefix = XmlUtil.getOrCreatePrefixForNamespace(element, wsuNs, "wsu");
+            element.setAttributeNS(wsuNs, wsuPrefix + ":Id", id);
+        }
+    }
 }

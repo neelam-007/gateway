@@ -122,7 +122,7 @@ public class WssDecoratorImpl implements WssDecorator {
         if (decorationRequirements.getSenderSamlToken() != null) {
             saml = addSamlSecurityToken(securityHeader, decorationRequirements.getSenderSamlToken());
             if (decorationRequirements.isIncludeSamlTokenInSignature()) {
-                decorationRequirements.getElementsToSign().add(saml);
+                signList.add(saml);
             }
         }
 
@@ -714,17 +714,8 @@ public class WssDecoratorImpl implements WssDecorator {
 
         c.idToElementCache.put(id, element);
 
-        // Check for special handling of dsig and xenc Ids
-        String ns = element.getNamespaceURI();
-        if (SoapUtil.DIGSIG_URI.equals(ns) || SoapUtil.XMLENC_NS.equals(ns)) {
-            // hack hack hack - xenc and dsig elements aren't allowed to use wsu:Id, due to their inflexible schemas.
-            // WSSE says they we required to (ab)use local namespace Id instead.
-            element.setAttribute("Id", id);
-        } else {
-            // do normal handling
-            String wsuPrefix = XmlUtil.getOrCreatePrefixForNamespace(element, c.wsuNS, "wsu");
-            element.setAttributeNS(c.wsuNS, wsuPrefix + ":Id", id);
-        }
+        final String wsuNs = c.wsuNS;
+        SoapUtil.setWsuId(element, wsuNs, id);
 
         return id;
     }

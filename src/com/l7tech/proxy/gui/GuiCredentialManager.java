@@ -50,7 +50,7 @@ class GuiCredentialManager extends CredentialManager {
      * just runs it; otherwise uses SwingUtilities.invokeAndWait()
      * @param runnable  code that displays a modal dialog
      */
-    private void invokeDialog(Runnable runnable) {
+    private void invokeOnSwingThread(Runnable runnable) {
         if (SwingUtilities.isEventDispatchThread()) {
             runnable.run();
         } else {
@@ -145,7 +145,7 @@ class GuiCredentialManager extends CredentialManager {
         }
 
         log.info("Displaying logon prompt for Gateway " + ssg);
-        invokeDialog(new Runnable() {
+        invokeOnSwingThread(new Runnable() {
             public void run() {
                 PasswordAuthentication pw = LogonDialog.logon(Gui.getInstance().getFrame(),
                                                               ssg.toString(),
@@ -168,14 +168,7 @@ class GuiCredentialManager extends CredentialManager {
                 ssg.getRuntime().promptForUsernameAndPassword(true);
                 holder.pw = pw;
 
-                try {
-                    ssgManager.save();
-                } catch (IOException e) {
-                    log.log(Level.SEVERE, "Unable to save Gateway configuration: ", e);
-                    Gui.errorMessage("Unable to save Gateway configuration",
-                                     "An error was encountered while writing your Gateway configuration to disk.",
-                                     e);
-                }
+                doSsgManagerSave();
             }
         });
 
@@ -187,6 +180,26 @@ class GuiCredentialManager extends CredentialManager {
         log.info("New credentials noted for Gateway " + ssg);
         ssg.getRuntime().resetSslContext();
         return holder.pw;
+    }
+
+    public void saveSsgChanges(Ssg ssg) {
+        // Ignore ssg and just save them all, since it's all we can do anyway
+        invokeOnSwingThread(new Runnable() {
+            public void run() {
+                doSsgManagerSave();
+            }
+        });
+    }
+
+    private void doSsgManagerSave() {
+        try {
+            ssgManager.save();
+        } catch (IOException e) {
+            log.log(Level.SEVERE, "Unable to save Gateway configuration: ", e);
+            Gui.errorMessage("Unable to save Gateway configuration",
+                             "An error was encountered while writing your Gateway configuration to disk.",
+                             e);
+        }
     }
 
     private static class DestructionFlag {
@@ -214,7 +227,7 @@ class GuiCredentialManager extends CredentialManager {
         // Avoid spamming the user with reports
         if (System.currentTimeMillis() > now + 1000)
             return;
-        invokeDialog(new Runnable() {
+        invokeOnSwingThread(new Runnable() {
             public void run() {
                 String msg = "Your password is incorrect for this client certificate, or the certificate\n" +
                         "and/or key store for the Gateway " + ssg +
@@ -259,7 +272,7 @@ class GuiCredentialManager extends CredentialManager {
         if (System.currentTimeMillis() > now + 1000)
             return;
 
-        invokeDialog(new Runnable() {
+        invokeOnSwingThread(new Runnable() {
             public void run() {
                 Gui.errorMessage("You need a client certificate to communicate with the Gateway " + ssg + ", \n" +
                                  "but it has already issued a client certificate to this account and cannot issue\n" +
@@ -270,44 +283,32 @@ class GuiCredentialManager extends CredentialManager {
         });
     }
 
-    /**
-     * Notify the user that an SSL connection to the SSG could not be established because the hostname did not match
-     * the one in the certificate.
-     *
-     * @param ssg
-     * @param whatWeWanted  the expected hostname, equal to ssg.getSsgAddress()
-     * @param whatWeGotInstead  the hostname in the peer's certificate
-     */
-    public void notifySsgHostnameMismatch(final Ssg ssg, final String whatWeWanted, final String whatWeGotInstead) {
-        // If this SSG isn't suppose to be hassling us with dialog boxes, stop now
-        if (!ssg.getRuntime().promptForUsernameAndPassword())
-            return;
-
+    public void notifySslHostnameMismatch(final String server, final String whatWeWanted, final String whatWeGotInstead) {
         long now = System.currentTimeMillis();
 
         // Avoid spamming the user with reports
         if (System.currentTimeMillis() > now + 1000)
             return;
 
-        invokeDialog(new Runnable() {
+        invokeOnSwingThread(new Runnable() {
             public void run() {
                 Gui.errorMessage(
-                        "<HTML>The configured hostname for the Gateway " + ssg + " is \"" + whatWeWanted + "\", <br>" +
+                        "<HTML>The configured hostname for " + server + " is \"" + whatWeWanted + "\", <br>" +
                         "but the server presented a certificate claiming its hostname is \"" + whatWeGotInstead + "\". <br>" +
-                        "<p>Please double check the Gateway hostname for the Gateway " + ssg + ".");
+                        "<p>Please double check the hostname for " + server + ".");
 
             }
         });
     }
 
-    public void notifySsgCertificateUntrusted(Ssg ssg, final X509Certificate certificate) throws OperationCanceledException {
-        String mess = "The authenticity of the SecureSpan Gateway server certificate could not be verified using the " +
-                "current user name and password.  Do you want to trust the Gateway " + ssg + " using this server certificate?  " +
+    public void notifySslCertificateUntrusted(String server, final X509Certificate certificate) throws OperationCanceledException {
+        String mess = "The authenticity of the SSL server certificate for " + server + " could not be automatically established.  " +
+                "Do you want to trust " + server + " using this server certificate?  " +
                 "If you don't know, click Cancel.";
         final TrustCertificateDialog tcd = new TrustCertificateDialog(certificate,
-                                                                      "Trust Gateway Certificate",
+                                                                      "Trust Certificate for " + server,
                                                                       mess);
-        invokeDialog(new Runnable() {
+        invokeOnSwingThread(new Runnable() {
             public void run() {
                 tcd.show();
             }

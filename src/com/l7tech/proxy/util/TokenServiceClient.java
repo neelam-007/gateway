@@ -88,13 +88,15 @@ public class TokenServiceClient {
             Element env = msg.getDocumentElement();
             Element body = XmlUtil.findFirstChildElement(env);
 
-            // Sign it
+            // Maybe sign it
             WssDecorator wssDecorator = new WssDecoratorImpl();
             DecorationRequirements req = new DecorationRequirements();
-            req.setSignTimestamp(true);
-            req.setSenderCertificate(clientCertificate);
-            req.setSenderPrivateKey(clientPrivateKey);
-            req.getElementsToSign().add(body);
+            if (clientPrivateKey != null && clientCertificate != null) {
+                req.setSenderCertificate(clientCertificate);
+                req.setSenderPrivateKey(clientPrivateKey);
+                req.setSignTimestamp(true);
+                req.getElementsToSign().add(body);
+            }
             req.setTimestampCreatedDate(timestampCreatedDate);
             wssDecorator.decorateMessage(msg, req);
 
@@ -126,12 +128,12 @@ public class TokenServiceClient {
             extraNs += " xmlns:saml=\"" + desiredTokenType.getWstPrototypeElementNs() + "\"";
 
         Document msg = XmlUtil.stringToDocument("<soap:Envelope xmlns:soap=\"" + SOAPConstants.URI_NS_SOAP_ENVELOPE + "\"" + extraNs + ">" +
-                                                    "<soap:Body>" +
+                                                    "<soap:Header/><soap:Body>" +
                                                     "<wst:RequestSecurityToken xmlns:wst=\"" + SoapUtil.WST_NAMESPACE + "\">" +
                                                     "</wst:RequestSecurityToken>" +
                                                     "</soap:Body></soap:Envelope>");
         Element env = msg.getDocumentElement();
-        Element body = XmlUtil.findFirstChildElement(env);
+        Element body = XmlUtil.findFirstChildElementByName(env, env.getNamespaceURI(), "Body");
         Element rst = XmlUtil.findFirstChildElement(body);
 
         // Add AppliesTo, if provided
@@ -230,7 +232,7 @@ public class TokenServiceClient {
     {
         if (timestampCreatedDate == null) timestampCreatedDate = new Date();
         Document requestDoc = createRequestSecurityTokenMessage(clientCertificate, clientPrivateKey,
-                                                                SecurityTokenType.SAML_AUTHENTICATION,
+                                                                null,
                                                                 requestType,
                                                                 base, appliesToAddress, timestampCreatedDate);
         requestDoc.getDocumentElement().setAttribute("xmlns:saml", SamlConstants.NS_SAML);
@@ -250,7 +252,10 @@ public class TokenServiceClient {
             throws IOException, GeneralSecurityException
     {
         try {
-            log.log(Level.INFO, "Applying for new Security Token for " + clientCertificate.getSubjectDN() +
+            String clientName = "current user";
+            if (clientCertificate != null)
+                clientName = clientCertificate.getSubjectDN().getName();
+            log.log(Level.INFO, "Applying for new Security Token for " + clientName +
                                 " with token server " + url.toString());
 
             CurrentSslPeer.set(sslPeer);
@@ -258,20 +263,28 @@ public class TokenServiceClient {
             CurrentSslPeer.set(null);
             conn.setDoOutput(true);
             conn.setAllowUserInteraction(false);
+            conn.setDefaultUseCaches(false);
             conn.setRequestProperty(MimeUtil.CONTENT_TYPE, XmlUtil.TEXT_XML);
+            conn.setRequestProperty(SoapUtil.SOAPACTION, "\"\"");
             XmlUtil.nodeToOutputStream(requestDoc, conn.getOutputStream());
             int len = conn.getContentLength();
             log.log(Level.FINEST, "Token server response content length=" + len);
+            Object content = conn.getContent();
+            log.log(Level.FINEST, "Token server content class " + content.getClass());
             String contentType = conn.getContentType();
             if (contentType == null || contentType.indexOf(XmlUtil.TEXT_XML) < 0)
                 throw new IOException("Token server returned unsupported content type " + conn.getContentType());
             Document response = null;
             response = XmlUtil.parse(conn.getInputStream());
             Object result = null;
-            result = parseSignedRequestSecurityTokenResponse(response,
-                                                       clientCertificate,
-                                                       clientPrivateKey,
-                                                       serverCertificate);
+            if (clientCertificate != null && clientPrivateKey != null && serverCertificate != null) {
+                result = parseSignedRequestSecurityTokenResponse(response,
+                                                                 clientCertificate,
+                                                                 clientPrivateKey,
+                                                                 serverCertificate);
+            } else {
+                result = parseUnsignedRequestSecurityTokenResponse(response);
+            }
             return result;
         } catch (SAXException e) {
             throw new CausedIOException("Unable to parse RequestSecurityTokenResponse from security token service: " + e.getMessage(), e);

@@ -118,22 +118,29 @@ public abstract class CredentialManager {
     public abstract void notifyCertificateAlreadyIssued(Ssg ssg);
 
     /**
-     * Notify the user that an SSL connection to the SSG could not be established because the hostname did not match
-     * the one in the certificate.
+     * Notify the user that an SSL connection to the server could not be established because the hostname did not match
+     * the one in the certificate presented by the server during the handshake.
+     * <p>
      * Caller <em>must not</em> hold the Ssg monitor when calling this method.
      *
-     * @param ssg
-     * @param whatWeWanted  the expected hostname, equal to ssg.getSsgAddress()
+     * @param server  description of the SSL server we were talking to (ie, "the Gateway foo.bar.baz")
+     * @param whatWeWanted  the expected hostname, equal to ssg.getSsgAddress() if the server was an Ssg
      * @param whatWeGotInstead  the hostname in the peer's certificate
      */
-    public abstract void notifySsgHostnameMismatch(Ssg ssg, String whatWeWanted, String whatWeGotInstead);
+    public abstract void notifySslHostnameMismatch(String server, String whatWeWanted, String whatWeGotInstead);
 
     /**
      * Notify the user that the discovered server certificate could not be trusted automatically.
      * The user may elect to trust it anyway, or to cancel.
      *
-     * @param ssg
-     * @param certificate
+     * @param server description of the SSL server we were talking to (ie, "the Gateway foo.bar.baz")
+     * @param certificate the certificate that was presented by this server and that did not pass muster
      */
-    public abstract void notifySsgCertificateUntrusted(Ssg ssg, X509Certificate certificate) throws OperationCanceledException;
+    public abstract void notifySslCertificateUntrusted(String server, X509Certificate certificate) throws OperationCanceledException;
+
+    /**
+     * Save any changes made to the specified Ssg back to whereever it came from.
+     * @param ssg the Ssg whose data has changed.  Must not be null.
+     */
+    public abstract void saveSsgChanges(Ssg ssg);
 }

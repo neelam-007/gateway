@@ -17,10 +17,6 @@ import java.util.logging.Logger;
 /**
  * Default CredentialManager implementation.  This version requires that the credentials already be
  * configured in the Ssg object; it takes no action.
- *
- * User: mike
- * Date: Jun 27, 2003
- * Time: 10:39:29 AM
  */
 public class CredentialManagerImpl extends CredentialManager {
     private static final Logger log = Logger.getLogger(CredentialManagerImpl.class.getName());
@@ -73,32 +69,21 @@ public class CredentialManagerImpl extends CredentialManager {
         throw new OperationCanceledException("Unable to authorize deletion of corrupt keystore");
     }
 
-    /**
-     * Notify the user that a client certificate has already been issued for his account.
-     * At this point there is nothing the user can do except try a different account, or contact
-     * his Gateway administrator and beg to have the lost certificate revoked from the database.
-     *
-     * @param ssg
-     */
     public void notifyCertificateAlreadyIssued(Ssg ssg) {
         log.log(Level.SEVERE, "Certificate has already been issued for this account on Gateway " + ssg + "; the server refuses to give us a new one until the Gateway admin revokes our old one");
     }
 
-    /**
-     * Notify the user that an SSL connection to the SSG could not be established because the hostname did not match
-     * the one in the certificate.
-     *
-     * @param ssg
-     * @param whatWeWanted  the expected hostname, equal to ssg.getSsgAddress()
-     * @param whatWeGotInstead  the hostname in the peer's certificate
-     */
-    public void notifySsgHostnameMismatch(Ssg ssg, String whatWeWanted, String whatWeGotInstead) {
+    public void notifySslHostnameMismatch(String server, String whatWeWanted, String whatWeGotInstead) {
         log.log(Level.SEVERE, "Gateway hostname " + whatWeWanted + " does not match hostname in peer certificate: \"" + whatWeGotInstead + "\"");
     }
 
-    public void notifySsgCertificateUntrusted(Ssg ssg, X509Certificate certificate) throws OperationCanceledException {
-        String msg = "The downloaded Gateway server certificate could not be verified with the current user name and password.";
+    public void notifySslCertificateUntrusted(String server, X509Certificate certificate) throws OperationCanceledException {
+        String msg = "The authenticity of the SSL server certificate could not be established automatically.";
         log.log(Level.SEVERE, msg);
         throw new OperationCanceledException(msg);
+    }
+
+    public void saveSsgChanges(Ssg ssg) {
+        log.log(Level.SEVERE, "Unable to save changed Ssg information for Ssg " + ssg + "; ignoring the save request.");
     }
 }

@@ -13,6 +13,7 @@ import com.l7tech.common.security.token.SecurityTokenType;
 import com.l7tech.common.security.token.UsernameToken;
 import com.l7tech.common.security.token.UsernameTokenImpl;
 import com.l7tech.common.util.HexUtils;
+import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.xml.TestDocuments;
 import com.l7tech.common.xml.saml.SamlAssertion;
@@ -29,6 +30,7 @@ import junit.framework.TestSuite;
 import org.springframework.context.ApplicationContext;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.w3c.dom.Document;
+import org.w3c.dom.Element;
 
 import javax.servlet.http.HttpServletRequest;
 import java.io.InputStream;
@@ -178,6 +180,8 @@ public class TokenServiceTest extends TestCase {
     public void testCreateFimRst() throws Exception {
 
         UsernameToken usernameToken = new UsernameTokenImpl("testuser", "passw0rd".toCharArray());
+        Element utElm = usernameToken.asElement();
+        SoapUtil.setWsuId(utElm, SoapUtil.WSU_NAMESPACE, "UsernameToken-1");
 
         // TODO after FIM interop use AppliesTo like http://l7tech.com/services/TokenServiceTest instead
         Document rstDoc = TokenServiceClient.createRequestSecurityTokenMessage(null,
@@ -187,10 +191,10 @@ public class TokenServiceTest extends TestCase {
         assertNotNull(rstDoc);
 
         // TODO check this somehow, other than uncommenting below line and eyeballing the diff
-//        InputStream fimIs = getClass().getClassLoader().getResourceAsStream("com/l7tech/example/resources/tivoli/FIM_RST.xml");
-//        final String origRst = XmlUtil.nodeToFormattedString(XmlUtil.parse(fimIs));
-//        String rst = XmlUtil.nodeToFormattedString(rstDoc);
-//        assertEquals(rst, origRst);
+        InputStream fimIs = getClass().getClassLoader().getResourceAsStream("com/l7tech/example/resources/tivoli/FIM_RST.xml");
+        final String origRst = XmlUtil.nodeToFormattedString(XmlUtil.parse(fimIs));
+        String rst = XmlUtil.nodeToFormattedString(rstDoc);
+        assertEquals(rst, origRst);
     }
 
     public void testParseFimRstr() throws Exception {

@@ -45,9 +45,15 @@ public class ClientSamlAuthenticationStatement extends ClientAssertion {
                    HttpChallengeRequiredException, PolicyRetryableException, PolicyAssertionException,
                    InvalidDocumentFormatException
     {
-        context.prepareClientCertificate();
         final Ssg ssg = context.getSsg();
-        final PrivateKey privateKey = ssg.getClientCertificatePrivateKey();
+
+        // If we are capable of having client cert, then get one
+        final PrivateKey privateKey;
+        if (!ssg.isFederatedGateway() || ssg.getTrustedGateway() != null) {
+            context.prepareClientCertificate();
+            privateKey = ssg.getClientCertificatePrivateKey();
+        } else
+            privateKey = null;
 
         // Look up or apply for SAML ticket
         final SamlAssertion ass = context.getOrCreateSamlAssertion();
@@ -61,9 +67,13 @@ public class ClientSamlAuthenticationStatement extends ClientAssertion {
                     } else {
                         wssReqs = context.getAlternateWssRequirements(data.getRecipientContext());
                     }
-                    wssReqs.setSignTimestamp(true); //todo: timestamp should not be signed (only saml token and the body).
-                    wssReqs.setSenderSamlToken(ass.asElement());
-                    wssReqs.setSenderPrivateKey(privateKey);
+                    if (privateKey != null) {
+                        wssReqs.setSenderSamlToken(ass.asElement(), true); // sign the assertion into the msg   
+                        wssReqs.setSignTimestamp(true);
+                        wssReqs.setSenderPrivateKey(privateKey);
+                    } else {
+                        wssReqs.setSenderSamlToken(ass.asElement(), false); // can't sign the assertion
+                    }
                     return AssertionStatus.NONE;
                 } catch (IOException e) {
                     String msg = "Cannot initialize the recipient's  DecorationRequirements";

@@ -67,12 +67,12 @@ public class SecureSpanBridgeFactory {
     private static Map credentialManagerMap = Collections.synchronizedMap(new HashMap());
     static {
         Managers.setCredentialManager(new CredentialManagerImpl() {
-            public void notifySsgCertificateUntrusted(Ssg ssg, X509Certificate certificate) throws OperationCanceledException {
+            public void notifySslCertificateUntrusted(Ssg ssg, X509Certificate certificate) throws OperationCanceledException {
                 CredentialManager cm = (CredentialManager)credentialManagerMap.get(ssg);
                 if (cm != null)
-                    cm.notifySsgCertificateUntrusted(ssg, certificate);
+                    cm.notifySslCertificateUntrusted("the Gateway " + ssg, certificate);
                 else
-                    super.notifySsgCertificateUntrusted(ssg, certificate);
+                    super.notifySslCertificateUntrusted("the Gateway " + ssg, certificate);
             }
         });
     }
@@ -107,7 +107,7 @@ public class SecureSpanBridgeFactory {
             final SecureSpanBridgeOptions.GatewayCertificateTrustManager tm = options.getGatewayCertificateTrustManager();
             credentialManagerMap.put(ssg, new CredentialManagerImpl() {
                 final String msgNoTrust = "Bridge API user's GatewayCertificateTrustManager rejected Gateway certificate";
-                public void notifySsgCertificateUntrusted(Ssg ssg, X509Certificate certificate) throws OperationCanceledException {
+                public void notifySslCertificateUntrusted(Ssg ssg, X509Certificate certificate) throws OperationCanceledException {
                     try {
                         if (tm.isGatewayCertificateTrusted(new X509Certificate[] {certificate}))
                             return;

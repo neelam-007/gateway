@@ -87,10 +87,10 @@ public class ServerSamlAuthenticationStatement implements ServerAssertion {
                 SecurityToken tok = tokens[i];
                 if (tok instanceof SamlSecurityToken) {
                     SamlSecurityToken samlToken = (SamlSecurityToken)tok;
-                    if (samlToken.isPossessionProved()) {
+                    if (samlToken.isPossessionProved() || samlToken.isBearerToken()) {
                         if (samlAssertion != null) {
-                            logger.severe("We got a request that presented more than one valid signature from more " +
-                                          "than one SAML assertion.  This is not currently supported.");
+                            logger.severe("We got a request that contained more than one SAML assertion.  " +
+                                          "This is not currently supported.");
                             return AssertionStatus.BAD_REQUEST;
                         }
                         samlAssertion = samlToken;
@@ -98,7 +98,7 @@ public class ServerSamlAuthenticationStatement implements ServerAssertion {
                 }
             }
             if (samlAssertion == null) {
-                logger.info("This assertion did not find a proven SAML assertion to use as credentials. Returning AUTH_REQUIRED.");
+                logger.info("This assertion did not find an acceptable SAML assertion to use as credentials.");
                 context.setAuthenticationMissing();
                 return AssertionStatus.AUTH_REQUIRED;
             }

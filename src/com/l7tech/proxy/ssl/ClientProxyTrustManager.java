@@ -74,6 +74,9 @@ public class ClientProxyTrustManager implements X509TrustManager {
         if (peer == null)
             throw new IllegalStateException("No peer Gateway is available in this thread");
 
+        // Remember last cert presented by this peer during the handshake
+        peer.storeLastSeenPeerCertificate(x509Certificates[0]);
+
         // Verify the hostname
         String expectedHostname = peer.getHostname();
         String cn = "";
