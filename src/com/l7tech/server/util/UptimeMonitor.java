@@ -31,6 +31,7 @@ public class UptimeMonitor {
         "/usr/bin/uptime",
         "/bin/uptime",
         "c:/cygwin/bin/uptime",
+        "c:/opt/cygwin/bin/uptime"
     };
     private static String foundUptime = null;
 
