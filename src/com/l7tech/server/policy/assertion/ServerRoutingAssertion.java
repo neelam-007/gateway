@@ -9,6 +9,7 @@ package com.l7tech.server.policy.assertion;
 import com.l7tech.policy.assertion.RoutingAssertion;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
+import com.l7tech.policy.assertion.RoutingStatus;
 import com.l7tech.message.Request;
 import com.l7tech.message.Response;
 import com.l7tech.message.XmlRequest;
@@ -47,11 +48,14 @@ public class ServerRoutingAssertion implements ServerAssertion {
         int max = data.getMaxConnections();
         _connectionManager.setMaxConnectionsPerHost( max );
         _connectionManager.setMaxTotalConnections( max * 10 );
+        _connectionManager.setConnectionStaleCheckingEnabled( false );
     }
 
     public static final String PRODUCT = "Layer7-SecureSpan-Gateway";
 
     public static final String DEFAULT_USER_AGENT = PRODUCT + "/v" + BuildInfo.getProductVersion() + "-b" + BuildInfo.getBuildNumber();
+
+
 
     /**
      * Forwards the request along to a ProtectedService at the configured URL.
@@ -61,6 +65,8 @@ public class ServerRoutingAssertion implements ServerAssertion {
      * @throws com.l7tech.policy.assertion.PolicyAssertionException if some error preventing the execution of the PolicyAssertion has occurred.
      */
     public AssertionStatus checkRequest( Request grequest, Response gresponse ) throws IOException, PolicyAssertionException {
+        grequest.setRoutingStatus( RoutingStatus.ATTEMPTED );
+
         XmlRequest request;
         XmlResponse response;
         if ( grequest instanceof XmlRequest && gresponse instanceof XmlResponse ) {
@@ -68,8 +74,6 @@ public class ServerRoutingAssertion implements ServerAssertion {
             response = (XmlResponse)gresponse;
         } else
             throw new PolicyAssertionException( "Only XML Requests are supported by ServerRoutingAssertion!" );
-
-        HttpClient client = new HttpClient(_connectionManager);
 
         PostMethod postMethod = null;
 
@@ -83,6 +87,8 @@ public class ServerRoutingAssertion implements ServerAssertion {
             } else {
                 url = new URL( psurl );
             }
+
+            HttpClient client = new HttpClient(_connectionManager);
 
             postMethod = new PostMethod(url.toString());
 
@@ -131,7 +137,7 @@ public class ServerRoutingAssertion implements ServerAssertion {
             response.setParameter( Response.PARAM_HTTP_CONTENT_TYPE, ctype );
             if (ctype.indexOf(TEXT_XML) > 0) {
                 // Note that this will consume the first part of the stream...
-                BufferedReader br = new BufferedReader( new InputStreamReader(responseStream, ENCODING /*TODO*/ ) );
+                BufferedReader br = new BufferedReader( new InputStreamReader(responseStream, ENCODING  ) );
                 String line;
                 StringBuffer responseXml = new StringBuffer();
                 while ((line = br.readLine()) != null) {
@@ -141,7 +147,7 @@ public class ServerRoutingAssertion implements ServerAssertion {
             }
             response.setProtectedResponseStream(responseStream);
 
-            request.setRouted(true);
+            request.setRoutingStatus( RoutingStatus.ROUTED );
             _data.incrementRequestCount();
 
             return AssertionStatus.NONE;
