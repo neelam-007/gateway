@@ -213,15 +213,6 @@ public class ServerHttpRoutingAssertion extends ServerRoutingAssertion {
                                               httpRoutingAssertion.getCurrentSecurityHeaderHandling(),
                                               httpRoutingAssertion.getXmlSecurityActorToPromote());
 
-                final MimeKnob reqMime = context.getRequest().getMimeKnob();
-                postMethod.addRequestHeader(MimeUtil.CONTENT_TYPE, reqMime.getOuterContentType().getFullValue());
-
-                // Fix for Bug #1282 - Must set a content-length on PostMethod or it will try to buffer the whole thing
-                final long contentLength = reqMime.getContentLength();
-                if (contentLength > Integer.MAX_VALUE)
-                    throw new IOException("Body content is too long to be processed -- maximum is " + Integer.MAX_VALUE + " bytes");
-                postMethod.setRequestContentLength((int)contentLength);
-
                 String userAgent = httpRoutingAssertion.getUserAgent();
                 if (userAgent == null || userAgent.length() == 0) userAgent = DEFAULT_USER_AGENT;
                 postMethod.setRequestHeader(USER_AGENT, userAgent);
@@ -308,6 +299,14 @@ public class ServerHttpRoutingAssertion extends ServerRoutingAssertion {
                 attachCookies(client, context, url, auditor);
 
                 // Serialize the request
+                final MimeKnob reqMime = context.getRequest().getMimeKnob();
+                postMethod.addRequestHeader(MimeUtil.CONTENT_TYPE, reqMime.getOuterContentType().getFullValue());
+
+                // Fix for Bug #1282 - Must set a content-length on PostMethod or it will try to buffer the whole thing
+                final long contentLength = reqMime.getContentLength();
+                if (contentLength > Integer.MAX_VALUE)
+                    throw new IOException("Body content is too long to be processed -- maximum is " + Integer.MAX_VALUE + " bytes");
+                postMethod.setRequestContentLength((int)contentLength);
                 final InputStream bodyInputStream = reqMime.getEntireMessageBodyAsInputStream();
                 postMethod.setRequestBody(bodyInputStream);
 
