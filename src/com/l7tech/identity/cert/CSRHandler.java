@@ -65,13 +65,13 @@ public class CSRHandler extends AuthenticatableHttpServlet {
             return;
         }
 
-        PersistenceContext pc = null;
+        //PersistenceContext pc = null;
 
         try {
             // Authentication
             List users = null;
             try {
-                pc = PersistenceContext.getCurrent();
+                //pc = PersistenceContext.getCurrent();
                 users = authenticateRequestBasic(request);
             } catch (IOException e) {
                 response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "authentication error");
@@ -80,10 +80,6 @@ public class CSRHandler extends AuthenticatableHttpServlet {
             } catch (BadCredentialsException e) {
                 response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "must provide valid credentials");
                 logger.log(Level.SEVERE, "Failed authentication", e);
-                return;
-            } catch ( SQLException se ) {
-                response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "authentication error");
-                logger.log(Level.SEVERE, "Failed authentication", se);
                 return;
             }
 
@@ -123,7 +119,7 @@ public class CSRHandler extends AuthenticatableHttpServlet {
 
             // record new cert
             try {
-                pc.beginTransaction();
+                PersistenceContext.getCurrent().beginTransaction();
                 man.recordNewUserCert(authenticatedUser, cert);
             } catch (UpdateException e) {
                 String msg = "Could not record cert. " + e.getMessage();
@@ -135,12 +131,18 @@ public class CSRHandler extends AuthenticatableHttpServlet {
                 response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, msg);
                 logger.log(Level.SEVERE, msg, e);
                 return;
+            } catch ( SQLException e ) {
+                String msg = "Could not record cert. " + e.getMessage();
+                logger.log(Level.SEVERE, msg, e);
+                return;
             } finally {
                 try {
-                    pc.commitTransaction();
+                    PersistenceContext.getCurrent().commitTransaction();
                 } catch (TransactionException te) {
                     logger.log(Level.WARNING, "exception committing new cert update", te);
                 } catch (ObjectModelException e) {
+                    logger.log(Level.WARNING, "exception committing cert update", e);
+                } catch (SQLException e) {
                     logger.log(Level.WARNING, "exception committing cert update", e);
                 }
             }
@@ -174,7 +176,12 @@ public class CSRHandler extends AuthenticatableHttpServlet {
                 return;
             }
         } finally {
-            if ( pc != null ) pc.close();
+            try {
+                PersistenceContext.getCurrent().close();
+            }
+            catch (SQLException e) {
+                logger.log(Level.WARNING, "exception closing context", e);
+            }
         }
     }
 
