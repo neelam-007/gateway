@@ -36,25 +36,8 @@ public final class Config {
             if (serverHostname == null) {
                 serverHostname = determineHostname();
             }
-            Object[][] schemes = new Object[][] {
-                {"http", new Integer(8080), new Integer(80)},
-                {"https", new Integer(8443), new Integer(443)},
-            };
-            StringBuffer sb = new StringBuffer();
-            boolean firstPass = true;
-            for (int i = 0; i < schemes.length; i++) {
-                Object[] scheme = schemes[i];
-                for (int j = 1; j < scheme.length; j++) {
-                    Object o = scheme[j];
-                    if (!firstPass) {
-                        sb.append(" ");
-                    }
-                    sb.append(scheme[0]+"://"+serverHostname+":"+o.toString()+ClassServerServlet.URI_PREFIX);
-                    firstPass = false;
-                }
-            }
-            final String codebase = sb.toString();
-            logger.fine("Setting the 'java.rmi.server.codebase' to '"+codebase+"'");
+            final String codebase = "http://"+serverHostname+":8080"+ClassServerServlet.URI_PREFIX;
+            logger.fine("Setting the default 'java.rmi.server.codebase' to '"+codebase+"'");
             System.setProperty("java.rmi.server.codebase", codebase);
         }
     }

@@ -43,7 +43,7 @@ public class ClassServerServlet extends HttpServlet {
         InputStream in = null;
         try {
             String resource = null;
-            for (int i = 1; i >= 0; i--) {
+            for (int i = 0; i < 2; i++) {
                 resource = requestURI.substring(URI_PREFIX.length() - i);
                 logger.fine("Lookup for the resource '" + resource + "'");
                 ClassLoader cl = Thread.currentThread().getContextClassLoader();
@@ -54,7 +54,7 @@ public class ClassServerServlet extends HttpServlet {
             }
 
             if (null == in) {
-                logger.warning("Unable to locate the resource '" + resource + "'");
+                logger.fine("Unable to locate the resource '" + resource + "'");
                 response.setStatus(HttpServletResponse.SC_NOT_FOUND);
                 logger.fine("The resource '" + resource + "' is not found");
                 return;
