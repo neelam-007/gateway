@@ -13,6 +13,8 @@ import com.l7tech.policy.assertion.ext.Category;
 import com.l7tech.policy.assertion.identity.IdentityAssertion;
 import com.l7tech.policy.assertion.identity.SpecificUser;
 import com.l7tech.policy.assertion.xml.XslTransformation;
+import com.l7tech.policy.assertion.xmlsec.RequestWssX509Cert;
+import com.l7tech.policy.assertion.xmlsec.ResponseWssConfidentiality;
 import com.l7tech.policy.assertion.xmlsec.ResponseWssIntegrity;
 
 import java.net.MalformedURLException;
@@ -185,6 +187,13 @@ class PathValidator {
             seenHTTPBasic = true;
         }
 
+        if (a instanceof RequestWssX509Cert) {
+            if (seenWssSignature) {
+                result.addError(new PolicyValidatorResult.Error(a, assertionPath, "WSS Signature already set.", null));
+            }
+            seenWssSignature = true;
+        }
+
         // Custom Assertion can only be used with HTTP Basic
         if (seenCustomAssertion && !seenHTTPBasic) {
             result.addError(new PolicyValidatorResult.
@@ -207,16 +216,15 @@ class PathValidator {
                   "The assertion might not work as configured." +
                   " There is a routing assertion before this assertion.", null));
             }
-        } else if (a instanceof ResponseWssIntegrity) {
-            if (!seenRouting) {
+        } else if (a instanceof XpathBasedAssertion) {
+            if (!seenWssSignature) {
                 result.addError(new PolicyValidatorResult.Error(a, assertionPath,
-                  "Xml Response Security must occur after routing.", null));
+                  "This assertion requires a WSS Signature authentication.", null));
             }
-            if (seenXmlResponseSecurityAssertion) {
+            if (a instanceof ResponseWssIntegrity || a instanceof ResponseWssConfidentiality) {
                 result.addError(new PolicyValidatorResult.Error(a, assertionPath,
-                  "Xml Response Security cannot appear more than once in path.", null));
+                  "This can only occur after routing.", null));
             }
-            seenXmlResponseSecurityAssertion = true;
         } else if (a instanceof HttpClientCert) {
             DefaultPolicyValidator.DeferredValidate dv = new DefaultPolicyValidator.DeferredValidate() {
                 public void validate(PathValidator pv, Assertion[] path) {
@@ -323,7 +331,7 @@ class PathValidator {
 
     private boolean hasPreconditionAssertion(Assertion a) {
         // check preconditions for both SslAssertion and  ResponseWssIntegrity assertions - see processPrecondition()
-        if (a instanceof SslAssertion || a instanceof ResponseWssIntegrity || a instanceof HttpClientCert ||
+        if (a instanceof SslAssertion || a instanceof XpathBasedAssertion || a instanceof HttpClientCert ||
           a instanceof XslTransformation)
             return true;
         return false;
@@ -333,11 +341,11 @@ class PathValidator {
     boolean seenCredentials = false;
     boolean seenAccessControl = false;
     boolean seenRouting = false;
+    boolean seenWssSignature = false;
     boolean seenSsl = false;
     boolean sslForbidden = false;
     boolean seenCredAssertionThatRequiresClientCert = false;
     boolean seenDigestAssertion = false;
-    boolean seenXmlResponseSecurityAssertion = false;
     boolean seenSpecificUserAssertion = false;
     boolean seenCustomAssertion = false;
     boolean seenHTTPBasic = false;
