@@ -158,9 +158,7 @@ public abstract class AssertionTreeNode extends AbstractTreeNode {
      * @param pn
      */
     private void assignPolicyTemplate(PolicyTemplateNode pn) {
-        JTree tree = ComponentRegistry.getInstance().getPolicyTree();
         ServiceNode sn = getServiceNodeCookie();
-
         if (sn == null)
             throw new IllegalArgumentException("No edited service specified");
         ByteArrayOutputStream bo = null;
