@@ -6,12 +6,12 @@
 
 package com.l7tech.common.security.xml;
 
+import com.l7tech.common.security.JceProvider;
 import com.l7tech.common.util.CertUtils;
 import com.l7tech.common.util.HexUtils;
 import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.xml.InvalidDocumentFormatException;
-import com.l7tech.common.security.JceProvider;
 import org.w3c.dom.Element;
 
 import javax.crypto.Cipher;
@@ -258,7 +258,7 @@ public class XencUtil {
      * @throws GeneralSecurityException
      */
     public static String encryptKeyWithRsaAndPad(byte[] keyBytes, PublicKey publicKey, SecureRandom rand) throws GeneralSecurityException {
-        Cipher rsa = JceProvider.getRSANoPaddingCipher();//Cipher.getInstance("RSA", JceProvider.getAsymmetricJceProvider().getName());
+        Cipher rsa = JceProvider.getRsaNoPaddingCipher();//Cipher.getInstance("RSA", JceProvider.getAsymmetricJceProvider().getName());
         rsa.init(Cipher.ENCRYPT_MODE, publicKey);
         if (!(publicKey instanceof RSAPublicKey))
             throw new KeyException("Unable to encrypt -- unsupported recipient public key type " +

@@ -17,6 +17,8 @@ import com.phaos.crypto.RSAKeyPairGenerator;
 import com.phaos.crypto.RandomBitsSource;
 import com.phaos.jce.provider.Phaos;
 
+import javax.crypto.Cipher;
+import javax.crypto.NoSuchPaddingException;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.math.BigInteger;
@@ -197,5 +199,9 @@ public class PhaosJceProviderEngine implements JceProviderEngine {
             throw new CausedSignatureException(e);
         }
         return new PhaosCertificateRequest(csr);
+    }
+
+    public Cipher getRsaNoPaddingCipher() throws NoSuchProviderException, NoSuchAlgorithmException, NoSuchPaddingException {
+        return Cipher.getInstance("RSA/NONE/NoPadding", PROVIDER.getName());
     }
 }

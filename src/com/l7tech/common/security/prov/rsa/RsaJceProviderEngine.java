@@ -17,6 +17,8 @@ import com.rsa.jsafe.JSAFE_PrivateKey;
 import com.rsa.jsafe.JSAFE_PublicKey;
 import com.rsa.jsafe.JSAFE_UnimplementedException;
 
+import javax.crypto.Cipher;
+import javax.crypto.NoSuchPaddingException;
 import java.math.BigInteger;
 import java.security.*;
 import java.security.interfaces.RSAPublicKey;
@@ -217,5 +219,9 @@ public class RsaJceProviderEngine implements JceProviderEngine {
         }
 
         return new RsaCertificateRequest(csr);
+    }
+
+    public Cipher getRsaNoPaddingCipher() throws NoSuchProviderException, NoSuchAlgorithmException, NoSuchPaddingException {
+        return Cipher.getInstance("RSA/NONE/NoPadding", PROVIDER.getName());
     }
 }

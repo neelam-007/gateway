@@ -6,10 +6,9 @@
 
 package com.l7tech.common.security;
 
-import java.security.InvalidKeyException;
-import java.security.KeyPair;
-import java.security.Provider;
-import java.security.SignatureException;
+import javax.crypto.Cipher;
+import javax.crypto.NoSuchPaddingException;
+import java.security.*;
 
 /**
  * Provides routines that do cryptographic operations using an underlying crypto api.
@@ -57,4 +56,14 @@ public interface JceProviderEngine {
      * @return
      */
     CertificateRequest makeCsr(String username, KeyPair keyPair) throws InvalidKeyException, SignatureException;
+
+    /**
+     * Get an implementation of RSA configured to work in raw mode, with padding disabled.
+     *
+     * @return an RSA Cipher implementation.  Never null.
+     * @throws NoSuchProviderException   if there is a configuration problem.  Shouldn't happen.
+     * @throws NoSuchAlgorithmException  if this provider is unable to deliver an appropriately-configured RSA implementation.  Shouldn't happen.
+     * @throws NoSuchPaddingException    if this provider is unable to deliver an appropriately-configured RSA implementation.  Shouldn't happen.
+     */
+    Cipher getRsaNoPaddingCipher() throws NoSuchProviderException, NoSuchAlgorithmException, NoSuchPaddingException;
 }

@@ -17,6 +17,8 @@ import org.bouncycastle.asn1.x509.X509Name;
 import org.bouncycastle.jce.PKCS10CertificationRequest;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 
+import javax.crypto.Cipher;
+import javax.crypto.NoSuchPaddingException;
 import java.security.*;
 
 /**
@@ -91,6 +93,10 @@ public class NcipherJceProviderEngine implements JceProviderEngine {
             throw new RuntimeException(e); // can't happen
         }
         return new BouncyCastleCertificateRequest(certReq, PROVIDER.getName());
+    }
+
+    public Cipher getRsaNoPaddingCipher() throws NoSuchProviderException, NoSuchAlgorithmException, NoSuchPaddingException {
+        return Cipher.getInstance("RSA/NONE/NoPadding", PROVIDER.getName());
     }
 
     private BouncyCastleProvider bouncyCastleProvider = new BouncyCastleProvider();

@@ -15,6 +15,8 @@ import org.bouncycastle.jce.PKCS10CertificationRequest;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.jce.provider.JDKKeyPairGenerator;
 
+import javax.crypto.Cipher;
+import javax.crypto.NoSuchPaddingException;
 import java.security.*;
 
 /**
@@ -79,6 +81,10 @@ public class BouncyCastleJceProviderEngine implements JceProviderEngine {
      */
     public CertificateRequest makeCsr( String username, KeyPair keyPair ) throws SignatureException, InvalidKeyException {
         return staticMakeCsr( username, keyPair, PROVIDER.getName() );
+    }
+
+    public Cipher getRsaNoPaddingCipher() throws NoSuchProviderException, NoSuchAlgorithmException, NoSuchPaddingException {
+        return Cipher.getInstance("RSA/NONE/NoPadding", PROVIDER.getName());
     }
 
     /**

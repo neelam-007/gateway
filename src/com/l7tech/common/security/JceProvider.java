@@ -58,15 +58,8 @@ public abstract class JceProvider {
         return Holder.engine.getAsymmetricProvider();
     }
 
-    public static Cipher getRSANoPaddingCipher() throws NoSuchAlgorithmException, NoSuchProviderException, NoSuchPaddingException {
-        String provider = getAsymmetricJceProvider().getName();
-        if (provider == "BC") {
-            return Cipher.getInstance("RSA/NONE/NoPadding", provider);
-        } else { // todo, add cases for both SUN and IBM 
-            // try this default value
-            return Cipher.getInstance("RSA/NONE/NoPadding", provider);
-        }
-
+    public static Cipher getRsaNoPaddingCipher() throws NoSuchAlgorithmException, NoSuchPaddingException, NoSuchProviderException {
+        return Holder.engine.getRsaNoPaddingCipher();
     }
 
     public static RsaSignerEngine createRsaSignerEngine(String keyStorePath, String storePass, String privateKeyAlias, String privateKeyPass, String storeType) {
