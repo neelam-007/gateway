@@ -26,7 +26,7 @@ public class WorkSpacePanel extends JPanel {
     static final Logger log = Logger.getLogger(WorkSpacePanel.class.getName());
     private final TabbedPane tabbedPane = new TabbedPane();
 
-    /* this class classloader */
+    /** TLS helper for container veto excpetions */
     private static ThreadLocal containerVetoException = new ThreadLocal() {
         protected synchronized Object initialValue() {
             return null;
@@ -43,23 +43,24 @@ public class WorkSpacePanel extends JPanel {
 
     /**
      * Set the active component for the work space.
-     *
+     * 
      * @param jc the new component to host
      */
     public void setComponent(JComponent jc) throws ActionVetoException {
         tabbedPane.removeAll();
-        if (containerVetoException.get() !=null) {
-            ContainerVetoException cve =  (ContainerVetoException)containerVetoException.get();
+        if (containerVetoException.get() != null) {
+            ContainerVetoException cve = (ContainerVetoException)containerVetoException.get();
             containerVetoException.set(null);
-           throw new ActionVetoException(null, "workspace change vetoed", cve);
+            throw new ActionVetoException(null, "workspace change vetoed", cve);
         }
 
         tabbedPane.addTab(jc.getName(), jc);
         jc.addPropertyChangeListener(new PropertyChangeListener() {
             /**
              * This method gets called when a bound property is changed.
+             * 
              * @param evt A PropertyChangeEvent object describing the event source
-             *   	and the property that has changed.
+             *            and the property that has changed.
              */
             public void propertyChange(PropertyChangeEvent evt) {
                 if ("name".equals(evt.getPropertyName())) {
@@ -70,15 +71,27 @@ public class WorkSpacePanel extends JPanel {
     }
 
     /**
+     * get the component that the workspace panel is currently
+     * hosting or null.
+     * @return the workspace panel component or null
+     */
+    public JComponent getComponent() {
+        int tabCount = tabbedPane.getTabCount();
+        if (tabCount == 0) return null;
+        return (JComponent)tabbedPane.getComponentAt(tabCount-1);
+    }
+
+
+    /**
      * Remove the active component that the workspace.
      * The {@link JComponent#getName() } sets the tab name.
      */
     public void clearWorkspace() throws ActionVetoException {
         tabbedPane.removeAll();
-        if (containerVetoException.get() !=null) {
-            ContainerVetoException cve =  (ContainerVetoException)containerVetoException.get();
+        if (containerVetoException.get() != null) {
+            ContainerVetoException cve = (ContainerVetoException)containerVetoException.get();
             containerVetoException.set(null);
-           throw new ActionVetoException(null, "workspace change vetoed", cve);
+            throw new ActionVetoException(null, "workspace change vetoed", cve);
         }
     }
 
@@ -88,9 +101,9 @@ public class WorkSpacePanel extends JPanel {
      * from this container.
      * If l is null, no exception is thrown and no action is performed.
      * This is a specialized version of the container listener, and it is
-     * delegated to the Container that hosts the <i>workspace</i> component.  
-     *
-     * @param    l the container listener
+     * delegated to the Container that hosts the <i>workspace</i> component.
+     * 
+     * @param l the container listener
      */
     public synchronized void addWorkspaceContainerListener(ContainerListener l) {
         tabbedPane.addContainerListener(l);
@@ -101,9 +114,9 @@ public class WorkSpacePanel extends JPanel {
      * container events from this container.
      * If l is null, no exception is thrown and no action is performed.
      * This is a specialized version of the container listener and it is
-     * delegated to the Container that hosts the <i>workspace</i> component.  
-     *
-     * @param 	l the container listener
+     * delegated to the Container that hosts the <i>workspace</i> component.
+     * 
+     * @param l the container listener
      */
     public synchronized void removeWorkspaceContainerListener(ContainerListener l) {
         tabbedPane.removeContainerListener(l);
@@ -128,7 +141,9 @@ public class WorkSpacePanel extends JPanel {
         // look and feel listener
         PropertyChangeListener l =
           new PropertyChangeListener() {
-              /** This method gets called when a property is changed.*/
+              /**
+               * This method gets called when a property is changed.
+               */
               public void propertyChange(final PropertyChangeEvent evt) {
                   if ("lookAndFeel".equals(evt.getPropertyName())) {
                       SwingUtilities.invokeLater(new Runnable() {
@@ -145,7 +160,9 @@ public class WorkSpacePanel extends JPanel {
         try {
             Preferences pref = Preferences.getPreferences();
             l = new PropertyChangeListener() {
-                /** This method gets called when a property is changed.*/
+                /**
+                 * This method gets called when a property is changed.
+                 */
                 public void propertyChange(PropertyChangeEvent evt) {
                     log.info("toolbar view changed to " + evt.getNewValue());
                 }
@@ -182,7 +199,9 @@ public class WorkSpacePanel extends JPanel {
     private final
     HierarchyListener hierarchyListener =
       new HierarchyListener() {
-          /** Called when the hierarchy has been changed.*/
+          /**
+           * Called when the hierarchy has been changed.
+           */
           public void hierarchyChanged(HierarchyEvent e) {
               long flags = e.getChangeFlags();
               if ((flags & HierarchyEvent.SHOWING_CHANGED) == HierarchyEvent.SHOWING_CHANGED) {
@@ -206,10 +225,10 @@ public class WorkSpacePanel extends JPanel {
          * Adds the specified container listener to receive container events
          * from this container.
          * If l is null, no exception is thrown and no action is performed.
-         * This is a specialized version of the container listener, that 
+         * This is a specialized version of the container listener, that
          * support the VetoableContainerListener
-         *
-         * @param    l the container listener
+         * 
+         * @param l the container listener
          */
         public synchronized void addContainerListener(ContainerListener l) {
             if (l instanceof VetoableContainerListener) {
@@ -222,10 +241,10 @@ public class WorkSpacePanel extends JPanel {
          * Removes the specified container listener so it no longer receives
          * container events from this container.
          * If l is null, no exception is thrown and no action is performed.
-         * This is a specialized version of the container listener, that 
+         * This is a specialized version of the container listener, that
          * supports the VetoableContainerListener
-         *
-         * @param 	l the container listener
+         * 
+         * @param l the container listener
          */
         public synchronized void removeContainerListener(ContainerListener l) {
             if (l instanceof VetoableContainerListener) {
@@ -237,9 +256,9 @@ public class WorkSpacePanel extends JPanel {
         /**
          * Removes the tab at <code>index</code>. This method is overriden
          * for veto support.
-         *
+         * 
          * @see #addTab
-         * @see #insertTab  
+         * @see #insertTab
          */
         public void removeTabAt(int index) {
             containerVetoException.set(null);
@@ -262,7 +281,7 @@ public class WorkSpacePanel extends JPanel {
 
         /**
          * Inserts a <code>component</code>, at <code>index</code>. This method
-         * is overriden for veto uspprt.           
+         * is overriden for veto uspprt.
          */
         public void insertTab
           (String
@@ -291,9 +310,9 @@ public class WorkSpacePanel extends JPanel {
         /**
          * Removes all the tabs and their corresponding components
          * from the <code>tabbedpane</code>.
-         *
+         * 
          * @see #addTab
-         * @see #removeTabAt  
+         * @see #removeTabAt
          */
         public void removeAll() {
             //setSelectedIndexImpl(-1);

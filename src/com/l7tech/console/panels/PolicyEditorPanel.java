@@ -59,12 +59,13 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
     private final ComponentRegistry componentRegistry =
       Registry.getDefault().getComponentRegistry();
     private JScrollPane policyTreePane;
+
     private ServiceNode serviceNode;
 
     public PolicyEditorPanel(ServiceNode sn) throws FindException, RemoteException {
         layoutComponents();
-        renderService(sn, false);
         this.serviceNode = sn;
+        renderPolicy(false);
         setEditorListeners();
     }
 
@@ -80,6 +81,20 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
         String oldName = getName();
         super.setName(name);
         this.firePropertyChange("name", oldName, name);
+    }
+
+
+    /**
+     * Get the service node that thids panel is editing
+     * <p>
+     * Note that it does not return the copy, therefore any
+     * changes made through this method are not visible to
+     * the policy editor.
+     *
+     * @return the noe that the panel is editing
+     */
+    public ServiceNode getServiceNode() {
+        return serviceNode;
     }
 
 
@@ -113,15 +128,14 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
     }
 
     /**
-     * Render the service and the policy into the editor
-     * 
-     * @param sn           the service node
-     * @param identityView 
+     * Render the service policy into the editor
+     * @param identityView
      * @throws FindException 
      */
-    private void renderService(ServiceNode sn, boolean identityView)
+    private void renderPolicy(boolean identityView)
       throws FindException, RemoteException {
-        this.service = sn.getPublishedService();
+
+        this.service = serviceNode.getPublishedService();
         setName(service.getName());
         getSplitPane().setName(service.getName());
 
@@ -138,7 +152,7 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
             filteredTreeModel = new FilteredTreeModel(root);
         }
         rootAssertion = (AssertionTreeNode)filteredTreeModel.getRoot();
-        rootAssertion.addCookie(new AbstractTreeNode.NodeCookie(sn));
+        rootAssertion.addCookie(new AbstractTreeNode.NodeCookie(serviceNode));
 
         policyTree.setModel(filteredTreeModel);
         if (identityView) {
@@ -306,7 +320,7 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
                     boolean selected = identityViewButton.isSelected();
                     policyTree.getModel().removeTreeModelListener(policyTreeModellistener);
                     try {
-                        renderService(serviceNode, selected);
+                        renderPolicy(selected);
                     } catch (FindException e1) {
                         log.log(Level.SEVERE, "Unable to retrieve the service " + service.getName(), e1);
                     } catch (RemoteException e1) {
@@ -468,9 +482,9 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
               log.info(evt.getPropertyName() + "changed");
               try {
                   if ("service.name".equals(evt.getPropertyName())) {
-                      renderService(serviceNode, false);
+                      renderPolicy(false);
                   } else if ("policy".equals(evt.getPropertyName())) {
-                      renderService(serviceNode, false);
+                      renderPolicy(false);
                       policyEditorToolbar.buttonSave.setEnabled(true);
                       policyEditorToolbar.buttonSave.getAction().setEnabled(true);
                   }
@@ -567,6 +581,8 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
                     throw new ContainerVetoException(e, "User aborted");
                 }
             }
+            final PolicyToolBar pt = componentRegistry.getMainWindow().getPolicyToolBar();
+            pt.disableAll();
         }
     }
 
