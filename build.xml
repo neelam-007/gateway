@@ -475,8 +475,8 @@
         <antcall target="test"/>
         <antcall target="deploy"/>
 
-        <echo message="commit -m 'Incremented build number to ${build.number}' build.number"/>
-        <cvs command="commit -m 'Incremented build number to ${build.number}' build.number"/>
+        <echo message="commit -m '[OFFICIAL-build] Incremented build number to ${build.number}' build.number"/>
+        <cvs command="commit -m '[OFFICIAL-build] Incremented build number to ${build.number}' build.number"/>
     </target>
 
     <target name="INTERNAL-buildinfo">
