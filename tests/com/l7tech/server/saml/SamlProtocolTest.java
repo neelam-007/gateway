@@ -125,7 +125,7 @@ public class SamlProtocolTest extends TestCase {
         final String contents = mockServletOutputStream.getContents();
         SOAPMessage msg = msgFactory.createMessage(new MimeHeaders(), new ByteArrayInputStream(contents.getBytes()));
         SOAPPart soapPart = msg.getSOAPPart();
-        //todo: find out why the belove call fails
+        //todo: find out why the below call fails
 //        SOAPFault fault = soapPart.getEnvelope().getBody().getFault();
 //        assertTrue(fault != null);
     }
