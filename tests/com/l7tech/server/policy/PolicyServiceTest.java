@@ -58,8 +58,8 @@ public class PolicyServiceTest extends TestCase {
          TestSetup wrapper = new TestSetup(suite) {
 
              protected void setUp() throws Exception {
-                 applicationContext = createApplicationContext();
                  Keys.createTestSsgKeystoreProperties();
+                 applicationContext = createApplicationContext();
              }
 
              protected void tearDown() throws Exception {
