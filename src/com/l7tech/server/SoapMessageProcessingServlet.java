@@ -14,6 +14,7 @@ import com.l7tech.objectmodel.PersistenceContext;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.service.PublishedService;
+import com.l7tech.server.policy.PolicyVersionException;
 
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
@@ -94,6 +95,10 @@ public class SoapMessageProcessingServlet extends HttpServlet {
             } catch (PolicyAssertionException pae) {
                 logger.log(Level.SEVERE, pae.getMessage(), pae);
                 sendFault(sreq, sresp, hrequest, hresponse, HttpServletResponse.SC_INTERNAL_SERVER_ERROR, SoapUtil.FC_SERVER, pae.toString());
+            } catch (PolicyVersionException pve) {
+                String msg = "Request referred to an outdated version of policy";
+                logger.log(Level.INFO, msg );
+                sendFault(sreq, sresp, hrequest, hresponse, HttpServletResponse.SC_EXPECTATION_FAILED, SoapUtil.FC_CLIENT, msg);
             }
         } catch (SOAPException se) {
             logger.log(Level.SEVERE, se.getMessage(), se);

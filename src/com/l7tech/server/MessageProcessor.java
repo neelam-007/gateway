@@ -17,6 +17,7 @@ import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.RoutingStatus;
 import com.l7tech.server.policy.assertion.ServerAssertion;
+import com.l7tech.server.policy.PolicyVersionException;
 import com.l7tech.service.PublishedService;
 import com.l7tech.service.ServiceManager;
 import com.l7tech.service.ServiceStatistics;
@@ -37,7 +38,9 @@ import java.util.logging.Logger;
  * @version $Revision$
  */
 public class MessageProcessor {
-    public AssertionStatus processMessage( Request request, Response response ) throws IOException, PolicyAssertionException {
+    public AssertionStatus processMessage( Request request, Response response )
+            throws IOException, PolicyAssertionException, PolicyVersionException {
+
         try {
             ServiceManager manager = (ServiceManager)Locator.getDefault().lookup(ServiceManager.class);
             PublishedService service = manager.resolve(request);
@@ -81,7 +84,7 @@ public class MessageProcessor {
                         // logger.severe(msg);
                         // this will make the servlet send back the URL of the policy
                         response.setPolicyViolated(true);
-                        throw new PolicyAssertionException(msg);
+                        throw new PolicyVersionException();
                     }
                 } else {
                     logger.fine("Requestor did not provide policy id.");
