@@ -1,11 +1,14 @@
 package com.l7tech.console.action;
 
 import com.l7tech.console.MainWindow;
+import com.l7tech.console.tree.AbstractTreeNode;
+import com.l7tech.console.tree.identity.IdentityProvidersTree;
 import com.l7tech.console.panels.WorkSpacePanel;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
 
 import javax.swing.*;
+import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.event.HyperlinkEvent;
 import javax.swing.event.HyperlinkListener;
 import javax.swing.text.html.HTMLDocument;
@@ -101,8 +104,11 @@ public class HomeAction extends BaseAction {
                         new NewUserAction(null).actionPerformed(null);
                     } else if (ADD_GROUP.equals(url)) {
                         new NewGroupAction(null).actionPerformed(null);
-                    }else if (ADD_ID_PROVIDER.equals(url)) {
-                        new NewProviderAction(null).actionPerformed(null);
+                    } else if (ADD_ID_PROVIDER.equals(url)) {
+                        final DefaultMutableTreeNode root =
+                                (DefaultMutableTreeNode) getIdentitiesTree().getModel().getRoot();
+                        AbstractTreeNode node = (AbstractTreeNode) root;
+                        new NewProviderAction(node).actionPerformed(null);
                     }
                 }
             }
@@ -113,6 +119,16 @@ public class HomeAction extends BaseAction {
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    private JTree getIdentitiesTree() {
+        JTree tree = (JTree)TopComponents.getInstance().getComponent(IdentityProvidersTree.NAME);
+        if (tree != null) return tree;
+        IdentityProvidersTree identityProvidersTree = new IdentityProvidersTree();
+        identityProvidersTree.setShowsRootHandles(true);
+        identityProvidersTree.setBorder(null);
+        TopComponents.getInstance().registerComponent(IdentityProvidersTree.NAME, identityProvidersTree);
+        return identityProvidersTree;
     }
 
     private static final String ADD_SERVICE = "file://add.service";
