@@ -9,6 +9,8 @@ package com.l7tech.proxy.processor;
 import com.l7tech.common.util.CertificateDownloader;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
+import com.l7tech.policy.assertion.xmlsec.XmlRequestSecurity;
+import com.l7tech.policy.assertion.xmlsec.XmlResponseSecurity;
 import com.l7tech.proxy.ConfigurationException;
 import com.l7tech.proxy.datamodel.Managers;
 import com.l7tech.proxy.datamodel.PendingRequest;
@@ -16,6 +18,7 @@ import com.l7tech.proxy.datamodel.PolicyManager;
 import com.l7tech.proxy.datamodel.Ssg;
 import com.l7tech.proxy.datamodel.SsgKeyStoreManager;
 import com.l7tech.proxy.datamodel.SsgResponse;
+import com.l7tech.proxy.datamodel.SsgSessionManager;
 import com.l7tech.proxy.datamodel.exceptions.BadCredentialsException;
 import com.l7tech.proxy.datamodel.exceptions.ClientCertificateException;
 import com.l7tech.proxy.datamodel.exceptions.OperationCanceledException;
@@ -242,6 +245,12 @@ public class MessageProcessor {
             setAuthenticationState(req, state, postMethod);
             postMethod.addRequestHeader("SOAPAction", req.getSoapAction());
             postMethod.addRequestHeader("L7-Original-URL", req.getOriginalUrl().toString());
+            if (req.isNonceRequired())
+                postMethod.addRequestHeader(XmlResponseSecurity.XML_NONCE_HEADER_NAME,
+                                            Long.toString(req.getNonce()));
+            if (req.getSession() != null)
+                postMethod.addRequestHeader(XmlResponseSecurity.XML_SESSID_HEADER_NAME,
+                                            Long.toString(req.getSession().getId()));
 
             String postBody = XmlUtil.documentToString(req.getSoapEnvelopeDirectly());
             //log.info("Posting to SSG: " + postBody);
@@ -250,6 +259,13 @@ public class MessageProcessor {
             log.info("Posting request to SSG " + ssg + ", url " + url);
             int status = client.executeMethod(postMethod);
             log.info("POST to SSG completed with HTTP status code " + status);
+
+            Header sessionStatus = postMethod.getResponseHeader(XmlRequestSecurity.SESSION_STATUS_HTTP_HEADER);
+            if (sessionStatus != null && sessionStatus.getValue().equalsIgnoreCase("invalid")) {
+                log.info("SSG response contained a sessionstatus:invalid header; will invalidate session and try again");
+                SsgSessionManager.invalidateSession(ssg);
+                throw new PolicyRetryableException();
+            }
 
             Header policyUrlHeader = postMethod.getResponseHeader("PolicyUrl");
             if (policyUrlHeader != null) {
