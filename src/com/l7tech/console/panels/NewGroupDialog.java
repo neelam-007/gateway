@@ -10,6 +10,7 @@ import com.l7tech.console.util.Registry;
 import com.l7tech.identity.GroupBean;
 import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.identity.IdentityProviderType;
+import com.l7tech.identity.IdentityProviderConfigManager;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
 
@@ -108,10 +109,10 @@ public class NewGroupDialog extends JDialog {
 
         // If ipc is null, the action is invoked either from the Task menu or Home page.
         // So this must be the Internal group.
-        if(ipc == null) {
+        if (ipc == null) {
             setTitle(resources.getString("dialog.internal.title"));
         } else {            
-            if(ipc.type() == IdentityProviderType.FEDERATED) {
+            if (ipc.type() == IdentityProviderType.FEDERATED) {
                 setTitle(resources.getString("dialog.federated.title"));
             } else if (ipc.type() == IdentityProviderType.INTERNAL) {
                 setTitle(resources.getString("dialog.internal.title"));
@@ -347,7 +348,11 @@ public class NewGroupDialog extends JDialog {
                             EntityHeader header = new EntityHeader();
                             header.setType(EntityType.GROUP);
                             header.setName(group.getName());
-                            group.setUniqueIdentifier(Registry.getDefault().getIdentityAdmin().saveGroup(ipc.getOid(), group, null ));
+                            long providerid;
+                            if (ipc == null) {
+                                providerid = IdentityProviderConfigManager.INTERNALPROVIDER_SPECIAL_OID;
+                            } else providerid = ipc.getOid();
+                            group.setUniqueIdentifier(Registry.getDefault().getIdentityAdmin().saveGroup(providerid, group, null ));
                             header.setStrId(group.getUniqueIdentifier());
                             NewGroupDialog.this.fireEventGroupAdded(header);
                             insertSuccess = true;
@@ -415,7 +420,7 @@ public class NewGroupDialog extends JDialog {
      * @return true validated, false othwerwise
      */
     private boolean validateInput() {
-        if(groupIdTextField.getText().length() < 3) {
+        if (groupIdTextField.getText().length() < 3) {
                    JOptionPane.showMessageDialog(this, resources.getString("groupIdTextField.error.empty"),
                                    resources.getString("groupIdTextField.error.title"),
                                    JOptionPane.ERROR_MESSAGE);
