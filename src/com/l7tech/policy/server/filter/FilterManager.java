@@ -97,7 +97,7 @@ public class FilterManager {
         // todo, load this from some config file
         filterTypes = new Class[] {
             IdentityRule.class,
-            HideRoutingTarget.class,
+            //HideRoutingTarget.class, // no longer needed
             HideUnsupportedClientAssertions.class,
         };
         logger = LogManager.getInstance().getSystemLogger();
