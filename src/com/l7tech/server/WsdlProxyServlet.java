@@ -25,6 +25,7 @@ import java.io.IOException;
 import java.util.Collection;
 import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.List;
 import java.util.logging.Level;
 import java.sql.SQLException;
 import java.net.URL;
@@ -69,9 +70,9 @@ public class WsdlProxyServlet extends AuthenticatableHttpServlet {
         String serviceId = req.getParameter(PARAM_SERVICEOID);
 
         // let's see if we can get credentials...
-        User user = null;
+        List users;
         try {
-            user = authenticateRequestBasic(req);
+            users = authenticateRequestBasic(req);
         } catch (BadCredentialsException e) {
             logger.log(Level.SEVERE, "returning 401 to requestor because invalid creds were provided", e);
             res.sendError(HttpServletResponse.SC_UNAUTHORIZED, e.getMessage());
@@ -81,8 +82,8 @@ public class WsdlProxyServlet extends AuthenticatableHttpServlet {
         // NOTE: sending credentials over insecure channel is treated as an anonymous request
         // (i dont care if you send me credentials in non secure manner, that is your problem
         // however, i will not send sensitive information unless the channel is secure)
-        if (user != null && req.isSecure()) {
-            doAuthenticated(req, res, serviceId, user);
+        if ( users != null && !users.isEmpty() && req.isSecure()) {
+            doAuthenticated(req, res, serviceId, users );
         } else {
             doAnonymous(req, res, serviceId);
         }
@@ -92,7 +93,7 @@ public class WsdlProxyServlet extends AuthenticatableHttpServlet {
         doAuthenticated(req, res, svcId, null);
     }
 
-    private void doAuthenticated(HttpServletRequest req, HttpServletResponse res, String svcId, User requestor) throws IOException {
+    private void doAuthenticated(HttpServletRequest req, HttpServletResponse res, String svcId, List users ) throws IOException {
         // HANDLE REQUEST FOR ONE SERVICE DESCRIPTION
         if (svcId != null && svcId.length() > 0) {
             // get this service
@@ -120,17 +121,25 @@ public class WsdlProxyServlet extends AuthenticatableHttpServlet {
                 return;
             }
             // make sure this service is indeed anonymously accessible
-            if (requestor == null) {
+            if ( users == null || users.isEmpty() ) {
                 if (!policyAllowAnonymous(svc)) {
                     logger.info("user denied access to service description");
                     res.sendError(HttpServletResponse.SC_UNAUTHORIZED, "you need to provide valid credentials to see this service's description");
                     return;
                 }
             } else { // otherwise make sure the requestor is authorized for this policy
-                if (!policyAllowAnonymous(svc) && !userCanSeeThisService(requestor, svc)) {
-                    logger.info("user denied access to service description " + requestor + " " + svc.getPolicyXml());
-                    res.sendError(HttpServletResponse.SC_UNAUTHORIZED, "these credentials do not grant you access to this service description.");
-                    return;
+                boolean ok = false;
+                if ( !policyAllowAnonymous( svc ) ) {
+                    User requestor = null;
+                    for (Iterator i = users.iterator(); i.hasNext();) {
+                        requestor = (User) i.next();
+                        if ( userCanSeeThisService( requestor, svc ) ) ok = true;
+                    }
+                    if ( !ok ) {
+                        logger.info("user denied access to service description " + requestor + " " + svc.getPolicyXml());
+                        res.sendError(HttpServletResponse.SC_UNAUTHORIZED, "these credentials do not grant you access to this service description.");
+                        return;
+                    }
                 }
             }
             outputServiceDescription(req, res, svc);
@@ -139,8 +148,10 @@ public class WsdlProxyServlet extends AuthenticatableHttpServlet {
         } else { // HANDLE REQUEST FOR LIST OF SERVICES
             Collection services = null;
             try {
-                if (requestor == null) services = listAnonymouslyViewableServices();
-                else services = listAnonymouslyViewableAndProtectedServices(requestor);
+                if ( users == null || users.isEmpty() )
+                    services = listAnonymouslyViewableServices();
+                else
+                    services = listAnonymouslyViewableAndProtectedServices(users);
             } catch (TransactionException e) {
                 logger.log(Level.SEVERE, "cannot list services", e);
                 res.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, e.getMessage());
@@ -203,7 +214,7 @@ public class WsdlProxyServlet extends AuthenticatableHttpServlet {
         return listAnonymouslyViewableAndProtectedServices(null);
     }
 
-    private Collection listAnonymouslyViewableAndProtectedServices(User requestor) throws TransactionException, IOException, FindException {
+    private Collection listAnonymouslyViewableAndProtectedServices( List users ) throws TransactionException, IOException, FindException {
 
         ServiceManager manager = getServiceManager();
         beginTransaction();
@@ -217,15 +228,19 @@ public class WsdlProxyServlet extends AuthenticatableHttpServlet {
         // decide which ones make the cut
         for (Iterator i = allServices.iterator(); i.hasNext();) {
             PublishedService svc = (PublishedService)i.next();
-            if (requestor == null) {
+            if ( users == null || users.isEmpty() ) {
                 if (policyAllowAnonymous(svc)) {
                     output.add(svc);
                 }
             } else {
                 if (policyAllowAnonymous(svc)) {
                     output.add(svc);
-                } else if (userCanSeeThisService(requestor, svc)) {
-                    output.add(svc);
+                } else {
+                    for (Iterator j = users.iterator(); j.hasNext();) {
+                        User requestor = (User)j.next();
+                        if (userCanSeeThisService(requestor, svc))
+                            output.add(svc);
+                    }
                 }
             }
         }

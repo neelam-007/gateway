@@ -25,6 +25,7 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
+import java.util.List;
 import java.util.logging.Level;
 
 
@@ -113,16 +114,16 @@ public class PolicyServlet extends AuthenticatableHttpServlet {
             return;
         }
         // get credentials and check that they are valid for this policy
-        User user = null;
+        List users;
         try {
-            user = authenticateRequestBasic(httpServletRequest);
+            users = authenticateRequestBasic(httpServletRequest);
         } catch (BadCredentialsException e) {
             logger.log(Level.SEVERE, "returning 401 to requestor because invalid creds were provided", e);
             httpServletResponse.sendError(HttpServletResponse.SC_UNAUTHORIZED, e.getMessage());
             return;
         }
         if (!anonymousok) {
-            if (user == null) {
+            if ( users == null || users.isEmpty() ) {
                 // send error back with a hint that credentials should be provided
                 String newUrl = "https://"  + httpServletRequest.getServerName();
                 if (httpServletRequest.getServerPort() == 8080 || httpServletRequest.getServerPort() == 8443) {
@@ -139,11 +140,18 @@ public class PolicyServlet extends AuthenticatableHttpServlet {
         // (this may be everything, if the user has no business seeing this policy)
         try {
             // finer, not logged by default. change log level in web.xml to see these
-            logger.finer("Policy before filtering: " + targetService.getPolicyXml());
-            targetService = FilterManager.getInstance().applyAllFilters(user, targetService);
-            // finer, not logged by default. change log level in web.xml to see these
-            logger.finer("Policy after filtering: " +
-                         ((targetService == null) ? "null" : targetService.getPolicyXml()));
+            for (Iterator i = users.iterator(); i.hasNext();) {
+                User user = (User) i.next();
+
+                logger.finer("Policy before filtering: " + targetService.getPolicyXml());
+                targetService = FilterManager.getInstance().applyAllFilters(user, targetService);
+                // finer, not logged by default. change log level in web.xml to see these
+                logger.finer("Policy after filtering: " +
+                             ((targetService == null) ? "null" : targetService.getPolicyXml()));
+
+                if ( targetService != null ) break;
+            }
+
             if (targetService == null) {
                 logger.warning("requestor tried to download policy that " +
                                "he should not be allowed to see - will return error");
@@ -172,6 +180,8 @@ public class PolicyServlet extends AuthenticatableHttpServlet {
         byte[] cert = KeystoreUtils.getInstance().readRootCert();
         logger.fine("Sending root cert");
 
+        MessageDigest md5 = MessageDigest.getInstance("MD5");
+
         // Insert Cert-Check-NNN: headers if we can.
         if (username != null) {
             ArrayList checks = findCheckInfos(username);
@@ -183,7 +193,6 @@ public class PolicyServlet extends AuthenticatableHttpServlet {
                     continue;
                 }
 
-                MessageDigest md5 = MessageDigest.getInstance("MD5");
                 md5.reset();
                 md5.update(info.ha1.getBytes());
                 md5.update(nonce.getBytes());

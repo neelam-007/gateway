@@ -24,6 +24,8 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.Collection;
 import java.util.Iterator;
+import java.util.List;
+import java.util.ArrayList;
 import java.sql.SQLException;
 
 /**
@@ -49,8 +51,10 @@ public abstract class AuthenticatableHttpServlet extends HttpServlet {
      * If credentials are provided but they are invalid, this will throw a BadCredentialsException
      * @return the authenticated user, null if no creds provided
      */
-    protected User authenticateRequestBasic(HttpServletRequest req) throws IOException, BadCredentialsException {
+    protected List authenticateRequestBasic(HttpServletRequest req) throws IOException, BadCredentialsException {
         // get the credentials
+        List users = new ArrayList();
+
         String authorizationHeader = req.getHeader("Authorization");
         if (authorizationHeader == null || authorizationHeader.length() < 1) {
             logger.warning("No authorization header found.");
@@ -78,13 +82,21 @@ public abstract class AuthenticatableHttpServlet extends HttpServlet {
                 IdentityProvider provider = (IdentityProvider) i.next();
                 try {
                     provider.authenticate(creds);
+                    logger.fine("Authentication success for user " + creds.getUser().getLogin() + " on identity provider: " + provider.getConfig().getName());
+                    users.add( creds.getUser() );
                 } catch (AuthenticationException e) {
                     logger.fine("Authentication failed for user " + creds.getUser().getLogin() + " on identity provider: " + provider.getConfig().getName());
                     continue;
                 }
-                logger.fine("Authentication success for user " + creds.getUser().getLogin() + " on identity provider: " + provider.getConfig().getName());
-                return creds.getUser();
             }
+
+            if ( users.isEmpty() ) {
+                String msg = "Creds do not authenticate against any registered id provider.";
+                logger.warning(msg);
+                throw new BadCredentialsException(msg);
+            }
+
+            return users;
         } catch (FindException e) {
             logger.log(Level.SEVERE, "Exception getting id providers.", e);
             return null;
@@ -97,9 +109,6 @@ public abstract class AuthenticatableHttpServlet extends HttpServlet {
                 logger.log(Level.WARNING, null, te);
             }
         }
-        String msg = "Creds do not authenticate against any registered id provider.";
-        logger.warning(msg);
-        throw new BadCredentialsException(msg);
     }
 
     /**
