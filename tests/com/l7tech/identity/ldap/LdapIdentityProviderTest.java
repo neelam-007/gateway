@@ -14,6 +14,9 @@ import com.l7tech.server.identity.ldap.LdapIdentityProvider;
 import com.l7tech.server.identity.ldap.LdapUserManager;
 import org.springframework.context.ApplicationContext;
 
+import javax.naming.directory.DirContext;
+import javax.naming.directory.InitialDirContext;
+import javax.naming.directory.Attributes;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.Iterator;
@@ -49,7 +52,7 @@ public class LdapIdentityProviderTest {
     private LdapIdentityProviderConfig getConfigForMSAD() throws IOException {
         LdapConfigTemplateManager templateManager = new LdapConfigTemplateManager();
         LdapIdentityProviderConfig msadTemplate = templateManager.getTemplate("MicrosoftActiveDirectory");
-        //msadTemplate.setLdapUrl("ldap://localhost:3899");
+        //msadTemplate.setLdapUrl(new String[]{"ldap://localhost:3899"});
         msadTemplate.setLdapUrl(new String[]{"ldap://mail.l7tech.com:3268"});
         msadTemplate.setSearchBase("ou=Layer 7 Users,dc=L7TECH,dc=LOCAL");
         msadTemplate.setBindDN("browse");
@@ -119,9 +122,17 @@ public class LdapIdentityProviderTest {
         return timtam;
     }
 
-    private LdapIdentityProvider getMSADProvider() throws IOException {
-        LdapIdentityProvider spock = new LdapIdentityProvider(getConfigForMSAD());
-        return spock;
+    private LdapIdentityProvider getMSADProvider() throws Exception {
+        LdapIdentityProvider msad = new LdapIdentityProvider(getConfigForMSAD());
+
+        LdapUserManager usman = new LdapUserManager(msad);
+        msad.setUserManager(usman);
+        LdapGroupManager grpman = new LdapGroupManager(msad);
+        msad.setGroupManager(grpman);
+        msad.setClientCertManager((ClientCertManager)applicationContext.getBean("clientCertManager"));
+        msad.setServerConfig((ServerConfig)applicationContext.getBean("serverConfig"));
+        msad.afterPropertiesSet();
+        return msad;
     }
 
     private LdapIdentityProvider getOracleProvider() throws IOException {
@@ -201,11 +212,17 @@ public class LdapIdentityProviderTest {
         //me.localProvider.test();
         //me.testGetUsers();
         //me.testGetGroupsAndMembers();
-        LoginCredentials creds = new LoginCredentials("flascelles", "".toCharArray(), null);
+        LoginCredentials creds = new LoginCredentials("flascelles", "blah".toCharArray(), null);
         User authenticated = me.localProvider.authenticate(creds);
         System.out.println("USER " + authenticated);
 
+        //me.checkSasl("ldap://localhost:3899");
+    }
 
+    private void checkSasl(String url) throws Exception {
+        DirContext cntx = new InitialDirContext();
+        Attributes attrs = cntx.getAttributes(url, new String[]{"supportedSASLMechanisms"});
+        System.out.println(attrs);
     }
 
     private ApplicationContext applicationContext = ApplicationContexts.getTestApplicationContext();
