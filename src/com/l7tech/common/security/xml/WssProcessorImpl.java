@@ -17,7 +17,7 @@ import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
-//import org.apache.xmlbeans.XmlException;
+import org.apache.xmlbeans.XmlException;
 
 import javax.crypto.Cipher;
 import javax.xml.parsers.ParserConfigurationException;
@@ -33,7 +33,7 @@ import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-//import x0Assertion.oasisNamesTcSAML1.AssertionType;
+import x0Assertion.oasisNamesTcSAML1.AssertionType;
 
 /**
  * An implementation of the WssProcessor for use in both the SSG and the SSA.
@@ -828,16 +828,18 @@ public class WssProcessorImpl implements WssProcessor {
     private void processSamlSecurityToken( Element securityTokenElement, ProcessingStatusHolder context )
         throws ProcessorException, InvalidDocumentFormatException
     {
-        logger.finest("Processing saml:Assertion XML SecurityToken (IGNORING IT FOR NOW)");
-        /*
+        logger.finest("Processing saml:Assertion XML SecurityToken");
         try {
             AssertionType assertion = AssertionType.Factory.parse( securityTokenElement );
             SamlSecurityToken saml = new SamlSecurityTokenImpl(securityTokenElement, assertion);
             context.securityTokens.add(saml);
+
+            // TODO integrate cert inside assertion
+
+            // TODO verify sender-vouches + proof-of-possession
         } catch (XmlException e) {
             throw new InvalidDocumentFormatException("Couldn't parse SAML Assertion", e);
         }
-        */
     }
 
     private X509SecurityTokenImpl resolveCertByRef(final Element parentElement, ProcessingStatusHolder cntx) {
@@ -1149,7 +1151,6 @@ public class WssProcessorImpl implements WssProcessor {
         }
     }
 
-    /*
     private static class SamlSecurityTokenImpl implements SamlSecurityToken {
         public SamlSecurityTokenImpl(Element element, AssertionType assertion) {
             this.element = element;
@@ -1167,7 +1168,6 @@ public class WssProcessorImpl implements WssProcessor {
         private Element element;
         private AssertionType assertion;
     }
-    */
 
 
     private static class TimestampImpl implements WssProcessor.Timestamp {
