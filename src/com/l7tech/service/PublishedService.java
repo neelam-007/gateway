@@ -76,6 +76,10 @@ public class PublishedService extends NamedEntityImp {
         _rootAssertion = null;
     }
 
+    public String toString() {
+        return "com.l7tech.service.PublishedService _policyXml=" + _policyXml + " _wsdlUrl=" + _wsdlUrl + " _wsdlXml=" + _wsdlXml;
+    }
+
     // ************************************************
     // PRIVATES
     // ************************************************
