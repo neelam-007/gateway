@@ -11,9 +11,7 @@ SSG deployment steps for a clean linux box
 [ROOT]	download and install jdk
 [ROOT]	change group on java install dir to ssg
 [SSG]	download and uncompress tomcat
-[ROOT]	create /etc/profile.d/ssg.sh as root and change own to ssg
-[SSG]	in that script, define JAVA_HOME, TOMCAT_HOME and add $JAVA_HOME/bin to path
-[SSG]	also in that script, define aliases startssg and stopssg
+
 [ROOT]	service mysqld start (starts mysql)
 [ROOT]	chkconfig mysqld on (make sure mysqld starts at boot)
 [ROOT]	Create database (2 steps)
@@ -25,6 +23,10 @@ SSG deployment steps for a clean linux box
 		1. cvs -d :pserver:flascell@sarek:/home/cvsuser login
 		2. cvs -d :pserver:flascell@sarek:/home/cvsuser co UneasyRooster
 		3. cvs -d :pserver:flascell@sarek:/home/cvsuser logout
+
+[ROOT]  copy etc/ssgruntimedefs.sh to /etc/profile.d
+[SSG]  edit /etc/profile.d/ssgruntimedefs.sh. make sure JAVA_HOME and TOMCAT_HOME point to the right place
+
 [SSG]	edit default_build.properties change database username and password to "ssg" and it's password
 [SSG]	go to root of UneasyRooster and run "./build.sh deploy"
 [SSG]	go to UneasyRooster/etc/ and run sslGen.sh
