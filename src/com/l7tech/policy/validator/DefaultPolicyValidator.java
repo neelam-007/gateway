@@ -143,8 +143,8 @@ public class DefaultPolicyValidator extends PolicyValidator {
                         );
                     }
                 } catch (FindException e) {
-                    result.addWarning(
-                      new PolicyValidatorResult.Warning(a, "This identity might no longer be valid.", null)
+                    result.addError(
+                      new PolicyValidatorResult.Error(a, "This identity might no longer be valid.", e)
                     );
                     log.log(Level.INFO, "could not retrieve IdentityProvider", e);
                 }
@@ -196,24 +196,21 @@ public class DefaultPolicyValidator extends PolicyValidator {
                 }
             } else if (a instanceof XmlResponseSecurity) {
                 if (!seenRouting) {
-                    result.addWarning(
-                            new PolicyValidatorResult.Warning(a,
-                                    "The assertion might not work as configured." +
-                            "\nXml Response Security must occur after routing.", null)
+                    result.addError(
+                            new PolicyValidatorResult.Error(a,
+                            "Xml Response Security must occur after routing.", null)
                     );
                 }
             } else if (a instanceof HttpClientCert) {
                 if (!seenSsl) {
-                    result.addWarning(
-                            new PolicyValidatorResult.Warning(a,
-                                    "The assertion might not work as configured." +
-                            "\nHttpClientCert requires to have SSL transport.", null)
+                    result.addError(
+                            new PolicyValidatorResult.Error(a,
+                            "HttpClientCert requires to have SSL transport.", null)
                     );
                 } else if (sslForbidden) {
-                    result.addWarning(
-                            new PolicyValidatorResult.Warning(a,
-                                    "The assertion might not work as configured." +
-                            "\nHttpClientCert requires to have SSL transport but SSL is forbidden.", null)
+                    result.addError(
+                            new PolicyValidatorResult.Error(a,
+                            "HttpClientCert requires to have SSL transport (not forbidden).", null)
                     );
                 }
                 processCredentialSource(a);
