@@ -62,16 +62,41 @@ public class SecurityContextTokenHandler {
 
     /**
      * This appends the sessionid to the message using ws-sc lingo.
+     * Same as other appendSessionInfoToSoapMessage except this one also includes a creation timestamp. This
+     * extra parameter should be used when a sessionid is 'suggested' to a SSG for the first time.
+     */
+    public static void appendSessionInfoToSoapMessage(Document soapmsg, byte[] sessionid, long seqnumber,
+                                                      long creationtimestamp) {
+        Element securityCtxTokEl = getOrMakeSecurityContextTokenElement(soapmsg);
+        appendIDElement(securityCtxTokEl, sessionid);
+        appendSeqElement(securityCtxTokEl, seqnumber);
+        appendCreationElement(securityCtxTokEl, creationtimestamp);
+    }
+
+    /**
+     * This appends the sessionid to the message using ws-sc lingo.
      */
     public static void appendSessionInfoToSoapMessage(Document soapmsg, byte[] sessionid, long seqnumber) {
         Element securityCtxTokEl = getOrMakeSecurityContextTokenElement(soapmsg);
-        String currentwscPrefix = securityCtxTokEl.getPrefix();
-        Element idElement = securityCtxTokEl.getOwnerDocument().createElementNS(WSC_NAMESPACE, SCTOKEN_ID_ELNAME);
+        appendIDElement(securityCtxTokEl, sessionid);
+        appendSeqElement(securityCtxTokEl, seqnumber);
+    }
+
+    private static void appendSeqElement(Element securityCtxTokenEl, long seqnumber) {
+        // todo, add the sequence number
+    }
+
+    private static void appendCreationElement(Element securityCtxTokenEl, long creationTimeStamp) {
+        // todo, add the creation
+    }
+
+    private static void appendIDElement(Element securityCtxTokenEl, byte[] sessionid) {
+        String currentwscPrefix = securityCtxTokenEl.getPrefix();
+        Element idElement = securityCtxTokenEl.getOwnerDocument().createElementNS(WSC_NAMESPACE, SCTOKEN_ID_ELNAME);
         idElement.setPrefix(currentwscPrefix);
-        Text valNode = securityCtxTokEl.getOwnerDocument().createTextNode(sessionIdToURI(sessionid));
+        Text valNode = securityCtxTokenEl.getOwnerDocument().createTextNode(sessionIdToURI(sessionid));
         idElement.appendChild(valNode);
-        securityCtxTokEl.insertBefore(idElement, null);
-        // todo, the sequence number
+        securityCtxTokenEl.insertBefore(idElement, null);
     }
 
     /**
