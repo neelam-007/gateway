@@ -156,9 +156,9 @@ DROP TABLE service_resolution;
 CREATE TABLE service_resolution (
   objectid bigint NOT NULL PRIMARY KEY,
   serviceid bigint NOT NULL default '0',
-  soapaction varchar(128) default '',
+  soapaction varchar(255) default '',
   urn varchar(255) default '',
-  uri varchar(128) default '',
+  uri varchar(255) default '',
   unique(soapaction, urn, uri)
 );
 
