@@ -1,16 +1,18 @@
 package com.l7tech.common.security.xml;
 
-import sun.misc.BASE64Encoder;
-import sun.misc.BASE64Decoder;
-
-import java.security.SecureRandom;
-import java.io.IOException;
-
-import org.w3c.dom.*;
 import com.l7tech.common.util.SoapUtil;
+import com.l7tech.common.util.XmlUtil;
+import org.w3c.dom.*;
+import org.xml.sax.SAXException;
+import sun.misc.BASE64Decoder;
+import sun.misc.BASE64Encoder;
+
+import java.io.IOException;
+import java.security.SecureRandom;
 
 /**
  * Appends and parses out xml security session information in/out of soap messages.
+ * The specifications used here are WS-Secure Conversation
  *
  * This is not yet plugged in and will eventually phase out the class SecureConversationTokenHandler.
  *
@@ -48,6 +50,19 @@ public class SecurityContextTokenHandler {
     }
 
     /**
+     * Creates a soap message that contains a RequestSecurityToken request
+     * following the WS-Trust 1.1 specification (april 2004). This is
+     * intended to be used by a client who wants to get a new Security Context
+     * (session) from a SSG server. This message needs to be signed by the
+     * requestor before it is sent to a server.
+     *
+     * @return a document containing the soap message with a RequestSecurityToken body
+     */
+    public static Document createNewRequestSecurityToken() throws IOException, SAXException {
+        return XmlUtil.stringToDocument(REQUESTSECURITYTOKEN_SOAPMSG);
+    }
+
+    /**
      * does the reverse of sessionIdToURI
      * @param uri URI representation (looks like uuid:base64edrawsessionid)
      * @return a 16 bytes session id
@@ -80,6 +95,30 @@ public class SecurityContextTokenHandler {
         Element securityCtxTokEl = getOrMakeSecurityContextTokenElement(soapmsg);
         appendIDElement(securityCtxTokEl, sessionid);
         appendSeqElement(securityCtxTokEl, seqnumber);
+    }
+
+    /**
+     * Attempts to extract the session id from a wsse:Security/wsc:SecurityContextToken/wsc:Identifier element
+     * @return null if not present
+     */
+    public static byte[] getSessionIdFromWSCToken(Document soapMsg) throws IOException {
+        // get the element
+        NodeList listIdElements = soapMsg.getElementsByTagNameNS(WSC_NAMESPACE, SCTOKEN_ID_ELNAME);
+        if (listIdElements.getLength() < 1) {
+            return null;
+        }
+        Element idel = (Element)listIdElements.item(0);
+        // get its text child
+        StringBuffer childText = new StringBuffer();
+        NodeList children = idel.getChildNodes();
+        for (int i = 0; i < children.getLength(); i++) {
+            Node kid = children.item(i);
+            if (kid.getNodeType() == Node.TEXT_NODE) {
+                childText.append(kid.getNodeValue());
+            }
+        }
+        // convert back to session id
+        return URIToSessionId(childText.toString());
     }
 
     private static void appendSeqElement(Element securityCtxTokenEl, long seqnumber) {
@@ -117,30 +156,6 @@ public class SecurityContextTokenHandler {
         }
     }
 
-    /**
-     * Attempts to extract the session id from a wsse:Security/wsc:SecurityContextToken/wsc:Identifier element
-     * @return null if not present
-     */
-    public static byte[] getSessionIdFromWSCToken(Document soapMsg) throws IOException{
-        // get the element
-        NodeList listIdElements = soapMsg.getElementsByTagNameNS(WSC_NAMESPACE, SCTOKEN_ID_ELNAME);
-        if (listIdElements.getLength() < 1) {
-            return null;
-        }
-        Element idel = (Element)listIdElements.item(0);
-        // get its text child
-        StringBuffer childText = new StringBuffer();
-        NodeList children = idel.getChildNodes();
-        for (int i = 0; i < children.getLength(); i++) {
-            Node kid = children.item(i);
-            if (kid.getNodeType() == Node.TEXT_NODE) {
-                childText.append(kid.getNodeValue());
-            }
-        }
-        // convert back to session id
-        return URIToSessionId(childText.toString());
-    }
-
     private static final SecureRandom rand = new SecureRandom();
     public static final String URI_PREFIX = "uuid:";
 
@@ -148,4 +163,12 @@ public class SecurityContextTokenHandler {
     public static final String SCTOKEN_ELNAME = "SecurityContextToken";
     public static final String SCTOKEN_ID_ELNAME = "Identifier";
     public static final String DEF_WSC_NAMESPACE_PREFIX = "wsc";
+    public static final String REQUESTSECURITYTOKEN_SOAPMSG =
+            "<S:Envelope xmlns:S=\"http://schemas.xmlsoap.org/soap/envelope/\">" +
+                "<S:Body>" +
+                   "<wst:RequestSecurityToken xmlns:wst=\"http://schemas.xmlsoap.org/ws/2004/04/trust\">" +
+                       "<wst:RequestType>http://schemas.xmlsoap.org/ws/2004/04/security/trust/Issue</wst:RequestType>" +
+                   "</wst:RequestSecurityToken>" +
+                "</S:Body>" +
+            "</S:Envelope>";
 }
