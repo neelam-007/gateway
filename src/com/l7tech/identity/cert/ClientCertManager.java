@@ -45,4 +45,13 @@ public interface ClientCertManager {
      * revokes the cert (if applicable) for this user
      */
     void revokeUserCert(User user) throws UpdateException;
+
+    /**
+     * record the fact that the a user cert was used successfully in an authentication operation
+     * this will prevent the user to regen his cert until the administrator revokes the cert
+     *
+     * @param user owner of the cert
+     * @throws UpdateException
+     */
+    void rememberCertWasUsedSuccessfully(User user) throws UpdateException;
 }

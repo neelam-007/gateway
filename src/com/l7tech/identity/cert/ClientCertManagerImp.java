@@ -142,6 +142,7 @@ public class ClientCertManagerImp implements ClientCertManager {
         logger.finest("revokeUserCert for " + user.getLogin());
         CertEntryRow currentdata = getFromTable(user);
         if (currentdata != null) {
+            // todo, something about the user's password
             currentdata.setCert(null);
             currentdata.setResetCounter(0);
             try {
@@ -163,6 +164,36 @@ public class ClientCertManagerImp implements ClientCertManager {
             }
         } else {
             logger.fine("there was no existing cert for " + user.getLogin());
+        }
+    }
+
+    public void rememberCertWasUsedSuccessfully(User user) throws UpdateException {
+        logger.finest("rememberCertWasUsedSuccessfully for " + user.getLogin());
+        CertEntryRow currentdata = getFromTable(user);
+        if (currentdata != null) {
+            currentdata.setResetCounter(10);
+            try {
+                HibernatePersistenceContext pc = (HibernatePersistenceContext)PersistenceContext.getCurrent();
+                Session session = pc.getSession();
+                Transaction trans = session.beginTransaction();
+                // update existing data
+                session.update(currentdata);
+                trans.commit();
+                pc.close();
+            } catch (HibernateException e) {
+                String msg = "Hibernate exception updating cert info";
+                logger.log(Level.WARNING, msg, e);
+                throw new UpdateException(msg, e);
+            } catch (SQLException e) {
+                String msg = "SQL exception updating cert info";
+                logger.log(Level.WARNING, msg, e);
+                throw new UpdateException(msg, e);
+            }
+        } else {
+            // this should not happen
+            String msg = "there was no existing cert for " + user.getLogin();
+            logger.warning(msg);
+            throw new UpdateException(msg);
         }
     }
 
