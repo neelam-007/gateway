@@ -415,9 +415,6 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
         public void treeNodesInserted(final TreeModelEvent e) {
             policyEditorToolbar.buttonSave.getAction().setEnabled(true);
             //todo: refactor this out
-            SwingUtilities.invokeLater(
-              new Runnable() {
-                  public void run() {
                       try {
                           TreePath path = e.getTreePath();
                           TreeNode parent = (TreeNode)path.getLastPathComponent();
@@ -443,8 +440,6 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
                             notify(Level.WARNING, e1,
                               "Error parsing wsdl- service " + service.getName());
                       }
-                  }
-              });
         }
 
         public void treeNodesRemoved(TreeModelEvent e) {

@@ -58,6 +58,17 @@ public class PolicyTree extends JTree implements DragSourceListener,
         this(null);
     }
 
+    public void setModel(TreeModel newModel) {
+        if (newModel == null) return;
+
+        TreeModel oldModel = getModel();
+        if (oldModel !=null) {
+            oldModel.removeTreeModelListener(this);
+        }
+        super.setModel(newModel);
+        newModel.addTreeModelListener(this);
+    }
+
     /** initialize */
     private void initialize() {
 
@@ -175,6 +186,9 @@ public class PolicyTree extends JTree implements DragSourceListener,
             if (nAction == DnDConstants.ACTION_MOVE) {	// The dragged item (pathSource) has been inserted at the target selected by the user.
                 // Now it is time to delete it from its original location.
                 log.fine("REMOVING: " + pathSource.getLastPathComponent());
+                DefaultTreeModel model = (DefaultTreeModel)getModel();
+                model.removeNodeFromParent((MutableTreeNode)pathSource.getLastPathComponent());
+
                 // .
                 // .. ask your TreeModel to delete the node
                 // .
@@ -482,26 +496,22 @@ public class PolicyTree extends JTree implements DragSourceListener,
                         log.fine("DROPPING: " + pathSource.getLastPathComponent());
                         DefaultTreeModel model = (DefaultTreeModel)getModel();
                         TreePath pathNewChild = null;
-                        // ework the belov with node clone or copy and then remove in dragDropEnd
-                        /*
+                        // rework the belov with node clone or copy and then remove in dragDropEnd
+                        final AssertionTreeNode an = (AssertionTreeNode)pathSource.getLastPathComponent();
+                        final AssertionTreeNode assertionTreeNodeCopy = AssertionTreeNodeFactory.asTreeNode(an.asAssertion());
+
                         if (isExpanded(pathTarget) && !((TreeNode)pathTarget.getLastPathComponent()).isLeaf()) {
                             MutableTreeNode node = (MutableTreeNode)pathTarget.getLastPathComponent();
-                            final MutableTreeNode nr = (MutableTreeNode)pathSource.getLastPathComponent();
-                            model.removeNodeFromParent(nr);
-                            node.insert(nr, 0);
-                            model.nodeChanged((TreeNode)model.getRoot());
+                            model.insertNodeInto(assertionTreeNodeCopy, node, 0);
                         } else {
                             DefaultMutableTreeNode node = (DefaultMutableTreeNode)pathTarget.getLastPathComponent();
                             final DefaultMutableTreeNode parent = ((DefaultMutableTreeNode)node.getParent());
-                            final MutableTreeNode nr = (MutableTreeNode)pathSource.getLastPathComponent();
-                            model.removeNodeFromParent(nr);
 
                             int index = parent.getIndex(node);
                             if (index !=-1) {
-                                parent.insert(nr, index);
-                                model.reload(parent);
+                                model.insertNodeInto(assertionTreeNodeCopy, parent, index+1);
                             }
-                        } */
+                        }
 
                         if (pathNewChild != null)
                             setSelectionPath(pathNewChild);	// Mark this as the selected path in the tree

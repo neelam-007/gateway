@@ -206,18 +206,18 @@ public class PolicyToolBar extends JToolBar implements ConnectionListener {
     private TreeSelectionListener
       policyTreeListener = new TreeSelectionListener() {
           public void valueChanged(TreeSelectionEvent e) {
-              try {
-                  TreePath path = e.getPath();
+              TreePath path = e.getNewLeadSelectionPath();
+              if (path == null) {
+                  lastAssertionNode = null;
+              } else {
                   lastAssertionNode = (AssertionTreeNode)path.getLastPathComponent();
-                  updateActions();
-              } catch (Exception e1) {
-                  e1.printStackTrace();
               }
+              updateActions();
           }
       };
 
     private TreeModelListener
-      policyTreeModelListener  = new TreeModelListener() {
+      policyTreeModelListener = new TreeModelListener() {
           public void treeNodesChanged(TreeModelEvent e) {
           }
 
@@ -237,6 +237,8 @@ public class PolicyToolBar extends JToolBar implements ConnectionListener {
           }
 
           public void treeStructureChanged(TreeModelEvent e) {
+              lastAssertionNode = null;
+              updateActions();
           }
       };
 
