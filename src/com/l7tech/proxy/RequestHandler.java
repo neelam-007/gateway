@@ -367,7 +367,7 @@ public class RequestHandler extends AbstractHttpHandler {
                 Ssg ssg = (Ssg)i.next();
                 String wsilUrl = "http://" + request.getHost() + ":" + port + "/" +
                   ssg.getLocalEndpoint() + ClientProxy.WSIL_SUFFIX;
-                o.println("<li><a href=\"" + wsilUrl + "\">" + ssg.toString() + "</a></li>");
+                o.println("<li><a href=\"" + wsilUrl + "\">" + ssg.getSsgAddress() + " (" + ssg.getUsername() + ")</a></li>");
             }
             o.println("</ul>");
         }
