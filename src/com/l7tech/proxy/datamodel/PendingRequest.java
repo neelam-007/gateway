@@ -38,7 +38,6 @@ public class PendingRequest {
     // Policy settings, filled in by traversing policy tree
     private static class PolicySettings {
         private boolean isSslRequired = false;
-        private boolean isClientCertRequired = false;
         private boolean isBasicAuthRequired = false;
         private boolean isDigestAuthRequired = false;
         private boolean isNonceRequired = false;
@@ -153,14 +152,6 @@ public class PendingRequest {
 
     public void setSslRequired(boolean sslRequired) {
         policySettings.isSslRequired = sslRequired;
-    }
-
-    public boolean isClientCertRequired() {
-        return policySettings.isClientCertRequired;
-    }
-
-    public void setClientCertRequired(boolean clientCertRequired) {
-        policySettings.isClientCertRequired = clientCertRequired;
     }
 
     public boolean isNonceRequired() {
