@@ -22,6 +22,7 @@ import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.xml.InvalidDocumentFormatException;
 import com.l7tech.common.xml.MessageNotSoapException;
 import com.l7tech.common.xml.saml.SamlHolderOfKeyAssertion;
+import com.l7tech.common.xml.saml.SamlAssertion;
 import com.l7tech.proxy.datamodel.CurrentRequest;
 import com.l7tech.proxy.datamodel.Ssg;
 import org.w3c.dom.Document;
@@ -273,7 +274,7 @@ public class TokenServiceClient {
         if (samlTokenEl != null) {
             // It's a signed SAML assertion
             try {
-                return new SamlHolderOfKeyAssertion(samlTokenEl);
+                return SamlAssertion.fromElement(samlTokenEl);
             } catch (SAXException e) {
                 throw new InvalidDocumentFormatException(e);
             }

@@ -17,4 +17,5 @@ public interface SamlSecurityToken extends SecurityToken {
     SamlAssertion asSamlAssertion();
     X509Certificate getSubjectCertificate();
     boolean isPossessionProved();
+    X509Certificate getIssuerCertificate();
 }

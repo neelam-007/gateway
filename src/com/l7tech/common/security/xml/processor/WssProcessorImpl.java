@@ -1052,12 +1052,12 @@ public class WssProcessorImpl implements WssProcessor {
     }
 
     private static class SamlSecurityTokenImpl extends SigningSecurityTokenImpl implements SamlSecurityToken {
-        SamlHolderOfKeyAssertion assertion;
+        SamlAssertion assertion;
 
         public SamlSecurityTokenImpl(Element element) throws InvalidDocumentFormatException {
             super(element);
             try {
-                this.assertion = new SamlHolderOfKeyAssertion(element);
+                this.assertion = SamlAssertion.fromElement(element);
             } catch (SAXException e) {
                 throw new InvalidDocumentFormatException(e);
             }
@@ -1068,7 +1068,7 @@ public class WssProcessorImpl implements WssProcessor {
          * @return the X509Certificate from the SAML Assertion's //SubjectConfirmation/KeyInfo. May be null.
          */
         public X509Certificate getCertificate() {
-            return assertion.getSubjectCertificate();
+            return assertion.getSigningCertificate();
         }
 
         public SamlAssertion asSamlAssertion() {
@@ -1077,6 +1077,10 @@ public class WssProcessorImpl implements WssProcessor {
 
         public X509Certificate getSubjectCertificate() {
             return assertion.getSubjectCertificate();
+        }
+
+        public X509Certificate getIssuerCertificate() {
+            return this.assertion.getIssuerCertificate();
         }
 
         public String getElementId() {
