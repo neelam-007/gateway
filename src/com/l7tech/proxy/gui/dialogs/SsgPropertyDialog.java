@@ -295,34 +295,57 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
                 }
             });
 
-        identityPane.getGatewayCertButton().addActionListener(new ActionListener() {
-                public void actionPerformed(ActionEvent e) {
-                    try {
-                        X509Certificate cert = SsgKeyStoreManager.getServerCert(ssg);
-                        if (cert == null) {
-                            JOptionPane.showMessageDialog(Gui.getInstance().getFrame(),
-                                                          "We haven't yet discovered the server certificate\n" +
-                                                          "for the Gateway " + ssgName(),
-                                                          "No server certificate",
-                                                          JOptionPane.INFORMATION_MESSAGE);
-                            return;
-                        }
-                        new CertDialog(cert, "Server Certificate", "Server Certificate for Gateway " + ssgName()).show();
-                    } catch (Exception e1) {
-                        log.log(Level.SEVERE, "Unable to access server certificate", e1);
-                        e1.printStackTrace();
-                        Gui.errorMessage("Unable to access server certificate",
-                                         "Unable to access server certificate for Gateway " + ssgName(),
-                                         e1);
+        identityPane.getTrustedSSGCertButton().addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                try {
+                    X509Certificate cert = SsgKeyStoreManager.getServerCert(ssg);
+                    if (cert == null) {
+                        JOptionPane.showMessageDialog(Gui.getInstance().getFrame(),
+                                "We haven't yet discovered the server certificate\n" +
+                                "for the Gateway " + ssgName(),
+                                "No server certificate",
+                                JOptionPane.INFORMATION_MESSAGE);
+                        return;
                     }
+                    new CertDialog(cert, "Server Certificate", "Server Certificate for Gateway " + ssgName()).show();
+                } catch (Exception e1) {
+                    log.log(Level.SEVERE, "Unable to access server certificate", e1);
+                    e1.printStackTrace();
+                    Gui.errorMessage("Unable to access server certificate",
+                            "Unable to access server certificate for Gateway " + ssgName(),
+                            e1);
                 }
-            });
+            }
+        });
+
+        identityPane.getFederatedSSGCertButton().addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                try {
+                    X509Certificate cert = SsgKeyStoreManager.getServerCert(ssg);
+                    if (cert == null) {
+                        JOptionPane.showMessageDialog(Gui.getInstance().getFrame(),
+                                "We haven't yet discovered the server certificate\n" +
+                                "for the Gateway " + ssgName(),
+                                "No server certificate",
+                                JOptionPane.INFORMATION_MESSAGE);
+                        return;
+                    }
+                    new CertDialog(cert, "Server Certificate", "Server Certificate for Gateway " + ssgName()).show();
+                } catch (Exception e1) {
+                    log.log(Level.SEVERE, "Unable to access server certificate", e1);
+                    e1.printStackTrace();
+                    Gui.errorMessage("Unable to access server certificate",
+                            "Unable to access server certificate for Gateway " + ssgName(),
+                            e1);
+                }
+            }
+        });
 
         identityPane.getUseClientCredentialCheckBox().addActionListener(new ActionListener() {
-                public void actionPerformed(ActionEvent e) {
-                    updateIdentityEnableState();
-                }
-            });
+            public void actionPerformed(ActionEvent e) {
+                updateIdentityEnableState();
+            }
+        });
 
         return identityPane;
     }

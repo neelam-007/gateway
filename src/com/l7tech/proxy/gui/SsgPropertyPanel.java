@@ -24,7 +24,8 @@ public class SsgPropertyPanel extends JPanel {
     private JTextField usernameTextField;
     private JPasswordField userPasswordField;
     private JButton clientCertButton;
-    private JButton gatewayCertButton;
+    private JButton trustedSSGCertButton;
+    private JButton federatedSSGCertButton;
     private JCheckBox useClientCredentialCheckBox;
     private JCheckBox savePasswordCheckBox;
 
@@ -76,12 +77,20 @@ public class SsgPropertyPanel extends JPanel {
         this.clientCertButton = clientCertButton;
     }
 
-    public JButton getGatewayCertButton() {
-        return gatewayCertButton;
+    public JButton getTrustedSSGCertButton() {
+        return trustedSSGCertButton;
     }
 
-    public void setGatewayCertButton(JButton gatewayCertButton) {
-        this.gatewayCertButton = gatewayCertButton;
+    public void setTrustedSSGCertButton(JButton trustedSSGCertButton) {
+        this.trustedSSGCertButton = trustedSSGCertButton;
+    }
+
+    public JButton getFederatedSSGCertButton() {
+        return federatedSSGCertButton;
+    }
+
+    public void setFederatedSSGCertButton(JButton federatedSSGCertButton) {
+        this.federatedSSGCertButton = federatedSSGCertButton;
     }
 
     public JCheckBox getUseClientCredentialCheckBox() {
@@ -134,6 +143,7 @@ public class SsgPropertyPanel extends JPanel {
 
     public void setFederatedSSGFormEnabled(boolean enabled) {
         trustedSSGComboBox.setEnabled(enabled);
+        federatedSSGCertButton.setEnabled(enabled);
     }
 
     public void setTrustedSSGFormEnabled(boolean enabled) {
@@ -142,7 +152,7 @@ public class SsgPropertyPanel extends JPanel {
         useClientCredentialCheckBox.setEnabled(enabled);
         savePasswordCheckBox.setEnabled(enabled);
         clientCertButton.setEnabled(enabled);
-        gatewayCertButton.setEnabled(enabled);
+        trustedSSGCertButton.setEnabled(enabled);
     }
 
     {
@@ -199,14 +209,14 @@ public class SsgPropertyPanel extends JPanel {
         clientCertButton = new JButton();
         clientCertButton.setText("View your client certificate");
         panel5.add(clientCertButton, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null));
-        gatewayCertButton = new JButton();
-        gatewayCertButton.setText("View Gateway's certificate");
-        panel5.add(gatewayCertButton, new GridConstraints(0, 1, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null));
+        trustedSSGCertButton = new JButton();
+        trustedSSGCertButton.setText("View Gateway's certificate");
+        panel5.add(trustedSSGCertButton, new GridConstraints(0, 1, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null));
         federatedSSGRadioButton = new JRadioButton();
         federatedSSGRadioButton.setText("Federated Gateway");
         panel1.add(federatedSSGRadioButton, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null));
         final JPanel panel6 = new JPanel();
-        panel6.setLayout(new GridLayoutManager(1, 1, new Insets(0, 20, 10, 10), -1, -1));
+        panel6.setLayout(new GridLayoutManager(2, 1, new Insets(0, 20, 10, 10), -1, -1));
         panel1.add(panel6, new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null));
         final JPanel panel7 = new JPanel();
         panel7.setLayout(new GridLayoutManager(1, 3, new Insets(0, 0, 0, 0), -1, -1));
@@ -216,7 +226,16 @@ public class SsgPropertyPanel extends JPanel {
         panel7.add(label3, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null));
         trustedSSGComboBox = new JComboBox();
         panel7.add(trustedSSGComboBox, new GridConstraints(0, 2, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null));
+        final JPanel panel8 = new JPanel();
+        panel8.setLayout(new GridLayoutManager(1, 2, new Insets(5, 10, 5, 5), -1, -1));
+        panel6.add(panel8, new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null));
+        panel8.setBorder(BorderFactory.createTitledBorder(BorderFactory.createEtchedBorder(), "  Certificates "));
+        federatedSSGCertButton = new JButton();
+        federatedSSGCertButton.setText("View Gateway's certificate");
+        panel8.add(federatedSSGCertButton, new GridConstraints(0, 1, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null));
         final Spacer spacer1 = new Spacer();
-        panel1.add(spacer1, new GridConstraints(4, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_VERTICAL, 1, GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null));
+        panel8.add(spacer1, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_WANT_GROW, 1, null, null, null));
+        final Spacer spacer2 = new Spacer();
+        panel1.add(spacer2, new GridConstraints(4, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_VERTICAL, 1, GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null));
     }
 }
