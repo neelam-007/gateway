@@ -466,6 +466,9 @@ public class LogonDialog extends JDialog {
             final ClientCredentialManager credentialManager = getCredentialManager();
             credentialManager.onDisconnect(new ConnectionEvent(this, ConnectionEvent.DISCONNECTED));
 
+            // fla change: remember this url even if the login wont be successfull (requirement #729)
+            serverUrlHistory.add(serverURL);
+
             // if the service is not avail, format the message and show to te client (if not already notified)
             if (!isServiceAvailable(serviceURL)) {
                 if (!sslHostNameMismatchUserNotified) {
@@ -475,7 +478,7 @@ public class LogonDialog extends JDialog {
                 }
                 return;
             }
-            serverUrlHistory.add(serverURL);
+
             final String serviceURL1 = serviceURL;
             final SwingWorker sw =
               new SwingWorker() {
