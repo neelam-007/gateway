@@ -263,6 +263,7 @@ public class LdapIdentityProvider implements IdentityProvider {
             throw new IllegalArgumentException("types must contain users and or groups");
         }
         Collection output = new TreeSet(new EntityHeaderComparator());
+        DirContext context = null;
         String filter = null;
         try
         {
@@ -286,7 +287,7 @@ public class LdapIdentityProvider implements IdentityProvider {
             }
             SearchControls sc = new SearchControls();
             sc.setSearchScope(SearchControls.SUBTREE_SCOPE);
-            DirContext context = getBrowseContext(cfg);
+            context = getBrowseContext(cfg);
             answer = context.search(cfg.getSearchBase(), filter, sc);
             while (answer.hasMore()) {
                 // get this item
@@ -299,9 +300,16 @@ public class LdapIdentityProvider implements IdentityProvider {
                 else logger.warning("objectclass not supported for dn=" + dn);
             }
             if (answer != null) answer.close();
-            context.close();
         } catch (NamingException e) {
-            logger.log(Level.SEVERE, "error searching with filter: " + filter, e);
+            logger.log(Level.WARNING, "error searching with filter: " + filter, e);
+        } finally {
+            if ( context != null ) {
+                try {
+                    context.close();
+                } catch ( NamingException e ) {
+                    logger.log( Level.WARNING, "Caught NamingException while closing LDAP Context", e );
+                }
+            }
         }
         return output;
     }
