@@ -10,6 +10,7 @@ import com.l7tech.objectmodel.imp.NamedEntityImp;
 
 import java.io.Serializable;
 import java.util.Set;
+import java.util.TreeSet;
 
 /**
  * A reference to a preconfigured connection to a JMS provider.
