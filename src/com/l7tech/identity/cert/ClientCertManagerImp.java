@@ -54,9 +54,9 @@ public class ClientCertManagerImp implements ClientCertManager {
 
     public void recordNewUserCert(User user, Certificate cert) throws UpdateException {
         logger.finest("recordNewUserCert for " + user.getLogin());
-        PersistenceContext pc = null;
+        HibernatePersistenceContext pc = null;
         try {
-            pc = PersistenceContext.getCurrent();
+            pc = (HibernatePersistenceContext)PersistenceContext.getCurrent();
         } catch (SQLException e) {
             String msg = "SQL exception getting context";
             logger.log(Level.WARNING, msg, e);
@@ -68,6 +68,7 @@ public class ClientCertManagerImp implements ClientCertManager {
             if (!userCanGenCert(user)) {
                 String msg = "this user is currently not allowed to generate a new cert: " + user.getLogin();
                 pc.rollbackTransaction();
+                logger.info(msg);
                 throw new UpdateException(msg);
             }
             CertEntryRow userData = getFromTable(user);
@@ -75,8 +76,8 @@ public class ClientCertManagerImp implements ClientCertManager {
             boolean newentry = false;
             if (userData == null) {
                 userData = new CertEntryRow();
-                userData.setProviderId(user.getProviderId());
-                userData.setUserLogin(user.getLogin());
+                userData.setProvider(user.getProviderId());
+                userData.setLogin(user.getLogin());
                 userData.setResetCounter(0);
                 newentry = true;
             }
@@ -94,20 +95,30 @@ public class ClientCertManagerImp implements ClientCertManager {
             }
 
             if (newentry) {
-                manager.save(pc, user);
+                Object res = pc.getSession().save(userData);
+                logger.finest("saving cert entry " + res);
             } else {
-                manager.update(pc, user);
+                logger.finest("updating cert entry");
+                pc.getSession().update(userData);
             }
 
             pc.commitTransaction();
-
+            pc.close();
 
         } catch (TransactionException e) {
             String msg = "Transaction exception recording cert";
             logger.log(Level.WARNING, msg, e);
             throw new UpdateException(msg, e);
-        } catch (SaveException e) {
-            String msg = "Save exception recording cert";
+        } catch (HibernateException e) {
+            String msg = "Hibernate exception recording cert";
+            logger.log(Level.WARNING, msg, e);
+            throw new UpdateException(msg, e);
+        } catch (SQLException e) {
+            String msg = "SQL exception recording cert";
+            logger.log(Level.WARNING, msg, e);
+            throw new UpdateException(msg, e);
+        } catch (Throwable e) {
+            String msg = "Unhandled exception recording cert";
             logger.log(Level.WARNING, msg, e);
             throw new UpdateException(msg, e);
         }
@@ -175,8 +186,9 @@ public class ClientCertManagerImp implements ClientCertManager {
                        " where " + TABLE_NAME + "." + PROVIDER_COLUMN + " = ?" +
                        " and " + TABLE_NAME + "." + PROVIDER_LOGIN + " = ?";
         List hibResults = null;
+        HibernatePersistenceContext context = null;
         try {
-            HibernatePersistenceContext context = (HibernatePersistenceContext)PersistenceContext.getCurrent();
+            context = (HibernatePersistenceContext)PersistenceContext.getCurrent();
             Query q = context.getSession().createQuery(query);
             q.setLong(0, user.getProviderId());
             q.setString(1, user.getLogin());
@@ -187,6 +199,8 @@ public class ClientCertManagerImp implements ClientCertManager {
         }  catch (HibernateException e) {
             hibResults = Collections.EMPTY_LIST;
             logger.log(Level.WARNING, "hibernate error finding cert entry for " + user.getLogin(), e);
+        } finally {
+            context.close();
         }
 
         switch (hibResults.size()) {
@@ -205,6 +219,6 @@ public class ClientCertManagerImp implements ClientCertManager {
     protected Logger logger = null;
 
     private static final String TABLE_NAME = "client_cert";
-    private static final String PROVIDER_COLUMN = "providerId";
-    private static final String PROVIDER_LOGIN = "userLogin";
+    private static final String PROVIDER_COLUMN = "provider";
+    private static final String PROVIDER_LOGIN = "login";
 }
