@@ -79,7 +79,7 @@ public class DotNetInteropTest extends TestCase {
         Document derivedKeySignedDoc = getDerviedKeySignedRequest();
         Element header = SoapUtil.getHeaderElement(derivedKeySignedDoc);
 
-        Element security = (Element) ((XmlUtil.findChildElementsByName(header, "http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd", "Security")).get(0));
+        Element security = SoapUtil.getSecurityElement(header);
         Element derivedKeyToken = (Element) ((XmlUtil.findChildElementsByName(security, "http://schemas.xmlsoap.org/ws/2004/04/sc", "DerivedKeyToken")).get(0));
         byte[] secret = {5, 2, 4, 5, 8, 7, 9, 6, 32, 4, 1, 55, 8, 7, 77, 7};
 
