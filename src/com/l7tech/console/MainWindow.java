@@ -348,8 +348,8 @@ public class MainWindow extends JFrame {
             newProviderSubMenu.setText("Create Identity Provider");
             newProviderSubMenu.setIcon(new ImageIcon(ImageCache.getInstance().getIcon("com/l7tech/console/resources/providers16.gif")));
 
+            newProviderSubMenu.add(getNewFederatedIdentityProviderAction());
             newProviderSubMenu.add(getNewProviderAction());
-            newProviderSubMenu.add(getNewPKIProviderAction());
         }
         return newProviderSubMenu;
     }
@@ -548,7 +548,7 @@ public class MainWindow extends JFrame {
         return newInernalGroupAction;
     }
 
-    private Action getNewPKIProviderAction() {
+    private Action getNewFederatedIdentityProviderAction() {
          if (newPKIProviderAction != null) return newPKIProviderAction;
          newPKIProviderAction = new NewFederatedIdentityProviderAction(null) {
              /**

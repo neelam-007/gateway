@@ -90,9 +90,9 @@ public class IdentitiesRootNode extends AbstractTreeNode {
      * @return actions appropriate to the node
      */
     public Action[] getActions() {
-        return new Action[]{
-            new NewProviderAction(this),
+        return new Action[]{            
             new NewFederatedIdentityProviderAction(this),
+            new NewProviderAction(this),
             //     new NewSamlProviderAction(this),
             new RefreshTreeNodeAction(this)};
     }
