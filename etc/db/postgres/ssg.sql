@@ -223,7 +223,7 @@ DROP TABLE ssg_logs;
 CREATE TABLE ssg_logs (
   nodeid varchar(18) NOT NULL default '',
   sequencenumber bigint NOT NULL default '0',
-  message varchar(255),
+  message text,
   strlvl varchar(12),
   loggername varchar(128),
   millis bigint,
