@@ -1,12 +1,12 @@
 package com.l7tech.proxy.gui;
 
-import com.l7tech.proxy.RequestInterceptor;
-import com.l7tech.proxy.datamodel.Ssg;
-import com.l7tech.proxy.datamodel.PolicyAttachmentKey;
-import com.l7tech.proxy.datamodel.SsgResponse;
-import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.console.tree.EntityTreeCellRenderer;
 import com.l7tech.console.tree.policy.PolicyTreeModel;
+import com.l7tech.policy.assertion.Assertion;
+import com.l7tech.proxy.RequestInterceptor;
+import com.l7tech.proxy.datamodel.PolicyAttachmentKey;
+import com.l7tech.proxy.datamodel.Ssg;
+import com.l7tech.proxy.datamodel.SsgResponse;
 import org.apache.log4j.Category;
 import org.apache.xml.serialize.OutputFormat;
 import org.apache.xml.serialize.XMLSerializer;
@@ -14,12 +14,12 @@ import org.w3c.dom.Document;
 
 import javax.swing.*;
 import javax.swing.tree.TreeModel;
+import java.awt.*;
 import java.io.StringWriter;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
-import java.awt.*;
 
 /**
  * Keep track of messages that have come and gone.
@@ -177,7 +177,11 @@ public class MessageViewerModel extends AbstractListModel implements RequestInte
      * @param reply
      */
     public void onReceiveReply(final SsgResponse reply) {
-        appendMessage(new SavedTextMessage("From Server", reply.toString()));
+        Object r = reply.getResponseFast();
+        if (r instanceof Document)
+            appendMessage(new SavedXmlMessage("From Server", (Document) r));
+        else
+            appendMessage(new SavedTextMessage("From Server", r.toString()));
     }
 
     /**

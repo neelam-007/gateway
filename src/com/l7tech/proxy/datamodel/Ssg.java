@@ -4,6 +4,7 @@ import com.l7tech.proxy.ClientProxy;
 import com.l7tech.xmlenc.Session;
 import org.apache.log4j.Category;
 
+import javax.swing.*;
 import java.io.File;
 import java.io.Serializable;
 import java.net.MalformedURLException;
@@ -12,6 +13,10 @@ import java.security.KeyStore;
 import java.util.HashMap;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.List;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.lang.ref.WeakReference;
 
 /**
  * In-core representation of an SSG.
@@ -48,6 +53,7 @@ public class Ssg implements Serializable, Cloneable, Comparable {
     private transient int numTimesLogonDialogCanceled = 0;
     private transient long credentialsUpdatedTimeMillis = 0;
     private transient Session session = null;
+    private transient List listeners = new ArrayList(); // List of weak references to listeners
 
     public int compareTo(final Object o) {
         long id0 = getId();
@@ -130,6 +136,53 @@ public class Ssg implements Serializable, Cloneable, Comparable {
     }
 
     /**
+     * Add a listener to be notified of changes to this Ssg's state, including policy changes.
+     */
+    public synchronized void addSsgListener(SsgListener listener) {
+        listeners.add(new WeakReference(listener));
+    }
+
+    /**
+     * Remove a listener from the queue.
+     */
+    public synchronized void removeSsgListener(SsgListener listener) {
+        for (Iterator i = listeners.iterator(); i.hasNext();) {
+            WeakReference reference = (WeakReference) i.next();
+            Object o = reference.get();
+            if (o == null || o == listener)
+                i.remove();
+        }
+    }
+
+    /**
+     * Notify all listeners that an SsgEvent has occurred.
+     * @param event  the event to transmit
+     */
+    private void fireSsgEvent(final SsgEvent event) {
+        if (event.getSource() != this)
+            throw new IllegalArgumentException("Event to be fired must identify this Ssg as the source");
+        SwingUtilities.invokeLater(new Runnable() {
+            public void run() {
+                for (Iterator i = listeners.iterator(); i.hasNext();) {
+                    WeakReference reference = (WeakReference) i.next();
+                    SsgListener target = (SsgListener) reference.get();
+                    if (target != null) {
+                        if (event.getType() == SsgEvent.POLICY_ATTACHED)
+                            target.policyAttached(event);
+                        else
+                            throw new IllegalArgumentException("Unknown event type: " + event.getType());
+                    }
+                }
+            }
+        });
+    }
+
+    /** Fire a new POLICY_ATTACHED event. */
+    void firePolicyAttachedEvent(PolicyAttachmentKey pak, Policy policy) {
+        fireSsgEvent(SsgEvent.createPolicyAttachedEvent(this, pak, policy));
+    }
+
+    /**
      * Attach (or update) a policy for this SSG.  The policy will be filed
      * under the specified URI and/or SOAPAction, at least one of which must
      * be provided.
@@ -157,6 +210,7 @@ public class Ssg implements Serializable, Cloneable, Comparable {
      */
     public synchronized void attachPolicy(PolicyAttachmentKey key, Policy policy ) {
         policyMap.put(key, policy);
+        firePolicyAttachedEvent(key, policy);
     }
 
     /**

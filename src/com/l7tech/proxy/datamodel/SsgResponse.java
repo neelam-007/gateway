@@ -48,6 +48,18 @@ public class SsgResponse {
         return responseDoc;
     }
 
+    /**
+     * Returns the response as a Document, if one is already available, or as a String otherwise.  Use
+     * to avoid parsing when possible, if you don't prefer either format.
+     *
+     * @return
+     */
+    public Object getResponseFast() {
+        if (responseDoc != null)
+            return responseDoc;
+        return responseString;
+    }
+
     public String toString() {
         try {
             return getResponseAsString();

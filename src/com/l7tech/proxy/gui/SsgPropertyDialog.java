@@ -9,6 +9,8 @@ import com.l7tech.proxy.datamodel.Policy;
 import com.l7tech.proxy.datamodel.PolicyAttachmentKey;
 import com.l7tech.proxy.datamodel.Ssg;
 import com.l7tech.proxy.datamodel.SsgKeyStoreManager;
+import com.l7tech.proxy.datamodel.SsgListener;
+import com.l7tech.proxy.datamodel.SsgEvent;
 import org.apache.log4j.Category;
 
 import javax.swing.*;
@@ -32,7 +34,7 @@ import java.util.Arrays;
  * Time: 11:14:36 AM
  * To change this template use Options | File Templates.
  */
-public class SsgPropertyDialog extends PropertyDialog {
+public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
     private static final Category log = Category.getInstance(SsgPropertyDialog.class);
 
     // Model
@@ -73,8 +75,14 @@ public class SsgPropertyDialog extends PropertyDialog {
         this.clientProxy = clientProxy;
         tabbedPane.add("General", getGeneralPane());
         tabbedPane.add("Policies", getPoliciesPane());
+        ssg.addSsgListener(this);
         setSsg(ssg);
         pack();
+    }
+
+    protected void finalize() throws Throwable {
+        ssg.removeSsgListener(this);
+        super.finalize();
     }
 
     /**
@@ -536,5 +544,15 @@ public class SsgPropertyDialog extends PropertyDialog {
                 ssg.clearPolicies();
         }
         setSsg(ssg);
+    }
+
+    /**
+     * This event is fired when a policy is attached to an Ssg with a PolicyAttachmentKey, either new
+     * or updated.
+     *
+     * @param evt
+     */
+    public void policyAttached(SsgEvent evt) {
+        updatePolicyPanel();
     }
 }
