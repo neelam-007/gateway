@@ -5,7 +5,7 @@
 #
 # JAVA_HOME - Determines the version of Java used.
 # SRC_ROOT  - project root
-
+SRC_ROOT="."
 #Report environment settings
 reportenv() {
     echo "SRC_ROOT=$SRC_ROOT"
