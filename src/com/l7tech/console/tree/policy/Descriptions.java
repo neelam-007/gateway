@@ -130,16 +130,16 @@ public class Descriptions {
                 JmsRoutingAssertion ass = (JmsRoutingAssertion)assertion;
                 String s;
                 if (ass.getEndpointOid() == null) {
-                    s = "Route to as-yet-undefined JMS Queue";
+                    s = " (undefined)";
                 } else {
                     String name = ass.getEndpointName();
                     if (name == null)
                         name = "(unnamed)";
-                    s = "Route to JMS Queue " + name;
+                    s = name;
                 }
                 return new Object[]{s};
             } else {
-                return new Object[]{"Route using unknown protocol"};
+                return new Object[]{"? using unknown protocol"};
             }
         }
     }
