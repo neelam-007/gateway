@@ -237,6 +237,7 @@
             <test name="com.l7tech.common.security.xml.WssDecoratorTest" haltonfailure="no"/>
             <test name="com.l7tech.common.security.xml.WssProcessorTest" haltonfailure="no"/>
             <test name="com.l7tech.common.security.xml.WssRoundTripTest" haltonfailure="no"/>
+            <test name="com.l7tech.server.TokenServiceTest" haltonfailure="no"/>
 
             <!--
              ** add policy tests into the com.l7tech.policy.AllTests class
