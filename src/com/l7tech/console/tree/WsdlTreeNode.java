@@ -46,7 +46,6 @@ public abstract class WsdlTreeNode extends DefaultMutableTreeNode {
             loadChildren();
         }
         return super.getChildCount();
-
     }
 
 

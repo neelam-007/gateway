@@ -40,6 +40,6 @@ public class DirectoryBrowser extends JTree {
         setLargeModel(true);
         setCellRenderer(new EntityTreeCellRenderer());
         putClientProperty("JTree.lineStyle", "Angled");
-        setUI(CustomTreeUI.getTreeUI());
+        //setUI(CustomTreeUI.getTreeUI());
     }
 }

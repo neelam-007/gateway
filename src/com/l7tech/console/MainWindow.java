@@ -7,14 +7,17 @@ import com.l7tech.console.tree.*;
 import com.l7tech.console.util.Preferences;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.action.*;
+import com.l7tech.console.factory.JComponentFactory;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
+import com.l7tech.util.Locator;
 import org.apache.log4j.Category;
 
 import javax.help.HelpBroker;
 import javax.help.HelpSet;
 import javax.help.HelpSetException;
 import javax.swing.*;
+import javax.swing.text.html.HTMLDocument;
 import javax.swing.border.Border;
 import javax.swing.event.*;
 import javax.swing.tree.*;
@@ -750,6 +753,24 @@ public class MainWindow extends JFrame {
         mainSplitPaneRight = new JPanel();
         mainSplitPaneRight.setLayout(new GridBagLayout());
 
+        // check if node/context supports listing
+        workBenchPanel = new WorkBenchPanel();
+        getMainSplitPaneRight().removeAll();
+        GridBagConstraints constraints
+          = new GridBagConstraints(0, // gridx
+            0, // gridy
+            1, // widthx
+            1, // widthy
+            1.0, // weightx
+            1.0, // weigthy
+            GridBagConstraints.NORTH, // anchor
+            GridBagConstraints.BOTH, //fill
+            new Insets(0, 0, 0, 0), // inses
+            0, // padx
+            0); // pady
+        getMainSplitPaneRight().add(workBenchPanel, constraints);
+
+
         return mainSplitPaneRight;
     }
 
@@ -768,7 +789,6 @@ public class MainWindow extends JFrame {
         paletteTreeView.putClientProperty("JTree.lineStyle", "Angled");
 
         TreeNode node = new DefaultMutableTreeNode("Disconnected");
-        paletteTreeView.setUI(CustomTreeUI.getTreeUI());
 
         DefaultTreeModel treeModel =
           new DefaultTreeModel(node);
@@ -794,7 +814,6 @@ public class MainWindow extends JFrame {
         servicesTreeView.putClientProperty("JTree.lineStyle", "Angled");
 
         TreeNode node = new DefaultMutableTreeNode("Disconnected");
-        servicesTreeView.setUI(CustomTreeUI.getTreeUI());
 
         DefaultTreeModel treeModel =
           new DefaultTreeModel(node);
@@ -1363,57 +1382,21 @@ public class MainWindow extends JFrame {
       };
 
     /**
-     * Updates the right panel to edit the given node.
+     * Updates the right panel with the component that manages
+     * the given node.
+     * Determine the panel for node, and if any found
      */
-    private void activateBrowserPanel(EntityTreeNode node) {
-
-        JPanel panel;
-        // check if node/context supports listing
-        panel = getContextListPanel(node);
-
-        // only if something is returned
-        if (panel != null) {
-            getMainSplitPaneRight().removeAll();
-            GridBagConstraints constraints
-              = new GridBagConstraints(0, // gridx
-                0, // gridy
-                1, // widthx
-                1, // widthy
-                1.0, // weightx
-                1.0, // weigthy
-                GridBagConstraints.NORTH, // anchor
-                GridBagConstraints.BOTH, //fill
-                new Insets(0, 0, 0, 0), // inses
-                0, // padx
-                0); // pady
-            getMainSplitPaneRight().add(panel, constraints);
-            getMainSplitPaneRight().validate();
-            getMainSplitPaneRight().repaint();
-        }
+    private void activateWorkBenchPanel(Object o) {
+        if (o == null) return;
+        JComponentFactory jcf =
+          (JComponentFactory)Locator.getDefault().lookup(JComponentFactory.class);
+        JComponent jc = jcf.getJComponent(o);
+        workBenchPanel.setComponent(jc);
     }
 
-    /**
-     * return the context list panel for the node, or null if node
-     * is not a 'listable' container.
-     *
-     * @param node   EntityTreeNode representing the context
-     * @return The <CODE>JPanel</CODE> that lists the context, null if
-     *         the context does not support listing.
-     */
-    private JPanel getContextListPanel(EntityTreeNode node) {
-        if (!node.isLeaf()) {
-            // workBenchPanel.setParentNode(getPaletteJTreeView(), node);
-            if (workBenchPanel != null) return workBenchPanel;
-            workBenchPanel = new WorkBenchPanel();
-            return workBenchPanel;
-
-        }
-        return null;
-    }
 
     /**
      * Invoked on node selection change, update the right panel
-     *
      * @param event
      * @see TreeSelectionEvent for details
      */
@@ -1421,13 +1404,14 @@ public class MainWindow extends JFrame {
         // get the node and call panel factory
         Object object = getServicesTreeView().getLastSelectedPathComponent();
         // if not EntityTreeNode silently return
-        if (!(object instanceof EntityTreeNode)) {
-            return;
+        if (object instanceof EntityTreeNode) {
+            EntityTreeNode node = (EntityTreeNode) object;
+            // update actions for the node
+            updateActions(node);
+            object = node.getUserObject();
         }
-        EntityTreeNode node = (EntityTreeNode) object;
-        // update actions for the node
-        updateActions(node);
-        activateBrowserPanel(node);
+
+        activateWorkBenchPanel(object);
     }
 
     /**
@@ -2055,8 +2039,6 @@ public class MainWindow extends JFrame {
         // update panels with new l&f
         SwingUtilities.updateComponentTreeUI(MainWindow.this);
         MainWindow.this.validate();
-        //PanelFactory.clearCachedPanels();
-        getPaletteJTreeView().setUI(CustomTreeUI.getTreeUI());
     }
 
     /**

@@ -7,6 +7,9 @@ import com.l7tech.objectmodel.EntityType;
 import com.l7tech.identity.Group;
 import com.l7tech.identity.User;
 import com.l7tech.util.WeakSet;
+import com.l7tech.policy.assertion.Assertion;
+import com.l7tech.policy.assertion.identity.MemberOfGroup;
+import com.l7tech.policy.assertion.identity.SpecificUser;
 
 import javax.swing.*;
 
@@ -123,8 +126,28 @@ public class IconManager {
             return new ImageIcon(cl.getResource(MainWindow.RESOURCE_PATH + "/Forward16.gif"));
         }
         return null;
-
     }
+
+    /**
+       * Get the icon for the Assertion passed.
+       *
+       * @param assertion   the Assertion instance
+       * @return ImageIcon for the given node
+       */
+      public ImageIcon getIcon(Assertion assertion) {
+          if (assertion == null) {
+              throw new IllegalArgumentException();
+          }
+          ClassLoader cl = assertion.getClass().getClassLoader();
+          if (assertion instanceof MemberOfGroup) {
+               return new ImageIcon(cl.getResource(MainWindow.RESOURCE_PATH + "/group16.png"));
+          } else if(assertion instanceof SpecificUser) {
+              return new ImageIcon(cl.getResource(MainWindow.RESOURCE_PATH + "/user16.png"));
+          }
+          return null;
+
+      }
+
 
     /**
      * Returns an up button

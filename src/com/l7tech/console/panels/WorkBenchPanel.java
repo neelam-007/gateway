@@ -1,19 +1,13 @@
 package com.l7tech.console.panels;
 
-import com.l7tech.console.MainWindow;
 import com.l7tech.console.tree.BasicTreeNode;
 import com.l7tech.console.util.IconManager;
 import com.l7tech.console.util.Preferences;
 import org.apache.log4j.Category;
 
 import javax.swing.*;
-import javax.swing.event.HyperlinkEvent;
-import javax.swing.event.HyperlinkListener;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
-import javax.swing.text.html.HTMLDocument;
-import javax.swing.tree.DefaultMutableTreeNode;
-import javax.swing.tree.TreeNode;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -22,7 +16,6 @@ import java.awt.event.HierarchyListener;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.io.IOException;
-import java.net.URL;
 
 /**
  * <CODE>WorkBenchPanel</CODE> represents the main editing panel
@@ -33,12 +26,10 @@ public class WorkBenchPanel extends JPanel {
 
     private final JPanel listPane = new JPanel();
     private final JTabbedPane tabbedPane = new JTabbedPane();
-
-    private JTree tree = null;
-    private DefaultMutableTreeNode parentNode = null;
-    final String home = MainWindow.RESOURCE_PATH+"/home.html";
+    private JScrollPane scrollPane = new JScrollPane();
     /* this class classloader */
     private final ClassLoader cl = getClass().getClassLoader();
+
 
     /**
      * default constructor
@@ -53,6 +44,19 @@ public class WorkBenchPanel extends JPanel {
     }
 
     /**
+     * Set the active component that the work bench.
+     * The {@link JComponent#getName() } sets the tab name.
+     *
+     * @param jc the new component to host
+     */
+    public void setComponent(JComponent jc) {
+        scrollPane.setViewportView(jc);
+        if (jc !=null) {
+            tabbedPane.setTitleAt(0, jc.getName());
+        }
+    }
+
+    /**
      * layout components on this panel
      */
     private void layoutComponents() throws IOException {
@@ -60,9 +64,8 @@ public class WorkBenchPanel extends JPanel {
         setLayout(new BorderLayout());
 
         listPane.setLayout(new BorderLayout());
-        JScrollPane scrollPane = new JScrollPane(forTreeNode(null));
         listPane.add(scrollPane, BorderLayout.CENTER);
-        tabbedPane.addTab("Home", listPane);
+        tabbedPane.addTab("", listPane);
 
         Font f = tabbedPane.getFont();
         tabbedPane.setFont(new Font(f.getName(), Font.BOLD, 12));
@@ -106,34 +109,6 @@ public class WorkBenchPanel extends JPanel {
         } catch (IOException e) {
             log.warn("error instantiaitng preferences", e);
         }
-    }
-
-    /**
-     *
-     * @param node the node to examine
-     * @return the corresponding component
-     */
-    private JComponent forTreeNode(TreeNode node) {
-        HTMLDocument doc = new HTMLDocument();
-        JTextPane htmlPane = new JTextPane(doc);
-
-        URL url = cl.getResource(home);
-
-        htmlPane.setEditable(false);
-        htmlPane.addHyperlinkListener( new HyperlinkListener() {
-            public void hyperlinkUpdate(HyperlinkEvent e) {
-                if (HyperlinkEvent.EventType.ACTIVATED == e.getEventType()) {
-                    System.out.println("activated "+e.getURL());
-                }
-            }
-        });
-        try {
-            htmlPane.setPage(url);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-        return htmlPane;
-
     }
 
     /**
