@@ -8,7 +8,7 @@ import com.l7tech.console.logging.ErrorManager;
 import com.l7tech.console.text.FilterDocument;
 import com.l7tech.console.util.Registry;
 import com.l7tech.identity.GroupBean;
-import com.l7tech.identity.IdentityProviderConfigManager;
+import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
 
@@ -47,15 +47,17 @@ public class NewGroupDialog extends JDialog {
 
     GroupBean group = new GroupBean();
     private EventListenerList listenerList = new EventListenerList();
+    IdentityProviderConfig ipc;
 
     /**
      * Create a new NewGroupDialog fdialog for a given Company
      *
      * @param parent  the parent Frame. May be <B>null</B>
      */
-    public NewGroupDialog(JFrame parent) {
+    public NewGroupDialog(JFrame parent, IdentityProviderConfig ipc) {
         super(parent, true);
         this.parent = parent;
+        this.ipc = ipc;
         initResources();
         initComponents();
         pack();
@@ -331,7 +333,7 @@ public class NewGroupDialog extends JDialog {
                             EntityHeader header = new EntityHeader();
                             header.setType(EntityType.GROUP);
                             header.setName(group.getName());
-                            group.setUniqueIdentifier(Registry.getDefault().getIdentityAdmin().saveGroup(IdentityProviderConfigManager.INTERNALPROVIDER_SPECIAL_OID, group, null ));
+                            group.setUniqueIdentifier(Registry.getDefault().getIdentityAdmin().saveGroup(ipc.getOid(), group, null ));
                             header.setStrId(group.getUniqueIdentifier());
                             NewGroupDialog.this.fireEventGroupAdded(header);
                             insertSuccess = true;
@@ -377,7 +379,7 @@ public class NewGroupDialog extends JDialog {
                                 header.setName(group.getName());
                                 header.setStrId(group.getUniqueIdentifier());
                                 try {
-                                    panel.edit(header, Registry.getDefault().getInternalProviderConfig());
+                                    panel.edit(header, ipc);
                                 } catch (Exception e) {
                                     throw new RuntimeException(e);
                                 }
