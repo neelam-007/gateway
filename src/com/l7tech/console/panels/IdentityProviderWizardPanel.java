@@ -27,20 +27,23 @@ import java.awt.event.ActionListener;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.Iterator;
+import java.security.Principal;
 
 
 /**
  * <code>IdentityProviderWizardPanel</code> that represent a step in the wizard
  * <code>WizardStepPanel</code> that collects the published service identities
  * info.
- *
+ * 
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  * @version 1.0
  */
 public class IdentityProviderWizardPanel extends WizardStepPanel {
     private DefaultComboBoxModel providersComboBoxModel;
 
-    /** Creates new form IdentityProviderWizardPanel */
+    /**
+     * Creates new form IdentityProviderWizardPanel
+     */
     public IdentityProviderWizardPanel() {
         super(null);
         initComponents();
@@ -78,12 +81,11 @@ public class IdentityProviderWizardPanel extends WizardStepPanel {
 
         providersComboBox.setModel(getProvidersComboBoxModel());
         providersComboBox.setRenderer(new DefaultListCellRenderer() {
-            public Component getListCellRendererComponent(
-              JList list,
-              Object value,
-              int index,
-              boolean isSelected,
-              boolean cellHasFocus) {
+            public Component getListCellRendererComponent(JList list,
+                                                          Object value,
+                                                          int index,
+                                                          boolean isSelected,
+                                                          boolean cellHasFocus) {
                 Component c = super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
                 IdentityProvider ip = (IdentityProvider)value;
                 setText(ip.getConfig().getName());
@@ -93,7 +95,9 @@ public class IdentityProviderWizardPanel extends WizardStepPanel {
         providersComboBox.addActionListener(new ActionListener() {
             Object oldSelectedItem = null;
 
-            /** Invoked when an action occurs.  */
+            /**
+             * Invoked when an action occurs.
+             */
             public void actionPerformed(ActionEvent e) {
                 Object newSelectedItem = providersComboBox.getSelectedItem();
                 if (newSelectedItem != oldSelectedItem)
@@ -126,7 +130,9 @@ public class IdentityProviderWizardPanel extends WizardStepPanel {
         buttonAdd.setIcon(IconManager.getInstance().getIconAdd());
 
         buttonAdd.addActionListener(new ActionListener() {
-            /** Invoked when an action occurs. */
+            /**
+             * Invoked when an action occurs.
+             */
             public void actionPerformed(ActionEvent e) {
                 int[] rows = identitiesOutTable.getSelectedRows();
                 Object[] toAdd = new Object[rows.length];
@@ -150,7 +156,9 @@ public class IdentityProviderWizardPanel extends WizardStepPanel {
         buttonAddAll.setIcon(IconManager.getInstance().getIconAddAll());
 
         buttonAddAll.addActionListener(new ActionListener() {
-            /** Invoked when an action occurs. */
+            /**
+             * Invoked when an action occurs.
+             */
             public void actionPerformed(ActionEvent e) {
                 Object[] listOut = getIdentitiesOutTableModel().getDataSet();
 
@@ -169,7 +177,9 @@ public class IdentityProviderWizardPanel extends WizardStepPanel {
         buttonRemove.setIcon(IconManager.getInstance().getIconRemove());
 
         buttonRemove.addActionListener(new ActionListener() {
-            /** Invoked when an action occurs. */
+            /**
+             * Invoked when an action occurs.
+             */
             public void actionPerformed(ActionEvent e) {
                 int[] rows = identitiesInTable.getSelectedRows();
                 Object[] toRemove = new Object[rows.length];
@@ -193,7 +203,9 @@ public class IdentityProviderWizardPanel extends WizardStepPanel {
         buttonRemoveAll.setIcon(IconManager.getInstance().getIconRemoveAll());
 
         buttonRemoveAll.addActionListener(new ActionListener() {
-            /** Invoked when an action occurs. */
+            /**
+             * Invoked when an action occurs.
+             */
             public void actionPerformed(ActionEvent e) {
                 Object[] listIn = getIdentitiesInTableModel().getDataSet();
                 getIdentitiesOutTableModel().addRows(listIn);
@@ -222,59 +234,58 @@ public class IdentityProviderWizardPanel extends WizardStepPanel {
         identitiesjPanel.add(buttonPanel);
 
 
-
         sslCheckBox.setText("Require SSL/TLS encryption");
         add(sslCheckBox,
-            new GridBagConstraints(0, 0, GridBagConstraints.REMAINDER, 1, 1.0, 0.0,
-                                   GridBagConstraints.WEST,
-                                   GridBagConstraints.BOTH,
-                                   new Insets(0, 0, 8, 0), 0, 0));
+          new GridBagConstraints(0, 0, GridBagConstraints.REMAINDER, 1, 1.0, 0.0,
+            GridBagConstraints.WEST,
+            GridBagConstraints.BOTH,
+            new Insets(0, 0, 8, 0), 0, 0));
 
 
         authButtonGroup = new ButtonGroup();
         getAnonRadio().setSelected(true);
         authButtonGroup.add(getAnonRadio());
         add(getAnonRadio(),
-            new GridBagConstraints(0, 1, GridBagConstraints.REMAINDER, 1, 1.0, 0.0,
-                                   GridBagConstraints.SOUTHWEST,
-                                   GridBagConstraints.HORIZONTAL,
-                                   new Insets(0, 0, 0, 0), 0, 0));
+          new GridBagConstraints(0, 1, GridBagConstraints.REMAINDER, 1, 1.0, 0.0,
+            GridBagConstraints.SOUTHWEST,
+            GridBagConstraints.HORIZONTAL,
+            new Insets(0, 0, 0, 0), 0, 0));
 
 
         authButtonGroup.add(getAuthRadio());
         add(getAuthRadio(),
-            new GridBagConstraints(0, 2, GridBagConstraints.REMAINDER, 1, 1.0, 0.0,
-                                   GridBagConstraints.NORTHWEST,
-                                   GridBagConstraints.HORIZONTAL,
-                                   new Insets(0, 0, 5, 0), 0, 0));
+          new GridBagConstraints(0, 2, GridBagConstraints.REMAINDER, 1, 1.0, 0.0,
+            GridBagConstraints.NORTHWEST,
+            GridBagConstraints.HORIZONTAL,
+            new Insets(0, 0, 5, 0), 0, 0));
 
         add(new JLabel("Authentication method:"),
-            new GridBagConstraints(0, 3, 1, 1, 0.0, 0.0,
-                                   GridBagConstraints.EAST,
-                                   GridBagConstraints.NONE,
-                                   new Insets(0, 25, 4, 5), 0, 0));
+          new GridBagConstraints(0, 3, 1, 1, 0.0, 0.0,
+            GridBagConstraints.EAST,
+            GridBagConstraints.NONE,
+            new Insets(0, 25, 4, 5), 0, 0));
         add(credentialsLocationComboBox,
-            new GridBagConstraints(1, 3, GridBagConstraints.REMAINDER, 1, 1.0, 0.0,
-                                   GridBagConstraints.WEST,
-                                   GridBagConstraints.HORIZONTAL,
-                                   new Insets(0, 0, 4, 5), 0, 0));
+          new GridBagConstraints(1, 3, GridBagConstraints.REMAINDER, 1, 1.0, 0.0,
+            GridBagConstraints.WEST,
+            GridBagConstraints.HORIZONTAL,
+            new Insets(0, 0, 4, 5), 0, 0));
 
         add(new JLabel("Identity provider:"),
-            new GridBagConstraints(0, 4, 1, 1, 0.0, 0.0,
-                                   GridBagConstraints.EAST,
-                                   GridBagConstraints.NONE,
-                                   new Insets(0, 25, 5, 5), 0, 0));
+          new GridBagConstraints(0, 4, 1, 1, 0.0, 0.0,
+            GridBagConstraints.EAST,
+            GridBagConstraints.NONE,
+            new Insets(0, 25, 5, 5), 0, 0));
         add(providersComboBox,
-            new GridBagConstraints(1, 4, GridBagConstraints.REMAINDER, 1, 1.0, 0.0,
-                                   GridBagConstraints.WEST,
-                                   GridBagConstraints.HORIZONTAL,
-                                   new Insets(0, 0, 5, 5), 0, 0));
+          new GridBagConstraints(1, 4, GridBagConstraints.REMAINDER, 1, 1.0, 0.0,
+            GridBagConstraints.WEST,
+            GridBagConstraints.HORIZONTAL,
+            new Insets(0, 0, 5, 5), 0, 0));
 
         add(identitiesjPanel,
-            new GridBagConstraints(0, 5, GridBagConstraints.REMAINDER, 1, 1.0, 100.0,
-                                   GridBagConstraints.CENTER,
-                                   GridBagConstraints.BOTH,
-                                   new Insets(0, 0, 5, 0), 0, 0));
+          new GridBagConstraints(0, 5, GridBagConstraints.REMAINDER, 1, 1.0, 100.0,
+            GridBagConstraints.CENTER,
+            GridBagConstraints.BOTH,
+            new Insets(0, 0, 5, 0), 0, 0));
 
 
     }
@@ -294,14 +305,16 @@ public class IdentityProviderWizardPanel extends WizardStepPanel {
 
             Iterator i = ip.getUserManager().findAllHeaders().iterator();
             while (i.hasNext()) {
-                 modelOut.addRow(i.next());
+                modelOut.addRow(fromHeader((EntityHeader)i.next(), ip));
             }
             i = ip.getGroupManager().findAllHeaders().iterator();
             while (i.hasNext()) {
-                 modelOut.addRow(i.next());
+                modelOut.addRow(fromHeader((EntityHeader)i.next(), ip));
             }
+
             SortedSingleColumnTableModel modelIn = getIdentitiesInTableModel();
-            modelIn.clearDataSet();
+            //modelIn.clearDataSet();
+
             getIdentitiesOutTableModel().fireTableDataChanged();
             getIdentitiesInTableModel().fireTableDataChanged();
         } catch (FindException ex) {
@@ -363,8 +376,8 @@ public class IdentityProviderWizardPanel extends WizardStepPanel {
 
         identitiesInTableModel = new SortedSingleColumnTableModel(new Comparator() {
             public int compare(Object o1, Object o2) {
-                EntityHeader e1 = (EntityHeader) o1;
-                EntityHeader e2 = (EntityHeader) o2;
+                Principal e1 = (Principal)o1;
+                Principal e2 = (Principal)o2;
 
                 return e1.getName().compareToIgnoreCase(e2.getName());
             }
@@ -388,8 +401,8 @@ public class IdentityProviderWizardPanel extends WizardStepPanel {
 
         identitiesOutTableModel = new SortedSingleColumnTableModel(new Comparator() {
             public int compare(Object o1, Object o2) {
-                EntityHeader e1 = (EntityHeader) o1;
-                EntityHeader e2 = (EntityHeader) o2;
+                Principal e1 = (Principal)o1;
+                Principal e2 = (Principal)o2;
 
                 return e1.getName().compareToIgnoreCase(e2.getName());
             }
@@ -406,10 +419,10 @@ public class IdentityProviderWizardPanel extends WizardStepPanel {
 
     /**
      * Provides the wizard with the current data
-     *
+     * 
      * @param settings the object representing wizard panel state
-     * @exception IllegalArgumentException if the the data provided
-     * by the wizard are not valid.
+     * @throws IllegalArgumentException if the the data provided
+     *                                  by the wizard are not valid.
      */
     public void readSettings(Object settings) throws IllegalArgumentException {
         PublishServiceWizard.ServiceAndAssertion
@@ -424,10 +437,10 @@ public class IdentityProviderWizardPanel extends WizardStepPanel {
 
     /**
      * Provides the wizard with the current data as shared policy
-     *
+     * 
      * @param pa the object representing wizard panel state
-     * @exception IllegalArgumentException if the the data provided
-     * by the wizard are not valid.
+     * @throws IllegalArgumentException if the the data provided
+     *                                  by the wizard are not valid.
      */
     private void applySharedPolicySettings(PublishServiceWizard.ServiceAndAssertion pa) {
         IdentityProvider ip = (IdentityProvider)getProvidersComboBoxModel().getSelectedItem();
@@ -442,17 +455,13 @@ public class IdentityProviderWizardPanel extends WizardStepPanel {
         if (!isAnonymous()) {
             Iterator it = getIdentitiesInTableModel().getDataIterator();
             while (it.hasNext()) {
-                EntityHeader eh = (EntityHeader)it.next();
-                if (EntityType.USER.equals(eh.getType())) {
-                    UserBean u = new UserBean();
-                    u.setName(eh.getName());
-                    u.setLogin(eh.getName());
-                    identityAssertions.add(new SpecificUser(ip.getConfig().getOid(), u.getLogin()));
-                } else if (EntityType.GROUP.equals(eh.getType())) {
-                    GroupBean g = new GroupBean();
-                    g.setName(eh.getName());
-                    g.getName();
-                    MemberOfGroup ma = new MemberOfGroup(ip.getConfig().getOid(), g.getName(), eh.getStrId());
+                Principal p = (Principal)it.next();
+                if (p instanceof User) {
+                    User u = (User)p;
+                    identityAssertions.add(new SpecificUser(u.getProviderId(), u.getLogin()));
+                } else if (p instanceof Group) {
+                    Group g = (Group)p;
+                    MemberOfGroup ma = new MemberOfGroup(g.getProviderId(), g.getName(), g.getUniqueIdentifier());
                     identityAssertions.add(ma);
                 }
             }
@@ -475,10 +484,10 @@ public class IdentityProviderWizardPanel extends WizardStepPanel {
 
     /**
      * Provides the wizard with the current data as individual policies
-     *
+     * 
      * @param pa the object representing wizard panel state
-     * @exception IllegalArgumentException if the the data provided
-     * by the wizard are not valid.
+     * @throws IllegalArgumentException if the the data provided
+     *                                  by the wizard are not valid.
      */
     private void applyIndividualPolicySettings(PublishServiceWizard.ServiceAndAssertion pa) {
         IdentityProvider ip = (IdentityProvider)getProvidersComboBoxModel().getSelectedItem();
@@ -504,17 +513,13 @@ public class IdentityProviderWizardPanel extends WizardStepPanel {
                     identityAssertion.add(ca);
             }
 
-            EntityHeader eh = (EntityHeader)it.next();
-            if (EntityType.USER.equals(eh.getType())) {
-                UserBean u = new UserBean();
-                u.setName(eh.getName());
-                u.setLogin(eh.getName());
-                identityAssertion.add(new SpecificUser(ip.getConfig().getOid(), u.getLogin()));
-            } else if (EntityType.GROUP.equals(eh.getType())) {
-                GroupBean g = new GroupBean();
-                g.setName(eh.getName());
-                g.getName();
-                MemberOfGroup ma = new MemberOfGroup(ip.getConfig().getOid(), g.getName(), eh.getStrId());
+            Principal p = (Principal)it.next();
+            if (p instanceof User) {
+                User u = (User)p;
+                identityAssertion.add(new SpecificUser(u.getProviderId(), u.getLogin()));
+            } else if (p instanceof Group) {
+                Group g = (Group)p;
+                MemberOfGroup ma = new MemberOfGroup(g.getProviderId(), g.getName(), g.getUniqueIdentifier());
                 identityAssertion.add(ma);
             }
             allAssertions.add(new AllAssertion(identityAssertion));
@@ -524,7 +529,9 @@ public class IdentityProviderWizardPanel extends WizardStepPanel {
     }
 
 
-    /** @return the wizard step label    */
+    /**
+     * @return the wizard step label
+     */
     public String getStepLabel() {
         return "Access control";
     }
@@ -579,23 +586,23 @@ public class IdentityProviderWizardPanel extends WizardStepPanel {
               }
 
               this.setFont(new Font("Dialog", Font.PLAIN, 12));
-              EntityHeader h = (EntityHeader)value;
-              EntityType type = h.getType();
-              ImageIcon icon = IdentityProviderWizardPanel.this.getIcon(type);
+              Principal p = (Principal)value;
+              ImageIcon icon = IdentityProviderWizardPanel.this.getIcon(p);
               if (icon != null) setIcon(icon);
-              setText(h.getName());
+              setText(p.getName());
               setToolTipText(null);
-              if (type.equals(EntityType.GROUP)) {
-                // assume that the strid is a valuable piece of information if it;s something else than a number
-                String strid = h.getStrId();
-                String tt = null;
-                try {
-                    Long.parseLong(strid);
-                    tt = null;
-                } catch (NumberFormatException nfe) {
-                    tt = strid;
-                }
-                setToolTipText(tt);
+
+              if (p instanceof Group) {
+                  // assume that the strid is a valuable piece of information if it;s something else than a number
+                  String strid = ((Group)p).getUniqueIdentifier();
+                  String tt = null;
+                  try {
+                      Long.parseLong(strid);
+                      tt = null;
+                  } catch (NumberFormatException nfe) {
+                      tt = strid;
+                  }
+                  setToolTipText(tt);
               }
               return this;
           }
@@ -603,20 +610,37 @@ public class IdentityProviderWizardPanel extends WizardStepPanel {
 
     /**
      * Get the Icon for the Class passed.
-     *
-     * @param type   the entity type enum
+     * 
+     * @param p the entity type enum
      * @return ImageIcon for the given node
      */
-    private ImageIcon getIcon(EntityType type) {
-        if (type == null) {
+    private ImageIcon getIcon(Principal p) {
+        if (p == null) {
             throw new NullPointerException("type");
         }
-        if (type.equals(EntityType.GROUP)) {
+        if (p instanceof Group) {
             return new ImageIcon(ImageCache.getInstance().getIcon(GroupPanel.GROUP_ICON_RESOURCE));
-        } else if (type.equals(EntityType.USER)) {
+        } else if (p instanceof User) {
             return new ImageIcon(ImageCache.getInstance().getIcon(UserPanel.USER_ICON_RESOURCE));
         }
         return null;
+    }
+
+    private Principal fromHeader(EntityHeader h, IdentityProvider ip) {
+        if (EntityType.GROUP.equals(h.getType())) {
+            GroupBean g = new GroupBean();
+            g.setName(h.getName());
+            g.getName();
+            g.setProviderId(ip.getConfig().getOid());
+            return g;
+        } else if (EntityType.USER.equals(h.getType())) {
+            UserBean u = new UserBean();
+            u.setName(h.getName());
+            u.setLogin(h.getName());
+            u.setProviderId(ip.getConfig().getOid());
+            return u;
+        }
+        throw new IllegalArgumentException("Unknown type " + h.getType());
     }
 
     private JTable identitiesInTable;
