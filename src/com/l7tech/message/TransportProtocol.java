@@ -20,6 +20,17 @@ public class TransportProtocol {
         _name = name;
     }
 
+    public String toString() {
+        StringBuffer result = new StringBuffer( "<class " );
+        result.append( getClass().getName() );
+        result.append( ": #" );
+        result.append( _num );
+        result.append( ": " );
+        result.append( _name );
+        result.append( ">" );
+        return result.toString();
+    }
+
     private int _num;
     private String _name;
 }
