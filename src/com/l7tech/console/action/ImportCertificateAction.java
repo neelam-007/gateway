@@ -28,6 +28,7 @@ import java.util.logging.Logger;
  */
 public class ImportCertificateAction extends BaseAction {
     static Logger log = Logger.getLogger(ImportCertificateAction.class.getName());
+
     /**
      * @return the action name
      */
@@ -101,46 +102,45 @@ public class ImportCertificateAction extends BaseAction {
     }
 
     /**
-        * Import an SSG certificate into our trust store.
-        * @param selectedFile the SSG certificate file.  Must be in *.cer binary format, whatever that is.
-        *                     Probably PKCS#7.
-        */
-       private void importSsgCertificate(File selectedFile)
-               throws IOException, CertificateException, KeyStoreException, NoSuchAlgorithmException
-       {
-           KeyStore ks = KeyStore.getInstance("JKS");
-           try {
-               FileInputStream ksfis = new FileInputStream(ClientProxy.TRUST_STORE_FILE);
-               ks.load(ksfis, ClientProxy.TRUST_STORE_PASSWORD.toCharArray());
-               ksfis.close();
-           } catch (FileNotFoundException e) {
-               // Create a new one.
-               ks.load(null, ClientProxy.TRUST_STORE_PASSWORD.toCharArray());
-           }
+     * Import an SSG certificate into our trust store.
+     * @param selectedFile the SSG certificate file.  Must be in *.cer binary format, whatever that is.
+     *                     Probably PKCS#7.
+     */
+    private void importSsgCertificate(File selectedFile)
+      throws IOException, CertificateException, KeyStoreException, NoSuchAlgorithmException {
+        KeyStore ks = KeyStore.getInstance("JKS");
+        try {
+            FileInputStream ksfis = new FileInputStream(ClientProxy.TRUST_STORE_FILE);
+            ks.load(ksfis, ClientProxy.TRUST_STORE_PASSWORD.toCharArray());
+            ksfis.close();
+        } catch (FileNotFoundException e) {
+            // Create a new one.
+            ks.load(null, ClientProxy.TRUST_STORE_PASSWORD.toCharArray());
+        }
 
-           FileInputStream certfis = new FileInputStream(selectedFile);
-           CertificateFactory cf = CertificateFactory.getInstance("X.509");
-           Collection c = cf.generateCertificates(certfis);
-           Iterator i = c.iterator();
-           while (i.hasNext()) {
-               Certificate cert = (Certificate)i.next();
-               log.info("Adding certificate: " + cert);
-               ks.setCertificateEntry("tomcat", cert);
-           }
+        FileInputStream certfis = new FileInputStream(selectedFile);
+        CertificateFactory cf = CertificateFactory.getInstance("X.509");
+        Collection c = cf.generateCertificates(certfis);
+        Iterator i = c.iterator();
+        while (i.hasNext()) {
+            Certificate cert = (Certificate)i.next();
+            log.info("Adding certificate: " + cert);
+            ks.setCertificateEntry("tomcat", cert);
+        }
 
-           FileOutputStream ksfos = null;
-           try {
-               ksfos = new FileOutputStream(ClientProxy.TRUST_STORE_FILE);
-               ks.store(ksfos, ClientProxy.TRUST_STORE_PASSWORD.toCharArray());
-           } finally {
-               if (ksfos != null)
-                   ksfos.close();
-           }
+        FileOutputStream ksfos = null;
+        try {
+            ksfos = new FileOutputStream(ClientProxy.TRUST_STORE_FILE);
+            ks.store(ksfos, ClientProxy.TRUST_STORE_PASSWORD.toCharArray());
+        } finally {
+            if (ksfos != null)
+                ksfos.close();
+        }
 
-           JOptionPane.showMessageDialog(getFrame(),
-             "Certificate import was successful. \n" +
-             "You'll need to restart the Policy Editor for it to take effect.",
-             "Certificate import successful", JOptionPane.INFORMATION_MESSAGE);
-       }
+        JOptionPane.showMessageDialog(getFrame(),
+          "Certificate import was successful. \n" +
+          "You'll need to restart the Policy Editor for it to take effect.",
+          "Certificate import successful", JOptionPane.INFORMATION_MESSAGE);
+    }
 
 }
