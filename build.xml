@@ -386,7 +386,7 @@
       <war warfile="${build.dir}/${war}" update="true">
         <!-- SSM webstart -->
         <zipfileset dir="${src.root}/etc/jnlp" includes="ssm.jnlp" prefix="ssm"/>
-        <zipfileset dir="${src.root}/src/com/l7tech/console/resources" includes="layer7_logo_small_64x64.png" prefix="ssm/images"/>
+        <zipfileset dir="${src.root}/src/com/l7tech/console/resources" includes="layer7_logo_small_64x64.gif" prefix="ssm/images"/>
         <zipfileset dir="${build.dir}/lib" includes="jini-core.jar,jini-ext.jar,reggie-dl.jar,reggie.jar,jh.jar,kunststoff.jar,
                                                      looks-1.1.3.jar,odmg.jar,hibernate2.jar,oswego-concurrent.jar,wsdl4j.jar,qname.jar, xercesImpl.jar,xml-apis.jar,
                                                      axis.jar,commons-httpclient-2.0-rc2.jar,commons-lang.jar,commons-collections.jar,forms_rt.jar,jedit-syntax.jar,
