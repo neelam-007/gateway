@@ -56,7 +56,7 @@ public abstract class ServerIdentityAssertion implements ServerAssertion {
                 throw new IllegalStateException( err );
             } else {
                 // Authentication is required for any IdentityAssertion
-                response.addResult( new AssertionResult( _data, request, AssertionStatus.AUTH_REQUIRED ) );
+                response.addResult( new AssertionResult( _data, AssertionStatus.AUTH_REQUIRED ) );
                 // TODO: Some future IdentityAssertion might succeed, but this flag will remain true!
                 response.setAuthenticationMissing( true );
                 return AssertionStatus.AUTH_REQUIRED;
@@ -87,23 +87,23 @@ public abstract class ServerIdentityAssertion implements ServerAssertion {
                     return checkUser( user );
                 } catch ( BadCredentialsException bce ) {
                     // Authentication failure
-                    response.addResult( new AssertionResult( _data, request, AssertionStatus.AUTH_FAILED, bce.getMessage(), bce ));
+                    response.addResult( new AssertionResult( _data, AssertionStatus.AUTH_FAILED, bce.getMessage(), bce ));
                     _log.log(Level.INFO, "Authentication failed for " + user.getLogin() );
                     return AssertionStatus.AUTH_FAILED;
                 } catch ( InvalidClientCertificateException icce ) {
-                    response.addResult( new AssertionResult( _data, request, AssertionStatus.AUTH_FAILED, icce.getMessage(), icce ));
+                    response.addResult( new AssertionResult( _data, AssertionStatus.AUTH_FAILED, icce.getMessage(), icce ));
                     _log.log(Level.INFO, "Invalid client cert for " + user.getLogin() );
                     // set some response header so that the CP is made aware of this situation
                     response.setParameter(Response.PARAM_HTTP_CERT_STATUS, "invalid");
                     return AssertionStatus.AUTH_FAILED;
                 } catch ( MissingCredentialsException mce ) {
                     response.setAuthenticationMissing(true);
-                    response.addResult( new AssertionResult( _data, request, AssertionStatus.AUTH_REQUIRED, mce.getMessage(), mce ));
+                    response.addResult( new AssertionResult( _data, AssertionStatus.AUTH_REQUIRED, mce.getMessage(), mce ));
                     _log.log(Level.INFO, "Authentication failed for " + user.getLogin() );
                     return AssertionStatus.AUTH_REQUIRED;
                 } catch ( AuthenticationException ae ) {
                     _log.log(Level.INFO, "Authentication failed for " + user.getLogin() );
-                    response.addResult( new AssertionResult( _data, request, AssertionStatus.AUTH_FAILED, ae.getMessage(), ae ));
+                    response.addResult( new AssertionResult( _data, AssertionStatus.AUTH_FAILED, ae.getMessage(), ae ));
                     return AssertionStatus.AUTH_FAILED;
                 } catch ( FindException fe ) {
                     String err = "Couldn't find identity provider!";
