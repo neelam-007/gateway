@@ -387,6 +387,7 @@
                 <exclude name="com/l7tech/common/security/TrustedCert**" />
 
                 <exclude name="com/l7tech/policy/server/**/*"/>
+                <exclude name="com/l7tech/policy/exporter/**/*"/>
                 <exclude name="com/l7tech/policy/validator/RequestXpathAssertionValidator.class"/>
                 <exclude name="com/l7tech/policy/validator/ValidatorFactory.class"/>
 
@@ -404,22 +405,8 @@
             <fileset dir="${build.dir}/classes">
                 <exclude name="com/l7tech/logging/rmi/**/*"/>
                 <exclude name="com/l7tech/policy/server/**/*"/>
-                <include name="com/l7tech/identity/*Exception*"/>
-                <include name="com/l7tech/identity/cert/ClientCertManager.class"/>
-                <include name="com/l7tech/identity/cert/ClientCertManagerRemote.class"/>
-                <include name="com/l7tech/identity/*Client*"/>
-                <include name="com/l7tech/identity/Group*"/>
-                <include name="com/l7tech/identity/User*"/>
-                <include name="com/l7tech/identity/Identity*"/>
-                <exclude name="com/l7tech/identity/*Server*"/>
-                <exclude name="com/l7tech/identity/IdentityProviderFactory.class"/>
-                <include name="com/l7tech/identity/internal/InternalUser.class"/>
-                <include name="com/l7tech/identity/internal/InternalGroup.class"/>
-                <include name="com/l7tech/identity/ldap/*.class"/>
-                <exclude name="com/l7tech/identity/ldap/LdapGroupManager.class"/>
-                <exclude name="com/l7tech/identity/ldap/LdapUserManager.class"/>
-                <exclude name="com/l7tech/identity/ldap/LdapIdentityProvider.class"/>
-                <exclude name="com/l7tech/identity/ldap/LdapConfigTemplateManager.class"/>
+                <exclude name="com/l7tech/message/**/*"/>
+                <include name="com/l7tech/identity/**/*"/>
                 <include name="com/l7tech/common/**/*"/>
                 <exclude name="com/l7tech/common/security/prov/**/*"/>
                 <exclude name="com/l7tech/common/security/saml/**/*"/>
