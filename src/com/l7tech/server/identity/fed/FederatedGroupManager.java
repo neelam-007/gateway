@@ -71,10 +71,14 @@ public class FederatedGroupManager extends PersistentGroupManager {
             SamlConfig samlConfig = providerConfig.getSamlConfig();
             if ( providerConfig.isX509Supported() || (providerConfig.isSamlSupported() && samlConfig.isNameIdX509SubjectName()) ) {
                 String dnPattern = ((VirtualGroup)group).getX509SubjectDnPattern();
-                if ( dnPattern != null ) {
+                if ( dnPattern != null && dnPattern.length() > 0 ) {
                     String userDn = user.getSubjectDn();
-                    if ( userDn != null && CertUtils.dnMatchesPattern( user.getSubjectDn(), dnPattern ) )
-                        return true;
+                    try {
+                        if ( userDn != null && userDn.length() > 0 && CertUtils.dnMatchesPattern( user.getSubjectDn(), dnPattern ) )
+                            return true;
+                    } catch (IllegalArgumentException e) {
+                        logger.warning("X.509 Subject DN pattern '" + dnPattern +"' is not a valid DN" );
+                    }
                 }
             }
 
@@ -89,7 +93,6 @@ public class FederatedGroupManager extends PersistentGroupManager {
                         return m.matches();
                     } catch (PatternSyntaxException e) {
                         logger.warning("Email pattern '" + emailPattern + "' is not a valid regular expression");
-                        return false;
                     }
                 }
             }
