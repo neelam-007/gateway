@@ -128,8 +128,8 @@ public class WssProcessorTest extends TestCase {
         makeDotNetTestDocument("request wrapped l7 actor", TestDocuments.WRAPED_L7ACTOR),
         makeDotNetTestDocument("request multiple wrapped l7 actor", TestDocuments.MULTIPLE_WRAPED_L7ACTOR),
 
-        makeDotNetTestDocument("dotnet signed encrypted SecureConversation request", TestDocuments.DOTNET_ENCRYPTED_USING_DERIVED_KEY_TOKEN),
         makeDotNetTestDocument("dotnet signed SecureConversation request", TestDocuments.DOTNET_SIGNED_USING_DERIVED_KEY_TOKEN),
+        makeDotNetTestDocument("dotnet signed encrypted SecureConversation request", TestDocuments.DOTNET_ENCRYPTED_USING_DERIVED_KEY_TOKEN),
     };
 
     private TestDocument makeEttkTestDocument(String testname, String docname) {
