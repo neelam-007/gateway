@@ -220,15 +220,16 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
             });
 
             this.add(buttonSave);
-            buttonSave.getAction().setEnabled(false);
-            BaseAction ba = (BaseAction)buttonSave.getAction();
+            final BaseAction ba = (BaseAction)buttonSave.getAction();
+            ba.setEnabled(false);
             ba.addActionListener(new ActionListener() {
                 /**
                  * Invoked when an action occurs.
                  */
                 public void actionPerformed(ActionEvent e) {
                     appendToMessageArea("<i>Policy saved.</i>");
-                    buttonSave.getAction().setEnabled(false);
+                    ba.setEnabled(false);
+                    buttonSave.setEnabled(false);
                 }
             });
             buttonSaveTemplate = new JButton(new SavePolicyTemplateAction() {
@@ -316,8 +317,10 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
             Action action = actions[i];
             if (action instanceof SavePolicyAction) {
                 actions[i] = policyEditorToolbar.buttonSave.getAction();
+                actions[i].setEnabled(policyEditorToolbar.buttonSave.isEnabled());
             } else if (action instanceof ValidatePolicyAction) {
                 actions[i] = policyEditorToolbar.buttonValidate.getAction();
+                actions[i].setEnabled(policyEditorToolbar.buttonValidate.isEnabled());
             }
         }
     }
@@ -391,7 +394,6 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
 
     // listen for tree changes
     TreeModelListener treeModellistener = new TreeModelListener() {
-
         public void treeNodesChanged(TreeModelEvent e) {
             policyEditorToolbar.buttonSave.setEnabled(true);
             TreePath path = e.getTreePath();
