@@ -53,7 +53,7 @@ public class SsgKeyStoreManager {
      * @param ssg
      * @return
      */
-    public static boolean isClientCertAvailabile(Ssg ssg) {
+    public static boolean isClientCertAvailabile(Ssg ssg) throws KeyStoreCorruptException {
         if (ssg.haveClientCert() == null)
             ssg.haveClientCert(getClientCert(ssg) == null ? Boolean.FALSE : Boolean.TRUE);
         return ssg.haveClientCert().booleanValue();
@@ -65,8 +65,7 @@ public class SsgKeyStoreManager {
      * @param ssg  the Ssg whose KeyStore to examine
      * @return the server certificate (nominally the CA cert), or null if it hasn't yet been discovered.
      */
-    public static X509Certificate getServerCert(Ssg ssg)
-    {
+    public static X509Certificate getServerCert(Ssg ssg) throws KeyStoreCorruptException {
         try {
             return (X509Certificate) getKeyStore(ssg).getCertificate(SSG_ALIAS);
         } catch (KeyStoreException e) {
@@ -81,8 +80,7 @@ public class SsgKeyStoreManager {
      * @param ssg  the Ssg whose KeyStore to examine
      * @return our client certificate, or null if we haven't yet applied for one
      */
-    public static X509Certificate getClientCert(Ssg ssg)
-    {
+    public static X509Certificate getClientCert(Ssg ssg) throws KeyStoreCorruptException {
         try {
             return (X509Certificate) getKeyStore(ssg).getCertificate(ALIAS);
         } catch (KeyStoreException e) {
@@ -100,7 +98,7 @@ public class SsgKeyStoreManager {
      *                            KeyStore.deleteEntry() contract states that some provider might someday throw this.
      */
     public static void deleteClientCert(Ssg ssg)
-            throws IOException, KeyStoreException
+            throws IOException, KeyStoreException, KeyStoreCorruptException
     {
         synchronized (ssg) {
             getKeyStore(ssg).deleteEntry(ALIAS);
@@ -118,8 +116,7 @@ public class SsgKeyStoreManager {
      * @param ssg
      * @return
      */
-    public static X509Certificate[] getClientCertificateChain(Ssg ssg)
-    {
+    public static X509Certificate[] getClientCertificateChain(Ssg ssg) throws KeyStoreCorruptException {
         Certificate[] certs;
         try {
             certs = getKeyStore(ssg).getCertificateChain(ALIAS);
@@ -148,7 +145,7 @@ public class SsgKeyStoreManager {
      * @throws OperationCanceledException if the user canceled the password prompt
      */
     public static PrivateKey getClientCertPrivateKey(Ssg ssg)
-            throws NoSuchAlgorithmException, BadCredentialsException, OperationCanceledException
+            throws NoSuchAlgorithmException, BadCredentialsException, OperationCanceledException, KeyStoreCorruptException
     {
         synchronized (ssg) {
             if (!isClientCertAvailabile(ssg))
@@ -190,7 +187,7 @@ public class SsgKeyStoreManager {
      * @param ssg   the SSG whose KeyStore to examine
      * @return our public key, or null if we haven't yet applied for a client cert with this Ssg.
      */
-    public static PublicKey getClientCertPublicKey(Ssg ssg) {
+    public static PublicKey getClientCertPublicKey(Ssg ssg) throws KeyStoreCorruptException {
         if (!isClientCertAvailabile(ssg))
             return null;
         return getClientCert(ssg).getPublicKey();
@@ -302,7 +299,7 @@ public class SsgKeyStoreManager {
      * @throws IOException       if there was a problem writing the keystore to disk
      */
     public static void saveSsgCertificate(final Ssg ssg, X509Certificate cert)
-            throws KeyStoreException, IOException
+            throws KeyStoreException, IOException, KeyStoreCorruptException
     {
         synchronized (ssg) {
             log.info("Saving SSG certificate to disk");
@@ -325,7 +322,7 @@ public class SsgKeyStoreManager {
      * @throws IOException  if there was a problem writing the keystore to disk
      */
     public static void saveClientCertificate(final Ssg ssg, PrivateKey privateKey, X509Certificate cert)
-            throws KeyStoreException, IOException
+            throws KeyStoreException, IOException, KeyStoreCorruptException
     {
         log.info("Saving client certificate to disk");
         PasswordAuthentication pw;

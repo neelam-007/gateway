@@ -13,6 +13,7 @@ import com.l7tech.proxy.datamodel.exceptions.BadCredentialsException;
 import com.l7tech.proxy.datamodel.exceptions.ClientCertificateException;
 import com.l7tech.proxy.datamodel.exceptions.OperationCanceledException;
 import com.l7tech.proxy.datamodel.exceptions.ResponseValidationException;
+import com.l7tech.proxy.datamodel.exceptions.KeyStoreCorruptException;
 import org.xml.sax.SAXException;
 
 import java.io.IOException;
@@ -31,7 +32,7 @@ public abstract class ClientAssertion {
      */
     public abstract AssertionStatus decorateRequest(PendingRequest request)
             throws BadCredentialsException, OperationCanceledException, GeneralSecurityException,
-                   ClientCertificateException, IOException, SAXException;
+                   ClientCertificateException, IOException, SAXException, KeyStoreCorruptException;
 
     /**
      * ClientProxy clinet-side processing of the given response.
@@ -41,7 +42,7 @@ public abstract class ClientAssertion {
      */
     public abstract AssertionStatus unDecorateReply(PendingRequest request, SsgResponse response)
             throws BadCredentialsException, OperationCanceledException, GeneralSecurityException, IOException,
-                   SAXException, ResponseValidationException;
+                   SAXException, ResponseValidationException, KeyStoreCorruptException;
 
     /**
      * @return the human-readable node name that is displayed.

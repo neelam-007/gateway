@@ -9,6 +9,7 @@ import com.l7tech.proxy.datamodel.Ssg;
 import com.l7tech.proxy.datamodel.SsgFinder;
 import com.l7tech.proxy.datamodel.SsgKeyStoreManager;
 import com.l7tech.proxy.datamodel.exceptions.BadCredentialsException;
+import com.l7tech.proxy.datamodel.exceptions.KeyStoreCorruptException;
 import com.l7tech.proxy.datamodel.exceptions.OperationCanceledException;
 import com.l7tech.proxy.datamodel.exceptions.ServerCertificateUntrustedException;
 import com.l7tech.proxy.processor.MessageProcessor;
@@ -307,29 +308,35 @@ public class ClientProxy {
         int attempts = 0;
         for (;;) {
             try {
-                X509Certificate caCert = SsgKeyStoreManager.getServerCert(ssg);
-                if (caCert == null)
-                    throw new ServerCertificateUntrustedException(); // fault in the SSG cert
-                X509Certificate cert = SslUtils.obtainClientCertificate(ssg.getServerCertRequestUrl(),
-                                                                        request.getUsername(),
-                                                                        request.getPassword(),
-                                                                        csr,
-                                                                        caCert);
-                // make sure private key is stored on disk encrypted with the password that was used to obtain it
-                SsgKeyStoreManager.saveClientCertificate(ssg, keyPair.getPrivate(), cert);
-                initializeSsl(); // reset global SSL state
-                return;
-            } catch (SslUtils.BadCredentialsException e) {  // note: not the same class BadCredentialsException
-                if (++attempts > 3)
-                    throw new BadCredentialsException(e);
+                try {
+                    X509Certificate caCert = SsgKeyStoreManager.getServerCert(ssg);
+                    if (caCert == null)
+                        throw new ServerCertificateUntrustedException(); // fault in the SSG cert
+                    X509Certificate cert = SslUtils.obtainClientCertificate(ssg.getServerCertRequestUrl(),
+                                                                            request.getUsername(),
+                                                                            request.getPassword(),
+                                                                            csr,
+                                                                            caCert);
+                    // make sure private key is stored on disk encrypted with the password that was used to obtain it
+                    SsgKeyStoreManager.saveClientCertificate(ssg, keyPair.getPrivate(), cert);
+                    initializeSsl(); // reset global SSL state
+                    return;
+                } catch (SslUtils.BadCredentialsException e) {  // note: not the same class BadCredentialsException
+                    if (++attempts > 3)
+                        throw new BadCredentialsException(e);
 
-                if (SsgKeyStoreManager.isClientCertAvailabile(ssg)) // shouldn't be necessary, but just in case
-                    SsgKeyStoreManager.deleteClientCert(ssg);
-                request.getNewCredentials();
-                // retry with new password
-            } catch (SslUtils.CertificateAlreadyIssuedException e) {
-                Managers.getCredentialManager().notifyCertificateAlreadyIssued(ssg);
-                throw new OperationCanceledException();
+                    if (SsgKeyStoreManager.isClientCertAvailabile(ssg)) // shouldn't be necessary, but just in case
+                        SsgKeyStoreManager.deleteClientCert(ssg);
+                    request.getNewCredentials();
+                    // FALLTHROUGH -- retry with new password
+                } catch (SslUtils.CertificateAlreadyIssuedException e) {
+                    Managers.getCredentialManager().notifyCertificateAlreadyIssued(ssg);
+                    throw new OperationCanceledException();
+                }
+            } catch (KeyStoreCorruptException e) {
+                Managers.getCredentialManager().notifyKeyStoreCorrupt(ssg);
+                SsgKeyStoreManager.deleteKeyStore(ssg);
+                // FALLTHROUGH -- retry with newly-emptied keystore
             }
         }
     }
@@ -345,7 +352,7 @@ public class ClientProxy {
      * @throws GeneralSecurityException for miscellaneous and mostly unlikely certificate or key store problems
      */
     public static void installSsgServerCertificate(Ssg ssg)
-            throws IOException, BadCredentialsException, OperationCanceledException, GeneralSecurityException
+            throws IOException, BadCredentialsException, OperationCanceledException, GeneralSecurityException, KeyStoreCorruptException
     {
         PasswordAuthentication pw = Managers.getCredentialManager().getCredentials(ssg);
         CertificateDownloader cd = new CertificateDownloader(ssg.getServerUrl(),

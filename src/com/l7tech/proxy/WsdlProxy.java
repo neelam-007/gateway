@@ -11,9 +11,11 @@ import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.proxy.datamodel.Managers;
 import com.l7tech.proxy.datamodel.Ssg;
+import com.l7tech.proxy.datamodel.SsgKeyStoreManager;
 import com.l7tech.proxy.datamodel.exceptions.BadCredentialsException;
 import com.l7tech.proxy.datamodel.exceptions.OperationCanceledException;
 import com.l7tech.proxy.datamodel.exceptions.ServerCertificateUntrustedException;
+import com.l7tech.proxy.datamodel.exceptions.KeyStoreCorruptException;
 import com.l7tech.proxy.util.ClientLogger;
 import com.l7tech.common.xml.Wsdl;
 import org.apache.commons.httpclient.HttpClient;
@@ -155,14 +157,21 @@ public class WsdlProxy {
                     if (ExceptionUtils.causedBy(e, ServerCertificateUntrustedException.class)) {
                         try {
                             log.info("Attempting to discover Ssg server certificate for " + ssg);
-                            ClientProxy.installSsgServerCertificate(ssg);
+                            try {
+                                ClientProxy.installSsgServerCertificate(ssg);
+                            } catch (KeyStoreCorruptException e1) {
+                                Managers.getCredentialManager().notifyKeyStoreCorrupt(ssg);
+                                SsgKeyStoreManager.deleteKeyStore(ssg);
+                                status = -1; // hack hack hack: fake status meaning "try again"
+                                // FALLTHROUGH -- try again with newly-emptied keystore
+                            }
                             continue;
                         } catch (GeneralSecurityException e1) {
                             throw new DownloadException("Unable to discover Gateway's server certificate", e1);
                         } catch (BadCredentialsException e1) {
                             log.warn("Certificate discovery service indicates bad password; setting status to 401 artificially");
                             status = 401; // hack hack hack: fake up a 401 status to trigger password dialog below
-                            // fall through and continue
+                            // FALLTHROUGH -- get new credentials and try again
                         }
                     } else
                         throw e;
@@ -175,6 +184,8 @@ public class WsdlProxy {
                 } else if (status == 401) {
                     pw = Managers.getCredentialManager().getNewCredentials(ssg);
                     // FALLTHROUGH - continue and try again with new password
+                } else if (status == -1) {
+                    // FALLTHROUGH -- continue and try again with empty keystore
                 } else
                     break;
             } finally {

@@ -11,6 +11,7 @@ import com.l7tech.proxy.datamodel.Ssg;
 import com.l7tech.proxy.datamodel.SsgKeyStoreManager;
 import com.l7tech.proxy.datamodel.exceptions.BadCredentialsException;
 import com.l7tech.proxy.datamodel.exceptions.OperationCanceledException;
+import com.l7tech.proxy.datamodel.exceptions.KeyStoreCorruptException;
 import com.l7tech.proxy.util.ClientLogger;
 
 import javax.net.ssl.X509KeyManager;
@@ -49,6 +50,9 @@ public class ClientProxyKeyManager implements X509KeyManager {
         } catch (OperationCanceledException e) {
             log.error(e);
             throw new ClientProxySslException(e);
+        } catch (KeyStoreCorruptException e) {
+            log.error(e);
+            throw new ClientProxySslException(e);
         }
     }
 
@@ -57,7 +61,13 @@ public class ClientProxyKeyManager implements X509KeyManager {
         Ssg ssg = CurrentRequest.getCurrentSsg();
         if (ssg == null)
             throw new IllegalStateException("No current Ssg is available in this thread");
-        X509Certificate[] certs = SsgKeyStoreManager.getClientCertificateChain(ssg);
+        X509Certificate[] certs = new X509Certificate[0];
+        try {
+            certs = SsgKeyStoreManager.getClientCertificateChain(ssg);
+        } catch (KeyStoreCorruptException e) {
+            log.error(e);
+            throw new ClientProxySslException(e);
+        }
         log.info("Found " + certs.length + " client certificates with SSG " + ssg);
         if (certs.length < 1) {
             log.info("*** About to return NULL certificate array..");
@@ -88,19 +98,22 @@ public class ClientProxyKeyManager implements X509KeyManager {
         if (ssg == null)
             throw new IllegalStateException("No current Ssg is available in this thread");
         String hostname = ssg.getSsgAddress();
-        if (SsgKeyStoreManager.isClientCertAvailabile(ssg)) {
-            try {
+        try {
+            if (SsgKeyStoreManager.isClientCertAvailabile(ssg)) {
                 SsgKeyStoreManager.getClientCertPrivateKey(ssg); // make sure key is recoverable
                 log.info("Will present client cert for hostname " + hostname);
                 return hostname;
-            } catch (NoSuchAlgorithmException e) {
-                throw new RuntimeException(e); // can't happen
-            } catch (BadCredentialsException e) {
-                log.info("Private key for client cert for Ssg " + ssg + " is currently unrecoverable; won't bother to present this cert");
-                return null;
-            } catch (OperationCanceledException e) {
-                throw new RuntimeException(e);
             }
+        } catch (KeyStoreCorruptException e) {
+            log.error(e);
+            throw new RuntimeException(e);
+        } catch (NoSuchAlgorithmException e) {
+            throw new RuntimeException(e); // can't happen
+        } catch (BadCredentialsException e) {
+            log.info("Private key for client cert for Ssg " + ssg + " is currently unrecoverable; won't bother to present this cert");
+            return null;
+        } catch (OperationCanceledException e) {
+            throw new RuntimeException(e);
         }
         log.info("No client cert found for this connection to hostname " + hostname);
         return null;

@@ -12,6 +12,7 @@ import com.l7tech.proxy.datamodel.Ssg;
 import com.l7tech.proxy.datamodel.SsgManager;
 import com.l7tech.proxy.datamodel.SsgKeyStoreManager;
 import com.l7tech.proxy.datamodel.exceptions.OperationCanceledException;
+import com.l7tech.proxy.datamodel.exceptions.KeyStoreCorruptException;
 import com.l7tech.proxy.util.ClientLogger;
 
 import javax.swing.*;
@@ -68,15 +69,31 @@ public class GuiCredentialManager extends CredentialManager {
     }
 
     public PasswordAuthentication getCredentials(final Ssg ssg) throws OperationCanceledException {
-        return getCredentials(ssg, false);
+        for (;;) {
+            try {
+                return getCredentials(ssg, false);
+            } catch (KeyStoreCorruptException e) {
+                notifyKeyStoreCorrupt(ssg);
+                SsgKeyStoreManager.deleteKeyStore(ssg);
+                // FALLTHROUGH -- retry with newly-emptied keystore
+            }
+        }
     }
 
     public PasswordAuthentication getNewCredentials(final Ssg ssg) throws OperationCanceledException {
-        return getCredentials(ssg, true);
+        for (;;) {
+            try {
+                return getCredentials(ssg, true);
+            } catch (KeyStoreCorruptException e) {
+                notifyKeyStoreCorrupt(ssg);
+                SsgKeyStoreManager.deleteKeyStore(ssg);
+                // FALLTHROUGH -- retry with newly-emptied keystore
+            }
+        }
     }
 
     private PasswordAuthentication getCredentials(final Ssg ssg, final boolean oldOnesWereBad)
-            throws OperationCanceledException
+            throws OperationCanceledException, KeyStoreCorruptException
     {
         PasswordAuthentication pw = ssg.getCredentials();
         if (!oldOnesWereBad && pw != null)

@@ -12,6 +12,9 @@ import com.l7tech.proxy.datamodel.Ssg;
 import com.l7tech.proxy.datamodel.SsgEvent;
 import com.l7tech.proxy.datamodel.SsgKeyStoreManager;
 import com.l7tech.proxy.datamodel.SsgListener;
+import com.l7tech.proxy.datamodel.Managers;
+import com.l7tech.proxy.datamodel.exceptions.KeyStoreCorruptException;
+import com.l7tech.proxy.datamodel.exceptions.OperationCanceledException;
 import com.l7tech.proxy.gui.util.IconManager;
 import com.l7tech.proxy.gui.policy.PolicyTreeCellRenderer;
 import com.l7tech.proxy.gui.policy.PolicyTreeModel;
@@ -73,7 +76,10 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
     private JTextField fieldSsgPort;
     private JTextField fieldSslPort;
 
-    //   View for Policy pane
+    //   View for Agent Policy pane
+    private JComponent agentPolicyPane;
+
+    //   View for Service Policies pane
     private JComponent policiesPane;
     private JTree policyTree;
     private JTable policyTable;
@@ -89,7 +95,8 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
         tabbedPane.add("General", getGeneralPane());
         tabbedPane.add("Identity", getIdentityPane());
         tabbedPane.add("Network", getNetworkPane());
-        tabbedPane.add("Policies", getPoliciesPane());
+        //tabbedPane.add("Agent Policy", getAgentPolicyPane());
+        tabbedPane.add("Service Policies", getPoliciesPane());
         ssg.addSsgListener(this);
         setSsg(ssg);
         pack();
@@ -130,6 +137,18 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
         }
     }
 
+    private JComponent getAgentPolicyPane() {
+        if (agentPolicyPane == null) {
+            int y = 0;
+            JPanel pane = new JPanel(new GridBagLayout());
+            agentPolicyPane = new JScrollPane(pane);
+            agentPolicyPane.setBorder(BorderFactory.createEmptyBorder());
+
+
+        }
+        return agentPolicyPane;
+    }
+
     private JComponent getPoliciesPane() {
         if (policiesPane == null) {
             int y = 0;
@@ -137,7 +156,7 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
             policiesPane = new JScrollPane(pane);
             policiesPane.setBorder(BorderFactory.createEmptyBorder());
 
-            pane.add(new JLabel("<HTML><h4>Policies being cached by this Agent</h4></HTML>"),
+            pane.add(new JLabel("<HTML><h4>Service Policies being cached by this Agent</h4></HTML>"),
                      new GridBagConstraints(0, y++, 1, 1, 0.0, 0.0,
                                             GridBagConstraints.NORTHWEST,
                                             GridBagConstraints.BOTH,
@@ -671,12 +690,23 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
             cbSavePassword.setSelected(ssg.isSavePasswordToDisk());
             updateCustomPortsEnableState();
 
-            if (SsgKeyStoreManager.isClientCertAvailabile(ssg)) {
-                X509Certificate cert = SsgKeyStoreManager.getClientCert(ssg);
-                X500Principal certName = new X500Principal(cert.getSubjectDN().toString());
-                String certNameString = certName.getName(X500Principal.CANONICAL);
-                fieldUsername.setText(certNameString.substring(3));
-                fieldUsername.setEditable(false);
+            try {
+                if (SsgKeyStoreManager.isClientCertAvailabile(ssg)) {
+                    X509Certificate cert = null;
+                    cert = SsgKeyStoreManager.getClientCert(ssg);
+                    X500Principal certName = new X500Principal(cert.getSubjectDN().toString());
+                    String certNameString = certName.getName(X500Principal.CANONICAL);
+                    fieldUsername.setText(certNameString.substring(3));
+                    fieldUsername.setEditable(false);
+                }
+            } catch (KeyStoreCorruptException e) {
+                try {
+                    Managers.getCredentialManager().notifyKeyStoreCorrupt(ssg);
+                    SsgKeyStoreManager.deleteKeyStore(ssg);
+                    // FALLTHROUGH -- continue, with newly-blank keystore
+                } catch (OperationCanceledException e1) {
+                    // FALLTHROUGH -- continue, pretending we had no keystore
+                }
             }
 
             updatePolicyPanel();

@@ -15,8 +15,8 @@ import com.l7tech.proxy.datamodel.PendingRequest;
 import com.l7tech.proxy.datamodel.Ssg;
 import com.l7tech.proxy.datamodel.SsgKeyStoreManager;
 import com.l7tech.proxy.datamodel.SsgResponse;
-import com.l7tech.proxy.datamodel.SsgSessionManager;
 import com.l7tech.proxy.datamodel.exceptions.BadCredentialsException;
+import com.l7tech.proxy.datamodel.exceptions.KeyStoreCorruptException;
 import com.l7tech.proxy.datamodel.exceptions.OperationCanceledException;
 import com.l7tech.proxy.datamodel.exceptions.ResponseValidationException;
 import com.l7tech.proxy.datamodel.exceptions.ServerCertificateUntrustedException;
@@ -71,7 +71,7 @@ public class ClientXmlResponseSecurity extends ClientAssertion {
      */
     public AssertionStatus decorateRequest(PendingRequest request)
             throws ServerCertificateUntrustedException,
-                   OperationCanceledException, BadCredentialsException, IOException
+                   OperationCanceledException, BadCredentialsException, IOException, KeyStoreCorruptException
     {
         Ssg ssg = request.getSsg();
 
@@ -97,7 +97,7 @@ public class ClientXmlResponseSecurity extends ClientAssertion {
      * @param response
      * @return
      */
-    public AssertionStatus unDecorateReply(PendingRequest request, SsgResponse response) throws ServerCertificateUntrustedException, IOException, SAXException, ResponseValidationException {
+    public AssertionStatus unDecorateReply(PendingRequest request, SsgResponse response) throws ServerCertificateUntrustedException, IOException, SAXException, ResponseValidationException, KeyStoreCorruptException {
         Document doc = response.getResponseAsDocument();
 
         // LOOK FOR NONCE IN WSSC TOKEN

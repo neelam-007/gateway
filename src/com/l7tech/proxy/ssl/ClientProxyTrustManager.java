@@ -10,6 +10,7 @@ import com.l7tech.proxy.datamodel.CurrentRequest;
 import com.l7tech.proxy.datamodel.Ssg;
 import com.l7tech.proxy.datamodel.SsgKeyStoreManager;
 import com.l7tech.proxy.datamodel.exceptions.ServerCertificateUntrustedException;
+import com.l7tech.proxy.datamodel.exceptions.KeyStoreCorruptException;
 import com.l7tech.proxy.util.ClientLogger;
 import sun.security.x509.X500Name;
 
@@ -36,8 +37,13 @@ public class ClientProxyTrustManager implements X509TrustManager {
         if (ssg == null)
             throw new IllegalStateException("No current Ssg is available in this thread");
 
-        X509Certificate ssgCert = SsgKeyStoreManager.getServerCert(ssg);
-        return ssgCert == null ? new X509Certificate[0] : new X509Certificate[] { ssgCert };
+        X509Certificate ssgCert = null;
+        try {
+            ssgCert = SsgKeyStoreManager.getServerCert(ssg);
+            return ssgCert == null ? new X509Certificate[0] : new X509Certificate[] { ssgCert };
+        } catch (KeyStoreCorruptException e) {
+            return new X509Certificate[0];
+        }
     }
 
     public void checkClientTrusted(X509Certificate[] x509Certificates, String s) throws CertificateException {
@@ -72,7 +78,12 @@ public class ClientProxyTrustManager implements X509TrustManager {
                                                 expectedHostname + ")");
 
         // Get the trusted CA key for this SSG.
-        X509Certificate trustedCert = SsgKeyStoreManager.getServerCert(ssg);
+        X509Certificate trustedCert = null;
+        try {
+            trustedCert = SsgKeyStoreManager.getServerCert(ssg);
+        } catch (KeyStoreCorruptException e) {
+            throw new RuntimeException(e);
+        }
         if (trustedCert == null)
             throw new ServerCertificateUntrustedException("We have not yet discovered this SSG's server certificate");
 

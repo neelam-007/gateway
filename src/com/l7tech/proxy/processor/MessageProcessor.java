@@ -24,11 +24,11 @@ import com.l7tech.proxy.datamodel.SsgResponse;
 import com.l7tech.proxy.datamodel.SsgSessionManager;
 import com.l7tech.proxy.datamodel.exceptions.BadCredentialsException;
 import com.l7tech.proxy.datamodel.exceptions.ClientCertificateException;
+import com.l7tech.proxy.datamodel.exceptions.KeyStoreCorruptException;
 import com.l7tech.proxy.datamodel.exceptions.OperationCanceledException;
 import com.l7tech.proxy.datamodel.exceptions.PolicyRetryableException;
 import com.l7tech.proxy.datamodel.exceptions.ResponseValidationException;
 import com.l7tech.proxy.datamodel.exceptions.ServerCertificateUntrustedException;
-import com.l7tech.proxy.datamodel.exceptions.KeyStoreCorruptException;
 import com.l7tech.proxy.ssl.HostnameMismatchException;
 import com.l7tech.proxy.util.CannedSoapFaults;
 import com.l7tech.proxy.util.ClientLogger;
@@ -45,6 +45,10 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.security.GeneralSecurityException;
 import java.security.UnrecoverableKeyException;
+import java.security.KeyStoreException;
+import java.security.NoSuchAlgorithmException;
+import java.security.NoSuchProviderException;
+import java.security.KeyManagementException;
 import java.security.cert.CertificateException;
 
 /**
@@ -93,78 +97,36 @@ public class MessageProcessor {
      */
     public SsgResponse processMessage(PendingRequest req)
             throws ClientCertificateException, OperationCanceledException,
-                   ConfigurationException, GeneralSecurityException, IOException, SAXException,
-                   ResponseValidationException
+            ConfigurationException, GeneralSecurityException, IOException, SAXException,
+            ResponseValidationException
     {
         Ssg ssg = req.getSsg();
 
         for (int attempts = 0; attempts < MAX_TRIES; ++attempts) {
             try {
                 try {
-                    Policy appliedPolicy = enforcePolicy(req);
-                    SsgResponse res = obtainResponse(req, appliedPolicy);
-                    undecorateResponse(req, res, appliedPolicy);
-                    return res;
-                } catch (KeyStoreCorruptException e) {
-                    Managers.getCredentialManager().notifyKeyStoreCorrupt(ssg);
-                    SsgKeyStoreManager.deleteKeyStore(ssg);
-                    // FALLTHROUGH -- retry, creating new keystore
-                } catch (SSLException e) {
-                    // An SSL handshake with the SSG has failed.
-                    // See if we can identify the cause and correct it.
-
-                    // Do we not have the right password to access our keystore?
-                    if (ExceptionUtils.causedBy(e, BadCredentialsException.class) ||
-                        ExceptionUtils.causedBy(e, UnrecoverableKeyException.class))
-                        throw new BadCredentialsException(e);
-
-                    // Was this server cert untrusted?
-                    if (!ExceptionUtils.causedBy(e, ServerCertificateUntrustedException.class)) {
-                        // No, that wasn't the problem.  Was it a cert hostname mismatch?
-                        HostnameMismatchException hme = (HostnameMismatchException)
-                                        ExceptionUtils.getCauseIfCausedBy(e, HostnameMismatchException.class);
-                        if (hme != null) {
-                            // Notify user of the hostname mismatch and then abort this request
-                            String wanted = hme.getWhatWasWanted();
-                            String got = hme.getWhatWeGotInstead();
-                            Managers.getCredentialManager().notifySsgHostnameMismatch(ssg,
-                                                                                      wanted,
-                                                                                      got);
-                            throw e;
-                        }
-
-                        // not sure what happened; throw it up and abort the request
-                        throw e;
+                    try {
+                        Policy appliedPolicy = enforcePolicy(req);
+                        SsgResponse res = obtainResponse(req, appliedPolicy);
+                        undecorateResponse(req, res, appliedPolicy);
+                        return res;
+                    } catch (SSLException e) {
+                        handleSslException(e, ssg);
+                        // FALLTHROUGH -- retry with new server certificate
+                    } catch (ServerCertificateUntrustedException e) {
+                        ClientProxy.installSsgServerCertificate(ssg); // might throw BadCredentialsException
+                        // FALLTHROUGH allow policy to reset and retry
                     }
-
-                    // We don't trust the server cert.  Perform certificate discovery and try again
-                    ClientProxy.installSsgServerCertificate(ssg); // might throw BadCredentialsException
-                    // FALLTHROUGH -- retry with new server certificate
-                } catch (ServerCertificateUntrustedException e) {
-                    ClientProxy.installSsgServerCertificate(ssg); // might throw BadCredentialsException
+                } catch (PolicyRetryableException e) {
+                    // FALLTHROUGH allow policy to reset and retry
+                } catch (BadCredentialsException e) {
+                    handleBadCredentialsException(ssg, req, e);
                     // FALLTHROUGH allow policy to reset and retry
                 }
-            } catch (PolicyRetryableException e) {
-                // FALLTHROUGH allow policy to reset and retry
-            } catch (BadCredentialsException e) {
-                // If we have a client cert, and the current password worked to decrypt it's private key, but something
-                // has rejected the password anyway, we need to reestablish the validity of this account with the SSG.
-                if (SsgKeyStoreManager.isClientCertAvailabile(ssg) && SsgKeyStoreManager.isPasswordWorkedForPrivateKey(ssg)) {
-                    if (securePasswordPing(req)) {
-                        // password works with our keystore, and with the SSG, so why did it fail just now?
-                        String message = "Recieved password failure, but it worked with our keystore and the SSG liked it when we double-checked it.  " +
-                                  "Could be an internal error, or an attack, or the SSG admin toggling your account on and off.";
-                        log.error(message);
-                        throw new ConfigurationException(message, e);
-                    } else {
-                        log.error("The SSG password that was used to obtain this client cert is no longer valid -- deleting the client cert");
-                        SsgKeyStoreManager.deleteClientCert(ssg);
-                        req.getClientProxy().initializeSsl(); // reset global SSL state
-                    }
-                }
-
-                req.getNewCredentials();
-                // FALLTHROUGH allow policy to reset and retry
+            } catch (KeyStoreCorruptException e) {
+                Managers.getCredentialManager().notifyKeyStoreCorrupt(ssg);
+                SsgKeyStoreManager.deleteKeyStore(ssg);
+                // FALLTHROUGH -- retry, creating new keystore
             }
             req.reset();
         }
@@ -173,6 +135,69 @@ public class MessageProcessor {
         if (req.getLastErrorResponse() != null)
             return req.getLastErrorResponse();
         throw new ConfigurationException("Unable to conform to policy, and no useful fault from Ssg.");
+    }
+
+    private void handleBadCredentialsException(Ssg ssg, PendingRequest req, BadCredentialsException e)
+            throws KeyStoreCorruptException, IOException, OperationCanceledException, ConfigurationException,
+                   KeyStoreException, NoSuchAlgorithmException, NoSuchProviderException, KeyManagementException
+    {
+        // If we have a client cert, and the current password worked to decrypt it's private key, but something
+        // has rejected the password anyway, we need to reestablish the validity of this account with the SSG.
+        if (SsgKeyStoreManager.isClientCertAvailabile(ssg) && SsgKeyStoreManager.isPasswordWorkedForPrivateKey(ssg)) {
+            if (securePasswordPing(req)) {
+                // password works with our keystore, and with the SSG, so why did it fail just now?
+                String message = "Recieved password failure, but it worked with our keystore and the SSG liked it when we double-checked it.  " +
+                        "Could be an internal error, or an attack, or the SSG admin toggling your account on and off.";
+                log.error(message);
+                throw new ConfigurationException(message, e);
+            }
+            log.error("The SSG password that was used to obtain this client cert is no longer valid -- deleting the client cert");
+            try {
+                SsgKeyStoreManager.deleteClientCert(ssg);
+            } catch (KeyStoreCorruptException e1) {
+                Managers.getCredentialManager().notifyKeyStoreCorrupt(ssg);
+                SsgKeyStoreManager.deleteKeyStore(ssg);
+            }
+            req.getClientProxy().initializeSsl(); // reset global SSL state
+            // FALLTHROUGH -- retry, creating new keystore
+        }
+
+        req.getNewCredentials();
+    }
+
+    private static void handleSslException(SSLException e, Ssg ssg)
+            throws BadCredentialsException, IOException, OperationCanceledException, GeneralSecurityException,
+                   KeyStoreCorruptException
+    {
+        // An SSL handshake with the SSG has failed.
+        // See if we can identify the cause and correct it.
+
+        // Do we not have the right password to access our keystore?
+        if (ExceptionUtils.causedBy(e, BadCredentialsException.class) ||
+                ExceptionUtils.causedBy(e, UnrecoverableKeyException.class))
+            throw new BadCredentialsException(e);
+
+        // Was this server cert untrusted?
+        if (!ExceptionUtils.causedBy(e, ServerCertificateUntrustedException.class)) {
+            // No, that wasn't the problem.  Was it a cert hostname mismatch?
+            HostnameMismatchException hme = (HostnameMismatchException)
+                    ExceptionUtils.getCauseIfCausedBy(e, HostnameMismatchException.class);
+            if (hme != null) {
+                // Notify user of the hostname mismatch and then abort this request
+                String wanted = hme.getWhatWasWanted();
+                String got = hme.getWhatWeGotInstead();
+                Managers.getCredentialManager().notifySsgHostnameMismatch(ssg,
+                                                                          wanted,
+                                                                          got);
+                throw e;
+            }
+
+            // not sure what happened; throw it up and abort the request
+            throw e;
+        }
+
+        // We don't trust the server cert.  Perform certificate discovery and try again
+        ClientProxy.installSsgServerCertificate(ssg); // might throw BadCredentialsException
     }
 
     /**
@@ -211,7 +236,7 @@ public class MessageProcessor {
      * @throws ServerCertificateUntrustedException  if the Ssg certificate needs to be (re)imported.
      */
     private Policy enforcePolicy(PendingRequest req)
-            throws OperationCanceledException, GeneralSecurityException, BadCredentialsException, IOException, SAXException, ClientCertificateException
+            throws OperationCanceledException, GeneralSecurityException, BadCredentialsException, IOException, SAXException, ClientCertificateException, KeyStoreCorruptException
     {
         Policy policy = policyManager.getPolicy(req);
         if (policy == null)
@@ -235,7 +260,7 @@ public class MessageProcessor {
     private void undecorateResponse(PendingRequest req, SsgResponse res, Policy appliedPolicy)
             throws OperationCanceledException,
                    GeneralSecurityException, BadCredentialsException, IOException,
-                   ResponseValidationException, SAXException
+                   ResponseValidationException, SAXException, KeyStoreCorruptException
     {
         log.info(appliedPolicy == null ? "skipping undecorate step" : "undecorating response");
         if (appliedPolicy == null)
@@ -300,7 +325,7 @@ public class MessageProcessor {
      */
     private SsgResponse obtainResponse(PendingRequest req, Policy policy)
             throws ConfigurationException, IOException, PolicyRetryableException, ServerCertificateUntrustedException,
-            OperationCanceledException, ClientCertificateException, BadCredentialsException
+            OperationCanceledException, ClientCertificateException, BadCredentialsException, KeyStoreCorruptException
     {
         URL url = getUrl(req);
         Ssg ssg = req.getSsg();

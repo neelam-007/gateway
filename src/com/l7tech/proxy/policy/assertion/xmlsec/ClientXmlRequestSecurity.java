@@ -15,6 +15,7 @@ import com.l7tech.proxy.datamodel.SsgResponse;
 import com.l7tech.proxy.datamodel.exceptions.BadCredentialsException;
 import com.l7tech.proxy.datamodel.exceptions.OperationCanceledException;
 import com.l7tech.proxy.datamodel.exceptions.ServerCertificateUntrustedException;
+import com.l7tech.proxy.datamodel.exceptions.KeyStoreCorruptException;
 import com.l7tech.proxy.policy.assertion.ClientAssertion;
 import com.l7tech.proxy.policy.assertion.credential.http.ClientHttpClientCert;
 import com.l7tech.proxy.util.ClientLogger;
@@ -56,7 +57,7 @@ public class ClientXmlRequestSecurity extends ClientAssertion {
      */
     public AssertionStatus decorateRequest(PendingRequest request)
             throws OperationCanceledException, BadCredentialsException,
-            GeneralSecurityException, IOException
+            GeneralSecurityException, IOException, KeyStoreCorruptException
     {
         // GET THE SOAP DOCUMENT
         Document soapmsg = null;

@@ -11,7 +11,7 @@ package com.l7tech.proxy.datamodel.exceptions;
  * @author mike
  * @version 1.0
  */
-public class KeyStoreCorruptException extends RuntimeException {
+public class KeyStoreCorruptException extends Exception {
     public KeyStoreCorruptException() {
     }
 

@@ -145,6 +145,6 @@ public class SsgPropertyDialogTest extends TestCase {
         Gui.setInstance(Gui.createGui(clientProxy, new SsgManagerStub()));
         Gui.getInstance().start();
         SsgPropertyDialog.makeSsgPropertyDialog(clientProxy, ssg).show();
-        Gui.getInstance().stop();
+        System.exit(0);
     }
 }

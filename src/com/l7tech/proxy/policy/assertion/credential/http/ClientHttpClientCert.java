@@ -15,6 +15,7 @@ import com.l7tech.proxy.datamodel.SsgResponse;
 import com.l7tech.proxy.datamodel.exceptions.BadCredentialsException;
 import com.l7tech.proxy.datamodel.exceptions.ClientCertificateException;
 import com.l7tech.proxy.datamodel.exceptions.OperationCanceledException;
+import com.l7tech.proxy.datamodel.exceptions.KeyStoreCorruptException;
 import com.l7tech.proxy.policy.assertion.ClientAssertion;
 import com.l7tech.proxy.util.ClientLogger;
 
@@ -38,7 +39,7 @@ public class ClientHttpClientCert extends ClientAssertion {
      * @return AssertionStatus.NONE if this Assertion was applied to the request successfully; otherwise, some error code
      */
     public AssertionStatus decorateRequest(PendingRequest request)
-            throws OperationCanceledException, BadCredentialsException, GeneralSecurityException, ClientCertificateException
+            throws OperationCanceledException, BadCredentialsException, GeneralSecurityException, ClientCertificateException, KeyStoreCorruptException
     {
         Ssg ssg = request.getSsg();
         request.getCredentials();
