@@ -4,6 +4,7 @@ package com.l7tech.proxy.gui;
 import com.l7tech.console.panels.Utilities;
 import com.l7tech.proxy.RequestInterceptor;
 import com.l7tech.proxy.ClientProxy;
+import com.l7tech.proxy.datamodel.Ssg;
 import com.l7tech.proxy.gui.util.IconManager;
 import com.l7tech.proxy.util.JavaVersionChecker;
 import org.apache.log4j.Category;
@@ -243,6 +244,13 @@ public class Gui {
     private Action getImportCertActionListener() {
         return new AbstractAction() {
             public void actionPerformed(ActionEvent evt) {
+                Ssg ssg = getSsgListPanel().getSelectedSsg();
+                if (ssg == null) {
+                    JOptionPane.showMessageDialog(getFrame(),
+                                                  "Please select the SSG for which you are importing the certificate.",
+                                                  "No SSG is selected", JOptionPane.ERROR_MESSAGE);
+                    return;
+                }
 
                 JFileChooser fc = getFileChooser();
                 FileFilter filter = new FileFilter() {
@@ -265,7 +273,7 @@ public class Gui {
 
                 if (JFileChooser.APPROVE_OPTION == fc.showOpenDialog(getFrame())) {
                     try {
-                        importSsgCertificate(fc.getSelectedFile());
+                        importSsgCertificate(ssg, fc.getSelectedFile());
                     } catch (IOException e) {
                         log.error(e);
                         JOptionPane.showMessageDialog(getFrame(),
@@ -296,39 +304,16 @@ public class Gui {
      * @param selectedFile the SSG certificate file.  Must be in *.cer binary format, whatever that is.
      *                     Probably PKCS#7.
      */
-    private void importSsgCertificate(File selectedFile)
-            throws IOException, CertificateException, KeyStoreException, NoSuchAlgorithmException
+    private void importSsgCertificate(Ssg ssg, File selectedFile)
+            throws IOException, CertificateException, NoSuchAlgorithmException, KeyStoreException
     {
-        KeyStore ks = KeyStore.getInstance("JKS");
-        try {
-            FileInputStream ksfis = new FileInputStream(ClientProxy.TRUST_STORE_FILE);
-            try {
-                ks.load(ksfis, ClientProxy.TRUST_STORE_PASSWORD.toCharArray());
-            } finally {
-                ksfis.close();
-            }
-        } catch (FileNotFoundException e) {
-            // Create a new one.
-            ks.load(null, ClientProxy.TRUST_STORE_PASSWORD.toCharArray());
-        }
-
         FileInputStream certfis = new FileInputStream(selectedFile);
         CertificateFactory cf = CertificateFactory.getInstance("X.509");
         Collection c = cf.generateCertificates(certfis);
         Iterator i = c.iterator();
         while (i.hasNext()) {
             Certificate cert = (Certificate)i.next();
-            log.info("Adding certificate: " + cert);
-            ks.setCertificateEntry("tomcat", cert);
-        }
-
-        FileOutputStream ksfos = null;
-        try {
-            ksfos = new FileOutputStream(ClientProxy.TRUST_STORE_FILE);
-            ks.store(ksfos, ClientProxy.TRUST_STORE_PASSWORD.toCharArray());
-        } finally {
-            if (ksfos != null)
-                ksfos.close();
+            ClientProxy.importCertificate(ssg, cert);
         }
 
         JOptionPane.showMessageDialog(getFrame(), "Certificate import was successful. \n" +

@@ -26,6 +26,7 @@ public class Ssg implements Serializable, Cloneable, Comparable {
     private transient char[] password = null;
     private HashMap policyMap = new HashMap();
     private boolean defaultSsg = false;
+    private boolean hasCertificate = false;
 
     private transient boolean promptForUsernameAndPassword = true;
     private transient int numTimesLogonDialogCanceled = 0;
@@ -287,5 +288,13 @@ public class Ssg implements Serializable, Cloneable, Comparable {
 
     public void setDefaultSsg(boolean defaultSsg) {
         this.defaultSsg = defaultSsg;
+    }
+
+    public boolean isHasCertificate() {
+        return hasCertificate;
+    }
+
+    public void setHasCertificate(boolean hasCertificate) {
+        this.hasCertificate = hasCertificate;
     }
 }

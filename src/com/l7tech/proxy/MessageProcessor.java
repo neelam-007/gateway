@@ -6,6 +6,7 @@
 
 package com.l7tech.proxy;
 
+import com.l7tech.common.util.CertificateDownloader;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
@@ -23,12 +24,16 @@ import org.apache.commons.httpclient.methods.PostMethod;
 import org.apache.log4j.Category;
 import org.xml.sax.SAXException;
 
+import javax.net.ssl.SSLHandshakeException;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.security.NoSuchAlgorithmException;
+import java.security.KeyStoreException;
+import java.security.cert.CertificateException;
 
 /**
  * Class that processes messages in request->response fashion.
@@ -56,9 +61,13 @@ public class MessageProcessor {
      * @throws ConfigurationException if the SSG configuration is not valid
      * @throws IOException if there was a problem obtaining the response from the server
      * @throws SAXException if the response from the server was not a valid SOAP envelope
+     * @throws CertificateException if the SSG provides a certificate that makes no sense
+     * @throws NoSuchAlgorithmException I believe that this Can't Happen
+     * @throws KeyStoreException if the SSG key could not be stored in our trustStore
      */
     public String processMessage(PendingRequest pendingRequest)
-            throws PolicyAssertionException, ConfigurationException, SAXException, IOException
+            throws PolicyAssertionException, ConfigurationException, SAXException, IOException,
+            CertificateException, NoSuchAlgorithmException, KeyStoreException
     {
         Assertion policy = policyManager.getPolicy(pendingRequest);
         AssertionStatus result = policy.decorateRequest(pendingRequest);
@@ -84,10 +93,14 @@ public class MessageProcessor {
      * @throws IOException if there was a problem obtaining the response from the server
      * @throws SAXException if the response from the server was not a valid SOAP envelope
      * @throws PolicyAssertionException if our internal recursive call to processMessage() threw it
+     * @throws CertificateException if the SSG provides a certificate that makes no sense
+     * @throws NoSuchAlgorithmException I believe that this Can't Happen
+     * @throws KeyStoreException if the SSG key could not be stored in our trustStore
      */
     // You might want to close your eyes for this part
     private String callSsg(PendingRequest pendingRequest)
-            throws ConfigurationException, IOException, SAXException, PolicyAssertionException
+            throws ConfigurationException, IOException, SAXException, PolicyAssertionException,
+                   CertificateException, NoSuchAlgorithmException, KeyStoreException
     {
         Ssg ssg = pendingRequest.getSsg();
 
@@ -133,11 +146,16 @@ public class MessageProcessor {
         postMethod.setRequestBody(pendingRequest.getSoapEnvelope().toString());
         try {
             log.info("Posting request to SSG " + ssg + ", url " + url);
-            int status = client.executeMethod(postMethod);
+            int status = 0;
+            try {
+                status = client.executeMethod(postMethod);
+            } catch (SSLHandshakeException e) {
+                return installCertificate(pendingRequest);
+            }
             log.info("POST to SSG completed with HTTP status code " + status);
             Header policyUrlHeader = postMethod.getResponseHeader("PolicyUrl");
             if (policyUrlHeader != null) {
-                log.info("SSG response contained a PolicyUrl header");
+                log.info("SSG response contained a PolicyUrl header: " + policyUrlHeader.getValue());
                 // Have we already updated a policy while processing this request?
                 if (pendingRequest.isPolicyUpdated())
                     throw new ConfigurationException("Policy was updated, but SSG says it's still out-of-date");
@@ -163,6 +181,7 @@ public class MessageProcessor {
                     pendingRequest.reset();
                     return processMessage(pendingRequest);
                 }
+                // fall through and allow SSG error message to reach client
             }
 
             Header contentType = postMethod.getResponseHeader("Content-Type");
@@ -189,5 +208,42 @@ public class MessageProcessor {
         }
     }
 
+    /**
+     * Get credentials, and download and install the SSG certificate.
+     *
+     * @return Soap message to send back to the client.
+     * @throws KeyStoreException if the SSG key could not be stored in our trustStore
+     */
+    private String installCertificate(PendingRequest req)
+            throws IOException, CertificateException, NoSuchAlgorithmException, KeyStoreException
+    {
+        Ssg ssg = req.getSsg();
+        CertificateDownloader cd = new CertificateDownloader(new URL(ssg.getServerUrl()),
+                                                             ssg.getUsername(),
+                                                             ssg.getPassword());
 
+        for (;;) {
+            while (ssg.getUsername() == null || ssg.getUsername().length() < 1 || ssg.getPassword() == null) {
+                if (!ssg.isPromptForUsernameAndPassword() || req.getTimesCredentialsUpdated() > 2)
+                    return CannedSoapFaults.UNAUTHORIZED;
+
+                Managers.getCredentialManager().getCredentials(ssg);
+                req.incrementTimesCredentialsUpdated();
+            }
+            cd.setUsername(ssg.getUsername());
+            cd.setPassword(ssg.getPassword());
+
+            if (cd.downloadCertificate()) {
+                ClientProxy.importCertificate(ssg, cd.getCertificate());
+                Managers.getCredentialManager().notifyCertificateUpdated(ssg);
+                return CannedSoapFaults.TRY_AGAIN;
+            } else {
+                if (!ssg.isPromptForUsernameAndPassword() || req.getTimesCredentialsUpdated() > 2)
+                    return CannedSoapFaults.UNAUTHORIZED;
+                Managers.getCredentialManager().notifyInvalidCredentials(ssg);
+                Managers.getCredentialManager().getCredentials(req.getSsg());
+                req.incrementTimesCredentialsUpdated();
+            }
+        }
+    }
 }

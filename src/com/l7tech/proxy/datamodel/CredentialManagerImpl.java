@@ -43,4 +43,8 @@ public class CredentialManagerImpl implements CredentialManager {
     public void notifyInvalidCredentials(Ssg ssg) {
         log.error("Credentials are invalid for SSG " + ssg);
     }
+
+    public void notifyCertificateUpdated(Ssg ssg) {
+        log.info("SSG certificate was updated -- Client Proxy must be restarted ASAP");
+    }
 }

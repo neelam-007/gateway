@@ -1,5 +1,6 @@
 package com.l7tech.proxy;
 
+import com.l7tech.proxy.datamodel.Ssg;
 import com.l7tech.proxy.datamodel.SsgFinder;
 import org.apache.log4j.Category;
 import org.mortbay.http.HttpContext;
@@ -7,9 +8,18 @@ import org.mortbay.http.HttpServer;
 import org.mortbay.http.SocketListener;
 import org.mortbay.util.MultiException;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.io.File;
+import java.security.KeyStore;
+import java.security.KeyStoreException;
+import java.security.NoSuchAlgorithmException;
+import java.security.cert.Certificate;
+import java.security.cert.CertificateException;
 import java.util.Properties;
 
 /**
@@ -164,5 +174,38 @@ public class ClientProxy {
         }
 
         isDestroyed = true;
+    }
+
+    public synchronized static void importCertificate(Ssg ssg, Certificate cert)
+            throws KeyStoreException, CertificateException, NoSuchAlgorithmException, IOException
+    {
+        String alias = "ssg" + ssg.getId();
+
+        KeyStore ks = KeyStore.getInstance("JKS");
+        try {
+            FileInputStream ksfis = new FileInputStream(ClientProxy.TRUST_STORE_FILE);
+            try {
+                ks.load(ksfis, ClientProxy.TRUST_STORE_PASSWORD.toCharArray());
+            } finally {
+                ksfis.close();
+            }
+        } catch (FileNotFoundException e) {
+            // Create a new one.
+            ks.load(null, ClientProxy.TRUST_STORE_PASSWORD.toCharArray());
+        }
+
+        log.info("Adding certificate: " + cert);
+        ks.setCertificateEntry(alias, cert);
+
+        FileOutputStream ksfos = null;
+        try {
+            ksfos = new FileOutputStream(ClientProxy.TRUST_STORE_FILE);
+            ks.store(ksfos, ClientProxy.TRUST_STORE_PASSWORD.toCharArray());
+        } finally {
+            if (ksfos != null)
+                ksfos.close();
+        }
+
+        ssg.setHasCertificate(true);
     }
 }

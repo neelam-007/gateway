@@ -29,4 +29,9 @@ public interface CredentialManager {
      * Notify that the credentials for this SSG have been tried and found to be no good.
      */
     void notifyInvalidCredentials(Ssg ssg);
+
+    /**
+     * Notify that the client must be restarted for a certificate change to take effect.
+     */
+    void notifyCertificateUpdated(Ssg ssg);
 }

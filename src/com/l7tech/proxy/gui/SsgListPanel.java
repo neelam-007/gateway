@@ -70,6 +70,15 @@ public class SsgListPanel extends JPanel {
         toolBar.add(new JButton(getActionDeleteSsg()));
     }
 
+    /**
+     * Get the currently selected SSG, or null if no SSG is selected.
+     *
+     * @return The selected SSG or null.
+     */
+    public Ssg getSelectedSsg() {
+        return (Ssg)ssgList.getSelectedValue();
+    }
+
     public Action getActionDeleteSsg() {
         if (actionDeleteSsg == null) {
             actionDeleteSsg = new AbstractAction("Delete", IconManager.getRemove()) {
