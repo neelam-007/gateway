@@ -19,7 +19,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * Class encapsulating the response from the Ssg to a given request.  Does parsing on-demand.
+ * Class encapsulating the response from the Ssg to a given request.
  * User: mike
  * Date: Aug 15, 2003
  * Time: 9:48:45 AM
