@@ -35,6 +35,7 @@ public class RequestWssSamlPropertiesPanel extends JDialog {
     private RequestWssSaml assertion;
     private boolean assertionChanged;
     private WizardStepPanel[] wizardPanels;
+    private ChangeListener wizardPanelChangeListener;
 
     /**
      * Creates new wizard
@@ -100,7 +101,7 @@ public class RequestWssSamlPropertiesPanel extends JDialog {
         tabbedPane.add(conditionsWizardStepPanel.getStepLabel(), conditionsWizardStepPanel);
 
 
-        final ChangeListener changeListener = new ChangeListener() {
+        wizardPanelChangeListener = new ChangeListener() {
             public void stateChanged(ChangeEvent e) {
                 for (int j = 0; j < wizardPanels.length; j++) {
                     WizardStepPanel panel = wizardPanels[j];
@@ -115,7 +116,7 @@ public class RequestWssSamlPropertiesPanel extends JDialog {
         for (int i = 0; i < wizardPanels.length; i++) {
             WizardStepPanel wizardPanel = wizardPanels[i];
             wizardPanel.readSettings(assertion);
-            wizardPanel.addChangeListener(changeListener);
+            wizardPanel.addChangeListener(wizardPanelChangeListener);
         }
         Actions.setEscKeyStrokeDisposes(this);
         buttonCancel.addActionListener(new ActionListener() {
