@@ -85,20 +85,8 @@ public class Service {
         try {
             // does that object have a history?
             if (service.getOid() > 0) {
-
                 ServiceManager manager = getServiceManagerAndBeginTransaction();
-                // check version
-                int currentVersion = manager.getCurrentPolicyVersion(service.getOid());
-                if (currentVersion > service.getVersion()) {
-                    throw new RemoteException("Outdated version of published service.");
-                }
-                // update patch to fix hibernate problem
-                PublishedService originalService = manager.findByPrimaryKey(service.getOid());
-                originalService.copyFrom(service);
-                manager.update(originalService);
-                // end of patch
-                // getServiceManagerAndBeginTransaction().update(service);
-                LogManager.getInstance().getSystemLogger().log(Level.INFO, "Updated PublishedService: " + service.getOid());
+                manager.update(service);
                 return service.getOid();
             }
             // ... or is it a new object
@@ -106,7 +94,11 @@ public class Service {
                 LogManager.getInstance().getSystemLogger().log(Level.INFO, "Saving PublishedService: " + service.getOid());
                 return getServiceManagerAndBeginTransaction().save(service);
             }
-        } catch (Exception e) {
+        } catch (UpdateException e) {
+            throw new java.rmi.RemoteException(e.getMessage(), e);
+        }  catch (SaveException e) {
+            throw new java.rmi.RemoteException(e.getMessage(), e);
+        }  catch (VersionException e) {
             throw new java.rmi.RemoteException(e.getMessage(), e);
         } finally {
             endTransaction();

@@ -19,6 +19,7 @@ import java.sql.SQLException;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.io.IOException;
 
 import cirrus.hibernate.Session;
 import cirrus.hibernate.HibernateException;
@@ -208,16 +209,34 @@ public class ServiceManagerImp extends HibernateEntityManager implements Service
         }
     }
 
-    // todo, throw version exception directly
-    public void update(PublishedService service) throws UpdateException {
+    public synchronized void update(PublishedService service) throws UpdateException, VersionException {
+        PublishedService original = null;
+        try {
+            original = findByPrimaryKey(service.getOid());
+        } catch (FindException e) {
+            throw new UpdateException("could not get original service", e);
+        }
+
         try {
             // check if it's valid
             validate( service );
 
+            // check version
+            if (original.getVersion() != service.getVersion()) {
+                throw new VersionException("the published service you are trying to update is no longer valid.");
+            }
+
+            // copy back into hibernate object
+            try {
+                original.copyFrom(service);
+            } catch (IOException e) {
+                throw new UpdateException("could not copy published service", e);
+            }
+
             // update
-            _manager.update( getContext(), service );
-            putService( service );
-            fireUpdated( service );
+            _manager.update(getContext(), original);
+            putService(original);
+            fireUpdated(original);
         } catch ( SQLException se ) {
             _log.log( Level.SEVERE, se.toString(), se );
             throw new UpdateException( se.toString(), se );
