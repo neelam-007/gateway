@@ -59,7 +59,7 @@ public abstract class HibernateEntityManager implements EntityManager {
         return sqlBuffer.toString();
     }
 
-    public void checkUpdate( NamedEntity ent ) throws UpdateException {
+    public void checkUpdate( Entity ent ) throws UpdateException {
         String stmt = getFieldQuery( new Long( ent.getOid() ).toString(), F_VERSION );
 
         try {
