@@ -1,0 +1,109 @@
+<?xml version="1.0"?>
+<!DOCTYPE hibernate-mapping PUBLIC
+        "-//Hibernate/Hibernate Mapping DTD//EN"
+        "http://hibernate.sourceforge.net/hibernate-mapping-1.1.dtd">
+
+<hibernate-mapping>
+    <class name="com.l7tech.identity.imp.IdentityProviderConfigImp" table="identity_provider">
+        <id name="oid" column="oid" type="long">
+            <generator class="hilo.long"/>
+        </id>
+
+        <property name="description" type="string"/>
+        <property name="name" type="string"/>
+        <property name="type" type="com.l7tech.identity.imp.IdentityProviderTypeImp"/>
+    </class>
+
+    <class name="com.l7tech.identity.imp.IdentityProviderTypeImp" table="identity_provider_type">
+        <id name="oid" column="oid" type="long">
+            <generator class="hilo.long"/>
+        </id>
+        <property name="description" type="string"/>
+        <property name="name" type="string"/>
+        <property name="className" type="string" column="class_name"/>
+    </class>
+
+   <class name="com.l7tech.objectmodel.imp.ObjectIdentityImp" table="object_identity">
+        <id name="oid" column="oid" type="long">
+          <generator class="hilo.long"/>
+        </id>
+        <property name="tableName" type="string"/>
+        <property name="keySeed" type="long"/>
+        <property name="keyBatchSize" type="int"/>
+        <property name="classSeed" type="int"/>
+        <property name="serverSeed" type="int"/>
+    </class>
+
+    <class name="com.l7tech.identity.internal.imp.AddressImp" table="address">
+        <id name="oid" column="oid" type="long">
+                <generator class="hilo.long"/>
+        </id>
+
+        <property name="address" type="string"/>
+        <property name="address2" type="string"/>
+        <property name="city" type="string"/>
+        <property name="state" type="com.l7tech.identity.internal.imp.StateImp"/>
+        <property name="country" type="com.l7tech.identity.internal.imp.CountryImp"/>
+        <property name="postalCode" type="string"/>
+    </class>
+
+    <class name="com.l7tech.identity.internal.imp.CountryImp" table="country">
+        <id name="oid" column="oid" type="long">
+            <generator class="hilo.long"/>
+        </id>
+        <property name="code" type="string"/>
+        <property name="name" type="string"/>
+
+        <set role="states" lazy="true" table="state">
+            <key type="long" column="country_oid"/>
+            <one-to-many class="com.l7tech.identity.internal.imp.StateImp"/>
+        </set>
+    </class>
+
+    <class name="com.l7tech.identity.internal.imp.StateImp" table="state">
+        <id name="oid" column="oid" type="long">
+            <generator class="hilo.long"/>
+        </id>
+        <property name="code" type="string"/>
+        <property name="name" type="string"/>
+        <property name="country" type="com.l7tech.identity.internal.imp.CountryImp"/>
+    </class>
+
+    <class name="com.l7tech.identity.internal.imp.GroupImp" table="internal_group">
+        <id name="oid" column="oid" type="long">
+            <generator class="hilo.long"/>
+        </id>
+        <property name="description" type="string"/>
+        <property name="name" type="string"/>
+    </class>
+
+    <class name="com.l7tech.identity.internal.imp.OrganizationImp" table="internal_organization">
+        <id name="oid" column="oid" type="long">
+            <generator class="hilo.long"/>
+        </id>
+<!--        <property name="users" type="set"/> -->
+        <property name="name" type="string"/>
+        <property name="address" type="com.l7tech.identity.internal.imp.AddressImp"/>
+        <property name="mailingAddress" type="com.l7tech.identity.internal.imp.AddressImp"/>
+        <property name="billingAddress" type="com.l7tech.identity.internal.imp.AddressImp"/>
+    </class>
+
+    <class name="com.l7tech.identity.internal.imp.UserImp" table="internal_user">
+        <id name="oid" column="oid" type="long">
+            <generator class="hilo.long"/>
+        </id>
+        <property name="login" type="string"/>
+        <property name="password" type="string"/>
+        <property name="firstName" type="string"/>
+        <property name="lastName" type="string"/>
+        <property name="email" type="string"/>
+        <property name="title" type="string"/>
+        <property name="department" type="string"/>
+        <property name="organization" type="com.l7tech.identity.internal.imp.OrganizationImp"/>
+        <property name="address" type="com.l7tech.identity.internal.imp.AddressImp"/>
+        <property name="billingAddress" type="com.l7tech.identity.internal.imp.AddressImp"/>
+        <property name="mailingAddress" type="com.l7tech.identity.internal.imp.AddressImp"/>
+<!--        <property name="groups" type="set"/> -->
+    </class>
+
+</hibernate-mapping>
