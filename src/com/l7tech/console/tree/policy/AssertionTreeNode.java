@@ -60,7 +60,7 @@ abstract class AssertionTreeNode extends DefaultMutableTreeNode {
 }
 
 
-class LeafAssertionTreeNode extends AssertionTreeNode {
+abstract class LeafAssertionTreeNode extends AssertionTreeNode {
     public LeafAssertionTreeNode(Assertion assertion) {
         super(assertion);
          if (assertion == null) {
@@ -70,13 +70,6 @@ class LeafAssertionTreeNode extends AssertionTreeNode {
 
     protected void loadChildren() {
         hasLoadedChildren = true;
-    }
-
-    /**
-     * specify this node image resource
-     */
-    protected String iconResource(boolean open) {
-        return "com/l7tech/console/resources/user16.png";
     }
 }
 
