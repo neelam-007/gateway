@@ -1,6 +1,6 @@
 package com.l7tech.console.panels;
 
-import com.l7tech.console.table.ContextListTableModel;
+import com.l7tech.console.table.DynamicTableModel;
 import com.l7tech.console.table.TableRowAction;
 import com.l7tech.console.table.TableRowMenu;
 import com.l7tech.console.tree.*;
@@ -25,12 +25,13 @@ import java.beans.PropertyChangeListener;
 import java.io.IOException;
 
 /**
- * <CODE>ContainerListPanel</CODE> browses the contest of
- * the container/context. It does support basic object
- * navigaiton and object management.
+ * <CODE>TreeFolderListPanel</CODE> browses the children for a given
+ * tree node.
+ *
+ * It does support basic object navigaiton and object management. *
  */
-public class ContainerListPanel extends EntityEditorPanel {
-    private static final Category log = Category.getInstance(ContainerListPanel.class.getName());
+public class TreeFolderListPanel extends EntityEditorPanel {
+    private static final Category log = Category.getInstance(TreeFolderListPanel.class.getName());
 
     private final JPanel listPane = new JPanel();
     private final JTabbedPane tabbedPane = new JTabbedPane();
@@ -38,7 +39,7 @@ public class ContainerListPanel extends EntityEditorPanel {
     private final JTable jTable = new JTable();
     private JScrollPane scrollPane = new JScrollPane(jTable);
 
-    private ContextListTableModel tableModel = null;
+    private DynamicTableModel tableModel = null;
 
     private JTree tree = null;
     private DefaultMutableTreeNode parentNode = null;
@@ -53,7 +54,7 @@ public class ContainerListPanel extends EntityEditorPanel {
     /**
      * default constructor
      */
-    public ContainerListPanel() {
+    public TreeFolderListPanel() {
         layoutComponents();
         initializePropertiesListener();
     }
@@ -135,7 +136,7 @@ public class ContainerListPanel extends EntityEditorPanel {
                         if (e.getClickCount() == 2) {
                             int row = jTable.getSelectedRow();
                             if (row == -1) return;
-                            Object o = ((ContextListTableModel) jTable.getModel()).getValueAt(row);
+                            Object o = ((DynamicTableModel) jTable.getModel()).getValueAt(row);
                             if (o == null) return;
                             handleExploreRequest((BasicTreeNode) o);
                         }
@@ -184,7 +185,7 @@ public class ContainerListPanel extends EntityEditorPanel {
                         if ("lookAndFeel".equals(evt.getPropertyName())) {
                             SwingUtilities.invokeLater(new Runnable() {
                                 public void run() {
-                                    SwingUtilities.updateComponentTreeUI(ContainerListPanel.this);
+                                    SwingUtilities.updateComponentTreeUI(TreeFolderListPanel.this);
                                     scrollPane.getViewport().setBackground(jTable.getBackground());
                                 }
                             });
@@ -222,10 +223,10 @@ public class ContainerListPanel extends EntityEditorPanel {
             }
 
             tableModel =
-                    new ContextListTableModel(parentBasicTreeNode.children(),
+                    new DynamicTableModel(parentBasicTreeNode.children(),
                             2,
                             new String[]{parentBasicTreeNode.getLabel(), getColHeader(parentBasicTreeNode)},
-                            new ContextListTableModel.ObjectRowAdapter() {
+                            new DynamicTableModel.ObjectRowAdapter() {
                                 public Object getValue(Object o, int col) {
                                     String text = "";
                                     if (o instanceof EntityHeader) {
@@ -254,7 +255,7 @@ public class ContainerListPanel extends EntityEditorPanel {
     }
 
     // could be useful later..
-    private String getColHeader(BasicTreeNode ptn) {
+    private String getColHeader(BasicTreeNode bn) {
         return "Description";
     }
 
@@ -350,7 +351,7 @@ public class ContainerListPanel extends EntityEditorPanel {
      */
     private JDialog getNewEntryDialog() {
         JDialog dlg = null;
-        JFrame f = (JFrame) SwingUtilities.windowForComponent(ContainerListPanel.this);
+        JFrame f = (JFrame) SwingUtilities.windowForComponent(TreeFolderListPanel.this);
         if (parentBasicTreeNode instanceof AdminFolderNode) {
             AdminFolderNode adminFolder =
                     (AdminFolderNode) parentBasicTreeNode;
@@ -387,7 +388,7 @@ public class ContainerListPanel extends EntityEditorPanel {
         EntityEditorPanel panel = PanelFactory.getPanel(cls, panelListener);
         if (panel == null) return;
         panel.edit(header);
-        JFrame f = (JFrame) SwingUtilities.windowForComponent(ContainerListPanel.this);
+        JFrame f = (JFrame) SwingUtilities.windowForComponent(TreeFolderListPanel.this);
         EditorDialog dialog = new EditorDialog(f, panel);
 
         dialog.pack();
@@ -491,7 +492,7 @@ public class ContainerListPanel extends EntityEditorPanel {
         if (mouseEvent.isPopupTrigger()) {
             int row = jTable.getSelectedRow();
             if (row == -1) return;
-            Object o = ((ContextListTableModel) jTable.getModel()).getValueAt(row);
+            Object o = ((DynamicTableModel) jTable.getModel()).getValueAt(row);
             if (o == null) return;
             JPopupMenu menu = getTableItemJPopupMenu(o, row);
             if (menu != null) {
@@ -792,7 +793,7 @@ public class ContainerListPanel extends EntityEditorPanel {
                 public void hierarchyChanged(HierarchyEvent e) {
                     long flags = e.getChangeFlags();
                     if ((flags & HierarchyEvent.SHOWING_CHANGED) == HierarchyEvent.SHOWING_CHANGED) {
-                        if (ContainerListPanel.this.isShowing()) {
+                        if (TreeFolderListPanel.this.isShowing()) {
                             try {
                                 tableModel.start();
                                 SwingUtilities.

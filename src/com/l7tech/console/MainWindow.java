@@ -98,7 +98,7 @@ public class MainWindow extends JFrame {
 
     // panel that lists container
     private final
-    ContainerListPanel cListPanel = new ContainerListPanel();
+    TreeFolderListPanel cListPanel = new TreeFolderListPanel();
 
     /* this class classloader */
     private final ClassLoader cl = getClass().getClassLoader();

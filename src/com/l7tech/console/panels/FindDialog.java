@@ -1,7 +1,7 @@
 package com.l7tech.console.panels;
 
 import com.l7tech.console.panels.*;
-import com.l7tech.console.table.ContextListTableModel;
+import com.l7tech.console.table.DynamicTableModel;
 import com.l7tech.console.tree.EntityTreeNode;
 import com.l7tech.console.tree.EntityHeaderNode;
 import com.l7tech.console.MainWindow;
@@ -78,7 +78,7 @@ public class FindDialog extends JDialog {
   final JLabel resultCounter = new JLabel();
 
 
-  private ContextListTableModel tableModel =  null;
+  private DynamicTableModel tableModel =  null;
   private JTabbedPane searchTabs = new JTabbedPane();
   private Dimension origDimension = null;
 
@@ -515,7 +515,7 @@ public class FindDialog extends JDialog {
                                      int row = jTable.getSelectedRow();
                                      if (row == -1) return;
                                      Object o =
-                                     ((ContextListTableModel)jTable.getModel()).getValueAt(row);
+                                     ((DynamicTableModel)jTable.getModel()).getValueAt(row);
                                      if (o == null) return;
                                      showEntryDialog(o);
                                    }
