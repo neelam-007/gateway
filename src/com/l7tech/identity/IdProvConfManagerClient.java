@@ -93,7 +93,15 @@ public class IdProvConfManagerClient implements IdentityProviderConfigManager {
     }
 
     public void test(IdentityProviderConfig identityProviderConfig) throws InvalidIdProviderCfgException {
-        // test
+        try {
+            getStub().testIdProviderConfig(identityProviderConfig);
+        } catch (RemoteException e) {
+            Throwable cause = getTypedCause(e, InvalidIdProviderCfgException.class);
+            if (cause instanceof InvalidIdProviderCfgException) {
+                throw (InvalidIdProviderCfgException)(cause);
+            }
+            else throw new InvalidIdProviderCfgException(e);
+        }
     }
 
     public Collection findAllHeaders() throws FindException {
@@ -153,6 +161,17 @@ public class IdProvConfManagerClient implements IdentityProviderConfigManager {
             throw new RemoteException("Unable to obtain the remote service");
         }
         return svc;
+    }
+
+    private static Throwable getTypedCause(Throwable e, Class typeWanted) {
+        Throwable ex = e;
+        while (ex != null){
+            if (ex.getClass().equals(typeWanted)) {
+                return ex;
+            }
+            ex = ex.getCause();
+        }
+        return e;
     }
 
 }
