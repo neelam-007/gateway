@@ -1,23 +1,23 @@
 package com.l7tech.console.panels;
 
-import com.l7tech.common.security.TrustedCert;
 import com.l7tech.common.gui.util.Utilities;
+import com.l7tech.common.security.TrustedCertAdmin;
+import com.l7tech.common.util.Locator;
+import com.l7tech.console.table.TrustedCertsTable;
 import com.l7tech.console.table.TrustedCertTableSorter;
+import com.l7tech.objectmodel.FindException;
 
 import javax.swing.*;
 import javax.swing.event.ListSelectionListener;
 import javax.swing.event.ListSelectionEvent;
-import javax.swing.table.TableColumnModel;
-import javax.swing.table.JTableHeader;
-import javax.swing.table.DefaultTableModel;
 import java.util.ResourceBundle;
 import java.util.Locale;
+import java.util.Vector;
 import java.util.logging.Logger;
 import java.awt.*;
 import java.awt.event.ActionListener;
 import java.awt.event.ActionEvent;
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
+import java.rmi.RemoteException;
 
 /**
  * <p> Copyright (C) 2004 Layer 7 Technologies Inc.</p>
@@ -33,8 +33,7 @@ public class PKIIdentityProviderWindow extends JDialog {
     private JButton propertiesButton;
     private JButton saveButton;
     private JButton cancelButton;
-    private TrustedCertTableSorter trustedCertTableSorter;
-    private JTable trustedCertTable = null;
+    private TrustedCertsTable trustedCertTable = null;
 
     private static ResourceBundle resources = ResourceBundle.getBundle("com.l7tech.console.resources.PKIIdentityProviderDialog", Locale.getDefault());
     private static Logger logger = Logger.getLogger(PKIIdentityProviderWindow.class.getName());
@@ -72,12 +71,26 @@ public class PKIIdentityProviderWindow extends JDialog {
         p.setLayout(new BorderLayout());
         p.add(mainPanel, BorderLayout.CENTER);
 
-        certScrollPane.setViewportView(getTrustedCertTable());
-        addMouseListenerToHeaderInTable(trustedCertTable);
+        if(trustedCertTable == null) {
+            trustedCertTable = new TrustedCertsTable();
+        }
+        certScrollPane.setViewportView(trustedCertTable);
+
+        trustedCertTable.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
+            /**
+             * Called whenever the value of the selection changes.
+             *
+             * @param e the event that characterizes the change.
+             */
+            public void valueChanged(ListSelectionEvent e) {
+
+                enableOrDisableButtons();
+            }
+        });
 
         addButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent event) {
-
+                //loadTrustedCerts();
             }
         });
 
@@ -109,65 +122,50 @@ public class PKIIdentityProviderWindow extends JDialog {
     }
 
     /**
-     * Return trustedCertTable property value
-     *
-     * @return JTable
+     * Load the certs from the database
      */
-    private JTable getTrustedCertTable() {
+    private void loadTrustedCerts() {
 
-        if (trustedCertTable != null) return trustedCertTable;
+        java.util.List certList = null;
+        try {
+            certList = getTrustedCertAdmin().findAllCerts();
 
-        trustedCertTable = new javax.swing.JTable();
-        trustedCertTable.setModel(getTrustedCertTableModel());
-        trustedCertTable.getTableHeader().setReorderingAllowed(false);
-        trustedCertTable.getSelectionModel().setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+            Vector certs = new Vector();
+            for (int i = 0; i < certList.size(); i++) {
+                Object o = (Object) certList.get(i);
+                certs.add(o);
+            }
+            ((TrustedCertTableSorter) trustedCertTable.getModel()).setData(certs);
+            ((TrustedCertTableSorter) trustedCertTable.getModel()).getRealModel().setRowCount(certs.size());
+            ((TrustedCertTableSorter) trustedCertTable.getModel()).fireTableDataChanged();
 
-        // Hide the cert expiration data column
-        getTrustedCertTable().getColumnModel().getColumn(TrustedCertTableSorter.CERT_TABLE_CERT_USAGE_COLUMN_INDEX).setMinWidth(0);
-        getTrustedCertTable().getColumnModel().getColumn(TrustedCertTableSorter.CERT_TABLE_CERT_USAGE_COLUMN_INDEX).setMaxWidth(0);
-        getTrustedCertTable().getColumnModel().getColumn(TrustedCertTableSorter.CERT_TABLE_CERT_USAGE_COLUMN_INDEX).setPreferredWidth(0);
-
-
-        trustedCertTable.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
-                    /**
-                     * Called whenever the value of the selection changes.
-                     * @param e the event that characterizes the change.
-                     */
-                    public void valueChanged(ListSelectionEvent e) {
-
-                        enableOrDisableButtons();
-                    }
-        });
-
-        return trustedCertTable;
+        } catch (RemoteException re) {
+            JOptionPane.showMessageDialog(this, resources.getString("cert.remote.exception"),
+                                        resources.getString("load.error.title"),
+                                        JOptionPane.ERROR_MESSAGE);
+        } catch (FindException e) {
+            JOptionPane.showMessageDialog(this, resources.getString("cert.find.error"),
+                                        resources.getString("load.error.title"),
+                                        JOptionPane.ERROR_MESSAGE);
+        }
     }
+
     /**
-      * Return TrustedCertTableSorter property value
-      *
-      * @return TrustedCertTableSorter
-      */
-     private TrustedCertTableSorter getTrustedCertTableModel() {
+     * Retrieve the object reference of the Trusted Cert Admin service
+     *
+     * @return TrustedCertAdmin  - The object reference.
+     * @throws RuntimeException  if the object reference of the Trusted Cert Admin service is not found.
+     */
+    private TrustedCertAdmin getTrustedCertAdmin() throws RuntimeException {
+        TrustedCertAdmin tca =
+                (TrustedCertAdmin) Locator.
+                getDefault().lookup(TrustedCertAdmin.class);
+        if (tca == null) {
+            throw new RuntimeException("Could not find registered " + TrustedCertAdmin.class);
+        }
 
-         if (trustedCertTableSorter != null) {
-             return trustedCertTableSorter;
-         }
-
-         Object[][] rows = new Object[][]{};
-
-         String[] cols = new String[]{
-             "Name", "Issued by", "Expiration Date", "Usage"
-         };
-
-         trustedCertTableSorter = new TrustedCertTableSorter(new DefaultTableModel(rows, cols) {
-             public boolean isCellEditable(int row, int col) {
-                 // the table cells are not editable
-                 return false;
-             }
-         });
-
-         return trustedCertTableSorter;
-
-     }
+        return tca;
+    }
 
     /**
      * Enable or disable the fields based on the current selections.
@@ -175,38 +173,13 @@ public class PKIIdentityProviderWindow extends JDialog {
     private void enableOrDisableButtons() {
         boolean propsEnabled = false;
         boolean removeEnabled = false;
-        int row = getTrustedCertTable().getSelectedRow();
+        int row = trustedCertTable.getSelectedRow();
         if (row >= 0) {
             removeEnabled = true;
             propsEnabled = true;
         }
         removeButton.setEnabled(removeEnabled);
         propertiesButton.setEnabled(propsEnabled);
-    }
-
-    /**
-     *  Add a mouse listener to the Table to trigger a table sort
-     *  when a column heading is clicked in the JTable.
-     */
-    public void addMouseListenerToHeaderInTable(JTable table) {
-
-        final JTable tableView = table;
-        tableView.setColumnSelectionAllowed(false);
-        MouseAdapter listMouseListener = new MouseAdapter() {
-            public void mouseClicked(MouseEvent e) {
-                TableColumnModel columnModel = tableView.getColumnModel();
-                int viewColumn = columnModel.getColumnIndexAtX(e.getX());
-                int column = tableView.convertColumnIndexToModel(viewColumn);
-                if (e.getClickCount() == 1 && column != -1) {
-
-                    ((TrustedCertTableSorter) tableView.getModel()).sortData(column, true);
-                    ((TrustedCertTableSorter) tableView.getModel()).fireTableDataChanged();
-                    tableView.getTableHeader().resizeAndRepaint();
-                }
-            }
-        };
-        JTableHeader th = tableView.getTableHeader();
-        th.addMouseListener(listMouseListener);
     }
 
     {
@@ -293,5 +266,6 @@ public class PKIIdentityProviderWindow extends JDialog {
         _17.setText("Trusted Certificates");
         _1.add(_17, new com.intellij.uiDesigner.core.GridConstraints(1, 0, 1, 1, 8, 0, 0, 0, null, null, null));
     }
+
 
 }
