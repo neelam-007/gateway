@@ -336,12 +336,12 @@ public class MessageProcessor {
     }
 
     /**
-     * Configure HTTP Basic or Digest auth on the specific HttpState and PostMethod, if called for by
+     * Configure HTTP Basic or Digest auth on the specified HttpState and PostMethod, if called for by
      * the specified PendingRequest.
      *
      * @param req  the PendingRequest that might require HTTP level authentication
      * @param state  the HttpState to adjust
-     * @param postMethod  the PendingRequest to adjust
+     * @param postMethod  the PostMethod to adjust
      */
     private void setAuthenticationState(PendingRequest req, HttpState state, PostMethod postMethod)
             throws OperationCanceledException
