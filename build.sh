@@ -44,7 +44,7 @@ fi
 
 PATH="$JAVA_HOME/bin:$PATH"; export PATH
 JDK_CLASSES="$JAVA_HOME/lib/rt.jar:$JAVA_HOME/lib/tools.jar"
-if [ ! -e $TOMCAT_HOME/bin/startup.sh ]; then
+if [ ! -e "$TOMCAT_HOME/bin/startup.sh" ]; then
     echo ""
     echo "The Tomcat Server wasn't found in directory ${TOMCAT_HOME}."
     echo "Please set your environment so that the TOMCAT_HOME variable "
@@ -71,4 +71,4 @@ if $cygwin; then
   TOMCAT_HOME=`cygpath --path --windows "$TOMCAT_HOME"`
 fi
 export CLASSPATH
-java org.apache.tools.ant.Main -Dtomcat.home=$TOMCAT_HOME -Dsrc.root=$SRC_ROOT $@
+java org.apache.tools.ant.Main "-Dtomcat.home=$TOMCAT_HOME" "-Dsrc.root=$SRC_ROOT" $@
