@@ -65,9 +65,14 @@ public class ServerConfig implements ComponentConfig {
         String jndiValue = getPropertyValue(jndiProp);
         String defaultValue = getPropertyValue(dfltProp);
 
-        logger.fine("Checking System property " + systemValue);
-        String value = System.getProperty(systemValue);
-        if (value == null && jndiValue != null) {
+        String value = null;
+
+        if ( systemValue != null && systemValue.length() > 0 ) {
+            logger.fine("Checking System property " + systemValue);
+            value = System.getProperty(systemValue);
+        }
+
+        if (value == null && jndiValue != null && jndiValue.length() > 0 ) {
             try {
                 logger.fine("Checking JNDI property " + jndiValue);
                 if (_icontext == null) _icontext = new InitialContext();
@@ -77,7 +82,7 @@ public class ServerConfig implements ComponentConfig {
             }
         }
 
-        if (value == null) {
+        if ( value == null ) {
             logger.fine("Using default value " + defaultValue);
             value = defaultValue;
         }
