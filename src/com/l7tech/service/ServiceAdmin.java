@@ -74,19 +74,23 @@ public interface ServiceAdmin extends Remote {
     void deletePublishedService(long oid) throws RemoteException, DeleteException;
 
     /**
-     * Resolve and retrieve the WSDL at the given url.
+     * Get a wsdl document from a URL. The WSDL document will be resolved by the gateway so that the manager
+     * can get at services that are 'hidden' behind the gateway.
+     * This is meant to be used when a service is originally published.
      *
-     * @param url the WSDL url
-     * @return the WSDL document as String
+     * @param url the url that the gateway will use to resolve the wsdl document. this may contain
+     * userinfo type credentials
+     * @return the contents resolved by this url
      *
-     * @throws RemoteException on remote communication error
+     * @throws RemoteException on remote communication error or if the remote service returned something else than 200
      * @throws IOException thrown on I/O error accessing the WSDL url
      * @throws MalformedURLException thrown on malformed WSDL url
      */
     String resolveWsdlTarget(String url) throws RemoteException, IOException, MalformedURLException;
 
     /**
-     * Validate the service policy and return the policy validation result.
+     * Validate the service policy and return the policy validation result. Only the server side validation rules
+     * are invoked here.
      * @param policyXml the policy xml document
      * @param serviceId the service unique ID
      * @return the policy validation result that contains policy validation warnings
