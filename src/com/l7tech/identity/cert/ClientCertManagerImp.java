@@ -5,9 +5,9 @@ import com.l7tech.objectmodel.*;
 import com.l7tech.logging.LogManager;
 
 import java.security.cert.Certificate;
+import java.security.cert.CertificateEncodingException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.CertificateException;
-import java.security.cert.CertificateEncodingException;
 import java.util.logging.Logger;
 import java.util.logging.Level;
 import java.util.List;
@@ -38,6 +38,7 @@ public class ClientCertManagerImp implements ClientCertManager {
     }
 
     public boolean userCanGenCert(User user) {
+        logger.finest("userCanGenCert for " + user.getLogin());
         CertEntryRow userData = getFromTable(user);
         // if this user has no data at all, then he is allowed to generate a cert
         if (userData == null) return true;
@@ -49,6 +50,7 @@ public class ClientCertManagerImp implements ClientCertManager {
     }
 
     public void recordNewUserCert(User user, Certificate cert) throws UpdateException {
+        logger.finest("recordNewUserCert for " + user.getLogin());
         PersistenceContext pc = null;
         try {
             pc = PersistenceContext.getCurrent();
@@ -86,6 +88,7 @@ public class ClientCertManagerImp implements ClientCertManager {
     }
 
     public Certificate getUserCert(User user) throws FindException {
+        logger.finest("getUserCert for " + user.getLogin());
         CertEntryRow userData = getFromTable(user);
         if (userData != null) {
             String dbcert = userData.getCert();
@@ -113,6 +116,7 @@ public class ClientCertManagerImp implements ClientCertManager {
     }
 
     public void revokeUserCert(User user) throws UpdateException {
+        logger.finest("revokeUserCert for " + user.getLogin());
         PersistenceContext pc = null;
         try {
             pc = PersistenceContext.getCurrent();
@@ -171,6 +175,6 @@ public class ClientCertManagerImp implements ClientCertManager {
     protected Logger logger = null;
 
     private static final String TABLE_NAME = "client_cert";
-    private static final String PROVIDER_COLUMN = "provider";
-    private static final String PROVIDER_LOGIN = "login";
+    private static final String PROVIDER_COLUMN = "providerId";
+    private static final String PROVIDER_LOGIN = "userLogin";
 }
