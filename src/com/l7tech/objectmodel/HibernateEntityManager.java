@@ -32,6 +32,29 @@ public abstract class HibernateEntityManager implements EntityManager {
         _manager = manager;
     }
 
+    /**
+     * Returns the current version (in the database) of the entity with the specified OID.
+     * @param oid the OID of the entity whose version should be retrieved
+     * @return The version, or null if the entity does not exist.
+     * @throws FindException
+     */
+    public Integer getVersion( long oid ) throws FindException {
+        String alias = getTableName();
+        String query = "SELECT " + alias + ".version"
+                       + " FROM " + alias + " IN CLASS " + getImpClass().getName()
+                       + " WHERE " + alias + ".oid = ?";
+        try {
+            List results = PersistenceManager.find( getContext(), query, new Long(oid), Long.TYPE );
+            if ( results.size() == 0 ) return null;
+            if ( results.size() > 1 ) throw new FindException( "Multiple results found" );
+            Object result = results.get(0);
+            if ( !(result instanceof Integer) ) throw new FindException( "Found " + result.getClass().getName() + " when looking for Integer!" );
+            return (Integer)result;
+        } catch ( SQLException e ) {
+            throw new FindException( e.toString(), e );
+        }
+    }
+
     public Entity findEntity( long oid ) throws FindException {
         String alias = getTableName();
         String query = "FROM " + alias +
