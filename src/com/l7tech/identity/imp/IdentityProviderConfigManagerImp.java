@@ -9,16 +9,16 @@ import java.sql.SQLException;
 /**
  * @author alex
  */
-public class IdentityProviderConfigManagerImp extends com.l7tech.objectmodel.HibernateEntityManager implements IdentityProviderConfigManager {
+public class IdentityProviderConfigManagerImp extends HibernateEntityManager implements IdentityProviderConfigManager {
     public IdentityProviderConfigManagerImp() {
         _manager = PersistenceManager.getInstance();
     }
 
-    public void delete(IdentityProviderConfig identityProviderConfig) {
+    public void delete(IdentityProviderConfig identityProviderConfig) throws DeleteException {
         _manager.delete( identityProviderConfig );
     }
 
-    public IdentityProviderConfig findByPrimaryKey( long oid ) {
+    public IdentityProviderConfig findByPrimaryKey( long oid ) throws FindException {
         return null;
     }
 
@@ -30,11 +30,11 @@ public class IdentityProviderConfigManagerImp extends com.l7tech.objectmodel.Hib
         }
     }
 
-    public Collection findAll() {
+    public Collection findAll() throws FindException {
         return _manager.find( "select * from identity-provider", "hello", String.class );
     }
 
-    public Collection findAll(int offset, int windowSize) {
+    public Collection findAll(int offset, int windowSize) throws FindException {
         return null;
     }
 
