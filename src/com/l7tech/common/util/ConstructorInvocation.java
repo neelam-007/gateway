@@ -20,7 +20,7 @@ import java.util.Arrays;
  * @author <a href="mailto:emarceta@layer7tech.com">Emil Marceta</a>
  * @version Feb 26, 2004
  */
-public class ConstructorInvocation {
+public final class ConstructorInvocation {
     private Class targetClass;
     private Class[] arguments = new Class[]{};
 
