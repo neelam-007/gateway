@@ -1,22 +1,22 @@
 package com.l7tech.console.action;
 
-import com.l7tech.console.panels.PublishServiceWizard;
-import com.l7tech.console.tree.*;
-import com.l7tech.console.util.WindowManager;
-import com.l7tech.console.util.Registry;
-import com.l7tech.console.MainWindow;
-import com.l7tech.console.event.EntityListenerAdapter;
-import com.l7tech.console.event.EntityListener;
 import com.l7tech.console.event.EntityEvent;
+import com.l7tech.console.event.EntityListener;
+import com.l7tech.console.event.EntityListenerAdapter;
+import com.l7tech.console.panels.PublishServiceWizard;
+import com.l7tech.console.tree.ServicesTree;
+import com.l7tech.console.tree.TreeNodeFactory;
+import com.l7tech.console.util.Registry;
+import com.l7tech.console.util.WindowManager;
 import com.l7tech.objectmodel.EntityHeader;
 
 import javax.swing.*;
+import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.DefaultTreeModel;
 import javax.swing.tree.TreeNode;
 import javax.swing.tree.TreePath;
-import javax.swing.tree.DefaultMutableTreeNode;
-import java.util.logging.Logger;
 import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * The <code>PublishServiceAction</code> action invokes the pubish
@@ -79,7 +79,7 @@ public class PublishServiceAction extends BaseAction {
             SwingUtilities.invokeLater(new Runnable() {
                 public void run() {
                     EntityHeader eh = (EntityHeader) ev.getEntity();
-                    JTree tree = (JTree) WindowManager.getInstance().getComponent(MainWindow.SERVICES_TREE);
+                    JTree tree = (JTree) WindowManager.getInstance().getComponent(ServicesTree.NAME);
                     if (tree != null) {
                         DefaultMutableTreeNode root = (DefaultMutableTreeNode)tree.getModel().getRoot();
                         TreeNode[] nodes = root.getPath();

@@ -60,6 +60,15 @@ public class ServiceNode extends AbstractTreeNode {
     }
 
     /**
+     *Test if the node can be deleted. Default is <code>true</code>
+     *
+     * @return true if the node can be deleted, false otherwise
+     */
+    public boolean canDelete() {
+        return true;
+    }
+
+    /**
      * Returns true if the receiver is a leaf.
      *
      * @return true if leaf, false otherwise

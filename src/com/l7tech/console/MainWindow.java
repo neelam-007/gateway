@@ -97,7 +97,6 @@ public class MainWindow extends JFrame {
 
     private JMenu gotoMenu;
     public static final String ASSERTION_PALETTE = "assertion.palette";
-    public static final String SERVICES_TREE = "services.treee";
     public static final String TITLE = "SSG console";
     public static final String NAME = "main.window"; // registered
     private JTree policyTree;
@@ -592,17 +591,12 @@ public class MainWindow extends JFrame {
      */
     private JTree getServicesTree() {
         JTree tree =
-          (JTree)WindowManager.getInstance().getComponent(SERVICES_TREE);
+          (JTree)WindowManager.getInstance().getComponent(ServicesTree.NAME);
         if (tree != null)
             return tree;
 
-        tree = new JTree();
-        tree.setShowsRootHandles(true);
-        tree.setLargeModel(true);
-        tree.setCellRenderer(new EntityTreeCellRenderer());
-        tree.putClientProperty("JTree.lineStyle", "Angled");
-        tree.setModel(null);
-        WindowManager.getInstance().registerComponent(SERVICES_TREE, tree);
+        tree = new ServicesTree();
+        WindowManager.getInstance().registerComponent(ServicesTree.NAME, tree);
         return tree;
     }
 

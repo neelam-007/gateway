@@ -2,6 +2,7 @@ package com.l7tech.console.action;
 
 import com.l7tech.console.MainWindow;
 import com.l7tech.console.tree.ServiceNode;
+import com.l7tech.console.tree.ServicesTree;
 import com.l7tech.console.util.WindowManager;
 
 import javax.swing.*;
@@ -58,7 +59,7 @@ public class DeleteServiceAction extends BaseAction {
         boolean deleted = Actions.deleteService(node);
         if (deleted) {
             JTree tree =
-              (JTree)WindowManager.getInstance().getComponent(MainWindow.SERVICES_TREE);
+              (JTree)WindowManager.getInstance().getComponent(ServicesTree.NAME);
             DefaultTreeModel model = (DefaultTreeModel)tree.getModel();
             model.removeNodeFromParent(node);
         }
