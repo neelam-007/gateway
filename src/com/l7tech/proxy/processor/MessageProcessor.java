@@ -165,8 +165,10 @@ public class MessageProcessor {
                         // FALLTHROUGH allow policy to reset and retry
                     }
                 } catch (KeyStoreCorruptException e) {
-                    Managers.getCredentialManager().notifyKeyStoreCorrupt(ssg);
-                    SsgKeyStoreManager.deleteStores(ssg);
+                    Ssg problemSsg = ssg.getTrustedGateway();
+                    if (problemSsg == null) problemSsg = ssg;
+                    Managers.getCredentialManager().notifyKeyStoreCorrupt(problemSsg);
+                    SsgKeyStoreManager.deleteStores(problemSsg);
                     // FALLTHROUGH -- retry, creating new keystore
                 } catch (DecoratorException e) {
                     throw new ConfigurationException(e);
@@ -213,8 +215,10 @@ public class MessageProcessor {
             try {
                 SsgKeyStoreManager.deleteClientCert(ssg);
             } catch (KeyStoreCorruptException e1) {
-                Managers.getCredentialManager().notifyKeyStoreCorrupt(ssg);
-                SsgKeyStoreManager.deleteStores(ssg);
+                Ssg problemSsg = ssg.getTrustedGateway();
+                if (problemSsg == null) problemSsg = ssg;
+                Managers.getCredentialManager().notifyKeyStoreCorrupt(problemSsg);
+                SsgKeyStoreManager.deleteStores(problemSsg);
             }
             ssg.resetSslContext();
             // FALLTHROUGH -- retry, creating new keystore

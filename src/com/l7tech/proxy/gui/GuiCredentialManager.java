@@ -72,13 +72,19 @@ public class GuiCredentialManager extends CredentialManager {
         private boolean lockUsername = false;
     }
 
+    private void handleCorruptKeystore(Ssg ssg) throws OperationCanceledException {
+        Ssg problemSsg = ssg.getTrustedGateway();
+        if (problemSsg == null) problemSsg = ssg;
+        notifyKeyStoreCorrupt(problemSsg);
+        SsgKeyStoreManager.deleteStores(problemSsg);
+    }
+
     public PasswordAuthentication getCredentials(final Ssg ssg) throws OperationCanceledException {
         for (;;) {
             try {
                 return getCredentials(ssg, "", false, false);
             } catch (KeyStoreCorruptException e) {
-                notifyKeyStoreCorrupt(ssg);
-                SsgKeyStoreManager.deleteStores(ssg);
+                handleCorruptKeystore(ssg);
                 // FALLTHROUGH -- retry with newly-emptied keystore
             }
         }
@@ -94,8 +100,7 @@ public class GuiCredentialManager extends CredentialManager {
             try {
                 return getCredentials(ssg, hint.toString(), disregardExisting, reportBadPassword);
             } catch (KeyStoreCorruptException e) {
-                notifyKeyStoreCorrupt(ssg);
-                SsgKeyStoreManager.deleteStores(ssg);
+                handleCorruptKeystore(ssg);
                 // FALLTHROUGH -- retry with newly-emptied keystore
             }
         }
@@ -106,8 +111,7 @@ public class GuiCredentialManager extends CredentialManager {
             try {
                 return getCredentials(ssg, "", true, displayBadPasswordMessage);
             } catch (KeyStoreCorruptException e) {
-                notifyKeyStoreCorrupt(ssg);
-                SsgKeyStoreManager.deleteStores(ssg);
+                handleCorruptKeystore(ssg);
                 // FALLTHROUGH -- retry with newly-emptied keystore
             }
         }
