@@ -68,15 +68,17 @@ public class ViewerToolBar extends JToolBar {
         xpathPanel.setBorder(new EmptyBorder(2, 5, 2, 2));
         JPanel xpanel = new JPanel(new BorderLayout());
         xpanel.setBorder(new EmptyBorder(1, 0, 1, 0));
-        xpanel.add(xpath, BorderLayout.CENTER);
-        xpathPanel.add(xpathLabel, BorderLayout.WEST);
-        xpathPanel.add(xpanel, BorderLayout.CENTER);
-        xpathPanel.add(selectXpath, BorderLayout.EAST);
-        add(xpathPanel, BorderLayout.CENTER);
 
         xpath.setFont(xpath.getFont().deriveFont(Font.PLAIN, 12));
         xpath.setPreferredSize(new Dimension(100, 19));
         xpath.setEditable(true);
+
+        xpanel.add(xpath, BorderLayout.CENTER);
+        xpathPanel.add(xpathLabel, BorderLayout.WEST);
+        xpathPanel.add(xpanel, BorderLayout.CENTER);
+        xpathPanel.add(selectXpath, BorderLayout.EAST);
+
+        add(xpathPanel, BorderLayout.CENTER);
 
         add(expand);
         add(collapse);
@@ -111,6 +113,14 @@ public class ViewerToolBar extends JToolBar {
         expand.setEnabled(enabled);
         selectXpath.setEnabled(enabled);
     }
+
+    /**
+     * @return the currently selected xpath
+     */
+    public String getXPath() {
+        return xpath.getSelectedItem().toString();
+    }
+
 
     private void setXPaths() {
         if (xpath.getItemCount() > 0) {
