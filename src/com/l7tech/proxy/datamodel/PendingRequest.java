@@ -424,16 +424,15 @@ public class PendingRequest {
     }
 
     /**
-     * Get the secure conversation ID.
+     * Get the secure conversation ID.  This returns the ID that was used in this request, if any.  No checking
+     * of session expiry is done by this method.
      * @return The secure conversation session ID for this session, or null if there isn't one.
      */
     public String getSecureConversationId() {
         if (secureConversationId != null) {
-            checkExpiredSecureConversationSession();
             return secureConversationId;
         }
         secureConversationId = ssg.secureConversationId();
-        checkExpiredSecureConversationSession();
         return secureConversationId;
     }
 
