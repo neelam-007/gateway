@@ -44,32 +44,8 @@ public class JmsSoapRequest extends SoapRequest {
 
             final BytesMessage breq = (BytesMessage)request;
 
-            InputStream is = new InputStream() {
-                public int read() throws IOException {
-                    try {
-                        return breq.readByte();
-                    } catch ( final JMSException e ) {
-                        throw new CausedIOException( e );
-                    }
-                }
-
-                public synchronized int read( byte[] out, int off, int len ) throws IOException {
-                    try {
-                        if ( off == 0 ) {
-                            return breq.readBytes( out, len );
-                        } else {
-                            byte[] temp = new byte[ len ];
-                            int num = breq.readBytes( temp, len );
-                            if ( num < 0 ) return num;
-                            System.arraycopy( temp, 0, out, off, len );
-                            return num;
-                        }
-                    } catch ( final JMSException e ) {
-                        throw new CausedIOException( e );
-                    }
-                }
-            };
-            return new InputStreamReader( is, DEFAULT_ENCODING );
+            InputStream is = new BytesMessageInputStream( breq );
+            return new InputStreamReader( is, JmsUtil.DEFAULT_ENCODING );     // todo sane encoding
         } else {
             _logger.warning( "Can't get a reader for a non-text message! Returning a reader on an empty String!" );
             return new StringReader("");
@@ -89,6 +65,4 @@ public class JmsSoapRequest extends SoapRequest {
     }
 
     private JmsTransportMetadata _jms;
-    public static final int BUFLEN = 4096;
-    public static final String DEFAULT_ENCODING = "UTF-8";
 }

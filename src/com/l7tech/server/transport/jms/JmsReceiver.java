@@ -13,6 +13,7 @@ import com.l7tech.logging.LogManager;
 import com.l7tech.server.ComponentConfig;
 import com.l7tech.server.LifecycleException;
 import com.l7tech.server.ServerComponentLifecycle;
+import com.l7tech.server.PeriodicVersionCheck;
 
 import javax.jms.*;
 import javax.naming.Context;
@@ -43,7 +44,6 @@ public class JmsReceiver implements ServerComponentLifecycle {
 
     // JMS stuff
     private JmsBag _bag;
-    private Queue _jmsInboundQueue;
     private Queue _jmsOutboundQueue;
     private Queue _jmsFailureQueue;
 
@@ -75,7 +75,6 @@ public class JmsReceiver implements ServerComponentLifecycle {
      * Use this constructor when the replyType is either
      * {@link com.l7tech.common.transport.jms.JmsReplyType#AUTOMATIC},
      * {@link com.l7tech.common.transport.jms.JmsReplyType#NO_REPLY} or
-     * {@link com.l7tech.common.transport.jms.JmsReplyType#REPLY_TO_SAME}.
      *
      * @param replyType A {@link com.l7tech.common.transport.jms.JmsReplyType} value indicating this receiver's
      *                  reply semantics
@@ -91,7 +90,6 @@ public class JmsReceiver implements ServerComponentLifecycle {
      * Use this constructor when the replyType is either
      * {@link com.l7tech.common.transport.jms.JmsReplyType#AUTOMATIC},
      * {@link com.l7tech.common.transport.jms.JmsReplyType#NO_REPLY} or
-     * {@link com.l7tech.common.transport.jms.JmsReplyType#REPLY_TO_SAME}.
      *
      * @param inbound The {@link com.l7tech.common.transport.jms.JmsEndpoint} from which to receive requests
      */
@@ -138,10 +136,6 @@ public class JmsReceiver implements ServerComponentLifecycle {
                 _logger.finer("Returning AUTOMATIC '" + request.getJMSReplyTo() +
                   "' for '" + toString() + "'");
                 return request.getJMSReplyTo();
-            } else if (_replyType == JmsReplyType.REPLY_TO_SAME) {
-                _logger.finer("Returning REPLY_TO_SAME '" + _inboundRequestEndpoint.getDestinationName() +
-                  "' for '" + toString() + "'");
-                return _jmsInboundQueue;
             } else if (_replyType == JmsReplyType.REPLY_TO_OTHER) {
                 _logger.finer("Returning REPLY_TO_OTHER '" + _inboundRequestEndpoint.getDestinationName() +
                   "' for '" + toString() + "'");
@@ -177,8 +171,6 @@ public class JmsReceiver implements ServerComponentLifecycle {
             _bag = JmsUtil.connect( _connection, _inboundRequestEndpoint.getPasswordAuthentication() );
 
             Context jndiContext = _bag.getJndiContext();
-            _jmsInboundQueue = (Queue)jndiContext.lookup(_inboundRequestEndpoint.getDestinationName());
-
             if (_outboundResponseEndpoint != null) {
                 _logger.fine( "Using " + _outboundResponseEndpoint.getDestinationName() + " for outbound response messages" );
                 String dname = _outboundResponseEndpoint.getDestinationName();

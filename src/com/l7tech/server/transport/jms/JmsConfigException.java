@@ -11,7 +11,7 @@ package com.l7tech.server.transport.jms;
  * @version $Revision$
  */
 public class JmsConfigException extends Exception {
-    JmsConfigException( String message ) {
+    public JmsConfigException( String message ) {
         super( message );
     }
 }

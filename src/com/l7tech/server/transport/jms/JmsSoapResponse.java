@@ -8,6 +8,8 @@ package com.l7tech.server.transport.jms;
 
 import com.l7tech.message.SoapResponse;
 
+import javax.jms.BytesMessage;
+
 /**
  * @author alex
  * @version $Revision$
@@ -15,5 +17,9 @@ import com.l7tech.message.SoapResponse;
 public class JmsSoapResponse extends SoapResponse {
     public JmsSoapResponse( JmsTransportMetadata tm ) {
         super( tm );
+    }
+
+    public void setResponseXml( BytesMessage bmsg ) {
+
     }
 }

@@ -95,9 +95,15 @@ public class JmsBootProcess implements ServerComponentLifecycle {
     public synchronized void start() {
         if ( !_valid ) return;
 
-        ConnectionVersionChecker connectionChecker = new ConnectionVersionChecker( _connectionManager );
-        EndpointVersionChecker endpointChecker = new EndpointVersionChecker( _endpointManager );
+        connectionChecker = new ConnectionVersionChecker( _connectionManager );
+        endpointChecker = new EndpointVersionChecker( _endpointManager );
 
+        if (_versionTimer != null) {
+            _versionTimer.cancel();
+            _versionTimer = null;
+        }
+
+        _versionTimer = new Timer();
         _versionTimer.schedule( connectionChecker, connectionChecker.getFrequency() * 2,
                                           connectionChecker.getFrequency() );
 
@@ -109,6 +115,7 @@ public class JmsBootProcess implements ServerComponentLifecycle {
      * Attempts to stop all running JMS receivers, then stops the {@link EndpointVersionChecker} and
      * {@link ConnectionVersionChecker}
      */
+    // todo make this idempotent?
     public synchronized void stop() {
         for (Iterator i = _receivers.iterator(); i.hasNext();) {
             JmsReceiver receiver = (JmsReceiver)i.next();
@@ -117,13 +124,20 @@ public class JmsBootProcess implements ServerComponentLifecycle {
         }
 
         _versionTimer.cancel();
+        _versionTimer = null;
+        connectionChecker = null;
+        endpointChecker = null;
     }
 
     /**
      * Attempts to close all JMS receivers.
      */
     public synchronized void close() {
+        // todo call stop() after it's been made idempotent?
         _versionTimer.cancel();
+        _versionTimer = null;
+        connectionChecker = null;
+        endpointChecker = null;
 
         for (Iterator i = _receivers.iterator(); i.hasNext();) {
             JmsReceiver receiver = (JmsReceiver)i.next();
@@ -237,7 +251,15 @@ public class JmsBootProcess implements ServerComponentLifecycle {
                 receiver.start();
                 _receivers.add(receiver);
             } catch (LifecycleException e) {
-                _logger.warning("Exception while initializing receiver " + receiver);
+                _logger.warning("Exception while initializing receiver " + receiver +
+                                "; will try again later: " + e.toString());
+                try {
+                    Thread.sleep(500);
+                } catch ( InterruptedException e1 ) {
+                    Thread.currentThread().interrupt();
+                }
+                if (endpointChecker != null)
+                    endpointChecker.markObjectAsStale( new Long(updatedEndpoint.getOid()));
             } catch ( FindException e ) {
                 _logger.log( Level.SEVERE, "Couldn't find connection for endpoint " + updatedEndpoint, e );
             }
@@ -258,10 +280,12 @@ public class JmsBootProcess implements ServerComponentLifecycle {
     private JmsEndpointManager _endpointManager;
     private Set _receivers = new HashSet();
 
-    private final Timer _versionTimer = new Timer(true);
+    private Timer _versionTimer = null;
 
     private Logger _logger = LogManager.getInstance().getSystemLogger();
     private boolean _booted = false;
     private boolean _valid = false;
     public static final int FREQUENCY = 4 * 1000;
+    private ConnectionVersionChecker connectionChecker;
+    private EndpointVersionChecker endpointChecker;
 }

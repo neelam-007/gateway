@@ -26,7 +26,7 @@ public class JmsEndpoint extends NamedEntityImp implements Serializable, Compara
 
     private long _connectionOid;
     private String _destinationName;
-    private JmsReplyType _replyType;
+    private JmsReplyType _replyType = JmsReplyType.AUTOMATIC;
     private String _username;
     private String _password;
     private int _maxConcurrentRequests = DEFAULT_MAX_CONCURRENT_REQUESTS;
@@ -122,6 +122,8 @@ public class JmsEndpoint extends NamedEntityImp implements Serializable, Compara
     }
 
     public JmsReplyType getReplyType() {
+        if (_replyType == null)
+            return JmsReplyType.AUTOMATIC;
         return _replyType;
     }
 

@@ -10,11 +10,11 @@ import com.l7tech.common.transport.jms.JmsEndpoint;
 import com.l7tech.common.util.SoapUtil;
 import com.l7tech.logging.LogManager;
 import com.l7tech.policy.assertion.AssertionStatus;
-import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.server.MessageProcessor;
 
 import javax.jms.*;
-import javax.xml.soap.*;
+import javax.xml.soap.SOAPException;
+import javax.xml.soap.SOAPMessage;
 import java.io.IOException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -78,7 +78,7 @@ class JmsRequestHandler {
             if ( responseXml == null || responseXml.length() == 0 ) {
                 if ( faultMessage == null ) faultMessage = status.getMessage();
                 SOAPMessage msg = SoapUtil.makeFaultMessage( SoapUtil.FC_SERVER, faultMessage );
-                responseXml = SoapUtil.soapMessageToString( msg, "UTF-8" ); // TODO ENCODING @)$(*)!!
+                responseXml = SoapUtil.soapMessageToString( msg, JmsUtil.DEFAULT_ENCODING ); // TODO ENCODING @)$(*)!!
             }
 
             if ( jmsResponse instanceof TextMessage ) {
@@ -86,7 +86,7 @@ class JmsRequestHandler {
                 tresp.setText( responseXml );
             } else if ( jmsResponse instanceof BytesMessage ) {
                 BytesMessage bresp = (BytesMessage)jmsResponse;
-                bresp.writeBytes( responseXml.getBytes( "UTF-8" ) ); // TODO ENCODING
+                bresp.writeBytes( responseXml.getBytes( JmsUtil.DEFAULT_ENCODING ) ); // TODO ENCODING
             } else {
                 throw new JmsRuntimeException( "Can't send a " + jmsResponse.getClass().getName() +
                                                ". Only BytesMessage and TextMessage are supported" );

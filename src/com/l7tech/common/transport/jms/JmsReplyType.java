@@ -19,8 +19,7 @@ public class JmsReplyType implements Serializable, PersistentEnum {
     public static final JmsReplyType AUTOMATIC = new JmsReplyType( 0, "Automatic" );
     public static final JmsReplyType NO_REPLY = new JmsReplyType( 1, "No reply" );
     public static final JmsReplyType REPLY_TO_OTHER = new JmsReplyType( 2, "Reply to other" );
-    public static final JmsReplyType REPLY_TO_SAME = new JmsReplyType( 3, "Reply to same destination" );
-    private static final JmsReplyType[] VALUES = { AUTOMATIC, NO_REPLY, REPLY_TO_OTHER, REPLY_TO_SAME };
+    private static final JmsReplyType[] VALUES = { AUTOMATIC, NO_REPLY, REPLY_TO_OTHER };
 
     public int getNum() { return _num; }
     public String getName() { return _name; }

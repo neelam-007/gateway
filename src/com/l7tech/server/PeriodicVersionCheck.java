@@ -124,6 +124,10 @@ public abstract class PeriodicVersionCheck extends TimerTask {
         }
     }
 
+    public void markObjectAsStale( Long oid ) {
+        _cachedVersionMap.remove( oid );
+    }
+
     private void remove( Long oid ) {
         _cachedVersionMap.remove( oid );
         onDelete( oid.longValue() );
