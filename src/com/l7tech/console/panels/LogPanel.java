@@ -58,6 +58,7 @@ public class LogPanel extends JPanel {
     private JTextArea msgDetails = null;
     private JSlider slider = null;
     private JCheckBox details = null;
+    private JCheckBox autoRefresh = null;
     private DefaultTableModel logTableModel = null;
     private FilteredLogTableModel logTableModelFilter = null;
     private JLabel msgTotal = new JLabel(MSG_TOTAL_PREFIX + "0");
@@ -271,6 +272,23 @@ public class LogPanel extends JPanel {
                 detailsActionPerformed(evt);
             }
         });
+
+         if(autoRefresh == null){
+            autoRefresh = new JCheckBox();
+        }
+        autoRefresh.setFont(new java.awt.Font("Dialog", 0, 11));
+        autoRefresh.setText("Auto-refresh");
+        autoRefresh.setSelected(true);
+        autoRefresh.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                if (autoRefresh.isSelected()) {
+                    getLogsRefreshTimer().start();
+                } else {
+                    getLogsRefreshTimer().stop();
+                }
+            }
+        });
+        controlPane.add(autoRefresh);
         controlPane.add(details);
         controlPane.add(msgTotal);
 /*
@@ -480,8 +498,9 @@ public class LogPanel extends JPanel {
 
         updateMsgTotal();
 
-        // find the new index of the message selected
-        getLogsRefreshTimer().start();
+        if(autoRefresh.isSelected()){
+            getLogsRefreshTimer().start();
+        }
     }
 
     private void setSelectedRow(String msgNumber) {
