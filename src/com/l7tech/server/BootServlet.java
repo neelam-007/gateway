@@ -10,6 +10,7 @@ import com.l7tech.common.BuildInfo;
 import com.l7tech.jini.Services;
 import com.l7tech.jini.export.RemoteService;
 import com.l7tech.objectmodel.HibernatePersistenceManager;
+import com.l7tech.logging.LogManager;
 
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
@@ -27,7 +28,8 @@ import java.util.logging.Logger;
  * @version $Revision$
  */
 public class BootServlet extends HttpServlet {
-    private final Logger logger = Logger.getLogger(BootServlet.class.getName());
+    // private final Logger logger = Logger.getLogger(BootServlet.class.getName());
+    private final Logger logger = LogManager.getInstance().getSystemLogger();
 
     public void init( ServletConfig config ) throws ServletException {
         super.init( config );
