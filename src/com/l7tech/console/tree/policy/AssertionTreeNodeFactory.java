@@ -14,7 +14,6 @@ import com.l7tech.policy.assertion.identity.SpecificUser;
 import com.l7tech.policy.assertion.xml.SchemaValidation;
 import com.l7tech.policy.assertion.xml.XslTransformation;
 import com.l7tech.policy.assertion.xmlsec.*;
-import com.l7tech.console.tree.RequestWssReplayProtectionNode;
 
 import java.lang.reflect.InvocationTargetException;
 import java.util.HashMap;
@@ -66,6 +65,7 @@ public class AssertionTreeNodeFactory {
         assertionMap.put(TimeRange.class, TimeRangeTreeNode.class);
         assertionMap.put(RemoteIpRange.class, RemoteIpRangeTreeNode.class);
         assertionMap.put(CustomAssertionHolder.class, CustomAssertionTreeNode.class);
+        assertionMap.put(AuditAssertion.class, AuditAssertionTreeNode.class);
     }
 
     /**
