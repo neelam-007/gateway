@@ -67,7 +67,6 @@ public class MultipartMessageReader {
             } else {
                 throw new RuntimeException("The entry retrived from multipartParts object is not the type of com.l7tech.Message.Part");
             }
-            System.out.println("The object is: " + o.toString());
         }
         return attachments;
     }
