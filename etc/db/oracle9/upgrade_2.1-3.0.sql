@@ -6,7 +6,7 @@ INSERT INTO internal_group VALUES (4,0,'Gateway Operators','SecureSpan Manager u
 
 ALTER TABLE internal_user DROP COLUMN title;
 UPDATE internal_user SET name=login WHERE name IS NULL;
-ALTER TABLE published_service ADD soap char(1) NOT NULL; 
+ALTER TABLE published_service ADD soap char(1) DEFAULT 1; 
 ALTER TABLE published_service ADD routing_uri varchar(128);
 UPDATE published_service SET soap=1;
 

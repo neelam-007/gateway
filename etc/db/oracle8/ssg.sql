@@ -113,7 +113,7 @@ CREATE TABLE published_service (
   wsdl_url varchar(255) NOT NULL ,
   wsdl_xml clob NOT NULL ,
   disabled char(1) NOT NULL ,
-  soap char(1) NOT NULL,
+  soap char(1) DEFAULT 1,
   routing_uri varchar(128)
 );
 
