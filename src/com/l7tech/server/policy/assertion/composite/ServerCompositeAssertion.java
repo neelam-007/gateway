@@ -42,14 +42,18 @@ public abstract class ServerCompositeAssertion implements ServerAssertion {
     }
 
     protected void rollbackDeferredAssertions(Request request, Response response) {
-        request.removeDeferredAssertion(this);
-        response.removeDeferredAssertion(this);
+        if (request != null)
+            request.removeDeferredAssertion(this);
+        if (response != null)
+            response.removeDeferredAssertion(this);
         for (int i = 0; i < children.length; i++) {
             ServerAssertion child = children[i];
             if (child instanceof ServerCompositeAssertion)
                 ((ServerCompositeAssertion)child).rollbackDeferredAssertions(request, response);
-            request.removeDeferredAssertion(child);
-            response.removeDeferredAssertion(child);
+            if (request != null)
+                request.removeDeferredAssertion(child);
+            if (response != null)
+                response.removeDeferredAssertion(child);
         }
     }
 }
