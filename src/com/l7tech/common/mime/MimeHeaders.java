@@ -8,6 +8,7 @@ package com.l7tech.common.mime;
 
 import com.l7tech.common.util.CausedIOException;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.util.Collections;
@@ -109,6 +110,15 @@ public class MimeHeaders {
      */
     public int size() {
         return headers.size();
+    }
+
+    /**
+     * @return the MIME headers re-encoded as a byte array.
+     */
+    public byte[] toByteArray() throws IOException {
+        ByteArrayOutputStream out = new ByteArrayOutputStream(128);
+        write(out);
+        return out.toByteArray();
     }
 
     /**

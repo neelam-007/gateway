@@ -30,8 +30,8 @@ public class MimeHeader {
 
     // Bytes of common stuff needed when serializing mime header
     static final byte[] CRLF;
-    private static final byte[] SEMICOLON;
-    private static final byte[] COLON;
+    protected static final byte[] SEMICOLON;
+    protected static final byte[] COLON;
 
     static {
         try {
@@ -104,12 +104,14 @@ public class MimeHeader {
     void write(OutputStream os) throws IOException {
         os.write(getName().getBytes(ENCODING));
         os.write(COLON);
-        os.write(MimeUtility.quote(getValue(), HeaderTokenizer.MIME).getBytes(ENCODING));
+//        os.write(MimeUtility.quote(getValue(), HeaderTokenizer.MIME).getBytes(ENCODING));
+        os.write(getValue().getBytes(ENCODING));
         for (Iterator i = params.entrySet().iterator(); i.hasNext();) {
             Map.Entry entry = (Map.Entry)i.next();
             String name = (String)entry.getKey();
             String value = (String)entry.getValue();
             os.write(SEMICOLON);
+            os.write(' ');
             os.write(name.getBytes(ENCODING));
             os.write('=');
             os.write(MimeUtility.quote(value, HeaderTokenizer.MIME).getBytes(ENCODING));

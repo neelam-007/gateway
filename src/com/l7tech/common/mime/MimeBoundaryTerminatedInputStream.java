@@ -57,6 +57,10 @@ class MimeBoundaryTerminatedInputStream extends FilterInputStream {
      * and leave the input InputStream positioned at the first byte beyond the multipart boundary (that is, the
      * first byte of the headers of the next part, if there is one, or the next message and/or end of the stream
      * if there isn't).
+     * <p>
+     * This cannot be used on its own for reading the initial preamble of a multipart message if the preamble might
+     * be empty -- this is because in that situation, the first byte of the inputstream is positioned at a "--" rather
+     * than at a CRLF.  To work around this, unread a CRLF before using this class to consume the preamble. 
      *
      * @param rawBoundary  the multipart boundary bytes, including the initial "--" but not including any CRLFs.
      * @param in the PushbackInputStream to wrap

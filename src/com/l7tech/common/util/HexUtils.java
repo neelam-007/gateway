@@ -10,10 +10,7 @@ import com.l7tech.common.mime.MimeUtil;
 import sun.misc.BASE64Decoder;
 import sun.misc.BASE64Encoder;
 
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
+import java.io.*;
 import java.net.URL;
 import java.net.URLConnection;
 import java.security.MessageDigest;
@@ -215,6 +212,23 @@ public class HexUtils {
                 return offset;
         }
         /* NOTREACHED */
+    }
+
+    /**
+     * This ballistic podiatry version of slurpStream will slurp until memory is full.
+     * If you wish to limit the size of the returned
+     * byte array, use slurpStream(InputStream, int).  If you wish to provider your own buffer to prevent
+     * copying, use slurpStream(InputStream, byte[]).
+     *
+     * @param stream  the stream to slurp
+     * @return a byte array containing the entire content of the stream, to EOF.  Never null.
+     * @throws IOException if there is an IOException while reading the stream
+     * @throws OutOfMemoryError if the stream is too big to fit into memory
+     */
+    public static byte[] slurpStream(InputStream stream) throws IOException {
+        ByteArrayOutputStream out = new ByteArrayOutputStream(4096);
+        copyStream(stream, out);
+        return out.toByteArray();
     }
 
     /** Holds the result of a slurpUrl() call. */

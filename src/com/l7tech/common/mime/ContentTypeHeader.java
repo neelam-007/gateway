@@ -12,6 +12,8 @@ import javax.mail.internet.HeaderTokenizer;
 import javax.mail.internet.MimeUtility;
 import javax.mail.internet.ParseException;
 import java.io.IOException;
+import java.io.OutputStream;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.logging.Logger;
@@ -179,4 +181,25 @@ public class ContentTypeHeader extends MimeHeader {
     public boolean isXml() {
         return isText() && "xml".equalsIgnoreCase(getSubtype());
     }
+
+    // Reserialize to correct format
+    void write(OutputStream os) throws IOException {
+        os.write(getName().getBytes(ENCODING));
+        os.write(COLON);
+        os.write(getType().getBytes(ENCODING));
+        os.write('/');
+        os.write(getSubtype().getBytes(ENCODING));
+        for (Iterator i = params.entrySet().iterator(); i.hasNext();) {
+            Map.Entry entry = (Map.Entry)i.next();
+            String name = (String)entry.getKey();
+            String value = (String)entry.getValue();
+            os.write(SEMICOLON);
+            os.write(' ');
+            os.write(name.getBytes(ENCODING));
+            os.write('=');
+            os.write(MimeUtility.quote(value, HeaderTokenizer.MIME).getBytes(ENCODING));
+        }
+        os.write(CRLF);
+    }
+
 }

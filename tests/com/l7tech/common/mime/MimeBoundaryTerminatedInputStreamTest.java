@@ -143,4 +143,33 @@ public class MimeBoundaryTerminatedInputStreamTest extends TestCase {
         log.info("Constructed test MIME multipart message " + testMsg.length + " bytes long: \n" + new String(testMsg));
         readParts(testMsg, 2, 4096);
     }
+
+    public void testRubyMultipartWithTwoPartsAndNoPreamble() throws Exception {
+        byte[] testMsg = ("Content-Type: " + MultipartMessageTest.CT2 + "\r\n\r\n" +
+                MultipartMessageTest.MESS2).getBytes();
+        log.info("Constructed test MIME multipart message " + testMsg.length + " bytes long: \n" + new String(testMsg));
+        try {
+            readParts(testMsg, 2, 4096);
+            fail("Did not receive expected IOException reading preamble with no CRLF before initial boundary");
+        } catch (IOException e) {
+            log.info("Received expected IOException when trying to read preamble with no CRLF before initial boundary: " + e.getMessage());
+        }
+    }
+
+    public void testEmptyStream() throws Exception {
+        String boundary = "----=Part_-763936460.407197826076299";
+        String stream = boundary + "--\r\n";
+
+        PushbackInputStream is = new PushbackInputStream(new ByteArrayInputStream(stream.getBytes()), 4096);
+        MimeBoundaryTerminatedInputStream mbtis =
+                new MimeBoundaryTerminatedInputStream(boundary.getBytes(), is, 4096);
+
+        ByteArrayOutputStream got = new ByteArrayOutputStream();
+        try {
+            HexUtils.copyStream(mbtis, got);
+            fail("Did not receive expected IOException reading preamble with no CRLF before initial boundary");
+        } catch (IOException e) {
+            log.info("Received expected IOException when trying to read preamble with no CRLF before initial boundary: " + e.getMessage());
+        }
+    }
 }
