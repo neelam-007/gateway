@@ -363,7 +363,7 @@
         <copy todir="${build.classes}">
             <fileset dir="${src.root}/src">
                 <!-- TODO: Emil, tell us why this is evil! -->
-                <include name="com/l7tech/util/locator/services.properties"/>
+                <include name="com/l7tech/common/locator/services.properties"/>
             </fileset>
         </copy>
     </target>
@@ -461,7 +461,7 @@
 
         <buildnumber/>
 
-        <property name="hostname" value="data"/>
+        <property name="hostname" value="data.l7tech.com"/>
 
         <tstamp>
             <format property="build.date" pattern="yyyyMMdd"/>
