@@ -27,14 +27,9 @@ public class CustomAssertionHolder extends Assertion {
      */
     private static final long serialVersionUID = 7410439507802944818L;
 
-    protected transient CompositeAssertion parent;
 
     public CustomAssertionHolder() {
         this.parent = null;
-    }
-
-    public CompositeAssertion getParent() {
-        return parent;
     }
 
     /**
