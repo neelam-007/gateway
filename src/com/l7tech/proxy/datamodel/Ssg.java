@@ -117,7 +117,7 @@ public class Ssg implements Cloneable, Comparable {
      * @param policy
      * @throws IllegalArgumentException if neither uri nor soapAction is specified, or policy is null
      */
-    public void attachPolicy(String uri, String soapAction, Assertion policy)
+    public synchronized void attachPolicy(String uri, String soapAction, Assertion policy)
             throws IllegalArgumentException
     {
         boolean haveUri = uri != null && uri.length() > 0;
@@ -137,7 +137,7 @@ public class Ssg implements Cloneable, Comparable {
      * @param uri The namespace of the first element within the SOAP message body.
      * @return A policy if found, or null
      */
-    public Assertion getPolicyByUri(String uri) {
+    public synchronized Assertion getPolicyByUri(String uri) {
         return (Assertion)policiesByUri.get(uri);
     }
 
@@ -146,7 +146,7 @@ public class Ssg implements Cloneable, Comparable {
      * @param soapAction The operation (minus fragment, if any) specified in the SOAPAction: header.
      * @return A policy if found, or null
      */
-    public Assertion getPolicyBySoapAction(String soapAction) {
+    public synchronized Assertion getPolicyBySoapAction(String soapAction) {
         return (Assertion)policiesBySoapAction.get(soapAction);
     }
 
