@@ -32,6 +32,13 @@ public class SymantecAntivirusScanEngineClientTest extends TestCase {
         junit.textui.TestRunner.run(suite());
     }
 
+    protected void setUp() {
+        System.setProperty("com.l7tech.server.savseEnable", "yes");
+        System.setProperty("com.l7tech.server.savsePort", "7777");
+        System.setProperty("com.l7tech.server.savseHost", "phlox.l7tech.com");
+        scanner = new SymantecAntivirusScanEngineClient();
+    }
+
     public void testInfectedMultipartMsg() throws Exception {
         Message msg = makeMsg(MULTIPART_CONTENTTYPE,
                               INFECTED_MULTIPART_MIME_MSG_PAYLOAD.getBytes());
@@ -70,6 +77,10 @@ public class SymantecAntivirusScanEngineClientTest extends TestCase {
         assertTrue("the first part is infected", infected[0]);
     }
 
+    public void testGettingOptions() throws Exception {
+        System.out.println("Scanner options:\n" + scanner.getSavScanEngineOptions());
+    }
+
     private Message makeMsg(String contentTypeValue, byte[] content) throws Exception {
         Message msg = new Message();
         msg.initialize(new ByteArrayStashManager(),
@@ -80,9 +91,9 @@ public class SymantecAntivirusScanEngineClientTest extends TestCase {
 
     private SymantecAntivirusScanEngineClient.SAVScanEngineResponse[] scanMsg(Message msg) throws Exception {
         SymantecAntivirusScanEngineClient.SAVScanEngineResponse[] output = scanner.scan(msg);
-        for (int i = 0; i < output.length; i++) {
+        /*for (int i = 0; i < output.length; i++) {
             System.out.println(output[i]);
-        }
+        }*/
         return output;
     }
 
@@ -94,7 +105,7 @@ public class SymantecAntivirusScanEngineClientTest extends TestCase {
         return output;
     }
 
-    private final SymantecAntivirusScanEngineClient scanner = new SymantecAntivirusScanEngineClient();
+    private SymantecAntivirusScanEngineClient scanner;
     private static final byte[] VIRUS = {0x58, 0x35, 0x4f, 0x21, 0x50, 0x25,
                                          0x40, 0x41, 0x50, 0x5b, 0x34, 0x5c, 0x50, 0x5a,
                                          0x58, 0x35, 0x34, 0x28, 0x50, 0x5e, 0x29, 0x37,

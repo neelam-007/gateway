@@ -48,6 +48,10 @@ public class ServerConfig extends ApplicationObjectSupport {
 
     public static final String PARAM_AUDIT_ASSOCIATED_LOGS_THRESHOLD = "auditAssociatedLogsThreshold";
 
+    public static final String PARAM_ANTIVIRUS_ENABLED = "savseEnable";
+    public static final String PARAM_ANTIVIRUS_HOST = "savseHost";
+    public static final String PARAM_ANTIVIRUS_PORT = "savsePort";
+
     public static final int DEFAULT_JMS_THREAD_POOL_SIZE = 200;
 
     public static final String PROPS_PATH_PROPERTY = "com.l7tech.server.serverConfigPropertiesPath";

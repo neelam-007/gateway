@@ -11,6 +11,7 @@ import com.l7tech.common.mime.PartIterator;
 import com.l7tech.common.mime.PartInfo;
 import com.l7tech.common.mime.NoSuchPartException;
 import com.l7tech.common.util.HexUtils;
+import com.l7tech.server.ServerConfig;
 
 import java.net.Socket;
 import java.net.UnknownHostException;
@@ -31,7 +32,9 @@ import java.text.MessageFormat;
 public class SymantecAntivirusScanEngineClient {
     private static final Logger logger =  Logger.getLogger(SymantecAntivirusScanEngineClient.class.getName());
     private static final String SCAN_REQ = "RESPMOD icap://{0}:{1}/AVSCAN?action=SCAN ICAP/1.0\r\n";
-    public static final String DEF_HEADER = "Content-Type: application/octet-stream\r\n\r\n";
+    private static final String DEF_HEADER = "Content-Type: application/octet-stream\r\n\r\n";
+    private String scannerHostName;
+    private Integer scannerPort;
 
     /**
      * Send content to scan using ICAP and read response from sav scan engine.
@@ -70,33 +73,39 @@ public class SymantecAntivirusScanEngineClient {
         socket.getOutputStream().write("\r\n0\r\n\r\n".getBytes());
 
         byte[] returnedfromsav = new byte[4096];
+        int read = readFromSocket(socket, returnedfromsav, 250);
+        socket.close();
+        if (read <= 0) {
+            throw new IOException("server did not return anything");
+        }
+        String output = new String(returnedfromsav, 0, read);
+        logger.fine("Response from sav scan engine:\n" + output);
+        return output;
+    }
+
+    /**
+     * The sav scan engine will not close the socket when it is done transmitting response. To ensure that
+     * the entire response is sent back, reading from the server involves a timeout.
+     */
+    private int readFromSocket(Socket s, byte[] buffer, long timeout) throws IOException {
         int read = 0;
-        read = socket.getInputStream().read(returnedfromsav); // todo, some sort of timeout here too
-        StringBuffer output = new StringBuffer();
-        while (read > 0) {
-            String tmp = new String(returnedfromsav, 0, read);
-            output.append(tmp);
-            // are we done? (the server does not close the socket when it
-            // is done so we have to be careful to not block current thread
-            // by simply reading from socket - we need a timeout)
-            if (socket.getInputStream().available() <= 0) {
+        int offset = 0;
+        InputStream stream = s.getInputStream();
+        do {
+            if (stream.available() <= 0) {
                 try {
-                    Thread.sleep(250);
+                    Thread.sleep(timeout);
                 } catch (InterruptedException e) {
-                    logger.log(Level.SEVERE, "Reading of response from server interupted", e);
-                    throw new RuntimeException(e);
+                    String msg = "Reading from socket interupted";
+                    logger.log(Level.SEVERE, msg, e);
+                    throw new IOException(msg + e.getMessage());
                 }
             }
-
-            if (socket.getInputStream().available() > 0) {
-                read = socket.getInputStream().read(returnedfromsav);
-            } else {
-                read = 0;
-            }
-        }
-        socket.close();
-        logger.fine("Response from sav scan engine:\n" + output.toString());
-        return output.toString();
+            if (stream.available() <= 0) break;
+            read = stream.read(buffer, offset, buffer.length-offset);
+            offset += read;
+        } while (read > 0);
+        return offset;
     }
 
     /**
@@ -141,10 +150,11 @@ public class SymantecAntivirusScanEngineClient {
         String statusString;
         long statusCode;
         Map headers;
+        String body;
         public String toString() {
             StringBuffer output = new StringBuffer();
             output.append("Response from Scan Engine\n");
-            output.append("\tStatus: " + statusCode + "\n");
+            output.append("\tStatus: " + statusString + "\n");
             String str = (String)headers.get("X-Infection-Found");
             if (str != null) {
                 output.append("\tX-Infection-Found: " + str + "\n");
@@ -152,6 +162,9 @@ public class SymantecAntivirusScanEngineClient {
             str = (String)headers.get("X-Violations-Found");
             if (str != null) {
                 output.append("\tX-Violations-Found: " + str + "\n");
+            }
+            if (body != null) {
+                output.append("\tBody:" + body + "\n");
             }
             return output.toString();
         }
@@ -204,6 +217,9 @@ public class SymantecAntivirusScanEngineClient {
             logger.warning("there are no headers");
         }
         output.headers = parseHeaders(response, startofheaders, endofheaders);
+        if ((response.length()+4) > endofheaders) {
+            output.body = response.substring(endofheaders+4);
+        }
         return output;
     }
 
@@ -261,31 +277,43 @@ public class SymantecAntivirusScanEngineClient {
         return output;
     }
 
-    public String getSavScanEngineOptions(String scanEngineHostname, int scanEnginePort) throws IOException, UnknownHostException {
+    public String getSavScanEngineOptions() throws IOException, UnknownHostException {
         String req = "OPTIONS icap://savse.com/avscan ICAP/1.0\r\n\r\n";
-        Socket socket = new Socket(scanEngineHostname, scanEnginePort);
+        Socket socket = new Socket(scannerHostName(), scannerPort());
         socket.getOutputStream().write(req.getBytes());
         byte[] returnedfromsav = new byte[4096];
-        int read = 0;
-        read = socket.getInputStream().read(returnedfromsav);
-        StringBuffer output = new StringBuffer();
-        while (read > 0) {
-            output.append(new String(returnedfromsav, 0, read));
-            if (socket.getInputStream().available() <= 0) break;
-            read = socket.getInputStream().read(returnedfromsav);
-        }
+        int read = readFromSocket(socket, returnedfromsav, 250);
         socket.close();
-        return output.toString();
+        if (read <= 0) {
+            throw new IOException("server did not return anything");
+        }
+        return new String(returnedfromsav, 0, read);
     }
 
-    // todo, read this from some config file
-    private String scannerHostName() {
-        return "localhost";
+    private synchronized String scannerHostName() {
+        if (scannerHostName == null) {
+            scannerHostName = ServerConfig.getInstance().getProperty(ServerConfig.PARAM_ANTIVIRUS_HOST);
+            if (scannerHostName == null) {
+                // todo a special exception type for this type of event
+                throw new IllegalStateException("The property " + ServerConfig.PARAM_ANTIVIRUS_HOST +
+                                                " cannot be retrieved. This gateway is not configured properly.");
+            }
+        }
+        return scannerHostName;
     }
 
-    // todo, read this from some config file
-    private int scannerPort() {
-        return 7777;
+    private synchronized int scannerPort() {
+        if (scannerPort == null) {
+            String tmp = ServerConfig.getInstance().getProperty(ServerConfig.PARAM_ANTIVIRUS_PORT);
+            if (tmp == null) {
+                // todo a special exception type for this type of event
+                throw new IllegalStateException("The property " + ServerConfig.PARAM_ANTIVIRUS_PORT +
+                                                " cannot be retrieved. This gateway is not configured properly.");
+            } else {
+                scannerPort = new Integer(tmp);
+            }
+        }
+        return scannerPort.intValue();
     }
 
     /**
