@@ -15,6 +15,9 @@ import com.l7tech.identity.UserBean;
 import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
+import com.intellij.uiDesigner.core.GridLayoutManager;
+import com.intellij.uiDesigner.core.GridConstraints;
+import com.intellij.uiDesigner.core.Spacer;
 
 import javax.swing.*;
 import javax.swing.event.DocumentEvent;
@@ -35,14 +38,15 @@ import java.util.logging.Level;
  */
 public class NewFederatedUserDialog extends JDialog {
 
+    private static int USER_NAME_NOT_YET_UPDATED = -1;
+    private static int USER_NAME_UPDATED_WITH_X509DN = 0;
+    private static int USER_NAME_UPDATED_WITH_LOGIN = 1;
+    private static int USER_NAME_UPDATED_WITH_EMAIL = 2;
     private JPanel mainPanel;
     private JTextField userNameTextField;
     private JTextField x509SubjectDNTextField;
     private JTextField loginTextField;
     private JTextField emailTextField;
-    private JRadioButton subjectDNRadioButton;
-    private JRadioButton loginRadioButton;
-    private JRadioButton emailRadioButton;
     private JCheckBox additionalPropertiesCheckBox;
     private JButton createButton;
     private JButton cancelButton;
@@ -50,18 +54,15 @@ public class NewFederatedUserDialog extends JDialog {
     private boolean createThenEdit = false;
     private String CMD_CANCEL = "cmd.cancel";
     private String CMD_OK = "cmd.ok";
-    private boolean UserIdFieldFilled = false;
     private EventListenerList listenerList = new EventListenerList();
     private IdentityProviderConfig ipc;
-
+    private int userNameTextFieldUpdated = USER_NAME_NOT_YET_UPDATED;
+    private JFrame parent;
+    
     /* the user instance */
     private UserBean user = new UserBean();
-
-
     private static ResourceBundle resources = ResourceBundle.getBundle("com.l7tech.console.resources.NewUserDialog", Locale.getDefault());
 
-
-    private JFrame parent;
 
     public NewFederatedUserDialog(JFrame parent, IdentityProviderConfig ipc) {
         super(parent, true);
@@ -88,30 +89,6 @@ public class NewFederatedUserDialog extends JDialog {
             }
         });
 
-        ButtonGroup bg = new ButtonGroup();
-        bg.add(subjectDNRadioButton);
-        bg.add(loginRadioButton);
-        bg.add(emailRadioButton);
-        subjectDNRadioButton.setSelected(true);
-
-        subjectDNRadioButton.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent event) {
-                updateUserNameLinkedTextField();
-            }
-        });
-
-        emailRadioButton.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent event) {
-                updateUserNameLinkedTextField();
-            }
-        });
-
-        loginRadioButton.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent event) {
-                updateUserNameLinkedTextField();
-            }
-        });
-
         createButton.setText(resources.getString("createButton.label"));
         createButton.setToolTipText(resources.getString("createButton.tooltip"));
         createButton.setActionCommand(CMD_OK);
@@ -131,15 +108,28 @@ public class NewFederatedUserDialog extends JDialog {
         });
 
         userNameTextField.setToolTipText(resources.getString("idTextField.tooltip"));
-        userNameTextField.setDocument(new FilterDocument(24,
-                        new FilterDocument.Filter() {
-                            public boolean accept(String str) {
-                                if (str == null) return false;
-                                return true;
-                            }
-                        }));
-        userNameTextField.getDocument().putProperty("name", "userId");
-        userNameTextField.getDocument().addDocumentListener(documentListener);
+        userNameTextField.addKeyListener(new KeyAdapter() {
+            public void keyReleased(KeyEvent e) {
+                SwingUtilities.invokeLater(new Runnable() {
+                    public void run() {
+                        if(userNameTextField.getText().length() > 0) {
+                            x509SubjectDNTextField.getDocument().removeDocumentListener(documentListener);
+                            loginTextField.getDocument().removeDocumentListener(documentListener);
+                            emailTextField.getDocument().removeDocumentListener(documentListener);
+                        }
+                        if (userNameTextField.getText().length() >= 3) {
+
+                            // enable the Create button
+                            createButton.setEnabled(true);
+                        } else {
+                            // disbale the button
+                            createButton.setEnabled(false);
+                        }
+                    }
+                });
+
+            }
+        });
 
         x509SubjectDNTextField.setToolTipText(resources.getString("x509SubjectDNTextField.tooltip"));
         x509SubjectDNTextField.setDocument(new FilterDocument(64,
@@ -322,162 +312,78 @@ public class NewFederatedUserDialog extends JDialog {
 
     public void updateUserNameField(DocumentEvent e) {
         final Document field = e.getDocument();
-        if (field.getProperty("name").equals("userId")) {
-            SwingUtilities.invokeLater(new Runnable() {
-                public void run() {
-                    updateFromUserIdField(field);
-                }
-            });
-        }
 
        if(field.getProperty("name").equals("x509DN")) {
             SwingUtilities.invokeLater(new Runnable() {
                 public void run() {
-                    updateFromX509SubjectDNField();
-                }
-            });
-        }
 
-        if(field.getProperty("name").equals("email")) {
-             SwingUtilities.invokeLater(new Runnable() {
-                public void run() {
-                    updateFromEmailField();
+                    if(!updateFromX509SubjectDNField()) {
+                        if(!updateFromLoginField()) {
+                            updateFromEmailField();
+                        }
+                    }
                 }
             });
         }
 
         if(field.getProperty("name").equals("login")) {
              SwingUtilities.invokeLater(new Runnable() {
+                 public void run() {
+
+                     if(userNameTextFieldUpdated != USER_NAME_UPDATED_WITH_X509DN && !updateFromLoginField()) {
+                         updateFromEmailField();
+                     }
+                 }
+            });
+        }
+
+        if(field.getProperty("name").equals("email")) {
+             SwingUtilities.invokeLater(new Runnable() {
                 public void run() {
-                    updateFromLoginField();
+                    if(userNameTextFieldUpdated != USER_NAME_UPDATED_WITH_X509DN &&
+                       userNameTextFieldUpdated != USER_NAME_UPDATED_WITH_LOGIN) {
+                        updateFromEmailField();
+                    }
                 }
             });
         }
     }
 
+    private boolean updateFromX509SubjectDNField() {
+        String cn = extractCommonName(x509SubjectDNTextField.getText());
 
-    private void updateFromUserIdField(Document doc) {
-
-        if (doc.getLength() >= 3) {
-            UserIdFieldFilled = true;
-        } else {
-            UserIdFieldFilled = false;
-        }
-
-        if (subjectDNRadioButton.isSelected()) {
-            if (!(extractCommonName(x509SubjectDNTextField.getText())).equals(userNameTextField.getText())) {
-                x509SubjectDNTextField.setText(formulateSubjectDN(x509SubjectDNTextField.getText()));
-            }
-        }
-        if (emailRadioButton.isSelected()) {
-            if(!(extractNameFromEmail(emailTextField.getText())).equals(userNameTextField.getText())) {
-                emailTextField.setText(formulateEmail(emailTextField.getText()));
-            }
-        }
-        if (loginRadioButton.isSelected()) {
-            if(!loginTextField.getText().equals(userNameTextField.getText())) {
-                loginTextField.setText(userNameTextField.getText());
-            }
-        }
-
-        if (UserIdFieldFilled) {
-            // enable the Create button
-            createButton.setEnabled(true);
-        } else {
-            // disbale the button
-            createButton.setEnabled(false);
-        }
-    }
-
-    private void updateFromLoginField() {
-        if (loginRadioButton.isSelected()) {
-            if(!userNameTextField.getText().equals(loginTextField.getText())) {
-                userNameTextField.setText(loginTextField.getText());
-            }
-        }
-    }
-
-    private void updateFromEmailField() {
-        if (emailRadioButton.isSelected()) {
-            String name = extractNameFromEmail(emailTextField.getText());
-            if(!userNameTextField.getText().equals(name)) {
-                userNameTextField.setText(name);
-            }
-        }
-    }
-
-    private void updateFromX509SubjectDNField() {
-        if (subjectDNRadioButton.isSelected()) {
-            String cn = extractCommonName(x509SubjectDNTextField.getText());
+        if(cn.length() > 0) {
             if(!userNameTextField.getText().equals(cn)) {
                 userNameTextField.setText(cn);
             }
+            userNameTextFieldUpdated = USER_NAME_UPDATED_WITH_X509DN;
+            return true;
         }
+        return false;
     }
 
-    private void updateUserNameLinkedTextField() {
-        if (userNameTextField.isCursorSet() && userNameTextField.getText().trim().length() > 0) {
-            if (subjectDNRadioButton.isSelected()) {
-                x509SubjectDNTextField.setText(formulateSubjectDN(x509SubjectDNTextField.getText()));
+    private boolean updateFromLoginField() {
+        if(loginTextField.getText().length() > 0) {
+            if(!userNameTextField.getText().equals(loginTextField.getText())) {
+                userNameTextField.setText(loginTextField.getText());
             }
-            if (emailRadioButton.isSelected()) {
-                emailTextField.setText(formulateEmail(emailTextField.getText()));
-            }
-            if (loginRadioButton.isSelected()) {
-                loginTextField.setText(userNameTextField.getText());
-            }
+            userNameTextFieldUpdated = USER_NAME_UPDATED_WITH_LOGIN;
+            return true;
         }
+        return false;
     }
 
-    private String formulateEmail(String currentEmail) {
+    private boolean updateFromEmailField() {
+        String name = extractNameFromEmail(emailTextField.getText());
 
-        if(currentEmail.length() == 0) {
-            return userNameTextField.getText() + "@";
-        }
-
-        int startIndex = currentEmail.indexOf("@");
-
-        if(startIndex <  0) {
-            return userNameTextField.getText() + "@";
-        } else {
-            return userNameTextField.getText() + currentEmail.substring(startIndex);
-        }
-
-
-    }
-
-    private String formulateSubjectDN(String currentDN) {
-
-        int endIndex = -1;
-        int startIndex = -1;
-        String newDN = "";
-
-        if (currentDN.length() == 0) {
-            newDN = "CN=" + userNameTextField.getText();
-        }
-
-        int index1 = currentDN.indexOf("CN=");
-        int index2 = currentDN.indexOf("cn=");
-
-        // cn or CN not found
-        if (index1 < 0 && index2 < 0) {
-            newDN =  "CN=" + userNameTextField.getText();
-        } else {
-            endIndex = currentDN.indexOf(",");
-            if (index1 < 0) {
-                startIndex = index2;
-
-            } else {
-                // index 2 < 0
-                startIndex = index1;
+        if(name.length() > 0) {
+            if(!userNameTextField.getText().equals(name)) {
+                userNameTextField.setText(name);
             }
-
-            newDN = currentDN.substring(0, startIndex+3) + userNameTextField.getText();
-            if(endIndex > 0) {
-                 newDN += currentDN.substring(endIndex);
-            }
+            userNameTextFieldUpdated = USER_NAME_UPDATED_WITH_EMAIL;
+            return true;
         }
-        return newDN;
+        return false;
     }
 
     private String extractNameFromEmail(String email) {
@@ -526,114 +432,70 @@ public class NewFederatedUserDialog extends JDialog {
 
     {
 // GUI initializer generated by IntelliJ IDEA GUI Designer
-// >>> IMPORTANT!! <<<
+// !!! IMPORTANT !!!
 // DO NOT EDIT OR ADD ANY CODE HERE!
         $$$setupUI$$$();
     }
 
     /**
      * Method generated by IntelliJ IDEA GUI Designer
-     * >>> IMPORTANT!! <<<
+     * !!! IMPORTANT !!!
      * DO NOT edit this method OR call it in your code!
      */
     private void $$$setupUI$$$() {
-        final JPanel _1;
-        _1 = new JPanel();
-        mainPanel = _1;
-        _1.setLayout(new com.intellij.uiDesigner.core.GridLayoutManager(3, 1, new Insets(10, 10, 10, 10), -1, -1));
-        final JPanel _2;
-        _2 = new JPanel();
-        _2.setLayout(new com.intellij.uiDesigner.core.GridLayoutManager(2, 1, new Insets(0, 0, 0, 0), -1, -1));
-        _1.add(_2, new com.intellij.uiDesigner.core.GridConstraints(0, 0, 1, 1, 0, 3, 3, 3, null, null, null));
-        final JPanel _3;
-        _3 = new JPanel();
-        _3.setLayout(new com.intellij.uiDesigner.core.GridLayoutManager(1, 2, new Insets(10, 0, 10, 10), -1, -1));
-        _2.add(_3, new com.intellij.uiDesigner.core.GridConstraints(0, 0, 1, 1, 0, 3, 3, 3, null, null, null));
-        final JLabel _4;
-        _4 = new JLabel();
-        _4.setText("User Name:");
-        _3.add(_4, new com.intellij.uiDesigner.core.GridConstraints(0, 0, 1, 1, 8, 0, 0, 0, null, null, null));
-        final JTextField _5;
-        _5 = new JTextField();
-        userNameTextField = _5;
-        _3.add(_5, new com.intellij.uiDesigner.core.GridConstraints(0, 1, 1, 1, 8, 1, 6, 0, null, new Dimension(150, -1), new Dimension(200, -1)));
-        final JPanel _6;
-        _6 = new JPanel();
-        _6.setLayout(new com.intellij.uiDesigner.core.GridLayoutManager(1, 1, new Insets(10, 10, 10, 10), -1, -1));
-        _2.add(_6, new com.intellij.uiDesigner.core.GridConstraints(1, 0, 1, 1, 0, 3, 3, 3, null, null, null));
-        _6.setBorder(BorderFactory.createTitledBorder(BorderFactory.createEtchedBorder(), "  Credential Name Identitier  "));
-        final JPanel _7;
-        _7 = new JPanel();
-        _7.setLayout(new com.intellij.uiDesigner.core.GridLayoutManager(3, 3, new Insets(0, 0, 0, 0), -1, -1));
-        _6.add(_7, new com.intellij.uiDesigner.core.GridConstraints(0, 0, 1, 1, 0, 3, 3, 3, null, null, null));
-        final JLabel _8;
-        _8 = new JLabel();
-        _8.setText("X509 Subject DN:");
-        _7.add(_8, new com.intellij.uiDesigner.core.GridConstraints(0, 0, 1, 1, 8, 0, 0, 0, null, null, null));
-        final JLabel _9;
-        _9 = new JLabel();
-        _9.setText("Login:");
-        _7.add(_9, new com.intellij.uiDesigner.core.GridConstraints(1, 0, 1, 1, 8, 0, 0, 0, null, null, null));
-        final JLabel _10;
-        _10 = new JLabel();
-        _10.setText("Email:");
-        _7.add(_10, new com.intellij.uiDesigner.core.GridConstraints(2, 0, 1, 1, 8, 0, 0, 0, null, null, null));
-        final JTextField _11;
-        _11 = new JTextField();
-        x509SubjectDNTextField = _11;
-        _7.add(_11, new com.intellij.uiDesigner.core.GridConstraints(0, 1, 1, 1, 8, 1, 6, 0, null, new Dimension(200, -1), null));
-        final JTextField _12;
-        _12 = new JTextField();
-        loginTextField = _12;
-        _12.setText("");
-        _7.add(_12, new com.intellij.uiDesigner.core.GridConstraints(1, 1, 1, 1, 8, 1, 6, 0, null, new Dimension(200, -1), null));
-        final JTextField _13;
-        _13 = new JTextField();
-        emailTextField = _13;
-        _13.setText("");
-        _7.add(_13, new com.intellij.uiDesigner.core.GridConstraints(2, 1, 1, 1, 8, 1, 6, 0, null, new Dimension(200, -1), null));
-        final JRadioButton _14;
-        _14 = new JRadioButton();
-        subjectDNRadioButton = _14;
-        _14.setText("User Name as CN");
-        _7.add(_14, new com.intellij.uiDesigner.core.GridConstraints(0, 2, 1, 1, 8, 0, 3, 0, null, null, null));
-        final JRadioButton _15;
-        _15 = new JRadioButton();
-        loginRadioButton = _15;
-        _15.setText("USer Name as Login");
-        _7.add(_15, new com.intellij.uiDesigner.core.GridConstraints(1, 2, 1, 1, 8, 0, 3, 0, null, null, null));
-        final JRadioButton _16;
-        _16 = new JRadioButton();
-        emailRadioButton = _16;
-        _16.setText("User Name as First Part of Email");
-        _7.add(_16, new com.intellij.uiDesigner.core.GridConstraints(2, 2, 1, 1, 8, 0, 3, 0, null, null, null));
-        final JPanel _17;
-        _17 = new JPanel();
-        _17.setLayout(new com.intellij.uiDesigner.core.GridLayoutManager(1, 1, new Insets(0, 0, 0, 0), -1, -1));
-        _1.add(_17, new com.intellij.uiDesigner.core.GridConstraints(1, 0, 1, 1, 0, 3, 3, 3, null, null, null));
-        final JCheckBox _18;
-        _18 = new JCheckBox();
-        additionalPropertiesCheckBox = _18;
-        _18.setText("Define Additional Properties");
-        _17.add(_18, new com.intellij.uiDesigner.core.GridConstraints(0, 0, 1, 1, 8, 0, 3, 0, null, null, null));
-        final JPanel _19;
-        _19 = new JPanel();
-        _19.setLayout(new com.intellij.uiDesigner.core.GridLayoutManager(1, 3, new Insets(0, 0, 0, 0), -1, -1));
-        _1.add(_19, new com.intellij.uiDesigner.core.GridConstraints(2, 0, 1, 1, 0, 3, 3, 3, null, null, null));
-        final JButton _20;
-        _20 = new JButton();
-        createButton = _20;
-        _20.setText("Create");
-        _19.add(_20, new com.intellij.uiDesigner.core.GridConstraints(0, 1, 1, 1, 0, 1, 3, 0, null, null, null));
-        final JButton _21;
-        _21 = new JButton();
-        cancelButton = _21;
-        _21.setText("Cancel");
-        _19.add(_21, new com.intellij.uiDesigner.core.GridConstraints(0, 2, 1, 1, 0, 1, 3, 0, null, null, null));
-        final com.intellij.uiDesigner.core.Spacer _22;
-        _22 = new com.intellij.uiDesigner.core.Spacer();
-        _19.add(_22, new com.intellij.uiDesigner.core.GridConstraints(0, 0, 1, 1, 0, 1, 6, 1, null, null, null));
+        mainPanel = new JPanel();
+        mainPanel.setLayout(new GridLayoutManager(3, 1, new Insets(10, 10, 10, 10), -1, -1));
+        final JPanel panel1 = new JPanel();
+        panel1.setLayout(new GridLayoutManager(2, 1, new Insets(0, 0, 0, 0), -1, -1));
+        mainPanel.add(panel1, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null));
+        final JPanel panel2 = new JPanel();
+        panel2.setLayout(new GridLayoutManager(1, 1, new Insets(10, 10, 10, 10), -1, -1));
+        panel1.add(panel2, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null));
+        panel2.setBorder(BorderFactory.createTitledBorder(BorderFactory.createEtchedBorder(), "  Credential Name Identitier  "));
+        final JPanel panel3 = new JPanel();
+        panel3.setLayout(new GridLayoutManager(3, 3, new Insets(0, 0, 0, 0), -1, -1));
+        panel2.add(panel3, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null));
+        final JLabel label1 = new JLabel();
+        label1.setText("X509 Subject DN:");
+        panel3.add(label1, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null));
+        final JLabel label2 = new JLabel();
+        label2.setText("Login:");
+        panel3.add(label2, new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null));
+        final JLabel label3 = new JLabel();
+        label3.setText("Email:");
+        panel3.add(label3, new GridConstraints(2, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null));
+        x509SubjectDNTextField = new JTextField();
+        panel3.add(x509SubjectDNTextField, new GridConstraints(0, 1, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_FIXED, null, new Dimension(200, -1), null));
+        loginTextField = new JTextField();
+        loginTextField.setText("");
+        panel3.add(loginTextField, new GridConstraints(1, 1, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_FIXED, null, new Dimension(200, -1), null));
+        emailTextField = new JTextField();
+        emailTextField.setText("");
+        panel3.add(emailTextField, new GridConstraints(2, 1, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_FIXED, null, new Dimension(200, -1), null));
+        final JPanel panel4 = new JPanel();
+        panel4.setLayout(new GridLayoutManager(1, 3, new Insets(10, 10, 10, 10), -1, -1));
+        panel1.add(panel4, new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null));
+        userNameTextField = new JTextField();
+        panel4.add(userNameTextField, new GridConstraints(0, 1, 1, 2, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null));
+        final JLabel label4 = new JLabel();
+        label4.setText("User Name:");
+        panel4.add(label4, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null));
+        final JPanel panel5 = new JPanel();
+        panel5.setLayout(new GridLayoutManager(1, 1, new Insets(0, 0, 0, 0), -1, -1));
+        mainPanel.add(panel5, new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null));
+        additionalPropertiesCheckBox = new JCheckBox();
+        additionalPropertiesCheckBox.setText("Define Additional Properties");
+        panel5.add(additionalPropertiesCheckBox, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null));
+        final JPanel panel6 = new JPanel();
+        panel6.setLayout(new GridLayoutManager(1, 3, new Insets(0, 0, 0, 0), -1, -1));
+        mainPanel.add(panel6, new GridConstraints(2, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null));
+        createButton = new JButton();
+        createButton.setText("Create");
+        panel6.add(createButton, new GridConstraints(0, 1, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null));
+        cancelButton = new JButton();
+        cancelButton.setText("Cancel");
+        panel6.add(cancelButton, new GridConstraints(0, 2, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null));
+        final Spacer spacer1 = new Spacer();
+        panel6.add(spacer1, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_WANT_GROW, 1, null, null, null));
     }
-
-
 }
