@@ -2,9 +2,12 @@ package com.l7tech.adminws;
 
 import com.l7tech.jini.lookup.ServiceLookup;
 import com.l7tech.util.Locator;
+import com.l7tech.adminws.identity.IdentityService;
 
 import javax.security.auth.login.LoginException;
 import java.net.PasswordAuthentication;
+
+import com.l7tech.adminws.identity.Service;
 
 /**
  * Default <code>ClientCredentialManager</code> implementaiton that validates
@@ -26,11 +29,21 @@ public class ClientCredentialManagerImpl extends ClientCredentialManager {
             setCredentials(creds);
             Object serviceLookup =
                     Locator.getDefault().lookup(ServiceLookup.class);
-            // version check
         } catch (Exception e) {
             LoginException le = new LoginException();
             le.initCause(e); // no constructor with nested throwable
             throw le;
+        }
+        // version check
+        IdentityService remoteInterace = (IdentityService)Locator.getDefault().lookup(IdentityService.class);
+        try {
+            String remoteVersion = remoteInterace.echoVersion();
+            if (!Service.VERSION.equals(remoteVersion)) {
+                throw new VersionException("Version mismatch. Client= " + Service.VERSION + ". Server= " + remoteVersion);
+            }
+
+        } catch (java.rmi.RemoteException e) {
+            throw new VersionException(e);
         }
     }
 }
