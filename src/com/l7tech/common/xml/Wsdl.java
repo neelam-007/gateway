@@ -175,6 +175,21 @@ public class Wsdl {
     }
 
     /**
+     * @param bo the binding operation
+     * @return the binding where the binding operation is defined or <b>null</b>
+     */ 
+    public Binding getBinding(BindingOperation bo) {
+        Iterator bindings = getBindings().iterator();
+        while (bindings.hasNext()) {
+            Binding binding = (Binding)bindings.next();
+            if (binding.getBindingOperations().contains(bo)) {
+                return binding;
+            }
+        }
+        return null;
+    }
+
+    /**
      * @return the collection of WSDL <code>Message</code>
      *         instances described in this definition.
      */
