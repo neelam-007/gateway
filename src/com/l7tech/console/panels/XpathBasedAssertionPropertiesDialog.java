@@ -97,6 +97,8 @@ public class XpathBasedAssertionPropertiesDialog extends JDialog {
             title.append("encrypt.");
         } else if ((n instanceof RequestXpathPolicyTreeNode)) {
             title.append("require.");
+        } else if ((n instanceof ResponseXpathPolicyTreeNode)) {
+            title.append("require.");
         } else throw new IllegalArgumentException("Unsupported security node: " + n.getClass());
         setTitle(title.toString());
 
@@ -514,8 +516,8 @@ public class XpathBasedAssertionPropertiesDialog extends JDialog {
         final JTree _7;
         _7 = new JTree();
         operationsTree = _7;
-        _7.setShowsRootHandles(false);
         _7.setRootVisible(false);
+        _7.setShowsRootHandles(false);
         _6.setViewportView(_7);
         final JPanel _8;
         _8 = new JPanel();
@@ -563,10 +565,11 @@ public class XpathBasedAssertionPropertiesDialog extends JDialog {
         _18 = new JTextField();
         xPathExpressionTxtField = _18;
         _18.setToolTipText("The Xpath to save in the assertion");
-        _18.setText("blahblahs");
-        _18.setFocusable(true);
         _18.setEditable(false);
+        _18.setText("blahblahs");
         _18.setFocusCycleRoot(false);
+        _18.setFocusable(true);
         _12.add(_18, new GridConstraints(1, 1, 1, 6, 8, 1, 6, 0, null, new Dimension(150, 25), null));
     }
+
 }
