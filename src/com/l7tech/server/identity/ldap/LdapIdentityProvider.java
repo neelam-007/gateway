@@ -370,7 +370,7 @@ public class LdapIdentityProvider implements IdentityProvider {
         } catch (NamingException e) {
             // note. i am not embedding the NamingException because it sometimes
             // contains com.sun.jndi.ldap.LdapCtx which does not implement serializable
-            String msg = "cannot connect to this directory";
+            String msg = "Cannot connect to this directory.";
             logger.log(Level.INFO, "ldap config test failure " + msg, e);
             throw new InvalidIdProviderCfgException(msg);
         }
