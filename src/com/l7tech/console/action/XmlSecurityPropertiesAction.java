@@ -57,7 +57,7 @@ public class XmlSecurityPropertiesAction extends NodeAction {
         final MainWindow mw = Registry.getDefault().getComponentRegistry().getMainWindow();
         XmlSecurityPropertiesDialog dialog = new XmlSecurityPropertiesDialog(mw, false, n);
         dialog.pack();
-        dialog.setSize(900, 450); //todo: consider some dynamic sizing - em
+        dialog.setSize(800, 650); //todo: consider some dynamic sizing - em
         Utilities.centerOnScreen(dialog);
         dialog.show();
     }
