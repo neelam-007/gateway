@@ -39,11 +39,11 @@ public class FilteredLogTableSorter extends FilteredLogTableModel {
         super.setRealModel(model);
     }
 
-    public int getSortedColumn(){
+    public int getSortedColumn() {
         return columnToSort;
     }
 
-    public boolean isAscending(){
+    public boolean isAscending() {
         return ascending;
     }
 
@@ -65,8 +65,7 @@ public class FilteredLogTableSorter extends FilteredLogTableModel {
             Vector gatewayLogs;
             if ((node = rawLogCache.get(nodeId)) != null) {
                 gatewayLogs = (Vector) node;
-            }
-            else {
+            } else {
                 // create a empty cache for the new node
                 gatewayLogs = new Vector();
             }
@@ -103,40 +102,51 @@ public class FilteredLogTableSorter extends FilteredLogTableModel {
         realModel.setRowCount((sortedData.length));
         realModel.fireTableDataChanged();
     }
+
     public void sortData(int column, boolean orderToggle) {
 
-        if(orderToggle){
+        if (orderToggle) {
             ascending = ascending ? false : true;
         }
 
         // always sort in ascending order if the user select a new column
-        if(column != columnToSort){
+        if (column != columnToSort) {
             ascending = true;
         }
         // save the column index
         columnToSort = column;
 
-        Object[] sorted = filteredLogCache.toArray();
+        //Object[] sorted = filteredLogCache.toArray();
+
+        Integer[] sorted = new Integer[filteredLogCache.size()];
+
+        for (int i = 0; i < sorted.length; i++) {
+            sorted[i] = new Integer(i);
+        }
+
         Arrays.sort(sorted, new FilteredLogTableSorter.ColumnSorter(columnToSort, ascending));
         sortedData = sorted;
     }
 
     public Object getValueAt(int row, int col) {
+
+        LogMessage msg = (LogMessage) filteredLogCache.get(((Integer) sortedData[row]).intValue());
+
         switch (col) {
             case LogPanel.LOG_MSG_NUMBER_COLUMN_INDEX:
-                return new Long (((LogMessage) sortedData[row]).getMsgNumber());
+                return new Long(msg.getMsgNumber());
             case LogPanel.LOG_NODE_NAME_COLUMN_INDEX:
-                return ((LogMessage) sortedData[row]).getNodeName();
+                return msg.getNodeName();
             case LogPanel.LOG_TIMESTAMP_COLUMN_INDEX:
-                return ((LogMessage) sortedData[row]).getTime();
+                return msg.getTime();
             case LogPanel.LOG_SEVERITY_COLUMN_INDEX:
-                return ((LogMessage) sortedData[row]).getSeverity();
+                return msg.getSeverity();
             case LogPanel.LOG_MSG_DETAILS_COLUMN_INDEX:
-                return ((LogMessage) sortedData[row]).getMessageDetails();
+                return msg.getMessageDetails();
             case LogPanel.LOG_JAVA_CLASS_COLUMN_INDEX:
-                return ((LogMessage) sortedData[row]).getMessageClass();
+                return msg.getMessageClass();
             case LogPanel.LOG_JAVA_METHOD_COLUMN_INDEX:
-                return ((LogMessage) sortedData[row]).getMessageMethod();
+                return msg.getMessageMethod();
             default:
                 throw new IllegalArgumentException("Bad Column");
         }
@@ -156,34 +166,37 @@ public class FilteredLogTableSorter extends FilteredLogTableModel {
             String elementA = new String("");
             String elementB = new String("");
 
+            LogMessage logMsgA = (LogMessage) filteredLogCache.get(((Integer) a).intValue());
+            LogMessage logMsgB = (LogMessage) filteredLogCache.get(((Integer) b).intValue());
 
             switch (column) {
                 case LogPanel.LOG_MSG_NUMBER_COLUMN_INDEX:
-                    elementA = Long.toString(((LogMessage) a).getMsgNumber());
-                    elementB = Long.toString(((LogMessage) b).getMsgNumber());
+                    elementA = Long.toString(logMsgA.getMsgNumber());
+                    elementB = Long.toString(logMsgB.getMsgNumber());
                     break;
                 case LogPanel.LOG_NODE_NAME_COLUMN_INDEX:
-                    elementA = ((LogMessage) a).getNodeName();
-                    elementB = ((LogMessage) b).getNodeName();
+                    elementA = logMsgA.getNodeName();
+                    elementB = logMsgB.getNodeName();
                     break;
                 case LogPanel.LOG_TIMESTAMP_COLUMN_INDEX:
-                    elementA = ((LogMessage) a).getTime();
-                    elementB = ((LogMessage) b).getTime();
+                    elementA = logMsgA.getTime();
+                    elementB = logMsgB.getTime();
                     break;
                 case LogPanel.LOG_SEVERITY_COLUMN_INDEX:
-                    elementA = ((LogMessage) a).getSeverity();
-                    elementB = ((LogMessage) b).getSeverity();
+                    elementA = logMsgA.getSeverity();
+                    elementB = logMsgB.getSeverity();
                     break;
                 case LogPanel.LOG_MSG_DETAILS_COLUMN_INDEX:
-                    elementA = ((LogMessage) a).getMessageDetails();
-                    elementB = ((LogMessage) b).getMessageDetails();
+                    elementA = logMsgA.getMessageDetails();
+                    elementB = logMsgB.getMessageDetails();
                     break;
                 case LogPanel.LOG_JAVA_CLASS_COLUMN_INDEX:
-                    elementA = ((LogMessage) a).getMessageClass();
-                    elementB = ((LogMessage) b).getMessageClass();
+                    elementA = logMsgA.getMessageClass();
+                    elementB = logMsgB.getMessageClass();
+                    break;
                 case LogPanel.LOG_JAVA_METHOD_COLUMN_INDEX:
-                    elementA = ((LogMessage) a).getMessageMethod();
-                    elementB = ((LogMessage) b).getMessageMethod();
+                    elementA = logMsgA.getMessageMethod();
+                    elementB = logMsgB.getMessageMethod();
                     break;
                 default:
                     logger.warning("Bad Statistics Table Column: " + column);
@@ -215,8 +228,9 @@ public class FilteredLogTableSorter extends FilteredLogTableModel {
             }
         }
     }
+
     public void onConnect() {
-       logService = (LogAdmin) Locator.getDefault().lookup(LogAdmin.class);
+        logService = (LogAdmin) Locator.getDefault().lookup(LogAdmin.class);
         if (logService == null) throw new IllegalStateException("cannot obtain LogAdmin remote reference");
 
         clusterStatusAdmin = (ClusterStatusAdmin) Locator.getDefault().lookup(ClusterStatusAdmin.class);
@@ -242,36 +256,21 @@ public class FilteredLogTableSorter extends FilteredLogTableModel {
             GatewayStatus gatewayStatus = (GatewayStatus) currentNodeList.get(i.next());
 
             Object logCache = null;
-            if((logCache = rawLogCache.get(gatewayStatus.getNodeId())) != null) {
+            if ((logCache = rawLogCache.get(gatewayStatus.getNodeId())) != null) {
 
                 if (((Vector) logCache).size() > 0) {
-                   endMsgNumber = ((LogMessage) ((Vector) logCache).firstElement()).getMsgNumber();
+                    endMsgNumber = ((LogMessage) ((Vector) logCache).firstElement()).getMsgNumber();
                 }
 
                 //todo: the following line should be moved out of this block - it is placed here for testing purpose only
                 // maybe this doesn't matter as the node must be in the rawLogCache anyway
-                requests.add(new LogRequest(gatewayStatus.getNodeId(),  -1, endMsgNumber));
+                requests.add(new LogRequest(gatewayStatus.getNodeId(), -1, endMsgNumber));
             }
 
             //requests.add(new LogRequest(gatewayStatus.getNodeId(),  -1, endMsgNumber));
         }
 
-        // create a worker thread to retrieve the Service statistics
-/*        final LogsWorker logsWorker = new LogsWorker(logService, startMsgNumber, endMsgNumber) {
-            public void finished() {
-                updateLogsTable(getNewLogs(), msgFilterLevel);
-                logPane.updateMsgTotal();
-                logPane.setSelectedRow(msgNumSelected);
-
-                if (restartTimer) {
-                    logPane.getLogsRefreshTimer().start();
-                }
-            }
-        };
-
-        logsWorker.start();*/
-
-                // create a worker thread to retrieve the cluster info
+        // create a worker thread to retrieve the cluster info
         final ClusterLogWorker infoWorker = new ClusterLogWorker(clusterStatusAdmin, logService, currentNodeList, requests) {
             public void finished() {
 
