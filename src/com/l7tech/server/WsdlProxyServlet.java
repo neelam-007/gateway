@@ -3,6 +3,7 @@ package com.l7tech.server;
 import com.l7tech.identity.*;
 import com.l7tech.service.PublishedService;
 import com.l7tech.service.ServiceManager;
+import com.l7tech.service.Wsdl;
 import com.l7tech.common.util.Locator;
 import com.l7tech.objectmodel.PersistenceContext;
 import com.l7tech.objectmodel.TransactionException;
@@ -18,12 +19,14 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.ServletException;
 import javax.servlet.ServletConfig;
+import javax.wsdl.WSDLException;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.logging.Level;
 import java.sql.SQLException;
+import java.net.URL;
 
 
 /**
@@ -54,6 +57,8 @@ import java.sql.SQLException;
  * For URL pattern, consult web.xml
  */
 public class WsdlProxyServlet extends AuthenticatableHttpServlet {
+
+    public static final String SOAP_PROCESSING_SERVLET_URI = "/ssg/soap";
 
     public void init( ServletConfig config ) throws ServletException {
         super.init( config );
@@ -120,7 +125,7 @@ public class WsdlProxyServlet extends AuthenticatableHttpServlet {
                     return;
                 }
             }
-            outputServiceDescription(res, svc);
+            outputServiceDescription(req, res, svc);
             endTransaction();
         } else { // HANDLE REQUEST FOR LIST OF SERVICES
             Collection services = null;
@@ -145,12 +150,27 @@ public class WsdlProxyServlet extends AuthenticatableHttpServlet {
         }
     }
 
-    private void outputServiceDescription(HttpServletResponse res, PublishedService svc) throws IOException {
+    private void outputServiceDescription(HttpServletRequest req, HttpServletResponse res, PublishedService svc) throws IOException {
         // first, apply the necessary modifications to the wsdl before sending it back
-        String output = svc.getWsdlXml();
-        // todo, plug in mangler
+        Wsdl output = null;
+        try {
+            output = svc.parsedWsdl();
+        } catch (WSDLException e) {
+            logger.log(Level.SEVERE, "error getting wsdl from published service", e);
+            throw new IOException(e.getMessage());
+        }
+
+        // change url of the wsdl
+        // direct to http by default. choose http port based on port used for this request.
+        int port = req.getServerPort();
+        if (port == 8443) port = 8080;
+        else if (port == 443) port = 80;
+        URL ssgurl = new URL("http" + "://" + req.getServerName() + ":" + port + SOAP_PROCESSING_SERVLET_URI + "?" + PARAM_SERVICEOID + "=" + Long.toString(svc.getOid()));        
+        output.setPortUrl(output.getSoapPort(), ssgurl);
+
+        // output the wsdl
         res.setContentType("text/xml; charset=utf-8");
-        res.getOutputStream().println(output);
+        res.getOutputStream().println(output.toString());
     }
 
     private void outputServiceDescriptions(HttpServletRequest req, HttpServletResponse res, Collection services) {
