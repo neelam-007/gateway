@@ -11,6 +11,7 @@ import javax.wsdl.WSDLException;
 import java.rmi.RemoteException;
 import java.util.Collection;
 import java.io.InputStreamReader;
+import java.io.StringWriter;
 import java.net.URL;
 
 /**
@@ -38,7 +39,11 @@ public class ServiceManagerStub implements ServiceManager {
      */
     public String resolveWsdlTarget(String url) throws RemoteException {
         try {
-            return Wsdl.newInstance(null, new InputStreamReader(new URL(url).openStream())).toString();
+            Wsdl wsdl =
+              Wsdl.newInstance(null, new InputStreamReader(new URL(url).openStream()));
+            StringWriter sw = new StringWriter();
+            wsdl.toWriter(sw);
+            return sw.toString();
         } catch (WSDLException e) {
             throw new RemoteException("resolveWsdlTarget()", e);
         } catch (java.io.IOException e) {

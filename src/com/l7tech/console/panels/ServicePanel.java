@@ -1,9 +1,13 @@
 package com.l7tech.console.panels;
 
 import com.l7tech.console.util.Registry;
+import com.l7tech.console.tree.WsdlTreeNode;
 import com.l7tech.service.Wsdl;
 
 import javax.swing.*;
+import javax.swing.tree.TreeNode;
+import javax.swing.tree.TreeModel;
+import javax.swing.tree.DefaultTreeModel;
 import javax.swing.border.EmptyBorder;
 import javax.wsdl.WSDLException;
 import javax.wsdl.PortType;
@@ -38,7 +42,7 @@ public class ServicePanel extends WizardStepPanel {
         resolvejButton = new JButton();
         serviceOperationsjPanel = new JPanel();
         methodsjScrollPane = new JScrollPane();
-        methodsjList = new JList();
+        wsdlJTree = new JTree();
         rigidAreatjPanel = new JPanel();
 
         setLayout(new BorderLayout());
@@ -66,20 +70,17 @@ public class ServicePanel extends WizardStepPanel {
                     String sw =
                             Registry.getDefault().getServiceManager().resolveWsdlTarget(wsdlUrljTextField.getText());
                     Wsdl wsdl = Wsdl.newInstance(null, new StringReader(sw));
-                    java.util.List operations = new ArrayList();
-                    for(Iterator i = wsdl.getPortTypes().iterator(); i.hasNext();) {
-                        PortType pt = (PortType)i.next();
-                        operations = pt.getOperations();
-                    }
-                    // methodsjList.
+                    TreeNode node = WsdlTreeNode.newInstance(wsdl);
+                    wsdlJTree.setModel(new DefaultTreeModel(node));
                 } catch (RemoteException e1) {
+                    e1.printStackTrace();
                     JOptionPane.showMessageDialog(null,
                                         "Unable to resolve the WSDL at location '"+wsdlUrljTextField.getText()+"'\n",
                                         "Error",
                                         JOptionPane.ERROR_MESSAGE);
-                    e1.printStackTrace();
 
                 } catch (WSDLException e1) {
+                     e1.printStackTrace();
                     JOptionPane.showMessageDialog(null,
                             "Unable to parse the WSDL at location '"+wsdlUrljTextField.getText()+"'\n",
                                                             "Error",
@@ -98,13 +99,8 @@ public class ServicePanel extends WizardStepPanel {
         methodsjScrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
         methodsjScrollPane.setPreferredSize(new Dimension(200, 150));
 
-        methodsjList.setModel(new AbstractListModel() {
-            String[] strings = { "getQuote", "placeOrder", "cancelOrder", "viewPendingOrders" };
-            public int getSize() { return strings.length; }
-            public Object getElementAt(int i) { return strings[i]; }
-        });
 
-        methodsjScrollPane.setViewportView(methodsjList);
+        methodsjScrollPane.setViewportView(wsdlJTree);
 
         serviceOperationsjPanel.add(methodsjScrollPane);
 
@@ -131,7 +127,7 @@ public class ServicePanel extends WizardStepPanel {
     private JLabel serviceUrljLabel;
     private JPanel rigidAreatjPanel;
     private JScrollPane methodsjScrollPane;
-    private JList methodsjList;
+    private JTree wsdlJTree;
     private JPanel serviceUrljPanel;
     private JPanel serviceOperationsjPanel;
     private JTextField wsdlUrljTextField;
