@@ -39,10 +39,10 @@ start() {
 
 	USER=`whoami`
         echo -n $"Starting $prog: "
-	if [ "$USER" == "root" ]; then
-        	su - $ssguser -c "$ssg start" > /dev/null 2>&1
+	if [ "$USER" = "root" ]; then
+        	su - $ssguser -c "$ssg start -security" > /dev/null 2>&1
         	RETVAL=$?
-	elif [ "$USER" == "$ssguser" ]; then
+	elif [ "$USER" = "$ssguser" ]; then
 		$ssg start > /dev/null 2>&1
 		RETVAL=$?
 	else
@@ -60,10 +60,10 @@ stop() {
 		exit
 	fi
 	echo -n $"Stopping $prog: "
-	if [ $USER == "root" ]; then
+	if [ "$USER" = "root" ]; then
         	su - $ssguser -c "$ssg stop" > /dev/null 2>&1
         	RETVAL=$?
-	elif [ $USER == "$ssguser" ]; then
+	elif [ "$USER" = "$ssguser" ]; then
 		$ssg stop > /dev/null 2>&1
 		RETVAL=$?
 	else
