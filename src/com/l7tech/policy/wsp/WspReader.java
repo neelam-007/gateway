@@ -71,13 +71,13 @@ public class WspReader {
             }
         }
 
-        List childElements = WspConstants.getChildElements(policyElement);
+        List childElements = TypeMappingUtils.getChildElements(policyElement);
         if (childElements.isEmpty())
             return null; // Empty Policy tag explicitly means a null policy
 
         if (childElements.size() != 1)
             throw new InvalidPolicyStreamException("Policy does not have exactly zero or one immediate child");
-        Object target = WspConstants.thawElement((Element) childElements.get(0), visitor).target;
+        Object target = TypeMappingUtils.thawElement((Element) childElements.get(0), visitor).target;
         if (!(target instanceof Assertion))
             throw new InvalidPolicyStreamException("Policy does not have an assertion as its immediate child");
         Assertion root = (Assertion) target;

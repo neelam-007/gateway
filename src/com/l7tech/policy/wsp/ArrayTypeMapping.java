@@ -13,7 +13,7 @@ import java.util.Iterator;
 import java.util.List;
 
 /**
- * @author mike
+ * TypeMapping that knows how to serialize arrays of objects of some specific class.
  */
 class ArrayTypeMapping extends ComplexTypeMapping {
     private final Object[] prototype;
@@ -33,7 +33,7 @@ class ArrayTypeMapping extends ComplexTypeMapping {
 
     protected TypedReference createObject(Element element, String value, WspVisitor visitor) throws InvalidPolicyStreamException {
         List objects = new ArrayList();
-        List arrayElements = WspConstants.getChildElements(element, "item");
+        List arrayElements = TypeMappingUtils.getChildElements(element, "item");
         for (Iterator i = arrayElements.iterator(); i.hasNext();) {
             Element kidElement = (Element)i.next();
             TypedReference ktr = WspConstants.typeMappingObject.thaw(kidElement, visitor);

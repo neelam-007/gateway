@@ -11,7 +11,7 @@ import org.w3c.dom.Element;
 import java.lang.reflect.Constructor;
 
 /**
- * @author mike
+ * Superclass for type mappings whose values can't be represented just as simple strings.
  */
 class ComplexTypeMapping extends BasicTypeMapping {
     protected Constructor constructor; // default, no-arguments constructor for this type

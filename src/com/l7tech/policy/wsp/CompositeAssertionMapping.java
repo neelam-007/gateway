@@ -15,7 +15,7 @@ import java.util.LinkedList;
 import java.util.List;
 
 /**
- * @author mike
+ * TypeMapping that knows how to serliaze a CompositeAssertion and its children into a policy XML document.
  */
 class CompositeAssertionMapping extends AssertionMapping {
     CompositeAssertion source;
@@ -35,7 +35,7 @@ class CompositeAssertionMapping extends AssertionMapping {
             if (kid == null)
                 throw new InvalidPolicyTreeException("Unable to serialize a null assertion");
             Class kidClass = kid.getClass();
-            TypeMapping tm = WspConstants.findTypeMappingByClass(kidClass);
+            TypeMapping tm = TypeMappingUtils.findTypeMappingByClass(kidClass);
             if (tm == null)
                 throw new InvalidPolicyTreeException("No TypeMapping found for class " + kidClass);
             tm.freeze(new TypedReference(kidClass, kid), element);
@@ -49,7 +49,7 @@ class CompositeAssertionMapping extends AssertionMapping {
 
         // gather children
         List convertedKids = new LinkedList();
-        List kids = WspConstants.getChildElements(source);
+        List kids = TypeMappingUtils.getChildElements(source);
         for (Iterator i = kids.iterator(); i.hasNext();) {
             Element kidNode = (Element)i.next();
             TypedReference tr = WspConstants.typeMappingObject.thaw(kidNode, visitor);

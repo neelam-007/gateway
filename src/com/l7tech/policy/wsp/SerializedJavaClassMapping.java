@@ -52,7 +52,7 @@ class SerializedJavaClassMapping extends BeanTypeMapping {
         if (value == null)
             throw new InvalidPolicyStreamException("Null values not supported");
 
-        List entryElements = WspConstants.getChildElements(element, ELEMENT_NAME);
+        List entryElements = TypeMappingUtils.getChildElements(element, ELEMENT_NAME);
         if (entryElements.size() != 1) {
             throw new InvalidPolicyStreamException("Single child element expected with serialized Java mapping");
         }

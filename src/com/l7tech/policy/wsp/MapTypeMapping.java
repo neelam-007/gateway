@@ -13,7 +13,7 @@ import java.lang.reflect.Constructor;
 import java.util.*;
 
 /**
- * @author mike
+ * TypeMapping that knows how to represent a {@link Map} with String keys in a policy XML document.
  */
 class MapTypeMapping extends ComplexTypeMapping {
     // This is utterly grotesque, but it's all Java's fault.  Please close eyes here
@@ -55,10 +55,10 @@ class MapTypeMapping extends ComplexTypeMapping {
 
     protected void populateObject(TypedReference object, Element source, WspVisitor visitor) throws InvalidPolicyStreamException {
         Map map = (Map)object.target;
-        List entryElements = WspConstants.getChildElements(source, "entry");
+        List entryElements = TypeMappingUtils.getChildElements(source, "entry");
         for (Iterator i = entryElements.iterator(); i.hasNext();) {
             Element element = (Element)i.next();
-            List keyValueElements = WspConstants.getChildElements(element);
+            List keyValueElements = TypeMappingUtils.getChildElements(element);
             if (keyValueElements.size() != 2)
                 throw new InvalidPolicyStreamException("Map entry does not have exactly two child elements (key and value)");
             Element keyElement = (Element)keyValueElements.get(0);

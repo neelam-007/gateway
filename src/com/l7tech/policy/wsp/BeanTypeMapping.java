@@ -18,7 +18,7 @@ import java.util.Map;
 import java.util.logging.Logger;
 
 /**
- * @author mike
+ * A TypeMapping that supports a bean-like object with a default constructor and some getters and setters.
  */
 class BeanTypeMapping extends ComplexTypeMapping {
     private static final Logger log = Logger.getLogger(BeanTypeMapping.class.getName());
@@ -41,7 +41,7 @@ class BeanTypeMapping extends ComplexTypeMapping {
         Object target = object.target;
 
         // gather properties
-        List properties = WspConstants.getChildElements(source);
+        List properties = TypeMappingUtils.getChildElements(source);
         for (Iterator i = properties.iterator(); i.hasNext();) {
             Element kid = (Element)i.next();
             String parm = kid.getLocalName();
@@ -78,7 +78,7 @@ class BeanTypeMapping extends ComplexTypeMapping {
                     }
                 }
             } while (setter == null);
-            WspConstants.invokeMethod(setter, target, parameter);
+            TypeMappingUtils.invokeMethod(setter, target, parameter);
         } catch (SecurityException e) {
             visitor.unknownProperty(targetSource, propertySource, target, parm, value, e);
         } catch (IllegalAccessException e) {
@@ -114,7 +114,7 @@ class BeanTypeMapping extends ComplexTypeMapping {
         }
         for (Iterator i = getters.keySet().iterator(); i.hasNext();) {
             String parm = (String)i.next();
-            if (WspConstants.isIgnorableProperty(parm))
+            if (TypeMappingUtils.isIgnorableProperty(parm))
                 continue;
             Method getter = (Method)getters.get(parm);
             if (getter == null)
@@ -130,11 +130,11 @@ class BeanTypeMapping extends ComplexTypeMapping {
             Class returnType = getter.getReturnType();
             if (!setter.getParameterTypes()[0].equals(returnType))
                 throw new InvalidPolicyTreeException("class has getter and setter for " + parm + " which disagree about its type");
-            TypeMapping tm = WspConstants.findTypeMappingByClass(returnType);
+            TypeMapping tm = TypeMappingUtils.findTypeMappingByClass(returnType);
             if (tm == null)
                 throw new InvalidPolicyTreeException("class " + bean.getClass() + " has property \"" + parm + "\" with unsupported type " + returnType);
             final Object[] args = new Object[0];
-            Object value = WspConstants.invokeMethod(getter, bean, args);
+            Object value = TypeMappingUtils.invokeMethod(getter, bean, args);
             TypedReference tr = new TypedReference(returnType, value, parm);
             tm.freeze(tr, element);
         }

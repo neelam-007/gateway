@@ -29,6 +29,7 @@ public class AuditFolderNode extends AbstractTreeNode {
         int index = 0;
         children = null;
         insert( new AuditAssertionPaletteNode(), index++ );
+        insert( new SnmpTrapAssertionPaletteNode(), index++ );
     }
 
     /**
@@ -39,7 +40,7 @@ public class AuditFolderNode extends AbstractTreeNode {
      * @return the FQ name as a String
      */
     public String getName() {
-        return "Logging and Auditing";
+        return "Logging, Auditing and Alerts";
     }
 
     /**

@@ -2,6 +2,7 @@ package com.l7tech.console.tree.policy;
 
 import com.l7tech.common.util.ConstructorInvocation;
 import com.l7tech.policy.assertion.*;
+import com.l7tech.policy.assertion.alert.SnmpTrapAssertion;
 import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.assertion.composite.OneOrMoreAssertion;
 import com.l7tech.policy.assertion.credential.WsTrustCredentialExchange;
@@ -62,6 +63,7 @@ public class AssertionTreeNodeFactory {
         assertionMap.put(SchemaValidation.class, SchemaValidationTreeNode.class);
         assertionMap.put(XslTransformation.class, XslTransformationTreeNode.class);
         assertionMap.put(TimeRange.class, TimeRangeTreeNode.class);
+        assertionMap.put(SnmpTrapAssertion.class, SnmpTrapAssertionTreeNode.class);
         assertionMap.put(RemoteIpRange.class, RemoteIpRangeTreeNode.class);
         assertionMap.put(CustomAssertionHolder.class, CustomAssertionTreeNode.class);
         assertionMap.put(AuditAssertion.class, AuditAssertionTreeNode.class);

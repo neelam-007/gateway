@@ -11,7 +11,10 @@ import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 
 /**
- * @author mike
+ * TypeMapping that knows how to map any Object to a policy XML.  When serializing any object that is some conrete
+ * type other than Object, will try to locate
+ * an exact-match TypeMapping for the given class and will fail if one is not found.  Similarly, will attempt
+ * to deserialize any XML element for which a valid TypeMapping can be found.
  */
 class ObjectTypeMapping extends BasicTypeMapping {
     ObjectTypeMapping(Class clazz, String externalName) {
@@ -24,7 +27,7 @@ class ObjectTypeMapping extends BasicTypeMapping {
         if (object.target != null) {
             Class c = object.target.getClass();
             if (c != Object.class) {
-                TypeMapping tm = WspConstants.findTypeMappingByClass(c);
+                TypeMapping tm = TypeMappingUtils.findTypeMappingByClass(c);
                 if (tm != null)
                     return tm.freeze(new TypedReference(c, object.target, object.name), container);
 
@@ -52,7 +55,7 @@ class ObjectTypeMapping extends BasicTypeMapping {
         NamedNodeMap attrs = source.getAttributes();
         if (attrs.getLength() == 0) {
             // Appears to be an anonymous element  <Typename>..</Typename>
-            TypeMapping tm = WspConstants.findTypeMappingByExternalName(source.getNodeName());
+            TypeMapping tm = TypeMappingUtils.findTypeMappingByExternalName(source.getNodeName());
             if (tm == null) {
                 final InvalidPolicyStreamException e = new InvalidPolicyStreamException("Unrecognized anonymous element " + source.getNodeName());
                 if (recursing) throw e;
@@ -87,7 +90,7 @@ class ObjectTypeMapping extends BasicTypeMapping {
             return new TypedReference(clazz, isNull ? null : new Object(), source.getNodeName());
         }
 
-        TypeMapping tm = WspConstants.findTypeMappingByExternalName(typeName);
+        TypeMapping tm = TypeMappingUtils.findTypeMappingByExternalName(typeName);
         if (tm == null)
             throw new InvalidPolicyStreamException("Policy contains unrecognized type name \"" + source.getNodeName() + "\"");
 

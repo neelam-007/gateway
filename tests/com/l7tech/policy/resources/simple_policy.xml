@@ -217,6 +217,13 @@
                     <DetailMessage stringValueNull="null"/>
                     <OriginalXml stringValueNull="null"/>
                 </UnknownAssertion>
+                <SnmpTrap>
+                    <ErrorMessage stringValue="Layer 7 SecureSpan Gateway SNMP Trap"/>
+                    <Oid intValue="0"/>
+                    <Community stringValue=""/>
+                    <TargetPort intValue="162"/>
+                    <TargetHostname stringValue=""/>
+                </SnmpTrap>
             </OneOrMore>
         </All>
         <ExactlyOne>
@@ -273,8 +280,8 @@
                                     <ContentTypes stringArrayValue="included">
                                     <item stringValue="application/x-zip-compressed"/>
                                     </ContentTypes>
-                                    <Name stringValue="portfolioData"/>
                                     <MaxLength intValue="0"/>
+                                    <Name stringValue="portfolioData"/>
                                     </value>
                                     </entry>
                                     </Multipart>

@@ -24,7 +24,7 @@ class BasicTypeMapping implements TypeMapping {
     BasicTypeMapping(Class clazz, String externalName) {
         this.clazz = clazz;
         this.externalName = externalName;
-        this.isNullable = WspConstants.isNullableType(clazz);
+        this.isNullable = TypeMappingUtils.isNullableType(clazz);
         try {
             stringConstructor = clazz.getConstructor(new Class[]{String.class});
         } catch (Exception e) {

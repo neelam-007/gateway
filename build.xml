@@ -403,6 +403,8 @@
                 <include name="odmg.jar"/>
                 <include name="oswego-concurrent.jar"/>
                 <include name="qname.jar"/>
+                <include name="snmp4j.jar"/>
+                <include name="log4j.jar"/> <!-- todo find a way to use snmp4j without log4j -->
 
                 <include name="systinet-*.jar" if="include.systinet"/>
                 <include name="jaxrpc.jar" unless="include.systinet"/>
@@ -779,6 +781,10 @@
             </fileset>
 
             <fileset dir="${src.root}/lib/gateway/tarari">
+                <include name="*.jar"/>
+            </fileset>
+
+            <fileset dir="${src.root}/lib/gateway/snmp">
                 <include name="*.jar"/>
             </fileset>
         </copy>

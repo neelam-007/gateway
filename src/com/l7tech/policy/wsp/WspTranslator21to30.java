@@ -180,7 +180,7 @@ public class WspTranslator21to30 implements WspTranslator {
                     Element elementXpath = XmlUtil.findOnlyOneChildElementByName(item, item.getNamespaceURI(), "ElementXpath");
                     if (preconditionXpath == null || elementXpath == null)
                         throw new InvalidPolicyStreamException("Invalid 2.1 policy - " + origName + " requires both PreconditionXpath and ElementXpath");
-                    TypedReference pxref = WspConstants.thawElement(preconditionXpath, StrictWspVisitor.INSTANCE);
+                    TypedReference pxref = TypeMappingUtils.thawElement(preconditionXpath, StrictWspVisitor.INSTANCE);
                     final AllAssertion itemAll = new AllAssertion();
                     enforcementOr.addChild(itemAll);
                     if (pxref.target != null) {
@@ -201,7 +201,7 @@ public class WspTranslator21to30 implements WspTranslator {
                             seenNamespaceMap = pxpath.getNamespaces();
                     }
 
-                    TypedReference exref = WspConstants.thawElement(elementXpath, StrictWspVisitor.INSTANCE);
+                    TypedReference exref = TypeMappingUtils.thawElement(elementXpath, StrictWspVisitor.INSTANCE);
                     if (exref.target == null)
                         throw new InvalidPolicyStreamException("Invalid 2.1 policy - " + origName + " ElementXpath may not be null");
 

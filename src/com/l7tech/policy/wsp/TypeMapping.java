@@ -9,11 +9,22 @@ package com.l7tech.policy.wsp;
 import org.w3c.dom.Element;
 
 /**
- * @author mike
+ * Interface for something that knows how to convert an object of a given type into an XML element and vice versa.
  */
 interface TypeMapping {
+    /**
+     * Get the concrete class that this TypeMapping recognizes.  A {@link TypedReference} passed to {@link #freeze}
+     * must be of this type, and TypeReferences returned by {@link #thaw} will be of this type.
+     *
+     * @return the class that this TypeMapping supports, ie AllAssertion.class.  Never null.
+     */
     Class getMappedClass();
 
+    /**
+     * Get the name that is used for this type inside serialized XML documents.
+     *
+     * @return  the name for this type, ie "All".  Never null.
+     */
     String getExternalName();
 
     /**

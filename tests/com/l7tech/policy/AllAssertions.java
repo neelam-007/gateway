@@ -7,6 +7,7 @@
 package com.l7tech.policy;
 
 import com.l7tech.policy.assertion.*;
+import com.l7tech.policy.assertion.alert.SnmpTrapAssertion;
 import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.assertion.composite.ExactlyOneAssertion;
 import com.l7tech.policy.assertion.composite.OneOrMoreAssertion;
@@ -54,6 +55,7 @@ public class AllAssertions {
         new RequestWssReplayProtection(),
         new RequestSwAAssertion(),
         new WsTrustCredentialExchange(),
+        new SnmpTrapAssertion(),
         // TODO new TimeOfDayAssertion(),
         // TODO new DateRangeAssertion(),
         // TODO new DayOfWeekAssertion(),
@@ -103,7 +105,8 @@ public class AllAssertions {
         new WsTrustCredentialExchange(),
         CUSTOM_ASSERTION_HOLDER,
         new Regex(),
-        new UnknownAssertion()
+        new UnknownAssertion(),
+        new SnmpTrapAssertion(),
         // TODO new TimeOfDayAssertion(),
         // TODO new DateRangeAssertion(),
         // TODO new DayOfWeekAssertion(),
@@ -145,7 +148,8 @@ public class AllAssertions {
         new CustomAssertionHolder(),
         new WsTrustCredentialExchange(),
         new Regex(),
-        new UnknownAssertion()
+        new UnknownAssertion(),
+        new SnmpTrapAssertion(),
         // TODO new TimeOfDayAssertion(),
         // TODO new DateRangeAssertion(),
         // TODO new DayOfWeekAssertion(),
