@@ -31,6 +31,7 @@ public class ClusterStatusWorker extends SwingWorker {
     private Hashtable statsList;
     private Hashtable newNodeList;
     private Hashtable currentNodeList;
+    private long clusterRequestCount;
 
     private ServiceAdmin serviceManager = null;
     static Logger logger = Logger.getLogger(ClusterStatusWorker.class.getName());
@@ -45,6 +46,9 @@ public class ClusterStatusWorker extends SwingWorker {
 
     public Hashtable getNewNodeList(){
         return newNodeList;
+    }
+    public long getClusterRequestCount(){
+        return clusterRequestCount;
     }
 
     public Vector getStatisticsList(){
@@ -177,6 +181,9 @@ public class ClusterStatusWorker extends SwingWorker {
 //                    System.out.println("adding AttempCount to cache: " + serviceStats[i].getRequests());
                 }
             }
+
+            //todo: only count the node in service
+            clusterRequestCount += serviceStats[i].getRequests();
         }
 
         // return a dummy object

@@ -481,6 +481,12 @@ public class ClusterStatusWindow extends JFrame {
                 su.setStatus(0);
             }
 
+            if(getClusterRequestCount() !=0 ){
+                su.setLoadSharing((new Long(su.getRequestCount() * 100 / getClusterRequestCount())).intValue());
+            }
+            else{
+                su.setLoadSharing(0);
+            }
             cs.add(su);
         }
 
@@ -543,7 +549,7 @@ public class ClusterStatusWindow extends JFrame {
         return cs;
     }
 
-/*
+
     private void updateClusterRequestCounterCache(long newCount) {
 
         if (clusterRequestCounterCache.size() <= GatewayStatus.NUMBER_OF_SAMPLE_PER_MINUTE) {
@@ -567,7 +573,7 @@ public class ClusterStatusWindow extends JFrame {
 
         return totalCount;
     }
-*/
+
 
     private javax.swing.Timer getStatusRefreshTimer() {
 
@@ -591,9 +597,10 @@ public class ClusterStatusWindow extends JFrame {
         final ClusterStatusWorker statsWorker = new ClusterStatusWorker(serviceManager, clusterStatusAdmin, currentNodeList) {
             public void finished() {
                 //updateServerMetricsFields(getMetrics());
-                statisticsPane.updateStatisticsTable(getStatisticsList());
+                statisticsPane.updateStatisticsTable(this.getStatisticsList());
 
                 currentNodeList = getNewNodeList();
+                updateClusterRequestCounterCache(this.getClusterRequestCount());
 
                 Vector cs = prepareClusterStatusData();
 
