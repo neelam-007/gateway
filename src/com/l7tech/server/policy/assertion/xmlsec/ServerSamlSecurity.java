@@ -5,6 +5,7 @@ import com.l7tech.common.security.xml.processor.SamlSecurityToken;
 import com.l7tech.common.security.xml.processor.SecurityToken;
 import com.l7tech.common.xml.saml.SamlAssertion;
 import com.l7tech.common.xml.saml.SamlHolderOfKeyAssertion;
+import com.l7tech.common.xml.saml.SamlSenderVouchesAssertion;
 import com.l7tech.message.Request;
 import com.l7tech.message.Response;
 import com.l7tech.message.SoapRequest;
@@ -87,15 +88,26 @@ public class ServerSamlSecurity implements ServerAssertion {
             }
         }
 
-        if (samlAssertion != null) { // todo, should this accept any type of SamlAssertion?
-            if (!(samlAssertion instanceof SamlHolderOfKeyAssertion)) {
-                logger.warning("We got a request that presented a valid signature from a SAML assertion, but it was not a Holder-of-Key assertion.");
-                return AssertionStatus.BAD_REQUEST;
+        if (samlAssertion != null) {
+            // check that the right type of assertion is present
+            if (assertion.getConfirmationMethodType() == SamlSecurity.CONFIRMATION_METHOD_HOLDER_OF_KEY) {
+                if (!(samlAssertion instanceof SamlHolderOfKeyAssertion)) {
+                    logger.warning("We got a request that presented a valid signature from a SAML assertion, but " +
+                                   "it was not a Holder-of-Key assertion. " +
+                                   "This policy assertion requires hok type of confirmation.");
+                    return AssertionStatus.BAD_REQUEST;
+                }
+            } else if (assertion.getConfirmationMethodType() == SamlSecurity.CONFIRMATION_METHOD_SENDER_VOUCHES) {
+                if (!(samlAssertion instanceof SamlSenderVouchesAssertion)) {
+                    logger.warning("We got a request that presented a valid signature from a SAML assertion, but " +
+                                   "it was not a Sender-vouches assertion. " +
+                                   "This policy assertion requires sv type of confirmation.");
+                    return AssertionStatus.BAD_REQUEST;
+                }
             }
-            SamlHolderOfKeyAssertion hok = (SamlHolderOfKeyAssertion)samlAssertion;
 
             // Check expiry date
-            Calendar expires = hok.getExpires();
+            Calendar expires = samlAssertion.getExpires();
             Calendar now = Calendar.getInstance(UTC_TIME_ZONE);
             if (!expires.after(now)) {
                 logger.warning("SAML holder-of-key assertion in this request has expired; assertion therefore fails.");
@@ -103,7 +115,7 @@ public class ServerSamlSecurity implements ServerAssertion {
             }
 
             // Save pincipal credential for later authentication
-            X500Name x500name = new X500Name(hok.getSubjectCertificate().getSubjectX500Principal().getName());
+            X500Name x500name = new X500Name(samlAssertion.getSubjectCertificate().getSubjectX500Principal().getName());
             String subjectCN = x500name.getCommonName();
             request.setPrincipalCredentials(new LoginCredentials(subjectCN,
                                                                  null,
