@@ -605,7 +605,7 @@ public class SsgRuntime {
                 // Failover must be added last so requests can be downcast to FailoverHttpRequest in MP,
                 // so an InputStreamFactory can be set; otherwise all requests are buffered.
                 final String[] addrs = ssg.getOverrideIpAddresses();
-                if (addrs != null && addrs.length > 0) {
+                if (ssg.isUseOverrideIpAddresses() && addrs != null && addrs.length > 0) {
                     log.fine("Enabling failover IP list for Gateway " + ssg);
                     FailoverStrategy strategy = new StickyFailoverStrategy(addrs);
                     int max = addrs.length;

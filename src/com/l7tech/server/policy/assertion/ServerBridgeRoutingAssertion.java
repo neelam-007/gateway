@@ -9,8 +9,12 @@ package com.l7tech.server.policy.assertion;
 import com.l7tech.common.audit.AssertionMessages;
 import com.l7tech.common.audit.AuditDetailMessage;
 import com.l7tech.common.audit.Auditor;
+import com.l7tech.common.http.FailoverHttpClient;
+import com.l7tech.common.http.GenericHttpClient;
 import com.l7tech.common.http.SimpleHttpClient;
 import com.l7tech.common.http.prov.apache.CommonsHttpClient;
+import com.l7tech.common.io.failover.FailoverStrategy;
+import com.l7tech.common.io.failover.StickyFailoverStrategy;
 import com.l7tech.common.message.*;
 import com.l7tech.common.security.saml.SamlAssertionGenerator;
 import com.l7tech.common.security.saml.SubjectStatement;
@@ -184,10 +188,31 @@ public class ServerBridgeRoutingAssertion extends ServerRoutingAssertion {
 
         ssg.getRuntime().setSsgKeyStoreManager(new BridgeRoutingKeyStoreManager());
 
+        // Configure failover if enabled
+        String addrs[] = assertion.getCustomIpAddresses();
+        if (addrs != null && addrs.length > 0 && areValidUrlHostnames(addrs, auditor)) {
+            ssg.setOverrideIpAddresses(addrs);
+            ssg.setUseOverrideIpAddresses(true);
+        }
 
-        SimpleHttpClient httpClient = new SimpleHttpClient(new SslPeerHttpClient(new CommonsHttpClient(ssg.getRuntime().getHttpConnectionManager()),
-                                                                                 ssg,
-                                                                                 ClientProxySecureProtocolSocketFactory.getInstance()));
+        // Set up HTTP client (use commons client)
+        GenericHttpClient client = new CommonsHttpClient(ssg.getRuntime().getHttpConnectionManager());
+
+        // Attach SSL support
+        client = new SslPeerHttpClient(client,
+                                       ssg,
+                                       ClientProxySecureProtocolSocketFactory.getInstance());
+
+        if (ssg.isUseOverrideIpAddresses()) {
+            // Attach failover client
+            FailoverStrategy strategy = new StickyFailoverStrategy(addrs);
+            int attempts = addrs.length;
+            client = new FailoverHttpClient(client, strategy, attempts, logger);
+        }
+
+        // Attach simple front-end
+        SimpleHttpClient httpClient = new SimpleHttpClient(client);
+
         ssg.getRuntime().setHttpClient(httpClient);
 
         if (hardcodedPolicy != null) {
@@ -240,6 +265,19 @@ public class ServerBridgeRoutingAssertion extends ServerRoutingAssertion {
         // TODO make this fully configurable
         ssg.setUseSslByDefault(true);
         messageProcessor = new MessageProcessor();
+    }
+
+    private boolean areValidUrlHostnames(String[] addrs, Auditor auditor) {
+        for (int i = 0; i < addrs.length; i++) {
+            String addr = addrs[i];
+            try {
+                new URL("http", addr, 777, "/foo/bar");
+            } catch (MalformedURLException e) {
+                auditor.logAndAudit(AssertionMessages.REMOTE_ADDRESS_INVALID, new String[] { addr });
+                return false;
+            }
+        }
+        return true;
     }
 
     public AssertionStatus checkRequest(PolicyEnforcementContext context) throws IOException, PolicyAssertionException {
