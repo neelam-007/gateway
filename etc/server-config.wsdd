@@ -106,7 +106,7 @@
 
 
  <service name="serviceAdmin" provider="java:RPC">
-  <parameter name="allowedMethods" value="resolveWsdlTarget findServiceByPrimaryKey findAllPublishedServices findAllPublishedServicesByOffset"/>
+  <parameter name="allowedMethods" value="resolveWsdlTarget findServiceByPrimaryKey findAllPublishedServices findAllPublishedServicesByOffset savePublishedService deletePublishedService"/>
   <parameter name="wsdlPortType" value="servicePortType"/>
   <parameter name="scope" value="Application"/>
   <parameter name="className" value="com.l7tech.adminws.service.Service"/>
@@ -127,6 +127,14 @@
   <operation name="findAllPublishedServicesByOffset" qname="ns3:findAllPublishedServicesByOffset" returnQName="findAllPublishedServicesByOffsetReturn" returnType="ns3:ArrayOfHeaders" xmlns:ns3="http://www.layer7-tech.com/service">
    <parameter name="offset" type="xsd:int" xmlns:xsd="http://www.w3.org/2001/XMLSchema"/>
    <parameter name="windowSize" type="xsd:int" xmlns:xsd="http://www.w3.org/2001/XMLSchema"/>
+  </operation>
+
+  <operation name="savePublishedService" qname="ns5:savePublishedService" returnQName="savePublishedServiceReturn" returnType="xsd:long" xmlns:ns5="http://www.layer7-tech.com/service" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+   <parameter name="service" type="ns5:PublishedService"/>
+  </operation>
+
+  <operation name="deletePublishedService" qname="ns6:deletePublishedService" xmlns:ns6="http://www.layer7-tech.com/identity">
+   <parameter name="oid" type="xsd:long" xmlns:xsd="http://www.w3.org/2001/XMLSchema"/>
   </operation>
 
   <typeMapping deserializer="org.apache.axis.encoding.ser.BeanDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" qname="ns17:PublishedService" serializer="org.apache.axis.encoding.ser.BeanSerializerFactory" type="java:com.l7tech.service.PublishedService" xmlns:ns17="http://www.layer7-tech.com/service"/>
