@@ -16,6 +16,8 @@ import com.l7tech.policy.assertion.composite.OneOrMoreAssertion;
 import com.l7tech.policy.assertion.credential.http.HttpBasic;
 import com.l7tech.policy.assertion.identity.SpecificUser;
 import com.l7tech.policy.assertion.xmlsec.RequestWssX509Cert;
+import com.l7tech.policy.assertion.xmlsec.SecureConversation;
+import com.l7tech.policy.assertion.xmlsec.RequestWssReplayProtection;
 import com.l7tech.policy.wsp.WspReader;
 import junit.framework.Test;
 import junit.framework.TestCase;
@@ -226,5 +228,32 @@ public class DefaultPolicyPathBuilderTest extends TestCase {
         }
     }
 
+
+    public void testBug1374() throws Exception {
+        Assertion firstOr = new OneOrMoreAssertion(Arrays.asList(new Assertion[]{
+            //new HttpBasic(),
+            new RequestWssX509Cert(),
+            new SecureConversation()
+        }));
+        Assertion secondOr = new OneOrMoreAssertion(Arrays.asList(new Assertion[]{
+                new SpecificUser(-2, "wilma", "wilma", "wilma")
+        }));
+
+        Assertion top = new AllAssertion(Arrays.asList(new Assertion[]{
+            firstOr,
+            new RequestWssReplayProtection(),
+            secondOr,
+            new HttpRoutingAssertion("http://wheel")
+        }));
+
+        DefaultPolicyPathBuilder builder = new DefaultPolicyPathBuilder();
+        PolicyPathResult result = builder.generate(top);
+        assertTrue(result.getPathCount() == 2);
+        Iterator it = result.paths().iterator();
+        while (it.hasNext()) {
+            AssertionPath path = (AssertionPath)it.next();
+            System.out.println(DefaultPolicyPathBuilder.pathToString(path));
+        }
+    }
 
 }

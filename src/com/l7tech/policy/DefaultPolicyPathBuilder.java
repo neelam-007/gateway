@@ -131,7 +131,7 @@ public class DefaultPolicyPathBuilder extends PolicyPathBuilder {
             }
 
         }
-        return pruneNonEmptyComposites(assertionPaths);
+        return pruneIncompletePaths(assertionPaths);
     }
 
     /**
@@ -159,20 +159,22 @@ public class DefaultPolicyPathBuilder extends PolicyPathBuilder {
 
 
     /**
-     * prune the assertion paths that contain composite assertions
-     * where the assertion has children and the child is not immediate
-     * assertion node in the path. Those assertions were kept arround so
-     * the correct paths could be accumulated.
+     * prune the incomplete assertion paths. The incomplete paths
+     * contain composite assertions  where the assertion has children
+     * and the child is not immediate assertion in the path. Those
+     * (incomplete) paths were kept arround so the correct full paths
+     * could get accumulated
      *
      * @param assertionPaths the assertion path set to process
-     * @return the new <code>Set</code> without assertion paths
-     *         that end with composites.
+     * @return the new <code>Set</code> without incomplete paths
      */
-    private Set pruneNonEmptyComposites(Set assertionPaths) {
+    private Set pruneIncompletePaths(Set assertionPaths) {
         Set remove = new HashSet();
 
         // the last node is a composite, it has children but the path
         // is not showing that
+        // this could be as well done in the second loop. Doing the 'last assertion'
+        // check first is a quickshortcut, and happens often
         for (Iterator iterator = assertionPaths.iterator(); iterator.hasNext();) {
             AssertionPath assertionPath = (AssertionPath)iterator.next();
             final Assertion assertion = assertionPath.lastAssertion();
@@ -180,6 +182,25 @@ public class DefaultPolicyPathBuilder extends PolicyPathBuilder {
                 CompositeAssertion ca = (CompositeAssertion)assertion;
                 if (!ca.getChildren().isEmpty()) {
                     remove.add(assertionPath);
+                    continue;
+                }
+            }
+            // there is node that is a composite, it has some children, but the next
+            // assertion in path is not in the child set
+            Assertion[] assertionArr = assertionPath.getPath();
+            for (int i = 0; i < assertionArr.length; i++) {
+                Assertion a = assertionArr[i];
+                if (a == assertionPath.lastAssertion()) {
+                    continue;
+                }
+                if (a instanceof CompositeAssertion) {
+                    CompositeAssertion ca = (CompositeAssertion)a;
+                    List children = ca.getChildren();
+                    Assertion next = assertionArr[i+1];
+                    if (!children.isEmpty() && !children.contains(next)) {
+                        remove.add(assertionPath);
+                        break;
+                    }
                 }
             }
         }
@@ -255,8 +276,8 @@ public class DefaultPolicyPathBuilder extends PolicyPathBuilder {
         for (int i = 0; i < ass.length; i++) {
             if (ass[i] instanceof CompositeAssertion) {
                 sb.append("" + (i + 1) + " " + ass[i].getClass().toString() + '@' + System.identityHashCode(ass[i]))
-                .append("\n");
-            }else {
+                  .append("\n");
+            } else {
                 sb.append("" + (i + 1) + " " + ass[i]).append("\n");
             }
         }
