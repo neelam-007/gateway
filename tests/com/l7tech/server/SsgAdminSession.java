@@ -107,6 +107,18 @@ public abstract class SsgAdminSession {
         return _trustedCertAdmin;
     }
 
+    /**
+     * @deprecated No more part of the admin interface, find a different way possibly using the {@link IdentityAdmin}
+     */
+    protected IdentityProviderConfigManager getIdentityProviderConfigManager() {
+        if (_identityProviderConfigManager == null) {
+            _identityProviderConfigManager = (IdentityProviderConfigManager)Locator.getDefault().lookup(IdentityProviderConfigManager.class);
+            if (_identityProviderConfigManager == null) {
+                throw new IllegalStateException("No IdentityProviderConfigManager configured in services");
+            }
+        }
+        return _identityProviderConfigManager;
+    }
 
     private static ApplicationContext createApplicationContext() {
         String ctxName = System.getProperty("ssm.application.context");
