@@ -29,58 +29,7 @@ public class Auditor {
 
         if(logger == null) return;  // todo: log will be removed once the audit feature is enhanced to replace log
 
-        // Don't look at this, this is a nasty hack so that the log records created here don't have Auditor.logAndAudit as their source class and method names.
-        LogRecord rec = new LogRecord(msg.getLevel(), msg.getMessage()) {
-            private boolean needToInferCaller = true;
-            private String sourceClassName;
-            private String sourceMethodName;
-
-            private void inferCaller() {
-                needToInferCaller = false;
-                // Get the stack trace.
-                StackTraceElement stack[] = (new Throwable()).getStackTrace();
-                // First, search back to a method in the Logger class.
-                int ix = 0;
-                while (ix < stack.length) {
-                    StackTraceElement frame = stack[ix];
-                    String cname = frame.getClassName();
-                    if (cname.equals("java.util.logging.Logger")) {
-                        break;
-                    }
-                    ix++;
-                }
-                // Now search for the frame AFTER the first frame before the "Logger" class (to avoid logging everything as belonging to Auditor)
-                boolean seenMe = false;
-                for (; ix < stack.length; ix++) {
-                    StackTraceElement frame = stack[ix];
-                    String cname = frame.getClassName();
-                    if (!cname.equals("java.util.logging.Logger")) {
-                        // We've found the relevant frame. (skip one)
-                        if (seenMe) {
-                            if (cname.equals(Auditor.class.getName())) continue;
-                            sourceClassName = cname;
-                            sourceMethodName = frame.getMethodName();
-                            return;
-                        } else {
-                            seenMe = true;
-                            continue;
-                        }
-                    }
-                }
-                // We haven't found a suitable frame, so just punt.  This is
-                // OK as we are only commited to making a "best effort" here.
-            }
-
-            public String getSourceClassName() {
-                if (needToInferCaller) inferCaller();
-                return sourceClassName;
-            }
-
-            public String getSourceMethodName() {
-                if (needToInferCaller) inferCaller();
-                return sourceMethodName;
-            }
-        };
+        LogRecord rec = new AuditHackLogRecord(msg);
         rec.setLoggerName(logger.getName());
         if (e != null) rec.setThrown(e);
         if (params != null) rec.setParameters(params);
@@ -93,5 +42,62 @@ public class Auditor {
 
     public void logAndAudit(AuditDetailMessage msg) {
         logAndAudit(msg, null, null);
+    }
+
+    // Don't look at this, this is a nasty hack so that the log records created here don't have Auditor.logAndAudit as their source class and method names.
+    private static class AuditHackLogRecord extends LogRecord {
+        private boolean needToInferCaller = true;
+        private String sourceClassName;
+        private String sourceMethodName;
+
+        public AuditHackLogRecord(AuditDetailMessage msg) {
+            super(msg.getLevel(), msg.getMessage());
+        }
+
+        private void inferCaller() {
+            needToInferCaller = false;
+            // Get the stack trace.
+            StackTraceElement stack[] = (new Throwable()).getStackTrace();
+            // First, search back to a method in the Logger class.
+            int ix = 0;
+            while (ix < stack.length) {
+                StackTraceElement frame = stack[ix];
+                String cname = frame.getClassName();
+                if (cname.equals("java.util.logging.Logger")) {
+                    break;
+                }
+                ix++;
+            }
+            // Now search for the frame AFTER the first frame before the "Logger" class (to avoid logging everything as belonging to Auditor)
+            boolean seenMe = false;
+            for (; ix < stack.length; ix++) {
+                StackTraceElement frame = stack[ix];
+                String cname = frame.getClassName();
+                if (!cname.equals("java.util.logging.Logger")) {
+                    // We've found the relevant frame. (skip one)
+                    if (seenMe) {
+                        if (cname.equals(Auditor.class.getName())) continue;
+                        sourceClassName = cname;
+                        sourceMethodName = frame.getMethodName();
+                        return;
+                    } else {
+                        seenMe = true;
+                        continue;
+                    }
+                }
+            }
+            // We haven't found a suitable frame, so just punt.  This is
+            // OK as we are only commited to making a "best effort" here.
+        }
+
+        public String getSourceClassName() {
+            if (needToInferCaller) inferCaller();
+            return sourceClassName;
+        }
+
+        public String getSourceMethodName() {
+            if (needToInferCaller) inferCaller();
+            return sourceMethodName;
+        }
     }
 }
