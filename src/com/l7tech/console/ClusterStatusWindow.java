@@ -223,7 +223,7 @@ public class ClusterStatusWindow extends JFrame {
                                                              boolean hasFocus,
                                                              int row, int column) {
                   super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
-                  this.setHorizontalAlignment(TRAILING);
+                  this.setHorizontalAlignment(SwingConstants.TRAILING);
 
 
                   return this;

@@ -63,15 +63,9 @@ public class LogPanel extends JPanel {
     public LogPanel() {
         setLayout(new BorderLayout());
 
-       // setBorder(new javax.swing.border.LineBorder(new java.awt.Color(0, 0, 0)));
-        //setMinimumSize(new Dimension(600, 200));
-
         add(getMsgPane(), BorderLayout.NORTH);
         add(getMsgDetailsPane(), BorderLayout.CENTER);
         add(getSelectPane(), BorderLayout.SOUTH);
-
-        // the logPane is not shown default
-      //  setVisible(false);
 
         getMsgTable().getSelectionModel().
                 addListSelectionListener(new ListSelectionListener() {
@@ -127,33 +121,6 @@ public class LogPanel extends JPanel {
         clearMsgTable();
     }
 
-/*    public void setLogPaneDividerLocation(){
-
-       try {
-           Preferences prefs = Preferences.getPreferences();
-           String s = prefs.getString("main.log.details.divider.location");
-           if (s != null) {
-               int l = Integer.parseInt(s);
-               getLogPaneTop().setDividerLocation(l);
-           } else {
-               getLogPaneTop().setDividerLocation(0.7);
-           }
-       } catch (NumberFormatException e1) {
-
-       }
-    }*/
-
- /*   public void saveLogDetailsDividerLocation(){
-
-         try {
-            Preferences prefs = Preferences.getPreferences();
-            int l = getLogPaneTop().getDividerLocation();
-            prefs.putProperty("main.log.details.divider.location", Integer.toString(l));
-        } catch (NullPointerException e1) {
-        }
-    }
-*/
-
     /**
      * Return SelectPane property value
      * @return JPanel
@@ -162,8 +129,8 @@ public class LogPanel extends JPanel {
         if(selectPane != null) return selectPane;
 
         selectPane = new JPanel();
-        selectPane.setMinimumSize(new Dimension((int)selectPane.getSize().getWidth(), 35));
-        selectPane.setPreferredSize(new Dimension((int)selectPane.getSize().getWidth(), 35));
+        selectPane.setMinimumSize(new Dimension((int)selectPane.getSize().getWidth(), 50));
+        selectPane.setPreferredSize(new Dimension((int)selectPane.getSize().getWidth(), 50));
         selectPane.setLayout(new FlowLayout(FlowLayout.LEFT));
         selectPane.add(getFilterPane());
         selectPane.add(getControlPane());
@@ -340,8 +307,9 @@ public class LogPanel extends JPanel {
         if(msgDetailsPane != null)  return msgDetailsPane;
 
         msgDetailsPane = new JTabbedPane();
-        msgDetailsPane.setMinimumSize(new java.awt.Dimension(457, 150));
-        msgDetailsPane.setPreferredSize(new java.awt.Dimension(457, 150));
+        msgDetailsPane.setMaximumSize(new java.awt.Dimension(1000, 150));
+        msgDetailsPane.setMinimumSize(new java.awt.Dimension(400, 150));
+        msgDetailsPane.setPreferredSize(new java.awt.Dimension(400, 150));
         msgDetailsPane.addTab("Details", getMsgDetails());
 
         return msgDetailsPane;
