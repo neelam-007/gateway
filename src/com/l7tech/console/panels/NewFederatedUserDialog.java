@@ -32,6 +32,8 @@ import java.util.ResourceBundle;
 import java.util.logging.Level;
 
 /**
+ * This class provides a dialog for adding a new federated user.
+ *
  * <p> Copyright (C) 2004 Layer 7 Technologies Inc.</p>
  * <p> @author fpang </p>
  * $Id$
@@ -57,22 +59,27 @@ public class NewFederatedUserDialog extends JDialog {
     private EventListenerList listenerList = new EventListenerList();
     private IdentityProviderConfig ipc;
     private int userNameTextFieldUpdated = USER_NAME_NOT_YET_UPDATED;
-    private JFrame parent;
     
     /* the user instance */
     private UserBean user = new UserBean();
     private static ResourceBundle resources = ResourceBundle.getBundle("com.l7tech.console.resources.NewUserDialog", Locale.getDefault());
 
-
+    /**
+     * Constructor
+     * @param parent  the owner of the component
+     * @param ipc   the config of the identity provider the new user belongs to
+     */
     public NewFederatedUserDialog(JFrame parent, IdentityProviderConfig ipc) {
         super(parent, true);
-        this.parent = parent;
         this.ipc = ipc;
         initialize();
         pack();
         Utilities.centerOnScreen(this);
     }
 
+    /**
+     * Initialize the components of the dialog
+     */
     private void initialize() {
         Container p = getContentPane();
         p.setLayout(new BorderLayout());
@@ -225,6 +232,11 @@ public class NewFederatedUserDialog extends JDialog {
         }
     }
 
+    /**
+     * validate the user inputs
+     *
+     * @return true if the input data are valid. false otherwise.
+     */
     private boolean validateInput() {
 
         if(userNameTextField.getText().length() < 3) {
@@ -300,21 +312,11 @@ public class NewFederatedUserDialog extends JDialog {
         }
     }
 
-    private final DocumentListener documentListener = new DocumentListener() {
-        public void changedUpdate(DocumentEvent e) {
-            updateUserNameField(e);
-        }
-
-        public void insertUpdate(DocumentEvent e) {
-            updateUserNameField(e);
-        }
-
-        public void removeUpdate(DocumentEvent e) {
-            updateUserNameField(e);
-        }
-    };
-
-    public void updateUserNameField(DocumentEvent e) {
+    /**
+     * Update the user name text field.
+     *
+     */
+    private void updateUserNameField(DocumentEvent e) {
         final Document field = e.getDocument();
 
        if(field.getProperty("name").equals("x509DN")) {
@@ -353,6 +355,10 @@ public class NewFederatedUserDialog extends JDialog {
         }
     }
 
+    /**
+     * Update the user name text field with the CN part of the Subject DN.
+     * @return true if the update succeeded, false otherewise.
+     */
     private boolean updateFromX509SubjectDNField() {
         String cn = extractCommonName(x509SubjectDNTextField.getText());
 
@@ -362,10 +368,16 @@ public class NewFederatedUserDialog extends JDialog {
             }
             userNameTextFieldUpdated = USER_NAME_UPDATED_WITH_X509DN;
             return true;
+        } else {
+            userNameTextField.setText("");
+            return false;
         }
-        return false;
     }
 
+   /**
+     * Update the user name text field with the login name.
+     * @return true if the update succeeded, false otherewise.
+     */
     private boolean updateFromLoginField() {
         if(loginTextField.getText().length() > 0) {
             if(!userNameTextField.getText().equals(loginTextField.getText())) {
@@ -373,10 +385,16 @@ public class NewFederatedUserDialog extends JDialog {
             }
             userNameTextFieldUpdated = USER_NAME_UPDATED_WITH_LOGIN;
             return true;
+        } else {
+            userNameTextField.setText("");
+            return false;
         }
-        return false;
     }
 
+    /**
+     * Update the user name text field with the one in the email.
+     * @return true if the update succeeded, false otherewise.
+     */
     private boolean updateFromEmailField() {
         String name = extractNameFromEmail(emailTextField.getText());
 
@@ -386,10 +404,17 @@ public class NewFederatedUserDialog extends JDialog {
             }
             userNameTextFieldUpdated = USER_NAME_UPDATED_WITH_EMAIL;
             return true;
+        } else {
+            userNameTextField.setText("");
+            return false;
         }
-        return false;
     }
 
+    /**
+     * Extract the user name from the eamil.
+     * @param email  the given email
+     * @return  String the username in the email
+     */
     private String extractNameFromEmail(String email) {
         if (email == null)
             throw new IllegalArgumentException("Email is NULL");
@@ -403,6 +428,12 @@ public class NewFederatedUserDialog extends JDialog {
 
     }
 
+    /**
+     *
+     * Extract the CN part of the DN.
+     * @param dn  the given DN
+     * @return String the CN part of the DN
+     */
     private String extractCommonName(String dn) {
 
         if (dn == null)
@@ -433,6 +464,20 @@ public class NewFederatedUserDialog extends JDialog {
 
         return cn;
     }
+
+    private final DocumentListener documentListener = new DocumentListener() {
+        public void changedUpdate(DocumentEvent e) {
+            updateUserNameField(e);
+        }
+
+        public void insertUpdate(DocumentEvent e) {
+            updateUserNameField(e);
+        }
+
+        public void removeUpdate(DocumentEvent e) {
+            updateUserNameField(e);
+        }
+    };
 
     {
 // GUI initializer generated by IntelliJ IDEA GUI Designer
