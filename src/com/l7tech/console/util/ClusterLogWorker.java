@@ -180,7 +180,7 @@ public class ClusterLogWorker extends SwingWorker {
                             else if (lowest > logMsg.getMsgNumber()) lowest = logMsg.getMsgNumber();
                             newLogs.add(logMsg);
                         }
-                        logRequest.setEndMsgNumber(lowest);
+                        logRequest.setStartMsgNumber(lowest);
 
                     }
                 } catch (RemoteException e) {

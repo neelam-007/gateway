@@ -432,7 +432,7 @@ public class FilteredLogTableSorter extends FilteredLogTableModel {
                     }
 
                     // add the request for retrieving logs from the node
-                    requests.add(new LogRequest(gatewayStatus.getNodeId(), highest, -1));
+                    requests.add(new LogRequest(gatewayStatus.getNodeId(), -1, highest));
                 }
             }
         }

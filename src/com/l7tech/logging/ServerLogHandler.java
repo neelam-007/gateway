@@ -138,7 +138,8 @@ public class ServerLogHandler extends Handler {
         StringBuffer hql = new StringBuffer("FROM log IN CLASS " );
         hql.append( SSGLogRecord.class.getName() );
         hql.append( " WHERE log.").append( NODEID_COLNAME ).append( " = ? " );
-        hql.append( "AND log." ).append( OID_COLNAME ).append( " < ?" );
+        hql.append( "AND log." ).append( OID_COLNAME ).append( " < ? " );
+        hql.append( "ORDER BY log." ).append( OID_COLNAME ).append( " DESC" );
         Query q = context.getSession().createQuery(hql.toString());
         q.setString(0,nodeId);
         q.setLong(1,endid);
@@ -176,9 +177,9 @@ public class ServerLogHandler extends Handler {
         Collection res = null;
         try {
             if (lowMsgNumber < 0 && highMsgNumber >= 0) {
-                res = getRecordsBeyondHighId(reqnode, size, context, highMsgNumber);
+                res = getRecordsBeforeLowId(reqnode, size, context, highMsgNumber);
             } else if (lowMsgNumber >= 0 && highMsgNumber < 0) {
-                res = getRecordsBeforeLowId(reqnode, size, context, lowMsgNumber);
+                res = getRecordsBeyondHighId(reqnode, size, context, lowMsgNumber);
             } else if (lowMsgNumber >= 0 && highMsgNumber >= 0) {
                 res = getRecordsInRange(reqnode, size, context, lowMsgNumber, highMsgNumber);
             } else {
