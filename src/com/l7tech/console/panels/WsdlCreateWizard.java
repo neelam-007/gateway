@@ -15,7 +15,6 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
-import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 import java.io.StringWriter;
@@ -110,7 +109,7 @@ public class WsdlCreateWizard extends Wizard {
     static String prefixedName(QName localName, Definition definition) {
         String prefix = "";
         Set entries = definition.getNamespaces().entrySet();
-        for (Iterator iterator = entries.iterator(); iterator.hasNext();) {
+        for (java.util.Iterator iterator = entries.iterator(); iterator.hasNext();) {
             Map.Entry entry = (Map.Entry)iterator.next();
             if (entry.getValue().equals(localName.getNamespaceURI())) {
                 prefix = (String)entry.getKey() + ":";

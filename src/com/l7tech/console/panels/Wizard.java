@@ -1,13 +1,20 @@
 package com.l7tech.console.panels;
 
+import com.l7tech.console.event.WizardListener;
+import com.l7tech.console.event.WizardEvent;
+
 import javax.swing.*;
 import javax.swing.border.CompoundBorder;
 import javax.swing.border.EmptyBorder;
 import javax.swing.border.EtchedBorder;
 import javax.swing.border.MatteBorder;
+import javax.swing.event.ChangeEvent;
+import javax.swing.event.ChangeListener;
 import javax.swing.event.EventListenerList;
 import java.awt.*;
 import java.awt.event.*;
+import java.util.NoSuchElementException;
+import java.util.EventListener;
 
 /**
  * The <code>Wizard</code> that drives the wizard step panels.
@@ -16,54 +23,74 @@ import java.awt.event.*;
  * @version 1.0
  */
 public class Wizard extends JDialog {
-    private EventListenerList listenerList = new EventListenerList();
     private WizardStepPanel startPanel;
-    private WizardStepPanel currentPanel;
-
+    private Wizard.Iterator wizardIterator;
     protected Object wizardInput;
+
+    protected EventListenerList listenerList = new EventListenerList();
 
     /** Creates new wizard */
     public Wizard(Frame parent, WizardStepPanel panel) {
         super(parent, false);
+        if (panel == null) {
+            throw new IllegalArgumentException("panel == null");
+        }
         this.startPanel = panel;
-        currentPanel = startPanel;
-        initComponents();
+        wizardIterator = new Wizard.Iterator(startPanel);
+        layoutComponents();
+        initialize();
     }
 
     /**
-     * This method is called from within the constructor to
-     * initialize the form.
+     * Adds the specified wizard listener to receive events from
+     * this wizard.
+     *
+     * @param    l   the wizard listener
      */
-    private void initComponents() {
+    public synchronized void addWizardListener(WizardListener l) {
+        listenerList.add(WizardListener.class, l);
+    }
+
+    /**
+     * Removes the specified wizard listener so that it no longer
+     * receives events from this wizard.
+     *
+     * @param    l   the wizard listener
+     */
+    public synchronized void removeWizardListener(WizardListener l) {
+        listenerList.remove(WizardListener.class, l);
+    }
+
+    /**
+     * @return the current wizard panel
+     */
+    public WizardStepPanel getSelectedWizardPanel() {
+        return wizardIterator.current();
+    }
+
+
+    /**
+     * This method is called from within the constructor to
+     * layout the form.
+     */
+    private void layoutComponents() {
         mainPanel = new JPanel();
-        titlePanel = new JPanel();
-
-        stepsPanel = new JPanel();
-        stepsTitlePanel = new JPanel();
-        stepPanel = new JPanel();
-        stepDescriptionScrollPane = new JScrollPane();
-        stepDescriptionTextArea = new JTextArea();
-
-        addHierarchyListener(new HierarchyListener() {
-            public void hierarchyChanged(HierarchyEvent evt) {
-                formHierarchyChanged(evt);
-            }
-        });
-
-        addWindowListener(new WindowAdapter() {
-            public void windowClosing(WindowEvent evt) {
-                closeDialog(evt);
-            }
-        });
-
         mainPanel.setLayout(new BorderLayout());
         mainPanel.setBorder(new EtchedBorder());
+
+        addWindowListener(new WindowAdapter() {
+            public void windowClosed(WindowEvent evt) {
+                cancel(new ActionEvent(Wizard.this, 0, ""));
+            }
+        });
+
+        JPanel titlePanel = new JPanel();
         titlePanel.setLayout(new BorderLayout());
         titlePanel.setBorder(new EmptyBorder(new Insets(5, 10, 5, 10)));
 
         JLabel titleLabel = new JLabel();
         titleLabel.setBorder(
-          new CompoundBorder(new MatteBorder(new Insets(0, 0, 1, 0), new Color(0, 0, 0)),
+          new CompoundBorder(new MatteBorder(new Insets(0, 0, 1, 0), Color.BLACK),
             new EmptyBorder(new Insets(5, 5, 5, 5))));
 
         titleLabel.setHorizontalAlignment(SwingConstants.TRAILING);
@@ -72,90 +99,222 @@ public class Wizard extends JDialog {
 
         mainPanel.add(titlePanel, BorderLayout.NORTH);
 
-        mainPanel.add(createButtonPanel(), BorderLayout.SOUTH);
-        stepsPanel.setLayout(new BoxLayout(stepsPanel, BoxLayout.Y_AXIS));
-        stepsPanel.setBackground(new Color(213, 222, 222));
-        stepsPanel.setBorder(new EtchedBorder());
 
+        stepLabelsPanel = new JPanel();
+        stepLabelsPanel.setLayout(new BoxLayout(stepLabelsPanel, BoxLayout.Y_AXIS));
+
+        Color stepsPanelColor = new Color(213, 222, 222);
+
+        stepLabelsPanel.setBackground(stepsPanelColor);
+        stepLabelsPanel.setBorder(new EtchedBorder());
+
+
+        JPanel stepsTitlePanel = new JPanel();
         stepsTitlePanel.setLayout(new FlowLayout(FlowLayout.LEFT));
+
         stepsTitlePanel.setPreferredSize(new Dimension(150, 40));
         stepsTitlePanel.setMaximumSize(new Dimension(150, 40));
 
-        stepsTitlePanel.setBackground(new Color(213, 222, 222));
+        stepsTitlePanel.setBackground(stepsPanelColor);
+
         stepsTitlePanel.
-          setBorder(new CompoundBorder(new EmptyBorder(new Insets(5, 5, 5, 5)),
-            new MatteBorder(new Insets(0, 0, 1, 0), new Color(0, 0, 0))));
+          setBorder(new CompoundBorder(
+            new EmptyBorder(new Insets(5, 5, 5, 5)),
+            new MatteBorder(new Insets(0, 0, 1, 0), Color.BLACK))
+          );
 
-        JLabel stepsLabel = new JLabel();
-        stepsLabel.setFont(new Font("Dialog", 1, 14));
-        stepsLabel.setText("Steps");
+
+        //steps label panel
+        JLabel stepsLabel = new JLabel("Steps");
+        stepsLabel.setFont(new Font("Dialog", Font.BOLD, 14));
         stepsTitlePanel.add(stepsLabel);
-        stepsPanel.add(stepsTitlePanel);
-        mainPanel.add(stepsPanel, BorderLayout.WEST);
+        stepLabelsPanel.add(stepsTitlePanel);
+        int i = 0;
+        for (Iterator itp = new Iterator(startPanel); itp.hasNext(); itp.next()) {
+            WizardStepPanel p = itp.current();
+            String label = "" + (++i) + ". " + p.getStepLabel();
+            WizardLabel l = new WizardLabel(label, p, false);
+            stepLabelsPanel.add(l);
+            addWizardListener(l);
+        }
+        mainPanel.add(stepLabelsPanel, BorderLayout.WEST);
+        
 
-        stepPanel.setLayout(new BorderLayout());
-        stepPanel.setBorder(new EmptyBorder(new Insets(5, 10, 5, 10)));
-        stepPanel.add(currentPanel, BorderLayout.CENTER);
+        // the wizard step panel
+        wizardStepPanel = new JPanel();
+        wizardStepPanel.setLayout(new BorderLayout());
+        wizardStepPanel.setBorder(new EmptyBorder(new Insets(5, 10, 5, 10)));
 
+        JScrollPane descScrollPane = new JScrollPane();
+        descScrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
 
-        stepDescriptionScrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
+        JTextArea da = getStepDescriptionTextArea();
+        da.setBackground(descScrollPane.getBackground());
+        descScrollPane.setViewportView(da);
 
-        stepDescriptionTextArea.setEditable(false);
-        stepDescriptionTextArea.setLineWrap(true);
-        stepDescriptionTextArea.setWrapStyleWord(true);
-        stepDescriptionTextArea.setRows(5);
-        stepDescriptionTextArea.setBackground(stepDescriptionScrollPane.getBackground());
-        stepDescriptionScrollPane.setViewportView(stepDescriptionTextArea);
+        wizardStepPanel.add(descScrollPane, BorderLayout.SOUTH);
 
-        stepPanel.add(stepDescriptionScrollPane, BorderLayout.SOUTH);
-        mainPanel.add(stepPanel, BorderLayout.CENTER);
+        mainPanel.add(wizardStepPanel, BorderLayout.CENTER);
+        mainPanel.add(createButtonPanel(), BorderLayout.SOUTH);
         getContentPane().add(mainPanel, BorderLayout.CENTER);
+
         pack();
         //setSize(new Dimension(800, 500));
     }
 
-    private void formHierarchyChanged(HierarchyEvent evt) {
-        int eID = evt.getID();
-        long flags = evt.getChangeFlags();
+    /**
+     * initialize the wizard state
+     */
+    private void initialize() {
+        for (Iterator it = new Wizard.Iterator(startPanel); it.hasNext();) {
+            WizardStepPanel p = it.next();
+            p.addChangeListener(stepStateListener);
+        }
+        SwingUtilities.invokeLater(
+          new Runnable() {
+              public void run() {
+                  selectWizardPanel(null, wizardIterator.current());
+              }
+          });
+    }
 
-        if (eID == HierarchyEvent.HIERARCHY_CHANGED &&
-          ((flags & HierarchyEvent.DISPLAYABILITY_CHANGED) == HierarchyEvent.DISPLAYABILITY_CHANGED)) {
-            WizardStepPanel p = currentPanel;
-            int i = 0;
-            while (p != null) {
-                JLabel l = new JLabel("" + (i + 1) + ". " + p.getStepLabel());
-                l.setFont(new java.awt.Font("Dialog", 1, 12));
-                l.setForeground(Color.WHITE);
-                stepsPanel.add(l);
-                p = p.nextPanel();
+    /**
+     * advance the wizard
+     */
+    protected void advance(ActionEvent evt) {
+        WizardStepPanel current = wizardIterator.current();
+        selectWizardPanel(current, wizardIterator.next());
+    }
+
+    /**
+     * reverse the wizard
+     */
+    protected void reverse(ActionEvent evt) {
+        WizardStepPanel current = wizardIterator.current();
+        selectWizardPanel(current, wizardIterator.previous());
+    }
+
+    /**
+     * cancel the wizard
+     */
+    protected void cancel(ActionEvent evt) {
+        setVisible(false);
+        dispose();
+        fireWizardCanceled();
+    }
+
+    /**
+     * cancel the wizard
+     */
+    protected void finish(ActionEvent evt) {
+        setVisible(false);
+        dispose();
+        fireWizardFinished();
+    }
+
+    /**
+     * Notifies all listeners that the selected wizard panel has changed
+     *
+     * @param p the panel to which the selection has changed
+     */
+    private void fireSelectionChanged(WizardStepPanel p) {
+        EventListener[] listeners = listenerList.getListeners(WizardListener.class);
+        WizardEvent we = new WizardEvent(p, WizardEvent.SELECTION_CHANGED);
+        for (int i = 0; i < listeners.length; i++) {
+            ((WizardListener)listeners[i]).wizardSelectionChanged(we);
+        }
+    }
+
+    /**
+     * Notifies all the listeners that the wizard has been canceled
+     */
+    private void fireWizardCanceled() {
+        EventListener[] listeners = listenerList.getListeners(WizardListener.class);
+        WizardEvent we = new WizardEvent(this, WizardEvent.CANCELED);
+        for (int i = 0; i < listeners.length; i++) {
+            ((WizardListener)listeners[i]).wizardCanceled(we);
+        }
+    }
+
+    /**
+     * Notifies all the listeners that the wizard has been canceled
+     */
+    private void fireWizardFinished() {
+        EventListener[] listeners = listenerList.getListeners(WizardListener.class);
+        WizardEvent we = new WizardEvent(this, WizardEvent.FINISHED);
+        for (int i = 0; i < listeners.length; i++) {
+            ((WizardListener)listeners[i]).wizardCanceled(we);
+        }
+    }
+
+    /**
+     * the listener that is registered with each panel
+     */
+    private ChangeListener stepStateListener = new ChangeListener() {
+        /**
+         * Invoked when the target of the listener has changed its state.
+         *
+         * @param e  a ChangeEvent object
+         */
+        public void stateChanged(ChangeEvent e) {
+            Object source = e.getSource();
+            if (source instanceof WizardStepPanel) {
+                updateWizardControls((WizardStepPanel)source);
             }
         }
-    }
+    };
 
-    protected void buttonBackActionPerformed(ActionEvent evt) {
-    }
-
-    protected void buttonNextActionPerformed(ActionEvent evt) {
-        currentPanel.storeSettings(wizardInput);
-        if (currentPanel.hasNextPanel()) {
-            stepPanel.remove(currentPanel);
-            currentPanel = currentPanel.nextPanel();
-            currentPanel.readSettings(wizardInput);
-            stepPanel.add(currentPanel, BorderLayout.CENTER);
-            stepPanel.updateUI();
+    /**
+     * select the wizard panel
+     * @param current the current panel
+     * @param next the next panel
+     */
+    protected void selectWizardPanel(WizardStepPanel current, WizardStepPanel next) {
+        if (current != null) {
+            if (wizardInput != null) {
+                current.storeSettings(wizardInput);
+            }
+            wizardStepPanel.remove(current);
         }
-
+        if (wizardInput != null) {
+            current.readSettings(wizardInput);
+        }
+        wizardStepPanel.add(next, BorderLayout.CENTER);
+        updateWizardControls(next);
+        fireSelectionChanged(next);
     }
 
-    private void buttonCancelActionPerformed(ActionEvent evt) {
-        setVisible(false);
-        dispose();
+    /**
+     * updates the wizard controls with the state from the
+     * panel parameter
+     * Default Wizard deals with the standard buttons. Wizards
+     * that provide more controls (wizard buttons for example)
+     * override this method.
+     *
+     * @param wp the wizard panel
+     */
+    private void updateWizardControls(WizardStepPanel wp) {
+        buttonFinish.setEnabled(wp.canFinish());
+        buttonNext.setEnabled(wp.canAdvance() && wizardIterator.hasNext());
+        buttonBack.setEnabled(wizardIterator.hasPrevious());
+        wizardStepPanel.updateUI();
     }
 
-    /** Closes the dialog */
-    private void closeDialog(WindowEvent evt) {
-        setVisible(false);
-        dispose();
+
+    /**
+     * @return the description area
+     */
+    private JTextArea getStepDescriptionTextArea() {
+        if (stepDescriptionTextArea != null)
+            return stepDescriptionTextArea;
+
+        stepDescriptionTextArea = new JTextArea();
+        stepDescriptionTextArea.setEditable(false);
+        stepDescriptionTextArea.setLineWrap(true);
+        stepDescriptionTextArea.setWrapStyleWord(true);
+        stepDescriptionTextArea.setRows(5);
+
+        return stepDescriptionTextArea;
     }
 
     protected JPanel createButtonPanel() {
@@ -174,6 +333,11 @@ public class Wizard extends JDialog {
         if (cancelButton == null) {
             cancelButton = new JButton();
             cancelButton.setText("Cancel");
+            cancelButton.addActionListener(new ActionListener() {
+                public void actionPerformed(ActionEvent evt) {
+                    cancel(evt);
+                }
+            });
         }
         return cancelButton;
     }
@@ -182,10 +346,15 @@ public class Wizard extends JDialog {
         if (buttonFinish == null) {
             buttonFinish = new JButton();
             buttonFinish.setText("Finish");
+            buttonFinish.addActionListener(new ActionListener() {
+                public void actionPerformed(ActionEvent evt) {
+                    finish(evt);
+                }
+            });
         }
-
         return buttonFinish;
     }
+
 
     protected JButton getButtonNext() {
         if (buttonNext == null) {
@@ -193,7 +362,7 @@ public class Wizard extends JDialog {
             buttonNext.setText("Next");
             buttonNext.addActionListener(new ActionListener() {
                 public void actionPerformed(ActionEvent evt) {
-                    buttonNextActionPerformed(evt);
+                    advance(evt);
                 }
             });
         }
@@ -206,7 +375,7 @@ public class Wizard extends JDialog {
             buttonBack.setText("Back");
             buttonBack.addActionListener(new ActionListener() {
                 public void actionPerformed(ActionEvent evt) {
-                    buttonBackActionPerformed(evt);
+                    reverse(evt);
                 }
             });
         }
@@ -221,18 +390,161 @@ public class Wizard extends JDialog {
         return buttonHelp;
     }
 
-    private JPanel titlePanel;
-    private JScrollPane stepDescriptionScrollPane;
+    /**
+     * the wizard iterator that allows wizard panels traversal
+     * in each direction.
+     */
+    public static class Iterator {
+        private WizardStepPanel first = null;
+        private WizardStepPanel previous = null;
+        private WizardStepPanel current = null;
+
+        /**
+         * construct the iteratir with the starting panel
+         * @param panel the start paanel
+         */
+        public Iterator(WizardStepPanel panel) {
+            if (panel == null) {
+                throw new IllegalArgumentException();
+            }
+            first = panel;
+            current = panel;
+        }
+
+        /**
+         * Returns <tt>true</tt> if this iterator has more elements when
+         * traversing the list in the forward direction.
+         *
+         * @return <tt>true</tt> if the list iterator has more elements when
+         *		traversing the list in the forward direction.
+         */
+        public boolean hasNext() {
+            return current.nextPanel() != null;
+        }
+
+        /**
+         * Returns <tt>true</tt> if this list iterator has more elements when
+         * traversing the list in the reverse direction.
+         *
+         * @return <tt>true</tt> if the list iterator has more elements when
+         *	       traversing the list in the reverse direction.
+         */
+        public boolean hasPrevious() {
+            return previous != null;
+        }
+
+        /**
+         * Returns the next element in the list.  This method may be called
+         * repeatedly to iterate through the list, or intermixed with calls to
+         * <tt>previous</tt> to go back and forth.
+         *
+         * @return the next element in the list.
+         * @exception java.util.NoSuchElementException if the iteration has no next element.
+         */
+        public WizardStepPanel next() {
+            if (hasNext()) {
+                previous = current;
+                current = current.nextPanel();
+                return current;
+            }
+            throw new NoSuchElementException();
+        }
+
+        /**
+         * @return the current element in the list.
+         */
+        public WizardStepPanel current() {
+            return current;
+        }
+
+        /**
+         * Returns the previous element in the list.  This method may be called
+         * repeatedly to iterate through the list backwards, or intermixed with
+         * calls to <tt>next</tt> to go back and forth.
+         *
+         * @return the previous element in the list.
+         *
+         * @exception java.util.NoSuchElementException if the iteration has no previous
+         *            element.
+         */
+        public WizardStepPanel previous() {
+            if (hasPrevious()) {
+                current = previous;
+                previous = null;
+                for (WizardStepPanel p = first; p != null; p = p.nextPanel()) {
+                    if (p.nextPanel() == current) {
+                        previous = p;
+                    }
+                }
+                return current;
+            }
+            throw new NoSuchElementException();
+
+        }
+    }
+
+    private class WizardLabel extends JLabel implements WizardListener {
+        private WizardStepPanel wizardPanel;
+        boolean selected;
+
+        WizardLabel(String label, WizardStepPanel panel, boolean selected) {
+            this.wizardPanel = panel;
+            setFont(new Font("Dialog", Font.BOLD, 12));
+            setText(label);
+            setSelected(selected);
+        }
+
+        /**
+         * @return true if the label is selected ,false otherwise
+         */
+        public boolean isSelected() {
+            return selected;
+        }
+
+        /**
+         *
+         * @param b the new selected propert
+         */
+        public void setSelected(boolean b) {
+            selected = b;
+            setForeground(b ? Color.BLACK : Color.WHITE);
+        }
+
+        /**
+         * Invoked when the wizard page has been changed.
+         *
+         * @param e the event describing the selection change
+         */
+        public void wizardSelectionChanged(WizardEvent e) {
+            setSelected(e.getSource() == wizardPanel);
+        }
+
+        /**
+         * Invoked when the wizard has finished.
+         *
+         * @param e the event describing the wizard finish
+         */
+        public void wizardFinished(WizardEvent e) {
+        }
+
+        /**
+         * Invoked when the wizard has been cancelled.
+         *
+         * @param e the event describinng the wizard cancel
+         */
+        public void wizardCanceled(WizardEvent e) {
+        }
+    }
+
     private JPanel mainPanel;
+    private JPanel stepLabelsPanel;
+    private JPanel wizardStepPanel;
+
     private JTextArea stepDescriptionTextArea;
-
-    private JPanel stepsTitlePanel;
-    private JPanel stepPanel;
-    private JPanel stepsPanel;
-
     private JButton buttonFinish;
     private JButton cancelButton;
     private JButton buttonNext;
     private JButton buttonBack;
     private JButton buttonHelp;
+
 }

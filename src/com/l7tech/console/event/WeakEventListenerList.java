@@ -1,14 +1,13 @@
 package com.l7tech.console.event;
 
-import java.lang.ref.WeakReference;
-import java.lang.reflect.Array;
-import java.lang.reflect.Array;
+import javax.swing.event.EventListenerList;
+import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
-import java.io.IOException;
 import java.io.Serializable;
+import java.lang.ref.WeakReference;
+import java.lang.reflect.Array;
 import java.util.EventListener;
-import javax.swing.event.EventListenerList;
 
 /**
  * Class that can hold the list of event listeners

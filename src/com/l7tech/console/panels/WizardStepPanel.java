@@ -1,9 +1,12 @@
 package com.l7tech.console.panels;
 
-import javax.swing.JPanel;
-import javax.swing.event.ChangeListener;
+import com.l7tech.console.event.WeakEventListenerList;
+
+import javax.swing.*;
 import javax.swing.event.ChangeEvent;
-import java.awt.*;
+import javax.swing.event.ChangeListener;
+import javax.swing.event.EventListenerList;
+import java.util.EventListener;
 
 /**
  * <code>JPanel</code> that represent a step in the wizard extend the
@@ -13,6 +16,7 @@ import java.awt.*;
  * @version 1.0
  */
 public abstract class WizardStepPanel extends JPanel {
+    private EventListenerList listenerList = new WeakEventListenerList();
     private WizardStepPanel nextPanel;
 
     /** Creates new form WizardPanel */
@@ -21,7 +25,7 @@ public abstract class WizardStepPanel extends JPanel {
     }
 
     public final boolean hasNextPanel() {
-        return nextPanel !=null;
+        return nextPanel != null;
     }
 
     public final WizardStepPanel nextPanel() {
@@ -45,6 +49,28 @@ public abstract class WizardStepPanel extends JPanel {
 
 
     /**
+     * Test whether the step is finished and it is safe to advance to the next
+     * one.
+     *
+     * @return true if the panel is valid, false otherwis
+     */
+
+    public boolean canAdvance() {
+        return true;
+    }
+
+    /**
+     * Test whether the step is finished and it is safe to finish the wizard.
+     *
+     * @return true if the panel is valid, false otherwis
+     */
+
+    public boolean canFinish() {
+        return true;
+    }
+
+
+    /**
      * Add a listener to changes of the panel's validity.
      * The default is a simple implementation that supports a single
      * listener.
@@ -54,7 +80,7 @@ public abstract class WizardStepPanel extends JPanel {
      * @see #isValid
      */
     public void addChangeListener(ChangeListener l) {
-        changeListener = l;
+        listenerList.add(ChangeListener.class, l);
     }
 
     /**
@@ -66,15 +92,17 @@ public abstract class WizardStepPanel extends JPanel {
      * @param l the listener to remove
      */
     public void removeChangeListener(ChangeListener l) {
-        changeListener = null;
+        listenerList.remove(ChangeListener.class, l);
     }
 
     /**
      * notify listeners of the state change
      */
     protected void notifyListeners() {
-        if (changeListener != null) {
-            changeListener.stateChanged(new ChangeEvent(this));
+        ChangeEvent event = new ChangeEvent(this);
+        EventListener[] listeners = listenerList.getListeners(ChangeListener.class);
+        for (int i = 0; i < listeners.length; i++) {
+            ((ChangeListener)listeners[i]).stateChanged(event);
         }
     }
 
