@@ -8,6 +8,7 @@ import com.l7tech.cluster.GatewayStatus;
 import com.l7tech.cluster.LogRequest;
 import com.l7tech.logging.LogAdmin;
 import com.l7tech.logging.LogMessage;
+import com.l7tech.logging.SSGLogRecord;
 import com.l7tech.console.table.FilteredLogTableModel;
 
 import java.util.*;
@@ -105,8 +106,7 @@ public class ClusterLogWorker extends SwingWorker {
                     // store the last update time
                     nodeStatus.setSecondLastUpdateTimeStamp(((GatewayStatus) node).getLastUpdateTimeStamp());
                 }
-            }
-            else{
+            } else {
                 // add the node to the request array with the startMsgNumber and endMsgNumber set to -1
                 requests.add(new LogRequest(nodeStatus.getNodeId(), -1, -1));
             }
@@ -115,49 +115,56 @@ public class ClusterLogWorker extends SwingWorker {
             newNodeList.put(nodeStatus.getNodeId(), nodeStatus);
         }
 
-        String[] rawLogs = new String[]{};
+        SSGLogRecord[] rawLogs = new SSGLogRecord[]{};
         int accumulatedNewLogs = 0;
         Vector newLogs = new Vector();
 
         if (requests.size() > 0) {
+            //for (int i = 0; i < requests.size(); i++) {
+            for (int i = 0; i < 1; i++) {
+                LogRequest logRequest = (LogRequest) requests.elementAt(i);
 
-            do {
-                try {
+                do {
+                    try {
 
-                    rawLogs = logService.getSystemLog(((LogRequest) requests.get(0)).getStartMsgNumber(), ((LogRequest) requests.get(0)).getEndMsgNumber(), FilteredLogTableModel.MAX_MESSAGE_BLOCK_SIZE);
-                    //System.out.println("Number of logs received: " + rawLogs.length);
+                        rawLogs = new SSGLogRecord[]{};
 
-                    // todo: retrieve multiple nodes later
-                    //rawLogs = logService.getSystemLog(requests[0].getNodeId(), requests[0].getStartMsgNumber(), requests[0].getEndMsgNumber(), FilteredLogTableModel.MAX_MESSAGE_BLOCK_SIZE);
+                        rawLogs = logService.getSystemLog(logRequest.getNodeId(), logRequest.getStartMsgNumber(), logRequest.getEndMsgNumber(), FilteredLogTableModel.MAX_MESSAGE_BLOCK_SIZE);
+                        //    rawLogs = logService.getSystemLog(((LogRequest) requests.get(0)).getNodeId(), ((LogRequest) requests.get(0)).getStartMsgNumber(), ((LogRequest) requests.get(0)).getEndMsgNumber(), FilteredLogTableModel.MAX_MESSAGE_BLOCK_SIZE);
 
-                    LogMessage logMsg = null;
+                        //System.out.println("NodeId: " + logRequest.getNodeId() + ", Number of logs received: " + rawLogs.length);
 
-                    if (rawLogs.length > 0) {
+                        // todo: retrieve multiple nodes later
+                        //rawLogs = logService.getSystemLog(requests[0].getNodeId(), requests[0].getStartMsgNumber(), requests[0].getEndMsgNumber(), FilteredLogTableModel.MAX_MESSAGE_BLOCK_SIZE);
 
-                        for (int i = 0; i < (rawLogs.length) && (newLogs.size() < FilteredLogTableModel.MAX_NUMBER_OF_LOG_MESSGAES); i++) {
-                            logMsg = new LogMessage(rawLogs[i]);
-                            newLogs.add(logMsg);
+                        LogMessage logMsg = null;
+
+                        if (rawLogs.length > 0) {
+
+                            for (int j = 0; j < (rawLogs.length) && (newLogs.size() < FilteredLogTableModel.MAX_NUMBER_OF_LOG_MESSGAES); j++) {
+                                logMsg = new LogMessage(rawLogs[j]);
+                                newLogs.add(logMsg);
+                            }
+
+                            if (accumulatedNewLogs + rawLogs.length <= FilteredLogTableModel.MAX_NUMBER_OF_LOG_MESSGAES) {
+                                // update the startMsgNumber
+                                logRequest.setStartMsgNumber(logMsg.getMsgNumber());
+
+                                accumulatedNewLogs += rawLogs.length;
+                            } else {
+
+                                // done
+                                break;
+                            }
                         }
 
-                        if (accumulatedNewLogs + rawLogs.length <= FilteredLogTableModel.MAX_NUMBER_OF_LOG_MESSGAES) {
-                            // update the startMsgNumber
-                            ((LogRequest) requests.get(0)).setStartMsgNumber(logMsg.getMsgNumber());
-
-                            accumulatedNewLogs += rawLogs.length;
-                        } else {
-
-                            // done
-                            break;
-                        }
+                    } catch (RemoteException e) {
+                        logger.log(Level.SEVERE, "Unable to retrieve logs from server", e);
                     }
+                } while (rawLogs.length == FilteredLogTableModel.MAX_MESSAGE_BLOCK_SIZE);    // may be more messages for retrieval
 
-                } catch (RemoteException e) {
-                    logger.log(Level.SEVERE, "Unable to retrieve logs from server", e);
-                }
-            } while (rawLogs.length == FilteredLogTableModel.MAX_MESSAGE_BLOCK_SIZE);    // may be more messages for retrieval
-
-            retrievedLogs.put(((LogRequest) requests.get(0)).getNodeId(), newLogs);
-
+                retrievedLogs.put(logRequest.getNodeId(), newLogs);
+            }
         }
         return newNodeList;
 

@@ -1,6 +1,8 @@
 package com.l7tech.logging;
 
 import java.util.StringTokenizer;
+import java.util.Calendar;
+import java.text.SimpleDateFormat;
 
 /*
  * This class encapsulates the log message.
@@ -18,6 +20,17 @@ public class LogMessage {
     private String msgMethod = null;
     private String msgDetails = null;
     private String nodeName = "";
+    SimpleDateFormat sdf = new SimpleDateFormat( "yyyyMMdd HH:mm:ss.SSS" );
+
+    public LogMessage(SSGLogRecord log) {
+        msgNumber = log.getSequenceNumber();
+        Calendar.getInstance().setTimeInMillis(log.getMillis());
+        time = sdf.format(Calendar.getInstance().getTime());
+        severity = log.getLevel().toString();
+        msgClass = log.getSourceClassName().toString();
+        msgMethod = log.getSourceMethodName().toString();
+        msgDetails = log.getMessage();
+    }
 
     public LogMessage(String log){
 
