@@ -45,7 +45,10 @@ public class HexUtils {
     }
 
     /**
-     * Slurp a stream into a byte array and return an array of the appropriate size.
+     * Slurp a stream into a byte array and return an array of the appropriate size.  This requires
+     * reading into a buffer array, and then copying to a new array.. if you don't need the array to be
+     * exact size required, you can avoid a copy by supplying your own array to the alternate
+     * slurpStream() call.
      *
      * @param stream  the stream to read
      * @param maxLength  the maximum number of bytes you are willing to recieve
@@ -61,8 +64,10 @@ public class HexUtils {
     }
 
     /**
-     * Slurp a stream into a byte array and return the number of bytes that were in the stream.
-     * The stream will be read until EOF or until the maximum specified number of bytes have been read.
+     * Slurp a stream into a byte array without doing any copying, and return the number of bytes that
+     * were in the stream.  The stream will be read until EOF or until the maximum specified number of bytes have
+     * been read.  If you would like the array created for you with the exact size required, and don't mind
+     * an extra array copy being involved, use the other form of slurpStream().
      *
      * @param stream the stream to read
      * @param bb the array of bytes in which to read it
