@@ -57,7 +57,7 @@
   </operation>
   <operation name="findUserByPrimaryKey" qname="ns9:findUserByPrimaryKey" returnQName="findUserByPrimaryKeyReturn" returnType="ns9:User" xmlns:ns9="http://www.layer7-tech.com/identity">
    <parameter name="identityProviderConfigId" type="xsd:long" xmlns:xsd="http://www.w3.org/2001/XMLSchema"/>
-   <parameter name="oid" type="xsd:long" xmlns:xsd="http://www.w3.org/2001/XMLSchema"/>
+   <parameter name="oid" type="xsd:string" xmlns:xsd="http://www.w3.org/2001/XMLSchema"/>
   </operation>
   <operation name="deleteUser" qname="ns10:deleteUser" xmlns:ns10="http://www.layer7-tech.com/identity">
    <parameter name="identityProviderConfigId" type="xsd:long" xmlns:xsd="http://www.w3.org/2001/XMLSchema"/>
