@@ -54,7 +54,7 @@ public class Client {
 		// call.setReturnClass(com.l7tech.identity.imp.IdentityProviderConfigImp.class);
         // call.setReturnClass(com.l7tech.identity.IdentityProviderConfig.class);
         // call.addParameter(new javax.xml.namespace.QName("", "oid"), new javax.xml.namespace.QName("http://www.w3.org/2001/XMLSchema", "long"), long.class, javax.xml.rpc.ParameterMode.IN);
-        return (com.l7tech.identity.imp.IdentityProviderConfigImp)call.invoke(new Object[]{new java.lang.Long(oid)});
+        return (com.l7tech.identity.IdentityProviderConfig)call.invoke(new Object[]{new java.lang.Long(oid)});
     }
     public long saveIdentityProviderConfig(com.l7tech.identity.IdentityProviderConfig identityProviderConfig) throws java.rmi.RemoteException {
         Call call = createStubCall();
@@ -100,7 +100,7 @@ public class Client {
         //call.addParameter(new javax.xml.namespace.QName("", "userId"), new javax.xml.namespace.QName("http://www.w3.org/2001/XMLSchema", "string"), String.class, javax.xml.rpc.ParameterMode.IN);
         //call.setReturnClass(com.l7tech.identity.internal.imp.UserImp.class);
         //call.setReturnClass(com.l7tech.identity.User.class);
-        return (com.l7tech.identity.internal.imp.UserImp)call.invoke(new Object[]{new java.lang.Long(identityProviderConfigId), userId});
+        return (com.l7tech.identity.User)call.invoke(new Object[]{new java.lang.Long(identityProviderConfigId), userId});
     }
     public void deleteUser(long identityProviderConfigId, String userId) throws java.rmi.RemoteException {
         Call call = createStubCall();
@@ -145,7 +145,7 @@ public class Client {
         // call.addParameter(new javax.xml.namespace.QName("", "identityProviderConfigId"), new javax.xml.namespace.QName("http://www.w3.org/2001/XMLSchema", "long"), long.class, javax.xml.rpc.ParameterMode.IN);
         // call.addParameter(new javax.xml.namespace.QName("", "groupId"), new javax.xml.namespace.QName("http://www.w3.org/2001/XMLSchema", "string"), String.class, javax.xml.rpc.ParameterMode.IN);
         // call.setReturnClass(com.l7tech.identity.internal.imp.GroupImp.class);
-        return (com.l7tech.identity.internal.imp.GroupImp)call.invoke(new Object[]{new java.lang.Long(identityProviderConfigId), groupId});
+        return (com.l7tech.identity.Group)call.invoke(new Object[]{new java.lang.Long(identityProviderConfigId), groupId});
     }
     public void deleteGroup(long identityProviderConfigId, String groupId) throws java.rmi.RemoteException {
         Call call = createStubCall();
@@ -207,6 +207,12 @@ public class Client {
         call.registerTypeMapping(com.l7tech.identity.internal.imp.UserImp.class, qn, new org.apache.axis.encoding.ser.BeanSerializerFactory(com.l7tech.identity.internal.imp.UserImp.class, qn), new org.apache.axis.encoding.ser.BeanDeserializerFactory(com.l7tech.identity.internal.imp.UserImp.class, qn));
         qn = new QName(IDENTITY_URN, "Group");
         call.registerTypeMapping(com.l7tech.identity.internal.imp.GroupImp.class, qn, new org.apache.axis.encoding.ser.BeanSerializerFactory(com.l7tech.identity.internal.imp.GroupImp.class, qn), new org.apache.axis.encoding.ser.BeanDeserializerFactory(com.l7tech.identity.internal.imp.GroupImp.class, qn));
+        qn = new QName(IDENTITY_URN, "LdapIdentityProviderConfig");
+        call.registerTypeMapping(com.l7tech.identity.ldap.LdapIdentityProviderConfig.class, qn, new org.apache.axis.encoding.ser.BeanSerializerFactory(com.l7tech.identity.ldap.LdapIdentityProviderConfig.class, qn), new org.apache.axis.encoding.ser.BeanDeserializerFactory(com.l7tech.identity.ldap.LdapIdentityProviderConfig.class, qn));
+        qn = new QName(IDENTITY_URN, "LdapUser");
+        call.registerTypeMapping(com.l7tech.identity.ldap.LdapUser.class, qn, new org.apache.axis.encoding.ser.BeanSerializerFactory(com.l7tech.identity.ldap.LdapUser.class, qn), new org.apache.axis.encoding.ser.BeanDeserializerFactory(com.l7tech.identity.ldap.LdapUser.class, qn));
+        qn = new QName(IDENTITY_URN, "LdapGroup");
+        call.registerTypeMapping(com.l7tech.identity.ldap.LdapGroup.class, qn, new org.apache.axis.encoding.ser.BeanSerializerFactory(com.l7tech.identity.ldap.LdapGroup.class, qn), new org.apache.axis.encoding.ser.BeanDeserializerFactory(com.l7tech.identity.ldap.LdapGroup.class, qn));
     }
 
     private static final String IDENTITY_URN = "http://www.layer7-tech.com/identity";
