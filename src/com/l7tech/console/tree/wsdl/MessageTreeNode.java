@@ -13,7 +13,7 @@ import java.util.Map;
 public class MessageTreeNode extends WsdlTreeNode {
     private Message message;
 
-    MessageTreeNode(Message m) {
+    public MessageTreeNode(Message m) {
         this(m, new Options());
     }
 
@@ -23,7 +23,7 @@ public class MessageTreeNode extends WsdlTreeNode {
      * @param m       the message
      * @param options the wsdl rendering options
      */
-    MessageTreeNode(Message m, Options options) {
+    public MessageTreeNode(Message m, Options options) {
         super(null, options);
         this.message = m;
     }

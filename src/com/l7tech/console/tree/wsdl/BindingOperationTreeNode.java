@@ -10,7 +10,7 @@ import javax.wsdl.Input;
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  */
 public class BindingOperationTreeNode extends WsdlTreeNode {
-    private BindingOperation operation;
+    protected BindingOperation operation;
 
     public BindingOperationTreeNode(BindingOperation bo, Options options) {
         super(null, options);
