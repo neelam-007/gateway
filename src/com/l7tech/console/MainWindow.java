@@ -55,7 +55,7 @@ public class MainWindow extends JFrame {
     public static final String RESOURCE_PATH = "com/l7tech/console/resources";
 
     /** the path to JavaHelp helpset file */
-    public static final String HELP_PATH = "com/l7tech/console/resources/helpset/ssg.hs";
+    public static final String HELP_PATH = "com/l7tech/console/resources/helpset/secure_span_gateway_console_help.hs";
 
     /** the resource bundle name */
     private static
