@@ -71,7 +71,7 @@ public class StubDataStoreTest extends TestCase {
 
     public void testAddAndUpdateUser() throws Exception {
         UserManager um = registry.getInternalUserManager();
-        InternalUser user = new InternalUser();
+        UserBean user = new UserBean();
         user.setLogin("mgreen");
         user.setName(user.getLogin());
         user.setFirstName("Mary");
