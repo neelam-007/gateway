@@ -15,10 +15,12 @@ import com.l7tech.objectmodel.*;
 import com.l7tech.policy.assertion.credential.CredentialFormat;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.assertion.credential.http.HttpDigest;
+import com.l7tech.server.ServerConfig;
 
 import javax.naming.Context;
 import javax.naming.NamingEnumeration;
 import javax.naming.NamingException;
+import javax.naming.CommunicationException;
 import javax.naming.directory.*;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -32,6 +34,10 @@ import java.sql.SQLException;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import EDU.oswego.cs.dl.util.concurrent.ReadWriteLock;
+import EDU.oswego.cs.dl.util.concurrent.WriterPreferenceReadWriteLock;
+import EDU.oswego.cs.dl.util.concurrent.Sync;
 
 /**
  * Server-side implementation of the LDAP provider.
@@ -56,9 +62,30 @@ public class LdapIdentityProvider implements IdentityProvider {
         if (this.config.getLdapUrl() == null || this.config.getLdapUrl().length < 1) {
             throw new IllegalArgumentException("This config does not contain an ldap url"); // should not happen
         }
-        lastSuccessfulLdapUrl = this.config.getLdapUrl()[0];
         userManager = new LdapUserManager(this.config, this);
         groupManager = new LdapGroupManager(this.config, this);
+        initializeFallbackMechanism();
+    }
+
+    public void initializeFallbackMechanism() {
+
+        // configure timeout period
+        String property = ServerConfig.getInstance().getProperty("ldap.reconnect.timeout");
+        if (property == null || property.length() < 1) {
+            retryFailedConnectionTimeout = 60000;
+            logger.warning("ldap.reconnect.timeout server property not set. using default");
+        } else {
+            try {
+                retryFailedConnectionTimeout = Long.parseLong(property);
+            } catch (NumberFormatException e) {
+                logger.log(Level.WARNING, "ldap.reconnect.timeout property not configured properly. using default", e);
+                retryFailedConnectionTimeout = 60000;
+            }
+        }
+        // build a table of ldap urls status
+        ldapUrls = config.getLdapUrl();
+        urlStatus = new Long[ldapUrls.length];
+        lastSuccessfulLdapUrl = ldapUrls[0];
     }
 
     public IdentityProviderConfig getConfig() {
@@ -74,25 +101,82 @@ public class LdapIdentityProvider implements IdentityProvider {
     }
 
     /**
-     * @return The ldap url that was last used to successfully connect to the ldap directory.
+     * @return The ldap url that was last used to successfully connect to the ldap directory. May be null if
+     * previous attempt failed on all available urls.
      */
     String getLastWorkingLdapUrl() {
-        return lastSuccessfulLdapUrl;
+        Sync read = fallbackLock.readLock();
+        try {
+            read.acquire();
+            return lastSuccessfulLdapUrl;
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        } finally {
+            if (read != null) read.release();
+        }
     }
 
     /**
+     * Remember that the passed URL could not be used to connect normally and get the next ldap URL from
+     * the list that should be tried to connect with. Will return null if all known urls have failed to
+     * connect in the last while. (last while being a configurable timeout period defined in
+     * serverconfig.properties under ldap.reconnect.timeout in ms)
      *
-     * @param urlThatFailed the url that failed to connect
-     * @return the next url in the list or null if all urls were marked as failure within the last x minutes
+     * @param urlThatFailed the url that failed to connect, or null if no url was previously available
+     * @return the next url in the list or null if all urls were marked as failure within the last while
      */
-    synchronized String markCurrentUrlFailureAndGetNextOneInLine(String urlThatFailed) {
-        // todo
-        return null;
+    String markCurrentUrlFailureAndGetFirstAvailableOne(String urlThatFailed) {
+        Sync write = fallbackLock.writeLock();
+        try {
+            write.acquire();
+            if (urlThatFailed != lastSuccessfulLdapUrl) return lastSuccessfulLdapUrl;
+            if (urlThatFailed != null) {
+                int failurePos = 0;
+                for (int i = 0; i < ldapUrls.length; i++) {
+                    if (ldapUrls[i] == urlThatFailed) {
+                        failurePos = i;
+                        urlStatus[i] = new Long(System.currentTimeMillis());
+                        logger.info("Will not try this url again for next " + (retryFailedConnectionTimeout/1000) +
+                                    " seconds : " + ldapUrls[i]);
+                    }
+                }
+                if (failurePos > (ldapUrls.length-1)) {
+                    throw new RuntimeException("passed a url not in list"); // this should not happen
+                }
+            }
+            // find first available url
+            for (int i = 0; i < ldapUrls.length; i++) {
+                boolean thisoneok = false;
+                if (urlStatus[i] == null) {
+                    thisoneok = true;
+                    logger.fine("Try url " + ldapUrls[i]);
+                } else {
+                    long howLong = System.currentTimeMillis() - ((Long)urlStatus[i]).longValue();
+                    if (howLong > retryFailedConnectionTimeout) {
+                        thisoneok = true;
+                        urlStatus[i] = null;
+                        logger.fine("Ldap URL has been punished long enough. Trying it again: " + ldapUrls[i]);
+                    }
+                }
+                if (thisoneok) {
+                    logger.info("Trying to recover using this url: " + ldapUrls[i]);
+                    lastSuccessfulLdapUrl = ldapUrls[i];
+                    return lastSuccessfulLdapUrl;
+                }
+            }
+            logger.fine("All defined urls have not been responding");
+            lastSuccessfulLdapUrl = null;
+            return null;
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        } finally {
+            if (write != null) write.release();
+        }
     }
 
     public User authenticate(LoginCredentials pc) throws AuthenticationException, FindException, IOException {
         LdapUser realUser = null;
-        realUser = (LdapUser)userManager.findByLogin( pc.getLogin());
+        realUser = (LdapUser)userManager.findByLogin(pc.getLogin());
         if (realUser == null) return null;
 
         final CredentialFormat format = pc.getFormat();
@@ -364,27 +448,39 @@ public class LdapIdentityProvider implements IdentityProvider {
     }
 
     public DirContext getBrowseContext() throws NamingException {
+        String ldapurl = getLastWorkingLdapUrl();
+        if (ldapurl == null) {
+            ldapurl = markCurrentUrlFailureAndGetFirstAvailableOne(ldapurl);
+        }
+        while (ldapurl != null) {
             UnsynchronizedNamingProperties env = new UnsynchronizedNamingProperties();
             // fla note: this is weird. new BrowseContext objects are created at every operation so they
             // should not cross threads.
-            env.put( "java.naming.ldap.version", "3" );
+            env.put("java.naming.ldap.version", "3");
             env.put(Context.INITIAL_CONTEXT_FACTORY, "com.sun.jndi.ldap.LdapCtxFactory");
-            // todo, refactor to rotate across all possible urls
             // when getting javax.naming.CommunicationException at
-            env.put(Context.PROVIDER_URL, getLastWorkingLdapUrl());
+            env.put(Context.PROVIDER_URL, ldapurl);
             env.put("com.sun.jndi.ldap.connect.pool", "true");
             env.put("com.sun.jndi.ldap.connect.timeout", LDAP_CONNECT_TIMEOUT );
             env.put("com.sun.jndi.ldap.connect.pool.timeout", LDAP_POOL_IDLE_TIMEOUT );
             String dn = config.getBindDN();
-            if ( dn != null && dn.length() > 0 ) {
+            if (dn != null && dn.length() > 0) {
                 String pass = config.getBindPasswd();
-                env.put( Context.SECURITY_AUTHENTICATION, "simple" );
-                env.put( Context.SECURITY_PRINCIPAL, dn );
-                env.put( Context.SECURITY_CREDENTIALS, pass );
+                env.put(Context.SECURITY_AUTHENTICATION, "simple");
+                env.put(Context.SECURITY_PRINCIPAL, dn);
+                env.put(Context.SECURITY_CREDENTIALS, pass);
             }
             env.lock();
-            // Create the initial directory context.
-            return new InitialDirContext(env);
+
+            try {
+                // Create the initial directory context.
+                return new InitialDirContext(env);
+            } catch (CommunicationException e) {
+                logger.log(Level.INFO, "Could not establish context using LDAP URL " + ldapurl, e);
+                ldapurl = markCurrentUrlFailureAndGetFirstAvailableOne(ldapurl);
+            }
+        }
+        throw new CommunicationException("Could not establish context on any of the ldap urls.");
     }
 
     public void test() throws InvalidIdProviderCfgException {
@@ -694,5 +790,9 @@ public class LdapIdentityProvider implements IdentityProvider {
     private final LdapUserManager userManager;
     private final LdapGroupManager groupManager;
     private String lastSuccessfulLdapUrl;
+    private long retryFailedConnectionTimeout;
+    private final ReadWriteLock fallbackLock = new WriterPreferenceReadWriteLock();
+    private String[] ldapUrls;
+    private Long[] urlStatus;
     private final Logger logger = Logger.getLogger(getClass().getName());
 }

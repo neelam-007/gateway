@@ -251,35 +251,45 @@ public class LdapUserManager implements UserManager {
     }
 
     public boolean authenticateBasic(String dn, String passwd) {
-        UnsynchronizedNamingProperties env = new UnsynchronizedNamingProperties();
-        env.put(Context.INITIAL_CONTEXT_FACTORY, "com.sun.jndi.ldap.LdapCtxFactory");
-        // todo refactor to use all possible urls
-        env.put(Context.PROVIDER_URL, parent.getLastWorkingLdapUrl());
-        env.put(Context.SECURITY_AUTHENTICATION, "simple");
-        env.put(Context.SECURITY_PRINCIPAL, dn);
-        env.put(Context.SECURITY_CREDENTIALS, passwd);
-        env.put("com.sun.jndi.ldap.connect.pool", "true");
-        env.put("com.sun.jndi.ldap.connect.timeout", LdapIdentityProvider.LDAP_CONNECT_TIMEOUT );
-        env.put("com.sun.jndi.ldap.connect.pool.timeout", LdapIdentityProvider.LDAP_POOL_IDLE_TIMEOUT );
-        env.lock();
-
-        DirContext userCtx = null;
-        try
-        {
-            userCtx = new InitialDirContext(env);
-            // Close the context when we're done
-            userCtx.close();
-        } catch (AuthenticationException e) {
-            // when you get bad credentials
-            logger.info( "User failed to authenticate: " + dn  + " in provider " + cfg.getName());
-            return false;
-        } catch (NamingException e) {
-            // when you get a connection problem
-            logger.log( Level.WARNING, "General naming failure for user: " + dn + " in provider " + cfg.getName(), e);
-            return false;
+        String ldapurl = parent.getLastWorkingLdapUrl();
+        if (ldapurl == null) {
+            ldapurl = parent.markCurrentUrlFailureAndGetFirstAvailableOne(ldapurl);
         }
-        logger.info("User: "+ dn +" authenticated successfully in provider " + cfg.getName());
-        return true;
+        while (ldapurl != null) {
+            UnsynchronizedNamingProperties env = new UnsynchronizedNamingProperties();
+            env.put(Context.INITIAL_CONTEXT_FACTORY, "com.sun.jndi.ldap.LdapCtxFactory");
+            env.put(Context.PROVIDER_URL, ldapurl);
+            env.put(Context.SECURITY_AUTHENTICATION, "simple");
+            env.put(Context.SECURITY_PRINCIPAL, dn);
+            env.put(Context.SECURITY_CREDENTIALS, passwd);
+            env.put("com.sun.jndi.ldap.connect.pool", "true");
+            env.put("com.sun.jndi.ldap.connect.timeout", LdapIdentityProvider.LDAP_CONNECT_TIMEOUT );
+            env.put("com.sun.jndi.ldap.connect.pool.timeout", LdapIdentityProvider.LDAP_POOL_IDLE_TIMEOUT );
+            env.lock();
+
+            DirContext userCtx = null;
+            try
+            {
+                userCtx = new InitialDirContext(env);
+                // Close the context when we're done
+                userCtx.close();
+                logger.info("User: "+ dn +" authenticated successfully in provider " + cfg.getName());
+                return true;
+            } catch (CommunicationException e) {
+                logger.log(Level.INFO, "Could not establish context using LDAP URL " + ldapurl, e);
+                ldapurl = parent.markCurrentUrlFailureAndGetFirstAvailableOne(ldapurl);
+                continue;
+            } catch (AuthenticationException e) {
+                // when you get bad credentials
+                logger.info( "User failed to authenticate: " + dn  + " in provider " + cfg.getName());
+                return false;
+            } catch (NamingException e) {
+                logger.log( Level.WARNING, "General naming failure for user: " + dn + " in provider " + cfg.getName(), e);
+                return false;
+            }
+        }
+        logger.warning("Could not establish context on any of the ldap urls.");
+        return false;
     }
 
     private LdapIdentityProviderConfig cfg;

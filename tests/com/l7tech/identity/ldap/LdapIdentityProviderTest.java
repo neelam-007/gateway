@@ -30,8 +30,9 @@ public class LdapIdentityProviderTest extends TestCase {
     private LdapIdentityProviderConfig getConfigForSpock() throws IOException {
         LdapConfigTemplateManager templateManager = new LdapConfigTemplateManager();
         LdapIdentityProviderConfig spockTemplate = templateManager.getTemplate("GenericLDAP");
-        spockTemplate.setLdapUrl(new String[] {"ldap://localhost:3899"});
+        //spockTemplate.setLdapUrl(new String[] {"ldap://riker:389", "ldap://localhost:3899", "ldap://sisko:389"});
         //spockTemplate.setLdapUrl(new String[] {"ldap://spock:389"});
+        spockTemplate.setLdapUrl(new String[] {"ldap://localhost:3899"});
         spockTemplate.setSearchBase("dc=layer7-tech,dc=com");
         return spockTemplate;
     }
@@ -193,7 +194,12 @@ public class LdapIdentityProviderTest extends TestCase {
         //me.testGetUsers();
         //me.testGetGroupsAndMembers();
         LoginCredentials creds = new LoginCredentials("flascelles", "rockclimbing".toCharArray(), WssBasic.class);
-        me.localProvider.authenticate(creds);
+        for (int i = 0; i < 3; i++) {
+            me.localProvider.authenticate(creds);
+            me.localProvider.authenticate(creds);
+            // wait one minute
+            Thread.sleep(10001);
+        }
     }
 
     private LdapIdentityProvider localProvider;
