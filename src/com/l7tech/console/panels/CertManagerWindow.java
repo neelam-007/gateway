@@ -39,8 +39,9 @@ public class CertManagerWindow extends JDialog {
 
     public static final int CERT_TABLE_CERT_OID_COLUMN_INDEX = 0;
     public static final int CERT_TABLE_CERT_NAME_COLUMN_INDEX = 1;
-    public static final int CERT_TABLE_CERT_SUBJECT_COLUMN_INDEX = 2;
+    public static final int CERT_TABLE_CERT_EXPIRATION_DATE_COLUMN_INDEX = 2;
     public static final int CERT_TABLE_CERT_USAGE_COLUMN_INDEX = 3;
+
     private JPanel mainPanel;
     private JButton addButton;
     private JButton removeButton;
@@ -190,7 +191,7 @@ public class CertManagerWindow extends JDialog {
     public void addMouseListenerToHeaderInTable(JTable table) {
 
         final JTable tableView = table;
-        tableView.setColumnSelectionAllowed(false);
+        tableView.setColumnSelectionAllowed(true);
         MouseAdapter listMouseListener = new MouseAdapter() {
             public void mouseClicked(MouseEvent e) {
                 TableColumnModel columnModel = tableView.getColumnModel();
@@ -296,7 +297,7 @@ public class CertManagerWindow extends JDialog {
         Object[][] rows = new Object[][]{};
 
         String[] cols = new String[]{
-            "OID", "Name", "Subject", "Usage"
+            "OID", "Name", "Expiration Date", "Usage"
         };
 
         trustedCertTableSorter = new TrustedCertTableSorter(new DefaultTableModel(rows, cols) {

@@ -8,12 +8,16 @@ import java.util.logging.Logger;
 import java.util.Vector;
 import java.util.Arrays;
 import java.util.Comparator;
+import java.util.Calendar;
+import java.io.IOException;
+import java.security.cert.CertificateException;
+import java.text.SimpleDateFormat;
 
 /**
  * <p> Copyright (C) 2004 Layer 7 Technologies Inc.</p>
  * 
- * @author fpang
- *         $Id$
+ * <p> @author fpang </p>
+ * $Id$
  */
 public class TrustedCertTableSorter extends FilteredDefaultTableModel {
     static Logger logger = Logger.getLogger(TrustedCertTableSorter.class.getName());
@@ -23,27 +27,12 @@ public class TrustedCertTableSorter extends FilteredDefaultTableModel {
     private Object[] sortedData = null;
 
     /**
-     * Constructor
-     */
-    public TrustedCertTableSorter() {
-    }
-
-    /**
      * Constructor taking <CODE>DefaultTableModel</CODE> as the input parameter.
      *
      * @param model  A table model.
      */
     public TrustedCertTableSorter(DefaultTableModel model) {
-        setModel(model);
-    }
-
-   /**
-     * Set the table model.
-     *
-     * @param model  The table model to be set.
-     */
-    public void setModel(DefaultTableModel model) {
-        super.setRealModel(model);
+        setRealModel(model);
     }
 
     /**
@@ -111,12 +100,19 @@ public class TrustedCertTableSorter extends FilteredDefaultTableModel {
                 return new Long(((TrustedCert) sortedData[row]).getOid());
             case CertManagerWindow.CERT_TABLE_CERT_NAME_COLUMN_INDEX:
                 return ((TrustedCert) sortedData[row]).getName();
-            case CertManagerWindow.CERT_TABLE_CERT_SUBJECT_COLUMN_INDEX:
-                return ((TrustedCert) sortedData[row]).getSubjectDn();
+             case CertManagerWindow.CERT_TABLE_CERT_EXPIRATION_DATE_COLUMN_INDEX:
+                try {
+                    SimpleDateFormat sdf = new SimpleDateFormat("mm/dd/yyyy");
+                    Calendar cal = Calendar.getInstance();
+                    cal.setTime(((TrustedCert)sortedData[row]).getCertificate().getNotAfter());
+                    return sdf.format(cal.getTime());
+                } catch (CertificateException e) {
+                    e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+                } catch (IOException e) {
+                    e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+                }
             case CertManagerWindow.CERT_TABLE_CERT_USAGE_COLUMN_INDEX:
-                //todo:
-                //return ((TrustedCert) sortedData[row]).getUsage();
-                return "";
+                return ((TrustedCert) sortedData[row]).getUsageDescription();
             default:
                 throw new IllegalArgumentException("Bad Column");
         }
@@ -156,16 +152,22 @@ public class TrustedCertTableSorter extends FilteredDefaultTableModel {
 
             switch (column) {
                 case CertManagerWindow.CERT_TABLE_CERT_NAME_COLUMN_INDEX:
-                    elementA = "";
-                    elementB = "";
+                    elementA = ((TrustedCert) a).getName();
+                    elementB = ((TrustedCert) b).getName();
                     break;
-                case CertManagerWindow.CERT_TABLE_CERT_SUBJECT_COLUMN_INDEX:
-                    elementA = "";
-                    elementB = "";
+                case CertManagerWindow.CERT_TABLE_CERT_EXPIRATION_DATE_COLUMN_INDEX:
+                    try {
+                        elementA = new Long(((TrustedCert) a).getCertificate().getNotAfter().getTime());
+                        elementB = new Long(((TrustedCert) b).getCertificate().getNotAfter().getTime());
+                    } catch (IOException e) {
+                        e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+                    } catch (CertificateException e) {
+                        e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+                    }
                     break;
                 case CertManagerWindow.CERT_TABLE_CERT_USAGE_COLUMN_INDEX:
-                    elementA = "";
-                    elementB = "";
+                    elementA = ((TrustedCert) a).getUsageDescription();
+                    elementB = ((TrustedCert) b).getUsageDescription();
                     break;
 
                 default:
@@ -191,14 +193,18 @@ public class TrustedCertTableSorter extends FilteredDefaultTableModel {
                 return -1;
             } else {
                 if (ascending) {
-                    if(elementA instanceof String) {
+                    if (elementA instanceof Long) {
+                        return ((Long) elementA).longValue() > ((Long) elementB).longValue()?1:0;
+                    } else if(elementA instanceof String) {
                         return ((String)elementA).compareToIgnoreCase((String)elementB);
                     } else {
                         // add code here to support other types
                         return 0;
                     }
                 } else {
-                    if(elementA instanceof String) {
+                     if (elementA instanceof Long) {
+                        return ((Long) elementB).longValue() > ((Long) elementA).longValue()?1:0;
+                    } else if(elementA instanceof String) {
                         return ((String)elementB).compareToIgnoreCase((String)elementA);
                     } else {
                         // add code here to support other types
