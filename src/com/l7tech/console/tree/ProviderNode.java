@@ -2,7 +2,8 @@ package com.l7tech.console.tree;
 
 import com.l7tech.console.action.*;
 import com.l7tech.console.panels.FindIdentitiesDialog;
-import com.l7tech.identity.IdentityProviderConfigManager;
+import com.l7tech.identity.IdentityProvider;
+import com.l7tech.identity.IdentityProviderType;
 import com.l7tech.objectmodel.EntityHeader;
 
 import javax.swing.*;
@@ -56,9 +57,16 @@ public class ProviderNode extends EntityHeaderNode {
         final NewUserAction newUserAction = new NewUserAction(this);
         final NewGroupAction newGroupAction = new NewGroupAction(this);
 
-        final long oid = getEntityHeader().getOid();
-        newUserAction.setEnabled(oid == IdentityProviderConfigManager.INTERNALPROVIDER_SPECIAL_OID);
-        newGroupAction.setEnabled(oid == IdentityProviderConfigManager.INTERNALPROVIDER_SPECIAL_OID);
+        IdentityProvider iProvider = getProvider();
+        if (iProvider.getConfig().type() == IdentityProviderType.INTERNAL ||
+                iProvider.getConfig().type() == IdentityProviderType.FEDERATED) {
+            newUserAction.setEnabled(true);
+            newGroupAction.setEnabled(true);
+        } else {
+            newUserAction.setEnabled(false);
+            newGroupAction.setEnabled(false);
+        }
+
         list.add(newUserAction);
         list.add(newGroupAction);
 
@@ -66,7 +74,7 @@ public class ProviderNode extends EntityHeaderNode {
         for (Iterator iterator = list.iterator(); iterator.hasNext();) {
             Action action = (Action)iterator.next();
             if (action instanceof DeleteEntityAction) {
-                action.setEnabled(oid != IdentityProviderConfigManager.INTERNALPROVIDER_SPECIAL_OID);
+                action.setEnabled(iProvider.getConfig().type() != IdentityProviderType.INTERNAL);
             }
 
         }
