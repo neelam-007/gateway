@@ -159,12 +159,13 @@ public class PolicyManagerImpl implements PolicyManager {
                 log.info("New policy saved successfully");
                 return;
             } catch (BadCredentialsException e) {
-                log.info("Policy service denies access to this policy with current credentials");
+                String msg = "Policy service denies access to this policy with current credentials";
                 if (ssg.getTrustedGateway() != null) {
-                    final String msg = "Unable to obtain new credentials for federated Gateway; policy download therefore fails.";
-                    log.warning(msg);
+                    msg += "; federated policy download therefore fails.";
+                    log.info(msg);
                     throw new ConfigurationException(msg);
-                }
+                } else
+                    log.info(msg);                
 
                 log.info("Prompting for new credentials");
                 request.getNewCredentials();
