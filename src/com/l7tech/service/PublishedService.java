@@ -31,21 +31,34 @@ public class PublishedService extends NamedEntityImp {
         return _wsdlUrl;
     }
 
-    public void setWsdlUrl(String wsdlUrl) throws MalformedURLException {
+    public void setWsdlUrl( String wsdlUrl ) throws MalformedURLException {
+        if ( _wsdlUrl != null && !_wsdlUrl.equals(wsdlUrl) ) _wsdlXml = null;
         _wsdlUrl = wsdlUrl;
-        _url = new URL( wsdlUrl );
+        new URL( wsdlUrl );
     }
 
     public String getWsdlXml() throws IOException {
         if ( _wsdlXml == null ) {
-            Reader r = new BufferedReader( new InputStreamReader( _url.openStream() ) );
-            StringBuffer xml = new StringBuffer();
-            char[] buf = new char[4096];
-            int num;
-            while ( ( num = r.read( buf ) ) != -1 ) {
-                xml.append( buf, 0, num );
+            URL url = null;
+            try {
+                url = new URL(_wsdlUrl);
+            } catch ( MalformedURLException mue ) {
+                throw new IOException(mue.toString());
             }
-            _wsdlXml = xml.toString();
+
+            Reader r = null;
+            try {
+                r = new BufferedReader( new InputStreamReader( url.openStream() ) );
+                StringBuffer xml = new StringBuffer();
+                char[] buf = new char[4096];
+                int num;
+                while ( ( num = r.read( buf ) ) != -1 ) {
+                    xml.append( buf, 0, num );
+                }
+                _wsdlXml = xml.toString();
+            } finally {
+                if ( r != null ) r.close();
+            }
         }
         return _wsdlXml;
     }
@@ -105,7 +118,6 @@ public class PublishedService extends NamedEntityImp {
     protected String _soapAction;
     protected String _urn;
 
-    private transient URL _url;
     protected transient Wsdl _parsedWsdl;
     protected transient Assertion _rootAssertion;
 }
