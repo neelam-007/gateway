@@ -581,19 +581,20 @@ public class TimeRangePropertiesDialog extends JDialog {
 
     private JPanel makeBottomButtonsPanel() {
         // construct buttons
-        helpButton = new JButton();
-        helpButton.setText(resources.getString("helpButton.name"));
         okButton = new JButton();
         okButton.setText(resources.getString("okButton.name"));
         cancelButton = new JButton();
         cancelButton.setText(resources.getString("cancelButton.name"));
+        helpButton = new JButton();
+        helpButton.setText(resources.getString("helpButton.name"));
 
         // construct the bottom panel and wrap it with a border
         JPanel buttonsPanel = new JPanel();
         buttonsPanel.setLayout(new FlowLayout(FlowLayout.TRAILING, CONTROL_SPACING, 0));
-        buttonsPanel.add(helpButton);
         buttonsPanel.add(okButton);
         buttonsPanel.add(cancelButton);
+
+        buttonsPanel.add(helpButton);
 
         //  make this panel align to the right
         JPanel rightPanel = new JPanel();
