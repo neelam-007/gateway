@@ -245,9 +245,9 @@ CREATE TABLE ssg_logs (
   sourceclassname varchar(128),
   sourcemethodname varchar(128),
   strrequestid varchar(40),
-  PRIMARY KEY(objectid)
+  PRIMARY KEY(objectid),
+  KEY idx_millis(millis)
 ) TYPE=InnoDB;
-CREATE INDEX idx_millis ON ssg_logs (millis);
 
 --
 -- Dumping data for table 'ssg_logs'
