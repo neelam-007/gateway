@@ -2,16 +2,13 @@ package com.l7tech.console.panels;
 
 import com.l7tech.console.table.LogTableModel;
 import com.l7tech.console.table.FilteredLogTableModel;
-import com.l7tech.console.MainWindow;
 import com.l7tech.console.util.Preferences;
 
 import javax.swing.*;
-import javax.swing.border.Border;
 import javax.swing.table.*;
 import javax.swing.event.*;
 import java.awt.*;
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
+
 import java.awt.event.ActionListener;
 import java.awt.event.ActionEvent;
 import java.util.Dictionary;
@@ -41,8 +38,6 @@ public class LogPanel extends JPanel {
     private javax.swing.Timer logsRefreshTimer = null;
 
     private static ResourceBundle resapplication = java.util.ResourceBundle.getBundle("com.l7tech.console.resources.console");
-    private final ClassLoader cl = getClass().getClassLoader();
-    private Border curBorder = null;
 
     private int msgFilterLevel = MSG_FILTER_LEVEL_WARNING;
     private JPanel selectPane = null;
