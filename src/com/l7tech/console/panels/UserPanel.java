@@ -46,8 +46,6 @@ public class UserPanel extends EntityEditorPanel {
     private JButton okButton;
     private JButton cancelButton;
 
-
-
     // user
     private EntityHeader userHeader;
     private User user;

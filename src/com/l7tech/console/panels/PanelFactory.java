@@ -9,6 +9,7 @@ import com.l7tech.console.tree.EntityHeaderNode;
 import com.l7tech.identity.Group;
 import com.l7tech.identity.User;
 import com.l7tech.objectmodel.EntityType;
+import com.l7tech.objectmodel.EntityHeader;
 
 import javax.swing.*;
 
@@ -37,8 +38,10 @@ public class PanelFactory {
         Object object = node.getUserObject();
         if (object == null) throw new IllegalArgumentException("node.getUserObject() returns null");
         if (object instanceof EntityHeaderNode) {
+            EntityHeader entityHeader = ((EntityHeaderNode)object).getEntityHeader();
             EntityEditorPanel panel =
-                    getPanel(((EntityHeaderNode)object).getEntityHeader().getType(), pListener);
+                    getPanel(entityHeader.getType(), pListener);
+            panel.edit(entityHeader);
             return panel;
         }
         JOptionPane.showMessageDialog(null,

@@ -543,7 +543,7 @@ public class MainWindow extends JFrame {
               public void actionPerformed(ActionEvent event) {
                   JTree tree = getPaletteJTreeView();
                   EntityTreeNode node =
-                    (EntityTreeNode) tree.getLastSelectedPathComponent();
+                    (EntityTreeNode)tree.getLastSelectedPathComponent();
 
                   if (node != null) {
                       refreshNode(node);
@@ -574,7 +574,7 @@ public class MainWindow extends JFrame {
                * @see Action#removePropertyChangeListener
                */
               public void actionPerformed(ActionEvent event) {
-                  JCheckBoxMenuItem item = (JCheckBoxMenuItem) event.getSource();
+                  JCheckBoxMenuItem item = (JCheckBoxMenuItem)event.getSource();
                   Component[] comps = getMainLeftJPanel().getComponents();
                   for (int i = comps.length - 1; i >= 0; i--) {
                       if (comps[i] instanceof JSplitPane) {
@@ -608,11 +608,11 @@ public class MainWindow extends JFrame {
                * @see Action#removePropertyChangeListener
                */
               public void actionPerformed(ActionEvent event) {
-                  JCheckBoxMenuItem item = (JCheckBoxMenuItem) event.getSource();
+                  JCheckBoxMenuItem item = (JCheckBoxMenuItem)event.getSource();
                   Component[] comps = getMainLeftJPanel().getComponents();
                   for (int i = comps.length - 1; i >= 0; i--) {
                       if (comps[i] instanceof JSplitPane) {
-                          JSplitPane p = (JSplitPane) comps[i];
+                          JSplitPane p = (JSplitPane)comps[i];
                           if (item.isSelected()) {
                           }
                       }
@@ -646,7 +646,7 @@ public class MainWindow extends JFrame {
               public void actionPerformed(ActionEvent event) {
 
                   EntityTreeNode context =
-                    (EntityTreeNode) getPaletteJTreeView().getModel().getRoot();
+                    (EntityTreeNode)getPaletteJTreeView().getModel().getRoot();
                   JDialog d = new FindDialog(MainWindow.this, true, context, listenerBroker);
                   d.setLocation(MainWindow.this.getLocationOnScreen());
                   d.show();
@@ -697,7 +697,7 @@ public class MainWindow extends JFrame {
               public void actionPerformed(ActionEvent event) {
                   JTree tree = getPaletteJTreeView();
                   EntityTreeNode node =
-                    (EntityTreeNode) tree.getLastSelectedPathComponent();
+                    (EntityTreeNode)tree.getLastSelectedPathComponent();
 
                   if (node != null) {
                       removeNode(node);
@@ -977,31 +977,31 @@ public class MainWindow extends JFrame {
         toolBarPane.putClientProperty("JToolBar.isRollover", Boolean.TRUE);
         JButton b = toolBarPane.add(getConnectAction());
         b.setFont(new Font("Dialog", 1, 10));
-        b.setText((String) getConnectAction().getValue(Action.NAME));
+        b.setText((String)getConnectAction().getValue(Action.NAME));
         b.setMargin(new Insets(0, 0, 0, 0));
         b.setHorizontalTextPosition(SwingConstants.RIGHT);
 
         b = toolBarPane.add(getDisconnectAction());
         b.setFont(new Font("Dialog", 1, 10));
-        b.setText((String) getDisconnectAction().getValue(Action.NAME));
+        b.setText((String)getDisconnectAction().getValue(Action.NAME));
         b.setMargin(new Insets(0, 0, 0, 0));
         b.setHorizontalTextPosition(SwingConstants.RIGHT);
 
         b = toolBarPane.add(getRefreshAction());
         b.setFont(new Font("Dialog", 1, 10));
-        b.setText((String) getRefreshAction().getValue(Action.NAME));
+        b.setText((String)getRefreshAction().getValue(Action.NAME));
         b.setMargin(new Insets(0, 0, 0, 0));
         b.setHorizontalTextPosition(SwingConstants.RIGHT);
 
         b = toolBarPane.add(getFindAction());
         b.setFont(new Font("Dialog", 1, 10));
-        b.setText((String) getFindAction().getValue(Action.NAME));
+        b.setText((String)getFindAction().getValue(Action.NAME));
         b.setMargin(new Insets(0, 0, 0, 0));
         b.setHorizontalTextPosition(SwingConstants.RIGHT);
 
         b = toolBarPane.add(getPreferencesAction());
         b.setFont(new Font("Dialog", 1, 10));
-        b.setText((String) getPreferencesAction().getValue(Action.NAME));
+        b.setText((String)getPreferencesAction().getValue(Action.NAME));
         b.setMargin(new Insets(0, 0, 0, 0));
         b.setHorizontalTextPosition(SwingConstants.RIGHT);
 
@@ -1121,9 +1121,9 @@ public class MainWindow extends JFrame {
         int mInc = js.getVerticalScrollBar().getUnitIncrement();
         // some arbitrary text to set the unit increment to the
         // height of one line instead of default value
-        int vInc = (int) getStatusMsgLeft().getPreferredSize().getHeight();
+        int vInc = (int)getStatusMsgLeft().getPreferredSize().getHeight();
         js.getVerticalScrollBar().setUnitIncrement(Math.max(mInc, vInc));
-        int hInc = (int) getStatusMsgLeft().getPreferredSize().getWidth();
+        int hInc = (int)getStatusMsgLeft().getPreferredSize().getWidth();
         js.getHorizontalScrollBar().setUnitIncrement(Math.max(mInc, hInc));
 
         JSplitPane sections = new JSplitPane(JSplitPane.VERTICAL_SPLIT);
@@ -1139,9 +1139,9 @@ public class MainWindow extends JFrame {
         mInc = js.getVerticalScrollBar().getUnitIncrement();
         // some arbitrary text to set the unit increment to the
         // height of one line instead of default value
-        vInc = (int) getStatusMsgLeft().getPreferredSize().getHeight();
+        vInc = (int)getStatusMsgLeft().getPreferredSize().getHeight();
         js.getVerticalScrollBar().setUnitIncrement(Math.max(mInc, vInc));
-        hInc = (int) getStatusMsgLeft().getPreferredSize().getWidth();
+        hInc = (int)getStatusMsgLeft().getPreferredSize().getWidth();
         js.getHorizontalScrollBar().setUnitIncrement(Math.max(mInc, hInc));
         sections.setBottomComponent(js);
 
@@ -1167,15 +1167,15 @@ public class MainWindow extends JFrame {
             /** Invoked when an action occurs. */
             public void actionPerformed(ActionEvent e) {
                 JPanel panel = null;
-                EntityTreeNode dNode = (EntityTreeNode) node;
+                EntityTreeNode dNode = (EntityTreeNode)node;
                 Object object = dNode.getUserObject();
                 DefaultMutableTreeNode parent =
-                  (DefaultMutableTreeNode) node.getParent();
+                  (DefaultMutableTreeNode)node.getParent();
 
                 if (TreeNodeMenu.DELETE.equals(e.getActionCommand())) {
                     removeNode(dNode);
                 } else if (TreeNodeMenu.NEW_ADMINISTRATOR.equals(e.getActionCommand())) {
-                    AdminFolderNode adminFolder = (AdminFolderNode) object;
+                    AdminFolderNode adminFolder = (AdminFolderNode)object;
                     NewAdminDialog dialog = new NewAdminDialog(MainWindow.this, adminFolder);
                     dialog.setResizable(false);
                     dialog.setPanelListener(listenerBroker);
@@ -1212,7 +1212,6 @@ public class MainWindow extends JFrame {
                       "Information",
                       JOptionPane.INFORMATION_MESSAGE);
                 }
-
                 // only if something is returned
                 if (panel != null) {
                     EditorDialog dialog = new EditorDialog(MainWindow.this, panel);
@@ -1223,7 +1222,7 @@ public class MainWindow extends JFrame {
                 }
             }
         };
-        return TreeNodeMenu.forNode((EntityTreeNode) node, listener);
+        return TreeNodeMenu.forNode((EntityTreeNode)node, listener);
     }
 
 
@@ -1284,7 +1283,7 @@ public class MainWindow extends JFrame {
            * @param object an arbitrary object set by the Panel
            */
           public void onInsert(Object object) {
-              EntityHeader entity = (EntityHeader) object;
+              EntityHeader entity = (EntityHeader)object;
               BasicTreeNode newNode =
                 TreeNodeFactory.asTreeNode(entity);
               if (newNode.isLeaf()) return;
@@ -1301,12 +1300,12 @@ public class MainWindow extends JFrame {
               if (!tree.hasBeenExpanded(path)) return;
 
               EntityTreeNode pNode =
-                (EntityTreeNode) tree.getLastSelectedPathComponent();
+                (EntityTreeNode)tree.getLastSelectedPathComponent();
 
               EntityTreeNode node = new EntityTreeNode(newNode);
               pNode.add(node);
               pNode.sortChildren(EntityTreeNode.DEFAULT_COMPARATOR);
-              DefaultTreeModel model = (DefaultTreeModel) tree.getModel();
+              DefaultTreeModel model = (DefaultTreeModel)tree.getModel();
               model.nodeStructureChanged(pNode);
           }
 
@@ -1317,14 +1316,14 @@ public class MainWindow extends JFrame {
            * @param object an arbitrary object set by the Panel
            */
           public void onUpdate(Object object) {
-              EntityHeader entity = (EntityHeader) object;
+              EntityHeader entity = (EntityHeader)object;
               BasicTreeNode newNode =
                 TreeNodeFactory.asTreeNode(entity);
 
               if (newNode.isLeaf() ||
                 !(newNode instanceof EntityHeader))
                   return;
-              EntityHeader en = (EntityHeader) newNode;
+              EntityHeader en = (EntityHeader)newNode;
 
               JTree tree;
               if (EntityType.SERVICE.equals(entity.getType())) {
@@ -1339,8 +1338,8 @@ public class MainWindow extends JFrame {
 
 
               DefaultMutableTreeNode node =
-                (DefaultMutableTreeNode) TreeNodeAction.
-                nodeByName(en.getName(), (DefaultMutableTreeNode) path.getLastPathComponent());
+                (DefaultMutableTreeNode)TreeNodeAction.
+                nodeByName(en.getName(), (DefaultMutableTreeNode)path.getLastPathComponent());
 
               if (node == null) {
                   throw new
@@ -1357,7 +1356,7 @@ public class MainWindow extends JFrame {
           public void onDelete(Object object) {
               if (!(object instanceof EntityHeaderNode)) return;
 
-              EntityHeaderNode eh = (EntityHeaderNode) object;
+              EntityHeaderNode eh = (EntityHeaderNode)object;
               JTree tree;
               if (EntityType.SERVICE.equals(eh.getEntityHeader().getType())) {
                   tree = getServicesTreeView();
@@ -1369,14 +1368,14 @@ public class MainWindow extends JFrame {
 
               if (tree.hasBeenExpanded(path)) {
                   DefaultMutableTreeNode node =
-                    (DefaultMutableTreeNode) TreeNodeAction.
-                    nodeByName(eh.getName(), (DefaultMutableTreeNode) path.getLastPathComponent());
+                    (DefaultMutableTreeNode)TreeNodeAction.
+                    nodeByName(eh.getName(), (DefaultMutableTreeNode)path.getLastPathComponent());
 
                   if (node == null) {
                       throw new
                         IllegalStateException("Update of node that isn't in tree ( " + eh.getName() + " )");
                   }
-                  ((DefaultTreeModel) tree.getModel()).removeNodeFromParent(node);
+                  ((DefaultTreeModel)tree.getModel()).removeNodeFromParent(node);
               }
           }
       };
@@ -1405,7 +1404,7 @@ public class MainWindow extends JFrame {
         Object object = getServicesTreeView().getLastSelectedPathComponent();
         // if not EntityTreeNode silently return
         if (object instanceof EntityTreeNode) {
-            EntityTreeNode node = (EntityTreeNode) object;
+            EntityTreeNode node = (EntityTreeNode)object;
             // update actions for the node
             updateActions(node);
             object = node.getUserObject();
@@ -1436,9 +1435,9 @@ public class MainWindow extends JFrame {
         TreeNode node =
           TreeNodeAction.
           nodeByName(name,
-            (DefaultMutableTreeNode) getPaletteJTreeView().getModel().getRoot());
+            (DefaultMutableTreeNode)getPaletteJTreeView().getModel().getRoot());
         if (node != null) {
-            TreePath path = new TreePath(((DefaultMutableTreeNode) node).getPath());
+            TreePath path = new TreePath(((DefaultMutableTreeNode)node).getPath());
             getPaletteJTreeView().setSelectionPath(path);
         }
 
@@ -1451,7 +1450,7 @@ public class MainWindow extends JFrame {
      */
     private void removeNode(EntityTreeNode node) {
         // store the parent node to use as a panel for later
-        EntityTreeNode parentNode = (EntityTreeNode) node.getParent();
+        EntityTreeNode parentNode = (EntityTreeNode)node.getParent();
         if (!TreeNodeAction.deleteNode(node)) return;
         paletteTreeObjectListener.onDelete(node.getUserObject());
 
@@ -1484,8 +1483,8 @@ public class MainWindow extends JFrame {
             Utilities.equalizeComponentSizes(components);
             for (int i = 0; components != null && i < components.length; i++) {
                 if (components[i] instanceof JMenu &&
-                  ((JMenu) components[i]).getText().equals(TreeNodeMenu.NEW)) {
-                    JMenu menu = (JMenu) components[i];
+                  ((JMenu)components[i]).getText().equals(TreeNodeMenu.NEW)) {
+                    JMenu menu = (JMenu)components[i];
                     Component[] nItems = menu.getMenuComponents();
                     Utilities.equalizeComponentSizes(nItems);
                     for (int j = 0; nItems != null && j < nItems.length; j++) {
@@ -1516,7 +1515,7 @@ public class MainWindow extends JFrame {
      * @param mouseEvent
      */
     public void jTreePopUpEventHandler(MouseEvent mouseEvent) {
-        JTree tree = (JTree) mouseEvent.getSource();
+        JTree tree = (JTree)mouseEvent.getSource();
 
         if (mouseEvent.isPopupTrigger()) {
             int closestRow = tree.getClosestRowForLocation(mouseEvent.getX(), mouseEvent.getY());
@@ -1535,7 +1534,7 @@ public class MainWindow extends JFrame {
                 if (!found) {
                     tree.setSelectionRow(closestRow);
                 }
-                TreeNode node = (TreeNode) tree.getLastSelectedPathComponent();
+                TreeNode node = (TreeNode)tree.getLastSelectedPathComponent();
 
                 JPopupMenu menu = getTreeNodeJPopupMenu(node);
                 if (menu != null) {
@@ -1711,14 +1710,14 @@ public class MainWindow extends JFrame {
                   if (path == null) return;
 
                   EntityTreeNode node =
-                    (EntityTreeNode) path.getLastPathComponent();
+                    (EntityTreeNode)path.getLastPathComponent();
                   if (node == null) return;
                   int keyCode = e.getKeyCode();
                   if (keyCode == KeyEvent.VK_DELETE) {
                       removeNode(node);
                   } else if (keyCode == KeyEvent.VK_BACK_SPACE) {
                       DefaultMutableTreeNode parent =
-                        (DefaultMutableTreeNode) node.getParent();
+                        (DefaultMutableTreeNode)node.getParent();
                       if (parent == null) return;
 
                       TreeNode[] nodes = parent.getPath();
@@ -2023,7 +2022,7 @@ public class MainWindow extends JFrame {
         try {
             Object lafObject =
               Class.forName(lookAndFeel).newInstance();
-            UIManager.setLookAndFeel((LookAndFeel) lafObject);
+            UIManager.setLookAndFeel((LookAndFeel)lafObject);
         } catch (Exception e) {
             lfSet = false;
         }
