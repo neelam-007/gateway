@@ -88,6 +88,7 @@ public class ServerWssBasic extends ServerWssCredentialSource implements ServerA
             // this is good, we got what we needed
             User u = new User();
             u.setLogin(handler.getParsedUsername());
+            LogManager.getInstance().getSystemLogger().log(Level.INFO, "Found credentials for user " + handler.getParsedUsername());
             return new PrincipalCredentials(u, passwd.getBytes(), CredentialFormat.CLEARTEXT);
         } catch (IOException e) {
             LogManager.getInstance().getSystemLogger().log(Level.SEVERE, "Exception parsing xml request " + e.getMessage(), e);
