@@ -30,8 +30,8 @@ public class StatisticsPanel extends JPanel {
     private static final String STATISTICS_UNAVAILABLE = "unavailable";
     private static final String SERVER_UP_TIME_PREFIX = "Server Uptime: ";
     private static final String LAST_MINUTE_SERVER_LOAD_PREFIX = "Avg load (1 min): ";
-    private static final String MIDDLE_SPACE = "        ";
-    private static final String END_SPACE = "     ";
+    private static final String MIDDLE_SPACE = "     ";
+    private static final String END_SPACE    = "   ";
     private static final int STAT_REFRESH_TIMER = 5000;
     private static final String ATTEMPTED_TOTAL_PREFIX = "Attempted Total: ";
     private static final String AUTHORIZED_TOTAL_PREFIX = "Authorized Total: ";
@@ -132,7 +132,7 @@ public class StatisticsPanel extends JPanel {
         if(selectPaneRight != null) return selectPaneRight;
 
         selectPaneRight = new JPanel();
-        selectPaneRight.setLayout(new FlowLayout());
+        selectPaneRight.setLayout(new FlowLayout(FlowLayout.LEFT, 5, 13));
         selectPaneRight.add(getAttemptedTotalLabel());
         selectPaneRight.add(getAuthorizedTotalLabel());
         selectPaneRight.add(getCompletedTotalLabel());
@@ -304,7 +304,7 @@ public class StatisticsPanel extends JPanel {
             metrics = null;
         }
         if (metrics == null) {
-            serverUpTime.setText(MIDDLE_SPACE + SERVER_UP_TIME_PREFIX + STATISTICS_UNAVAILABLE + MIDDLE_SPACE);
+            serverUpTime.setText(END_SPACE + SERVER_UP_TIME_PREFIX + STATISTICS_UNAVAILABLE + MIDDLE_SPACE);
             lastMinuteServerLoad.setText(LAST_MINUTE_SERVER_LOAD_PREFIX + STATISTICS_UNAVAILABLE + END_SPACE);
 
         } else {
@@ -336,7 +336,7 @@ public class StatisticsPanel extends JPanel {
             else{
                 uptimeString += Long.toString(minutes_remain) + " minutes " + MIDDLE_SPACE;
             }
-            serverUpTime.setText(MIDDLE_SPACE + SERVER_UP_TIME_PREFIX + uptimeString);
+            serverUpTime.setText(END_SPACE + SERVER_UP_TIME_PREFIX + uptimeString);
             lastMinuteServerLoad.setText(LAST_MINUTE_SERVER_LOAD_PREFIX + Double.toString(metrics.getLoad1()) + END_SPACE);
 
         }
@@ -351,7 +351,7 @@ public class StatisticsPanel extends JPanel {
             getStatTableModel().removeRow(0);
         }
         getStatTableModel().fireTableDataChanged();
-        serverUpTime.setText(MIDDLE_SPACE + SERVER_UP_TIME_PREFIX + STATISTICS_UNAVAILABLE + MIDDLE_SPACE);
+        serverUpTime.setText(END_SPACE + SERVER_UP_TIME_PREFIX + STATISTICS_UNAVAILABLE + MIDDLE_SPACE);
         lastMinuteServerLoad.setText(LAST_MINUTE_SERVER_LOAD_PREFIX + STATISTICS_UNAVAILABLE + END_SPACE);
         attemptedTotalLabel.setText(MIDDLE_SPACE + ATTEMPTED_TOTAL_PREFIX + "0");
         authorizedTotalLabel.setText(MIDDLE_SPACE + AUTHORIZED_TOTAL_PREFIX + "0");
