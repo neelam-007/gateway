@@ -1,5 +1,7 @@
 package com.l7tech.identity.cert;
 
+import com.l7tech.cluster.ClusterInfoManager;
+import com.l7tech.cluster.ClusterNodeInfo;
 import com.l7tech.common.util.HexUtils;
 import com.l7tech.common.util.KeystoreUtils;
 import com.l7tech.common.util.Locator;
@@ -7,27 +9,24 @@ import com.l7tech.identity.BadCredentialsException;
 import com.l7tech.identity.User;
 import com.l7tech.objectmodel.*;
 import com.l7tech.server.AuthenticatableHttpServlet;
-import com.l7tech.cluster.ClusterInfoManager;
-import com.l7tech.cluster.ClusterNodeInfo;
+import org.apache.commons.httpclient.HttpClient;
+import org.apache.commons.httpclient.methods.PostMethod;
 import sun.security.x509.X500Name;
 
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import java.io.IOException;
 import java.io.File;
+import java.io.IOException;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateEncodingException;
 import java.security.cert.X509Certificate;
 import java.sql.SQLException;
-import java.util.List;
 import java.util.Collection;
 import java.util.Iterator;
+import java.util.List;
 import java.util.logging.Level;
-
-import org.apache.commons.httpclient.HttpClient;
-import org.apache.commons.httpclient.methods.PostMethod;
 
 
 /**
@@ -275,6 +274,40 @@ public class CSRHandler extends AuthenticatableHttpServlet {
             url += "?" + req.getQueryString();
         }
         logger.finest("using url " + url);
+
+        /*// using HttpURLConnection
+        HttpURLConnection connection = (HttpURLConnection)(new URL(url)).openConnection();
+        connection.setDoOutput(true);
+        connection.setRequestMethod("POST");
+        // loose hostname verifier
+        if (connection instanceof HttpsURLConnection) {
+            ((HttpsURLConnection)connection).setHostnameVerifier(
+              new HostnameVerifier() {
+                  public boolean verify(String s, SSLSession sslSession) {
+                      return true;
+                  }
+              });
+        }
+        connection.setRequestProperty(CONTENT_TYPE, req.getContentType());
+        connection.setRequestProperty(ROUTED_FROM_PEER, "Yes");
+        connection.setRequestProperty(AUTH_HEADER_NAME, req.getHeader(AUTH_HEADER_NAME));
+        OutputStream outputstream = connection.getOutputStream();
+        InputStream inputSream = req.getInputStream();
+        byte[] buff = new byte[256];
+        int read = inputSream.read(buff);
+        while (read > 0) {
+            outputstream.write(buff, 0, read);
+            read = inputSream.read(buff);
+        }
+        outputstream.close();
+        int status = connection.getResponseCode();
+        res.setStatus(status);
+        connection.getContentType()
+        res.setContentType();
+        */
+
+
+        // using apache HttpClient
         HttpClient client = new HttpClient();
         PostMethod postMethod = new PostMethod(url.toString());
         postMethod.setRequestHeader(CONTENT_TYPE, req.getContentType());
