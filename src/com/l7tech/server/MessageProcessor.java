@@ -10,6 +10,7 @@ import com.l7tech.common.protocol.SecureSpanConstants;
 import com.l7tech.common.security.xml.Session;
 import com.l7tech.common.security.xml.SessionNotFoundException;
 import com.l7tech.common.security.xml.WssProcessor;
+import com.l7tech.common.security.xml.WssProcessorImpl;
 import com.l7tech.common.util.Locator;
 import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.util.KeystoreUtils;
@@ -57,7 +58,7 @@ public class MessageProcessor {
         // WSS-Processing Step
         if (request instanceof SoapRequest) {
             SoapRequest req = (SoapRequest)request;
-            WssProcessor trogdor = (WssProcessor)Locator.getDefault().lookup(WssProcessor.class);
+            WssProcessor trogdor = new WssProcessorImpl(); // no need for locator
             X509Certificate serverSSLcert = null;
             PrivateKey sslPrivateKey = null;
             try {
