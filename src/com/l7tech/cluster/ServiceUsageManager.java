@@ -4,6 +4,7 @@ import com.l7tech.objectmodel.*;
 import com.l7tech.logging.LogManager;
 
 import java.util.Collection;
+import java.util.List;
 import java.util.logging.Logger;
 import java.util.logging.Level;
 import java.sql.SQLException;
@@ -53,7 +54,13 @@ public class ServiceUsageManager {
         try {
             HibernatePersistenceContext pc = (HibernatePersistenceContext)PersistenceContext.getCurrent();
             Session session = pc.getSession();
-            session.save(data);
+            //session.save(data);
+            //session.saveOrUpdate(data);
+            if (isAlreadyInDB(data)) {
+                session.update(data);
+            } else {
+                session.save(data);
+            }
         } catch (SQLException e) {
             String msg = "could not record this service usage obj";
             logger.log(Level.SEVERE, msg, e);
@@ -84,7 +91,30 @@ public class ServiceUsageManager {
         }
     }
 
+    private boolean isAlreadyInDB(ServiceUsage arg) {
+        String query = "from " + TABLE_NAME + " in class " + ServiceUsage.class.getName() +
+                          " where " + TABLE_NAME + "." + NODE_ID_COLUMN_NAME +
+                          " = \'" + arg.getNodeid() + "\'" + " and " + TABLE_NAME + "." + SERVICE_ID_COLUMN_NAME +
+                          " = \'" + arg.getServiceid() + "\'";
+        try {
+            HibernatePersistenceContext pc = (HibernatePersistenceContext)PersistenceContext.getCurrent();
+            Session session = pc.getSession();
+            List res = session.find(query);
+            if (res == null || res.isEmpty()) return false;
+            return true;
+        } catch (SQLException e) {
+            String msg = "could not retreive service usage obj";
+            logger.log(Level.SEVERE, msg, e);
+            return false;
+        } catch (HibernateException e) {
+            String msg = "could not retreive service usage obj";
+            logger.log(Level.SEVERE, msg, e);
+            return false;
+        }
+    }
+
     private final Logger logger = LogManager.getInstance().getSystemLogger();
     public static final String TABLE_NAME = "service_usage";
     public static final String NODE_ID_COLUMN_NAME = "nodeid";
+    public static final String SERVICE_ID_COLUMN_NAME = "serviceid";
 }
