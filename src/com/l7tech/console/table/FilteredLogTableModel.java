@@ -88,11 +88,11 @@ public class FilteredLogTableModel extends FilteredDefaultTableModel {
 
         for (Iterator i = rawLogCache.keySet().iterator(); i.hasNext(); ) {
             Object node = i.next();
-            filterData(((String) node), msgFilterLevel);
+            filterData((String) node);
         }
     }
 
-    protected void filterData(String nodeId, int msgFilterLevel) {
+    private void filterData(String nodeId) {
 
         Object node = null;
         Vector logs;

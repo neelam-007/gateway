@@ -84,7 +84,7 @@ public class FilteredLogTableSorter extends FilteredLogTableModel {
             rawLogCache.put(nodeId, gatewayLogs);
 
             // filter the logs
-            filterData(nodeId, msgFilterLevel);
+            filterData(msgFilterLevel);
 
             // sort the logs
             sortData(columnToSort, false);
@@ -254,8 +254,7 @@ public class FilteredLogTableSorter extends FilteredLogTableModel {
         Vector requests = new Vector();
 
         //todo: check if this is required anymore
-        int index = 0;
-        for (Iterator i = currentNodeList.keySet().iterator(); i.hasNext(); index++) {
+        for (Iterator i = currentNodeList.keySet().iterator(); i.hasNext(); ) {
             GatewayStatus gatewayStatus = (GatewayStatus) currentNodeList.get(i.next());
 
             Object logCache = null;
