@@ -52,6 +52,8 @@
                 <SpecificUser>
                     <UserLogin stringValueNull="null"/>
                     <IdentityProviderOid longValue="-1"/>
+                    <UserUid stringValueNull="null"/>
+                    <UserName stringValueNull="null"/>
                 </SpecificUser>
                 <RequestWssX509Cert/>
                 <RequestWssIntegrity>
