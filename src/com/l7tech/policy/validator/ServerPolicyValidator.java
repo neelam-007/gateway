@@ -6,10 +6,19 @@ import com.l7tech.policy.PolicyValidatorResult;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.credential.CredentialSourceAssertion;
 import com.l7tech.policy.assertion.identity.IdentityAssertion;
+import com.l7tech.policy.assertion.identity.SpecificUser;
+import com.l7tech.policy.assertion.identity.MemberOfGroup;
 import com.l7tech.policy.assertion.xmlsec.SamlSecurity;
+import com.l7tech.server.identity.IdentityProviderFactory;
+import com.l7tech.identity.IdentityProvider;
+import com.l7tech.identity.IdentityProviderType;
+import com.l7tech.identity.fed.FederatedIdentityProviderConfig;
+import com.l7tech.objectmodel.FindException;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.logging.Logger;
+import java.util.logging.Level;
 
 /**
  * Performs server side policy validation.
@@ -57,37 +66,68 @@ public class ServerPolicyValidator extends PolicyValidator {
     }
 
     /**
-     * @return 0: the corresponding id does not exist
-     *         1: the corresponding id exists and does not belong to saml only fip
-     *         2: the corresponding id exists but belongs to saml only fip
+     * This is synchronized just in case, i dont expect this to be invoked from multiple simultaneous threads.
+     * Add more return values as needed.
+     *
+     * @return see ID_NOT_EXIST, ID_EXIST, or ID_EXIST_BUT_SAMLONLY
      */
-    private int getIdStatus(IdentityAssertion identityAssertion) {
+    private synchronized int getIdStatus(IdentityAssertion identityAssertion) {
+        // look in cache first
         Integer output = (Integer)idAssertionStatus.get(identityAssertion);
         if (output == null) {
-            // todo
+            try {
+                // get provider
+                IdentityProvider prov = IdentityProviderFactory.getProvider(identityAssertion.getIdentityProviderOid());
+                // check if it's a fip
+                boolean samlonly = false;
+                if (prov.getConfig().getTypeVal() == IdentityProviderType.FEDERATED.toVal()) {
+                    FederatedIdentityProviderConfig cfg = (FederatedIdentityProviderConfig)prov.getConfig();
+                    if (cfg.isSamlSupported() && !cfg.isX509Supported()) {
+                        samlonly = true;
+                    }
+                }
+                boolean idexists = false;
+                // check if user or group exists
+                if (identityAssertion instanceof SpecificUser) {
+                    SpecificUser su = (SpecificUser)identityAssertion;
+                    if (prov.getUserManager().findByPrimaryKey(su.getUserUid()) != null) {
+                        idexists = true;
+                    }
+                } else if (identityAssertion instanceof MemberOfGroup) {
+                    MemberOfGroup mog = (MemberOfGroup)identityAssertion;
+                    prov.getGroupManager().findByPrimaryKey(mog.getGroupId());
+                } else {
+                    throw new RuntimeException("Type not supported " + identityAssertion.getClass().getName());
+                }
+                int val = -1;
+                if (!idexists) val = ID_NOT_EXIST;
+                else if (samlonly) val = ID_EXIST_BUT_SAMLONLY;
+                else val = ID_EXIST;
+                output = new Integer(val);
+                idAssertionStatus.put(identityAssertion, output);
+            } catch (FindException e) {
+                logger.log(Level.WARNING, "problem retrieving identity", e);
+                output = new Integer(ID_NOT_EXIST);
+                idAssertionStatus.put(identityAssertion, output);
+            }
         }
         return output.intValue();
     }
+
+    private static final int ID_NOT_EXIST = 0; // the corresponding id does not exist
+    private static final int ID_EXIST = 1; // the corresponding id exists and does not belong to saml only fip
+    private static final int ID_EXIST_BUT_SAMLONLY = 2; // the corresponding id exists but belongs to saml only fip
 
     // A new validator is instantiated once per policy validation
     // so it's ok to cache these here. This cache will expire at
     // end of each policy validation.
     /**
      * key is IdentityAssertion object
-     * value Integer
-     *      0: the corresponding id does not exist
-     *      1: the corresponding id exists and does not belong to saml only fip
-     *      2: the corresponding id exists but belongs to saml only fip
+     * value Integer (ID_NOT_EXIST, ID_EXIST, or ID_EXIST_BUT_SAMLONLY)
      */
     private Map idAssertionStatus = new HashMap();
-    /**
-     * key is Long with id provider config id
-     * value is Integer
-     *      0: the corresponding provider does not exist
-     *      1: the corresponding provider exists and has nothing special
-     *      2: the corresponding provider exists and is of type that only allows saml
-     */
-    private Map idProviderStatus = new HashMap();
+
+    private final Logger logger = Logger.getLogger(ServerPolicyValidator.class.getName());
 
     class PathContext {
         boolean seenCredCredAssertionOtherThanSaml = false;
