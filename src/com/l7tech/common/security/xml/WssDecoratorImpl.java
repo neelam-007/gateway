@@ -45,7 +45,8 @@ public class WssDecoratorImpl implements WssDecorator {
     private static final Logger logger = Logger.getLogger(WssDecorator.class.getName());
 
     public static final int TIMESTAMP_TIMOUT_SEC = 300;
-    public static final String KEYID_VALUETYPE_SKI = "http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-x509-token-profile-1.0#X509SubjectKeyIdentifier";
+    public static final String VALUETYPE_SKI = "http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-x509-token-profile-1.0#X509SubjectKeyIdentifier";
+    public static final String VALUETYPE_X509 = "http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-x509-token-profile-1.0#X509v3";
 
     private static class Context {
         SecureRandom rand = new SecureRandom();
@@ -165,7 +166,6 @@ public class WssDecoratorImpl implements WssDecorator {
         //                      ValueType="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-x509-token-profile-1.0#X509v3" />
         //      </wsse:SecurityTokenReference>
         // </KeyInfo>
-        // todo, fix hard coded strings
         String bstId = getOrCreateWsuId(c, binarySecurityToken);
         String wssePrefix = securityHeader.getPrefix();
         Element keyInfoEl = securityHeader.getOwnerDocument().createElementNS(securityHeader.getNamespaceURI(),
@@ -180,7 +180,7 @@ public class WssDecoratorImpl implements WssDecorator {
         secTokRefEl.appendChild(refEl);
         keyInfoEl.appendChild(secTokRefEl);
         refEl.setAttribute("URI", "#" + bstId);
-        refEl.setAttribute("ValueType", "http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-x509-token-profile-1.0#X509v3");
+        refEl.setAttribute("ValueType", VALUETYPE_X509);
 
 
 
@@ -232,14 +232,11 @@ public class WssDecoratorImpl implements WssDecorator {
         Element encryptionMethod = XmlUtil.createAndAppendElementNS(encryptedKey, "EncryptionMethod", xencNs, xenc);
         encryptionMethod.setAttribute("Algorithm", SoapUtil.SUPPORTED_ENCRYPTEDKEY_ALGO);
 
-        // todo - need to do something reasonable here when there is no SKI in the recipient cert.
-        // Options include omitting the KeyInfo (as we are doing now) and including a copy of the entire cert
         byte[] recipSki = recipientCertificate.getExtensionValue(CertUtils.X509_OID_SUBJECTKEYID);
         if (recipSki != null)
-            addKeyInfo(encryptedKey, recipSki);
+            addKeyInfo(encryptedKey, recipSki, VALUETYPE_SKI);
         else
-            logger.warning("Unable to include KeyInfo in EncryptedKey -- Recipient certificate has no SubjectKeyId" +
-                           " (dn=" + recipientCertificate.getSubjectDN() + ")");
+            addKeyInfo(encryptedKey, recipientCertificate.getEncoded(), VALUETYPE_X509);
 
         Element cipherData = XmlUtil.createAndAppendElementNS(encryptedKey, "CipherData", xencNs, xenc);
         Element cipherValue = XmlUtil.createAndAppendElementNS(cipherData, "CipherValue", xencNs, xenc);
@@ -372,7 +369,7 @@ public class WssDecoratorImpl implements WssDecorator {
         return padded;
     }
 
-    private void addKeyInfo(Element encryptedKey, byte[] recipSki) {
+    private void addKeyInfo(Element encryptedKey, byte[] idBytes, String valueType) {
         Document soapMsg = encryptedKey.getOwnerDocument();
         String wsseNs = encryptedKey.getParentNode().getNamespaceURI();
         String wssePrefix = encryptedKey.getParentNode().getPrefix();
@@ -382,8 +379,8 @@ public class WssDecoratorImpl implements WssDecorator {
                                                                     wsseNs, wssePrefix);
         Element keyId = XmlUtil.createAndAppendElementNS(securityTokenRef, SoapUtil.KEYIDENTIFIER_EL_NAME,
                                                          wsseNs, wssePrefix);
-        keyId.setAttribute("ValueType", KEYID_VALUETYPE_SKI);
-        String recipSkiB64 = HexUtils.encodeBase64(recipSki, true);
+        keyId.setAttribute("ValueType", valueType);
+        String recipSkiB64 = HexUtils.encodeBase64(idBytes, true);
         keyId.appendChild(soapMsg.createTextNode(recipSkiB64));
     }
 

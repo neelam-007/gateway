@@ -210,4 +210,20 @@ public class WssDecoratorTest extends TestCase {
                                 new Element[] { c.body },
                                 new Element[] { c.message.getDocumentElement() });
     }
+
+    public void testSkilessRecipientCert() throws Exception {
+        runTest(getSkilessRecipientCertTestDocument());
+    }
+
+    public TestDocument getSkilessRecipientCertTestDocument() throws Exception {
+        Context c = new Context();
+        return new TestDocument(c,
+                                TestDocuments.getDotNetServerCertificate(), // reversed, so skiless IBM key is recip
+                                TestDocuments.getDotNetServerPrivateKey(),
+                                TestDocuments.getEttkClientCertificate(),
+                                TestDocuments.getEttkClientPrivateKey(),
+                                false,
+                                new Element[] { c.body },
+                                new Element[] { c.message.getDocumentElement() });
+    }
 }

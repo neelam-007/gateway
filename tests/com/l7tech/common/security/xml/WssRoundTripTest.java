@@ -110,6 +110,11 @@ public class WssRoundTripTest extends TestCase {
                                                wssDecoratorTest.getWrappedSecurityHeaderTestDocument()));
     }
 
+    public void testSkilessRecipientCert() throws Exception {
+        runRoundTripTest(new NamedTestDocument("SkilessRecipientCert",
+                                               wssDecoratorTest.getSkilessRecipientCertTestDocument()));        
+    }
+
     private void runRoundTripTest(NamedTestDocument ntd) throws Exception {
         log.info("Running round-trip test on test document: " + ntd.name);
         WssDecoratorTest.TestDocument td = ntd.td;
