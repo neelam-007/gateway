@@ -4,8 +4,6 @@ import javax.swing.table.DefaultTableModel;
 import javax.swing.table.TableColumnModel;
 import javax.swing.table.JTableHeader;
 import javax.swing.*;
-import javax.swing.event.ListSelectionListener;
-import javax.swing.event.ListSelectionEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 
@@ -16,47 +14,68 @@ import java.awt.event.MouseEvent;
  */
 public class TrustedCertsTable extends JTable {
 
+    private TrustedCertTableSorter tableSorter = null;
+
     public TrustedCertsTable() {
 
         setModel(getTrustedCertTableModel());
         getTableHeader().setReorderingAllowed(false);
         getSelectionModel().setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
 
-        // Hide the cert expiration data column
-        getColumnModel().getColumn(TrustedCertTableSorter.CERT_TABLE_CERT_USAGE_COLUMN_INDEX).setMinWidth(0);
-        getColumnModel().getColumn(TrustedCertTableSorter.CERT_TABLE_CERT_USAGE_COLUMN_INDEX).setMaxWidth(0);
-        getColumnModel().getColumn(TrustedCertTableSorter.CERT_TABLE_CERT_USAGE_COLUMN_INDEX).setPreferredWidth(0);
-
         addMouseListenerToHeaderInTable();
     }
 
     /**
-       * Return TrustedCertTableSorter property value
-       *
-       * @return TrustedCertTableSorter
-       */
-      private TrustedCertTableSorter getTrustedCertTableModel() {
+     * Hide the colunm
+     *
+     * @param columnIndex The index of the column being hiden.
+     */
+    public void hideColumn(int columnIndex) {
+        if (columnIndex <= getColumnCount()) {
 
-          Object[][] rows = new Object[][]{};
-
-          String[] cols = new String[]{
-              "Name", "Issued by", "Expiration Date", "Usage"
-          };
-
-          TrustedCertTableSorter trustedCertTableSorter = new TrustedCertTableSorter(new DefaultTableModel(rows, cols) {
-              public boolean isCellEditable(int row, int col) {
-                  // the table cells are not editable
-                  return false;
-              }
-          });
-
-          return trustedCertTableSorter;
-
-      }
+            getColumnModel().getColumn(columnIndex).setMinWidth(0);
+            getColumnModel().getColumn(columnIndex).setMaxWidth(0);
+            getColumnModel().getColumn(columnIndex).setPreferredWidth(0);
+        }
+    }
 
     /**
-     *  Add a mouse listener to the Table to trigger a table sort
-     *  when a column heading is clicked in the JTable.
+     * Get table sorter which is the table model being used in this table.
+     *
+     * @return TrustedCertTableSorter  The table model with column sorting.
+     */
+    public TrustedCertTableSorter getTableSorter() {
+        return tableSorter;
+    }
+
+    /**
+     * Return TrustedCertTableSorter property value
+     *
+     * @return TrustedCertTableSorter
+     */
+    private TrustedCertTableSorter getTrustedCertTableModel() {
+
+        if (tableSorter == null) {
+            Object[][] rows = new Object[][]{};
+
+            String[] cols = new String[]{
+                "Name", "Issued by", "Expiration Date", "Usage"
+            };
+
+            tableSorter = new TrustedCertTableSorter(new DefaultTableModel(rows, cols) {
+                public boolean isCellEditable(int row, int col) {
+                    // the table cells are not editable
+                    return false;
+                }
+            });
+        }
+
+        return tableSorter;
+    }
+
+    /**
+     * Add a mouse listener to the Table to trigger a table sort
+     * when a column heading is clicked in the JTable.
      */
     private void addMouseListenerToHeaderInTable() {
 
