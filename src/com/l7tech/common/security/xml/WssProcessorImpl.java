@@ -461,7 +461,7 @@ public class WssProcessorImpl implements WssProcessor {
      */
     public void decryptReferencedElements(Key key, Element refList, ProcessingStatusHolder cntx)
             throws GeneralSecurityException, ParserConfigurationException, IOException, SAXException,
-            ProcessorException
+                   ProcessorException, InvalidDocumentFormatException
     {
         List dataRefEls = XmlUtil.findChildElementsByName(refList, SoapUtil.XMLENC_NS, "DataReference");
         if ( dataRefEls == null || dataRefEls.isEmpty() ) {
@@ -471,16 +471,54 @@ public class WssProcessorImpl implements WssProcessor {
 
         for (Iterator j = dataRefEls.iterator(); j.hasNext();) {
             Element dataRefEl = (Element)j.next();
-            decryptElement(dataRefEl, refList, key, cntx);
+            String dataRefUri = dataRefEl.getAttribute(SoapUtil.REFERENCE_URI_ATTR_NAME);
+            Element encryptedDataElement = SoapUtil.getElementByWsuId(refList.getOwnerDocument(), dataRefUri);
+            if (encryptedDataElement == null) {
+                String msg = "cannot resolve encrypted data element " + dataRefUri;
+                logger.warning(msg);
+                throw new ProcessorException(msg);
+            }
 
+            decryptElement(encryptedDataElement, key, cntx);
         }
     }
 
-    private void decryptElement(Element dataRefEl, Element refList, Key key, ProcessingStatusHolder cntx)
+    private void decryptElement(Element encryptedDataElement, Key key, ProcessingStatusHolder cntx)
             throws GeneralSecurityException, ParserConfigurationException, IOException, SAXException,
-                   ProcessorException
+                   ProcessorException, InvalidDocumentFormatException
     {
-        String dataRefUri = dataRefEl.getAttribute(SoapUtil.REFERENCE_URI_ATTR_NAME);
+        Node parent = encryptedDataElement.getParentNode();
+        if (parent == null || !(parent instanceof Element))
+            throw new InvalidDocumentFormatException("Root of document is encrypted"); // sanity check, can't happen
+        Element parentElement = (Element) encryptedDataElement.getParentNode();
+
+        // See if the parent element contains nothing else except attributes and this EncryptedData element
+        // (and possibly a whitespace node before and after it)
+        Node nextWhitespace = null;
+        Node nextSib = encryptedDataElement.getNextSibling();
+        if (nextSib != null && nextSib.getNodeType() == Node.TEXT_NODE && nextSib.getNodeValue().trim().length() < 1)
+            nextWhitespace = nextSib;
+        Node prevWhitespace = null;
+        Node prevSib = encryptedDataElement.getPreviousSibling();
+        if (prevSib != null && prevSib.getNodeType() == Node.TEXT_NODE && prevSib.getNodeValue().trim().length() < 1)
+            prevWhitespace = prevSib;
+
+        boolean onlyChild = true;
+        NodeList sibNodes = parentElement.getChildNodes();
+        for (int i = 0; i < sibNodes.getLength(); ++i) {
+            Node node = sibNodes.item(i);
+            if (node == null || node.getNodeType() == Node.ATTRIBUTE_NODE)
+                continue; // not relevant
+            if (node == nextWhitespace || node == prevWhitespace)
+                continue; // ignore
+            if (node == encryptedDataElement)
+                continue; // this is the encrypteddata element itself
+
+            // we've found a relevant sibling, proving that not all of parentElement's non-attribute content
+            // is encrypted within this EncryptedData
+            onlyChild = false;
+            break;
+        }
 
         // Create decryption context and decrypt the EncryptedData subtree. Note that this effects the
         // soapMsg document
@@ -488,27 +526,16 @@ public class WssProcessorImpl implements WssProcessor {
         AlgorithmFactoryExtn af = new AlgorithmFactoryExtn();
         af.setProvider(JceProvider.getSymmetricJceProvider().getName());
         dc.setAlgorithmFactory(af);
-        Element encryptedDataElement = SoapUtil.getElementByWsuId(refList.getOwnerDocument(), dataRefUri);
-        if (encryptedDataElement == null) {
-            String msg = "cannot resolve encrypted data element " + dataRefUri;
-            logger.warning(msg);
-            throw new ProcessorException(msg);
-        }
         dc.setEncryptedType(encryptedDataElement, EncryptedData.CONTENT,
                                                     null, null);
         dc.setKey(key);
+        NodeList dataList;
         try {
             // do the actual decryption
             dc.decrypt();
             dc.replace();
             // remember encrypted element
-            NodeList dataList = dc.getDataAsNodeList();
-            for (int i = 0; i < dataList.getLength(); i++) {
-                Node node = dataList.item(i);
-                if (node.getNodeType() == Node.ELEMENT_NODE) {
-                    cntx.elementsThatWereEncrypted.add(node);
-                }
-            }
+            dataList = dc.getDataAsNodeList();
         } catch (XSignatureException e) {
             logger.log(Level.WARNING, "Error decrypting", e);
             throw new ProcessorException(e);
@@ -518,6 +545,26 @@ public class WssProcessorImpl implements WssProcessor {
         } catch (KeyInfoResolvingException e) {
             logger.log(Level.WARNING, "Error decrypting", e);
             throw new ProcessorException(e);
+        }
+
+        // Now record the fact that some data was encrypted.
+        // Did the parent element contain any non-attribute content other than this EncryptedData
+        // (and possibly some whitespace before and after)?
+        if (onlyChild) {
+            // All relevant content of the parent node was encrypted.
+            logger.info("All of element '" + parentElement.getLocalName() + "' non-attribute contents were encrypted");
+            cntx.elementsThatWereEncrypted.add(parentElement);
+        } else {
+            // There was unencrypted stuff mixed in with the EncryptedData, so we can only record elements as
+            // encrypted that were actually wholly inside the EncryptedData.
+            // TODO: In this situation, no note is taken of any encrypted non-Element nodes (such as text nodes)
+            logger.info("Only some of element '" + parentElement.getLocalName() + "' non-attribute contents were encrypted");
+            for (int i = 0; i < dataList.getLength(); i++) {
+                Node node = dataList.item(i);
+                if (node.getNodeType() == Node.ELEMENT_NODE) {
+                    cntx.elementsThatWereEncrypted.add(node);
+                }
+            }
         }
     }
 
