@@ -35,6 +35,7 @@ public class HideRoutingTarget extends Filter {
         // apply rules on this one
         if (arg instanceof RoutingAssertion) {
             removeSelfFromParent(arg, false);
+            return true;
         } else if (arg instanceof CompositeAssertion) {
             // apply rules to children
             CompositeAssertion root = (CompositeAssertion)arg;
