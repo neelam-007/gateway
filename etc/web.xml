@@ -17,6 +17,8 @@
         <init-param>
             <param-name>CertPath</param-name>
             <param-value>../../kstores/ssg.cer</param-value>
+            <!-- use this instead to send back ssl cert signed by root ca
+            <param-value>../../kstores/ssl_rootcerted.cer</param-value> -->
         </init-param>
     </servlet>
 
