@@ -98,9 +98,9 @@ public class SecurityProviderImpl extends SecurityProvider
                 throw new SecurityException("Unable to verify the server certificate at "+namingURL);
             }
         } catch (NoSuchAlgorithmException e) {
-            throw new SecurityException(e);
+            throw (SecurityException)new SecurityException().initCause(e);
         } catch (CertificateEncodingException e) {
-            throw new SecurityException(e);
+            throw (SecurityException)new SecurityException().initCause(e);
         }
 
     }
