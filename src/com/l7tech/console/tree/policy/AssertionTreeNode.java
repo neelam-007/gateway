@@ -10,6 +10,7 @@ import javax.swing.*;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
+import java.util.Enumeration;
 
 /**
  * Class AssertionTreeNode.
@@ -19,6 +20,13 @@ public abstract class AssertionTreeNode extends AbstractTreeNode {
 
     AssertionTreeNode(Assertion assertion) {
         super(assertion);
+    }
+
+    /**
+     * @return the assertion this node represents
+     */
+    public final Assertion asAssertion() {
+        return (Assertion)getUserObject();
     }
 
     /**
@@ -40,8 +48,8 @@ public abstract class AssertionTreeNode extends AbstractTreeNode {
         da.setEnabled(canDelete());
         list.add(da);
 
-        Action sp = new SavePolicyAction();
-        sp.setEnabled(false);
+        Action sp = new SavePolicyAction(this);
+        //sp.setEnabled(false);
         list.add(sp);
 
         Action vp = new ValidatePolicyAction((AssertionTreeNode)getRoot());

@@ -1,15 +1,7 @@
 package com.l7tech.console.tree.policy;
 
 
-import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.RoutingAssertion;
-import com.l7tech.policy.assertion.composite.CompositeAssertion;
-import com.l7tech.console.util.IconManager2;
-
-import javax.swing.tree.DefaultMutableTreeNode;
-import javax.swing.*;
-import java.util.Iterator;
-import java.awt.*;
 
 /**
  * Class SpecificUserAssertionTreeNode.
@@ -29,7 +21,7 @@ class RoutingAssertionTreeNode extends LeafAssertionTreeNode {
         if (url != null) {
             return "Route to "+url;
         }
-        return "defaull assertion";
+        return "default service route";
     }
 
     /**

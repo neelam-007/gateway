@@ -1,18 +1,19 @@
 package com.l7tech.console.action;
 
-import com.l7tech.console.tree.policy.AssertionTreeNode;
-import com.l7tech.console.tree.policy.PolicyTree;
-import com.l7tech.console.tree.ServiceNode;
-import com.l7tech.console.util.WindowManager;
-import com.l7tech.console.util.Registry;
 import com.l7tech.console.logging.ErrorManager;
+import com.l7tech.console.tree.ServiceNode;
+import com.l7tech.console.tree.policy.AssertionTreeNode;
+import com.l7tech.console.tree.policy.PolicyTreeModel;
+import com.l7tech.console.util.Registry;
+import com.l7tech.console.util.WindowManager;
+import com.l7tech.console.MainWindow;
 import com.l7tech.service.PublishedService;
-import com.l7tech.objectmodel.FindException;
-import com.l7tech.objectmodel.SaveException;
+import com.l7tech.policy.wsp.WspWriter;
+import com.l7tech.policy.assertion.Assertion;
 
 import javax.swing.*;
-import javax.swing.tree.DefaultTreeModel;
 import java.util.logging.Level;
+import java.io.ByteArrayOutputStream;
 
 
 /**
@@ -23,12 +24,15 @@ import java.util.logging.Level;
  * @version 1.0
  */
 public class SavePolicyAction extends BaseAction {
-    protected ServiceNode node;
+    protected AssertionTreeNode node;
 
     public SavePolicyAction() {
     }
 
-    public SavePolicyAction(ServiceNode node) {
+    public SavePolicyAction(AssertionTreeNode node) {
+        if (node == null) {
+            throw new IllegalArgumentException();
+        }
         this.node = node;
     }
     /**
@@ -63,8 +67,14 @@ public class SavePolicyAction extends BaseAction {
             throw new IllegalStateException("no node specified");
         }
         try {
-            PublishedService svc = node.getPublishedService();
-            Registry.getDefault().getServiceManager().save(svc);
+            JTree tree = (JTree) WindowManager.getInstance().getComponent(MainWindow.SERVICES_TREE);
+            PolicyTreeModel model = (PolicyTreeModel)tree.getModel();
+            PublishedService svc = model.getService();
+            Assertion rootAssertion = ((AssertionTreeNode)node.getRoot()).asAssertion();
+            ByteArrayOutputStream bo = new ByteArrayOutputStream();
+            WspWriter.writePolicy(rootAssertion, bo);
+            svc.setPolicyXml(bo.toString());
+            Registry.getDefault().getServiceManager().update(svc);
         } catch (Exception e) {
             ErrorManager.getDefault().notify(Level.WARNING, e, "Error saving service and policy");
         }
