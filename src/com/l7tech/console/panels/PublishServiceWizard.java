@@ -297,7 +297,7 @@ public class PublishServiceWizard extends JDialog {
         //mainjPanel.add(panelButtons, BorderLayout.SOUTH);
 
         stepsjPanel.setLayout(new BoxLayout(stepsjPanel, BoxLayout.Y_AXIS));
-        stepsjPanel.setBackground(new Color(233, 233, 233));
+        stepsjPanel.setBackground(new Color(213, 222, 222));
 
         stepsTitlePanel.setLayout(new FlowLayout(FlowLayout.LEFT));
         stepsTitlePanel.setPreferredSize(new Dimension(150, 40));
