@@ -1,18 +1,18 @@
 package com.l7tech.policy;
 
 import com.l7tech.policy.assertion.Assertion;
-import com.l7tech.policy.assertion.composite.ExactlyOneAssertion;
 import com.l7tech.policy.assertion.FalseAssertion;
 import com.l7tech.policy.assertion.TrueAssertion;
+import com.l7tech.policy.assertion.composite.ExactlyOneAssertion;
 import com.l7tech.policy.wsp.WspWriter;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
 
-import java.io.*;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.Arrays;
-import java.util.List;
-import java.util.ArrayList;
 import java.util.logging.Logger;
 
 /**
