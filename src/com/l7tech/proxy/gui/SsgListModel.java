@@ -8,6 +8,8 @@ import com.l7tech.proxy.datamodel.SsgNotFoundException;
 import javax.swing.*;
 import java.io.IOException;
 
+import org.apache.log4j.Category;
+
 /**
  * Provide a ListModel view of the current SSG list.
  * User: mike
@@ -15,6 +17,7 @@ import java.io.IOException;
  * Time: 2:48:51 PM
  */
 public class SsgListModel extends AbstractListModel {
+    private static final Category log = Category.getInstance(SsgListModel.class);
 
     public int getSize() {
         return Managers.getSsgManager().getSsgList().size();
@@ -43,6 +46,14 @@ public class SsgListModel extends AbstractListModel {
             fireContentsChanged(this, 0, getSize() + 1);
         } catch (SsgNotFoundException e) {
             // who cares
+        }
+    }
+
+    public void setDefaultSsg(Ssg ssg) {
+        try {
+            Managers.getSsgManager().setDefaultSsg(ssg);
+        } catch (SsgNotFoundException e) {
+            log.error(e); // shouldn't ever happen
         }
     }
 

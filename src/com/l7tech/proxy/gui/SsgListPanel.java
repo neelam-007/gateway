@@ -102,8 +102,11 @@ public class SsgListPanel extends JPanel {
                     try {
                         final Ssg ssg = (Ssg)ssgList.getSelectedValue();
                         if (ssg != null) {
-                            if (PropertyDialog.getPropertyDialogForObject(ssgList.getSelectedValue()).runDialog())
+                            if (PropertyDialog.getPropertyDialogForObject(ssg).runDialog()) {
+                                if (ssg.isDefaultSsg())
+                                    ssgListModel.setDefaultSsg(ssg);
                                 ssgListModel.editedSsg();
+                            }
                         }
                     } catch (ClassNotFoundException e1) {
                         // No property editor for Ssg objects.  this can't happen

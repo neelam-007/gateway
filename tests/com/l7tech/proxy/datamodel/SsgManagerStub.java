@@ -65,6 +65,43 @@ public class SsgManagerStub implements SsgManager {
             throw new SsgNotFoundException();
     }
 
+    /**
+     * Get the default SSG.
+     * Returns the first SSG that has its Default flag set.  Usually there is only one such SSG.
+     * @return the Default SSG
+     * @throws SsgNotFoundException if no Default SSG was found
+     */
+    public Ssg getDefaultSsg() throws SsgNotFoundException {
+        for (Iterator i = ssgs.iterator(); i.hasNext();) {
+            Ssg ssg = (Ssg) i.next();
+            if (ssg.isDefaultSsg())
+                return ssg;
+        }
+        throw new SsgNotFoundException();
+    }
+
+    /**
+     * Set the default SSG.
+     * If this method returns, it's guaranteed that the specified Ssg
+     * is in the Ssg list and is the only one with its Default flag set to true.
+     * @param ssg the SSG that should be made the new default ssg
+     * @throws SsgNotFoundException if the specified SSG is not registered
+     */
+    public void setDefaultSsg(Ssg ssg) throws SsgNotFoundException {
+        boolean found = false;
+        for (Iterator i = ssgs.iterator(); i.hasNext();) {
+            Ssg s = (Ssg) i.next();
+            if (s.equals(ssg)) {
+                s.setDefaultSsg(true);
+                found = true;
+            } else {
+                s.setDefaultSsg(false);
+            }
+        }
+        if (!found)
+            throw new SsgNotFoundException();
+    }
+
     public void save() throws IOException {
     }
 

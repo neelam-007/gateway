@@ -32,6 +32,23 @@ public interface SsgManager extends SsgFinder {
     void remove(Ssg ssg) throws SsgNotFoundException;
 
     /**
+     * Get the default SSG.
+     * Returns the first SSG that has its Default flag set.  Usually there is only one such SSG.
+     * @return the Default SSG
+     * @throws SsgNotFoundException if no Default SSG was found
+     */
+    Ssg getDefaultSsg() throws SsgNotFoundException;
+
+    /**
+     * Set the default SSG.
+     * If this method returns, it's guaranteed that the specified Ssg
+     * is in the Ssg list and is the only one with its Default flag set to true.
+     * @param ssg the SSG that should be made the new default ssg
+     * @throws SsgNotFoundException if the specified SSG is not registered
+     */
+    void setDefaultSsg(Ssg ssg) throws SsgNotFoundException;
+
+    /**
      * Save changes back to persistent store.
      * Changes to the SSG configuration are not guaranteed to be persisted unless users call
      * this method after each cluster of changes to Ssgs and calls to add() and remove().

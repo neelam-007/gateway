@@ -285,4 +285,41 @@ class SsgManagerImpl implements SsgManager {
         if (!ssgs.remove(ssg))
             throw new SsgNotFoundException("The specified SSG was not found");
     }
+
+    /**
+     * Get the default SSG.
+     * Returns the first SSG that has its Default flag set.  Usually there is only one such SSG.
+     * @return the Default SSG
+     * @throws SsgNotFoundException if no Default SSG was found
+     */
+    public Ssg getDefaultSsg() throws SsgNotFoundException {
+        for (Iterator i = ssgs.iterator(); i.hasNext();) {
+            Ssg ssg = (Ssg) i.next();
+            if (ssg.isDefaultSsg())
+                return ssg;
+        }
+        throw new SsgNotFoundException("No default SSG is currently registered.");
+    }
+
+    /**
+     * Set the default SSG.
+     * If this method returns, it's guaranteed that the specified Ssg
+     * is in the Ssg list and is the only one with its Default flag set to true.
+     * @param ssg
+     * @throws SsgNotFoundException
+     */
+    public synchronized void setDefaultSsg(Ssg ssg) throws SsgNotFoundException {
+        boolean found = false;
+        for (Iterator i = ssgs.iterator(); i.hasNext();) {
+            Ssg s = (Ssg) i.next();
+            if (s.equals(ssg)) {
+                s.setDefaultSsg(true);
+                found = true;
+            } else {
+                s.setDefaultSsg(false);
+            }
+        }
+        if (!found)
+            throw new SsgNotFoundException("The requested default SSG is not currently registered.");
+    }
 }

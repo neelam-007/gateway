@@ -27,6 +27,7 @@ public class Ssg implements Serializable, Cloneable, Comparable {
     private String keyStorePath = null;
     private HashMap policyMap = new HashMap();
     private boolean promptForUsernameAndPassword = true;
+    private boolean defaultSsg = false;
 
     private transient int numTimesLogonDialogCanceled = 0;
 
@@ -107,7 +108,7 @@ public class Ssg implements Serializable, Cloneable, Comparable {
     }
 
     public String toString() {
-        return getName();
+        return getName() + (isDefaultSsg() ? " (Default)" : "");
     }
 
     // Generate a lookup key given a uri and a soapAction
@@ -282,5 +283,18 @@ public class Ssg implements Serializable, Cloneable, Comparable {
 
     public synchronized int incrementNumTimesLogonDialogCanceled() {
         return ++this.numTimesLogonDialogCanceled;
+    }
+
+    /**
+     * Is this SSG marked as Default?
+     * If a client request arrives via an endpoint not mapped to any SSG, it is routed to the Default SSG.
+     * @return
+     */
+    public boolean isDefaultSsg() {
+        return defaultSsg;
+    }
+
+    public void setDefaultSsg(boolean defaultSsg) {
+        this.defaultSsg = defaultSsg;
     }
 }
