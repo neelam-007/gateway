@@ -44,7 +44,7 @@ public class InternalIdentityProviderServer implements IdentityProvider {
                 return false;
             } else {
                 String dbPassHash = dbUser.getPassword();
-                String authPassHash = authUser.encodePasswd( login, new String( credentials, ENCODING ) );
+                String authPassHash = User.encodePasswd( login, new String( credentials, ENCODING ) );
                 if ( dbPassHash.equals( authPassHash ) ) return true;
                 _log.info( "Incorrect password for login " + login );
                 return false;
