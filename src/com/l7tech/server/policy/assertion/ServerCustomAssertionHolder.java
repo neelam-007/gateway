@@ -72,7 +72,7 @@ public class ServerCustomAssertionHolder implements ServerAssertion {
                 if (principalName != null) {
                     subject.getPrincipals().add(new CustomAssertionPrincipal(principalName));
                 }
-                final byte[] credentials = principalCredentials.getCredentials();
+                final char[] credentials = principalCredentials.getCredentials();
                 if (credentials != null) {
                     subject.getPrivateCredentials().add(new String(credentials));
                 }

@@ -95,7 +95,7 @@ public class LdapIdentityProvider implements IdentityProvider {
             throw new BadCredentialsException("credentials did not authenticate");
         } else if (pc.getFormat() == CredentialFormat.DIGEST) {
             String dbPassHash = realUser.getPassword();
-            byte[] credentials = pc.getCredentials();
+            char[] credentials = pc.getCredentials();
             Map authParams = (Map)pc.getPayload();
             if (authParams == null) {
                 String msg = "No Digest authentication parameters found in LoginCredentials payload!";
@@ -123,7 +123,7 @@ public class LdapIdentityProvider implements IdentityProvider {
             }
 
             String expectedResponse = HexUtils.encodeMd5Digest( _md5.digest( serverDigestValue.getBytes() ) );
-            String response = new String( credentials );
+            String response = new String(credentials);
 
             String login = pc.getLogin();
             if ( response.equals( expectedResponse ) ) {

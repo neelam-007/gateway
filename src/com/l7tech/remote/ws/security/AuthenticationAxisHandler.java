@@ -149,7 +149,7 @@ public class AuthenticationAxisHandler extends org.apache.axis.handlers.BasicHan
             clearTextPasswd = value.substring(i + 1);
         }
 
-        LoginCredentials creds = new LoginCredentials(login, clearTextPasswd.getBytes(), null);
+        LoginCredentials creds = new LoginCredentials(login, clearTextPasswd.toCharArray(), null);
 
         if (identityProviderConfigManager == null) {
             identityProviderConfigManager = (IdentityProviderConfigManager)Locator.getDefault().lookup(com.l7tech.identity.IdentityProviderConfigManager.class);

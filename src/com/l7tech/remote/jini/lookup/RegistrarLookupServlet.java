@@ -202,7 +202,7 @@ public class RegistrarLookupServlet extends HttpServlet {
             clearTextPasswd = decodedCredentials.substring(i + 1);
         }
 
-        LoginCredentials creds = new LoginCredentials(login, clearTextPasswd.getBytes(), null);
+        LoginCredentials creds = new LoginCredentials(login, clearTextPasswd.toCharArray(), null);
         return creds;
     }
 

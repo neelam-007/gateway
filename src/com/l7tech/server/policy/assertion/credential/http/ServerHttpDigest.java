@@ -19,7 +19,6 @@ import com.l7tech.server.policy.assertion.ServerAssertion;
 import com.l7tech.server.policy.assertion.credential.DigestSessions;
 
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.HashMap;
@@ -101,12 +100,8 @@ public class ServerHttpDigest extends ServerHttpCredentialSource implements Serv
         if ( (userName == null) || (realmName == null) || ( digestResponse == null) )
             return null;
 
-        try {
-            return new LoginCredentials( userName, digestResponse.getBytes( ENCODING ),
-                                         CredentialFormat.DIGEST, _data.getClass(), realmName, authParams );
-        } catch (UnsupportedEncodingException e) {
-            throw new RuntimeException( e );
-        }
+        return new LoginCredentials( userName, digestResponse.toCharArray(),
+                                     CredentialFormat.DIGEST, _data.getClass(), realmName, authParams );
     }
 
     private Map myChallengeParams( String nonce ) {

@@ -63,7 +63,7 @@ public class InternalIdentityProviderServer extends PersistentIdentityProvider {
 
     public User authenticate( LoginCredentials pc ) throws AuthenticationException, FindException, IOException {
         String login = pc.getLogin();
-        byte[] credentials = pc.getCredentials();
+        char[] credentials = pc.getCredentials();
 
         try {
             InternalUser dbUser = null;
@@ -177,7 +177,7 @@ public class InternalIdentityProviderServer extends PersistentIdentityProvider {
                     String authPassHash = null;
 
                     if ( format == CredentialFormat.CLEARTEXT ) {
-                        authPassHash = UserBean.encodePasswd( login, new String( credentials, ENCODING ), HttpDigest.REALM );
+                        authPassHash = UserBean.encodePasswd( login, new String(credentials), HttpDigest.REALM );
                     } else if ( format == CredentialFormat.DIGEST ) {
                         Map authParams = (Map)pc.getPayload();
                         if ( authParams == null ) {

@@ -165,7 +165,7 @@ public class LdapIdentityProviderTest extends TestCase {
             try {
                 authenticated = localProvider.authenticate(
                         new LoginCredentials(notauthenticated.getLogin(),
-                        passwd.getBytes(), CredentialFormat.CLEARTEXT, HttpBasic.class, null, null));
+                        passwd.toCharArray(), CredentialFormat.CLEARTEXT, HttpBasic.class, null, null));
             } catch (Exception e) {
                 System.out.println("creds do not authenticate.");
             }

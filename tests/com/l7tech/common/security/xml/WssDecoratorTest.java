@@ -154,7 +154,7 @@ public class WssDecoratorTest extends TestCase {
         Document doc = TestDocuments.getTestDocument(TestDocuments.PLACEORDER_CLEARTEXT);
         log.info("Before decoration:" + XmlUtil.nodeToFormattedString(doc));
         WssDecorator.DecorationRequirements reqs = new WssDecorator.DecorationRequirements();
-        reqs.setUsernameTokenCredentials(new LoginCredentials("franco", "blahblah".getBytes(), WssBasic.class));
+        reqs.setUsernameTokenCredentials(new LoginCredentials("franco", "blahblah".toCharArray(), WssBasic.class));
 
         decorator.decorateMessage(doc, reqs);
         log.info("Decorated message:" + XmlUtil.nodeToFormattedString(doc));

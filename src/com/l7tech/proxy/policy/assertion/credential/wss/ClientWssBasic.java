@@ -17,8 +17,8 @@ import com.l7tech.proxy.policy.assertion.ClientDecorator;
 import org.xml.sax.SAXException;
 
 import java.io.IOException;
-import java.util.logging.Logger;
 import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * decorates a request with a header that looks like that:
@@ -54,7 +54,7 @@ public class ClientWssBasic extends ClientWssCredentialSource {
 
         // get the username and passwords
         final String username = request.getUsername();
-        final byte[] password = new String(request.getPassword()).getBytes();
+        final char[] password = request.getPassword();
 
         request.getPendingDecorations().put(this, new ClientDecorator() {
             public AssertionStatus decorateRequest(PendingRequest request) {

@@ -70,7 +70,7 @@ public class ServerHttpBasic extends ServerHttpCredentialSource implements Serve
 
             logger.fine( "Found HTTP Basic credentials for user " + login );
 
-            return new LoginCredentials( login, pass.getBytes(ENCODING), CredentialFormat.CLEARTEXT,
+            return new LoginCredentials( login, pass.toCharArray(), CredentialFormat.CLEARTEXT,
                                          _data.getClass(), null );
         } else {
             // No colons

@@ -6,7 +6,11 @@
 
 package com.l7tech.policy.assertion.credential;
 
+import com.l7tech.common.util.CertUtils;
+
 import java.security.cert.X509Certificate;
+import java.util.List;
+import java.util.Map;
 
 /**
  * Stores a reference to a User and its associated credentials (i.e. password).
@@ -16,7 +20,26 @@ import java.security.cert.X509Certificate;
  * @author alex
  */
 public class LoginCredentials {
-    public LoginCredentials( String login, byte[] credentials, CredentialFormat format,
+    public static LoginCredentials makeCertificateCredentials(X509Certificate cert, Class credentialSource) {
+        Map dnMap = CertUtils.dnToAttributeMap(cert.getSubjectDN().getName());
+        List cnValues = (List)dnMap.get("CN");
+        String login = null;
+        if (cnValues != null && cnValues.size() >= 1) {
+            login = (String)cnValues.get(0);
+        }
+
+        return new LoginCredentials(login, null, CredentialFormat.CLIENTCERT, credentialSource, null, cert);
+    }
+
+    public static LoginCredentials makePasswordCredentials(String login, char[] pass, Class credentialSource) {
+        return new LoginCredentials(login, pass, CredentialFormat.CLEARTEXT, credentialSource, null );
+    }
+
+    public static LoginCredentials makeDigestCredentials(String login, char[] digest, String realm, Class credentialSource) {
+        return new LoginCredentials(login, digest, CredentialFormat.DIGEST, credentialSource, realm, null );
+    }
+
+    public LoginCredentials( String login, char[] credentials, CredentialFormat format,
                              Class credentialSource, String realm, Object payload ) {
         this.login = login;
         this.credentials = credentials;
@@ -28,15 +51,15 @@ public class LoginCredentials {
             throw new IllegalArgumentException("Must provide a certificate when creating client cert credentials");
     }
 
-    public LoginCredentials( String login, byte[] credentials, CredentialFormat format, Class credentialSource, String realm ) {
+    public LoginCredentials( String login, char[] credentials, CredentialFormat format, Class credentialSource, String realm ) {
         this( login, credentials, format, credentialSource, realm, null );
     }
 
-    public LoginCredentials( String login, byte[] credentials, CredentialFormat format, Class credentialSource ) {
+    public LoginCredentials( String login, char[] credentials, CredentialFormat format, Class credentialSource ) {
         this( login, credentials, format, credentialSource, null );
     }
 
-    public LoginCredentials( String login, byte[] credentials, Class credentialSource ) {
+    public LoginCredentials( String login, char[] credentials, Class credentialSource ) {
         this( login, credentials, CredentialFormat.CLEARTEXT, credentialSource, null );
     }
 
@@ -44,7 +67,7 @@ public class LoginCredentials {
         return login;
     }
 
-    public byte[] getCredentials() {
+    public char[] getCredentials() {
         return credentials;
     }
 
@@ -103,7 +126,7 @@ public class LoginCredentials {
     }
 
     private final String login;
-    private final byte[] credentials;
+    private final char[] credentials;
     private final String realm;
     private Class credentialSourceAssertion;
     private CredentialFormat format;
