@@ -1,22 +1,29 @@
 -- Fix old
+ALTER TABLE internal_group MODIFY COLUMN description text;
+ALTER TABLE internal_group MODIFY COLUMN description text;
 DELETE FROM internal_group where objectid=2;
 INSERT INTO internal_group VALUES (2,0,'Gateway Administrators','SecureSpan Manager users with full administrative rights in the SecureSpan Gateway.');
 INSERT INTO internal_group VALUES (4,0,'Gateway Operators','SecureSpan Manager users with partial read-only rights in the SecureSpan Gateway.');
+
 ALTER TABLE internal_user DROP COLUMN title;
+
 ALTER TABLE published_service ADD COLUMN soap TINYINT(1) NOT NULL DEFAULT 1;
-UPDATE published_services SET soap=1;
 ALTER TABLE published_service ADD COLUMN routing_uri varchar(128) default NULL;
+UPDATE published_services SET soap=1;
+
 ALTER TABLE client_cert ADD COLUMN user_id varchar(255) NOT NULL;
+
 ALTER TABLE service_resolution MODIFY COLUMN soapaction varchar(255) default '';
-ALTER TABLE service_resolution MODIFY  COLUMN urn varchar(255) default '';
+ALTER TABLE service_resolution MODIFY COLUMN urn varchar(255) default '';
 ALTER TABLE service_resolution ADD COLUMN uri varchar(255) default '';
 ALTER TABLE service_resolution DROP INDEX soapaction;
 ALTER TABLE service_resolution ADD UNIQUE soapaction (soapaction,urn,uri);
+
 ALTER TABLE ssg_logs ADD INDEX idx_requestid(strrequestid);
+
 ALTER TABLE cluster_info ADD COLUMN multicast_address varchar(16) default NULL;
+
 ALTER TABLE identity_provider MODIFY COLUMN description text;
-ALTER TABLE internal_group MODIFY COLUMN description text;
-ALTER TABLE internal_group MODIFY COLUMN description text;
 
 -- New tables
 
