@@ -6,6 +6,7 @@ import com.l7tech.logging.LogManager;
 import com.l7tech.objectmodel.EntityHeaderComparator;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.UpdateException;
 import com.l7tech.policy.assertion.credential.CredentialFormat;
 import com.l7tech.policy.assertion.credential.PrincipalCredentials;
 import com.l7tech.policy.assertion.credential.http.HttpDigest;
@@ -119,7 +120,7 @@ public class InternalIdentityProviderServer implements IdentityProvider {
                     _log.log(Level.INFO, "Verification OK - client cert is valid.");
                     // End of Check
 
-                    dbCert = userManager.retrieveUserCert( new Long(dbUser.getOid()).toString() );
+                    dbCert = userManager.retrieveUserCert(Long.toString(dbUser.getOid()));
                     if ( dbCert == null ) {
                         _log.log( Level.WARNING, "No certificate found for user " + login );
                         return false;
@@ -136,8 +137,10 @@ public class InternalIdentityProviderServer implements IdentityProvider {
                         X509Certificate pcCert = (X509Certificate)maybeCert;
                         _log.log( Level.FINE, "Request cert serial# is " + pcCert.getSerialNumber().toString() );
                         if ( pcCert.equals( dbCertX509 ) ) {
-                            _log.log( Level.INFO, "Authenticated user " + login + " using an SSL client certificate" );
+                            _log.log( Level.INFO, "Authenticated user " + login + " using a client certificate" );
                             pc.getUser().copyFrom( dbUser );
+                            // remember that this cert was used at least once successfully
+                            userManager.setCertWasUsed(Long.toString(dbUser.getOid()));
                             return true;
                         } else {
                             _log.log( Level.WARNING, "Failed to authenticate user " + login + " using an SSL client certificate (request certificate doesn't match database)" );
@@ -206,6 +209,9 @@ public class InternalIdentityProviderServer implements IdentityProvider {
                     return false;
                 }
             }
+        } catch (UpdateException e ) {
+            _log.log(Level.SEVERE, null, e);
+            return false;
         } catch ( FindException fe ) {
             _log.log(Level.SEVERE, null, fe);
             return false;
