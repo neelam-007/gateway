@@ -38,6 +38,7 @@ import java.util.Properties;
 public class Preferences extends PropertyChangeSupport {
   private static boolean debug = false;
   public static final String SERVICE_URL = "service.url";
+  public static final String SERVICE_URL_SUFFIX = "/ssg";
   private static Preferences prefs = null;
 
   protected Properties props = new Properties();
@@ -469,7 +470,7 @@ public class Preferences extends PropertyChangeSupport {
    * @return the service url.
    */
   public String getServiceUrl() {
-    return props.getProperty(SERVICE_URL);
+    return props.getProperty(SERVICE_URL) +SERVICE_URL_SUFFIX;
   }
   /**
    * Returns the inactivity timeout value. The method is a conveninece
