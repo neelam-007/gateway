@@ -8,16 +8,14 @@ package com.l7tech.service;
 
 import com.l7tech.logging.LogManager;
 import com.l7tech.message.Request;
-import com.l7tech.message.HttpSoapRequest;
-import com.l7tech.message.HttpTransportMetadata;
 import com.l7tech.objectmodel.imp.NamedEntityImp;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.FalseAssertion;
 import com.l7tech.policy.wsp.WspReader;
-import com.l7tech.util.SoapUtil;
+import com.l7tech.server.policy.ServerPolicyFactory;
 import com.l7tech.server.policy.assertion.ServerAssertion;
 import com.l7tech.server.policy.assertion.ServerFalseAssertion;
-import com.l7tech.server.policy.ServerPolicyFactory;
+import com.l7tech.util.SoapUtil;
 import org.xml.sax.InputSource;
 
 import javax.wsdl.Port;
