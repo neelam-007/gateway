@@ -17,9 +17,9 @@ import java.util.Iterator;
 import java.util.List;
 
 /**
- * Asserts that every one of the child Assertions returned a positive result, and returns the last result.
+ * Evaluate children until none left or one fails; return last result evaluated.
  *
- * Semantically equivalent to a non-short-circuited AND.
+ * Semantically equivalent to a short-circuited AND.
  *
  * @author alex
  * @version $Revision$
@@ -61,9 +61,9 @@ public class AllAssertion extends CompositeAssertion {
         AssertionStatus result = AssertionStatus.NONE;
         for (Iterator kids = children.iterator(); kids.hasNext();) {
             Assertion assertion = (Assertion)kids.next();
-            AssertionStatus thisResult = assertion.decorateRequest(req);
-            if (thisResult != AssertionStatus.NONE)
-                result = thisResult;
+            result = assertion.decorateRequest(req);
+            if (result != AssertionStatus.NONE)
+                return result;
         }
         return result;
     }

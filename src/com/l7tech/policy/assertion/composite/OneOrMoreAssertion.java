@@ -18,9 +18,9 @@ import java.util.Iterator;
 import java.util.List;
 
 /**
- * Asserts that at least one of the child Assertions returned a positive result, and returns the last positive result.
+ * Evaluate children until none left or one succeeds; returns last result evaluated.
  *
- * Semantically equivalent to a non-short-circuited OR.
+ * Semantically equivalent to a short-circuited OR.
  *
  * @author alex
  * @version $Revision$
@@ -41,34 +41,31 @@ public class OneOrMoreAssertion extends CompositeAssertion {
         mustHaveChildren();
         Iterator kids = children();
         Assertion child;
-        AssertionStatus result = null;
-        AssertionStatus lastResult = AssertionStatus.FALSIFIED;
+        AssertionStatus result = AssertionStatus.FALSIFIED;
         while (kids.hasNext()) {
             child = (Assertion)kids.next();
             result = child.checkRequest(request, response);
-            if (result == AssertionStatus.NONE) lastResult = result;
+            if (result == AssertionStatus.NONE) return result;
         }
-        return lastResult;
+        return result;
     }
 
     /**
      * Modify the provided PendingRequest to conform to this policy assertion.
-     * For a OneOrMoreAssertion, we'll have all our children attempt decorate the request, and return success
-     * if even one of them succeeded.
+     * For OneOrMoreAssertion, we'll run children only until one succeeds (or we run out of children).
      * @param req
      * @return the AssertionStatus.NONE if at least one child succeeded; the rightmost-child error otherwise.
      * @throws PolicyAssertionException
      */
     public AssertionStatus decorateRequest(PendingRequest req) throws PolicyAssertionException {
         mustHaveChildren();
-        boolean oneWorked = false;
         AssertionStatus result = AssertionStatus.FAILED;
         for (Iterator kids = children.iterator(); kids.hasNext();) {
             Assertion assertion = (Assertion)kids.next();
             result = assertion.decorateRequest(req);
             if (result == AssertionStatus.NONE)
-                oneWorked = true;
+                return result;
         }
-        return oneWorked ? AssertionStatus.NONE : result;
+        return result;
     }
 }
