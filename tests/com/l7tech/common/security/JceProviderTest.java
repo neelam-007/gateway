@@ -136,14 +136,12 @@ public class JceProviderTest {
             }
         });
 
-/*
         final byte[] csrEnc = csr.getEncoded();
         reportTime("Sign CSR", 50 * scale, new Testable() {
             public void run() throws Exception {
                 signer.createCertificate(csrEnc);
             }
         });
-*/
 
         reportTime("Parse document (baseline)", 1000 * scale, new Testable() {
             public void run() throws Throwable {

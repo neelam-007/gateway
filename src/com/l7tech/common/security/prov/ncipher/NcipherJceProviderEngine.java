@@ -27,7 +27,7 @@ public class NcipherJceProviderEngine implements JceProviderEngine {
 
     public NcipherJceProviderEngine() {
         Security.insertProviderAt(PROVIDER, 0);
-//        Security.addProvider( new BouncyCastleProvider() );
+        Security.addProvider( new BouncyCastleProvider() );
     }
 
     /**
