@@ -24,7 +24,7 @@ public class Main {
 
     /** Start a GUI-equipped client proxy and run it until it's shut down. */
     public static void main(final String[] argv) {
-        log.info("Starting new GUI-mode Client Proxy");
+        log.info("Starting Layer7 Client Proxy in GUI mode");
 
         clientProxy = new ClientProxy(Managers.getSsgManager(),
                                       new MessageProcessor(Managers.getPolicyManager()),
@@ -40,8 +40,8 @@ public class Main {
         } catch (MultiException e) {
             String message = "Unable to start the Client Proxy: " + e;
             if (e.getException(0) instanceof BindException) {
-                message = "The Client Proxy is already running.  \nPlease shut down the existing " +
-                        "Client Proxy and try again.";
+                message = "The Layer7 Client Proxy is already running.  \nPlease shut down the existing " +
+                        "Layer7 Client Proxy and try again.";
             }
 
             Gui.getInstance().errorMessage(message);
