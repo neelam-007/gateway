@@ -459,35 +459,69 @@
         </copy>
     </target>
 
-    <target name="BROKEN-start-tomcat">
+    <target name="test-ssg">
+        <parallel>
+            <antcall target="start-tomcat"/>
+            <sequential>
+                <waitfor maxwait="20" maxwaitunit="second" checkevery="500">
+                    <http url="http://localhost:8080/"/>
+                </waitfor>
+
+                <!-- Do some tests -->
+
+                <antcall target="stop-tomcat"/>
+            </sequential>
+        </parallel>
+    </target>
+
+    <target name="start-tomcat"> <!-- depends="deploy" -->
+        <exec executable="${java.home}/bin/java" dir="${tomcat.home}">
+            <arg line="-Djava.security.policy=${tomcat.home}/conf/catalina.policy"/>
+            <arg line="-Dcatalina.home=${tomcat.home}"/>
+            <arg line="-jar ${tomcat.home}/bin/bootstrap.jar"/>
+            <arg line="start"/>
+        </exec>
+
+        <!--
         <java classname="org.apache.catalina.startup.Bootstrap"
             dir="${tomcat.home}"
             fork="yes"
             jvm="${java.home}/bin/java"
-            maxmemory="128m">
-            <jvmarg value="-Djava.compiler=NONE"/>
+            maxmemory="512m">
             <sysproperty key="catalina.home" value="${tomcat.home}"/>
+            <sysproperty key="java.security.policy" value="${tomcat.home}/conf/catalina.policy"/>
             <arg value="start"/>
+
             <classpath>
-                <fileset dir="${tomcat.home}">
-                    <include name="**/*.jar"/>
+                <fileset dir="${tomcat.home}/bin">
+                    <include name="bootstrap.jar"/>
                 </fileset>
             </classpath>
         </java>
+        -->
     </target>
 
-    <target name="BROKEN-stop-tomcat">
-        <java classname="org.apache.tomcat.startup.Tomcat"
+    <target name="stop-tomcat">
+        <exec executable="${java.home}/bin/java" dir="${tomcat.home}">
+            <arg line="-Djava.security.policy=${tomcat.home}/conf/catalina.policy"/>
+            <arg line="-Dcatalina.home=${tomcat.home}"/>
+            <arg line="-jar ${tomcat.home}/bin/bootstrap.jar"/>
+            <arg line="stop"/>
+        </exec>
+
+        <!--
+        <java classname="org.apache.catlina.startup.Bootstrap"
             dir="${tomcat.home}"
             fork="yes">
             <sysproperty key="catalina.home" value="${tomcat.home}"/>
             <arg value="stop"/>
             <classpath>
-                <fileset dir="${tomcat.home}">
-                    <include name="**/*.jar"/>
+                <fileset dir="${tomcat.home}/bin">
+                    <include name="bootstrap.jar"/>
                 </fileset>
             </classpath>
         </java>
+        -->
     </target>
 
     <target name="make-install-image" depends="init-dev">
