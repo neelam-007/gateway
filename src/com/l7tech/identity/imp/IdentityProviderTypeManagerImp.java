@@ -4,7 +4,6 @@ import com.l7tech.identity.*;
 import com.l7tech.objectmodel.*;
 
 import java.util.*;
-import java.sql.SQLException;
 
 /**
  * @author alex
