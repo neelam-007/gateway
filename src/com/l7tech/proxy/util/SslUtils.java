@@ -74,10 +74,10 @@ public class SslUtils {
      * If this returns, the caller should attempt to discover and/or import the server cert.
      *
      * @param server the name of the SSL server we were trying to talk to, ie "the Gatway foo.bar.com"
-     * @param e the SSLException that was caught
      * @throws javax.net.ssl.SSLException if the exception could not be handled.
+     * @param e the SSLException that was caught
      */
-    public static void handleServerCertProblem(String server, SSLException e) throws SSLException {
+    public static void handleServerCertProblem(String server, Exception e) throws SSLException {
         // Was this server cert untrusted?
         Throwable scuet = ExceptionUtils.getCauseIfCausedBy(e, ServerCertificateUntrustedException.class);
         ServerCertificateUntrustedException scue = (ServerCertificateUntrustedException)scuet;

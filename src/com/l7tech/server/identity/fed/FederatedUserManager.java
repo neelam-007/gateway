@@ -72,6 +72,22 @@ public class FederatedUserManager extends PersistentUserManager {
         }
     }
 
+    public FederatedUser findByEmail(String email) throws FindException {
+        try {
+            List results = getHibernateTemplate().find(FIND_BY_EMAIL, new Object[] { new Long(getProviderOid()), email } );
+            switch( results.size() ) {
+                case 0:
+                    return null;
+                case 1:
+                    return (FederatedUser)results.get(0);
+                default:
+                    throw new FindException("Found multiple users with same email");
+            }
+        } catch (DataAccessException e) {
+            throw new FindException("Couldn't find user", e);
+        }
+    }
+
     protected PersistentUser cast( User user ) {
         FederatedUser imp;
         if ( user instanceof UserBean ) {
@@ -90,7 +106,12 @@ public class FederatedUserManager extends PersistentUserManager {
         findHeadersCriteria.add(Expression.eq("providerId", new Long(getProviderOid())));
     }
 
-    private final String FIND_BY_DN = "FROM " + getTableName() + " IN CLASS " + getImpClass() +
+    private final String FIND_BY_ = "FROM " + getTableName() + " IN CLASS " + getImpClass() +
                                       " WHERE " + getTableName() + ".providerId = ? " +
-                                      "AND " + getTableName() + ".subjectDn = ?";
+                                      "AND " + getTableName();
+
+    private final String FIND_BY_DN = FIND_BY_ + ".subjectDn = ?";
+
+    private final String FIND_BY_EMAIL = FIND_BY_ + ".email = ?";
+
 }

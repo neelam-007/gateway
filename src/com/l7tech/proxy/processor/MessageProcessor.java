@@ -165,12 +165,15 @@ public class MessageProcessor {
                                 handleSslException(context.getSsg(), context.getCredentialsForTrustedSsg(), e);
                             // FALLTHROUGH -- retry with new server certificate
                         } catch (ServerCertificateUntrustedException e) {
-                            if (context.getSsg().getTrustedGateway() != null) {
+                            if (context.getSsg().isFederatedGateway()) {
                                 SslPeer sslPeer = CurrentSslPeer.get();
                                 if (sslPeer == context.getSsg())
                                     SsgKeyStoreManager.installSsgServerCertificate(ssg, null);
                                 else if (sslPeer == context.getSsg().getTrustedGateway())
                                     SsgKeyStoreManager.installSsgServerCertificate((Ssg)sslPeer, context.getFederatedCredentials());
+                                else if (sslPeer != null)
+                                    // We were talking to something else, probably a token provider.
+                                    handleSslExceptionForWsTrustTokenService(ssg, sslPeer, e);
                                 else
                                     throw new ConfigurationException("SSL handshake failed, but peer Gateway was neither the Trusted nor Federated Gateway.");
                             } else
@@ -275,7 +278,7 @@ public class MessageProcessor {
         SsgKeyStoreManager.installSsgServerCertificate(ssg, credentials); // might throw BadCredentialsException
     }
 
-    private void handleSslExceptionForWsTrustTokenService(Ssg federatedSsg, SslPeer sslPeer, SSLException e)
+    private void handleSslExceptionForWsTrustTokenService(Ssg federatedSsg, SslPeer sslPeer, Exception e)
             throws SSLException, OperationCanceledException, CertificateEncodingException
     {
         WsTrustSamlTokenStrategy strat = federatedSsg.getWsTrustSamlTokenStrategy();

@@ -175,12 +175,12 @@ public class WsTrustSamlTokenStrategy extends AbstractSamlTokenStrategy implemen
      *
      * @param sslPeer  the SslPeer that was active when the SSLException was caught.  This must not be null.
      *                 Will be expected to identify this WS-Trust server.
-     * @param e the SSLException we are to attempt to handle
      * @throws SSLException if we couldn't handle the exception
      * @throws OperationCanceledException if the user cancels the certificate dialog, or declines to trust the certificate
      * @throws CertificateEncodingException if there is a problem with the certificate
+     * @param e the SSLException we are to attempt to handle
      */
-    public void handleSslException(SslPeer sslPeer, SSLException e)
+    public void handleSslException(SslPeer sslPeer, Exception e)
             throws SSLException, OperationCanceledException, CertificateEncodingException
     {
         if (!(sslPeer instanceof WsTrustSslPeer))

@@ -135,17 +135,19 @@ public class SamlAuthorizationHandler extends FederatedAuthorizationHandler {
         if (subjectCertificate != null && certSubjectDn != null)
             return lookupSubjectByCert(assertion, certSubjectDn, subjectCertificate);
 
-        // No cert -- check by name identifier value, assuming it will match as a login
-        // TODO fix this to work with email addresses and all the other random crap
-        // TODO fix this to work with email addresses and all the other random crap
-        // TODO fix this to work with email addresses and all the other random crap
-        // TODO fix this to work with email addresses and all the other random crap
+        // No cert -- check by name identifier value, assuming it will match as a login or email
         final String niFormat = assertion.getNameIdentifierFormat();
         final String niValue = assertion.getNameIdentifierValue();
         final String niQualifier = assertion.getNameQualifier();
 
         try {
-            FederatedUser u = (FederatedUser)getUserManager().findByLogin(niValue);
+            FederatedUser u = null;
+            if (SamlConstants.NAMEIDENTIFIER_EMAIL.equals(niFormat)) {
+                u = (FederatedUser)getUserManager().findByEmail(niValue);
+            } else if (SamlConstants.NAMEIDENTIFIER_WINDOWS.equals(niFormat) ||
+                    SamlConstants.NAMEIDENTIFIER_UNSPECIFIED.equals(niFormat)) {
+                u = (FederatedUser)getUserManager().findByLogin(niValue);
+            }
             if (u == null) {
                 if (certOidSet.isEmpty()) return null; // Virtual groups not supported with no trusted certs
                 u = createFakeUserForVirtualGroup(certSubjectDn, niFormat, niValue, niQualifier);
