@@ -48,11 +48,18 @@ public class XpathEvaluatorTest extends TestCase {
             assertTrue("Should return true", bool.booleanValue());
         }
 
-        nodes = xe.select("contains(//SOAP-ENV:Envelope/SOAP-ENV:Body/m:GetLastTradePrice/symbol,'BZZT')");
+        nodes = xe.select("not(contains(//SOAP-ENV:Envelope/SOAP-ENV:Body/m:GetLastTradePrice/symbol,'BZZT'))");
         assertTrue("Size should have been >0", nodes.size() > 0);
         for (Iterator iterator = nodes.iterator(); iterator.hasNext();) {
             Boolean bool = (Boolean) iterator.next();
-            assertTrue("Should return false", !bool.booleanValue());
+            assertTrue("Should return true", bool.booleanValue());
+        }
+
+        nodes = xe.select("not(contains(//SOAP-ENV:Envelope/SOAP-ENV:Body/m:GetLastTradePrice/elnotpresent,'BZZT'))");
+        assertTrue("Size should have been >0", nodes.size() > 0);
+        for (Iterator iterator = nodes.iterator(); iterator.hasNext();) {
+            Boolean bool = (Boolean) iterator.next();
+            assertTrue("Should return true", bool.booleanValue());
         }
     }
 
