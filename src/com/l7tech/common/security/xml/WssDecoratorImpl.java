@@ -82,10 +82,10 @@ public class WssDecoratorImpl implements WssDecorator {
         Context c = new Context();
 
         Element securityHeader = createSecurityHeader(message);
+        Set signList = decorationRequirements.getElementsToSign();
 
-        if (decorationRequirements.isSignTimestamp() || !decorationRequirements.getElementsToSign().isEmpty()) {
+        if (decorationRequirements.isSignTimestamp() || !signList.isEmpty()) {
             Element timestamp = addTimestamp(securityHeader);
-            Set signList = decorationRequirements.getElementsToSign();
             if (!signList.contains(message.getDocumentElement()))
                 signList.add(timestamp);
         }
@@ -96,7 +96,7 @@ public class WssDecoratorImpl implements WssDecorator {
         }
 
         Element bst = null;
-        if (decorationRequirements.getSenderCertificate() != null)
+        if (decorationRequirements.getSenderCertificate() != null && !signList.isEmpty())
             bst = addX509BinarySecurityToken(securityHeader, decorationRequirements.getSenderCertificate());
 
         Element signature = null;
@@ -104,14 +104,14 @@ public class WssDecoratorImpl implements WssDecorator {
             if (decorationRequirements.getSenderPrivateKey() == null)
                 throw new IllegalArgumentException("Signing is requested, but senderPrivateKey is null");
             if (bst == null)
-                throw new IllegalArgumentException("Signing is requested, but no senderCertificate was supplied");            
+                throw new IllegalArgumentException("Signing is requested, but no senderCertificate was supplied");
             signature = addSignature(c,
                                      decorationRequirements.getSenderPrivateKey(),
                                      (Element[])(decorationRequirements.getElementsToSign().toArray(new Element[0])),
                                      securityHeader,
                                      bst);
         }
-        
+
         if (decorationRequirements.getElementsToEncrypt().size() > 0) {
             if (decorationRequirements.getRecipientCertificate() == null)
                 throw new IllegalArgumentException("Encryption is requested, but recipientCertificate is null");
@@ -120,6 +120,18 @@ public class WssDecoratorImpl implements WssDecorator {
                             decorationRequirements.getRecipientCertificate(),
                             (Element[])(decorationRequirements.getElementsToEncrypt().toArray(new Element[0])),
                             signature);
+        }
+
+        // Decoration is done.
+
+        // Final cleanup: if we are about to emit an empty Security header, remove it now
+        if (XmlUtil.elementIsEmpty(securityHeader)) {
+            final Element soapHeader = (Element)securityHeader.getParentNode();
+            soapHeader.removeChild(securityHeader);
+
+            // If we are about to emit an empty SOAP header, remove it now
+            if (XmlUtil.elementIsEmpty(soapHeader))
+                soapHeader.getParentNode().removeChild(soapHeader);
         }
 
     }
