@@ -21,6 +21,7 @@ import com.l7tech.policy.assertion.composite.CompositeAssertion;
 import com.l7tech.policy.assertion.credential.CredentialSourceAssertion;
 import com.l7tech.policy.wsp.WspReader;
 import com.l7tech.policy.server.PolicyFilter.FilterManager;
+import com.l7tech.policy.server.PolicyFilter.FilteringException;
 
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
@@ -115,7 +116,14 @@ public class PolicyServlet extends HttpServlet {
         }
 
         // THE POLICY SHOULD BE STRIPPED OUT OF ANYTHING THAT THE REQUESTOR SHOULD NOT BE ALLOWED TO SEE
-        targetService = FilterManager.getInstance().applyAllFilters(user, targetService); 
+        try {
+            // todo, re-enable this
+            /*targetService = */FilterManager.getInstance().applyAllFilters(user, targetService);
+        } catch (FilteringException e) {
+            LogManager.getInstance().getSystemLogger().log(Level.SEVERE, "Could not filter policy", e);
+            httpServletResponse.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Could not process policy. Consult server logs.");
+            return;
+        }
 
         // OUTPUT THE POLICY
         outputPublishedServicePolicy(targetService, httpServletResponse);
