@@ -6,6 +6,8 @@ import java.rmi.Remote;
 import java.rmi.RemoteException;
 
 /**
+ * Remote interface for managaging JMS providers.
+ *
  * @author alex
  * @version $Revision$
  */
@@ -14,7 +16,4 @@ public interface JmsAdmin extends Remote {
     JmsProvider findProviderByPrimaryKey( long oid ) throws RemoteException, FindException;
     long saveProvider( JmsProvider provider ) throws RemoteException, UpdateException, SaveException, VersionException;
     void deleteProvider( long providerOid ) throws RemoteException, DeleteException;
-
-    long saveDestination( JmsDestination destination ) throws RemoteException, UpdateException, SaveException, VersionException;
-    void deleteDestination( long destinationOid ) throws RemoteException, DeleteException;
 }
