@@ -27,7 +27,7 @@ public class LdapIdentityProviderServerTest extends junit.framework.TestCase {
     public void testFindAllUsers() throws Exception {
         IdentityProviderConfig config = new IdentityProviderConfig(IdentityProviderType.LDAP);
         // use this url when ssh forwarding locally
-        // config.setLdapHostURL("ldap://localhost:3899");
+        // config.putProperty(LdapConfigSettings.LDAP_HOST_URL, "ldap://localhost:3899");
         // use this url when in the office
         config.putProperty(LdapConfigSettings.LDAP_HOST_URL, "ldap://spock:389");
         config.putProperty(LdapConfigSettings.LDAP_SEARCH_BASE, "dc=layer7-tech,dc=com");
@@ -49,7 +49,7 @@ public class LdapIdentityProviderServerTest extends junit.framework.TestCase {
             User usr = me.findByPrimaryKey(header.getStrId());
             if (usr != null) usrsReceived = true;
             // uncomment if you want to see the content
-            //System.out.println(usr);
+            // System.out.println(usr);
         }
         assertTrue("receiving users", usrsReceived);
     }
@@ -57,7 +57,7 @@ public class LdapIdentityProviderServerTest extends junit.framework.TestCase {
     public void testFindAllGroups() throws Exception {
         IdentityProviderConfig config = new IdentityProviderConfig(IdentityProviderType.LDAP);
         // use this url when ssh forwarding locally
-        // config.setLdapHostURL("ldap://localhost:3899");
+        //config.putProperty(LdapConfigSettings.LDAP_HOST_URL, "ldap://localhost:3899");
         // use this url when in the office
         config.putProperty(LdapConfigSettings.LDAP_HOST_URL, "ldap://spock:389");
         config.putProperty(LdapConfigSettings.LDAP_SEARCH_BASE, "dc=layer7-tech,dc=com");
@@ -77,7 +77,7 @@ public class LdapIdentityProviderServerTest extends junit.framework.TestCase {
         while (i.hasNext()) {
             Group group = (Group)i.next();
             // uncomment if you want to see the content
-            //System.out.println(group);
+            // System.out.println(group);
             if (group != null) grpsReceived = true;
         }
         assertTrue("receiving groups", grpsReceived);
