@@ -14,8 +14,6 @@ import com.l7tech.policy.assertion.identity.IdentityAssertion;
 import com.l7tech.policy.assertion.identity.SpecificUser;
 import com.l7tech.policy.assertion.xml.XslTransformation;
 import com.l7tech.policy.assertion.xmlsec.RequestWssX509Cert;
-import com.l7tech.policy.assertion.xmlsec.ResponseWssConfidentiality;
-import com.l7tech.policy.assertion.xmlsec.ResponseWssIntegrity;
 
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -215,17 +213,6 @@ class PathValidator {
                 result.addWarning(new PolicyValidatorResult.Warning(a, assertionPath,
                   "The assertion might not work as configured." +
                   " There is a routing assertion before this assertion.", null));
-            }
-        } else if (a instanceof XpathBasedAssertion) {
-            if (!seenWssSignature) {
-                result.addError(new PolicyValidatorResult.Error(a, assertionPath,
-                  "This assertion requires a WSS Signature authentication.", null));
-            }
-            if (a instanceof ResponseWssIntegrity || a instanceof ResponseWssConfidentiality) {
-                if (!seenRouting) {
-                    result.addError(new PolicyValidatorResult.Error(a, assertionPath,
-                      "This can only occur after routing.", null));
-                }
             }
         } else if (a instanceof HttpClientCert) {
             DefaultPolicyValidator.DeferredValidate dv = new DefaultPolicyValidator.DeferredValidate() {
