@@ -13,14 +13,11 @@ import java.io.IOException;
  * The interface <code>CustomAssertionsRegistrar</code> implementations
  * provide access to the custom assertions that have been registered with
  * the runtime.
- *
- * @author emil
- * @version Feb 13, 2004
  */
 public interface CustomAssertionsRegistrar extends Remote {
     /**
      * @return the list of all assertions known to the runtime
-     * @throws RemoteException
+     * @throws RemoteException on remote communication error
      */
     Collection getAssertions() throws RemoteException;
 
@@ -28,7 +25,7 @@ public interface CustomAssertionsRegistrar extends Remote {
      * @param c the category to query for
      * @return the list of all assertions known to the runtime
      *         for a give n category
-     * @throws RemoteException
+     * @throws RemoteException on remote communication error
      */
     Collection getAssertions(Category c) throws RemoteException;
 

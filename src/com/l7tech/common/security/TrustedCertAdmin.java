@@ -17,8 +17,6 @@ import java.util.List;
 
 /**
  * Remote interface to get/save/delete certs trusted by the gateway.
- * @author alex
- * @version $Revision$
  */
 public interface TrustedCertAdmin extends Remote {
 
@@ -26,6 +24,7 @@ public interface TrustedCertAdmin extends Remote {
      * Retrieves all {@link TrustedCert}s from the database.
      * @return a {@link List} of {@link TrustedCert}s
      * @throws FindException if there was a server-side problem accessing the requested information
+     * @throws RemoteException on remote communication error
      */
     public List findAllCerts() throws FindException, RemoteException;
 
@@ -34,6 +33,7 @@ public interface TrustedCertAdmin extends Remote {
      * @param oid the oid of the {@link TrustedCert} to retrieve
      * @return the TrustedCert or null if no cert for that oid
      * @throws FindException if there was a server-side problem accessing the requested information
+     * @throws RemoteException on remote communication error
      */
     public TrustedCert findCertByPrimaryKey(long oid) throws FindException, RemoteException;
 
@@ -42,7 +42,7 @@ public interface TrustedCertAdmin extends Remote {
      * @param dn the Subject DN of the {@link TrustedCert} to retrieve
      * @return the TrustedCert or null if no cert for that oid
      * @throws FindException
-     * @throws RemoteException
+     * @throws RemoteException on remote communication error
      */
     public TrustedCert findCertBySubjectDn(String dn) throws FindException, RemoteException;
 
@@ -53,6 +53,7 @@ public interface TrustedCertAdmin extends Remote {
      * @throws SaveException if there was a server-side problem saving the cert
      * @throws UpdateException if there was a server-side problem updating the cert
      * @throws VersionException if the updated cert was not up-to-date (updating an old version)
+     * @throws RemoteException on remote communication error
      */
     public long saveCert(TrustedCert cert) throws SaveException, UpdateException, VersionException, RemoteException;
 
@@ -61,6 +62,7 @@ public interface TrustedCertAdmin extends Remote {
      * @param oid the oid of the {@link TrustedCert} to be deleted
      * @throws FindException if the {@link TrustedCert} cannot be found
      * @throws DeleteException if the {@link TrustedCert} cannot be deleted
+     * @throws RemoteException on remote communication error
      */
     public void deleteCert(long oid) throws FindException, DeleteException, RemoteException;
 
@@ -74,6 +76,7 @@ public interface TrustedCertAdmin extends Remote {
      * Retrieves the {@link X509Certificate} chain from the specified URL.
      * @param url the url from which to retrieve the cert.
      * @return an {@link X509Certificate} chain.
+     * @throws RemoteException on remote communication error
      * @throws IOException if the certificate cannot be retrieved for whatever reason.
      * @throws IllegalArgumentException if the URL does not start with "https://"
      * @throws HostnameMismatchException if the hostname did not match the cert's subject
@@ -85,6 +88,7 @@ public interface TrustedCertAdmin extends Remote {
      * @param url the url from which to retrieve the cert.
      * @param ignoreHostname whether or not the hostname match should be ignored when doing ssl handshake
      * @return an {@link X509Certificate} chain.
+     * @throws RemoteException on remote communication error
      * @throws IOException if the certificate cannot be retrieved for whatever reason.
      * @throws HostnameMismatchException if the hostname did not match the cert's subject
      */
@@ -95,6 +99,7 @@ public interface TrustedCertAdmin extends Remote {
      * @return the gateway's root cert
      * @throws IOException if the certificate cannot be retrieved
      * @throws CertificateException if the certificate cannot be retrieved
+     * @throws RemoteException on remote communication error
      */
     public X509Certificate getSSGRootCert() throws IOException, CertificateException, RemoteException;
 }
