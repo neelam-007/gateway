@@ -15,33 +15,33 @@ public class RoutingAssertion extends Assertion implements Cloneable, Serializab
     public static final int DEFAULT_MAX_CONNECTIONS_PER_HOST = 100; // Flagrantly in contravention of RFC2616!
 
     public RoutingAssertion() {
-        this(null, null, null, null );
+        this(null, null, null, null);
     }
 
     public RoutingAssertion(String protectedServiceUrl) {
-        this(protectedServiceUrl, null, null, null );
+        this(protectedServiceUrl, null, null, null);
     }
 
 
-    public RoutingAssertion( String protectedServiceUrl, String login, String password, String realm ) {
-        this( protectedServiceUrl, login, password, realm, -1 );
+    public RoutingAssertion(String protectedServiceUrl, String login, String password, String realm) {
+        this(protectedServiceUrl, login, password, realm, -1);
     }
 
     /**
      * Full constructor.
-     *
+     * 
      * @param protectedServiceUrl the service url
-     * @param login protected service login
-     * @param password protected service password
-     * @param realm protected servcie realm
+     * @param login               protected service login
+     * @param password            protected service password
+     * @param realm               protected servcie realm
      */
-    public RoutingAssertion( String protectedServiceUrl, String login, String password, String realm, int maxConnections ) {
+    public RoutingAssertion(String protectedServiceUrl, String login, String password, String realm, int maxConnections) {
         _protectedServiceUrl = protectedServiceUrl;
         _login = login;
         _password = password;
         _realm = realm;
 
-        if ( maxConnections == -1 ) maxConnections = DEFAULT_MAX_CONNECTIONS_PER_HOST;
+        if (maxConnections == -1) maxConnections = DEFAULT_MAX_CONNECTIONS_PER_HOST;
         _maxConnections = maxConnections;
     }
 
@@ -54,7 +54,7 @@ public class RoutingAssertion extends Assertion implements Cloneable, Serializab
         return _maxConnections;
     }
 
-    public void setMaxConnections( int maxConnections ) {
+    public void setMaxConnections(int maxConnections) {
         _maxConnections = maxConnections;
     }
 
@@ -98,6 +98,33 @@ public class RoutingAssertion extends Assertion implements Cloneable, Serializab
         _userAgent = userAgent;
     }
 
+    public boolean isAttachSamlAssertion() {
+        return attachSamlAssertion;
+    }
+
+    public void setAttachSamlAssertion(boolean attachSamlAssertion) {
+        this.attachSamlAssertion = attachSamlAssertion;
+    }
+
+    public int getSamlAssertionExpiry() {
+        return samlAssertionExpiry;
+    }
+
+    public void setSamlAssertionExpiry(int samlAssertionExpiry) {
+        if (samlAssertionExpiry <= 0) {
+            throw new IllegalArgumentException();
+        }
+        this.samlAssertionExpiry = samlAssertionExpiry;
+    }
+
+    public boolean isGroupMembershipStatement() {
+        return groupMembershipStatement;
+    }
+
+    public void setGroupMembershipStatement(boolean groupMembershipStatement) {
+        this.groupMembershipStatement = groupMembershipStatement;
+    }
+
     public String toString() {
         return super.toString() + " url=" + getProtectedServiceUrl() + " login=" + getLogin() + " realm=" + getRealm();
     }
@@ -108,4 +135,9 @@ public class RoutingAssertion extends Assertion implements Cloneable, Serializab
     protected String _realm;
     protected String _userAgent;
     protected int _maxConnections;
+
+    // saml (model as a different bean when serializer supports it)
+    protected boolean attachSamlAssertion;
+    protected int samlAssertionExpiry;
+    protected boolean groupMembershipStatement;
 }

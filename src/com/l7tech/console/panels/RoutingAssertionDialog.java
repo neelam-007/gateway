@@ -5,13 +5,15 @@ import com.l7tech.common.xml.Wsdl;
 import com.l7tech.console.event.PolicyEvent;
 import com.l7tech.console.event.PolicyListener;
 import com.l7tech.console.tree.ServiceNode;
+import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.AssertionPath;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.RoutingAssertion;
-import com.l7tech.objectmodel.FindException;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
+import javax.swing.event.ChangeEvent;
+import javax.swing.event.ChangeListener;
 import javax.swing.event.EventListenerList;
 import java.awt.*;
 import java.awt.event.ActionEvent;
@@ -24,7 +26,7 @@ import java.util.logging.Logger;
 /**
  * <code>RoutingAssertionDialog</code> is the protected service
  * policy edit dialog.
- *
+ * 
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  * @version 1.0
  */
@@ -37,19 +39,40 @@ public class RoutingAssertionDialog extends JDialog {
     private EventListenerList listenerList = new EventListenerList();
     private ServiceNode service;
 
-    /** Creates new form ServicePanel */
+    private JComboBox authenticationMethodComboBox;
+    private JTextField identityTextField;
+    private JTextField realmTextField;
+    private JPasswordField identityPasswordField;
+
+    private JPanel credentialsPanel;
+    private JPanel serviceUrlPanel;
+    private JTextField serviceUrlTextField;
+    private JPanel mainPanel;
+
+    private JRadioButton passwordMethod;
+    private JRadioButton samlMethod;
+    private JSpinner expirySpinner;
+    private JCheckBox memebershipStatementCheck;
+    private JLabel expirySpinLabel;
+    private JLabel identityLabel;
+    private JLabel passwordLabel;
+    private JLabel realmLabel;
+
+    /**
+     * Creates new form ServicePanel
+     */
     public RoutingAssertionDialog(Frame owner, RoutingAssertion a, ServiceNode sn) {
         super(owner, true);
         setTitle("Edit Routing Assertion");
         assertion = a;
         this.service = sn;
         initComponents();
+        initFormData();
     }
-
 
     /**
      * add the PolicyListener
-     *
+     * 
      * @param listener the PolicyListener
      */
     public void addPolicyListener(PolicyListener listener) {
@@ -58,7 +81,7 @@ public class RoutingAssertionDialog extends JDialog {
 
     /**
      * remove the the PolicyListener
-     *
+     * 
      * @param listener the PolicyListener
      */
     public void removePolicyListener(PolicyListener listener) {
@@ -67,6 +90,7 @@ public class RoutingAssertionDialog extends JDialog {
 
     /**
      * notfy the listeners
+     * 
      * @param a the assertion
      */
     private void fireEventAssertionChanged(final Assertion a) {
@@ -92,7 +116,7 @@ public class RoutingAssertionDialog extends JDialog {
     private void initComponents() {
         GridBagConstraints gridBagConstraints;
         mainPanel = new JPanel();
-        credentialsAndTransportPanel = new JPanel();
+        credentialsPanel = new JPanel();
 
         getContentPane().setLayout(new BorderLayout());
         getServiceUrlPanel().setBorder(BorderFactory.createEmptyBorder(10, 5, 5, 10));
@@ -102,36 +126,106 @@ public class RoutingAssertionDialog extends JDialog {
         mainPanel.setBorder(new EmptyBorder(new Insets(10, 10, 10, 10)));
 
 
-        credentialsAndTransportPanel.setLayout(new GridBagLayout());
-        credentialsAndTransportPanel.setBorder(BorderFactory.createTitledBorder("Protected service authentication"));
+        credentialsPanel.setLayout(new GridBagLayout());
+        credentialsPanel.setBorder(BorderFactory.createTitledBorder("Protected service authentication"));
+        ButtonGroup methodGroup = new ButtonGroup();
+
+        passwordMethod = new JRadioButton("Username/Password");
+        methodGroup.add(passwordMethod);
         gridBagConstraints = new GridBagConstraints();
         gridBagConstraints.gridx = 0;
         gridBagConstraints.gridy = 0;
+        gridBagConstraints.insets = new Insets(0, 0, 20, 10);
+        gridBagConstraints.anchor = GridBagConstraints.WEST;
+        credentialsPanel.add(passwordMethod, gridBagConstraints);
+
+        JSeparator js = new JSeparator(JSeparator.VERTICAL);
+        gridBagConstraints = new GridBagConstraints();
+        gridBagConstraints.gridx = 1;
+        gridBagConstraints.gridy = 0;
+        gridBagConstraints.fill = GridBagConstraints.VERTICAL;
+        gridBagConstraints.gridheight = 2;
+        gridBagConstraints.weightx = 1.0;
+        gridBagConstraints.insets = new Insets(2, 5, 2, 5);
+        credentialsPanel.add(js, gridBagConstraints);
+
+
+        samlMethod = new JRadioButton("SAML assertion");
+        methodGroup.add(samlMethod);
+        gridBagConstraints = new GridBagConstraints();
+        gridBagConstraints.gridx = 2;
+        gridBagConstraints.gridy = 0;
         gridBagConstraints.insets = new Insets(0, 0, 20, 0);
         gridBagConstraints.anchor = GridBagConstraints.WEST;
-        credentialsAndTransportPanel.add(getCredentialsPanel(), gridBagConstraints);
+        credentialsPanel.add(samlMethod, gridBagConstraints);
+
+        gridBagConstraints = new GridBagConstraints();
+        gridBagConstraints.gridx = 0;
+        gridBagConstraints.gridy = 1;
+        gridBagConstraints.insets = new Insets(0, 0, 20, 10);
+        gridBagConstraints.anchor = GridBagConstraints.WEST;
+        credentialsPanel.add(getCredentialsPanel(), gridBagConstraints);
+
+        gridBagConstraints = new GridBagConstraints();
+        gridBagConstraints.gridx = 2;
+        gridBagConstraints.gridy = 1;
+        gridBagConstraints.fill = GridBagConstraints.HORIZONTAL;
+        gridBagConstraints.anchor = GridBagConstraints.WEST;
+        gridBagConstraints.insets = new Insets(0, 0, 20, 10);
+        credentialsPanel.add(getSamlAssertionPanel(), gridBagConstraints);
 
         gridBagConstraints = new GridBagConstraints();
         gridBagConstraints.gridx = 0;
         gridBagConstraints.gridy = 2;
-        gridBagConstraints.fill = GridBagConstraints.BOTH;
-        gridBagConstraints.weightx = 1.0;
-        gridBagConstraints.weighty = 1.0;
-        credentialsAndTransportPanel.add(Box.createGlue(), gridBagConstraints);
+        gridBagConstraints.fill = GridBagConstraints.VERTICAL;
+        credentialsPanel.add(Box.createGlue(), gridBagConstraints);
 
-        mainPanel.add(credentialsAndTransportPanel);
+
+        mainPanel.add(credentialsPanel);
 
         // Add buttonPanel
         mainPanel.add(getButtonPanel());
-
-
         getContentPane().add(mainPanel, BorderLayout.CENTER);
+        
+        // listeners
+        samlMethod.addChangeListener(new ChangeListener() {
+            public void stateChanged(ChangeEvent e) {
+                updateEnableDisable();
+            }
+        });
+        passwordMethod.addChangeListener(new ChangeListener() {
+            public void stateChanged(ChangeEvent e) {
+                updateEnableDisable();
+            }
+        });
+
+    }
+
+    private void updateEnableDisable() {
+        boolean saml = false;
+        boolean password = true;
+        if (samlMethod.isSelected()) {
+            saml = true;
+        }
+        password = !saml;
+
+        expirySpinner.setEnabled(saml);
+        expirySpinLabel.setEnabled(saml);
+        memebershipStatementCheck.setEnabled(saml);
+
+        identityTextField.setEnabled(password);
+        identityLabel.setEnabled(password);
+        realmTextField.setEnabled(password);
+        realmLabel.setEnabled(password);
+        identityPasswordField.setEnabled(password);
+        passwordLabel.setEnabled(password);
     }
 
     /**
      * get the credentials that were entered.
-     *
+     * <p/>
      * todo: deal with certificates too
+     * 
      * @return the credentialsd byte array
      */
     private byte[] getCredentials() {
@@ -152,7 +246,6 @@ public class RoutingAssertionDialog extends JDialog {
         serviceUrlPanel.add(serviceUrlLabel);
 
         serviceUrlTextField = new JTextField();
-        serviceUrlTextField.setText(assertion.getProtectedServiceUrl());
         serviceUrlTextField.setPreferredSize(new Dimension(300, 20));
         serviceUrlPanel.add(serviceUrlTextField);
 
@@ -204,64 +297,54 @@ public class RoutingAssertionDialog extends JDialog {
         credentialsPanel.setLayout(new BoxLayout(credentialsPanel, BoxLayout.Y_AXIS));
         credentialsPanel.setBorder(new EmptyBorder(new Insets(5, 5, 5, 0)));
 
-        JPanel authMethodPanel = new JPanel();
-        authMethodPanel.setLayout(new BoxLayout(authMethodPanel, BoxLayout.X_AXIS));
-
-        credentialsPanel.add(authMethodPanel);
-
-        credentialsPanel.add(Box.createRigidArea(new Dimension(20, 10)));
-
         JPanel identityPanel = new JPanel();
         identityPanel.setLayout(new BoxLayout(identityPanel, BoxLayout.X_AXIS));
-        JLabel identityLabel = new JLabel();
+        identityLabel = new JLabel();
         identityLabel.setText("Identity");
         identityPanel.add(identityLabel);
-
         identityPanel.add(Box.createRigidArea(new Dimension(20, 10)));
 
         identityTextField = new JTextField();
-        identityTextField.setText(assertion.getLogin());
+        identityLabel.setLabelFor(identityTextField);
         identityTextField.setPreferredSize(new Dimension(50, 20));
         identityPanel.add(identityTextField);
 
         identityPanel.add(Box.createGlue());
         credentialsPanel.add(identityPanel);
-
         credentialsPanel.add(Box.createRigidArea(new Dimension(20, 10)));
 
 
         JPanel passwordPanel = new JPanel();
         passwordPanel.setLayout(new BoxLayout(passwordPanel, BoxLayout.X_AXIS));
 
-        JLabel passwordLabel = new JLabel();
+        passwordLabel = new JLabel();
         passwordLabel.setText("Password");
         passwordPanel.add(passwordLabel);
 
         passwordPanel.add(Box.createRigidArea(new Dimension(20, 10)));
 
         identityPasswordField = new JPasswordField();
-        identityPasswordField.setText(assertion.getPassword());
+        passwordLabel.setLabelFor(identityPasswordField);
         identityPasswordField.setPreferredSize(new Dimension(50, 20));
         passwordPanel.add(identityPasswordField);
         passwordPanel.add(Box.createGlue());
         credentialsPanel.add(passwordPanel);
-
         credentialsPanel.add(Box.createRigidArea(new Dimension(20, 10)));
 
         JPanel realmPanel = new JPanel();
         realmPanel.setLayout(new BoxLayout(realmPanel, BoxLayout.X_AXIS));
-        JLabel realmLabel = new JLabel();
+        realmLabel = new JLabel();
         realmLabel.setText("Realm");
         realmPanel.add(realmLabel);
 
         realmPanel.add(Box.createRigidArea(new Dimension(20, 10)));
 
         realmTextField = new JTextField();
-        realmTextField.setText(assertion.getRealm());
+        realmLabel.setLabelFor(realmTextField);
         realmTextField.setPreferredSize(new Dimension(50, 20));
         realmPanel.add(realmTextField);
-
         realmPanel.add(Box.createGlue());
+
         credentialsPanel.add(realmPanel);
 
 
@@ -281,7 +364,45 @@ public class RoutingAssertionDialog extends JDialog {
     }
 
 
-    /** Returns buttonPanel */
+    private JPanel getSamlAssertionPanel() {
+        JPanel samlPanel = new JPanel();
+        samlPanel.setLayout(new BoxLayout(samlPanel, BoxLayout.Y_AXIS));
+        samlPanel.setBorder(new EmptyBorder(new Insets(5, 5, 5, 0)));
+
+        JPanel expiresPanel = new JPanel();
+        expiresPanel.setLayout(new BoxLayout(expiresPanel, BoxLayout.X_AXIS));
+
+        expirySpinner = new JSpinner();
+        Integer value = new Integer(5);
+        Integer min = new Integer(1);
+        Integer max = new Integer(120);
+        Integer step = new Integer(1);
+        SpinnerNumberModel spinModel = new SpinnerNumberModel(value, min, max, step);
+        expirySpinner.setModel(spinModel);
+        expirySpinLabel = new JLabel("Ticket expiry (in minutes):");
+        expirySpinLabel.setLabelFor(expirySpinner);
+
+        expiresPanel.add(expirySpinLabel);
+        expiresPanel.add(expirySpinner);
+        expiresPanel.add(Box.createGlue());
+
+        samlPanel.add(expiresPanel);
+        samlPanel.add(Box.createRigidArea(new Dimension(20, 10)));
+
+        JPanel includeGroupsPanel = new JPanel();
+        includeGroupsPanel.setLayout(new BoxLayout(includeGroupsPanel, BoxLayout.X_AXIS));
+        memebershipStatementCheck = new JCheckBox("Group membership statement");
+        includeGroupsPanel.add(memebershipStatementCheck);
+        includeGroupsPanel.add(Box.createGlue());
+        samlPanel.add(includeGroupsPanel);
+        samlPanel.add(Box.createGlue());
+        return samlPanel;
+    }
+
+
+    /**
+     * Returns buttonPanel
+     */
     private JPanel getButtonPanel() {
         if (buttonPanel == null) {
             buttonPanel = new JPanel();
@@ -319,7 +440,9 @@ public class RoutingAssertionDialog extends JDialog {
     }
 
 
-    /** Returns okButton */
+    /**
+     * Returns okButton
+     */
     private JButton getOKButton() {
         // If button not already created
         if (null == okButton) {
@@ -333,6 +456,10 @@ public class RoutingAssertionDialog extends JDialog {
                     assertion.setLogin(identityTextField.getText());
                     assertion.setPassword(new String(getCredentials()));
                     assertion.setRealm(realmTextField.getText());
+                    final Integer sv = (Integer)expirySpinner.getValue();
+                    assertion.setSamlAssertionExpiry(sv.intValue());
+                    assertion.setGroupMembershipStatement(memebershipStatementCheck.isSelected());
+                    assertion.setAttachSamlAssertion(samlMethod.isSelected());
                     fireEventAssertionChanged(assertion);
                     RoutingAssertionDialog.this.dispose();
                 }
@@ -343,7 +470,9 @@ public class RoutingAssertionDialog extends JDialog {
         return okButton;
     }
 
-    /** Returns cancelButton */
+    /**
+     * Returns cancelButton
+     */
     private JButton getCancelButton() {
         // If button not already created
         if (null == cancelButton) {
@@ -362,24 +491,25 @@ public class RoutingAssertionDialog extends JDialog {
         return cancelButton;
     }
 
-    /**
-     * @return whether the selection is anonymou
-     */
-    private boolean isAnonymous() {
-        String name = (String)authenticationMethodComboBox.getSelectedItem();
-        return "Anonymous".equals(name);
+    private void initFormData() {
+        identityTextField.setText(assertion.getLogin());
+
+        identityPasswordField.setText(assertion.getPassword());
+        realmTextField.setText(assertion.getRealm());
+        serviceUrlTextField.setText(assertion.getProtectedServiceUrl());
+
+        memebershipStatementCheck.setSelected(assertion.isGroupMembershipStatement());
+        int expiry = assertion.getSamlAssertionExpiry();
+        if (expiry == 0) {
+            expiry = 5;
+        }
+        expirySpinner.setValue(new Integer(expiry));
+        SwingUtilities.invokeLater(new Runnable() {
+            public void run() {
+                boolean saml = assertion.isAttachSamlAssertion();
+                samlMethod.setSelected(saml);
+                passwordMethod.setSelected(!saml);
+            }
+        });
     }
-
-
-    private JComboBox authenticationMethodComboBox;
-    private JTextField identityTextField;
-    private JTextField realmTextField;
-    private JPasswordField identityPasswordField;
-    private JPasswordField confitmPasswordField;
-    private JPanel credentialsAndTransportPanel;
-    private JPanel serviceUrlPanel;
-    private JTextField serviceUrlTextField;
-    private JPanel mainPanel;
-
-
 }
