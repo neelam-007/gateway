@@ -193,7 +193,7 @@ public class AssertionPath implements Serializable {
      * Returns true if this set contains the specified <code>Assertion</code>.
      * <p>
      * @param a the assertion to test the presence of
-     * @return true if this path contains the assertion, false otheriwse
+     * @return true if this path contains the assertion, false otherwise
      */
     public boolean contains(Assertion a) {
         if (a == null) return false;
@@ -204,6 +204,24 @@ public class AssertionPath implements Serializable {
        }
         return false;
     }
+
+    /**
+     * Returns true if this set contains the <code>Assertion</code> fo
+     * specified type.
+     * <p>
+     * @param assertionClass the assertion class to test the presence of
+     * @return true if this path contains the assertion class, false otherwise
+     */
+    public boolean contains(Class assertionClass) {
+        if (assertionClass == null) return false;
+        Assertion[] path = getPath();
+        for (int i = 0; i < path.length; i++) {
+           Assertion assertion = path[i];
+           if (assertionClass.equals(assertion.getClass())) return true;
+       }
+        return false;
+    }
+
 
     /**
      * Tests two AssertionPaths for equality by checking each element of

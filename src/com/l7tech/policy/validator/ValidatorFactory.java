@@ -7,10 +7,7 @@ import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.RequestSwAAssertion;
 import com.l7tech.policy.assertion.RequestXpathAssertion;
 import com.l7tech.policy.assertion.ResponseXpathAssertion;
-import com.l7tech.policy.assertion.xmlsec.RequestWssConfidentiality;
-import com.l7tech.policy.assertion.xmlsec.RequestWssIntegrity;
-import com.l7tech.policy.assertion.xmlsec.ResponseWssConfidentiality;
-import com.l7tech.policy.assertion.xmlsec.ResponseWssIntegrity;
+import com.l7tech.policy.assertion.xmlsec.*;
 import com.l7tech.service.PublishedService;
 
 import java.lang.reflect.Constructor;
@@ -38,6 +35,9 @@ class ValidatorFactory {
         assertionMap.put(ResponseWssIntegrity.class, XpathBasedAssertionValidator.class);
         assertionMap.put(ResponseWssConfidentiality.class, XpathBasedAssertionValidator.class);
         assertionMap.put(RequestSwAAssertion.class, SwaRequestAssertionValidator.class);
+        assertionMap.put(SamlAttributeStatement.class, SamlStatementValidator.class);
+        assertionMap.put(SamlAuthorizationStatement.class, SamlStatementValidator.class);
+        assertionMap.put(SamlAuthenticationStatement.class, SamlStatementValidator.class);
         // add mapping
     }
 
