@@ -1,13 +1,13 @@
 package com.l7tech.server;
 
+import com.l7tech.common.security.xml.WssProcessor;
 import com.l7tech.common.util.Locator;
 import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.xml.InvalidDocumentFormatException;
-import com.l7tech.common.security.xml.WssProcessor;
+import com.l7tech.identity.AuthenticationException;
+import com.l7tech.identity.IdentityProvider;
 import com.l7tech.identity.IdentityProviderConfigManager;
 import com.l7tech.identity.User;
-import com.l7tech.identity.IdentityProvider;
-import com.l7tech.identity.AuthenticationException;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.server.identity.IdentityProviderFactory;
@@ -17,6 +17,7 @@ import org.xml.sax.SAXException;
 
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
+import javax.servlet.ServletOutputStream;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -25,11 +26,11 @@ import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 import java.io.BufferedReader;
 import java.io.IOException;
+import java.security.GeneralSecurityException;
 import java.util.Collection;
 import java.util.Iterator;
-import java.util.logging.Logger;
 import java.util.logging.Level;
-import java.security.GeneralSecurityException;
+import java.util.logging.Logger;
 
 /**
  * The servlet handling WS Trust RequestSecurityToken requests.
@@ -91,7 +92,15 @@ public class TokenServiceServlet extends HttpServlet {
             res.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, msg);
             return;
         }
-        outputRequestSecurityTokenResponse(response, res);
+        // dont let this ioexception fall through, this is a debugging nightmare!
+        try {
+            outputRequestSecurityTokenResponse(response, res);
+        } catch (IOException e) {
+            String msg = "Error printing result. " + e.getMessage();
+            logger.log(Level.SEVERE, msg, e);
+            res.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, msg);
+            return;
+        }
     }
 
     private final TokenService.CredentialsAuthenticator authenticator() {
@@ -127,8 +136,11 @@ public class TokenServiceServlet extends HttpServlet {
     }
 
     private void outputRequestSecurityTokenResponse(Document requestSecurityTokenResponse,
-                                                    HttpServletResponse res) {
-        // todo, send back the RequestSecurityTokenResponse to the requestor
+                                                    HttpServletResponse res) throws IOException {
+        res.setContentType("text/xml; charset=utf-8");
+        ServletOutputStream os = res.getOutputStream();
+        XmlUtil.nodeToOutputStream(requestSecurityTokenResponse, os);
+        os.close();
     }
 
     private Document extractXMLPayload(HttpServletRequest req)
