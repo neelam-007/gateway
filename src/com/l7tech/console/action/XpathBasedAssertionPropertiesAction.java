@@ -6,6 +6,7 @@ import com.l7tech.common.xml.XpathEvaluator;
 import com.l7tech.common.util.XmlUtil;
 import com.l7tech.console.MainWindow;
 import com.l7tech.console.panels.XpathBasedAssertionPropertiesDialog;
+import com.l7tech.console.panels.XPathExpressionPanel;
 import com.l7tech.console.tree.policy.*;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.objectmodel.FindException;
@@ -106,13 +107,18 @@ public abstract class XpathBasedAssertionPropertiesAction extends NodeAction {
                     } else {
                         title = "piglet"; // can't happen
                     }
-                    String question = "Please provide xpath value.";
                     String initialValue = xmlSecAssertion.getXpathExpression().getExpression();
+                    XPathExpressionPanel panel = new XPathExpressionPanel(null, title, initialValue, xmlSecAssertion.getXpathExpression().getNamespaces());
+                    panel.pack();
+                    panel.show();
+                    /*String question = "Please provide xpath value.";
+
                     String res = (String)JOptionPane.showInputDialog(null, question, title,
                                                                      JOptionPane.QUESTION_MESSAGE,
-                                                                     null, null, initialValue);
-                    if (isValidValue(res)) {
-                        xmlSecAssertion.setXpathExpression(new XpathExpression(res));
+                                                                     null, null, initialValue);*/
+                    if (!panel.wasCanceled()) {
+                        xmlSecAssertion.setXpathExpression(new XpathExpression(panel.newXpathValue(),
+                                                                               panel.newXpathNamespaceMap()));
                         okListener.actionPerformed(null);
                     }
                 } else {
