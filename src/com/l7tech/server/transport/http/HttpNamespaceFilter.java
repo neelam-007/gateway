@@ -93,7 +93,7 @@ public class HttpNamespaceFilter implements Filter {
         switch (candidate.charAt(plen)) {
             case '/':
             case '?':
-            case ':':
+            case ';':
                 return true;
             default:
                 return false;
