@@ -28,6 +28,7 @@ public final class TestDocuments {
     public static final String PLACEORDER_WITH_MAJESTY = DIR + "PlaceOrder_with_XmlRequestSecurity.xml";
     public static final String PLACEORDER_KEYS = DIR + "PlaceOrder_with_XmlRequestSecurity_keys.properties";
     public static final String BUG_763_MONSTER_POLICY = PDIR + "bug763MonsterPolicy.xml";
+    public static final String DOTNET_SIGNED_REQUEST = DIR + "dotNetSignedSoapRequest.xml";
 
     private TestDocuments() { }
 
