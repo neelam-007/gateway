@@ -118,19 +118,42 @@ public class MessageProcessor {
                 if (stats != null) stats.attemptedRequest();
                 status = serverPolicy.checkRequest( request, response );
 
+                RoutingStatus rstat = request.getRoutingStatus();
+
+                boolean authorized = false;
+                if ( rstat == RoutingStatus.ATTEMPTED ) {
+                    /* If policy execution got as far as the routing assertion,
+                       we consider the request to have been authorized, whether
+                       or not the routing itself was successful. */
+                    authorized = true;
+                }
+
                 if ( status == AssertionStatus.NONE ) {
-                    if (stats != null) stats.authorizedRequest();
-                    RoutingStatus rstat = request.getRoutingStatus();
-                    if ( rstat == RoutingStatus.ROUTED ) {
-                        logger.fine( "Request was routed with status " + " " + status.getNumeric() + " (" + status.getMessage() + ")" );
+                    // Policy execution concluded successfully
+                    authorized = true;
+                    if ( rstat == RoutingStatus.ROUTED || rstat == RoutingStatus.UNKNOWN ) {
+                        /* We include UNKNOWN because it's valid (albeit silly)
+                        for a policy to contain no RoutingAssertion */
+                        logger.fine("Request was completed with status " + " " + status.getNumeric() + " (" + status.getMessage() + ")");
                         if (stats != null) stats.completedRequest();
-                    } else if ( rstat == RoutingStatus.ATTEMPTED ) {
-                        logger.severe( "Request routing failed with status " + status.getNumeric() + " (" + status.getMessage() + ")" );
-                        status = AssertionStatus.FALSIFIED;
+                    } else {
+                        // This can only happen when a post-routing assertion fails
+                        logger.severe( "Policy status was NONE but routing was attempted anyway!" );
+                        status = AssertionStatus.SERVER_ERROR;
                     }
                 } else {
-                    logger.warning( "Policy evaluation resulted in status " + status.getNumeric() + " (" + status.getMessage() + ")" );
+                    // Policy execution concluded unsuccessfully
+                    if (rstat == RoutingStatus.ATTEMPTED) {
+                        // Most likely the failure was in the routing assertion
+                        logger.warning("Request routing failed with status " + status.getNumeric() + " (" + status.getMessage() + ")");
+                        status = AssertionStatus.FAILED;
+                    } else {
+                        // Most likely the failure was in some other assertion
+                        logger.warning( "Policy evaluation resulted in status " + status.getNumeric() + " (" + status.getMessage() + ")" );
+                    }
                 }
+
+                if ( authorized && stats != null ) stats.authorizedRequest();
             }
 
             return status;
