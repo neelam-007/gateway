@@ -25,7 +25,7 @@ public class NewInternalUserAction extends NodeAction {
      * @return the action name
      */
     public String getName() {
-        return "Create User";
+        return "Create Internal User";
     }
 
     /**
