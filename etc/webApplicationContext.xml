@@ -47,8 +47,8 @@
 
     <!--    shared export properties, inherited with parent= -->
     <bean id="sharedExportProperties">
-        <property name="registryPort"><value>2104</value></property>
-        <property name="servicePort"><value>2104</value></property>
+        <property name="registryPort"><value>2124</value></property>
+        <property name="servicePort"><value>2124</value></property>
         <property name="clientSocketFactory"><ref bean="rmiClientSocketFactory"/></property>
         <property name="serverSocketFactory"><ref bean="rmiServerSocketFactory"/></property>
         <property name="registryClientSocketFactory"><ref bean="rmiClientSocketFactory"/></property>

@@ -470,6 +470,8 @@
     <target name="package.manager" unless="ssg.only">
         <jar jarfile="${build.dir}/Manager.jar" manifest="${src.root}/etc/Manager.mf">
             <fileset dir="${build.dir}/classes">
+                <include name="com/l7tech/admin/Admin*.class"/>
+                <include name="com/l7tech/admin/rmi/*Stub.class"/>
                 <exclude name="com/l7tech/logging/rmi/**/*"/>
                 <exclude name="com/l7tech/policy/server/**/*"/>
                 <include name="com/l7tech/identity/**/*"/>
@@ -514,6 +516,7 @@
                 <include name="com/l7tech/service/PublishedService.class"/>
                 <include name="com/l7tech/service/ServiceStatistics.class"/>
                 <include name="com/l7tech/service/ResolutionParameterTooLongException.class"/>
+                <include name="com/l7tech/remote/rmi/**/*"/>
             </fileset>
         </jar>
     </target>
