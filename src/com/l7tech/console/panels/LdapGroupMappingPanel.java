@@ -4,6 +4,7 @@ import com.l7tech.identity.ldap.LdapIdentityProviderConfig;
 import com.l7tech.identity.ldap.GroupMappingConfig;
 import com.l7tech.identity.ldap.MemberStrategy;
 import com.l7tech.console.util.SortedListModel;
+import com.l7tech.console.util.ComponentRegistry;
 
 import javax.swing.*;
 import javax.swing.border.EtchedBorder;
@@ -15,6 +16,7 @@ import java.util.Comparator;
 import java.util.Iterator;
 import java.util.Locale;
 import java.util.ResourceBundle;
+import java.util.logging.Logger;
 
 /**
  * This class provides a panel for users to add/delete/modify the LDAP attribute mapping of the group bjectclass.
@@ -25,6 +27,8 @@ import java.util.ResourceBundle;
  */
 
 public class LdapGroupMappingPanel extends IdentityProviderStepPanel {
+
+    static final Logger log = Logger.getLogger(LdapGroupMappingPanel.class.getName());
 
     /**
      * Constructor - create a new group attribute mapping panel.
@@ -37,6 +41,7 @@ public class LdapGroupMappingPanel extends IdentityProviderStepPanel {
         initComponents();
         setLayout(new BorderLayout());
         add(mainPanel, BorderLayout.CENTER);
+        thisPanel = this;
     }
 
     /**
@@ -83,24 +88,20 @@ public class LdapGroupMappingPanel extends IdentityProviderStepPanel {
     /**
      * Validate the input data
      *
+     * @param name  The object class name
      * @return  boolean  true if the input data is valid, false otherwise.
      */
-    private boolean validateInput() {
+    private boolean validateInput(String name) {
 
         boolean rc = true;
-        int occurrence = 0;
 
         Iterator itr = getGroupListModel().iterator();
         while (itr.hasNext()) {
             Object o = itr.next();
             if (o instanceof GroupMappingConfig) {
-                if (((GroupMappingConfig) o).getObjClass().equals(getObjectClassField().getText())) {
-                    // the selected group found
-                    occurrence++;
-                    if(occurrence >= 2) {
-                        rc = false;
-                        break;
-                    }
+                if (((GroupMappingConfig) o).getObjClass().compareToIgnoreCase(name) == 0) {
+                    rc = false;
+                    break;
                 }
             }
         }
@@ -207,7 +208,6 @@ public class LdapGroupMappingPanel extends IdentityProviderStepPanel {
             nameAttribute.setText(groupMapping.getNameAttrName());
             memberAttribute.setText(groupMapping.getMemberAttrName());
             memberStrategy.setSelectedIndex(groupMapping.getMemberStrategy().getVal());
-            originalObjectClass = groupMapping.getObjClass();
         }
     }
 
@@ -256,7 +256,6 @@ public class LdapGroupMappingPanel extends IdentityProviderStepPanel {
                 newEntry.setObjClass("untitled" + ++nameIndex);
                 newEntry.setMemberStrategy(MemberStrategy.MEMBERS_ARE_DN);
                 getGroupListModel().add(newEntry);
-
                 getGroupList().setSelectedValue(newEntry, true);
                 enableGroupMappingTextFields(true);
             }
@@ -286,9 +285,9 @@ public class LdapGroupMappingPanel extends IdentityProviderStepPanel {
 
         removeButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
+
                 Object o = getGroupList().getSelectedValue();
                 if (o != null) {
-
                     // remove the item from the data model
                     getGroupListModel().removeElement(o);
 
@@ -325,7 +324,6 @@ public class LdapGroupMappingPanel extends IdentityProviderStepPanel {
         objectClass.setPreferredSize(new java.awt.Dimension(170, 20));
         objectClass.setToolTipText(resources.getString("objectClassNameTextField.tooltip"));
 
-        final JPanel thisPanel = this;
         objectClass.addKeyListener(new KeyListener() {
             public void keyPressed(KeyEvent ke) {
                 // don't care
@@ -342,20 +340,38 @@ public class LdapGroupMappingPanel extends IdentityProviderStepPanel {
                 } else {
 
                     if (objectClass.getText().length() == 0) {
-                        currentEntry.setObjClass(originalObjectClass);
-                        objectClass.setText(originalObjectClass);
-                    } else {
-                        currentEntry.setObjClass(objectClass.getText());
-                    }
+                        // restore the value into objectClass field. this prevents the empty content in case of cancellation by user
+                        objectClass.setText(currentEntry.getObjClass());
 
-                    if (!validateInput()) {
-                        JOptionPane.showMessageDialog(thisPanel, resources.getString("add.entry.duplicated"),
-                                resources.getString("add.error.title"),
-                                JOptionPane.ERROR_MESSAGE);
-                        currentEntry.setObjClass(originalObjectClass);
-                        objectClass.setText(originalObjectClass);
+                        // create a dialog
+                        EditLdapObjectClassNameDialog d = new EditLdapObjectClassNameDialog(ComponentRegistry.getInstance().getMainWindow(), objectClassNameChangeListener, objectClass.getText());
+
+                        // show the dialog
+                        d.show();
+
+                    } else {
+                        if (objectClass.getText().compareToIgnoreCase(currentEntry.getObjClass()) != 0) {
+                            if (!validateInput(objectClass.getText())) {
+                                JOptionPane.showMessageDialog(thisPanel, resources.getString("add.entry.duplicated"),
+                                        resources.getString("add.error.title"),
+                                        JOptionPane.ERROR_MESSAGE);
+
+                                objectClass.setText(currentEntry.getObjClass());
+                            } else {
+
+                                // remove the old entry
+                                getGroupListModel().removeElement(currentEntry);
+
+                                // modify the object class name
+                                currentEntry.setObjClass(objectClass.getText());
+
+                                // add the new entry
+                                getGroupListModel().add(currentEntry);
+                            }
+
+                            getGroupList().setSelectedValue(currentEntry, true);
+                        }
                     }
-                    getGroupList().setSelectedValue(currentEntry, true);
 
                 }
             }
@@ -634,6 +650,49 @@ public class LdapGroupMappingPanel extends IdentityProviderStepPanel {
         }
     };
 
+    private ActionListener
+            objectClassNameChangeListener = new ActionListener() {
+                /**
+                 * Fired when an set of children is updated.
+                 */
+                public void actionPerformed(final ActionEvent ev) {
+                    SwingUtilities.invokeLater(new Runnable() {
+
+                        public void run() {
+
+                            GroupMappingConfig currentEntry = (GroupMappingConfig) getGroupList().getSelectedValue();
+
+                            if (currentEntry == null) {
+                                log.severe("Internal error: No LDAP object class entry is selected");
+                            } else {
+                                if (ev.getActionCommand().compareToIgnoreCase(currentEntry.getObjClass()) != 0) {
+                                    if (!validateInput(ev.getActionCommand())) {
+                                        JOptionPane.showMessageDialog(thisPanel, resources.getString("add.entry.duplicated"),
+                                                resources.getString("add.error.title"),
+                                                JOptionPane.ERROR_MESSAGE);
+                                        objectClass.setText(currentEntry.getObjClass());
+                                    } else {
+                                        // populate the name to the object class field
+                                        objectClass.setText(ev.getActionCommand());
+
+                                        // remove the old entry
+                                        getGroupListModel().removeElement(currentEntry);
+
+                                        // modify the object class name
+                                        currentEntry.setObjClass(ev.getActionCommand());
+
+                                        // add the new entry
+                                        getGroupListModel().add(currentEntry);
+                                    }
+                                }
+
+                                // select the new entry
+                                getGroupList().setSelectedValue(currentEntry, true);
+                            }
+                        }
+                    });
+                }
+            };
 
     private javax.swing.JButton addButton;
     private javax.swing.JButton removeButton;
@@ -661,7 +720,8 @@ public class LdapGroupMappingPanel extends IdentityProviderStepPanel {
     private LdapIdentityProviderConfig iProviderConfig = null;
     private SortedListModel groupListModel = null;
     private static int nameIndex = 0;
-    private String originalObjectClass = "";
     private GroupMappingConfig lastSelectedGroup = null;
     private ResourceBundle resources = null;
+    private final JPanel thisPanel;
+
 }

@@ -4,6 +4,7 @@ import com.l7tech.identity.ldap.LdapIdentityProviderConfig;
 import com.l7tech.identity.ldap.UserMappingConfig;
 import com.l7tech.identity.ldap.PasswdStrategy;
 import com.l7tech.console.util.SortedListModel;
+import com.l7tech.console.util.ComponentRegistry;
 
 import javax.swing.*;
 import javax.swing.border.Border;
@@ -19,6 +20,7 @@ import java.util.Comparator;
 import java.util.Locale;
 import java.util.ResourceBundle;
 import java.util.Iterator;
+import java.util.logging.Logger;
 
 /**
  * This class provides a panel for users to add/delete/modify the LDAP attribute mapping of the user objectclass.
@@ -29,6 +31,8 @@ import java.util.Iterator;
  */
 
 public class LdapUserMappingPanel extends IdentityProviderStepPanel {
+
+    static final Logger log = Logger.getLogger(LdapUserMappingPanel.class.getName());
 
     /**
      * Constructor - create a new user attribute mapping panel.
@@ -41,6 +45,7 @@ public class LdapUserMappingPanel extends IdentityProviderStepPanel {
         initComponents();
         setLayout(new BorderLayout());
         add(mainPanel, BorderLayout.CENTER);
+        thisPanel = this;
     }
 
     /**
@@ -94,27 +99,23 @@ public class LdapUserMappingPanel extends IdentityProviderStepPanel {
      *
      * @return  boolean  true if the input data is valid, false otherwise.
      */
-    private boolean validateInput() {
+    private boolean validateInput(String name) {
 
-        boolean rc = true;
-        int occurrence = 0;
+         boolean rc = true;
 
-        Iterator itr = getUserListModel().iterator();
-        while (itr.hasNext()) {
-            Object o = itr.next();
-            if (o instanceof UserMappingConfig) {
-                if (((UserMappingConfig) o).getObjClass().equals(getObjectClassField().getText())) {
-                    // the selected group found
-                    occurrence++;
-                    if (occurrence >= 2) {
-                        rc = false;
-                        break;
-                    }
-                }
-            }
-        }
-        return rc;
-    }
+         Iterator itr = getUserListModel().iterator();
+         while (itr.hasNext()) {
+             Object o = itr.next();
+             if (o instanceof UserMappingConfig) {
+                 if (((UserMappingConfig) o).getObjClass().compareToIgnoreCase(name) == 0) {
+                     rc = false;
+                     break;
+                 }
+             }
+         }
+         return rc;
+     }
+
 
     /**
      * Populate the configuration data from the wizard input object to the visual components of the panel.
@@ -222,7 +223,6 @@ public class LdapUserMappingPanel extends IdentityProviderStepPanel {
  /*   Commented out the password strategry for the time being as the server does not handle it right now (Bugzilla #615)
             passwordStrategyAttribute.setSelectedIndex(userMapping.getPasswdType().getVal());  */
 
-            originalObjectClass = userMapping.getObjClass();
         }
     }
 
@@ -277,7 +277,6 @@ public class LdapUserMappingPanel extends IdentityProviderStepPanel {
                 newEntry.setObjClass("untitled" + ++nameIndex);
                 newEntry.setPasswdType(PasswdStrategy.CLEAR);
                 getUserListModel().add(newEntry);
-
                 getUserList().setSelectedValue(newEntry, true);
                 enableUserMappingTextFields(true);
             }
@@ -348,7 +347,6 @@ public class LdapUserMappingPanel extends IdentityProviderStepPanel {
         objectClass.setPreferredSize(new java.awt.Dimension(150, 20));
         objectClass.setToolTipText(resources.getString("objectClassNameTextField.tooltip"));
 
-        final JPanel thisPanel = this;
         objectClass.addKeyListener(new KeyListener() {
             public void keyPressed(KeyEvent ke) {
                 // don't care
@@ -365,19 +363,38 @@ public class LdapUserMappingPanel extends IdentityProviderStepPanel {
 
                 } else {
                     if (objectClass.getText().length() == 0) {
-                        currentEntry.setObjClass(originalObjectClass);
-                        objectClass.setText(originalObjectClass);
+                        // restore the value into objectClass field. this prevents the empty content in case of cancellation by user
+                        objectClass.setText(currentEntry.getObjClass());
+
+                        // create a dialog
+                        EditLdapObjectClassNameDialog d = new EditLdapObjectClassNameDialog(ComponentRegistry.getInstance().getMainWindow(), objectClassNameChangeListener, objectClass.getText());
+
+                        // show the dialog
+                        d.show();
+
                     } else {
-                        currentEntry.setObjClass(objectClass.getText());
+                        if (objectClass.getText().compareToIgnoreCase(currentEntry.getObjClass()) != 0) {
+                            if (!validateInput(objectClass.getText())) {
+                                JOptionPane.showMessageDialog(thisPanel, resources.getString("add.entry.duplicated"),
+                                        resources.getString("add.error.title"),
+                                        JOptionPane.ERROR_MESSAGE);
+
+                                objectClass.setText(currentEntry.getObjClass());
+                            } else {
+
+                                // remove the old entry
+                                getUserListModel().removeElement(currentEntry);
+
+                                // modify the object class name
+                                currentEntry.setObjClass(objectClass.getText());
+
+                                // add the new entry
+                                getUserListModel().add(currentEntry);
+                            }
+
+                            getUserList().setSelectedValue(currentEntry, true);
+                        }
                     }
-                    if (!validateInput()) {
-                        JOptionPane.showMessageDialog(thisPanel, resources.getString("add.entry.duplicated"),
-                                resources.getString("add.error.title"),
-                                JOptionPane.ERROR_MESSAGE);
-                        currentEntry.setObjClass(originalObjectClass);
-                        objectClass.setText(originalObjectClass);
-                    }
-                    getUserList().setSelectedValue(currentEntry, true);
                 }
             }
 
@@ -739,6 +756,50 @@ public class LdapUserMappingPanel extends IdentityProviderStepPanel {
         }
     };
 
+    private ActionListener
+            objectClassNameChangeListener = new ActionListener() {
+                /**
+                 * Fired when an set of children is updated.
+                 */
+                public void actionPerformed(final ActionEvent ev) {
+                    SwingUtilities.invokeLater(new Runnable() {
+
+                        public void run() {
+
+                            UserMappingConfig currentEntry = (UserMappingConfig) getUserList().getSelectedValue();
+
+                            if (currentEntry == null) {
+                                log.severe("Internal error: No LDAP object class entry is selected");
+                            } else {
+                                if (ev.getActionCommand().compareToIgnoreCase(currentEntry.getObjClass()) != 0) {
+                                    if (!validateInput(ev.getActionCommand())) {
+                                        JOptionPane.showMessageDialog(thisPanel, resources.getString("add.entry.duplicated"),
+                                                resources.getString("add.error.title"),
+                                                JOptionPane.ERROR_MESSAGE);
+                                        objectClass.setText(currentEntry.getObjClass());
+                                    } else {
+                                        // populate the name to the object class field
+                                        objectClass.setText(ev.getActionCommand());
+
+                                        // remove the old entry
+                                        getUserListModel().removeElement(currentEntry);
+
+                                        // modify the object class name
+                                        currentEntry.setObjClass(ev.getActionCommand());
+
+                                        // add the new entry
+                                        getUserListModel().add(currentEntry);
+                                    }
+                                }
+
+                                // select the new entry
+                                getUserList().setSelectedValue(currentEntry, true);
+                            }
+                        }
+                    });
+                }
+            };
+
     private javax.swing.JLabel attributeTitleLabel;
     private javax.swing.JLabel firstNameAttributeLabel;
     private javax.swing.JLabel emailAttributeLabel;
@@ -776,10 +837,12 @@ public class LdapUserMappingPanel extends IdentityProviderStepPanel {
     private LdapIdentityProviderConfig iProviderConfig = null;
     private SortedListModel userListModel = null;
     private static int nameIndex = 0;
-    private String originalObjectClass = "";
+//    private String originalObjectClass = "";
 
     private ResourceBundle resources = null;
     private UserMappingConfig lastSelectedUser = null;
+
+    private final JPanel thisPanel;
 }
 
 
