@@ -39,6 +39,7 @@ public class ResolutionParameters extends EntityImp implements Serializable {
     }
 
     public void setUrn(String urn) throws ResolutionParameterTooLongException {
+        if (urn == null) urn = ""; // Oracle
         if (urn != null && urn.length() > MAX_LENGTH_RES_PARAMETER) {
             throw new ResolutionParameterTooLongException("The namespace " + urn + " is too " +
                                                           "long to remember as a resolution parameter.");
@@ -59,6 +60,7 @@ public class ResolutionParameters extends EntityImp implements Serializable {
     }
 
     public void setUri(String uri) throws ResolutionParameterTooLongException {
+        if (uri == null) uri = ""; // Oracle
         if (uri != null && uri.length() > MAX_LENGTH_RES_PARAMETER) {
             throw new ResolutionParameterTooLongException("The URI " + uri + " is too " +
                                                           "long to remember as a resolution parameter.");
