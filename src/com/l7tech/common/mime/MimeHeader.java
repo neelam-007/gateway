@@ -118,6 +118,7 @@ public class MimeHeader {
         return params;
     }
 
+    /** @return the ENTIRE header string, including name and trailing CRLF, ie "Content-Type: text/xml; charset=utf8\r\n" */
     public String toString() {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         try {
