@@ -65,6 +65,21 @@ public class WssProcessorImpl implements WssProcessor {
         }
     }
 
+    public static class InvalidContextException extends ProcessorException {
+
+        public InvalidContextException(String contextId) {
+            super("The identifier " + contextId + " is not a currently recognized secure " +
+                  "conversation context on this server");
+            this.contextId = contextId;
+        }
+
+        public String getUnresolvedContextId() {
+            return contextId;
+        }
+
+        private String contextId = null;
+    }
+
     /**
      * This processes a soap message. That is, the contents of the Header/Security are processed as per the WSS rules.
      *
@@ -162,9 +177,7 @@ public class WssProcessorImpl implements WssProcessor {
                                                          "did not provide a SecurityContextFinder");
                         final SecurityContext secContext = securityContextFinder.getSecurityContext(identifier);
                         if (secContext == null) {
-                            throw new GeneralSecurityException("The identifier " + identifier +
-                                                               " did not resolve to an existing secure conversation " +
-                                                               "session on this server");
+                            throw new InvalidContextException(identifier);
                         }
                         SecurityContextTokenImpl secConTok = new SecurityContextTokenImpl(secContext,
                                                                                           secConTokEl,
