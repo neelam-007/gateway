@@ -330,13 +330,15 @@ public class WssProcessorImpl implements WssProcessor {
                     }
 
                     if (keyIdValueBytes != null) {
-                        if (valueType.length() < 1 || valueType.equals(SoapUtil.VALUETYPE_SKI)) {
+                        if (valueType == null || valueType.length() <= 0) {
+                            logger.fine("The KeyId Value Type is not specified. We will therefore not check it.");
+                            /* FALLTHROUGH */
+                        } else if (valueType.equals(SoapUtil.VALUETYPE_SKI)) {
                             // If not typed, assume it's a ski
                             byte[] ski = recipientCert.getExtensionValue(CertUtils.X509_OID_SUBJECTKEYID);
                             if (ski == null) {
-                                logger.warning("This EncryptedKey has a KeyInfo that apparently requests a specific SKI, " +
-                                            "but our certificate does not have a SKI.  Will try to decrypt anyway.");
-                                /* FALLTHROUGH */
+                                // this should never happen
+                                throw new ProcessorException("Our certificate does not have a ski.");
                             } else {
                                 // trim if necessary
                                 byte[] ski2 = ski;
@@ -346,12 +348,13 @@ public class WssProcessorImpl implements WssProcessor {
                                                      ski2, 0, keyIdValueBytes.length);
                                 }
                                 if (Arrays.equals(keyIdValueBytes, ski2)) {
-                                    logger.fine("the Key SKI is recognized");
+                                    logger.fine("the Key SKI is recognized. This key is for us for sure!");
                                     /* FALLTHROUGH */
                                 } else {
-                                    logger.warning("This EncryptedKey has a KeyInfo that apparently requests a specific SKI, " +
-                                                "but our certificate's SKI does not match.  Will try to decrypt anyway.");
-                                    /* FALLTHROUGH */
+                                    String msg = "This EncryptedKey has a KeyInfo that declares a specific SKI, " +
+                                                 "but our certificate's SKI does not match.";
+                                    logger.warning(msg);
+                                    throw new GeneralSecurityException(msg);
                                 }
                             }
                         } else if (valueType.equals(SoapUtil.VALUETYPE_X509)) {
@@ -359,13 +362,14 @@ public class WssProcessorImpl implements WssProcessor {
                             X509Certificate referencedCert = (X509Certificate)CertificateFactory.getInstance("X.509").
                                                                 generateCertificate(new ByteArrayInputStream(keyIdValueBytes));
                             if (recipientCert.equals(referencedCert)) {
-                                logger.fine("the Key recipient cert is recognized");
+                                logger.fine("The Key recipient cert is recognized");
                                 /* FALLTHROUGH */
 
                             } else {
-                                logger.warning("This EncryptedKey has a KeyInfo that apparently requests a specific cert, " +
-                                            "but our certificate does not match.  Will try to decrypt anyway.");
-                                /* FALLTHROUGH */
+                                String msg = "This EncryptedKey has a KeyInfo that declares a specific cert, " +
+                                             "but our certificate does not match.";
+                                logger.warning(msg);
+                                throw new GeneralSecurityException(msg);
                             }
                         } else
                             throw new InvalidDocumentFormatException("The EncryptedKey's KeyInfo uses an unsupported " +
