@@ -1,6 +1,6 @@
 package com.l7tech.console.tree;
 
-
+import com.l7tech.policy.assertion.xmlsec.XmlRequestSecurity;
 
 
 /**
@@ -46,7 +46,7 @@ public class AuthMethodFolderNode extends AbstractTreeNode {
         insert(new HttpClientCertificateAuthNode(), index++);
         insert(new WsTokenBasicAuthNode(), index++);
         insert(new WsTokenDigestAuthNode(), index++);
-        insert(new WsTokenClientCertAuthNode(), index++);
+        insert(new XmlRequestSecurityNode(), index++);
     }
 
     /**
