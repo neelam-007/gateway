@@ -28,9 +28,9 @@ public class FilterManager {
 
     /**
      * Takes an assertion tree and passes it through the registered filters.
-     * @param policyRequestor
-     * @param rootAssertion
-     * @return
+     * @param policyRequestor or null is the requestor is anonymous
+     * @param rootAssertion is modified by the filter(s)
+     * @return the filtered policy or null if a filter decided that this user has absolutely no business with this policy
      * @throws FilteringException
      */
     public Assertion applyAllFilters(User policyRequestor, Assertion rootAssertion) throws FilteringException {
@@ -56,7 +56,7 @@ public class FilterManager {
 
     /**
      * This takes the passed policy and sends back a filtered version
-     * @param policyRequestor
+     * @param policyRequestor or null is the requestor is anonymous
      * @param policyToFilter this is not affected
      * @return the policy filtered by all registered filters
      * @throws FilteringException
