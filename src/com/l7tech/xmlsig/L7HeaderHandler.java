@@ -1,6 +1,9 @@
 package com.l7tech.xmlsig;
 
 import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.Text;
+import com.l7tech.util.SoapUtil;
 
 /**
  * LAYER 7 TECHNOLOGIES, INC
@@ -23,8 +26,12 @@ public class L7HeaderHandler {
     public static final String NONCE_EL_NAME = "Nonce";
 
 
-    public void appendNonceToDocument(Document soapmsg) {
-        // todo
+    public void appendNonceToDocument(Document soapmsg, long nonce) {
+        Element header = SoapUtil.getOrMakeHeader(soapmsg);
+        Element nonceEl = soapmsg.createElementNS(NAMESPACE, PREFIX + ":" + NONCE_EL_NAME);
+        Text val = soapmsg.createTextNode(Long.toString(nonce));
+        nonceEl.appendChild(val);
+        header.appendChild(nonceEl);
     }
 
     public long readNonceFromDocument(Document soapmsg) {
@@ -32,7 +39,7 @@ public class L7HeaderHandler {
         return -1;
     }
 
-    public void appendSessIdAndSeqNrToDocument(Document soapmsg) {
+    public void appendSessIdAndSeqNrToDocument(Document soapmsg, long sessId, long seqNr) {
         // todo
     }
 
