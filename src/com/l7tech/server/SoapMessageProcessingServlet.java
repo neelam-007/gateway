@@ -164,24 +164,24 @@ public class SoapMessageProcessingServlet extends HttpServlet {
                     return;
                 } else {
                     logger.fine("servlet transport returning 500");
-                    sendFault(context, hrequest, hresponse, HttpServletResponse.SC_INTERNAL_SERVER_ERROR,
+                    sendFault(context, hrequest, hresponse,
                       status.getSoapFaultCode(), status.getMessage());
                     return;
                 }
             } catch (PolicyAssertionException pae) {
                 logger.log(Level.SEVERE, pae.getMessage(), pae);
-                sendFault(context, hrequest, hresponse, HttpServletResponse.SC_INTERNAL_SERVER_ERROR,
+                sendFault(context, hrequest, hresponse,
                   SoapFaultUtils.FC_SERVER, pae.toString());
                 return;
             } catch (PolicyVersionException pve) {
                 String msg = "Request referred to an outdated version of policy";
                 logger.log(Level.INFO, msg);
-                sendFault(context, hrequest, hresponse, HttpServletResponse.SC_EXPECTATION_FAILED,
+                sendFault(context, hrequest, hresponse,
                   SoapFaultUtils.FC_CLIENT, msg);
                 return;
             } catch (NoSuchPartException e) {
                 logger.log(Level.SEVERE, e.getMessage(), e);
-                sendFault(context, hrequest, hresponse, HttpServletResponse.SC_EXPECTATION_FAILED,
+                sendFault(context, hrequest, hresponse,
                   SoapFaultUtils.FC_CLIENT, e.toString());
                 return;
             }
@@ -192,7 +192,6 @@ public class SoapMessageProcessingServlet extends HttpServlet {
                 sendFault(context,
                   hrequest,
                   hresponse,
-                  HttpServletResponse.SC_INTERNAL_SERVER_ERROR,
                   SoapFaultUtils.FC_SERVER,
                   e.getMessage());
             } catch (SAXException e1) {
@@ -248,7 +247,7 @@ public class SoapMessageProcessingServlet extends HttpServlet {
 
     private void sendFault(PolicyEnforcementContext context,
                            HttpServletRequest hreq, HttpServletResponse hresp,
-                           int httpStatus, String faultCode, String faultString) throws IOException, SAXException {
+                           String faultCode, String faultString) throws IOException, SAXException {
         OutputStream responseStream = null;
         try {
             responseStream = hresp.getOutputStream();
