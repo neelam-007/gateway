@@ -194,8 +194,8 @@ public class CertImportMethodsPanel extends WizardStepPanel {
         final JRadioButton _4;
         _4 = new JRadioButton();
         fileRadioButton = _4;
-        _4.setEnabled(true);
         _4.setText("Import from a File");
+        _4.setEnabled(true);
         _4.setSelected(false);
         _2.add(_4, new com.intellij.uiDesigner.core.GridConstraints(1, 0, 1, 1, 8, 0, 3, 0, null, null, null));
         final JRadioButton _5;

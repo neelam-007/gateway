@@ -6,27 +6,21 @@ import com.intellij.uiDesigner.core.Spacer;
 import com.l7tech.console.action.Actions;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.console.event.*;
-import com.l7tech.console.logging.ErrorManager;
-import com.l7tech.console.tree.identity.IdentityProvidersTree;
-import com.l7tech.console.tree.AbstractTreeNode;
-import com.l7tech.console.tree.TreeNodeFactory;
+import com.l7tech.console.table.TrustedCertTableSorter;
 import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.common.security.TrustedCertAdmin;
 import com.l7tech.common.util.Locator;
-import com.l7tech.identity.IdentityProviderConfig;
-import com.l7tech.identity.IdentityProviderConfigManager;
 import com.l7tech.objectmodel.*;
 
+
+import javax.swing.table.DefaultTableModel;
 import javax.swing.*;
-import javax.swing.tree.TreePath;
-import javax.swing.tree.DefaultTreeModel;
-import javax.swing.tree.TreeNode;
-import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.*;
 import java.util.ResourceBundle;
 import java.util.Locale;
-import java.util.logging.Level;
+import java.util.Vector;
 import java.rmi.RemoteException;
 
 
@@ -37,13 +31,19 @@ import java.rmi.RemoteException;
  */
 public class CertManagerWindow extends JDialog {
 
+    public static final int CERT_TABLE_CERT_NAME_COLUMN_INDEX = 0;
+    public static final int CERT_TABLE_CERT_SUBJECT_COLUMN_INDEX = 1;
+    public static final int CERT_TABLE_CERT_USAGE_COLUMN_INDEX = 2;
     private JPanel mainPanel;
     private JButton addButton;
     private JButton removeButton;
     private JButton propertiesButton;
     private JButton closeButton;
     private static CertManagerWindow instance = null;
+    private JTable trustedCertTable = null;
+    private JScrollPane certTableScrollPane;
     private static ResourceBundle resources = ResourceBundle.getBundle("com.l7tech.console.resources.CertificateDialog", Locale.getDefault());
+    private TrustedCertTableSorter trustedCertTableSorter;
 
     private CertManagerWindow(Frame owner) {
         super(owner, resources.getString("dialog.title"), true);
@@ -64,6 +64,7 @@ public class CertManagerWindow extends JDialog {
                 throw new IllegalArgumentException("Owner must be derived from either Frame or Window");
 
             instance.initialize();
+            instance.loadTrustedCerts();
         }
 
         return instance;
@@ -74,6 +75,8 @@ public class CertManagerWindow extends JDialog {
         Container p = instance.getContentPane();
         p.setLayout(new BorderLayout());
         p.add(mainPanel, BorderLayout.CENTER);
+        certTableScrollPane.setViewportView(getTrustedCertTable());
+
 
         closeButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent event) {
@@ -127,6 +130,27 @@ public class CertManagerWindow extends JDialog {
 
     }
 
+    private void loadTrustedCerts() {
+
+        java.util.List certList = null;
+        try {
+            certList = getTrustedCertAdmin().findAllCerts();
+
+            Vector certs = new Vector();
+            for (int i = 0; i < certList.size(); i++) {
+                Object o = (Object) certList.get(i);
+                certs.add(o);
+            }
+            getTrustedCertTableModel().setData(certs);
+            getTrustedCertTableModel().getRealModel().setRowCount(certs.size());
+            getTrustedCertTableModel().fireTableDataChanged();
+
+        } catch (RemoteException re) {
+
+        } catch (FindException e) {
+            e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+        }
+    }
 
     private void enableOrDisableButtons() {
         boolean propsEnabled = false;
@@ -183,6 +207,49 @@ public class CertManagerWindow extends JDialog {
         }
 
     };
+
+    /**
+     * Return trustedCertTable property value
+     *
+     * @return  JTable
+     */
+    private JTable getTrustedCertTable() {
+
+        if (trustedCertTable != null) return trustedCertTable;
+
+        trustedCertTable = new javax.swing.JTable();
+        trustedCertTable.setModel(getTrustedCertTableModel());
+
+        return trustedCertTable;
+    }
+
+    /**
+     * Return TrustedCertTableSorter property value
+     *
+     * @return  TrustedCertTableSorter
+     */
+    private TrustedCertTableSorter getTrustedCertTableModel() {
+
+        if (trustedCertTableSorter != null) {
+            return trustedCertTableSorter;
+        }
+
+        Object[][] rows = new Object[][]{};
+
+        String[] cols = new String[]{
+            "Name", "Subject", "Usage"
+        };
+
+        trustedCertTableSorter = new TrustedCertTableSorter(new DefaultTableModel(rows, cols) {
+            public boolean isCellEditable(int row, int col) {
+                // the table cells are not editable
+                return false;
+            }
+        });
+
+        return trustedCertTableSorter;
+
+    }
 
     private TrustedCertAdmin getTrustedCertAdmin() throws RuntimeException {
         TrustedCertAdmin tca =
@@ -249,22 +316,20 @@ public class CertManagerWindow extends JDialog {
         _8.add(_9, new GridConstraints(0, 0, 1, 1, 8, 0, 0, 0, null, null, null));
         final JScrollPane _10;
         _10 = new JScrollPane();
-        _1.add(_10, new GridConstraints(2, 1, 1, 1, 0, 3, 7, 7, null, null, null));
-        final JTable _11;
-        _11 = new JTable();
-        _10.setViewportView(_11);
+        certTableScrollPane = _10;
+        _1.add(_10, new GridConstraints(2, 1, 1, 1, 0, 3, 7, 7, null, new Dimension(450, 400), null));
+        final Spacer _11;
+        _11 = new Spacer();
+        _1.add(_11, new GridConstraints(2, 3, 1, 1, 0, 1, 6, 1, new Dimension(10, -1), null, null));
         final Spacer _12;
         _12 = new Spacer();
-        _1.add(_12, new GridConstraints(2, 3, 1, 1, 0, 1, 6, 1, new Dimension(10, -1), null, null));
+        _1.add(_12, new GridConstraints(2, 0, 1, 1, 0, 1, 6, 1, new Dimension(10, -1), null, null));
         final Spacer _13;
         _13 = new Spacer();
-        _1.add(_13, new GridConstraints(2, 0, 1, 1, 0, 1, 6, 1, new Dimension(10, -1), null, null));
+        _1.add(_13, new GridConstraints(3, 1, 1, 1, 0, 2, 1, 6, new Dimension(-1, 10), new Dimension(-1, 10), null));
         final Spacer _14;
         _14 = new Spacer();
-        _1.add(_14, new GridConstraints(3, 1, 1, 1, 0, 2, 1, 6, new Dimension(-1, 10), new Dimension(-1, 10), null));
-        final Spacer _15;
-        _15 = new Spacer();
-        _1.add(_15, new GridConstraints(0, 1, 1, 1, 0, 2, 1, 6, new Dimension(-1, 10), new Dimension(-1, 10), null));
+        _1.add(_14, new GridConstraints(0, 1, 1, 1, 0, 2, 1, 6, new Dimension(-1, 10), new Dimension(-1, 10), null));
     }
 
 
