@@ -115,7 +115,8 @@ public class WssProcessorImpl implements WssProcessor {
                 processUsernameToken(securityChildToProcess, cntx);
             } else {
                 // Unhandled child elements of the Security Header
-                String mu = securityChildToProcess.getAttributeNS(currentSoapNamespace, SoapUtil.MUSTUNDERSTAND_ATTR_NAME).trim();
+                String mu = securityChildToProcess.getAttributeNS(currentSoapNamespace,
+                                                                  SoapUtil.MUSTUNDERSTAND_ATTR_NAME).trim();
                 if ("1".equals(mu) || "true".equalsIgnoreCase(mu)) {
                     String msg = "Unrecognized element in default Security header: " +
                                  securityChildToProcess.getNodeName() +
@@ -270,7 +271,8 @@ public class WssProcessorImpl implements WssProcessor {
                             byte[] ski2 = ski;
                             if (ski.length > keyIdValueBytes.length) {
                                 ski2 = new byte[keyIdValueBytes.length];
-                                System.arraycopy(ski, ski.length-keyIdValueBytes.length, ski2, 0, keyIdValueBytes.length);
+                                System.arraycopy(ski, ski.length-keyIdValueBytes.length,
+                                                 ski2, 0, keyIdValueBytes.length);
                             }
                             if (Arrays.equals(keyIdValueBytes, ski2)) {
                                 logger.fine("the Key SKI is recognized");
@@ -300,7 +302,9 @@ public class WssProcessorImpl implements WssProcessor {
 
         // get the xenc:CipherValue
         Element cipherValue = null;
-        Element cipherData = XmlUtil.findOnlyOneChildElementByName(encryptedKeyElement, SoapUtil.XMLENC_NS, "CipherData");
+        Element cipherData = XmlUtil.findOnlyOneChildElementByName(encryptedKeyElement,
+                                                                   SoapUtil.XMLENC_NS,
+                                                                   "CipherData");
         if (cipherData != null) {
             cipherValue = XmlUtil.findOnlyOneChildElementByName(cipherData, SoapUtil.XMLENC_NS, "CipherValue");
         }
@@ -331,7 +335,9 @@ public class WssProcessorImpl implements WssProcessor {
         }
 
         // We got the key. Get the list of elements to decrypt.
-        Element refList = XmlUtil.findOnlyOneChildElementByName(encryptedKeyElement, SoapUtil.XMLENC_NS, "ReferenceList");
+        Element refList = XmlUtil.findOnlyOneChildElementByName(encryptedKeyElement,
+                                                                SoapUtil.XMLENC_NS,
+                                                                "ReferenceList");
         try {
             decryptReferencedElements(new AesKey(unencryptedKey, unencryptedKey.length*8), refList, cntx);
         } catch (ParserConfigurationException e) {
@@ -648,11 +654,11 @@ public class WssProcessorImpl implements WssProcessor {
         return null;
     }
 
-    private void processSignature(final Element signatureElement, ProcessingStatusHolder cntx) throws ProcessorException {
+    private void processSignature(final Element sigElement, ProcessingStatusHolder cntx) throws ProcessorException {
         logger.finest("Processing Signature");
 
         // 1st, process the KeyInfo
-        Element keyInfoElement = KeyInfo.searchForKeyInfo(signatureElement);
+        Element keyInfoElement = KeyInfo.searchForKeyInfo(sigElement);
         if (keyInfoElement == null) {
             throw new ProcessorException("KeyInfo element not found in Signature Element");
         }
@@ -674,7 +680,7 @@ public class WssProcessorImpl implements WssProcessor {
                                        return SoapUtil.getElementByWsuId(doc, s);
                                    }
                                });
-        Validity validity = sigContext.verify(signatureElement, pubKey);
+        Validity validity = sigContext.verify(sigElement, pubKey);
 
         if (!validity.getCoreValidity()) {
             StringBuffer msg = new StringBuffer("Validity not achieved. " + validity.getSignedInfoMessage());
@@ -694,7 +700,7 @@ public class WssProcessorImpl implements WssProcessor {
             Element elementCovered = SoapUtil.getElementByWsuId(cntx.originalDocument, elementCoveredURI);
             if (elementCovered == null) {
                 // i guess the element might be in the processed document (something decrypted was later signed)
-                elementCovered = SoapUtil.getElementByWsuId(signatureElement.getOwnerDocument(), elementCoveredURI);
+                elementCovered = SoapUtil.getElementByWsuId(sigElement.getOwnerDocument(), elementCoveredURI);
             }
             if (elementCovered == null) {
                 String msg = "Element covered by signature cannot be found in original document nor in " +
