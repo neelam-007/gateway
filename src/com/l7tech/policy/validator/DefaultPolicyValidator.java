@@ -34,9 +34,9 @@ public class DefaultPolicyValidator extends PolicyValidator {
     static Logger log = Logger.getLogger(DefaultPolicyValidator.class.getName());
 
 
-    public void validatePath(AssertionPath ap, PolicyValidatorResult r) {
+    public void validatePath(AssertionPath ap, PolicyValidatorResult r, boolean isSoap) {
         Assertion[] ass = ap.getPath();
-        PathValidator pv = new PathValidator(ap, r);
+        PathValidator pv = new PathValidator(ap, r, isSoap);
         for (int i = 0; i < ass.length; i++) {
             pv.validate(ass[i]);
         }

@@ -33,10 +33,12 @@ class PathValidator {
     List deferredValidators = new ArrayList();
     private AssertionPath assertionPath;
     private final Logger logger = Logger.getLogger(PathValidator.class.getName());
+    private boolean isServiceSoap;
 
-    PathValidator(AssertionPath ap, PolicyValidatorResult r) {
+    PathValidator(AssertionPath ap, PolicyValidatorResult r, boolean isSoap) {
         result = r;
         assertionPath = ap;
+        isServiceSoap = isSoap;
     }
 
     public void validate(Assertion a) {
@@ -44,6 +46,10 @@ class PathValidator {
         // has precondition
         if (hasPreconditionAssertion(a)) {
             processPrecondition(a);
+        }
+
+        if (onlyForSoap(a)) {
+            processSoapSpecific(a);
         }
 
         if (isComposite(a)) {
@@ -304,6 +310,13 @@ class PathValidator {
         }
     }
 
+    private void processSoapSpecific(Assertion a) {
+        if (!this.isServiceSoap) {
+            result.addError(new PolicyValidatorResult.Error(a, assertionPath,
+              "This assertion only works with soap services.", null));
+        }
+    }
+
     private void processComposite(CompositeAssertion a) {
         if (a.getChildren().isEmpty()) {
             result.addWarning(new PolicyValidatorResult.Warning(a, assertionPath,
@@ -337,6 +350,16 @@ class PathValidator {
 
     private boolean isComposite(Assertion a) {
         return a instanceof CompositeAssertion;
+    }
+
+    private boolean onlyForSoap(Assertion a) {
+        if (a instanceof SecureConversation || a instanceof WssBasic ||
+            a instanceof RequestWssConfidentiality  || a instanceof RequestWssIntegrity  ||
+            a instanceof RequestWssReplayProtection || a instanceof RequestWssX509Cert ||
+            a instanceof ResponseWssConfidentiality  || a instanceof ResponseWssIntegrity ||
+            a instanceof SamlSecurity)
+            return true;
+        return false;
     }
 
     private boolean hasPreconditionAssertion(Assertion a) {

@@ -139,7 +139,8 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
      * validate the service policy.
      */
     public void validatePolicy() {
-        final PolicyValidatorResult result = PolicyValidator.getDefault().validate(rootAssertion.asAssertion());
+        final PolicyValidatorResult result = PolicyValidator.getDefault().validate(rootAssertion.asAssertion(),
+                                                                                   service.isSoap());
         displayPolicyValidateResult(pruneDuplicates(result));
     }
 
@@ -445,7 +446,7 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
             validateAction = new ValidatePolicyAction() {
                 protected void performAction() {
                     PolicyValidatorResult result
-                      = PolicyValidator.getDefault().validate(rootAssertion.asAssertion());
+                      = PolicyValidator.getDefault().validate(rootAssertion.asAssertion(), service.isSoap());
                     displayPolicyValidateResult(pruneDuplicates(result));
 
                 }
@@ -460,12 +461,12 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
      */
     private String fullValidate() {
         PolicyValidatorResult result = PolicyValidator.getDefault().
-                                            validate(rootAssertion.asAssertion());
+                                            validate(rootAssertion.asAssertion(), service.isSoap());
         String policyXml = null;
         try {
             policyXml = WspWriter.getPolicyXml(rootAssertion.asAssertion());
             PolicyValidatorResult result2 = Registry.getDefault().getServiceManager().
-                                                validatePolicy(policyXml);
+                                                validatePolicy(policyXml, service.isSoap());
             if (result2.getErrorCount() > 0) {
                 for (Iterator i = result2.getErrors().iterator(); i.hasNext();) {
                     result.addError((com.l7tech.policy.PolicyValidatorResult.Error)i.next());

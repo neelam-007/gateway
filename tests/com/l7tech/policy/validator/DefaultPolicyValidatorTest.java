@@ -64,7 +64,7 @@ public class DefaultPolicyValidatorTest extends TestCase {
         AllAssertion aa = new AllAssertion();
         aa.setChildren(kids);
         PolicyValidator dfpv = PolicyValidator.getDefault();
-        PolicyValidatorResult result = dfpv.validate(aa);
+        PolicyValidatorResult result = dfpv.validate(aa, true);
         List messages = result.messages(httpRoutingAssertion);
         assertTrue("Expected errors/warnings for the " + HttpRoutingAssertion.class + " assertion, got 0", !messages.isEmpty(), messages);
 
@@ -77,7 +77,7 @@ public class DefaultPolicyValidatorTest extends TestCase {
           });
         aa = new AllAssertion();
         aa.setChildren(kids);
-        result = dfpv.validate(aa);
+        result = dfpv.validate(aa, true);
         messages = result.messages(httpRoutingAssertion);
         assertTrue("Expected no errors/warnings.", messages.isEmpty(), messages);
     }
@@ -100,7 +100,7 @@ public class DefaultPolicyValidatorTest extends TestCase {
         AllAssertion aa = new AllAssertion();
         aa.setChildren(kids);
         PolicyValidator dfpv = PolicyValidator.getDefault();
-        PolicyValidatorResult result = dfpv.validate(aa);
+        PolicyValidatorResult result = dfpv.validate(aa, true);
         List messages = result.messages(specificUser);
         assertTrue("Expected errors/warnings for the " + HttpRoutingAssertion.class + " assertion, got 0 messages.", !messages.isEmpty());
 
@@ -115,7 +115,7 @@ public class DefaultPolicyValidatorTest extends TestCase {
         aa = new AllAssertion();
         aa.setChildren(kids);
         dfpv = PolicyValidator.getDefault();
-        result = dfpv.validate(aa);
+        result = dfpv.validate(aa, true);
         messages = result.messages(specificUser);
         assertTrue("Expected no errors/warnings.", messages.isEmpty(), messages);
     }
@@ -138,7 +138,7 @@ public class DefaultPolicyValidatorTest extends TestCase {
         AllAssertion aa = new AllAssertion();
         aa.setChildren(kids);
         PolicyValidator dfpv = PolicyValidator.getDefault();
-        PolicyValidatorResult result = dfpv.validate(aa);
+        PolicyValidatorResult result = dfpv.validate(aa, true);
         List messages = result.messages(xs);
         assertTrue("Expected errors/warnings for the " + RequestWssIntegrity.class + " assertion, got 0", !messages.isEmpty(), messages);
     }
@@ -161,7 +161,7 @@ public class DefaultPolicyValidatorTest extends TestCase {
         AllAssertion aa = new AllAssertion();
         aa.setChildren(kids);
         PolicyValidator dfpv = PolicyValidator.getDefault();
-        PolicyValidatorResult result = dfpv.validate(aa);
+        PolicyValidatorResult result = dfpv.validate(aa, true);
         List messages = result.messages(xs);
         assertTrue("Expected no errors/warnings", messages.isEmpty(), messages);
     }
@@ -186,7 +186,7 @@ public class DefaultPolicyValidatorTest extends TestCase {
         AllAssertion aa = new AllAssertion();
         aa.setChildren(kids);
         PolicyValidator dfpv = PolicyValidator.getDefault();
-        PolicyValidatorResult result = dfpv.validate(aa);
+        PolicyValidatorResult result = dfpv.validate(aa, true);
         List messages = result.getMessages();
         assertTrue("Expected no errors/warnings", messages.isEmpty(), messages);
 
@@ -199,7 +199,7 @@ public class DefaultPolicyValidatorTest extends TestCase {
           });
         aa = new AllAssertion();
         aa.setChildren(kids);
-        result = dfpv.validate(aa);
+        result = dfpv.validate(aa, true);
         messages = result.messages(httpClientCert);
         assertTrue("Expected errors/warnings for the " + HttpClientCert.class + " assertion, got 0", !messages.isEmpty());
     }

@@ -89,11 +89,11 @@ public class ServiceAdminImpl extends RemoteService implements ServiceAdmin {
         }
     }
 
-    public PolicyValidatorResult validatePolicy(String policyXml) throws RemoteException {
+    public PolicyValidatorResult validatePolicy(String policyXml, boolean isSoap) throws RemoteException {
         try {
             Assertion assertion = WspReader.parse(policyXml);
             PolicyValidator validator = new ServerPolicyValidator();
-            return validator.validate(assertion);
+            return validator.validate(assertion, isSoap);
         } catch (IOException e) {
             logger.log(Level.WARNING, "cannot parse passed policy xml: " + policyXml, e);
             throw new RemoteException("cannot parse passed policy xml", e);

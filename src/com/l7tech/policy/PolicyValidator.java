@@ -44,7 +44,7 @@ public abstract class PolicyValidator {
      * @param assertion the assertion tree to be validated.
      * @return the result of the validation
      */
-    public PolicyValidatorResult validate(Assertion assertion) {
+    public PolicyValidatorResult validate(Assertion assertion, boolean isSoap) {
         assertion.treeChanged();
         if (assertion == null) {
             throw new IllegalArgumentException();
@@ -56,7 +56,7 @@ public abstract class PolicyValidator {
 
         for (Iterator iterator = path.paths().iterator(); iterator.hasNext();) {
             AssertionPath assertionPath = (AssertionPath)iterator.next();
-            validatePath(assertionPath, result);
+            validatePath(assertionPath, result, isSoap);
         }
         return result;
     }
@@ -67,5 +67,5 @@ public abstract class PolicyValidator {
      * @param ap the assertion path to validate
      * @param r  the result collect parameter
      */
-    abstract public void validatePath(AssertionPath ap, PolicyValidatorResult r);
+    abstract public void validatePath(AssertionPath ap, PolicyValidatorResult r, boolean isSoap);
 }

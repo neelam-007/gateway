@@ -26,5 +26,5 @@ public interface ServiceAdmin extends Remote {
 
     void deletePublishedService(long oid) throws RemoteException, DeleteException;
 
-    PolicyValidatorResult validatePolicy(String policyXml) throws RemoteException;
+    PolicyValidatorResult validatePolicy(String policyXml, boolean isSoap) throws RemoteException;
 }

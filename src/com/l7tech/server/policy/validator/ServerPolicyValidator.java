@@ -44,7 +44,7 @@ import java.util.logging.Level;
  * $Id$<br/>
  */
 public class ServerPolicyValidator extends PolicyValidator {
-    public void validatePath(AssertionPath ap, PolicyValidatorResult r) {
+    public void validatePath(AssertionPath ap, PolicyValidatorResult r, boolean isSoap) {
         Assertion[] ass = ap.getPath();
         PathContext pathContext = new PathContext();
         for (int i = 0; i < ass.length; i++) {

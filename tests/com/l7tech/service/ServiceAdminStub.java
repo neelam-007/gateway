@@ -61,7 +61,7 @@ public class ServiceAdminStub implements ServiceAdmin {
         }
     }
 
-    public PolicyValidatorResult validatePolicy(String assertion) throws RemoteException {
+    public PolicyValidatorResult validatePolicy(String assertion, boolean issoap) throws RemoteException {
         // todo
         return null;
     }
