@@ -46,7 +46,7 @@ public class SymantecAntivirusScanEngineClient {
      * @return a response from the scan engine server for each part in this message. these response can be
      * interpreted with a call to savseResponseIndicateInfection()
      */
-    public SAVScanEngineResponse[] scan(Message msg)  throws IOException, UnknownHostException, NoSuchPartException {
+    public SAVScanEngineResponse[] scan(Message msg) throws CannotDetermineInfectionException, NoSuchPartException, IOException {
         ArrayList res = new ArrayList();
         for (PartIterator i = msg.getMimeKnob().getParts(); i.hasNext();) {
             PartInfo pi = i.next();
@@ -70,28 +70,27 @@ public class SymantecAntivirusScanEngineClient {
      * 	0
      * @return true means savse is saying there is infection
      */
-    public boolean savseResponseIndicateInfection(SAVScanEngineResponse parsedResponse) {
-        if (parsedResponse.headers == null) {
+    public boolean savseResponseIndicateInfection(SAVScanEngineResponse res) throws CannotDetermineInfectionException {
+        if (res.headers == null) {
             logger.warning("this parsed response does not contain headers, infection cannot be determined");
-            throw new RuntimeException("unexpected response format. " + parsedResponse); // todo, special exception type
+            throw new CannotDetermineInfectionException("Unexpected response format. " + res);
         }
-        String str = (String)parsedResponse.headers.get("X-Infection-Found");
+        String str = (String)res.headers.get("X-Infection-Found");
         if (str != null && str.length() > 0) {
             logger.warning("Infection detected - X-Infection-Found: " + str);
             return true;
         }
-        str = (String)parsedResponse.headers.get("X-Violations-Found");
+        str = (String)res.headers.get("X-Violations-Found");
         if (str != null && str.length() > 0) {
             logger.warning("Infection detected - X-Violations-Found: " + str);
             return true;
         }
 
-        if (parsedResponse.statusCode == 204) {
+        if (res.statusCode == 204) {
             return false;
         }
 
-        logger.warning("Unexpected return code: " + parsedResponse.statusString);
-        // todo, some sort of 'maybe infected' return code
+        logger.info("Unexpected return code with no infection declared: " + res.statusString);
         return false;
     }
 
@@ -124,7 +123,9 @@ public class SymantecAntivirusScanEngineClient {
     /**
      * Send content to scan using ICAP and read response from sav scan engine.
      */
-    private String getSavseResponse(String scanEngineHostname, int scanEnginePort, byte[] headers, byte[] payload, String filename) throws IOException, UnknownHostException {
+    private String getSavseResponse(String scanEngineHostname, int scanEnginePort,
+                                    byte[] headers, byte[] payload,
+                                    String filename) throws IOException, UnknownHostException {
         String get = "GET http://scapi.symantec.com/" + filename + " HTTP/1.0\r\n\r\n";
 
         String hdr;
@@ -160,7 +161,7 @@ public class SymantecAntivirusScanEngineClient {
         byte[] returnedfromsav = new byte[4096];
         int read = readFromSocket(socket, returnedfromsav);
         if (read <= 0) {
-            throw new IOException("server returned nothing");
+            throw new IOException("Server returned nothing");
         }
         String output = new String(returnedfromsav, 0, read);
         logger.fine("Response from sav scan engine:\n" + output);
@@ -402,15 +403,23 @@ public class SymantecAntivirusScanEngineClient {
      * @param payload the actual payload to scan
      * @return the result of the scan
      */
-    public SAVScanEngineResponse scan(byte[] headers, byte[] payload)  throws IOException, UnknownHostException {
-        String res = getSavseResponse(scannerHostName(),
-                                      scannerPort(),
-                                      headers,
-                                      payload,
-                                      "ssgreq." + System.currentTimeMillis());
+    public SAVScanEngineResponse scan(byte[] headers, byte[] payload) throws CannotDetermineInfectionException {
+        String res = null;
+        try {
+            res = getSavseResponse(scannerHostName(),
+                                                  scannerPort(),
+                                                  headers,
+                                                  payload,
+                                                  "ssgreq." + System.currentTimeMillis());
+        } catch (IOException e) {
+            throw new CannotDetermineInfectionException("Cannot get response from Symantec anti " +
+                                                        "virus scan engine server",
+                                                        e);
+        }
 
         if (res == null) {
-            throw new IOException("cannot get response from savse server");
+            throw new CannotDetermineInfectionException("Cannot get response from Symantec anti " +
+                                                        "virus scan engine server");
         }
 
         return parseResponse(res);
