@@ -6,6 +6,8 @@
 
 package com.l7tech.proxy.datamodel;
 
+import com.l7tech.proxy.processor.OperationCanceledException;
+
 /**
  * Get usernames and passwords from somewhere.  The caller of the manager interface will then
  * typically stuff them into an Ssg object for safe keeping.
@@ -22,9 +24,8 @@ public interface CredentialManager {
      * overwritten with new ones.  Where the credentials actually come from is up to the CredentialManager
      * implementation; in the GUI environment, it will pop up a login window.
      * @param ssg  the Ssg whose username and password are to be updated
-     * @return true if the credentials were updated; false if new credentials couldn't be obtained.
      */
-    boolean getCredentials(Ssg ssg);
+    void getCredentials(Ssg ssg) throws OperationCanceledException;
 
     /**
      * Notify that the credentials for this SSG have been tried and found to be no good.

@@ -8,6 +8,7 @@ package com.l7tech.proxy.gui;
 
 import com.l7tech.proxy.datamodel.CredentialManager;
 import com.l7tech.proxy.datamodel.Ssg;
+import com.l7tech.proxy.processor.OperationCanceledException;
 import com.l7tech.console.panels.Utilities;
 
 import javax.swing.*;
@@ -44,18 +45,18 @@ public class GuiCredentialManager implements CredentialManager {
      * and hold here until it finishes.
      * @param ssg
      */
-    public boolean getCredentials(final Ssg ssg) {
+    public void getCredentials(final Ssg ssg) throws OperationCanceledException {
         // If this SSG isn't supposed to be hassling us with dialog boxes, stop now
         if (!ssg.promptForUsernameAndPassword()) {
             log.info("Logon prompts disabled for SSG " + ssg);
-            return false;
+            throw new OperationCanceledException("Logon prompts are disabled for SSG " + ssg);
         }
 
         long now = System.currentTimeMillis();
         synchronized(this) {
             // If another instance already updated the credentials while we were waiting, we've done our job
             if (ssg.credentialsUpdatedTime() > now)
-                return true;
+                return;
 
             final PromptState promptState = new PromptState();
             log.info("Displaying logon prompt for SSG " + ssg);
@@ -82,9 +83,12 @@ public class GuiCredentialManager implements CredentialManager {
                 log.error(e);
             }
 
-            log.info(promptState.credentialsObtained ? "New credentials noted for SSG " + ssg
-                                                     : "User canceled logon dialog for SSG " + ssg);
-            return promptState.credentialsObtained;
+            if (promptState.credentialsObtained)
+                log.info("New credentials noted for SSG " + ssg);
+            else{
+                log.info("User canceled logon dialog for SSG " + ssg);
+                throw new OperationCanceledException("User canceled logon dialog");
+            }
         }
     }
 

@@ -7,6 +7,7 @@
 package com.l7tech.proxy.datamodel;
 
 import org.apache.log4j.Category;
+import com.l7tech.proxy.processor.OperationCanceledException;
 
 /**
  * Default CredentialManager implementation.  This version requires that the credentials already be
@@ -32,9 +33,9 @@ public class CredentialManagerImpl implements CredentialManager {
      * Ssg is not already configured with valid credentials there's nothing we can do about it.
      * @param ssg
      */
-    public boolean getCredentials(Ssg ssg) {
-        log.warn("Updated credentials needed for SSG " + ssg);
-        return false;
+    public void getCredentials(Ssg ssg) throws OperationCanceledException {
+        log.error("Headless CredentialManager: unable to obtain new credentials");
+        throw new OperationCanceledException("Unable to obtain new credentials");
     }
 
     /**
