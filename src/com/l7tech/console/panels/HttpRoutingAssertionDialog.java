@@ -23,6 +23,8 @@ import java.util.EventListener;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.rmi.RemoteException;
+import java.net.URL;
+import java.net.MalformedURLException;
 
 
 /**
@@ -481,17 +483,33 @@ public class HttpRoutingAssertionDialog extends JDialog {
             // Register listener
             okButton.addActionListener(new ActionListener() {
                 public void actionPerformed(ActionEvent e) {
-                    assertion.setProtectedServiceUrl(serviceUrlTextField.getText());
-                    assertion.setLogin(identityTextField.getText());
-                    assertion.setPassword(new String(getCredentials()));
-                    assertion.setRealm(realmTextField.getText());
-                    final Integer sv = (Integer)expirySpinner.getValue();
-                    assertion.setSamlAssertionExpiry(sv.intValue());
-                    assertion.setGroupMembershipStatement(memebershipStatementCheck.isSelected());
-                    assertion.setAttachSamlSenderVouches(samlMethod.isSelected());
-                    assertion.setTaiCredentialChaining(taiCredentialChaining.isSelected());
-                    fireEventAssertionChanged(assertion);
-                    HttpRoutingAssertionDialog.this.dispose();
+                    // check url before accepting
+                    String url = serviceUrlTextField.getText();
+                    boolean bad = false;
+                    if (url == null || url.length() < 1) {
+                        url = "<empty>";
+                        bad = true;
+                    }
+                    try {
+                        new URL(url);
+                    } catch (MalformedURLException e1) {
+                        bad = true;
+                    }
+                    if (bad) {
+                        JOptionPane.showMessageDialog(okButton, "URL value " + url + " is not valid.");
+                    } else {
+                        assertion.setProtectedServiceUrl(url);
+                        assertion.setLogin(identityTextField.getText());
+                        assertion.setPassword(new String(getCredentials()));
+                        assertion.setRealm(realmTextField.getText());
+                        final Integer sv = (Integer)expirySpinner.getValue();
+                        assertion.setSamlAssertionExpiry(sv.intValue());
+                        assertion.setGroupMembershipStatement(memebershipStatementCheck.isSelected());
+                        assertion.setAttachSamlSenderVouches(samlMethod.isSelected());
+                        assertion.setTaiCredentialChaining(taiCredentialChaining.isSelected());
+                        fireEventAssertionChanged(assertion);
+                        HttpRoutingAssertionDialog.this.dispose();
+                    }
                 }
             });
         }
