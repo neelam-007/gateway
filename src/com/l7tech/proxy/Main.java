@@ -3,6 +3,7 @@ package com.l7tech.proxy;
 import com.l7tech.proxy.datamodel.Managers;
 import com.l7tech.proxy.datamodel.SsgFinderImpl;
 import com.l7tech.proxy.processor.MessageProcessor;
+import com.l7tech.common.BuildInfo;
 import org.apache.log4j.Category;
 
 /**
@@ -32,7 +33,7 @@ public class Main {
 
     /** Start a text-only client proxy and run it until it's shut down. */
     public static void main(final String[] argv) {
-        log.info("Starting Layer7 Client Proxy in daemon mode");
+        log.info("Starting daemon mode Agent; " + BuildInfo.getLongBuildString());
 
         int port = getIntProperty("com.l7tech.proxy.listener.port", DEFAULT_PORT);
         int minThreads = getIntProperty("com.l7tech.proxy.listener.minthreads", MIN_THREADS);

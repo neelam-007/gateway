@@ -5,6 +5,7 @@ import com.l7tech.proxy.processor.MessageProcessor;
 import com.l7tech.proxy.datamodel.Managers;
 import com.l7tech.proxy.datamodel.SsgManager;
 import com.l7tech.proxy.datamodel.SsgManagerImpl;
+import com.l7tech.common.BuildInfo;
 import org.apache.log4j.Category;
 import org.mortbay.util.MultiException;
 
@@ -37,7 +38,7 @@ public class Main {
 
     /** Start a GUI-equipped client proxy and run it until it's shut down. */
     public static void main(final String[] argv) {
-        log.info("Starting SecureSpan Agent in GUI mode; " + ClientProxy.CVS_REVISION);
+        log.info("Starting Agent; " + BuildInfo.getLongBuildString());
 
         SsgManager ssgManager = SsgManagerImpl.getSsgManagerImpl();
 
