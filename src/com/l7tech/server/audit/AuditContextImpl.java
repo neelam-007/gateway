@@ -79,7 +79,7 @@ public class AuditContextImpl implements AuditContext {
 
     public void flush() {
         if (currentRecord == null) {
-            if (details.isEmpty()) {
+            if (!details.isEmpty()) {
                 logger.warning("flush() called with AuditDetails but no AuditRecord");
             }
             return;
