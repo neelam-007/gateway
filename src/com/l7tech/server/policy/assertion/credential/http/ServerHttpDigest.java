@@ -14,6 +14,7 @@ import com.l7tech.policy.assertion.credential.CredentialFinderException;
 import com.l7tech.policy.assertion.credential.PrincipalCredentials;
 import com.l7tech.policy.assertion.credential.http.HttpDigest;
 import com.l7tech.server.policy.assertion.ServerAssertion;
+import com.l7tech.server.policy.assertion.credential.DigestSessions;
 
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -38,30 +39,6 @@ public class ServerHttpDigest extends ServerHttpCredentialSource implements Serv
     public static final String ENCODING = "UTF-8";
     public static final String SCHEME = "Digest";
 
-    private static final String NONCEKEY = "Layer7-SSG-DigestNonceKey";
-
-    /**
-     * Generate a unique token. The token is generated according to the
-     * following pattern. NOnceToken = Base64 ( MD5 ( client-IP ":"
-     * time-stamp ":" private-key ) ).
-     *
-     * @param request HTTP Servlet request
-     */
-    protected String generateNonce( Request request ) {
-
-        long currentTime = System.currentTimeMillis();
-
-        String nonceValue = request.getTransportMetadata().getParameter( Request.PARAM_HTTP_REMOTE_ADDR ) + ":" +
-            currentTime + ":" + NONCEKEY;
-
-        byte[] buffer = _md5.digest(nonceValue.getBytes());
-        nonceValue = HexUtils.encodeMd5Digest(buffer);
-
-        // Updating the value in the no once hashtable
-        _nonceTokens.put(nonceValue, new Long( currentTime + _data.getNonceTimeout() ));
-
-        return nonceValue;
-    }
 
     /**
      * Generates the WWW-Authenticate header.
@@ -95,8 +72,8 @@ public class ServerHttpDigest extends ServerHttpCredentialSource implements Serv
         // Get the realm name
         String realmName = _data.getRealm();
         if (realmName == null)
-            realmName = request.getParameter( Request.PARAM_HTTP_SERVER_NAME ) + ":"
-                + request.getParameter( Request.PARAM_HTTP_SERVER_PORT );
+            realmName = request.getParameter( Request.PARAM_SERVER_NAME ) + ":"
+                + request.getParameter( Request.PARAM_SERVER_PORT );
 
         byte[] buffer = _md5.digest(nOnce.getBytes());
 
@@ -110,11 +87,8 @@ public class ServerHttpDigest extends ServerHttpCredentialSource implements Serv
     protected AssertionStatus doCheckCredentials( Request request, Response response ) {
         Map authParams = (Map)request.getParameter( Request.PARAM_HTTP_AUTH_PARAMS );
         String nonce = (String)authParams.get( HttpDigest.PARAM_NONCE );
-        StringBuffer challenge = new StringBuffer();
-
         String userName = (String)authParams.get( HttpDigest.PARAM_USERNAME );
         String realmName = (String)authParams.get( HttpDigest.PARAM_REALM );
-        String nOnce = (String)authParams.get( HttpDigest.PARAM_NONCE );
         String nc = (String)authParams.get( HttpDigest.PARAM_NC );
         String cnonce = (String)authParams.get( HttpDigest.PARAM_CNONCE );
         String qop = (String)authParams.get( HttpDigest.PARAM_QOP );
@@ -123,7 +97,7 @@ public class ServerHttpDigest extends ServerHttpCredentialSource implements Serv
         String opaque = null;
         String method = (String)request.getParameter( Request.PARAM_HTTP_METHOD );
 
-        if ( (userName == null) || (realmName == null) || (nOnce == null)
+        if ( (userName == null) || (realmName == null) || (nonce == null)
              || (uri == null) || (response == null) )
             return AssertionStatus.AUTH_FAILED;
 
@@ -134,11 +108,8 @@ public class ServerHttpDigest extends ServerHttpCredentialSource implements Serv
 
         String md5a2 = HexUtils.encodeMd5Digest( _md5.digest(a2.getBytes()) );
 
-        response.setParameter( Response.PARAM_HTTP_WWWAUTHENTICATE, challenge.toString() );
-
-        return ( authenticate(userName, digestResponse, nOnce, nc, cnonce, qop,
+        return ( authenticate(userName, digestResponse, nonce, nc, cnonce, qop,
                                    realmName, md5a2));
-
     }
 
     protected PrincipalCredentials doFindCredentials( Request request, Response response ) throws CredentialFinderException {
@@ -147,7 +118,19 @@ public class ServerHttpDigest extends ServerHttpCredentialSource implements Serv
         return null;
     }
 
-    protected Map challengeParams(Request request, Response response) {
+    protected Map challengeParams( Request request, Response response ) {
+        Map requestAuthParams = (Map)request.getParameter( Request.PARAM_HTTP_AUTH_PARAMS );
+        Map params = new HashMap();
+
+        String requestNonce = (String)requestAuthParams.get( HttpDigest.PARAM_NONCE );
+        if ( requestNonce == null || requestNonce.length() == 0 ) {
+            String responseNonce = DigestSessions.getInstance().generateNonce( request, _data.getNonceTimeout(), _data.getMaxNonceCount() );
+
+        } else {
+
+        }
+
+
         // TODO
         return null;
     }
