@@ -125,21 +125,18 @@ public class Wsdl {
     }
 
     /**
-     * Returns the service URI (url) from WSDL <code>Port</code>
-     * instances described in this definition. If there
+     * Returns the service URI (url) from first WSDL <code>Port</code>
+     * instance described in this definition. If there
      * are multiple <code>Port</code> instances it is arbitrary
      * as to which port object is returned.
      * <p>
-     * Note that WS vendors do not support multiple ports and
-     * services per definition too.
-     *
      * @return the service url or <b>null</b> if service url
      *         is not found
      */
     public String getServiceURI() {
         for (Iterator it = getServices().iterator(); it.hasNext();) {
             Service svc = (Service)it.next();
-            for (Iterator ports = svc.getPorts().values().iterator();ports.hasNext();) {
+            for (Iterator ports = svc.getPorts().values().iterator(); ports.hasNext();) {
                 Port p = (Port)ports.next();
                 List elements = p.getExtensibilityElements();
                 for (Iterator ite = elements.iterator(); ite.hasNext();) {
@@ -153,6 +150,26 @@ public class Wsdl {
         }
         return null;
     }
+
+    /**
+     * Returns the service name element from WSDL <code>Port</code>
+     * instances described in this definition. 
+     * If there are multiple <code>Service</code> instances it is
+     * arbitrary as to which service name is returned.
+     * Only the local name part is returned.
+     * <p>
+     *
+     * @return the service name or <b>null</b> if service name
+     *         is not found
+     */
+    public String getServiceName() {
+        for (Iterator it = getServices().iterator(); it.hasNext();) {
+            Service svc = (Service)it.next();
+            return svc.getQName().getLocalPart();
+        }
+        return null;
+    }
+
 
     /**
      * @return the collection of WSDL <code>Binding</code>
@@ -282,37 +299,37 @@ public class Wsdl {
         Port pork = null;
         Port soapPort = null;
 
-        while ( services.hasNext() ) {
+        while (services.hasNext()) {
             int numPorts = 0;
-            if ( wsdlService != null ) {
-                logger.warning( "WSDL " + getDefinition().getTargetNamespace() + " has more than one service, we will use only the first." );
+            if (wsdlService != null) {
+                logger.warning("WSDL " + getDefinition().getTargetNamespace() + " has more than one service, we will use only the first.");
                 break;
             }
 
             wsdlService = (Service)services.next();
             Map ports = wsdlService.getPorts();
-            if ( ports == null ) continue;
+            if (ports == null) continue;
 
             Iterator portKeys = ports.keySet().iterator();
             String portKey;
-            while ( portKeys.hasNext() ) {
+            while (portKeys.hasNext()) {
                 portKey = (String)portKeys.next();
-                if ( soapPort == null ) {
+                if (soapPort == null) {
                     pork = (Port)ports.get(portKey);
 
                     List elements = pork.getExtensibilityElements();
                     ExtensibilityElement eel;
                     // Find the first Port that contains a SOAPAddress eel
-                    for ( int i = 0; i < elements.size(); i++ ) {
+                    for (int i = 0; i < elements.size(); i++) {
                         eel = (ExtensibilityElement)elements.get(i);
-                        if ( eel instanceof SOAPAddress ) {
+                        if (eel instanceof SOAPAddress) {
                             soapPort = pork;
                             numPorts++;
                         }
                     }
                 }
             }
-            if ( numPorts > 1 ) logger.warning( "WSDL " + getDefinition().getTargetNamespace() + " has more than one port, used the first." );
+            if (numPorts > 1) logger.warning("WSDL " + getDefinition().getTargetNamespace() + " has more than one port, used the first.");
         }
         return soapPort;
     }
@@ -322,16 +339,16 @@ public class Wsdl {
         URL url = null;
         ExtensibilityElement eel;
         int num = 0;
-        for ( int i = 0; i < elements.size(); i++ ) {
+        for (int i = 0; i < elements.size(); i++) {
             eel = (ExtensibilityElement)elements.get(i);
-            if ( eel instanceof SOAPAddress ) {
+            if (eel instanceof SOAPAddress) {
                 SOAPAddress sadd = (SOAPAddress)eel;
                 num++;
-                url = new URL( sadd.getLocationURI() );
+                url = new URL(sadd.getLocationURI());
             }
         }
 
-        if ( num > 1 ) logger.warning( "WSDL " + getDefinition().getTargetNamespace() + " contained multiple <soap:address> elements" );
+        if (num > 1) logger.warning("WSDL " + getDefinition().getTargetNamespace() + " contained multiple <soap:address> elements");
 
         return url;
     }
@@ -346,16 +363,16 @@ public class Wsdl {
         List elements = wsdlPort.getExtensibilityElements();
         ExtensibilityElement eel;
         int num = 0;
-        for ( int i = 0; i < elements.size(); i++ ) {
+        for (int i = 0; i < elements.size(); i++) {
             eel = (ExtensibilityElement)elements.get(i);
-            if ( eel instanceof SOAPAddress ) {
+            if (eel instanceof SOAPAddress) {
                 SOAPAddress sadd = (SOAPAddress)eel;
                 num++;
                 sadd.setLocationURI(url.toString());
             }
         }
 
-        if ( num > 1 ) logger.warning( "WSDL " + getDefinition().getTargetNamespace() + " contained multiple <soap:address> elements" );
+        if (num > 1) logger.warning("WSDL " + getDefinition().getTargetNamespace() + " contained multiple <soap:address> elements");
     }
 
     private Definition definition;

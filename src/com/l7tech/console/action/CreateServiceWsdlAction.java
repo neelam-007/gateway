@@ -14,6 +14,7 @@ import com.l7tech.objectmodel.DuplicateObjectException;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.service.PublishedService;
+import com.l7tech.service.Wsdl;
 import com.l7tech.policy.wsp.WspWriter;
 import com.l7tech.policy.assertion.TrueAssertion;
 import com.l7tech.policy.assertion.Assertion;
@@ -32,6 +33,7 @@ import javax.wsdl.factory.WSDLFactory;
 import javax.wsdl.xml.WSDLWriter;
 import java.io.StringWriter;
 import java.io.ByteArrayOutputStream;
+import java.io.StringReader;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.Map;
@@ -130,7 +132,8 @@ public class CreateServiceWsdlAction extends BaseAction implements ConnectionLis
                 WSDLWriter wsdlWriter = fac.newWSDLWriter();
                 StringWriter sw = new StringWriter();
                 wsdlWriter.writeWSDL(def, sw);
-                service.setName(def.getTargetNamespace());
+                Wsdl ws = Wsdl.newInstance(null, new StringReader(sw.toString()));
+                service.setName(ws.getServiceName());
                 service.setWsdlXml(sw.toString());
                 service.setWsdlUrl(getServiceAddress(def));
 

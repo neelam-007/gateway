@@ -164,7 +164,7 @@ public class ServicePanel extends WizardStepPanel {
               Registry.getDefault().getServiceManager().resolveWsdlTarget(wsdlUrljTextField.getText());
             wsdl = Wsdl.newInstance(null, new StringReader(wsdlXml));
 
-            service.setName(wsdl.getDefinition().getTargetNamespace());
+            service.setName(wsdl.getServiceName());
             service.setWsdlXml(wsdlXml);
             service.setWsdlUrl(wsdlUrljTextField.getText());
 
