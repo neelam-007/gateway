@@ -12,18 +12,21 @@ import com.l7tech.common.security.saml.Constants;
 import com.l7tech.common.util.*;
 import com.l7tech.common.xml.InvalidDocumentFormatException;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
+import org.apache.xmlbeans.XmlException;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
-import org.apache.xmlbeans.XmlException;
+import x0Assertion.oasisNamesTcSAML1.AssertionType;
 
-import javax.crypto.Cipher;
 import javax.xml.parsers.ParserConfigurationException;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.security.*;
+import java.security.GeneralSecurityException;
+import java.security.Key;
+import java.security.NoSuchAlgorithmException;
+import java.security.PrivateKey;
 import java.security.cert.CertificateExpiredException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.CertificateNotYetValidException;
@@ -32,8 +35,6 @@ import java.text.ParseException;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-
-import x0Assertion.oasisNamesTcSAML1.AssertionType;
 
 /**
  * An implementation of the WssProcessor for use in both the SSG and the SSA.
@@ -437,125 +438,13 @@ public class WssProcessorImpl implements WssProcessor {
 
         // If there's a KeyIdentifier, log whether it's talking about our key
         // Check that this is for us by checking the ds:KeyInfo/wsse:SecurityTokenReference/wsse:KeyIdentifier
-        Element kinfo = XmlUtil.findOnlyOneChildElementByName(encryptedKeyElement, SoapUtil.DIGSIG_URI, SoapUtil.KINFO_EL_NAME);
-        if (kinfo != null) {
-            Element str = XmlUtil.findOnlyOneChildElementByName(kinfo,
-                                                                SoapUtil.SECURITY_URIS_ARRAY,
-                                                                SoapUtil.SECURITYTOKENREFERENCE_EL_NAME);
-            if (str != null) {
-                Element ki = XmlUtil.findOnlyOneChildElementByName(str,
-                                                                   SoapUtil.SECURITY_URIS_ARRAY,
-                                                                   SoapUtil.KEYIDENTIFIER_EL_NAME);
-                if (ki != null) {
-                    String valueType = ki.getAttribute("ValueType");
-                    String keyIdentifierValue = XmlUtil.getTextValue(ki);
-                    byte[] keyIdValueBytes = new byte[0];
-                    try {
-                        keyIdValueBytes = HexUtils.decodeBase64(keyIdentifierValue, true);
-                    } catch (IOException e) {
-                        throw new InvalidDocumentFormatException("Unable to parse base64 Key Identifier", e);
-                    }
-
-                    if (keyIdValueBytes != null) {
-                        if (valueType == null || valueType.length() <= 0) {
-                            logger.fine("The KeyId Value Type is not specified. We will therefore not check it.");
-                            /* FALLTHROUGH */
-                        } else if (valueType.equals(SoapUtil.VALUETYPE_SKI)) {
-                            // If not typed, assume it's a ski
-                            byte[] ski = recipientCert.getExtensionValue(CertUtils.X509_OID_SUBJECTKEYID);
-                            if (ski == null) {
-                                // this should never happen
-                                throw new ProcessorException("Our certificate does not have a ski." +
-                                                             "This should never happen");
-                            } else {
-                                // trim if necessary
-                                byte[] ski2 = ski;
-                                if (ski.length > keyIdValueBytes.length) {
-                                    ski2 = new byte[keyIdValueBytes.length];
-                                    System.arraycopy(ski, ski.length-keyIdValueBytes.length,
-                                                     ski2, 0, keyIdValueBytes.length);
-                                }
-                                if (Arrays.equals(keyIdValueBytes, ski2)) {
-                                    logger.fine("the Key SKI is recognized. This key is for us for sure!");
-                                    /* FALLTHROUGH */
-                                } else {
-                                    String msg = "This EncryptedKey has a KeyInfo that declares a specific SKI, " +
-                                                 "but our certificate's SKI does not match.";
-                                    logger.warning(msg);
-                                    throw new GeneralSecurityException(msg);
-                                }
-                            }
-                        } else if (valueType.equals(SoapUtil.VALUETYPE_X509)) {
-                            // It seems to be a complete certificate
-                            X509Certificate referencedCert = (X509Certificate)CertificateFactory.getInstance("X.509").
-                                                                generateCertificate(new ByteArrayInputStream(keyIdValueBytes));
-                            if (recipientCert.equals(referencedCert)) {
-                                logger.fine("The Key recipient cert is recognized");
-                                /* FALLTHROUGH */
-
-                            } else {
-                                String msg = "This EncryptedKey has a KeyInfo that declares a specific cert, " +
-                                             "but our certificate does not match.";
-                                logger.warning(msg);
-                                throw new GeneralSecurityException(msg);
-                            }
-                        } else
-                            throw new InvalidDocumentFormatException("The EncryptedKey's KeyInfo uses an unsupported " +
-                                                                     "ValueType: " + valueType);
-                    }
-                }
-            }
-        }
-
+        XencUtil.checkKeyInfo(encryptedKeyElement, recipientCert);
 
         // verify that the algo is supported
-        Element encryptionMethodEl = XmlUtil.findOnlyOneChildElementByName(encryptedKeyElement,
-                                                                           SoapUtil.XMLENC_NS,
-                                                                           "EncryptionMethod");
-        if (encryptionMethodEl != null) {
-            String encMethodValue = encryptionMethodEl.getAttribute("Algorithm");
-            if (encMethodValue == null || encMethodValue.length() < 1) {
-                logger.warning("Algorithm not specified in EncryptionMethod element");
-                return;
-            } else if (!encMethodValue.equals(SoapUtil.SUPPORTED_ENCRYPTEDKEY_ALGO)) {
-                logger.warning("Algorithm not supported " + encMethodValue);
-                return;
-            }
-        }
+        XencUtil.checkEncryptionMethod(encryptedKeyElement);
 
-        // get the xenc:CipherValue
-        Element cipherValue = null;
-        Element cipherData = XmlUtil.findOnlyOneChildElementByName(encryptedKeyElement,
-                                                                   SoapUtil.XMLENC_NS,
-                                                                   "CipherData");
-        if (cipherData != null) {
-            cipherValue = XmlUtil.findOnlyOneChildElementByName(cipherData, SoapUtil.XMLENC_NS, "CipherValue");
-        }
-        if (cipherValue == null) {
-            logger.warning("element missing CipherValue");
-            return;
-        }
-        // we got the value, decrypt it
-        String value = XmlUtil.getTextValue(cipherValue);
-        byte[] encryptedKeyBytes = new byte[0];
-        try {
-            encryptedKeyBytes = HexUtils.decodeBase64(value, true);
-        } catch (IOException e) {
-            throw new InvalidDocumentFormatException("Unable to parse base64 EncryptedKey CipherValue", e);
-        }
-        Cipher rsa = null;
-        rsa = Cipher.getInstance("RSA");
-        rsa.init(Cipher.DECRYPT_MODE, recipientKey);
-
-        byte[] decryptedPadded = rsa.doFinal(encryptedKeyBytes);
-        // unpad
-        byte[] unencryptedKey = null;
-        try {
-            unencryptedKey = unPadRSADecryptedSymmetricKey(decryptedPadded);
-        } catch (IllegalArgumentException e) {
-            logger.log(Level.WARNING, "The key could not be unpadded", e);
-            throw new ProcessorException(e);
-        }
+        // Extract the encrypted key
+        byte[] unencryptedKey = XencUtil.decryptKey(encryptedKeyElement, recipientKey);
 
         // We got the key. Get the list of elements to decrypt.
         Element refList = XmlUtil.findOnlyOneChildElementByName(encryptedKeyElement,
@@ -573,41 +462,6 @@ public class WssProcessorImpl implements WssProcessor {
             logger.log(Level.WARNING, "Error decrypting", e);
             throw new ProcessorException(e);
         }
-    }
-
-    /**
-     * This handles the padding of the encryption method designated by http://www.w3.org/2001/04/xmlenc#rsa-1_5.
-     *
-     * Exceprt from the spec:
-     * the padding is of the following special form:
-     * 02 | PS* | 00 | key
-     * where "|" is concatenation, "02" and "00" are fixed octets of the corresponding hexadecimal value, PS is
-     * a string of strong pseudo-random octets [RANDOM] at least eight octets long, containing no zero octets,
-     * and long enough that the value of the quantity being CRYPTed is one octet shorter than the RSA modulus,
-     * and "key" is the key being transported. The key is 192 bits for TRIPLEDES and 128, 192, or 256 bits for
-     * AES. Support of this key transport algorithm for transporting 192 bit keys is MANDATORY to implement.
-     *
-     * @param paddedKey the decrpted but still padded key
-     * @return the unpadded decrypted key
-     */
-    private static byte[] unPadRSADecryptedSymmetricKey(byte[] paddedKey) throws IllegalArgumentException {
-        // the first byte should be 02
-        if (paddedKey[0] != 2) throw new IllegalArgumentException("paddedKey has wrong format");
-        // traverse the next series of byte until we get to the first 00
-        int pos = 0;
-        for (pos = 0; pos < paddedKey.length; pos++) {
-            if (paddedKey[pos] == 0) {
-                break;
-            }
-        }
-        // the remainder is the key to return
-        int keylength = paddedKey.length - 1 - pos;
-        if (keylength < 16) {
-            throw new IllegalArgumentException("key length " + keylength + "is not a valid length");
-        }
-        byte[] output = new byte[keylength];
-        System.arraycopy(paddedKey, pos+1, output, 0, keylength);
-        return output;
     }
 
     /**
@@ -826,7 +680,7 @@ public class WssProcessorImpl implements WssProcessor {
     }
 
     private void processSamlSecurityToken( Element securityTokenElement, ProcessingStatusHolder context )
-        throws ProcessorException, InvalidDocumentFormatException
+        throws InvalidDocumentFormatException
     {
         logger.finest("Processing saml:Assertion XML SecurityToken");
         try {

@@ -15,6 +15,7 @@ import java.util.logging.Logger;
 import com.l7tech.common.security.xml.TokenServiceClient;
 import com.l7tech.common.xml.TestDocuments;
 import com.l7tech.common.util.XmlUtil;
+import com.l7tech.common.util.HexUtils;
 import com.l7tech.identity.User;
 import com.l7tech.identity.UserBean;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
@@ -47,7 +48,7 @@ public class TokenServiceTest extends TestCase {
 
         final TokenService service = new TokenService(TestDocuments.getDotNetServerPrivateKey(),
                                                       TestDocuments.getDotNetServerCertificate());
-        
+
         final TokenService.CredentialsAuthenticator authenticator = new TokenService.CredentialsAuthenticator() {
 
             public User authenticate(LoginCredentials creds) {
@@ -60,5 +61,16 @@ public class TokenServiceTest extends TestCase {
         Document responseMsg = service.respondToRequestSecurityToken(requestMsg, authenticator);
 
         log.info("Decorated response (reformatted): " + XmlUtil.nodeToFormattedString(responseMsg));
+
+        Object responseObj = tsc.parseRequestSecurityTokenResponse(responseMsg,
+                                                                   TestDocuments.getDotNetServerCertificate(),
+                                                                   TestDocuments.getDotNetServerPrivateKey(),
+                                                                   TestDocuments.getDotNetServerCertificate());
+
+        assertTrue(responseObj instanceof TokenServiceClient.SecureConversationSession);
+        TokenServiceClient.SecureConversationSession session = (TokenServiceClient.SecureConversationSession)responseObj;
+        log.info("Got session! Session id=" + session.getSessionId());
+        log.info("Session expiry date=" + session.getExpiryDate());
+        log.info("Session shared secret=" + HexUtils.hexDump(session.getSharedSecret()));
     }
 }

@@ -604,47 +604,9 @@ public class WssDecoratorImpl implements WssDecorator {
             throw new KeyException("Unable to encrypt -- unsupported recipient public key type " +
                                    publicKey.getClass().getName());
         final int modulusLength = ((RSAPublicKey)publicKey).getModulus().toByteArray().length;
-        byte[] paddedKeyBytes = padSymmetricKeyForRsaEncryption(c, keyBytes, modulusLength);
+        byte[] paddedKeyBytes = XencUtil.padSymmetricKeyForRsaEncryption(keyBytes, modulusLength, c.rand);
         byte[] encrypted = rsa.doFinal(paddedKeyBytes);
         return HexUtils.encodeBase64(encrypted, true);
-    }
-
-    /**
-     * This handles the padding of the encryption method designated by http://www.w3.org/2001/04/xmlenc#rsa-1_5.
-     *
-     * Exceprt from the spec:
-     * the padding is of the following special form:
-     * 02 | PS* | 00 | key
-     * where "|" is concatenation, "02" and "00" are fixed octets of the corresponding hexadecimal value, PS is
-     * a string of strong pseudo-random octets [RANDOM] at least eight octets long, containing no zero octets,
-     * and long enough that the value of the quantity being CRYPTed is one octet shorter than the RSA modulus,
-     * and "key" is the key being transported. The key is 192 bits for TRIPLEDES and 128, 192, or 256 bits for
-     * AES. Support of this key transport algorithm for transporting 192 bit keys is MANDATORY to implement.
-     *
-     * @param keyBytes
-     * @return
-     * @throws KeyException if there are too many keyBytes to fit inside this modulus
-     */
-    private byte[] padSymmetricKeyForRsaEncryption(Context c, byte[] keyBytes, int modulusBytes) throws KeyException {
-        int padbytes = modulusBytes - 3 - keyBytes.length;
-
-        // Check just in case, although this should never happen in real life
-        if (padbytes < 8)
-            throw new KeyException("Recipient RSA public key has too few bits to encode this symmetric key");
-
-        byte[] padded = new byte[modulusBytes - 1];
-        int pos = 0;
-        padded[pos++] = 2;
-        while (padbytes > 0) {
-            padded[pos++] = (byte)(c.rand.nextInt(255) + 1);
-            padbytes--;
-        }
-        padded[pos++] = 0;
-        System.arraycopy(keyBytes, 0, padded, pos, keyBytes.length);
-
-
-
-        return padded;
     }
 
     private void addKeyInfo(Element encryptedKey, byte[] idBytes, String valueType) {
