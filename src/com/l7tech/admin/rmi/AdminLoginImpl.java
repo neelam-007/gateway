@@ -57,7 +57,7 @@ public class AdminLoginImpl extends ApplicationObjectSupport
             if (!containsAdminAccessRole(roles)) {
                 throw new AccessControlException(user.getName() + " does not have privilege to access administrative services");
             }
-            logger.info("" + getHighestRole(roles) + " user.getLogin() " + "logged in from IP " + UnicastRemoteObject.getClientHost());
+            logger.info("" + getHighestRole(roles) + " "+user.getLogin() + " logged in from IP " + UnicastRemoteObject.getClientHost());
             AdminContext adminContext = (AdminContext)getApplicationContext().getBean("adminContextRemote");
             return adminContext;
         } catch (AuthenticationException e) {
