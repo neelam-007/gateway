@@ -8,14 +8,15 @@ import java.io.IOException;
 
 import com.l7tech.credential.PrincipalCredentials;
 
+import javax.servlet.http.HttpServletRequest;
+
 /**
  * @author alex
  * @version $Revision$
  */
 public class SoapRequest extends XmlMessageAdapter implements SoapMessage, XmlRequest {
-    public SoapRequest( InputStream requestStream ) {
-        // No document yet
-        _requestStream = requestStream;
+    public SoapRequest( TransportMetadata metadata ) throws IOException {
+        super( metadata );
     }
 
     /**
@@ -57,6 +58,12 @@ public class SoapRequest extends XmlMessageAdapter implements SoapMessage, XmlRe
         _authenticated = authenticated;
     }
 
+    public Object getParameter( Object name ) {
+        // TODO: Get from _axisEnvelope?
+        return null;
+    }
+
+    protected HttpServletRequest _request;
     protected boolean _authenticated;
     protected PrincipalCredentials _principalCredentials;
     protected InputStream _requestStream;
