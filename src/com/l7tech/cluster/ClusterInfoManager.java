@@ -123,7 +123,6 @@ public class ClusterInfoManager {
     }
 
     /**
-     *
      * @return a collection containing ClusterNodeInfo objects. if the collection is empty, it means that
      * the SSG operated by itself outsides a cluster.
      */
