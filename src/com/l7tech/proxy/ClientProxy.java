@@ -68,7 +68,7 @@ public class ClientProxy {
             return;
 
         // Set up SSL trust store
-        // TODO: we need better cert management than this grody hack
+        // TODO: we still need better cert management than this grody hack
         Properties props = System.getProperties();
         props.put("java.protocol.handler.pkgs", "com.sun.net.ssl.internal.www.protocol");
         props.put("javax.net.ssl.trustStore", TRUST_STORE_FILE.getAbsolutePath());
