@@ -18,6 +18,9 @@ import java.awt.event.ItemListener;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Iterator;
 
 /**
  * @author emil
@@ -113,50 +116,38 @@ public class RegexDialog extends JDialog {
                 SimpleAttributeSet sas = new SimpleAttributeSet();
                 sas.addAttribute(StyleConstants.ColorConstants.Background, Color.yellow);
                 SimpleAttributeSet nas = new SimpleAttributeSet();
+
+                Collection highlights = new ArrayList();
                 if (matchAndReplaceRadioButton.isSelected()) {
                     String replaceText = replaceTextArea.getText();
                     StringBuffer sb = new StringBuffer();
+
                     while (matcher.find()) {
-                        int offset = sb.length();
                         matcher.appendReplacement(sb, replaceText);
-                        String s = sb.substring(offset, sb.length());
-                        try {
-                            String beforeMatchString = s.substring(0, matcher.start());
-                            doc.insertString(offset, beforeMatchString, nas);
-                            doc.insertString(offset + beforeMatchString.length(), replaceText, sas);
-                        } catch (BadLocationException e1) {
-                            throw new RuntimeException(e1);
-                        }
+                        highlights.add(new int[] {sb.length() - replaceText.length(), replaceText.length()});
                     }
-                    int offset = sb.length();
                     matcher.appendTail(sb);
-                    String appendString = sb.substring(offset);
+
                     try {
-                        doc.insertString(offset, appendString, nas);
+                        doc.insertString(0, sb.toString(), nas);
                     } catch (BadLocationException e1) {
                         throw new RuntimeException(e1);
                     }
                 } else {
                     String testInputString = testInputTextArea.getText();
-                    int offset = 0;
+                    try {
+                        doc.insertString(0, testInputString, nas);
+                    } catch (BadLocationException e1) {
+                        throw new RuntimeException(e1);
+                    }
+
                     while (matcher.find()) {
-                        String beforeMatchString = testInputString.substring(offset, matcher.start());
-                        try {
-                            doc.insertString(offset, beforeMatchString, nas);
-                            offset += beforeMatchString.length();
-                            doc.insertString(offset, matcher.group(), sas);
-                            offset += matcher.group().length();
-                        } catch (BadLocationException e1) {
-                            throw new RuntimeException(e1);
-                        }
+                        highlights.add(new int[] {matcher.start(), matcher.end() - matcher.start()});
                     }
-                    if (offset < testInputString.length()) {
-                        try {
-                            doc.insertString(offset, testInputString.substring(offset), nas);
-                        } catch (BadLocationException e1) {
-                            throw new RuntimeException(e1);
-                        }
-                    }
+                }
+                for (Iterator iterator = highlights.iterator(); iterator.hasNext();) {
+                    int[] pos = (int[])iterator.next();
+                    doc.setCharacterAttributes(pos[0], pos[1], sas, true);
                 }
             }
         });
