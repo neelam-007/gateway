@@ -70,13 +70,25 @@ public class ServiceNode extends EntityHeaderNode {
      * @return actions appropriate to the node
      */
     public Action[] getActions() {
+        PublishedService ps = null;
+        try {
+            ps = getPublishedService();
+        }
+        catch (Exception e) {
+            log.log(Level.WARNING, "Error retrieving service", e);
+            return new Action[0];
+        }
+        if (ps == null) {
+            log.warning("Cannot retriev service");
+            return new Action[0];
+        }
         DisableServiceAction da = new DisableServiceAction(this);
         da.setEnabled(false);
         EnableServiceAction ea = new EnableServiceAction(this);
         ea.setEnabled(false);
 
         try {
-            boolean disabled = getPublishedService().isDisabled();
+            boolean disabled = ps.isDisabled();
             da.setEnabled(!disabled);
             ea.setEnabled(disabled);
         } catch (Exception e) {
@@ -157,7 +169,12 @@ public class ServiceNode extends EntityHeaderNode {
     private String getServiceName() {
         try {
             if (serviceName == null) {
-                serviceName = getPublishedService().getName();
+                PublishedService ps = getPublishedService();
+                if (ps != null) {
+                    serviceName = getPublishedService().getName();
+                } else {
+                    return "deleted?";
+                }
             }
             return serviceName;
         } catch (Exception e) {
