@@ -1,10 +1,6 @@
 package com.l7tech.identity.cert;
 
-import java.io.FileInputStream;
-import java.io.InputStream;
-import java.io.ByteArrayInputStream;
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
+import java.io.*;
 import java.util.Properties;
 import java.util.Arrays;
 import java.util.Date;
@@ -20,6 +16,7 @@ import java.util.Properties;
 import java.util.logging.Level;
 
 import com.l7tech.logging.LogManager;
+import com.l7tech.common.util.HexUtils;
 
 /**
  * Layer 7 Technologies, inc.
@@ -146,14 +143,27 @@ public class RSASigner {
             System.out.println("java RSASigner rootkstorePath rootkstorepass rootkeyAlias rootprivateKeyPass csrfilepath outputcertpath");
             return;
         }
+
         // read the csr from the file
         byte[] csrfromfile = null;
-        // todo
+        byte[] b64Encoded = HexUtils.slurpStream(new FileInputStream(args[4]), 16384);
+        String tmpStr = new String(b64Encoded);
+        String beginKey = "-----BEGIN CERTIFICATE REQUEST-----";
+        String endKey = "-----END CERTIFICATE REQUEST-----";
+        int beggining = tmpStr.indexOf(beginKey) + beginKey.length();
+        int end = tmpStr.indexOf(endKey);
+        String b64str = tmpStr.substring(beggining, end);
+        sun.misc.BASE64Decoder base64decoder = new sun.misc.BASE64Decoder();
+        csrfromfile = base64decoder.decodeBuffer(b64str);
+
         // instantiate the signer
         RSASigner me = new RSASigner(args[0], args[1], args[2], args[3]);
         Certificate cert = me.createCertificate(csrfromfile);
-        // serialize the cert to path provided
-        // todo
+
+        // serialize the cert to the path provided
+        byte[] certbytes = cert.getEncoded();
+        FileOutputStream output = new FileOutputStream(args[5]);
+        output.write(certbytes);
     }
 
     /**
@@ -365,6 +375,7 @@ public class RSASigner {
     private X509Certificate makeBCCertificate(String dn, X509Name caname,
                                               long validity, PublicKey publicKey, int keyusage)
             throws Exception {
+        LogManager.getInstance().getSystemLogger().log(Level.INFO, "makeBCCertificate() dn= " + dn);
         //start initialising the cert---------------------
         final String sigAlg = "SHA1WithRSA";
 
@@ -450,6 +461,9 @@ public class RSASigner {
         X509Certificate cert = certgen.generateX509Certificate(privateKey);
 
         LogManager.getInstance().getSystemLogger().log(Level.FINE, "<makeBCCertificate()");
+
+        LogManager.getInstance().getSystemLogger().log(Level.INFO, "makeBCCertificate() exit subject dn= " + cert.getSubjectDN().toString());
+
         return (X509Certificate) cert;
     }
     // makeBCCertificate
