@@ -6,16 +6,11 @@
 
 package com.l7tech.server;
 
-import com.l7tech.admin.RoleUtils;
+import com.l7tech.admin.AccessManager;
 import com.l7tech.common.security.TrustedCert;
 import com.l7tech.common.security.TrustedCertAdmin;
-import com.l7tech.common.util.KeystoreUtils;
 import com.l7tech.identity.cert.TrustedCertManager;
 import com.l7tech.objectmodel.*;
-import org.springframework.beans.BeansException;
-import org.springframework.beans.factory.InitializingBean;
-import org.springframework.context.ApplicationContext;
-import org.springframework.context.ApplicationContextAware;
 import org.springframework.orm.hibernate.support.HibernateDaoSupport;
 
 import javax.net.ssl.*;
@@ -36,9 +31,24 @@ import java.util.logging.Logger;
  * @author alex
  * @version $Revision$
  */
-public class TrustedCertAdminImpl extends HibernateDaoSupport
-  implements TrustedCertAdmin, InitializingBean, ApplicationContextAware {
-    private ApplicationContext applicationContext;
+public class TrustedCertAdminImpl extends HibernateDaoSupport implements TrustedCertAdmin {
+    private final AccessManager accessManager;
+    private final X509Certificate rootCertificate;
+
+    public TrustedCertAdminImpl(TrustedCertManager trustedCertManager, X509Certificate rootCertificate, AccessManager accessManager) {
+        this.trustedCertManager = trustedCertManager;
+        if (trustedCertManager == null) {
+            throw new IllegalArgumentException("trusted cert manager is required");
+        }
+        this.accessManager = accessManager;
+        if (accessManager == null) {
+            throw new IllegalArgumentException("Access Manager is required");
+        }
+        this.rootCertificate = rootCertificate;
+        if (rootCertificate == null) {
+            throw new IllegalArgumentException("Root Certificate is required");
+        }
+    }
 
     public List findAllCerts() throws FindException, RemoteException {
         return new ArrayList(getManager().findAll());
@@ -53,7 +63,7 @@ public class TrustedCertAdminImpl extends HibernateDaoSupport
     }
 
     public long saveCert(final TrustedCert cert) throws SaveException, UpdateException, VersionException, RemoteException {
-        RoleUtils.enforceAdminRole(applicationContext);
+        accessManager.enforceAdminRole();
         long oid;
         if (cert.getOid() == Entity.DEFAULT_OID) {
             // check that cert with same dn not already exist
@@ -77,7 +87,7 @@ public class TrustedCertAdminImpl extends HibernateDaoSupport
     }
 
     public void deleteCert(final long oid) throws FindException, DeleteException, RemoteException {
-        RoleUtils.enforceAdminRole(applicationContext);
+        accessManager.enforceAdminRole();
         getManager().delete(oid);
     }
 
@@ -152,36 +162,14 @@ public class TrustedCertAdminImpl extends HibernateDaoSupport
     }
 
     public X509Certificate getSSGRootCert() throws IOException, CertificateException, RemoteException {
-        return KeystoreUtils.getInstance().getRootCert();
+        return rootCertificate;
     }
-
-    public void setTrustedCertManager(TrustedCertManager trustedCertManager) {
-        this.trustedCertManager = trustedCertManager;
-    }
-
-    /**
-     * Set the ApplicationContext that this object runs in.
-     */
-    public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
-        this.applicationContext = applicationContext;
-    }
-
-    public void initDao() throws Exception {
-        checktrustedCertManager();
-    }
-
-    private void checktrustedCertManager() {
-        if (trustedCertManager == null) {
-            throw new IllegalArgumentException("trusted cert manager is required");
-        }
-    }
-
 
     private TrustedCertManager getManager() {
         return trustedCertManager;
     }
 
     private Logger logger = Logger.getLogger(getClass().getName());
-    private TrustedCertManager trustedCertManager;
+    private final TrustedCertManager trustedCertManager;
 
 }

@@ -300,6 +300,16 @@
             <value>getSSLPrivateKey</value>
         </property>
     </bean>
+
+    <bean id="rootCertificate" class="org.springframework.beans.factory.config.MethodInvokingFactoryBean">
+          <property name="targetObject">
+              <ref local='sslKeystore'/>
+          </property>
+          <property name="targetMethod">
+              <value>getRootCert</value>
+          </property>
+      </bean>
+
     <!-- server Wss Decorator -->
     <bean id="wssDecorator" class="com.l7tech.common.security.xml.decorator.WssDecoratorImpl"></bean>
     <!-- server Message Processor -->

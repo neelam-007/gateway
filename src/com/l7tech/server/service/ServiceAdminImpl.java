@@ -1,6 +1,6 @@
 package com.l7tech.server.service;
 
-import com.l7tech.admin.RoleUtils;
+import com.l7tech.admin.AccessManager;
 import com.l7tech.objectmodel.*;
 import com.l7tech.policy.PolicyValidator;
 import com.l7tech.policy.PolicyValidatorResult;
@@ -14,10 +14,7 @@ import org.apache.commons.httpclient.HttpException;
 import org.apache.commons.httpclient.HttpState;
 import org.apache.commons.httpclient.UsernamePasswordCredentials;
 import org.apache.commons.httpclient.methods.GetMethod;
-import org.springframework.beans.BeansException;
-import org.springframework.beans.factory.InitializingBean;
 import org.springframework.context.ApplicationContext;
-import org.springframework.context.ApplicationContextAware;
 import org.springframework.orm.hibernate.support.HibernateDaoSupport;
 
 import java.io.IOException;
@@ -36,13 +33,18 @@ import java.util.logging.Logger;
  * User: flascelles<br/>
  * Date: Jun 6, 2003
  */
-public class ServiceAdminImpl extends HibernateDaoSupport implements ServiceAdmin, InitializingBean, ApplicationContextAware {
+public class ServiceAdminImpl extends HibernateDaoSupport implements ServiceAdmin {
 
     public static final String SERVICE_DEPENDENT_URL_PORTION = "/services/serviceAdmin";
 
     private ServiceManager serviceManager;
     private PolicyValidator policyValidator;
     private ApplicationContext applicationContext;
+    private final AccessManager accessManager;
+
+    public ServiceAdminImpl(AccessManager accessManager) {
+        this.accessManager = accessManager;
+    }
 
     public String resolveWsdlTarget(String url) throws IOException, MalformedURLException {
         try {
@@ -127,7 +129,7 @@ public class ServiceAdminImpl extends HibernateDaoSupport implements ServiceAdmi
     public long savePublishedService(PublishedService service) throws RemoteException,
                                     UpdateException, SaveException, VersionException, ResolutionParameterTooLongException {
 
-            RoleUtils.enforceAdminRole(getApplicationContext());
+            accessManager.enforceAdminRole();
             long oid = PublishedService.DEFAULT_OID;
 
             if (service.getOid() > 0) {
@@ -147,7 +149,7 @@ public class ServiceAdminImpl extends HibernateDaoSupport implements ServiceAdmi
         PublishedService service = null;
         try {
             long oid = toLong(serviceID);
-            RoleUtils.enforceAdminRole(getApplicationContext());
+            accessManager.enforceAdminRole();
             service = serviceManager.findByPrimaryKey(oid);
             serviceManager.delete(service);
             logger.info("Deleted PublishedService: " + oid);
@@ -209,16 +211,5 @@ public class ServiceAdminImpl extends HibernateDaoSupport implements ServiceAdmi
         if  (policyValidator == null) {
             throw new IllegalArgumentException("Policy Validator is required");
         }
-    }
-
-    /**
-     * Set the ApplicationContext that this object runs in.
-     */
-    public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
-        this.applicationContext = applicationContext;
-    }
-
-    private ApplicationContext getApplicationContext() {
-        return applicationContext;
     }
 }

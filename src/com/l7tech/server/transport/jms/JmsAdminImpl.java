@@ -6,13 +6,9 @@
 
 package com.l7tech.server.transport.jms;
 
-import com.l7tech.admin.RoleUtils;
+import com.l7tech.admin.AccessManager;
 import com.l7tech.common.transport.jms.*;
 import com.l7tech.objectmodel.*;
-import org.springframework.beans.BeansException;
-import org.springframework.beans.factory.InitializingBean;
-import org.springframework.context.ApplicationContext;
-import org.springframework.context.ApplicationContextAware;
 import org.springframework.orm.hibernate.support.HibernateDaoSupport;
 
 import javax.jms.*;
@@ -30,10 +26,15 @@ import java.util.logging.Logger;
  * @author alex
  * @version $Revision$
  */
-public class JmsAdminImpl extends HibernateDaoSupport implements JmsAdmin, InitializingBean, ApplicationContextAware {
+public class JmsAdminImpl extends HibernateDaoSupport implements JmsAdmin {
     private JmsConnectionManager jmsConnectionManager;
     private JmsEndpointManager jmsEndpointManager;
-    private ApplicationContext applicationContext;
+    private final AccessManager accessManager;
+
+
+    public JmsAdminImpl(AccessManager accessManager) {
+        this.accessManager = accessManager;
+    }
 
     public JmsProvider[] getProviderList() throws RemoteException, FindException {
         return (JmsProvider[])jmsConnectionManager.findAllProviders().toArray(new JmsProvider[0]);
@@ -95,7 +96,7 @@ public class JmsAdminImpl extends HibernateDaoSupport implements JmsAdmin, Initi
     }
 
     public void setEndpointMessageSource(long oid, boolean isMessageSource) throws RemoteException, FindException, UpdateException {
-        RoleUtils.enforceAdminRole(getApplicationContext());
+        accessManager.enforceAdminRole();
         JmsEndpoint endpoint = findEndpointByPrimaryKey(oid);
         if (endpoint == null) throw new FindException("No endpoint with OID " + oid + " could be found");
         endpoint.setMessageSource(isMessageSource);
@@ -113,7 +114,7 @@ public class JmsAdminImpl extends HibernateDaoSupport implements JmsAdmin, Initi
 
     public long saveConnection(JmsConnection connection) throws RemoteException, SaveException, VersionException {
         try {
-            RoleUtils.enforceAdminRole(getApplicationContext());
+            accessManager.enforceAdminRole();
 
             long oid = connection.getOid();
             if (oid == JmsConnection.DEFAULT_OID)
@@ -236,8 +237,7 @@ public class JmsAdminImpl extends HibernateDaoSupport implements JmsAdmin, Initi
 
     public long saveEndpoint(JmsEndpoint endpoint) throws RemoteException, SaveException, VersionException {
         try {
-            RoleUtils.enforceAdminRole(getApplicationContext());
-
+            accessManager.enforceAdminRole();
             long oid = endpoint.getOid();
             if (oid == JmsConnection.DEFAULT_OID)
                 oid = jmsEndpointManager.save(endpoint);
@@ -252,12 +252,12 @@ public class JmsAdminImpl extends HibernateDaoSupport implements JmsAdmin, Initi
     }
 
     public void deleteEndpoint(long endpointOid) throws RemoteException, FindException, DeleteException {
-        RoleUtils.enforceAdminRole(getApplicationContext());
+        accessManager.enforceAdminRole();
         jmsEndpointManager.delete(endpointOid);
     }
 
     public void deleteConnection(long connectionOid) throws RemoteException, FindException, DeleteException {
-        RoleUtils.enforceAdminRole(getApplicationContext());
+        accessManager.enforceAdminRole();
         jmsConnectionManager.delete(connectionOid);
     }
 
@@ -267,18 +267,6 @@ public class JmsAdminImpl extends HibernateDaoSupport implements JmsAdmin, Initi
 
     public void setJmsEndpointManager(JmsEndpointManager jmsEndpointManager) {
         this.jmsEndpointManager = jmsEndpointManager;
-    }
-
-
-    /**
-     * Set the ApplicationContext that this object runs in.
-     */
-    public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
-        this.applicationContext = applicationContext;
-    }
-
-    private ApplicationContext getApplicationContext() {
-        return applicationContext;
     }
 
     protected void initDao() throws Exception {

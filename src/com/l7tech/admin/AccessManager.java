@@ -9,17 +9,21 @@ import com.l7tech.common.Authorizer;
 import com.l7tech.identity.Group;
 
 import javax.security.auth.Subject;
-import java.security.AccessController;
 import java.security.AccessControlException;
-
-import org.springframework.context.ApplicationContext;
+import java.security.AccessController;
 
 /**
  * A bag of utility method that deal with admin roles
  * @author emil
  * @version Dec 10, 2004
  */
-public class RoleUtils {
+public class AccessManager {
+    private final Authorizer authorizer;
+
+    public AccessManager(Authorizer authorizer) {
+        this.authorizer = authorizer;
+    }
+
     /**
      * Returns a boolean indicating whether the authenticated user is included in the specified
      * logical "roles".
@@ -27,17 +31,12 @@ public class RoleUtils {
      * @param roles role - a String array specifying the role names
      * @return a boolean indicating whether the user making this request belongs to one or more given
      *         roles; false if not or the user has not been authenticated
-     * @param applicationContext
      */
-    public static boolean isUserInRole(String[] roles, ApplicationContext applicationContext) {
-        if (applicationContext == null) {
-            throw new IllegalArgumentException("Application Context is required");
-        }
+    public boolean isUserInRole(String[] roles) {
         Subject subject = Subject.getSubject(AccessController.getContext());
         if (subject == null) {
             return false;
         }
-        Authorizer authorizer =  (Authorizer)applicationContext.getBean("authorizer");
         return authorizer.isSubjectInRole(subject, roles);
     }
 
@@ -45,14 +44,10 @@ public class RoleUtils {
      * Makes sure that current subject has full write admin role.
      *
      * @throws java.security.AccessControlException if not the case
-     * @param applicationContext
      */
-    public static void enforceAdminRole(ApplicationContext applicationContext)
+    public void enforceAdminRole()
       throws AccessControlException {
-        if (applicationContext == null) {
-            throw new IllegalArgumentException("Application Context is required");
-        }
-        if (!isUserInRole(new String[]{Group.ADMIN_GROUP_NAME}, applicationContext)) {
+        if (!isUserInRole(new String[]{Group.ADMIN_GROUP_NAME})) {
             throw new AccessControlException("Must be member of " + Group.ADMIN_GROUP_NAME +
               " to perform this operation.");
         }

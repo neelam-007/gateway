@@ -1,12 +1,9 @@
 package com.l7tech.cluster;
 
-import com.l7tech.admin.RoleUtils;
+import com.l7tech.admin.AccessManager;
 import com.l7tech.objectmodel.DeleteException;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.UpdateException;
-import org.springframework.beans.BeansException;
-import org.springframework.context.ApplicationContext;
-import org.springframework.context.ApplicationContextAware;
 import org.springframework.orm.hibernate.support.HibernateDaoSupport;
 
 import java.rmi.RemoteException;
@@ -24,9 +21,7 @@ import java.util.logging.Logger;
  * Date: Jan 2, 2004<br/>
  * $Id$<br/>
  */
-public class ClusterStatusAdminImp extends HibernateDaoSupport implements ClusterStatusAdmin, ApplicationContextAware {
-    private ApplicationContext applicationContext;
-
+public class ClusterStatusAdminImp extends HibernateDaoSupport implements ClusterStatusAdmin {
     /**
      * Constructs the new cluster status admin implementation.
      * On constructir change update the spring bean definition
@@ -34,14 +29,18 @@ public class ClusterStatusAdminImp extends HibernateDaoSupport implements Cluste
      * @param clusterInfoManager
      * @param serviceUsageManager
      */
-    public ClusterStatusAdminImp(ClusterInfoManager clusterInfoManager, ServiceUsageManager serviceUsageManager) {
+    public ClusterStatusAdminImp(ClusterInfoManager clusterInfoManager, ServiceUsageManager serviceUsageManager, AccessManager accessManager) {
         this.clusterInfoManager = clusterInfoManager;
         this.serviceUsageManager = serviceUsageManager;
+        this.accessManager = accessManager;
         if (clusterInfoManager == null) {
             throw new IllegalArgumentException("Cluster Info manager is required");
         }
         if (serviceUsageManager == null) {
             throw new IllegalArgumentException("Service Usage manager is required");
+        }
+        if (accessManager == null) {
+            throw new IllegalArgumentException("Access manager is required");
         }
     }
 
@@ -79,7 +78,7 @@ public class ClusterStatusAdminImp extends HibernateDaoSupport implements Cluste
      * @param newName the new name of the node (must not be null)
      */
     public void changeNodeName(String nodeid, String newName) throws RemoteException, UpdateException {
-        RoleUtils.enforceAdminRole(getApplicationContext());
+        accessManager.enforceAdminRole();
         clusterInfoManager.renameNode(nodeid, newName);
     }
 
@@ -93,7 +92,7 @@ public class ClusterStatusAdminImp extends HibernateDaoSupport implements Cluste
      * @param nodeid the mac of the stale node to remove
      */
     public void removeStaleNode(String nodeid) throws RemoteException, DeleteException {
-        RoleUtils.enforceAdminRole(getApplicationContext());
+        accessManager.enforceAdminRole();
         logger.info("removing stale node: " + nodeid);
         clusterInfoManager.deleteNode(nodeid);
         serviceUsageManager.clear(nodeid);
@@ -123,19 +122,10 @@ public class ClusterStatusAdminImp extends HibernateDaoSupport implements Cluste
         return clusterInfoManager.getSelfNodeInf().getName();
     }
 
-    /**
-     * Set the ApplicationContext that this object runs in.
-     */
-    public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
-        this.applicationContext = applicationContext;
-    }
-
-    private ApplicationContext getApplicationContext() {
-        return applicationContext;
-    }
 
     private final ClusterInfoManager clusterInfoManager;
     private final ServiceUsageManager serviceUsageManager;
+    private final AccessManager accessManager;
     private final Logger logger = Logger.getLogger(getClass().getName());
 
 }

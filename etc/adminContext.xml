@@ -56,14 +56,22 @@
         </property>
     </bean>
 
+    <!-- server side admin access manager -->
+    <bean id="accessManager" class="com.l7tech.admin.AccessManager">
+        <constructor-arg>
+            <ref bean="authorizer"/>
+        </constructor-arg>
+    </bean>
+
+
       <!--
         configure the codebase for class downloading
-    -->
-     <bean class="org.springframework.beans.factory.config.MethodInvokingFactoryBean">
+      -->
+    <bean class="org.springframework.beans.factory.config.MethodInvokingFactoryBean">
          <property name="staticMethod">
              <value>com.l7tech.spring.remoting.rmi.codebase.Config.configureCodeBase</value>
          </property>
-     </bean>
+    </bean>
 
       <!--
     set the internal trust failurte handler. This is required when the ssl connection to self is attempted,
@@ -179,7 +187,10 @@
  </bean>
     <!--    identity admin servant -->
     <bean id="identityAdmin" class="com.l7tech.server.identity.IdentityAdminImpl">
-        <property name="identityProviderConfigManager">
+        <constructor-arg>
+               <ref bean="accessManager"/>
+         </constructor-arg>
+         <property name="identityProviderConfigManager">
             <ref bean="identityProviderConfigManager"/>
         </property>
         <property name="clientCertManager">
@@ -223,7 +234,10 @@
     </bean>
     <!--    audit admin servant -->
     <bean id="auditAdmin" class="com.l7tech.server.audit.AuditAdminImpl">
-        <property name="auditRecordManager">
+        <constructor-arg>
+               <ref bean="accessManager"/>
+         </constructor-arg>
+         <property name="auditRecordManager">
             <ref bean="auditRecordManager"/>
         </property>
         <property name="sessionFactory">
@@ -243,7 +257,10 @@
 
     <!--    service admin servant -->
     <bean id="serviceAdmin" class="com.l7tech.server.service.ServiceAdminImpl">
-        <property name="serviceManager">
+        <constructor-arg>
+               <ref bean="accessManager"/>
+         </constructor-arg>
+         <property name="serviceManager">
             <ref bean="serviceManager"/>
         </property>
         <property name="policyValidator">
@@ -266,7 +283,10 @@
 
     <!--    jms admin servant -->
     <bean id="jmsAdmin" class="com.l7tech.server.transport.jms.JmsAdminImpl">
-        <property name="jmsConnectionManager">
+        <constructor-arg>
+               <ref bean="accessManager"/>
+         </constructor-arg>
+         <property name="jmsConnectionManager">
             <ref bean="jmsConnectionManager"/>
         </property>
         <property name="jmsEndpointManager">
@@ -288,9 +308,15 @@
  </bean>
     <!--    trusted cert admin servant -->
  <bean id="trustedCertAdmin" class="com.l7tech.server.TrustedCertAdminImpl">
-     <property name="trustedCertManager">
-         <ref bean="trustedCertManager"/>
-     </property>
+     <constructor-arg>
+           <ref bean="trustedCertManager"/>
+     </constructor-arg>
+     <constructor-arg>
+            <ref bean="rootCertificate"/>
+      </constructor-arg>
+      <constructor-arg>
+           <ref bean="accessManager"/>
+     </constructor-arg>
      <property name="sessionFactory">
          <ref bean="sessionFactory"/>
      </property>
@@ -329,7 +355,10 @@
       <constructor-arg>
           <ref bean="serviceUsageManager"/>
       </constructor-arg>
-      <property name="sessionFactory">
+      <constructor-arg>
+            <ref bean="accessManager"/>
+        </constructor-arg>
+        <property name="sessionFactory">
           <ref bean="sessionFactory"/>
       </property>
   </bean>

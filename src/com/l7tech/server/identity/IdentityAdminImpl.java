@@ -1,6 +1,6 @@
 package com.l7tech.server.identity;
 
-import com.l7tech.admin.RoleUtils;
+import com.l7tech.admin.AccessManager;
 import com.l7tech.common.Authorizer;
 import com.l7tech.common.protocol.SecureSpanConstants;
 import com.l7tech.common.util.HexUtils;
@@ -10,10 +10,6 @@ import com.l7tech.identity.internal.InternalUser;
 import com.l7tech.identity.ldap.LdapIdentityProviderConfig;
 import com.l7tech.objectmodel.*;
 import com.l7tech.server.identity.ldap.LdapConfigTemplateManager;
-import org.springframework.beans.BeansException;
-import org.springframework.beans.factory.InitializingBean;
-import org.springframework.context.ApplicationContext;
-import org.springframework.context.ApplicationContextAware;
 import org.springframework.orm.hibernate.support.HibernateDaoSupport;
 
 import javax.security.auth.Subject;
@@ -38,12 +34,15 @@ import java.util.logging.Logger;
  * User: flascelles<br/>
  * Date: May 26, 2003
  */
-public class IdentityAdminImpl extends HibernateDaoSupport
-  implements IdentityAdmin, InitializingBean, ApplicationContextAware {
+public class IdentityAdminImpl extends HibernateDaoSupport  implements IdentityAdmin {
     private ClientCertManager clientCertManager;
 
     public static final String SERVICE_DEPENDENT_URL_PORTION = "/services/identityAdmin";
-    private ApplicationContext applicationContext;
+    private final AccessManager accessManager;
+
+    public IdentityAdminImpl(AccessManager accessManager) {
+        this.accessManager = accessManager;
+    }
 
     /**
      * Returns a version string. This can be compared to version on client-side.
@@ -76,7 +75,7 @@ public class IdentityAdminImpl extends HibernateDaoSupport
     public long saveIdentityProviderConfig(IdentityProviderConfig identityProviderConfig)
       throws RemoteException, SaveException, UpdateException {
         try {
-            RoleUtils.enforceAdminRole(getApplicationContext());
+            accessManager.enforceAdminRole();
             if (identityProviderConfig.getOid() > 0) {
                 IdentityProviderConfigManager manager = getIdProvCfgMan();
                 IdentityProviderConfig originalConfig = manager.findByPrimaryKey(identityProviderConfig.getOid());
@@ -153,7 +152,7 @@ public class IdentityAdminImpl extends HibernateDaoSupport
 
     public void deleteIdentityProviderConfig(long oid) throws RemoteException, DeleteException {
         try {
-            RoleUtils.enforceAdminRole(getApplicationContext());
+            accessManager.enforceAdminRole();
             IdentityProviderConfigManager manager = getIdProvCfgMan();
 
             final IdentityProviderConfig ipc = manager.findByPrimaryKey(oid);
@@ -213,7 +212,7 @@ public class IdentityAdminImpl extends HibernateDaoSupport
     public void deleteUser(long cfgid, String userId)
       throws RemoteException, DeleteException, ObjectNotFoundException {
         try {
-            RoleUtils.enforceAdminRole(getApplicationContext());
+            accessManager.enforceAdminRole();
             UserManager userManager = retrieveUserManager(cfgid);
             if (userManager == null) throw new RemoteException("Cannot retrieve the UserManager");
             User user = userManager.findByPrimaryKey(userId);
@@ -231,7 +230,7 @@ public class IdentityAdminImpl extends HibernateDaoSupport
     public String saveUser(long identityProviderConfigId, User user, Set groupHeaders)
       throws RemoteException, SaveException, UpdateException, ObjectNotFoundException {
         try {
-            RoleUtils.enforceAdminRole(getApplicationContext());
+            accessManager.enforceAdminRole();
             IdentityProvider provider = identityProviderFactory.getProvider(identityProviderConfigId);
             if (provider == null) throw new FindException("IdentityProvider could not be found");
             UserManager userManager = provider.getUserManager();
@@ -270,7 +269,7 @@ public class IdentityAdminImpl extends HibernateDaoSupport
     public void deleteGroup(long cfgid, String groupId)
       throws RemoteException, DeleteException, ObjectNotFoundException {
         try {
-            RoleUtils.enforceAdminRole(getApplicationContext());
+            accessManager.enforceAdminRole();
             GroupManager groupManager = retrieveGroupManager(cfgid);
             Group grp = groupManager.findByPrimaryKey(groupId);
             if (grp == null) throw new ObjectNotFoundException("Group does not exist");
@@ -284,7 +283,7 @@ public class IdentityAdminImpl extends HibernateDaoSupport
     public String saveGroup(long identityProviderConfigId, Group group, Set userHeaders)
       throws RemoteException, SaveException, UpdateException, ObjectNotFoundException {
         try {
-            RoleUtils.enforceAdminRole(getApplicationContext());
+            accessManager.enforceAdminRole();
             IdentityProvider provider = identityProviderFactory.getProvider(identityProviderConfigId);
             if (provider == null) throw new FindException("IdentityProvider could not be found");
             GroupManager groupManager = provider.getGroupManager();
@@ -317,7 +316,7 @@ public class IdentityAdminImpl extends HibernateDaoSupport
 
     public void revokeCert(User user) throws RemoteException, UpdateException, ObjectNotFoundException {
         try {
-            RoleUtils.enforceAdminRole(getApplicationContext());
+            accessManager.enforceAdminRole();
             // revoke the cert in internal CA
             clientCertManager.revokeUserCert(user);
             // internal users should have their password "revoked" along with their cert
@@ -350,7 +349,7 @@ public class IdentityAdminImpl extends HibernateDaoSupport
     }
 
     public void recordNewUserCert(User user, Certificate cert) throws RemoteException, UpdateException {
-            RoleUtils.enforceAdminRole(getApplicationContext());
+            accessManager.enforceAdminRole();
             // revoke the cert in internal CA
             clientCertManager.recordNewUserCert(user, cert);
     }
@@ -449,22 +448,6 @@ public class IdentityAdminImpl extends HibernateDaoSupport
         checkidentityProviderConfigManager();
         checkClientCertManager();
         checkAuthorizer();
-    }
-
-
-    /**
-     * Set the ApplicationContext that this object runs in.
-     */
-    public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
-        this.applicationContext = applicationContext;
-    }
-
-    // ************************************************
-    // PRIVATES
-    // ************************************************
-
-    private ApplicationContext getApplicationContext() {
-        return applicationContext;
     }
 
     private void checkidentityProviderFactory() {
