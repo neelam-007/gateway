@@ -2,6 +2,7 @@
 package com.l7tech.proxy.gui;
 
 import com.l7tech.common.gui.util.Utilities;
+import com.l7tech.common.gui.ExceptionDialog;
 import com.l7tech.proxy.RequestInterceptor;
 import com.l7tech.proxy.ClientProxy;
 import com.l7tech.proxy.datamodel.SsgManager;
@@ -15,6 +16,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
+import java.util.logging.Level;
 
 /**
  * Encapsulates the Client Proxy's user interface.
@@ -290,9 +292,25 @@ public class Gui {
 
     /**
      * Display an error message.
+     *
      * @param msg the error message to display
      */
-    public void errorMessage(final String msg) {
+    public static void errorMessage(final String msg) {
         JOptionPane.showMessageDialog(getInstance().getFrame(), msg, "Unable to proceed", JOptionPane.ERROR_MESSAGE);
+    }
+
+    /**
+     * Display an error message based on a caught exception.
+     *
+     * @param title
+     * @param message
+     * @param t
+     */
+    public static void errorMessage(String title, String message, Throwable t) {
+        ExceptionDialog d = new ExceptionDialog(getInstance().getFrame(), title, message, t, Level.SEVERE);
+        d.setModal(true);
+        d.pack();
+        Utilities.centerOnScreen(d);
+        d.show();
     }
 }

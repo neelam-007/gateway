@@ -3,6 +3,7 @@ package com.l7tech.proxy.gui;
 import com.l7tech.common.gui.widgets.CertificatePanel;
 import com.l7tech.common.gui.widgets.WrappingLabel;
 import com.l7tech.common.gui.IntegerField;
+import com.l7tech.common.gui.ExceptionDialog;
 import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.console.tree.EntityTreeCellRenderer;
 import com.l7tech.console.tree.policy.PolicyTreeModel;
@@ -33,6 +34,7 @@ import java.security.NoSuchAlgorithmException;
 import java.security.cert.CertificateEncodingException;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
+import java.util.logging.Level;
 
 /**
  * Panel for editing properties of an SSG object.
@@ -513,12 +515,10 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
                     } catch (Exception e1) {
                         log.error(e1);
                         e1.printStackTrace();
-                        JOptionPane.showMessageDialog(Gui.getInstance().getFrame(),
-                                                      "Unable to access server certificate for Gateway " + ssg + ": " + e1,
-                                                      "Unable to access server certificate",
-                                                      JOptionPane.ERROR_MESSAGE);
+                        Gui.errorMessage("Unable to access server certificate",
+                                         "Unable to access server certificate for Gateway " + ssg,
+                                         e1);
                     }
-
                 }
             });
         }
@@ -550,10 +550,9 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
                     } catch (Exception e1) {
                         log.error(e1);
                         e1.printStackTrace();
-                        JOptionPane.showMessageDialog(Gui.getInstance().getFrame(),
-                                                      "Unable to access client certificate for Gateway " + ssg + ": " + e1,
-                                                      "Unable to access client certificate",
-                                                      JOptionPane.ERROR_MESSAGE);
+                        Gui.errorMessage("Unable to access client certificate",
+                                         "Unable to access client certificate for Gateway " + ssg,
+                                         e1);
                     }
                 }
             });

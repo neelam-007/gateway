@@ -69,7 +69,7 @@ public class Main {
                         "Agent and try again.";
             }
 
-            Gui.getInstance().errorMessage(message);
+            Gui.errorMessage(message);
             System.err.println("Unable to start httpServer");
             e.printStackTrace(System.err);
             System.exit(2);

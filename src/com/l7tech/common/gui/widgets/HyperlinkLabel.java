@@ -1,4 +1,4 @@
-package com.l7tech.console.util;
+package com.l7tech.common.gui.widgets;
 
 import javax.swing.*;
 import javax.swing.event.HyperlinkEvent;

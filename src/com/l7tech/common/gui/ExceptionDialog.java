@@ -1,7 +1,7 @@
-package com.l7tech.console.logging;
+package com.l7tech.common.gui;
 
 
-import com.l7tech.console.util.HyperlinkLabel;
+import com.l7tech.common.gui.widgets.HyperlinkLabel;
 
 import javax.swing.*;
 import javax.swing.event.HyperlinkListener;
@@ -233,7 +233,7 @@ public class ExceptionDialog extends JDialog implements ActionListener {
 
     public static void main(String[] args) {
         ExceptionDialog d = new
-          ExceptionDialog(null,
+                ExceptionDialog(null,
             "There was problem that caused this messich. The program will now exit.",
             new Exception("Exception message"), Level.INFO);
         d.pack();
