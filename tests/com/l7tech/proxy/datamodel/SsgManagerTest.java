@@ -185,9 +185,6 @@ public class SsgManagerTest extends TestCase {
 
         eraseAllSsgs();
         assertTrue(sm.getSsgList().size() == 0);
-
-        assertTrue(0xFFFFFFFF + 1 == 0);
-
     }
 
     public static void main(String[] args) {
