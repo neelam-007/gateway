@@ -70,5 +70,19 @@ if $cygwin; then
   CLASSPATH=`cygpath --path --windows "$CLASSPATH"`
 fi
 export CLASSPATH
-$JAVA_HOME/bin/java $@
+
+case "$1" in 
+	ssg)
+		# start tomcat?
+		exec $TOMCAT_HOME/bin/startup.sh run
+		;;
+	console)
+		target="com.l7tech.console.Main";
+		exec $JAVA_HOME/bin/java ${target}
+		;;
+	proxy)
+		target="com.l7tech.proxy.Main";
+		exec $JAVA_HOME/bin/java ${target}
+		;;
+esac 
     
