@@ -7,9 +7,12 @@
 package com.l7tech.server.policy;
 
 import com.l7tech.common.util.ConstructorInvocation;
+import com.l7tech.common.xml.TarariLoader;
 import com.l7tech.policy.PolicyFactory;
-import com.l7tech.policy.assertion.Assertion;
+import com.l7tech.policy.assertion.*;
 import com.l7tech.server.policy.assertion.ServerAssertion;
+import com.l7tech.server.policy.assertion.ServerRequestXpathAssertion;
+import com.l7tech.server.policy.assertion.ServerResponseXpathAssertion;
 import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
@@ -39,6 +42,16 @@ public class ServerPolicyFactory extends PolicyFactory implements ApplicationCon
 
     protected Object makeSpecificPolicy(Assertion genericAssertion) {
         try {
+            // Prevent Tarari assertions from being loaded on non-Tarari SSGs
+            // TODO find an abstraction for this assertion censorship
+            if (TarariLoader.getServerContext() == null) {
+                if (genericAssertion instanceof RequestAcceleratedXpathAssertion)
+                    return new ServerRequestXpathAssertion((RequestXpathAssertion)genericAssertion);
+
+                if (genericAssertion instanceof ResponseAcceleratedXpathAssertion)
+                    return new ServerResponseXpathAssertion((ResponseXpathAssertion)genericAssertion);
+            }
+
             Class genericAssertionClass = genericAssertion.getClass();
             Class specificAssertionClass = resolveProductClass(genericAssertionClass);
             Constructor ctor = ConstructorInvocation.findMatchingConstructor(specificAssertionClass, new Class[]{genericAssertionClass, ApplicationContext.class});

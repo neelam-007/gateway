@@ -10,6 +10,7 @@ import com.l7tech.service.PublishedService;
 import com.l7tech.service.ResolutionParameterTooLongException;
 import com.l7tech.service.ServiceAdmin;
 import com.l7tech.common.uddi.WsdlInfo;
+import com.l7tech.common.xml.TarariLoader;
 import com.l7tech.server.ServerConfig;
 import com.l7tech.server.service.uddi.UddiAgentV3;
 import org.apache.commons.httpclient.HttpClient;

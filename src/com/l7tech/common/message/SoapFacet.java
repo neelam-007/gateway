@@ -12,11 +12,13 @@ import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.xml.InvalidDocumentFormatException;
 import com.l7tech.common.xml.SoapFaultDetail;
 import com.l7tech.common.xml.SoftwareFallbackException;
-import com.l7tech.common.xml.TarariProber;
+import com.l7tech.common.xml.TarariLoader;
+import com.l7tech.common.xml.tarari.TarariMessageContext;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -57,9 +59,16 @@ class SoapFacet extends MessageFacet {
      * @throws NoSuchPartException if the Message first part has already been destructively read
      */
     public static SoapInfo getSoapInfo(Message message) throws IOException, SAXException, NoSuchPartException {
-        if (TarariProber.isTarariPresent()) {
+        TarariMessageContextFactory mcfac = TarariLoader.getMessageContextFactory();
+        SoapInfoFactory fac = TarariLoader.getSoapInfoFactory();
+        if (mcfac != null && fac != null) {
             try {
-                return TarariProber.getSoapInfoTarari(message.getMimeKnob().getFirstPart().getInputStream(false));
+                InputStream inputStream = message.getMimeKnob().getFirstPart().getInputStream(false);
+                // TODO need to invalidate message context if document changes
+                TarariMessageContext mc = mcfac.makeMessageContext(inputStream);
+                SoapInfo soapInfo = fac.getSoapInfo(mc);
+                message.attachKnob(TarariKnob.class, new TarariKnob(mc));
+                return soapInfo;
             } catch (SoftwareFallbackException e) {
                 // TODO if this happens a lot for perfectly reasonable reasons, downgrade to something below INFO
                 logger.log(Level.INFO, "Falling back from hardware to software processing", e);

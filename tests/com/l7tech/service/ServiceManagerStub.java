@@ -8,6 +8,8 @@ import com.l7tech.server.policy.assertion.ServerAssertion;
 import com.l7tech.server.service.ServiceCache;
 import com.l7tech.server.service.ServiceManager;
 import com.l7tech.server.service.resolution.ServiceResolutionException;
+import org.springframework.beans.factory.InitializingBean;
+import org.springframework.context.support.ApplicationObjectSupport;
 
 import javax.wsdl.WSDLException;
 import java.io.InputStreamReader;
@@ -16,9 +18,6 @@ import java.net.URL;
 import java.rmi.RemoteException;
 import java.util.*;
 import java.util.logging.Logger;
-
-import org.springframework.context.support.ApplicationObjectSupport;
-import org.springframework.beans.factory.InitializingBean;
 
 /**
  * Class ServiceManagerStub.
@@ -99,6 +98,9 @@ public class ServiceManagerStub extends ApplicationObjectSupport implements Serv
             versions.put(new Long(publishedService.getOid()), new Integer(1));
         }
         return versions;
+    }
+
+    public void setVisitorClassnames(String visitorClasses) {
     }
 
     /**

@@ -89,16 +89,16 @@ public class ServerResponseXpathAssertion implements ServerAssertion {
             }
 
             if ( result == null || result.size() == 0 ) {
-                auditor.logAndAudit(AssertionMessages.XPATH_PATTERN_NOT_MATCHED_RESPONSE, new String[] {pattern});
+                auditor.logAndAudit(AssertionMessages.XPATH_PATTERN_NOT_MATCHED_RESPONSE);
                 return AssertionStatus.FALSIFIED;
             } else {
                 Object o = result.get(0);
                 if ( o instanceof Boolean ) {
                     if ( ((Boolean)o).booleanValue() ) {
-                        auditor.logAndAudit(AssertionMessages.XPATH_RESULT_TRUE, new String[] {pattern});
+                        auditor.logAndAudit(AssertionMessages.XPATH_RESULT_TRUE);
                         return AssertionStatus.NONE;
                     } else {
-                        auditor.logAndAudit(AssertionMessages.XPATH_RESULT_FALSE, new String[] {pattern});
+                        auditor.logAndAudit(AssertionMessages.XPATH_RESULT_FALSE);
                         return AssertionStatus.FALSIFIED;
                     }
                 } else if ( o instanceof Node ) {
@@ -106,17 +106,17 @@ public class ServerResponseXpathAssertion implements ServerAssertion {
                     int type = n.getNodeType();
                     switch( type ) {
                         case Node.TEXT_NODE:
-                            auditor.logAndAudit(AssertionMessages.XPATH_TEXT_NODE_FOUND, new String[] {pattern, n.getNodeValue()});
+                            auditor.logAndAudit(AssertionMessages.XPATH_TEXT_NODE_FOUND);
                             return AssertionStatus.NONE;
                         case Node.ELEMENT_NODE:
-                            auditor.logAndAudit(AssertionMessages.XPATH_ELEMENT_FOUND, new String[] {pattern, n.getNodeName()});
+                            auditor.logAndAudit(AssertionMessages.XPATH_ELEMENT_FOUND);
                             return AssertionStatus.NONE;
                         default:
-                            auditor.logAndAudit(AssertionMessages.XPATH_OTHER_NODE_FOUND, new String[] {pattern, n.toString()});
+                            auditor.logAndAudit(AssertionMessages.XPATH_OTHER_NODE_FOUND);
                             return AssertionStatus.NONE;
                     }
                 } else {
-                    auditor.logAndAudit(AssertionMessages.XPATH_SUCCEED_RESPONSE, new String[] {pattern});
+                    auditor.logAndAudit(AssertionMessages.XPATH_SUCCEED_RESPONSE);
                     return AssertionStatus.NONE;
                 }
             }

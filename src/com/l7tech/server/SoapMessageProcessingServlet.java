@@ -198,8 +198,12 @@ public class SoapMessageProcessingServlet extends HttpServlet {
                 throw new ServletException(e);
             }
         } finally {
-            AuditContext auditContext = (AuditContext)applicationContext.getBean("auditContext");
-            auditContext.flush();
+            try {
+                AuditContext auditContext = (AuditContext)applicationContext.getBean("auditContext");
+                auditContext.flush();
+            } finally {
+                context.close();
+            }
         }
     }
 

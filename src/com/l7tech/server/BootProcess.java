@@ -10,13 +10,12 @@ import com.l7tech.common.Component;
 import com.l7tech.common.audit.Auditor;
 import com.l7tech.common.security.JceProvider;
 import com.l7tech.common.util.JdkLoggerConfigurator;
-import com.l7tech.common.xml.TarariProber;
-import com.l7tech.common.xml.tarari.TarariUtil;
+import com.l7tech.common.xml.TarariLoader;
+import com.l7tech.common.xml.tarari.ServerTarariContext;
 import com.l7tech.server.audit.AuditContext;
 import com.l7tech.server.audit.SystemAuditListener;
 import com.l7tech.server.event.EventManager;
 import com.l7tech.server.event.system.*;
-import com.tarari.xml.xpath.XPathCompilerException;
 import org.springframework.beans.factory.DisposableBean;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.context.ApplicationContext;
@@ -159,13 +158,10 @@ public class BootProcess extends ApplicationObjectSupport
     public void afterPropertiesSet() throws Exception {
         auditor = new Auditor((AuditContext)serverConfig.getSpringContext().getBean("auditContext"), Logger.getLogger(getClass().getName()));
 
-        if (TarariProber.isTarariPresent()) {
+        ServerTarariContext context = TarariLoader.getServerContext();
+        if (context != null) {
             auditor.logAndAudit(BootMessages.XMLHARDWARE_INIT);
-            try {
-                TarariUtil.setupIsSoap();
-            } catch (XPathCompilerException e) {
-                auditor.logAndAudit(BootMessages.XMLHARDWARE_ERROR);
-            }
+            context.compile();
         } else {
             auditor.logAndAudit(BootMessages.XMLHARDWARE_DISABLED);
         }

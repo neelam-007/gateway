@@ -417,4 +417,12 @@ public final class Message {
         }
     }
 
+    protected void finalize() throws Throwable {
+        try {
+            close(); // Someone has been bad!
+        } finally {
+            super.finalize();
+        }
+    }
+
 }

@@ -13,16 +13,26 @@ import com.tarari.xml.xpath.RAXContext;
  * Represents resources held in kernel-memory by the Tarari driver, namely
  * a document in one buffer and a token list in the other.
  */
-class TarariContext {
-    TarariContext(XMLDocument doc, RAXContext context) {
+public class TarariMessageContextImpl implements TarariMessageContext {
+    private final XMLDocument tarariDoc;
+    private final RAXContext raxContext;
+
+    TarariMessageContextImpl(XMLDocument doc, RAXContext context) {
+        if (doc == null || context == null) throw new IllegalArgumentException();
         this.tarariDoc = doc;
         this.raxContext = context;
     }
 
-    void close() {
+    public void close() {
         tarariDoc.release();
-        raxContext = null;
-        tarariDoc = null;
+    }
+
+    public XMLDocument getTarariDoc() {
+        return tarariDoc;
+    }
+
+    public RAXContext getRaxContext() {
+        return raxContext;
     }
 
     protected void finalize() throws Throwable {
@@ -32,7 +42,4 @@ class TarariContext {
             close();
         }
     }
-
-    XMLDocument tarariDoc;
-    RAXContext raxContext;
 }

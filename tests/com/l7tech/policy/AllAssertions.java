@@ -52,6 +52,8 @@ public class AllAssertions {
         new ResponseWssConfidentiality(),
         new RequestXpathAssertion(),
         new ResponseXpathAssertion(),
+        new RequestAcceleratedXpathAssertion(),
+        new ResponseAcceleratedXpathAssertion(),
         new RequestWssReplayProtection(),
         new RequestSwAAssertion(),
         // TODO new TimeOfDayAssertion(),

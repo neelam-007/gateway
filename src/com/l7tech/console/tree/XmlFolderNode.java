@@ -40,8 +40,10 @@ public class XmlFolderNode extends AbstractTreeNode {
     protected void loadChildren() {
         int index = 0;
         children = null;
-        insert( new RequestXpathPaletteNode(), index++ );
-        insert( new ResponseXpathPaletteNode(), index++ );
+        insert(new RequestXpathPaletteNode(), index++);
+        insert(new ResponseXpathPaletteNode(), index++);
+        insert(new RequestAcceleratedXpathPaletteNode(), index++);
+        insert(new ResponseAcceleratedXpathPaletteNode(), index++);
         insert(new SchemaValidationPaletteNode(), index++);
         insert(new XslTransformationPaletteNode(), index++);
         insert(new RequestSwAAssertionPaletteNode(), index++);

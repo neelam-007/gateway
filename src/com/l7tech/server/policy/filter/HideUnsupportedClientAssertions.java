@@ -79,6 +79,8 @@ public class HideUnsupportedClientAssertions implements Filter {
         ResponseWssConfidentiality.class,
         RequestXpathAssertion.class,
         ResponseXpathAssertion.class,
+        RequestAcceleratedXpathAssertion.class,
+        ResponseAcceleratedXpathAssertion.class,
         RequestWssReplayProtection.class,
         SamlAuthenticationStatement.class,
     };

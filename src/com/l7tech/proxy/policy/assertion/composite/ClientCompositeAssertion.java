@@ -24,7 +24,7 @@ public abstract class ClientCompositeAssertion extends ClientAssertion {
     }
 
     public ClientCompositeAssertion( CompositeAssertion composite ) {
-        this.children = (ClientAssertion[])ClientPolicyFactory.getInstance().makeCompositePolicy( composite ).toArray( new ClientAssertion[0] );
+        this.children = (ClientAssertion[])ClientPolicyFactory.getInstance().makeCompositePolicy(composite).toArray( new ClientAssertion[0] );
     }
 
     /**

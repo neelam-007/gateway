@@ -4,6 +4,7 @@ import EDU.oswego.cs.dl.util.concurrent.ReadWriteLock;
 import EDU.oswego.cs.dl.util.concurrent.Sync;
 import EDU.oswego.cs.dl.util.concurrent.WriterPreferenceReadWriteLock;
 import com.l7tech.common.message.Message;
+import com.l7tech.common.xml.TarariLoader;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.server.policy.ServerPolicyFactory;
 import com.l7tech.server.policy.assertion.ServerAssertion;
@@ -426,6 +427,7 @@ public class ServiceCache extends ApplicationObjectSupport implements Disposable
                             cacheNoLock(toUpdateOrAdd);
                         } // otherwise, next integrity check shall delete this service from cache
                     }
+                    TarariLoader.compile();
                     for (Iterator i = deletions.iterator(); i.hasNext();) {
                         Long key = (Long)i.next();
                         PublishedService serviceToDelete = (PublishedService)services.get(key);

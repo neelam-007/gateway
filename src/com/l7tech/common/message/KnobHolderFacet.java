@@ -28,4 +28,12 @@ public class KnobHolderFacet extends MessageFacet {
             return knob;
         return super.getKnob(c);
     }
+
+    public void close() {
+        if (knob instanceof CloseableMessageKnob) {
+            CloseableMessageKnob closeableMessageKnob = (CloseableMessageKnob) knob;
+            closeableMessageKnob.close();
+        }
+        super.close();
+    }
 }

@@ -7,6 +7,7 @@
 package com.l7tech.server.service;
 
 import com.l7tech.common.message.Message;
+import com.l7tech.common.xml.TarariLoader;
 import com.l7tech.objectmodel.*;
 import com.l7tech.server.policy.assertion.ServerAssertion;
 import com.l7tech.server.service.resolution.ResolutionManager;
@@ -19,7 +20,6 @@ import net.sf.hibernate.Session;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.TransactionStatus;
 import org.springframework.transaction.support.*;
-import org.springframework.beans.factory.DisposableBean;
 
 import java.io.IOException;
 import java.rmi.RemoteException;
@@ -29,13 +29,25 @@ import java.util.logging.Logger;
 
 /**
  * Manages PublishedService instances.
- * Note that this object has state, so it should be effectively a Singleton!
- *
- * @author alex
- * @version $Revision$
  */
 public class ServiceManagerImp extends HibernateEntityManager implements ServiceManager {
     private ServiceCache serviceCache;
+    private Class[] visitorClasses;
+
+    public void setVisitorClassnames(String visitorClassnames) {
+        String[] names = visitorClassnames.split(",\\s*");
+        ArrayList classes = new ArrayList();
+        for (int i = 0; i < names.length; i++) {
+            String name = names[i];
+            try {
+                Class clazz = Class.forName(name);
+                classes.add(clazz);
+            } catch (ClassNotFoundException e) {
+                logger.log(Level.WARNING, "PolicyVisitor classname " + name + " could not be loaded.", e);
+            }
+            visitorClasses = (Class[])classes.toArray(new Class[0]);
+        }
+    }
 
     public String resolveWsdlTarget(String url) throws RemoteException {
         throw new UnsupportedOperationException();
@@ -79,6 +91,7 @@ public class ServiceManagerImp extends HibernateEntityManager implements Service
                     if (svcnow != null) {
                         try {
                             serviceCache.cache(svcnow);
+                            TarariLoader.compile();
                         } catch (InterruptedException e) {
                             logger.log(Level.WARNING, "could not update cache", e);
                         }
@@ -161,6 +174,7 @@ public class ServiceManagerImp extends HibernateEntityManager implements Service
                     if (svcnow != null) {
                         try {
                             serviceCache.cache(svcnow);
+                            TarariLoader.compile();
                         } catch (InterruptedException e) {
                             logger.log(Level.WARNING, "could not update cache", e);
                         }
@@ -247,6 +261,7 @@ public class ServiceManagerImp extends HibernateEntityManager implements Service
         }
     }
 
+
     public Class getImpClass() {
         return PublishedService.class;
     }
@@ -308,6 +323,7 @@ public class ServiceManagerImp extends HibernateEntityManager implements Service
                     service = (PublishedService)i.next();
                     serviceCache.cache(service);
                 }
+                TarariLoader.compile();
             }
             // make sure the integrity check is running
             serviceCache.initiateIntegrityCheckProcess();

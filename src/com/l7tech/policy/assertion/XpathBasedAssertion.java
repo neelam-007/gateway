@@ -7,7 +7,6 @@
 package com.l7tech.policy.assertion;
 
 import com.l7tech.common.xml.XpathExpression;
-import com.l7tech.policy.assertion.composite.CompositeAssertion;
 
 import javax.xml.rpc.NamespaceConstants;
 import javax.xml.soap.SOAPConstants;
@@ -47,4 +46,5 @@ public abstract class XpathBasedAssertion extends Assertion {
             sb.append(" namespacesmap=" + x.getNamespaces());
         return sb.toString();
     }
+
 }

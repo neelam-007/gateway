@@ -42,6 +42,12 @@ public abstract class XpathBasedAssertionPropertiesAction extends NodeAction {
         } else if (node instanceof ResponseXpathPolicyTreeNode) {
             ResponseXpathPolicyTreeNode n = (ResponseXpathPolicyTreeNode)node;
             return new ResponseXpathPropertiesAction(n);
+        } else if (node instanceof RequestAcceleratedXpathPolicyTreeNode) {
+            RequestAcceleratedXpathPolicyTreeNode n = (RequestAcceleratedXpathPolicyTreeNode)node;
+            return new RequestAcceleratedXpathPropertiesAction(n);
+        } else if (node instanceof ResponseAcceleratedXpathPolicyTreeNode) {
+            ResponseAcceleratedXpathPolicyTreeNode n = (ResponseAcceleratedXpathPolicyTreeNode)node;
+            return new ResponseAcceleratedXpathPropertiesAction(n);
         }
         throw new RuntimeException("Type not supported " + node.getClass().getName());
     }

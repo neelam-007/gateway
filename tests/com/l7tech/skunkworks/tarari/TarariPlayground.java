@@ -5,7 +5,9 @@ package com.l7tech.skunkworks.tarari;
 
 import com.l7tech.common.util.HexUtils;
 import com.l7tech.common.xml.TestDocuments;
-import com.l7tech.common.xml.tarari.TarariUtil;
+import com.l7tech.common.xml.tarari.ServerTarariContext;
+import com.l7tech.common.xml.tarari.ServerTarariContext;
+import com.l7tech.server.tarari.ServerTarariContextImpl;
 import com.tarari.xml.XMLDocument;
 import com.tarari.xml.XMLDocumentException;
 import com.tarari.xml.xpath.RAXContext;
@@ -16,8 +18,11 @@ import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 
 public class TarariPlayground {
+    private static ServerTarariContext tarariContext;
+
     public static void main(String[] args) throws Exception {
-        TarariUtil.setupIsSoap();
+        tarariContext = new ServerTarariContextImpl();
+        tarariContext.compile();
 
         if (args.length > 0) {
             Boolean soap = args.length == 2 ? Boolean.valueOf(args[1]) : Boolean.FALSE;
@@ -43,7 +48,7 @@ public class TarariPlayground {
             docStream.reset();
             RAXContext context = getProcessedContext(docStream);
 
-            if (context.isSoap(TarariUtil.getUriIndices()) != shouldBeSoap) {
+            if (context.isSoap(tarariContext.getSoapNamespaceUriIndices()) != shouldBeSoap) {
                 System.out.println("BAD");
             }
         }

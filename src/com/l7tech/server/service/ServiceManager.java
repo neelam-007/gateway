@@ -96,4 +96,6 @@ public interface ServiceManager extends EntityManager {
      * @throws FindException if the query fails for some reason
      */
     Map getServiceVersions() throws FindException;
+
+    void setVisitorClassnames(String visitorClasses);
 }
