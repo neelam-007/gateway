@@ -12,7 +12,6 @@ import java.awt.event.*;
  * User: mike
  * Date: May 22, 2003
  * Time: 1:47:04 PM
- * To change this template use Options | File Templates.
  */
 public class Gui {
     private static final Category log = Category.getInstance(Gui.class.getName());
