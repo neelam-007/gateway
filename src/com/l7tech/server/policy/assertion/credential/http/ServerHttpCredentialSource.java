@@ -9,6 +9,7 @@ package com.l7tech.server.policy.assertion.credential.http;
 import com.l7tech.common.message.HttpRequestKnob;
 import com.l7tech.common.message.HttpResponseKnob;
 import com.l7tech.common.message.Message;
+import com.l7tech.common.audit.Auditor;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.credential.CredentialFinderException;
@@ -17,6 +18,7 @@ import com.l7tech.policy.assertion.credential.http.HttpCredentialSourceAssertion
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.ServerAssertion;
 import com.l7tech.server.policy.assertion.credential.ServerCredentialSourceAssertion;
+import com.l7tech.server.AssertionMessages;
 
 import java.io.IOException;
 import java.util.Iterator;
@@ -116,8 +118,10 @@ public abstract class ServerHttpCredentialSource extends ServerCredentialSourceA
     protected HttpCredentialSourceAssertion _data;
 
     public AssertionStatus checkRequest(PolicyEnforcementContext context) throws IOException, PolicyAssertionException {
+
+        Auditor auditor = new Auditor(context.getAuditContext(), logger);
         if (context.getRequest().getKnob(HttpRequestKnob.class) == null) {
-            logger.info("Request not HTTP; unable to extract HTTP credentials");
+            auditor.logAndAudit(AssertionMessages.HTTP_CS_CANNOT_EXTRACT_CREDENTIALS);
             return AssertionStatus.NOT_APPLICABLE;
         }
         return super.checkRequest(context);

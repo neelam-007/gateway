@@ -127,4 +127,14 @@ public class AssertionMessages extends Messages {
     public static final M CA_CREDENTIAL_INFO                                = m(5000, Level.FINE, "Service:{0}, custom assertion: {1}, principal:{2}");
     public static final M CA_INVALID_CA_DESCRIPTOR                          = m(5001, Level.WARNING, "Invalid custom assertion descriptor detected for {0}, This policy element is misconfigured and will cause the policy to fail.");
 
+    // ServerHttpCredentialSource
+    public static final M HTTP_CS_CANNOT_EXTRACT_CREDENTIALS                = m(5100, Level.INFO, "Request not HTTP; unable to extract HTTP credentials");
+
+    // ServerWssBasic
+    public static final M WSS_BASIC_FOR_ANOTHER_RECIPIENT                   = m(5200, Level.FINE, "This is intended for another recipient, nothing to validate.");
+    public static final M WSS_BASIC_NOT_SOAP                                = m(5201, Level.INFO, "Request not SOAP: Cannot check for WS-Security UsernameToken");
+    public static final M WSS_BASIC_NO_CREDENTIALS                          = m(5202, Level.INFO, "Request did not include WSS Basic credentials.");
+    public static final M WSS_BASIC_CANNOT_FIND_CREDENTIALS                 = m(5203, Level.INFO, "cannot find credentials");
+
+
 }
