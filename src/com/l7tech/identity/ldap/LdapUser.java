@@ -106,6 +106,7 @@ public class LdapUser implements User, Serializable {
      */
     public void setProviderId( long providerId) {
         this.providerId = providerId;
+        _userBean.setProviderId(providerId);
     }
 
     public String toString() {
@@ -123,6 +124,7 @@ public class LdapUser implements User, Serializable {
 
     public void setDn(String dn) {
         _dn = dn;
+        _userBean.setUniqueIdentifier(dn);
     }
 
     public String getCn() {
