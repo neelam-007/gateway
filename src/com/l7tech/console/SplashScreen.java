@@ -50,7 +50,7 @@ class SplashScreen extends JWindow implements MouseListener {
         if (labelSplash == null) {
             labelSplash = new javax.swing.JLabel();
             labelSplash.setName("JLabelSplash");
-            labelSplash.setIcon(new javax.swing.ImageIcon(cl.getResource(MainWindow.RESOURCE_PATH + "/splash-screen.png")));
+            labelSplash.setIcon(new javax.swing.ImageIcon(cl.getResource(MainWindow.RESOURCE_PATH + "/splash-screen.gif")));
             labelSplash.setText("");
             labelSplash.setMaximumSize(new java.awt.Dimension(293, 247));
             labelSplash.setMinimumSize(new java.awt.Dimension(293, 247));
