@@ -120,7 +120,7 @@ public class SoapMessageProcessingServlet extends HttpServlet {
         final HttpServletResponseKnob respKnob = new HttpServletResponseKnob(hresponse);
         response.attachHttpResponseKnob(respKnob);
 
-        final PolicyEnforcementContext context = new PolicyEnforcementContext(request, response, 
+        final PolicyEnforcementContext context = new PolicyEnforcementContext(request, response,
                                                                               hrequest, hresponse);
 
         // TODO refactor the stash manager creation code into a home of its own
@@ -199,7 +199,7 @@ public class SoapMessageProcessingServlet extends HttpServlet {
             }
         } finally {
             AuditContext auditContext = (AuditContext)applicationContext.getBean("auditContext");
-            if (!auditContext.isClosed()) auditContext.close();
+            auditContext.close();
         }
     }
 

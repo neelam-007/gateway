@@ -32,11 +32,4 @@ public class AuditContextStub implements AuditContext {
         this.closed = true;
     }
 
-    public boolean isFlushed() {
-        return flushed;
-    }
-
-    public boolean isClosed() {
-        return closed;
-    }
 }

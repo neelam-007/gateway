@@ -39,7 +39,6 @@ public class AuditContextImpl implements AuditContext {
     private static int ordinal = 0;
     private final ServerConfig serverConfig;
 
-
     public AuditContextImpl(ServerConfig serverConfig, AuditRecordManager auditRecordManager) {
         if (serverConfig == null) {
             throw new IllegalArgumentException("Server Config is required");
@@ -128,10 +127,15 @@ public class AuditContextImpl implements AuditContext {
 
     public void close() {
         try {
-            if (closed) return;
+            if (closed) throw new IllegalStateException("Already closed");
             if (!flushed) flush();
         } finally {
-            closed = true;
+            // Reinitialize in case this thread needs us again for a new request
+            closed = false;
+            flushed = false;
+            currentRecord = null;
+            details = new HashSet();
+            highestLevelYetSeen = Level.ALL;
         }
     }
 
@@ -144,14 +148,6 @@ public class AuditContextImpl implements AuditContext {
         } finally {
             super.finalize();
         }
-    }
-
-    public boolean isFlushed() {
-        return flushed;
-    }
-
-    public boolean isClosed() {
-        return closed;
     }
 
     private Level getSystemMessageThreshold() {

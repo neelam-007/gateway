@@ -57,13 +57,4 @@ public interface AuditContext {
      */
     void close();
 
-    /**
-     * @return true if the context has been flushed, indicating that any records it may have contained have been written to the database.
-     */
-    boolean isFlushed();
-
-    /**
-     * @return true if the context has been closed, indicating that it cannot be used again.
-     */
-    boolean isClosed();
 }
