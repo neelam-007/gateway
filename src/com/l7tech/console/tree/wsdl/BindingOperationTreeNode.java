@@ -2,6 +2,7 @@ package com.l7tech.console.tree.wsdl;
 
 import javax.wsdl.BindingOperation;
 import javax.wsdl.Message;
+import javax.wsdl.Input;
 
 /**
  * Class BindingOperationTreeNode.
@@ -17,9 +18,12 @@ public class BindingOperationTreeNode extends WsdlTreeNode {
     }
 
     protected void loadChildren() {
-        final Message m = operation.getOperation().getInput().getMessage();
-        children = null;
-        insert(new MessageTreeNode(m), 0);
+        final Input input = operation.getOperation().getInput();
+        if (input !=null) {
+            final Message m = input.getMessage();
+            children = null;
+            insert(new MessageTreeNode(m), 0);
+        }
     }
 
     /**
