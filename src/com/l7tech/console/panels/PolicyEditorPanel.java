@@ -4,6 +4,7 @@ import com.l7tech.console.action.*;
 import com.l7tech.console.tree.FilteredTreeModel;
 import com.l7tech.console.tree.NodeFilter;
 import com.l7tech.console.tree.ServiceNode;
+import com.l7tech.console.tree.ServicesTree;
 import com.l7tech.console.tree.policy.*;
 import com.l7tech.console.util.PopUpMouseListener;
 import com.l7tech.console.util.Registry;
@@ -66,8 +67,8 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
     public PolicyEditorPanel(ServiceNode sn) throws FindException, RemoteException {
         layoutComponents();
         renderService(sn);
-        addServiceListeners(sn);
         this.serviceNode = sn;
+        setEditorListeners();
     }
 
     /**
@@ -132,7 +133,7 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
         TreeNode root = (TreeNode)model.getRoot();
         FilteredTreeModel filteredTreeModel = new FilteredTreeModel(root);
         policyTree.setModel(filteredTreeModel);
-        filteredTreeModel.addTreeModelListener(treeModellistener);
+        filteredTreeModel.addTreeModelListener(policyTreeModellistener);
 
         final TreePath path = new TreePath(((DefaultMutableTreeNode)root).getPath());
 
@@ -143,8 +144,16 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
         });
     }
 
-    private void addServiceListeners(ServiceNode sn) {
-        sn.addPropertyChangeListener(servicePropertyChangeListener);
+    /**
+     * set various listeners that this panel uses
+     */
+    private void setEditorListeners() {
+        serviceNode.addPropertyChangeListener(servicePropertyChangeListener);
+        JTree tree = (JTree)componentRegistry.getComponent(ServicesTree.NAME);
+        if (tree == null) {
+            throw new IllegalStateException("Internal error - (could not get services tree component)");
+        }
+        tree.getModel().addTreeModelListener(servicesTreeModelListener);
     }
 
 
@@ -257,7 +266,7 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
             identityViewButton.addActionListener(new ActionListener() {
                 public void actionPerformed(ActionEvent e) {
                     boolean selected = identityViewButton.isSelected();
-                    policyTree.getModel().removeTreeModelListener(treeModellistener);
+                    policyTree.getModel().removeTreeModelListener(policyTreeModellistener);
                     if (selected) {
                         PolicyTreeModel model =
                           PolicyTreeModel.identitityModel(rootAssertion.asAssertion());
@@ -270,7 +279,7 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
                         FilteredTreeModel fm = new FilteredTreeModel((TreeNode)model.getRoot());
                         policyTree.setModel(fm);
                     }
-                    policyTree.getModel().addTreeModelListener(treeModellistener);
+                    policyTree.getModel().addTreeModelListener(policyTreeModellistener);
                 }
             });
             this.add(identityViewButton);
@@ -392,8 +401,8 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
 
     }
 
-    // listen for tree changes
-    TreeModelListener treeModellistener = new TreeModelListener() {
+    // listener for policy tree changes
+    TreeModelListener policyTreeModellistener = new TreeModelListener() {
         public void treeNodesChanged(TreeModelEvent e) {
             policyEditorToolbar.buttonSave.setEnabled(true);
             TreePath path = e.getTreePath();
@@ -451,6 +460,29 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
             policyEditorToolbar.buttonSave.getAction().setEnabled(true);
         }
     };
+
+// listener for policy tree changes
+    TreeModelListener servicesTreeModelListener = new TreeModelListener() {
+        public void treeNodesChanged(TreeModelEvent e) {}
+
+        public void treeNodesInserted(TreeModelEvent e) {}
+
+        public void treeNodesRemoved(TreeModelEvent e) {
+            Object[] children = e.getChildren();
+            for (int i = 0; i < children.length; i++) {
+                Object child = children[i];
+                if (child == serviceNode) {
+                    log.fine("Service node deleted, disabling save controls");
+                    policyEditorToolbar.buttonSave.setEnabled(false);
+                    policyEditorToolbar.buttonSave.getAction().setEnabled(false);
+                }
+            }
+        }
+
+        public void treeStructureChanged(TreeModelEvent e) {}
+
+    };
+
 
     private final PropertyChangeListener
       servicePropertyChangeListener = new PropertyChangeListener() {
