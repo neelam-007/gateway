@@ -7,6 +7,7 @@ import com.l7tech.console.util.TopComponents;
 import com.l7tech.console.panels.WorkSpacePanel;
 import com.l7tech.console.poleditor.PolicyEditorPanel;
 import com.l7tech.console.poleditor.PolicyEditorPanel;
+import com.l7tech.console.MainWindow;
 import com.l7tech.service.PublishedService;
 
 import javax.swing.*;
@@ -81,6 +82,7 @@ public class DeleteServiceAction extends BaseAction {
                     // if currently edited service was deleted
                     if (node.getPublishedService().getOid() == svc.getOid()) {
                         cws.clearWorkspace();
+                        MainWindow.getMain().firePolicyEditDeleted();
                     }
                 } catch (Exception e) {
                     throw new RuntimeException(e);
