@@ -34,6 +34,7 @@ public class ClientProxy {
     private static final Category log = Category.getInstance(ClientProxy.class);
     public static final String PROXY_CONFIG =
             System.getProperties().getProperty("user.home") + File.separator + ".l7tech";
+    private static final String USER_AGENT = "L7 Client Proxy; Protocol v1.0";
 
     private SsgFinder ssgFinder;
     private HttpServer httpServer;
@@ -82,6 +83,8 @@ public class ClientProxy {
     {
         if (isInitialized)
             return;
+
+        System.setProperty("httpclient.useragent", USER_AGENT);
 
         // Set up SSL context
         ClientProxyKeyManager keyManager = new ClientProxyKeyManager(ssgFinder);
