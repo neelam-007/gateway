@@ -21,7 +21,6 @@ import javax.security.auth.Subject;
 import javax.swing.*;
 import java.awt.*;
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
@@ -239,22 +238,7 @@ public class Main {
                 }
                 URL url = cl.getResource(res[i]);
                 String file = directory + File.separator + new File(url.getFile()).getName();
-                final InputStream input = in;
-                FileUtils.saveFileSafely(file, new FileUtils.Saver() {
-                    public void doSave(FileOutputStream fos) throws IOException {
-                        byte[] bytearray = new byte[512];
-                        int len = 0;
-                        try {
-                            while ((len = input.read(bytearray)) != -1) {
-                                fos.write(bytearray, 0, len);
-                            }
-                        } finally {
-                            if (fos != null) fos.close();
-                        }
-                    }
-                });
-                in.close();
-                in = null;
+                FileUtils.save(in, new File(file));
             }
         } finally {
             if (in != null) {

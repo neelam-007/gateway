@@ -6,22 +6,22 @@
 
 package com.l7tech.common.util;
 
-import java.io.IOException;
-import java.io.FileOutputStream;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
+import java.io.*;
+import java.nio.channels.FileChannel;
+import java.nio.channels.ReadableByteChannel;
 
 /**
  * Utility methods to approximate Unix-style transactional file replacement in Java.
- *
+ * <p/>
  * User: mike
  * Date: Jul 30, 2003
  * Time: 2:58:00 PM
  */
 public class FileUtils {
 
-    /** Interface implemented by those who wish to call saveFileSafely(). */
+    /**
+     * Interface implemented by those who wish to call saveFileSafely().
+     */
     public interface Saver {
         void doSave(FileOutputStream fos) throws IOException;
     }
@@ -30,7 +30,7 @@ public class FileUtils {
      * Safely overwrite the specified file with new information.
      * Caller is responsible for ensuring that only one thread will be attempting to save or load
      * the same file at the same time.
-     *
+     * <p/>
      * <pre>
      *    oldFile   curFile  newFile  Description                    Action to take
      *    --------  -------  -------  -----------------------------  --------------------------------
@@ -42,9 +42,9 @@ public class FileUtils {
      *  6    +         -        +     Update was interrupted         -newFile; (do #5)
      *  7    +         +        -     Update was interrupted         -oldFile; (do #3)
      *  8    +         +        +     Invalid; can't happen          -newFile; -oldFile; (do #3)
-     *</pre>
-     *
-     *  We guarantee to end up in state #3 if we complete successfully.
+     * </pre>
+     * <p/>
+     * We guarantee to end up in state #3 if we complete successfully.
      */
     public static void saveFileSafely(String path, Saver saver) throws IOException {
         FileOutputStream out = null;
@@ -87,13 +87,13 @@ public class FileUtils {
 
             if (curFile.exists())
                 if (!curFile.renameTo(oldFile))
-                    // If we need to do this, it has to succeed
+                // If we need to do this, it has to succeed
                     throw new IOException("Unable to rename " + curFile + " to " + oldFile);
 
             // If interrupted here, we end up in State 6 (or State 2 if was no existing file)
 
             if (!newFile.renameTo(curFile))
-                // This must succeed in order for the update to complete
+            // This must succeed in order for the update to complete
                 throw new IOException("Unable to rename " + newFile + " to " + curFile);
 
             // If interrupted here, we end up in State 7 (or State 3 if was no existing file)
@@ -134,8 +134,8 @@ public class FileUtils {
      * to loadFileSafely() will recover an out-of-date version of the file if we are interrupted in mid-delete).
      * Caller is responsible for ensuring that only one thread attempts to save or load the same file at any time.
      *
-     * @param path  the path to delete
-     * @return  true if some files were deleted, or false if none were found
+     * @param path the path to delete
+     * @return true if some files were deleted, or false if none were found
      */
     public static boolean deleteFileSafely(String path) {
         boolean deletes = false;
@@ -148,5 +148,41 @@ public class FileUtils {
         return deletes;
     }
 
+    /**
+     * Saves the inputstream into the given output file.
+     * On successfull operation closes the input stream <code>in</code>.
+     *
+     * @param in  the input file
+     * @param out the output file
+     * @throws IOException on io error
+     */
+    public static void save(InputStream in, File out) throws IOException {
+        if (in == null || out == null) {
+            throw new IllegalArgumentException();
+        }
+        ReadableByteChannel sourceChannel = new InputStreamChannel(in);
+        FileChannel destinationChannel = new FileOutputStream(out).getChannel();
+        destinationChannel.transferFrom(sourceChannel, 0, Integer.MAX_VALUE);
+        sourceChannel.close();
+        destinationChannel.close();
+    }
 
+    /**
+     * Copies one file into output file.  It will copy the file entirely in the
+     * kernel space on operating systems with  appropriate support.
+     *
+     * @param in  the input file
+     * @param out the output
+     * @throws IOException in io error
+     */
+    public static void copyFile(File in, File out) throws IOException {
+        if (in == null || out == null) {
+            throw new IllegalArgumentException();
+        }
+        FileChannel sourceChannel = new FileInputStream(in).getChannel();
+        FileChannel destinationChannel = new FileOutputStream(out).getChannel();
+        sourceChannel.transferTo(0, sourceChannel.size(), destinationChannel);
+        sourceChannel.close();
+        destinationChannel.close();
+    }
 }
