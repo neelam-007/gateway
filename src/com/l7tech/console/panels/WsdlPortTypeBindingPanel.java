@@ -157,7 +157,6 @@ public class WsdlPortTypeBindingPanel extends WizardStepPanel {
         } catch (WSDLException e) {
             throw new RuntimeException(e);
         }
-        binding.setQName(new QName(portTypeBindingNameField.getText()));
     }
 
     /**
@@ -171,12 +170,15 @@ public class WsdlPortTypeBindingPanel extends WizardStepPanel {
         Binding binding;
         if (bindings.isEmpty()) {
             binding = definition.createBinding();
+            binding.setQName(new QName(portTypeBindingNameField.getText()));
             binding.setPortType(portType);
             binding.setUndefined(false);
             collectSoapBinding(binding);
             definition.addBinding(binding);
         } else {
             binding = (Binding)bindings.values().iterator().next();
+            definition.removeBinding(binding.getQName());
+            return getEditedBinding();
         }
         binding.getBindingOperations().clear();
         for (Iterator it = portType.getOperations().iterator(); it.hasNext();) {
