@@ -22,12 +22,11 @@ import java.util.logging.Logger;
 public class InternalGroupManagerServer extends HibernateEntityManager implements GroupManager {
     public InternalGroupManagerServer( InternalIdentityProviderServer provider ) {
         super();
-        _provider = provider;
     }
 
     public Group findByName(String name) throws FindException {
         try {
-            List groups = _manager.find(getContext(), "from " + getTableName() + " in class " + getImpClass().getName() + " where " + getTableName() + ".name = ?", name, String.class);
+            List groups = PersistenceManager.find(getContext(), "from " + getTableName() + " in class " + getImpClass().getName() + " where " + getTableName() + ".name = ?", name, String.class);
             switch (groups.size()) {
                 case 0:
                     return null;
@@ -54,7 +53,7 @@ public class InternalGroupManagerServer extends HibernateEntityManager implement
                 logger.fine("findByPrimaryKey called with null arg.");
                 return null;
             }
-            InternalGroup out = (InternalGroup)_manager.findByPrimaryKey(getContext(), getImpClass(), Long.parseLong(oid));
+            InternalGroup out = (InternalGroup)PersistenceManager.findByPrimaryKey(getContext(), getImpClass(), Long.parseLong(oid));
             if (out == null) return null;
             out.setProviderId(IdProvConfManagerServer.INTERNALPROVIDER_SPECIAL_OID);
             return out;
@@ -98,17 +97,30 @@ public class InternalGroupManagerServer extends HibernateEntityManager implement
         }
     }
 
+    /** Must be called in a transaction! */
     public void delete(Group group) throws DeleteException, ObjectNotFoundException {
+        HibernatePersistenceContext context = null;
         try {
+            context = (HibernatePersistenceContext)getContext();
             InternalGroup imp = cast( group );
             // it is not allowed to delete the admin group
             if ( Group.ADMIN_GROUP_NAME.equals( imp.getName() ) ) {
                 logger.severe("an attempt to delete the admin group was made.");
                 throw new DeleteException("Cannot delete administrator group.");
             }
-            _manager.delete(getContext(), imp);
+            Set userHeaders = getUserHeaders(group);
+            Session s = context.getSession();
+            for ( Iterator i = userHeaders.iterator(); i.hasNext(); ) {
+                EntityHeader userHeader = (EntityHeader) i.next();
+                s.delete(new GroupMembership( userHeader.getOid(), imp.getOid() ));
+            }
+            s.delete(imp);
         } catch (SQLException se) {
             throw new DeleteException(se.toString(), se);
+        } catch ( FindException e ) {
+            throw new DeleteException(e.toString(), e);
+        } catch ( HibernateException e ) {
+            throw new DeleteException(e.toString(), e);
         }
     }
 
@@ -135,7 +147,7 @@ public class InternalGroupManagerServer extends HibernateEntityManager implement
             if (existingGrp != null) {
                 throw new SaveException("This group cannot be saved because an existing group already uses the name '" + group.getName() + "'");
             }
-            String oid = Long.toString( _manager.save(getContext(), imp) );
+            String oid = Long.toString( PersistenceManager.save(getContext(), imp) );
 
             if ( userHeaders != null ) {
                 try {
@@ -195,7 +207,7 @@ public class InternalGroupManagerServer extends HibernateEntityManager implement
             setUserHeaders( group.getUniqueIdentifier(), userHeaders );
 
             originalGroup.copyFrom(imp);
-            _manager.update(getContext(), originalGroup);
+            PersistenceManager.update(getContext(), originalGroup);
         } catch (FindException e) {
             throw new UpdateException("Update called on group that does not already exist", e);
         } catch (SQLException se) {
@@ -514,7 +526,6 @@ public class InternalGroupManagerServer extends HibernateEntityManager implement
     }
 
     private final Logger logger = Logger.getLogger(getClass().getName());
-    private InternalIdentityProviderServer _provider;
 
     public static final String HQL_GETGROUPS = "select grp from grp in class " + IMPCLASSNAME + ", " +
              "membership in class " + GMCLASSNAME + " " +
