@@ -12,11 +12,10 @@ import com.l7tech.identity.imp.*;
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
 import javax.servlet.http.*;
+import javax.naming.InitialContext;
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.util.Collection;
 import java.util.Iterator;
-import java.sql.SQLException;
 
 /**
  * @author alex
@@ -24,6 +23,7 @@ import java.sql.SQLException;
 public class HibernatePersistenceManagerServlet extends HttpServlet {
     public void init( ServletConfig config ) throws ServletException {
         super.init( config );
+
         try {
             HibernatePersistenceManager.initialize();
         } catch ( Exception e ) {
@@ -41,15 +41,15 @@ public class HibernatePersistenceManagerServlet extends HttpServlet {
         IdentityProviderTypeManager iptm;
         try {
             context = PersistenceManager.getContext();
+            context.beginTransaction();
             ipcm = new IdentityProviderConfigManagerImp( context );
             iptm = new IdentityProviderTypeManagerImp( context );
-        } catch ( SQLException se ) {
-            throw new ServletException( se );
+        } catch ( Exception e ) {
+            throw new ServletException( e );
         }
 
         try {
             String op = request.getParameter("op");
-            PersistenceManager.beginTransaction( context );
 
             if ( op.equals("list") ) {
                 Iterator i = ipcm.findAll().iterator();
@@ -76,6 +76,7 @@ public class HibernatePersistenceManagerServlet extends HttpServlet {
                     out.println( "Couldn't find " + oid );
                 else {
                     ipcm.delete(config);
+
                     out.println( oid + " deleted." );
                 }
             } else if ( op.equals( "create") ) {
@@ -90,14 +91,19 @@ public class HibernatePersistenceManagerServlet extends HttpServlet {
                 config.setType( type );
 
                 long oid = ipcm.save( config );
+
                 out.println( "Saved " + oid );
             }
-        } catch ( ObjectModelException ome ) {
-            throw new ServletException( ome );
+        } catch ( Exception e ) {
+            throw new ServletException( e );
         } finally {
             try {
-                PersistenceManager.commitTransaction( context );
-            } catch ( TransactionException te ) {
+                String rollback = request.getParameter("rollback");
+                if ( "true".equals( rollback ) )
+                    context.rollbackTransaction();
+                else
+                    context.commitTransaction();
+            } catch ( Exception te ) {
                 throw new ServletException( te );
             }
         }
