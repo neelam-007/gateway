@@ -133,6 +133,9 @@ public class IdentityRule extends Filter {
                 } catch (FindException e) {
                     logger.log(Level.WARNING, "Cannot get group from provider", e);
                     return false;
+                } catch (IllegalStateException e) {
+                    logger.log(Level.WARNING, "Cannot get group from provider", e);
+                    return false;
                 }
             }
             return false;
