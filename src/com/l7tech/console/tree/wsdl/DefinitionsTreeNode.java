@@ -13,10 +13,12 @@ import java.util.*;
  */
 public class DefinitionsTreeNode extends WsdlTreeNode {
     private final Definition definition;
+    private Wsdl wsdl;
 
     DefinitionsTreeNode(Definition def, Options options) {
         super(null, options);
         this.definition = def;
+        this.wsdl = new Wsdl(definition);
     }
 
     /**
@@ -44,8 +46,8 @@ public class DefinitionsTreeNode extends WsdlTreeNode {
 
             public List list() {
                 List list = new ArrayList();
-                Map messages = Wsdl.getElements(definition, Wsdl.ELEMENT_TYPE_MESSAGE);
-                for (Iterator i = messages.values().iterator(); i.hasNext();) {
+                Collection messages = wsdl.getMessages();
+                for (Iterator i = messages.iterator(); i.hasNext();) {
                     list.add(new MessageTreeNode((Message)i.next()));
                 }
                 return list;
@@ -64,9 +66,10 @@ public class DefinitionsTreeNode extends WsdlTreeNode {
 
             public List list() {
                 List list = new ArrayList();
-                Map portTypes = Wsdl.getElements(definition, Wsdl.ELEMENT_TYPE_PORT_TYPE);
 
-                for (Iterator i = portTypes.values().iterator(); i.hasNext();) {
+                Collection portTypes = wsdl.getPortTypes();
+
+                for (Iterator i = portTypes.iterator(); i.hasNext();) {
                     list.add(new PortTypeTreeNode((PortType)i.next(), wsdlOptions));
                 }
 
@@ -86,9 +89,9 @@ public class DefinitionsTreeNode extends WsdlTreeNode {
 
             public List list() {
                 List list = new ArrayList();
-                Map bindings = Wsdl.getElements(definition, Wsdl.ELEMENT_TYPE_BINDING);
+                Collection bindings = wsdl.getBindings();
 
-                for (Iterator i = bindings.values().iterator(); i.hasNext();) {
+                for (Iterator i = bindings.iterator(); i.hasNext();) {
                     list.add(new BindingTreeNode((Binding)i.next(), wsdlOptions));
                 }
                 return list;
@@ -107,8 +110,8 @@ public class DefinitionsTreeNode extends WsdlTreeNode {
 
             public List list() {
                 List list = new ArrayList();
-                Map services = Wsdl.getElements(definition, Wsdl.ELEMENT_TYPE_SERVICE);
-                for (Iterator i = services.values().iterator(); i.hasNext();) {
+                Collection services = wsdl.getServices();
+                for (Iterator i = services.iterator(); i.hasNext();) {
                     list.add(new ServiceTreeNode((Service)i.next(), wsdlOptions));
                 }
                 return list;

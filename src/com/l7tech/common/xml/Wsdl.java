@@ -6,7 +6,6 @@ import com.l7tech.console.util.Registry;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
-import org.w3c.dom.Node;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 
@@ -23,12 +22,15 @@ import javax.wsdl.factory.WSDLFactory;
 import javax.wsdl.xml.WSDLReader;
 import javax.wsdl.xml.WSDLWriter;
 import javax.xml.soap.SOAPConstants;
-import java.io.*;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.io.Reader;
+import java.io.Writer;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.rmi.RemoteException;
 import java.util.*;
 import java.util.logging.Logger;
-import java.rmi.RemoteException;
 
 
 /**
@@ -44,10 +46,6 @@ import java.rmi.RemoteException;
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  */
 public class Wsdl {
-    public static final int ELEMENT_TYPE_MESSAGE = 1;
-    public static final int ELEMENT_TYPE_BINDING = 2;
-    public static final int ELEMENT_TYPE_PORT_TYPE = 3;
-    public static final int ELEMENT_TYPE_SERVICE = 4;
 
     public static final String NS = "ns";
     /**
@@ -71,7 +69,10 @@ public class Wsdl {
      *
      * @param d the wsdl4j definition instance
      */
-    protected Wsdl(Definition d) {
+    public Wsdl(Definition d) {
+        if (d == null) {
+            throw new IllegalArgumentException();
+        }
         definition = d;
     }
 
@@ -196,7 +197,13 @@ public class Wsdl {
      *         instances described in this definition.
      */
     public Collection getBindings() {
-        Collection allBindings = definition.getBindings().values();
+        final Collection allBindings = new ArrayList();
+        collectElements(new ElementCollector() {
+            public void collect(Definition def) {
+                allBindings.addAll(def.getBindings().values());
+            }
+        }, definition);
+
         if (showBindings == ALL_BINDINGS) {
             return allBindings;
         }
@@ -271,26 +278,52 @@ public class Wsdl {
 
     /**
      * @return the collection of WSDL <code>Message</code>
-     *         instances described in this definition.
+     *         instances described in this definition and
+     *         imported definitions.
      */
     public Collection getMessages() {
-        return definition.getMessages().values();
+        final Collection messages = new ArrayList();
+
+        collectElements(new ElementCollector() {
+            public void collect(Definition def) {
+                messages.addAll(def.getMessages().values());
+            }
+        }, definition);
+        return messages;
     }
 
     /**
      * @return the collection of WSDL <code>PortType</code>
-     *         instances described in this definition.
+     *         instances described in this definition and imported
+     *         definitions.
      */
     public Collection getPortTypes() {
-        return definition.getPortTypes().values();
+        final Collection portTypes = new ArrayList();
+
+        collectElements(new ElementCollector() {
+            public void collect(Definition def) {
+                portTypes.addAll(def.getPortTypes().values());
+            }
+        }, definition);
+
+        return portTypes;
     }
 
     /**
      * @return the collection of WSDL <code>Service</code>
-     *         instances described in this definition.
+     *         instances described in this definition and
+     *         imported definitions.
      */
     public Collection getServices() {
-        return definition.getServices().values();
+        final Collection services = new ArrayList();
+
+        collectElements(new ElementCollector() {
+            public void collect(Definition def) {
+                services.addAll(def.getServices().values());
+            }
+        }, definition);
+
+        return services;
     }
 
     /**
@@ -750,77 +783,18 @@ public class Wsdl {
     }
 
     /**
-     * Retrieve the all elements of the specified type
-     *
-     * @param def         the wsdl defintion
-     * @param elementType the element type (ELEMENT_TYPE_MESSAGE, ELEMENT_TYPE_BINDING, & ELEMENT_TYPE_PORT_TYPE)
-     * @return Map the list of elements of the specified type. Never null.
+     * Traverses all the imported definitions and invokes collect on the collector
+     * for reach definition
+     * @param collector
      */
-    public static Map getElements(Definition def, int elementType) {
-        Map allElements = new HashMap();
-        switch (elementType) {
-            case ELEMENT_TYPE_MESSAGE:
-                allElements = def.getMessages();
-
-                break;
-            case ELEMENT_TYPE_BINDING:
-                allElements = def.getBindings();
-
-                break;
-            case ELEMENT_TYPE_PORT_TYPE:
-                allElements = def.getPortTypes();
-                break;
-            case ELEMENT_TYPE_SERVICE:
-                allElements = def.getServices();
-                break;
-            default:
-                return new HashMap();
+    private void collectElements(ElementCollector collector, Definition def) {
+        collector.collect(def);
+        final Map imports = def.getImports();
+        for (Iterator iterator = imports.values().iterator(); iterator.hasNext();) {
+            Import importDef = (Import)iterator.next();
+            collectElements(collector, importDef.getDefinition());
         }
-        Import imp = null;
-        if (def.getImports().size() > 0) {
-            Iterator itr = def.getImports().keySet().iterator();
-            while (itr.hasNext()) {
-                Object importDef = itr.next();
-                Vector importList = (Vector) def.getImports().get(importDef);
-                for (int k = 0; k < importList.size(); k++) {
-                    imp = (Import) importList.elementAt(k);
-                    Map elements = null;
-
-                    if(imp.getDefinition() == null) continue;
-                    switch (elementType) {
-                        case ELEMENT_TYPE_MESSAGE:
-                            elements = imp.getDefinition().getMessages();
-
-                            break;
-                        case ELEMENT_TYPE_BINDING:
-                            elements = imp.getDefinition().getBindings();
-
-                            break;
-                        case ELEMENT_TYPE_PORT_TYPE:
-                            elements = imp.getDefinition().getPortTypes();
-                            break;
-                        case ELEMENT_TYPE_SERVICE:
-                            elements = imp.getDefinition().getServices();
-                            break;
-                        default:
-                            return new HashMap();
-                    }
-                    if (elements.size() > 0) {
-                        allElements.putAll(elements);
-                    }
-                }
-            }
-        }
-
-        if (imp != null && imp.getDefinition() != null) {
-            Map moreElements = getElements(imp.getDefinition(), elementType);
-            if (moreElements.size() > 0) {
-                allElements.putAll(moreElements);
-            }
-        }
-        return allElements;
     }
-
     /**
      * Get the schema element from the wsdl definiton.
      *
@@ -875,4 +849,12 @@ public class Wsdl {
     private Definition definition;
 
     private transient Logger logger = Logger.getLogger(getClass().getName());
+
+    private interface ElementCollector  {
+        /**
+         * The implementation collects the elements of the interest fro mthe definition
+         * @param def the wsdl DEfinition
+         */
+        void collect(Definition def);
+    }
 }

@@ -16,10 +16,7 @@ import javax.wsdl.extensions.soap.SOAPOperation;
 import javax.xml.namespace.QName;
 import javax.xml.soap.*;
 import java.io.*;
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.rmi.RemoteException;
 import java.net.MalformedURLException;
 
@@ -118,8 +115,8 @@ public class SoapMessageGenerator {
     public Message[] generateRequests(Wsdl wsdl) throws SOAPException, RemoteException, MalformedURLException, IOException, SAXException {
         this.wsdl = wsdl;
         List requests = new ArrayList();
-        Map bindings = Wsdl.getElements(wsdl.getDefinition(), Wsdl.ELEMENT_TYPE_BINDING);
-        Iterator it = bindings.values().iterator();
+        Collection bindings = wsdl.getBindings();
+        Iterator it = bindings.iterator();
         while (it.hasNext()) {
             Binding binding = (Binding)it.next();
             requests.addAll(generateMessages(binding, true));
@@ -135,8 +132,8 @@ public class SoapMessageGenerator {
     public Message[] generateResponses(Wsdl wsdl) throws SOAPException, RemoteException, MalformedURLException, IOException, SAXException {
         this.wsdl = wsdl;
         List requests = new ArrayList();
-        Map bindings = Wsdl.getElements(wsdl.getDefinition(), Wsdl.ELEMENT_TYPE_BINDING);
-        Iterator it = bindings.values().iterator();
+        Collection bindings = wsdl.getBindings();
+        Iterator it = bindings.iterator();
         while (it.hasNext()) {
             Binding binding = (Binding)it.next();
             requests.addAll(generateMessages(binding, false));
