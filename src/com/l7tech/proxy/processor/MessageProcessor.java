@@ -280,6 +280,8 @@ public class MessageProcessor {
                 URL policyUrl;
                 try {
                     policyUrl = new URL(policyUrlHeader.getValue());
+                    // force the policy URL to point at the SSG hostname the user typed
+                    policyUrl = new URL(policyUrl.getProtocol(), ssg.getSsgAddress(), policyUrl.getPort(), policyUrl.getFile());
                 } catch (MalformedURLException e) {
                     throw new ConfigurationException("The Ssg sent us an invalid Policy URL.");
                 }
