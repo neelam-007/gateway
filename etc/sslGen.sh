@@ -23,20 +23,37 @@
 # -----------------------------------------------------------------------------
 #
 
-KEYSTORE_DIR=$TOMCAT_HOME/kstores
-KEYSTORE_FILE=$KEYSTORE_DIR/tomcatSsl
-CERTIFICATE_FILE=$TOMCAT_HOME/kstores/ssg.cer
-SERVER_XML_FILE=$TOMCAT_HOME/conf/server.xml
+# Under cygwin?.
+cygwin=false;
+case "`uname`" in
+  CYGWIN*) cygwin=true ;;
+esac
+
+# For Cygwin, get the Windows paths for keytool.
+TOMCAT_HOME_OSPATH="$TOMCAT_HOME"
+if $cygwin; then
+  TOMCAT_HOME_OSPATH=`cygpath --path --windows "$TOMCAT_HOME"`
+fi
+
+KEYTOOL="$JAVA_HOME/bin/keytool"
+KEYSTORE_DIR="$TOMCAT_HOME/kstores"
+KEYSTORE_DIR_OSPATH="$TOMCAT_HOME_OSPATH/kstores"
+KEYSTORE_FILE="$KEYSTORE_DIR/tomcatSsl"
+KEYSTORE_FILE_OSPATH="$KEYSTORE_DIR_OSPATH/tomcatSsl"
+CERTIFICATE_FILE="$TOMCAT_HOME/kstores/ssg.cer"
+CERTIFICATE_FILE_OSPATH="$TOMCAT_HOME_OSPATH/kstores/ssg.cer"
+SERVER_XML_FILE="$TOMCAT_HOME/conf/server.xml"
+
 
 # VERIFY THAT THE TOMCAT_HOME VARIABLE IS SET
-if [ ! $TOMCAT_HOME ]; then
+if [ ! "$TOMCAT_HOME" ]; then
         echo "ERROR: TOMCAT_HOME not set"
         echo
         exit -1
 fi
 
 # VERIFY THAT THE KEYSTORE IS NOT YET SET
-if [ -e $KEYSTORE_FILE ]; then
+if [ -e "$KEYSTORE_FILE" ]; then
         echo "THE KEYSTORE ALREADY EXIST."
         echo "DO YOU WANT TO OVERWRITE? [y/n]"
         read ADMIN_ANSWER
@@ -45,21 +62,21 @@ if [ -e $KEYSTORE_FILE ]; then
                 exit -1
                 echo
         else
-                /bin/rm $KEYSTORE_FILE
+                /bin/rm "$KEYSTORE_FILE"
         fi
 fi
 
 # ENSURE THAT THE DIRECTORY EXISTS
-mkdir $KEYSTORE_DIR
+mkdir "$KEYSTORE_DIR"
 
 # GET A KEYSTORE PASSWORD FROM CALLER
 echo "Please provide an keystore password"
-read -s KEYSTORE_PASSWORD
+read KEYSTORE_PASSWORD
 echo "Please repeat"
-read -s KEYSTORE_PASSWORD_REPEAT
+read KEYSTORE_PASSWORD_REPEAT
 
 # VERIFY THAT PASSWORDS ARE EQUAL
-if [ ! $KEYSTORE_PASSWORD = $KEYSTORE_PASSWORD_REPEAT ]; then
+if [ ! "$KEYSTORE_PASSWORD" = "$KEYSTORE_PASSWORD_REPEAT" ]; then
 	echo "ERROR : passwords do not match"
 	exit -1
 fi
@@ -78,16 +95,16 @@ echo "This value must be equal to the host name that the client uses to reach th
 echo
 echo "PRESS ANY KEY TO CONTINUE"
 read
-keytool -genkey -alias tomcat -keystore $KEYSTORE_FILE -keyalg RSA -keypass $KEYSTORE_PASSWORD -storepass $KEYSTORE_PASSWORD
+$KEYTOOL -genkey -alias tomcat -keystore "$KEYSTORE_FILE_OSPATH" -keyalg RSA -keypass $KEYSTORE_PASSWORD -storepass "$KEYSTORE_PASSWORD"
 
 # CHECK THAT THIS KEYSTORE WAS SET SUCCESSFULLY
-if [ -e $KEYSTORE_FILE ]
+if [ -e "$KEYSTORE_FILE" ]
 then
 # EXPORT THE SERVER CERTIFICATE
-        keytool -export -alias tomcat -storepass $KEYSTORE_PASSWORD -file $CERTIFICATE_FILE -keystore $KEYSTORE_FILE
+        $KEYTOOL -export -alias tomcat -storepass "$KEYSTORE_PASSWORD" -file "$CERTIFICATE_FILE_OSPATH" -keystore "$KEYSTORE_FILE_OSPATH"
 
 # EDIT THE server.xml file so that the magic value "__FunkySsgMojo__" is replaced by the actual password
-perl -pi.bak -e s/keystorePass=\".*\"/keystorePass=\"$KEYSTORE_PASSWORD\"/ $SERVER_XML_FILE
+perl -pi.bak -e s/keystorePass=\".*\"/keystorePass=\"$KEYSTORE_PASSWORD\"/ "$SERVER_XML_FILE"
 
 
 # ASK THE USER IF HE WANTS TO COPY THE CERTIFICATE TO FLOPPY?
@@ -100,12 +117,12 @@ perl -pi.bak -e s/keystorePass=\".*\"/keystorePass=\"$KEYSTORE_PASSWORD\"/ $SERV
         read QUERY_ANSWER
         if [ $QUERY_ANSWER = "y" ]; then
                 mount /mnt/floppy
-                cp $CERTIFICATE_FILE /mnt/floppy/ssg.cer
+                cp "$CERTIFICATE_FILE" /mnt/floppy/ssg.cer
         fi
 
 else
 # INFORM THE USER OF THE FAILURE
         echo "ERROR: The keystore file was not generated"
         echo
-        exit -1
+        exit 255
 fi
