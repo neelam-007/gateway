@@ -81,6 +81,12 @@ public class UserPanel extends EntityEditorPanel {
     private IdentityProvider idProvider;
     private final MainWindow mainWindow = Registry.getDefault().getComponentRegistry().getMainWindow();
 
+    private final ActionListener closeDlgListener = new ActionListener() {
+                                                      public void actionPerformed(ActionEvent e) {
+                                                          SwingUtilities.windowForComponent(UserPanel.this).dispose();
+                                                      }
+                                                    };
+
 
     /**
      * default constructor
@@ -523,7 +529,10 @@ public class UserPanel extends EntityEditorPanel {
             okButton = new JButton(OK_BUTTON);
 
             // Register listener
-            okButton.addActionListener(new ActionListener() {
+            if (idProvider.isReadOnly()) {
+                okButton.addActionListener(closeDlgListener);
+            } else {
+                okButton.addActionListener(new ActionListener() {
                 public void actionPerformed(ActionEvent e) {
                     // Apply changes if possible
                     if (!collectAndSaveChanges()) {
@@ -535,7 +544,7 @@ public class UserPanel extends EntityEditorPanel {
                     dlg.dispose();
                 }
             });
-            if (idProvider.isReadOnly()) okButton.setEnabled(false);
+            }
         }
         return okButton;
     }
@@ -551,11 +560,7 @@ public class UserPanel extends EntityEditorPanel {
             cancelButton = new JButton(CANCEL_BUTTON);
 
             // Register listener
-            cancelButton.addActionListener(new ActionListener() {
-                public void actionPerformed(ActionEvent e) {
-                    SwingUtilities.windowForComponent(UserPanel.this).dispose();
-                }
-            });
+            cancelButton.addActionListener(closeDlgListener);
         }
 
         // Return button

@@ -67,6 +67,11 @@ public class GroupPanel extends EntityEditorPanel {
     private IdentityProvider idProvider;
     private final String GROUP_DOES_NOT_EXIST_MSG = "This group no longer exists";
     private final MainWindow mainWindow = Registry.getDefault().getComponentRegistry().getMainWindow();
+    private final ActionListener closeDlgListener = new ActionListener() {
+                                                      public void actionPerformed(ActionEvent e) {
+                                                          SwingUtilities.windowForComponent(GroupPanel.this).dispose();
+                                                      }
+                                                    };
 
     /**
      * default constructor
@@ -413,19 +418,23 @@ public class GroupPanel extends EntityEditorPanel {
             okButton = new JButton(OK_BUTTON);
 
             // Register listener
-            okButton.addActionListener(new ActionListener() {
-                public void actionPerformed(ActionEvent e) {
-                    // Apply changes if possible
-                    if (!collectAndSaveChanges()) {
-                        // Error - just return
-                        return;
+
+            if (idProvider.isReadOnly()) {
+                okButton.addActionListener(closeDlgListener);
+            } else {
+                okButton.addActionListener(new ActionListener() {
+                    public void actionPerformed(ActionEvent e) {
+                        // Apply changes if possible
+                        if (!collectAndSaveChanges()) {
+                            // Error - just return
+                            return;
+                        }
+                        Window dlg = SwingUtilities.windowForComponent(GroupPanel.this);
+                        dlg.setVisible(false);
+                        dlg.dispose();
                     }
-                    Window dlg = SwingUtilities.windowForComponent(GroupPanel.this);
-                    dlg.setVisible(false);
-                    dlg.dispose();
-                }
-            });
-            if (idProvider.isReadOnly()) okButton.setEnabled(false);
+                });
+            }
         }
 
         // Return button
@@ -443,11 +452,7 @@ public class GroupPanel extends EntityEditorPanel {
             cancelButton = new JButton(CANCEL_BUTTON);
 
             // Register listener
-            cancelButton.addActionListener(new ActionListener() {
-                public void actionPerformed(ActionEvent e) {
-                    SwingUtilities.windowForComponent(GroupPanel.this).dispose();
-                }
-            });
+            cancelButton.addActionListener(closeDlgListener);
         }
 
         // Return button
