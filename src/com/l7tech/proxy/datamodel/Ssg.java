@@ -44,6 +44,8 @@ public class Ssg implements Serializable, Cloneable, Comparable {
     private int sslPort = SSG_SSL_PORT;
     private String username = null;
     private boolean defaultSsg = false;
+    private boolean chainCredentialsFromClient = false;
+    private boolean useSslByDefault = true;
     private boolean savePasswordToDisk = false;
     private byte[] persistPassword = null;
 
@@ -579,5 +581,21 @@ public class Ssg implements Serializable, Cloneable, Comparable {
         if (username != null && username.length() > 0 && password != null)
             return new PasswordAuthentication(username, password);
         return null;
+    }
+
+    public boolean isChainCredentialsFromClient() {
+        return chainCredentialsFromClient;
+    }
+
+    public void setChainCredentialsFromClient(boolean chainCredentialsFromClient) {
+        this.chainCredentialsFromClient = chainCredentialsFromClient;
+    }
+
+    public boolean isUseSslByDefault() {
+        return useSslByDefault;
+    }
+
+    public void setUseSslByDefault(boolean useSslByDefault) {
+        this.useSslByDefault = useSslByDefault;
     }
 }
