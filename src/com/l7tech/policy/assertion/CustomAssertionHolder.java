@@ -20,6 +20,12 @@ import com.l7tech.policy.assertion.ext.CustomAssertion;
  * @see CustomAssertion
  */
 public class CustomAssertionHolder extends Assertion {
+    /**
+     * Serialization id, maintain to indicate serialization compatibility
+     * with a previous versions of the  class.
+     */
+    private static final long serialVersionUID = 7410439507802944818L;
+
     protected transient CompositeAssertion parent;
 
     public CustomAssertionHolder() {
