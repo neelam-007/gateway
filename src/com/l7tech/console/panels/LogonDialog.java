@@ -171,15 +171,18 @@ public class LogonDialog extends JDialog {
 
         DocumentListener inputValidDocumentListener = new DocumentListener() {
             public void insertUpdate(DocumentEvent e) {
-                loginButton.setEnabled(isInputValid());
+                if (loginButton !=null)
+                    loginButton.setEnabled(isInputValid());
             }
 
             public void removeUpdate(DocumentEvent e) {
-                loginButton.setEnabled(isInputValid());
+                if (loginButton !=null)
+                    loginButton.setEnabled(isInputValid());
             }
 
             public void changedUpdate(DocumentEvent e) {
-                loginButton.setEnabled(isInputValid());
+                if (loginButton !=null)
+                    loginButton.setEnabled(isInputValid());
             }
         };
 
@@ -686,6 +689,8 @@ public class LogonDialog extends JDialog {
             return false;
         }
         try {
+            if (serverComboBox == null) return false;
+
             JTextField editor = (JTextField)serverComboBox.getEditor().getEditorComponent();
             String surl = editor.getText();
             if (surl == null || "".equals(surl)) {
