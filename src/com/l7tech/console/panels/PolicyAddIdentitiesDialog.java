@@ -345,8 +345,9 @@ public class PolicyAddIdentitiesDialog extends JDialog {
                     } else if (EntityType.GROUP.equals(eh.getType())) {
                         GroupBean g = new GroupBean();
                         g.setName(eh.getName());
-                        MemberOfGroup ma = new MemberOfGroup(ip.getConfig().getOid(), g.getName());
+                        MemberOfGroup ma = new MemberOfGroup(ip.getConfig().getOid(), g.getName(), eh.getStrId());
                         ma.setGroupName(g.getName());
+                        ma.setGroupId(eh.getStrId());
                         identityAssertions.add(ma);
                     }
                 }

@@ -80,8 +80,10 @@ public class GroupNode extends EntityHeaderNode {
     public Assertion asAssertion() {
         ProviderNode parent = (ProviderNode)getParent();
         EntityHeader e = getEntityHeader();
-        MemberOfGroup memberOfGroup = new MemberOfGroup(parent.getEntityHeader().getOid(), e.getName());
+        MemberOfGroup memberOfGroup = new MemberOfGroup(parent.getEntityHeader().getOid(), e.getName(), e.getStrId());
+        // check
         memberOfGroup.setGroupName(e.getName());
+        memberOfGroup.setGroupId(e.getStrId());
         return memberOfGroup;
     }
 
