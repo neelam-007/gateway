@@ -7,6 +7,7 @@ import com.l7tech.common.xml.XpathEvaluator;
 import com.l7tech.common.xml.XpathExpression;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.RequestXpathAssertion;
+import com.l7tech.server.audit.AuditContextStub;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.ServerRequestXpathAssertion;
 import junit.framework.Test;
@@ -51,7 +52,9 @@ public class RequestXpathAssertionTest extends TestCase {
         Message m = new Message();
         m.initialize(testDoc);
 
-        return serverAssertion.checkRequest(new PolicyEnforcementContext(m, new Message()));
+        PolicyEnforcementContext pec = new PolicyEnforcementContext(m, new Message());
+        pec.setAuditContext(new AuditContextStub());
+        return serverAssertion.checkRequest(pec);
     }
 
     private ServerRequestXpathAssertion getAssertion(XpathExpression expression) {
