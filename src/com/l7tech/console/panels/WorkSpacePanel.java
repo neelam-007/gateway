@@ -258,7 +258,7 @@ public class WorkSpacePanel extends JPanel {
             try {
                 for (int i = 0; i < listeners.length; i++) {
                     EventListener listener = listeners[i];
-                    ((VetoableContainerListener)listener).componentWillRemove(e);
+                    ((VetoableContainerListener)listener).componentWillAdd(e);
                 }
                 super.insertTab(title, icon, component, tip, index);
             } catch (ContainerVetoException e1) {
