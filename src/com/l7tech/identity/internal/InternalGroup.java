@@ -91,7 +91,6 @@ public class InternalGroup extends NamedEntityImp implements Group {
 
     public void setVersion(int version) {
         _groupBean.setVersion(version);
-        super.setVersion(version);
     }
 
     public String toString() {
