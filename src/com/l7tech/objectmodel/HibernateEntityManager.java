@@ -340,7 +340,7 @@ public abstract class HibernateEntityManager extends HibernateDaoSupport impleme
         try {
             return getHibernateTemplate().load(impClass, new Long(oid));
         } catch (DataAccessException e) {
-            if (ExceptionUtils.causedBy(e, ObjectNotFoundException.class)) {
+            if (ExceptionUtils.causedBy(e, net.sf.hibernate.ObjectNotFoundException.class)) {
                 return null;
             }
             throw new FindException("Data access error ", e);
