@@ -205,19 +205,18 @@ public abstract class AbstractLdapIdentityProviderServer implements IdentityProv
                 String dn = sr.getName() + "," + cfg.getProperty(LdapConfigSettings.LDAP_SEARCH_BASE);
                 Attributes atts = sr.getAttributes();
                 // is it user or group ?
-                Attribute objectclasses = atts.get("objectclass");
+                EntityType type = getSearchResultType(sr);
                 EntityHeader header = null;
                 // construct header accordingly
-                if (objectclasses.contains( getConstants().groupObjectClass() )) {
+                if (type == EntityType.GROUP) {
                     header = new EntityHeader(dn, EntityType.GROUP, dn, null);
-                } else if (objectclasses.contains( getConstants().userObjectClass() )) {
-                    Object tmp = LdapManager.extractOneAttributeValue(atts, getConstants().userLoginAttribute() );
+                } else if (type == EntityType.USER) {
+                    Object tmp = LdapManager.extractOneAttributeValue(atts, getConstants().userLoginAttribute());
                     if (tmp != null) {
                         header = new EntityHeader(dn, EntityType.USER, tmp.toString(), null);
+                    } else {
+                        logger.info("A user found in the search did not have a login value: " + dn);
                     }
-                } else if (objectclasses.contains(constants.oUObjClassName()) ||
-                           objectclasses.contains(constants.oUObjClassName().toLowerCase())) {
-                    header = new EntityHeader(dn, EntityType.GROUP, dn, null);
                 } else {
                     logger.warning("objectclass not supported for dn=" + dn);
                 }
@@ -230,6 +229,33 @@ public abstract class AbstractLdapIdentityProviderServer implements IdentityProv
             logger.log(Level.SEVERE, e.getMessage(), e);
         }
         return output;
+    }
+    
+    /**
+     * determines whether the SearchResult contains a User or a Group
+     * @param sr
+     * @return EntityType.USER, EntityType.GROUP, or EntityType.UNDEFINED
+     */
+    private EntityType getSearchResultType(SearchResult sr) {
+        Attributes atts = sr.getAttributes();
+        // is it user or group ?
+        Attribute objectclasses = atts.get("objectclass");
+        // check if it's a user
+        String userclass = getConstants().userObjectClass();
+        if (objectclasses.contains(userclass)) return EntityType.USER;
+        userclass = userclass.toLowerCase();
+        if (objectclasses.contains(userclass)) return EntityType.USER;
+        // check that it's a group
+        String groupclass = getConstants().groupObjectClass();
+        if (objectclasses.contains(groupclass)) return EntityType.GROUP;
+        groupclass = groupclass.toLowerCase();
+        if (objectclasses.contains(groupclass)) return EntityType.GROUP;
+        // check for OU group
+        groupclass = getConstants().oUObjClassName();
+        if (objectclasses.contains(groupclass)) return EntityType.GROUP;
+        groupclass = groupclass.toLowerCase();
+        if (objectclasses.contains(groupclass)) return EntityType.GROUP;
+        return EntityType.UNDEFINED;
     }
 
     private DirContext browseContext() throws NamingException {
