@@ -67,6 +67,11 @@ public class LdapUserManagerServer extends LdapManager implements UserManager {
         }
     }
 
+    public User findByLogin(String login) throws FindException {
+        // todo
+        return null;
+    }
+
     /**
      * This is actually not supported in this UserManager since the we assume the ldap connector is only used to
      * read user information
