@@ -135,6 +135,7 @@ public class StatisticsPanel extends JPanel {
         statTable.setShowHorizontalLines(false);
         statTable.setShowVerticalLines(false);
         statTable.setRowSelectionAllowed(false);
+        statTable.getTableHeader().setReorderingAllowed(false);
 
         return statTable;
     }
