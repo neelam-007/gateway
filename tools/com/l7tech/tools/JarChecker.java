@@ -46,16 +46,16 @@ public class JarChecker {
                 String truncName = name.substring(0, name.length() - ".class".length());
                 String className = truncName.replace('/', '.').replace('\\', '.');
                 if (className.indexOf('$') > -1) {
-                    log("Skipping inner class " + name);
-                } else {
-                    log("Loading class: " + className);
-                    try {
-                        Class.forName(className);
-                    } catch (Throwable e) {
-                        System.err.println("ERROR: while loading class: " + className + ": " + e);
-                        e.printStackTrace(System.err);
-                        hadErrors = true;
-                    }
+                    log("Undecorating inner class " + name);
+                    
+                }
+                log("Loading class: " + className);
+                try {
+                    Class.forName(className);
+                } catch (Throwable e) {
+                    System.err.println("ERROR: while loading class: " + className + ": " + e);
+                    e.printStackTrace(System.err);
+                    hadErrors = true;
                 }
             }
         }
