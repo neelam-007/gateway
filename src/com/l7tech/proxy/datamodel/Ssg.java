@@ -161,6 +161,8 @@ public class Ssg implements Serializable, Cloneable, Comparable {
     private void fireSsgEvent(final SsgEvent event) {
         if (event.getSource() != this)
             throw new IllegalArgumentException("Event to be fired must identify this Ssg as the source");
+        if (listeners.size() < 1)
+            return;
         SwingUtilities.invokeLater(new Runnable() {
             public void run() {
                 for (Iterator i = listeners.iterator(); i.hasNext();) {
