@@ -13,7 +13,7 @@ import java.rmi.RemoteException;
  * <code>Log</code> service implementation.
  *
  * @author  <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
- * @version $Id
+ * @version $Id$
  */
 public class LogAdminImpl extends RemoteService implements LogAdmin {
     /**

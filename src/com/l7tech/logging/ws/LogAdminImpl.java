@@ -15,7 +15,7 @@ import java.util.logging.Logger;
  * <br/><br/>
  * Layer 7 technologies, inc.<br/>
  * @author flascell<br/>
- * @version $Id
+ * @version $Id$
  */
 public class LogAdminImpl implements LogAdmin {
     public static final String SERVICE_DEPENDENT_URL_PORTION = "/services/loggingAdmin";
