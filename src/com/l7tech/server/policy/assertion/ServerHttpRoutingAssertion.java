@@ -174,10 +174,12 @@ public class ServerHttpRoutingAssertion extends ServerRoutingAssertion {
                 response.setParameter(Response.PARAM_HTTP_CONTENT_TYPE, ctype);
                 // Note that this will consume the first part of the stream...
                 BufferedReader br = new BufferedReader(new InputStreamReader(responseStream, ENCODING));
-                String line;
                 StringBuffer responseXml = new StringBuffer();
-                while ((line = br.readLine()) != null) {
-                    responseXml.append(line);
+                char[] buf = new char[1024];
+                int read = br.read(buf);
+                while (read > 0) {
+                    responseXml.append(buf, 0, read);
+                    read = br.read(buf);
                 }
                 response.setResponseXml(responseXml.toString());
                 response.setProtectedResponseStream(responseStream);
