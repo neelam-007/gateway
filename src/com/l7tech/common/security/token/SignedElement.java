@@ -12,6 +12,7 @@ package com.l7tech.common.security.token;
 public interface SignedElement extends ParsedElement {
     /**
      * @return either a X509SecurityToken or a DerivedKeyToken
+     * TODO this should return SigningSecurityToken
      */
-    SecurityToken getSigningSecurityToken();
+    SigningSecurityToken getSigningSecurityToken();
 }

@@ -895,7 +895,7 @@ public class WssProcessorImpl implements WssProcessor {
             final Element finalElementCovered = elementCovered;
             if (signingCertToken != null) {
                 final SignedElement signedElement = new SignedElement() {
-                    public SecurityToken getSigningSecurityToken() {
+                    public SigningSecurityToken getSigningSecurityToken() {
                         return signingCertToken;
                     }
                     public Element asElement() {
@@ -907,7 +907,7 @@ public class WssProcessorImpl implements WssProcessor {
                 signingCertToken.onPossessionProved();
             } else if (dkt != null) {
                 final SignedElement signedElement = new SignedElement() {
-                                    public SecurityToken getSigningSecurityToken() {
+                                    public SigningSecurityToken getSigningSecurityToken() {
                                         return dkt.getSecurityContextToken();
                                     }
                                     public Element asElement() {
