@@ -84,7 +84,9 @@ public class MessageViewer extends JFrame {
                 setSelectedIndex(messageList.getSelectedIndex());
             }
         });
-        final JScrollPane messageListPane = new JScrollPane(messageList);
+        final JScrollPane messageListPane = new JScrollPane(messageList,
+                                                            JScrollPane.VERTICAL_SCROLLBAR_ALWAYS,
+                                                            JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
         messageList.setMinimumSize(new Dimension(150, 380));
         messageList.setMaximumSize(new Dimension(150, 32768));
         messageList.setPreferredSize(new Dimension(150, 380));
@@ -118,7 +120,7 @@ public class MessageViewer extends JFrame {
         cp.add(messageListPane,
                new GridBagConstraints(0, 0, 1, 1, 0.0, 1.0,
                                       GridBagConstraints.EAST,
-                                      GridBagConstraints.BOTH,
+                                      GridBagConstraints.VERTICAL,
                                       new Insets(0, 0, 0, 0), 0, 0));
         cp.add(messageViewPane,
                new GridBagConstraints(1, 0, 1, 1, 1.0, 1.0,
