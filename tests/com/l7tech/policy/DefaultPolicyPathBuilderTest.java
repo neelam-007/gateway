@@ -140,4 +140,18 @@ public class DefaultPolicyPathBuilderTest extends TestCase {
         // TODO -- check for duplicated path subcomponents
 
     }
+
+    public void testPerOperationDecorationsTreeFollowedByIdTree() throws Exception {
+        Assertion policy = WspReader.parse(TestDocuments.getInputStream(TestDocuments.WAREHOUSE_SECURED_POLICY));
+        DefaultPolicyPathBuilder builder = new DefaultPolicyPathBuilder();
+
+        PolicyPathResult result = builder.generate(policy);
+        int count = result.getPathCount();
+        assertTrue(count == 4);
+
+        Set paths = result.paths();                            
+        // TODO -- check for screwed up path subcomponents
+
+
+    }
 }
