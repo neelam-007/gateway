@@ -273,6 +273,7 @@ CREATE TABLE jms_provider (
   version integer NOT NULL default '0',
   name varchar(128) NOT NULL default '',
   jndi_url varchar(255) NOT NULL default '',
+  factory_classname varchar(255) default '',
   destination_factory_url varchar(255) NOT NULL default '',
   queue_factory_url varchar(255) NOT NULL default '',
   topic_factory_url varchar(255) NOT NULL default '',
