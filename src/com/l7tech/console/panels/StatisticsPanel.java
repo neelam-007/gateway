@@ -3,10 +3,12 @@ package com.l7tech.console.panels;
 import com.l7tech.common.util.UptimeMetrics;
 import com.l7tech.common.util.Locator;
 import com.l7tech.console.table.LogTableModel;
+import com.l7tech.console.table.StatisticsTableSorter;
 import com.l7tech.console.util.StatisticsWorker;
 import com.l7tech.service.ServiceStatistics;
 import com.l7tech.service.ServiceAdmin;
 import com.l7tech.logging.LogAdmin;
+import com.l7tech.logging.StatisticsRecord;
 
 import javax.swing.*;
 import javax.swing.event.TableColumnModelListener;
@@ -42,6 +44,7 @@ public class StatisticsPanel extends JPanel {
 
     LogAdmin logService = null;
     private ServiceAdmin serviceManager = null;
+    private Vector statsList = new Vector();
 
     // IMPORTANT NOTE:
     // 1. need to make sure that NUMBER_OF_SAMPLE_PER_MINUTE has no fraction when REFRESH_INTERVAL is changed
@@ -53,7 +56,7 @@ public class StatisticsPanel extends JPanel {
     private JTable statTable = null;
     private JTable statTotalTable = null;
     private JScrollPane statTablePane = null;
-    private DefaultTableModel statTableModel = null;
+    private StatisticsTableSorter statTableSorter = null;
     private DefaultTableColumnModel columnModel = null;
     private DefaultTableColumnModel totalColumnModel = null;
     private DefaultTableModel statTotalTableModel = null;
@@ -98,6 +101,8 @@ public class StatisticsPanel extends JPanel {
 
         // intantiate the cache
         lastMinuteCompletedCountsCache = new HashMap();
+
+        statsList = new Vector();
     }
 
     public void onDisconnect(){
@@ -152,6 +157,8 @@ public class StatisticsPanel extends JPanel {
         if (statTable != null) return statTable;
 
         statTable = new JTable(getStatTableModel(), getStatColumnModel());
+
+        getStatTableModel().addMouseListenerToHeaderInTable(statTable);
 
         statTable.setShowHorizontalLines(false);
         statTable.setShowVerticalLines(false);
@@ -215,15 +222,17 @@ public class StatisticsPanel extends JPanel {
         return totalColumnModel;
     }
 
-    private DefaultTableModel getStatTableModel() {
-        if (statTableModel != null) {
-            return statTableModel;
+    private StatisticsTableSorter getStatTableModel() {
+        if (statTableSorter != null) {
+            return statTableSorter;
         }
 
         String[] cols = {"Service Name", "Attempted Requests", "Authorized", "Completed", "Completed (requests/min)", "Completed (last min.)"};
         String[][] rows = new String[][]{};
 
-        statTableModel = new LogTableModel(rows, cols) {
+        LogTableModel tableModel = new LogTableModel(rows, cols);
+
+        statTableSorter = new StatisticsTableSorter(tableModel) {
             public Class getColumnClass(int columnIndex) {
                 Class dataType = java.lang.String.class;
                 // Only the value of the first column is a string, other columns contains numbers which should be aligned to the right
@@ -234,7 +243,7 @@ public class StatisticsPanel extends JPanel {
             }
         };
 
-        return statTableModel;
+        return statTableSorter;
     }
 
     DefaultTableModel getStatTotalTableModel() {
@@ -360,53 +369,44 @@ public class StatisticsPanel extends JPanel {
         statsWorker.start();
     }
 
-    private void updateStatisticsTable(Vector statsList) {
-        boolean cleanUp = true;
+    private void updateStatisticsTable(Vector rawStatsList) {
 
-        for (int i = 0; i < statsList.size(); i++) {
+        statsList = new Vector();
+        attemptedCountTotal = 0;
+        authorizedCountTotal = 0;
+        completedCountTotal = 0;
+        completedCountPerMinuteTotal = 0;
+        lastMinuteCompletedCountTotal = 0;
 
-            // remove old table data
-            if (cleanUp) {
-                while (getStatTableModel().getRowCount() > 0) {
-                    getStatTableModel().removeRow(0);
-                }
-                attemptedCountTotal = 0;
-                authorizedCountTotal = 0;
-                completedCountTotal = 0;
-                completedCountPerMinuteTotal = 0;
-                lastMinuteCompletedCountTotal = 0;
-                cleanUp = false;
-            }
+        for (int i = 0; i < rawStatsList.size(); i++) {
 
-            Vector newRow = new Vector();
-            ServiceStatistics stats = (ServiceStatistics) statsList.get(i);
-
-            newRow.add(stats.getServiceName());
-            long completedCounts = stats.getCompletedRequestCount();
-
-            newRow.add(new Integer(stats.getAttemptedRequestCount()));
-            newRow.add(new Integer(stats.getAuthorizedRequestCount()));
-            newRow.add(new Long(completedCounts));
-
+            ServiceStatistics stats = (ServiceStatistics) rawStatsList.get(i);
+            long completedCount = stats.getCompletedRequestCount();
+            long completedCountPerMinute = 0;
             if (serverUpTimeMinutues > 0) {
-                newRow.add(new Long(completedCounts / serverUpTimeMinutues));
-                completedCountPerMinuteTotal += completedCounts / serverUpTimeMinutues;
-            } else {
-                newRow.add(new Long(0));
+                completedCountPerMinute = completedCount / serverUpTimeMinutues;
+                completedCountPerMinuteTotal += completedCount / serverUpTimeMinutues;
             }
 
-            updateStatCache(stats.getServiceName(), completedCounts);
-
+            updateStatCache(stats.getServiceName(), completedCount);
             long lastMinuteCompletedCount = getLastMinuteCompletedCount(stats.getServiceName());
-            newRow.add(new Long(lastMinuteCompletedCount));
 
-            getStatTableModel().addRow(newRow);
+            StatisticsRecord statsRec = new StatisticsRecord(stats.getServiceName(),
+                    (long) stats.getAttemptedRequestCount(),
+                    (long) stats.getAuthorizedRequestCount(),
+                    completedCount,
+                    completedCountPerMinute,
+                    lastMinuteCompletedCount);
+
+            statsList.add(statsRec);
             attemptedCountTotal += stats.getAttemptedRequestCount();
             authorizedCountTotal += stats.getAuthorizedRequestCount();
             completedCountTotal += stats.getCompletedRequestCount();
             lastMinuteCompletedCountTotal += lastMinuteCompletedCount;
         }
 
+        getStatTableModel().setData(statsList);
+        getStatTableModel().getRealModel().setRowCount(statsList.size());
         getStatTableModel().fireTableDataChanged();
 
         updateReqeustsTotal();
@@ -415,7 +415,7 @@ public class StatisticsPanel extends JPanel {
 
     }
 
-    private void updateReqeustsTotal(){
+    private void updateReqeustsTotal() {
 
        getStatTotalTable().setValueAt(new Long(attemptedCountTotal), 0, 1);
        getStatTotalTable().setValueAt(new Long(authorizedCountTotal), 0, 2);
@@ -472,7 +472,7 @@ public class StatisticsPanel extends JPanel {
 
     public void clearStatiistics() {
         while (getStatTableModel().getRowCount() > 0) {
-            getStatTableModel().removeRow(0);
+            getStatTableModel().getRealModel().removeRow(0);
         }
         getStatTableModel().fireTableDataChanged();
 

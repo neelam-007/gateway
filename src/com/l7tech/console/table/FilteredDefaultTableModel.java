@@ -11,7 +11,8 @@ import javax.swing.event.TableModelListener;
  * Time: 4:15:08 PM
  * To change this template use Options | File Templates.
  */
-public abstract class FilteredDefaultTableModel extends AbstractTableModel{
+
+public abstract class FilteredDefaultTableModel extends AbstractTableModel {
 
     // Storage of reference to model being filtered
     protected DefaultTableModel realModel = null;
@@ -58,7 +59,5 @@ public abstract class FilteredDefaultTableModel extends AbstractTableModel{
     public String getColumnName(int columnIndex){
         return realModel.getColumnName(columnIndex);
     }
-
-
 
 }
