@@ -11,6 +11,7 @@ import com.l7tech.util.SoapUtil;
 import com.l7tech.util.KeystoreUtils;
 import com.l7tech.logging.LogManager;
 import com.l7tech.xmlsig.SoapMsgSigner;
+import com.l7tech.xmlsig.SecureConversationTokenHandler;
 import com.l7tech.xmlenc.SessionManager;
 import com.l7tech.xmlenc.Session;
 import com.l7tech.xmlenc.SessionNotFoundException;
@@ -52,6 +53,7 @@ public class ServerXmlResponseSecurity implements ServerAssertion {
     }
 
     public AssertionStatus checkRequest(Request request, Response response) throws IOException, PolicyAssertionException {
+        // GET THE DOCUMENT
         Document soapmsg = null;
         try {
             soapmsg = SoapUtil.getDocument(response);
@@ -65,19 +67,26 @@ public class ServerXmlResponseSecurity implements ServerAssertion {
             logger.severe(msg);
             throw new PolicyAssertionException(msg);
         }
+        HttpTransportMetadata meta = (HttpTransportMetadata)request.getTransportMetadata();
 
-        // should we encrypt the body before signing it?
+        // DECORATE WITH NONCE IN A WSSC TOKEN
+        String nonceValue = meta.getRequest().getHeader(XmlResponseSecurity.XML_NONCE_HEADER_NAME);
+        // (this is optional)
+        if (nonceValue != null && nonceValue.length() > 0) {
+            SecureConversationTokenHandler.appendNonceToDocument(soapmsg, Long.parseLong(nonceValue));
+        }
+
+        // ENCRYPTION (optional)
         if (data.isEncryption()) {
+            // RETREIVE SESSION ID
             // get the header containing the xml session id
-            HttpTransportMetadata meta = (HttpTransportMetadata)request.getTransportMetadata();
-            String sessionIDHeaderValue = meta.getRequest().getHeader(XmlResponseSecurity.XML_ENC_HEADER_NAME);
+            String sessionIDHeaderValue = meta.getRequest().getHeader(XmlResponseSecurity.XML_SESSID_HEADER_NAME);
             if (sessionIDHeaderValue == null || sessionIDHeaderValue.length() < 1) {
                 String msg = "Could not encrypt response because xml session id was not provided by requestor.";
                 logger.severe(msg);
                 throw new PolicyAssertionException(msg);
             }
-
-            // retrieve the session id
+            // retrieve the session
             Session xmlsession = null;
             try {
                 xmlsession = SessionManager.getInstance().getSession(Long.parseLong(sessionIDHeaderValue));
@@ -111,6 +120,7 @@ public class ServerXmlResponseSecurity implements ServerAssertion {
             logger.info("Response document was encrypted.");
         }
 
+        // GET THE SIGNING CERT
         X509Certificate serverCert = null;
         byte[] buf = KeystoreUtils.getInstance().readSSLCert();
         ByteArrayInputStream bais = new ByteArrayInputStream(buf);
@@ -122,6 +132,7 @@ public class ServerXmlResponseSecurity implements ServerAssertion {
             throw new PolicyAssertionException(msg);
         }
 
+        // GET THE SIGNING KEY
         PrivateKey serverPrivateKey = null;
         try {
             serverPrivateKey = KeystoreUtils.getInstance().getSSLPrivateKey();
@@ -131,6 +142,7 @@ public class ServerXmlResponseSecurity implements ServerAssertion {
             throw new PolicyAssertionException(msg);
         }
 
+        // XML SIGNATURE
         SoapMsgSigner dsigHelper = new SoapMsgSigner();
         try {
             dsigHelper.signEnvelope(soapmsg, serverPrivateKey, serverCert);
