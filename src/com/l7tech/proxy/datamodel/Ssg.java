@@ -428,6 +428,10 @@ public class Ssg implements Serializable, Cloneable, Comparable {
 
     public void setUsername(final String username) {
         this.username = username;
+
+        // clear session cookies when a user name is changed/set
+        clearSessionCookies();
+
         fireDataChangedEvent();
     }
 
@@ -479,6 +483,10 @@ public class Ssg implements Serializable, Cloneable, Comparable {
             this.passwordWorkedWithSsg = false;
         }
         this.password = password;
+
+        // clear session cookies when a user name is changed/set
+        clearSessionCookies();
+
         if (isSavePasswordToDisk())
             setPersistPassword(obfuscatePassword(password));
         else
