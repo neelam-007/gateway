@@ -29,14 +29,14 @@ public class RoutingAssertion extends Assertion implements Cloneable, Serializab
     public static final String SOAPACTION = "SOAPAction";
     public static final String TEXT_XML = "text/xml";
     public static final String ENCODING = "UTF-8";
+    public static final int DEFAULT_MAX_CONNECTIONS_PER_HOST = 10; // In flagrant contravention of RFC2616!
 
     public RoutingAssertion() {
-        this(null, null, null, null);
-
+        this(null, null, null, null, -1);
     }
 
     public RoutingAssertion(String protectedServiceUrl) {
-        this(protectedServiceUrl, null, null, null);
+        this(protectedServiceUrl, null, null, null, -1);
     }
 
     /**
@@ -47,17 +47,29 @@ public class RoutingAssertion extends Assertion implements Cloneable, Serializab
      * @param password protected service password
      * @param realm protected servcie realm
      */
-    public RoutingAssertion(String protectedServiceUrl, String login, String password, String realm) {
+    public RoutingAssertion( String protectedServiceUrl, String login, String password, String realm, int maxConnections ) {
         _protectedServiceUrl = protectedServiceUrl;
         _login = login;
         _password = password;
         _realm = realm;
+
+        if ( maxConnections == -1 ) maxConnections = DEFAULT_MAX_CONNECTIONS_PER_HOST;
+        _maxConnections = maxConnections;
         _connectionManager = new MultiThreadedHttpConnectionManager();
+        _connectionManager.setMaxConnectionsPerHost( maxConnections );
     }
 
     public Object clone() throws CloneNotSupportedException {
         RoutingAssertion n = (RoutingAssertion)super.clone();
         return n;
+    }
+
+    public int getMaxConnections() {
+        return _maxConnections;
+    }
+
+    public void setMaxConnections( int maxConnections ) {
+        _maxConnections = maxConnections;
     }
 
     public String getLogin() {
@@ -203,6 +215,7 @@ public class RoutingAssertion extends Assertion implements Cloneable, Serializab
     protected String _login;
     protected String _password;
     protected String _realm;
+    protected int _maxConnections;
 
     protected transient MultiThreadedHttpConnectionManager _connectionManager;
     protected transient HttpState _httpState;
