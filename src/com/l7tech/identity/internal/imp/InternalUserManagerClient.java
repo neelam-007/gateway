@@ -96,7 +96,7 @@ public class InternalUserManagerClient implements com.l7tech.identity.UserManage
     private Client getStub() throws java.rmi.RemoteException {
         if (localStub == null) {
             try {
-                localStub = new Client(getServiceURL());
+                localStub = new Client(getServiceURL(), getAdminUsername(), getAdminPassword());
             }
             catch (Exception e) {
                 throw new java.rmi.RemoteException("cannot instantiate the admin service stub", e);
@@ -113,6 +113,14 @@ public class InternalUserManagerClient implements com.l7tech.identity.UserManage
         prefUrl += "/services/identityAdmin";
         return prefUrl;
         //return "http://localhost:8080/UneasyRooster/services/identities";
+    }
+    private String getAdminUsername() throws IOException {
+        // todo, read this from somewhere
+        return null;
+    }
+    private String getAdminPassword() throws IOException {
+        // todo, read this from somewhere
+        return null;
     }
 
     private long identityProviderConfigId;
