@@ -17,10 +17,9 @@ import java.net.PasswordAuthentication;
 import java.net.URL;
 import java.security.KeyStore;
 import java.security.PrivateKey;
-import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
-import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
 
@@ -58,7 +57,7 @@ public class Ssg implements Serializable, Cloneable, Comparable {
     private transient int numTimesLogonDialogCanceled = 0;
     private transient long credentialsUpdatedTimeMillis = 0;
     private transient Session session = null;
-    private transient List listeners = new ArrayList(); // List of weak references to listeners
+    private transient Set listeners = new HashSet(); // List of weak references to listeners
     private transient PrivateKey privateKey = null; // cache of private key
     private transient boolean passwordWorkedForPrivateKey = false;
     private transient boolean passwordWorkedWithSsg = false;
@@ -144,7 +143,8 @@ public class Ssg implements Serializable, Cloneable, Comparable {
     /**
      * Add a listener to be notified of changes to this Ssg's state, including policy changes.
      * Adding a listener requires that a Gui be available, since event delivery is done on the Swing
-     * thread.
+     * thread.  The listeners are stored in a Set; thus you may add the same listener instance multiple
+     * times, but it will only receive one copy of each event.
      */
     public synchronized void addSsgListener(SsgListener listener) {
         listeners.add(new WeakReference(listener));
@@ -179,6 +179,8 @@ public class Ssg implements Serializable, Cloneable, Comparable {
                     if (target != null) {
                         if (event.getType() == SsgEvent.POLICY_ATTACHED)
                             target.policyAttached(event);
+                        else if (event.getType() == SsgEvent.DATA_CHANGED)
+                            target.dataChanged(event);
                         else
                             throw new IllegalArgumentException("Unknown event type: " + event.getType());
                     }
@@ -188,8 +190,13 @@ public class Ssg implements Serializable, Cloneable, Comparable {
     }
 
     /** Fire a new POLICY_ATTACHED event. */
-    private void firePolicyAttachedEvent(PolicyAttachmentKey pak, Policy policy) {
-        fireSsgEvent(SsgEvent.createPolicyAttachedEvent(this, pak, policy));
+    private void firePolicyAttachedEvent(Policy policy) {
+        fireSsgEvent(SsgEvent.createPolicyAttachedEvent(this, policy));
+    }
+
+    /** Fire a new DATA_CHANGED event. */
+    private void fireDataChangedEvent() {
+        fireSsgEvent(SsgEvent.createDataChangedEvent(this));
     }
 
     /**
@@ -220,7 +227,7 @@ public class Ssg implements Serializable, Cloneable, Comparable {
      */
     public synchronized void attachPolicy(PolicyAttachmentKey key, Policy policy ) {
         policyMap.put(key, policy);
-        firePolicyAttachedEvent(key, policy);
+        firePolicyAttachedEvent(policy);
     }
 
     /**
@@ -377,6 +384,7 @@ public class Ssg implements Serializable, Cloneable, Comparable {
 
     public void setUsername(final String username) {
         this.username = username;
+        fireDataChangedEvent();
     }
 
     /** Obfuscate the password for storage to disk in plaintext. */

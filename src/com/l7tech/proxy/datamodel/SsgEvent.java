@@ -30,21 +30,23 @@ public class SsgEvent extends EventObject {
 
     /** The types of events we can describe. */
     public static final SsgEventType POLICY_ATTACHED = new SsgEventType(1, "policy added");
+    public static final SsgEventType DATA_CHANGED = new SsgEventType(2, "data changed");
 
     /** Type of this event, chosen from the list above. */
     private final SsgEventType type;
 
     /** For POLICY_* events, the policy that was attached. */
-    private final Policy policy;
+    private Policy policy;
 
-    /** For POLICY_ATTACHED events, the key to which the policy was attached. */
-    private final PolicyAttachmentKey policyAttachmentKey;
-
-    private SsgEvent(Ssg source, SsgEventType type, PolicyAttachmentKey pak, Policy policy) {
+    private SsgEvent(Ssg source, SsgEventType type, Policy policy) {
         super(source);
         this.policy = policy;
         this.type = type;
-        this.policyAttachmentKey = pak;
+    }
+
+    private SsgEvent(Ssg source, SsgEventType type) {
+        super(source);
+        this.type = type;
     }
 
     public SsgEventType getType() {
@@ -56,8 +58,14 @@ public class SsgEvent extends EventObject {
     }
 
     /** Create a new SsgEvent of type POLICY_ADDED. */
-    public static SsgEvent createPolicyAttachedEvent(Ssg ssg, PolicyAttachmentKey key, Policy policy) {
-        SsgEvent evt = new SsgEvent(ssg, POLICY_ATTACHED, key, policy);
+    public static SsgEvent createPolicyAttachedEvent(Ssg ssg, Policy policy) {
+        SsgEvent evt = new SsgEvent(ssg, POLICY_ATTACHED, policy);
+        return evt;
+    }
+
+    /** Create a new SsgEvent of type DATA_CHANGED. */
+    public static SsgEvent createDataChangedEvent(Ssg ssg) {
+        SsgEvent evt = new SsgEvent(ssg, DATA_CHANGED);
         return evt;
     }
 

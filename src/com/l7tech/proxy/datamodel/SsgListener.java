@@ -25,4 +25,9 @@ public interface SsgListener extends EventListener {
      * @param evt
      */
     void policyAttached(SsgEvent evt);
+
+    /**
+     * This event is fired when field data in an Ssg such as name, local endpoing etc. are changed.
+     */
+    void dataChanged(SsgEvent evt);
 }

@@ -789,6 +789,10 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
         updatePolicyPanel();
     }
 
+    public void dataChanged(SsgEvent evt) {
+        // Take no action; we don't override the user's data.
+    }
+
     public void show() {
         getFieldServerAddress().requestFocus();
         super.show();

@@ -1,6 +1,8 @@
 package com.l7tech.proxy.gui;
 
 import com.l7tech.proxy.datamodel.Ssg;
+import com.l7tech.proxy.datamodel.SsgEvent;
+import com.l7tech.proxy.datamodel.SsgListener;
 import com.l7tech.proxy.datamodel.SsgManager;
 import com.l7tech.proxy.datamodel.exceptions.SsgNotFoundException;
 import com.l7tech.proxy.util.ClientLogger;
@@ -8,6 +10,7 @@ import com.l7tech.proxy.util.ClientLogger;
 import javax.swing.*;
 import javax.swing.table.AbstractTableModel;
 import java.io.IOException;
+import java.util.List;
 
 /**
  * Provide a ListModel view of the current SSG list.
@@ -15,7 +18,7 @@ import java.io.IOException;
  * Date: Jun 3, 2003
  * Time: 2:48:51 PM
  */
-public class SsgTableModel extends AbstractTableModel {
+public class SsgTableModel extends AbstractTableModel implements SsgListener {
     private static final ClientLogger log = ClientLogger.getInstance(SsgTableModel.class);
     private SsgManager ssgManager;
 
@@ -41,6 +44,7 @@ public class SsgTableModel extends AbstractTableModel {
                 case 1:
                     return ssg.getLocalEndpoint();
                 case 2:
+                    ssg.addSsgListener(this); // make sure we're subscribed for updates
                     return ssg.getUsername() == null ? "" : ssg.getUsername();
                 default:
                     return null;
@@ -117,6 +121,29 @@ public class SsgTableModel extends AbstractTableModel {
                 "Unable to save changes",
                 JOptionPane.OK_OPTION,
                 null);
+        }
+    }
+
+    /**
+     * This event is fired when a policy is attached to an Ssg with a PolicyAttachmentKey, either new
+     * or updated.
+     *
+     * @param evt
+     */
+    public void policyAttached(SsgEvent evt) {
+        // no action required
+    }
+
+    /**
+     * This event is fired when field data in an Ssg such as name, local endpoing etc. are changed.
+     */
+    public void dataChanged(SsgEvent evt) {
+        List ssgList = ssgManager.getSsgList();
+        for (int i = 0; i < ssgList.size(); ++i) {
+            Ssg ssg = (Ssg) ssgList.get(i);
+            if (ssg != null && ssg.equals(evt.getSource())) {
+                fireTableRowsUpdated(i, i);
+            }
         }
     }
 }
