@@ -194,7 +194,13 @@ public class CertImportMethodsPanel extends WizardStepPanel {
                                        resources.getString("view.error.title"),
                                        JOptionPane.ERROR_MESSAGE);
                 return false;
-            } catch (IOException e) {
+            } catch (IllegalArgumentException iae) {
+                 JOptionPane.showMessageDialog(this, iae.getMessage(),
+                                       resources.getString("view.error.title"),
+                                       JOptionPane.ERROR_MESSAGE);
+                return false;
+
+            } catch (IOException ioe) {
                 logger.warning("Unable to retrieve certificate via SSL connection: " + urlConnTextField.getText().trim());
                 return false;
             }
@@ -337,15 +343,15 @@ public class CertImportMethodsPanel extends WizardStepPanel {
         final JRadioButton _3;
         _3 = new JRadioButton();
         urlConnRadioButton = _3;
-        _3.setText("Retrieve via SSL Connection");
         _3.setSelected(false);
+        _3.setText("Retrieve via SSL Connection");
         _2.add(_3, new com.intellij.uiDesigner.core.GridConstraints(0, 0, 1, 1, 8, 0, 3, 0, null, null, null));
         final JRadioButton _4;
         _4 = new JRadioButton();
         fileRadioButton = _4;
+        _4.setSelected(false);
         _4.setEnabled(true);
         _4.setText("Import from a File");
-        _4.setSelected(false);
         _2.add(_4, new com.intellij.uiDesigner.core.GridConstraints(1, 0, 1, 1, 8, 0, 3, 0, null, null, null));
         final JRadioButton _5;
         _5 = new JRadioButton();
