@@ -97,7 +97,7 @@ public class HibernatePersistenceManager extends PersistenceManager {
             ContextHolder h = getContextHolder( context );
             Session s = h._session;
             return s.find( query );
-        } catch ( ObjectNotFoundException onfe ) {
+        } catch ( cirrus.hibernate.ObjectNotFoundException onfe ) {
             return EMPTYLIST;
         } catch ( HibernateException he ) {
             logger.throwing( getClass().getName(), "doFind", he );
@@ -175,7 +175,7 @@ public class HibernatePersistenceManager extends PersistenceManager {
             logger.throwing( getClass().getName(), "doFindByPrimaryKey", se );
             close( context );
             throw new FindException( se.toString(), se );
-        } catch (ObjectNotFoundException e) {
+        } catch (cirrus.hibernate.ObjectNotFoundException e) {
             logger.log(Level.FINE, "object not found, returning null", e);
             return null;
         } catch ( HibernateException he ) {
