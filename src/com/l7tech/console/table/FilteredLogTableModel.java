@@ -46,7 +46,7 @@ public class FilteredLogTableModel extends FilteredDefaultTableModel{
          logsCache.removeAllElements();
      }
 
-     public void refreshLogs(final int msgFilterLevel, final LogPanel logPane, final String msgNumSelected){
+     public void refreshLogs(final int msgFilterLevel, final LogPanel logPane, final String msgNumSelected, final boolean restartTimer){
 
          if (log == null) {
              log = (Log) Locator.getDefault().lookup(Log.class);
@@ -66,6 +66,10 @@ public class FilteredLogTableModel extends FilteredDefaultTableModel{
                 updateLogsTable(getNewLogs(), msgFilterLevel);
                 logPane.updateMsgTotal();
                 logPane.setSelectedRow(msgNumSelected);
+
+                if(restartTimer){
+                    logPane.getLogsRefreshTimer().start();
+                }
             }
         };
 
