@@ -89,8 +89,32 @@ public class CertDetailsPanel extends WizardStepPanel {
 
                     if (cert != null) {
 
-                        // strip out the first 3 characters (ie. "cn=" )
-                        certNameTextField.setText(cert.getSubjectDN().getName().substring(3, cert.getSubjectDN().getName().length()));
+                        // retrieve the value of cn
+                        String subjectName = cert.getSubjectDN().getName();
+
+                        int index1 = subjectName.indexOf("cn=");
+                        int index2 = subjectName.indexOf("CN=");
+                        int startIndex = -1;
+                        int endIndex = -1;
+
+                        if(index1 >= 0 ) {
+                             startIndex = index1 + 3;
+                        } else if(index2 >= 0) {
+                             startIndex = index2 + 3;
+                        }
+
+                        if(startIndex >= 0) {
+                            endIndex = subjectName.indexOf(",", startIndex);
+                            if(endIndex > 0) {
+                                certNameTextField.setText(subjectName.substring(startIndex, endIndex));
+                            } else {
+                                certNameTextField.setText(subjectName.substring(startIndex, subjectName.length()));
+                            }
+                        }
+                        else {
+                            // cn NOT found, use the subject name
+                            certNameTextField.setText(subjectName);
+                        }
 
                         // remove the old view
                         if (certView != null) {
