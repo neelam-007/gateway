@@ -1,6 +1,7 @@
 package com.l7tech.console.tree.identity;
 
 import com.l7tech.console.action.NewProviderAction;
+import com.l7tech.console.action.NewPKIProviderAction;
 import com.l7tech.console.tree.*;
 import com.l7tech.console.util.Registry;
 
@@ -91,6 +92,7 @@ public class IdentitiesRootNode extends AbstractTreeNode {
     public Action[] getActions() {
         return new Action[]{
             new NewProviderAction(this),
+            new NewPKIProviderAction(this),
             //     new NewSamlProviderAction(this),
             new RefreshTreeNodeAction(this)};
     }
