@@ -13,8 +13,8 @@ import com.l7tech.common.Component;
  * @version $Revision$
  */
 public class Started extends LifecycleEvent {
-    public Started( Object source, Component component ) {
-        super( source, component );
+    public Started(Object source, Component component, String ip) {
+        super(source, component, ip);
     }
 
     public String getAction() {

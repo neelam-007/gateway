@@ -27,6 +27,8 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.sql.SQLException;
 import java.util.*;
 import java.util.logging.Level;
@@ -48,6 +50,12 @@ public class BootProcess implements ServerComponentLifecycle {
     private List _components = new ArrayList();
 
     public void init(ComponentConfig config) throws LifecycleException {
+        try {
+            ipAddress = InetAddress.getLocalHost().getHostAddress();
+        } catch ( UnknownHostException e ) {
+            logger.log( Level.SEVERE, "Couldn't get local IP address. Will use 127.0.0.1 in audit records.", e );
+            ipAddress = LOCALHOST_IP;
+        }
         HibernatePersistenceContext context = null;
         try {
             // Initialize database stuff
@@ -64,7 +72,7 @@ public class BootProcess implements ServerComponentLifecycle {
 
             context = (HibernatePersistenceContext)PersistenceContext.getCurrent();
             try {
-                EventManager.fireInNewTransaction(new Initializing(this, Component.GW_SERVER));
+                EventManager.fireInNewTransaction(new Initializing(this, Component.GW_SERVER, ipAddress));
             } catch ( TransactionException e ) {
                 logger.log( Level.WARNING, "Couldn't commit event transaction", e );
             }
@@ -110,7 +118,7 @@ public class BootProcess implements ServerComponentLifecycle {
             }
 
             try {
-                EventManager.fireInNewTransaction(new Initialized(this, Component.GW_SERVER));
+                EventManager.fireInNewTransaction(new Initialized(this, Component.GW_SERVER, ipAddress));
             } catch ( TransactionException e ) {
                 logger.log( Level.WARNING, "Couldn't commit event transaction", e );
             }
@@ -130,7 +138,7 @@ public class BootProcess implements ServerComponentLifecycle {
         try {
             context = PersistenceContext.getCurrent();
             try {
-                EventManager.fireInNewTransaction(new Starting(this, Component.GW_SERVER));
+                EventManager.fireInNewTransaction(new Starting(this, Component.GW_SERVER, ipAddress));
             } catch ( TransactionException e ) {
                 logger.log( Level.WARNING, "Couldn't commit event transaction", e );
             }
@@ -158,7 +166,7 @@ public class BootProcess implements ServerComponentLifecycle {
 
             logger.info(BuildInfo.getLongBuildString());
             try {
-                EventManager.fireInNewTransaction(new Started(this, Component.GW_SERVER));
+                EventManager.fireInNewTransaction(new Started(this, Component.GW_SERVER, ipAddress));
             } catch ( TransactionException e ) {
                 logger.log( Level.WARNING, "Couldn't commit event transaction", e );
             }
@@ -172,7 +180,7 @@ public class BootProcess implements ServerComponentLifecycle {
 
     public void stop() throws LifecycleException {
         try {
-            EventManager.fireInNewTransaction(new Stopping(this, Component.GW_SERVER));
+            EventManager.fireInNewTransaction(new Stopping(this, Component.GW_SERVER, ipAddress));
         } catch ( TransactionException e ) {
             logger.log( Level.WARNING, "Couldn't commit event transaction", e );
         }
@@ -189,13 +197,13 @@ public class BootProcess implements ServerComponentLifecycle {
             component.stop();
         }
 
-        EventManager.fire(new Stopped(this, Component.GW_SERVER));
+        EventManager.fire(new Stopped(this, Component.GW_SERVER, ipAddress));
         logger.info("Stopped.");
     }
 
     public void close() throws LifecycleException {
         try {
-            EventManager.fireInNewTransaction(new Closing(this, Component.GW_SERVER));
+            EventManager.fireInNewTransaction(new Closing(this, Component.GW_SERVER, ipAddress));
         } catch ( TransactionException e ) {
             logger.log( Level.WARNING, "Couldn't commit event transaction", e );
         }
@@ -217,7 +225,7 @@ public class BootProcess implements ServerComponentLifecycle {
         if (serviceManager != null && serviceManager instanceof ServiceManagerImp) {
             ((ServiceManagerImp)serviceManager).destroy();
         }
-        EventManager.fire(new Closed(this, Component.GW_SERVER));
+        EventManager.fire(new Closed(this, Component.GW_SERVER, ipAddress));
         EventManager.removeListener(systemAuditListener);
         logger.info("Closed.");
     }
@@ -253,4 +261,6 @@ public class BootProcess implements ServerComponentLifecycle {
     }
 
     private SystemAuditListener systemAuditListener;
+    private String ipAddress;
+    public static final String LOCALHOST_IP = "127.0.0.1";
 }

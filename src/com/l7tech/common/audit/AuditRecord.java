@@ -19,7 +19,19 @@ public abstract class AuditRecord extends SSGLogRecord {
     protected AuditRecord() {
     }
 
-    public AuditRecord(Level level, String nodeId, String message) {
+    public AuditRecord(Level level, String nodeId, String ipAddress, String message) {
         super(level, nodeId, message);
+        this.ipAddress = ipAddress;
     }
+
+    public String getIpAddress() {
+        return ipAddress;
+    }
+
+    /** @deprecated to be called only for serialization and persistence purposes! */
+    public void setIpAddress( String ipAddress ) {
+        this.ipAddress = ipAddress;
+    }
+
+    protected String ipAddress;
 }

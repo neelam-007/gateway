@@ -16,6 +16,7 @@ import com.l7tech.objectmodel.event.*;
 import com.l7tech.server.service.ServiceEvent;
 import com.l7tech.service.PublishedService;
 import net.jini.export.ServerContext;
+import net.jini.io.context.ClientHost;
 import net.jini.io.context.ClientSubject;
 
 import java.rmi.server.ServerNotActiveException;
@@ -90,39 +91,48 @@ public class AdminAuditListener implements CreateListener, UpdateListener, Delet
     }
 
     public void entityCreated( Created created ) {
-        String adminLogin = getAdminLogin();
-        if (adminLogin == null) return;
+        AdminInfo info = getAdminInfo();
+        if (info == null) return;
         try {
-            auditRecordManager.save(new AdminAuditRecord(level(created), nodeId, created, adminLogin));
+            auditRecordManager.save(new AdminAuditRecord(level(created), nodeId, created, info.login, info.ip));
         } catch ( SaveException e ) {
             logger.log( Level.SEVERE, "Couldn't save " + created, e );
         }
     }
 
     public void entityUpdated( Updated updated ) {
-        String adminLogin = getAdminLogin();
-        if (adminLogin == null) return;
+        AdminInfo info = getAdminInfo();
+        if (info == null) return;
         try {
-            auditRecordManager.save(new AdminAuditRecord(level(updated), nodeId, updated, adminLogin));
+            auditRecordManager.save(new AdminAuditRecord(level(updated), nodeId, updated, info.login, info.ip));
         } catch ( SaveException e ) {
             logger.log( Level.SEVERE, "Couldn't save " + updated, e );
         }
     }
 
     public void entityDeleted( Deleted deleted ) {
-        String adminLogin = getAdminLogin();
-        if (adminLogin == null) return;
+        AdminInfo info = getAdminInfo();
+        if (info == null) return;
         try {
-            auditRecordManager.save(new AdminAuditRecord(level(deleted), nodeId, deleted, adminLogin));
+            auditRecordManager.save(new AdminAuditRecord(level(deleted), nodeId, deleted, info.login, info.ip));
         } catch ( SaveException e ) {
             logger.log( Level.SEVERE, "Couldn't save " + deleted, e );
         }
     }
 
-    private String getAdminLogin() {
+    private AdminInfo getAdminInfo() {
         ClientSubject clientSubject = null;
+        String login = null;
+        String address = null;
         try {
             clientSubject = (ClientSubject)ServerContext.getServerContextElement(ClientSubject.class);
+            ClientHost host = (ClientHost)ServerContext.getServerContextElement(ClientHost.class);
+            if (host != null) {
+                address = host.getClientHost().getHostAddress();
+            } else {
+                logger.warning("Could not determine administrator IP address. Will use " + LOCALHOST_IP);
+                address = LOCALHOST_IP;
+            }
         } catch ( ServerNotActiveException e ) {
             return null;
         }
@@ -130,18 +140,29 @@ public class AdminAuditListener implements CreateListener, UpdateListener, Delet
             Set principals = clientSubject.getClientSubject().getPrincipals();
             if (principals != null && !principals.isEmpty()) {
                 Principal p = (Principal)principals.iterator().next();
-                String login = null;
                 if (p instanceof User) login = ((User)p).getLogin();
                 if (login == null) login = p.getName();
-                return login;
             }
         }
+
+        if (login != null) {
+            AdminInfo info = new AdminInfo();
+            info.login = login;
+            if (address != null) info.ip = address;
+            return info;
+        }
+
         logger.warning("Unable to determine current administrator login");
         return null;
     }
 
+    private static class AdminInfo {
+        private String login;
+        private String ip;
+    }
 
     private Map levelMappings = new HashMap();
     private final AuditRecordManager auditRecordManager;
     private static final Logger logger = Logger.getLogger(AdminAuditListener.class.getName());
+    public static final String LOCALHOST_IP = "127.0.0.1";
 }

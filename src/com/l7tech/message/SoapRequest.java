@@ -167,7 +167,8 @@ public abstract class SoapRequest extends XmlMessageAdapter implements SoapMessa
     protected InputStream _requestInputStream;
     protected User _user;
     protected RoutingStatus _routingStatus = RoutingStatus.NONE;
-    protected Level auditLevel;
+    // Set to lowest by default so it can be overridden by MessageProcessor
+    protected Level auditLevel = Level.ALL;
 
     /** The cached XML document. */
     protected String _requestXml;

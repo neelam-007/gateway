@@ -14,9 +14,10 @@ import com.l7tech.objectmodel.event.Event;
  * @version $Revision$
  */
 public abstract class LifecycleEvent extends Event {
-    public LifecycleEvent(Object source, Component component) {
+    public LifecycleEvent(Object source, Component component, String ipAddress) {
         super(source);
         this.component = component;
+        this.ipAddress = ipAddress;
     }
 
     public abstract String getAction();
@@ -25,5 +26,10 @@ public abstract class LifecycleEvent extends Event {
         return component;
     }
 
+    public String getIpAddress() {
+        return ipAddress;
+    }
+
     private final Component component;
+    private final String ipAddress;
 }

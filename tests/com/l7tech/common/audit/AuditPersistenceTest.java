@@ -13,6 +13,7 @@ import junit.framework.TestCase;
 import junit.framework.TestSuite;
 import net.sf.hibernate.Session;
 
+import java.net.InetAddress;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.logging.Level;
@@ -41,7 +42,7 @@ public class AuditPersistenceTest extends TestCase {
         HibernatePersistenceContext context = (HibernatePersistenceContext)HibernatePersistenceContext.getCurrent();
         context.beginTransaction();
         Session s = context.getSession();
-        Object id = s.save(new AdminAuditRecord(Level.INFO, "thisnode", new Created(new PublishedService()), "admin"));
+        Object id = s.save(new AdminAuditRecord(Level.INFO, "thisnode", new Created(new PublishedService()), "admin", InetAddress.getLocalHost().getHostAddress()));
         System.out.println("Saved " + id);
         context.commitTransaction();
     }

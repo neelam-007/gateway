@@ -31,7 +31,7 @@ public class MessageSummaryAuditRecord extends AuditRecord {
                                      long serviceOid, String serviceName,
                                      boolean authenticated, long identityProviderOid, String userName, String userId)
     {
-        super(level, nodeId, null);
+        super(level, nodeId, clientAddr, null);
         StringBuffer msg = new StringBuffer("Message ");
         if (status == AssertionStatus.NONE) {
             msg.append("processed successfully");
@@ -43,7 +43,6 @@ public class MessageSummaryAuditRecord extends AuditRecord {
         this.requestId = requestId;
         this.setMessage(msg.toString());
         this.status = status.getNumeric();
-        this.clientAddr = clientAddr;
         this.requestXml = requestXml;
         this.requestContentLength = requestContentLength;
         this.responseXml = responseXml;
@@ -78,10 +77,6 @@ public class MessageSummaryAuditRecord extends AuditRecord {
 
     public String getUserId() {
         return userId;
-    }
-
-    public String getClientAddr() {
-        return clientAddr;
     }
 
     public String getRequestXml() {
@@ -150,11 +145,6 @@ public class MessageSummaryAuditRecord extends AuditRecord {
     }
 
     /** @deprecated to be called only for serialization and persistence purposes! */
-    public void setClientAddr( String clientAddr ) {
-        this.clientAddr = clientAddr;
-    }
-
-    /** @deprecated to be called only for serialization and persistence purposes! */
     public void setRequestContentLength( int requestContentLength ) {
         this.requestContentLength = requestContentLength;
     }
@@ -190,9 +180,6 @@ public class MessageSummaryAuditRecord extends AuditRecord {
 
     /** <code>true</code> indicates that the request was successfully authenticated, or <code>false</code> otherwise. */
     protected boolean authenticated;
-
-    /** IP address or hostname of the client responsible for this request if known, or null otherwise. */
-    protected String clientAddr;
 
     /** Length of the request */
     protected int requestContentLength = -1;

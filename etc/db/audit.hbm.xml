@@ -20,6 +20,7 @@
         <property name="millis" column="time" type="long"/>
         <property name="strLvl" column="level" type="string"/>
         <property name="message" column="message" type="string"/>
+        <property name="ipAddress" column="ip_address" type="string"/>
 
         <joined-subclass name="com.l7tech.common.audit.MessageSummaryAuditRecord" table="audit_message" >
             <key column="objectid"/>
@@ -31,7 +32,6 @@
             <property name="userId" column="user_id" type="string"/>
             <property name="userName" column="user_name" type="string"/>
             <property name="authenticated" column="authenticated" type="boolean"/>
-            <property name="clientAddr" column="client_address" type="string"/>
             <property name="requestXml" column="request_xml" type="text"/>
             <property name="requestContentLength" column="request_length" type="int"/>
             <property name="responseXml" column="response_xml" type="text"/>

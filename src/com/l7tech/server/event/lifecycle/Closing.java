@@ -13,8 +13,8 @@ import com.l7tech.common.Component;
  * @version $Revision$
  */
 public class Closing extends LifecycleEvent {
-    public Closing(Object source, Component component) {
-        super( source, component );
+    public Closing(Object source, Component component, String ip) {
+        super( source, component, ip);
     }
 
     public String getAction() {

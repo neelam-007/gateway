@@ -368,10 +368,12 @@ CREATE TABLE audit (
   time bigint NOT NULL,
   level varchar(12) NOT NULL,
   message varchar(255) NOT NULL,
+  ip_address varchar(32) NOT NULL,
   PRIMARY KEY  (objectid),
   INDEX idx_nodeid (nodeid),
   INDEX idx_time (time),
-  INDEX idx_level (level)
+  INDEX idx_level (level),
+  INDEX idx_ip_address (ip_address)
 );
 
 --
@@ -399,7 +401,6 @@ CREATE TABLE audit_message (
   objectid bigint NOT NULL,
   status varchar(32) NOT NULL,
   request_id varchar(40) NOT NULL,
-  client_address varchar(32) NOT NULL,
   service_oid bigint,
   service_name varchar(128),
   user_name varchar(64),
@@ -413,7 +414,6 @@ CREATE TABLE audit_message (
   PRIMARY KEY  (objectid),
   INDEX idx_status (status),
   INDEX idx_request_id (request_id),
-  INDEX idx_client_address (client_address),
   INDEX idx_service_oid (service_oid),
   INDEX idx_provider_oid (provider_oid),
   INDEX idx_user_id (user_id)

@@ -13,8 +13,8 @@ import com.l7tech.common.Component;
  * @version $Revision$
  */
 public class Stopped extends LifecycleEvent {
-    public Stopped( Object source, Component component ) {
-        super( source, component );
+    public Stopped(Object source, Component component, String ip) {
+        super(source, component, ip);
     }
 
     public String getAction() {

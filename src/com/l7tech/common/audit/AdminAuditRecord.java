@@ -7,6 +7,7 @@
 package com.l7tech.common.audit;
 
 import com.l7tech.objectmodel.Entity;
+import com.l7tech.objectmodel.NamedEntity;
 import com.l7tech.objectmodel.event.Created;
 import com.l7tech.objectmodel.event.Deleted;
 import com.l7tech.objectmodel.event.PersistenceEvent;
@@ -28,17 +29,25 @@ public class AdminAuditRecord extends AuditRecord {
     public static final char ACTION_UPDATED = 'U';
     public static final char ACTION_DELETED = 'D';
 
-    public AdminAuditRecord(Level level, String nodeId, PersistenceEvent event, String adminLogin) {
-        super(level, nodeId, null);
+    public AdminAuditRecord(Level level, String nodeId, PersistenceEvent event, String adminLogin, String ip) {
+        super(level, nodeId, ip, null);
         if (adminLogin == null) throw new IllegalStateException("Couldn't determine current administrator login");
         this.adminLogin = adminLogin;
 
         final Entity entity = event.getEntity();
         this.entityClassname = entity.getClass().getName();
         this.entityOid = entity.getOid();
-        StringBuffer msg = new StringBuffer(entityClassname);
-        msg.append(" ");
-        msg.append(entityOid);
+        int ppos = entityClassname.lastIndexOf(".");
+        String localClassname = ppos >= 0 ? entityClassname.substring(ppos+1) : entityClassname;
+        StringBuffer msg = new StringBuffer(localClassname);
+        msg.append(" #").append(entityOid);
+        if (entity instanceof NamedEntity) {
+            msg.append(" (");
+            msg.append(((NamedEntity)entity).getName());
+            msg.append(")");
+        } else {
+            msg.append(entityOid);
+        }
         if (event instanceof Created) {
             action = ACTION_CREATED;
             msg.append(" created");

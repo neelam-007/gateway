@@ -30,7 +30,7 @@ public class MessageProcessingAuditListener implements MessageProcessingEventLis
     }
 
     public void messageProcessed( Request request, Response response, AssertionStatus status ) {
-        final MessageSummaryAuditRecord rec = MessageSummaryAuditFactory.makeEvent(Level.INFO, status);
+        final MessageSummaryAuditRecord rec = MessageSummaryAuditFactory.makeEvent(request.getAuditLevel(), status);
         try {
             HibernatePersistenceContext context = (HibernatePersistenceContext) HibernatePersistenceContext.getCurrent();
             context.doInTransaction(new PersistenceAction() {
