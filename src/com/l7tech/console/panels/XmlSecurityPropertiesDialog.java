@@ -10,6 +10,8 @@ import com.l7tech.console.table.SecuredMessagePartsTableModel.SecuredMessagePart
 import com.l7tech.console.tree.ServiceNode;
 import com.l7tech.console.tree.policy.AssertionTreeNode;
 import com.l7tech.console.tree.policy.XmlSecurityTreeNode;
+import com.l7tech.console.tree.policy.XmlRequestSecurityTreeNode;
+import com.l7tech.console.tree.policy.XmlResponseSecurityTreeNode;
 import com.l7tech.console.tree.wsdl.*;
 import com.l7tech.console.util.Registry;
 import com.l7tech.objectmodel.FindException;
@@ -50,7 +52,6 @@ public class XmlSecurityPropertiesDialog extends JDialog {
     private XmlSecurityAssertion xmlSecAssertion;
     private ServiceNode serviceNode;
     private Wsdl serviceWsdl;
-
     private JScrollPane tableScrollPane;
     private JScrollPane treeScrollPane;
     private SecuredMessagePartsTableModel securedMessagePartsTableModel;
@@ -61,10 +62,19 @@ public class XmlSecurityPropertiesDialog extends JDialog {
     private static final String SOAP_ENVELOPE = "/SOAP-ENV:Envelope";
     private Map namespaces = new HashMap();
 
+    /**
+     * @param owner this panel owner
+     * @param modal is this modal dialog or not
+     * @param n the xml security node
+     */
     public XmlSecurityPropertiesDialog(JFrame owner, boolean modal, XmlSecurityTreeNode n) {
         super(owner, modal);
         if (n == null) {
             throw new IllegalArgumentException();
+        }
+        if (!(n instanceof XmlRequestSecurityTreeNode ||
+              n instanceof XmlResponseSecurityTreeNode)) {
+            throw new IllegalArgumentException("Unsupported security node: "+n.getClass());
         }
         node = n;
         setTitle("XML security properties");
@@ -221,6 +231,7 @@ public class XmlSecurityPropertiesDialog extends JDialog {
             Collection collection = wsdl.getBindings();
             WsdlTreeNode.Options wo = new WsdlTreeNode.Options();
             wo.setShowMessageParts();
+            wo.setShowInputMessages();
             for (Iterator iterator = collection.iterator(); iterator.hasNext();) {
                 Binding b = (Binding)iterator.next();
                 java.util.List operations = b.getBindingOperations();
@@ -366,10 +377,21 @@ public class XmlSecurityPropertiesDialog extends JDialog {
             children = null;
             insert(new XmlElementTreeNode("Envelope", wsdlOptions), index++);
             insert(new XmlElementTreeNode("Body", wsdlOptions), index++);
-            final Input input = operation.getOperation().getInput();
-            if (input != null) {
-                final Message m = input.getMessage();
-                insert(new MessageTreeNode(m, wsdlOptions), index++);
+
+            if (wsdlOptions.isShowInputMessages()) {
+                final Input input = operation.getOperation().getInput();
+                if (input != null) {
+                    final Message m = input.getMessage();
+                    insert(new MessageTreeNode(m, wsdlOptions), index++);
+                }
+            }
+
+            if (wsdlOptions.isShowOutputMessages()) {
+                final Output output = operation.getOperation().getOutput();
+                if (output != null) {
+                    final Message m = output.getMessage();
+                    insert(new MessageTreeNode(m, wsdlOptions), index++);
+                }
             }
         }
     }
