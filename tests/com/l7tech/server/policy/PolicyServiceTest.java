@@ -128,7 +128,7 @@ public class PolicyServiceTest extends TestCase {
         };
 
         ps.respondToPolicyDownloadRequest(context, true, policyGetter);
-        Document response = context.getResponse().getXmlKnob().getDocument(false);
+        Document response = context.getResponse().getXmlKnob().getDocumentReadOnly();
         assertNotNull(response);
         log.info("Response (pretty-printed):" + XmlUtil.nodeToFormattedString(response));
         return response;
@@ -138,7 +138,7 @@ public class PolicyServiceTest extends TestCase {
         final PolicyEnforcementContext context = getPolicyRequestContext(loginCredentials);
         Message request = context.getRequest();
         Document response = getPolicyResponse(policyToTest, context);
-        Policy policy = parsePolicyResponse(request.getXmlKnob().getDocument(false), response);
+        Policy policy = parsePolicyResponse(request.getXmlKnob().getDocumentReadOnly(), response);
         log.info("Returned policy version: " + policy.getVersion());
         log.info("Returned policy: " + policy.getAssertion());
     }
@@ -288,13 +288,13 @@ public class PolicyServiceTest extends TestCase {
     public void testReplayedPolicyResponse() throws Exception {
         final PolicyEnforcementContext context = getPolicyRequestContext(null);
         Document firstResponse = getPolicyResponse(new TrueAssertion(), context);
-        Policy firstPolicy = parsePolicyResponse(context.getRequest().getXmlKnob().getDocument(false), firstResponse);
+        Policy firstPolicy = parsePolicyResponse(context.getRequest().getXmlKnob().getDocumentReadOnly(), firstResponse);
         assertNotNull(firstPolicy);
 
         // So far so good.  Now let's try a replay
         Message secondRequest = getPolicyRequestContext(null).getRequest();
         try {
-            parsePolicyResponse(secondRequest.getXmlKnob().getDocument(false), firstResponse);
+            parsePolicyResponse(secondRequest.getXmlKnob().getDocumentReadOnly(), firstResponse);
             fail("The replayed policy response should have been rejected by the client.");
         } catch (InvalidDocumentFormatException e) {
             // Ok

@@ -144,8 +144,6 @@ public class ServerHttpRoutingAssertion extends ServerRoutingAssertion {
                 if (contentLength > Integer.MAX_VALUE)
                     throw new IOException("Body content is too long to be processed -- maximum is " + Integer.MAX_VALUE + " bytes");
                 postMethod.setRequestContentLength((int)contentLength);
-                final InputStream bodyInputStream = reqMime.getEntireMessageBodyAsInputStream();
-                postMethod.setRequestBody(bodyInputStream);
 
                 String userAgent = httpRoutingAssertion.getUserAgent();
                 if (userAgent == null || userAgent.length() == 0) userAgent = DEFAULT_USER_AGENT;
@@ -214,7 +212,7 @@ public class ServerHttpRoutingAssertion extends ServerRoutingAssertion {
                 }
 
                 if (httpRoutingAssertion.isAttachSamlSenderVouches()) {
-                    Document document = context.getRequest().getXmlKnob().getDocument(true);
+                    Document document = context.getRequest().getXmlKnob().getDocumentWritable();
                     SamlAssertionGenerator ag = new SamlAssertionGenerator();
                     SignerInfo si = KeystoreUtils.getInstance().getSignerInfo();
                     SamlAssertionGenerator.Options samlOptions = new SamlAssertionGenerator.Options();
@@ -231,6 +229,10 @@ public class ServerHttpRoutingAssertion extends ServerRoutingAssertion {
                     ag.attachSenderVouches(document, si, context.getCredentials(), samlOptions);
                 }
                 attachCookies(client, context, url);
+
+                // Serialize the request
+                final InputStream bodyInputStream = reqMime.getEntireMessageBodyAsInputStream();
+                postMethod.setRequestBody(bodyInputStream);
 
                 if (hconf == null) {
                     client.executeMethod(postMethod);

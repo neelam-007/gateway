@@ -18,16 +18,42 @@ import java.io.IOException;
  */
 public interface XmlKnob extends MessageKnob {
     /**
-     * TODO: Add a version of this that will not invalidate the first part of the message
-     * TODO: if the caller sets a flag indicating that it does not intend to modify the Document
-     * TODO: Add a way to obtain the original document, before any undecorating
-     * @param writable Set to true if you intend to modify the Document.
-     *                 If true, the first MIME part will be invalidated immediately.
-     * @return the parsed Document.
+     * Get a read-only view of the current working Document.  There is currently no way to enforce
+     * that the returned Document is not modified; callers are expected to keep their word.
+     *
+     * @see #getDocumentWritable for the method to use if you have any chance of modifying the Document
+     * @return the current working Document.  Caller must not modify this in any way.
      * @throws SAXException if the XML in the first part's InputStream is not well formed
      * @throws IOException if there is a problem reading XML from the first part's InputStream
+     * @throws IOException if there is a problem reading from or writing to a stash
      */
-    Document getDocument(boolean writable) throws SAXException, IOException;
+    Document getDocumentReadOnly() throws SAXException, IOException;
+
+    /**
+     * Get a read-write copy of the current working Document.  If the original Document has not been saved yet,
+     * a clone of the working Document will be saved at this point.  Also, the underlying MIME bytestream will be marked
+     * as dirty.
+     *
+     * @see #getDocumentReadOnly for the read-only, faster version of this call
+     * @return the current working Document.  Caller may modify this.
+     * @throws SAXException if the XML in the first part's InputStream is not well formed
+     * @throws IOException if there is a problem reading XML from the first part's InputStream
+     * @throws IOException if there is a problem reading from or writing to a stash
+     */
+    Document getDocumentWritable() throws SAXException, IOException;
+
+    /**
+     * Get a read-only view of the original Document from when the MIME bytestream was first parsed.  There is
+     * currently no way to enforce that the returned Document is not modified; callers are expected to keep their
+     * word.
+     *
+     * @see #getDocumentWritable for a way to get a writable version of the current working Document, instead
+     * @return the original Document as it came from the MIME bytestream.  Caller must not modify this in any way.
+     * @throws SAXException if the XML in the first part's InputStream is not well formed
+     * @throws IOException if there is a problem reading XML from the first part's InputStream
+     * @throws IOException if there is a problem reading from or writing to a stash
+     */
+    Document getOriginalDocument() throws SAXException, IOException;
 
     /**
      * set the Document.  Also invalidates the first MIME part.

@@ -47,7 +47,7 @@ public class ClientResponseXpathAssertion extends ClientAssertion {
             SAXException, ResponseValidationException, KeyStoreCorruptException, PolicyAssertionException
     {
         final XpathExpression xpathExpression = responseXpathAssertion.getXpathExpression();
-        final XpathEvaluator eval = XpathEvaluator.newEvaluator(context.getResponse().getXmlKnob().getDocument(false),
+        final XpathEvaluator eval = XpathEvaluator.newEvaluator(context.getResponse().getXmlKnob().getDocumentReadOnly(),
                                                                 xpathExpression.getNamespaces());
         try {
             List nodes = eval.select(xpathExpression.getExpression());

@@ -23,11 +23,12 @@ import java.io.InputStream;
  * Represents a MimeFacet whose first part is text/xml.
  */
 class XmlFacet extends MessageFacet {
-    private Document document = null;
+    private Document originalDocument = null;  // the original Document
+    private Document workingDocument = null;  // the working Document
     private ProcessorResult processorResult = null;
     private DecorationRequirements decorationRequirements = null;
 
-    /** Can be assumed to be true if {@link #document} == null */
+    /** Can be assumed to be true if {@link #workingDocument} == null */
     private boolean firstPartValid;
 
     /**
@@ -109,20 +110,20 @@ class XmlFacet extends MessageFacet {
         }
 
         /**
-         * Ensure that the first MIME part's bytes match the serialized form of the current document.
+         * Ensure that the first MIME part's bytes match the serialized form of the current workingDocument.
          *
          * @throws IOException if XML serialization throws IOException, perhaps due to a lazy Document.
          */
         private void ensureFirstPartValid() throws IOException {
             if (firstPartValid) {
                 return;
-            } else if (document == null) {
+            } else if (workingDocument == null) {
                 firstPartValid = true;
                 return;
             }
 
             final ContentTypeHeader textXml = ContentTypeHeader.XML_DEFAULT;
-            final byte[] bytes = XmlUtil.nodeToString(document).getBytes(textXml.getEncoding());
+            final byte[] bytes = XmlUtil.nodeToString(workingDocument).getBytes(textXml.getEncoding());
             if (bytes != null) {
                 final PartInfo firstPart = mk.getFirstPart();
                 firstPart.setBodyBytes(bytes);
@@ -142,25 +143,37 @@ class XmlFacet extends MessageFacet {
             this.mk = mk;
         }
 
-        public Document getDocument(boolean writable) throws SAXException, IOException {
-            if (document == null) {
+        public Document getDocumentReadOnly() throws SAXException, IOException {
+            if (workingDocument == null) {
                 final PartInfo firstPart = mk.getFirstPart();
                 if (!firstPart.getContentType().isXml())
                     throw new SAXException("Content type of first part of message is not XML");
                 try {
-                    document = XmlUtil.parse(firstPart.getInputStream(false));
+                    workingDocument = XmlUtil.parse(firstPart.getInputStream(false));
                 } catch (NoSuchPartException e) {
                     throw new SAXException("Unable to parse XML: " + e);
                 }
             }
-            if (writable)
-                firstPartValid = false; // Assume caller is going to run roughshod over document
-            return document;
+            return workingDocument;
+        }
+
+        public Document getDocumentWritable() throws SAXException, IOException {
+            Document working = getDocumentReadOnly();
+            firstPartValid = false;
+            if (originalDocument == null)
+                originalDocument = (Document)working.cloneNode(true);
+            return working;
+        }
+
+        public Document getOriginalDocument() throws SAXException, IOException {
+            if (originalDocument == null)
+                originalDocument = (Document)getDocumentReadOnly().cloneNode(true);
+            return originalDocument;
         }
 
         public void setDocument(Document document) {
             firstPartValid = false;
-            XmlFacet.this.document = document;
+            XmlFacet.this.workingDocument = document;
         }
 
         public ProcessorResult getProcessorResult() {

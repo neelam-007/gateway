@@ -12,7 +12,6 @@ import com.l7tech.proxy.datamodel.PolicyAttachmentKey;
 import com.l7tech.proxy.datamodel.Ssg;
 import com.l7tech.proxy.message.PolicyApplicationContext;
 
-import java.io.IOException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -33,8 +32,8 @@ public class MessageLogger implements RequestInterceptor {
      */
     public void onReceiveMessage(PolicyApplicationContext context) {
         try {
-            log.info("Received client request: " + XmlUtil.nodeToString(context.getOriginalDocument()));
-        } catch (IOException e) {
+            log.info("Received client request: " + XmlUtil.nodeToString(context.getRequest().getXmlKnob().getOriginalDocument()));
+        } catch (Exception e) {
             log.log(Level.SEVERE, "Error examining client request", e);
         }
     }

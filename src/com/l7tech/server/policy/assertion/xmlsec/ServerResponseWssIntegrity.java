@@ -71,7 +71,7 @@ public class ServerResponseWssIntegrity implements ServerAssertion {
                 // GET THE DOCUMENT
                 Document soapmsg = null;
                 try {
-                    soapmsg = context.getResponse().getXmlKnob().getDocument(false);
+                    soapmsg = context.getResponse().getXmlKnob().getDocumentReadOnly();
                 } catch (SAXException e) {
                     String msg = "cannot get an xml document from the response to sign";
                     logger.severe(msg);

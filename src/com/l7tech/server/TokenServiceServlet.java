@@ -135,7 +135,7 @@ public class TokenServiceServlet extends HttpServlet {
             // get response document
             Document output = null;
             try {
-                output = context.getResponse().getXmlKnob().getDocument(false);
+                output = context.getResponse().getXmlKnob().getDocumentReadOnly();
             } catch (SAXException e) {
                 String msg = "Cannot retrieve response document. " + e.getMessage();
                 logger.log(Level.SEVERE, msg, e);

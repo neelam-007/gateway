@@ -137,7 +137,7 @@ public class ServerCustomAssertionHolder implements ServerAssertion {
 
         public CustomServiceResponse(PolicyEnforcementContext pec) throws IOException, SAXException {
             this.pec = pec;
-            this.document = (Document)pec.getResponse().getXmlKnob().getDocument(false).cloneNode(true);
+            this.document = (Document)pec.getResponse().getXmlKnob().getDocumentReadOnly().cloneNode(true);
 
             context.put("httpRequest", pec.getHttpServletRequest());
             context.put("httpResponse", pec.getHttpServletResponse());
@@ -192,7 +192,7 @@ public class ServerCustomAssertionHolder implements ServerAssertion {
         public CustomServiceRequest(PolicyEnforcementContext pec)
           throws IOException, SAXException {
             this.pec = pec;
-            this.document = (Document)pec.getRequest().getXmlKnob().getDocument(false).cloneNode(true);
+            this.document = (Document)pec.getRequest().getXmlKnob().getDocumentReadOnly().cloneNode(true);
             Vector newCookies = pec.getUpdatedCookies();
             context.put("httpRequest", pec.getHttpServletRequest());
             context.put("httpResponse", pec.getHttpServletResponse());

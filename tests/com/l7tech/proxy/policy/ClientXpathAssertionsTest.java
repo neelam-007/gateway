@@ -18,9 +18,7 @@ import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
 import org.w3c.dom.Document;
-import org.xml.sax.SAXException;
 
-import java.io.IOException;
 import java.util.Map;
 import java.util.logging.Logger;
 
@@ -95,13 +93,7 @@ public class ClientXpathAssertionsTest extends TestCase {
     }
 
     private PolicyApplicationContext makereq(Ssg ssg, Document d) {
-        try {
-            return new PolicyApplicationContext(ssg, new Message(d), new Message(d), null, null, null);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        } catch (SAXException e) {
-            throw new RuntimeException(e);
-        }
+        return new PolicyApplicationContext(ssg, new Message(d), new Message(d), null, null, null);
     }
 
     public void testClientRequestXpathAssertion() throws Exception {

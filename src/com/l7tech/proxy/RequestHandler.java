@@ -215,7 +215,7 @@ public class RequestHandler extends AbstractHttpHandler {
                 prequest.attachKnob(HttpHeadersKnob.class, new HttpHeadersKnob(gatherHeaders(httpRequest)));
 
                 URL originalUrl = getOriginalUrl(httpRequest, endpoint);
-                PolicyAttachmentKey pak = gatherPolicyAttachmentKey(httpRequest, prequest.getXmlKnob().getDocument(false), originalUrl);
+                PolicyAttachmentKey pak = gatherPolicyAttachmentKey(httpRequest, prequest.getXmlKnob().getDocumentReadOnly(), originalUrl);
 
                 context = new PolicyApplicationContext(ssg,
                                                        prequest,

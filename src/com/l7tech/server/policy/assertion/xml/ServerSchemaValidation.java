@@ -62,7 +62,7 @@ public class ServerSchemaValidation implements ServerAssertion {
                     return AssertionStatus.NOT_APPLICABLE;
                 }
 
-                return checkRequest(context.getResponse().getXmlKnob().getDocument(false));
+                return checkRequest(context.getResponse().getXmlKnob().getDocumentReadOnly());
             } catch (SAXException e) {
                 throw new PolicyAssertionException("could not parse response document", e);
             }
@@ -75,7 +75,7 @@ public class ServerSchemaValidation implements ServerAssertion {
                     return AssertionStatus.NOT_APPLICABLE;
                 }
 
-                return checkRequest(context.getRequest().getXmlKnob().getDocument(false));
+                return checkRequest(context.getRequest().getXmlKnob().getDocumentReadOnly());
             } catch (SAXException e) {
                 throw new PolicyAssertionException("could not parse request document", e);
             }

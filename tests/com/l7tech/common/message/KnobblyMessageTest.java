@@ -100,8 +100,8 @@ public class KnobblyMessageTest extends TestCase {
             // getKnob should succeed...
             XmlKnob xmlKnob = msg.getXmlKnob();
 
-            // ...but getDocument should fail
-            Document d = xmlKnob.getDocument(false);
+            // ...but getDocumentReadOnly should fail
+            Document d = xmlKnob.getDocumentReadOnly();
             fail("Failed to get expected exception.  d=" + d);
         } catch (SAXException e) {
             logger.info("Got expected exception: " + e);
@@ -127,7 +127,7 @@ public class KnobblyMessageTest extends TestCase {
         Message msg = new Message(new ByteArrayStashManager(),
                                   ContentTypeHeader.XML_DEFAULT,
                                   new ByteArrayInputStream("<getquote>MSFT</getquote>".getBytes()));
-        logger.info(XmlUtil.nodeToString(msg.getXmlKnob().getDocument(false)));
+        logger.info(XmlUtil.nodeToString(msg.getXmlKnob().getDocumentReadOnly()));
         assertNotNull(msg.getMimeKnob());
 
         // Soap knob has not been asked for yet

@@ -9,7 +9,6 @@ package com.l7tech.proxy.message;
 import com.l7tech.common.message.Message;
 import com.l7tech.common.message.ProcessingContext;
 import com.l7tech.common.security.xml.decorator.DecorationRequirements;
-import com.l7tech.common.util.CausedIllegalStateException;
 import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.xml.InvalidDocumentFormatException;
 import com.l7tech.common.xml.saml.SamlHolderOfKeyAssertion;
@@ -20,7 +19,6 @@ import com.l7tech.proxy.RequestInterceptor;
 import com.l7tech.proxy.datamodel.*;
 import com.l7tech.proxy.datamodel.exceptions.*;
 import com.l7tech.proxy.util.TokenServiceClient;
-import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
 
 import java.io.IOException;
@@ -49,7 +47,6 @@ public class PolicyApplicationContext extends ProcessingContext {
 
     private final CredentialManager credentialManager = Managers.getCredentialManager();
 
-    private final Document originalDoc;
     private final Ssg ssg;
     private final RequestInterceptor requestInterceptor;
     private final PolicyAttachmentKey policyAttachmentKey;
@@ -92,21 +89,14 @@ public class PolicyApplicationContext extends ProcessingContext {
      * @param requestInterceptor a RequestInterceptor that wishes to be notified about policy updates, or null.
      * @param policyAttachmentKey the soapaction, namespace, and uri that apply to this request, or null
      * @param origUrl            the reconstructed local URL from which this request arrived, or null
-     * @throws SAXException if the first part's content type is not text/xml.
      * @throws IllegalStateException if this Message has not yet been attached to an InputStream.
-     * @throws IOException if there is a problem reading XML from the first part's InputStream
-     * @throws IOException       if originalDocument needs to be serialized, but cannot be, due to some
-     *                           canonicalizer problem (relative namespaces, maybe)
      */
     public PolicyApplicationContext(Ssg ssg, Message request, Message response,
                                     RequestInterceptor requestInterceptor,
                                     PolicyAttachmentKey policyAttachmentKey,
                                     URL origUrl)
-            throws SAXException, IOException
     {
         super(request, response);
-        originalDoc = request.getXmlKnob().getDocument(false);
-        getRequest().getXmlKnob().setDocument((Document)originalDoc.cloneNode(true));
         if (ssg == null) throw new NullPointerException("ssg is null");
         if (requestInterceptor == null)
             requestInterceptor = NullRequestInterceptor.INSTANCE;
@@ -134,22 +124,7 @@ public class PolicyApplicationContext extends ProcessingContext {
      * Reset all policy settings in preperation for starting processing over again with a different policy.
      */
     public void reset() {
-        try {
-            getRequest().getXmlKnob().setDocument((Document)originalDoc.cloneNode(true));
-        } catch (SAXException e) {
-            throw new CausedIllegalStateException(e); // can't happen, it's always got an XML knob
-        }
         policySettings = new PolicySettings();
-    }
-
-    /**
-     * Get the original document, as it arrived.  Must not be modified.  Assumed to be identical to what came in
-     * as the first part of the MIME body.
-     *
-     * @return the original Document.  Modifications will not be written back to the first MIME part's body.
-     */
-    public Document getOriginalDocument() {
-        return originalDoc;
     }
 
     public Ssg getSsg() {
@@ -380,9 +355,9 @@ public class PolicyApplicationContext extends ProcessingContext {
     /**
      * Ensure that there is a Wsa message ID in this request.
      */
-    public void prepareWsaMessageId() throws InvalidDocumentFormatException {
+    public void prepareWsaMessageId() throws InvalidDocumentFormatException, SAXException, IOException {
         if (getL7aMessageId() == null) {
-            String id = SoapUtil.getL7aMessageId(getOriginalDocument());
+            String id = SoapUtil.getL7aMessageId(getRequest().getXmlKnob().getOriginalDocument());
 
             if (id == null) {
                 id = SoapUtil.generateUniqeUri();

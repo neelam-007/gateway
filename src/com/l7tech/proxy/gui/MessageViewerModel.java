@@ -249,9 +249,16 @@ class MessageViewerModel extends AbstractListModel implements RequestInterceptor
      */
     public void onReceiveMessage(PolicyApplicationContext context) {
         HttpHeadersKnob hhk = (HttpHeadersKnob)context.getRequest().getKnobAlways(HttpHeadersKnob.class);
-        appendMessage(new SavedXmlMessage("From Client",
-                                          context.getOriginalDocument(),
-                                          hhk.getHeaders()));
+        try {
+            appendMessage(new SavedXmlMessage("From Client",
+                                              context.getRequest().getXmlKnob().getOriginalDocument(),
+                                              hhk.getHeaders()));
+        } catch (Exception e) {
+            final String msg = "Message Viewer unable to get request as XML Document: " + e.getMessage();
+            log.log(Level.WARNING, msg, e);
+            appendMessage(new SavedTextMessage("From Client", msg));
+            return;
+        }
     }
 
     /**
@@ -262,7 +269,7 @@ class MessageViewerModel extends AbstractListModel implements RequestInterceptor
     public void onReceiveReply(PolicyApplicationContext context) {
         Document responseDoc = null;
         try {
-            responseDoc = context.getResponse().getXmlKnob().getDocument(false);
+            responseDoc = context.getResponse().getXmlKnob().getDocumentReadOnly();
         } catch (Exception e) {
             final String msg = "Message Viewer unable to get response as XML Document: " + e.getMessage();
             log.log(Level.WARNING, msg, e);

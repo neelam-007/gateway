@@ -166,7 +166,7 @@ public class SecureSpanBridgeFactory {
                 // Copy results out before context gets closed
                 final HttpResponseKnob responseHttp = (HttpResponseKnob)context.getResponse().getKnob(HttpResponseKnob.class);
                 final int httpStatus = responseHttp != null ? responseHttp.getStatus() : 500;
-                final Document doc = context.getResponse().getXmlKnob().getDocument(false); // we no longer care about sync with underlying MIME part
+                final Document doc = context.getResponse().getXmlKnob().getDocumentReadOnly(); // we no longer care about sync with underlying MIME part
                 return new Result() {
                     public int getHttpStatus() {
                         return httpStatus;

@@ -13,7 +13,9 @@ import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.RequestXpathAssertion;
 import com.l7tech.proxy.message.PolicyApplicationContext;
 import org.jaxen.JaxenException;
+import org.xml.sax.SAXException;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.logging.Logger;
 
@@ -30,10 +32,10 @@ public class ClientRequestXpathAssertion extends ClientAssertion {
         this.requestXpathAssertion = requestXpathAssertion;
     }
 
-    public AssertionStatus decorateRequest(PolicyApplicationContext context) throws PolicyAssertionException {
+    public AssertionStatus decorateRequest(PolicyApplicationContext context) throws PolicyAssertionException, SAXException, IOException {
         final XpathExpression xpathExpression = requestXpathAssertion.getXpathExpression();
         // Match the Original _undecorated_ document always, so operation-specific paths are deterministic
-        final XpathEvaluator eval = XpathEvaluator.newEvaluator(context.getOriginalDocument(),
+        final XpathEvaluator eval = XpathEvaluator.newEvaluator(context.getRequest().getXmlKnob().getOriginalDocument(),
                                                                 xpathExpression.getNamespaces());
         try {
             List nodes = eval.select(xpathExpression.getExpression());
@@ -51,7 +53,7 @@ public class ClientRequestXpathAssertion extends ClientAssertion {
         }
     }
 
-    public AssertionStatus unDecorateReply(PolicyApplicationContext context) throws PolicyAssertionException {
+    public AssertionStatus unDecorateReply(PolicyApplicationContext context) throws PolicyAssertionException, IOException, SAXException {
         return decorateRequest(context); // make sure we follow the same policy path when processing the response
     }
 

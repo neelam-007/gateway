@@ -83,7 +83,7 @@ public class ServerRequestSwAAssertion implements ServerAssertion {
 
 
         try {
-            Document doc = context.getRequest().getXmlKnob().getDocument(false);
+            Document doc = context.getRequest().getXmlKnob().getDocumentReadOnly();
 
             Iterator bindingItr = _data.getBindings().keySet().iterator();
 

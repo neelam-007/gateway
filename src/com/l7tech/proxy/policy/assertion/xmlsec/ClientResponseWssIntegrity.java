@@ -50,7 +50,7 @@ public class ClientResponseWssIntegrity extends ClientAssertion {
             IOException, KeyStoreCorruptException, ClientCertificateException, PolicyRetryableException
     {
         context.getPendingDecorations().put(this, new ClientDecorator() {
-            public AssertionStatus decorateRequest(PolicyApplicationContext context) throws InvalidDocumentFormatException {
+            public AssertionStatus decorateRequest(PolicyApplicationContext context) throws InvalidDocumentFormatException, IOException, SAXException {
                 log.log(Level.FINER, "Expecting a signed reply; will be sure to include L7a:MessageID");
                 context.prepareWsaMessageId();
                 return AssertionStatus.NONE;
@@ -71,7 +71,7 @@ public class ClientResponseWssIntegrity extends ClientAssertion {
     {
         final Message response = context.getResponse();
         final XmlKnob responseXml = response.getXmlKnob();
-        Document soapmsg = responseXml.getDocument(false);
+        Document soapmsg = responseXml.getDocumentReadOnly();
         ProcessorResult wssRes = responseXml.getProcessorResult();
         if (wssRes == null) {
             log.info("WSS processing was not done on this response.");
@@ -91,7 +91,6 @@ public class ClientResponseWssIntegrity extends ClientAssertion {
             }
 
             // Skip this check on subsequent ResponseWssIntegrity assertions.
-            soapmsg = responseXml.getDocument(true); // upgrade to writable document
             context.setL7aMessageId(null);
         }
 

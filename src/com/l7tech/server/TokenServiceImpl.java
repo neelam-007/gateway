@@ -101,7 +101,7 @@ public class TokenServiceImpl implements TokenService {
             final XmlKnob reqXml = context.getRequest().getXmlKnob();
             X509Certificate serverSSLcert = getServerCert();
             PrivateKey sslPrivateKey = getServerKey();
-            ProcessorResult wssOutput = trogdor.undecorateMessage(reqXml.getDocument(false),
+            ProcessorResult wssOutput = trogdor.undecorateMessage(reqXml.getDocumentReadOnly(),
                                                                   serverSSLcert,
                                                                   sslPrivateKey,
                                                                   SecureConversationContextManager.getInstance());
@@ -409,7 +409,7 @@ public class TokenServiceImpl implements TokenService {
         Document doc = null;
         try {
             XmlKnob reqXml = context.getRequest().getXmlKnob();
-            doc = reqXml.getDocument(false);
+            doc = reqXml.getDocumentReadOnly();
         } catch (SAXException e) {
             // if we can't get the doc, then the request must be bad
             logger.log(Level.WARNING, "Cannot get request's document", e);
@@ -464,7 +464,7 @@ public class TokenServiceImpl implements TokenService {
         Document doc = null;
         try {
             XmlKnob reqXml = context.getRequest().getXmlKnob();
-            doc = reqXml.getDocument(false);
+            doc = reqXml.getDocumentReadOnly();
         } catch (SAXException e) {
             // if we can't get the doc, then the request must be bad
             logger.log(Level.WARNING, "Cannot get request's document", e);

@@ -107,7 +107,7 @@ class JmsRequestHandler {
                 try {
                     status = messageProcessor.processMessage(context);
                     _logger.finest("Policy resulted in status " + status);
-                    responseStream = new ByteArrayInputStream(XmlUtil.nodeToString(context.getResponse().getXmlKnob().getDocument(false)).getBytes());
+                    responseStream = new ByteArrayInputStream(XmlUtil.nodeToString(context.getResponse().getXmlKnob().getDocumentReadOnly()).getBytes());
                 } catch ( PolicyVersionException pve ) {
                     String msg1 = "Request referred to an outdated version of policy";
                     _logger.log( Level.INFO, msg1 );

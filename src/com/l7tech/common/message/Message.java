@@ -22,6 +22,8 @@ import java.io.InputStream;
 /**
  * Represents an abstract Message in the system.  This can be a request or a reply; over HTTP or JMS or transport
  * not yet determined; using SOAP, MIME, XML, or not yet set.  Any message at all.
+ * <p>
+ * All Messages and MessageFacets should be assumed <em>not</em> to be threadsafe.
  */
 public final class Message {
     private MessageFacet rootFacet;
@@ -31,9 +33,6 @@ public final class Message {
      */
     public Message() {
     }
-
-
-
 
     /**
      * Create a Message pre-initialized with a MIME facet attached to the specified InputStream.

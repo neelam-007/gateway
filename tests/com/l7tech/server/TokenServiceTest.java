@@ -103,7 +103,7 @@ public class TokenServiceTest extends TestCase {
 
         service.respondToSecurityTokenRequest(context, authenticator);
 
-        Document responseMsg = response.getXmlKnob().getDocument(true);
+        Document responseMsg = response.getXmlKnob().getDocumentWritable();
 
         log.info("Decorated response (reformatted): " + XmlUtil.nodeToFormattedString(responseMsg));
 
@@ -154,7 +154,7 @@ public class TokenServiceTest extends TestCase {
 
         service.respondToSecurityTokenRequest(context, authenticator);
 
-        Document responseMsg = response.getXmlKnob().getDocument(true);
+        Document responseMsg = response.getXmlKnob().getDocumentWritable();
 
         log.info("Decorated response (reformatted): " + XmlUtil.nodeToFormattedString(responseMsg));
 

@@ -66,7 +66,7 @@ class SoapFacet extends MessageFacet {
                 // fallthrough to software
             }
         }
-        return getSoapInfoDom(message.getXmlKnob().getDocument(false));
+        return getSoapInfoDom(message.getXmlKnob().getDocumentReadOnly());
     }
 
     /** Software fallback version of getSoapInfo.  Requires DOM parsing have been done already. */
@@ -95,7 +95,7 @@ class SoapFacet extends MessageFacet {
                     if (soapInfo != null && soapInfo.payloadNsUri != null) {
                         return soapInfo.payloadNsUri;
                     } else {
-                        return SoapUtil.getPayloadNamespaceUri(getMessage().getXmlKnob().getDocument(false));
+                        return SoapUtil.getPayloadNamespaceUri(getMessage().getXmlKnob().getDocumentReadOnly());
                     }
                 }
 
@@ -129,7 +129,7 @@ class SoapFacet extends MessageFacet {
                  */
                 private SoapFaultDetail gatherFaultDetail() throws SAXException, IOException, InvalidDocumentFormatException {
                     if (faultDetail == null)
-                       faultDetail = SoapFaultUtils.gatherSoapFaultDetail(getMessage().getXmlKnob().getDocument(false));
+                       faultDetail = SoapFaultUtils.gatherSoapFaultDetail(getMessage().getXmlKnob().getDocumentReadOnly());
                     return faultDetail;
                 }
             };

@@ -372,7 +372,7 @@ public class MessageProcessor {
                 if (result == AssertionStatus.NONE) {
                     // Ensure L7a:MessageID exists if we are supposed to have one
                     final Message request = context.getRequest();
-                    final Document requestDoc = request.getXmlKnob().getDocument(false);
+                    final Document requestDoc = request.getXmlKnob().getDocumentReadOnly();
                     if (context.getL7aMessageId() != null)
                         if (SoapUtil.getL7aMessageId(requestDoc) == null)
                             SoapUtil.setL7aMessageId(requestDoc, context.getL7aMessageId());
@@ -384,7 +384,7 @@ public class MessageProcessor {
                         Integer expiryMillis = Integer.getInteger(PROPERTY_TIMESTAMP_EXPIRY);
                         if (expiryMillis != null)
                             context.getWssRequirements().setTimestampTimeoutMillis(expiryMillis.intValue());
-                        wssDecorator.decorateMessage(request.getXmlKnob().getDocument(true), // upgrade to writable document
+                        wssDecorator.decorateMessage(request.getXmlKnob().getDocumentWritable(), // upgrade to writable document
                                                      context.getWssRequirements());
                     } else
                         log.info("Request isn't SOAP; skipping WS-Security decoration");
@@ -548,7 +548,7 @@ public class MessageProcessor {
             if (policy != null && policy.getVersion() != null)
                 postMethod.addRequestHeader(SecureSpanConstants.HttpHeaders.POLICY_VERSION, policy.getVersion());
 
-            final Document decoratedDocument = request.getXmlKnob().getDocument(false);
+            final Document decoratedDocument = request.getXmlKnob().getDocumentReadOnly();
             String postBody = XmlUtil.nodeToString(decoratedDocument);
 
             if (LogFlags.logPosts) {
@@ -660,7 +660,7 @@ public class MessageProcessor {
             });
 
             // Assert that response is XML
-            Document responseDocument = response.getXmlKnob().getDocument(false);
+            Document responseDocument = response.getXmlKnob().getDocumentReadOnly();
             boolean responseDocChanged = false;
 
             if (LogFlags.logResponse) {

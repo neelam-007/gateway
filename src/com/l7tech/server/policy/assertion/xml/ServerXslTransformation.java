@@ -54,7 +54,7 @@ public class ServerXslTransformation implements ServerAssertion {
                     }
 
                     logger.finest("transforming request");
-                    doctotransform = context.getRequest().getXmlKnob().getDocument(true);
+                    doctotransform = context.getRequest().getXmlKnob().getDocumentWritable();
                     break;
                 case XslTransformation.APPLY_TO_RESPONSE:
                     if (!context.getResponse().isXml()) {
@@ -63,7 +63,7 @@ public class ServerXslTransformation implements ServerAssertion {
                     }
 
                     logger.finest("transforming response");
-                    doctotransform = context.getResponse().getXmlKnob().getDocument(true);
+                    doctotransform = context.getResponse().getXmlKnob().getDocumentWritable();
                     break;
                 default:
                     // should not get here!
