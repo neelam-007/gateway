@@ -66,6 +66,10 @@ public class HttpServiceLookup extends ServiceLookup {
                 return null;
             }
             Object server = matches.items[0].service;
+            if (server == null) {
+                logger.severe("Lookup returned null service for '"+cl.getClass()+"' service id '" +matches.items[0].serviceID+"'");
+                return null;
+            }
             /* Prepare the server proxy */
             ProxyPreparer preparer = getProxyPreparer(cl);
             return preparer.prepareProxy(server);
