@@ -613,8 +613,8 @@ public class PolicyApplicationContext extends ProcessingContext {
      */
     public void downloadPolicy(String serviceid)
             throws OperationCanceledException, GeneralSecurityException, HttpChallengeRequiredException,
-                   IOException, ClientCertificateException, KeyStoreCorruptException, PolicyRetryableException,
-                   ConfigurationException
+            IOException, ClientCertificateException, KeyStoreCorruptException, PolicyRetryableException,
+            ConfigurationException, PolicyLockedException
     {
         final Ssg ssg = getSsg();
         final PolicyAttachmentKey pak = getPolicyAttachmentKey();

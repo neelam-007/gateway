@@ -6,6 +6,8 @@
 
 package com.l7tech.proxy.datamodel;
 
+import com.l7tech.proxy.datamodel.exceptions.PolicyLockedException;
+
 import java.io.Serializable;
 import java.util.*;
 import java.util.logging.Logger;
@@ -143,7 +145,7 @@ public class LocalPolicyManager implements PolicyManager, Serializable {
         return found;
     }
 
-    public synchronized void setPolicy(PolicyAttachmentKey key, Policy policy) {
+    public synchronized void setPolicy(PolicyAttachmentKey key, Policy policy) throws PolicyLockedException {
         if (key == null) throw new NullPointerException();
         if (policy == null) throw new NullPointerException();
         if (key.isBeginsWithMatch()) {

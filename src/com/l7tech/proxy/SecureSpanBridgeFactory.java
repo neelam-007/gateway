@@ -14,7 +14,9 @@ import com.l7tech.common.util.CausedIOException;
 import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.xml.InvalidDocumentFormatException;
+import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.PolicyAssertionException;
+import com.l7tech.policy.wsp.WspReader;
 import com.l7tech.proxy.datamodel.*;
 import com.l7tech.proxy.datamodel.exceptions.*;
 import com.l7tech.proxy.message.PolicyApplicationContext;
@@ -36,6 +38,7 @@ import java.security.cert.X509Certificate;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.WeakHashMap;
 
 /**
  * Obtain a SecureSpanBridge implementation.
@@ -139,6 +142,7 @@ public class SecureSpanBridgeFactory {
         private final RequestInterceptor nri;
         private final MessageProcessor mp;
         private final PasswordAuthentication pw;
+        private final PolicyManager originalPolicyManager;
 
         private String localUri = "/bridge/api/NoOriginalUri";
 
@@ -147,6 +151,7 @@ public class SecureSpanBridgeFactory {
             this.nri = nri;
             this.mp = mp;
             this.pw = pw;
+            originalPolicyManager = ssg.getRuntime().getPolicyManager();
         }
 
         Ssg getSsg() {
@@ -159,6 +164,31 @@ public class SecureSpanBridgeFactory {
 
         MessageProcessor getMessageProcessor() {
             return mp;
+        }
+
+        public void setStaticPolicy(String policyXml) throws SAXException {
+            if (policyXml == null) {
+                ssg.getRuntime().setPolicyManager(originalPolicyManager);
+                return;
+            }
+            ssg.getRuntime().setPolicyManager(getStaticPolicyManager(policyXml));
+        }
+
+        private static Map policyManagerCache = Collections.synchronizedMap(new WeakHashMap());
+        private PolicyManager getStaticPolicyManager(String policyXml) throws SAXException {
+            if (policyXml == null) throw new NullPointerException();
+            try {
+                PolicyManager staticPolicyManager = (PolicyManager)policyManagerCache.get(policyXml);
+                if (staticPolicyManager != null)
+                    return staticPolicyManager;
+                Assertion rootAssertion = WspReader.parse(policyXml);
+                Policy policy = new Policy(rootAssertion, null);
+                staticPolicyManager = new StaticPolicyManager(policy);
+                policyManagerCache.put(policyXml, staticPolicyManager);
+                return staticPolicyManager;
+            } catch (IOException e) {
+                throw new SAXException(e);
+            }
         }
 
         public SecureSpanBridge.Result send(String soapAction, Document message) throws SendException, IOException, CausedBadCredentialsException, CausedCertificateAlreadyIssuedException {
@@ -212,6 +242,8 @@ public class SecureSpanBridgeFactory {
             } catch (ProcessorException e) {
                 throw new CausedSendException(e);
             } catch (BadSecurityContextException e) {
+                throw new CausedSendException(e);
+            } catch (PolicyLockedException e) {
                 throw new CausedSendException(e);
             } finally {
                 if (context != null)
@@ -349,5 +381,7 @@ public class SecureSpanBridgeFactory {
                 throw new CausedIOException(e);
             }
         }
+
     }
+
 }

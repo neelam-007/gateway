@@ -6,6 +6,8 @@
 
 package com.l7tech.proxy.datamodel;
 
+import com.l7tech.proxy.datamodel.exceptions.PolicyLockedException;
+
 import java.util.HashMap;
 import java.util.Map;
 
@@ -19,7 +21,7 @@ public class PersistentPolicyManager extends LocalPolicyManager {
     PersistentPolicyManager() {
     }
 
-    public void setPolicy(PolicyAttachmentKey key, Policy policy ) {
+    public void setPolicy(PolicyAttachmentKey key, Policy policy ) throws PolicyLockedException {
         key.setPersistent(true);
         policy.setVersion(null);
         policy.setValid(true); // statically-configured policies must never be ignored

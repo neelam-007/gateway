@@ -6,6 +6,8 @@
 
 package com.l7tech.proxy.datamodel;
 
+import com.l7tech.proxy.datamodel.exceptions.PolicyLockedException;
+
 import java.util.Set;
 
 /**
@@ -46,7 +48,7 @@ public class TransientPolicyManager extends LocalPolicyManager {
         return setCopy;
     }
 
-    public synchronized void setPolicy(PolicyAttachmentKey key, Policy policy ) {
+    public synchronized void setPolicy(PolicyAttachmentKey key, Policy policy ) throws PolicyLockedException {
         if (key == null) throw new NullPointerException();
         if (policy == null) throw new NullPointerException();
 
@@ -58,7 +60,7 @@ public class TransientPolicyManager extends LocalPolicyManager {
                 // Attempt to save non-persistent policy over top of persistent policy.
                 // TODO add hook here to alert an observer and allow them to choose a course of action.
                 // For now, we will always respond as follows: reject the new policy.
-                throw new IllegalStateException("Unable to store new policy: a locked local policy already exists with this policy attachment key.");
+                throw new PolicyLockedException("Unable to store new policy: a locked local policy already exists with this policy attachment key.");
             }
             super.setPolicy(key, policy);
         }

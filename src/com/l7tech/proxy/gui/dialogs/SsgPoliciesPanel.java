@@ -13,6 +13,7 @@ import com.l7tech.policy.wsp.WspWriter;
 import com.l7tech.proxy.datamodel.Policy;
 import com.l7tech.proxy.datamodel.PolicyAttachmentKey;
 import com.l7tech.proxy.datamodel.PolicyManager;
+import com.l7tech.proxy.datamodel.exceptions.PolicyLockedException;
 import com.l7tech.proxy.gui.Gui;
 import com.l7tech.proxy.gui.policy.PolicyTreeCellRenderer;
 import com.l7tech.proxy.gui.policy.PolicyTreeModel;
@@ -253,6 +254,12 @@ class SsgPoliciesPanel extends JPanel {
                               "Unable to import the specified file: " + e.getMessage(),
                               "Unable to read file",
                               JOptionPane.ERROR_MESSAGE);
+                        } catch (PolicyLockedException e) {
+                            log.log(Level.WARNING, "Error saving policy", e);
+                            JOptionPane.showMessageDialog(getRootPane(),
+                              "Unable to save the new policy: " + e.getMessage() + "\nPlease try again.",
+                              "Unable to save policy",
+                              JOptionPane.ERROR_MESSAGE);
                         } finally {
                             if (policyIs != null) try { policyIs.close(); } catch (IOException e) {}
                         }
@@ -343,7 +350,15 @@ class SsgPoliciesPanel extends JPanel {
                     policyCache.flushPolicy(pak);
                     if (!newPak.isPersistent())
                         policyCache.flushPolicy(newPak); // avoid trying to overwrite persistent with transient
-                    policyCache.setPolicy(newPak, policy);
+                    try {
+                        policyCache.setPolicy(newPak, policy);
+                    } catch (PolicyLockedException e1) {
+                        log.log(Level.WARNING, "Error saving policy", e1);
+                        JOptionPane.showMessageDialog(getRootPane(),
+                          "Unable to save the edited policy: " + e1.getMessage() + "\nPlease try again.",
+                          "Unable to save policy",
+                          JOptionPane.ERROR_MESSAGE);
+                    }
                     lastSelectedPolicy = newPak;
                     updatePolicyPanel();
                 }
@@ -422,7 +437,11 @@ class SsgPoliciesPanel extends JPanel {
                             pak.setBeginsWithMatch(p.booleanValue());
                             if (!pak.isPersistent())
                                 policyCache.flushPolicy(pak);
-                            policyCache.setPolicy(pak, policy);
+                            try {
+                                policyCache.setPolicy(pak, policy);
+                            } catch (PolicyLockedException e) {
+                                log.log(Level.WARNING, "Unable to save policy", e);
+                            }
                             updatePolicyPanel();
                         }
                     }
@@ -436,7 +455,11 @@ class SsgPoliciesPanel extends JPanel {
                             pak.setPersistent(p.booleanValue());
                             if (!pak.isPersistent())
                                 policyCache.flushPolicy(pak);
-                            policyCache.setPolicy(pak, policy);
+                            try {
+                                policyCache.setPolicy(pak, policy);
+                            } catch (PolicyLockedException e) {
+                                log.log(Level.WARNING, "Unable to save policy", e);
+                            }
                             updatePolicyPanel();
                         }
                     }

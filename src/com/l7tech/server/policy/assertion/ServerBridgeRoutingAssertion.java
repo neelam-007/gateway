@@ -54,8 +54,6 @@ import java.net.*;
 import java.security.*;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
-import java.util.Collections;
-import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -221,33 +219,8 @@ public class ServerBridgeRoutingAssertion extends ServerRoutingAssertion {
 
         ssg.getRuntime().setHttpClient(httpClient);
 
-        if (hardcodedPolicy != null) {
-            ssg.getRuntime().setPolicyManager(new PolicyManager() {
-                public void flushPolicy(PolicyAttachmentKey policyAttachmentKey) {
-                    // No action needed
-                }
-
-                public Policy getPolicy(PolicyAttachmentKey policyAttachmentKey) {
-                    return hardcodedPolicy;
-                }
-
-                public Policy findMatchingPolicy(PolicyAttachmentKey policyAttachmentKey) {
-                    return hardcodedPolicy;
-                }
-
-                public void setPolicy(PolicyAttachmentKey key, Policy policy) {
-                    throw new IllegalStateException("Unable to store new policy: this Bridge Routing Assertion has a hardcoded policy.");
-                }
-
-                public Set getPolicyAttachmentKeys() {
-                    return Collections.EMPTY_SET;
-                }
-
-                public void clearPolicies() {
-                    // No action needed
-                }
-            });
-        }
+        if (hardcodedPolicy != null)
+            ssg.getRuntime().setPolicyManager(new StaticPolicyManager(hardcodedPolicy));
 
         // TODO use this trust manager somehow
 
@@ -410,6 +383,9 @@ public class ServerBridgeRoutingAssertion extends ServerRoutingAssertion {
                     return AssertionStatus.FAILED;
                 } catch (ProcessorException e) {
                     auditor.logAndAudit(AssertionMessages.EXCEPTION_SEVERE, null, e);
+                    return AssertionStatus.FAILED;
+                } catch (PolicyLockedException e) {
+                    auditor.logAndAudit(AssertionMessages.EXCEPTION_WARNING, null, e);
                     return AssertionStatus.FAILED;
                 }
             } catch (WSDLException we) {

@@ -6,6 +6,8 @@
 
 package com.l7tech.proxy.datamodel;
 
+import com.l7tech.proxy.datamodel.exceptions.PolicyLockedException;
+
 import java.io.Serializable;
 import java.util.Set;
 
@@ -47,9 +49,9 @@ public interface PolicyManager extends Serializable {
      *
      * @param key    the {@link PolicyAttachmentKey} under which to file this {@link Policy}.  May not be null.
      * @param policy the Policy to file.  May not be null.
-     * @throws UnsupportedOperationException if this PolicyManager is read-only.
+     * @throws PolicyLockedException if this PolicyManager is read-only or an existing policy cannot be replaced.
      */
-    void setPolicy(PolicyAttachmentKey key, Policy policy);
+    void setPolicy(PolicyAttachmentKey key, Policy policy) throws PolicyLockedException;
 
     /**
      * Get the set of PolicyAttachmentKey that we currently know about.  These are the ones that

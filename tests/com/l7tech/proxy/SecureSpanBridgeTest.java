@@ -7,9 +7,15 @@
 package com.l7tech.proxy;
 
 import com.l7tech.common.util.XmlUtil;
+import com.l7tech.policy.assertion.Assertion;
+import com.l7tech.policy.assertion.TrueAssertion;
+import com.l7tech.policy.assertion.composite.AllAssertion;
+import com.l7tech.policy.assertion.credential.http.HttpBasic;
+import com.l7tech.policy.wsp.WspWriter;
 
 import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
+import java.util.Arrays;
 import java.util.logging.Logger;
 
 /**
@@ -63,6 +69,16 @@ public class SecureSpanBridgeTest {
         //HexUtils.Slurpage slurpage = HexUtils.slurpUrl(SecureSpanBridgeTest.class.getClassLoader().getResource(SAML4));
         //String message = new String(slurpage.bytes);
         SecureSpanBridge.Result result = bridge.send(soapaction, message);
+        log.info("Got back http status " + result.getHttpStatus());
+        log.info("Got back envelope:\n" + XmlUtil.nodeToString(result.getResponse()));
+
+        // Test static policy
+        Assertion staticAss = new AllAssertion(Arrays.asList(new Assertion[] {
+            new HttpBasic(),
+            new TrueAssertion(),
+        }));
+        bridge.setStaticPolicy(WspWriter.getPolicyXml(staticAss));
+        result = bridge.send(soapaction, message);
         log.info("Got back http status " + result.getHttpStatus());
         log.info("Got back envelope:\n" + XmlUtil.nodeToString(result.getResponse()));
     }

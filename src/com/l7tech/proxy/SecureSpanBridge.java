@@ -42,6 +42,20 @@ public interface SecureSpanBridge {
     public static class CertificateAlreadyIssuedException extends Exception {}
 
     /**
+     * Set a static policy to use for subsequent requests.
+     * Setting a static policy overrides the internal policy cache and disables
+     * dynamic policy discovery.
+     * <p>
+     * Internally, a cache of policy XML String instances to parsed policy trees is kept.  Thus, switching
+     * among a small set of policy XML strings by repeatedly calling this method does not require the same policies
+     * XML String to be reparsed on subsequent calls.
+     *
+     * @param policyXml  a new static policy, or null to disable static policies and re-enable dynamic policy discovery.
+     * @throws SAXException if the specified policy XML cannot be parsed, or is not a valid policy document.
+     */
+    void setStaticPolicy(String policyXml) throws SAXException;
+
+    /**
      * Send a message to the service through the Gateway.
      * <p>
      * If instructed by the Gateway, we will download and apply a security policy to the message and response.

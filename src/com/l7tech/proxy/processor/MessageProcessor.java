@@ -116,10 +116,10 @@ public class MessageProcessor {
      *                                        response from the SSG
      */
     public void processMessage(final PolicyApplicationContext context)
-      throws ClientCertificateException, OperationCanceledException,
-      ConfigurationException, GeneralSecurityException, IOException, SAXException,
-      ResponseValidationException, HttpChallengeRequiredException, PolicyAssertionException,
-      InvalidDocumentFormatException, ProcessorException, BadSecurityContextException
+            throws ClientCertificateException, OperationCanceledException,
+            ConfigurationException, GeneralSecurityException, IOException, SAXException,
+            ResponseValidationException, HttpChallengeRequiredException, PolicyAssertionException,
+            InvalidDocumentFormatException, ProcessorException, BadSecurityContextException, PolicyLockedException
     {
         boolean succeeded = false;
         try {
@@ -550,10 +550,10 @@ public class MessageProcessor {
      *                                        if the response from the SSG could not be undecorated
      */
     private void obtainResponse(final PolicyApplicationContext context)
-      throws ConfigurationException, IOException, PolicyRetryableException, GeneralSecurityException,
-      OperationCanceledException, ClientCertificateException, BadCredentialsException,
-      KeyStoreCorruptException, HttpChallengeRequiredException, SAXException, NoSuchAlgorithmException,
-      InvalidDocumentFormatException, ProcessorException, BadSecurityContextException
+            throws ConfigurationException, IOException, PolicyRetryableException, GeneralSecurityException,
+            OperationCanceledException, ClientCertificateException, BadCredentialsException,
+            KeyStoreCorruptException, HttpChallengeRequiredException, SAXException, NoSuchAlgorithmException,
+            InvalidDocumentFormatException, ProcessorException, BadSecurityContextException, PolicyLockedException
     {
         URL url = getUrl(context);
         final Ssg ssg = context.getSsg();
