@@ -8,6 +8,7 @@ import com.l7tech.policy.PolicyValidatorResult;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.RoutingAssertion;
 import com.l7tech.policy.assertion.SslAssertion;
+import com.l7tech.policy.assertion.xmlsec.XmlResponseSecurity;
 import com.l7tech.policy.assertion.credential.CredentialSourceAssertion;
 import com.l7tech.policy.assertion.identity.IdentityAssertion;
 
@@ -137,12 +138,22 @@ public class DefaultPolicyValidator extends PolicyValidator {
         }
 
         private void processPrecondition(Assertion a) {
-            if (seenRouting) {
-                result.addWarning(
-                  new PolicyValidatorResult.Warning(a,
-                    "The assertion might not work as configured." +
-                   "\nThere is a routing assertion before this assertion.", null)
-                );
+            if (a instanceof SslAssertion) {
+                if (seenRouting) {
+                    result.addWarning(
+                      new PolicyValidatorResult.Warning(a,
+                        "The assertion might not work as configured." +
+                       "\nThere is a routing assertion before this assertion.", null)
+                    );
+                }
+            } else if (a instanceof XmlResponseSecurity) {
+                if (!seenRouting) {
+                    result.addWarning(
+                      new PolicyValidatorResult.Warning(a,
+                        "The assertion might not work as configured." +
+                       "\nXml Response Security must occur after routing.", null)
+                    );
+                }
             }
             seenPreconditions = true;
         }
@@ -168,7 +179,10 @@ public class DefaultPolicyValidator extends PolicyValidator {
         }
 
         private boolean isPreconditionAssertion(Assertion a) {
-            return a instanceof SslAssertion;
+            // check preconditions for both SslAssertion and  XmlResponseSecurity assertions - see processPrecondition()
+            if (a instanceof SslAssertion || a instanceof XmlResponseSecurity)
+                return true;
+            return false;
         }
 
         boolean seenPreconditions = false;
