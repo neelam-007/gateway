@@ -111,7 +111,8 @@ public class ServerSamlSecurity implements ServerAssertion {
     private boolean validateIntervalConditions(AssertionType at)
       throws InvalidAssertionException {
         checkNonNullAssertionElement("Assertion", at);
-        Date now = new Date();
+        Calendar now = Calendar.getInstance();
+        now.setTime(new Date());
         ConditionsType type = at.getConditions();
         checkNonNullAssertionElement("Conditions", type);
         Calendar notBefore = type.getNotBefore();
