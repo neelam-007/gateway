@@ -41,6 +41,7 @@ my $pid = $$;
 my $save_file="/etc/SSG_INSTALL";
 my $group_name="gateway";
 my $user_name="gateway";
+my $setkey="/ssg/bin/setkeys.sh";
 
 # Files subject to configuration
 my $front_conf = "/etc/sysconfig/network-scripts/ifcfg-eth1";
@@ -420,8 +421,8 @@ EOF
 	# 5. gen keys?  (keys should be generated only after hostname/cluster hostname confirmed)
 	if (($Conf{gc_cluster} eq "n") || ($Conf{gc_cluster} eq "y" && $Conf{gc_firstnode} eq "y")) {
 		# gen the keys, otherwise copy them
-		print "Invoke /ssg/bin/setkeys.sh script to generate keys\n";
-		system("su - gateway -c /ssg/bin/setkeys.sh");
+		print "Invoke $setkey script to generate keys\n";
+		system("su - gateway -c $setkey");
 
 	} else {
 		print "Copy keys & keys configuration files from the first node...\n";
@@ -536,6 +537,9 @@ DESCRIPTION
     * GRANT ALL ON ssg.* to <db_username>@\'localhost\' identified by \'<db user password>\';
     * GRANT REPLICATION SLAVE ON *.* to <db replicator username>@\'%\' identified by \'<db replicator password>\';
     However, this script will not revoke any access that has been granted. You will need to perform manual revoke access if necessary.
+
+    $setkey will be run to generate CA and SSL keys if this is a non cluster SSG, or this node is the first node of a cluster SSG. 
+    For the rest of the nodes (not the first node), CA and SSL keys will be copied from the first node of the cluster.
 
 OPTION
     -apply     Don't ask for config, run OS config using $save_file
