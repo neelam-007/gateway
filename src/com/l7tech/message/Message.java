@@ -22,6 +22,18 @@ public interface Message {
         protected String name;
         protected String value;
         protected Map params = new HashMap();
+
+        public String getName() {
+            return name;
+        }
+
+        public String getValue() {
+            return value;
+        }
+
+        public Map getParams() {
+            return params;
+        }                       
     }
 
     public static class Part {
@@ -29,8 +41,25 @@ public interface Message {
             return (HeaderValue)headers.get(name);
         }
 
+        public int getPosition() {
+            return position;
+        }
+
+        public void setPostion(int position) {
+            this.position = position;
+        }
+
+        public String getContent() {
+            return content;
+        }
+
+        public Map getHeaders() {
+            return headers;
+        }
+
         protected String content;
         protected Map headers = new HashMap();
+        protected int position;
     }
 
     static final String PREFIX             = "com.l7tech.message";

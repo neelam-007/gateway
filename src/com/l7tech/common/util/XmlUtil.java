@@ -37,6 +37,7 @@ public class XmlUtil {
     public static final String CONTENT_TYPE = "Content-Type";
     public static final String CONTENT_ID = "Content-Id";
     public static final String TEXT_XML = "text/xml";
+    public static final String IMAGE_GIF = "image/gif";
 
     private static final EntityResolver SAFE_ENTITY_RESOLVER = new EntityResolver() {
         public InputSource resolveEntity( String publicId, String systemId ) throws SAXException {
