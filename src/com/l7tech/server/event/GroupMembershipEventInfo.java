@@ -38,9 +38,13 @@ public class GroupMembershipEventInfo {
         }
 
         try {
+            NamedEntity g = null;
+            NamedEntity u = null;
             IdentityProvider provider = IdentityProviderFactory.getProvider(providerOid);
-            NamedEntity g = (PersistentGroup)provider.getGroupManager().findByPrimaryKey(Long.toString(gm.getGroupOid()));
-            NamedEntity u = (PersistentUser)provider.getUserManager().findByPrimaryKey(Long.toString(gm.getUserOid()));
+            if (provider != null) {
+                g = (PersistentGroup)provider.getGroupManager().findByPrimaryKey(Long.toString(gm.getGroupOid()));
+                u = (PersistentUser)provider.getUserManager().findByPrimaryKey(Long.toString(gm.getUserOid()));
+            }
 
             if (g == null) g = new DeletedEntity(groupClass, gm.getGroupOid());
             if (u == null) u = new DeletedEntity(userClass, gm.getUserOid());
