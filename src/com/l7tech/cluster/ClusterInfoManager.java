@@ -161,6 +161,7 @@ public class ClusterInfoManager {
                     ClusterNodeInfo output = getNodeStatusFromDB(mac);
                     if (output != null) {
                         selfId = mac;
+                        logger.finest("will update status for row: " + mac);
                         return output;
                     }
                 }
@@ -188,6 +189,7 @@ public class ClusterInfoManager {
                         String msg = "cannot record new cluster node";
                         logger.log(Level.SEVERE, msg, e);
                     }
+                    logger.finest("no cluster status row existed for this server. created one");
                     return newClusterInfo;
                 }
             }
@@ -242,7 +244,9 @@ public class ClusterInfoManager {
     private Collection getMacs() {
         ArrayList output = new ArrayList();
         output.addAll(getIfconfigMac());
-        output.addAll(getIpconfigMac());
+        if (output.isEmpty()) {
+            output.addAll(getIpconfigMac());
+        }
         return output;
     }
 
