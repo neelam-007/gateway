@@ -280,7 +280,8 @@ public class LdapIdentityProvider implements IdentityProvider {
                 EntityHeader header = searchResultToHeader(sr, dn);
                 // if we successfully constructed a header, add it to result list
                 if (header != null) output.add(header);
-                else logger.warning("objectclass not supported for dn=" + dn);
+                else logger.warning("entry not valid or objectclass not supported for dn=" + dn + ". this " +
+                                    "entry will not be presented as part of the search results.");
             }
             if (answer != null) answer.close();
         } catch (NamingException e) {
@@ -524,10 +525,59 @@ public class LdapIdentityProvider implements IdentityProvider {
     }
 
     /**
-     * determines whether the SearchResult contains a User or a Group. this is a utility method used throughout
-     * this package
+     * In MSAD, there is an attribute named userAccountControl which contains information
+     * regarding the validity of the account pointed to by the ldap entry. This method will return false
+     * IF the attribute is present AND IF one of those attributes is set:
+     * 0x00000002 	The user account is disabled.
+     * 0x00000010 	The account is currently locked out.
+     *
+     * Otherwise, will return true.
+     *
+     * Note: not sure what to do about these flag:
+     * 0x00800000 	The user password has expired. This flag is created by the system using data from the
+     *              Pwd-Last-Set attribute and the domain policy.
+     * 0x00040000 	The user must log on using a smart card.
+     *
+     * See bugzilla #1116 for the justification of this check.
+     */
+    private boolean isValidEntryBasedOnUserAccountControlAttribute(Attributes attibutes) {
+        final long DISABLED_FLAG    = 0x00000002;
+        final long LOCKED_FLAG      = 0x00000010;
+        Attribute userAccountControlAttr = attibutes.get("userAccountControl");
+        if (userAccountControlAttr != null && userAccountControlAttr.size() > 0) {
+            Object found = null;
+            try {
+                found = userAccountControlAttr.get(0);
+            } catch (NamingException e) {
+                logger.log(Level.SEVERE, "Problem accessing the userAccountControl attribute");
+            }
+            Long value = null;
+            if (found instanceof String) {
+                value = new Long((String)found);
+            } else if (found instanceof Long) {
+                value = (Long)found;
+            } else {
+                logger.severe("FOUND userAccountControl attribute but " +
+                              "is of unexpected type: " + found.getClass().getName());
+            }
+            if (value != null) {
+                if ((value.longValue() & DISABLED_FLAG) == DISABLED_FLAG) {
+                    logger.fine("Disabled flag encountered");
+                    return false;
+                } else if ((value.longValue() & LOCKED_FLAG) == LOCKED_FLAG) {
+                    logger.fine("Locked flag encountered");
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+
+    /**
+     * Constructs an EntityHeader for the dn passed.
      * @param sr
-     * @return EntityType.USER, EntityType.GROUP, or EntityType.UNDEFINED
+     * @return the EntityHeader for the dn or null if the object class is not supported or if the entity
+     * should be ignored (perhaps disabled)
      */
     EntityHeader searchResultToHeader(SearchResult sr, String dn) {
         Attributes atts = sr.getAttributes();
@@ -538,6 +588,7 @@ public class LdapIdentityProvider implements IdentityProvider {
         for (int i = 0; i < userTypes.length; i ++) {
             String userclass = userTypes[i].getObjClass();
             if (attrContainsCaseIndependent(objectclasses, userclass)) {
+                if (!isValidEntryBasedOnUserAccountControlAttribute(atts)) return null;
                 Object tmp = null;
                 String login = null;
                 try {
