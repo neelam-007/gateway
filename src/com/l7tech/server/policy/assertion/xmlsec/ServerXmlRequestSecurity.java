@@ -132,7 +132,7 @@ public class ServerXmlRequestSecurity implements ServerAssertion {
                 X509Certificate knownCert = null;
                 LoginCredentials pc = request.getPrincipalCredentials();
                 if ( pc.getFormat().isClientCert() ) {
-                    knownCert = (X509Certificate) request.getPrincipalCredentials().getPayload();
+                    knownCert = (X509Certificate)request.getPrincipalCredentials().getPayload();
                 }
 
                 if (knownCert == null) {
@@ -152,7 +152,7 @@ public class ServerXmlRequestSecurity implements ServerAssertion {
                 if ( !knownCert.equals( xmlCertChain[0] ) ) {
                     logger.log( Level.WARNING,
                                 "XmlRequestSecurity signing certificate did not match previously issued certificate" );
-                    return AssertionStatus.FALSIFIED;
+                    return AssertionStatus.AUTH_FAILED;
                 }
 
                 // FALLTHROUGH - authenticated user matches cert just fine
