@@ -12,6 +12,7 @@ import com.l7tech.common.xml.XpathExpression;
 import org.jaxen.JaxenException;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
+import org.w3c.dom.Node;
 
 import java.io.IOException;
 import java.security.*;
@@ -104,7 +105,7 @@ class Signer extends SecurityProcessor {
                         throw new SecurityProcessorException(message);
                     }
                     element = (Element)nodes.get(0);
-                    if (element.equals(document.getDocumentElement())) {
+                    if (Node.DOCUMENT_NODE == element.getNodeType()) {
                         envelopeProcessed = true; //signal to ignore everything else. Should scream if more eleemnts exist?
                     }
                 } else {
@@ -112,14 +113,18 @@ class Signer extends SecurityProcessor {
                     envelopeProcessed = true; //signal to ignore everything else. Should scream if more lements exist?
                 }
                 if (elementSecurity.isEncryption()) {
-                    check(elementSecurity);
-                    // we do above check to verify if the parameters are valid and everything is ready for encryption
-                    final String referenceId = ENC_REFERENCE + encReferenceIdSuffix;
-                    byte[] keyreq = encryptionKey.getEncoded();
-                    long sessId = session.getId();
-                    XmlMangler.encryptXml(element, keyreq, Long.toString(sessId), referenceId);
-                    ++encReferenceIdSuffix;
-                    logger.fine("encrypted element for XPath" + xpath.getExpression());
+                    if (element.hasChildNodes()) {
+                        check(elementSecurity);
+                        // we do above check to verify if the parameters are valid and everything is ready for encryption
+                        final String referenceId = ENC_REFERENCE + encReferenceIdSuffix;
+                        byte[] keyreq = encryptionKey.getEncoded();
+                        long sessId = session.getId();
+                        XmlMangler.encryptXml(element, keyreq, Long.toString(sessId), referenceId);
+                        ++encReferenceIdSuffix;
+                        logger.fine("encrypted element for XPath" + xpath.getExpression());
+                    } else {
+                        logger.warning("Encrypt requested XPath '" + xpath.getExpression() + "'" + " but no child nodes exist, skipping encryption");
+                    }
                 }
                 // dsig
                 final String referenceId = SIGN_REFERENCE + signReferenceIdSuffix;

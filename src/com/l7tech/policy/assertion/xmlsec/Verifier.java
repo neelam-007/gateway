@@ -13,6 +13,7 @@ import com.l7tech.common.xml.XpathExpression;
 import org.jaxen.JaxenException;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
+import org.w3c.dom.Node;
 import org.xml.sax.SAXException;
 
 import javax.xml.parsers.ParserConfigurationException;
@@ -88,7 +89,7 @@ class Verifier extends SecurityProcessor {
                         throw new SecurityProcessorException(message);
                     }
                     element = (Element)nodes.get(0);
-                    if (element.equals(document.getDocumentElement())) {
+                    if (Node.DOCUMENT_NODE == element.getNodeType()) {
                         envelopeProcessed = true; //signal to ignore everything else. Should scream if more elemnts exist?
                     }
                 } else {
@@ -102,10 +103,14 @@ class Verifier extends SecurityProcessor {
                 documentCertificate = dsigHelper.validateSignature(document, element);
                 logger.fine("signature of response message verified");
 
-
                 if (elementSecurity.isEncryption()) { //element security is required
-                    check(elementSecurity);
-                    XmlMangler.decryptXml(document, decryptionKey);
+                    if (element.hasChildNodes()) {
+                        check(elementSecurity);
+                        XmlMangler.decryptXml(document, decryptionKey);
+                    } else {
+                        logger.warning("Encrypt requested XPath '" + xpath.getExpression() + "'" + " but no child nodes exist, skipping encryption");
+                    }
+
                 }
                 logger.fine("response message element decrypted");
             }
