@@ -75,6 +75,8 @@
         <id name="oid" column="oid" type="long">
             <generator class="hilo.long"/>
         </id>
+
+        <property name="providerOid" column="provider_oid" type="long"/>
         <property name="description" type="string"/>
         <property name="name" type="string"/>
     </class>
@@ -94,17 +96,18 @@
         <id name="oid" column="oid" type="long">
             <generator class="hilo.long"/>
         </id>
+        <property name="providerOid" column="provider_oid" type="long"/>
         <property name="login" type="string"/>
         <property name="password" type="string"/>
-        <property name="firstName" type="string"/>
-        <property name="lastName" type="string"/>
+        <property name="firstName" column="first_name"  type="string"/>
+        <property name="lastName" column="last_name" type="string"/>
         <property name="email" type="string"/>
         <property name="title" type="string"/>
         <property name="department" type="string"/>
         <property name="organization" type="com.l7tech.identity.internal.imp.OrganizationImp"/>
         <property name="address" type="com.l7tech.identity.internal.imp.AddressImp"/>
-        <property name="billingAddress" type="com.l7tech.identity.internal.imp.AddressImp"/>
-        <property name="mailingAddress" type="com.l7tech.identity.internal.imp.AddressImp"/>
+        <property name="billingAddress" column="billing_address" type="com.l7tech.identity.internal.imp.AddressImp"/>
+        <property name="mailingAddress" column="mailing_address" type="com.l7tech.identity.internal.imp.AddressImp"/>
 <!--        <property name="groups" type="set"/> -->
     </class>
 
