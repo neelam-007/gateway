@@ -10,6 +10,7 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
 import java.security.cert.X509Certificate;
+import java.security.PrivateKey;
 import java.util.Date;
 
 /**
@@ -55,5 +56,7 @@ public interface WssProcessor {
 
     public static class ProcessorException extends Exception {}
 
-    ProcessorResult undecorateMessage(Document message) throws ProcessorException;
+    ProcessorResult undecorateMessage(Document message,
+                                      X509Certificate recipientCertificate,
+                                      PrivateKey recipientPrivateKey) throws ProcessorException;
 }

@@ -10,6 +10,7 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
 import java.security.cert.X509Certificate;
+import java.security.PrivateKey;
 
 /**
  * Creates a Security header and decorates a message according to instructions passed in.
@@ -19,6 +20,8 @@ import java.security.cert.X509Certificate;
 public interface WssDecorator {
     Document decorateMessage(Document message,
                              X509Certificate recipientCertificate,
+                             X509Certificate senderCertificate,
+                             PrivateKey senderPrivateKey,
                              Element[] elementsToEncrypt,
                              Element[] elementsToSign);
 }
