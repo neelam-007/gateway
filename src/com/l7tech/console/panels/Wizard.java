@@ -3,6 +3,7 @@ package com.l7tech.console.panels;
 import com.l7tech.console.event.WizardEvent;
 import com.l7tech.console.event.WizardListener;
 import com.l7tech.console.event.WizardAdapter;
+import com.l7tech.common.gui.widgets.WrappingLabel;
 
 import javax.swing.*;
 import javax.swing.border.CompoundBorder;
@@ -328,7 +329,7 @@ public class Wizard extends JDialog {
         if (stepDescriptionTextArea != null)
             return stepDescriptionTextArea;
 
-        stepDescriptionTextArea = new JTextArea();
+        stepDescriptionTextArea = new WrappingLabel();
         stepDescriptionTextArea.setEditable(false);
         stepDescriptionTextArea.setLineWrap(true);
         stepDescriptionTextArea.setWrapStyleWord(true);
