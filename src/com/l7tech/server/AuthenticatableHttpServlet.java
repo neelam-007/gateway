@@ -348,7 +348,7 @@ public abstract class AuthenticatableHttpServlet extends HttpServlet {
     protected void endTransaction() {
         try {
             PersistenceContext context = PersistenceContext.getCurrent();
-            context.commitTransaction();
+            context.commitIfPresent();
             context.close();
         } catch (SQLException e) {
             logger.log(Level.WARNING, "end transaction error", e);
