@@ -33,7 +33,7 @@ public class ContentTypeHeader extends MimeHeader {
             XML_DEFAULT.getEncoding();
             OCTET_STREAM_DEFAULT = parseValue("application/octet-stream");
             OCTET_STREAM_DEFAULT.getEncoding();
-        } catch (IOException e) {
+        } catch (Throwable e) {
             throw new Error(e);
         }
     }
@@ -164,7 +164,7 @@ public class ContentTypeHeader extends MimeHeader {
             this.mimeCharset = (String)getParam("charset");
 
             if (mimeCharset == null) {
-                logger.info("No charset value found in Content-Type header; assuming " + ENCODING);
+                logger.finest("No charset value found in Content-Type header; assuming " + ENCODING);
                 javaEncoding = ENCODING;
             } else {
                 String tmp = MimeUtility.javaCharset(mimeCharset);

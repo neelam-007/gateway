@@ -493,7 +493,6 @@
                 <exclude name="com/l7tech/common/util/Pkcs12*.class"/>
                 <exclude name="com/l7tech/common/security/xml/processor/**/*"/>
                 <exclude name="com/l7tech/common/security/xml/decorator/**/*"/>
-                <exclude name="com/l7tech/common/mime/**/*"/>
 
                 <include name="com/l7tech/cluster/ClusterNodeInfo.class"/>
                 <include name="com/l7tech/cluster/ClusterStatusAdmin.class"/>
