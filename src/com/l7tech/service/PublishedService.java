@@ -102,7 +102,8 @@ public class PublishedService extends NamedEntityImp {
         if ( _wsdlPort == null ) {
             Iterator services = parsedWsdl().getServices().iterator();
             Service wsdlService = null;
-            Port wsdlPort = null;
+            Port pork = null;
+            Port soapPort = null;
 
             int numServices = 0;
             while ( services.hasNext() ) {
@@ -117,16 +118,27 @@ public class PublishedService extends NamedEntityImp {
                 Iterator portKeys = ports.keySet().iterator();
                 String portKey;
                 if ( portKeys.hasNext() ) {
-                    numPorts++;
-                    if ( wsdlPort == null ) {
+                    if ( soapPort == null ) {
                         portKey = (String)portKeys.next();
-                        wsdlPort = (Port)ports.get(portKey);
+                        pork = (Port)ports.get(portKey);
+
+                        List elements = pork.getExtensibilityElements();
+                        ExtensibilityElement eel;
+                        // Find the first Port that contains a SOAPAddress eel
+                        for ( int i = 0; i < elements.size(); i++ ) {
+                            eel = (ExtensibilityElement)elements.get(i);
+                            if ( eel instanceof SOAPAddress ) {
+                                soapPort = pork;
+                                numPorts++;
+                            }
+                        }
+
                     }
                 }
                 if ( numPorts > 1 ) _log.warn( "WSDL " + getWsdlUrl() + " has more than one port, used the first." );
             }
             if ( numServices > 1 ) _log.warn( "WSDL " + getWsdlUrl() + " has more than one service, used the first." );
-            _wsdlPort = wsdlPort;
+            _wsdlPort = soapPort;
         }
 
         return _wsdlPort;
