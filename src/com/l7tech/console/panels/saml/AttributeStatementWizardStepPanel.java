@@ -97,8 +97,8 @@ public class AttributeStatementWizardStepPanel extends WizardStepPanel {
     public void readSettings(Object settings) throws IllegalArgumentException {
         RequestWssSaml assertion = (RequestWssSaml)settings;
         SamlAttributeStatement statement = assertion.getAttributeStatement();
+        setSkipped(statement == null);
         if (statement == null) {
-            setSkipped(true);
             return;
         }
 
