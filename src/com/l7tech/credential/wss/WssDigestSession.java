@@ -6,8 +6,10 @@
 
 package com.l7tech.credential.wss;
 
+import com.l7tech.credential.DigestSession;
+
 /**
  * @author alex
  */
-public class WssDigestSession {
+public class WssDigestSession extends DigestSession {
 }

@@ -6,8 +6,10 @@
 
 package com.l7tech.credential.http;
 
+import com.l7tech.credential.DigestSession;
+
 /**
  * @author alex
  */
-public class HttpDigestSession {
+public class HttpDigestSession extends DigestSession {
 }
