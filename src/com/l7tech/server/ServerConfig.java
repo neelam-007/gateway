@@ -38,6 +38,7 @@ public class ServerConfig {
     public static final String PARAM_HTTPS_PORTS       = "httpsPorts";
     public static final String PARAM_HOSTNAME          = "hostname";
     public static final String PARAM_SYSTEMPROPS       = "systemPropertiesPath";
+    public static final String PARAM_SERVERCOMPONENTS  = "serverComponents";
 
     public static final String PROPS_PATH_PROPERTY = "com.l7tech.server.serverConfigPropertiesPath";
     public static final String PROPS_PATH_DEFAULT = "/ssg/etc/conf/serverconfig.properties";
