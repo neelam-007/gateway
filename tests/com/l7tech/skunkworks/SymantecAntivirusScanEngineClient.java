@@ -71,14 +71,14 @@ public class SymantecAntivirusScanEngineClient {
 
         byte[] returnedfromsav = new byte[4096];
         int read = 0;
-        read = socket.getInputStream().read(returnedfromsav);
+        read = socket.getInputStream().read(returnedfromsav); // todo, some sort of timeout here too
         StringBuffer output = new StringBuffer();
         while (read > 0) {
             String tmp = new String(returnedfromsav, 0, read);
             output.append(tmp);
             // are we done? (the server does not close the socket when it
             // is done so we have to be careful to not block current thread
-            // by simply reading from socket)
+            // by simply reading from socket - we need a timeout)
             if (socket.getInputStream().available() <= 0) {
                 try {
                     Thread.sleep(250);
