@@ -1,6 +1,9 @@
 package com.l7tech.service;
 
 import com.l7tech.objectmodel.*;
+import com.l7tech.server.policy.assertion.ServerAssertion;
+import com.l7tech.message.Request;
+import com.l7tech.service.resolution.ServiceResolutionException;
 
 /**
  * Layer 7 Technologies, inc.
@@ -36,8 +39,6 @@ public interface ServiceManager extends EntityManager {
      */
     long save( PublishedService service ) throws SaveException;
 
-    public int getCurrentPolicyVersion(long policyId) throws FindException; 
-
     /**
      * updates a policy service. call this instead of save if the service
      * has an history. on the console side implementation, you can call save
@@ -55,4 +56,21 @@ public interface ServiceManager extends EntityManager {
      * @throws DeleteException
      */
     void delete( PublishedService service ) throws DeleteException;
+
+    /**
+     * returns the parsed server-side policy for a specific PublishedService
+     */
+    ServerAssertion getServerPolicy(long serviceOid) throws FindException;
+
+    /**
+     * resolves to which published service the passed request applies to
+     */
+    PublishedService resolve(Request req) throws ServiceResolutionException;
+
+    /**
+     * returns a ServiceStatistics object for the specified serviceid
+     */
+    ServiceStatistics getServiceStatistics(long serviceOid) throws FindException;
+
+    int getCurrentPolicyVersion(long policyId) throws FindException;
  }

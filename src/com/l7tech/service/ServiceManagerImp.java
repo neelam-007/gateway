@@ -11,6 +11,9 @@ import cirrus.hibernate.Session;
 import com.l7tech.logging.LogManager;
 import com.l7tech.objectmodel.*;
 import com.l7tech.service.resolution.ResolutionManager;
+import com.l7tech.service.resolution.ServiceResolutionException;
+import com.l7tech.server.policy.assertion.ServerAssertion;
+import com.l7tech.message.Request;
 
 import java.io.IOException;
 import java.rmi.RemoteException;
@@ -257,6 +260,26 @@ public class ServiceManagerImp extends HibernateEntityManager implements Service
             String msg = "could not register for transaction callback";
             logger.log(Level.WARNING, msg, e);
             throw new DeleteException(msg, e);
+        }
+    }
+
+    public ServerAssertion getServerPolicy(long serviceOid) throws FindException {
+        try {
+            return ServiceCache.getInstance().getServerPolicy(serviceOid);
+        } catch (InterruptedException e) {
+            throw new FindException("error accessing policy from cache", e);
+        }
+    }
+
+    public PublishedService resolve(Request req) throws ServiceResolutionException {
+        return ServiceCache.getInstance().resolve(req);
+    }
+
+    public ServiceStatistics getServiceStatistics(long serviceOid) throws FindException {
+        try {
+            return ServiceCache.getInstance().getServiceStatistics(serviceOid);
+        } catch (InterruptedException e) {
+            throw new FindException("error accessing statistics from cache", e);
         }
     }
 

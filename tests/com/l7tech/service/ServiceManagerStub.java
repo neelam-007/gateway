@@ -5,6 +5,7 @@ import com.l7tech.message.Request;
 import com.l7tech.service.resolution.ServiceResolutionException;
 import com.l7tech.identity.StubDataStore;
 import com.l7tech.common.xml.Wsdl;
+import com.l7tech.server.policy.assertion.ServerAssertion;
 
 import javax.wsdl.WSDLException;
 import java.rmi.RemoteException;
@@ -132,6 +133,18 @@ public class ServiceManagerStub implements ServiceManager {
             throw new DeleteException("Could not find service oid= " + service.getOid());
         }
 
+    }
+
+    public ServerAssertion getServerPolicy(long serviceOid) throws FindException {
+        throw new UnsupportedOperationException("todo");
+    }
+
+    public PublishedService resolve(Request req) throws ServiceResolutionException {
+        throw new UnsupportedOperationException("todo");
+    }
+
+    public ServiceStatistics getServiceStatistics(long serviceOid) throws FindException {
+        throw new UnsupportedOperationException("todo");
     }
 
     /**
