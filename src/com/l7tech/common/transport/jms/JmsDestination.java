@@ -22,6 +22,28 @@ public class JmsDestination extends NamedEntityImp implements Serializable {
     private JmsProvider _provider;
     private String _destinationName;
     private JmsReplyType _replyType;
+    private String _username;
+    private String _password;
+
+    public String getUsername() {
+        return _username;
+    }
+
+    public void setUsername( String username ) {
+        _username = username;
+    }
+
+    public String getPassword() {
+        return _password;
+    }
+
+    public void setPassword( String password ) {
+        _password = password;
+    }
+
+    public String toString() {
+        return _provider.getName() + "/" + _name;
+    }
 
     /** Optional, set only if {@link #_replyType} is {@link com.l7tech.common.transport.jms.JmsReplyType#REPLY_TO_OTHER} */
     private JmsDestination _replyDestination;
