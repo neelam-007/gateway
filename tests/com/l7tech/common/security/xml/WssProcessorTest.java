@@ -163,7 +163,7 @@ public class WssProcessorTest extends TestCase {
         doTest(makeEttkTestDocument("websphere signed request", TestDocuments.WEBSPHERE_SIGNED_REQUEST));
     }
 
-    public void testFrancoisAgentSignedRequest() throws Exception {
+    public void testFrancisAgentSignedRequest() throws Exception {
         doTest(makeDotNetTestDocument("agent failing signed request", TestDocuments.AGENT_FAILING_SIGNED_REQUEST));
     }
 
