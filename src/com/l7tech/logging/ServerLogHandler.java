@@ -195,12 +195,12 @@ public class ServerLogHandler extends Handler {
             session = context.getSession();
         } catch (SQLException e) {
             reportException("cannot get persistence context", e);
+            if ( context != null ) context.close();
             return;
         } catch (HibernateException e) {
             reportException("cannot get session", e);
-            return;
-        } finally {
             if ( context != null ) context.close();
+            return;
         }
 
         try {
