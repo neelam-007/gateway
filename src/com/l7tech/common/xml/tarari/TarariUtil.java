@@ -34,6 +34,12 @@ public class TarariUtil {
         "/*[local-name()=\"Envelope\"]/*[1][local-name()=\"Header\"]/*[local-name()=\"Security\"]"
     };
 
+    /* Index of our own SOAP payload element xpath.  1-based index, ready to pass to RAXContext.getCount(). */
+    public static final int XPATH_INDEX_PAYLOAD = 6;
+
+    /* Index of our own Security header element xpath.  1-based index, ready to pass to RAXContext.getCount(). */
+    public static final int XPATH_INDEX_SECHEADER = 7;
+
     public static final String NS_XPATH_PREFIX = "//*[namespace-uri()=\"";
     public static final String NS_XPATH_SUFFIX = "\"]";
 

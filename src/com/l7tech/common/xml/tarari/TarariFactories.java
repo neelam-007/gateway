@@ -21,8 +21,8 @@ import com.tarari.xml.xpath.XPathProcessor;
 import com.tarari.xml.xpath.XPathProcessorException;
 import org.xml.sax.SAXException;
 
-import java.io.InputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.logging.Logger;
 
 /**
@@ -56,11 +56,11 @@ public class TarariFactories implements SoapInfoFactory, TarariMessageContextFac
         boolean hasSecurityHeaders = false;
         RAXContext raxContext = messageContext.getRaxContext();
         if (raxContext.isSoap(serverContext.getSoapNamespaceUriIndices())) {
-            int numUris = messageContext.getRaxContext().getCount(0, 6);
+            int numUris = messageContext.getRaxContext().getCount(0, TarariUtil.XPATH_INDEX_PAYLOAD);
             if (numUris <= 0) {
                 logger.info("Couldn't find a namespace URI for SOAP payload");
             } else {
-                NodeSet payloadNodes = raxContext.getNodeSet(0, 6);
+                NodeSet payloadNodes = raxContext.getNodeSet(0, TarariUtil.XPATH_INDEX_PAYLOAD);
                 if (payloadNodes == null) {
                     throw new SAXException("SOAP payload NodeSet was null but count was >= 1");
                 }
@@ -70,11 +70,11 @@ public class TarariFactories implements SoapInfoFactory, TarariMessageContextFac
                 }
             }
 
-            int numSec = raxContext.getCount(0, 7);
+            int numSec = raxContext.getCount(0, TarariUtil.XPATH_INDEX_SECHEADER);
             if (numSec <= 0) {
                 logger.fine("No Security header found");
             } else {
-                NodeSet secNodes = raxContext.getNodeSet(0, 7);
+                NodeSet secNodes = raxContext.getNodeSet(0, TarariUtil.XPATH_INDEX_SECHEADER);
                 if (secNodes == null || secNodes.getNodeCount() <= 0) {
                     throw new SAXException("Security NodeSet empty or null, but count was >= 1");
                 }

@@ -86,6 +86,8 @@ public abstract class ServerAcceleratedXpathAssertion implements ServerAssertion
         TarariKnob tknob = null;
         Message mess = isReq ? context.getRequest() : context.getResponse();
         try {
+            // Ensure Tarari context is attached, if possible
+            // TODO need a better way to attach this
             mess.isSoap();
         } catch (SAXException e) {
             auditor.logAndAudit(isReq ? AssertionMessages.XPATH_REQUEST_NOT_XML : AssertionMessages.XPATH_RESPONSE_NOT_XML);
