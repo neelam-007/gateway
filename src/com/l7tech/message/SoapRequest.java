@@ -77,7 +77,17 @@ public class SoapRequest extends XmlMessageAdapter implements SoapMessage, XmlRe
         _authenticated = authenticated;
     }
 
+    public synchronized boolean isRouted() {
+        return _routed;
+    }
+
+    public synchronized void setRouted(boolean routed) {
+        _routed = routed;
+    }
+
     protected boolean _authenticated;
+    protected boolean _routed;
+
     protected PrincipalCredentials _principalCredentials;
     protected InputStream _requestStream;
 }

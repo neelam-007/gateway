@@ -54,6 +54,8 @@ public interface Request extends Message {
     void setPrincipalCredentials( PrincipalCredentials pc );
 
     boolean isAuthenticated();
-
     void setAuthenticated( boolean authenticated );
+
+    boolean isRouted();
+    void setRouted( boolean routed );
 }
