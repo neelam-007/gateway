@@ -23,6 +23,7 @@ public class AbstractLocatorTest extends TestCase {
      */
     public AbstractLocatorTest(String name) {
         super(name);
+
     }
 
     /**
@@ -35,6 +36,7 @@ public class AbstractLocatorTest extends TestCase {
             /**
              * test setup that deletes the stub data store; will trigger
              * store recreate
+             * sets the environment
              * @throws Exception on error deleting the stub data store
              */
             protected void setUp() throws Exception {
@@ -42,6 +44,10 @@ public class AbstractLocatorTest extends TestCase {
                 if (f.exists()) {
                     f.delete();
                 }
+
+                System.setProperty("com.l7tech.util.locator.properties",
+                        "/com/l7tech/console/resources/services.properties");
+
             }
 
             protected void tearDown() throws Exception {
@@ -61,7 +67,7 @@ public class AbstractLocatorTest extends TestCase {
 
     public void testSimpleLookup() throws Exception {
         TesLocator locator = new TesLocator();
-        locator.addPair("object", String.class);
+        locator.addPair(String.class, Object.class);
         Object result = locator.lookup(String.class);
         if (result == null) {
             fail("Exptected successfull lookup.");
@@ -71,10 +77,18 @@ public class AbstractLocatorTest extends TestCase {
         assertTrue(result == result2);
     }
 
+    public void testFailLookup() throws Exception {
+        TesLocator locator = new TesLocator();
+        locator.addPair(Object.class, Object.class);
+        Object result = locator.lookup(String.class);
+        if (result != null) {
+            fail("Lookup should have returned null.");
+        }
+    }
+
+
     public void testPropertiesLocator() throws Exception {
         LocatorStub.recycle();
-        System.setProperty("com.l7tech.util.locator.properties",
-          "/com/l7tech/console/resources/services.properties");
         logger.info(Locator.getDefault().toString());
         Object result =
           Locator.getDefault().lookup(IdentityProviderConfigManager.class);

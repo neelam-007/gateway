@@ -74,15 +74,14 @@ public class PropertiesLocator extends AbstractLocator {
             properties.load(inputStream);
             for (Enumeration e = properties.keys(); e.hasMoreElements();) {
                 String key = (String)e.nextElement();
-                String name = (String)properties.get(key);
-                Class cls =  null;
+                String value = (String)properties.get(key);
                 try {
-                    cls = Class.forName(name);
-                    addPair(key, cls);
+                    Class intf = Class.forName(key);
+                    Class impl = Class.forName(value);
+                    addPair(intf, impl);
                 } catch (ClassNotFoundException ex) {
                     ex.printStackTrace();  // too early to use error manager
                 }
-
             }
         } finally {
             inputStream.close();

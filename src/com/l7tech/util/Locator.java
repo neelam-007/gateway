@@ -264,7 +264,10 @@ public abstract class Locator {
 
         /* for debugging */
         public String toString() {
-            return "Locator.Item[type=" + getType() + ",id=" + getId() + ",instance=" + getInstance() + "]";
+            return "Locator.Item[type=" +
+              getType() + ",id=" +
+              (getId() == null ? "null" : getId()) +
+              ",instance=" + getInstance() + "]";
         }
     }
 
