@@ -142,7 +142,7 @@ public class NewFederatedUserDialog extends JDialog {
         userNameTextField.getDocument().addDocumentListener(documentListener);
 
         x509SubjectDNTextField.setToolTipText(resources.getString("x509SubjectDNTextField.tooltip"));
-        x509SubjectDNTextField.setDocument(new FilterDocument(24,
+        x509SubjectDNTextField.setDocument(new FilterDocument(64,
                         new FilterDocument.Filter() {
                             public boolean accept(String str) {
                                 if (str == null) return false;
@@ -365,7 +365,9 @@ public class NewFederatedUserDialog extends JDialog {
         }
 
         if (subjectDNRadioButton.isSelected()) {
-            x509SubjectDNTextField.setText(formulateSubjectDN(x509SubjectDNTextField.getText()));
+            if (!(extractCommonName(x509SubjectDNTextField.getText())).equals(userNameTextField.getText())) {
+                x509SubjectDNTextField.setText(formulateSubjectDN(x509SubjectDNTextField.getText()));
+            }
         }
         if (emailRadioButton.isSelected()) {
             emailTextField.setText(userNameTextField.getText() + "@");
@@ -486,7 +488,7 @@ public class NewFederatedUserDialog extends JDialog {
         } else if (index2 >= 0) {
             startIndex = index2 + 3;
         } else {
-            throw new IllegalArgumentException("Cert subject DN is not in the format CN=username");
+            return "";
         }
 
         if (startIndex >= 0) {
