@@ -61,7 +61,7 @@ public class IdentityProviderFactory {
      * @throws FindException
      */
     public synchronized static IdentityProvider getProvider(long identityProviderOid) throws FindException {
-        IdProvConfManagerServer configManager = (IdProvConfManagerServer)Locator.getDefault().lookup( IdentityProviderConfigManager.class );
+        IdentityProviderConfigManager configManager = (IdentityProviderConfigManager)Locator.getDefault().lookup( IdentityProviderConfigManager.class );
         Long oid = new Long(identityProviderOid);
 
         IdentityProvider cachedProvider = (IdentityProvider)providers.get(oid);
