@@ -1,47 +1,45 @@
 package com.l7tech.console.panels;
 
+import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.console.action.*;
+import com.l7tech.console.event.ContainerVetoException;
+import com.l7tech.console.event.VetoableContainerListener;
 import com.l7tech.console.tree.*;
 import com.l7tech.console.tree.policy.*;
+import com.l7tech.console.util.ComponentRegistry;
 import com.l7tech.console.util.PopUpMouseListener;
 import com.l7tech.console.util.Registry;
-import com.l7tech.console.util.ComponentRegistry;
-import com.l7tech.console.logging.ErrorManager;
-import com.l7tech.console.event.VetoableContainerListener;
-import com.l7tech.console.event.ContainerVetoException;
+import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.PolicyValidator;
 import com.l7tech.policy.PolicyValidatorResult;
 import com.l7tech.policy.assertion.Assertion;
-import com.l7tech.policy.assertion.RoutingAssertion;
 import com.l7tech.service.PublishedService;
-import com.l7tech.objectmodel.FindException;
-import com.l7tech.common.gui.util.Utilities;
 
 import javax.swing.*;
+import javax.swing.event.HyperlinkEvent;
+import javax.swing.event.HyperlinkListener;
 import javax.swing.event.TreeModelEvent;
 import javax.swing.event.TreeModelListener;
-import javax.swing.event.HyperlinkListener;
-import javax.swing.event.HyperlinkEvent;
 import javax.swing.text.EditorKit;
 import javax.swing.text.html.HTMLDocument;
 import javax.swing.text.html.HTMLEditorKit;
 import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.TreeNode;
 import javax.swing.tree.TreePath;
-import javax.swing.tree.DefaultTreeModel;
-import javax.wsdl.WSDLException;
 import java.awt.*;
-import java.awt.event.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.event.ContainerEvent;
+import java.awt.event.MouseEvent;
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
 import java.io.StringReader;
+import java.net.URI;
+import java.rmi.RemoteException;
+import java.util.Enumeration;
 import java.util.Iterator;
 import java.util.Set;
-import java.util.Enumeration;
-import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.net.URI;
-import java.beans.PropertyChangeListener;
-import java.beans.PropertyChangeEvent;
-import java.rmi.RemoteException;
 
 /**
  * The class represents the policy editor
@@ -402,44 +400,10 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
     TreeModelListener policyTreeModellistener = new TreeModelListener() {
         public void treeNodesChanged(TreeModelEvent e) {
             policyEditorToolbar.buttonSave.setEnabled(true);
-            /*TreePath path = e.getTreePath();
-            TreeNode parent = (TreeNode)path.getLastPathComponent();
-            int[] indices = e.getChildIndices();
-            for (int i = 0; i < indices.length; i++) {
-                int indice = indices[i];
-                TreeNode node = parent.getChildAt(indice);
-                log.info("nodes changed received " + node);
-            } */
         }
 
         public void treeNodesInserted(final TreeModelEvent e) {
             policyEditorToolbar.buttonSave.getAction().setEnabled(true);
-            //todo: refactor this out
-                      try {
-                          TreePath path = e.getTreePath();
-                          TreeNode parent = (TreeNode)path.getLastPathComponent();
-                          TreeNode lastNode = null;
-                          int[] indices = e.getChildIndices();
-                          for (int i = 0; i < indices.length; i++) {
-                              int indice = indices[i];
-                              TreeNode node = parent.getChildAt(indice);
-                              lastNode = node;
-                              if (node instanceof RoutingAssertionTreeNode) {
-                                  RoutingAssertionTreeNode rn = (RoutingAssertionTreeNode)node;
-                                  ((RoutingAssertion)rn.asAssertion()).setProtectedServiceUrl(service.parsedWsdl().getServiceURI());
-                                  ((DefaultTreeModel)policyTree.getModel()).nodeChanged(node);
-                              }
-                          }
-                          if (!policyTree.isExpanded(path)) {
-                              policyTree.expandPath(path);
-                          }
-                          if (lastNode != null)
-                              policyTree.setSelectionPath(path.pathByAddingChild(lastNode));
-                      } catch (WSDLException e1) {
-                          ErrorManager.getDefault().
-                            notify(Level.WARNING, e1,
-                              "Error parsing wsdl- service " + service.getName());
-                      }
         }
 
         public void treeNodesRemoved(TreeModelEvent e) {
@@ -454,9 +418,11 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
 
 // listener for policy tree changes
     TreeModelListener servicesTreeModelListener = new TreeModelListener() {
-        public void treeNodesChanged(TreeModelEvent e) {}
+        public void treeNodesChanged(TreeModelEvent e) {
+        }
 
-        public void treeNodesInserted(TreeModelEvent e) {}
+        public void treeNodesInserted(TreeModelEvent e) {
+        }
 
         public void treeNodesRemoved(TreeModelEvent e) {
             Object[] children = e.getChildren();
@@ -470,7 +436,8 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
             }
         }
 
-        public void treeStructureChanged(TreeModelEvent e) {}
+        public void treeStructureChanged(TreeModelEvent e) {
+        }
 
     };
 
