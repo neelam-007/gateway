@@ -31,31 +31,31 @@ public class ServerRemoteIpRangeTest extends TestCase {
         ServerRemoteIpRange testee = new ServerRemoteIpRange(rule);
 
         String addToTest = "192.168.11.0";
-        boolean res = testee.assert(addToTest);
+        boolean res = testee.assertAddress(addToTest);
         assertTrue(addToTest + " should pass", res);
 
         addToTest = "192.168.11.5";
-        res = testee.assert(addToTest);
+        res = testee.assertAddress(addToTest);
         assertTrue(addToTest + " should pass", res);
 
         addToTest = "192.168.11.99";
-        res = testee.assert(addToTest);
+        res = testee.assertAddress(addToTest);
         assertTrue(addToTest + " should pass", res);
 
         addToTest = "192.168.11.255";
-        res = testee.assert(addToTest);
+        res = testee.assertAddress(addToTest);
         assertTrue(addToTest + " should pass", res);
 
         addToTest = "192.168.1.0";
-        res = testee.assert(addToTest);
+        res = testee.assertAddress(addToTest);
         assertFalse(addToTest + " should NOT pass", res);
 
         addToTest = "192.178.11.22";
-        res = testee.assert(addToTest);
+        res = testee.assertAddress(addToTest);
         assertFalse(addToTest + " should NOT pass", res);
 
         addToTest = "10.168.1.2";
-        res = testee.assert(addToTest);
+        res = testee.assertAddress(addToTest);
         assertFalse(addToTest + " should NOT pass", res);
     }
 
@@ -64,23 +64,23 @@ public class ServerRemoteIpRangeTest extends TestCase {
         ServerRemoteIpRange testee = new ServerRemoteIpRange(rule);
 
         String addToTest = "10.1.0.1";
-        boolean res = testee.assert(addToTest);
+        boolean res = testee.assertAddress(addToTest);
         assertTrue(addToTest + " should pass", res);
 
         addToTest = "52.1.97.1";
-        res = testee.assert(addToTest);
+        res = testee.assertAddress(addToTest);
         assertTrue(addToTest + " should pass", res);
 
         addToTest = "10.0.0.0";
-        res = testee.assert(addToTest);
+        res = testee.assertAddress(addToTest);
         assertFalse(addToTest + " should NOT pass", res);
 
         addToTest = "10.0.0.255";
-        res = testee.assert(addToTest);
+        res = testee.assertAddress(addToTest);
         assertFalse(addToTest + " should NOT pass", res);
 
         addToTest = "10.0.0.77";
-        res = testee.assert(addToTest);
+        res = testee.assertAddress(addToTest);
         assertFalse(addToTest + " should NOT pass", res);
     }
 }

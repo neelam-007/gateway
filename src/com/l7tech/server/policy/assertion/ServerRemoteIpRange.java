@@ -36,7 +36,7 @@ public class ServerRemoteIpRange implements ServerAssertion {
             return AssertionStatus.FAILED;
         }
         // check assertion with this address
-        if (assert(remoteAddress)) {
+        if (assertAddress(remoteAddress)) {
             return AssertionStatus.NONE;
         } else return AssertionStatus.FAILED;
     }
@@ -44,7 +44,7 @@ public class ServerRemoteIpRange implements ServerAssertion {
     /**
      * decide whether the address passed passes or fails the assertion
      */
-    boolean assert(String addressToCheck) {
+    boolean assertAddress(String addressToCheck) {
         boolean isInRange = true;
         int[] subject = decomposeAddress(addressToCheck, null);
         for (int i = 0; i < 4; i++) {
@@ -53,7 +53,7 @@ public class ServerRemoteIpRange implements ServerAssertion {
                 break;
             }
         }
-        // if the address is not in range and the assertion calls for a range inclusion, the assert fails
+        // if the address is not in range and the assertion calls for a range inclusion, the assertAddress fails
         if (rule.isAllowRange() && !isInRange) {
             logger.info("This assertion is failing because address " + addressToCheck +
                         " is not in assertion range " + serializedRange);
