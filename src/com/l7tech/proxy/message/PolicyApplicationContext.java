@@ -208,10 +208,16 @@ public class PolicyApplicationContext extends ProcessingContext {
     }
 
     /**
-     * @return a map in which the key is the recipient's actor value and the value is a DecorationRequirements object
+     * @return the decoration requirements for the recipient designated by the passed actor value
      */
-    public Map getAlternateWssRequirements() {
-        return policySettings.downstreamRecipientWSSRequirements;
+    public DecorationRequirements getAlternateWssRequirements(String actor) {
+        DecorationRequirements output = (DecorationRequirements)policySettings.
+                                                                downstreamRecipientWSSRequirements.get(actor);
+        if (output == null) {
+            output = new DecorationRequirements();
+            policySettings.downstreamRecipientWSSRequirements.put(actor, output);
+        }
+        return output;
     }
 
     /**
