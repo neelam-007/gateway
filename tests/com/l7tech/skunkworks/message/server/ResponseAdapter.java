@@ -19,7 +19,7 @@ import java.util.List;
  * @author mike
  */
 public class ResponseAdapter extends XmlMessageAdapterAdapter implements XmlResponse {
-    public ResponseAdapter(MessageProcessingContext context) {
+    public ResponseAdapter(MessageContext context) {
         super(context, context.getResponse());
     }
 

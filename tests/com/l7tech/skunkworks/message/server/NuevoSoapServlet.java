@@ -43,7 +43,7 @@ public class NuevoSoapServlet extends HttpServlet {
             respMsg.attachHttpResponseKnob(respKnob);
 
             AssertionStatus status = AssertionStatus.UNDEFINED;
-            MessageProcessingContext context = new MessageProcessingContext(reqMsg, respMsg);
+            MessageContext context = new MessageContext(reqMsg, respMsg);
             RequestAdapter reqAdapter = new RequestAdapter(context);
             ResponseAdapter respAdapter = new ResponseAdapter(context);
             status = MessageProcessor.getInstance().processMessage(reqAdapter, respAdapter);

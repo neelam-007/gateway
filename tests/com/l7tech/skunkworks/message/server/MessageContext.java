@@ -23,8 +23,8 @@ import java.util.logging.Logger;
 /**
  * The thing that follows every request through the message processing system
  */
-public class MessageProcessingContext {
-    private static final Logger logger = Logger.getLogger(MessageProcessingContext.class.getName());
+public class MessageContext {
+    private static final Logger logger = Logger.getLogger(MessageContext.class.getName());
 
     private final Message request;
     private final Message response;
@@ -47,7 +47,7 @@ public class MessageProcessingContext {
     private boolean isAuthenticationMissing = false;
     private boolean isPolicyViolated = false;
 
-    public MessageProcessingContext(Message request, Message response) {
+    public MessageContext(Message request, Message response) {
         this.requestId = RequestIdGenerator.next();
         if (request == null || response == null) throw new NullPointerException();
         this.request = request;

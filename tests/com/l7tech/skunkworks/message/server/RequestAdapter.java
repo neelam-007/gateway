@@ -18,7 +18,7 @@ import java.util.logging.Level;
  * @author mike
  */
 public class RequestAdapter extends XmlMessageAdapterAdapter implements XmlRequest {
-    public RequestAdapter(MessageProcessingContext context) {
+    public RequestAdapter(MessageContext context) {
         super(context, context.getRequest());
     }
 

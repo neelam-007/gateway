@@ -27,10 +27,10 @@ import java.util.Iterator;
  * @author mike
  */
 public abstract class XmlMessageAdapterAdapter implements XmlMessage {
-    protected final MessageProcessingContext context;
+    protected final MessageContext context;
     protected final Message message;
 
-    protected XmlMessageAdapterAdapter(MessageProcessingContext context, Message message) {
+    protected XmlMessageAdapterAdapter(MessageContext context, Message message) {
         if (context == null || message == null) throw new NullPointerException();
         this.context = context;
         this.message = message;
