@@ -57,6 +57,7 @@ public class ClientProxy {
      * to http://localhost:7700/ssg3/wsdl as a WSDL discovery request to the corresponding SSG.
      */
     public static final String WSDL_SUFFIX = "/wsdl";
+    public static final String WSIL_SUFFIX = "/wsil";
 
     private SsgFinder ssgFinder;
     private HttpServer httpServer;

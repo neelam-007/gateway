@@ -23,9 +23,13 @@ import org.w3c.dom.NodeList;
 
 import javax.wsdl.Port;
 import java.io.IOException;
+import java.io.OutputStream;
+import java.io.PrintStream;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.Enumeration;
+import java.util.List;
+import java.util.Iterator;
 import java.util.regex.Pattern;
 
 /**
@@ -133,6 +137,10 @@ public class RequestHandler extends AbstractHttpHandler {
             endpoint = endpoint.substring(0, endpoint.length() - ClientProxy.WSDL_SUFFIX.length());
             isWsdl = true;
         }
+        if (endpoint.endsWith(ClientProxy.WSIL_SUFFIX)) {
+            endpoint = endpoint.substring(0, endpoint.length() - ClientProxy.WSIL_SUFFIX.length());
+            isWsdl = true;
+        }
 
         final Ssg ssg = getDesiredSsg(endpoint);
         log.info("Mapped to SSG: " + ssg);
@@ -143,7 +151,10 @@ public class RequestHandler extends AbstractHttpHandler {
             return;
         }
 
-        requirePostMethod(request);
+        if (request.getMethod().compareToIgnoreCase("POST") != 0) {
+            handleNonPostMethod(request, response);
+            return;
+        }
 
         PendingRequest pendingRequest;
         try {
@@ -178,16 +189,45 @@ public class RequestHandler extends AbstractHttpHandler {
     }
 
     /**
-     * Make sure this is a Post request.
-     * @param request           the Request that should be an HTTP POST
-     * @throws HttpException    thrown if it isn't
+     * Handle a request method other than POST.
+     * @param request           the Request that isn't an HTTP POST
+     * @throws HttpException if the request wasn't a GET either
      */
-    private void requirePostMethod(final HttpRequest request) throws HttpException {
-        if (request.getMethod().compareToIgnoreCase("POST") != 0) {
+    private void handleNonPostMethod(HttpRequest request, HttpResponse response) throws IOException {
+        if (request.getMethod().compareToIgnoreCase("GET") != 0) {
             final HttpException t = new HttpException(405); // "Method not allowed"
-            interceptor.onMessageError(t);
             throw t;
         }
+
+        handleGetRequest(request, response);
+    }
+
+    /**
+     * Handle a GET request to this Agent's message processing port.  We'll try to return a useful
+     * HTML document including links to the WSIL proxies for each configured SSG.
+     * @param request
+     */
+    private void handleGetRequest(HttpRequest request, HttpResponse response) throws IOException {
+        response.addField("Content-Type", "text/html");
+        PrintStream o = new PrintStream(response.getOutputStream());
+        o.println("<html><head><title>SecureSpan Agent</title></head>" +
+                  "<body><h2>SecureSpan Agent</h2>");
+        List ssgs = ssgFinder.getSsgList();
+        if (ssgs.isEmpty()) {
+            o.println("<p>There are currently no Gateways registered with this Agent.");
+        } else {
+            o.println("<p>This Agent is ready to proxy services provided by the following Gateways:</p><ul>");
+            int port = clientProxy.getBindPort();
+            for (Iterator i = ssgs.iterator(); i.hasNext();) {
+                Ssg ssg = (Ssg) i.next();
+                String wsilUrl = "http://" + request.getHost() + ":" + port + "/" +
+                    ssg.getLocalEndpoint() + ClientProxy.WSIL_SUFFIX;
+                o.println("<li><a href=\"" + wsilUrl + "\">" + ssg.toString() + "</a></li>");
+            }
+            o.println("</ul>");
+        }
+        o.println("</body></html>");
+        response.commit();
     }
 
     /**

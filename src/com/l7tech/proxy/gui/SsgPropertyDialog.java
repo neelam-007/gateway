@@ -656,7 +656,7 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
             fieldLocalEndpoint.setText("http://localhost:" + clientProxy.getBindPort() + "/" +
                                        ssg.getLocalEndpoint());
             fieldWsdlEndpoint.setText("http://localhost:" + clientProxy.getBindPort() + "/" +
-                                      ssg.getLocalEndpoint() + ClientProxy.WSDL_SUFFIX);
+                                      ssg.getLocalEndpoint() + ClientProxy.WSIL_SUFFIX);
             fieldServerAddress.setText(ssg.getSsgAddress());
             fieldUsername.setText(ssg.getUsername());
             char[] pass = ssg.cmPassword();
