@@ -5,16 +5,20 @@ import com.l7tech.console.action.ActionVetoException;
 import com.l7tech.console.util.BarIndicator;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.panels.StatisticsPanel;
+import com.l7tech.console.table.ClusterStatusTableSorter;
+import com.l7tech.console.table.LogTableModel;
+import com.l7tech.console.table.StatisticsTableSorter;
+import com.l7tech.console.data.GatewayStatus;
+import com.l7tech.console.icons.ArrowIcon;
 import com.l7tech.common.gui.util.ImageCache;
 
 import javax.swing.*;
-import javax.swing.table.DefaultTableCellRenderer;
+import javax.swing.table.*;
 import java.util.ResourceBundle;
 import java.util.Hashtable;
+import java.util.Vector;
 import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.KeyEvent;
-import java.awt.event.ActionListener;
+import java.awt.event.*;
 
 /*
  * Copyright (C) 2003 Layer 7 Technologies Inc.
@@ -31,6 +35,8 @@ public class ClusterStatusWindow extends JFrame {
             ResourceBundle resapplication =
             java.util.ResourceBundle.getBundle("com.l7tech.console.resources.console");
     //private final ClassLoader cl = getClass().getClassLoader();
+    private Icon upArrowIcon = new ArrowIcon(0);
+    private Icon downArrowIcon = new ArrowIcon(1);
 
     public ClusterStatusWindow(final String title) {
         super(title);
@@ -57,11 +63,19 @@ public class ClusterStatusWindow extends JFrame {
                     }
                 });
 
+
+        //todo: remove this test data
+        Vector dummyData = getClusterStatusDummyData();
+        getClusterStatusTableModel().setData(dummyData);
+        getClusterStatusTableModel().getRealModel().setRowCount(dummyData.size());
+        getClusterStatusTableModel().fireTableDataChanged();
+
         pack();
 
         //todo: need to reorganize this
         getStatisticsPane().onConnect();
         getStatisticsPane().refreshStatistics();
+
     }
 
     /**
@@ -162,29 +176,7 @@ public class ClusterStatusWindow extends JFrame {
         jPanel2.setLayout(new java.awt.BorderLayout());
 
         jScrollPane2.setMinimumSize(new java.awt.Dimension(400, 220));
-        jTable2.setModel(new javax.swing.table.DefaultTableModel(
-                new Object[][]{
-                    {"Active", "SSG1", new Integer(20), new Integer(5), new Double(1.5), "1 days 2 hrs 16 mins", "192.128.1.100"},
-                    {"Active", "SSG2", new Integer(23), new Integer(10), new Double(1.8), "2 days 10 hrs 3 mins", "192.128.1.101"},
-                    {"Inactive", "SSG3", new Integer(0), new Integer(0), new Double(0), "0", "192.128.1.102"},
-                    {"Active", "SSG4", new Integer(17), new Integer(3), new Double(1.1), "2 hrs 10 mins", "192.128.2.10"},
-                    {"Active", "SSG5", new Integer(18), new Integer(8), new Double(2.1), "6 days 8 hrs 55 mins", "192.128.2.11"},
-                    {"Active", "SSG6", new Integer(22), new Integer(5), new Double(0.8), "7 hrs 23 mins", "192.128.3.1"},
-                    {"Inactive", "SSG7", new Integer(0), new Integer(0), new Double(0), "0", "192.128.3.2"},
-                    {"Inactive", "SSG8", new Integer(0), new Integer(0), new Double(0), "0", "192.128.3.3"}
-                },
-                new String[]{
-                    "Status", "Gateway", "Load Sharing %", "Request Failure%", "Load Avg", "Uptime", "IP Address"
-                }
-        ) {
-            Class[] types = new Class[]{
-                java.lang.String.class, java.lang.String.class, java.lang.Integer.class, java.lang.Integer.class, java.lang.Double.class, java.lang.String.class, java.lang.String.class
-            };
-
-            public Class getColumnClass(int columnIndex) {
-                return types[columnIndex];
-            }
-        });
+        jTable2.setModel(getClusterStatusTableModel());
 
         BarIndicator loadShareRenderer = new BarIndicator(MIN,MAX, Color.green);
          loadShareRenderer.setStringPainted(true);
@@ -230,12 +222,12 @@ public class ClusterStatusWindow extends JFrame {
 
                   Object s = jTable2.getValueAt(row, 0);
 
-                  String status = "";
-                  if(s instanceof String) status = (String) s;
+                  //String status = "";
+                 // if(s instanceof String) status = (String) s;
                      // this.setText("");
-                      if (status.startsWith("Active")) {
+                      if (s.toString().equals("1")) {
                           this.setIcon(connectIcon);
-                      } else if (status.startsWith("Inactive")) {
+                      } else if (s.toString().equals("0")) {
                           this.setIcon(disconnectIcon);
                       } else {
 
@@ -260,8 +252,14 @@ public class ClusterStatusWindow extends JFrame {
               }
           });
 
-        jScrollPane2.setViewportView(jTable2);
+        for(int i = 0; i <= 6; i++){
+             jTable2.getColumnModel().getColumn(i).setHeaderRenderer(iconHeaderRenderer);
+        }
 
+        addMouseListenerToHeaderInTable(jTable2);
+        jTable2.getTableHeader().setReorderingAllowed(false);
+
+        jScrollPane2.setViewportView(jTable2);
 
         jPanel2.add(jScrollPane2, java.awt.BorderLayout.CENTER);
 
@@ -315,6 +313,128 @@ public class ClusterStatusWindow extends JFrame {
         return statisticsPane;
     }
 
+    private ClusterStatusTableSorter getClusterStatusTableModel(){
+
+        if (clusterStatusTableSorter != null) {
+            return clusterStatusTableSorter;
+        }
+
+         Object[][] rows = new Object [][]{
+/*                    {new Integer(1), "SSG1", new Integer(20), new Integer(5), new Double(1.5), "1 days 2 hrs 16 mins", "192.128.1.100"},
+                    {new Integer(1), "SSG2", new Integer(23), new Integer(10), new Double(1.8), "2 days 10 hrs 3 mins", "192.128.1.101"},
+                    {new Integer(0), "SSG3", new Integer(0), new Integer(0), new Double(0), "0", "192.128.1.102"},
+                    {new Integer(1), "SSG4", new Integer(17), new Integer(3), new Double(1.1), "2 hrs 10 mins", "192.128.2.10"},
+                    {new Integer(1), "SSG5", new Integer(18), new Integer(8), new Double(2.1), "6 days 8 hrs 55 mins", "192.128.2.11"},
+                    {new Integer(1), "SSG6", new Integer(22), new Integer(5), new Double(0.8), "7 hrs 23 mins", "192.128.3.1"},
+                    {new Integer(0), "SSG7", new Integer(0), new Integer(0), new Double(0), "0", "192.128.3.2"},
+                    {new Integer(0), "SSG8", new Integer(0), new Integer(0), new Double(0), "0", "192.128.3.3"}*/
+            };
+
+        String[] cols = new String[]{
+            "Status", "Gateway", "Load Sharing %", "Request Failure%", "Load Avg", "Uptime", "IP Address"
+        };
+
+        Class[] types = new Class[]{
+            java.lang.String.class, java.lang.String.class, java.lang.Integer.class, java.lang.Integer.class, java.lang.Double.class, java.lang.String.class, java.lang.String.class
+        };
+
+        LogTableModel tableModel = new LogTableModel(rows, cols);
+
+        clusterStatusTableSorter = new ClusterStatusTableSorter(tableModel) {
+            /*public Class getColumnClass(int columnIndex) {
+                return types[columnIndex];
+
+            }*/
+        };
+
+        return clusterStatusTableSorter;
+
+    }
+
+    // This customized renderer can render objects of the type TextandIcon
+    TableCellRenderer iconHeaderRenderer = new DefaultTableCellRenderer() {
+        public Component getTableCellRendererComponent(JTable table, Object value,
+                                                       boolean isSelected, boolean hasFocus, int row, int column) {
+            // Inherit the colors and font from the header component
+            if (table != null) {
+                JTableHeader header = table.getTableHeader();
+                if (header != null) {
+                    setForeground(header.getForeground());
+                    setBackground(header.getBackground());
+                    setFont(header.getFont());
+                    setHorizontalTextPosition(SwingConstants.LEFT);
+                }
+            }
+
+            setText((String) value);
+
+            if (getClusterStatusTableModel().getSortedColumn() == column) {
+
+                if (getClusterStatusTableModel().isAscending()) {
+                    setIcon(upArrowIcon);
+                } else {
+                    setIcon(downArrowIcon);
+                }
+            }
+            else{
+                setIcon(null);
+            }
+
+            setBorder(UIManager.getBorder("TableHeader.cellBorder"));
+            setHorizontalAlignment(JLabel.CENTER);
+            return this;
+        }
+    };
+
+    // Add a mouse listener to the Table to trigger a table sort
+    // when a column heading is clicked in the JTable.
+    public void addMouseListenerToHeaderInTable(JTable table) {
+
+        final JTable tableView = table;
+        tableView.setColumnSelectionAllowed(false);
+        MouseAdapter listMouseListener = new MouseAdapter() {
+            public void mouseClicked(MouseEvent e) {
+                TableColumnModel columnModel = tableView.getColumnModel();
+                int viewColumn = columnModel.getColumnIndexAtX(e.getX());
+                int column = tableView.convertColumnIndexToModel(viewColumn);
+                if (e.getClickCount() == 1 && column != -1) {
+
+                    ((ClusterStatusTableSorter)tableView.getModel()).sortData(column, true);
+                    ((ClusterStatusTableSorter)tableView.getModel()).fireTableDataChanged();
+                    tableView.getTableHeader().resizeAndRepaint();
+                }
+            }
+        };
+        JTableHeader th = tableView.getTableHeader();
+        th.addMouseListener(listMouseListener);
+    }
+
+
+    Vector getClusterStatusDummyData(){
+
+     Vector dummyData = new Vector();
+
+        GatewayStatus node1 = new GatewayStatus(1, "SSG1", 20, 5, 1.5, "1 days 2 hrs 16 mins", "192.128.1.100");
+        GatewayStatus node2 = new GatewayStatus(1, "SSG2", 23, 10, 1.8, "2 days 10 hrs 3 mins", "192.128.1.101");
+        GatewayStatus node3 = new GatewayStatus(0, "SSG3", 0, 0, 0, "0", "192.128.1.102");
+        GatewayStatus node4 = new GatewayStatus(1, "SSG4", 17, 3, 1.1, "2 hrs 10 mins", "192.128.2.10");
+        GatewayStatus node5 = new GatewayStatus(1, "SSG5", 18, 8, 2.1, "6 days 8 hrs 55 mins", "192.128.2.11");
+        GatewayStatus node6 = new GatewayStatus(1, "SSG6", 22, 5, 0.8, "7 hrs 23 mins", "192.128.3.1");
+        GatewayStatus node7 = new GatewayStatus(0, "SSG7", 0, 0, 0, "0", "192.128.3.2");
+        GatewayStatus node8 = new GatewayStatus(0, "SSG8", 0, 0, 0, "0", "192.128.3.3");
+
+        dummyData.add(node1);
+        dummyData.add(node2);
+        dummyData.add(node3);
+        dummyData.add(node4);
+        dummyData.add(node5);
+        dummyData.add(node6);
+        dummyData.add(node7);
+        dummyData.add(node8);
+
+        return dummyData;
+    }
+
     private javax.swing.JLabel jLabel1;
     private javax.swing.JLabel jLabel2;
     private javax.swing.JLabel jLabel3;
@@ -338,7 +458,7 @@ public class ClusterStatusWindow extends JFrame {
     private javax.swing.JMenu helpMenu;
     private javax.swing.JMenuItem exitMenuItem;
     private javax.swing.JMenuItem helpTopicsMenuItem;
-
+    private ClusterStatusTableSorter clusterStatusTableSorter = null;
     private StatisticsPanel statisticsPane;
 
     private JPanel frameContentPane;

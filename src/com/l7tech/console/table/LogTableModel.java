@@ -12,7 +12,7 @@ import javax.swing.table.DefaultTableModel;
 
 public class LogTableModel extends DefaultTableModel {
 
-    public LogTableModel(String[][] data, String[] columnNames){
+    public LogTableModel(Object[][] data, String[] columnNames){
         super(data, columnNames);
     }
 

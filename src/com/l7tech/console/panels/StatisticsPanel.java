@@ -62,9 +62,9 @@ public class StatisticsPanel extends JPanel {
     private JCheckBox autoRefresh = null;
     private JPanel serverLoadPane = null;
     private javax.swing.Timer statRefreshTimer = null;
-    private JLabel serverUpTime = null;
-    private JLabel lastMinuteServerLoad = null;
-    private JPanel selectPaneRight = null;
+//    private JLabel serverUpTime = null;
+//    private JLabel lastMinuteServerLoad = null;
+//    private JPanel selectPaneRight = null;
     private JPanel selectPaneLeft = null;
     private long attemptedCountTotal = 0;
     private long authorizedCountTotal = 0;
@@ -280,20 +280,20 @@ public class StatisticsPanel extends JPanel {
         selectPane = new JPanel();
         selectPane.setMinimumSize(new Dimension((int) selectPane.getSize().getWidth(), 35));
         selectPane.setLayout(new BorderLayout());
-        selectPane.add(getSelectPaneLeft(), BorderLayout.WEST);
-        selectPane.add(getSelectPaneRight(), BorderLayout.EAST);
+        selectPane.add(getSelectPaneLeft(), BorderLayout.EAST);
+//        selectPane.add(getSelectPaneRight(), BorderLayout.EAST);
 
         return selectPane;
     }
 
-    private JPanel getSelectPaneRight(){
+/*    private JPanel getSelectPaneRight(){
         if(selectPaneRight != null) return selectPaneRight;
 
         selectPaneRight = new JPanel();
         selectPaneRight.setLayout(new FlowLayout(FlowLayout.LEFT, 5, 10));
         selectPaneRight.add(getServerLoadPane());
         return selectPaneRight;
-    }
+    }*/
 
     private JPanel getSelectPaneLeft(){
         if( selectPaneLeft != null) return selectPaneLeft;
@@ -304,7 +304,8 @@ public class StatisticsPanel extends JPanel {
 
         return selectPaneLeft;
     }
-    private JPanel getServerLoadPane() {
+
+/*    private JPanel getServerLoadPane() {
         if (serverLoadPane != null) return serverLoadPane;
 
         serverLoadPane = new JPanel();
@@ -316,7 +317,7 @@ public class StatisticsPanel extends JPanel {
         serverLoadPane.add(lastMinuteServerLoad);
 
         return serverLoadPane;
-    }
+    }*/
 
     private JPanel getControlPane() {
         if (controlPane != null) return controlPane;
@@ -366,7 +367,7 @@ public class StatisticsPanel extends JPanel {
         // create a worker thread to retrieve the Service statistics
         final StatisticsWorker statsWorker = new StatisticsWorker(serviceManager, logService) {
             public void finished(){
-                updateServerMetricsFields(getMetrics());
+                //updateServerMetricsFields(getMetrics());
                 updateStatisticsTable(getStatsList());
             }
         };
@@ -430,7 +431,7 @@ public class StatisticsPanel extends JPanel {
        getStatTotalTableModel().fireTableDataChanged();
     }
 
-    private void updateServerMetricsFields(UptimeMetrics metrics) {
+/*    private void updateServerMetricsFields(UptimeMetrics metrics) {
 
         if (metrics == null) {
             serverUpTime.setText(END_SPACE + SERVER_UP_TIME_PREFIX + STATISTICS_UNAVAILABLE + MIDDLE_SPACE);
@@ -469,7 +470,7 @@ public class StatisticsPanel extends JPanel {
             lastMinuteServerLoad.setText(LAST_MINUTE_SERVER_LOAD_PREFIX + Double.toString(metrics.getLoad1()) + END_SPACE);
 
         }
-    }
+    }*/
 
     public void stopRefreshTimer() {
         getStatRefreshTimer().stop();
@@ -489,8 +490,8 @@ public class StatisticsPanel extends JPanel {
         getStatTotalTable().setValueAt(null, 0, 5);
         getStatTotalTableModel().fireTableDataChanged();
 
-        serverUpTime.setText(END_SPACE + SERVER_UP_TIME_PREFIX + STATISTICS_UNAVAILABLE + MIDDLE_SPACE);
-        lastMinuteServerLoad.setText(LAST_MINUTE_SERVER_LOAD_PREFIX + STATISTICS_UNAVAILABLE + END_SPACE);
+ //       serverUpTime.setText(END_SPACE + SERVER_UP_TIME_PREFIX + STATISTICS_UNAVAILABLE + MIDDLE_SPACE);
+ //       lastMinuteServerLoad.setText(LAST_MINUTE_SERVER_LOAD_PREFIX + STATISTICS_UNAVAILABLE + END_SPACE);
     }
 
     public void updateStatTotalTableColumnModel(ChangeEvent e) {
