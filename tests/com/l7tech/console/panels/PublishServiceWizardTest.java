@@ -78,6 +78,10 @@ public class PublishServiceWizardTest extends Locator {
         public IdentityProvider getIdentityProvider(EntityHeaderNode node) {
             return IDENTITY_PROVIDER_STUB;
         }
+
+        public IdentityProvider getIdentityProvider(long idProviderOid) {
+            return IDENTITY_PROVIDER_STUB;
+        }
     }
 
     public Object lookup(Class clazz) {

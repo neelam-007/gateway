@@ -41,6 +41,11 @@ public class RegistryStub extends Registry {
         return cm.getInternalIdentityProvider();
     }
 
+    public IdentityProvider getIdentityProvider(long idProviderOid) {
+       // todo, does the stub mode support anything other than the internal id provider?
+        return cm.getInternalIdentityProvider();
+    }
+
     /**
      * @return the internal user manager
      */
