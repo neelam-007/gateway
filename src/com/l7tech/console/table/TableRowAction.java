@@ -78,7 +78,7 @@ public class TableRowAction {
     public static boolean hasProperties(EntityTreeNode node) {
         Object o = node.getUserObject();
         if (o instanceof BasicTreeNode) {
-            return hasProperties((BasicTreeNode) o);
+            return hasProperties(o);
         }
         return false;
     }
@@ -103,7 +103,7 @@ public class TableRowAction {
     public static boolean isBrowseable(EntityTreeNode node) {
         Object o = node.getUserObject();
         if (o instanceof BasicTreeNode) {
-            return isBrowseable((BasicTreeNode) o);
+            return isBrowseable(o);
         }
         return false;
     }

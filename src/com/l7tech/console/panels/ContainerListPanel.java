@@ -253,9 +253,8 @@ public class ContainerListPanel extends EntityEditorPanel {
         }
     }
 
-    // could be usefull later..
+    // could be useful later..
     private String getColHeader(BasicTreeNode ptn) {
-        if (ptn instanceof ProvidersFolderNode) return "Comments";
         return "Description";
     }
 
@@ -268,7 +267,7 @@ public class ContainerListPanel extends EntityEditorPanel {
      */
     private void handleExploreRequest(BasicTreeNode dobj) {
         if (dobj.isLeaf()) {
-            showEntryDialog(dobj);
+            showEntityDialog(dobj);
         } else {
 
             final TreePath parentPath
@@ -380,12 +379,14 @@ public class ContainerListPanel extends EntityEditorPanel {
      *
      * @param bn   the <CODE>BasicTreeNode</CODE> instance
      */
-    private void showEntryDialog(BasicTreeNode bn) {
-        if (!(bn instanceof EntityTreeNode)) return;
+    private void showEntityDialog(BasicTreeNode bn) {
+        if (!(bn instanceof EntityHeaderNode)) return;
+        EntityHeader header = ((EntityHeaderNode)bn).getEntityHeader();
 
-        JPanel panel = PanelFactory.getPanel((EntityTreeNode) bn, panelListener);
-
+        Class cls = header.getType();
+        EntityEditorPanel panel = PanelFactory.getPanel(cls, panelListener);
         if (panel == null) return;
+        panel.edit(header);
         JFrame f = (JFrame) SwingUtilities.windowForComponent(ContainerListPanel.this);
         EditorDialog dialog = new EditorDialog(f, panel);
 
@@ -555,7 +556,7 @@ public class ContainerListPanel extends EntityEditorPanel {
                     if (TableRowMenu.BROWSE.equals(e.getActionCommand())) {
                         handleExploreRequest((BasicTreeNode) object);
                     } else if (TableRowMenu.PROPERTIES.equals(e.getActionCommand())) {
-                        showEntryDialog((BasicTreeNode) object);
+                        showEntityDialog((BasicTreeNode) object);
                     } else if (TableRowMenu.DELETE.equals(e.getActionCommand())) {
                         handleDeleteRequest(bn, row, true);
                     } else {
@@ -570,7 +571,7 @@ public class ContainerListPanel extends EntityEditorPanel {
                     if (TableRowMenu.BROWSE.equals(e.getActionCommand())) {
                         handleExploreRequest((BasicTreeNode) object);
                     } else if (TableRowMenu.PROPERTIES.equals(e.getActionCommand())) {
-                        showEntryDialog((BasicTreeNode) object);
+                        showEntityDialog((BasicTreeNode) object);
                     } else {
                         log.debug("action not implemented " + e.getActionCommand());
                     }
@@ -724,7 +725,7 @@ public class ContainerListPanel extends EntityEditorPanel {
                             if (row == -1) return;
                             Object o = jTable.getModel().getValueAt(row, 0);
                             if (o == null) return;
-                            showEntryDialog((BasicTreeNode) o);
+                            showEntityDialog((BasicTreeNode) o);
                         }
                     });
 

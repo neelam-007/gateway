@@ -36,7 +36,8 @@ public class PanelFactory {
         Object object = node.getUserObject();
         if (object == null) throw new IllegalArgumentException("node.getUserObject() returns null");
         if (object instanceof EntityHeaderNode) {
-            return getPanel(((EntityHeaderNode)object).getEntityHeader().getType(), pListener);
+            EntityEditorPanel panel =
+                    getPanel(((EntityHeaderNode)object).getEntityHeader().getType(), pListener);
         }
         JOptionPane.showMessageDialog(null,
                         "Could not retrieve panel for given class ("+object.getClass()+")",

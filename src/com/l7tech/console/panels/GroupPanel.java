@@ -2,6 +2,7 @@ package com.l7tech.console.panels;
 
 import com.l7tech.console.text.MaxLengthDocument;
 import com.l7tech.console.util.IconManager;
+import com.l7tech.console.util.Registry;
 import com.l7tech.identity.Group;
 import com.l7tech.identity.internal.imp.GroupImp;
 import com.l7tech.objectmodel.EntityHeader;
@@ -33,7 +34,7 @@ public class GroupPanel extends EntityEditorPanel {
     private JPanel buttonPanel;
 
     private JTabbedPane tabbedPane;
-    //protected final GroupUsersPanel agentPanel = new GroupUsersPanel(this); // membership
+    private final GroupUsersPanel usersPanel = new GroupUsersPanel(this); // membership
 
     // Apply/Revert buttons
     private JButton okButton;
@@ -49,6 +50,7 @@ public class GroupPanel extends EntityEditorPanel {
 
     // Titles/Labels
     private static final String DETAILS_LABEL = "General";
+    private static final String MEMBERSHIP_LABEL = "Memebership";
     private static final String GROUP_DESCRIPTION_TITLE = "Description:";
 
     private static final String OK_BUTTON = "OK";
@@ -62,12 +64,80 @@ public class GroupPanel extends EntityEditorPanel {
     public GroupPanel() {
         try {
             // Initialize form components
-            jbInit();
+            layoutComponents();
             this.addHierarchyListener(hierarchyListener);
         } catch (Exception e) {
             log.error("GroupPanel()", e);
             e.printStackTrace();
         }
+    }
+
+    /**
+     * Enables or disables the apply and revert button based
+     * on whether or not data on the form has been changed
+     */
+    public void setDirty() {
+        // If entity not already changed
+        if (!formDirty) {
+            // Enable buttons
+            getOKButton().setEnabled(true);
+            getApplyButton().setEnabled(true);
+            formDirty = true;
+        }
+    }
+
+
+    /**
+     * Retrieves the Group and constructs the Panel
+     *
+     * @param object
+     */
+    public void edit(Object object) {
+        try {
+            // Here is where we would use the node context to retrieve Panel content
+            if (!(object instanceof EntityHeader)) {
+                throw new IllegalArgumentException("Invalid argument type: "
+                        + "\nExpected: EntityHeader"
+                        + "\nReceived: " + object.getClass().getName());
+            }
+
+            groupHeader = (EntityHeader)object;
+
+            if (!Group.class.equals(groupHeader.getType())) {
+                throw new IllegalArgumentException("Invalid argument type: "
+                        + "\nExpected: Group "
+                        + "\nReceived: " + groupHeader.getType());
+            }
+
+            boolean isNew = groupHeader.getOid() == 0;
+            if (isNew) {
+                group = new GroupImp();
+                group.setName(groupHeader.getName());
+            } else {
+                group =
+                        Registry.getDefault().getInternalGroupManager().findByPrimaryKey(groupHeader.getOid());
+                if (group == null) {
+                    throw new RuntimeException("Group missing "+groupHeader.getOid());
+                }
+            }
+
+            // Populate the form for insert/update
+            setData(group);
+        } catch (Exception e) {
+            log.error("GroupPanel Edit Exception: " + e.toString());
+        }
+    }
+
+    /**
+     * Retrieve the <code>Group</code> this panel is editing.
+     * It is a convenience, and package private method, for
+     * interested panels.
+     *
+     *
+     * @return the group that this panel is currently editing
+     */
+    Group getGroup() {
+        return group;
     }
 
 
@@ -76,7 +146,7 @@ public class GroupPanel extends EntityEditorPanel {
      *
      * @exception Exception
      */
-    private void jbInit() throws Exception {
+    private void layoutComponents() throws Exception {
         // Set layout
         this.setName("Group");
         this.setLayout(new GridBagLayout());
@@ -126,6 +196,7 @@ public class GroupPanel extends EntityEditorPanel {
 
             // Add all tabs
             tabbedPane.add(getDetailsPanel(), DETAILS_LABEL);
+            tabbedPane.add(usersPanel, MEMBERSHIP_LABEL);
         }
 
         // Return tabbed pane
@@ -364,56 +435,6 @@ public class GroupPanel extends EntityEditorPanel {
         return applyButton;
     }
 
-    /**
-     * Enables or disables the apply and revert button based
-     * on whether or not data on the form has been changed
-     */
-    public void setDirty() {
-        // If entity not already changed
-        if (!formDirty) {
-            // Enable buttons
-            getOKButton().setEnabled(true);
-            getApplyButton().setEnabled(true);
-            formDirty = true;
-        }
-    }
-
-
-    /**
-     * Retrieves the Group and constructs the Panel
-     *
-     * @param object
-     */
-    public void edit(Object object) {
-        try {
-            // Here is where we would use the node context to retrieve Panel content
-            if (!(object instanceof EntityHeader)) {
-                throw new IllegalArgumentException("Invalid argument type: "
-                        + "\nExpected: EntityHeader"
-                        + "\nReceived: " + object.getClass().getName());
-            }
-
-            groupHeader = (EntityHeader)object;
-
-            if (!Group.class.equals(groupHeader.getType())) {
-                throw new IllegalArgumentException("Invalid argument type: "
-                        + "\nExpected: Group "
-                        + "\nReceived: " + groupHeader.getType());
-            }
-
-            boolean isNew = false;
-            group = new GroupImp();
-            group.setOid(groupHeader.getOid());
-            group.setName(groupHeader.getName());
-
-            // Populate the form for insert/update
-            setData(group);
-        } catch (Exception e) {
-            log.error("GroupPanel Edit Exception: " + e.toString());
-            e.printStackTrace();
-        }
-    }
-
 
     /**
      * Populates the form from the group bean
@@ -433,7 +454,7 @@ public class GroupPanel extends EntityEditorPanel {
      *
      * @return Group   a clone of the Group, up-to-date with form changes
      */
-    public Group collectChanges() {
+    private Group collectChanges() {
         return null;
     }
 
