@@ -2,6 +2,7 @@ package com.l7tech.server.policy;
 
 import com.l7tech.common.message.Message;
 import com.l7tech.common.ApplicationContexts;
+import com.l7tech.common.security.Keys;
 import com.l7tech.policy.AllAssertions;
 import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.assertion.composite.AllAssertion;
@@ -15,6 +16,7 @@ import junit.framework.TestCase;
 import junit.framework.TestSuite;
 
 import java.util.Arrays;
+import java.io.IOException;
 
 import org.springframework.context.ApplicationContext;
 
@@ -36,7 +38,8 @@ public class ServerPolicyFactoryTest extends TestCase {
      * create the <code>TestSuite</code> for the
      * ServerPolicyFactoryTest <code>TestCase</code>
      */
-    public static Test suite() {
+    public static Test suite() throws IOException {
+        Keys.createTestSsgKeystoreProperties();
         TestSuite suite = new TestSuite(ServerPolicyFactoryTest.class);
         return suite;
     }
