@@ -12,7 +12,7 @@ import cirrus.hibernate.Session;
  * @author alex
  */
 public class HibernatePersistenceContextStub extends HibernatePersistenceContext {
-    Session getSession() {
+    public Session getSession() {
         return _session;
     }
 
