@@ -16,15 +16,18 @@ import com.l7tech.proxy.datamodel.Ssg;
 import com.l7tech.proxy.datamodel.exceptions.BadCredentialsException;
 import com.l7tech.proxy.datamodel.exceptions.BadPasswordFormatException;
 import com.l7tech.proxy.datamodel.exceptions.CertificateAlreadyIssuedException;
+import com.l7tech.proxy.ssl.ClientProxySecureProtocolSocketFactory;
 import com.l7tech.proxy.ssl.CurrentSslPeer;
 import org.apache.commons.httpclient.HttpClient;
 import org.apache.commons.httpclient.UsernamePasswordCredentials;
 import org.apache.commons.httpclient.methods.PostMethod;
 
+import javax.net.ssl.HttpsURLConnection;
 import javax.security.auth.x500.X500Principal;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.net.URL;
+import java.net.URLConnection;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
@@ -44,6 +47,20 @@ public class SslUtils {
 
     /** This is just a dummy body document, used as a placeholder in the password change POST. */
     private static final String PASSWORD_CHANGE_BODY = "<changePasswordAndRevokeClientCertificate/>";
+
+    /**
+     * Configure the specified URL connection to use the right socket factory, if it's SSL.
+     * @return true if this is an SSL connection; otherwise false.
+     */
+    public static boolean configureSslSocketFactory(URLConnection conn) {
+        boolean usingSsl = false;
+        if (conn instanceof HttpsURLConnection) {
+            HttpsURLConnection sslConn = (HttpsURLConnection)conn;
+            sslConn.setSSLSocketFactory(ClientProxySecureProtocolSocketFactory.getInstance());
+            usingSsl = true;
+        }
+        return usingSsl;
+    }
 
     public static final class PasswordNotWritableException extends Exception {
         private PasswordNotWritableException(String message) {

@@ -302,7 +302,8 @@ class GuiCredentialManager extends CredentialManager {
     }
 
     public void notifySslCertificateUntrusted(String server, final X509Certificate certificate) throws OperationCanceledException {
-        String mess = "The authenticity of the SSL server certificate for " + server + " could not be automatically established.  " +
+        final String msg = "The authenticity of the SSL server certificate for " + server + " could not be automatically established.  ";
+        String mess = msg +
                 "Do you want to trust " + server + " using this server certificate?  " +
                 "If you don't know, click Cancel.";
         final TrustCertificateDialog tcd = new TrustCertificateDialog(certificate,
@@ -314,7 +315,7 @@ class GuiCredentialManager extends CredentialManager {
             }
         });
         if (!tcd.isTrusted())
-            throw new OperationCanceledException("The downloaded SecureSpan Gateway server certificate could not be verified with the current user name and password.");
+            throw new OperationCanceledException(msg);
     }
 
     private PleaseWaitDialog getPleaseWaitDialog() {

@@ -32,6 +32,7 @@ import org.w3c.dom.Element;
 import org.xml.sax.SAXException;
 
 import javax.net.ssl.HttpsURLConnection;
+import javax.net.ssl.SSLException;
 import javax.xml.soap.SOAPConstants;
 import java.io.IOException;
 import java.net.PasswordAuthentication;
@@ -260,7 +261,7 @@ public class TokenServiceClient {
 
             CurrentSslPeer.set(sslPeer);
             URLConnection conn = url.openConnection();
-            CurrentSslPeer.set(null);
+            SslUtils.configureSslSocketFactory(conn);
             conn.setDoOutput(true);
             conn.setAllowUserInteraction(false);
             conn.setDefaultUseCaches(false);
@@ -292,6 +293,8 @@ public class TokenServiceClient {
             throw new CausedIOException("Unable to process response from security token service: " + e.getMessage(), e);
         } catch (ProcessorException e) {
             throw new CausedIOException("Unable to obtain a token from the security token server: " + e.getMessage(), e);
+        } catch (SSLException e) {
+            throw e; // rethrow as-is so server cert can be discovered if necessary
         } catch (IOException e) {
             throw new CausedIOException("Unable to obtain a token from the security token server: " + e.getMessage(), e);
         }
@@ -316,6 +319,7 @@ public class TokenServiceClient {
             // here, we must use the special
             CurrentSslPeer.set(ssg);
             URLConnection conn = url.openConnection();
+            SslUtils.configureSslSocketFactory(conn);
             conn.setRequestProperty("Authorization", "Basic " + encodedbasicauthvalue);
             if (conn instanceof HttpsURLConnection) {
                 sslConn = (HttpsURLConnection)conn;

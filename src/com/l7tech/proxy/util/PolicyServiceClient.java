@@ -33,13 +33,11 @@ import com.l7tech.proxy.datamodel.Policy;
 import com.l7tech.proxy.datamodel.Ssg;
 import com.l7tech.proxy.datamodel.exceptions.BadCredentialsException;
 import com.l7tech.proxy.datamodel.exceptions.ServerCertificateUntrustedException;
-import com.l7tech.proxy.ssl.ClientProxySecureProtocolSocketFactory;
 import com.l7tech.proxy.ssl.CurrentSslPeer;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.xml.sax.SAXException;
 
-import javax.net.ssl.HttpsURLConnection;
 import javax.xml.soap.SOAPConstants;
 import java.io.IOException;
 import java.io.InputStream;
@@ -354,17 +352,12 @@ public class PolicyServiceClient {
         log.log(Level.INFO, "Downloading policy from " + url.toString());
 
         final long millisBefore = System.currentTimeMillis();
-        boolean usingSsl = false;
         CurrentSslPeer.set(ssg);
         URLConnection conn = url.openConnection();
         if (!(conn instanceof HttpURLConnection))
             throw new IOException("Connection to policy server was not an HttpURLConnection; instead it was " + conn.getClass());
         HttpURLConnection httpConn = (HttpURLConnection)conn;
-        if (conn instanceof HttpsURLConnection) {
-            HttpsURLConnection sslConn = (HttpsURLConnection)conn;
-            sslConn.setSSLSocketFactory(ClientProxySecureProtocolSocketFactory.getInstance());
-            usingSsl = true;
-        }
+        boolean usingSsl = SslUtils.configureSslSocketFactory(conn);
         if (httpBasicAuthorization != null)
             conn.setRequestProperty("Authorization", httpBasicAuthorization);
         conn.setDoOutput(true);

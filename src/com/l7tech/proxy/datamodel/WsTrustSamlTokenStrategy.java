@@ -16,12 +16,14 @@ import com.l7tech.common.xml.saml.SamlAssertion;
 import com.l7tech.proxy.datamodel.exceptions.BadCredentialsException;
 import com.l7tech.proxy.datamodel.exceptions.KeyStoreCorruptException;
 import com.l7tech.proxy.datamodel.exceptions.OperationCanceledException;
+import com.l7tech.proxy.ssl.ClientProxyKeyManager;
 import com.l7tech.proxy.ssl.ClientProxyTrustManager;
 import com.l7tech.proxy.ssl.SslPeer;
 import com.l7tech.proxy.util.TokenServiceClient;
 import org.w3c.dom.Element;
 
 import javax.net.ssl.SSLContext;
+import javax.net.ssl.X509KeyManager;
 import javax.net.ssl.X509TrustManager;
 import java.io.IOException;
 import java.net.URL;
@@ -51,7 +53,7 @@ public class WsTrustSamlTokenStrategy extends AbstractSamlTokenStrategy {
         try {
             SSL_CONTEXT = SSLContext.getInstance("SSL", System.getProperty(SslPeer.PROP_SSL_PROVIDER,
                                                                           SslPeer.DEFAULT_SSL_PROVIDER));
-            SSL_CONTEXT.init(null,
+            SSL_CONTEXT.init(new X509KeyManager[] {new ClientProxyKeyManager()},
                             new X509TrustManager[] {new ClientProxyTrustManager()},
                             null);
         } catch (NoSuchAlgorithmException e) {
