@@ -14,6 +14,11 @@ import java.awt.event.MouseEvent;
 import java.util.Locale;
 import java.util.ResourceBundle;
 import java.util.logging.Logger;
+import java.security.cert.X509Certificate;
+import java.security.cert.CertificateException;
+import java.io.IOException;
+
+import org.bouncycastle.asn1.x509.KeyUsage;
 
 /**
  * <p> Copyright (C) 2004 Layer 7 Technologies Inc.</p>
@@ -109,6 +114,44 @@ public class CertUsagePanel extends WizardStepPanel {
                 tc.setTrustedForSigningServerCerts(signingServerCertCheckBox.isSelected());
                 tc.setTrustedForSsl(outboundSSLConnCheckBox.isSelected());
             }
+        }
+    }
+
+    /**
+      * Populate the configuration data from the wizard input object to the visual components of the panel.
+      *
+      * @param settings The current value of configuration items in the wizard input object.
+      * @throws IllegalArgumentException if the data provided by the wizard are not valid.
+      */
+    public void readSettings(Object settings) throws IllegalArgumentException {
+        if (!(settings instanceof TrustedCert))
+            throw new IllegalArgumentException("The settings object must be TrustedCert");
+
+        TrustedCert trustedCert = (TrustedCert) settings;
+
+        X509Certificate cert = null;
+        try {
+            cert = trustedCert.getCertificate();
+        } catch (CertificateException e) {
+             logger.warning(resources.getString("cert.decode.error"));
+            JOptionPane.showMessageDialog(mainPanel, resources.getString("cert.decode.error"),
+                                           resources.getString("save.error.title"),
+                                           JOptionPane.ERROR_MESSAGE);
+        } catch (IOException e) {
+            logger.warning(resources.getString("cert.decode.error"));
+            JOptionPane.showMessageDialog(mainPanel, resources.getString("cert.decode.error"),
+                                           resources.getString("save.error.title"),
+                                           JOptionPane.ERROR_MESSAGE);
+        }
+
+        // diasble the cert options that are not allowed based on the key usage specified in the cert
+        boolean [] keyUsageArray = cert.getKeyUsage();
+
+
+        if(keyUsageArray != null && !keyUsageArray[KeyUsage.keyCertSign]) {
+            signingServerCertCheckBox.setEnabled(false);
+            signingSAMLTokenCheckBox.setEnabled(false);
+            signingClientCertCheckBox.setEnabled(false);
         }
     }
 

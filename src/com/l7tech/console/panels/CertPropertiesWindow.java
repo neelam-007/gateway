@@ -27,6 +27,8 @@ import java.util.Locale;
 import java.util.ResourceBundle;
 import java.util.logging.Logger;
 
+import org.bouncycastle.asn1.x509.KeyUsage;
+
 /**
  * This class provides a dialog for viewing a trusted certificate and its usage.
  * Users can modify the cert name and ussage via the dialog.
@@ -254,6 +256,14 @@ public class CertPropertiesWindow extends JDialog {
         certIssuedToTextField.setText(CertUtils.extractUsernameFromClientCertificate(cert));
         certIssuedByTextField.setText(CertUtils.extractIssuerNameFromClientCertificate(cert));
         certNameTextField.setText(trustedCert.getName());
+
+        // diasble the cert options that are not allowed based on the key usage specified in the cert
+        boolean [] keyUsageArray = cert.getKeyUsage();
+        if(keyUsageArray != null && !keyUsageArray[KeyUsage.keyCertSign]) {
+            signingServerCertCheckBox.setEnabled(false);
+            signingSAMLTokenCheckBox.setEnabled(false);
+            signingClientCertCheckBox.setEnabled(false);
+        }
 
         // populate the details
         JComponent certView = getCertView(cert);
