@@ -66,7 +66,7 @@ public class RequestXpathPaletteNode extends AbstractTreeNode {
      * @return the node name that is displayed
      */
     public String getName() {
-        return "Evaluate request XPath expression";
+        return "Evaluate Request XPath";
     }
 
     /**
