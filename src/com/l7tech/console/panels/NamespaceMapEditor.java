@@ -7,7 +7,9 @@ import javax.swing.event.ListSelectionListener;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.table.TableModel;
 import javax.swing.table.AbstractTableModel;
+import javax.swing.table.TableCellRenderer;
 import java.awt.*;
+import java.awt.font.TextAttribute;
 import java.awt.event.*;
 import java.util.Map;
 import java.util.ArrayList;
@@ -110,6 +112,40 @@ public class NamespaceMapEditor extends JDialog {
             }
         };
         table1.setModel(model);
+
+        // render rows that cannot be edited with different font from ones that can be removed
+        if (forbiddenNamespaces != null) {
+            final TableCellRenderer normalCellRenderer = table1.getCellRenderer(0,0);
+            TableCellRenderer specialCellRenderer = new TableCellRenderer() {
+                public Component getTableCellRendererComponent(JTable table,
+                                                               Object value,
+                                                               boolean isSelected,
+                                                               boolean hasFocus,
+                                                               int row,
+                                                               int column) {
+                    Component output = normalCellRenderer.getTableCellRendererComponent(table,
+                                                                                        value,
+                                                                                        isSelected,
+                                                                                        hasFocus,
+                                                                                        row,
+                                                                                        column);
+                    Font font = output.getFont();
+                    Map fontAttributes = new HashMap(font.getAttributes());
+                    fontAttributes.put(TextAttribute.POSTURE, TextAttribute.POSTURE_REGULAR);
+                    fontAttributes.put(TextAttribute.WEIGHT, TextAttribute.WEIGHT_BOLD);
+                    String ns = (String)table1.getModel().getValueAt(row, 1);
+                    if (forbiddenNamespaces.contains(ns)) {
+                        fontAttributes.put(TextAttribute.POSTURE, TextAttribute.POSTURE_OBLIQUE);
+                        fontAttributes.put(TextAttribute.WEIGHT, TextAttribute.WEIGHT_REGULAR);
+                    }
+                    Font newFont = Font.getFont(fontAttributes);
+                    output.setFont(newFont);
+                    return output;
+                }
+            };
+            table1.getColumnModel().getColumn(0).setCellRenderer(specialCellRenderer);
+            table1.getColumnModel().getColumn(1).setCellRenderer(specialCellRenderer);
+        }
     }
 
     private void setListeners() {
