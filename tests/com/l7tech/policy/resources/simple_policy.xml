@@ -53,12 +53,18 @@
                     <UserLogin stringValueNull="null"/>
                     <IdentityProviderOid longValue="-1"/>
                 </SpecificUser>
-                <XmlResponseSecurity>
-                    <Elements elementSecurityArrayValue="included"/>
-                </XmlResponseSecurity>
-                <XmlRequestSecurity>
-                    <Elements elementSecurityArrayValue="included"/>
-                </XmlRequestSecurity>
+                <RequestWssIntegrity>
+                    <XpathExpression xpathExpressionValueNull="null"/>
+                </RequestWssIntegrity>
+                <RequestWssConfidentiality>
+                    <XpathExpression xpathExpressionValueNull="null"/>
+                </RequestWssConfidentiality>
+                <ResponseWssIntegrity>
+                    <XpathExpression xpathExpressionValueNull="null"/>
+                </ResponseWssIntegrity>
+                <ResponseWssConfidentiality>
+                    <XpathExpression xpathExpressionValueNull="null"/>
+                </ResponseWssConfidentiality>
                 <RequestXpathAssertion>
                     <NamespaceMap mapValueNull="null"/>
                     <Pattern stringValueNull="null"/>

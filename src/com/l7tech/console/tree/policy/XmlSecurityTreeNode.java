@@ -3,7 +3,6 @@ package com.l7tech.console.tree.policy;
 
 import com.l7tech.console.action.XmlSecurityPropertiesAction;
 import com.l7tech.policy.assertion.Assertion;
-import com.l7tech.policy.assertion.xmlsec.XmlSecurityAssertion;
 
 import javax.swing.*;
 import java.util.ArrayList;
@@ -25,12 +24,7 @@ public abstract class XmlSecurityTreeNode extends LeafAssertionTreeNode {
     public abstract String getBaseName();
 
     public String getName() {
-        if (userObject instanceof XmlSecurityAssertion) {
-            XmlSecurityAssertion ass = (XmlSecurityAssertion) userObject;
-            // return getBaseName() + " - " + (ass.isEncryption() ? "sign and encrypt" : "sign only");
-            return getBaseName();
-        } else
-            return getBaseName();
+        return getBaseName();
     }
 
     /**

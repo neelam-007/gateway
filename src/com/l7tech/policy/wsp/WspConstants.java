@@ -6,7 +6,6 @@
 
 package com.l7tech.policy.wsp;
 
-import com.l7tech.common.security.xml.ElementSecurity;
 import com.l7tech.common.xml.XpathExpression;
 import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.assertion.composite.AllAssertion;
@@ -22,9 +21,7 @@ import com.l7tech.policy.assertion.identity.MemberOfGroup;
 import com.l7tech.policy.assertion.identity.SpecificUser;
 import com.l7tech.policy.assertion.xml.SchemaValidation;
 import com.l7tech.policy.assertion.xml.XslTransformation;
-import com.l7tech.policy.assertion.xmlsec.SamlSecurity;
-import com.l7tech.policy.assertion.xmlsec.XmlRequestSecurity;
-import com.l7tech.policy.assertion.xmlsec.XmlResponseSecurity;
+import com.l7tech.policy.assertion.xmlsec.*;
 import org.w3c.dom.Element;
 import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
@@ -681,8 +678,10 @@ class WspConstants {
         new AssertionMapping(new TrueAssertion(), "TrueAssertion"),
         new AssertionMapping(new MemberOfGroup(), "MemberOfGroup"),
         new AssertionMapping(new SpecificUser(), "SpecificUser"),
-        new AssertionMapping(new XmlResponseSecurity(), "XmlResponseSecurity"),
-        new AssertionMapping(new XmlRequestSecurity(), "XmlRequestSecurity"),
+        new AssertionMapping(new RequestWssIntegrity(), "RequestWssIntegrity"),
+        new AssertionMapping(new RequestWssConfidentiality(), "RequestWssConfidentiality"),
+        new AssertionMapping(new ResponseWssIntegrity(), "ResponseWssIntegrity"),
+        new AssertionMapping(new ResponseWssConfidentiality(), "ResponseWssConfidentiality"),
         new AssertionMapping(new SamlSecurity(), "SamlSecurity"),
         new AssertionMapping(new RequestXpathAssertion(), "RequestXpathAssertion"),
         new AssertionMapping(new SchemaValidation(), "SchemaValidation"),
@@ -693,9 +692,6 @@ class WspConstants {
         new AssertionMapping(new UnknownAssertion(), "UnknownAssertion"),
 
         // Special types
-        new BeanTypeMapping(ElementSecurity.class, "elementSecurityValue"),
-        new ArrayTypeMapping(new ElementSecurity[0], "elementSecurityArrayValue"),
-
         new BeanTypeMapping(XpathExpression.class, "xpathExpressionValue"),
 
     };

@@ -1,7 +1,6 @@
 package com.l7tech.proxy.datamodel;
 
 import com.l7tech.common.protocol.SecureSpanConstants;
-import com.l7tech.common.security.xml.Session;
 import com.l7tech.common.util.HexUtils;
 import com.l7tech.proxy.ClientProxy;
 import com.l7tech.proxy.ssl.ClientProxyKeyManager;
@@ -82,7 +81,6 @@ public class Ssg implements Serializable, Cloneable, Comparable {
     private transient Boolean haveClientCert = null;
     private transient int numTimesLogonDialogCanceled = 0;
     private transient long credentialsUpdatedTimeMillis = 0;
-    private transient Session session = null;
     private transient Set listeners = new HashSet(); // List of weak references to listeners
     private transient PrivateKey privateKey = null; // cache of private key
     private transient boolean passwordWorkedForPrivateKey = false;
@@ -615,16 +613,6 @@ public class Ssg implements Serializable, Cloneable, Comparable {
         haveClientCert = null;
         privateKey = null;
         passwordWorkedForPrivateKey = false;
-    }
-
-    /** Cached session.  Package private; used by SsgSessionManager. */
-    Session session() {
-        return session;
-    }
-
-    /** Set cached session.  Package private; used by SsgSessionManager. */
-    void session(Session session) {
-        this.session = session;
     }
 
     /** Key store file.  Package private; used by SsgKeyStoreManager. */

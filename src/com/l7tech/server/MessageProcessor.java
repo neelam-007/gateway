@@ -6,14 +6,11 @@
 
 package com.l7tech.server;
 
-import com.l7tech.common.protocol.SecureSpanConstants;
-import com.l7tech.common.security.xml.Session;
-import com.l7tech.common.security.xml.SessionNotFoundException;
 import com.l7tech.common.security.xml.WssProcessor;
 import com.l7tech.common.security.xml.WssProcessorImpl;
+import com.l7tech.common.util.KeystoreUtils;
 import com.l7tech.common.util.Locator;
 import com.l7tech.common.util.XmlUtil;
-import com.l7tech.common.util.KeystoreUtils;
 import com.l7tech.common.xml.InvalidDocumentFormatException;
 import com.l7tech.message.Request;
 import com.l7tech.message.Response;
@@ -28,24 +25,24 @@ import com.l7tech.service.PublishedService;
 import com.l7tech.service.ServiceManager;
 import com.l7tech.service.ServiceStatistics;
 import com.l7tech.service.resolution.ServiceResolutionException;
+import org.xml.sax.SAXException;
 import org.xmlpull.v1.XmlPullParser;
 import org.xmlpull.v1.XmlPullParserException;
 import org.xmlpull.v1.XmlPullParserFactory;
-import org.xml.sax.SAXException;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
-import java.io.IOException;
 import java.io.ByteArrayInputStream;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-import java.security.cert.X509Certificate;
-import java.security.cert.CertificateFactory;
-import java.security.cert.CertificateException;
-import java.security.PrivateKey;
+import java.io.IOException;
 import java.security.GeneralSecurityException;
 import java.security.KeyStoreException;
+import java.security.PrivateKey;
+import java.security.cert.CertificateException;
+import java.security.cert.CertificateFactory;
+import java.security.cert.X509Certificate;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * @author alex
@@ -140,14 +137,6 @@ public class MessageProcessor {
                     }
                 } else {
                     logger.fine("Requestor did not provide policy id.");
-                }
-
-                // If an xml-enc session id is provided, make sure it's still valid
-                // (because we can't wait for the XmlResponseSecurity to fail because it happens after routing)
-                if (checkForInvalidXmlSessIdRef(request)) {
-                    response.setParameter( Response.PARAM_HTTP_SESSION_STATUS, SecureSpanConstants.INVALID );
-                    logger.info("Request referred to an invalid session id. Policy will not be executed.");
-                    return AssertionStatus.FALSIFIED;
                 }
 
                 // Get the server policy
@@ -281,38 +270,6 @@ public class MessageProcessor {
     public static void setCurrentResponse( Response response ) {
         _currentResponse.set( response );
     }
-
-    /**
-     * This looks a http header containing a reference to an xml session id which has become invalid.
-     * This prevents ServerXmlResponseSecurity to fail after the routing assertion succeeds.
-     * @return If there is indeed a reference to an invalid session id, then this returns true
-     */
-    private boolean checkForInvalidXmlSessIdRef(Request request) {
-        // RETREIVE SESSION ID
-        // get the header containing the xml session id
-        String sessionIDHeaderValue = (String)request.getParameter( Request.PARAM_HTTP_XML_SESSID );
-        if (sessionIDHeaderValue == null || sessionIDHeaderValue.length() < 1) {
-            // no trace of this, no worries then
-            return false;
-        }
-        // retrieve the session
-        Session xmlsession = null;
-        try {
-            xmlsession = SessionManager.getInstance().getSession(Long.parseLong(sessionIDHeaderValue));
-        } catch (SessionNotFoundException e) {
-            logger.warning( "Exception finding session with id=" + sessionIDHeaderValue );
-            return true;
-        } catch (NumberFormatException e) {
-            logger.warning( "Session id is not long value : " + sessionIDHeaderValue );
-            return true;
-        }
-
-        // upload this session into the request message's context
-        request.setParameter(Request.PARAM_HTTP_XML_SESSID, xmlsession);
-
-        return false;
-    }
-
 
     private static class SingletonHolder {
         private static MessageProcessor singleton = new MessageProcessor();

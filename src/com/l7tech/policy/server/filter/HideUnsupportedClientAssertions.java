@@ -11,8 +11,8 @@ import com.l7tech.policy.assertion.credential.http.HttpClientCert;
 import com.l7tech.policy.assertion.credential.http.HttpDigest;
 import com.l7tech.policy.assertion.credential.wss.WssBasic;
 import com.l7tech.policy.assertion.credential.wss.WssDigest;
-import com.l7tech.policy.assertion.xmlsec.XmlRequestSecurity;
-import com.l7tech.policy.assertion.xmlsec.XmlResponseSecurity;
+import com.l7tech.policy.assertion.xmlsec.RequestWssIntegrity;
+import com.l7tech.policy.assertion.xmlsec.ResponseWssIntegrity;
 
 import java.util.Iterator;
 
@@ -78,7 +78,7 @@ public class HideUnsupportedClientAssertions extends Filter {
         HttpDigest.class,
         WssBasic.class,
         WssDigest.class,
-        XmlRequestSecurity.class,
-        XmlResponseSecurity.class,
+        RequestWssIntegrity.class,
+        ResponseWssIntegrity.class,
     };
 }

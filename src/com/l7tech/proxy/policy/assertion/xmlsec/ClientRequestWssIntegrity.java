@@ -1,9 +1,8 @@
 package com.l7tech.proxy.policy.assertion.xmlsec;
 
-import com.l7tech.common.security.xml.*;
-import com.l7tech.common.xml.MessageNotSoapException;
+import com.l7tech.common.security.xml.SignerInfo;
 import com.l7tech.policy.assertion.AssertionStatus;
-import com.l7tech.policy.assertion.xmlsec.XmlRequestSecurity;
+import com.l7tech.policy.assertion.xmlsec.RequestWssIntegrity;
 import com.l7tech.proxy.datamodel.PendingRequest;
 import com.l7tech.proxy.datamodel.Ssg;
 import com.l7tech.proxy.datamodel.SsgKeyStoreManager;
@@ -34,10 +33,10 @@ import java.security.cert.X509Certificate;
  * Date: Aug 26, 2003<br/>
  * $Id$
  */
-public class ClientXmlRequestSecurity extends ClientAssertion {
+public class ClientRequestWssIntegrity extends ClientAssertion {
     private static final ClientLogger log = ClientLogger.getInstance(ClientHttpClientCert.class);
 
-    public ClientXmlRequestSecurity(XmlRequestSecurity data) {
+    public ClientRequestWssIntegrity(RequestWssIntegrity data) {
         this.xmlRequestSecurity = data;
         if (data == null) {
             throw new IllegalArgumentException("security elements is null");
@@ -71,12 +70,18 @@ public class ClientXmlRequestSecurity extends ClientAssertion {
             userCert = SsgKeyStoreManager.getClientCert(ssg);
             X509Certificate ssgCert = SsgKeyStoreManager.getServerCert(ssg);
             final SignerInfo si = new SignerInfo(userPrivateKey, new X509Certificate[] { userCert, ssgCert });
-            ElementSecurity[] elements = xmlRequestSecurity.getElements();
-            SecurityProcessor signer = SecurityProcessor.createSenderSecurityProcessor(si, ssgCert, elements);
-            signer.processInPlace(soapmsg);
+
+            // TODO rewrite rewrite rewrite rewrite
+            // signer.processInplace(...)
+            // TODO rewrite rewrite rewrite rewrite
+            // TODO rewrite rewrite rewrite rewrite
+            // TODO rewrite rewrite rewrite rewrite
+            // TODO rewrite rewrite rewrite rewrite
+            // TODO rewrite rewrite rewrite rewrite
+            // TODO rewrite rewrite rewrite rewrite
+            // TODO rewrite rewrite rewrite rewrite
+
         } catch (NoSuchAlgorithmException e) {
-            throw new RuntimeException(e);
-        } catch (SecurityProcessorException e) {
             throw new RuntimeException(e);
         }
         request.setSoapEnvelope(soapmsg);
@@ -95,12 +100,12 @@ public class ClientXmlRequestSecurity extends ClientAssertion {
     }
 
     public String getName() {
-        return "XML Request Security - " + (xmlRequestSecurity.hasEncryptionElement() ? "sign and encrypt" : "sign only");
+        return "XML Request Security - sign elements";
     }
 
     public String iconResource(boolean open) {
         return "com/l7tech/proxy/resources/tree/xmlencryption.gif";
     }
 
-    protected XmlRequestSecurity xmlRequestSecurity;
+    protected RequestWssIntegrity xmlRequestSecurity;
 }

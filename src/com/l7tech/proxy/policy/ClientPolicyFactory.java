@@ -18,8 +18,8 @@ import com.l7tech.policy.assertion.credential.wss.WssBasic;
 import com.l7tech.policy.assertion.credential.wss.WssDigest;
 import com.l7tech.policy.assertion.identity.MemberOfGroup;
 import com.l7tech.policy.assertion.identity.SpecificUser;
-import com.l7tech.policy.assertion.xmlsec.XmlRequestSecurity;
-import com.l7tech.policy.assertion.xmlsec.XmlResponseSecurity;
+import com.l7tech.policy.assertion.xmlsec.RequestWssIntegrity;
+import com.l7tech.policy.assertion.xmlsec.ResponseWssIntegrity;
 import com.l7tech.proxy.policy.assertion.*;
 import com.l7tech.proxy.policy.assertion.composite.ClientAllAssertion;
 import com.l7tech.proxy.policy.assertion.composite.ClientExactlyOneAssertion;
@@ -31,8 +31,8 @@ import com.l7tech.proxy.policy.assertion.credential.wss.ClientWssBasic;
 import com.l7tech.proxy.policy.assertion.credential.wss.ClientWssDigest;
 import com.l7tech.proxy.policy.assertion.identity.ClientMemberOfGroup;
 import com.l7tech.proxy.policy.assertion.identity.ClientSpecificUser;
-import com.l7tech.proxy.policy.assertion.xmlsec.ClientXmlRequestSecurity;
-import com.l7tech.proxy.policy.assertion.xmlsec.ClientXmlResponseSecurity;
+import com.l7tech.proxy.policy.assertion.xmlsec.ClientRequestWssIntegrity;
+import com.l7tech.proxy.policy.assertion.xmlsec.ClientResponseWssIntegrity;
 
 /**
  * @author alex
@@ -76,8 +76,8 @@ public class ClientPolicyFactory extends PolicyFactory {
         new ClientTrueAssertion(new TrueAssertion()),
         new ClientMemberOfGroup(new MemberOfGroup()),
         new ClientSpecificUser(new SpecificUser()),
-        new ClientXmlResponseSecurity(new XmlResponseSecurity()),
-        new ClientXmlRequestSecurity(new XmlRequestSecurity()),
+        new ClientResponseWssIntegrity(new ResponseWssIntegrity()),
+        new ClientRequestWssIntegrity(new RequestWssIntegrity()),
         new ClientRequestXpathAssertion(new RequestXpathAssertion())
         // TODO new TimeOfDayAssertion(),
         // TODO new DateRangeAssertion(),

@@ -6,8 +6,6 @@
 
 package com.l7tech.skunkworks;
 
-import com.l7tech.common.security.AesKey;
-import com.l7tech.common.security.xml.XmlMangler;
 import com.l7tech.common.util.XmlUtil;
 import junit.framework.Test;
 import junit.framework.TestCase;
@@ -16,8 +14,6 @@ import org.apache.commons.httpclient.HttpClient;
 import org.apache.commons.httpclient.methods.PostMethod;
 import org.w3c.dom.Document;
 
-import java.security.Key;
-import java.security.SecureRandom;
 import java.util.logging.Logger;
 
 /**
@@ -42,13 +38,6 @@ public class AcmeSoapClient extends TestCase {
         junit.textui.TestRunner.run(suite());
     }
 
-    private static AesKey generateKey() {
-        SecureRandom rand = new SecureRandom();
-        byte[] keyBytes = new byte[16];
-        rand.nextBytes(keyBytes);
-        return new AesKey(keyBytes, 128);
-    }
-
     public static final String SIMPLE_REQ =
                         "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
                         "<soap:Envelope xmlns:soap=\"http://schemas.xmlsoap.org/soap/envelope/\"" +
@@ -65,24 +54,6 @@ public class AcmeSoapClient extends TestCase {
         PostMethod pm = new PostMethod(TEST_URL);
         Document req = XmlUtil.stringToDocument(SIMPLE_REQ);
         pm.setRequestBody(XmlUtil.nodeToString(req));
-        log.info("Sending request: " + pm.getRequestBodyAsString());
-        pm.addRequestHeader("SOAPAction", "\"http://warehouse.acme.com/ws/getProductDetails\"");
-        pm.addRequestHeader("Content-Type", "text/xml");
-        int result = client.executeMethod(pm);
-        log.info("Post completed with status " + result);
-        log.info("Got response: " + pm.getResponseBodyAsString());
-    }
-
-    public void testDecryptedRequest() throws Exception {
-        HttpClient client = new HttpClient();
-        PostMethod pm = new PostMethod(TEST_URL);
-        Document req = XmlUtil.stringToDocument(SIMPLE_REQ);
-        Key key = generateKey();
-        XmlMangler.encryptXml(req, key.getEncoded(), "mine");
-        Document creq = XmlUtil.stringToDocument(XmlUtil.nodeToString(req));
-        XmlMangler.decryptDocument(creq, key);
-
-        pm.setRequestBody(XmlUtil.nodeToString(creq));
         log.info("Sending request: " + pm.getRequestBodyAsString());
         pm.addRequestHeader("SOAPAction", "\"http://warehouse.acme.com/ws/getProductDetails\"");
         pm.addRequestHeader("Content-Type", "text/xml");

@@ -1,25 +1,24 @@
 package com.l7tech.policy.validator;
 
-import com.l7tech.policy.PolicyValidatorResult;
 import com.l7tech.policy.AssertionPath;
+import com.l7tech.policy.PolicyValidatorResult;
 import com.l7tech.policy.assertion.*;
-import com.l7tech.policy.assertion.xml.XslTransformation;
+import com.l7tech.policy.assertion.composite.CompositeAssertion;
+import com.l7tech.policy.assertion.credential.CredentialSourceAssertion;
+import com.l7tech.policy.assertion.credential.http.HttpBasic;
 import com.l7tech.policy.assertion.credential.http.HttpClientCert;
 import com.l7tech.policy.assertion.credential.http.HttpDigest;
-import com.l7tech.policy.assertion.credential.http.HttpBasic;
 import com.l7tech.policy.assertion.credential.wss.WssBasic;
-import com.l7tech.policy.assertion.credential.CredentialSourceAssertion;
-import com.l7tech.policy.assertion.xmlsec.XmlRequestSecurity;
-import com.l7tech.policy.assertion.xmlsec.XmlResponseSecurity;
 import com.l7tech.policy.assertion.ext.Category;
 import com.l7tech.policy.assertion.identity.IdentityAssertion;
 import com.l7tech.policy.assertion.identity.SpecificUser;
-import com.l7tech.policy.assertion.composite.CompositeAssertion;
+import com.l7tech.policy.assertion.xml.XslTransformation;
+import com.l7tech.policy.assertion.xmlsec.ResponseWssIntegrity;
 
-import java.util.List;
-import java.util.ArrayList;
-import java.net.URL;
 import java.net.MalformedURLException;
+import java.net.URL;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * validate single path, and collect the validation results in the
@@ -150,14 +149,6 @@ class PathValidator {
         if (seenRouting) {
             result.addWarning(new PolicyValidatorResult.Warning(a, assertionPath, "The assertion must occur before routing.", null));
         }
-        // process XmlRequestSecurity first as it may not be credential assertion
-        if (a instanceof XmlRequestSecurity) {
-            seenCredAssertionThatRequiresClientCert = true;
-            XmlRequestSecurity xmlSec = (XmlRequestSecurity)a;
-            if (!xmlSec.hasAuthenticationElement()) {
-                return;
-            }
-        }
 
         if (seenAccessControl) {
             result.addError(new PolicyValidatorResult.
@@ -216,7 +207,7 @@ class PathValidator {
                   "The assertion might not work as configured." +
                   " There is a routing assertion before this assertion.", null));
             }
-        } else if (a instanceof XmlResponseSecurity) {
+        } else if (a instanceof ResponseWssIntegrity) {
             if (!seenRouting) {
                 result.addError(new PolicyValidatorResult.Error(a, assertionPath,
                   "Xml Response Security must occur after routing.", null));
@@ -249,22 +240,6 @@ class PathValidator {
             } else if (ass.getDirection() == XslTransformation.APPLY_TO_RESPONSE && !seenRouting) {
                 result.addError(new PolicyValidatorResult.Error(a, assertionPath,
                   "XSL transformation on the response must be positioned after routing.", null));
-            }
-        } else if (a instanceof XmlRequestSecurity) {
-            XmlRequestSecurity maybepartialsignature = (XmlRequestSecurity)a;
-            if (!maybepartialsignature.hasAuthenticationElement()) {
-                // check that an identity has been declared
-                if (!seenAccessControl) {
-                    //if (!seenSpecificUserAssertion) {
-                    result.addWarning(new PolicyValidatorResult.Warning(a, assertionPath,
-                      "Partial signature on the request must be preceeded by an access control assertion " +
-                      "so that the cert used can be compared to a valid user cert.", null));
-                }
-                if (seenRouting) {
-                    result.addError(new PolicyValidatorResult.Error(a, assertionPath,
-                      "Xml Request Security must occur before routing.", null));
-                }
-
             }
         }
         seenPreconditions = true;
@@ -339,15 +314,7 @@ class PathValidator {
     }
 
     private boolean isCrendentialSource(Assertion a) {
-        // an xmlrequestsecurity may or may not be considered a credential source
-        if (a instanceof XmlRequestSecurity) {
-            XmlRequestSecurity maybeCredSource = (XmlRequestSecurity)a;
-            if (maybeCredSource.hasAuthenticationElement()) {
-                return true;
-            } else
-                return false;
-        } else
-            return a instanceof CredentialSourceAssertion;
+        return a instanceof CredentialSourceAssertion;
     }
 
     private boolean isComposite(Assertion a) {
@@ -355,17 +322,10 @@ class PathValidator {
     }
 
     private boolean hasPreconditionAssertion(Assertion a) {
-        // check preconditions for both SslAssertion and  XmlResponseSecurity assertions - see processPrecondition()
-        if (a instanceof SslAssertion || a instanceof XmlResponseSecurity || a instanceof HttpClientCert ||
+        // check preconditions for both SslAssertion and  ResponseWssIntegrity assertions - see processPrecondition()
+        if (a instanceof SslAssertion || a instanceof ResponseWssIntegrity || a instanceof HttpClientCert ||
           a instanceof XslTransformation)
             return true;
-        if (a instanceof XmlRequestSecurity) {
-            XmlRequestSecurity maybepartialrequestsignature = (XmlRequestSecurity)a;
-            // if this is a partial xml signature on the request, we need to have authenticated a user beforehand
-            if (!maybepartialrequestsignature.hasAuthenticationElement()) {
-                return true;
-            }
-        }
         return false;
     }
 

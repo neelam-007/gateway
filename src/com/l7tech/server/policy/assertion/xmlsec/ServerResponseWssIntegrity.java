@@ -1,19 +1,16 @@
 package com.l7tech.server.policy.assertion.xmlsec;
 
-import com.l7tech.common.security.xml.*;
+import com.l7tech.common.security.xml.SignerInfo;
 import com.l7tech.common.util.KeystoreUtils;
 import com.l7tech.message.*;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
-import com.l7tech.policy.assertion.xmlsec.XmlResponseSecurity;
+import com.l7tech.policy.assertion.xmlsec.ResponseWssIntegrity;
 import com.l7tech.server.policy.assertion.ServerAssertion;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
 
 import java.io.IOException;
-import java.security.GeneralSecurityException;
-import java.security.cert.X509Certificate;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -31,9 +28,9 @@ import java.util.logging.Logger;
  * Date: Aug 26, 2003<br/>
  * $Id$
  */
-public class ServerXmlResponseSecurity implements ServerAssertion {
+public class ServerResponseWssIntegrity implements ServerAssertion {
 
-    public ServerXmlResponseSecurity(XmlResponseSecurity data) {
+    public ServerResponseWssIntegrity(ResponseWssIntegrity data) {
         xmlResponseSecurity = data;
     }
 
@@ -75,51 +72,31 @@ public class ServerXmlResponseSecurity implements ServerAssertion {
         }*/
 
         SignerInfo si = KeystoreUtils.getInstance().getSignerInfo();
-        ElementSecurity[] elements = xmlResponseSecurity.getElements();
+        // TODO verify rewrite     verify rewrite     verify rewrite
+        // TODO verify rewrite     verify rewrite     verify rewrite
+        // TODO verify rewrite     verify rewrite     verify rewrite
+        // TODO verify rewrite     verify rewrite     verify rewrite
+        // TODO verify rewrite     verify rewrite     verify rewrite
+        // TODO verify rewrite     verify rewrite     verify rewrite
+        // TODO verify rewrite     verify rewrite     verify rewrite
+        // TODO verify rewrite     verify rewrite     verify rewrite
+        // TODO verify rewrite     verify rewrite     verify rewrite
 
-        // TODO verify TROGDOR integration
-        // find a signed X509 token in the request
-        X509Certificate clientCert = null;
-        if (xmlResponseSecurity.hasEncryptionElement()) {
-            WssProcessor.ProcessorResult wssResult = soapRequest.getWssProcessorOutput();
-            WssProcessor.SecurityToken[] tokens = wssResult.getSecurityTokens();
-            for (int i = 0; i < tokens.length; i++) {
-                WssProcessor.SecurityToken token = tokens[i];
-                if (token instanceof WssProcessor.X509SecurityToken) {
-                    WssProcessor.X509SecurityToken x509token = (WssProcessor.X509SecurityToken)token;
-                    if (x509token.isPossessionProved()) {
-                        if (clientCert != null) {
-                            logger.log( Level.WARNING, "Request included more than one X509 security token whose key ownership was proven" );
-                            return AssertionStatus.BAD_REQUEST; // todo verify that this return value is appropriate
-                        }
-                        clientCert = x509token.asX509Certificate();
-                    }
-                }
-            }
-            if (clientCert == null) {
-                logger.log( Level.WARNING, "Unable to encrypt response -- request included no x509 token whose key ownership was proven" );
-                response.setAuthenticationMissing(true);
-                response.setPolicyViolated(true);
-                return AssertionStatus.FAILED; // todo verify that this return value is appropriate
-            }
-        }
+        // TODO rewrite rewrite!!
+        // TODO rewrite rewrite!!
+        // TODO rewrite rewrite!!
+        // TODO rewrite rewrite!!
+        // TODO rewrite rewrite!!
+        // TODO rewrite rewrite!!
+        // TODO rewrite rewrite!!
+        // TODO rewrite rewrite!!
+        // TODO rewrite rewrite!!
 
-        SecurityProcessor signer = SecurityProcessor.createSenderSecurityProcessor(si, clientCert, elements);
-        try {
-            signer.processInPlace(soapmsg);
-        } catch (SecurityProcessorException e) {
-            String msg = "error signing/encrypting response";
-            logger.log(Level.SEVERE, msg, e);
-            return AssertionStatus.FAILED;
-        } catch (GeneralSecurityException e) {
-            String msg = "error signing response";
-            logger.log(Level.SEVERE, msg, e);
-            return AssertionStatus.FAILED;
-        }
+
         ((XmlResponse)response).setDocument(soapmsg);
         return AssertionStatus.NONE;
     }
 
     private final Logger logger = Logger.getLogger(getClass().getName());
-    private XmlResponseSecurity xmlResponseSecurity;
+    private ResponseWssIntegrity xmlResponseSecurity;
 }

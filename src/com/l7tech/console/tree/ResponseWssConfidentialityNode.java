@@ -1,7 +1,7 @@
 package com.l7tech.console.tree;
 
 import com.l7tech.policy.assertion.Assertion;
-import com.l7tech.policy.assertion.xmlsec.XmlRequestSecurity;
+import com.l7tech.policy.assertion.xmlsec.ResponseWssConfidentiality;
 
 import javax.swing.*;
 
@@ -13,18 +13,9 @@ import javax.swing.*;
  * @author flascell
  * @version 1.0
  */
-public class XmlRequestSecurityNode extends AbstractTreeNode {
-    private static final String DEFAULT_NAME = "Sign/Encrypt Request";
-    private final String name;
-
-    public XmlRequestSecurityNode(String name) {
+public class ResponseWssConfidentialityNode extends AbstractTreeNode {
+    public ResponseWssConfidentialityNode() {
         super(null);
-        this.name = name;
-    }
-
-    public XmlRequestSecurityNode() {
-        super(null);
-        this.name = DEFAULT_NAME;
     }
 
     /**
@@ -44,7 +35,7 @@ public class XmlRequestSecurityNode extends AbstractTreeNode {
      * @return the assertion this node represnts
      */
     public Assertion asAssertion() {
-        return new XmlRequestSecurity();
+        return new ResponseWssConfidentiality();
     }
 
     /**
@@ -72,7 +63,8 @@ public class XmlRequestSecurityNode extends AbstractTreeNode {
      * @return the node name that is displayed
      */
     public String getName() {
-        return name;
+        return "Encrypt Response";
+
     }
 
     /**

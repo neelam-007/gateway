@@ -26,7 +26,6 @@ import com.l7tech.proxy.datamodel.PolicyManager;
 import com.l7tech.proxy.datamodel.Ssg;
 import com.l7tech.proxy.datamodel.SsgKeyStoreManager;
 import com.l7tech.proxy.datamodel.SsgResponse;
-import com.l7tech.proxy.datamodel.SsgSessionManager;
 import com.l7tech.proxy.datamodel.exceptions.CertificateAlreadyIssuedException;
 import com.l7tech.proxy.datamodel.exceptions.BadCredentialsException;
 import com.l7tech.proxy.datamodel.exceptions.ClientCertificateException;
@@ -422,9 +421,6 @@ public class MessageProcessor {
             if (req.isNonceRequired())
                 postMethod.addRequestHeader(SecureSpanConstants.HttpHeaders.XML_NONCE_HEADER_NAME,
                                             Long.toString(req.getNonce()));
-            if (req.getSession() != null)
-                postMethod.addRequestHeader(SecureSpanConstants.HttpHeaders.XML_SESSID_HEADER_NAME,
-                                            Long.toString(req.getSession().getId()));
 
             // Let the Gateway know what policy version we used for the request.
             Policy policy = req.getActivePolicy();
@@ -443,17 +439,6 @@ public class MessageProcessor {
             log.info("Posting request to Gateway " + ssg + ", url " + url);
             int status = client.executeMethod(postMethod);
             log.info("POST to Gateway completed with HTTP status code " + status);
-
-            Header sessionStatus = postMethod.getResponseHeader(SecureSpanConstants.HttpHeaders.SESSION_STATUS_HTTP_HEADER);
-            if (sessionStatus != null) {
-                log.info("Gateway response contained a session status header: " + sessionStatus.getName() + ": " + sessionStatus.getValue());
-                if (sessionStatus.getValue().equalsIgnoreCase(SecureSpanConstants.INVALID)) {
-                    log.info("sessionstatus:invalid header; will invalidate session and try again");
-                    SsgSessionManager.invalidateSession(ssg);
-                    throw new PolicyRetryableException();
-                }
-            } else
-                log.info("Gateway response contained no session status header");
 
             Header certStatusHeader = postMethod.getResponseHeader(SecureSpanConstants.HttpHeaders.CERT_STATUS);
             if (certStatusHeader != null && SecureSpanConstants.INVALID.equalsIgnoreCase(certStatusHeader.getValue())) {

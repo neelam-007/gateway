@@ -1,6 +1,5 @@
 package com.l7tech.server;
 
-import com.l7tech.common.protocol.SecureSpanConstants;
 import com.l7tech.message.Request;
 import com.l7tech.message.Response;
 import com.l7tech.service.PublishedService;
@@ -61,9 +60,6 @@ public class MockServletApi {
 
                 servletRequestMock.matchAndReturn("getContentType", "text/xml");
                 servletRequestMock.matchAndReturn("getAttribute", Response.PARAM_HTTP_STATUS, new Integer(200));
-
-                servletRequestMock.matchAndReturn("getAttribute", Request.PARAM_HTTP_XML_SESSID, null);
-                servletRequestMock.matchAndReturn("getHeader", SecureSpanConstants.HttpHeaders.XML_SESSID_HEADER_NAME, null);
 
                 servletRequestMock.matchAndReturn("getAttribute", Request.PARAM_HTTP_AUTHORIZATION, null);
                 servletRequestMock.matchAndReturn("getHeader", "Authorization", null);

@@ -9,9 +9,9 @@ import com.l7tech.policy.assertion.Assertion;
  * <p>
  * @author flascell
  */
-public class XmlResponseSecurityTreeNode extends XmlSecurityTreeNode {
+public class ResponseWssIntegrityTreeNode extends XmlSecurityTreeNode {
 
-    public XmlResponseSecurityTreeNode(Assertion assertion) {
+    public ResponseWssIntegrityTreeNode(Assertion assertion) {
         super(assertion);
     }
 
@@ -19,6 +19,6 @@ public class XmlResponseSecurityTreeNode extends XmlSecurityTreeNode {
      * @return the node name that is displayed
      */
     public String getBaseName() {
-        return "XML Response Security";
+        return "Sign Response Parts";
     }
 }

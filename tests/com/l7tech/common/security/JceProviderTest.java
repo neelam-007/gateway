@@ -7,9 +7,6 @@
 package com.l7tech.common.security;
 
 import com.l7tech.common.security.prov.bc.BouncyCastleCertificateRequest;
-import com.l7tech.common.security.xml.SoapMsgSigner;
-import com.l7tech.common.security.xml.XmlMangler;
-import com.l7tech.common.security.xml.XmlManglerTest;
 import com.l7tech.common.util.CertUtils;
 import com.l7tech.common.util.HexUtils;
 import com.l7tech.common.util.XmlUtil;
@@ -27,6 +24,8 @@ import java.util.logging.Logger;
 
 /**
  * Test the performance of a JceProviderEngine.
+ *
+ * @deprecated needs to be rewritten now that soapmsgsigner and xmlmangler are gone
  *
  * @author mike
  * @version 1.0
@@ -104,7 +103,10 @@ public class JceProviderTest {
         CertificateRequest csr;
         KeyPair kp; // client cert private (and public) key
         X509Certificate signedClientCert; // signedClientCert client cert
-        Document testDoc = XmlManglerTest.makeTestMessage();
+
+        // TODO rewrite
+        //Document testDoc = XmlManglerTest.makeTestMessage();
+        Document testDoc = null;
         final String testXml = XmlUtil.nodeToString(testDoc);
         Document signedDocument;
         String signedXml;
@@ -151,11 +153,13 @@ public class JceProviderTest {
 
             log.info("pretest: signing XML message");
             signedDocument = XmlUtil.stringToDocument(testXml);
-            SoapMsgSigner.signEnvelope(signedDocument, kp.getPrivate(), new X509Certificate[] { signedClientCert });
+            // TODO rewrite
+            //SoapMsgSigner.signEnvelope(signedDocument, kp.getPrivate(), new X509Certificate[] { signedClientCert });
             signedXml = XmlUtil.nodeToString(signedDocument);
 
             log.info("pretest: checking XML message signature");
-            SoapMsgSigner.validateSignature(XmlUtil.stringToDocument(signedXml));
+            // TODO rewrite
+            //SoapMsgSigner.validateSignature(XmlUtil.stringToDocument(signedXml));
         }
 
         reportTime("Empty loop (baseline)", 10000 * scale, concur, new Testable() {
@@ -184,21 +188,24 @@ public class JceProviderTest {
 
         final Document encryptedDoc = XmlUtil.stringToDocument(testXml);
         log.info("Before encryption: " + testXml);
-        XmlMangler.encryptXml(encryptedDoc, keyBytes, "MyKeyName");
+        // TODO rewrite
+        //XmlMangler.encryptXml(encryptedDoc, keyBytes, "MyKeyName");
         final String encryptedXml = XmlUtil.nodeToString(encryptedDoc);
         log.info("Encrypted XML message: " + encryptedXml);
 
         reportTime("Encrypt document", 1000 * scale, concur, new Testable() {
             public void run() throws Throwable {
                 Document blah = XmlUtil.stringToDocument(testXml);
-                XmlMangler.encryptXml(blah, keyBytes, "MyKeyName");
+                // TODO rewrite
+                //XmlMangler.encryptXml(blah, keyBytes, "MyKeyName");
             }
         });
 
         reportTime("Decrypt document", 200 * scale, concur, new Testable() {
             public void run() throws Throwable {
                 Document blah = XmlUtil.stringToDocument(encryptedXml);
-                XmlMangler.decryptDocument(blah, key);
+                // TODO rewrite
+                //XmlMangler.decryptDocument(blah, key);
             }
         });
 
@@ -207,13 +214,15 @@ public class JceProviderTest {
         final PrivateKey privateKey = kp.getPrivate();
         reportTime("Sign XML message", 20 * scale, concur, new Testable() {
             public void run() throws Throwable {
-                SoapMsgSigner.signEnvelope(XmlUtil.stringToDocument(fsigned), privateKey, new X509Certificate[] { fsignedClientCert });
+                // TODO rewrite
+                //SoapMsgSigner.signEnvelope(XmlUtil.stringToDocument(fsigned), privateKey, new X509Certificate[] { fsignedClientCert });
             }
         });
 
         reportTime("Validate signedClientCert XML message", 80 * scale, concur, new Testable() {
             public void run() throws Throwable {
-                SoapMsgSigner.validateSignature(XmlUtil.stringToDocument(fsigned));
+                // TODO rewrite
+                //SoapMsgSigner.validateSignature(XmlUtil.stringToDocument(fsigned));
             }
         });
     }

@@ -13,10 +13,7 @@ import com.l7tech.policy.assertion.identity.MemberOfGroup;
 import com.l7tech.policy.assertion.identity.SpecificUser;
 import com.l7tech.policy.assertion.xml.SchemaValidation;
 import com.l7tech.policy.assertion.xml.XslTransformation;
-import com.l7tech.policy.assertion.xmlsec.SamlSecurity;
-import com.l7tech.policy.assertion.xmlsec.XmlRequestSecurity;
-import com.l7tech.policy.assertion.xmlsec.XmlResponseSecurity;
-import com.l7tech.policy.assertion.xmlsec.RequestWssX509Cert;
+import com.l7tech.policy.assertion.xmlsec.*;
 
 import java.lang.reflect.InvocationTargetException;
 import java.util.HashMap;
@@ -53,8 +50,10 @@ public class AssertionTreeNodeFactory {
         assertionMap.put(HttpRoutingAssertion.class, HttpRoutingAssertionTreeNode.class);
         assertionMap.put(JmsRoutingAssertion.class, JmsRoutingAssertionTreeNode.class);
         assertionMap.put(TrueAssertion.class, AnonymousAssertionTreeNode.class);
-        assertionMap.put(XmlRequestSecurity.class, XmlRequestSecurityTreeNode.class);
-        assertionMap.put(XmlResponseSecurity.class, XmlResponseSecurityTreeNode.class);
+        assertionMap.put(RequestWssIntegrity.class, RequestWssIntegrityTreeNode.class);
+        assertionMap.put(ResponseWssIntegrity.class, ResponseWssConfidentialityTreeNode.class);
+        assertionMap.put(RequestWssConfidentiality.class, RequestWssConfidentialityTreeNode.class);
+        assertionMap.put(ResponseWssConfidentiality.class, ResponseWssConfidentialityTreeNode.class);
         assertionMap.put(RequestXpathAssertion.class, RequestXpathPolicyTreeNode.class);
         assertionMap.put(SamlSecurity.class, SamlTreeNode.class);
         assertionMap.put(SchemaValidation.class, SchemaValidationTreeNode.class);

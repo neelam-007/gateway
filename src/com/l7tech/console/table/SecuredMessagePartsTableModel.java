@@ -1,7 +1,5 @@
 package com.l7tech.console.table;
 
-import com.l7tech.common.security.xml.ElementSecurity;
-
 import javax.swing.table.AbstractTableModel;
 import javax.wsdl.BindingOperation;
 import java.util.ArrayList;
@@ -49,27 +47,9 @@ public class SecuredMessagePartsTableModel extends AbstractTableModel {
             this.encrypt = encrypt;
         }
 
-        public String getAlgorithm() {
-            return algorithm;
-        }
-
-        public void setAlgorithm(String algorithm) {
-            this.algorithm = algorithm;
-        }
-
-        public int getKeyLength() {
-            return keyLength;
-        }
-
-        public void setKeyLength(int keyLength) {
-            this.keyLength = keyLength;
-        }
-
         private BindingOperation operation;
         private String xpathExpression;
         private boolean encrypt;
-        private String algorithm = ElementSecurity.DEFAULT_CIPHER; // default
-        private int keyLength = ElementSecurity.DEFAULT_KEYBITS; // defaault
 
         /**
          * Tests whether this message part implies the part specified by the
@@ -219,10 +199,6 @@ public class SecuredMessagePartsTableModel extends AbstractTableModel {
             return sp.getXpathExpression();
         } else if (columnIndex == 2) {
             return new Boolean(sp.isEncrypt());
-        } else if (columnIndex == 3) {
-            return sp.getAlgorithm();
-        } else if (columnIndex == 4) {
-            return new Integer(sp.getKeyLength());
         }
         throw new IndexOutOfBoundsException("column " + columnIndex);
     }
@@ -302,16 +278,6 @@ public class SecuredMessagePartsTableModel extends AbstractTableModel {
                 throw new IllegalArgumentException("Unsupported type " + aValue.getClass() + " expected " + Boolean.class);
             }
             sp.setEncrypt(((Boolean)aValue).booleanValue());
-        } else if (columnIndex == 3) {
-            if (!(aValue instanceof String)) {
-                throw new IllegalArgumentException("Unsupported type " + aValue.getClass() + " expected " + String.class);
-            }
-            sp.setAlgorithm(aValue.toString());
-        } else if (columnIndex == 4) {
-            if (!(aValue instanceof Integer)) {
-                throw new IllegalArgumentException("Unsupported type " + aValue.getClass() + " expected " + Integer.class);
-            }
-            sp.setKeyLength(((Integer)aValue).intValue());
         } else {
             throw new IndexOutOfBoundsException("" + columnIndex + " > 4");
         }

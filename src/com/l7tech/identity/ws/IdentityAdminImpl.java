@@ -9,9 +9,9 @@ import com.l7tech.identity.internal.InternalUser;
 import com.l7tech.identity.ldap.LdapConfigTemplateManager;
 import com.l7tech.identity.ldap.LdapIdentityProviderConfig;
 import com.l7tech.objectmodel.*;
-import com.l7tech.server.SessionManager;
 
 import java.rmi.RemoteException;
+import java.security.SecureRandom;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateEncodingException;
 import java.sql.SQLException;
@@ -393,7 +393,7 @@ public class IdentityAdminImpl implements IdentityAdmin {
                     newPasswd = user.getPassword();
                 } else {
                     byte[] randomPasswd = new byte[32];
-                    SessionManager.getInstance().getRand().nextBytes(randomPasswd);
+                    getSecureRandom().nextBytes(randomPasswd);
                     newPasswd = new String(randomPasswd);
                 }
                 dbuser.setPassword(newPasswd);
@@ -409,6 +409,12 @@ public class IdentityAdminImpl implements IdentityAdmin {
             }
         }
 
+    }
+
+    private static SecureRandom secureRandom = null;
+    private synchronized SecureRandom getSecureRandom() {
+        if (secureRandom != null) return secureRandom;
+        return secureRandom = new SecureRandom();
     }
 
     public void testIdProviderConfig(IdentityProviderConfig identityProviderConfig)

@@ -1,14 +1,12 @@
 package com.l7tech.console.panels;
 
-import com.l7tech.common.security.xml.ElementSecurity;
-import com.l7tech.common.util.SoapUtil;
-import com.l7tech.common.xml.XpathExpression;
 import com.l7tech.policy.assertion.TrueAssertion;
 import com.l7tech.policy.assertion.credential.http.HttpBasic;
 import com.l7tech.policy.assertion.credential.http.HttpClientCert;
 import com.l7tech.policy.assertion.credential.http.HttpDigest;
 import com.l7tech.policy.assertion.credential.wss.WssBasic;
-import com.l7tech.policy.assertion.xmlsec.XmlRequestSecurity;
+import com.l7tech.policy.assertion.xmlsec.RequestWssIntegrity;
+import com.l7tech.policy.assertion.xmlsec.RequestWssX509Cert;
 
 import javax.swing.*;
 import javax.xml.soap.SOAPConstants;
@@ -82,17 +80,12 @@ public class CredentialsLocation {
         credentialsLocationMap.put("WS Token Basic", new WssBasic());
         // credentialsLocationMap.put("WS Token Digest", new WssDigest());
 
-        XmlRequestSecurity xmlRequestSecurity = new XmlRequestSecurity();
+        RequestWssIntegrity xmlRequestSecurity = new RequestWssIntegrity();
         Map namespaces = new HashMap();
         namespaces.put("soapenv", SOAPConstants.URI_NS_SOAP_ENVELOPE);
         namespaces.put("SOAP-ENV", SOAPConstants.URI_NS_SOAP_ENVELOPE);
 
-        XpathExpression xpathExpression = new XpathExpression(SoapUtil.SOAP_ENVELOPE_XPATH, namespaces);
-           final ElementSecurity elementSecurity =
-             new ElementSecurity(xpathExpression, null, false, ElementSecurity.DEFAULT_CIPHER, ElementSecurity.DEFAULT_KEYBITS);
-           xmlRequestSecurity.setElements(new ElementSecurity[]{elementSecurity});
-
-        credentialsLocationMap.put("XML Digital Signature", xmlRequestSecurity);
+        credentialsLocationMap.put("XML Digital Signature", new RequestWssX509Cert());
 
         return credentialsLocationMap;
     }

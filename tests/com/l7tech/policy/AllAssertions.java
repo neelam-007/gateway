@@ -19,8 +19,10 @@ import com.l7tech.policy.assertion.ext.Category;
 import com.l7tech.policy.assertion.ext.CustomAssertion;
 import com.l7tech.policy.assertion.identity.MemberOfGroup;
 import com.l7tech.policy.assertion.identity.SpecificUser;
-import com.l7tech.policy.assertion.xmlsec.XmlRequestSecurity;
-import com.l7tech.policy.assertion.xmlsec.XmlResponseSecurity;
+import com.l7tech.policy.assertion.xmlsec.RequestWssIntegrity;
+import com.l7tech.policy.assertion.xmlsec.ResponseWssIntegrity;
+import com.l7tech.policy.assertion.xmlsec.ResponseWssConfidentiality;
+import com.l7tech.policy.assertion.xmlsec.RequestWssConfidentiality;
 
 /**
  * @author alex
@@ -47,8 +49,8 @@ public class AllAssertions {
         new TrueAssertion(),
         new MemberOfGroup(),
         new SpecificUser(),
-        new XmlResponseSecurity(),
-        new XmlRequestSecurity(),
+        new ResponseWssIntegrity(),
+        new RequestWssIntegrity(),
         new RequestXpathAssertion(),
         // TODO new TimeOfDayAssertion(),
         // TODO new DateRangeAssertion(),
@@ -86,8 +88,8 @@ public class AllAssertions {
         new TrueAssertion(),
         new MemberOfGroup(),
         new SpecificUser(),
-        new XmlResponseSecurity(),
-        new XmlRequestSecurity(),
+        new ResponseWssIntegrity(),
+        new RequestWssIntegrity(),
         new RequestXpathAssertion(),
         CUSTOM_ASSERTION_HOLDER,
         new UnknownAssertion()
@@ -117,8 +119,10 @@ public class AllAssertions {
         new TrueAssertion(),
         new MemberOfGroup(),
         new SpecificUser(),
-        new XmlResponseSecurity(),
-        new XmlRequestSecurity(),
+        new RequestWssIntegrity(),
+        new RequestWssConfidentiality(),
+        new ResponseWssIntegrity(),
+        new ResponseWssConfidentiality(),
         new RequestXpathAssertion(),
         new CustomAssertionHolder(),
         new UnknownAssertion()

@@ -1,13 +1,14 @@
 package com.l7tech.common.security.xml;
 
-import org.w3c.dom.*;
 import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.xml.MessageNotSoapException;
-import com.l7tech.common.xml.MessageNotSoapException;
+import org.w3c.dom.*;
 
 /**
  * Appends or reads nonces, sequence numbers, and session ids from a
  * WS Secure Conversation Token header inside a soap message.
+ *
+ * @deprecated this will be replaced with SecurityContextTokenHandler by 3.0
  *
  * Format for requests :
  * <PRE>
@@ -58,7 +59,6 @@ import com.l7tech.common.xml.MessageNotSoapException;
  * Date: Aug 28, 2003<br/>
  * Time: 10:31:55 AM<br/>
  * $Id$
-
  */
 public class SecureConversationTokenHandler {
 

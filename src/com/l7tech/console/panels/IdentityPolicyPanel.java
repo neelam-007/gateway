@@ -13,7 +13,7 @@ import com.l7tech.console.util.TopComponents;
 import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.assertion.credential.CredentialSourceAssertion;
-import com.l7tech.policy.assertion.xmlsec.XmlRequestSecurity;
+import com.l7tech.policy.assertion.xmlsec.RequestWssX509Cert;
 import com.l7tech.service.PublishedService;
 
 import javax.swing.*;
@@ -265,7 +265,7 @@ public class IdentityPolicyPanel extends JPanel {
                 Object key = e.getItem();
                 CredentialSourceAssertion ca =
                   (CredentialSourceAssertion) credentialsLocationMap.get(key);
-                xmlSecOptions.setEnabled(ca instanceof XmlRequestSecurity);
+                xmlSecOptions.setEnabled(ca instanceof RequestWssX509Cert);
             }
         });
         
@@ -356,19 +356,10 @@ public class IdentityPolicyPanel extends JPanel {
         for (Iterator it = principalCredAssertions.iterator(); it.hasNext();) {
             CredentialSourceAssertion credAssertion = (CredentialSourceAssertion)it.next();
 
-            XmlRequestSecurity xmlSec = null;
-            if (credAssertion instanceof XmlRequestSecurity) {
-                xmlSec = (XmlRequestSecurity)credAssertion;
-                if (!xmlSec.hasAuthenticationElement()) {
-                    // Skip this -- it's not a valid credential source assertion.
-                    // TODO clean up CredentialSourceAssertion design -- See Bug #760 for discussion
-                    continue;
-                } else {
-                    existingCredAssertion = credAssertion;
-                }
-            } else {
-                existingCredAssertion = credAssertion;
-            }
+            existingCredAssertion = credAssertion;
+            RequestWssX509Cert xmlSec = null;
+            if (credAssertion instanceof RequestWssX509Cert)
+                xmlSec = (RequestWssX509Cert)credAssertion;
 
             selectAuthMethodComboItem(existingCredAssertion);
             if (othersCredAssertions.contains(existingCredAssertion))
@@ -376,7 +367,7 @@ public class IdentityPolicyPanel extends JPanel {
 
             if (xmlSec != null) {
                 xmlSecOptions.setEnabled(canmod);
-                boolean isXmlEncrypted = xmlSec.hasEncryptionElement();
+                boolean isXmlEncrypted = false; // TODO this no longer makes sense
                 xmlSecOptions.setSelectedIndex(isXmlEncrypted ? 1 : 0);
             } else
                 xmlSecOptions.setEnabled(false);
@@ -612,12 +603,7 @@ public class IdentityPolicyPanel extends JPanel {
 
         Object key = authMethodComboBox.getSelectedItem();
         CredentialSourceAssertion newCredAssertion = (CredentialSourceAssertion) credentialsLocationMap.get(key);
-        if (newCredAssertion instanceof XmlRequestSecurity) {
-            boolean encrypt = xmlSecOptions.getSelectedItem().equals(XML_SEC_OPTIONS[1]);
-            XmlRequestSecurity xmlSec = (XmlRequestSecurity) newCredAssertion;
-            if (xmlSec.getElements().length > 0)
-                xmlSec.getElements()[0].setEncryption(encrypt);
-        }
+        // TODO verify support for XML signing/encryption
         return newCredAssertion;
     }
 

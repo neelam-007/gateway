@@ -6,9 +6,6 @@
 
 package com.l7tech.policy.validator;
 
-import com.l7tech.common.security.xml.ElementSecurity;
-import com.l7tech.common.util.SoapUtil;
-import com.l7tech.common.xml.XpathExpression;
 import com.l7tech.policy.PolicyValidator;
 import com.l7tech.policy.PolicyValidatorResult;
 import com.l7tech.policy.assertion.Assertion;
@@ -18,8 +15,9 @@ import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.assertion.credential.http.HttpBasic;
 import com.l7tech.policy.assertion.credential.http.HttpClientCert;
 import com.l7tech.policy.assertion.identity.SpecificUser;
-import com.l7tech.policy.assertion.xmlsec.XmlRequestSecurity;
-import com.l7tech.policy.assertion.xmlsec.XmlResponseSecurity;
+import com.l7tech.policy.assertion.xmlsec.RequestWssIntegrity;
+import com.l7tech.policy.assertion.xmlsec.ResponseWssIntegrity;
+import com.l7tech.policy.assertion.xmlsec.RequestWssX509Cert;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
@@ -105,8 +103,7 @@ public class DefaultPolicyValidatorTest extends TestCase {
         List messages = result.messages(specificUser);
         assertTrue("Expected errors/warnings for the " + HttpRoutingAssertion.class + " assertion, got 0 messages.", !messages.isEmpty());
 
-        XmlRequestSecurity xs = new XmlRequestSecurity();
-        xs.setElements(new ElementSecurity[]{getAuthenticationElementSecurity()});
+        RequestWssX509Cert xs = new RequestWssX509Cert();
         kids =
           Arrays.asList(new Assertion[]{
               xs,
@@ -128,8 +125,7 @@ public class DefaultPolicyValidatorTest extends TestCase {
      * @throws Exception
      */
     public void testPartialXmlRequestSecurityAfterRoute() throws Exception {
-        XmlRequestSecurity xs = new XmlRequestSecurity();
-        xs.setElements(getTestPartialElementSecurity());
+        RequestWssX509Cert xs = new RequestWssX509Cert();
         final List kids =
           Arrays.asList(new Assertion[]{
               new SslAssertion(),
@@ -143,7 +139,7 @@ public class DefaultPolicyValidatorTest extends TestCase {
         PolicyValidator dfpv = PolicyValidator.getDefault();
         PolicyValidatorResult result = dfpv.validate(aa);
         List messages = result.messages(xs);
-        assertTrue("Expected errors/warnings for the " + XmlRequestSecurity.class + " assertion, got 0", !messages.isEmpty(), messages);
+        assertTrue("Expected errors/warnings for the " + RequestWssIntegrity.class + " assertion, got 0", !messages.isEmpty(), messages);
     }
 
     /**
@@ -152,8 +148,7 @@ public class DefaultPolicyValidatorTest extends TestCase {
      * @throws Exception
      */
     public void testPartialXmlRequestSecurity() throws Exception {
-        XmlRequestSecurity xs = new XmlRequestSecurity();
-        xs.setElements(getTestPartialElementSecurity());
+        RequestWssX509Cert xs = new RequestWssX509Cert();
         final List kids =
           Arrays.asList(new Assertion[]{
               new SslAssertion(),
@@ -177,8 +172,7 @@ public class DefaultPolicyValidatorTest extends TestCase {
      * @throws Exception
      */
     public void testPartialXmlResponseSecurityBeforeRoute() throws Exception {
-        XmlResponseSecurity xs = new XmlResponseSecurity();
-        xs.setElements(getTestPartialElementSecurity());
+        ResponseWssIntegrity xs = new ResponseWssIntegrity();
         final List kids =
           Arrays.asList(new Assertion[]{
               new SslAssertion(),
@@ -192,7 +186,7 @@ public class DefaultPolicyValidatorTest extends TestCase {
         PolicyValidator dfpv = PolicyValidator.getDefault();
         PolicyValidatorResult result = dfpv.validate(aa);
         List messages = result.messages(xs);
-        assertTrue("Expected errors/warnings for the " + XmlRequestSecurity.class + " assertion, got 0", !messages.isEmpty());
+        assertTrue("Expected errors/warnings for the " + RequestWssIntegrity.class + " assertion, got 0", !messages.isEmpty());
     }
 
 
@@ -231,41 +225,6 @@ public class DefaultPolicyValidatorTest extends TestCase {
         result = dfpv.validate(aa);
         messages = result.messages(httpClientCert);
         assertTrue("Expected errors/warnings for the " + HttpClientCert.class + " assertion, got 0", !messages.isEmpty());
-    }
-
-
-    /**
-     * @return test element security
-     */
-    private ElementSecurity[] getTestPartialElementSecurity() {
-        Map nm = new HashMap();
-        nm.put("soapenv", SOAPConstants.URI_NS_SOAP_ENVELOPE);
-        nm.put("impl", "http://warehouse.acme.com/ws");
-
-        return new ElementSecurity[]{
-            new ElementSecurity(new XpathExpression("/soapenv:Envelope/soapenv:Body/impl:placeOrder/accountid", nm),
-              new XpathExpression("/soapenv:Envelope/soapenv:Body/impl:placeOrder", nm),
-              false,
-              "AES", 128),
-
-            new ElementSecurity(new XpathExpression("/soapenv:Envelope/soapenv:Body/impl:placeOrder/price", nm),
-              new XpathExpression("/soapenv:Envelope/soapenv:Body/impl:placeOrder/placeOrder", nm),
-              true,
-              "AES", 128),
-
-            new ElementSecurity(new XpathExpression("/soapenv:Envelope/soapenv:Body/impl:placeOrder/amount", nm),
-              new XpathExpression("/soapenv:Envelope/soapenv:Body/impl:placeOrder/placeOrder", nm),
-              true,
-              "AES", 128),
-        };
-    }
-
-    private ElementSecurity getAuthenticationElementSecurity() {
-        Map namespaces = new HashMap();
-        namespaces.put("soapenv", SOAPConstants.URI_NS_SOAP_ENVELOPE);
-        namespaces.put("SOAP-ENV", SOAPConstants.URI_NS_SOAP_ENVELOPE);
-        XpathExpression xpathExpression = new XpathExpression(SoapUtil.SOAP_ENVELOPE_XPATH, namespaces);
-        return new ElementSecurity(xpathExpression, null, false, ElementSecurity.DEFAULT_CIPHER, ElementSecurity.DEFAULT_KEYBITS);
     }
 
     private static void assertTrue(String msg, boolean expression, List messages) {

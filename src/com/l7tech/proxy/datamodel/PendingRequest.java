@@ -6,7 +6,6 @@
 
 package com.l7tech.proxy.datamodel;
 
-import com.l7tech.common.security.xml.Session;
 import com.l7tech.proxy.RequestInterceptor;
 import com.l7tech.proxy.datamodel.exceptions.BadCredentialsException;
 import com.l7tech.proxy.datamodel.exceptions.CertificateAlreadyIssuedException;
@@ -118,7 +117,6 @@ public class PendingRequest {
         private boolean isBasicAuthRequired = false;
         private boolean isDigestAuthRequired = false;
         private boolean isNonceRequired = false;
-        private Session session = null; // session for the response to this request.  can't be changed once sent
     }
     private PolicySettings policySettings = new PolicySettings();
 
@@ -317,44 +315,6 @@ public class PendingRequest {
 
     public void setPolicyUpdated(boolean policyUpdated) {
         isPolicyUpdated = policyUpdated;
-    }
-
-    /**
-     * Get the session that was passed with the initial request, or null if we don't have one yet.
-     *
-     * @return
-     */
-    public Session getSession() {
-        return policySettings.session;
-    }
-
-    /**
-     * Get or create a session for this Ssg.
-     */
-    public Session getOrCreateSession()
-            throws ServerCertificateUntrustedException, BadCredentialsException, IOException,
-                   OperationCanceledException
-    {
-        Session session = getSession();
-        if (session != null)
-            return session;
-
-        session = SsgSessionManager.getOrCreateSession(getSsg(), getActivePolicy().getVersion());
-        setSession(session);
-        return session;
-    }
-
-    /**
-     * Set the session that will be referred to in the request, and used to decrypt/etc the reply.
-     * A reference to it is kept here so that even if the real session is invalidated on the Ssg
-     * by another thread after the request is sent, we'll still be able to work with the outstanding
-     * reply for this request.  (We can't just reissue the request at that point, since it will already
-     * have been successfully passed through the ssg to the target server.)
-     *
-     * @param session
-     */
-    public void setSession(Session session) {
-        policySettings.session = session;
     }
 
     public SsgResponse getLastErrorResponse() {

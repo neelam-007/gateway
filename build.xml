@@ -231,10 +231,8 @@
             <test name="com.l7tech.policy.AllTests" haltonfailure="no"/>
             <test name="com.l7tech.identity.StubDataStoreTest" haltonfailure="no"/>
             <test name="com.l7tech.common.security.KeysTest" haltonfailure="no"/>
-            <test name="com.l7tech.common.security.xml.XmlManglerTest" haltonfailure="no" fork="yes"/>
             <test name="com.l7tech.server.MockServletApiTest" haltonfailure="no"/>
             <test name="com.l7tech.common.xml.XpathEvaluatorTest" haltonfailure="no"/>
-            <test name="com.l7tech.policy.assertion.xmlsec.ElementSecurityTest" haltonfailure="no" fork="yes"/>
             <test name="com.l7tech.common.xml.SoapMessageGeneratorTest" haltonfailure="no" fork="yes"/>
             <!--
             ** TODO: make sure -security flag is added to the 'nightly' build/test

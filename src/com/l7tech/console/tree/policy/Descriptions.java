@@ -8,8 +8,8 @@ import com.l7tech.policy.assertion.credential.http.HttpBasic;
 import com.l7tech.policy.assertion.credential.http.HttpDigest;
 import com.l7tech.policy.assertion.identity.MemberOfGroup;
 import com.l7tech.policy.assertion.identity.SpecificUser;
-import com.l7tech.policy.assertion.xmlsec.XmlRequestSecurity;
-import com.l7tech.policy.assertion.xmlsec.XmlResponseSecurity;
+import com.l7tech.policy.assertion.xmlsec.RequestWssIntegrity;
+import com.l7tech.policy.assertion.xmlsec.ResponseWssIntegrity;
 
 import java.lang.reflect.InvocationTargetException;
 import java.util.HashMap;
@@ -197,7 +197,7 @@ public class Descriptions {
         descriptionsMap.put(HttpDigest.class, NoParam.class);
         descriptionsMap.put(HttpRoutingAssertion.class, RoutingDescription.class);
         descriptionsMap.put(JmsRoutingAssertion.class, RoutingDescription.class);
-        descriptionsMap.put(XmlRequestSecurity.class, NoParam.class);
-        descriptionsMap.put(XmlResponseSecurity.class, NoParam.class);
+        descriptionsMap.put(RequestWssIntegrity.class, NoParam.class);
+        descriptionsMap.put(ResponseWssIntegrity.class, NoParam.class);
     }
 }

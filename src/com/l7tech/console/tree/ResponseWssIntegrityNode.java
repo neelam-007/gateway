@@ -1,7 +1,7 @@
 package com.l7tech.console.tree;
 
 import com.l7tech.policy.assertion.Assertion;
-import com.l7tech.policy.assertion.xmlsec.XmlResponseSecurity;
+import com.l7tech.policy.assertion.xmlsec.ResponseWssIntegrity;
 
 import javax.swing.*;
 
@@ -13,8 +13,8 @@ import javax.swing.*;
  * @author flascell
  * @version 1.0
  */
-public class XmlResponseSecurityNode extends AbstractTreeNode {
-    public XmlResponseSecurityNode() {
+public class ResponseWssIntegrityNode extends AbstractTreeNode {
+    public ResponseWssIntegrityNode() {
         super(null);
     }
 
@@ -35,7 +35,7 @@ public class XmlResponseSecurityNode extends AbstractTreeNode {
      * @return the assertion this node represnts
      */
     public Assertion asAssertion() {
-        return new XmlResponseSecurity();
+        return new ResponseWssIntegrity();
     }
 
     /**
@@ -63,7 +63,7 @@ public class XmlResponseSecurityNode extends AbstractTreeNode {
      * @return the node name that is displayed
      */
     public String getName() {
-        return "Sign/Encrypt Response";
+        return "Sign Response";
 
     }
 

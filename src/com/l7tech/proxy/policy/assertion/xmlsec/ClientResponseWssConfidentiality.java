@@ -4,7 +4,8 @@ import com.l7tech.common.security.xml.*;
 import com.l7tech.common.util.CertUtils;
 import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.policy.assertion.AssertionStatus;
-import com.l7tech.policy.assertion.xmlsec.XmlResponseSecurity;
+import com.l7tech.policy.assertion.xmlsec.ResponseWssIntegrity;
+import com.l7tech.policy.assertion.xmlsec.ResponseWssConfidentiality;
 import com.l7tech.proxy.datamodel.PendingRequest;
 import com.l7tech.proxy.datamodel.Ssg;
 import com.l7tech.proxy.datamodel.SsgKeyStoreManager;
@@ -34,11 +35,11 @@ import java.security.cert.X509Certificate;
  * Date: Aug 26, 2003<br/>
  * $Id$
  */
-public class ClientXmlResponseSecurity extends ClientAssertion {
+public class ClientResponseWssConfidentiality extends ClientAssertion {
     private static final ClientLogger log = ClientLogger.getInstance(ClientHttpClientCert.class);
 
-    public ClientXmlResponseSecurity(XmlResponseSecurity data) {
-        xmlResponseSecurity = data;
+    public ClientResponseWssConfidentiality(ResponseWssConfidentiality data) {
+        responseWssConfidentiality = data;
         if (data == null) {
             throw new IllegalArgumentException("security elements is null");
         }
@@ -50,10 +51,10 @@ public class ClientXmlResponseSecurity extends ClientAssertion {
      *
      * @param request might receive a header containing the xml-enc session
      * @return AssertionStatus.NONE if we are prepared to handle the eventual response
-     * @throws ServerCertificateUntrustedException
+     * @throws com.l7tech.proxy.datamodel.exceptions.ServerCertificateUntrustedException
      *                                    if an updated SSG cert is needed
-     * @throws OperationCanceledException if the user cancels the logon dialog
-     * @throws BadCredentialsException    if the SSG rejects the SSG username/password when establishing the session
+     * @throws com.l7tech.proxy.datamodel.exceptions.OperationCanceledException if the user cancels the logon dialog
+     * @throws com.l7tech.proxy.datamodel.exceptions.BadCredentialsException    if the SSG rejects the SSG username/password when establishing the session
      */
     public AssertionStatus decorateRequest(PendingRequest request)
             throws GeneralSecurityException,
@@ -66,16 +67,7 @@ public class ClientXmlResponseSecurity extends ClientAssertion {
         if (SsgKeyStoreManager.getServerCert(ssg) == null)
             throw new ServerCertificateUntrustedException("Server cert is needed to check signatures, but has not yet been discovered");
 
-        log.info("According to policy, we're expecting a signed reply.  Will send nonce.");
-        request.setNonceRequired(true);
-
-        // If the response will be encrypted, we'll need to ensure that we have a client cert
-        if (xmlResponseSecurity.hasEncryptionElement()) {
-            log.info("According to policy, we're expecting an encrypted reply.  Verifying client cert.");
-            request.prepareClientCertificate();
-        }
-
-        return AssertionStatus.NONE;
+        return AssertionStatus.NOT_YET_IMPLEMENTED;
     }
 
     /**
@@ -89,47 +81,19 @@ public class ClientXmlResponseSecurity extends ClientAssertion {
       throws ServerCertificateUntrustedException, IOException, SAXException, ResponseValidationException, KeyStoreCorruptException {
         Document doc = response.getResponseAsDocument();
 
-        ElementSecurity[] elements = xmlResponseSecurity.getElements();
-        SecurityProcessor verifier = SecurityProcessor.createRecipientSecurityProcessor(response.getProcessorResult(),
-                                                                                        elements);
-        try {
-            X509Certificate caCert = SsgKeyStoreManager.getServerCert(request.getSsg());
-            SecurityProcessor.Result result = verifier.processInPlace(doc);
+        // TODO rewrite rewrite rewrite rewrite rewrite
+        // TODO rewrite rewrite rewrite rewrite rewrite
+        // TODO rewrite rewrite rewrite rewrite rewrite
+        // TODO rewrite rewrite rewrite rewrite rewrite
+        // TODO rewrite rewrite rewrite rewrite rewrite
+        // TODO rewrite rewrite rewrite rewrite rewrite
 
-            // If this assertion doesn't apply to this reply, we are done
-            if (result.getType() == SecurityProcessor.Result.Type.NOT_APPLICABLE) {
-                log.info("Response security does not apply to this request -- ignoring");
-                return AssertionStatus.NONE;
-            }
-
-            if (result.getType() != SecurityProcessor.Result.Type.OK)
-                throw new ResponseValidationException("Response from Gateway was not properly signed and/or encrypted according to policy");
-
-            /* TODO plug in the new relpay protection here if applicable (probably should go in another assertion anyway)
-            Long responsenonce = SecureConversationTokenHandler.takeNonceFromDocument(doc);
-            if (responsenonce == null)
-                throw new ResponseValidationException("Response from Gateway did not contain a nonce");
-            if (responsenonce.longValue() != request.getNonce())
-                throw new ResponseValidationException("Response from Gateway contained the wrong nonce value");*/
-
-            X509Certificate[] certificate = result.getCertificateChain();
-            if (certificate == null || certificate[0] == null) {
-                log.info("Response from gateway did not contain a signed envelope");
-            } else {
-                CertUtils.verifyCertificateChain(certificate, caCert, 1);
-            }
-        } catch (Exception e) {
-            handleResponseThrowable(e);
-        }
-
-        return AssertionStatus.NONE;
+        return AssertionStatus.NOT_YET_IMPLEMENTED;
     }
 
     private void handleResponseThrowable(Throwable e) throws ResponseValidationException {
         Throwable cause = ExceptionUtils.unnestToRoot(e);
-        if (cause instanceof InvalidSignatureException) {
-            throw new ResponseValidationException("Response from Gateway contained an invalid signature", e);
-        } else if (cause instanceof SignatureException) {
+        if (cause instanceof SignatureException) {
             throw new ResponseValidationException("Response from Gateway was signed, but not by the Gateway CA key we expected", e);
         } else if (cause instanceof CertificateException) {
             throw new ResponseValidationException("Signature on response from Gateway contained an invalid certificate", e);
@@ -144,7 +108,7 @@ public class ClientXmlResponseSecurity extends ClientAssertion {
     }
 
     public String getName() {
-        return "XML Response Security - " + (xmlResponseSecurity.hasEncryptionElement() ? "sign and encrypt" : "sign only");
+        return "XML Response Security - encrypt";
     }
 
     public String iconResource(boolean open) {
@@ -152,5 +116,5 @@ public class ClientXmlResponseSecurity extends ClientAssertion {
     }
 
 
-    private XmlResponseSecurity xmlResponseSecurity;
+    private ResponseWssConfidentiality responseWssConfidentiality;
 }
