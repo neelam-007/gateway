@@ -87,7 +87,7 @@ public class ServerHttpClientCert extends ServerCredentialSourceAssertion implem
             throw new CredentialFinderException("cannot extract name from cert", e, AssertionStatus.AUTH_FAILED);
         }
 
-        logger.info("cert found for user " + certCN);
+        logger.fine("cert found for user " + certCN);
 
         return new LoginCredentials( certCN, null, CredentialFormat.CLIENTCERT, _data.getClass(), null, clientCert );
     }
