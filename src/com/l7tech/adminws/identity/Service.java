@@ -33,7 +33,7 @@ public class Service implements IdentityService {
      * @return value to be compared with the client side value of Service.VERSION;
      * @throws java.rmi.RemoteException
      */
-    public String echoVersion() throws java.rmi.RemoteException {
+    public String echoVersion() throws RemoteException {
         return VERSION;
     }
     /**
@@ -41,9 +41,9 @@ public class Service implements IdentityService {
      * @return Array of entity headers for all existing id provider config
      * @throws java.rmi.RemoteException
      */
-    public EntityHeader[] findAllIdentityProviderConfig() throws java.rmi.RemoteException {
+    public EntityHeader[] findAllIdentityProviderConfig() throws RemoteException {
         try {
-            java.util.Collection res = getIdentityProviderConfigManagerAndBeginTransaction().findAllHeaders();
+            Collection res = getIdentityProviderConfigManagerAndBeginTransaction().findAllHeaders();
             return collectionToHeaderArray(res);
         } catch (FindException e) {
             logger.log(Level.SEVERE, "FindException in findAllIdentityProviderConfig", e);
@@ -60,9 +60,9 @@ public class Service implements IdentityService {
      * @return Array of entity headers for all existing id provider config
      * @throws java.rmi.RemoteException
      */
-    public EntityHeader[] findAllIdentityProviderConfigByOffset(int offset, int windowSize) throws java.rmi.RemoteException {
+    public EntityHeader[] findAllIdentityProviderConfigByOffset(int offset, int windowSize) throws RemoteException {
         try {
-            java.util.Collection res = getIdentityProviderConfigManagerAndBeginTransaction().findAllHeaders(offset, windowSize);
+            Collection res = getIdentityProviderConfigManagerAndBeginTransaction().findAllHeaders(offset, windowSize);
             return collectionToHeaderArray(res);
         } catch (FindException e) {
             logger.log(Level.SEVERE, null, e);
@@ -79,17 +79,17 @@ public class Service implements IdentityService {
      * @return An identity provider config object
      * @throws java.rmi.RemoteException
      */
-    public com.l7tech.identity.IdentityProviderConfig findIdentityProviderConfigByPrimaryKey(long oid) throws java.rmi.RemoteException {
+    public IdentityProviderConfig findIdentityProviderConfigByPrimaryKey(long oid) throws RemoteException {
         try {
             return getIdentityProviderConfigManagerAndBeginTransaction().findByPrimaryKey(oid);
         } catch (FindException e) {
             logger.log(Level.SEVERE, null, e);
-            throw new java.rmi.RemoteException("FindException in findIdentityProviderConfigByPrimaryKey", e);
+            throw new RemoteException("FindException in findIdentityProviderConfigByPrimaryKey", e);
         } finally {
             endTransaction();
         }
     }
-    public long saveIdentityProviderConfig(IdentityProviderConfig identityProviderConfig) throws java.rmi.RemoteException {
+    public long saveIdentityProviderConfig(IdentityProviderConfig identityProviderConfig) throws RemoteException {
         try {
             if (identityProviderConfig.getOid() > 0) {
                 IdentityProviderConfigManager manager = getIdentityProviderConfigManagerAndBeginTransaction();
@@ -103,31 +103,31 @@ public class Service implements IdentityService {
             return getIdentityProviderConfigManagerAndBeginTransaction().save(identityProviderConfig);
         } catch (Exception e) {
             logger.log(Level.SEVERE, null, e);
-            throw new java.rmi.RemoteException("Exception in saveIdentityProviderConfig", e);
+            throw new RemoteException("Exception in saveIdentityProviderConfig", e);
         } finally {
             endTransaction();
         }
     }
-    public void deleteIdentityProviderConfig(long oid) throws java.rmi.RemoteException {
+    public void deleteIdentityProviderConfig(long oid) throws RemoteException {
         try {
             IdentityProviderConfigManager manager = getIdentityProviderConfigManagerAndBeginTransaction();
             manager.delete(manager.findByPrimaryKey(oid));
             logger.info("Deleted IDProviderConfig: " + oid);
         } catch (FindException e) {
             logger.log(Level.SEVERE, null, e);
-            throw new java.rmi.RemoteException("FindException in deleteIdentityProviderConfig", e);
+            throw new RemoteException("FindException in deleteIdentityProviderConfig", e);
         }
         catch (DeleteException e) {
             logger.log(Level.SEVERE, null, e);
-            throw new java.rmi.RemoteException("DeleteException in deleteIdentityProviderConfig", e);
+            throw new RemoteException("DeleteException in deleteIdentityProviderConfig", e);
         } finally {
             endTransaction();
         }
     }
-    public EntityHeader[] findAllUsers(long identityProviderConfigId) throws java.rmi.RemoteException {
+    public EntityHeader[] findAllUsers(long identityProviderConfigId) throws RemoteException {
         try {
             UserManager userManager = retrieveUserManagerAndBeginTransaction(identityProviderConfigId);
-            java.util.Collection res = userManager.findAllHeaders();
+            Collection res = userManager.findAllHeaders();
             return collectionToHeaderArray(res);
         } catch (FindException e) {
             logger.log(Level.SEVERE, null, e);
@@ -136,10 +136,11 @@ public class Service implements IdentityService {
             endTransaction();
         }
     }
-    public EntityHeader[] findAllUsersByOffset(long identityProviderConfigId, int offset, int windowSize) throws java.rmi.RemoteException {
+    public EntityHeader[] findAllUsersByOffset(long identityProviderConfigId, int offset, int windowSize)
+            throws RemoteException {
         try {
             UserManager userManager = retrieveUserManagerAndBeginTransaction(identityProviderConfigId);
-            java.util.Collection res = userManager.findAllHeaders(offset, windowSize);
+            Collection res = userManager.findAllHeaders(offset, windowSize);
             return collectionToHeaderArray(res);
         } catch (FindException e) {
             logger.log(Level.SEVERE, null, e);
@@ -149,11 +150,17 @@ public class Service implements IdentityService {
         }
     }
 
-    public EntityHeader[] searchIdentities(long identityProviderConfigId, EntityType[] types, String pattern) throws java.rmi.RemoteException {
+    public EntityHeader[] searchIdentities(long identityProviderConfigId, EntityType[] types, String pattern)
+            throws RemoteException {
         try {
-            IdentityProviderConfig cfg = getIdentityProviderConfigManagerAndBeginTransaction().findByPrimaryKey(identityProviderConfigId);
+            IdentityProviderConfig cfg = getIdentityProviderConfigManagerAndBeginTransaction().
+                                            findByPrimaryKey(identityProviderConfigId);
             IdentityProvider provider = IdentityProviderFactory.makeProvider(cfg);
-            if (types != null) for (int i = 0; i < types.length; i++) types[i] = EntityType.fromValue(types[i].getVal());
+            if (types != null) {
+                for (int i = 0; i < types.length; i++) {
+                    types[i] = EntityType.fromValue(types[i].getVal());
+                }
+            }
             Collection searchResults = provider.search(types, pattern);
             return collectionToHeaderArray(searchResults);
         } catch (FindException e) {
@@ -164,9 +171,10 @@ public class Service implements IdentityService {
         }
     }
 
-    public com.l7tech.identity.User findUserByPrimaryKey(long identityProviderConfigId, String userId) throws java.rmi.RemoteException {
+    public User findUserByPrimaryKey(long identityProviderConfigId, String userId) throws RemoteException {
         try {
-            IdentityProviderConfig cfg = getIdentityProviderConfigManagerAndBeginTransaction().findByPrimaryKey(identityProviderConfigId);
+            IdentityProviderConfig cfg = getIdentityProviderConfigManagerAndBeginTransaction().
+                                            findByPrimaryKey(identityProviderConfigId);
             IdentityProvider provider = IdentityProviderFactory.makeProvider(cfg);
             GroupManager groupManager = provider.getGroupManager();
             UserManager userManager = provider.getUserManager();
@@ -192,32 +200,33 @@ public class Service implements IdentityService {
             return output;
         } catch (FindException e) {
             logger.log(Level.SEVERE, null, e);
-            throw new java.rmi.RemoteException("FindException in findUserByPrimaryKey", e);
+            throw new RemoteException("FindException in findUserByPrimaryKey", e);
         } finally {
             endTransaction();
         }
     }
-    public void deleteUser(long identityProviderConfigId, String userId) throws java.rmi.RemoteException {
+    public void deleteUser(long identityProviderConfigId, String userId) throws RemoteException {
         UserManager userManager = retrieveUserManagerAndBeginTransaction(identityProviderConfigId);
-        if (userManager == null) throw new java.rmi.RemoteException("Cannot retrieve the UserManager");
+        if (userManager == null) throw new RemoteException("Cannot retrieve the UserManager");
         try {
-            com.l7tech.identity.User user = userManager.findByPrimaryKey(userId);
+            User user = userManager.findByPrimaryKey(userId);
             userManager.delete(user);
             logger.info("Deleted User: " + user.getName());
         } catch (DeleteException e) {
             logger.log(Level.SEVERE, null, e);
-            throw new java.rmi.RemoteException("DeleteException in deleteUser", e);
+            throw new RemoteException("DeleteException in deleteUser", e);
         } catch (FindException e) {
             logger.log(Level.SEVERE, null, e);
-            throw new java.rmi.RemoteException("FindException in deleteUser", e);
+            throw new RemoteException("FindException in deleteUser", e);
         } finally {
             endTransaction();
         }
     }
 
-    public long saveUser(long identityProviderConfigId, com.l7tech.identity.User user) throws RemoteException {
+    public long saveUser(long identityProviderConfigId, User user) throws RemoteException {
         try {
-            IdentityProviderConfig cfg = getIdentityProviderConfigManagerAndBeginTransaction().findByPrimaryKey(identityProviderConfigId);
+            IdentityProviderConfig cfg = getIdentityProviderConfigManagerAndBeginTransaction().
+                                            findByPrimaryKey(identityProviderConfigId);
             IdentityProvider provider = IdentityProviderFactory.makeProvider(cfg);
             GroupManager groupManager = provider.getGroupManager();
             UserManager userManager = provider.getUserManager();
@@ -243,16 +252,17 @@ public class Service implements IdentityService {
             return userManager.save(user);
         } catch (Exception e) {
             logger.log(Level.SEVERE, null, e);
-            throw new java.rmi.RemoteException("Exception in saveUser", e);
+            throw new RemoteException("Exception in saveUser", e);
         } finally {
             endTransaction();
         }
     }
 
 
-    public EntityHeader[] findAllGroups(long identityProviderConfigId) throws java.rmi.RemoteException {
+    public EntityHeader[] findAllGroups(long identityProviderConfigId) throws RemoteException {
         try {
-            java.util.Collection res = retrieveGroupManagerAndBeginTransaction(identityProviderConfigId).findAllHeaders();
+            Collection res = retrieveGroupManagerAndBeginTransaction(identityProviderConfigId).
+                                findAllHeaders();
             return collectionToHeaderArray(res);
         } catch (FindException e) {
             logger.log(Level.SEVERE, null, e);
@@ -262,9 +272,11 @@ public class Service implements IdentityService {
         }
     }
 
-    public EntityHeader[] findAllGroupsByOffset(long identityProviderConfigId, int offset, int windowSize) throws java.rmi.RemoteException {
+    public EntityHeader[] findAllGroupsByOffset(long identityProviderConfigId, int offset, int windowSize)
+            throws RemoteException {
         try {
-            java.util.Collection res = retrieveGroupManagerAndBeginTransaction(identityProviderConfigId).findAllHeaders(offset, windowSize);
+            Collection res = retrieveGroupManagerAndBeginTransaction(identityProviderConfigId).
+                                findAllHeaders(offset, windowSize);
             return collectionToHeaderArray(res);
         } catch (FindException e) {
             logger.log(Level.SEVERE, null, e);
@@ -273,9 +285,10 @@ public class Service implements IdentityService {
             endTransaction();
         }
     }
-    public com.l7tech.identity.Group findGroupByPrimaryKey(long identityProviderConfigId, String groupId) throws java.rmi.RemoteException {
+    public Group findGroupByPrimaryKey(long identityProviderConfigId, String groupId) throws RemoteException {
         try {
-            IdentityProviderConfig cfg = getIdentityProviderConfigManagerAndBeginTransaction().findByPrimaryKey(identityProviderConfigId);
+            IdentityProviderConfig cfg = getIdentityProviderConfigManagerAndBeginTransaction().
+                                            findByPrimaryKey(identityProviderConfigId);
             IdentityProvider provider = IdentityProviderFactory.makeProvider(cfg);
             GroupManager groupManager = provider.getGroupManager();
             UserManager userManager = provider.getUserManager();
@@ -302,11 +315,11 @@ public class Service implements IdentityService {
             endTransaction();
         }
     }
-    public void deleteGroup(long identityProviderConfigId, String groupId) throws java.rmi.RemoteException {
+    public void deleteGroup(long identityProviderConfigId, String groupId) throws RemoteException {
         GroupManager groupManager = retrieveGroupManagerAndBeginTransaction(identityProviderConfigId);
         try {
-            com.l7tech.identity.Group grp = groupManager.findByPrimaryKey(groupId);
-            if (grp == null) throw new java.rmi.RemoteException("Group does not exist");
+            Group grp = groupManager.findByPrimaryKey(groupId);
+            if (grp == null) throw new RemoteException("Group does not exist");
             groupManager.delete(grp);
             logger.info("Deleted Group: " + grp.getName());
         } catch (ObjectModelException e) {
@@ -316,9 +329,10 @@ public class Service implements IdentityService {
             endTransaction();
         }
     }
-    public long saveGroup(long identityProviderConfigId, com.l7tech.identity.Group group) throws RemoteException {
+    public long saveGroup(long identityProviderConfigId, Group group) throws RemoteException {
         try {
-            IdentityProviderConfig cfg = getIdentityProviderConfigManagerAndBeginTransaction().findByPrimaryKey(identityProviderConfigId);
+            IdentityProviderConfig cfg = getIdentityProviderConfigManagerAndBeginTransaction().
+                                            findByPrimaryKey(identityProviderConfigId);
             IdentityProvider provider = IdentityProviderFactory.makeProvider(cfg);
             GroupManager groupManager = provider.getGroupManager();
             UserManager userManager = provider.getUserManager();
@@ -347,7 +361,7 @@ public class Service implements IdentityService {
             throw new RemoteException("SaveException in saveGroup", e);
         } catch (UpdateException e) {
             logger.log(Level.SEVERE, null, e);
-            throw new java.rmi.RemoteException("UpdateException in saveGroup", e);
+            throw new RemoteException("UpdateException in saveGroup", e);
         } catch (FindException e) {
             logger.log(Level.SEVERE, null, e);
             throw new RemoteException("FindException in saveGroup", e);
@@ -359,7 +373,8 @@ public class Service implements IdentityService {
     public String getUserCert(long identityProviderConfigId, String userId) throws RemoteException {
         // currently, this is only supported in the internal user manager
         // therefore, let this cast throw if it does
-        InternalUserManagerServer userManager = (InternalUserManagerServer)retrieveUserManagerAndBeginTransaction(identityProviderConfigId);
+        InternalUserManagerServer userManager =
+                (InternalUserManagerServer)retrieveUserManagerAndBeginTransaction(identityProviderConfigId);
         try {
             Certificate cert = userManager.retrieveUserCert(userId);
             if (cert == null) return null;
@@ -378,7 +393,8 @@ public class Service implements IdentityService {
     public void revokeCert(long identityProviderConfigId, String userId) throws RemoteException {
         // currently, this is only supported in the internal user manager
         // therefore, let this cast throw if it does
-        InternalUserManagerServer userManager = (InternalUserManagerServer)retrieveUserManagerAndBeginTransaction(identityProviderConfigId);
+        InternalUserManagerServer userManager =
+                (InternalUserManagerServer)retrieveUserManagerAndBeginTransaction(identityProviderConfigId);
         try {
             userManager.revokeCert(userId);
         } catch (UpdateException e) {
@@ -401,7 +417,8 @@ public class Service implements IdentityService {
     // PRIVATES
     // ************************************************
 
-    private IdentityProviderConfigManager getIdentityProviderConfigManagerAndBeginTransaction() throws java.rmi.RemoteException {
+    private IdentityProviderConfigManager getIdentityProviderConfigManagerAndBeginTransaction()
+            throws RemoteException {
         if (identityProviderConfigManager == null){
             initialiseConfigManager();
         }
@@ -409,16 +426,20 @@ public class Service implements IdentityService {
             PersistenceContext.getCurrent().beginTransaction();
         }
         catch (java.sql.SQLException e) {
-            logger.log(Level.SEVERE, null, e);
-            throw new RemoteException("SQLException in IdentitiesSoapBindingImpl.initialiseConfigManager from Locator.getDefault().lookup: "+ e.getMessage(), e);
+            String msg = "SQLException in IdentitiesSoapBindingImpl.initialiseConfigManager from" +
+                            " Locator.getDefault().lookup:";
+            logger.log(Level.SEVERE, msg, e);
+            throw new RemoteException(msg + " " + e.getMessage(), e);
         } catch (TransactionException e) {
-            logger.log(Level.SEVERE, null, e);
-            throw new RemoteException("TransactionException in IdentitiesSoapBindingImpl.initialiseConfigManager from Locator.getDefault().lookup: "+ e.getMessage(), e);
+            String msg = "TransactionException in IdentitiesSoapBindingImpl.initialiseConfigManager" +
+                            " from Locator.getDefault().lookup:";
+            logger.log(Level.SEVERE, msg, e);
+            throw new RemoteException(msg + " " + e.getMessage(), e);
         }
         return identityProviderConfigManager;
     }
 
-    private void endTransaction() throws java.rmi.RemoteException {
+    private void endTransaction() throws RemoteException {
         try {
             PersistenceContext context = PersistenceContext.getCurrent();
             context.commitTransaction();
@@ -432,10 +453,14 @@ public class Service implements IdentityService {
         }
     }
 
-    private UserManager retrieveUserManagerAndBeginTransaction(long identityProviderConfigId) throws java.rmi.RemoteException {
+    private UserManager retrieveUserManagerAndBeginTransaction(long identityProviderConfigId)
+            throws RemoteException {
         UserManager ret = null;
         try {
-            IdentityProvider provider = IdentityProviderFactory.makeProvider(getIdentityProviderConfigManagerAndBeginTransaction().findByPrimaryKey(identityProviderConfigId));
+            IdentityProvider provider =
+                    IdentityProviderFactory.
+                        makeProvider(getIdentityProviderConfigManagerAndBeginTransaction().
+                            findByPrimaryKey(identityProviderConfigId));
             ret = provider.getUserManager();
         } catch (FindException e) {
             logger.log(Level.SEVERE, null, e);
@@ -444,10 +469,14 @@ public class Service implements IdentityService {
         return ret;
     }
 
-    private GroupManager retrieveGroupManagerAndBeginTransaction(long identityProviderConfigId) throws java.rmi.RemoteException {
+    private GroupManager retrieveGroupManagerAndBeginTransaction(long identityProviderConfigId)
+            throws RemoteException {
         GroupManager ret = null;
         try {
-            IdentityProvider provider = IdentityProviderFactory.makeProvider(getIdentityProviderConfigManagerAndBeginTransaction().findByPrimaryKey(identityProviderConfigId));
+            IdentityProvider provider =
+                    IdentityProviderFactory.
+                        makeProvider(getIdentityProviderConfigManagerAndBeginTransaction().
+                            findByPrimaryKey(identityProviderConfigId));
             ret = provider.getGroupManager();
         } catch (FindException e) {
             logger.log(Level.SEVERE, null, e);
@@ -456,37 +485,46 @@ public class Service implements IdentityService {
         return ret;
     }
 
-    private synchronized void initialiseConfigManager() throws java.rmi.RemoteException {
+    private synchronized void initialiseConfigManager() throws RemoteException {
         try {
             // get the config manager implementation
-            identityProviderConfigManager = (com.l7tech.identity.IdentityProviderConfigManager)Locator.getDefault().lookup(com.l7tech.identity.IdentityProviderConfigManager.class);
-            if (identityProviderConfigManager == null) throw new java.rmi.RemoteException("Cannot instantiate the IdentityProviderConfigManager");
+            identityProviderConfigManager = (IdentityProviderConfigManager)Locator.
+                                                getDefault().
+                                                    lookup(IdentityProviderConfigManager.class);
+            if (identityProviderConfigManager == null) {
+                throw new RemoteException("Cannot instantiate the IdentityProviderConfigManager");
+            }
         } catch (ClassCastException e) {
-            logger.log(Level.SEVERE, null, e);
-            throw new RemoteException("ClassCastException in IdentitiesSoapBindingImpl.initialiseConfigManager from Locator.getDefault().lookup", e);
+            String msg = "ClassCastException in IdentitiesSoapBindingImpl.initialiseConfigManager " +
+                         "from Locator.getDefault().lookup";
+            logger.log(Level.SEVERE, msg, e);
+            throw new RemoteException(msg, e);
         } catch (RuntimeException e) {
-            logger.log(Level.SEVERE, null, e);
-            throw new RemoteException("RuntimeException in IdentitiesSoapBindingImpl.initialiseConfigManager from Locator.getDefault().lookup: "+ e.getMessage(), e);
+            String msg = "RuntimeException in IdentitiesSoapBindingImpl.initialiseConfigManager" +
+                         " from Locator.getDefault().lookup: ";
+            logger.log(Level.SEVERE, msg, e);
+            throw new RemoteException(msg + e.getMessage(), e);
         }
     }
 
-    private EntityHeader[] collectionToHeaderArray(java.util.Collection input) throws java.rmi.RemoteException {
+    private EntityHeader[] collectionToHeaderArray(Collection input) throws RemoteException {
         if (input == null) return new EntityHeader[0];
         EntityHeader[] output = new EntityHeader[input.size()];
         int count = 0;
-        java.util.Iterator i = input.iterator();
+        Iterator i = input.iterator();
         while (i.hasNext()) {
             try {
                 output[count] = (EntityHeader)i.next();
             } catch (ClassCastException e) {
-                logger.log(Level.SEVERE, null, e);
-                throw new java.rmi.RemoteException("Collection contained something other than a com.l7tech.objectmodel.EntityHeader", e);
+                String msg = "Collection contained something other than a " +
+                             "com.l7tech.objectmodel.EntityHeader";
+                logger.log(Level.SEVERE, msg, e);
+                throw new RemoteException(msg, e);
             }
             ++count;
         }
         return output;
     }
-
 
 
     IdentityProviderConfigManager identityProviderConfigManager = null;
