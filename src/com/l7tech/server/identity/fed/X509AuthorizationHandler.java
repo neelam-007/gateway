@@ -48,7 +48,11 @@ public class X509AuthorizationHandler extends FederatedAuthorizationHandler {
         final X509Config x509Config = providerConfig.getX509Config();
         if (x509Config == null) throw new AuthenticationException("X.509 enabled but not configured");
 
-        X509Certificate requestCert = (X509Certificate)pc.getPayload();
+        X509Certificate requestCert = pc.getClientCert();
+        if (requestCert == null) {
+            logger.info("Can only authorize credentials that include a certificate");
+            return null;
+        }
         String subjectDn = requestCert.getSubjectDN().getName();
 
         if ( !certOidSet.isEmpty() ) {
