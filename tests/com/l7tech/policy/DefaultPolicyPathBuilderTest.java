@@ -14,18 +14,20 @@ import com.l7tech.policy.assertion.TrueAssertion;
 import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.assertion.composite.OneOrMoreAssertion;
 import com.l7tech.policy.assertion.credential.http.HttpBasic;
+import com.l7tech.policy.assertion.credential.http.HttpDigest;
+import com.l7tech.policy.assertion.credential.http.HttpClientCert;
+import com.l7tech.policy.assertion.credential.wss.WssBasic;
 import com.l7tech.policy.assertion.identity.SpecificUser;
 import com.l7tech.policy.assertion.xmlsec.RequestWssX509Cert;
 import com.l7tech.policy.assertion.xmlsec.SecureConversation;
 import com.l7tech.policy.assertion.xmlsec.RequestWssReplayProtection;
+import com.l7tech.policy.assertion.xmlsec.SamlSecurity;
 import com.l7tech.policy.wsp.WspReader;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
 
-import java.util.Arrays;
-import java.util.List;
-import java.util.Iterator;
+import java.util.*;
 
 /**
  * Test the default policy assertion path builder/analyzer class
@@ -230,30 +232,43 @@ public class DefaultPolicyPathBuilderTest extends TestCase {
 
 
     public void testBug1374() throws Exception {
-        Assertion firstOr = new OneOrMoreAssertion(Arrays.asList(new Assertion[]{
-            //new HttpBasic(),
-            new RequestWssX509Cert(),
-            new SecureConversation()
-        }));
-        Assertion secondOr = new OneOrMoreAssertion(Arrays.asList(new Assertion[]{
+        List credentials = getCredentialsLocations();
+        int nCrendentials = credentials.size();
+        for (int i = nCrendentials - 1; i >= 0; i--) {
+            List childrenOr = credentials.subList(i, nCrendentials);
+            Assertion firstOr = new OneOrMoreAssertion(childrenOr);
+
+            Assertion secondOr = new OneOrMoreAssertion(Arrays.asList(new Assertion[]{
                 new SpecificUser(-2, "wilma", "wilma", "wilma")
-        }));
+            }));
 
-        Assertion top = new AllAssertion(Arrays.asList(new Assertion[]{
-            firstOr,
-            new RequestWssReplayProtection(),
-            secondOr,
-            new HttpRoutingAssertion("http://wheel")
-        }));
+            Assertion top = new AllAssertion(Arrays.asList(new Assertion[]{
+                firstOr,
+                new RequestWssReplayProtection(),
+                secondOr,
+                new HttpRoutingAssertion("http://wheel")
+            }));
 
-        DefaultPolicyPathBuilder builder = new DefaultPolicyPathBuilder();
-        PolicyPathResult result = builder.generate(top);
-        assertTrue(result.getPathCount() == 2);
-        Iterator it = result.paths().iterator();
-        while (it.hasNext()) {
-            AssertionPath path = (AssertionPath)it.next();
-            System.out.println(DefaultPolicyPathBuilder.pathToString(path));
+            DefaultPolicyPathBuilder builder = new DefaultPolicyPathBuilder();
+            PolicyPathResult result = builder.generate(top);
+            assertTrue(result.getPathCount() == nCrendentials - i);
         }
     }
+
+    static List getCredentialsLocations() {
+        List credentialsLocationList = new ArrayList();
+        credentialsLocationList.add(new TrueAssertion());
+
+        credentialsLocationList.add(new HttpBasic());
+        credentialsLocationList.add(new HttpDigest());
+        credentialsLocationList.add(new HttpClientCert());
+        credentialsLocationList.add(new WssBasic());
+        credentialsLocationList.add(new RequestWssX509Cert());
+        credentialsLocationList.add(new SecureConversation());
+        credentialsLocationList.add(new SamlSecurity());
+
+        return credentialsLocationList;
+    }
+
 
 }
