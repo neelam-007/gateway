@@ -3,7 +3,7 @@ package com.l7tech.console.util.registry;
 import com.l7tech.identity.*;
 import com.l7tech.common.util.Locator;
 import com.l7tech.console.util.Registry;
-import com.l7tech.adminws.service.ServiceManager;
+import com.l7tech.service.ServiceAdmin;
 
 
 
@@ -57,12 +57,10 @@ public class RegistryImpl extends Registry {
     /**
      * @return the service manager
      */
-    public ServiceManager getServiceManager() {
-        ServiceManager sm =
-          (ServiceManager)Locator.
-          getDefault().lookup(ServiceManager.class);
+    public ServiceAdmin getServiceManager() {
+        ServiceAdmin sm = (ServiceAdmin)Locator.getDefault().lookup(ServiceAdmin.class);
         if (sm == null) {
-            throw new RuntimeException("Could not find registered " + ServiceManager.class);
+            throw new RuntimeException("Could not find registered " + ServiceAdmin.class);
         }
         return sm;
     }

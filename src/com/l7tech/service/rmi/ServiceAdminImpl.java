@@ -1,9 +1,10 @@
-package com.l7tech.adminws.service;
+package com.l7tech.service.rmi;
 
 import com.l7tech.jini.export.RemoteService;
 import com.l7tech.objectmodel.*;
 import com.l7tech.service.PublishedService;
 import com.l7tech.service.ServiceStatistics;
+import com.l7tech.service.ServiceAdmin;
 import com.sun.jini.start.LifeCycle;
 import net.jini.config.ConfigurationException;
 
@@ -14,12 +15,12 @@ import java.rmi.RemoteException;
  * The class is the admin service manager implementaiton.
  *
  */
-public class ServiceManagerImpl extends RemoteService implements ServiceManager {
+public class ServiceAdminImpl extends RemoteService implements ServiceAdmin {
 
-    public ServiceManagerImpl (String[] configOptions, LifeCycle lc)
+    public ServiceAdminImpl (String[] configOptions, LifeCycle lc)
             throws ConfigurationException, IOException {
         super(configOptions, lc);
-        delegate = new Service();
+        delegate = new com.l7tech.service.ws.ServiceAdminImpl();
     }
 
     public String resolveWsdlTarget(String url) throws RemoteException {
@@ -63,5 +64,5 @@ public class ServiceManagerImpl extends RemoteService implements ServiceManager 
     // PRIVATES
     // ************************************************
 
-    private ServiceManager delegate = null;
+    private ServiceAdmin delegate = null;
 }

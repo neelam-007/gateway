@@ -1,7 +1,8 @@
-package com.l7tech.adminws.service;
+package com.l7tech.service.ws;
 
 import com.l7tech.service.PublishedService;
 import com.l7tech.service.ServiceStatistics;
+import com.l7tech.service.ServiceAdmin;
 import com.l7tech.objectmodel.*;
 import com.l7tech.common.util.Locator;
 import com.l7tech.logging.LogManager;
@@ -23,11 +24,11 @@ import java.io.IOException;
  * Date: Jun 6, 2003
  *
  */
-public class Service implements ServiceManager {
+public class ServiceAdminImpl implements ServiceAdmin {
 
     public static final String SERVICE_DEPENDENT_URL_PORTION = "/services/serviceAdmin";
 
-    public Service() {
+    public ServiceAdminImpl() {
         logger = LogManager.getInstance().getSystemLogger();
     }
 
@@ -88,7 +89,7 @@ public class Service implements ServiceManager {
      * the distinction happens on the server side by inspecting the oid of the object
      * if the oid appears to be "virgin" a save is invoked, otherwise an update call is made.
      * @param service the object to be saved or upodated
-     * @throws java.rmi.RemoteException
+     * @throws RemoteException
      */
     public long savePublishedService(PublishedService service) throws RemoteException,
                                     UpdateException, SaveException, VersionException {
@@ -155,7 +156,7 @@ public class Service implements ServiceManager {
         }
     }
 
-    private EntityHeader[] collectionToHeaderArray(java.util.Collection input) throws RemoteException {
+    private EntityHeader[] collectionToHeaderArray(Collection input) throws RemoteException {
         if (input == null) return new EntityHeader[0];
         EntityHeader[] output = new EntityHeader[input.size()];
         int count = 0;
@@ -180,7 +181,7 @@ public class Service implements ServiceManager {
                 throw new RemoteException("Cannot instantiate the ServiceManager");
             }
         } catch (Throwable e) {
-            String msg = "Exception in Locator.getDefault().lookup(com.l7tech.service.ServiceManager.class)";
+            String msg = "Exception in Locator.getDefault().lookup(com.l7tech.service.ServiceAdmin.class)";
             logger.log(Level.SEVERE, msg + e.getMessage(), e);
             throw new RemoteException(msg + e.getMessage(), e);
         }

@@ -1,4 +1,4 @@
-package com.l7tech.adminws.service;
+package com.l7tech.service;
 
 import com.l7tech.service.PublishedService;
 import com.l7tech.service.ServiceStatistics;
@@ -8,10 +8,12 @@ import java.rmi.Remote;
 import java.rmi.RemoteException;
 
 /**
- * Class ServiceManager.
- * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a> 
+ * Class ServiceAdmin
+ * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
+ *
+ * Interface for the remote administration of published services.
  */
-public interface ServiceManager extends Remote {
+public interface ServiceAdmin extends Remote {
     String resolveWsdlTarget(String url) throws RemoteException;
 
     PublishedService findServiceByPrimaryKey(long oid) throws RemoteException, FindException;

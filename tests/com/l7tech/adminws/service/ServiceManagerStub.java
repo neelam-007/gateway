@@ -6,6 +6,7 @@ import com.l7tech.objectmodel.EntityType;
 import com.l7tech.service.PublishedService;
 import com.l7tech.common.xml.Wsdl;
 import com.l7tech.service.ServiceStatistics;
+import com.l7tech.service.ServiceAdmin;
 
 import javax.wsdl.WSDLException;
 import java.io.InputStreamReader;
@@ -18,7 +19,7 @@ import java.util.*;
  * Class ServiceManagerStub.
  * @author <a href="mailto:emarceta@layer7-tech.com>Emil Marceta</a> 
  */
-public class ServiceManagerStub implements ServiceManager {
+public class ServiceManagerStub implements ServiceAdmin {
     private Map services;
 
     public ServiceManagerStub() {

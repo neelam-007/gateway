@@ -2,8 +2,8 @@ package com.l7tech.console.util.registry;
 
 import com.l7tech.console.util.Registry;
 import com.l7tech.identity.*;
-import com.l7tech.adminws.service.ServiceManager;
 import com.l7tech.common.util.Locator;
+import com.l7tech.service.ServiceAdmin;
 
 
 /**
@@ -49,8 +49,8 @@ public class RegistryStub extends Registry {
     /**
      * @return the service managerr
      */
-    public ServiceManager getServiceManager() {
-        return (ServiceManager)Locator.getDefault().lookup(ServiceManager.class);
+    public ServiceAdmin getServiceManager() {
+        return (ServiceAdmin)Locator.getDefault().lookup(ServiceAdmin.class);
     }
 
     StubDataStore dataStore = StubDataStore.defaultStore();

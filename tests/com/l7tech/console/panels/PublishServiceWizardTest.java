@@ -6,7 +6,6 @@
 
 package com.l7tech.console.panels;
 
-import com.l7tech.adminws.service.ServiceManager;
 import com.l7tech.adminws.service.ServiceManagerStub;
 import com.l7tech.common.util.Locator;
 import com.l7tech.console.util.Registry;
@@ -23,6 +22,7 @@ import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.wsp.WspReader;
 import com.l7tech.service.PublishedService;
+import com.l7tech.service.ServiceAdmin;
 import org.apache.log4j.Category;
 
 import javax.swing.*;
@@ -69,7 +69,7 @@ public class PublishServiceWizardTest extends Locator {
             return GROUP_MANAGER_STUB;
         }
 
-        public ServiceManager getServiceManager() {
+        public ServiceAdmin getServiceManager() {
             return SERVICE_MANAGER_STUB;
         }
     }
