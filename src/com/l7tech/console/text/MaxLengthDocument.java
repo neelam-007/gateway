@@ -1,6 +1,3 @@
-/*
- * $Header$
- */
 package com.l7tech.console.text;
 
 import javax.swing.text.AttributeSet;
@@ -33,7 +30,7 @@ public class MaxLengthDocument extends PlainDocument {
    * @param a the attributes for the inserted content
    * @exception BadLocationException  the given insert position is not a valid
    *   position within the document
-   * @see Document#insertString
+   * @see javax.swing.text.Document#insertString
    */
   public void insertString(int offs, String str, AttributeSet a)
   throws BadLocationException
