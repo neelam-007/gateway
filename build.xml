@@ -1138,10 +1138,6 @@ ssgadmin.md5 = '${install.pass.ssgadmin.md5}'
         <buildnumber/>
 
         <antcall target="clean"/>
-        <antcall target="compile"/>
-        <antcall target="compile-tests"/>
-        <antcall target="test"/>
-        <antcall target="clean"/>
         <antcall target="package"/>
         <antcall target="ssm-webstart"/>
         <antcall target="testpackage"/>
