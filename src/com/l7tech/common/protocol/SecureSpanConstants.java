@@ -36,6 +36,12 @@ public class SecureSpanConstants {
         public static final String POLICY_VERSION = "l7-policy-version";
 
         /**
+         * This header is returned by the ssg with value "invalid" when a client cert used for authentication was
+         * no longer valid
+         */
+        public static final String CERT_STATUS = "l7-cert-status";
+
+        /**
          * Contains the ID of the session established to hold security context information needed
          * by the two parties conversing.  This information includes the server write and server read
          * symmetric keys, the message sequence number, the creation timestamp, and a count of the number
