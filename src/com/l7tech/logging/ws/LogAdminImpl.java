@@ -3,6 +3,7 @@ package com.l7tech.logging.ws;
 import com.l7tech.logging.LogAdmin;
 import com.l7tech.logging.LogManager;
 import com.l7tech.logging.SSGLogRecord;
+import com.l7tech.logging.ServerLogManager;
 import com.l7tech.objectmodel.PersistenceContext;
 
 import java.rmi.RemoteException;
@@ -22,7 +23,7 @@ public class LogAdminImpl implements LogAdmin {
 
     public SSGLogRecord[] getSystemLog(String nodeid, long startMsgNumber, long endMsgNumber, int size) throws RemoteException {
         try {
-            return LogManager.getInstance().getRecorded(nodeid, startMsgNumber, endMsgNumber, size);
+            return ServerLogManager.getInstance().getRecorded(nodeid, startMsgNumber, endMsgNumber, size);
         } finally {
             try {
                 PersistenceContext.getCurrent().close();
@@ -37,5 +38,5 @@ public class LogAdminImpl implements LogAdmin {
     // PRIVATES
     // ************************************************
 
-    private Logger logger = LogManager.getInstance().getSystemLogger();
+    private final Logger logger = Logger.getLogger(getClass().getName());
 }

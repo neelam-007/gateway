@@ -17,26 +17,11 @@ public abstract class LogManager {
     /**
      * Provides access to the actual log manager
      */
-    public static LogManager getInstance() {
+    /*public static LogManager getInstance() {
         return SingletonHolder.singleton;
-    }
+    }*/
     public abstract Logger getSystemLogger();
 
-
-  /**
-     * Retrieve the system logs in between the startMsgNumber and endMsgNumber specified
-     * up to the specified size.
-     * NOTE: the log messages whose message number equals to startMsgNumber and endMsgNumber
-     * are not returned.
-     *
-     * @param startMsgNumber the message number to locate the start point.
-     *                       Start from beginning of the message buffer if it equals to -1.
-     * @param endMsgNumber   the message number to locate the end point.
-     *                       Retrieve messages until the end of the message buffer is hit if it equals to -1.
-     * @param size  the max. number of messages retrieved
-     * @return LogRecord[] the array of log records retrieved
-     */
-    public abstract LogRecord[] getRecorded(long startMsgNumber, long endMsgNumber, int size);
 
     /**
      * Retrieve the system logs in between the startMsgNumber and endMsgNumber specified
@@ -59,7 +44,7 @@ public abstract class LogManager {
     // ************************************************
     // PRIVATES
     // ************************************************
-    private static class SingletonHolder {
+    /*private static class SingletonHolder {
         private static LogManager singleton = null;
         static {
             try {
@@ -77,5 +62,5 @@ public abstract class LogManager {
                 if (singleton == null) singleton = new BasicLogManager();
             }
         }
-    }
+    }*/
 }

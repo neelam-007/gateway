@@ -32,36 +32,12 @@ import java.util.logging.*;
  */
 public class ServerLogManager extends LogManager {
 
-    public ServerLogManager() {
-        initialize();
+    public static ServerLogManager getInstance() {
+        return SingletonHolder.singleton;
     }
 
     public Logger getSystemLogger() {
         return systemLogger;
-    }
-
-    /**
-     * Retrieve the system logs in between the startMsgNumber and endMsgNumber specified
-     * up to the specified size.
-     * NOTE: the log messages whose message number equals to startMsgNumber and endMsgNumber
-     * are not returned.
-     *
-     * @param startMsgNumber the message number to locate the start point.
-     *                       Start from beginning of the message buffer if it equals to -1.
-     * @param endMsgNumber   the message number to locate the end point.
-     *                       Retrieve messages until the end of the message buffer is hit
-     *                       if it equals to -1.
-     * @param size  the max. number of messages retrieved
-     * @return LogRecord[] the array of log records retrieved
-     */
-    public LogRecord[] getRecorded(long startMsgNumber, long endMsgNumber, int size) {
-        Collection res = dbHandler.getLogRecords(null, startMsgNumber, endMsgNumber, size);
-        LogRecord[] output = new LogRecord[res.size()];
-        int cnt = 0;
-        for (Iterator i = res.iterator(); i.hasNext(); cnt++) {
-            output[cnt] = (LogRecord)i.next();
-        }
-        return output;
     }
 
     /**
@@ -93,6 +69,10 @@ public class ServerLogManager extends LogManager {
     // ************************************************
     // PRIVATES
     // ************************************************
+
+    private ServerLogManager() {
+        initialize();
+    }
 
     private synchronized void initialize() {
         if (systemLogger == null) {
@@ -263,4 +243,8 @@ public class ServerLogManager extends LogManager {
         private final ArrayList suckers = new ArrayList();
     }
     private final SuscriberHandler suscriberHandler = new SuscriberHandler();
+
+    private static class SingletonHolder {
+        private static ServerLogManager singleton = new ServerLogManager();
+    }
 }
