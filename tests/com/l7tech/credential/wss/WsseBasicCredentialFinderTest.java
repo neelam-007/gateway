@@ -5,7 +5,7 @@ import com.l7tech.message.HttpSoapRequest;
 import com.l7tech.message.HttpSoapResponse;
 import com.l7tech.message.SoapResponse;
 import com.l7tech.common.util.HexUtils;
-import com.l7tech.policy.assertion.credential.PrincipalCredentials;
+import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.assertion.credential.wss.WssBasic;
 import com.l7tech.server.policy.assertion.credential.wss.ServerWssBasic;
 
@@ -34,11 +34,11 @@ public class WsseBasicCredentialFinderTest {
         soapRequest.setRequestXml(new String(fileContents));
 
         ServerWssBasic wssBasic = new ServerWssBasic( new WssBasic() );
-        PrincipalCredentials creds = wssBasic.findCredentials(soapRequest, soapResponse);
+        LoginCredentials creds = wssBasic.findCredentials(soapRequest, soapResponse);
 
         if (creds != null) {
             System.out.println("creds found");
-            System.out.println("user login = " + creds.getUser().getLogin());
+            System.out.println("user login = " + creds.getLogin());
             System.out.println("passwd = " + new String(creds.getCredentials()));
         }
 

@@ -1,6 +1,8 @@
 package com.l7tech.identity;
 
 import com.l7tech.objectmodel.*;
+import com.l7tech.identity.internal.InternalGroup;
+
 import java.util.*;
 
 /**
@@ -27,26 +29,28 @@ public class GroupManagerStub extends GroupManagerAdapter {
     }
 
     public void delete(Group group) throws DeleteException {
-        if (dataStore.getGroups().remove(new Long(group.getOid())) == null) {
-            throw new DeleteException("Could not find group oid= " + group.getOid());
+        if (dataStore.getGroups().remove(new Long(group.getUniqueIdentifier())) == null) {
+            throw new DeleteException("Could not find group oid= " + group.getUniqueIdentifier());
         }
     }
 
-    public long save(Group group) throws SaveException {
+    public String save(Group group) throws SaveException {
+        InternalGroup imp = (InternalGroup)group;
         long oid = dataStore.nextObjectId();
-        group.setOid(oid);
+        imp.setOid(oid);
         Long key = new Long(oid);
         if (dataStore.getGroups().get(key) != null) {
-            throw new SaveException("Record exists, group oid= " + group.getOid());
+            throw new SaveException("Record exists, group oid= " + imp.getOid());
         }
         dataStore.getGroups().put(key, group);
-        return oid;
+        return new Long( oid ).toString();
     }
 
     public void update(Group group) throws UpdateException {
-        Long key = new Long(group.getOid());
+        InternalGroup imp = (InternalGroup)group;
+        Long key = new Long(imp.getOid());
         if (dataStore.getGroups().get(key) == null) {
-            throw new UpdateException("Record missing, group oid= " + group.getOid());
+            throw new UpdateException("Record missing, group oid= " + imp.getOid());
         }
         dataStore.getGroups().remove(key);
         dataStore.getGroups().put(key, group);
@@ -133,7 +137,8 @@ public class GroupManagerStub extends GroupManagerAdapter {
     }
 
     private EntityHeader fromGroup(Group g) {
+        InternalGroup imp = (InternalGroup)g;
         return
-                new EntityHeader(g.getOid(), EntityType.GROUP, g.getName(), null);
+                new EntityHeader(imp.getOid(), EntityType.GROUP, g.getName(), null);
     }
 }
