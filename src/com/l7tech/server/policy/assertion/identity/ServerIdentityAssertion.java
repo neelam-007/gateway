@@ -120,25 +120,24 @@ public abstract class ServerIdentityAssertion implements ServerAssertion {
     }
 
     /**
-     * Loads the <code>IdentityProvider</code> object corresponding to the
+     * Loads the {@link IdentityProvider} object corresponding to the
      * <code>identityProviderOid</code> property, using a cache if possible.
      * @return
      * @throws FindException
      */
     protected IdentityProvider getIdentityProvider() throws FindException {
-        if ( _configManager == null ) _configManager = new IdProvConfManagerServer();
-        IdentityProviderConfig config = _configManager.findByPrimaryKey( _data.getIdentityProviderOid() );
-        if (config == null) {
+        IdentityProvider provider = IdentityProviderFactory.getProvider(_data.getIdentityProviderOid());
+        if (provider == null) {
             String msg = "id assertion refers to an id provider which does not exist anymore";
             logger.warning(msg);
             throw new FindException(msg);
+        } else {
+            return provider;
         }
-        return IdentityProviderFactory.makeProvider(config);
     }
 
     protected abstract AssertionStatus checkUser( User u );
 
-    protected transient IdentityProviderConfigManager _configManager = null;
     protected final transient Logger logger = Logger.getLogger(getClass().getName());
 
     protected IdentityAssertion _data;
