@@ -192,6 +192,19 @@ public class PublishedService extends NamedEntityImp {
         return "com.l7tech.service.PublishedService _policyXml=" + _policyXml + " _wsdlUrl=" + _wsdlUrl + " _wsdlXml=" + _wsdlXml;
     }
 
+    /**
+     * allows to set all properties from another object
+     * @param objToCopy
+     */
+    public void copyFrom(PublishedService objToCopy) throws MalformedURLException, IOException {
+        setName(objToCopy.getName());
+        setPolicyXml(objToCopy.getPolicyXml());
+        setSoapAction(objToCopy.getSoapAction());
+        setUrn(objToCopy.getUrn());
+        setWsdlUrl(objToCopy.getWsdlUrl());
+        setWsdlXml(objToCopy.getWsdlXml());
+    }
+
     // ************************************************
     // PRIVATES
     // ************************************************
