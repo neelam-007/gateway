@@ -123,8 +123,13 @@ public class ServicePanel extends WizardStepPanel {
     }
 
     public String getDescription() {
-        return "Retrieve the protected service description."
-          + " Specify the service WSDL URL. Note that the request is performed on SSG (server side)";
+        return
+          "Retrieve the protected service description. Specify the service WSDL URL then " +
+          "click the resolve button. The system will then connect to that url and download " +
+          "the WSDL. If successful, the dialog box will fill in.  Note that the request is" +
+          " performed on SSG (server side). After successfully finding a WSDL, click Next to" +
+          " continue.";
+
     }
 
     public boolean isValid() {

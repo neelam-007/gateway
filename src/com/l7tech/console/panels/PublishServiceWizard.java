@@ -154,11 +154,17 @@ public class PublishServiceWizard extends JDialog {
         mainjPanel.setLayout(new BorderLayout());
 
         mainjPanel.setBorder(new EtchedBorder());
-        titlePanel.setLayout(new FlowLayout(FlowLayout.RIGHT));
 
-        titlePanel.setBorder(new EmptyBorder(new Insets(5, 5, 5, 5)));
+        titlePanel.setLayout(new BorderLayout());
+        titlePanel.setBorder(new EmptyBorder(new Insets(5, 10, 5, 10)));
+
+        titleLabel.setBorder(
+          new CompoundBorder(new MatteBorder(new Insets(0, 0, 1, 0), new Color(0, 0, 0)),
+                             new EmptyBorder(new Insets(5, 5, 5, 5))));
+
         titleLabel.setHorizontalAlignment(SwingConstants.TRAILING);
         titleLabel.setText("Publish Service wizard");
+        titleLabel.setFont(new Font("Dialog", 1, 14));
         titlePanel.add(titleLabel);
 
         mainjPanel.add(titlePanel, BorderLayout.NORTH);
@@ -247,16 +253,16 @@ public class PublishServiceWizard extends JDialog {
         stepsjPanel.setBackground(new Color(213, 222, 222));
         stepsjPanel.setBorder(new EtchedBorder());
 
-        stepsTitlePanel.setLayout(new java.awt.FlowLayout(java.awt.FlowLayout.LEFT));
+        stepsTitlePanel.setLayout(new FlowLayout(FlowLayout.LEFT));
         stepsTitlePanel.setPreferredSize(new Dimension(150, 40));
         stepsTitlePanel.setMaximumSize(new Dimension(150, 40));
 
-        stepsTitlePanel.setBackground(new java.awt.Color(213, 222, 222));
+        stepsTitlePanel.setBackground(new Color(213, 222, 222));
         stepsTitlePanel.
-          setBorder(new CompoundBorder(new EmptyBorder(new java.awt.Insets(5, 5, 5, 5)),
+          setBorder(new CompoundBorder(new EmptyBorder(new Insets(5, 5, 5, 5)),
             new MatteBorder(new Insets(0, 0, 1, 0), new Color(0, 0, 0))));
 
-        stepsLabel.setFont(new java.awt.Font("Dialog", 1, 14));
+        stepsLabel.setFont(new Font("Dialog", 1, 14));
         stepsLabel.setText("Steps");
         stepsTitlePanel.add(stepsLabel);
 
@@ -400,9 +406,11 @@ public class PublishServiceWizard extends JDialog {
         for (int i = 0; i < stepLabels.length; i++) {
             if (i == currentPanel) {
                 stepLabels[i].setForeground(Color.BLACK);
+                titleLabel.setText(stepLabels[i].getText());
             } else {
                 stepLabels[i].setForeground(Color.WHITE);
             }
+
         }
     }
 

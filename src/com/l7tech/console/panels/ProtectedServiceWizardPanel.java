@@ -79,7 +79,12 @@ public class ProtectedServiceWizardPanel extends WizardStepPanel {
 
     /** @return the wizard step description as string  */
     public String getDescription() {
-        return "Enter the protected service credentials and credentials policy";
+        return
+          "These are the username and password that we present to the service found in " +
+          "step 1 . Enter the protected service credentials and select the authorization " +
+          "method, or leave as anonymous";
+
+
     }
 
     /**

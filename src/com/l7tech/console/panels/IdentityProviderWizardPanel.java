@@ -352,8 +352,13 @@ public class IdentityProviderWizardPanel extends WizardStepPanel {
     }
 
     public String getDescription() {
-        return "Select the identities (users, groups) that are allowed to access the published service" +
-          " Specify where the credentials are located and transport layewr security";
+        return
+          "Select the identities (users, groups) that are allowed to access the published " +
+          "service.  Specify where the credentials are validated, internal or other providers " +
+          "like LDAP or check \"Anonymous Access\"\n" +
+          "Also, choose the type of credentials expected to be presented, IE, HTTP Basic or " +
+          "Digest, and whether SSL/TLS transport security is required"+
+          "Choose Finish when you are satisfied.";
     }
 
     /**
