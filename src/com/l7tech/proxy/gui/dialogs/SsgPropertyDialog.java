@@ -644,6 +644,13 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
                 }
             }
 
+            // override the default (trusted SSG) if the ssg is a federated SSG
+            if(ssg.getTrustedGatewayId() > 0) {
+                identityPane.getFederatedSSGRadioButton().setSelected(true);
+                identityPane.setTrustedSSGFormEnabled(false);
+                identityPane.setFederatedSSGFormEnabled(true);
+            }
+
             fieldLocalEndpoint.setText("http://localhost:" + clientProxy.getBindPort() + "/" +
                                        ssg.getLocalEndpoint());
             fieldWsdlEndpoint.setText("http://localhost:" + clientProxy.getBindPort() + "/" +
@@ -688,6 +695,8 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
 
                 Ssg selectedSsg = (Ssg) identityPane.getTrustedSSGComboBox().getSelectedItem();
                 ssg.setTrustedGatewayId(selectedSsg.getId());
+            } else {
+                ssg.setTrustedGatewayId(0);
             }
             ssg.setSsgAddress(fieldServerAddress.getText().trim().toLowerCase());
             ssg.setUsername(identityPane.getUsernameTextField().getText().trim());
