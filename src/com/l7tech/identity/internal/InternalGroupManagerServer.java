@@ -129,7 +129,7 @@ public class InternalGroupManagerServer extends HibernateEntityManager implement
         }
     }
 
-    public static InternalGroup cast(Group group) {
+    static InternalGroup cast(Group group) {
         InternalGroup imp;
         if ( group instanceof GroupBean ) {
             imp = new InternalGroup( (GroupBean)group );
