@@ -324,7 +324,10 @@ public class SystinetUDDIClientAPIv3Test {
 
                         for (int m = 0; m < odal.size(); m++) {
                             OverviewDoc od = odal.get(m);
-                            if (od.getOverviewURL() != null) {
+                            if ((od.getOverviewURL() != null) &&
+                                 od.getOverviewURL().getUseType() != null &&
+                                 od.getOverviewURL().getUseType().equalsIgnoreCase("wsdlInterface")) {
+
                                 final String wsdlURL = od.getOverviewURL().getValue();
                                 if (!wsdlList.contains(wsdlURL)) {
                                     wsdlList.add(wsdlURL);
