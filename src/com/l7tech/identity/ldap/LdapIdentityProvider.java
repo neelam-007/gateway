@@ -315,6 +315,10 @@ public class LdapIdentityProvider implements IdentityProvider {
         for (int i = 0; i < userTypes.length; i++) {
             output.append("(&" +
                             "(objectClass=" + userTypes[i].getObjClass() + ")" +
+                            "(" + userTypes[i].getLoginAttrName() + "=" + param + ")" +
+                          ")");
+            output.append("(&" +
+                            "(objectClass=" + userTypes[i].getObjClass() + ")" +
                             "(" + userTypes[i].getNameAttrName() + "=" + param + ")" +
                           ")");
         }
