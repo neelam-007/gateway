@@ -1,12 +1,9 @@
 package com.l7tech.console.panels;
 
-import com.intellij.uiDesigner.core.GridConstraints;
-import com.intellij.uiDesigner.core.GridLayoutManager;
-import com.intellij.uiDesigner.core.Spacer;
 import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.util.XmlUtil;
-import com.l7tech.common.xml.SoapMessageGenerator.Message;
 import com.l7tech.common.xml.*;
+import com.l7tech.common.xml.SoapMessageGenerator.Message;
 import com.l7tech.console.action.Actions;
 import com.l7tech.console.tree.ServiceNode;
 import com.l7tech.console.tree.policy.*;
@@ -21,15 +18,17 @@ import com.l7tech.console.xmlviewer.util.DocumentUtilities;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.assertion.XpathBasedAssertion;
 import com.l7tech.policy.assertion.xmlsec.RequestWssConfidentiality;
+import com.l7tech.policy.assertion.xmlsec.RequestWssIntegrity;
 import com.l7tech.policy.assertion.xmlsec.ResponseWssConfidentiality;
+import com.l7tech.policy.assertion.xmlsec.ResponseWssIntegrity;
 import org.dom4j.Document;
 import org.dom4j.DocumentException;
+import org.jaxen.JaxenException;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 import org.xml.sax.SAXParseException;
-import org.jaxen.JaxenException;
 
 import javax.swing.*;
 import javax.swing.event.TreeSelectionEvent;
@@ -43,17 +42,20 @@ import javax.xml.soap.SOAPMessage;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.awt.event.KeyListener;
 import java.awt.event.KeyEvent;
+import java.awt.event.KeyListener;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.StringReader;
 import java.net.URL;
 import java.rmi.RemoteException;
-import java.util.*;
-import java.util.logging.Logger;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map;
 import java.util.logging.Level;
+import java.util.logging.Logger;
 
 
 /**
@@ -70,6 +72,7 @@ public class XpathBasedAssertionPropertiesDialog extends JDialog {
     private JButton okButton;
     private JButton cancelButton;
     private JButton helpButton;
+    private JLabel descriptionLabel;
     private XpathBasedAssertionTreeNode node;
     private XpathBasedAssertion xmlSecAssertion;
     private ServiceNode serviceNode;
@@ -96,18 +99,6 @@ public class XpathBasedAssertionPropertiesDialog extends JDialog {
             throw new IllegalArgumentException();
         }
         node = n;
-        StringBuffer title = new StringBuffer("Select element to ");
-        if ((n instanceof RequestWssIntegrityTreeNode) || (n instanceof ResponseWssIntegrityTreeNode)) {
-            title.append("sign.");
-        } else if ((n instanceof RequestWssConfidentialityTreeNode) || (n instanceof ResponseWssConfidentialityTreeNode)) {
-            title.append("encrypt.");
-        } else if ((n instanceof RequestXpathPolicyTreeNode)) {
-            title.append("require.");
-        } else if ((n instanceof ResponseXpathPolicyTreeNode)) {
-            title.append("require.");
-        } else throw new IllegalArgumentException("Unsupported security node: " + n.getClass());
-        setTitle(title.toString());
-
         okActionListener = okListener;
 
         xmlSecAssertion = (XpathBasedAssertion)node.asAssertion();
@@ -235,6 +226,23 @@ public class XpathBasedAssertionPropertiesDialog extends JDialog {
         }
 
         messageViewerToolBar.getxpathField().addKeyListener(messageEditingListener);
+        String description = null;
+        String title = null;
+        if (xmlSecAssertion instanceof RequestWssConfidentiality) {
+            description = "Select request element to encrypt.";
+            title = "Encrypt Request Element Properties";
+        } else if (xmlSecAssertion instanceof ResponseWssConfidentiality) {
+            description = "Select response element to encrypt.";
+            title = "Encrypt Response Element Properties";
+        } else if (xmlSecAssertion instanceof RequestWssIntegrity) {
+            description = "Select request element to sign.";
+            title = "Sign Request Element Properties";
+        } else if (xmlSecAssertion instanceof ResponseWssIntegrity) {
+            description = "Select response element to sign.";
+            title = "Sign Response Element Properties";
+        }
+        descriptionLabel.setText(description);
+        setTitle(title);
     }
 
     /**

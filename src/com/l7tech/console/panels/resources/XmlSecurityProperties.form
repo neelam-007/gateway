@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <form xmlns="http://www.intellij.com/uidesigner/form/" version="1" bind-to-class="com.l7tech.console.panels.XpathBasedAssertionPropertiesDialog">
-  <grid id="24f2b" binding="mainPanel" row-count="5" column-count="1" hgap="-1" vgap="-1">
+  <grid id="24f2b" binding="mainPanel" row-count="6" column-count="1" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
     <margin top="5" left="10" bottom="0" right="10"/>
     <constraints>
       <xy x="6" y="19" width="873" height="585"/>
@@ -9,18 +9,18 @@
     <properties/>
     <border type="none"/>
     <children>
-      <grid id="6726c" row-count="1" column-count="1" hgap="-1" vgap="-1">
+      <grid id="6726c" row-count="1" column-count="1" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
         <margin top="10" left="0" bottom="0" right="0"/>
         <constraints>
-          <xy x="10" y="65" width="853" height="441"/>
-          <grid row="3" column="0" row-span="1" col-span="1" vsize-policy="7" hsize-policy="7" anchor="0" fill="3"/>
+          <xy x="10" y="90" width="853" height="435"/>
+          <grid row="4" column="0" row-span="1" col-span="1" vsize-policy="7" hsize-policy="7" anchor="0" fill="3"/>
         </constraints>
         <properties/>
         <border type="none"/>
         <children>
           <splitpane id="d9345">
             <constraints>
-              <xy x="0" y="10" width="853" height="431"/>
+              <xy x="0" y="10" width="853" height="425"/>
               <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="7" anchor="0" fill="3">
                 <preferred-size width="200" height="200"/>
               </grid>
@@ -30,7 +30,7 @@
             </properties>
             <border type="none"/>
             <children>
-              <grid id="2f606" row-count="2" column-count="1" hgap="-1" vgap="-1">
+              <grid id="2f606" row-count="2" column-count="1" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
                 <margin top="0" left="0" bottom="0" right="0"/>
                 <constraints>
                   <splitpane position="left"/>
@@ -40,7 +40,7 @@
                 <children>
                   <component id="abb92" class="javax.swing.JLabel" binding="operationsLabel">
                     <constraints>
-                      <xy x="0" y="0" width="116" height="20"/>
+                      <xy x="0" y="0" width="136" height="20"/>
                       <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="7" anchor="0" fill="3"/>
                     </constraints>
                     <properties>
@@ -50,7 +50,7 @@
                   </component>
                   <scrollpane id="6db4a" binding="treeScrollPane">
                     <constraints>
-                      <xy x="0" y="25" width="116" height="406"/>
+                      <xy x="0" y="25" width="136" height="400"/>
                       <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="7" hsize-policy="7" anchor="8" fill="3"/>
                     </constraints>
                     <properties>
@@ -69,7 +69,7 @@
                   </scrollpane>
                 </children>
               </grid>
-              <grid id="57614" row-count="2" column-count="1" hgap="-1" vgap="-1">
+              <grid id="57614" row-count="2" column-count="1" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
                 <margin top="0" left="0" bottom="0" right="0"/>
                 <constraints>
                   <splitpane position="right"/>
@@ -77,10 +77,10 @@
                 <properties/>
                 <border type="none"/>
                 <children>
-                  <grid id="e5cc1" binding="messageViewerToolbarPanel" row-count="1" column-count="2" hgap="-1" vgap="-1">
+                  <grid id="e5cc1" binding="messageViewerToolbarPanel" row-count="1" column-count="2" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
                     <margin top="0" left="0" bottom="0" right="0"/>
                     <constraints>
-                      <xy x="0" y="0" width="733" height="20"/>
+                      <xy x="0" y="0" width="713" height="20"/>
                       <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="1" hsize-policy="7" anchor="8" fill="1"/>
                     </constraints>
                     <properties/>
@@ -89,13 +89,13 @@
                   </grid>
                   <scrollpane id="afda0">
                     <constraints>
-                      <xy x="0" y="25" width="733" height="406"/>
+                      <xy x="0" y="25" width="713" height="400"/>
                       <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="7" hsize-policy="7" anchor="0" fill="3"/>
                     </constraints>
                     <properties/>
                     <border type="none"/>
                     <children>
-                      <grid id="affe0" binding="messageViewerPanel" row-count="1" column-count="1" hgap="-1" vgap="-1">
+                      <grid id="affe0" binding="messageViewerPanel" row-count="1" column-count="1" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
                         <margin top="0" left="0" bottom="0" right="0"/>
                         <constraints/>
                         <properties/>
@@ -110,18 +110,18 @@
           </splitpane>
         </children>
       </grid>
-      <grid id="8bfc0" row-count="2" column-count="7" hgap="-1" vgap="-1">
+      <grid id="8bfc0" row-count="2" column-count="7" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
         <margin top="5" left="0" bottom="5" right="0"/>
         <constraints>
-          <xy x="10" y="511" width="853" height="74"/>
-          <grid row="4" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="7" anchor="0" fill="3"/>
+          <xy x="10" y="530" width="853" height="55"/>
+          <grid row="5" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="7" anchor="0" fill="3"/>
         </constraints>
         <properties/>
         <border type="none"/>
         <children>
           <component id="44632" class="javax.swing.JButton" binding="okButton">
             <constraints>
-              <xy x="664" y="45" width="48" height="24"/>
+              <xy x="649" y="25" width="51" height="25"/>
               <grid row="1" column="4" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1"/>
             </constraints>
             <properties>
@@ -130,13 +130,13 @@
           </component>
           <hspacer id="44b42">
             <constraints>
-              <xy x="60" y="51" width="604" height="11"/>
+              <xy x="60" y="32" width="589" height="11"/>
               <grid row="1" column="3" row-span="1" col-span="1" vsize-policy="1" hsize-policy="6" anchor="0" fill="1"/>
             </constraints>
           </hspacer>
           <component id="322c3" class="javax.swing.JButton" binding="helpButton">
             <constraints>
-              <xy x="798" y="45" width="55" height="24"/>
+              <xy x="792" y="25" width="61" height="25"/>
               <grid row="1" column="6" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1"/>
             </constraints>
             <properties>
@@ -145,7 +145,7 @@
           </component>
           <component id="5c53" class="javax.swing.JButton" binding="cancelButton">
             <constraints>
-              <xy x="722" y="45" width="66" height="24"/>
+              <xy x="710" y="25" width="72" height="25"/>
               <grid row="1" column="5" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1"/>
             </constraints>
             <properties>
@@ -154,12 +154,21 @@
           </component>
           <vspacer id="ce7b6">
             <constraints>
-              <xy x="356" y="5" width="11" height="20"/>
+              <xy x="349" y="5" width="11" height="20"/>
               <grid row="0" column="3" row-span="1" col-span="1" vsize-policy="6" hsize-policy="1" anchor="0" fill="2"/>
             </constraints>
           </vspacer>
         </children>
       </grid>
+      <component id="f9f8a" class="javax.swing.JLabel" binding="descriptionLabel">
+        <constraints>
+          <xy x="10" y="7" width="124" height="15"/>
+          <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0"/>
+        </constraints>
+        <properties>
+          <text value="Some descriptive text"/>
+        </properties>
+      </component>
     </children>
   </grid>
 </form>
