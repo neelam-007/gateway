@@ -6,7 +6,6 @@
 # description: Layer7's Secure Span Gateway Daemon \
 #	       secures and provides access for SOAP services
 # processname: tomcat
-# pidfile: /var/run/ssg.pid
 # config: /ssg/tomcat
 
 # Source function library.
@@ -19,7 +18,7 @@ fi
 
 ssg="$TOMCAT_HOME/bin/catalina.sh"
 
-ssguser="jay"
+ssguser="gateway"
 prog="SSG"
 tries=3
 count=0
@@ -38,11 +37,12 @@ start() {
 		exit
 	fi
 
+	USER=`whoami`
         echo -n $"Starting $prog: "
-	if [ $USER == "root" ]; then
+	if [ "$USER" == "root" ]; then
         	su - $ssguser -c "$ssg start -security" > /dev/null 2>&1
         	RETVAL=$?
-	elif [ $USER == "$ssguser" ]; then
+	elif [ "$USER" == "$ssguser" ]; then
 		$ssg start -security > /dev/null 2>&1
 		RETVAL=$?
 	else
@@ -87,7 +87,7 @@ stop() {
 }
 
 find_tomcat() {
-	pid=`for x in \`pidof java\`; do ps $x | grep tomcat|cut -c 1-5 |tr -d [:blank:]  ; done`
+	pid=`pidof /ssg/j2sdk1.4.2_05/bin/java`
 }
 
 reallystop() {
