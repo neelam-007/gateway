@@ -6,8 +6,6 @@
 
 package com.l7tech.objectmodel.event;
 
-import com.l7tech.server.event.GenericListener;
-
 import java.util.EventListener;
 import java.util.EventObject;
 
