@@ -23,13 +23,6 @@ import java.util.Random;
 public class HibernatePersistenceManagerServlet extends HttpServlet {
     public void init( ServletConfig config ) throws ServletException {
         super.init( config );
-
-        try {
-            HibernatePersistenceManager.initialize();
-        } catch ( Exception e ) {
-            e.printStackTrace();
-            throw new ServletException( e );
-        }
     }
 
     public void doGet( HttpServletRequest request, HttpServletResponse response ) throws IOException, ServletException {
@@ -49,7 +42,7 @@ public class HibernatePersistenceManagerServlet extends HttpServlet {
         try {
             String op = request.getParameter("op");
 
-            if ( op.equals("list") ) {
+            if ( "list".equals(op) ) {
                 Iterator i = ipcm.findAll().iterator();
                 if ( !i.hasNext() ) {
                     out.println( "None!" );
@@ -61,12 +54,12 @@ public class HibernatePersistenceManagerServlet extends HttpServlet {
                         out.println( config.getName() );
                     }
                 }
-            } else if ( op.equals( "get") ) {
+            } else if ( "get".equals(op) ) {
                 String soid = request.getParameter("oid");
                 long oid = Long.parseLong( soid );
                 IdentityProviderConfig config = ipcm.findByPrimaryKey( oid );
                 out.println( config );
-            } else if ( op.equals( "delete") ) {
+            } else if ( "delete".equals(op) ) {
                 String soid = request.getParameter("oid");
                 long oid = Long.parseLong( soid );
                 IdentityProviderConfig config = ipcm.findByPrimaryKey( oid );
@@ -77,7 +70,7 @@ public class HibernatePersistenceManagerServlet extends HttpServlet {
 
                     out.println( oid + " deleted." );
                 }
-            } else if ( op.equals( "create") ) {
+            } else if ( "create".equals(op) ) {
                 IdentityProviderType type = new IdentityProviderTypeImp();
                 type.setClassName( "com.l7tech.identity.internal.InternalIdentityProvider" );
                 type.setName( "Internal Identity Provider" );
@@ -93,6 +86,8 @@ public class HibernatePersistenceManagerServlet extends HttpServlet {
                 ipcm.update( config );
 
                 out.println( "Saved " + oid );
+            } else {
+                out.println( "<b>The <tt>op</tt> parameter must be one of { get, create, delete, list }</b>" );
             }
         } catch ( Exception e ) {
             throw new ServletException( e );
@@ -101,13 +96,14 @@ public class HibernatePersistenceManagerServlet extends HttpServlet {
                 String rollback = request.getParameter("rollback");
                 if ( "true".equals( rollback ) )
                     PersistenceContext.getCurrent().rollbackTransaction();
-                else
+                else {
                     PersistenceContext.getCurrent().commitTransaction();
+                }
             } catch ( Exception te ) {
                 throw new ServletException( te );
             }
+            out.close();
         }
-        out.close();
     }
 
 }
