@@ -120,6 +120,7 @@ public class MainWindow extends JFrame {
     private Action newInernalUserAction;
     private Action newInernalGroupAction;
     private Action newProviderAction;
+    private HomeAction homeAction = new HomeAction();
 
     /**
      * MainWindow constructor comment.
@@ -370,7 +371,7 @@ public class MainWindow extends JFrame {
 
         JMenuItem menuItem;
 
-        menuItem = new JMenuItem(new HomeAction());
+        menuItem = new JMenuItem(homeAction);
         gotoMenu.add(menuItem);
         return gotoMenu;
     }
@@ -778,6 +779,8 @@ public class MainWindow extends JFrame {
         getConnectAction().setEnabled(!connected);
         getShowLogToggleAction().setEnabled(connected);
         getServerLoadAction().setEnabled(connected);
+        homeAction.setEnabled(connected);
+
     }
 
 
@@ -1084,7 +1087,6 @@ public class MainWindow extends JFrame {
         b.setMargin(new Insets(0, 0, 0, 0));
         b.setHorizontalTextPosition(SwingConstants.RIGHT);
 
-        final HomeAction homeAction = new HomeAction();
         b = toolBarPane.add(homeAction);
         b.setFont(new Font("Dialog", 1, 10));
         b.setText((String)homeAction.getValue(Action.NAME));
@@ -1690,11 +1692,10 @@ public class MainWindow extends JFrame {
                     }
                 });
               toggleConnectedMenus(true);
-
+              homeAction.actionPerformed(null);
               if(logMenuItem.isSelected()){
                   restoreLogPane();
               }
-              new HomeAction().actionPerformed(null);
           }
 
           /* invoked on authentication failure */
