@@ -126,7 +126,7 @@ public class InternalGroupManagerServer extends HibernateEntityManager implement
             // check that no existing group have same name
             Group existingGrp = null;
             try {
-                existingGrp = findByPrimaryKey( group.getUniqueIdentifier() );
+                existingGrp = findByName(group.getName());
             } catch (FindException e) {
                 existingGrp = null;
             }
