@@ -25,14 +25,30 @@ import java.util.Map;
  */
 public class LoginCredentials {
     public static LoginCredentials makeCertificateCredentials(X509Certificate cert, Class credentialSource) {
+        String login = getCn(cert);
+
+        return new LoginCredentials(login, null, CredentialFormat.CLIENTCERT, credentialSource, null, cert);
+    }
+
+    private static String getCn(X509Certificate cert) {
         Map dnMap = CertUtils.dnToAttributeMap(cert.getSubjectDN().getName());
         List cnValues = (List)dnMap.get("CN");
         String login = null;
         if (cnValues != null && cnValues.size() >= 1) {
             login = (String)cnValues.get(0);
         }
+        return login;
+    }
 
-        return new LoginCredentials(login, null, CredentialFormat.CLIENTCERT, credentialSource, null, cert);
+    public static LoginCredentials makeSamlCredentials(SamlAssertion assertion, Class credentialSource) {
+        String login = null;
+        X509Certificate cert = assertion.getSubjectCertificate();
+        if (cert != null) {
+            login = getCn(cert);
+        } else {
+            login = assertion.getNameIdentifierValue();
+        }
+        return new LoginCredentials(login, null, CredentialFormat.SAML, credentialSource, null, assertion);
     }
 
     public static LoginCredentials makePasswordCredentials(String login, char[] pass, Class credentialSource) {

@@ -10,6 +10,7 @@ import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.assertion.composite.ExactlyOneAssertion;
 import com.l7tech.policy.assertion.composite.OneOrMoreAssertion;
+import com.l7tech.policy.assertion.credential.WsTrustCredentialExchange;
 import com.l7tech.policy.assertion.credential.http.HttpBasic;
 import com.l7tech.policy.assertion.credential.http.HttpDigest;
 import com.l7tech.policy.assertion.credential.wss.WssBasic;
@@ -52,6 +53,7 @@ public class AllAssertions {
         new ResponseXpathAssertion(),
         new RequestWssReplayProtection(),
         new RequestSwAAssertion(),
+        new WsTrustCredentialExchange(),
         // TODO new TimeOfDayAssertion(),
         // TODO new DateRangeAssertion(),
         // TODO new DayOfWeekAssertion(),
@@ -98,6 +100,7 @@ public class AllAssertions {
         new RequestSwAAssertion(),
         new RequestWssSaml(),
         new AuditAssertion(),
+        new WsTrustCredentialExchange(),
         CUSTOM_ASSERTION_HOLDER,
         new UnknownAssertion()
         // TODO new TimeOfDayAssertion(),
@@ -139,6 +142,7 @@ public class AllAssertions {
         new RequestWssSaml(),
         new AuditAssertion(),
         new CustomAssertionHolder(),
+        new WsTrustCredentialExchange(),
         new UnknownAssertion()
         // TODO new TimeOfDayAssertion(),
         // TODO new DateRangeAssertion(),
@@ -154,6 +158,7 @@ public class AllAssertions {
         new RequestWssX509Cert(),
         new SecureConversation(),
         new RequestWssSaml(),
+        new WsTrustCredentialExchange(),
     };
 
 }

@@ -4,6 +4,7 @@ import com.l7tech.common.util.ConstructorInvocation;
 import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.assertion.composite.OneOrMoreAssertion;
+import com.l7tech.policy.assertion.credential.WsTrustCredentialExchange;
 import com.l7tech.policy.assertion.credential.http.HttpBasic;
 import com.l7tech.policy.assertion.credential.http.HttpDigest;
 import com.l7tech.policy.assertion.credential.wss.WssBasic;
@@ -65,6 +66,7 @@ public class AssertionTreeNodeFactory {
         assertionMap.put(CustomAssertionHolder.class, CustomAssertionTreeNode.class);
         assertionMap.put(AuditAssertion.class, AuditAssertionTreeNode.class);
         assertionMap.put(RequestWssSaml.class, RequestWssSamlTreeNode.class);
+        assertionMap.put(WsTrustCredentialExchange.class, WsTrustCredentialExchangeTreeNode.class);
     }
 
     /**

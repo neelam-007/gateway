@@ -6,6 +6,7 @@
 
 package com.l7tech.policy.wsp;
 
+import com.l7tech.common.security.xml.TokenServiceRequestType;
 import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.wsdl.BindingInfo;
 import com.l7tech.common.wsdl.BindingOperationInfo;
@@ -16,6 +17,7 @@ import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.assertion.composite.CompositeAssertion;
 import com.l7tech.policy.assertion.composite.ExactlyOneAssertion;
 import com.l7tech.policy.assertion.composite.OneOrMoreAssertion;
+import com.l7tech.policy.assertion.credential.WsTrustCredentialExchange;
 import com.l7tech.policy.assertion.credential.http.HttpBasic;
 import com.l7tech.policy.assertion.credential.http.HttpDigest;
 import com.l7tech.policy.assertion.credential.wss.WssBasic;
@@ -703,6 +705,16 @@ public class WspConstants {
             }
         },
 
+        new BasicTypeMapping(TokenServiceRequestType.class, "requestType") {
+            protected Object stringToObject(String value) throws InvalidPolicyStreamException {
+                return TokenServiceRequestType.fromString(value);
+            }
+
+            protected String objectToString(Object target) {
+                return ((TokenServiceRequestType)target).getUri();
+            }
+        },
+
         // Container types
         typeMappingArray,
         typeMappingStringArray,
@@ -743,6 +755,7 @@ public class WspConstants {
         new AssertionMapping(new TimeRange(), "TimeRange"),
         new AssertionMapping(new RemoteIpRange(), "RemoteIpAddressRange"),
         new AssertionMapping(new AuditAssertion(), "AuditAssertion"),
+        new AssertionMapping(new WsTrustCredentialExchange(), "WsTrustCredentialExchange"),
         new SerializedJavaClassMapping(CustomAssertionHolder.class, "CustomAssertion"),
         new AssertionMapping(new UnknownAssertion(), "UnknownAssertion"),
 

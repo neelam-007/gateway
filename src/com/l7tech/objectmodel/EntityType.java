@@ -5,6 +5,9 @@ import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.identity.User;
 import com.l7tech.common.transport.jms.JmsConnection;
 import com.l7tech.common.transport.jms.JmsEndpoint;
+import com.l7tech.common.security.TrustedCert;
+import com.l7tech.common.alert.AlertEvent;
+import com.l7tech.common.alert.Notification;
 import com.l7tech.service.PublishedService;
 
 import java.io.ObjectStreamException;
@@ -20,13 +23,19 @@ import java.io.Serializable;
  *
  */
 public class EntityType implements Serializable {
-    public static final EntityType ID_PROVIDER_CONFIG = new EntityType(1);
-    public static final EntityType USER = new EntityType(2);
-    public static final EntityType GROUP = new EntityType(3);
-    public static final EntityType SERVICE = new EntityType(4);
-    public static final EntityType JMS_CONNECTION = new EntityType(5);
-    public static final EntityType JMS_ENDPOINT = new EntityType(6);
-    public static final EntityType UNDEFINED = new EntityType(-1);
+    public static final EntityType ID_PROVIDER_CONFIG = new EntityType(1, IdentityProviderConfig.class);
+    public static final EntityType USER = new EntityType(2, User.class);
+    public static final EntityType GROUP = new EntityType(3, Group.class);
+    public static final EntityType SERVICE = new EntityType(4, PublishedService.class);
+    public static final EntityType JMS_CONNECTION = new EntityType(5, JmsConnection.class);
+    public static final EntityType JMS_ENDPOINT = new EntityType(6, JmsEndpoint.class);
+    public static final EntityType TRUSTED_CERT = new EntityType(7, TrustedCert.class);
+    public static final EntityType ALERT_TRIGGER = new EntityType(8, AlertEvent.class);
+    public static final EntityType ALERT_ACTION = new EntityType(9, Notification.class);
+    public static final EntityType UNDEFINED = new EntityType(-1, null);
+
+    private int val;
+    private Class entityClass;
 
     /**
      * Returns a hash code value for the object.
@@ -64,8 +73,9 @@ public class EntityType implements Serializable {
         val = -1;
     }
 
-    private EntityType(int val) {
+    private EntityType(int val, Class clazz) {
         this.val = val;
+        this.entityClass = clazz;
     }
 
     /**
@@ -82,6 +92,14 @@ public class EntityType implements Serializable {
         this.val = val;
     }
 
+    public Class getEntityClass() {
+        return entityClass;
+    }
+
+    public void setEntityClass(Class entityClass) {
+        this.entityClass = entityClass;
+    }
+
     public String toString() {
         switch (val) {
             case 1:
@@ -96,6 +114,12 @@ public class EntityType implements Serializable {
                 return "JMS_CONNECTION";
             case 6:
                 return "JMS_ENDPOINT";
+            case 7:
+                return "TRUSTED_CERT";
+            case 8:
+                return "ALERT_TRIGGER";
+            case 9:
+                return "ALERT_ACTION";
             default:
                 return "?";
         }
@@ -108,12 +132,17 @@ public class EntityType implements Serializable {
         else if (interfaceType.equals(PublishedService.class)) return SERVICE;
         else if (interfaceType.equals(JmsConnection.class)) return JMS_CONNECTION;
         else if (interfaceType.equals(JmsEndpoint.class)) return JMS_ENDPOINT;
+        else if (interfaceType.equals(TrustedCert.class)) return TRUSTED_CERT;
+        else if (interfaceType.equals(AlertEvent.class)) return ALERT_TRIGGER;
+        else if (interfaceType.equals(Notification.class)) return ALERT_ACTION;
         throw new IllegalArgumentException("no EntityType for interface " + interfaceType.getName());
     }
 
     private Object readResolve() throws ObjectStreamException {
         return fromValue(val);
     }
+
+
 
     /**
      * necessary for use in web service where those are constructed from value
@@ -132,10 +161,15 @@ public class EntityType implements Serializable {
                 return JMS_CONNECTION;
             case 6:
                 return JMS_ENDPOINT;
+            case 7:
+                return TRUSTED_CERT;
+            case 8:
+                return ALERT_TRIGGER;
+            case 9:
+                return ALERT_ACTION;
             default:
                 return UNDEFINED;
         }
     }
 
-    private int val;
 }

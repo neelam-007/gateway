@@ -40,6 +40,10 @@ public class TreeNodeFactory {
             return new UserNode(entity);
         } else if (EntityType.SERVICE.equals(entity.getType())) {
             return new ServiceNode(entity);
+        } else if (EntityType.ALERT_TRIGGER.equals(entity.getType())) {
+            return new AlertEventNode(entity);
+        } else if (EntityType.ALERT_ACTION.equals(entity.getType())) {
+            return new AlertNotificationNode(entity);
         }
 
         throw new IllegalArgumentException("Unknown entity type " + entity.getType());
