@@ -221,11 +221,11 @@ public class ServiceManagerImp extends HibernateEntityManager implements Service
             // check if it's valid
             validate( service );
 
-            // check version temporarily disabled because of certain updates that wont increment the version (disable / enable)
-            /*if (original.getVersion() != service.getVersion()) {
+            // check version
+            if (original.getVersion() != service.getVersion()) {
                 _log.severe("db service has version: " + original.getVersion() + ". requestor service has version: " + service.getVersion());
                 throw new VersionException("the published service you are trying to update is no longer valid.");
-            }*/
+            }
 
             // copy back into hibernate object
             try {
