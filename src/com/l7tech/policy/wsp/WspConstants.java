@@ -682,6 +682,7 @@ class WspConstants {
         new AssertionMapping(new RequestWssConfidentiality(), "RequestWssConfidentiality"),
         new AssertionMapping(new ResponseWssIntegrity(), "ResponseWssIntegrity"),
         new AssertionMapping(new ResponseWssConfidentiality(), "ResponseWssConfidentiality"),
+        new AssertionMapping(new RequestWssX509Cert(), "RequestWssX509Cert"),
         new AssertionMapping(new SamlSecurity(), "SamlSecurity"),
         new AssertionMapping(new RequestXpathAssertion(), "RequestXpathAssertion"),
         new AssertionMapping(new SchemaValidation(), "SchemaValidation"),
