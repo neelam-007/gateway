@@ -6,16 +6,16 @@
 
 package com.l7tech.proxy.util;
 
+import com.l7tech.common.http.GenericHttpHeader;
 import com.l7tech.common.http.GenericHttpRequestParamsImpl;
+import com.l7tech.common.http.HttpHeader;
 import com.l7tech.common.http.SimpleHttpClient;
 import com.l7tech.common.mime.ContentTypeHeader;
-import com.l7tech.common.mime.MimeUtil;
 import com.l7tech.common.protocol.SecureSpanConstants;
 import com.l7tech.common.security.CertificateRequest;
 import com.l7tech.common.util.CertUtils;
 import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.common.util.HexUtils;
-import com.l7tech.common.util.XmlUtil;
 import com.l7tech.proxy.datamodel.Managers;
 import com.l7tech.proxy.datamodel.Ssg;
 import com.l7tech.proxy.datamodel.exceptions.BadCredentialsException;
@@ -23,21 +23,17 @@ import com.l7tech.proxy.datamodel.exceptions.BadPasswordFormatException;
 import com.l7tech.proxy.datamodel.exceptions.CertificateAlreadyIssuedException;
 import com.l7tech.proxy.datamodel.exceptions.ServerCertificateUntrustedException;
 import com.l7tech.proxy.ssl.ClientProxySecureProtocolSocketFactory;
-import com.l7tech.proxy.ssl.CurrentSslPeer;
 import com.l7tech.proxy.ssl.HostnameMismatchException;
 import com.l7tech.proxy.ssl.SslPeer;
-import org.apache.commons.httpclient.HttpClient;
-import org.apache.commons.httpclient.UsernamePasswordCredentials;
-import org.apache.commons.httpclient.methods.PostMethod;
 
 import javax.net.ssl.HttpsURLConnection;
 import javax.net.ssl.SSLException;
 import javax.security.auth.x500.X500Principal;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.net.PasswordAuthentication;
 import java.net.URL;
 import java.net.URLConnection;
-import java.net.PasswordAuthentication;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
@@ -56,7 +52,7 @@ public class SslUtils {
     private static final Logger log = Logger.getLogger(SslUtils.class.getName());
 
     /** This is just a dummy body document, used as a placeholder in the password change POST. */
-    private static final String PASSWORD_CHANGE_BODY = "<changePasswordAndRevokeClientCertificate/>";
+    private static final byte[] PASSWORD_CHANGE_BODY = "<changePasswordAndRevokeClientCertificate/>".getBytes();
 
     /**
      * Configure the specified URL connection to use the right socket factory, if it's SSL.
@@ -139,37 +135,30 @@ public class SslUtils {
             throws IOException, BadCredentialsException, BadPasswordFormatException, PasswordNotWritableException
     {
         URL url = ssg.getServerPasswordChangeUrl();
-        HttpClient hc = new HttpClient();
-        hc.getState().setAuthenticationPreemptive(true);
-        hc.getState().setCredentials(null, null,
-                                     new UsernamePasswordCredentials(username,
-                                                                     new String(oldpassword)));
-        PostMethod post = new PostMethod(url.toExternalForm());
-        try {
-            post.setRequestBody(PASSWORD_CHANGE_BODY); // dummy body, just as placeholder for POST
-            post.setRequestHeader(MimeUtil.CONTENT_TYPE, XmlUtil.TEXT_XML);
-            post.setRequestHeader(MimeUtil.CONTENT_LENGTH, String.valueOf(PASSWORD_CHANGE_BODY.length()));
-            post.setRequestHeader(SecureSpanConstants.HttpHeaders.HEADER_NEWPASSWD,
-                                  HexUtils.encodeBase64(new String(newpassword).getBytes(), true));
-            CurrentSslPeer.set(ssg);
-            int result = hc.executeMethod(post);
-            CurrentSslPeer.set(null);
-            log.info("HTTPS POST to password change service returned HTTP status " + result);
-            if (result == 400) {
-                byte[] response = post.getResponseBody();
-                throw new BadPasswordFormatException("Password change service rejected your new password " +
-                                                     "(HTTP status " + result + "). " + new String(response));
-            }
-            if (result == 401) throw new BadCredentialsException("Password change service indicates invalid current credentials (HTTP status " + result + ")");
-            if (result == 403) throw new PasswordNotWritableException("Password change service is unable to change the password for this account (HTTP status " + result + ")");
-            if (result != 200) throw new IOException("HTTPS POST to password change service returned HTTP status " + result);
+        SimpleHttpClient client = ssg.getRuntime().getHttpClient();
+        GenericHttpRequestParamsImpl params = new GenericHttpRequestParamsImpl(url);
+        params.setPreemptiveAuthentication(true);
+        params.setPasswordAuthentication(new PasswordAuthentication(username, oldpassword));
+        params.setExtraHeaders(new HttpHeader[] {
+            new GenericHttpHeader(SecureSpanConstants.HttpHeaders.HEADER_NEWPASSWD,
+                                  HexUtils.encodeBase64(new String(newpassword).getBytes(), true)),
+        });
 
-            post.releaseConnection();
-            post = null;
-        } finally {
-            if (post != null)
-                post.releaseConnection();
+        SimpleHttpClient.SimpleHttpResponse response = client.post(params, PASSWORD_CHANGE_BODY);
+        int result = response.getStatus();
+
+        log.info("HTTPS POST to password change service returned HTTP status " + result);
+        if (result == 400) {
+            byte[] responseBytes = response.getBytes();
+            throw new BadPasswordFormatException("Password change service rejected your new password " +
+                                                 "(HTTP status " + result + "). " + new String(responseBytes));
         }
+        if (result == 401) throw new BadCredentialsException("Password change service indicates invalid current credentials (HTTP status " + result + ")");
+        if (result == 403) throw new PasswordNotWritableException("Password change service is unable to change the password for this account (HTTP status " + result + ")");
+        if (result != 200) throw new IOException("HTTPS POST to password change service returned HTTP status " + result);
+
+        // Success.
+        return;
     }
 
     /**

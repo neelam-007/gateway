@@ -171,7 +171,7 @@ class GuiCredentialManager extends CredentialManager {
             ssgManager.save();
         } catch (IOException e) {
             log.log(Level.SEVERE, "Unable to save Gateway configuration: ", e);
-            Gui.errorMessage("Unable to save Gateway configuration",
+            Gui.criticalErrorMessage("Unable to save Gateway configuration",
                              "An error was encountered while writing your Gateway configuration to disk.",
                              e);
         }

@@ -159,7 +159,7 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
                             new CertDialog(cert, "WS-Trust Server Certificate", "WS-Trust Server Certificate").show();
                         } catch (GeneralSecurityException e1) {
                             log.log(Level.SEVERE, "Unable to access WS-Trust server certificate", e1);
-                            Gui.errorMessage("Unable to access WS-Trust server certificate",
+                            Gui.criticalErrorMessage("Unable to access WS-Trust server certificate",
                                              "Unable to access WS-Trust server certificate",
                                              e1);
                         }
@@ -289,7 +289,7 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
                             new CertDialog(cert, "Server Certificate", "Server Certificate for Gateway " + ssgName()).show();
                         } catch (Exception e1) {
                             log.log(Level.SEVERE, "Unable to access server certificate", e1);
-                            Gui.errorMessage("Unable to access server certificate",
+                            Gui.criticalErrorMessage("Unable to access server certificate",
                                     "Unable to access server certificate for Gateway " + ssgName(),
                                     e1);
                         }

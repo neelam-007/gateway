@@ -421,12 +421,22 @@ public class Gui {
         JOptionPane.showMessageDialog( getInstance().getFrame(), msg, "Unable to Proceed", JOptionPane.ERROR_MESSAGE );
     }
 
-    public static void errorMessage( String title, String message, Throwable t ) {
+    /**
+     * Display a critical error message.  This version displays a dialog that states that the error is so critical
+     * that the application may need to be restarted; to this end, the dialog features a "Restart" button.  If
+     * the error is not so critical that the user is highly likely to need to restart the application, use
+     * {@link #errorMessage(String, String, String, Throwable)} instead.
+     *
+     * @param title
+     * @param message
+     * @param t
+     */
+    public static void criticalErrorMessage( String title, String message, Throwable t ) {
         errorMessage(title, null, message, t);
     }
 
     /**
-     * Display an error message based on a caught exception.
+     * Display an error message based on a caught exception, but without inviting the user to restart the application.
      */
     public static void errorMessage( String title, String labelMessage, String message, Throwable t ) {
         ExceptionDialog d = new ExceptionDialog( getInstance().getFrame(), title, labelMessage, message, t, Level.SEVERE );

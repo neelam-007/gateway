@@ -6,6 +6,7 @@
 
 package com.l7tech.proxy.gui;
 
+import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.proxy.datamodel.Ssg;
 import com.l7tech.proxy.datamodel.SsgManagerImpl;
 import com.l7tech.proxy.datamodel.exceptions.BadCredentialsException;
@@ -99,10 +100,16 @@ class ChangePasswordAction extends AbstractAction {
                     if (newpass == null)
                         return;
 
-                    SslUtils.changePasswordAndRevokeClientCertificate(ssg,
-                                                                      oldpass.getUserName(),
-                                                                      oldpass.getPassword(),
-                                                                      newpass);
+                    try {
+                        SslUtils.changePasswordAndRevokeClientCertificate(ssg,
+                                                                          oldpass.getUserName(),
+                                                                          oldpass.getPassword(),
+                                                                          newpass);
+                    } catch (IOException e1) {
+                        // un-hide wrapped SSLException so server cert disco can be triggered if needed.
+                        SSLException sse = (SSLException)ExceptionUtils.getCauseIfCausedBy(e1, SSLException.class);
+                        throw (SSLException)new SSLException(sse.getMessage()).initCause(e1);
+                    }
 
                     // Succeeded, so update password and client cert
                     ssg.getRuntime().setCachedPassword(newpass);
@@ -136,14 +143,16 @@ class ChangePasswordAction extends AbstractAction {
                         return;
                     } catch (Exception e1) {
                         log.log(Level.WARNING, e1.getMessage(), e1);
-                        Gui.errorMessage("Unable to change your password", "Unable to negotiate an SSL connection " +
-                                                                           "with the Gateway.", e1);
+                        Gui.errorMessage("Unable to change your password",
+                                         "Password change failed.",
+                                         "Unable to negotiate an SSL connection with the Gateway.", e1);
                         return;
                     }
                 } catch (IOException e1) {
                     log.log(Level.WARNING, e1.getMessage(), e1);
-                    Gui.errorMessage("Unable to change your password", "The Gateway was unable to change " +
-                                                                       "your password.", e1);
+                    Gui.errorMessage("Unable to change your password",
+                                     "Password change failed.",
+                                     "The Gateway was unable to change your password.", e1);
                     return;
                 } catch (BadCredentialsException e1) {
                     log.log(Level.WARNING, e1.getMessage(), e1);
@@ -152,7 +161,7 @@ class ChangePasswordAction extends AbstractAction {
                     return;
                 } catch (KeyStoreException e1) {
                     log.log(Level.WARNING, e1.getMessage(), e1);
-                    Gui.errorMessage("Unable to remove your existing client certificate",
+                    Gui.criticalErrorMessage("Unable to remove your existing client certificate",
                                      "There was an error while attempting to remove our local copy of your " +
                                      "newly-revoked client certificate.", e1);
                     return;
