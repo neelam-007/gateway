@@ -3,8 +3,6 @@ package com.l7tech.server;
 import com.l7tech.identity.*;
 import com.l7tech.logging.LogManager;
 import com.l7tech.objectmodel.FindException;
-import com.l7tech.objectmodel.PersistenceContext;
-import com.l7tech.objectmodel.TransactionException;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.composite.CompositeAssertion;
 import com.l7tech.policy.assertion.credential.CredentialFinderException;
@@ -20,7 +18,6 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import java.io.IOException;
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
@@ -101,14 +98,6 @@ public abstract class AuthenticatableHttpServlet extends HttpServlet {
         } catch (FindException e) {
             logger.log(Level.SEVERE, "Exception getting id providers.", e);
             return null;
-        } finally {
-            try {
-                rollbackTransaction();
-            } catch ( SQLException se ) {
-                logger.log(Level.WARNING, null, se);
-            } catch ( TransactionException te ) {
-                logger.log(Level.WARNING, null, te);
-            }
         }
     }
 
@@ -148,12 +137,6 @@ public abstract class AuthenticatableHttpServlet extends HttpServlet {
             }
         }
         return null;
-    }
-
-    private void rollbackTransaction() throws java.sql.SQLException, TransactionException {
-        PersistenceContext context = PersistenceContext.getCurrent();
-        context.rollbackTransaction();
-        context.close();
     }
 
     protected Logger logger = null;
