@@ -302,6 +302,11 @@ public class XmlSecurityRecipientContextEditor extends JDialog {
     private void ok() {
         // remember value
         if (specificRecipientRradio.isSelected()) {
+            if (actorComboBox.getSelectedItem() == null) {
+                JOptionPane.showMessageDialog(okButton, "You must choose an existing recipient or define a new one.",
+                                              "Invalid Selection", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
             XmlSecurityRecipientContext newRecipientContext = new XmlSecurityRecipientContext();
             newRecipientContext.setActor((String)actorComboBox.getSelectedItem());
             X509Certificate cert = null;
