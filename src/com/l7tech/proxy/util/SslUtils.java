@@ -12,11 +12,11 @@ import com.l7tech.common.security.CertificateRequest;
 import com.l7tech.common.util.CertUtils;
 import com.l7tech.common.util.HexUtils;
 import com.l7tech.common.util.XmlUtil;
-import com.l7tech.proxy.datamodel.CurrentRequest;
 import com.l7tech.proxy.datamodel.Ssg;
 import com.l7tech.proxy.datamodel.exceptions.BadCredentialsException;
 import com.l7tech.proxy.datamodel.exceptions.BadPasswordFormatException;
 import com.l7tech.proxy.datamodel.exceptions.CertificateAlreadyIssuedException;
+import com.l7tech.proxy.ssl.CurrentSslPeer;
 import org.apache.commons.httpclient.HttpClient;
 import org.apache.commons.httpclient.UsernamePasswordCredentials;
 import org.apache.commons.httpclient.methods.PostMethod;
@@ -88,9 +88,9 @@ public class SslUtils {
             post.setRequestHeader(MimeUtil.CONTENT_LENGTH, String.valueOf(PASSWORD_CHANGE_BODY.length()));
             post.setRequestHeader(SecureSpanConstants.HttpHeaders.HEADER_NEWPASSWD,
                                   HexUtils.encodeBase64(new String(newpassword).getBytes(), true));
-            CurrentRequest.setPeerSsg(ssg);
+            CurrentSslPeer.set(ssg);
             int result = hc.executeMethod(post);
-            CurrentRequest.setPeerSsg(null);
+            CurrentSslPeer.set(null);
             log.info("HTTPS POST to password change service returned HTTP status " + result);
             if (result == 400) {
                 byte[] response = post.getResponseBody();
@@ -150,9 +150,9 @@ public class SslUtils {
             post.setRequestHeader(MimeUtil.CONTENT_TYPE, "application/pkcs10");
             post.setRequestHeader(MimeUtil.CONTENT_LENGTH, String.valueOf(csrBytes.length));
 
-            CurrentRequest.setPeerSsg(ssg);
+            CurrentSslPeer.set(ssg);
             int result = hc.executeMethod(post);
-            CurrentRequest.setPeerSsg(null);            
+            CurrentSslPeer.set(null);
             if ( result == 401 ) throw new BadCredentialsException("HTTP POST to certificate signer returned status " + result );
             if ( result == 403 ) throw new CertificateAlreadyIssuedException("HTTP POST to certificate signer returned status " + result);
             if ( result != 200 ) throw new CertificateException( "HTTP POST to certificate signer generated status " + result );

@@ -71,8 +71,9 @@ public class ServerSamlAuthenticationStatement implements ServerAssertion {
 
             ProcessorResult wssResults = xmlKnob.getProcessorResult();
             if (wssResults == null) {
-                logger.finest("Request does not contain SOAP; cannot validate Saml Statement");
-                return AssertionStatus.FALSIFIED;
+                logger.info("No tokens were processed from this request. Returning AUTH_REQUIRED.");
+                context.setAuthenticationMissing();
+                return AssertionStatus.AUTH_REQUIRED;
             }
 
             SecurityToken[] tokens = wssResults.getSecurityTokens();

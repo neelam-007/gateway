@@ -6,7 +6,10 @@
 
 package com.l7tech.proxy.gui;
 
-import com.l7tech.proxy.datamodel.*;
+import com.l7tech.proxy.datamodel.Managers;
+import com.l7tech.proxy.datamodel.Ssg;
+import com.l7tech.proxy.datamodel.SsgKeyStoreManager;
+import com.l7tech.proxy.datamodel.SsgManagerImpl;
 import com.l7tech.proxy.datamodel.exceptions.BadCredentialsException;
 import com.l7tech.proxy.datamodel.exceptions.BadPasswordFormatException;
 import com.l7tech.proxy.datamodel.exceptions.KeyStoreCorruptException;
@@ -14,6 +17,7 @@ import com.l7tech.proxy.datamodel.exceptions.OperationCanceledException;
 import com.l7tech.proxy.gui.dialogs.PasswordDialog;
 import com.l7tech.proxy.gui.util.IconManager;
 import com.l7tech.proxy.processor.MessageProcessor;
+import com.l7tech.proxy.ssl.CurrentSslPeer;
 import com.l7tech.proxy.util.SslUtils;
 
 import javax.net.ssl.SSLException;
@@ -44,7 +48,7 @@ class ChangePasswordAction extends AbstractAction {
         boolean cmPasswdPotentiallyChanged = false;
         boolean changeCompleted = false;
         if (ssg != null) {
-            if (ssg.getTrustedGateway() != null) {
+            if (ssg.isFederatedGateway()) {
                 Gui.errorMessage("This is a Federated Gateway.  You must perform this\n" +
                                  "action on the corresponding Trusted Gateway instead." );
                 return;
@@ -61,7 +65,7 @@ class ChangePasswordAction extends AbstractAction {
                         Object[] certoptions;
                         String title;
                         String message;
-                        if (SsgKeyStoreManager.isClientCertAvailabile(ssg)) {
+                        if (ssg.getClientCertificate() != null) {
                             certoptions = new Object[] {"Revoke Certificate", "Cancel"};
                             title = "Revoke Client Certificate";
                             message = "You are about to send a request to\n" +
@@ -96,7 +100,6 @@ class ChangePasswordAction extends AbstractAction {
                     if (newpass == null)
                         return;
 
-                    CurrentRequest.setCurrentSsg(ssg);
                     SslUtils.changePasswordAndRevokeClientCertificate(ssg,
                                                                       oldpass.getUserName(),
                                                                       oldpass.getPassword(),
@@ -109,11 +112,7 @@ class ChangePasswordAction extends AbstractAction {
                     changeCompleted = true;
                 } catch (KeyStoreCorruptException e1) {
                     try {
-                        Ssg problemSsg = ssg.getTrustedGateway();
-                        if (problemSsg == null) problemSsg = ssg;
-                        Managers.getCredentialManager().notifyKeyStoreCorrupt(problemSsg);
-                        SsgKeyStoreManager.deleteStores(problemSsg);
-                        ssg.getRuntime().resetSslContext();
+                        ssg.getRuntime().handleKeyStoreCorrupt();
                         retry = true;
                         // FALLTHROUGH -- retry with newly-emptied keystore
                     } catch (OperationCanceledException e2) {
@@ -169,7 +168,7 @@ class ChangePasswordAction extends AbstractAction {
                                      "the password for this account");
                     return;
                 } finally {
-                    CurrentRequest.clearCurrentRequest();
+                    CurrentSslPeer.clear();
                     if (!changeCompleted && cmPasswdPotentiallyChanged && currentCMPasswd != null) {
                         ssg.getRuntime().setCachedPassword(currentCMPasswd);
                     }

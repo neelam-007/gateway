@@ -9,13 +9,11 @@ package com.l7tech.proxy.policy.assertion.credential.http;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.credential.http.HttpClientCert;
 import com.l7tech.proxy.datamodel.Ssg;
-import com.l7tech.proxy.datamodel.SsgKeyStoreManager;
 import com.l7tech.proxy.datamodel.exceptions.*;
 import com.l7tech.proxy.message.PolicyApplicationContext;
 import com.l7tech.proxy.policy.assertion.ClientAssertion;
 
 import java.security.GeneralSecurityException;
-import java.security.NoSuchAlgorithmException;
 
 /**
  * @author alex
@@ -36,12 +34,8 @@ public class ClientHttpClientCert extends ClientAssertion {
     {
         Ssg ssg = context.getSsg();
         context.prepareClientCertificate();
-        try {
-            // Make sure the private key is available
-            SsgKeyStoreManager.getClientCertPrivateKey(ssg);
-        } catch (NoSuchAlgorithmException e) {
-            throw new RuntimeException(e); // can't happen
-        }
+        // Make sure the private key is available
+        ssg.getClientCertificatePrivateKey();
         context.setSslRequired(true);  // client cert requires an SSL request
         return AssertionStatus.NONE;
     }

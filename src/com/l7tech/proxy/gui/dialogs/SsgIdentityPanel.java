@@ -11,12 +11,4 @@ abstract class SsgIdentityPanel extends JPanel {
     public abstract JButton getClientCertButton();
 
     public abstract JButton getSsgCertButton();
-
-    public abstract JCheckBox getUseClientCredentialCheckBox();
-
-    public abstract JCheckBox getSavePasswordCheckBox();
-
-    public abstract JTextField getUsernameTextField();
-
-    public abstract JPasswordField getUserPasswordField();
 }

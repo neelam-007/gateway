@@ -3,7 +3,12 @@ package com.l7tech.proxy.datamodel;
 import com.l7tech.common.protocol.SecureSpanConstants;
 import com.l7tech.common.util.HexUtils;
 import com.l7tech.proxy.ClientProxy;
+import com.l7tech.proxy.datamodel.exceptions.BadCredentialsException;
+import com.l7tech.proxy.datamodel.exceptions.KeyStoreCorruptException;
+import com.l7tech.proxy.datamodel.exceptions.OperationCanceledException;
+import com.l7tech.proxy.ssl.SslPeer;
 
+import javax.net.ssl.SSLContext;
 import javax.swing.*;
 import java.io.File;
 import java.io.IOException;
@@ -11,6 +16,9 @@ import java.io.Serializable;
 import java.lang.ref.WeakReference;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.security.NoSuchAlgorithmException;
+import java.security.PrivateKey;
+import java.security.cert.X509Certificate;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
@@ -21,7 +29,7 @@ import java.util.logging.Logger;
  * Ssg settings that get loaded from and saved to ssgs.xml.  Does not contain any behaviour; for that,
  * see {@link SsgRuntime}.
  */
-public class Ssg implements Serializable, Cloneable, Comparable {
+public class Ssg implements Serializable, Cloneable, Comparable, SslPeer {
     private static final Logger log = Logger.getLogger(Ssg.class.getName());
     private static final String SSG_PROTOCOL = "http";
     private static final int SSG_SSL_PORT = 8443;
@@ -53,9 +61,10 @@ public class Ssg implements Serializable, Cloneable, Comparable {
     private boolean useOverrideIpAddresses = false;
     private String[] overrideIpAddresses = null;
     private PersistentPolicyManager persistentPolicyManager = new PersistentPolicyManager(); // policy store that gets saved to disk
+    private WsTrustSamlTokenStrategy wsTrustSamlTokenStrategy = null; // non-default saml token strategy, or null
 
-    private Set listeners = new HashSet(); // List of weak references to listeners
-    private SsgRuntime runtime = new SsgRuntime(this);
+    private transient Set listeners = new HashSet(); // List of weak references to listeners
+    private transient SsgRuntime runtime = new SsgRuntime(this);
 
     /**
      * Get the {@link SsgRuntime} for this Ssg, providing access to behaviour, strategies, and transient settings.
@@ -143,10 +152,19 @@ public class Ssg implements Serializable, Cloneable, Comparable {
     /**
      * Get the "Trusted Gateway" for this Ssg.  The "Trusted Gateway" is used to obtain authentication information
      * instead of getting it directly from this Ssg.
-     * @return
+     * <p>
+     * Even if this method returns null, this Ssg might still represent a Federated Gateway -- it just means
+     * that it does not use a Trusted Gateway as a token provider.  To check if this Ssg represents a Federated Gateway,
+     * use {@link #isFederatedGateway()}.
+     *
+     * @return the Trusted Gateway associated with this Federated Gateway, or null if not applicable.
      */
     public Ssg getTrustedGateway() {
         return trustedGateway;
+    }
+
+    public boolean isFederatedGateway() {
+        return trustedGateway != null || getWsTrustSamlTokenStrategy() != null;
     }
 
     public void setTrustedGateway(Ssg trustedGateway) {
@@ -374,7 +392,6 @@ public class Ssg implements Serializable, Cloneable, Comparable {
         return new File(getTrustStorePath());
     }
 
-
     public byte[] getPersistPassword() {
         return persistPassword;
     }
@@ -413,6 +430,16 @@ public class Ssg implements Serializable, Cloneable, Comparable {
 
     public void setOverrideIpAddresses(String[] overrideIpAddresses) {
         this.overrideIpAddresses = overrideIpAddresses;
+    }
+
+    /** Non-default SAML token strategy, if any, or null to initialize with the default strategy. */
+    public WsTrustSamlTokenStrategy getWsTrustSamlTokenStrategy() {
+        return wsTrustSamlTokenStrategy;
+    }
+
+    /** Non-default SAML token strategy, if any, or null to initialize with the default strategy. */
+    public void setWsTrustSamlTokenStrategy(WsTrustSamlTokenStrategy wsTrustSamlTokenStrategy) {
+        this.wsTrustSamlTokenStrategy = wsTrustSamlTokenStrategy;
     }
 
     /** Obfuscate the password for storage to disk in plaintext. */
@@ -489,5 +516,69 @@ public class Ssg implements Serializable, Cloneable, Comparable {
     /** Fire a new DATA_CHANGED event. */
     private void fireDataChangedEvent() {
         fireSsgEvent(SsgEvent.createDataChangedEvent(this));
+    }
+
+    public X509Certificate getServerCertificate() {
+        for (;;) {
+            try {
+                return SsgKeyStoreManager.getServerCert(this);
+            } catch (KeyStoreCorruptException e) {
+                log.log(Level.WARNING, "Unable to read server certificate for Ssg " + this + ": " + e.getMessage(), e);
+                try {
+                    getRuntime().handleKeyStoreCorrupt();
+                } catch (OperationCanceledException e1) {
+                    throw new RuntimeException(e1); // cancel
+                }
+                /* FALLTHROUGH and retry */
+            }
+        }
+    }
+
+    public X509Certificate getClientCertificate() {
+        for (;;) {
+            try {
+                return SsgKeyStoreManager.getClientCert(this);
+            } catch (KeyStoreCorruptException e) {
+                log.log(Level.WARNING, "Unable to read client certificate for Ssg " + this + ": " + e.getMessage(), e);
+                try {
+                    getRuntime().handleKeyStoreCorrupt();
+                } catch (OperationCanceledException e1) {
+                    throw new RuntimeException(e1); // cancel it
+                }
+                /* FALLTHROUGH and retry */
+            }
+        }
+    }
+
+    /**
+     * Get the private key.  Might take a long time if it needs to prompt for a password.
+     */
+    public PrivateKey getClientCertificatePrivateKey() throws BadCredentialsException {
+        for (;;) {
+            try {
+                return SsgKeyStoreManager.getClientCertPrivateKey(this);
+            } catch (NoSuchAlgorithmException e) {
+                throw new RuntimeException("Unable to read private key from keystore", e);
+            } catch (KeyStoreCorruptException e) {
+                final String msg = "Unable to read client certificate for Ssg " + this + ": " + e.getMessage();
+                log.log(Level.WARNING, msg, e);
+                try {
+                    getRuntime().handleKeyStoreCorrupt();
+                } catch (OperationCanceledException e1) {
+                    throw new RuntimeException(msg); // cancel it
+                }
+                /* FALLTHROUGH and retry */
+            } catch (OperationCanceledException e) {
+                throw new RuntimeException(e);
+            }
+        }
+    }
+
+    public String getHostname() {
+        return getSsgAddress();
+    }
+
+    public SSLContext getSslContext() {
+        return getRuntime().getSslContext();
     }
 }

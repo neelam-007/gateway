@@ -10,14 +10,12 @@ import com.l7tech.common.protocol.SecureSpanConstants;
 import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.xml.Wsdl;
-import com.l7tech.proxy.datamodel.CurrentRequest;
 import com.l7tech.proxy.datamodel.Managers;
 import com.l7tech.proxy.datamodel.Ssg;
-import com.l7tech.proxy.datamodel.SsgKeyStoreManager;
 import com.l7tech.proxy.datamodel.exceptions.BadCredentialsException;
-import com.l7tech.proxy.datamodel.exceptions.KeyStoreCorruptException;
 import com.l7tech.proxy.datamodel.exceptions.OperationCanceledException;
 import com.l7tech.proxy.datamodel.exceptions.ServerCertificateUntrustedException;
+import com.l7tech.proxy.ssl.CurrentSslPeer;
 import org.apache.commons.httpclient.HttpClient;
 import org.apache.commons.httpclient.UsernamePasswordCredentials;
 import org.apache.commons.httpclient.methods.GetMethod;
@@ -154,24 +152,14 @@ class WsdlProxy {
                                                                                      new String(pw.getPassword())));
                 log.info("WsdlProxy: Attempting download from Gateway from URL: " + url);
                 try {
-                    CurrentRequest.setPeerSsg(ssg);
+                    CurrentSslPeer.set(ssg);
                     status = httpClient.executeMethod(getMethod);
-                    CurrentRequest.setPeerSsg(null);
+                    CurrentSslPeer.set(null);
                 } catch (SSLHandshakeException e) {
                     if (ExceptionUtils.causedBy(e, ServerCertificateUntrustedException.class)) {
                         try {
-                            log.info("Attempting to discover Gateway server certificate for " + ssg);
-                            try {
-                                SsgKeyStoreManager.installSsgServerCertificate(ssg, pw);
-                            } catch (KeyStoreCorruptException e1) {
-                                Ssg problemSsg = ssg.getTrustedGateway();
-                                if (problemSsg == null) problemSsg = ssg;
-                                Managers.getCredentialManager().notifyKeyStoreCorrupt(problemSsg);
-                                SsgKeyStoreManager.deleteStores(problemSsg);
-                                ssg.getRuntime().resetSslContext();
-                                status = -1; // hack hack hack: fake status meaning "try again"
-                                // FALLTHROUGH -- try again with newly-emptied keystore
-                            }
+                            ssg.getRuntime().discoverServerCertificate(pw);
+                            status = -1; // hack hack hack: fake status meaning "try again"
                             continue;
                         } catch (GeneralSecurityException e1) {
                             throw new DownloadException("Unable to discover Gateway's server certificate", e1);

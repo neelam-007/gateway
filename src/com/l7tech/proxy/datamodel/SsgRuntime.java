@@ -6,14 +6,14 @@
 
 package com.l7tech.proxy.datamodel;
 
-import com.l7tech.common.security.token.SecurityToken;
 import com.l7tech.common.security.token.SecurityTokenType;
 import com.l7tech.common.util.DateTranslator;
-import com.l7tech.common.xml.saml.SamlAssertion;
-import com.l7tech.proxy.datamodel.exceptions.*;
+import com.l7tech.proxy.datamodel.exceptions.BadCredentialsException;
+import com.l7tech.proxy.datamodel.exceptions.KeyStoreCorruptException;
+import com.l7tech.proxy.datamodel.exceptions.OperationCanceledException;
 import com.l7tech.proxy.ssl.ClientProxyKeyManager;
 import com.l7tech.proxy.ssl.ClientProxyTrustManager;
-import com.l7tech.proxy.util.TokenServiceClient;
+import com.l7tech.proxy.ssl.SslPeer;
 import org.apache.commons.httpclient.Cookie;
 import org.apache.commons.httpclient.MultiThreadedHttpConnectionManager;
 
@@ -39,8 +39,6 @@ public class SsgRuntime {
 
     private final Ssg ssg;
 
-    // SAML timestamp stuff
-    private static final int SAML_PREEXPIRE_SEC = 30;
     // Maximum simultaneous outbound connections.  Throttled wide-open.
     public static final int MAX_CONNECTIONS = 60000;
 
@@ -314,32 +312,53 @@ public class SsgRuntime {
     public PasswordAuthentication getCredentials() {
         String username = ssg.getUsername();
         char[] password = getCachedPassword();
-        if (username != null && ssg.getTrustedGateway() != null)
+        if (username != null && ssg.isFederatedGateway())
             return new PasswordAuthentication(username, new char[0]); // shield actual password in federated case
         if (username != null && username.length() > 0 && password != null)
             return new PasswordAuthentication(username, password);
         return null;
     }
 
+    private Map getTokenStrategiesByType() {
+        synchronized (ssg) {
+            if (tokenStrategiesByType == null) {
+                tokenStrategiesByType = new HashMap();
+                TokenStrategy samlStrat = ssg.getWsTrustSamlTokenStrategy();
+                if (samlStrat == null) {
+                    Ssg tokenServerSsg = ssg.getTrustedGateway();
+                    if (tokenServerSsg == null) tokenServerSsg = ssg;
+                    samlStrat = new TrustedSsgSamlTokenStrategy(tokenServerSsg);
+                }
+                tokenStrategiesByType.put(SecurityTokenType.SAML_AUTHENTICATION, samlStrat);
+            }
+            return tokenStrategiesByType;
+        }
+    }
+
     /**
      * Get the strategy for obtaining a specific type of security token.
-     * <p>
-     * TODO make these strategies configurable somehow
      *
-     * @param tokenType the type of security token to obtain
+     * @param tokenType the type of security token to obtain.  Must not be null
      * @return the strategy for getting the requested security token for this Ssg, or null if this Ssg
      *          is not configured with a strategy for the requested token type.
      */
     public TokenStrategy getTokenStrategy(SecurityTokenType tokenType) {
+        if (tokenType == null) throw new NullPointerException();
         synchronized (ssg) {
-            if (tokenStrategiesByType == null) {
-                tokenStrategiesByType = new HashMap();
-                Ssg tokenServerSsg = ssg.getTrustedGateway();
-                if (tokenServerSsg == null) tokenServerSsg = ssg;
-                tokenStrategiesByType.put(SecurityTokenType.SAML_AUTHENTICATION,
-                                          new DefaultSamlAuthnTokenStrategy(tokenServerSsg));
-            }
-            return (TokenStrategy)tokenStrategiesByType.get(tokenType);
+            return (TokenStrategy)getTokenStrategiesByType().get(tokenType);
+        }
+    }
+
+    /**
+     * Set the strategy for obtaining a specific type of security token.
+     *
+     * @param tokenType the type of security token to strategise.  Must not be null
+     * @param strategy the new strategy to use. Must not be null
+     */
+    public void setTokenStrategy(SecurityTokenType tokenType, TokenStrategy strategy) {
+        if (tokenType == null || strategy == null) throw new NullPointerException();
+        synchronized (ssg) {
+            getTokenStrategiesByType().put(tokenType, strategy);
         }
     }
 
@@ -376,8 +395,8 @@ public class SsgRuntime {
             ClientProxyTrustManager trustManager = getTrustManager();
             SSLContext sslContext = null;
             try {
-                sslContext = SSLContext.getInstance("SSL", System.getProperty("com.l7tech.proxy.sslProvider",
-                                                                              "SunJSSE"));
+                sslContext = SSLContext.getInstance("SSL", System.getProperty(SslPeer.PROP_SSL_PROVIDER,
+                                                                              SslPeer.DEFAULT_SSL_PROVIDER));
                 sslContext.init(new X509KeyManager[] {keyManager},
                                 new X509TrustManager[] {trustManager},
                                 null);
@@ -546,76 +565,33 @@ public class SsgRuntime {
         private static final ClientProxyTrustManager trustManager = new ClientProxyTrustManager();
     }
 
-    private static class DefaultSamlAuthnTokenStrategy extends AbstractTokenStrategy {
-        private final Ssg tokenServerSsg;
-        private SamlAssertion cachedAssertion = null;
+    public void handleKeyStoreCorrupt() throws OperationCanceledException {
+        Ssg problemSsg = ssg.getTrustedGateway();
+        if (problemSsg == null) problemSsg = ssg;
+        Managers.getCredentialManager().notifyKeyStoreCorrupt(problemSsg);
+        SsgKeyStoreManager.deleteStores(problemSsg);
+        resetSslContext();
+    }
 
-        /**
-         * @param tokenServerSsg what SSG is going to give me a SAML token
-         */
-        public DefaultSamlAuthnTokenStrategy(Ssg tokenServerSsg)
-        {
-            super(SecurityTokenType.SAML_AUTHENTICATION);
-            if (tokenServerSsg == null) throw new NullPointerException();
-            this.tokenServerSsg = tokenServerSsg;
-        }
-
-        public SecurityToken getOrCreate()
-                throws OperationCanceledException, GeneralSecurityException, IOException, ClientCertificateException,
-                KeyStoreCorruptException, PolicyRetryableException, BadCredentialsException
-        {
-            synchronized (tokenServerSsg) {
-                removeIfExpired();
-                if (cachedAssertion != null)
-                    return cachedAssertion;
-
-            }
-            SamlAssertion newone = acquireSamlAssertion();
-            synchronized (tokenServerSsg) {
-                return cachedAssertion = newone;
-            }
-        }
-
-        public SecurityToken getIfPresent() {
-            synchronized (tokenServerSsg) {
-                removeIfExpired();
-                return cachedAssertion;
-            }
-        }
-
-        /**
-         * Flush cached assertion if it has expired (or will expire soon).
-         */
-        private void removeIfExpired() {
-            synchronized (tokenServerSsg) {
-                if (cachedAssertion != null && cachedAssertion.isExpiringSoon(SAML_PREEXPIRE_SEC)) {
-                    log.log(Level.INFO, "Our SAML Holder-of-key assertion has expired or will do so within the next " +
-                                        SAML_PREEXPIRE_SEC + " seconds.  Will throw it away and get a new one.");
-                    cachedAssertion = null;
+    public void discoverServerCertificate(PasswordAuthentication pw)
+            throws GeneralSecurityException, IOException, BadCredentialsException
+    {
+        for (;;) {
+            try {
+                log.info("Attempting to discover Gateway server certificate for " + this);
+                SsgKeyStoreManager.installSsgServerCertificate(ssg, pw);
+                return;
+            } catch (OperationCanceledException e) {
+                throw new RuntimeException(e); // cancel it
+            } catch (KeyStoreCorruptException e) {
+                try {
+                    handleKeyStoreCorrupt();
+                } catch (OperationCanceledException e1) {
+                    throw new RuntimeException(e1);
                 }
+                /* FALLTHROUGH and retry */
             }
-        }
-
-        public void onTokenRejected() {
-            synchronized (tokenServerSsg) {
-                cachedAssertion = null;
-            }
-        }
-
-        private SamlAssertion acquireSamlAssertion()
-                throws OperationCanceledException, GeneralSecurityException,
-                KeyStoreCorruptException, BadCredentialsException, IOException
-        {
-            log.log(Level.INFO, "Applying for SAML holder-of-key assertion from Gateway " + tokenServerSsg.toString());
-            SamlAssertion s;
-            // TODO extract the strategies for getting tokenServer client cert, private key, and server cert
-            s = TokenServiceClient.obtainSamlAssertion(tokenServerSsg,
-                                                       SsgKeyStoreManager.getClientCert(tokenServerSsg),
-                                                       SsgKeyStoreManager.getClientCertPrivateKey(tokenServerSsg),
-                                                       SsgKeyStoreManager.getServerCert(tokenServerSsg),
-                                                       TokenServiceClient.RequestType.ISSUE);
-            log.log(Level.INFO, "Obtained SAML holder-of-key assertion from Gateway " + tokenServerSsg.toString());
-            return s;
         }
     }
+
 }

@@ -7,11 +7,8 @@
 package com.l7tech.proxy.gui;
 
 import com.l7tech.proxy.ClientProxy;
-import com.l7tech.proxy.datamodel.Managers;
 import com.l7tech.proxy.datamodel.Ssg;
 import com.l7tech.proxy.datamodel.SsgKeyStoreManager;
-import com.l7tech.proxy.datamodel.exceptions.KeyStoreCorruptException;
-import com.l7tech.proxy.datamodel.exceptions.OperationCanceledException;
 import com.l7tech.proxy.gui.util.IconManager;
 
 import javax.swing.*;
@@ -81,33 +78,20 @@ class DeleteSsgAction extends AbstractAction {
                                                   0, JOptionPane.WARNING_MESSAGE,
                                                   null, options, options[1]);
         if (result == 0) {
-            try {
-                if (ssg.getTrustedGateway() == null && SsgKeyStoreManager.isClientCertAvailabile(ssg)) {
-                    Object[] certoptions = { "Destroy Certificate", "Cancel" };
-                    int res2 = JOptionPane.showOptionDialog(null,
-                                                            "You have a Client Certificate assigned from this Gateway. \n" +
-                                                            "If you delete it, you will not be able to get another one \n" +
-                                                            "for your account until a Gateway administrator revokes your \n" +
-                                                            "old one and changes your password.  Are you sure you want to \n" +
-                                                            "delete your Client Certificate?\n\n" +
-                                                            "This action cannot be undone.",
-                                                            "Delete Client Certificate Forever?",
-                                                            0, JOptionPane.WARNING_MESSAGE,
-                                                            null, certoptions, certoptions[1]);
-                    if (res2 != 0)
-                        return;
-                }
-            } catch (KeyStoreCorruptException e1) {
-                try {
-                    Ssg problemSsg = ssg.getTrustedGateway();
-                    if (problemSsg == null) problemSsg = ssg;
-                    Managers.getCredentialManager().notifyKeyStoreCorrupt(problemSsg);
-                    SsgKeyStoreManager.deleteStores(problemSsg);
-                    ssg.getRuntime().resetSslContext();
-                    // FALLTHROUGH -- continue with newly-emptied keystore
-                } catch (OperationCanceledException e2) {
-                    return; // cancel the remove as well
-                }
+            if (!ssg.isFederatedGateway() && ssg.getClientCertificate() != null) {
+                Object[] certoptions = { "Destroy Certificate", "Cancel" };
+                int res2 = JOptionPane.showOptionDialog(null,
+                                                        "You have a Client Certificate assigned from this Gateway. \n" +
+                                                        "If you delete it, you will not be able to get another one \n" +
+                                                        "for your account until a Gateway administrator revokes your \n" +
+                                                        "old one and changes your password.  Are you sure you want to \n" +
+                                                        "delete your Client Certificate?\n\n" +
+                                                        "This action cannot be undone.",
+                                                        "Delete Client Certificate Forever?",
+                                                        0, JOptionPane.WARNING_MESSAGE,
+                                                        null, certoptions, certoptions[1]);
+                if (res2 != 0)
+                    return;
             }
 
             ssgListPanel.removeSsg(ssg);

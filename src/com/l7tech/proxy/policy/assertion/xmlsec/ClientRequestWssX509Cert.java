@@ -5,7 +5,6 @@ import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.xmlsec.RequestWssX509Cert;
 import com.l7tech.proxy.datamodel.Ssg;
-import com.l7tech.proxy.datamodel.SsgKeyStoreManager;
 import com.l7tech.proxy.datamodel.exceptions.*;
 import com.l7tech.proxy.message.PolicyApplicationContext;
 import com.l7tech.proxy.policy.assertion.ClientAssertion;
@@ -15,8 +14,8 @@ import org.xml.sax.SAXException;
 import java.io.IOException;
 import java.security.GeneralSecurityException;
 import java.security.PrivateKey;
-import java.security.cert.X509Certificate;
 import java.security.cert.CertificateException;
+import java.security.cert.X509Certificate;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -45,9 +44,9 @@ public class ClientRequestWssX509Cert extends ClientAssertion {
         context.prepareClientCertificate();
 
         final Ssg ssg = context.getSsg();
-        final PrivateKey userPrivateKey = SsgKeyStoreManager.getClientCertPrivateKey(ssg);
-        final X509Certificate userCert = SsgKeyStoreManager.getClientCert(ssg);
-        final X509Certificate ssgCert = SsgKeyStoreManager.getServerCert(ssg);
+        final PrivateKey userPrivateKey = ssg.getClientCertificatePrivateKey();
+        final X509Certificate userCert = ssg.getClientCertificate();
+        final X509Certificate ssgCert = ssg.getServerCertificate();
 
         // add a pending decoration that will be applied only if the rest of this policy branch succeeds
         context.getPendingDecorations().put(this, new ClientDecorator() {

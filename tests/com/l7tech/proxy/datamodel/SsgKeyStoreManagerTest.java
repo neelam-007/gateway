@@ -57,7 +57,7 @@ public class SsgKeyStoreManagerTest extends TestCase {
 
         SsgKeyStoreManager.saveClientCertificate(testSsg, kp.getPrivate(), cert, testSsg.getRuntime().getCachedPassword());
 
-        X509Certificate haveCert = SsgKeyStoreManager.getClientCert(testSsg);
+        X509Certificate haveCert = testSsg.getClientCertificate();
         assertTrue(haveCert.equals(cert));
 
         //SsgKeyStoreManager.deleteStores(testSsg);

@@ -33,7 +33,7 @@ public class ClientHttpDigest extends ClientAssertion {
     public AssertionStatus decorateRequest(PolicyApplicationContext context)
             throws OperationCanceledException
     {
-        if (context.getSsg().getTrustedGateway() != null) {
+        if (context.getSsg().isFederatedGateway()) {
             log.info("this is a Federated SSG.  Assertion therefore fails.");
             return AssertionStatus.FAILED;
         }

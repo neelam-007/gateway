@@ -7,7 +7,6 @@
 package com.l7tech.proxy.util;
 
 import com.l7tech.common.protocol.SecureSpanConstants;
-import com.l7tech.proxy.datamodel.CurrentRequest;
 import com.l7tech.proxy.datamodel.Ssg;
 import com.l7tech.proxy.datamodel.SsgKeyStoreManager;
 import com.l7tech.proxy.ssl.ClientProxySecureProtocolSocketFactory;
@@ -17,14 +16,11 @@ import junit.framework.TestSuite;
 import org.apache.commons.httpclient.protocol.Protocol;
 
 import java.net.PasswordAuthentication;
-import java.util.logging.Logger;
 
 /**
- * @author mike
+ * Manual test of changing password and revoking cert, using hardcoded account on phlox.
  */
 public class SslUtilsTest extends TestCase {
-    private static Logger log = Logger.getLogger(SslUtilsTest.class.getName());
-
     public SslUtilsTest(String name) {
         super(name);
     }
@@ -52,7 +48,6 @@ public class SslUtilsTest extends TestCase {
         ssg.setSsgAddress("phlox.l7tech.com");
         ssg.setUsername(username);
         ssg.getRuntime().setCachedPassword(password);
-        CurrentRequest.setCurrentSsg(ssg);
 
         SsgKeyStoreManager.installSsgServerCertificate(ssg, pw);
 

@@ -60,7 +60,7 @@ class SsgComboBoxUtil {
         int i = 0;
         for (; i < sslList.size(); i++) {
             Ssg item = (Ssg) sslList.get(i);
-            if (item.getTrustedGateway() == null && !item.getLocalEndpoint().equals(ssg.getLocalEndpoint())) {
+            if (!item.isFederatedGateway() && !item.getLocalEndpoint().equals(ssg.getLocalEndpoint())) {
                 comboBox.addItem(item);
             }
         }

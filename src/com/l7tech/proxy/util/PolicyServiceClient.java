@@ -29,12 +29,12 @@ import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.wsp.InvalidPolicyStreamException;
 import com.l7tech.policy.wsp.WspConstants;
 import com.l7tech.policy.wsp.WspReader;
-import com.l7tech.proxy.datamodel.CurrentRequest;
 import com.l7tech.proxy.datamodel.Policy;
 import com.l7tech.proxy.datamodel.Ssg;
 import com.l7tech.proxy.datamodel.exceptions.BadCredentialsException;
 import com.l7tech.proxy.datamodel.exceptions.ServerCertificateUntrustedException;
 import com.l7tech.proxy.ssl.ClientProxySecureProtocolSocketFactory;
+import com.l7tech.proxy.ssl.CurrentSslPeer;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.xml.sax.SAXException;
@@ -355,7 +355,7 @@ public class PolicyServiceClient {
 
         final long millisBefore = System.currentTimeMillis();
         boolean usingSsl = false;
-        CurrentRequest.setPeerSsg(ssg);
+        CurrentSslPeer.set(ssg);
         URLConnection conn = url.openConnection();
         if (!(conn instanceof HttpURLConnection))
             throw new IOException("Connection to policy server was not an HttpURLConnection; instead it was " + conn.getClass());
@@ -375,7 +375,7 @@ public class PolicyServiceClient {
         log.log(Level.FINE, "Policy server responded with: " + code + " " + httpConn.getResponseMessage());
         final int len = conn.getContentLength();
         log.log(Level.FINEST, "Policy server response content length=" + len);
-        CurrentRequest.setPeerSsg(null);
+        CurrentSslPeer.set(null);
         final String contentType = conn.getContentType();
         if (contentType == null || contentType.indexOf(XmlUtil.TEXT_XML) < 0)
             throw new IOException("Policy server returned unsupported content type " + conn.getContentType());
@@ -433,7 +433,7 @@ public class PolicyServiceClient {
      * with a WSS Signature using the specified client certificate, and verifying that the reponse signature
      * was valid and made by the specified serverCertificate.
      *
-     * @param ssg                required. the Ssg from which we are downloading.  Used to keep CurrentRequest.getPeerSsg() up-to-date.
+     * @param ssg                required. the Ssg from which we are downloading.  Used to keep CurrentSslPeer.getPeerSsg() up-to-date.
      * @param serviceId          required. the identifier of the service whose policy we wish to download.  Opaque to the client.
      * @param serverCertificate  required. used to verify identity of signer of downloaded policy.
      * @param useSsl             If true, will use HTTPS instead of HTTP.  If we have a client cert for this Ssg it
@@ -468,7 +468,7 @@ public class PolicyServiceClient {
      * with HTTP Basic-over-SSL, and verifying that the response signature was valid and made by the specified
      * serverCertificate.
      *
-     * @param ssg                required. the Ssg from which we are downloading.  Used to keep CurrentRequest.getPeerSsg() up-to-date.
+     * @param ssg                required. the Ssg from which we are downloading.  Used to keep CurrentSslPeer.getPeerSsg() up-to-date.
      * @param serviceId          required. the identifier of the service whose policy we wish to download.  Opaque to the client.
      * @param serverCertificate  required. used to verify identity of signer of downloaded policy.
      * @param basicCredentials   required. the credentials to use for HTTP Basic-over-SSL authentication.
@@ -496,7 +496,7 @@ public class PolicyServiceClient {
      * authenticating using a signature using the specified SAML Holder-of-key asseriton + subject private key,
      * and verifying that the response signature was valid and made by the specified serverCertificate.
      *
-     * @param ssg                required. the Ssg from which we are downloading.  Used to keep CurrentRequest.getPeerSsg() up-to-date.
+     * @param ssg                required. the Ssg from which we are downloading.  Used to keep CurrentSslPeer.getPeerSsg() up-to-date.
      * @return a new Policy.  Never null.
      * @throws IOException if there is a network problem
      * @throws GeneralSecurityException if there is a problem with a certificate or a crypto operation.
@@ -532,7 +532,7 @@ public class PolicyServiceClient {
      * no client side authentication (other than client cert if we have one available and useSsl is true),
      * but still verifying that the response signature was valid and made by the specified serverCertificate.
      *
-     * @param ssg                required. the Ssg from which we are downloading.  Used to keep CurrentRequest.getPeerSsg() up-to-date.
+     * @param ssg                required. the Ssg from which we are downloading.  Used to keep CurrentSslPeer.getPeerSsg() up-to-date.
      * @param serviceId          required. the identifier of the service whose policy we wish to download.  Opaque to the client.
      * @param serverCertificate  required. used to verify identity of signer of downloaded policy.
      * @param useSsl             If true, will use HTTPS instead of HTTP.  If we have a client cert for this Ssg it

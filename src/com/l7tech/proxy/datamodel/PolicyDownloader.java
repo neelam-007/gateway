@@ -51,13 +51,13 @@ public class PolicyDownloader {
                    ClientCertificateException, PolicyRetryableException, ConfigurationException
     {
         final boolean useSsl = ssg.isUseSslByDefault();
-        final X509Certificate serverCert = SsgKeyStoreManager.getServerCert(ssg);
+        final X509Certificate serverCert = ssg.getServerCertificate();
         if (serverCert == null)
             throw new ServerCertificateUntrustedException("Server certificate not yet known");
 
         // Try anonymous download first
         try {
-            if (useSsl && SsgKeyStoreManager.isClientCertAvailabile(ssg))
+            if (useSsl && ssg.getClientCertificate() != null)
                 log.info("Trying SSL-with-client-cert policy download from " + ssg);
             else
                 log.info("Trying anonymous policy download from " + ssg);
@@ -74,20 +74,20 @@ public class PolicyDownloader {
             // Anonymous download failed; need to try again with credentials.
             try {
                 Policy policy = null;
-                if (ssg.getTrustedGateway() != null) {
+                if (ssg.isFederatedGateway()) {
                     // Federated SSG -- use a SAML token for authentication.
                     log.info("Trying SAML-authenticated policy download from Federated Gateway " + ssg);
                     request.prepareClientCertificate();
                     SamlAssertion samlHok = request.getOrCreateSamlAssertion();
-                    PrivateKey key = SsgKeyStoreManager.getClientCertPrivateKey(ssg);
+                    PrivateKey key = ssg.getClientCertificatePrivateKey();
                     if (key == null) throw new ConfigurationException("Unable to obtain client cert private key"); // shouldn't happen
                     policy = PolicyServiceClient.downloadPolicyWithSamlAssertion(ssg, serviceId, serverCert, useSsl, samlHok, key);
-                } else if (SsgKeyStoreManager.isClientCertAvailabile(ssg)) {
+                } else if (ssg.getClientCertificate() != null) {
                     // Trusted SSG, but with a client cert -- use WSS signature for authentication.
                     log.info("Trying WSS-signature-authenticated policy download from Trusted Gateway " + ssg);
                     request.prepareClientCertificate();
-                    X509Certificate clientCert = SsgKeyStoreManager.getClientCert(ssg);
-                    PrivateKey key = SsgKeyStoreManager.getClientCertPrivateKey(ssg);
+                    X509Certificate clientCert = ssg.getClientCertificate();
+                    PrivateKey key = ssg.getClientCertificatePrivateKey();
                     policy = PolicyServiceClient.downloadPolicyWithWssSignature(ssg, serviceId, serverCert, useSsl,
                                                                                 clientCert, key);
                 } else {
@@ -101,7 +101,7 @@ public class PolicyDownloader {
                 return policy;
             } catch (BadCredentialsException e) {
                 String msg = "Policy service denies access to this policy with current credentials";
-                if (ssg.getTrustedGateway() != null) {
+                if (ssg.isFederatedGateway()) {
                     msg += "; federated policy download therefore fails.";
                     log.info(msg);
                     throw new ConfigurationException(msg);

@@ -7,10 +7,6 @@
 package com.l7tech.proxy.ssl;
 
 import com.l7tech.common.util.CertUtils;
-import com.l7tech.proxy.datamodel.CurrentRequest;
-import com.l7tech.proxy.datamodel.Ssg;
-import com.l7tech.proxy.datamodel.SsgKeyStoreManager;
-import com.l7tech.proxy.datamodel.exceptions.KeyStoreCorruptException;
 import com.l7tech.proxy.datamodel.exceptions.ServerCertificateUntrustedException;
 import sun.security.x509.X500Name;
 
@@ -55,17 +51,13 @@ public class ClientProxyTrustManager implements X509TrustManager {
 
     public X509Certificate[] getAcceptedIssuers() {
         // Find our current ssg
-        Ssg ssg = CurrentRequest.getPeerSsg();
-        if (ssg == null)
-            throw new IllegalStateException("No peer Gateway is available in this thread");
+        SslPeer peer = CurrentSslPeer.get();
+        if (peer == null)
+            throw new IllegalStateException("No SSL peer is available in this thread");
 
         X509Certificate ssgCert = null;
-        try {
-            ssgCert = SsgKeyStoreManager.getServerCert(ssg);
-            return ssgCert == null ? new X509Certificate[0] : new X509Certificate[] { ssgCert };
-        } catch (KeyStoreCorruptException e) {
-            return new X509Certificate[0];
-        }
+        ssgCert = peer.getServerCertificate();
+        return ssgCert == null ? new X509Certificate[0] : new X509Certificate[] { ssgCert };
     }
 
     public void checkClientTrusted(X509Certificate[] x509Certificates, String s) throws CertificateException {
@@ -78,12 +70,12 @@ public class ClientProxyTrustManager implements X509TrustManager {
             throw new IllegalArgumentException("empty certificate chain, or null auth type");
 
         // Find our current ssg
-        Ssg ssg = CurrentRequest.getPeerSsg();
-        if (ssg == null)
+        SslPeer peer = CurrentSslPeer.get();
+        if (peer == null)
             throw new IllegalStateException("No peer Gateway is available in this thread");
 
         // Verify the hostname
-        String expectedHostname = ssg.getSsgAddress();
+        String expectedHostname = peer.getHostname();
         String cn = "";
         try {
             X509Certificate cert = x509Certificates[0];
@@ -103,12 +95,7 @@ public class ClientProxyTrustManager implements X509TrustManager {
 
         // Get the trusted CA key for this SSG.
         X509Certificate trustedCert = null;
-        try {
-            trustedCert = SsgKeyStoreManager.getServerCert(ssg);
-        } catch (KeyStoreCorruptException e) {
-            log.log(Level.SEVERE, "Unable to read keystore", e);
-            throw new RuntimeException(e);
-        }
+        trustedCert = peer.getServerCertificate();
         if (trustedCert == null) {
             final String msg = "We have not yet discovered this Gateway's server certificate";
             log.log(Level.FINE, msg);

@@ -17,9 +17,9 @@ import com.l7tech.proxy.policy.assertion.ClientDecorator;
 import org.xml.sax.SAXException;
 
 import java.io.IOException;
+import java.security.cert.CertificateException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.security.cert.CertificateException;
 
 /**
  * decorates a request with a header that looks like that:
@@ -48,7 +48,7 @@ public class ClientWssBasic extends ClientWssCredentialSource {
     public AssertionStatus decorateRequest(PolicyApplicationContext context)
             throws OperationCanceledException, IOException, SAXException
     {
-        if (context.getSsg().getTrustedGateway() != null) {
+        if (context.getSsg().isFederatedGateway()) {
             log.log(Level.INFO, "Plaintext passwords not permitted with Federated Gateway.  Assertion therefore fails.");
             return AssertionStatus.FAILED;
         }

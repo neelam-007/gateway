@@ -9,7 +9,7 @@ package com.l7tech.proxy.gui.dialogs;
 import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.proxy.datamodel.Ssg;
 import com.l7tech.proxy.datamodel.SsgFinder;
-import com.l7tech.proxy.gui.Gui;
+import com.l7tech.proxy.datamodel.WsTrustSamlTokenStrategy;
 import com.l7tech.proxy.gui.util.IconManager;
 
 import javax.swing.*;
@@ -140,10 +140,9 @@ public class NewSsgDialog extends JDialog {
                 Ssg trustSsg = (Ssg)trustedSsgComboBox.getSelectedItem();
                 ssg.setTrustedGateway(trustSsg);
             } else {
-                // TODO Figure out how to configure an Ssg to be federated without a Trusted SSG.
-                final String msg = "this doesn't work, sorry";
-                Gui.errorMessage(msg);
-                return null;
+                ssg.setTrustedGateway(null);
+                WsTrustSamlTokenStrategy newStrat = new WsTrustSamlTokenStrategy();
+                ssg.setWsTrustSamlTokenStrategy(newStrat);
             }
         }
         return ssg;

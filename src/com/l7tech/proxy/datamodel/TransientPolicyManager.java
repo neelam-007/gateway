@@ -17,7 +17,7 @@ import java.util.Set;
  *
  */
 public class TransientPolicyManager extends LocalPolicyManager {
-    private PolicyManager delegate = null;
+    private final PolicyManager delegate;
 
     public TransientPolicyManager() {
         this.delegate = new PersistentPolicyManager(); // ensure delegate is never null
@@ -37,12 +37,6 @@ public class TransientPolicyManager extends LocalPolicyManager {
     /** Delegate accessor, for xml bean serializer.  Do not call this method. */
     public synchronized PolicyManager getDelegate() {
         return delegate;
-    }
-
-    /** Delegate mutator, for xml bean serializer.  Do not call this method. */
-    public synchronized void setDelegate(PolicyManager delegate) {
-        if (delegate == null) delegate = new PersistentPolicyManager(); // just in case
-        this.delegate = delegate;
     }
 
     public synchronized Set getPolicyAttachmentKeys() {

@@ -13,6 +13,7 @@ import com.l7tech.common.util.CertUtils;
 import com.l7tech.common.util.CertificateDownloader;
 import com.l7tech.common.util.FileUtils;
 import com.l7tech.proxy.datamodel.exceptions.*;
+import com.l7tech.proxy.ssl.CurrentSslPeer;
 import com.l7tech.proxy.util.SslUtils;
 
 import java.io.*;
@@ -29,10 +30,6 @@ import java.util.logging.Logger;
 
 /**
  * Maintain the SSG-specific KeyStores.
- *
- * User: mike
- * Date: Jul 30, 2003
- * Time: 7:36:04 PM
  */
 public class SsgKeyStoreManager {
     private static final Logger log = Logger.getLogger(SsgKeyStoreManager.class.getName());
@@ -60,10 +57,12 @@ public class SsgKeyStoreManager {
      * @return true if we have a client cert for this ssg
      * @throws KeyStoreCorruptException if the trust store is damaged
      */
-    public static boolean isClientCertAvailabile(Ssg ssg) throws KeyStoreCorruptException {
+    private static boolean isClientCertAvailabile(Ssg ssg) throws KeyStoreCorruptException {
         Ssg trusted = ssg.getTrustedGateway();
         if (trusted != null)
             return isClientCertAvailabile(trusted);
+        if (ssg.isFederatedGateway())
+            throw new RuntimeException("Not supported for WS-Trust federation");
         if (ssg.getRuntime().getHaveClientCert() == null)
             ssg.getRuntime().setHaveClientCert(getClientCert(ssg) == null ? Boolean.FALSE : Boolean.TRUE);
         return ssg.getRuntime().getHaveClientCert().booleanValue();
@@ -75,6 +74,8 @@ public class SsgKeyStoreManager {
      * take the tiem to load the KeyStore.  May be slow if there are problems with
      * the key store.  If this method returns true, the client cert private key
      * is already cached in memory.
+     * <p>
+     * TODO get rid of this somehow
      *
      * @param ssg the ssg to look at
      * @return true if we have a client cert for this SSG and have already unlocked the private key
@@ -84,6 +85,8 @@ public class SsgKeyStoreManager {
         Ssg trusted = ssg.getTrustedGateway();
         if (trusted != null)
             return isClientCertUnlocked(trusted);
+        if (ssg.isFederatedGateway())
+            return false;
         if (!isClientCertAvailabile(ssg)) return false;
         return ssg.getRuntime().getCachedPrivateKey() != null;
     }
@@ -107,7 +110,7 @@ public class SsgKeyStoreManager {
      * @param ssg  the Ssg whose KeyStore to examine
      * @return the server certificate (nominally the CA cert), or null if it hasn't yet been discovered.
      */
-    public static X509Certificate getServerCert(Ssg ssg) throws KeyStoreCorruptException {
+    static X509Certificate getServerCert(Ssg ssg) throws KeyStoreCorruptException {
         try {
             X509Certificate cert = ssg.getRuntime().getCachedServerCert();
             if (cert != null) return cert;
@@ -131,10 +134,12 @@ public class SsgKeyStoreManager {
      * @param ssg  the Ssg whose KeyStore to examine
      * @return our client certificate, or null if we haven't yet applied for one
      */
-    public static X509Certificate getClientCert(Ssg ssg) throws KeyStoreCorruptException {
+    static X509Certificate getClientCert(Ssg ssg) throws KeyStoreCorruptException {
         Ssg trusted = ssg.getTrustedGateway();
         if (trusted != null)
             return getClientCert(trusted);
+        if (ssg.isFederatedGateway())
+            throw new RuntimeException("Not supported for WS-Trust federation");
         try {
             X509Certificate cert = ssg.getRuntime().getCachedClientCert();
             if (cert != null) return cert;
@@ -163,7 +168,7 @@ public class SsgKeyStoreManager {
     public static void deleteClientCert(Ssg ssg)
             throws IOException, KeyStoreException, KeyStoreCorruptException
     {
-        if (ssg.getTrustedGateway() != null)
+        if (ssg.isFederatedGateway())
             throw new IllegalStateException("Federated SSGs may not delete their client certificate");
         synchronized (ssg) {
             KeyStore trustStore = getTrustStore(ssg);
@@ -180,41 +185,6 @@ public class SsgKeyStoreManager {
     }
 
     /**
-     * Get the entire certificate chain for our client certificate.  Typically this will have only two certificates
-     * in it: our client cert first, and then the SSG's CA cert.  Only X.509 certificates are returned.
-     *
-     * @param ssg
-     * @return
-     */
-    public static X509Certificate[] getClientCertificateChain(Ssg ssg) throws KeyStoreCorruptException {
-        Ssg trusted = ssg.getTrustedGateway();
-        if (trusted != null)
-            return getClientCertificateChain(trusted);
-
-        Certificate[] certs;
-        try {
-            synchronized (ssg) {
-                certs = getTrustStore(ssg).getCertificateChain(CLIENT_CERT_ALIAS);
-            }
-        } catch (KeyStoreException e) {
-            log.log(Level.SEVERE, "impossible exception", e);  // can't happen; keystore is initialized by getKeyStore()
-            throw new RuntimeException("impossible exception", e);
-        }
-        X509Certificate[] x5certs = new X509Certificate[certs.length];
-        for (int i = 0; i < certs.length; i++) {
-            Certificate cert = certs[i];
-            if (cert instanceof X509Certificate)
-                x5certs[i] = (X509Certificate) cert;
-            else {
-                String msg = "Stored client cert which is not X509Certificate: " + cert;
-                log.log(Level.SEVERE, msg);
-                throw new KeyStoreCorruptException(msg);
-            }
-        }
-        return x5certs;
-    }
-
-    /**
      * Get the private key for our client certificate with this SSG.  Caller *must not* hold the SSG monitor
      * when calling this method.
      *
@@ -224,7 +194,7 @@ public class SsgKeyStoreManager {
      * @throws BadCredentialsException    if the SSG password does not match the password used to encrypt the key.
      * @throws OperationCanceledException if the user canceled the password prompt
      */
-    public static PrivateKey getClientCertPrivateKey(Ssg ssg)
+    static PrivateKey getClientCertPrivateKey(Ssg ssg)
             throws NoSuchAlgorithmException, BadCredentialsException, OperationCanceledException, KeyStoreCorruptException
     {
         if (Thread.holdsLock(ssg))
@@ -233,6 +203,8 @@ public class SsgKeyStoreManager {
         Ssg trusted = ssg.getTrustedGateway();
         if (trusted != null)
             return getClientCertPrivateKey(trusted);
+        if (ssg.isFederatedGateway())
+            throw new RuntimeException("Not supported for WS-Trust federation");
 
         synchronized (ssg) {
             if (!isClientCertAvailabile(ssg))
@@ -267,28 +239,16 @@ public class SsgKeyStoreManager {
 
     /**
      * Check if the current SSG password matches the keystore private key password.
+     * <p>
+     * TODO remove this somehow, it sucks
      */
     public static boolean isPasswordWorkedForPrivateKey(Ssg ssg) {
         Ssg trusted = ssg.getTrustedGateway();
         if (trusted != null)
             return isPasswordWorkedForPrivateKey(trusted);
+        if (ssg.isFederatedGateway())
+            throw new RuntimeException("Not supported for WS-Trust federation");
         return ssg.getRuntime().isPasswordCorrectForPrivateKey();
-    }
-
-    /**
-     * Get the public key for our client certificate with this SSG.
-     *
-     * @param ssg   the SSG whose KeyStore to examine
-     * @return our public key, or null if we haven't yet applied for a client cert with this Ssg.
-     */
-    public static PublicKey getClientCertPublicKey(Ssg ssg) throws KeyStoreCorruptException {
-        Ssg trusted = ssg.getTrustedGateway();
-        if (trusted != null)
-            return getClientCertPublicKey(trusted);
-
-        if (!isClientCertAvailabile(ssg))
-            return null;
-        return getClientCert(ssg).getPublicKey();
     }
 
     /**
@@ -315,6 +275,8 @@ public class SsgKeyStoreManager {
                 return getKeyStore(trusted, password);
             }
         }
+        if (ssg.isFederatedGateway())
+            throw new RuntimeException("Not supported for WS-Trust federation");
         if (ssg.getRuntime().keyStore() == null) {
             KeyStore keyStore;
             try {
@@ -470,7 +432,7 @@ public class SsgKeyStoreManager {
      * @param ssg The SSG whose keystore is to be deleted.
      */
     public static void deleteStores(Ssg ssg) {
-        if (ssg.getTrustedGateway() != null)
+        if (ssg.isFederatedGateway())
             throw new IllegalStateException("Not permitted to delete key stores for a Federated SSG.");
 
         synchronized (ssg) {
@@ -535,7 +497,7 @@ public class SsgKeyStoreManager {
                                              char[] privateKeyPassword)
             throws KeyStoreException, IOException, KeyStoreCorruptException, CertificateException
     {
-        if (ssg.getTrustedGateway() != null)
+        if (ssg.isFederatedGateway())
             throw new IllegalArgumentException("Unable to save client certificate for Federated Gateway.");
         log.info("Saving client certificate to disk");
         synchronized (ssg) {
@@ -616,7 +578,7 @@ public class SsgKeyStoreManager {
             throws BadCredentialsException, GeneralSecurityException, KeyStoreCorruptException,
                    CertificateAlreadyIssuedException, IOException
     {
-        if (ssg.getTrustedGateway() != null)
+        if (ssg.isFederatedGateway())
             throw new IllegalArgumentException("Unable to obtain client certificate for Federated Gateway.");
         try {
             log.info("Generating new RSA key pair (could take several seconds)...");
@@ -652,7 +614,7 @@ public class SsgKeyStoreManager {
 
         X509Certificate caCert = getServerCert(ssg);
         if (caCert == null) {
-            CurrentRequest.setPeerSsg(ssg);
+            CurrentSslPeer.set(ssg);
             throw new ServerCertificateUntrustedException(); // fault in the SSG cert
         }
         X509Certificate cert = SslUtils.obtainClientCertificate(ssg,
@@ -685,11 +647,7 @@ public class SsgKeyStoreManager {
 
         if (badKeystore) {
             try {
-                Ssg problemSsg = ssg.getTrustedGateway();
-                if (problemSsg == null) problemSsg = ssg;
-                Managers.getCredentialManager().notifyKeyStoreCorrupt(problemSsg);
-                deleteStores(problemSsg);
-                ssg.getRuntime().resetSslContext();
+                ssg.getRuntime().handleKeyStoreCorrupt();
                 // FALLTHROUGH -- continue, with newly-blank keystore
             } catch (OperationCanceledException e1) {
                 // FALLTHROUGH -- continue, pretending we had no keystore
@@ -747,7 +705,7 @@ public class SsgKeyStoreManager {
                                                   char[] ssgPassword)
             throws IOException, GeneralSecurityException, KeyStoreCorruptException, AliasNotFoundException
     {
-        if (ssg.getTrustedGateway() != null)
+        if (ssg.isFederatedGateway())
             throw new IllegalArgumentException("Unable to import client certificate for Federated Gateway.");
         KeyStore ks;
         try {

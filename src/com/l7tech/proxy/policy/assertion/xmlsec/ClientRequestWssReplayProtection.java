@@ -4,7 +4,6 @@ import com.l7tech.common.security.xml.decorator.DecorationRequirements;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.xmlsec.RequestWssReplayProtection;
 import com.l7tech.proxy.datamodel.Ssg;
-import com.l7tech.proxy.datamodel.SsgKeyStoreManager;
 import com.l7tech.proxy.datamodel.exceptions.*;
 import com.l7tech.proxy.message.PolicyApplicationContext;
 import com.l7tech.proxy.policy.assertion.ClientAssertion;
@@ -61,9 +60,9 @@ public class ClientRequestWssReplayProtection extends ClientAssertion {
                     // We'll need a signature source to sign the timestamp.  We'll assume WSS, which may require
                     // getting a client cert.
                     final Ssg ssg = context.getSsg();
-                    final PrivateKey userPrivateKey = SsgKeyStoreManager.getClientCertPrivateKey(ssg);
-                    final X509Certificate userCert = SsgKeyStoreManager.getClientCert(ssg);
-                    final X509Certificate ssgCert = SsgKeyStoreManager.getServerCert(ssg);
+                    final PrivateKey userPrivateKey = ssg.getClientCertificatePrivateKey();
+                    final X509Certificate userCert = ssg.getClientCertificate();
+                    final X509Certificate ssgCert = ssg.getServerCertificate();
                     wssReqs.setRecipientCertificate(ssgCert);
                     wssReqs.setSenderCertificate(userCert);
                     wssReqs.setSenderPrivateKey(userPrivateKey);

@@ -35,7 +35,9 @@ import com.l7tech.proxy.message.PolicyApplicationContext;
 import com.l7tech.proxy.policy.assertion.ClientAssertion;
 import com.l7tech.proxy.policy.assertion.ClientDecorator;
 import com.l7tech.proxy.ssl.ClientProxySecureProtocolSocketFactory;
+import com.l7tech.proxy.ssl.CurrentSslPeer;
 import com.l7tech.proxy.ssl.HostnameMismatchException;
+import com.l7tech.proxy.ssl.SslPeer;
 import org.apache.commons.httpclient.*;
 import org.apache.commons.httpclient.methods.PostMethod;
 import org.apache.commons.httpclient.protocol.Protocol;
@@ -134,7 +136,7 @@ public class MessageProcessor {
             Ssg ssg = context.getSsg();
 
             for (int attempts = 0; attempts < MAX_TRIES; ++attempts) {
-                CurrentRequest.setPeerSsg(null); // force all SSL connections to set peer SSG first
+                CurrentSslPeer.set(null); // force all SSL connections to set peer SSG first
                 try {
                     try {
                         try {
@@ -145,11 +147,11 @@ public class MessageProcessor {
                             return;
                         } catch (SSLException e) {
                             if (context.getSsg().getTrustedGateway() != null) {
-                                Ssg peerSsg = CurrentRequest.getPeerSsg();
-                                if (peerSsg == context.getSsg())
+                                SslPeer sslPeer = CurrentSslPeer.get();
+                                if (sslPeer == context.getSsg())
                                     handleSslException(context.getSsg(), null, e);
-                                else if (peerSsg == context.getSsg().getTrustedGateway())
-                                    handleSslException(peerSsg, context.getFederatedCredentials(), e);
+                                else if (sslPeer == context.getSsg().getTrustedGateway())
+                                    handleSslException((Ssg)sslPeer, context.getFederatedCredentials(), e);
                                 else
                                     throw new ConfigurationException("SSL handshake failed, but peer Gateway was neither the Trusted nor Federated Gateway.");
                             } else
@@ -157,11 +159,11 @@ public class MessageProcessor {
                             // FALLTHROUGH -- retry with new server certificate
                         } catch (ServerCertificateUntrustedException e) {
                             if (context.getSsg().getTrustedGateway() != null) {
-                                Ssg peerSsg = CurrentRequest.getPeerSsg();
-                                if (peerSsg == context.getSsg())
+                                SslPeer sslPeer = CurrentSslPeer.get();
+                                if (sslPeer == context.getSsg())
                                     SsgKeyStoreManager.installSsgServerCertificate(ssg, null);
-                                else if (peerSsg == context.getSsg().getTrustedGateway())
-                                    SsgKeyStoreManager.installSsgServerCertificate(peerSsg, context.getFederatedCredentials());
+                                else if (sslPeer == context.getSsg().getTrustedGateway())
+                                    SsgKeyStoreManager.installSsgServerCertificate((Ssg)sslPeer, context.getFederatedCredentials());
                                 else
                                     throw new ConfigurationException("SSL handshake failed, but peer Gateway was neither the Trusted nor Federated Gateway.");
                             } else
@@ -175,11 +177,7 @@ public class MessageProcessor {
                         // FALLTHROUGH allow policy to reset and retry
                     }
                 } catch (KeyStoreCorruptException e) {
-                    Ssg problemSsg = ssg.getTrustedGateway();
-                    if (problemSsg == null) problemSsg = ssg;
-                    Managers.getCredentialManager().notifyKeyStoreCorrupt(problemSsg);
-                    SsgKeyStoreManager.deleteStores(problemSsg);
-                    ssg.getRuntime().resetSslContext();
+                    ssg.getRuntime().handleKeyStoreCorrupt();
                     // FALLTHROUGH -- retry, creating new keystore
                 } catch (DecoratorException e) {
                     throw new ConfigurationException(e);
@@ -207,12 +205,12 @@ public class MessageProcessor {
         if (ssg.isChainCredentialsFromClient())
             throw new HttpChallengeRequiredException(e);
 
-        if (ssg.getTrustedGateway() != null)
+        if (ssg.isFederatedGateway())
             throw new OperationCanceledException("Client identity rejected by federated Gateway " + ssg.getSsgAddress());
 
         // If we have a client cert, and the current password worked to decrypt it's private key, but something
         // has rejected the password anyway, we need to reestablish the validity of this account with the SSG.
-        if (SsgKeyStoreManager.isClientCertAvailabile(ssg) && SsgKeyStoreManager.isPasswordWorkedForPrivateKey(ssg)) {
+        if (ssg.getClientCertificate() != null && SsgKeyStoreManager.isPasswordWorkedForPrivateKey(ssg)) {
             if (securePasswordPing(context)) {
                 // password works with our keystore, and with the SSG, so why did it fail just now?
                 String message = "Recieved password failure, but it worked with our keystore and the Gateway liked it when we double-checked it.  " +
@@ -225,11 +223,7 @@ public class MessageProcessor {
             try {
                 SsgKeyStoreManager.deleteClientCert(ssg);
             } catch (KeyStoreCorruptException e1) {
-                Ssg problemSsg = ssg.getTrustedGateway();
-                if (problemSsg == null) problemSsg = ssg;
-                Managers.getCredentialManager().notifyKeyStoreCorrupt(problemSsg);
-                SsgKeyStoreManager.deleteStores(problemSsg);
-                ssg.getRuntime().resetSslContext();
+                ssg.getRuntime().handleKeyStoreCorrupt();
             }
             ssg.getRuntime().resetSslContext();
             // FALLTHROUGH -- retry, creating new keystore
@@ -303,7 +297,7 @@ public class MessageProcessor {
     private boolean securePasswordPing(PolicyApplicationContext context)
       throws IOException, OperationCanceledException {
         Ssg ssg = context.getSsg();
-        if (ssg.getTrustedGateway() != null)
+        if (ssg.isFederatedGateway())
             throw new OperationCanceledException("Unable to perform password ping with Federated SSG"); // can't happen
 
         // We'll just use the CertificateDownloader for this.
@@ -613,9 +607,9 @@ public class MessageProcessor {
             postMethod.setRequestBody(bodyInputStream);
 
             log.info("Posting request to Gateway " + ssg + ", url " + url);
-            CurrentRequest.setPeerSsg(ssg);
+            CurrentSslPeer.set(ssg);
             int status = client.executeMethod(postMethod);
-            CurrentRequest.setPeerSsg(null);
+            CurrentSslPeer.set(null);
             log.info("POST to Gateway completed with HTTP status code " + status);
 
             Header certStatusHeader = postMethod.getResponseHeader(SecureSpanConstants.HttpHeaders.CERT_STATUS);
@@ -623,7 +617,7 @@ public class MessageProcessor {
                 log.info("Gateway response contained a certficate status:invalid header.  Will get new client cert.");
                 // Try to get a new client cert; if this succeeds, it'll replace the old one
                 try {
-                    if (context.getSsg().getTrustedGateway() != null) {
+                    if (context.getSsg().isFederatedGateway()) {
                         log.log(Level.SEVERE, "Federated Gateway " + context.getSsg() + " is trying to tell us to destroy our Trusted client certificate; ignoring it");
                         throw new ConfigurationException("Federated Gateway rejected our client certificate");
                     }
@@ -768,8 +762,8 @@ public class MessageProcessor {
                 boolean haveKey = SsgKeyStoreManager.isClientCertUnlocked(ssg);
                 final ProcessorResult processorResultRaw =
                   wssProcessor.undecorateMessage(responseDocument,
-                    haveKey ? SsgKeyStoreManager.getClientCert(ssg) : null,
-                    haveKey ? SsgKeyStoreManager.getClientCertPrivateKey(ssg) : null,
+                    haveKey ? ssg.getClientCertificate() : null,
+                    haveKey ? ssg.getClientCertificatePrivateKey() : null,
                     scf);
                 // Translate timestamp in result from SSG time to local time
                 final WssTimestamp wssTimestampRaw = processorResultRaw.getTimestamp();
@@ -810,7 +804,7 @@ public class MessageProcessor {
         if (status == 401 || status == 402) {
             Header authHeader = postMethod.getResponseHeader("WWW-Authenticate");
             log.info("Got auth header: " + (authHeader == null ? "<null>" : authHeader.getValue()));
-            if (authHeader == null && "https".equals(url.getProtocol()) && SsgKeyStoreManager.isClientCertAvailabile(ssg)) {
+            if (authHeader == null && "https".equals(url.getProtocol()) && ssg.getClientCertificate() != null) {
                 log.info("Got 401 response from Gateway over https; possible that client cert is no good");
             }
 
@@ -858,7 +852,7 @@ public class MessageProcessor {
             return;
         }
 
-        if (context.getSsg().getTrustedGateway() != null) // can't happen; password based assertions should have all failed
+        if (context.getSsg().isFederatedGateway()) // can't happen; password based assertions should have all failed
             throw new OperationCanceledException("Password based authentication is not supported for Federated Gateway");
 
         // Set credentials and enable HTTP client auth

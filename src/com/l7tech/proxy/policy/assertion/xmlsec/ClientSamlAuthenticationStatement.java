@@ -13,7 +13,6 @@ import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.xmlsec.SamlAuthenticationStatement;
 import com.l7tech.proxy.datamodel.Ssg;
-import com.l7tech.proxy.datamodel.SsgKeyStoreManager;
 import com.l7tech.proxy.datamodel.exceptions.*;
 import com.l7tech.proxy.message.PolicyApplicationContext;
 import com.l7tech.proxy.policy.assertion.ClientAssertion;
@@ -48,7 +47,7 @@ public class ClientSamlAuthenticationStatement extends ClientAssertion {
     {
         context.prepareClientCertificate();
         final Ssg ssg = context.getSsg();
-        final PrivateKey privateKey = SsgKeyStoreManager.getClientCertPrivateKey(ssg);
+        final PrivateKey privateKey = ssg.getClientCertificatePrivateKey();
 
         // Look up or apply for SAML ticket
         final SamlAssertion ass = context.getOrCreateSamlAssertion();

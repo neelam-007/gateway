@@ -15,6 +15,7 @@ import com.l7tech.proxy.datamodel.exceptions.SsgNotFoundException;
 import com.l7tech.proxy.message.HttpHeadersKnob;
 import com.l7tech.proxy.message.PolicyApplicationContext;
 import com.l7tech.proxy.processor.MessageProcessor;
+import com.l7tech.proxy.ssl.CurrentSslPeer;
 import org.mortbay.http.HttpException;
 import org.mortbay.http.HttpRequest;
 import org.mortbay.http.HttpResponse;
@@ -168,8 +169,7 @@ public class RequestHandler extends AbstractHttpHandler {
         final Ssg ssg = getDesiredSsg(endpointIO);
         endpoint = endpointIO[0]; // use translated endpoint
         log.fine("Mapped to Gateway: " + ssg);
-        CurrentRequest.clearCurrentRequest();
-        CurrentRequest.setCurrentSsg(ssg);
+        CurrentSslPeer.clear();
 
         if (isWsdl) {
             handleWsdlRequest(httpRequest, httpResponse, ssg);
@@ -425,7 +425,7 @@ public class RequestHandler extends AbstractHttpHandler {
             log.info("Returning fault");
             context.getResponse().initialize(exceptionToFault(e, null, context.getOriginalUrl()));
         } finally {
-            CurrentRequest.clearCurrentRequest();
+            CurrentSslPeer.clear();
         }
     }
 

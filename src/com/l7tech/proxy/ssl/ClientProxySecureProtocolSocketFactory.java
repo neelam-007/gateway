@@ -6,8 +6,6 @@
 
 package com.l7tech.proxy.ssl;
 
-import com.l7tech.proxy.datamodel.CurrentRequest;
-import com.l7tech.proxy.datamodel.Ssg;
 import org.apache.commons.httpclient.protocol.SecureProtocolSocketFactory;
 
 import javax.net.ssl.SSLSocket;
@@ -16,16 +14,11 @@ import java.io.IOException;
 import java.net.InetAddress;
 import java.net.Socket;
 import java.net.UnknownHostException;
-import java.util.logging.Logger;
 
 /**
  * New socket factory for SSL with the Jakarta Commons HTTP client.
- * User: mike
- * Date: Jul 31, 2003
- * Time: 8:48:21 PM
  */
 public class ClientProxySecureProtocolSocketFactory extends SSLSocketFactory implements SecureProtocolSocketFactory {
-    private static final Logger log = Logger.getLogger(ClientProxySecureProtocolSocketFactory.class.getName());
     private final SSLSocketFactory defaultSslSocketFactory = (SSLSocketFactory)SSLSocketFactory.getDefault();
 
     private static class InstanceHolder {
@@ -46,50 +39,35 @@ public class ClientProxySecureProtocolSocketFactory extends SSLSocketFactory imp
         return InstanceHolder.INSTANCE;
     }
 
+    private static SSLSocketFactory socketFactory() {
+        SslContextHaver peer = CurrentSslPeer.get();
+        if (peer == null)
+            throw new IllegalStateException("Unable to create SSL client socket: No SSL peer is available in this thread");
+        return peer.getSslContext().getSocketFactory();
+    }
+
     public Socket createSocket(Socket socket, String host, int port, boolean autoClose)
             throws IOException, UnknownHostException
     {
-        Ssg ssg = CurrentRequest.getPeerSsg();
-        if (ssg == null)
-            throw new IllegalStateException("Unable to create SSL client socket: No peer Gateway is available in this thread");
-        final SSLSocket sock = (SSLSocket) ssg.getRuntime().getSslContext().getSocketFactory().createSocket(socket, host, port, autoClose);
-        return sock;
+        return (SSLSocket) socketFactory().createSocket(socket, host, port, autoClose);
     }
 
     public Socket createSocket(String host, int port, InetAddress clientHost, int clientPort)
             throws IOException, UnknownHostException
     {
-        Ssg ssg = CurrentRequest.getPeerSsg();
-        if (ssg == null)
-            throw new IllegalStateException("Unable to create SSL client socket: No peer Gateway is available in this thread");
-        final SSLSocket sock = (SSLSocket) ssg.getRuntime().getSslContext().getSocketFactory().createSocket(host, port, clientHost, clientPort);
-        return sock;
+        return (SSLSocket) socketFactory().createSocket(host, port, clientHost, clientPort);
     }
 
-    public Socket createSocket(InetAddress inetAddress, int i, InetAddress inetAddress1, int i1) throws IOException {
-        Ssg ssg = CurrentRequest.getPeerSsg();
-        if (ssg == null)
-            throw new IllegalStateException("Unable to create SSL client socket: No peer Gateway is available in this thread");
-        final SSLSocket sock = (SSLSocket) ssg.getRuntime().getSslContext().getSocketFactory().createSocket(inetAddress,
-                                                                                            i,
-                                                                                            inetAddress1,
-                                                                                            i1);
-        return sock;
+    public Socket createSocket(InetAddress inetAddress, int i, InetAddress inetAddress1, int i1) throws IOException
+    {
+        return (SSLSocket) socketFactory().createSocket(inetAddress, i, inetAddress1, i1);
     }
 
     public Socket createSocket(String host, int port) throws IOException, UnknownHostException {
-        Ssg ssg = CurrentRequest.getPeerSsg();
-        if (ssg == null)
-            throw new IllegalStateException("Unable to create SSL client socket: No peer Gateway is available in this thread");
-        final SSLSocket sock = (SSLSocket) ssg.getRuntime().getSslContext().getSocketFactory().createSocket(host, port);
-        return sock;
+        return (SSLSocket) socketFactory().createSocket(host, port);
     }
 
     public Socket createSocket(InetAddress inetAddress, int i) throws IOException {
-        Ssg ssg = CurrentRequest.getPeerSsg();
-        if (ssg == null)
-            throw new IllegalStateException("Unable to create SSL client socket: No peer Gateway is available in this thread");
-        final SSLSocket sock = (SSLSocket) ssg.getRuntime().getSslContext().getSocketFactory().createSocket(inetAddress, i);
-        return sock;
+        return (SSLSocket) socketFactory().createSocket(inetAddress, i);
     }
 }

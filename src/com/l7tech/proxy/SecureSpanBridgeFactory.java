@@ -19,6 +19,7 @@ import com.l7tech.proxy.datamodel.*;
 import com.l7tech.proxy.datamodel.exceptions.*;
 import com.l7tech.proxy.message.PolicyApplicationContext;
 import com.l7tech.proxy.processor.MessageProcessor;
+import com.l7tech.proxy.ssl.CurrentSslPeer;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
 
@@ -28,7 +29,6 @@ import java.net.PasswordAuthentication;
 import java.net.URL;
 import java.security.GeneralSecurityException;
 import java.security.KeyStoreException;
-import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
@@ -159,7 +159,6 @@ public class SecureSpanBridgeFactory {
             Message response = new Message();
             PolicyApplicationContext context = null;
             try {
-                CurrentRequest.setCurrentSsg(ssg);
                 context = new PolicyApplicationContext(ssg, request, response, nri, pak, origUrl);
                 mp.processMessage(context);
                 // Copy results out before context gets closed
@@ -206,7 +205,7 @@ public class SecureSpanBridgeFactory {
             } finally {
                 if (context != null)
                     context.close();
-                CurrentRequest.clearCurrentRequest();
+                CurrentSslPeer.clear();
             }
         }
 
@@ -225,32 +224,18 @@ public class SecureSpanBridgeFactory {
         }
 
         public X509Certificate getServerCert() throws IOException {
-            try {
-                return SsgKeyStoreManager.getServerCert(ssg);
-            } catch (KeyStoreCorruptException e) {
-                throw new CausedIOException(e);
-            }
+            return ssg.getServerCertificate();
         }
 
         public X509Certificate getClientCert() throws IOException {
-            try {
-                return SsgKeyStoreManager.getClientCert(ssg);
-            } catch (KeyStoreCorruptException e) {
-                throw new CausedIOException(e);
-            }
+            return ssg.getClientCertificate();
         }
 
         public PrivateKey getClientCertPrivateKey() throws CausedBadCredentialsException, IOException {
             try {
-                return SsgKeyStoreManager.getClientCertPrivateKey(ssg);
+                return ssg.getClientCertificatePrivateKey();
             } catch (com.l7tech.proxy.datamodel.exceptions.BadCredentialsException e) {
                 throw new CausedBadCredentialsException(e);
-            } catch (OperationCanceledException e) {
-                throw new CausedBadCredentialsException(e);
-            } catch (KeyStoreCorruptException e) {
-                throw new CausedIOException(e);
-            } catch (NoSuchAlgorithmException e) {
-                throw new RuntimeException("Unable to read private key: no such algorithm", e);
             }
         }
 
@@ -259,7 +244,7 @@ public class SecureSpanBridgeFactory {
                 CausedCertificateAlreadyIssuedException
         {
             try {
-                if (SsgKeyStoreManager.getServerCert(ssg) == null)
+                if (ssg.getServerCertificate() == null)
                     SsgKeyStoreManager.installSsgServerCertificate(ssg, pw);
             } catch (com.l7tech.proxy.datamodel.exceptions.BadCredentialsException e) {
                 throw new CausedBadCredentialsException(e);
@@ -270,7 +255,7 @@ public class SecureSpanBridgeFactory {
             }
 
             try {
-                if (SsgKeyStoreManager.getClientCert(ssg) == null)
+                if (ssg.getClientCertificate() == null)
                     SsgKeyStoreManager.obtainClientCertificate(ssg, pw);
             } catch (KeyStoreCorruptException e) {
                 throw new CausedIOException(e);

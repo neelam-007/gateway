@@ -21,11 +21,12 @@ import com.l7tech.common.util.*;
 import com.l7tech.common.xml.InvalidDocumentFormatException;
 import com.l7tech.common.xml.MessageNotSoapException;
 import com.l7tech.common.xml.saml.SamlAssertion;
-import com.l7tech.proxy.datamodel.CurrentRequest;
 import com.l7tech.proxy.datamodel.Managers;
 import com.l7tech.proxy.datamodel.Ssg;
 import com.l7tech.proxy.datamodel.exceptions.OperationCanceledException;
 import com.l7tech.proxy.ssl.ClientProxySecureProtocolSocketFactory;
+import com.l7tech.proxy.ssl.CurrentSslPeer;
+import com.l7tech.proxy.ssl.SslPeer;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.xml.sax.SAXException;
@@ -217,21 +218,23 @@ public class TokenServiceClient {
         return (SecureConversationSession)result;
     }
 
-    public static SamlAssertion obtainSamlAssertion(Ssg ssg,
+    public static SamlAssertion obtainSamlAssertion(URL url,
+                                                    SslPeer sslPeer,
+                                                    Date timestampCreatedDate,
                                                     X509Certificate clientCertificate,
                                                     PrivateKey clientPrivateKey,
-                                                    X509Certificate serverCertificate,
-                                                    RequestType requestType)
+                                                    RequestType requestType,
+                                                    SecurityToken base,
+                                                    String appliesToAddress)
             throws IOException, GeneralSecurityException
     {
-        URL url = new URL("http", ssg.getSsgAddress(), ssg.getSsgPort(), SecureSpanConstants.TOKEN_SERVICE_FILE);
-        Date timestampCreatedDate = ssg.getRuntime().getDateTranslatorToSsg().translate(new Date());
+        if (timestampCreatedDate == null) timestampCreatedDate = new Date();
         Document requestDoc = createRequestSecurityTokenMessage(clientCertificate, clientPrivateKey,
                                                                 SecurityTokenType.SAML_AUTHENTICATION,
                                                                 requestType,
-                                                                null, null, timestampCreatedDate);
+                                                                base, appliesToAddress, timestampCreatedDate);
         requestDoc.getDocumentElement().setAttribute("xmlns:saml", SamlConstants.NS_SAML);
-        Object result = obtainResponse(clientCertificate, url, ssg, requestDoc, clientPrivateKey, serverCertificate);
+        Object result = obtainResponse(clientCertificate, url, sslPeer, requestDoc, clientPrivateKey, sslPeer.getServerCertificate());
 
         if (!(result instanceof SamlAssertion))
             throw new IOException("Token server returned unwanted token type " + result.getClass());
@@ -240,7 +243,7 @@ public class TokenServiceClient {
 
     private static Object obtainResponse(X509Certificate clientCertificate,
                                          URL url,
-                                         Ssg ssg,
+                                         SslPeer sslPeer,
                                          Document requestDoc,
                                          PrivateKey clientPrivateKey,
                                          X509Certificate serverCertificate)
@@ -250,9 +253,9 @@ public class TokenServiceClient {
             log.log(Level.INFO, "Applying for new Security Token for " + clientCertificate.getSubjectDN() +
                                 " with token server " + url.toString());
 
-            CurrentRequest.setPeerSsg(ssg);
+            CurrentSslPeer.set(sslPeer);
             URLConnection conn = url.openConnection();
-            CurrentRequest.setPeerSsg(null);
+            CurrentSslPeer.set(null);
             conn.setDoOutput(true);
             conn.setAllowUserInteraction(false);
             conn.setRequestProperty(MimeUtil.CONTENT_TYPE, XmlUtil.TEXT_XML);
@@ -292,13 +295,13 @@ public class TokenServiceClient {
         try {
             log.log(Level.INFO, "Applying for new Security Token with token server " + url.toString());
 
-            CurrentRequest.setPeerSsg(ssg);
+            CurrentSslPeer.set(ssg);
             // enforce https and provide password credentials
             PasswordAuthentication pw = Managers.getCredentialManager().getCredentials(ssg);
             String encodedbasicauthvalue = HexUtils.encodeBase64((pw.getUserName() + ":" +
                                                                   new String(pw.getPassword())).getBytes());
             // here, we must use the special
-            CurrentRequest.setPeerSsg(ssg);
+            CurrentSslPeer.set(ssg);
             URLConnection conn = url.openConnection();
             conn.setRequestProperty("Authorization", "Basic " + encodedbasicauthvalue);
             if (conn instanceof HttpsURLConnection) {

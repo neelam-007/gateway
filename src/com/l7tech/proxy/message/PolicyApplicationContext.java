@@ -332,9 +332,13 @@ public class PolicyApplicationContext extends ProcessingContext {
     public PasswordAuthentication getFederatedCredentials()
       throws OperationCanceledException
     {
-        final Ssg trusted = ssg.getTrustedGateway();
-        if (trusted == null)
+        if (!ssg.isFederatedGateway())
             throw new OperationCanceledException("Trusted Gateway does not have any Federated credentials");
+        Ssg trusted = ssg.getTrustedGateway();
+        if (trusted == null)
+            // federated but no trustedGw, so must be using WS-Trust
+            throw new OperationCanceledException("Federated Gateway that uses third-party WS-Trust does not have any Federated credentials");
+
         PasswordAuthentication pw = getPasswordAuthentication();
         if (pw == null || pw.getUserName() == null || pw.getUserName().length() < 1 || pw.getPassword() == null)
             pw = credentialManager.getCredentials(trusted);
@@ -384,8 +388,7 @@ public class PolicyApplicationContext extends ProcessingContext {
      *                                    the logon dialog.
      */
     public PasswordAuthentication getCredentialsForTrustedSsg() throws OperationCanceledException {
-        final Ssg trusted = ssg.getTrustedGateway();
-        if (trusted != null)
+        if (ssg.isFederatedGateway())
             throw new OperationCanceledException("Not permitted to send real password to Federated Gateway.");
         PasswordAuthentication pw = getPasswordAuthentication();
         if (pw == null || pw.getUserName() == null || pw.getUserName().length() < 1 || pw.getPassword() == null)
@@ -402,15 +405,18 @@ public class PolicyApplicationContext extends ProcessingContext {
      */
     public void prepareClientCertificate() throws OperationCanceledException, KeyStoreCorruptException,
       GeneralSecurityException, ClientCertificateException,
-      ServerCertificateUntrustedException, BadCredentialsException, PolicyRetryableException {
+      ServerCertificateUntrustedException, BadCredentialsException, PolicyRetryableException
+    {
         try {
-            if (!SsgKeyStoreManager.isClientCertAvailabile(ssg)) {
+            if (ssg.getClientCertificate() == null) {
                 logger.info("PendingRequest: applying for client certificate");
                 Ssg trusted = ssg.getTrustedGateway();
-                if (trusted != null) {
-                    SsgKeyStoreManager.obtainClientCertificate(trusted, getFederatedCredentials());
-                } else {
+                if (trusted == null) {
+                    if (ssg.isFederatedGateway())
+                        throw new OperationCanceledException("Unable to apply for client cert from third-party WS-Trust server");
                     SsgKeyStoreManager.obtainClientCertificate(ssg, getCredentialsForTrustedSsg());
+                } else {
+                    SsgKeyStoreManager.obtainClientCertificate(trusted, getFederatedCredentials());
                 }
             }
         } catch (CertificateAlreadyIssuedException e) {
@@ -450,13 +456,13 @@ public class PolicyApplicationContext extends ProcessingContext {
         Ssg ssg = getSsg();
         TokenServiceClient.SecureConversationSession s = null;
         logger.log(Level.INFO, "Establishing new WS-SecureConversation session with Gateway " + ssg.toString());
-        if (SsgKeyStoreManager.getClientCert(ssg) == null) {
-            s = TokenServiceClient.obtainSecureConversationSession(ssg, SsgKeyStoreManager.getServerCert(ssg));
+        if (ssg.getClientCertificate() == null) {
+            s = TokenServiceClient.obtainSecureConversationSession(ssg, ssg.getServerCertificate());
         } else {
             s = TokenServiceClient.obtainSecureConversationSession(ssg,
-                                                                   SsgKeyStoreManager.getClientCert(ssg),
-                                                                   SsgKeyStoreManager.getClientCertPrivateKey(ssg),
-                                                                   SsgKeyStoreManager.getServerCert(ssg));
+                                                                   ssg.getClientCertificate(),
+                                                                   ssg.getClientCertificatePrivateKey(),
+                                                                   ssg.getServerCertificate());
         }
         logger.log(Level.INFO, "WS-SecureConversation session established with Gateway " + ssg.toString() + "; session ID=" + s.getSessionId());
         ssg.getRuntime().secureConversationId(s.getSessionId());

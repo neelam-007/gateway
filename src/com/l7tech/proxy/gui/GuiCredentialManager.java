@@ -10,7 +10,6 @@ import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.common.util.CertUtils;
 import com.l7tech.proxy.datamodel.CredentialManager;
 import com.l7tech.proxy.datamodel.Ssg;
-import com.l7tech.proxy.datamodel.SsgKeyStoreManager;
 import com.l7tech.proxy.datamodel.SsgManager;
 import com.l7tech.proxy.datamodel.exceptions.KeyStoreCorruptException;
 import com.l7tech.proxy.datamodel.exceptions.OperationCanceledException;
@@ -72,20 +71,12 @@ class GuiCredentialManager extends CredentialManager {
         private boolean lockUsername = false;
     }
 
-    private void handleCorruptKeystore(Ssg ssg) throws OperationCanceledException {
-        Ssg problemSsg = ssg.getTrustedGateway();
-        if (problemSsg == null) problemSsg = ssg;
-        notifyKeyStoreCorrupt(problemSsg);
-        SsgKeyStoreManager.deleteStores(problemSsg);
-        ssg.getRuntime().resetSslContext();
-    }
-
     public PasswordAuthentication getCredentials(final Ssg ssg) throws OperationCanceledException {
         for (;;) {
             try {
                 return getCredentials(ssg, "", false, false);
             } catch (KeyStoreCorruptException e) {
-                handleCorruptKeystore(ssg);
+                ssg.getRuntime().handleKeyStoreCorrupt();
                 // FALLTHROUGH -- retry with newly-emptied keystore
             }
         }
@@ -101,7 +92,7 @@ class GuiCredentialManager extends CredentialManager {
             try {
                 return getCredentials(ssg, hint.toString(), disregardExisting, reportBadPassword);
             } catch (KeyStoreCorruptException e) {
-                handleCorruptKeystore(ssg);
+                ssg.getRuntime().handleKeyStoreCorrupt();
                 // FALLTHROUGH -- retry with newly-emptied keystore
             }
         }
@@ -112,7 +103,7 @@ class GuiCredentialManager extends CredentialManager {
             try {
                 return getCredentials(ssg, "", true, displayBadPasswordMessage);
             } catch (KeyStoreCorruptException e) {
-                handleCorruptKeystore(ssg);
+                ssg.getRuntime().handleKeyStoreCorrupt();
                 // FALLTHROUGH -- retry with newly-emptied keystore
             }
         }
@@ -123,7 +114,7 @@ class GuiCredentialManager extends CredentialManager {
     {
         if (oldOnesWereBad) mustGetNewOnes = true;
 
-        if (ssg.getTrustedGateway() != null)
+        if (ssg.isFederatedGateway())
             throw new OperationCanceledException("Not permitted to send password credentials to a Federated Gateway");
 
         PasswordAuthentication pw = ssg.getRuntime().getCredentials();
@@ -146,12 +137,10 @@ class GuiCredentialManager extends CredentialManager {
 
             // Check if username is locked into a client certificate
             holder.showUsername = ssg.getUsername();
-            if (SsgKeyStoreManager.isClientCertAvailabile(ssg)) {
-                final X509Certificate cert = SsgKeyStoreManager.getClientCert(ssg);
-                if (cert != null) {
-                    holder.showUsername = CertUtils.extractCommonNameFromClientCertificate(cert);
-                    holder.lockUsername = true;
-                }
+            final X509Certificate cert = ssg.getClientCertificate();
+            if (cert != null) {
+                holder.showUsername = CertUtils.extractCommonNameFromClientCertificate(cert);
+                holder.lockUsername = true;
             }
         }
 
