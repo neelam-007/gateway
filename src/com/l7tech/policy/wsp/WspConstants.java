@@ -38,6 +38,7 @@ import java.util.*;
  */
 public class WspConstants {
     public static final String POLICY_NS = "http://www.layer7tech.com/ws/policy";
+    public static final String POLICY_ELNAME = "Policy";
 
     static boolean isNullableType(Class type) {
         return !(int.class.equals(type) ||
