@@ -98,8 +98,11 @@ public abstract class HibernateEntityManager implements EntityManager {
             List results = _manager.find( getContext(), getAllHeadersQuery());
             for (Iterator i = results.iterator(); i.hasNext();) {
                 Object[] row = (Object[])i.next();
+                String name = null;
+                if ( row.length > 1 & row[1] != null ) name = row[1].toString();
+                if ( name == null ) name = "";
                 final long id = ((Long)row[0]).longValue();
-                headers.add(new EntityHeader(id, EntityType.fromInterface(getInterfaceClass()), row[1].toString(), EMPTY_STRING));
+                headers.add(new EntityHeader(id, EntityType.fromInterface(getInterfaceClass()), name, EMPTY_STRING));
             }
             return Collections.unmodifiableList(headers);
         } catch ( SQLException se ) {
@@ -147,6 +150,4 @@ public abstract class HibernateEntityManager implements EntityManager {
                                              getImpClass().getName();
     protected PersistenceManager _manager;
     protected Logger logger = LogManager.getInstance().getSystemLogger();
-
-
 }
