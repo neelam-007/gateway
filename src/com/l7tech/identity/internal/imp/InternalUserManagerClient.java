@@ -115,12 +115,10 @@ public class InternalUserManagerClient implements com.l7tech.identity.UserManage
         //return "http://localhost:8080/UneasyRooster/services/identities";
     }
     private String getAdminUsername() throws IOException {
-        // todo, read this from somewhere
-        return null;
+        return com.l7tech.adminws.ClientCredentialManager.getCachedUsername();
     }
     private String getAdminPassword() throws IOException {
-        // todo, read this from somewhere
-        return null;
+        return com.l7tech.adminws.ClientCredentialManager.getCachedPasswd();
     }
 
     private long identityProviderConfigId;
