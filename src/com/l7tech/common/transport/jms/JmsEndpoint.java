@@ -18,7 +18,7 @@ import java.io.Serializable;
  * @author alex
  * @version $Revision$
  */
-public class JmsEndpoint extends NamedEntityImp implements Serializable {
+public class JmsEndpoint extends NamedEntityImp implements Serializable, Comparable {
     private JmsConnection _connection;
     private String _destinationName;
     private JmsReplyType _replyType;
@@ -88,5 +88,17 @@ public class JmsEndpoint extends NamedEntityImp implements Serializable {
 
     public void setFailureEndpoint(JmsEndpoint failureEndpoint) {
         _failureEndpoint = failureEndpoint;
+    }
+
+    public int compareTo(Object o) {
+        if (o.getClass().equals(JmsEndpoint.class)) {
+            JmsEndpoint that = (JmsEndpoint) o;
+            if (this.getOid() < that.getOid())
+                return -1;
+            else if (this.getOid() > that.getOid())
+                return 1;
+            return 0;
+        }
+        throw new IllegalArgumentException("May only compare JmsEndpoint to other JmsEndpoints");
     }
 }

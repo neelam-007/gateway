@@ -58,12 +58,12 @@ public class NewJmsConnectionDialog extends JDialog {
     }
 
     public NewJmsConnectionDialog(Dialog owner) {
-        super(owner);
+        super(owner, true);
         init();
     }
 
     public NewJmsConnectionDialog(Frame owner) {
-        super(owner);
+        super(owner, true);
         init();
     }
 
@@ -77,7 +77,7 @@ public class NewJmsConnectionDialog extends JDialog {
     }
 
     private void init() {
-        setTitle("New JMS Connection...");
+        setTitle("New JMS Connection");
         Container c = getContentPane();
         c.setLayout(new GridBagLayout());
         JPanel p = new JPanel(new GridBagLayout());
