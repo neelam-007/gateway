@@ -116,6 +116,8 @@ public class SnmpTrapPropertiesDialog extends JDialog {
         boolean ok = true;
         if (hostnameField.getText().length() < 1) ok = false;
         if (rbCustomPort.isSelected() && !isValidInt(portField.getText())) ok = false;
+        int port = safeParseInt(portField.getText(), SnmpTrapAssertion.DEFAULT_PORT);
+        if (port < 1 || port > 65535) ok = false;
 
         okButton.setEnabled(ok);
     }
