@@ -3,11 +3,10 @@ package com.l7tech.identity;
 import com.l7tech.objectmodel.DeleteException;
 
 /**
- * User: flascell
- * Date: Jul 1, 2003
- * Time: 10:27:45 AM
- *
  * Thrown when an attempt is made to delete an administrator account.
+ * <br/><br/>
+ * User: flascell<br/>
+ * Date: Jul 1, 2003
  */
 public final class CannotDeleteAdminAccountException extends DeleteException {
     public CannotDeleteAdminAccountException() {

@@ -4,14 +4,10 @@ import org.xml.sax.*;
 import com.l7tech.common.util.SAXParsingCompleteException;
 
 /**
- * User: flascell
- * Date: Aug 11, 2003
- * Time: 4:14:08 PM
- * $Id$
- *
  * SAX Handler for xml document which contains a wsse usernametoken element.
  *
  * Extracts a username and password from an xml document with the following format:
+ * <pre>
  * <?xml version="1.0" encoding="utf-8"?>
  * <S:Envelope xmlns:S="http://www.w3.org/2001/12/soap-envelope" xmlns:ds="http://www.w3.org/2000/09/xmldsig#">
  *         <S:Header>
@@ -26,7 +22,7 @@ import com.l7tech.common.util.SAXParsingCompleteException;
  *                 <tru:StockSymbol xmlns:tru="http://fabrikam123.com/payloads">QQQ</tru:StockSymbol>
  *         </S:Body>
  * </S:Envelope>
- *
+ * </pre>
  * This handler will throw a SAXParsingCompleteException to indicate that all the information was extracted
  * out of the document. This stops parsing early and makes this operation faster. If no username and password info
  * is found passwd the soap header, the handler will also throw a SAXParsingCompleteException but the password and
@@ -34,6 +30,11 @@ import com.l7tech.common.util.SAXParsingCompleteException;
  *
  * The optional password type is captured in the passwdType property. If not present it is set to the
  * DEFAULT_PASSWORD_TYPE constant.
+ *
+ * <br/><br/>
+ * User: flascell<br/>
+ * Date: Aug 11, 2003<br/>
+ * $Id$
  */
 public class WsseBasicSaxHandler implements ContentHandler {
 

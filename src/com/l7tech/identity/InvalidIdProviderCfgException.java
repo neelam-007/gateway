@@ -1,15 +1,15 @@
 package com.l7tech.identity;
 
 /**
- * LAYER 7 TECHNOLOGIES, INC
- *
- * User: flascell
- * Date: Sep 29, 2003
- * Time: 1:55:55 PM
- * $Id$
- *
- * An identity provider configuration is not valid
+ * An identity provider configuration is not valid.
  * @see IdentityProviderConfig
+ *
+ * <br/><br/>
+ * LAYER 7 TECHNOLOGIES, INC<br/>
+ *
+ * User: flascell<br/>
+ * Date: Sep 29, 2003<br/>
+ * $Id$
  */
 public class InvalidIdProviderCfgException extends Exception{
     public InvalidIdProviderCfgException() {

@@ -14,11 +14,11 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * User: flascell
+ * Knows about the location and passwords for keystores, server certificates, etc.
+ *
+ * <br/><br/>
+ * User: flascell<br/>
  * Date: Aug 26, 2003
- * Time: 10:16:08 AM
- * <p/>
- * Knows about the location and passwords for keystores, server certificates, etc
  */
 public class KeystoreUtils {
     public static final String DEFAULT_PROPS_RESOURCE = "/keystore.properties";

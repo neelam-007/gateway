@@ -8,11 +8,12 @@ import com.l7tech.service.resolution.ServiceResolutionException;
 import java.util.Collection;
 
 /**
- * Layer 7 Technologies, inc.
- * User: flascelles
- * Date: Jun 6, 2003
- *
  * Service API. Get instance of this through the Locator class.
+ *
+ * <br/><br/>
+ * Layer 7 Technologies, inc.<br/>
+ * User: flascelles<br/>
+ * Date: Jun 6, 2003
  */
 public interface ServiceManager extends EntityManager {
     /**
