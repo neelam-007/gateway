@@ -1,25 +1,27 @@
 package com.l7tech.policy.assertion.xmlsec;
 
-
-
 /**
- * LAYER 7 TECHNOLOGIES, INC
- *
- * User: flascell
- * Date: Aug 27, 2003
- * Time: 2:10:35 PM
- * $Id$
- *
- * Assertion that enforces xml digital signature on the soap envelope and potentially xml encryption on the soap body
+ * The <code>XmlSecurityAssertion</code> that sets the encryption toggle.
+ * <p>
+ * For example for the xml digital signature the xml encryption may be set.
+ * In the case of <code>SamlAssertion</code>
  */
 public interface XmlSecurityAssertion {
     /**
-     * This property describes whether or not the body should be encrypted as opposed to only signed
+     * This property describes whether or not the encryption is set on the assertion.
+     * The exact meaning of the encryption depends of the implementing class.
+     *
+     * In the body should be encrypted as opposed to only signed
+     *
+     * @return whether the encryption is used or not
      */
-    abstract boolean isEncryption();
+    boolean isEncryption();
 
     /**
-     * This property describes whether or not the body should be encrypted as opposed to only signed
+     * Enable or disable the encryption on the assertion. The exact meaning of the
+     * encryption flag depends on the implementing class.
+     *
+     * @param b toggle the encryption on the assertion
      */
-    abstract void setEncryption(boolean encryption);
+    void setEncryption(boolean b);
 }
