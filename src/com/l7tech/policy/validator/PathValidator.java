@@ -415,7 +415,7 @@ class PathValidator {
 
     private void processUnknown(UnknownAssertion a) {
         result.addWarning(new PolicyValidatorResult.Warning(a, assertionPath,
-              "This assertion is of type unknown and sould be removed from the policy.", null));
+              "This assertion is of type unknown and should be removed from the policy.", null));
     }
 
     private boolean isRouting(Assertion a) {
