@@ -102,12 +102,13 @@ public class WssProcessorImpl implements WssProcessor {
         // Process elements one by one
         Element securityChildToProcess = XmlUtil.findFirstChildElement(cntx.releventSecurityHeader);
         while (securityChildToProcess != null) {
+            boolean removeProcessedElement = false;
             if (securityChildToProcess.getLocalName().equals(SoapUtil.ENCRYPTEDKEY_EL_NAME)) {
                 processEncryptedKey(securityChildToProcess, recipientKey,
                                     recipientCert, cntx);
                 // if this element is processed BEFORE the signature validation, it should be removed
                 // for the signature to validate properly
-                securityChildToProcess.getParentNode().removeChild(securityChildToProcess);
+                removeProcessedElement = true;
             } else if (securityChildToProcess.getLocalName().equals(SoapUtil.TIMESTAMP_EL_NAME)) {
                 processTimestamp(cntx, securityChildToProcess);
             } else if (securityChildToProcess.getLocalName().equals(SoapUtil.BINARYSECURITYTOKEN_EL_NAME)) {
@@ -131,6 +132,9 @@ public class WssProcessorImpl implements WssProcessor {
                 }
             }
             Node nextSibling = securityChildToProcess.getNextSibling();
+            if (removeProcessedElement) {
+                securityChildToProcess.getParentNode().removeChild(securityChildToProcess);
+            }
             while (nextSibling != null && nextSibling.getNodeType() != Node.ELEMENT_NODE) {
                 nextSibling = nextSibling.getNextSibling();
             }
