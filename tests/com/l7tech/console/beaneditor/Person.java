@@ -1,0 +1,24 @@
+/*
+ * Copyright (C) 2003-2004 Layer 7 Technologies Inc.
+ *
+ * $Id$
+ */
+package com.l7tech.console.beaneditor;
+
+import java.io.Serializable;
+
+/**
+ * @author emil
+ * @version Feb 17, 2004
+ */
+public class Person implements Serializable {
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    String name;
+}
