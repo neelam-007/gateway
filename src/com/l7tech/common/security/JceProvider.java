@@ -6,13 +6,10 @@
 
 package com.l7tech.common.security;
 
-import com.l7tech.common.security.prov.bc.BouncyCastleJceProviderEngine;
-
 import java.security.InvalidKeyException;
 import java.security.KeyPair;
 import java.security.Provider;
 import java.security.SignatureException;
-import java.security.Security;
 
 /**
  * Provide a single point where our JCE provider can be altered.
@@ -20,36 +17,49 @@ import java.security.Security;
  * @version 1.0
  */
 public abstract class JceProvider {
-    private static JceProviderEngine engine = new BouncyCastleJceProviderEngine();
-    //private static JceProviderEngine engine = new PhaosJceProviderEngine();
+    public static final String ENGINE_PROPERTY = "com.l7tech.common.security.JceProviderEngine";
 
-    private static void listProviders() {
-        Provider[] p = Security.getProviders();
-        for (int i = 0; i < p.length; i++) {
-            Provider provider = p[i];
-            System.out.println("Security provider: " + provider.getName());
+    private static final String BC_ENGINE = "com.l7tech.common.security.prov.bc.BouncyCastleJceProviderEngine";
+    private static final String PHAOS_ENGINE = "com.l7tech.common.security.prov.phaos.PhaosJceProviderEngine";
+    private static final String DEFAULT_ENGINE = BC_ENGINE;
+
+    private static class Holder {
+        private static final String ENGINE = System.getProperty(ENGINE_PROPERTY, DEFAULT_ENGINE);
+        private static final JceProviderEngine engine = createEngine();
+
+        private static JceProviderEngine createEngine() {
+            try {
+                return (JceProviderEngine) Class.forName(ENGINE).getConstructors()[0].newInstance(new Object[0]);
+            } catch (Throwable t) {
+                throw new RuntimeException("Requested JceProviderEngine could not be instantiated: " + t.getMessage(), t);
+            }
+        }
+
+        private static JceProviderEngine getEngine() {
+            return engine;
         }
     }
 
     public static void init() {
         // no action should be required
+        Holder.getEngine();
     }
 
     public static Provider getProvider() {
-        return engine.getProvider();
+        return Holder.engine.getProvider();
     }
 
     public static RsaSignerEngine createRsaSignerEngine(String keyStorePath, String storePass, String privateKeyAlias, String privateKeyPass) {
-        return engine.createRsaSignerEngine(keyStorePath, storePass, privateKeyAlias, privateKeyPass);
+        return Holder.engine.createRsaSignerEngine(keyStorePath, storePass, privateKeyAlias, privateKeyPass);
     }
 
     public static KeyPair generateRsaKeyPair() {
-        return engine.generateRsaKeyPair();
+        return Holder.engine.generateRsaKeyPair();
     }
 
     public static CertificateRequest makeCsr(String username, KeyPair keyPair)
                  throws SignatureException, InvalidKeyException, RuntimeException
     {
-        return engine.makeCsr(username, keyPair);
+        return Holder.engine.makeCsr(username, keyPair);
     }
 }
