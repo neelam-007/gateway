@@ -545,7 +545,7 @@ public class MessageProcessor {
         if (req.isBasicAuthRequired() || req.isDigestAuthRequired()) {
             log.info("Enabling HTTP Basic or Digest auth with username=" + username);
             postMethod.setDoAuthentication(true);
-            state.setAuthenticationPreemptive(req.isBasicAuthRequired());
+            state.setAuthenticationPreemptive(req.isBasicAuthRequired() && !req.isDigestAuthRequired());
             state.setCredentials(null, null,
                                  new UsernamePasswordCredentials(username, new String(password)));
         }
