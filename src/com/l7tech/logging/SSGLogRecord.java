@@ -28,7 +28,7 @@ public class SSGLogRecord extends LogRecord implements Serializable {
         super(record.getLevel(), record.getMessage());
         setLoggerName(record.getLoggerName());
         setMillis(record.getMillis());
-        setSequenceNumber(record.getSequenceNumber());
+        //setSequenceNumber(record.getSequenceNumber());
         setSourceClassName(record.getSourceClassName());
         setSourceMethodName(record.getSourceMethodName());
     }
@@ -37,7 +37,7 @@ public class SSGLogRecord extends LogRecord implements Serializable {
         super(record.getLevel(), record.getMessage());
         setLoggerName(record.getLoggerName());
         setMillis(record.getMillis());
-        setSequenceNumber(record.getSequenceNumber());
+        //setSequenceNumber(record.getSequenceNumber());
         setSourceClassName(record.getSourceClassName());
         setSourceMethodName(record.getSourceMethodName());
         setReqId(reqId);
