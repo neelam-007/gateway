@@ -54,10 +54,8 @@ public class IdentityViewsRootNode extends AssertionTreeNode {
      * specify this node image resource
      */
     protected String iconResource(boolean open) {
-           if (open)
-            return "com/l7tech/console/resources/folderOpen.gif";
 
-        return "com/l7tech/console/resources/folder.gif";
+        return "com/l7tech/console/resources/identity.png";
     }
 
     /**
@@ -73,7 +71,7 @@ public class IdentityViewsRootNode extends AssertionTreeNode {
      * @return the node name that is displayed
      */
     public String getName() {
-        return "Identities folder";
+        return "Identities";
     }
 
 

@@ -1,19 +1,6 @@
 package com.l7tech.console.action;
 
-import com.l7tech.console.logging.ErrorManager;
-import com.l7tech.console.tree.ServiceNode;
-import com.l7tech.console.tree.policy.AssertionTreeNode;
-import com.l7tech.console.tree.policy.PolicyTreeModel;
-import com.l7tech.console.util.Registry;
-import com.l7tech.console.util.WindowManager;
-import com.l7tech.console.MainWindow;
-import com.l7tech.service.PublishedService;
-import com.l7tech.policy.wsp.WspWriter;
-import com.l7tech.policy.assertion.Assertion;
 
-import javax.swing.*;
-import java.util.logging.Level;
-import java.io.ByteArrayOutputStream;
 
 
 /**

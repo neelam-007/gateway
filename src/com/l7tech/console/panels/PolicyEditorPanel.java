@@ -5,23 +5,21 @@ import com.l7tech.console.action.SavePolicyAction;
 import com.l7tech.console.action.ValidatePolicyAction;
 import com.l7tech.console.tree.FilteredTreeModel;
 import com.l7tech.console.tree.NodeFilter;
-import com.l7tech.console.tree.AbstractTreeNode;
 import com.l7tech.console.tree.policy.*;
+import com.l7tech.console.util.PopUpMouseListener;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.WindowManager;
-import com.l7tech.console.util.PopUpMouseListener;
 import com.l7tech.policy.PolicyValidator;
 import com.l7tech.policy.PolicyValidatorResult;
-import com.l7tech.policy.AssertionPath;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.service.PublishedService;
 
 import javax.swing.*;
-import javax.swing.event.TreeModelListener;
 import javax.swing.event.TreeModelEvent;
+import javax.swing.event.TreeModelListener;
 import javax.swing.text.EditorKit;
-import javax.swing.tree.TreeNode;
 import javax.swing.tree.DefaultMutableTreeNode;
+import javax.swing.tree.TreeNode;
 import javax.swing.tree.TreePath;
 import java.awt.*;
 import java.awt.event.ActionEvent;
@@ -41,6 +39,7 @@ public class PolicyEditorPanel extends JPanel {
     private JTextPane messagesTextPane;
     private AssertionTreeNode rootAssertion;
     private JTree policyTree;
+    private PolicyEditToolBar policyEditorToolbar;
 
     public PolicyEditorPanel(PublishedService svc) {
         this.service = svc;
@@ -70,8 +69,11 @@ public class PolicyEditorPanel extends JPanel {
         PolicyTreeModel model = PolicyTreeModel.make(service);
         rootAssertion = (AssertionTreeNode)model.getRoot();
         TreeNode root = (TreeNode)model.getRoot();
-        policyTree.setModel(new FilteredTreeModel(root));
+        FilteredTreeModel filteredTreeModel = new FilteredTreeModel(root);
+        policyTree.setModel(filteredTreeModel);
+        filteredTreeModel.addTreeModelListener(treeModellistener);
         policyTree.setName(service.getName());
+
         JScrollPane scrollPane = new JScrollPane(policyTree);
         final TreePath path = new TreePath(((DefaultMutableTreeNode)root).getPath());
         SwingUtilities.invokeLater(new Runnable() {
@@ -123,9 +125,10 @@ public class PolicyEditorPanel extends JPanel {
      * @return ToolBarForTable
      */
     private PolicyEditToolBar getToolBar() {
-        PolicyEditToolBar tb = new PolicyEditToolBar();
-        tb.setFloatable(false);
-        return tb;
+        if (policyEditorToolbar !=null)  return policyEditorToolbar;
+        policyEditorToolbar = new PolicyEditToolBar();
+        policyEditorToolbar.setFloatable(false);
+        return policyEditorToolbar;
     }
 
     /**
@@ -144,6 +147,7 @@ public class PolicyEditorPanel extends JPanel {
         private void initComponents() {
             buttonSave = new JButton(new SavePolicyAction(rootAssertion));
             this.add(buttonSave);
+            buttonSave.setEnabled(false);
 
             buttonValidate = new JButton(new ValidatePolicyAction());
             this.add(buttonValidate);
@@ -178,6 +182,7 @@ public class PolicyEditorPanel extends JPanel {
             identityViewButton.addActionListener(new ActionListener() {
                 public void actionPerformed(ActionEvent e) {
                     boolean selected = identityViewButton.isSelected();
+                    policyTree.getModel().removeTreeModelListener(treeModellistener);
                     if (selected) {
                         PolicyTreeModel model =
                           PolicyTreeModel.identitityModel(rootAssertion.asAssertion());
@@ -190,6 +195,7 @@ public class PolicyEditorPanel extends JPanel {
                         FilteredTreeModel fm = new FilteredTreeModel((TreeNode)model.getRoot());
                         policyTree.setModel(fm);
                     }
+                    policyTree.getModel().addTreeModelListener(treeModellistener);
                 }
             });
             this.add(identityViewButton);
@@ -248,4 +254,25 @@ public class PolicyEditorPanel extends JPanel {
         }
 
     }
+
+    // listen for tree changes
+    TreeModelListener treeModellistener = new TreeModelListener () {
+
+        public void treeNodesChanged(TreeModelEvent e) {
+            policyEditorToolbar.buttonSave.setEnabled(true);
+        }
+
+        public void treeNodesInserted(TreeModelEvent e) {
+            policyEditorToolbar.buttonSave.setEnabled(true);
+
+        }
+        public void treeNodesRemoved(TreeModelEvent e) {
+            policyEditorToolbar.buttonSave.setEnabled(true);
+
+        }
+        public void treeStructureChanged(TreeModelEvent e) {
+            policyEditorToolbar.buttonSave.setEnabled(true);
+        }
+
+    };
 }

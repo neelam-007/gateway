@@ -65,7 +65,6 @@ public class DefaultPolicyPathBuilder extends PolicyPathBuilder {
      */
     private Set generatePaths(Assertion assertion) {
         Set assertionPaths = new LinkedHashSet();
-        //AssertionPath lastPath = null;
         Iterator preorder = assertion.preorderIterator();
         assertionPaths.add(new AssertionPath(new Assertion[]{(Assertion)preorder.next()}));
         pathStack.push(lastPath(assertionPaths));
@@ -76,20 +75,19 @@ public class DefaultPolicyPathBuilder extends PolicyPathBuilder {
             if (parentCreatesNewPaths(anext)) {
                 AssertionPath cp = (AssertionPath)pathStack.peek();
                 assertionPaths.remove(cp);
-                assertionPaths.add(cp.addAssertion(anext));
-
+                AssertionPath assertionPath = cp.addAssertion(anext);
+                assertionPaths.add(assertionPath);
+                if (isSplitPath(anext)) pathStack.push(assertionPath);
             } else {
                 Set add = new HashSet();
                 Set remove = new HashSet();
 
                 for (Iterator iterator = assertionPaths.iterator(); iterator.hasNext();) {
                     AssertionPath assertionPath = (AssertionPath)iterator.next();
-                    if (assertionPath.lastAssertion() == anext.getParent() ||
-                        assertionPath.lastAssertion().getParent() == anext.getParent()) {
+                    if (assertionPath.contains(anext.getParent())) {
                         AssertionPath a = assertionPath.addAssertion(anext);
                         add.add(a);
                         remove.add(assertionPath);
-
                     }
                 }
                 AssertionPath[] paths = (AssertionPath[])add.toArray(new AssertionPath[] {});
