@@ -4,7 +4,7 @@
 
 
 <beans>
-    <!--
+<!--
      * singleton using the factory method. This is transitional, as it is referencef from
      * too many places.
      -->
@@ -21,7 +21,7 @@
         </property>
     </bean>
 
-    <!--
+<!--
         Test Identity Provider
     -->
     <bean id="testIdentityProvider" factory-bean="identityProviderFactory" factory-method="createProviderInstance"
@@ -66,6 +66,9 @@
 
     <!-- server side client cert manager -->
     <bean id="clientCertManager" class="com.l7tech.server.identity.cert.ClientCertManagerStub">
+    </bean>
+    <!-- stub audit record manager -->
+    <bean id="auditRecordManager" class="com.l7tech.server.audit.AuditRecordManagerStub">
     </bean>
 
     <!-- server side HTTP routing client trust manager -->

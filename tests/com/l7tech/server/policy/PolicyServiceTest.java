@@ -109,6 +109,7 @@ public class PolicyServiceTest extends TestCase {
                                              TestDocuments.getDotNetServerCertificate(),
                                              (ServerPolicyFactory)applicationContext.getBean("policyFactory"),
           (FilterManager)applicationContext.getBean("policyFilterManager"));
+        ps.setApplicationContext(applicationContext);
         PolicyService.PolicyGetter policyGetter = new PolicyService.PolicyGetter() {
             public PolicyService.ServiceInfo getPolicy(String serviceId) {
                 return new PolicyService.ServiceInfo() {

@@ -205,7 +205,6 @@ public class AuditContext {
         currentAssociatedLogsThreshold = associatedLogsThreshold;
 
         auditRecordManager = (AuditRecordManager)ctx.getBean("auditRecordManager");
-        if (auditRecordManager == null) throw new IllegalStateException("Couldn't locate AuditRecordManager");
     }
 
     public static AuditContext getCurrent(ApplicationContext applicationContext) {
