@@ -84,7 +84,9 @@ public class SecureSpanConstants {
      */
     public static class HttpQueryParameters {
         /**
-         * Contains the OID of the published service whose policy the Agent is attempting to obey.
+         * Contains the OID of the published service whose policy the Agent is attempting to obey, possibly
+         * in the form of a policy version string (which looks like "oid|version" where version is the generation
+         * count, updated by the database whenever the policy changes).
          *
          * <h3>Usages:<ul>
          * <li>Sent by the Agent to the policy servlet as part of the policy URL.  See POLICYURL_HEADER in {@link HttpHeaders}.
@@ -144,6 +146,10 @@ public class SecureSpanConstants {
          * it's incremented whenever an administrator edits a policy and then saves his changes --
          * it doesn't identify which policy assertions are used or expected to be available or any
          * other protocol versioning.
+         * <p>
+         * The Agent does not attempt to interpret this value -- it is treated as an opaque string.  The Gateway
+         * currently uses the form "oid|version" where OID is the published service object ID and version is the
+         * generation count.
          *
          * <h3>Usages:<ul>
          * <li>Returned by the policy servlet to the Agent along with every policy download.
