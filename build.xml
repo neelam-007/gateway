@@ -521,9 +521,9 @@
 
     <target name="prepare.db">
         <antcall target="prepare.db.oracle"/>
-	<antcall target="prepare.db.oracle8"/>
-	<antcall target="prepare.db.mysql"/>
- 	<antcall target="prepare.db.postgres"/>
+        <antcall target="prepare.db.oracle8"/>
+        <antcall target="prepare.db.mysql"/>
+        <antcall target="prepare.db.postgres"/>
     </target>
 
     <target name="prepare.jms.openjms" if="include.jms.openjms">
@@ -600,7 +600,7 @@
         <copy todir="${build.lib}">
             <fileset dir="${src.root}/lib">
                 <include name="*.jar"/>
-		<include name="*.zip"/>
+		        <include name="*.zip"/>
                 <exclude name="**/CVS/*"/>
                 <exclude name="**/**ant*"/>
                 <exclude name="**/optional.jar"/>
@@ -625,7 +625,7 @@
         <copy todir="${build.classes}">
             <fileset dir="${src.root}/etc/db/${database.type}">
                 <!-- <include name="hibernate.cfg.xml"/> -->
-                <include name="hibernate.properties" if="dev.build"/>
+                <include name="hibernate.properties"/>
             </fileset>
 
             <fileset dir="${src.root}/etc/db">
@@ -635,7 +635,7 @@
             <fileset dir="${src.root}/etc">
                 <include name="keystore.properties" if="dev.build"/>
                 <include name="ssglog.properties"/>
-		<include name="spring.xml"/>
+		        <include name="spring.xml"/>
             </fileset>
 
             <fileset dir="${src.root}/src">
@@ -707,10 +707,6 @@
                 <include name="serverconfig.properties"/>
             </fileset>
         </copy>
-        <replaceregexp file="${build.classes}/serverconfig.properties">
-            <regexp pattern="pingStatement.default\s+=\s+.*"/>
-            <substitution expression="pingStatement.default = ${database.pingstmt}"/>
-        </replaceregexp>
     </target>
 
     <target name="db.properties" depends="db.properties.mysql, db.properties.postgres, db.properties.oracle, db.properties.oracle8"/>
@@ -755,7 +751,7 @@
      ** token replacement target.
      ** This should be done ONLY for non distribution builds.
      -->
-    <target name="configure_properties" if="dev.build" depends="db.properties">
+    <target name="configure_properties" depends="db.properties">
 
         <echo message="database.driver   = '${database.driver}'"/>
         <echo message="database.url      = '${database.url}'"/>
@@ -876,6 +872,12 @@
         <!-- Expand ROOT-bxxxx.war into tomcat/webapps -->
         <echo>Expanding ${install.src.war}...</echo>
         <unwar src="${install.src.war}" dest="${install.src.tomcat}/webapps/ROOT"/>
+
+        <move todir="${install.src.conf}">
+            <fileset dir="${install.src.tomcat}/webapps/ROOT/WEB-INF/classes">
+                <include name="hibernate.properties"/>
+            </fileset>
+        </move>
     </target>
 
     <target name="INTERNAL-ssg-install-genpass" if="install.full">
