@@ -71,7 +71,7 @@ public class WsdlPortTypeBindingPanel extends WizardStepPanel {
                "The \"port type binding\" element contains binding definitions that specify Web service " +
                "message formatting and protocol details. The \"Style\" attribute defines the binding style, " +
                "the \"Transport\" attribute indicates which SOAP transport corresponds to the binding, and the " +
-               "\"SOAP Action\" column in the Operations list specifies the value of the SOAPAction http header " +
+               "\"SOAP Action\" column in the Operations window specifies the value of the SOAPAction http header " +
                "for the operation." +
                "</html>";
     }
@@ -340,8 +340,8 @@ public class WsdlPortTypeBindingPanel extends WizardStepPanel {
         final JTextField _10;
         _10 = new JTextField();
         portTypeBindingTransportField = _10;
-        _10.setText("http://schemas.xmlsoap.org/soap/http");
         _10.setEditable(false);
+        _10.setText("http://schemas.xmlsoap.org/soap/http");
         _2.add(_10, new com.intellij.uiDesigner.core.GridConstraints(7, 2, 1, 1, 8, 1, 6, 0, null, new Dimension(150, -1), null));
         final com.intellij.uiDesigner.core.Spacer _11;
         _11 = new com.intellij.uiDesigner.core.Spacer();
