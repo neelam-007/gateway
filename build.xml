@@ -443,6 +443,8 @@
             token="DB_USER" value="${database.user}"/>
         <replace file="${build.classes}/hibernate.properties"
             token="DB_PASSWORD" value="${database.password}"/>
+        <replace file="${build.etc}/web.xml"
+            token="TOMCAT_HOME" value="${tomcat.home}"/>
     </target>
 
 
