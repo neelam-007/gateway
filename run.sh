@@ -81,7 +81,8 @@ case "$foo" in
 		;;
 	ssg)
 		# start tomcat?
-		exec $TOMCAT_HOME/bin/startup.sh run $*
+		$TOMCAT_HOME/bin/startup.sh stop $* 2>&1 > /dev/null 
+		exec $TOMCAT_HOME/bin/startup.sh start -security $* 
 		;;
 	console)
 		exec installer/Manager-*/Manager.sh
