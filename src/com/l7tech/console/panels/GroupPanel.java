@@ -142,6 +142,7 @@ public class GroupPanel extends EntityEditorPanel {
             } else {
                 Group g = idProvider.getGroupManager().findByPrimaryKey(groupHeader.getStrId());
                 if (g == null) {
+                    JOptionPane.showMessageDialog(mainWindow, GROUP_DOES_NOT_EXIST_MSG, "Warning", JOptionPane.WARNING_MESSAGE);
                     throw new NoSuchElementException("User missing " + groupHeader.getOid());
                 }
                 group = g.getGroupBean();
