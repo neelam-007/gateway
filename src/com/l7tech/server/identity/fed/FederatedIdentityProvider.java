@@ -200,7 +200,7 @@ public class FederatedIdentityProvider extends PersistentIdentityProvider {
 
             throw new BadCredentialsException("Federated IDP " + config.getName() + "(" + config.getOid() +
                                               ") is not configured to trust certificates found with " +
-                                              csa );
+                                              csa.getName() );
         } else if ( pc.getFormat() == CredentialFormat.SAML ) {
             // TODO
             if ( !config.isSamlSupported() ) throw new AuthenticationException("This identity provider is not configured to support SAML credentials");
