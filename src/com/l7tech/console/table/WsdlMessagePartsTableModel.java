@@ -167,6 +167,7 @@ public class WsdlMessagePartsTableModel extends AbstractTableModel {
      */
     private Part removePart(String name) {
         Part removed = (Part)message.getParts().remove(name);
+
         if (removed != null) {
             AbstractList al = (AbstractList)partsList;
             int index = al.indexOf(removed.getName());

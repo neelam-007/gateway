@@ -58,7 +58,6 @@ public class WsdlMessagesTableModel extends AbstractTableModel {
      * @see #getColumnCount
      */
     public int getRowCount() {
-        // return definition.getMessages().size();
         return messageList.size();
     }
 
@@ -79,20 +78,12 @@ public class WsdlMessagesTableModel extends AbstractTableModel {
      * <code>rowIndex</code>.
      * 
      * @param	rowIndex	the row whose value is to be queried
-     * (1 based)
      * @param	columnIndex the column whose value is to be queried
      * this field is ignored as
      * @return	the value Object at the specified cell
      */
     public Object getValueAt(int rowIndex, int columnIndex) {
-        // Iterator it = definition.getMessages().values().iterator();
-        Iterator it = messageList.iterator();
-        int row = 0;
-        while (it.hasNext()) {
-            Object m = it.next();
-            if (row++ == rowIndex) return m;
-        }
-        throw new IndexOutOfBoundsException("" + rowIndex + " > " + messageList.size());
+        return messageList.get(rowIndex);
     }
 
     /**
@@ -130,7 +121,8 @@ public class WsdlMessagesTableModel extends AbstractTableModel {
         message.setUndefined(false);
         definition.addMessage(message);
         messageList.add(message);
-        this.fireTableStructureChanged();
+        int index = messageList.size();
+        this.fireTableRowsInserted(index, index);
     }
 
 
@@ -149,10 +141,13 @@ public class WsdlMessagesTableModel extends AbstractTableModel {
      * @param name the message name local part
      */
     public Message removeMessage(QName name) {
+        int index = indexOf(name);
+        if (index == -1) return null;
+
         Message removed = definition.removeMessage(name);
         if (removed != null) {
             messageList.remove(removed);
-            this.fireTableStructureChanged();
+            this.fireTableRowsDeleted(index, index);
         }
         return removed;
     }
@@ -163,19 +158,35 @@ public class WsdlMessagesTableModel extends AbstractTableModel {
      * @param index the message index
      */
     public Message removeMessage(int index) {
-        // Iterator it = definition.getMessages().keySet().iterator();
         Iterator it = messageList.iterator();
         int row = 0;
         while (it.hasNext()) {
-            Object key = it.next();
+            Object o = it.next();
             if (row++ == index) {
                 Message m = (Message)messageList.remove(index);
                 definition.removeMessage(m.getQName());
-                this.fireTableStructureChanged();
+                fireTableRowsDeleted(index, index);
                 return m;
             }
         }
         throw new IndexOutOfBoundsException("" + index + " > " + messageList.size());
+    }
+
+    /**
+     * Searches for the message with the given <code>QName</code>
+     * Returns the index of the message or -1 if the message cannot be found
+     * 
+     * @param qn the message to search for.
+     * @return the index in this table model of the first occurrence of the
+     *         specified message, or -1 if this list does not contain this
+     *         message.
+     */
+    public int indexOf(QName qn) {
+        for (int i = messageList.size() - 1; i >= 0; --i) {
+            Message message = (Message)messageList.get(i);
+            if (qn.equals(message.getQName())) return i;
+        }
+        return -1;
     }
 
     /**
@@ -196,39 +207,25 @@ public class WsdlMessagesTableModel extends AbstractTableModel {
         if (!(aValue instanceof Message)) {
             throw new IllegalArgumentException("value is not a Message. Received " + aValue.getClass());
         }
-        Message m = getMessageAt(rowIndex);
         if (columnIndex == 0) {
-            replaceMessage(m, (Message)aValue);
+            replaceMessage(rowIndex, (Message)aValue);
         } else {
             throw new IndexOutOfBoundsException("" + columnIndex + " >= " + getColumnCount());
         }
     }
 
     /**
-     * replace the message om with the new message nm.
+     * replace the message at the index with the new message nm.
      * 
-     * @param om the
-     * @param nm 
+     * @param index the index of the message to replace
+     * @param nm the new message
      */
-    private void replaceMessage(Message om, Message nm) {
-        int size = messageList.size();
-        for (int i = 0; i < size; i++) {
-            Message m = (Message)messageList.get(i);
-            if (m.getQName().equals(om.getQName())) {
-                Message rm = removeMessage(m.getQName());
-                addMessage(nm);
-                if (rm != null) {
-                    Iterator pi = om.getParts().values().iterator();
-                    while (pi.hasNext()) {
-                        Part p = (Part)pi.next();
-                        nm.addPart(p);
-                    }
-                    messageList.set(i, nm);
-                }
-                this.fireTableRowsUpdated(i, i);
-                break;
-            }
-        }
+    private void replaceMessage(int index, Message nm) {
+        Message om = getMessageAt(index);
+        definition.removeMessage(om.getQName());
+        messageList.set(index, nm);
+        definition.addMessage(nm);
+        this.fireTableRowsUpdated(index, index);
     }
 
     /**
@@ -252,19 +249,12 @@ public class WsdlMessagesTableModel extends AbstractTableModel {
      * @param	rowIndex	the row whose value is to be queried
      * (1 based)
      * @return	the Message at the specified row
+     *
+     * @throws IndexOutOfBoundsException if the index is out of range (index
+     * 		  &lt; 0 || index &gt;= getRowCount()).
      */
     private Message getMessageAt(int rowIndex) {
-        //Iterator it = message.getParts().values().iterator();
-        Iterator it = messageList.iterator();
-        int row = 0;
-        while (it.hasNext()) {
-            Object o = it.next();
-            if (row++ == rowIndex) {
-                Message m = (Message)o;
-                return m;
-            }
-        }
-        throw new IndexOutOfBoundsException("" + rowIndex + " > " + messageList.size());
+        return (Message)messageList.get(rowIndex);
     }
 
     // hack so MessageImpl is editable. Make the internal list

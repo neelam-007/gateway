@@ -112,14 +112,14 @@ public class WsdlPortTypePanel extends WizardStepPanel {
         } else {
             throw new IllegalArgumentException("Unexpected type " + settings.getClass());
         }
-
+        validate(definition);
         PortType portType = getOrCreatePortType(definition);
 
         operationsModel = new WsdlOperationsTableModel(definition, portType);
         operationsTable.setModel(operationsModel);
         operationsTable.getTableHeader().setReorderingAllowed(false);
 
-        Object[] messages = definition.getMessages().values().toArray();
+        final Object[] messages = definition.getMessages().values().toArray();
         messagesComboBox.setModel(new DefaultComboBoxModel(messages));
         messagesComboBox.setRenderer(new DefaultListCellRenderer() {
             public Component
@@ -135,13 +135,49 @@ public class WsdlPortTypePanel extends WizardStepPanel {
                     setBackground(list.getBackground());
                     setForeground(list.getForeground());
                 }
-                QName qName = ((Message)value).getQName();
-                setText(WsdlCreateWizard.prefixedName(qName, definition));
+                if (value != null) {
+                    QName qName = ((Message)value).getQName();
+                    setText(WsdlCreateWizard.prefixedName(qName, definition));
+                } else {
+                    setText("");
+                }
                 return this;
             }
         });
-        operationsTable.setDefaultEditor(Output.class, new DefaultCellEditor(messagesComboBox));
-        operationsTable.setDefaultEditor(Input.class, new DefaultCellEditor(messagesComboBox));
+
+        DefaultCellEditor outputMessageEditor = new DefaultCellEditor(messagesComboBox) {
+            boolean canEdit = messages.length > 0;
+
+            public boolean stopCellEditing() {
+                if (canEdit) {
+                    return super.stopCellEditing();
+                }
+                SwingUtilities.invokeLater(new Runnable() {
+                    public void run() {
+                        cancelCellEditing();
+                    }
+                });
+                return false;
+            }
+        };
+
+        DefaultCellEditor inputMessageEditor = new DefaultCellEditor(messagesComboBox) {
+            boolean canEdit = messages.length > 0;
+
+            public boolean stopCellEditing() {
+                if (canEdit) {
+                    return super.stopCellEditing();
+                }
+                SwingUtilities.invokeLater(new Runnable() {
+                    public void run() {
+                        cancelCellEditing();
+                    }
+                });
+                return false;
+            }
+        };
+        operationsTable.setDefaultEditor(Output.class, outputMessageEditor);
+        operationsTable.setDefaultEditor(Input.class, inputMessageEditor);
         removeOperatonButton.setEnabled(operationsModel.getRowCount() > 0);
     }
 
@@ -163,8 +199,7 @@ public class WsdlPortTypePanel extends WizardStepPanel {
             throw new IllegalArgumentException("Unexpected type " + settings.getClass());
         }
 
-        PortType p = getOrCreatePortType(definition);
-        validate(p, definition);
+        validate(definition);
 
     }
 
@@ -291,23 +326,62 @@ public class WsdlPortTypePanel extends WizardStepPanel {
      * WSDL definition (through different wsdl elements) and the port
      * type may not be aware of this.
      * 
-     * @param p   the port type
      * @param def the wsdl definition
      */
-    private void validate(PortType p, Definition def) {
-        if (def.getTargetNamespace().equals(p.getQName().getNamespaceURI())) {
-            return;
+    private void validate(Definition def) {
+        PortType p = getOrCreatePortType(def);
+
+        if (needPortTypeUpdate(def, p)) {
+            WsdlCreateWizard.log.fine("target namespace changed, updating port type....");
+            updatePortType(p, def);
         }
-        WsdlCreateWizard.log.fine("target namespace changed, updating port type....");
+        validateOperations(def);
+    }
+
+    private boolean needPortTypeUpdate(Definition def, PortType p) {
+        return
+          !def.getTargetNamespace().equals(p.getQName().getNamespaceURI()) ||
+          !portTypeNameField.getText().equals(p.getQName().getLocalPart());
+
+    }
+
+    private void updatePortType(PortType p, Definition def) {
         def.removePortType(p.getQName());
         PortType portType = def.createPortType();
         portType.setQName(new QName(def.getTargetNamespace(), portTypeNameField.getText()));
         portType.setUndefined(false);
         def.addPortType(portType);
-        java.util.List operations  = p.getOperations();
+        java.util.List operations = p.getOperations();
         for (Iterator iterator = operations.iterator(); iterator.hasNext();) {
             Operation op = (Operation)iterator.next();
             portType.addOperation(op);
+        }
+    }
+
+    private void validateOperations(Definition def) {
+        PortType p = getOrCreatePortType(def);
+
+        java.util.List operations = p.getOperations();
+        for (Iterator iterator = operations.iterator(); iterator.hasNext();) {
+            Operation op = (Operation)iterator.next();
+            Input input = op.getInput();
+            if (input != null) {
+                Message m = input.getMessage();
+                if (m != null) {
+                    if (!def.getMessages().containsKey(m.getQName())) {
+                        input.setMessage(null);
+                    }
+                }
+            }
+            Output output = op.getOutput();
+            if (output !=null) {
+                Message m = output.getMessage();
+                if (m !=null) {
+                    if (!def.getMessages().containsKey(m.getQName())) {
+                        output.setMessage(null);
+                    }
+                }
+            }
         }
     }
 
@@ -361,8 +435,8 @@ public class WsdlPortTypePanel extends WizardStepPanel {
         final JButton _10;
         _10 = new JButton();
         addOperationButton = _10;
-        _10.setText("Add");
         _10.setLabel("Add");
+        _10.setText("Add");
         _8.add(_10, new com.intellij.uiDesigner.core.GridConstraints(0, 1, 1, 1, 4, 0, 0, 0, new Dimension(-1, -1), new Dimension(-1, -1), new Dimension(-1, -1)));
         final com.intellij.uiDesigner.core.Spacer _11;
         _11 = new com.intellij.uiDesigner.core.Spacer();
