@@ -300,6 +300,7 @@ public class PolicyEditorPanel extends JPanel {
     }
 
     private void displayPolicyValidateResult(PolicyValidatorResult r) {
+        overWriteMessageArea("");
         for (Iterator iterator = r.getErrors().iterator();
              iterator.hasNext();) {
             PolicyValidatorResult.Error pe =
