@@ -137,14 +137,30 @@ public class WssProcessorImpl implements WssProcessor {
         }
 
         // Backward compatibility - if we didn't see a timestamp in the security header, look up in the soap header
+        Element header = (Element)cntx.releventSecurityHeader.getParentNode();
         if (cntx.timestamp == null) {
-            Element header = (Element)cntx.releventSecurityHeader.getParentNode();
             // (header can't be null or we wouldn't be here)
             Element timestamp = XmlUtil.findFirstChildElementByName(header,
                                                                     SoapUtil.WSU_URIS_ARRAY,
                                                                     SoapUtil.TIMESTAMP_EL_NAME);
             if (timestamp != null)
                 processTimestamp(cntx, timestamp);
+        }
+
+        // Remember the WSA stuff in the header if present
+        Element msgIdEl = XmlUtil.findFirstChildElementByName(header,
+                                                              new String[] {SoapUtil.WSA_NAMESPACE,
+                                                                            SoapUtil.WSA_NAMESPACE2},
+                                                              "MessageID");
+        if (msgIdEl != null) {
+            cntx.wsaMessageId = XmlUtil.getTextValue(msgIdEl);
+        }
+        Element relatesToEl = XmlUtil.findFirstChildElementByName(header,
+                                                                  new String[] {SoapUtil.WSA_NAMESPACE,
+                                                                                SoapUtil.WSA_NAMESPACE2},
+                                                                  "RelatesTo");
+        if (relatesToEl != null) {
+            cntx.wsaRelatesTo = XmlUtil.getTextValue(relatesToEl);
         }
 
         // remove Security element altogether
@@ -734,6 +750,14 @@ public class WssProcessorImpl implements WssProcessor {
             public WssProcessor.Timestamp getTimestamp() {
                 return cntx.timestamp;
             }
+
+            public String getWsaMessageId() {
+                return cntx.wsaMessageId;
+            }
+
+            public String getWsaRelatesTo() {
+                return cntx.wsaRelatesTo;
+            }
         };
     }
 
@@ -747,5 +771,7 @@ public class WssProcessorImpl implements WssProcessor {
         final Collection securityTokens = new ArrayList();
         WssProcessor.Timestamp timestamp = null;
         Element releventSecurityHeader = null;
+        String wsaMessageId = null;
+        String wsaRelatesTo = null;
     }
 }
