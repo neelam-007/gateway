@@ -8,6 +8,8 @@ package com.l7tech.proxy;
 
 import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.util.CausedIOException;
+import com.l7tech.common.xml.InvalidDocumentFormatException;
+import com.l7tech.common.security.xml.WssProcessor;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.proxy.datamodel.CurrentRequest;
 import com.l7tech.proxy.datamodel.PendingRequest;
@@ -125,6 +127,10 @@ public class SecureSpanAgentFactory {
                 } catch (HttpChallengeRequiredException e) {
                     throw new CausedSendException(e); // can't happen -- no HTTP credential chaining in embedded mode
                 } catch (PolicyAssertionException e) {
+                    throw new CausedSendException(e);
+                } catch (InvalidDocumentFormatException e) {
+                    throw new CausedSendException(e);
+                } catch (WssProcessor.ProcessorException e) {
                     throw new CausedSendException(e);
                 }
             }
