@@ -12,7 +12,7 @@ package com.l7tech.proxy.processor;
  * Date: Aug 13, 2003
  * Time: 10:16:06 AM
  */
-public class ClientCertificateException extends MessageProcessorException {
+public class ClientCertificateException extends Exception {
     public ClientCertificateException() {
     }
 
