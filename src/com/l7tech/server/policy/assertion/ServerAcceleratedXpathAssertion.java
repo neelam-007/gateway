@@ -10,6 +10,7 @@ import com.l7tech.common.audit.AssertionMessages;
 import com.l7tech.common.audit.Auditor;
 import com.l7tech.common.message.Message;
 import com.l7tech.common.message.TarariKnob;
+import com.l7tech.common.mime.NoSuchPartException;
 import com.l7tech.common.xml.InvalidXpathException;
 import com.l7tech.common.xml.TarariLoader;
 import com.l7tech.common.xml.tarari.ServerTarariContext;
@@ -89,30 +90,33 @@ public abstract class ServerAcceleratedXpathAssertion implements ServerAssertion
             // Ensure Tarari context is attached, if possible
             // TODO need a better way to attach this
             mess.isSoap();
+            tknob = (TarariKnob) mess.getKnob(TarariKnob.class);
+            if (tknob == null) {
+                auditor.logAndAudit(AssertionMessages.ACCEL_XPATH_NO_CONTEXT);
+                return softwareDelegate.checkRequest(context);
+            }
+
+            TarariMessageContext tmc = tknob.getContext();
+            TarariMessageContextImpl tmContext = (TarariMessageContextImpl)tmc;
+            if (tmContext == null) {
+                auditor.logAndAudit(AssertionMessages.ACCEL_XPATH_NO_CONTEXT);
+                return softwareDelegate.checkRequest(context);
+            }
+
+            RAXContext raxContext = tmContext.getRaxContext();
+            int numMatches = raxContext.getCount(index);
+            if (numMatches > 0) {
+                auditor.logAndAudit(isReq ? AssertionMessages.XPATH_SUCCEED_REQUEST : AssertionMessages.XPATH_SUCCEED_RESPONSE);
+                return AssertionStatus.NONE;
+            } else {
+                return AssertionStatus.FALSIFIED;
+            }
         } catch (SAXException e) {
             auditor.logAndAudit(isReq ? AssertionMessages.XPATH_REQUEST_NOT_XML : AssertionMessages.XPATH_RESPONSE_NOT_XML);
             return AssertionStatus.FAILED;
-        }
-        tknob = (TarariKnob) mess.getKnob(TarariKnob.class);
-        if (tknob == null) {
-            auditor.logAndAudit(AssertionMessages.ACCEL_XPATH_NO_CONTEXT);
-            return softwareDelegate.checkRequest(context);
-        }
-
-        TarariMessageContext tmc = tknob.getContext();
-        TarariMessageContextImpl tmContext = (TarariMessageContextImpl)tmc;
-        if (tmContext == null) {
-            auditor.logAndAudit(AssertionMessages.ACCEL_XPATH_NO_CONTEXT);
-            return softwareDelegate.checkRequest(context);
-        }
-
-        RAXContext raxContext = tmContext.getRaxContext();
-        int numMatches = raxContext.getCount(index);
-        if (numMatches > 0) {
-            auditor.logAndAudit(isReq ? AssertionMessages.XPATH_SUCCEED_REQUEST : AssertionMessages.XPATH_SUCCEED_RESPONSE);
-            return AssertionStatus.NONE;
-        } else {
-            return AssertionStatus.FALSIFIED;
+        } catch (NoSuchPartException e) {
+            auditor.logAndAudit(AssertionMessages.EXCEPTION_INFO_WITH_MORE_INFO, new String[] {"The required attachment " + e.getWhatWasMissing() + "was not found in the request"}, e);
+            return AssertionStatus.FAILED;
         }
     }
 

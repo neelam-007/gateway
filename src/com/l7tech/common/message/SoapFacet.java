@@ -64,10 +64,9 @@ class SoapFacet extends MessageFacet {
         if (mcfac != null && fac != null) {
             try {
                 InputStream inputStream = message.getMimeKnob().getFirstPart().getInputStream(false);
-                // TODO need to invalidate message context if document changes
                 TarariMessageContext mc = mcfac.makeMessageContext(inputStream);
                 SoapInfo soapInfo = fac.getSoapInfo(mc);
-                message.attachKnob(TarariKnob.class, new TarariKnob(mc));
+                message.attachKnob(TarariKnob.class, new TarariKnob(message, mc));
                 return soapInfo;
             } catch (SoftwareFallbackException e) {
                 // TODO if this happens a lot for perfectly reasonable reasons, downgrade to something below INFO
