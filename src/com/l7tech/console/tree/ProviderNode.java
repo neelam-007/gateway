@@ -66,6 +66,13 @@ public class ProviderNode extends EntityHeaderNode {
 
 
         list.addAll(Arrays.asList(super.getActions()));
+        for (Iterator iterator = list.iterator(); iterator.hasNext();) {
+            Action action = (Action) iterator.next();
+            if(action instanceof DeleteEntityAction){
+                action.setEnabled(oid != IdentityProviderConfigManager.INTERNALPROVIDER_SPECIAL_OID);
+            }
+
+        }
 
         return (Action[])list.toArray(new Action[]{});
     }
