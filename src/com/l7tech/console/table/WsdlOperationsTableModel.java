@@ -120,6 +120,7 @@ public class WsdlOperationsTableModel extends AbstractTableModel {
     public Operation addOperation(String name) {
         Operation op = definition.createOperation();
         op.setName(name);
+        op.setUndefined(false);
         addOperation(op);
         return op;
     }
