@@ -129,7 +129,10 @@ public class FilteredLogTableModel extends FilteredDefaultTableModel{
 
      private boolean isFilteredMsg(LogMessage logMsg, int msgFilterLevel) {
 
-         if ((logMsg.getSeverity().toString().equals("INFO") && (msgFilterLevel >= LogPanel.MSG_FILTER_LEVEL_INFO)) ||
+         if ((((logMsg.getSeverity().toString().equals("FINEST")) ||
+               (logMsg.getSeverity().toString().equals("FINER")) ||
+               (logMsg.getSeverity().toString().equals("FINE"))) && (msgFilterLevel >= LogPanel.MSG_FILTER_LEVEL_ALL)) ||
+                 (logMsg.getSeverity().toString().equals("INFO") && (msgFilterLevel >= LogPanel.MSG_FILTER_LEVEL_INFO)) ||
                  (logMsg.getSeverity().toString().equals("WARNING") && (msgFilterLevel >= LogPanel.MSG_FILTER_LEVEL_WARNING)) ||
                  (logMsg.getSeverity().toString().equals("SEVERE") && (msgFilterLevel >= LogPanel.MSG_FILTER_LEVEL_SEVERE))) {
              return true;
