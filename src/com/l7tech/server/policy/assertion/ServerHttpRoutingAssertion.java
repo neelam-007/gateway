@@ -9,6 +9,7 @@ package com.l7tech.server.policy.assertion;
 import com.l7tech.common.BuildInfo;
 import com.l7tech.common.security.xml.SignerInfo;
 import com.l7tech.common.util.*;
+import com.l7tech.identity.User;
 import com.l7tech.message.*;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.HttpRoutingAssertion;
@@ -17,7 +18,6 @@ import com.l7tech.policy.assertion.RoutingStatus;
 import com.l7tech.server.saml.SamlAssertionGenerator;
 import com.l7tech.server.transport.http.SslClientTrustManager;
 import com.l7tech.service.PublishedService;
-import com.l7tech.identity.User;
 import org.apache.commons.httpclient.*;
 import org.apache.commons.httpclient.methods.PostMethod;
 import org.apache.commons.httpclient.protocol.Protocol;
@@ -134,10 +134,11 @@ public class ServerHttpRoutingAssertion extends ServerRoutingAssertion {
                 // todo: check if we need to support HTTP 1.1.
                 postMethod.setHttp11(false);
 
+                final MultipartMessageReader multipartReader = request.getMultipartReader();
                 if(request.isMultipart()) {
                     postMethod.setRequestHeader(XmlUtil.CONTENT_TYPE, XmlUtil.MULTIPART_CONTENT_TYPE +
                             "; type=\"" + XmlUtil.TEXT_XML + "\"" +
-                            "; start=\"" + request.getMultipartReader().getSoapPart().getHeader(XmlUtil.CONTENT_ID).getValue() + "\"" +
+                            "; start=\"" + multipartReader.getSoapPart().getHeader(XmlUtil.CONTENT_ID).getValue() + "\"" +
                             "; " + XmlUtil.MULTIPART_BOUNDARY + "=\"" + request.getMultipartBoundary()  + "\"");
                 } else {
                     postMethod.setRequestHeader(XmlUtil.CONTENT_TYPE, XmlUtil.TEXT_XML + "; charset=" + ENCODING.toLowerCase());
@@ -243,21 +244,21 @@ public class ServerHttpRoutingAssertion extends ServerRoutingAssertion {
                             request.getSoapPart(),
                             request.getMultipartBoundary());
 
-                    if(request.getMultipartReader().isAtLeastOneAttachmentParsed()){
+                    if(multipartReader.isAtLeastOneAttachmentParsed()){
                         is = null;
-                        if(request.getMultipartReader().getFileCache() != null) {
+                        if(multipartReader.getFileCache() != null) {
 
                             // close the connection for writing data to the temp file before opening the file for read operation
-                            request.getMultipartReader().closeFileCache();
+                            multipartReader.closeFileCache();
 
                             // read raw attachments from a temp file
-                            is = new FileInputStream(request.getMultipartReader().getFileCacheName());
+                            is = new FileInputStream(multipartReader.getFileCacheName());
 
                         } else {
 
                             // read raw attachments from memory
-                            byte[] dataBuf = new byte[request.getMultipartReader().getRawAttachmentsSize()];
-                            byte[] data = request.getMultipartReader().getRawAttachments();
+                            byte[] dataBuf = new byte[multipartReader.getRawAttachmentsSize()];
+                            byte[] data = multipartReader.getRawAttachments();
                             for(int i=0; i < dataBuf.length; i++) {
                                 dataBuf[i] = data[i];
                             }
@@ -269,7 +270,7 @@ public class ServerHttpRoutingAssertion extends ServerRoutingAssertion {
                         postMethod.setRequestBody(pushbackInputStream);
 
                     } else {
-                        PushbackInputStream pbis = request.getMultipartReader().getPushbackInputStream();
+                        PushbackInputStream pbis = multipartReader.getPushbackInputStream();
 
                         // push the modified SOAP part back to the input stream
                         pbis.unread(sb.toString().getBytes());
@@ -303,21 +304,22 @@ public class ServerHttpRoutingAssertion extends ServerRoutingAssertion {
                      is =null;
                 }
 
-                final String fileToDelete = request.getMultipartReader().getFileCacheName();
+                if (multipartReader != null) {
+                    final String fileToDelete = multipartReader.getFileCacheName();
 
-                // remove the cache file (attachments) after request is sent
-                Thread t = new Thread(new Runnable() {
-                    public void run() {
-                        try {
-                            Runtime.getRuntime().exec("rm " + fileToDelete);
-                        } catch (IOException e) {
-                            logger.warning("Cannot delete the cache file: " + fileToDelete);
+                    // remove the cache file (attachments) after request is sent
+                    Thread t = new Thread(new Runnable() {
+                        public void run() {
+                            try {
+                                Runtime.getRuntime().exec("rm " + fileToDelete);
+                            } catch (IOException e) {
+                                logger.warning("Cannot delete the cache file: " + fileToDelete);
+                            }
                         }
-                    }
-                });
+                    });
 
-                t.start();
-
+                    t.start();
+                }
             } catch (WSDLException we) {
                 logger.log(Level.SEVERE, null, we);
                 return AssertionStatus.FAILED;
