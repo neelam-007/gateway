@@ -463,9 +463,11 @@ public class RequestHandler extends AbstractHttpHandler {
                 String newval = replaceService.matcher(origUrl).replaceAll(newUrl + "$1");
                 location.setNodeValue(newval);
             }
-
-            response.addField(XmlUtil.CONTENT_TYPE, XmlUtil.TEXT_XML);
+            //response.addField(XmlUtil.CONTENT_TYPE, XmlUtil.TEXT_XML + "; charset=utf-8");
+            response.setCharacterEncoding("utf-8");
+            response.setContentType(XmlUtil.TEXT_XML);
             XmlUtil.nodeToFormattedOutputStream(wsil, response.getOutputStream());
+            response.getOutputStream().close();
             response.commit();
             return;
         } catch (WsdlProxy.ServiceNotFoundException e) {
