@@ -130,7 +130,7 @@
     <!--
        BeanNameAutoProxyCreator with proxyTargetClass option handles all beans methods to use PROPAGATION_REQUIRED
    -->
-  <bean id="autoProxyCreatorProxyTergetClass" class="org.springframework.aop.framework.autoproxy.BeanNameAutoProxyCreator">
+  <bean id="autoProxyCreatorProxyTargetClass" class="org.springframework.aop.framework.autoproxy.BeanNameAutoProxyCreator">
       <property name="proxyTargetClass">
           <value>true</value>
       </property>
