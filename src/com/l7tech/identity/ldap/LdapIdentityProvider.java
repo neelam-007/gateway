@@ -308,7 +308,7 @@ public class LdapIdentityProvider implements IdentityProvider {
     }
 
     public String getAuthRealm() {
-        return null;
+        return HttpDigest.REALM;
     }
 
     /**
