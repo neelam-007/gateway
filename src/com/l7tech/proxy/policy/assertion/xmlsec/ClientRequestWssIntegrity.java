@@ -16,8 +16,10 @@ import org.xml.sax.SAXException;
 
 import java.io.IOException;
 import java.security.GeneralSecurityException;
+import java.security.cert.CertificateException;
 import java.util.List;
 import java.util.logging.Logger;
+import java.util.logging.Level;
 
 /**
  * XML Digital signature on the soap request sent from the proxy to the ssg server. Also does XML
@@ -73,15 +75,26 @@ public class ClientRequestWssIntegrity extends ClientAssertion {
 
                     // get the client cert and private key
                     // We must have credentials to get the private key
-                    // todo fla, look at the recipient information of the assertion before assuming it's for default
-                    // recipient
-                    DecorationRequirements wssReqs = context.getDefaultWssRequirements();
+                    DecorationRequirements wssReqs;
+                    if (requestWssIntegrity.getRecipientContext().localRecipient()) {
+                        wssReqs = context.getDefaultWssRequirements();
+                    } else {
+                        wssReqs = context.getAlternateWssRequirements(requestWssIntegrity.getRecipientContext());
+                    }
                     wssReqs.getElementsToSign().addAll(elements);
                     return AssertionStatus.NONE;
                 } catch (JaxenException e) {
                     throw new PolicyAssertionException("ClientRequestWssIntegrity: " +
                                                        "Unable to execute xpath expression \"" +
                                                        xpathExpression.getExpression() + "\"", e);
+                } catch (IOException e) {
+                    String msg = "Cannot initialize the recipient's  DecorationRequirements";
+                    log.log(Level.WARNING, msg, e);
+                    throw new PolicyAssertionException(msg, e);
+                } catch (CertificateException e) {
+                    String msg = "Cannot initialize the recipient's  DecorationRequirements";
+                    log.log(Level.WARNING, msg, e);
+                    throw new PolicyAssertionException(msg, e);
                 }
             }
         });
