@@ -467,8 +467,6 @@
 
         <buildnumber/>
 
-        <property name="hostname" value="data.l7tech.com"/>
-
         <antcall target="clean"/>
         <antcall target="compile"/>
         <antcall target="compile-tests"/>
@@ -480,6 +478,8 @@
     </target>
 
     <target name="INTERNAL-buildinfo">
+        <property name="hostname" value="data.l7tech.com"/>
+
         <tstamp>
             <format property="build.date" pattern="yyyyMMdd"/>
             <format property="build.time" pattern="HHmmss"/>
