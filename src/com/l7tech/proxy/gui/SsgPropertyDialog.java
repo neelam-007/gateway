@@ -19,6 +19,8 @@ import javax.swing.*;
 import javax.swing.border.BevelBorder;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
+import javax.swing.event.DocumentListener;
+import javax.swing.event.DocumentEvent;
 import javax.swing.table.AbstractTableModel;
 import javax.swing.tree.TreeModel;
 import java.awt.*;
@@ -40,6 +42,7 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
 
     // Model
     private Ssg ssg; // The real Ssg instance, to which changes may be committed.
+    private ClientProxy clientProxy;  // The Client Proxy we're attached to, so we can display the bind port.
 
     // View
     private int gridY = 0; // Used for layout
@@ -52,6 +55,8 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
     private JComponent identityPane;
     private JTextField fieldUsername;
     private JPasswordField fieldPassword;
+    private JButton clientCertButton;
+    private JButton serverCertButton;
 
     //   View for Network pane
     private JComponent networkPane;
@@ -65,9 +70,6 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
     private DisplayPolicyTableModel displayPolicyTableModel;
     private JButton buttonFlushPolicies;
     private boolean policyFlushRequested = false;
-    private ClientProxy clientProxy;
-    private JButton clientCertButton;
-    private JButton serverCertButton;
 
 
     /** Create an SsgPropertyDialog ready to edit an Ssg instance. */
@@ -348,20 +350,27 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
                      new GridBagConstraints(0, gridY++, 2, 1, 0.0, 0.0,
                                             GridBagConstraints.CENTER,
                                             GridBagConstraints.NONE,
-                                            new Insets(14, 5, 0, 0), 0, 0));
+                                            new Insets(25, 5, 0, 0), 0, 0));
+
+            String splaintext = "Please enter the host name or Internet address " +
+                                "of the SecureSpan Gateway that will be processing your requests.";
+            WrappingLabel splain01 = new WrappingLabel(splaintext, 3);
+            pane.add(splain01,
+                     new GridBagConstraints(0, gridY++, 2, 1, 1000.0, 0.0,
+                                            GridBagConstraints.WEST,
+                                            GridBagConstraints.HORIZONTAL,
+                                            new Insets(25, 25, 0, 25), 0, 0));
 
             pane.add(new JLabel("Gateway Hostname:"),
                      new GridBagConstraints(0, gridY, 1, 1, 0.0, 0.0,
                                             GridBagConstraints.EAST,
                                             GridBagConstraints.NONE,
-                                            new Insets(14, 5, 0, 0), 0, 0));
+                                            new Insets(5, 25, 0, 0), 0, 0));
             pane.add(getFieldServerAddress(),
                      new GridBagConstraints(1, gridY++, 1, 1, 1000.0, 0.0,
                                             GridBagConstraints.WEST,
                                             GridBagConstraints.HORIZONTAL,
-                                            new Insets(14, 5, 0, 5), 0, 0));
-
-
+                                            new Insets(5, 5, 0, 25), 0, 0));
 
             // Have a spacer eat any leftover space
             pane.add(new JPanel(),
@@ -476,7 +485,28 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
     private JTextField getFieldServerAddress() {
         if (fieldServerAddress == null) {
             fieldServerAddress = new JTextField();
-            fieldServerAddress.setPreferredSize(new Dimension(250, 20));
+            fieldServerAddress.setPreferredSize(new Dimension(220, 20));
+            fieldServerAddress.setToolTipText("<HTML>Gateway hostname or address, for example<br><address>gateway.your-company.com");
+            fieldServerAddress.getDocument().addDocumentListener(new DocumentListener() {
+                private void checkOk() {
+                    if (fieldServerAddress.getText().length() > 1)
+                        SsgPropertyDialog.this.enableOk();
+                    else
+                        SsgPropertyDialog.this.disableOk();
+                }
+
+                public void insertUpdate(DocumentEvent e) {
+                    checkOk();
+                }
+
+                public void removeUpdate(DocumentEvent e) {
+                    checkOk();
+                }
+
+                public void changedUpdate(DocumentEvent e) {
+                    checkOk();
+                }
+            });
         }
         return fieldServerAddress;
     }
@@ -540,5 +570,10 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
      */
     public void policyAttached(SsgEvent evt) {
         updatePolicyPanel();
+    }
+
+    public void show() {
+        getFieldServerAddress().requestFocus();
+        super.show();
     }
 }
