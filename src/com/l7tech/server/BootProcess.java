@@ -24,8 +24,7 @@ import com.l7tech.cluster.StatusUpdater;
 import java.io.IOException;
 import java.io.File;
 import java.io.FileInputStream;
-import java.util.Properties;
-import java.util.Iterator;
+import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.sql.SQLException;
@@ -36,6 +35,7 @@ import java.sql.SQLException;
  */
 public class BootProcess implements ServerComponentLifecycle {
     private Logger logger = LogManager.getInstance().getSystemLogger();
+    private List _components = new ArrayList();
 
     public void init() throws LifecycleException {
         try {
@@ -66,6 +66,30 @@ public class BootProcess implements ServerComponentLifecycle {
             PersistenceContext.getCurrent().close();
 
             logger.info( BuildInfo.getLongBuildString() );
+
+            String[] componentClassnames = ServerConfig.getInstance().getProperty( ServerConfig.PARAM_SERVERCOMPONENTS ).split("\\s.*?");
+            ServerComponentLifecycle component = null;
+            for ( int i = 0; i < componentClassnames.length; i++ ) {
+                String classname = componentClassnames[i];
+                logger.info( "Loading server component '" + classname + "'" );
+                try {
+                    Class clazz = Class.forName( classname );
+                    component = (ServerComponentLifecycle)clazz.newInstance();
+                } catch ( ClassNotFoundException cnfe ) {
+                    logger.log( Level.WARNING, "Couldn't load server component '" + classname + "'", cnfe );
+                } catch ( InstantiationException e ) {
+                    logger.log( Level.WARNING, "Couldn't load server component '" + classname + "'", e );
+                } catch ( IllegalAccessException e ) {
+                    logger.log( Level.WARNING, "Couldn't load server component '" + classname + "'", e );
+                }
+
+                if ( component != null ) {
+                    component.init();
+                    _components.add( component );
+                    component.start();
+                }
+            }
+
             logger.info("Boot process complete.");
         } catch ( IOException ioe ) {
             throw new LifecycleException( ioe.toString(), ioe );
@@ -77,10 +101,32 @@ public class BootProcess implements ServerComponentLifecycle {
     }
 
     public void stop() throws LifecycleException {
+        logger.info( "Stopping server components" );
+
+        List stnenopmoc = new ArrayList();
+        stnenopmoc.addAll( _components );
+        Collections.reverse( stnenopmoc );
+
+        for ( Iterator i = stnenopmoc.iterator(); i.hasNext(); ) {
+            ServerComponentLifecycle component = (ServerComponentLifecycle)i.next();
+            component.stop();
+        }
     }
 
     public void close() throws LifecycleException {
+        logger.info( "Closing server components" );
+
+        List stnenopmoc = new ArrayList();
+        stnenopmoc.addAll( _components );
+        Collections.reverse( stnenopmoc );
+
+        for ( Iterator i = stnenopmoc.iterator(); i.hasNext(); ) {
+            ServerComponentLifecycle component = (ServerComponentLifecycle)i.next();
+            component.close();
+        }
+
         logger.info("Stopping admin services.");
+
         RemoteService.unexportAll();
         // stop cache integrity process if necessary
         ServiceManager serviceManager = (ServiceManager)Locator.getDefault().lookup(ServiceManager.class);
