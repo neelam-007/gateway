@@ -49,6 +49,8 @@ public class IconManager {
         } else if (clazz.equals(PoliciesFolderNode.class)) {
             return new ImageIcon(cl.getResource(MainWindow.RESOURCE_PATH + "/policy16.gif"));
         } else if (clazz.equals(ServicesFolderNode.class)) {
+            return new ImageIcon(cl.getResource(MainWindow.RESOURCE_PATH + "/server16.gif"));
+        } else if (clazz.equals(ServiceNode.class)) {
             return new ImageIcon(cl.getResource(MainWindow.RESOURCE_PATH + "/services16.png"));
         } else if (clazz.equals(AdminFolderNode.class)) {
             return new ImageIcon(cl.getResource(MainWindow.RESOURCE_PATH + "/user16.png"));
@@ -111,10 +113,10 @@ public class IconManager {
         ClassLoader cl = node.getClass().getClassLoader();
         if (node.isMessage()) {
             return new ImageIcon(cl.getResource(MainWindow.RESOURCE_PATH + "/SendMail16.gif"));
-        } else if(node.isService()) {
+        } else if (node.isService()) {
             return new ImageIcon(cl.getResource(MainWindow.RESOURCE_PATH + "/Bean16.gif"));
         } else if (node.isPortType()) {
-            return new ImageIcon(cl.getResource(MainWindow.RESOURCE_PATH + "/Refresh16.gif"));
+            return new ImageIcon(cl.getResource(MainWindow.RESOURCE_PATH + "/interface.gif"));
         } else if (node.isOperation()) {
             return new ImageIcon(cl.getResource(MainWindow.RESOURCE_PATH + "/Forward16.gif"));
         } else if (node.isBindingOperation()) {
@@ -149,32 +151,32 @@ public class IconManager {
 
         // icons for adding (all) and removing (all)
         iconAdd
-                = new ImageIcon(cl.getResource(MainWindow.RESOURCE_PATH + "/Add16.gif"));
+          = new ImageIcon(cl.getResource(MainWindow.RESOURCE_PATH + "/Add16.gif"));
         iconAddAll
-                = new ImageIcon(cl.getResource(MainWindow.RESOURCE_PATH + "/AddAll16.gif"));
+          = new ImageIcon(cl.getResource(MainWindow.RESOURCE_PATH + "/AddAll16.gif"));
         iconRemove
-                = new ImageIcon(cl.getResource(MainWindow.RESOURCE_PATH + "/Remove16.gif"));
+          = new ImageIcon(cl.getResource(MainWindow.RESOURCE_PATH + "/Remove16.gif"));
         iconRemoveAll
-                = new ImageIcon(cl.getResource(MainWindow.RESOURCE_PATH + "/RemoveAll16.gif"));
+          = new ImageIcon(cl.getResource(MainWindow.RESOURCE_PATH + "/RemoveAll16.gif"));
 
         defaultEdit
-                = new ImageIcon(cl.getResource(MainWindow.RESOURCE_PATH + "/Edit16.gif"));
+          = new ImageIcon(cl.getResource(MainWindow.RESOURCE_PATH + "/Edit16.gif"));
         defaultDelete
-                = new ImageIcon(cl.getResource(MainWindow.RESOURCE_PATH + "/Delete16.gif"));
+          = new ImageIcon(cl.getResource(MainWindow.RESOURCE_PATH + "/Delete16.gif"));
         defaultNew
-                = new ImageIcon(cl.getResource(MainWindow.RESOURCE_PATH + "/New16.gif"));
+          = new ImageIcon(cl.getResource(MainWindow.RESOURCE_PATH + "/New16.gif"));
 
         upOneLevel
-                = new ImageIcon(cl.getResource(MainWindow.RESOURCE_PATH + "/upOneLevel.gif"));
+          = new ImageIcon(cl.getResource(MainWindow.RESOURCE_PATH + "/upOneLevel.gif"));
 
         openFolder
-                = new ImageIcon(cl.getResource(MainWindow.RESOURCE_PATH + "/FolderOpen16.gif"));
+          = new ImageIcon(cl.getResource(MainWindow.RESOURCE_PATH + "/FolderOpen16.gif"));
 
         upButton
-                = new ImageIcon(cl.getResource(MainWindow.RESOURCE_PATH + "/up-button.gif"));
+          = new ImageIcon(cl.getResource(MainWindow.RESOURCE_PATH + "/up-button.gif"));
 
         downButton
-                = new ImageIcon(cl.getResource(MainWindow.RESOURCE_PATH + "/down-button.gif"));
+          = new ImageIcon(cl.getResource(MainWindow.RESOURCE_PATH + "/down-button.gif"));
     }
 
 
