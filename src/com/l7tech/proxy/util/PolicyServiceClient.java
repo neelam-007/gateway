@@ -153,7 +153,7 @@ public class PolicyServiceClient {
      * @param response the reponse from the policy service, which must by a SOAP message signed by serverCertificate.
      * @param serverCertificate the serverCertificate.  Must match the certificate that signed the response.
      * @param clientCert optional. if specified along with clientKey, encrypted responses can be processed.
-     * @param clientKey optional. if specified along with clientCert, encrypted responses can be processed.
+     * @param clientKey optional. if specified along with getCachedClientCert, encrypted responses can be processed.
      * @param signedResponseRequired if true, an InvalidDocumentFormatException will be thrown if the response
      *                               does not include a signed body, timestamp, and L7a:relatesTo.
      * @param outTimestampCreated if an array of length >= 1 is passed, its first element will be set to the signed
@@ -336,7 +336,7 @@ public class PolicyServiceClient {
      * @param httpBasicAuthorization optional.  If specified, the Authorization: HTTP header will be set to whatever is in this string.
      * @param serverCertificate  required.  used to verify identity of signer of downloaded policy.
      * @param clientCert         optional. if specified along with clientKey, an encrypted response can be processed.
-     * @param clientKey          optional. if specified along with clientCert, an encrypted response can be processed.
+     * @param clientKey          optional. if specified along with getCachedClientCert, an encrypted response can be processed.
      * @return
      * @throws IOException
      * @throws GeneralSecurityException
@@ -422,7 +422,7 @@ public class PolicyServiceClient {
             final long posDiff = Math.abs(ssgDiff);
             final String aheadBehind = ssgDiff > 0 ? "ahead of" : "behind";
             log.log(Level.INFO, "Noting that Gateway " + ssg + " clock is at about " + posDiff + "ms " + aheadBehind + " local clock.");
-            ssg.timeOffset(ssgDiff);
+            ssg.getRuntime().setTimeOffset(ssgDiff);
         }
 
         return result;
@@ -458,7 +458,7 @@ public class PolicyServiceClient {
                           ssg.getSsgAddress(),
                           useSsl ? ssg.getSslPort() : ssg.getSsgPort(),
                           SecureSpanConstants.POLICY_SERVICE_FILE);
-        Date timestampCreatedDate = ssg.dateTranslatorToSsg().translate(new Date());
+        Date timestampCreatedDate = ssg.getRuntime().getDateTranslatorToSsg().translate(new Date());
         Document requestDoc = createSignedGetPolicyRequest(serviceId, clientCert, clientKey, timestampCreatedDate);
         return obtainResponse(url, ssg, requestDoc, null, serverCertificate, clientCert, clientKey);
     }
@@ -522,7 +522,7 @@ public class PolicyServiceClient {
                           ssg.getSsgAddress(),
                           useSsl ? ssg.getSslPort() : ssg.getSsgPort(),
                           SecureSpanConstants.POLICY_SERVICE_FILE);
-        Date timestampCreatedDate = ssg.dateTranslatorToSsg().translate(new Date());
+        Date timestampCreatedDate = ssg.getRuntime().getDateTranslatorToSsg().translate(new Date());
         Document requestDoc = createSignedGetPolicyRequest(serviceId, samlAss, subjectPrivateKey, timestampCreatedDate);
         return obtainResponse(url, ssg, requestDoc, null, serverCertificate, samlAss.getSubjectCertificate(), subjectPrivateKey);
     }

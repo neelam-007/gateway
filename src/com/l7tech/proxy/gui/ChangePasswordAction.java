@@ -40,7 +40,7 @@ class ChangePasswordAction extends AbstractAction {
 
     public void actionPerformed(final ActionEvent e) {
         final Ssg ssg = ssgListPanel.getSelectedSsg();
-        final char[] currentCMPasswd = ssg.cmPassword();
+        final char[] currentCMPasswd = ssg.getRuntime().getCachedPassword();
         boolean cmPasswdPotentiallyChanged = false;
         boolean changeCompleted = false;
         if (ssg != null) {
@@ -103,7 +103,7 @@ class ChangePasswordAction extends AbstractAction {
                                                                       newpass);
 
                     // Succeeded, so update password and client cert
-                    ssg.cmPassword(newpass);
+                    ssg.getRuntime().setCachedPassword(newpass);
                     SsgKeyStoreManager.deleteClientCert(ssg);
                     SsgManagerImpl.getSsgManagerImpl().save();
                     changeCompleted = true;
@@ -113,7 +113,7 @@ class ChangePasswordAction extends AbstractAction {
                         if (problemSsg == null) problemSsg = ssg;
                         Managers.getCredentialManager().notifyKeyStoreCorrupt(problemSsg);
                         SsgKeyStoreManager.deleteStores(problemSsg);
-                        ssg.resetSslContext();
+                        ssg.getRuntime().resetSslContext();
                         retry = true;
                         // FALLTHROUGH -- retry with newly-emptied keystore
                     } catch (OperationCanceledException e2) {
@@ -171,7 +171,7 @@ class ChangePasswordAction extends AbstractAction {
                 } finally {
                     CurrentRequest.clearCurrentRequest();
                     if (!changeCompleted && cmPasswdPotentiallyChanged && currentCMPasswd != null) {
-                        ssg.cmPassword(currentCMPasswd);
+                        ssg.getRuntime().setCachedPassword(currentCMPasswd);
                     }
                 }
             }

@@ -51,7 +51,7 @@ public class SslUtilsTest extends TestCase {
         Ssg ssg = new Ssg(1);
         ssg.setSsgAddress("phlox.l7tech.com");
         ssg.setUsername(username);
-        ssg.cmPassword(password);
+        ssg.getRuntime().setCachedPassword(password);
         CurrentRequest.setCurrentSsg(ssg);
 
         SsgKeyStoreManager.installSsgServerCertificate(ssg, pw);

@@ -192,7 +192,7 @@ public class TokenServiceClient {
             throws IOException, GeneralSecurityException
     {
         URL url = new URL("http", ssg.getSsgAddress(), ssg.getSsgPort(), SecureSpanConstants.TOKEN_SERVICE_FILE);
-        Date timestampCreatedDate = ssg.dateTranslatorToSsg().translate(new Date());
+        Date timestampCreatedDate = ssg.getRuntime().getDateTranslatorToSsg().translate(new Date());
         Document requestDoc = createRequestSecurityTokenMessage(clientCertificate, clientPrivateKey,
                                                                 SecurityTokenType.WSSC, RequestType.ISSUE, null, null, timestampCreatedDate);
         Object result = obtainResponse(clientCertificate, url, ssg, requestDoc, clientPrivateKey, serverCertificate);
@@ -225,7 +225,7 @@ public class TokenServiceClient {
             throws IOException, GeneralSecurityException
     {
         URL url = new URL("http", ssg.getSsgAddress(), ssg.getSsgPort(), SecureSpanConstants.TOKEN_SERVICE_FILE);
-        Date timestampCreatedDate = ssg.dateTranslatorToSsg().translate(new Date());
+        Date timestampCreatedDate = ssg.getRuntime().getDateTranslatorToSsg().translate(new Date());
         Document requestDoc = createRequestSecurityTokenMessage(clientCertificate, clientPrivateKey,
                                                                 SecurityTokenType.SAML_AUTHENTICATION,
                                                                 requestType,

@@ -2,7 +2,10 @@ package com.l7tech.proxy;
 
 import com.l7tech.policy.assertion.TrueAssertion;
 import com.l7tech.policy.assertion.credential.http.HttpBasic;
-import com.l7tech.proxy.datamodel.*;
+import com.l7tech.proxy.datamodel.Policy;
+import com.l7tech.proxy.datamodel.PolicyManagerStub;
+import com.l7tech.proxy.datamodel.Ssg;
+import com.l7tech.proxy.datamodel.SsgManagerStub;
 import com.l7tech.proxy.processor.MessageProcessor;
 import com.l7tech.proxy.ssl.ClientProxyTrustManager;
 import junit.framework.Test;
@@ -103,14 +106,14 @@ public class FunctionalTest extends TestCase {
         // Make a do-nothing PolicyManager
         policyManager = new PolicyManagerStub();
         policyManager.setPolicy(new Policy(new TrueAssertion(), "testpolicy"));
-        ssgFake.rootPolicyManager(policyManager);
+        ssgFake.getRuntime().rootPolicyManager(policyManager);
         MessageProcessor messageProcessor = new MessageProcessor();
 
         // Start the client proxy
         clientProxy = new ClientProxy(ssgManager, messageProcessor, DEFAULT_PORT, MIN_THREADS, MAX_THREADS);
 
         // Turn off server cert verification for the test
-        ssgFake.trustManager(new ClientProxyTrustManager() {
+        ssgFake.getRuntime().setTrustManager(new ClientProxyTrustManager() {
             public void checkServerTrusted(X509Certificate[] x509Certificates, String s) throws CertificateException {
                 return;
             }
@@ -157,7 +160,7 @@ public class FunctionalTest extends TestCase {
 
         policyManager.setPolicy(new Policy(new TrueAssertion(), "testpolicy"));
         ssgFake.setSsgFile("/soap/ssg");
-        ssgFake.rootPolicyManager(policyManager);
+        ssgFake.getRuntime().rootPolicyManager(policyManager);
 
         Call call = new Call(proxyUrl + ssg0ProxyEndpoint);
         SOAPEnvelope responseEnvelope = call.invoke(reqEnvelope);
@@ -175,12 +178,12 @@ public class FunctionalTest extends TestCase {
 
         policyManager.setPolicy(new Policy(new HttpBasic(), "testpolicy"));
         URL url = new URL(ssgUrl);
-        ssgFake.rootPolicyManager(policyManager);
+        ssgFake.getRuntime().rootPolicyManager(policyManager);
         ssgFake.setSsgAddress(url.getHost());
         ssgFake.setSsgPort(url.getPort());
         ssgFake.setSsgFile("/soap/ssg/basicauth");
         ssgFake.setUsername("testuser");
-        ssgFake.cmPassword("testpassword".toCharArray());
+        ssgFake.getRuntime().setCachedPassword("testpassword".toCharArray());
 
         Call call = new Call(proxyUrl + ssg0ProxyEndpoint);
         SOAPEnvelope responseEnvelope = call.invoke(reqEnvelope);
@@ -198,7 +201,7 @@ public class FunctionalTest extends TestCase {
 
         policyManager.setPolicy(null);
         URL url = new URL(ssgUrl);
-        ssgFake.rootPolicyManager(policyManager);
+        ssgFake.getRuntime().rootPolicyManager(policyManager);
         ssgFake.setSsgAddress(url.getHost());
         ssgFake.setSsgPort(url.getPort());
         ssgFake.setSsgFile("/soap/ssg/throwfault");

@@ -168,7 +168,7 @@ class SsgListPanel extends JPanel {
                         for (int i = 0; i < rows; ++i) {
                             Ssg s = ssgTableModel.getSsgAtRow(i);
                             if (s != null)
-                                s.promptForUsernameAndPassword(true);
+                                s.getRuntime().promptForUsernameAndPassword(true);
                         }
                     }
                 }
@@ -216,7 +216,7 @@ class SsgListPanel extends JPanel {
 
                     for (int i = 0; i < ssgTableModel.getRowCount(); i++) {
                         Ssg ssg = ssgTableModel.getSsgAtRow(i);
-                        ssg.clearSessionCookies();
+                        ssg.getRuntime().clearSessionCookies();
                     }
                 }
             };

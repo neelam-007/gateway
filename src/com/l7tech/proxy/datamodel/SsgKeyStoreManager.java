@@ -36,8 +36,8 @@ import java.util.logging.Logger;
  */
 public class SsgKeyStoreManager {
     private static final Logger log = Logger.getLogger(SsgKeyStoreManager.class.getName());
-    private static final String CLIENT_CERT_ALIAS = "clientCert";
-    private static final String SERVER_CERT_ALIAS = "serverCert";
+    private static final String CLIENT_CERT_ALIAS = "getCachedClientCert";
+    private static final String SERVER_CERT_ALIAS = "setCachedServerCert";
 
     /**
      * This is the password that will be used for obfuscating the trust store, and checking it for
@@ -64,9 +64,9 @@ public class SsgKeyStoreManager {
         Ssg trusted = ssg.getTrustedGateway();
         if (trusted != null)
             return isClientCertAvailabile(trusted);
-        if (ssg.haveClientCert() == null)
-            ssg.haveClientCert(getClientCert(ssg) == null ? Boolean.FALSE : Boolean.TRUE);
-        return ssg.haveClientCert().booleanValue();
+        if (ssg.getRuntime().getHaveClientCert() == null)
+            ssg.getRuntime().setHaveClientCert(getClientCert(ssg) == null ? Boolean.FALSE : Boolean.TRUE);
+        return ssg.getRuntime().getHaveClientCert().booleanValue();
     }
 
     /**
@@ -85,7 +85,7 @@ public class SsgKeyStoreManager {
         if (trusted != null)
             return isClientCertUnlocked(trusted);
         if (!isClientCertAvailabile(ssg)) return false;
-        return ssg.privateKey() != null;
+        return ssg.getRuntime().getCachedPrivateKey() != null;
     }
 
     /**
@@ -109,11 +109,13 @@ public class SsgKeyStoreManager {
      */
     public static X509Certificate getServerCert(Ssg ssg) throws KeyStoreCorruptException {
         try {
-            X509Certificate cert = ssg.serverCert();
+            X509Certificate cert = ssg.getRuntime().getCachedServerCert();
             if (cert != null) return cert;
-            cert = (X509Certificate) getTrustStore(ssg).getCertificate(SERVER_CERT_ALIAS);
+            synchronized (ssg) {
+                cert = (X509Certificate) getTrustStore(ssg).getCertificate(SERVER_CERT_ALIAS);
+            }
             cert = convertToSunCertificate(cert);
-            ssg.serverCert(cert);
+            ssg.getRuntime().setCachedServerCert(cert);
             return cert;
         } catch (KeyStoreException e) {
             log.log(Level.SEVERE, "impossible exception", e);  // can't happen; keystore is initialized by getKeyStore()
@@ -134,11 +136,13 @@ public class SsgKeyStoreManager {
         if (trusted != null)
             return getClientCert(trusted);
         try {
-            X509Certificate cert = ssg.clientCert();
+            X509Certificate cert = ssg.getRuntime().getCachedClientCert();
             if (cert != null) return cert;
-            cert = (X509Certificate) getTrustStore(ssg).getCertificate(CLIENT_CERT_ALIAS);
+            synchronized (ssg) {
+                cert = (X509Certificate) getTrustStore(ssg).getCertificate(CLIENT_CERT_ALIAS);
+            }
             cert = convertToSunCertificate(cert);
-            ssg.clientCert(cert);
+            ssg.getRuntime().setCachedClientCert(cert);
             return cert;
         } catch (KeyStoreException e) {
             log.log(Level.SEVERE, "impossible exception", e);  // can't happen; keystore is initialized by getKeyStore()
@@ -167,11 +171,11 @@ public class SsgKeyStoreManager {
                 trustStore.deleteEntry(CLIENT_CERT_ALIAS);
             saveTrustStore(ssg);
             FileUtils.deleteFileSafely(ssg.getKeyStoreFile().getAbsolutePath());
-            ssg.clientCert(null);
-            ssg.haveClientCert(Boolean.FALSE);
-            ssg.passwordWorkedForPrivateKey(false);
-            ssg.keyStore(null);
-            ssg.privateKey(null);
+            ssg.getRuntime().setCachedClientCert(null);
+            ssg.getRuntime().setHaveClientCert(Boolean.FALSE);
+            ssg.getRuntime().setPasswordCorrectForPrivateKey(false);
+            ssg.getRuntime().keyStore(null);
+            ssg.getRuntime().setCachedPrivateKey(null);
         }
     }
 
@@ -189,7 +193,9 @@ public class SsgKeyStoreManager {
 
         Certificate[] certs;
         try {
-            certs = getTrustStore(ssg).getCertificateChain(CLIENT_CERT_ALIAS);
+            synchronized (ssg) {
+                certs = getTrustStore(ssg).getCertificateChain(CLIENT_CERT_ALIAS);
+            }
         } catch (KeyStoreException e) {
             log.log(Level.SEVERE, "impossible exception", e);  // can't happen; keystore is initialized by getKeyStore()
             throw new RuntimeException("impossible exception", e);
@@ -231,8 +237,8 @@ public class SsgKeyStoreManager {
         synchronized (ssg) {
             if (!isClientCertAvailabile(ssg))
                 return null;
-            if (ssg.privateKey() != null)
-                return ssg.privateKey();
+            if (ssg.getRuntime().getCachedPrivateKey() != null)
+                return ssg.getRuntime().getCachedPrivateKey();
         }
         PasswordAuthentication pw;
         pw = Managers.getCredentialManager().getCredentialsWithReasonHint(ssg,
@@ -242,12 +248,12 @@ public class SsgKeyStoreManager {
         synchronized (ssg) {
             if (!isClientCertAvailabile(ssg))
                 return null;
-            if (ssg.privateKey() != null)
-                return ssg.privateKey();
+            if (ssg.getRuntime().getCachedPrivateKey() != null)
+                return ssg.getRuntime().getCachedPrivateKey();
             try {
                 PrivateKey gotKey = (PrivateKey) getKeyStore(ssg, pw.getPassword()).getKey(CLIENT_CERT_ALIAS, pw.getPassword());
-                ssg.privateKey(gotKey);
-                ssg.passwordWorkedForPrivateKey(true);
+                ssg.getRuntime().setCachedPrivateKey(gotKey);
+                ssg.getRuntime().setPasswordCorrectForPrivateKey(true);
                 return gotKey;
             } catch (KeyStoreException e) {
                 log.log(Level.SEVERE, "impossible exception", e);  // can't happen; keystore is initialized by getKeyStore()
@@ -266,7 +272,7 @@ public class SsgKeyStoreManager {
         Ssg trusted = ssg.getTrustedGateway();
         if (trusted != null)
             return isPasswordWorkedForPrivateKey(trusted);
-        return ssg.passwordWorkedForPrivateKey();
+        return ssg.getRuntime().isPasswordCorrectForPrivateKey();
     }
 
     /**
@@ -289,103 +295,115 @@ public class SsgKeyStoreManager {
      * Obtain a key store for this SSG.  If one is present on disk, it will be loaded.  If the one on disk
      * is missing or corrupt, a new keystore will be created in memory.  Call saveStores() to safely
      * save the keystore back to disk.
+     * <p>
+     * To protect the returned keystore from concurrent modification, the caller must hold the ssg monitor
+     * before calling this method.
      *
      * @param ssg The Ssg whose keystore we are setting up.  Must not be null.
      * @return an in-memory KeyStore object for this Ssg, either loaded from disk or newly created.
      * @throws com.l7tech.proxy.datamodel.exceptions.KeyStoreCorruptException if the key store is damaged
+     * @throws IllegalStateException if the current thread does not already hold the ssg monitor.
      */
-    public static KeyStore getKeyStore(Ssg ssg, char[] password) throws KeyStoreCorruptException {
+    private static KeyStore getKeyStore(Ssg ssg, char[] password) throws KeyStoreCorruptException {
+        if (!Thread.holdsLock(ssg))
+            throw new IllegalStateException("Caller of getKeyStore must hold the Ssg monitor");
         Ssg trusted = ssg.getTrustedGateway();
-        if (trusted != null)
-            return getKeyStore(trusted, password);
-        synchronized (ssg) {
-            if (ssg.keyStore() == null) {
-                KeyStore keyStore;
-                try {
-                    keyStore = KeyStore.getInstance(KEYSTORE_TYPE);
-                } catch (KeyStoreException e) {
-                    log.log(Level.SEVERE, "Security provider configuration problem", e);
-                    throw new RuntimeException(e); // can't happen unless VM misconfigured
-                }
-                FileInputStream fis = null;
-                try {
-                    fis = FileUtils.loadFileSafely(ssg.getKeyStoreFile().getAbsolutePath());
-                    keyStore.load(fis, password);
-                } catch (Exception e) {
-                    if (e instanceof FileNotFoundException)
-                        log.info("Creating new key store " + ssg.getKeyStoreFile() + " for Gateway " + ssg);
-                    else {
-                        log.log(Level.SEVERE, "Unable to load existing key store " + ssg.getKeyStoreFile() + " for Gateway " + ssg, e);
-                        throw new KeyStoreCorruptException(e);
-                    }
-                    try {
-                        keyStore.load(null, password);
-                    } catch (Exception e1) {
-                        log.log(Level.SEVERE, "impossible exception", e);  // can't happen; keystore is initialized by getKeyStore()
-                        throw new RuntimeException(e1); // can't happen
-                    }
-                } finally {
-                    if (fis != null)
-                        try {
-                            fis.close();
-                        } catch (IOException e) {
-                            log.log(Level.SEVERE, "Impossible IOException while closing an InputStream; will ignore and continue", e);
-                        }
-                }
-                ssg.keyStore(keyStore);
+        if (trusted != null) {
+            if (Thread.holdsLock(trusted)) // deadlock avoidance; force locking from bottom-to-top
+                throw new IllegalStateException("Caller of getKeyStore must not hold the trusted Ssg's monitor");
+            synchronized (trusted) {
+                return getKeyStore(trusted, password);
             }
-            return ssg.keyStore();
         }
+        if (ssg.getRuntime().keyStore() == null) {
+            KeyStore keyStore;
+            try {
+                keyStore = KeyStore.getInstance(KEYSTORE_TYPE);
+            } catch (KeyStoreException e) {
+                log.log(Level.SEVERE, "Security provider configuration problem", e);
+                throw new RuntimeException(e); // can't happen unless VM misconfigured
+            }
+            FileInputStream fis = null;
+            try {
+                fis = FileUtils.loadFileSafely(ssg.getKeyStoreFile().getAbsolutePath());
+                keyStore.load(fis, password);
+            } catch (Exception e) {
+                if (e instanceof FileNotFoundException)
+                    log.info("Creating new key store " + ssg.getKeyStoreFile() + " for Gateway " + ssg);
+                else {
+                    log.log(Level.SEVERE, "Unable to load existing key store " + ssg.getKeyStoreFile() + " for Gateway " + ssg, e);
+                    throw new KeyStoreCorruptException(e);
+                }
+                try {
+                    keyStore.load(null, password);
+                } catch (Exception e1) {
+                    log.log(Level.SEVERE, "impossible exception", e);  // can't happen; keystore is initialized by getKeyStore()
+                    throw new RuntimeException(e1); // can't happen
+                }
+            } finally {
+                if (fis != null)
+                    try {
+                        fis.close();
+                    } catch (IOException e) {
+                        log.log(Level.SEVERE, "Impossible IOException while closing an InputStream; will ignore and continue", e);
+                    }
+            }
+            ssg.getRuntime().keyStore(keyStore);
+        }
+        return ssg.getRuntime().keyStore();
     }
 
     /**
      * Obtain a trust store for this SSG.  If one is present on disk, it will be loaded.  If the one on disk
      * is missing or corrupt, a new trust store will be created in memory.  Call saveTrustStore() to safely
      * save the trust store back to disk.
+     * <p>
+     * To protect the returned trust store from concurrent modification, the caller must already hold the
+     * Ssg monitor before calling this method.
      *
      * @param ssg The Ssg whose trust store we are setting up.  Must not be null.
      * @return an in-memory KeyStore object for this Ssg, either loaded from disk or newly created.
      * @throws com.l7tech.proxy.datamodel.exceptions.KeyStoreCorruptException if the key store is damaged
      */
     private static KeyStore getTrustStore(Ssg ssg) throws KeyStoreCorruptException {
-        synchronized (ssg) {
-            if (ssg.trustStore() == null) {
-                KeyStore trustStore;
-                try {
-                    trustStore = KeyStore.getInstance(TRUSTSTORE_TYPE);
-                } catch (KeyStoreException e) {
-                    log.log(Level.SEVERE, "Security provider configuration problem", e);
-                    throw new RuntimeException(e); // can't happen unless VM misconfigured
-                }
-                FileInputStream fis = null;
-                try {
-                    fis = FileUtils.loadFileSafely(ssg.getTrustStoreFile().getAbsolutePath());
-                    trustStore.load(fis, TRUSTSTORE_PASSWORD);
-                } catch (Exception e) {
-                    if (e instanceof FileNotFoundException)
-                        log.info("Creating new trust store " + ssg.getTrustStoreFile() + " for Gateway " + ssg);
-                    else {
-                        log.log(Level.SEVERE, "Unable to load existing trust store " + ssg.getTrustStoreFile() + " for Gateway " + ssg, e);
-                        throw new KeyStoreCorruptException(e);
-                    }
-                    try {
-                        trustStore.load(null, TRUSTSTORE_PASSWORD);
-                    } catch (Exception e1) {
-                        log.log(Level.SEVERE, "impossible exception", e);
-                        throw new RuntimeException(e1); // can't happen
-                    }
-                } finally {
-                    if (fis != null)
-                        try {
-                            fis.close();
-                        } catch (IOException e) {
-                            log.log(Level.SEVERE, "Impossible IOException while closing an InputStream; will ignore and continue", e);
-                        }
-                }
-                ssg.trustStore(trustStore);
+        if (!Thread.holdsLock(ssg))
+            throw new IllegalStateException("Caller of getTrustStore must hold the Ssg monitor");
+        if (ssg.getRuntime().trustStore() == null) {
+            KeyStore trustStore;
+            try {
+                trustStore = KeyStore.getInstance(TRUSTSTORE_TYPE);
+            } catch (KeyStoreException e) {
+                log.log(Level.SEVERE, "Security provider configuration problem", e);
+                throw new RuntimeException(e); // can't happen unless VM misconfigured
             }
-            return ssg.trustStore();
+            FileInputStream fis = null;
+            try {
+                fis = FileUtils.loadFileSafely(ssg.getTrustStoreFile().getAbsolutePath());
+                trustStore.load(fis, TRUSTSTORE_PASSWORD);
+            } catch (Exception e) {
+                if (e instanceof FileNotFoundException)
+                    log.info("Creating new trust store " + ssg.getTrustStoreFile() + " for Gateway " + ssg);
+                else {
+                    log.log(Level.SEVERE, "Unable to load existing trust store " + ssg.getTrustStoreFile() + " for Gateway " + ssg, e);
+                    throw new KeyStoreCorruptException(e);
+                }
+                try {
+                    trustStore.load(null, TRUSTSTORE_PASSWORD);
+                } catch (Exception e1) {
+                    log.log(Level.SEVERE, "impossible exception", e);
+                    throw new RuntimeException(e1); // can't happen
+                }
+            } finally {
+                if (fis != null)
+                    try {
+                        fis.close();
+                    } catch (IOException e) {
+                        log.log(Level.SEVERE, "Impossible IOException while closing an InputStream; will ignore and continue", e);
+                    }
+            }
+            ssg.getRuntime().trustStore(trustStore);
         }
+        return ssg.getRuntime().trustStore();
     }
 
     /**
@@ -398,14 +416,14 @@ public class SsgKeyStoreManager {
      */
     private static void saveTrustStore(final Ssg ssg) throws IllegalStateException, IOException {
         synchronized (ssg) {
-            if (ssg.trustStore() == null)
+            if (ssg.getRuntime().trustStore() == null)
                 throw new IllegalStateException("Gateway " + ssg + " hasn't yet loaded its trust store");
 
             FileUtils.saveFileSafely(ssg.getTrustStoreFile().getAbsolutePath(),
                                      new FileUtils.Saver() {
                                          public void doSave(FileOutputStream fos) throws IOException {
                                              try {
-                                                 ssg.trustStore().store(fos, TRUSTSTORE_PASSWORD);
+                                                 ssg.getRuntime().trustStore().store(fos, TRUSTSTORE_PASSWORD);
                                                  fos.close();
                                              } catch (KeyStoreException e) {
                                                  throw new IOException("Unable to write trust store for Gateway " + ssg + ": " + e);
@@ -424,14 +442,14 @@ public class SsgKeyStoreManager {
             throws IllegalStateException, IOException
     {
         synchronized (ssg) {
-            if (ssg.keyStore() == null)
+            if (ssg.getRuntime().keyStore() == null)
                 throw new IllegalStateException("Gateway " + ssg + " hasn't yet loaded its keystore");
 
             FileUtils.saveFileSafely(ssg.getKeyStoreFile().getAbsolutePath(),
                                      new FileUtils.Saver() {
                                          public void doSave(FileOutputStream fos) throws IOException {
                                              try {
-                                                 ssg.keyStore().store(fos, privateKeyPassword);
+                                                 ssg.getRuntime().keyStore().store(fos, privateKeyPassword);
                                                  fos.close();
                                              } catch (KeyStoreException e) {
                                                  throw new IOException("Unable to write KeyStore for Gateway " + ssg + ": " + e);
@@ -464,14 +482,14 @@ public class SsgKeyStoreManager {
 
     private static void clearCachedKeystoreData(Ssg ssg) {
         synchronized (ssg) {
-            ssg.keyStore(null);
-            ssg.trustStore(null);
-            ssg.privateKey(null);
-            ssg.passwordWorkedForPrivateKey(false);
-            ssg.haveClientCert(null);
-            ssg.clientCert(null);
-            ssg.serverCert(null);
-            ssg.resetSslContext();
+            ssg.getRuntime().keyStore(null);
+            ssg.getRuntime().trustStore(null);
+            ssg.getRuntime().setCachedPrivateKey(null);
+            ssg.getRuntime().setPasswordCorrectForPrivateKey(false);
+            ssg.getRuntime().setHaveClientCert(null);
+            ssg.getRuntime().setCachedClientCert(null);
+            ssg.getRuntime().setCachedServerCert(null);
+            ssg.getRuntime().resetSslContext();
         }
     }
 
@@ -488,14 +506,14 @@ public class SsgKeyStoreManager {
     {
         synchronized (ssg) {
             log.info("Saving Gateway server certificate to disk");
-            ssg.serverCert(null);
+            ssg.getRuntime().setCachedServerCert(null);
             cert = convertToSunCertificate(cert);
             KeyStore trustStore = getTrustStore(ssg);
             if (trustStore.containsAlias(SERVER_CERT_ALIAS))
                 trustStore.deleteEntry(SERVER_CERT_ALIAS);
             trustStore.setCertificateEntry(SERVER_CERT_ALIAS, cert);
             saveTrustStore(ssg);
-            ssg.serverCert(cert);
+            ssg.getRuntime().setCachedServerCert(cert);
         }
     }
 
@@ -507,7 +525,7 @@ public class SsgKeyStoreManager {
      *
      * @param ssg  the Ssg whose KeyStore to save
      * @param privateKey   the RSA private key corresponding to the public key in the certificate
-     * @param cert    the certificate, signed by the SSG CA, and whose public key corrsponds to privateKey
+     * @param cert    the certificate, signed by the SSG CA, and whose public key corrsponds to getCachedPrivateKey
      * @param privateKeyPassword the pass phrase with which to encrypt the private key
      * @throws IllegalArgumentException if the specified SSG has not yet had a password set
      * @throws KeyStoreException   if the key entry could not be saved for obscure reasons
@@ -521,7 +539,7 @@ public class SsgKeyStoreManager {
             throw new IllegalArgumentException("Unable to save client certificate for Federated Gateway.");
         log.info("Saving client certificate to disk");
         synchronized (ssg) {
-            ssg.clientCert(null);
+            ssg.getRuntime().setCachedClientCert(null);
             cert = convertToSunCertificate(cert);
             KeyStore trustStore = getTrustStore(ssg);
             if (trustStore.containsAlias(CLIENT_CERT_ALIAS))
@@ -535,9 +553,9 @@ public class SsgKeyStoreManager {
 
             saveKeyStore(ssg, privateKeyPassword);
             saveTrustStore(ssg);
-            ssg.haveClientCert(Boolean.TRUE);
-            ssg.privateKey(privateKey);
-            ssg.clientCert(cert);
+            ssg.getRuntime().setHaveClientCert(Boolean.TRUE);
+            ssg.getRuntime().setCachedPrivateKey(privateKey);
+            ssg.getRuntime().setCachedClientCert(cert);
         }
     }
 
@@ -644,7 +662,7 @@ public class SsgKeyStoreManager {
                                                                 caCert);
         // make sure private key is stored on disk encrypted with the password that was used to obtain it
         saveClientCertificate(ssg, keyPair.getPrivate(), cert, credentials.getPassword());
-        ssg.resetSslContext(); // reset cached SSL state
+        ssg.getRuntime().resetSslContext(); // reset cached SSL state
         return;
     }
 
@@ -671,7 +689,7 @@ public class SsgKeyStoreManager {
                 if (problemSsg == null) problemSsg = ssg;
                 Managers.getCredentialManager().notifyKeyStoreCorrupt(problemSsg);
                 deleteStores(problemSsg);
-                ssg.resetSslContext();
+                ssg.getRuntime().resetSslContext();
                 // FALLTHROUGH -- continue, with newly-blank keystore
             } catch (OperationCanceledException e1) {
                 // FALLTHROUGH -- continue, pretending we had no keystore

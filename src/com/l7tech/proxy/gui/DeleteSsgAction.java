@@ -103,7 +103,7 @@ class DeleteSsgAction extends AbstractAction {
                     if (problemSsg == null) problemSsg = ssg;
                     Managers.getCredentialManager().notifyKeyStoreCorrupt(problemSsg);
                     SsgKeyStoreManager.deleteStores(problemSsg);
-                    ssg.resetSslContext();
+                    ssg.getRuntime().resetSslContext();
                     // FALLTHROUGH -- continue with newly-emptied keystore
                 } catch (OperationCanceledException e2) {
                     return; // cancel the remove as well

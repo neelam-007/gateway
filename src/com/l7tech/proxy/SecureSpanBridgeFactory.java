@@ -88,7 +88,7 @@ public class SecureSpanBridgeFactory {
         final Ssg ssg = new Ssg(options.getId(), options.getGatewayHostname());
         final PasswordAuthentication pw = new PasswordAuthentication(options.getUsername(), (char[]) options.getPassword().clone());
         ssg.setUsername(pw.getUserName());
-        ssg.cmPassword(pw.getPassword());
+        ssg.getRuntime().setCachedPassword(pw.getPassword());
         if (options.getGatewayPort() != 0)
             ssg.setSsgPort(options.getGatewayPort());
         if (options.getGatewaySslPort() != 0)
@@ -285,7 +285,7 @@ public class SecureSpanBridgeFactory {
             try {
                 synchronized (ssg) {
                     SsgKeyStoreManager.saveSsgCertificate(ssg, serverCert);
-                    ssg.resetSslContext();
+                    ssg.getRuntime().resetSslContext();
                 }
             } catch (KeyStoreException e) {
                 throw new CausedIOException(e);
@@ -303,7 +303,7 @@ public class SecureSpanBridgeFactory {
             try {
                 synchronized (ssg) {
                     SsgKeyStoreManager.saveClientCertificate(ssg, clientKey, clientCert, pw.getPassword());
-                    ssg.resetSslContext();
+                    ssg.getRuntime().resetSslContext();
                 }
             } catch (KeyStoreException e) {
                 throw new CausedIOException(e);
@@ -329,7 +329,7 @@ public class SecureSpanBridgeFactory {
                         }
                     };
                     SsgKeyStoreManager.importClientCertificate(ssg, pkcs12Path, pkcs12Password, aliasPicker, pw.getPassword());
-                    ssg.resetSslContext();
+                    ssg.getRuntime().resetSslContext();
                 }
             } catch (GeneralSecurityException e) {
                 throw new CausedIOException(e);

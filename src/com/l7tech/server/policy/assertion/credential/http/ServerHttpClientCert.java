@@ -76,7 +76,7 @@ public class ServerHttpClientCert extends ServerCredentialSourceAssertion implem
         }
 
         // Get DN from cert, ie "CN=testuser, OU=ssg.example.com"
-        // String certCN = clientCert.getSubjectDN().getName();
+        // String certCN = getCachedClientCert.getSubjectDN().getName();
         // fla changed this to:
         String certCN = null;
         try {

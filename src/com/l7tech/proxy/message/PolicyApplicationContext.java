@@ -405,7 +405,7 @@ public class PolicyApplicationContext extends ProcessingContext {
         } catch (CertificateAlreadyIssuedException e) {
             // Bug #380 - if we haven't updated policy yet, try that first - mlyons
             if (!isPolicyUpdated()) {
-                getSsg().rootPolicyManager().flushPolicy(getPolicyAttachmentKey());
+                getSsg().getRuntime().rootPolicyManager().flushPolicy(getPolicyAttachmentKey());
                 throw new PolicyRetryableException();
             } else {
                 Managers.getCredentialManager().notifyCertificateAlreadyIssued(ssg);
@@ -448,21 +448,21 @@ public class PolicyApplicationContext extends ProcessingContext {
                                                                    SsgKeyStoreManager.getServerCert(ssg));
         }
         logger.log(Level.INFO, "WS-SecureConversation session established with Gateway " + ssg.toString() + "; session ID=" + s.getSessionId());
-        ssg.secureConversationId(s.getSessionId());
+        ssg.getRuntime().secureConversationId(s.getSessionId());
         secureConversationId = s.getSessionId();
-        ssg.secureConversationSharedSecret(s.getSharedSecret());
+        ssg.getRuntime().secureConversationSharedSecret(s.getSharedSecret());
         secureConversationSharedSecret = s.getSharedSecret();
         if (s.getExpiryDate() == null) {
             logger.info("WS-SecureConversation session did not include an expiry date.  Assuming expiry 600 seconds from now.");
             Calendar expiry = Calendar.getInstance(UTC_TIME_ZONE);
             expiry.add(Calendar.SECOND, WSSC_PREEXPIRE_SEC);
             secureConversationExpiryDate = expiry;
-            ssg.secureConversationExpiryDate(expiry);
+            ssg.getRuntime().secureConversationExpiryDate(expiry);
         } else {
             Calendar expiry = Calendar.getInstance(UTC_TIME_ZONE);
-            expiry.setTime(ssg.dateTranslatorFromSsg().translate(s.getExpiryDate()));
+            expiry.setTime(ssg.getRuntime().getDateTranslatorFromSsg().translate(s.getExpiryDate()));
             secureConversationExpiryDate = expiry;
-            ssg.secureConversationExpiryDate(expiry);
+            ssg.getRuntime().secureConversationExpiryDate(expiry);
             Calendar now = Calendar.getInstance(UTC_TIME_ZONE);
             now.add(Calendar.SECOND, WSSC_PREEXPIRE_SEC);
             if (!expiry.after(now))
@@ -480,13 +480,13 @@ public class PolicyApplicationContext extends ProcessingContext {
             if (!secureConversationExpiryDate.after(now)) {
                 // See if we need to throw out the one cached in the Ssg object as well
                 synchronized (ssg) {
-                    Calendar ssgDate = ssg.secureConversationExpiryDate();
+                    Calendar ssgDate = ssg.getRuntime().secureConversationExpiryDate();
                     if (ssgDate == secureConversationExpiryDate || (ssgDate != null && !ssgDate.after(now))) {
                         logger.log(Level.INFO, "Our WS-SecureConversation session has expired or will do so within the next " +
                           WSSC_PREEXPIRE_SEC + "seconds.  Will throw it away and get a new one.");
-                        ssg.secureConversationId(null);
-                        ssg.secureConversationSharedSecret(null);
-                        ssg.secureConversationExpiryDate(null);
+                        ssg.getRuntime().secureConversationId(null);
+                        ssg.getRuntime().secureConversationSharedSecret(null);
+                        ssg.getRuntime().secureConversationExpiryDate(null);
                     }
                 }
             }
@@ -520,7 +520,7 @@ public class PolicyApplicationContext extends ProcessingContext {
         if (secureConversationId != null)
             return secureConversationId;
 
-        secureConversationId = ssg.secureConversationId();
+        secureConversationId = ssg.getRuntime().secureConversationId();
         checkExpiredSecureConversationSession();
         if (secureConversationId != null)
             return secureConversationId;
@@ -536,9 +536,9 @@ public class PolicyApplicationContext extends ProcessingContext {
             secureConversationId = null;
             secureConversationExpiryDate = null;
             secureConversationSharedSecret = null;
-            ssg.secureConversationId(null);
-            ssg.secureConversationExpiryDate(null);
-            ssg.secureConversationSharedSecret(null);
+            ssg.getRuntime().secureConversationId(null);
+            ssg.getRuntime().secureConversationExpiryDate(null);
+            ssg.getRuntime().secureConversationSharedSecret(null);
         }
     }
 
@@ -550,7 +550,7 @@ public class PolicyApplicationContext extends ProcessingContext {
     public byte[] getSecureConversationSharedSecret() {
         if (secureConversationSharedSecret != null)
             return secureConversationSharedSecret;
-        return secureConversationSharedSecret = ssg.secureConversationSharedSecret();
+        return secureConversationSharedSecret = ssg.getRuntime().secureConversationSharedSecret();
     }
 
     /**
@@ -573,7 +573,7 @@ public class PolicyApplicationContext extends ProcessingContext {
         if (samlAssertion != null)
             return samlAssertion;
 
-        return samlAssertion = (SamlAssertion)ssg.getTokenStrategy(SecurityTokenType.SAML_AUTHENTICATION).getOrCreate();
+        return samlAssertion = (SamlAssertion)ssg.getRuntime().getTokenStrategy(SecurityTokenType.SAML_AUTHENTICATION).getOrCreate();
     }
 
     /**
@@ -592,7 +592,7 @@ public class PolicyApplicationContext extends ProcessingContext {
         final Ssg ssg = getSsg();
         final PolicyAttachmentKey pak = getPolicyAttachmentKey();
         Policy policy = new PolicyDownloader(this).downloadPolicy(pak, serviceid);
-        ssg.rootPolicyManager().setPolicy(pak, policy);
+        ssg.getRuntime().rootPolicyManager().setPolicy(pak, policy);
         if (requestInterceptor != null)
             requestInterceptor.onPolicyUpdated(ssg, pak, policy);
         setPolicyUpdated(true);

@@ -74,7 +74,7 @@ public class ClientPolicyTest extends TestCase {
         AssertionStatus result;
 
         ssg.setUsername(null);
-        ssg.cmPassword("".toCharArray());
+        ssg.getRuntime().setCachedPassword("".toCharArray());
         try {
             result = policy.decorateRequest(context);
             fail("HttpBasic was provided null username, and didn't throw");
@@ -97,7 +97,7 @@ public class ClientPolicyTest extends TestCase {
         assertTrue(context.isBasicAuthRequired());
 
         final String PASS = "s3cr3t";
-        ssg.cmPassword(PASS.toCharArray());
+        ssg.getRuntime().setCachedPassword(PASS.toCharArray());
         result = policy.decorateRequest(context);
         assertTrue(AssertionStatus.NONE.equals(result));
         assertTrue(context.isBasicAuthRequired());
@@ -140,7 +140,7 @@ public class ClientPolicyTest extends TestCase {
             ClientAssertion clientPolicy = ClientPolicyFactory.getInstance().makeClientPolicy( policy );
 
             ssg.setUsername("");
-            ssg.cmPassword("".toCharArray());
+            ssg.getRuntime().setCachedPassword("".toCharArray());
             try {
                 result = clientPolicy.decorateRequest(makeContext(ssg, env));
                 fail("Policy was given empty username, but failed to throw");
@@ -151,7 +151,7 @@ public class ClientPolicyTest extends TestCase {
             final String USER = "fbunky";
             final String PASS = "asdfjkal";
             ssg.setUsername(USER);
-            ssg.cmPassword(PASS.toCharArray());
+            ssg.getRuntime().setCachedPassword(PASS.toCharArray());
             result = clientPolicy.decorateRequest(makeContext(ssg, env));
             assertTrue(AssertionStatus.NONE.equals(result));
             assertTrue(context.isSslRequired());
@@ -172,7 +172,7 @@ public class ClientPolicyTest extends TestCase {
             ClientAssertion clientPolicy = ClientPolicyFactory.getInstance().makeClientPolicy( policy );
 
             ssg.setUsername("");
-            ssg.cmPassword("".toCharArray());
+            ssg.getRuntime().setCachedPassword("".toCharArray());
             try {
                 result = clientPolicy.decorateRequest(makeContext(ssg, env));
                 fail("Policy was given empty username, and failed to throw");
@@ -183,7 +183,7 @@ public class ClientPolicyTest extends TestCase {
             final String USER = "fbunky";
             final String PASS = "asdfjkal";
             ssg.setUsername(USER);
-            ssg.cmPassword(PASS.toCharArray());
+            ssg.getRuntime().setCachedPassword(PASS.toCharArray());
             result = clientPolicy.decorateRequest(makeContext(ssg, env));
             assertTrue(AssertionStatus.NONE.equals(result));
             assertFalse(context.isSslRequired());

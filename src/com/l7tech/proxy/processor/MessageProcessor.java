@@ -179,7 +179,7 @@ public class MessageProcessor {
                     if (problemSsg == null) problemSsg = ssg;
                     Managers.getCredentialManager().notifyKeyStoreCorrupt(problemSsg);
                     SsgKeyStoreManager.deleteStores(problemSsg);
-                    ssg.resetSslContext();
+                    ssg.getRuntime().resetSslContext();
                     // FALLTHROUGH -- retry, creating new keystore
                 } catch (DecoratorException e) {
                     throw new ConfigurationException(e);
@@ -229,9 +229,9 @@ public class MessageProcessor {
                 if (problemSsg == null) problemSsg = ssg;
                 Managers.getCredentialManager().notifyKeyStoreCorrupt(problemSsg);
                 SsgKeyStoreManager.deleteStores(problemSsg);
-                ssg.resetSslContext();
+                ssg.getRuntime().resetSslContext();
             }
-            ssg.resetSslContext();
+            ssg.getRuntime().resetSslContext();
             // FALLTHROUGH -- retry, creating new keystore
         }
 
@@ -313,7 +313,7 @@ public class MessageProcessor {
         try {
             // TODO: remove this stupid hack.  it doesn't help LDAP users anyway
             boolean worked = cd.downloadCertificate();
-            ssg.passwordWorkedWithSsg(worked);
+            ssg.getRuntime().passwordWorkedWithSsg(worked);
             return worked;
         } catch (CertificateException e) {
             log.log(Level.SEVERE, "Gateway sent us an invalid certificate during secure password ping", e);
@@ -379,7 +379,7 @@ public class MessageProcessor {
                     // Do all WSS processing all at once
                     if (request.isSoap()) {
                         log.info("Running pending request through WS-Security decorator");
-                        Date ts = context.getSsg().dateTranslatorToSsg().translate(new Date());
+                        Date ts = context.getSsg().getRuntime().getDateTranslatorToSsg().translate(new Date());
                         Integer expiryMillis = Integer.getInteger(PROPERTY_TIMESTAMP_EXPIRY);
                         DecorationRequirements[] wssrequirements = context.getAllDecorationRequirements();
                         for (int i = 0; i < wssrequirements.length; i++) {
@@ -409,7 +409,7 @@ public class MessageProcessor {
     }
 
     private Policy lookupPolicy(PolicyApplicationContext context) {
-        Policy policy = context.getSsg().rootPolicyManager().getPolicy(context.getPolicyAttachmentKey());
+        Policy policy = context.getSsg().getRuntime().rootPolicyManager().getPolicy(context.getPolicyAttachmentKey());
         if (policy != null) {
             if (LogFlags.logPolicies)
                 log.info("Found a policy for this request: " + policy.getAssertion());
@@ -473,7 +473,7 @@ public class MessageProcessor {
                 // TODO we should only trust this fault if it is signed
                 log.warning("Gateway reports " + responseFaultDetail.getFaultCode() +
                             ".  Will throw away current SAML ticket and try again.");
-                context.getSsg().getTokenStrategy(SecurityTokenType.SAML_AUTHENTICATION).onTokenRejected();
+                context.getSsg().getRuntime().getTokenStrategy(SecurityTokenType.SAML_AUTHENTICATION).onTokenRejected();
                 throw new PolicyRetryableException("Flushed rejected SAML ticket.");
             }
             // FALLTHROUGH: not handled by agent -- fall through and send it back to the client
@@ -556,15 +556,15 @@ public class MessageProcessor {
         URL url = getUrl(context);
         final Ssg ssg = context.getSsg();
 
-        HttpClient client = new HttpClient(context.getSsg().getHttpConnectionManager());
+        HttpClient client = new HttpClient(context.getSsg().getRuntime().getHttpConnectionManager());
         HttpState state = client.getState();
 
         // Forget any cached session cookies, for all services shared by this SSG        
         if (context.isPolicyUpdated()) {
-            ssg.clearSessionCookies();
+            ssg.getRuntime().clearSessionCookies();
         }
 
-        Cookie[] cookies = context.getSsg().retrieveSessionCookies();
+        Cookie[] cookies = context.getSsg().getRuntime().getSessionCookies();
         if (cookies != null) {
             for (int i = 0; i < cookies.length; i++) {
                 Cookie cookie = cookies[i];
@@ -636,7 +636,7 @@ public class MessageProcessor {
                 } catch (CertificateAlreadyIssuedException e) {
                     // Bug #380 - if we haven't updated policy yet, try that first - mlyons
                     if (!context.isPolicyUpdated()) {
-                        ssg.rootPolicyManager().flushPolicy(context.getPolicyAttachmentKey());
+                        ssg.getRuntime().rootPolicyManager().flushPolicy(context.getPolicyAttachmentKey());
                         throw new PolicyRetryableException();
                     } else {
                         Managers.getCredentialManager().notifyCertificateAlreadyIssued(ssg);
@@ -775,7 +775,7 @@ public class MessageProcessor {
                 final WssTimestamp wssTimestampRaw = processorResultRaw.getTimestamp();
                 processorResult = new ProcessorResultWrapper(processorResultRaw) {
                     public WssTimestamp getTimestamp() {
-                        return new WssTimestampWrapper(wssTimestampRaw, ssg.dateTranslatorFromSsg());
+                        return new WssTimestampWrapper(wssTimestampRaw, ssg.getRuntime().getDateTranslatorFromSsg());
                     }
                 };
 
@@ -795,9 +795,9 @@ public class MessageProcessor {
         } finally {
             if (postMethod != null) {
                 if (state.getCookies() == null) {
-                    context.getSsg().clearSessionCookies();
+                    context.getSsg().getRuntime().clearSessionCookies();
                 } else {
-                    context.getSsg().storeSessionCookies(state.getCookies());
+                    context.getSsg().getRuntime().setSessionCookies(state.getCookies());
                 }
             }
         }

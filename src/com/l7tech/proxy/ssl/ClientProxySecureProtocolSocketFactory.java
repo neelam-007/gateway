@@ -52,7 +52,7 @@ public class ClientProxySecureProtocolSocketFactory extends SSLSocketFactory imp
         Ssg ssg = CurrentRequest.getPeerSsg();
         if (ssg == null)
             throw new IllegalStateException("Unable to create SSL client socket: No peer Gateway is available in this thread");
-        final SSLSocket sock = (SSLSocket) ssg.sslContext().getSocketFactory().createSocket(socket, host, port, autoClose);
+        final SSLSocket sock = (SSLSocket) ssg.getRuntime().getSslContext().getSocketFactory().createSocket(socket, host, port, autoClose);
         return sock;
     }
 
@@ -62,7 +62,7 @@ public class ClientProxySecureProtocolSocketFactory extends SSLSocketFactory imp
         Ssg ssg = CurrentRequest.getPeerSsg();
         if (ssg == null)
             throw new IllegalStateException("Unable to create SSL client socket: No peer Gateway is available in this thread");
-        final SSLSocket sock = (SSLSocket) ssg.sslContext().getSocketFactory().createSocket(host, port, clientHost, clientPort);
+        final SSLSocket sock = (SSLSocket) ssg.getRuntime().getSslContext().getSocketFactory().createSocket(host, port, clientHost, clientPort);
         return sock;
     }
 
@@ -70,7 +70,7 @@ public class ClientProxySecureProtocolSocketFactory extends SSLSocketFactory imp
         Ssg ssg = CurrentRequest.getPeerSsg();
         if (ssg == null)
             throw new IllegalStateException("Unable to create SSL client socket: No peer Gateway is available in this thread");
-        final SSLSocket sock = (SSLSocket) ssg.sslContext().getSocketFactory().createSocket(inetAddress,
+        final SSLSocket sock = (SSLSocket) ssg.getRuntime().getSslContext().getSocketFactory().createSocket(inetAddress,
                                                                                             i,
                                                                                             inetAddress1,
                                                                                             i1);
@@ -81,7 +81,7 @@ public class ClientProxySecureProtocolSocketFactory extends SSLSocketFactory imp
         Ssg ssg = CurrentRequest.getPeerSsg();
         if (ssg == null)
             throw new IllegalStateException("Unable to create SSL client socket: No peer Gateway is available in this thread");
-        final SSLSocket sock = (SSLSocket) ssg.sslContext().getSocketFactory().createSocket(host, port);
+        final SSLSocket sock = (SSLSocket) ssg.getRuntime().getSslContext().getSocketFactory().createSocket(host, port);
         return sock;
     }
 
@@ -89,7 +89,7 @@ public class ClientProxySecureProtocolSocketFactory extends SSLSocketFactory imp
         Ssg ssg = CurrentRequest.getPeerSsg();
         if (ssg == null)
             throw new IllegalStateException("Unable to create SSL client socket: No peer Gateway is available in this thread");
-        final SSLSocket sock = (SSLSocket) ssg.sslContext().getSocketFactory().createSocket(inetAddress, i);
+        final SSLSocket sock = (SSLSocket) ssg.getRuntime().getSslContext().getSocketFactory().createSocket(inetAddress, i);
         return sock;
     }
 }

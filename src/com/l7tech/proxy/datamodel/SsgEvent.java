@@ -57,7 +57,7 @@ public class SsgEvent extends EventObject {
         return policy;
     }
 
-    /** Create a new SsgEvent of type POLICY_ADDED. */
+    /** Create a new SsgEvent of type POLICY_ATTACHED. */
     public static SsgEvent createPolicyAttachedEvent(Ssg ssg, Policy policy) {
         SsgEvent evt = new SsgEvent(ssg, POLICY_ATTACHED, policy);
         return evt;

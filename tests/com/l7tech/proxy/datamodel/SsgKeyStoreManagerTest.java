@@ -50,12 +50,12 @@ public class SsgKeyStoreManagerTest extends TestCase {
 
         Ssg testSsg = new Ssg(1, "foo.bar.blortch.l7tech.com");
         testSsg.setUsername(CertUtils.extractCommonNameFromClientCertificate(cert));
-        testSsg.cmPassword("tralala".toCharArray());
+        testSsg.getRuntime().setCachedPassword("tralala".toCharArray());
 
 
         SsgKeyStoreManager.deleteStores(testSsg);
 
-        SsgKeyStoreManager.saveClientCertificate(testSsg, kp.getPrivate(), cert, testSsg.cmPassword());
+        SsgKeyStoreManager.saveClientCertificate(testSsg, kp.getPrivate(), cert, testSsg.getRuntime().getCachedPassword());
 
         X509Certificate haveCert = SsgKeyStoreManager.getClientCert(testSsg);
         assertTrue(haveCert.equals(cert));

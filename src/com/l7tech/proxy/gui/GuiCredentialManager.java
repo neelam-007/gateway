@@ -77,7 +77,7 @@ class GuiCredentialManager extends CredentialManager {
         if (problemSsg == null) problemSsg = ssg;
         notifyKeyStoreCorrupt(problemSsg);
         SsgKeyStoreManager.deleteStores(problemSsg);
-        ssg.resetSslContext();
+        ssg.getRuntime().resetSslContext();
     }
 
     public PasswordAuthentication getCredentials(final Ssg ssg) throws OperationCanceledException {
@@ -126,12 +126,12 @@ class GuiCredentialManager extends CredentialManager {
         if (ssg.getTrustedGateway() != null)
             throw new OperationCanceledException("Not permitted to send password credentials to a Federated Gateway");
 
-        PasswordAuthentication pw = ssg.getCredentials();
+        PasswordAuthentication pw = ssg.getRuntime().getCredentials();
         if (!mustGetNewOnes && pw != null)
             return pw;
 
         // If this SSG isn't supposed to be hassling us with dialog boxes, stop now
-        if (!ssg.promptForUsernameAndPassword()) {
+        if (!ssg.getRuntime().promptForUsernameAndPassword()) {
             log.info("Logon prompts disabled for Gateway " + ssg);
             throw new OperationCanceledException("Logon prompts are disabled for Gateway " + ssg);
         }
@@ -140,8 +140,8 @@ class GuiCredentialManager extends CredentialManager {
         final CredHolder holder = new CredHolder();
 
         synchronized (ssg) {
-            pw = ssg.getCredentials();
-            if (ssg.credentialsUpdatedTime() > now && pw != null)
+            pw = ssg.getRuntime().getCredentials();
+            if (ssg.getRuntime().getCredentialsLastUpdatedTime() > now && pw != null)
                 return pw;
 
             // Check if username is locked into a client certificate
@@ -165,18 +165,18 @@ class GuiCredentialManager extends CredentialManager {
                                                               oldOnesWereBad,
                                                               reasonHint);
                 if (pw == null) {
-                    if (ssg.incrementNumTimesLogonDialogCanceled() > 2) {
+                    if (ssg.getRuntime().incrementNumTimesLogonDialogCanceled() > 2) {
                         // This is the second time we've popped up a logon dialog and the user has impatiently
                         // canceled it.  We can take a hint -- we'll turn off logon prompts until the proxy is
                         // restarted or the user manually changes the password.
-                        ssg.promptForUsernameAndPassword(false);
+                        ssg.getRuntime().promptForUsernameAndPassword(false);
                     }
                     return;
                 }
                 ssg.setUsername(pw.getUserName());
-                ssg.cmPassword(pw.getPassword()); // TODO: encoding?
-                ssg.onCredentialsUpdated();
-                ssg.promptForUsernameAndPassword(true);
+                ssg.getRuntime().setCachedPassword(pw.getPassword()); // TODO: encoding?
+                ssg.getRuntime().onCredentialsUpdated();
+                ssg.getRuntime().promptForUsernameAndPassword(true);
                 holder.pw = pw;
 
                 try {
@@ -196,7 +196,7 @@ class GuiCredentialManager extends CredentialManager {
         }
 
         log.info("New credentials noted for Gateway " + ssg);
-        ssg.resetSslContext();
+        ssg.getRuntime().resetSslContext();
         return holder.pw;
     }
 
@@ -247,7 +247,7 @@ class GuiCredentialManager extends CredentialManager {
         });
 
         if (!df.destroyKeystore) {
-            ssg.cmPassword(null); // forget cached credentials
+            ssg.getRuntime().setCachedPassword(null); // forget cached credentials
             throw new OperationCanceledException("Unable to read the key store.");
         }
     }
@@ -261,7 +261,7 @@ class GuiCredentialManager extends CredentialManager {
      */
     public void notifyCertificateAlreadyIssued(final Ssg ssg) {
         // If this SSG isn't suppose to be hassling us with dialog boxes, stop now
-        if (!ssg.promptForUsernameAndPassword())
+        if (!ssg.getRuntime().promptForUsernameAndPassword())
             return;
 
         long now = System.currentTimeMillis();
@@ -291,7 +291,7 @@ class GuiCredentialManager extends CredentialManager {
      */
     public void notifySsgHostnameMismatch(final Ssg ssg, final String whatWeWanted, final String whatWeGotInstead) {
         // If this SSG isn't suppose to be hassling us with dialog boxes, stop now
-        if (!ssg.promptForUsernameAndPassword())
+        if (!ssg.getRuntime().promptForUsernameAndPassword())
             return;
 
         long now = System.currentTimeMillis();

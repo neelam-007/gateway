@@ -162,7 +162,7 @@ public interface SecureSpanBridge {
      * The currently configured password will be used as the encryption password for the Key Store.
      *
      * @param clientCert the X509 certificate to use for this account
-     * @param clientKey the private key corresponding to the public key in clientCert
+     * @param clientKey the private key corresponding to the public key in getCachedClientCert
      * @throws IOException if there is a problem with the specified certificate
      * @throws IOException if the Key Store or Cert Store cannot be written
      * @throws IOException if the Key Store or Cert Store is corrupt

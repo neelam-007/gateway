@@ -389,7 +389,7 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
             // override the default (trusted SSG) if the ssg is a federated SSG
             if (ssg.getTrustedGateway() == null) {
                 ssgIdentityPane.getUsernameTextField().setText(ssg.getUsername());
-                char[] pass = ssg.cmPassword();
+                char[] pass = ssg.getRuntime().getCachedPassword();
                 boolean hasPassword = pass != null;
                 ssgIdentityPane.getUserPasswordField().setText(new String(hasPassword ? pass : "".toCharArray()));
                 boolean customPorts = isPortsCustom(ssg);
@@ -417,7 +417,7 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
             cbUseSslByDefault.setSelected(ssg.isUseSslByDefault());
             getNetworkPane().updateCustomPortsEnableState();
         }
-        getPoliciesPane().setPolicyCache(ssg.rootPolicyManager());
+        getPoliciesPane().setPolicyCache(ssg.getRuntime().rootPolicyManager());
 
         checkOk();
     }
@@ -441,8 +441,8 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
                 char[] pass = ssgIdentityPane.getUserPasswordField().getPassword();
 
                 // Make sure prompting is enabled
-                ssg.promptForUsernameAndPassword(true);
-                ssg.cmPassword(pass.length > 0 ? ssgIdentityPane.getUserPasswordField().getPassword() : null);
+                ssg.getRuntime().promptForUsernameAndPassword(true);
+                ssg.getRuntime().setCachedPassword(pass.length > 0 ? ssgIdentityPane.getUserPasswordField().getPassword() : null);
             } else {
                 // Force chain credentials to be off if this is a fed ssg
                 ssg.setChainCredentialsFromClient(false);
@@ -461,7 +461,7 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
                 ssg.setSsgPort(referenceSsg.getSsgPort());
                 ssg.setSslPort(referenceSsg.getSslPort());
             }
-            ssg.resetSslContext();
+            ssg.getRuntime().resetSslContext();
         }
         setSsg(ssg);
     }
