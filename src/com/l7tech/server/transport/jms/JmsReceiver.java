@@ -85,6 +85,10 @@ public class JmsReceiver implements ServerComponentLifecycle {
         this( conn, replyType, inbound, null, null );
     }
 
+    public String toString() {
+        return "jmsReceiver:" + _connection.getName() + "/" + _inboundRequestEndpoint.getName();
+    }
+
     public synchronized void init( ServerConfig config ) throws LifecycleException {
         Hashtable properties = new Hashtable();
         String classname = _connection.getInitialContextFactoryClassname();
@@ -114,7 +118,9 @@ public class JmsReceiver implements ServerComponentLifecycle {
             if ( _queueConnectionFactory == null &&
                  _topicConnectionFactory == null &&
                  _destinationConnectionFactory == null ) {
-                _logger.log( Level.WARNING, "No connection factory was configured for '" + _inboundRequestEndpoint.toString() + "'" );
+                String msg = "No connection factory was configured for '" + _inboundRequestEndpoint.toString() + "'";
+                _logger.log( Level.WARNING, msg );
+                throw new LifecycleException( msg );
             }
 
             _initialized = true;
