@@ -120,11 +120,11 @@ public class NewProviderAction extends NodeAction {
                                 header.setType(EntityType.ID_PROVIDER_CONFIG);
                                 try {
                                     header.setOid(getProviderConfigManager().save(iProvider));
-                                    fireEventProviderAdded(header);
-
                                 } catch (SaveException e) {
                                     ErrorManager.getDefault().notify(Level.WARNING, e, "Error saving the new identity provider: " + header.getName());
+                                    header = null;
                                 }
+                                if (header != null) fireEventProviderAdded(header);
                             }
                         });
             }
