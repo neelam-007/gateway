@@ -27,7 +27,7 @@
               <text value="X509 Subject DN:"/>
             </properties>
           </component>
-          <component id="5763a" class="javax.swing.JLabel">
+          <component id="5763a" class="javax.swing.JLabel" binding="emailPatternLabel">
             <constraints>
               <xy x="16" y="116" width="28" height="14"/>
               <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0"/>
