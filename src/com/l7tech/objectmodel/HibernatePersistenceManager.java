@@ -7,8 +7,8 @@
 package com.l7tech.objectmodel;
 
 import cirrus.hibernate.*;
+import cirrus.hibernate.Transaction;
 
-import javax.sql.DataSource;
 import javax.naming.InitialContext;
 import javax.naming.NamingException;
 import javax.transaction.*;
@@ -45,11 +45,11 @@ public class HibernatePersistenceManager extends PersistenceManager {
         InputStream is = getClass().getClassLoader().getResourceAsStream(resourcePath);
 
         props.load( is );
-        String dsUrl = props.getProperty(DATASOURCE_URL_PROPERTY);
+        //String dsUrl = props.getProperty(DATASOURCE_URL_PROPERTY);
         String sessionFactoryUrl = props.getProperty( SESSIONFACTORY_URL_PROPERTY );
-        if ( dsUrl == null || dsUrl.length() == 0 ) throw new RuntimeException( "Couldn't find property " + DATASOURCE_URL_PROPERTY + "!" );
+        //if ( dsUrl == null || dsUrl.length() == 0 ) throw new RuntimeException( "Couldn't find property " + DATASOURCE_URL_PROPERTY + "!" );
 
-        _dataSource = (DataSource)_initialContext.lookup(dsUrl);
+        //_dataSource = (DataSource)_initialContext.lookup(dsUrl);
 
         try {
             Hibernate.configure();
@@ -61,56 +61,96 @@ public class HibernatePersistenceManager extends PersistenceManager {
         }
     }
 
-    public Session getSession() throws SQLException {
-        if ( _sessionFactory == null ) throw new IllegalStateException("HibernatePersistenceManager must be initialized before calling getSession()!");
-        return _sessionFactory.openSession( _dataSource.getConnection() );
+    public PersistenceContext doGetContext() throws SQLException {
+        return new HibernatePersistenceContext( getSession() );
     }
 
-    private DataSource _dataSource;
-    private Datastore _dataStore;
+    private Session getSession() throws SQLException {
+        if ( _sessionFactory == null ) throw new IllegalStateException("HibernatePersistenceManager must be initialized before calling getSession()!");
+        return _sessionFactory.openSession();
+    }
+
+    //private DataSource _dataSource;
+    //private Datastore _dataStore;
     private SessionFactory _sessionFactory;
     private InitialContext _initialContext;
-    private UserTransaction _txn;
 
-    void doBeginTransaction() throws TransactionException {
+    class ContextHolder {
+        HibernatePersistenceContext _context;
+        Session _session;
+    }
+
+    private ContextHolder getContextHolder( PersistenceContext context ) {
+        if ( context == null || !(context instanceof HibernatePersistenceContext) )
+            throw new IllegalArgumentException( "Invalid context passed to a HibernatePersistenceManager method!");
+        ContextHolder holder = new ContextHolder();
+        holder._context = (HibernatePersistenceContext)context;
+        holder._session = holder._context.getSession();
+
+        return holder;
+    }
+
+    void doBeginTransaction( PersistenceContext context ) throws TransactionException {
+        ContextHolder h = getContextHolder( context );
+        Session s = h._session;
         try {
-            UserTransaction txn = (UserTransaction)_initialContext.lookup("java:comp/UserTransaction");
-            txn.begin();
-        } catch ( NamingException ne ) {
-            throw new TransactionException( ne.toString(), ne );
-        } catch ( NotSupportedException nse ) {
-            throw new TransactionException( nse.toString(), nse );
-        } catch ( SystemException se ) {
+            Transaction txn = s.beginTransaction();
+            h._context.setTransaction( txn );
+        } catch ( HibernateException he ) {
+            throw new TransactionException( he.toString(), he );
+        }
+    }
+
+    void doCommitTransaction( PersistenceContext context ) throws TransactionException {
+        ContextHolder h = getContextHolder( context );
+        Transaction txn = h._context.getTransaction();
+        if ( txn == null ) throw new IllegalStateException( "No transaction is active!");
+        try {
+            txn.commit();
+        } catch ( HibernateException he ) {
+            throw new TransactionException( he.toString(), he );
+        } catch ( SQLException se ) {
             throw new TransactionException( se.toString(), se );
         }
-
     }
 
-    void doCommitTransaction() {
-    }
-
-    void doRollbackTransaction() {
-    }
-
-    List doFind(String query, Object param, Class paramClass) {
-        return null;
-    }
-
-    List doFind(String query, Object[] params, Class[] paramClasses) {
-        return null;
-    }
-
-    Entity doLoad(Class clazz, long oid) {
-        return null;
-    }
-
-    Entity doLoadForUpdate(Class clazz, long oid) {
-        return null;
-    }
-
-    long doSave(Entity obj) throws SaveException {
+    void doRollbackTransaction( PersistenceContext context ) throws TransactionException {
+        ContextHolder h = getContextHolder( context );
+        Transaction txn = h._context.getTransaction();
+        if ( txn == null ) throw new IllegalStateException( "No transaction is active!");
         try {
-            Object key = getSession().save( obj );
+            txn.rollback();
+        } catch ( HibernateException he ) {
+            throw new TransactionException( he.toString(), he );
+        }
+    }
+
+    List doFind( PersistenceContext context, String query, Object param, Class paramClass) {
+        ContextHolder h = getContextHolder( context );
+        return null;
+    }
+
+    List doFind( PersistenceContext context, String query, Object[] params, Class[] paramClasses) {
+        ContextHolder h = getContextHolder( context );
+        return null;
+    }
+
+    Entity doFindByPrimaryKey( PersistenceContext context, Class clazz, long oid) throws FindException {
+        ContextHolder h = getContextHolder( context );
+        return null;
+    }
+
+    Entity doFindByPrimaryKey( PersistenceContext context, Class clazz, long oid, boolean forUpdate) throws FindException {
+        ContextHolder h = getContextHolder( context );
+        return null;
+    }
+
+    long doSave( PersistenceContext context, Entity obj) throws SaveException {
+        ContextHolder h = getContextHolder( context );
+        Session s = h._session;
+
+        try {
+            Object key = s.save( obj );
             if ( key.getClass().isAssignableFrom(Long.TYPE) ) {
                 return ((Long)key).longValue();
             } else {
@@ -123,7 +163,8 @@ public class HibernatePersistenceManager extends PersistenceManager {
         }
     }
 
-    void doDelete(Entity obj) {
+    void doDelete( PersistenceContext context, Entity obj) {
+        ContextHolder h = getContextHolder( context );
     }
 
 
