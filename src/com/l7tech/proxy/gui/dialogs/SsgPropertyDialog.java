@@ -722,23 +722,30 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
 
                 Ssg selectedSsg = (Ssg) identityPane.getTrustedSSGComboBox().getSelectedItem();
                 ssg.setTrustedGatewayId(selectedSsg.getId());
+
+                // clear the old stuff in trusted SSG
+                ssg.setUsername("");
+                ssg.setSavePasswordToDisk(false);
+                ssg.setChainCredentialsFromClient(false);
+
             } else {
                 ssg.setTrustedGatewayId(0);
+
+                ssg.setSsgAddress(fieldServerAddress.getText().trim().toLowerCase());
+                ssg.setUsername(identityPane.getUsernameTextField().getText().trim());
+                ssg.setSavePasswordToDisk(identityPane.getSavePasswordCheckBox().isSelected());
+                ssg.setUseSslByDefault(cbUseSslByDefault.isSelected());
+                ssg.setChainCredentialsFromClient(identityPane.getUseClientCredentialCheckBox().isSelected());
+
+                // We'll treat a blank password as though it's unconfigured.  If the user really needs to use
+                // a blank password to access a service, he can leave the password field blank in the logon
+                // dialog when it eventually appears.
+                char[] pass = identityPane.getUserPasswordField().getPassword();
+
+                // Make sure prompting is enabled
+                ssg.promptForUsernameAndPassword(true);
+                ssg.cmPassword(pass.length > 0 ? identityPane.getUserPasswordField().getPassword() : null);
             }
-            ssg.setSsgAddress(fieldServerAddress.getText().trim().toLowerCase());
-            ssg.setUsername(identityPane.getUsernameTextField().getText().trim());
-            ssg.setSavePasswordToDisk(identityPane.getSavePasswordCheckBox().isSelected());
-            ssg.setUseSslByDefault(cbUseSslByDefault.isSelected());
-            ssg.setChainCredentialsFromClient(identityPane.getUseClientCredentialCheckBox().isSelected());
-
-            // We'll treat a blank password as though it's unconfigured.  If the user really needs to use
-            // a blank password to access a service, he can leave the password field blank in the logon
-            // dialog when it eventually appears.
-            char[] pass = identityPane.getUserPasswordField().getPassword();
-
-            // Make sure prompting is enabled
-            ssg.promptForUsernameAndPassword(true);
-            ssg.cmPassword(pass.length > 0 ? identityPane.getUserPasswordField().getPassword() : null);
 
             if (radioNonstandardPorts.isSelected()) {
                 ssg.setSsgPort(Integer.parseInt(fieldSsgPort.getText()));
