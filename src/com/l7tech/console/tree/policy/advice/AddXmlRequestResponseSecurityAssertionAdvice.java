@@ -1,11 +1,11 @@
 package com.l7tech.console.tree.policy.advice;
 
-import com.l7tech.common.xml.XpathExpression;
 import com.l7tech.common.security.xml.ElementSecurity;
+import com.l7tech.common.util.SoapUtil;
+import com.l7tech.common.xml.XpathExpression;
 import com.l7tech.console.tree.policy.PolicyChange;
 import com.l7tech.console.tree.policy.PolicyException;
 import com.l7tech.policy.assertion.Assertion;
-import com.l7tech.common.security.xml.ElementSecurity;
 import com.l7tech.policy.assertion.xmlsec.XmlSecurityAssertion;
 
 import javax.xml.soap.SOAPConstants;
@@ -21,7 +21,6 @@ import java.util.Map;
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  */
 public class AddXmlRequestResponseSecurityAssertionAdvice implements Advice {
-    private static final String ENVELOPE_XPATH = "/soapenv:Envelope";
     private Map namespaces = new HashMap();
 
 
@@ -41,7 +40,7 @@ public class AddXmlRequestResponseSecurityAssertionAdvice implements Advice {
           !(assertions[0] instanceof XmlSecurityAssertion)) {
             throw new IllegalArgumentException();
         }
-        XpathExpression xpathExpression = new XpathExpression(ENVELOPE_XPATH, namespaces);
+        XpathExpression xpathExpression = new XpathExpression(SoapUtil.SOAP_ENVELOPE_XPATH, namespaces);
         XmlSecurityAssertion a = (XmlSecurityAssertion)assertions[0];
         final ElementSecurity elementSecurity =
           new ElementSecurity(xpathExpression, null, false, ElementSecurity.DEFAULT_CIPHER, ElementSecurity.DEFAULT_KEYBITS);

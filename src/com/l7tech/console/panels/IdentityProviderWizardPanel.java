@@ -27,6 +27,7 @@ import java.awt.event.ActionListener;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.Iterator;
+import java.util.Map;
 import java.security.Principal;
 
 
@@ -40,6 +41,7 @@ import java.security.Principal;
  */
 public class IdentityProviderWizardPanel extends WizardStepPanel {
     private DefaultComboBoxModel providersComboBoxModel;
+    private Map credentialsLocationMap = Components.newCredentialsLocationMap();
 
     /**
      * Creates new form IdentityProviderWizardPanel
@@ -468,7 +470,7 @@ public class IdentityProviderWizardPanel extends WizardStepPanel {
             // crenedtials location, safe
             Object o = credentialsLocationComboBox.getSelectedItem();
             if (o != null) {
-                Assertion ca = (Assertion)Components.getCredentialsLocationMap().get(o);
+                Assertion ca = (Assertion)credentialsLocationMap.get(o);
                 if (ca != null && !(ca instanceof TrueAssertion)) // trueassertion is anonymous
                     allAssertions.add(ca);
             }
@@ -508,7 +510,7 @@ public class IdentityProviderWizardPanel extends WizardStepPanel {
             // crenedtials location, safe
             Object o = credentialsLocationComboBox.getSelectedItem();
             if (o != null && !isAnonymous()) {
-                Assertion ca = (Assertion)Components.getCredentialsLocationMap().get(o);
+                Assertion ca = (Assertion)credentialsLocationMap.get(o);
                 if (ca != null && !(ca instanceof TrueAssertion)) // trueassertion is anonymous
                     identityAssertion.add(ca);
             }

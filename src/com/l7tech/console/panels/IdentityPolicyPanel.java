@@ -74,6 +74,7 @@ public class IdentityPolicyPanel extends JPanel {
     private PolicyTreeModel policyTreeModel;
     private AssertionTreeNode rootAssertionTreeNode;
     private static final String[] XML_SEC_OPTIONS = new String[]{"sign only", "sign and encrypt"};
+    private Map credentialsLocationMap = Components.newCredentialsLocationMap();
 
     /**
      * Create the identity policy panel for a given identity and service
@@ -136,7 +137,7 @@ public class IdentityPolicyPanel extends JPanel {
             public void itemStateChanged(ItemEvent e) {
                 Object key = e.getItem();
                 CredentialSourceAssertion ca =
-                        (CredentialSourceAssertion)Components.getCredentialsLocationMap().get(key);
+                        (CredentialSourceAssertion)credentialsLocationMap.get(key);
                 xmlSecOptions.setEnabled(ca instanceof XmlRequestSecurity);
             }
         });
@@ -234,7 +235,7 @@ public class IdentityPolicyPanel extends JPanel {
     }
 
     private void selectAuthMethodComboItem(Assertion cas) {
-        Set entrySet = Components.getCredentialsLocationMap().entrySet();
+        Set entrySet = credentialsLocationMap.entrySet();
         for (Iterator iterator = entrySet.iterator(); iterator.hasNext();) {
             Map.Entry entry = (Map.Entry)iterator.next();
             if (cas.getClass().equals(entry.getValue().getClass())) {
@@ -448,7 +449,7 @@ public class IdentityPolicyPanel extends JPanel {
         if (!authMethodComboBox.isEnabled()) return null;
 
         Object key = authMethodComboBox.getSelectedItem();
-        CredentialSourceAssertion newCredAssertion = (CredentialSourceAssertion)Components.getCredentialsLocationMap().get(key);
+        CredentialSourceAssertion newCredAssertion = (CredentialSourceAssertion)credentialsLocationMap.get(key);
         if (newCredAssertion instanceof XmlRequestSecurity) {
             boolean encrypt = xmlSecOptions.getSelectedItem().equals(XML_SEC_OPTIONS[1]);
             //((XmlRequestSecurity)newCredAssertion).setEncryption(encrypt);
