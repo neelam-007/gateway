@@ -27,7 +27,6 @@ public class FilteredLogTableSorter extends FilteredLogTableModel {
     private Object[] sortedData = null;
     private ClusterStatusAdmin clusterStatusAdmin = null;
     private LogAdmin logService = null;
-    private Hashtable currentNodeList;
 
     public FilteredLogTableSorter() {
     }
@@ -124,17 +123,19 @@ public class FilteredLogTableSorter extends FilteredLogTableModel {
 
     public Object getValueAt(int row, int col) {
         switch (col) {
-            case 0:
+            case LogPanel.LOG_MSG_NUMBER_COLUMN_INDEX:
                 return new Long (((LogMessage) sortedData[row]).getMsgNumber());
-            case 1:
+            case LogPanel.LOG_NODE_NAME_COLUMN_INDEX:
+                return ((LogMessage) sortedData[row]).getNodeName();
+            case LogPanel.LOG_TIMESTAMP_COLUMN_INDEX:
                 return ((LogMessage) sortedData[row]).getTime();
-            case 2:
+            case LogPanel.LOG_SEVERITY_COLUMN_INDEX:
                 return ((LogMessage) sortedData[row]).getSeverity();
-            case 3:
+            case LogPanel.LOG_MSG_DETAILS_COLUMN_INDEX:
                 return ((LogMessage) sortedData[row]).getMessageDetails();
-            case 4:
+            case LogPanel.LOG_JAVA_CLASS_COLUMN_INDEX:
                 return ((LogMessage) sortedData[row]).getMessageClass();
-            case 5:
+            case LogPanel.LOG_JAVA_METHOD_COLUMN_INDEX:
                 return ((LogMessage) sortedData[row]).getMessageMethod();
             default:
                 throw new IllegalArgumentException("Bad Column");
@@ -155,27 +156,32 @@ public class FilteredLogTableSorter extends FilteredLogTableModel {
             String elementA = new String("");
             String elementB = new String("");
 
+
             switch (column) {
-                case 0:
+                case LogPanel.LOG_MSG_NUMBER_COLUMN_INDEX:
                     elementA = Long.toString(((LogMessage) a).getMsgNumber());
                     elementB = Long.toString(((LogMessage) b).getMsgNumber());
                     break;
-                case 1:
+                case LogPanel.LOG_NODE_NAME_COLUMN_INDEX:
+                    elementA = ((LogMessage) a).getNodeName();
+                    elementB = ((LogMessage) b).getNodeName();
+                    break;
+                case LogPanel.LOG_TIMESTAMP_COLUMN_INDEX:
                     elementA = ((LogMessage) a).getTime();
                     elementB = ((LogMessage) b).getTime();
                     break;
-                case 2:
+                case LogPanel.LOG_SEVERITY_COLUMN_INDEX:
                     elementA = ((LogMessage) a).getSeverity();
                     elementB = ((LogMessage) b).getSeverity();
                     break;
-                case 3:
+                case LogPanel.LOG_MSG_DETAILS_COLUMN_INDEX:
                     elementA = ((LogMessage) a).getMessageDetails();
                     elementB = ((LogMessage) b).getMessageDetails();
                     break;
-                case 4:
+                case LogPanel.LOG_JAVA_CLASS_COLUMN_INDEX:
                     elementA = ((LogMessage) a).getMessageClass();
                     elementB = ((LogMessage) b).getMessageClass();
-                case 5:
+                case LogPanel.LOG_JAVA_METHOD_COLUMN_INDEX:
                     elementA = ((LogMessage) a).getMessageMethod();
                     elementB = ((LogMessage) b).getMessageMethod();
                     break;

@@ -2,6 +2,8 @@ package com.l7tech.console.table;
 
 import com.l7tech.logging.LogMessage;
 import com.l7tech.console.panels.LogPanel;
+import com.l7tech.cluster.GatewayStatus;
+
 import java.util.Vector;
 import java.util.Hashtable;
 import java.util.Iterator;
@@ -22,6 +24,7 @@ public class FilteredLogTableModel extends FilteredDefaultTableModel {
     protected Hashtable rawLogCache = new Hashtable();
     protected Vector filteredLogCache = new Vector();
     private int filterLevel = LogPanel.MSG_FILTER_LEVEL_WARNING;
+    protected Hashtable currentNodeList;
 
 
     public void setMsgFilterLevel(int filterLevel) {
@@ -93,6 +96,12 @@ public class FilteredLogTableModel extends FilteredDefaultTableModel {
 
         Object node = null;
         Vector logs;
+        Object nodeName = null;
+
+        if((nodeName = currentNodeList.get(nodeId)) == null) {
+            return;
+        }
+
         if ((node = rawLogCache.get(nodeId)) != null) {
             logs = (Vector) node;
 
@@ -101,6 +110,7 @@ public class FilteredLogTableModel extends FilteredDefaultTableModel {
                 LogMessage logMsg = (LogMessage) logs.elementAt(i);
 
                 if (isFilteredMsg(logMsg)) {
+                    logMsg.setNodeName(((GatewayStatus) nodeName).getName());
                     filteredLogCache.add(logMsg);
                 }
             }

@@ -43,6 +43,14 @@ public class LogPanel extends JPanel {
     public static final int MSG_FILTER_LEVEL_WARNING = 2;
     public static final int MSG_FILTER_LEVEL_SEVERE = 1;
 
+    public static final int LOG_MSG_NUMBER_COLUMN_INDEX = 0;
+    public static final int LOG_NODE_NAME_COLUMN_INDEX = 1;
+    public static final int LOG_TIMESTAMP_COLUMN_INDEX = 2;
+    public static final int LOG_SEVERITY_COLUMN_INDEX = 3;
+    public static final int LOG_MSG_DETAILS_COLUMN_INDEX = 4;
+    public static final int LOG_JAVA_CLASS_COLUMN_INDEX = 5;
+    public static final int LOG_JAVA_METHOD_COLUMN_INDEX = 6;
+
     public static final String MSG_TOTAL_PREFIX = "Total: ";
 
     private static final int LOG_REFRESH_TIMER = 3000;
@@ -99,18 +107,20 @@ public class LogPanel extends JPanel {
 
                         //msg = "The selected row is: " + row + "\n";
                         msg = "";
-                        //if (getMsgTable().getModel().getValueAt(row, 0) != null)
-                        //    msg = msg + "Message #: " + getMsgTable().getModel().getValueAt(row, 0).toString() + "\n";
-                        if (getMsgTable().getModel().getValueAt(row, 1) != null)
-                            msg = msg + "Time     : " + getMsgTable().getModel().getValueAt(row, 1).toString() + "\n";
-                        if (getMsgTable().getModel().getValueAt(row, 2) != null)
-                            msg = msg + "Severity : " + getMsgTable().getModel().getValueAt(row, 2).toString() + "\n";
-                        if (getMsgTable().getModel().getValueAt(row, 3) != null)
-                            msg = msg + "Message  : " + getMsgTable().getModel().getValueAt(row, 3).toString() + "\n";
-                        if (getMsgTable().getModel().getValueAt(row, 4) != null)
-                            msg = msg + "Class    : " + getMsgTable().getModel().getValueAt(row, 4).toString() + "\n";
-                        if (getMsgTable().getModel().getValueAt(row, 5) != null)
-                            msg = msg + "Method   : " + getMsgTable().getModel().getValueAt(row, 5).toString() + "\n";
+                        //if (getMsgTable().getModel().getValueAt(row, LOG_MSG_NUMBER_COLUMN_INDEX) != null)
+                        //    msg = msg + "Message #: " + getMsgTable().getModel().getValueAt(row, LOG_MSG_NUMBER_COLUMN_INDEX).toString() + "\n";
+                        if (getMsgTable().getModel().getValueAt(row, LOG_NODE_NAME_COLUMN_INDEX) != null)
+                            msg = msg + "Node     : " + getMsgTable().getModel().getValueAt(row, LOG_NODE_NAME_COLUMN_INDEX).toString() + "\n";
+                        if (getMsgTable().getModel().getValueAt(row, LOG_TIMESTAMP_COLUMN_INDEX) != null)
+                            msg = msg + "Time     : " + getMsgTable().getModel().getValueAt(row, LOG_TIMESTAMP_COLUMN_INDEX).toString() + "\n";
+                        if (getMsgTable().getModel().getValueAt(row, LOG_SEVERITY_COLUMN_INDEX) != null)
+                            msg = msg + "Severity : " + getMsgTable().getModel().getValueAt(row, LOG_SEVERITY_COLUMN_INDEX).toString() + "\n";
+                        if (getMsgTable().getModel().getValueAt(row, LOG_MSG_DETAILS_COLUMN_INDEX) != null)
+                            msg = msg + "Message  : " + getMsgTable().getModel().getValueAt(row, LOG_MSG_DETAILS_COLUMN_INDEX).toString() + "\n";
+                        if (getMsgTable().getModel().getValueAt(row, LOG_JAVA_CLASS_COLUMN_INDEX) != null)
+                            msg = msg + "Class    : " + getMsgTable().getModel().getValueAt(row, LOG_JAVA_CLASS_COLUMN_INDEX).toString() + "\n";
+                        if (getMsgTable().getModel().getValueAt(row, LOG_JAVA_METHOD_COLUMN_INDEX) != null)
+                            msg = msg + "Method   : " + getMsgTable().getModel().getValueAt(row, LOG_JAVA_METHOD_COLUMN_INDEX).toString() + "\n";
                         getMsgDetails().setText(msg);
 
                     }
@@ -370,12 +380,13 @@ public class LogPanel extends JPanel {
     private DefaultTableColumnModel getLogColumnModel() {
         DefaultTableColumnModel columnModel = new DefaultTableColumnModel();
 
-        columnModel.addColumn(new TableColumn(0, 20));
-        columnModel.addColumn(new TableColumn(1, 60));
-        columnModel.addColumn(new TableColumn(2, 15));
-        columnModel.addColumn(new TableColumn(3, 400));
-        columnModel.addColumn(new TableColumn(4, 0));   // min width is used
-        columnModel.addColumn(new TableColumn(5, 0));   // min width is used
+        columnModel.addColumn(new TableColumn(LOG_MSG_NUMBER_COLUMN_INDEX, 20));
+        columnModel.addColumn(new TableColumn(LOG_NODE_NAME_COLUMN_INDEX, 30));
+        columnModel.addColumn(new TableColumn(LOG_TIMESTAMP_COLUMN_INDEX, 80));
+        columnModel.addColumn(new TableColumn(LOG_SEVERITY_COLUMN_INDEX, 15));
+        columnModel.addColumn(new TableColumn(LOG_MSG_DETAILS_COLUMN_INDEX, 400));
+        columnModel.addColumn(new TableColumn(LOG_JAVA_CLASS_COLUMN_INDEX, 0));   // min width is used
+        columnModel.addColumn(new TableColumn(LOG_JAVA_METHOD_COLUMN_INDEX, 0));   // min width is used
 
         for(int i = 0; i < columnModel.getColumnCount(); i++){
             columnModel.getColumn(i).setHeaderRenderer(iconHeaderRenderer);
@@ -387,19 +398,20 @@ public class LogPanel extends JPanel {
             // show the message # column (mainly for debugging and testing purpose
         }
         else{
-            columnModel.getColumn(0).setMinWidth(0);
-            columnModel.getColumn(0).setMaxWidth(0);
-            columnModel.getColumn(0).setPreferredWidth(0);
+            columnModel.getColumn(LOG_MSG_NUMBER_COLUMN_INDEX).setMinWidth(0);
+            columnModel.getColumn(LOG_MSG_NUMBER_COLUMN_INDEX).setMaxWidth(0);
+            columnModel.getColumn(LOG_MSG_NUMBER_COLUMN_INDEX).setPreferredWidth(0);
         }
 
         // we don't show following columns including method, class
         // but the data is retrieved for display in the detailed pane
-        columnModel.getColumn(4).setMinWidth(0);
-        columnModel.getColumn(4).setMaxWidth(0);
-        columnModel.getColumn(4).setPreferredWidth(0);
-        columnModel.getColumn(5).setMinWidth(0);
-        columnModel.getColumn(5).setMaxWidth(0);
-        columnModel.getColumn(5).setPreferredWidth(0);
+        columnModel.getColumn(LOG_JAVA_CLASS_COLUMN_INDEX).setMinWidth(0);
+        columnModel.getColumn(LOG_JAVA_CLASS_COLUMN_INDEX).setMaxWidth(0);
+        columnModel.getColumn(LOG_JAVA_CLASS_COLUMN_INDEX).setPreferredWidth(0);
+
+        columnModel.getColumn(LOG_JAVA_METHOD_COLUMN_INDEX).setMinWidth(0);
+        columnModel.getColumn(LOG_JAVA_METHOD_COLUMN_INDEX).setMaxWidth(0);
+        columnModel.getColumn(LOG_JAVA_METHOD_COLUMN_INDEX).setPreferredWidth(0);
 
 
         return columnModel;
@@ -429,7 +441,7 @@ public class LogPanel extends JPanel {
             return logTableModel;
         }
 
-        String[] cols = {"Message #", "Time", "Severity", "Message", "Class", "Method"};
+        String[] cols = {"Message #", "Node", "Time", "Severity", "Message", "Class", "Method"};
         String[][] rows = new String[][]{};
 
         logTableModel = new LogTableModel(rows, cols);
