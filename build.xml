@@ -475,6 +475,13 @@
                 <!-- goes in lib/ext -->
                 <exclude name="com/l7tech/common/security/TrustedCert**"/>
 
+                <!-- Tarari drivers not available in standalone Agent -->
+                <exclude name="com/l7tech/common/xml/tarari/TarariUtil.class"/>
+                <exclude name="com/l7tech/common/xml/tarari/TarariFactories.class"/>
+                <exclude name="com/l7tech/common/xml/tarari/TarariMessageContextImpl.class"/>
+
+                <exclude name="com/l7tech/common/audit/**/*"/>
+
                 <exclude name="com/l7tech/policy/server/**/*"/>
                 <exclude name="com/l7tech/policy/exporter/**/*"/>
                 <exclude name="com/l7tech/policy/validator/RequestXpathAssertionValidator.class"/>

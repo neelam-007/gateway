@@ -6,8 +6,6 @@
 
 package com.l7tech.proxy.policy.assertion;
 
-import com.l7tech.common.audit.AssertionMessages;
-import com.l7tech.common.audit.Auditor;
 import com.l7tech.common.message.Message;
 import com.l7tech.common.message.TarariKnob;
 import com.l7tech.common.mime.NoSuchPartException;
@@ -34,7 +32,6 @@ import java.util.logging.Logger;
  */
 public class ClientAcceleratedXpathAssertion extends ClientXpathAssertion {
     private static final Logger logger = Logger.getLogger(ClientAcceleratedXpathAssertion.class.getName());
-    private final Auditor auditor = new Auditor(this, null, logger);
     protected final String expr;
     protected final ClientAssertion softwareDelegate;
 
@@ -90,19 +87,19 @@ public class ClientAcceleratedXpathAssertion extends ClientXpathAssertion {
     private AssertionStatus checkMatch(Message mess) throws IOException
     {
         if (expr == null ) {
-            auditor.logAndAudit(AssertionMessages.XPATH_PATTERN_INVALID);
+            logger.log(Level.WARNING, "XPath pattern is null or empty; assertion therefore fails.");
             return AssertionStatus.SERVER_ERROR;
         }
 
         GlobalTarariContext tarariContext = TarariLoader.getGlobalContext();
         if (tarariContext == null) {
-            auditor.logAndAudit(AssertionMessages.ACCEL_XPATH_NO_HARDWARE);
+            logger.log(Level.INFO, "Hardware acceleration not available; falling back to software xpath processing.");
             return null;
         }
 
         int index = tarariContext.getIndex(expr);
         if (index < 1) {
-            auditor.logAndAudit(AssertionMessages.ACCEL_XPATH_UNSUPPORTED_PATTERN);
+            logger.log(Level.INFO, "Hardware acceleration not supported for this xpath expression; falling back to software xpath processing.");
             return null;
         }
 
@@ -113,30 +110,32 @@ public class ClientAcceleratedXpathAssertion extends ClientXpathAssertion {
             mess.isSoap();
             tknob = (TarariKnob) mess.getKnob(TarariKnob.class);
             if (tknob == null) {
-                auditor.logAndAudit(AssertionMessages.ACCEL_XPATH_NO_CONTEXT);
+                logger.log(Level.WARNING, "This message has no hardware acceleration context; falling back to software xpath processing.");
                 return null;
             }
 
             TarariMessageContext tmc = tknob.getContext();
             TarariMessageContextImpl tmContext = (TarariMessageContextImpl)tmc;
             if (tmContext == null) {
-                auditor.logAndAudit(AssertionMessages.ACCEL_XPATH_NO_CONTEXT);
+                logger.log(Level.WARNING, "This message has no hardware acceleration context; falling back to software xpath processing.");
                 return null;
             }
 
             RAXContext raxContext = tmContext.getRaxContext();
             int numMatches = raxContext.getCount(index);
             if (numMatches > 0) {
-                auditor.logAndAudit(isRequest ? AssertionMessages.XPATH_SUCCEED_REQUEST : AssertionMessages.XPATH_SUCCEED_RESPONSE);
+                final String r = isRequest ? "request" : "response";
+                logger.log(Level.FINE, "XPath pattern matched " + r + "; assertion therefore succeeds.");
                 return AssertionStatus.NONE;
             } else {
                 return AssertionStatus.FALSIFIED;
             }
         } catch (SAXException e) {
-            auditor.logAndAudit(isRequest ? AssertionMessages.XPATH_REQUEST_NOT_XML : AssertionMessages.XPATH_RESPONSE_NOT_XML);
+            final String r = isRequest ? "Request" : "Response";
+            logger.log(Level.WARNING, r + " not XML; cannot evaluate XPath expression");
             return AssertionStatus.FAILED;
         } catch (NoSuchPartException e) {
-            auditor.logAndAudit(AssertionMessages.EXCEPTION_INFO_WITH_MORE_INFO, new String[] {"The required attachment " + e.getWhatWasMissing() + "was not found in the request"}, e);
+            logger.log(Level.WARNING, "The required attachment " + e.getWhatWasMissing() + "was not found in the request", e);
             return AssertionStatus.FAILED;
         }
     }
