@@ -1,0 +1,98 @@
+#!/bin/bash
+# -----------------------------------------------------------------------------
+# FILE [rootcaGen.sh]
+# LAYER 7 TECHNOLOGIES
+# $Id:
+#
+# THIS SCRIPT GENERATES THE PRIVATE KEYSTORE OF THE SSG
+#
+# PREREQUISITES
+# 1. THE DIRECTORY JAVA_HOME/bin IS PART OF THE PATH
+# 2. TOMCAT_HOME is set
+#
+# -----------------------------------------------------------------------------
+#
+
+# Under cygwin?.
+cygwin=false;
+case "`uname`" in
+  CYGWIN*) cygwin=true ;;
+esac
+
+# For Cygwin, get the Windows paths for keytool.
+TOMCAT_HOME_OSPATH="$TOMCAT_HOME"
+if $cygwin; then
+  TOMCAT_HOME_OSPATH=`cygpath --path --windows "$TOMCAT_HOME"`
+fi
+
+KEYTOOL="$JAVA_HOME/bin/keytool"
+KEYSTORE_DIR="$TOMCAT_HOME/kstores"
+KEYSTORE_DIR_OSPATH="$TOMCAT_HOME_OSPATH/kstores"
+KEYSTORE_FILE="$KEYSTORE_DIR/ssgroot"
+KEYSTORE_FILE_OSPATH="$KEYSTORE_DIR_OSPATH/ssgroot"
+CERTIFICATE_FILE="$TOMCAT_HOME/kstores/ssgroot.cer"
+CERTIFICATE_FILE_OSPATH="$TOMCAT_HOME_OSPATH/kstores/ssgroot.cer"
+
+# VERIFY THAT THE TOMCAT_HOME VARIABLE IS SET
+if [ ! "$TOMCAT_HOME" ]; then
+        echo "ERROR: TOMCAT_HOME not set"
+        echo
+        exit -1
+fi
+
+# VERIFY THAT THE KEYSTORE IS NOT YET SET
+if [ -e "$KEYSTORE_FILE" ]; then
+        echo "THE KEYSTORE ALREADY EXIST."
+        echo "DO YOU WANT TO OVERWRITE? [y/n]"
+        read ADMIN_ANSWER
+        if [ $ADMIN_ANSWER = "n" ]
+        then
+                exit -1
+                echo
+        else
+                /bin/rm "$KEYSTORE_FILE"
+        fi
+fi
+
+# ENSURE THAT THE DIRECTORY EXISTS
+mkdir "$KEYSTORE_DIR"
+
+# GET A KEYSTORE PASSWORD FROM CALLER
+echo "Please provide an keystore password"
+read -s KEYSTORE_PASSWORD
+echo "Please repeat"
+read -s KEYSTORE_PASSWORD_REPEAT
+
+# VERIFY THAT PASSWORDS ARE EQUAL
+if [ ! "$KEYSTORE_PASSWORD" = "$KEYSTORE_PASSWORD_REPEAT" ]; then
+	echo "ERROR : passwords do not match"
+	exit -1
+fi
+
+# VERIFY THAT THE PASSWORD IS LONG ENOUGH
+PASSWORD_LENGTH=${#KEYSTORE_PASSWORD}
+if [ "$PASSWORD_LENGTH" -lt 6 ]; then
+	echo "ERROR : the admin password must be at least 6 characters long"
+	exit -1
+fi
+
+# GENERATE THE KEYSTORE FILE
+echo "GENERATING THE ROOT KEYSTORE FILE"
+echo "Important: During the key generation, you must enter the COMMON NAME value (CN) properly."
+echo "This value must be equal to the host name that the client uses to reach the ssg (e.g. ssg.acme.com)."
+echo
+echo "PRESS ANY KEY TO CONTINUE"
+read
+$KEYTOOL -genkey -alias tomcat -keystore "$KEYSTORE_FILE_OSPATH" -keyalg RSA -keypass $KEYSTORE_PASSWORD -storepass "$KEYSTORE_PASSWORD"
+
+# CHECK THAT THIS KEYSTORE WAS SET SUCCESSFULLY
+if [ -e "$KEYSTORE_FILE" ]
+then
+# EXPORT THE SERVER CERTIFICATE
+        $KEYTOOL -export -alias tomcat -storepass "$KEYSTORE_PASSWORD" -file "$CERTIFICATE_FILE_OSPATH" -keystore "$KEYSTORE_FILE_OSPATH"
+else
+# INFORM THE USER OF THE FAILURE
+        echo "ERROR: The keystore file was not generated"
+        echo
+        exit 255
+fi
