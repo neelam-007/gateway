@@ -2,6 +2,7 @@ package com.l7tech.console.action;
 
 import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.common.util.ExceptionUtils;
+import com.l7tech.common.xml.Wsdl;
 import com.l7tech.console.MainWindow;
 import com.l7tech.console.event.*;
 import com.l7tech.console.panels.*;
@@ -12,13 +13,12 @@ import com.l7tech.console.util.Registry;
 import com.l7tech.objectmodel.DuplicateObjectException;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
+import com.l7tech.policy.assertion.Assertion;
+import com.l7tech.policy.assertion.RoutingAssertion;
+import com.l7tech.policy.assertion.composite.AllAssertion;
+import com.l7tech.policy.wsp.WspWriter;
 import com.l7tech.service.PublishedService;
 import com.l7tech.service.ServiceAdmin;
-import com.l7tech.common.xml.Wsdl;
-import com.l7tech.policy.wsp.WspWriter;
-import com.l7tech.policy.assertion.TrueAssertion;
-import com.l7tech.policy.assertion.Assertion;
-import com.l7tech.policy.assertion.composite.AllAssertion;
 
 import javax.swing.*;
 import javax.swing.tree.DefaultMutableTreeNode;
@@ -31,20 +31,20 @@ import javax.wsdl.Service;
 import javax.wsdl.extensions.soap.SOAPAddress;
 import javax.wsdl.factory.WSDLFactory;
 import javax.wsdl.xml.WSDLWriter;
-import java.io.StringWriter;
 import java.io.ByteArrayOutputStream;
 import java.io.StringReader;
+import java.io.StringWriter;
+import java.util.Arrays;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.Map;
-import java.util.Iterator;
-import java.util.Arrays;
-import java.util.List;
 
 /**
  * The <code>PublishServiceAction</code> action invokes the pubish
  * service wizard.
- *
+ * 
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  * @version 1.0
  */
@@ -76,9 +76,10 @@ public class CreateServiceWsdlAction extends BaseAction implements ConnectionLis
         return "com/l7tech/console/resources/policy16.gif";
     }
 
-    /** Actually perform the action.
+    /**
+     * Actually perform the action.
      * This is the method which should be called programmatically.
-
+     * <p/>
      * note on threading usage: do not access GUI components
      * without explicitly asking for the AWT event thread!
      */
@@ -108,7 +109,7 @@ public class CreateServiceWsdlAction extends BaseAction implements ConnectionLis
     private WizardListener wizardListener = new WizardAdapter() {
         /**
          * Invoked when the wizard has finished.
-         *
+         * 
          * @param we the event describing the wizard finish
          */
         public void wizardFinished(WizardEvent we) {
@@ -116,16 +117,6 @@ public class CreateServiceWsdlAction extends BaseAction implements ConnectionLis
             try {
                 Wizard w = (Wizard)we.getSource();
                 Definition def = (Definition)w.getCollectedInformation();
-                // assign empty policy
-                ByteArrayOutputStream bo = new ByteArrayOutputStream();
-                final List children = Arrays.asList(
-                                                new Assertion[] {
-                                                    new TrueAssertion()
-                                                });
-                WspWriter.writePolicy(
-                  new AllAssertion(children), bo);
-
-                service.setPolicyXml(bo.toString());
 
                 service.setDisabled(true);
                 WSDLFactory fac = WSDLFactory.newInstance();
@@ -135,7 +126,22 @@ public class CreateServiceWsdlAction extends BaseAction implements ConnectionLis
                 Wsdl ws = Wsdl.newInstance(null, new StringReader(sw.toString()));
                 service.setName(ws.getServiceName());
                 service.setWsdlXml(sw.toString());
-                service.setWsdlUrl(getServiceAddress(def));
+                final String serviceAddress = getServiceAddress(def);
+                service.setWsdlUrl(serviceAddress);
+                RoutingAssertion ra = null;
+                if (serviceAddress !=null) {
+                   ra = new RoutingAssertion(serviceAddress);
+                } else {
+                    ra = new RoutingAssertion();
+                }
+
+                // assign empty policy
+                ByteArrayOutputStream bo = new ByteArrayOutputStream();
+                final List children = Arrays.asList(new Assertion[]{ra});
+                WspWriter.writePolicy(new AllAssertion(children), bo);
+
+                service.setPolicyXml(bo.toString());
+
 
                 ServiceAdmin serviceManager = Registry.getDefault().getServiceManager();
                 long oid = serviceManager.savePublishedService(service);
@@ -166,7 +172,7 @@ public class CreateServiceWsdlAction extends BaseAction implements ConnectionLis
 
         /**
          * Invoked when the wizard has been cancelled.
-         *
+         * 
          * @param e the event describinng the wizard cancel
          */
         public void wizardCanceled(WizardEvent e) {
@@ -198,14 +204,13 @@ public class CreateServiceWsdlAction extends BaseAction implements ConnectionLis
 
     /**
      * determine the soap address of the first service/port
-     *
+     * 
      * @param def the WSDL definition model
      * @return the soap address as String
      * @throws IllegalArgumentException if the soap address is not found
-     *
      */
     private String getServiceAddress(Definition def)
-      throws IllegalArgumentException{
+      throws IllegalArgumentException {
         Map services = def.getServices();
         if (services.isEmpty()) {
             throw new IllegalArgumentException("missing service");
