@@ -21,9 +21,6 @@ import java.util.logging.Logger;
 public class ServerSpecificUser extends ServerIdentityAssertion implements ServerAssertion {
     public ServerSpecificUser( SpecificUser data ) {
         super( data );
-        if (data == null || data.getUserLogin() == null) {
-            throw new IllegalArgumentException("must set a valid SpecificUser assertion");
-        }
         _data = data;
     }
 
@@ -34,8 +31,16 @@ public class ServerSpecificUser extends ServerIdentityAssertion implements Serve
      * @return <code>AssertionStatus.NONE</code> if the <code>User</code> matches.
      */
     public AssertionStatus checkUser(User requestingUser) {
-        if (_data.getUserLogin().equals(requestingUser.getLogin())) {
-            if (requestingUser.getProviderId() == _data.getIdentityProviderOid()) {
+        // avoid npe, we must have a login to compare to
+        if (_data == null || _data.getUserLogin() == null) {
+            String msg = "null assertion or SpecificUser has null login.";
+            logger.warning(msg);
+            return AssertionStatus.SERVER_ERROR;
+        }
+
+        // check provider id and user login (start with provider as it's cheaper
+        if (requestingUser.getProviderId() == _data.getIdentityProviderOid()) {
+            if (_data.getUserLogin().equals(requestingUser.getLogin())) {
                 return AssertionStatus.NONE;
             }
         }
