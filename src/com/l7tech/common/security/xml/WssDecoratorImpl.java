@@ -72,7 +72,11 @@ public class WssDecoratorImpl implements WssDecorator {
         Element encryptedKey = addEncryptedKey(c, securityHeader, recipientCertificate, elementsToEncrypt);
 
         // todo sign
-        //Element signature = addSignature(senderCertificate, senderPrivateKey);
+        Element signature = addSignature(senderCertificate, senderPrivateKey);
+    }
+
+    private Element addSignature(X509Certificate senderCertificate, PrivateKey senderPrivateKey) {
+        return null;
     }
 
     private Element addEncryptedKey(Context c,
