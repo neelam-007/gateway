@@ -15,6 +15,7 @@ public class Ssg implements Cloneable, Comparable {
     private String name = "";
     private String localEndpoint = "";
     private String serverUrl = "";
+    private int sslPort = 443;
     private String username = null;
     private String password = null;
     private String keyStorePath = null;
@@ -151,5 +152,13 @@ public class Ssg implements Cloneable, Comparable {
 
     public void setKeyStorePath(final String keyStorePath) {
         this.keyStorePath = keyStorePath;
+    }
+
+    public int getSslPort() {
+        return sslPort;
+    }
+
+    public void setSslPort(int sslPort) {
+        this.sslPort = sslPort;
     }
 }

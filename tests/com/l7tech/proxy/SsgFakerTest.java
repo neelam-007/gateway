@@ -11,6 +11,7 @@ import org.apache.axis.soap.SOAPConstants;
 import org.xml.sax.helpers.AttributesImpl;
 
 import javax.xml.soap.SOAPException;
+import java.io.IOException;
 import java.net.MalformedURLException;
 import java.rmi.RemoteException;
 
@@ -48,7 +49,7 @@ public class SsgFakerTest extends TestCase {
         }
     }
 
-    protected void setUp() {
+    protected void setUp() throws IOException {
         destroyFaker();
         ssgFaker = new SsgFaker();
         ssgUrl = ssgFaker.start();
@@ -58,11 +59,11 @@ public class SsgFakerTest extends TestCase {
         destroyFaker();
     }
 
-
     /**
      * Bounce a message off of the echo server, bypassing the client proxy, and verify that it worked.
+     * @param ssgUrl the SSG server to talk to
      */
-    public void testSsgFaker() throws RemoteException, SOAPException, MalformedURLException {
+    private void doTestPing(String ssgUrl) throws RemoteException, SOAPException, MalformedURLException {
         SOAPEnvelope reqEnvelope = new SOAPEnvelope();
 
         SOAPHeader reqHeader = new SOAPHeader(pingNamespace,
@@ -91,4 +92,12 @@ public class SsgFakerTest extends TestCase {
         MessageElement rec = (MessageElement)re.getChildren().get(0);
         assertTrue(rec.getValue().equals(payload));
     }
+
+    public void testSsgFaker() throws Exception {
+        doTestPing(ssgUrl);
+    }
+
+    //public void testSsgFakerSsl() throws Exception {
+        //doTestPing(ssgFaker.getSslUrl());
+    //}
 }

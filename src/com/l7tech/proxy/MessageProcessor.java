@@ -6,15 +6,15 @@
 
 package com.l7tech.proxy;
 
-import org.apache.axis.message.SOAPEnvelope;
-import org.apache.axis.client.Call;
-import org.mortbay.http.HttpException;
-import com.l7tech.proxy.datamodel.PendingRequest;
-import com.l7tech.proxy.datamodel.Managers;
-import com.l7tech.proxy.datamodel.Ssg;
-import com.l7tech.proxy.datamodel.PolicyManager;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.PolicyAssertionException;
+import com.l7tech.proxy.datamodel.PendingRequest;
+import com.l7tech.proxy.datamodel.PolicyManager;
+import com.l7tech.proxy.datamodel.Ssg;
+import org.apache.axis.client.Call;
+import org.apache.axis.message.SOAPEnvelope;
+import org.apache.log4j.Category;
+import org.mortbay.http.HttpException;
 
 import java.io.IOException;
 import java.net.MalformedURLException;
@@ -28,6 +28,7 @@ import java.rmi.RemoteException;
  * Time: 10:12:25 AM
  */
 public class MessageProcessor {
+    private static final Category log = Category.getInstance(MessageProcessor.class);
     private PolicyManager policyManager;
 
     public MessageProcessor(PolicyManager policyManager) {
@@ -42,16 +43,10 @@ public class MessageProcessor {
      * @return
      * @throws HttpException
      */
-    public SOAPEnvelope processMessage(PendingRequest pendingRequest) throws HttpException {
-        try {
-            Assertion policy = policyManager.getPolicy(pendingRequest.getSsg());
-            policy.decorateRequest(pendingRequest);
-            return callSsg(pendingRequest);
-        } catch (IOException e) {
-            throw new HttpException(500, "Unable to obtain the policy for this SSG: " + e.toString());
-        } catch (PolicyAssertionException e) {
-            throw new HttpException(500, "Unable to conform to the policy required by this SGS: " + e.toString());
-        }
+    public SOAPEnvelope processMessage(PendingRequest pendingRequest) throws IOException, PolicyAssertionException {
+        Assertion policy = policyManager.getPolicy(pendingRequest.getSsg());
+        policy.decorateRequest(pendingRequest);
+        return callSsg(pendingRequest);
     }
 
     /**
@@ -60,18 +55,19 @@ public class MessageProcessor {
      * @return
      * @throws HttpException
      */
-    private SOAPEnvelope callSsg(PendingRequest pendingRequest) throws HttpException {
+    private SOAPEnvelope callSsg(PendingRequest pendingRequest) throws HttpException, RemoteException {
         Ssg ssg = pendingRequest.getSsg();
         try {
             URL url = new URL(ssg.getServerUrl());
             if (pendingRequest.isSslRequired()) {
-                if ("http".equalsIgnoreCase(url.getProtocol()))
-                    url = new URL("https", url.getHost(), url.getPort(), url.getFile());
-                else
+                if ("http".equalsIgnoreCase(url.getProtocol())) {
+                    log.info("Changing http to https per policy for this request (using SSL port " + ssg.getSslPort() + ")");
+                    url = new URL("https", url.getHost(), ssg.getSslPort(), url.getFile());
+                } else
                     throw new HttpException(500, "Couldn't find an SSL-enabled version of protocol " + url.getProtocol());
             }
 
-            Call call = new Call(ssg.getServerUrl());
+            Call call = new Call(url);
             if (pendingRequest.isBasicAuthRequired()) {
                 call.setUsername(pendingRequest.getHttpBasicUsername());
                 call.setPassword(pendingRequest.getHttpBasicPassword());
@@ -83,8 +79,6 @@ public class MessageProcessor {
             return call.invoke(pendingRequest.getSoapEnvelope());
         } catch (MalformedURLException e) {
             throw new HttpException(500, "Client Proxy: this SSG has an invalid server url: " + ssg.getServerUrl());
-        } catch (RemoteException e) {
-            throw new HttpException(500, "Client Proxy: unable to reach SSG service: " + e.toString());
         }
     }
 }

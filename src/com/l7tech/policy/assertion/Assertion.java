@@ -10,6 +10,7 @@ import com.l7tech.message.Request;
 import com.l7tech.message.Response;
 import com.l7tech.policy.assertion.composite.CompositeAssertion;
 import com.l7tech.proxy.datamodel.PendingRequest;
+import com.l7tech.util.Locator;
 
 import java.io.Serializable;
 

@@ -15,6 +15,8 @@ import org.xml.sax.helpers.AttributesImpl;
 
 import javax.xml.soap.SOAPException;
 import java.io.IOException;
+import java.io.FileNotFoundException;
+import java.net.URL;
 
 /**
  * A "test" Ssg that can be controlled programmatically.  Used to test the Client Proxy.
@@ -30,9 +32,12 @@ public class SsgFaker {
     private int maxThreads = 4;
     private int minThreads = 1;
     private int localPort = 7566;
+    private int sslPort = 443;
     private String localEndpoint = "soap/ssg";
     private String ssgUrl = "http://localhost:" + localPort + "/" + localEndpoint;
+    private String sslUrl = "https://localhost:" + sslPort + "/" + localEndpoint;
     private boolean destroyed = false;
+    private static final String KEYSTORE = "com/l7tech/proxy/resources/ssgfaker-sv.keystore";
 
     /**
      * Create an SsgFaker with default settings.
@@ -44,26 +49,55 @@ public class SsgFaker {
      * Start the test SSG.
      * @return The SSG's soap URL.
      */
-    public synchronized String start() {
+    public synchronized String start() throws IOException {
         if (destroyed)
             throw new IllegalStateException("this SsgFaker is no more");
+
         httpServer = new HttpServer();
-        SocketListener socketListener = new SocketListener();
-        socketListener.setMaxThreads(maxThreads);
-        socketListener.setMinThreads(minThreads);
-        socketListener.setPort(localPort);
+
         HttpContext context = new HttpContext(httpServer, "/");
         HttpHandler requestHandler = new SsgFakerHandler();
         context.addHandler(requestHandler);
         httpServer.addContext(context);
+
+        URL ksUrl = getClass().getClassLoader().getResource(KEYSTORE);
+        if (ksUrl == null)
+            throw new FileNotFoundException("Can't find keystore file: " + KEYSTORE);
+
+        // Set up HTTP listener
+        SocketListener socketListener = new SocketListener();
+        socketListener.setMaxThreads(maxThreads);
+        socketListener.setMinThreads(minThreads);
+        socketListener.setPort(localPort);
         httpServer.addListener(socketListener);
+
+        // Set up SSL listener
+        SunJsseListener sslListener = new SunJsseListener();
+        sslListener.setMaxThreads(maxThreads);
+        sslListener.setMinThreads(minThreads);
+        sslListener.setPort(sslPort);
+        sslListener.setKeystore(ksUrl.getPath());
+        sslListener.setKeyPassword("password");
+        sslListener.setPassword("password");
+        httpServer.addListener(sslListener);
+
         try {
             httpServer.start();
         } catch (MultiException e) {
             log.error("Unable to start up test SSG", e);
+            throw new IOException("Failed to start the SSG: " + e.toString());
         }
-        log.info("SsgFaker started; listening on " + ssgUrl);
+        log.info("SsgFaker started; listening for http connections on " + ssgUrl);
+        log.info("SsgFaker listeneing for https connections on " + sslUrl);
         return ssgUrl;
+    }
+
+    public String getSsgUrl() {
+        return ssgUrl;
+    }
+
+    public String getSslUrl() {
+        return sslUrl;
     }
 
     /**
@@ -134,7 +168,7 @@ public class SsgFaker {
     }
 
     /** Fire up an SsgFaker for testing purposes. */
-    public static void main(String[] args) {
+    public static void main(String[] args) throws IOException {
         SsgFaker ssgFaker = new SsgFaker();
         String url = ssgFaker.start();
         System.out.println("SSG Faker is now listening on " + url);

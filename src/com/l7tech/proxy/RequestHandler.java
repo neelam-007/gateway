@@ -1,6 +1,10 @@
 package com.l7tech.proxy;
 
-import org.apache.axis.client.Call;
+import com.l7tech.policy.assertion.PolicyAssertionException;
+import com.l7tech.proxy.datamodel.PendingRequest;
+import com.l7tech.proxy.datamodel.Ssg;
+import com.l7tech.proxy.datamodel.SsgFinder;
+import com.l7tech.proxy.datamodel.SsgNotFoundException;
 import org.apache.axis.message.SOAPEnvelope;
 import org.apache.log4j.Category;
 import org.mortbay.http.HttpException;
@@ -10,12 +14,6 @@ import org.mortbay.http.handler.AbstractHttpHandler;
 import org.xml.sax.SAXException;
 
 import java.io.IOException;
-import java.net.MalformedURLException;
-
-import com.l7tech.proxy.datamodel.SsgFinder;
-import com.l7tech.proxy.datamodel.Ssg;
-import com.l7tech.proxy.datamodel.SsgNotFoundException;
-import com.l7tech.proxy.datamodel.PendingRequest;
 
 /**
  * Handle an incoming HTTP request, and proxy it if it's a SOAP request we know how to deal with.
@@ -159,9 +157,12 @@ public class RequestHandler extends AbstractHttpHandler {
             interceptor.onReceiveReply(reply);
             log.info("Returning result");
             return reply;
-        } catch (HttpException e) {
+        } catch (IOException e) {
             interceptor.onReplyError(e);
-            throw e;
+            throw new HttpException(500, "Unable to obtain response from server: " + e.toString());
+        } catch (PolicyAssertionException e) {
+            interceptor.onReplyError(e);
+            throw new HttpException(500, "Unable to obtain response from server: " + e.toString());
         }
     }
 

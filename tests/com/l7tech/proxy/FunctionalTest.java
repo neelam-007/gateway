@@ -1,14 +1,20 @@
 package com.l7tech.proxy;
 
+import com.l7tech.policy.assertion.Assertion;
+import com.l7tech.policy.assertion.SslAssertion;
+import com.l7tech.policy.assertion.TrueAssertion;
+import com.l7tech.policy.assertion.composite.AllAssertion;
+import com.l7tech.policy.assertion.composite.ExactlyOneAssertion;
+import com.l7tech.policy.assertion.credential.http.HttpBasic;
+import com.l7tech.policy.assertion.credential.http.HttpDigest;
+import com.l7tech.proxy.datamodel.PolicyManagerStub;
 import com.l7tech.proxy.datamodel.Ssg;
 import com.l7tech.proxy.datamodel.SsgManagerStub;
-import com.l7tech.proxy.datamodel.PolicyManager;
-import com.l7tech.policy.assertion.Assertion;
-import com.l7tech.policy.assertion.TrueAssertion;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
 import org.apache.axis.AxisEngine;
+import org.apache.axis.AxisFault;
 import org.apache.axis.client.Call;
 import org.apache.axis.encoding.DeserializationContextImpl;
 import org.apache.axis.message.*;
@@ -19,6 +25,7 @@ import org.xml.sax.helpers.AttributesImpl;
 import javax.xml.soap.SOAPException;
 import java.net.MalformedURLException;
 import java.rmi.RemoteException;
+import java.util.Arrays;
 import java.io.IOException;
 
 /**
@@ -38,6 +45,7 @@ public class FunctionalTest extends TestCase {
     private SsgFaker ssgFaker;
     private ClientProxy clientProxy;
     private SsgManagerStub ssgManager;
+    private PolicyManagerStub policyManager = new PolicyManagerStub();
     private String ssgUrl;
     private String proxyUrl;
 
@@ -70,7 +78,7 @@ public class FunctionalTest extends TestCase {
     }
 
     /** Starts up the SSG Faker and the Client Proxy. */
-    protected void setUp() throws MultiException {
+    protected void setUp() throws MultiException, IOException {
         destroyFaker();
         destroyProxy();
 
@@ -88,11 +96,9 @@ public class FunctionalTest extends TestCase {
         ssgManager.add(ssgFake);
 
         // Make a do-nothing PolicyManager
-        MessageProcessor messageProcessor = new MessageProcessor(new PolicyManager() {
-            public Assertion getPolicy(Ssg ssg) throws IOException {
-                return new TrueAssertion();
-            }
-        });
+        policyManager = new PolicyManagerStub();
+        policyManager.setPolicy(new TrueAssertion());
+        MessageProcessor messageProcessor = new MessageProcessor(policyManager);
 
         // Start the client proxy
         clientProxy = new ClientProxy(ssgManager, messageProcessor, DEFAULT_PORT, MIN_THREADS, MAX_THREADS);
@@ -105,10 +111,7 @@ public class FunctionalTest extends TestCase {
         destroyProxy();
     }
 
-    /**
-     * Bounce a message off of the echo server, going through the client proxy.
-     */
-    public void testSimplePing() throws RemoteException, SOAPException, MalformedURLException {
+    private SOAPEnvelope makePingRequest(String payload) throws AxisFault, SOAPException {
         SOAPEnvelope reqEnvelope = new SOAPEnvelope();
 
         SOAPHeader reqHeader = new SOAPHeader(pingNamespace,
@@ -124,9 +127,17 @@ public class FunctionalTest extends TestCase {
         SOAPBodyElement reqBe = new SOAPBodyElement();
         reqBe.setNamespaceURI(pingNamespace + "#ping");
         reqBe.setName("ping");
-        String payload = "ping 1 2 3";
         reqBe.addChildElement("pingData").addTextNode(payload);
         reqEnvelope.addBodyElement(reqBe);
+        return reqEnvelope;
+    }
+
+    /**
+     * Bounce a message off of the echo server, going through the client proxy.
+     */
+    public void testSimplePing() throws RemoteException, SOAPException, MalformedURLException {
+        String payload = "ping 1 2 3";
+        SOAPEnvelope reqEnvelope = makePingRequest(payload);
 
         Call call = new Call(proxyUrl + ssg0ProxyEndpoint);
         SOAPEnvelope responseEnvelope = call.invoke(reqEnvelope);
@@ -136,5 +147,28 @@ public class FunctionalTest extends TestCase {
         MessageElement re = (MessageElement)responseEnvelope.getBody().getChildElements().next();
         MessageElement rec = (MessageElement)re.getChildren().get(0);
         assertTrue(rec.getValue().equals(payload));
+    }
+
+    public void testSslBasicAuthPing() throws SOAPException, RemoteException, MalformedURLException {
+        /* not working atm
+        String payload = "ping 1 2 3";
+        SOAPEnvelope reqEnvelope = makePingRequest(payload);
+
+        policyManager.setPolicy(new ExactlyOneAssertion(Arrays.asList(new Assertion[] {
+            new AllAssertion(Arrays.asList(new Assertion[] {
+                new SslAssertion(),
+                new HttpBasic()
+            })),
+            new HttpDigest()
+        })));
+
+        Call call = new Call(proxyUrl + ssg0ProxyEndpoint);
+        SOAPEnvelope responseEnvelope = call.invoke(reqEnvelope);
+
+        System.out.println("Client:  I Sent: " + reqEnvelope);
+        System.out.println("Client:  I Got back: " + responseEnvelope);
+        MessageElement re = (MessageElement)responseEnvelope.getBody().getChildElements().next();
+        MessageElement rec = (MessageElement)re.getChildren().get(0);
+        assertTrue(rec.getValue().equals(payload));     */
     }
 }

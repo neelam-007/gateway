@@ -35,6 +35,8 @@ import java.util.*;
  */
 
 public abstract class Locator {
+    private static final Locator deflt = getDefault();
+
     /**
      * A dummy locator that never returns any results.
      */
