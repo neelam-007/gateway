@@ -150,7 +150,7 @@ public class InternalIdentityProviderServer extends PersistentIdentityProvider {
                     }
 
                     logger.fine("Request cert serial# is " + requestCert.getSerialNumber().toString());
-                    if ( requestCert.equals( dbCert ) ) {
+                    if ( CertUtils.certsAreEqual(requestCert, dbCert ) ) {
                         logger.finest("Authenticated user " + login + " using a client certificate" );
                         // remember that this cert was used at least once successfully
                         try {

@@ -123,9 +123,16 @@ public class TrustedCertManagerImp extends HibernateEntityManager implements Tru
             try {
                 TrustedCert selfTrust = getCachedCertBySubjectDn(subjectDn, 30000);
                 if ( selfTrust != null ) {
-                    if ( !selfTrust.isTrustedForSsl() ) throw new CertificateException("Server cert '" + subjectDn + "' found but not trusted for SSL" );
-                    if ( !selfTrust.getCertificate().equals(serverCertChain[0]) ) throw new CertificateException("Server cert '" + subjectDn + "' found but doesn't match previously stored version" );
-                    return;
+                    if (!CertUtils.certsAreEqual(selfTrust.getCertificate(), serverCertChain[0]))
+                        throw new CertificateException("Server cert '" + subjectDn +
+                                                       "' found but doesn't match previously stored version" );
+                    if (selfTrust.isTrustedForSsl()) {
+                        // Good enough
+                        return;
+                    } else if ( !selfTrust.isTrustedForSsl() )
+                        logger.fine("Server cert '" + subjectDn + "' found but not trusted for SSL. Will check issuer cert, if any");
+
+                    // FALLTHROUGH - Check if its signer is trusted
                 }
             } catch (FindException e) {
                 logger.log(Level.WARNING, e.getMessage(), e);
@@ -156,7 +163,7 @@ public class TrustedCertManagerImp extends HibernateEntityManager implements Tru
             X509Certificate caCert = serverCertChain[1];
             X509Certificate caTrustCert = caTrust.getCertificate();
 
-            if ( !caCert.equals(caTrustCert) )
+            if ( !CertUtils.certsAreEqual(caCert, caTrustCert) )
                 throw new CertificateException("CA cert from server didn't match stored version");
 
             serverCertChain[0].verify(caTrustCert.getPublicKey());

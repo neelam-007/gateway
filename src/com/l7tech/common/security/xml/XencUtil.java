@@ -16,8 +16,8 @@ import org.w3c.dom.Element;
 import javax.crypto.Cipher;
 import java.io.IOException;
 import java.security.*;
-import java.security.interfaces.RSAPublicKey;
 import java.security.cert.X509Certificate;
+import java.security.interfaces.RSAPublicKey;
 import java.util.Arrays;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -128,7 +128,7 @@ public class XencUtil {
         } else if (valueType.equals(SoapUtil.VALUETYPE_X509)) {
             // It seems to be a complete certificate
             X509Certificate referencedCert = CertUtils.decodeCert(keyIdValueBytes);
-            if (recipientCert.equals(referencedCert)) {
+            if (CertUtils.certsAreEqual(recipientCert, referencedCert)) {
                 logger.fine("The Key recipient cert is recognized");
                 /* FALLTHROUGH */
 

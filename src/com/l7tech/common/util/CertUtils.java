@@ -34,6 +34,16 @@ public class CertUtils {
         return (X509Certificate)getFactory().generateCertificate(new ByteArrayInputStream(bytes));
     }
 
+    public static boolean certsAreEqual(X509Certificate cert1, X509Certificate cert2) {
+        if (cert2 == null) return false;
+        if (cert1.getClass() == cert2.getClass()) return cert1.equals(cert2);
+        try {
+            return Arrays.equals(cert1.getEncoded(), cert2.getEncoded() );
+        } catch ( CertificateEncodingException e ) {
+            return false;
+        }
+    }
+
     public static X509Certificate[] decodeCertChain(byte[] bytes) throws CertificateException {
         Collection list = getFactory().generateCertificates(new ByteArrayInputStream(bytes));
         ArrayList certs = new ArrayList(list.size());
@@ -357,7 +367,7 @@ public class CertUtils {
                     throw new CertificateUntrustedException("Unable to verify peer certificate with trusted cert: " + e);
                 }
             } else if (cert.getSubjectDN().equals(trustedDN)) {
-                if (cert.equals(trustedCert)) {
+                if (certsAreEqual(cert, trustedCert)) {
                     return; // success
                 }
             }

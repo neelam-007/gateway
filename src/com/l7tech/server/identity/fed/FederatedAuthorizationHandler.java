@@ -6,6 +6,7 @@
 
 package com.l7tech.server.identity.fed;
 
+import com.l7tech.common.util.CertUtils;
 import com.l7tech.identity.BadCredentialsException;
 import com.l7tech.identity.cert.ClientCertManager;
 import com.l7tech.identity.cert.TrustedCertManager;
@@ -44,7 +45,7 @@ public class FederatedAuthorizationHandler {
                                                   "and this Federated Identity Provider has no CA certs " +
                                                   "that are trusted");
             }
-        } else if ( !importedCert.equals(requestCert) ) {
+        } else if ( !CertUtils.certsAreEqual(importedCert, requestCert) ) {
                 throw new BadCredentialsException("Request certificate for user " + u +
                                                   " does not match previously imported certificate");
         }
