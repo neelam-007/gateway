@@ -45,8 +45,12 @@ public class HttpSoapResponse extends SoapResponse {
 
                 if ( name == null || value == null ) continue;
 
-                String hname = name.substring( PREFIX_HTTP_HEADER.length() + 1 );
-                hresponse.setHeader( hname, value );
+                if ( PARAM_HTTP_CONTENT_TYPE.equals( name ) ) {
+                    hresponse.setContentType( value );
+                } else {
+                    String hname = name.substring( PREFIX_HTTP_HEADER.length() + 1 );
+                    hresponse.setHeader( hname, value );
+                }
             }
         }
     }
