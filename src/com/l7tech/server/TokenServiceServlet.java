@@ -3,6 +3,7 @@ package com.l7tech.server;
 import com.l7tech.common.security.xml.WssProcessor;
 import com.l7tech.common.util.Locator;
 import com.l7tech.common.util.XmlUtil;
+import com.l7tech.common.util.KeystoreUtils;
 import com.l7tech.common.xml.InvalidDocumentFormatException;
 import com.l7tech.identity.AuthenticationException;
 import com.l7tech.identity.IdentityProvider;
@@ -27,6 +28,10 @@ import javax.xml.parsers.ParserConfigurationException;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.security.GeneralSecurityException;
+import java.security.KeyStoreException;
+import java.security.PrivateKey;
+import java.security.cert.CertificateException;
+import java.security.cert.X509Certificate;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.logging.Level;
@@ -68,7 +73,28 @@ public class TokenServiceServlet extends HttpServlet {
             res.sendError(HttpServletResponse.SC_BAD_REQUEST, msg);
             return;
         }
-        TokenService tokenService = new TokenService();
+        TokenService tokenService;
+        try {
+            X509Certificate a = KeystoreUtils.getInstance().getSslCert();
+            PrivateKey i = KeystoreUtils.getInstance().getSSLPrivateKey();
+            tokenService = new TokenService(i, a);
+        } catch (CertificateException e) {
+            String msg = "Error getting server cert/private key: " + e.getMessage();
+            logger.log(Level.SEVERE, msg, e);
+            res.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, msg);
+            return;
+        } catch (KeyStoreException e) {
+            String msg = "Error getting server cert/private key: " + e.getMessage();
+            logger.log(Level.SEVERE, msg, e);
+            res.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, msg);
+            return;
+        } catch (IOException e){
+            String msg = "Error getting server cert/private key: " + e.getMessage();
+            logger.log(Level.SEVERE, msg, e);
+            res.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, msg);
+            return;
+        }
+
         Document response = null;
         try {
             response = tokenService.respondToRequestSecurityToken(payload, authenticator(), req.getRemoteAddr());

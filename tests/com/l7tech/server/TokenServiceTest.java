@@ -14,12 +14,15 @@ import com.l7tech.identity.User;
 import com.l7tech.identity.UserBean;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.proxy.util.TokenServiceClient;
+import com.l7tech.server.saml.SamlHolderOfKeyAssertion;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
 import org.w3c.dom.Document;
 
 import java.util.logging.Logger;
+import java.security.cert.X509Certificate;
+import java.security.PrivateKey;
 
 /**
  * @author mike
@@ -74,15 +77,19 @@ public class TokenServiceTest extends TestCase {
     }
 
     public void testTokenServiceClientSaml() throws Exception {
+        final X509Certificate subjectCertificate = TestDocuments.getDotNetServerCertificate();
+        final PrivateKey subjectPrivateKey = TestDocuments.getDotNetServerPrivateKey();
+        final X509Certificate issuerCertificate = TestDocuments.getDotNetServerCertificate();
+        final PrivateKey issuerPrivateKey = TestDocuments.getDotNetServerPrivateKey();
         Document requestMsg = TokenServiceClient.createRequestSecurityTokenMessage(
-                TestDocuments.getDotNetServerCertificate(),
-                TestDocuments.getDotNetServerPrivateKey(),
+                subjectCertificate,
+                subjectPrivateKey,
                 "saml:Assertion");
         requestMsg.getDocumentElement().setAttribute("xmlns:saml", SamlConstants.NS_SAML);
         log.info("Decorated token request (reformatted): " + XmlUtil.nodeToFormattedString(requestMsg));
 
-        final TokenService service = new TokenService(TestDocuments.getDotNetServerPrivateKey(),
-                                                      TestDocuments.getDotNetServerCertificate());
+        final TokenService service = new TokenService(issuerPrivateKey,
+                                                      issuerCertificate);
 
         final TokenService.CredentialsAuthenticator authenticator = new TokenService.CredentialsAuthenticator() {
 
@@ -97,13 +104,23 @@ public class TokenServiceTest extends TestCase {
 
         log.info("Decorated response (reformatted): " + XmlUtil.nodeToFormattedString(responseMsg));
 
-/*
         Object responseObj = TokenServiceClient.parseRequestSecurityTokenResponse(responseMsg,
-                                                                   TestDocuments.getDotNetServerCertificate(),
-                                                                   TestDocuments.getDotNetServerPrivateKey(),
-                                                                   TestDocuments.getDotNetServerCertificate());
-*/
+                                                                                  subjectCertificate,
+                                                                                  subjectPrivateKey,
+                                                                                  issuerCertificate);
+        assertTrue("Token obtained must be SAML", responseObj instanceof SamlHolderOfKeyAssertion);
+        SamlHolderOfKeyAssertion token = (SamlHolderOfKeyAssertion)responseObj;
+        assertTrue("Obtained saml token must be signed", token.isSigned());
+        assertTrue("Obtained saml token must have non-null assertion ID", token.getAssertionId() != null);
+        assertTrue("Obtained saml token must have non-empty assertion ID", token.getAssertionId().length() > 0);
+        assertTrue("Obtained saml token must have subject certificate", token.getSubjectCertificate() != null);
+        assertTrue("Obtained saml token must have issuer certificate", token.getIssuerCertificate() != null);
+        assertEquals("subject certificate must match our client certificate",
+                     token.getSubjectCertificate(),
+                     subjectCertificate);
+        assertEquals("issuer certificate must match the expected issuer certificate",
+                     token.getIssuerCertificate(),
+                     issuerCertificate);
+        token.verifyIssuerSignature();
     }
-
-
 }

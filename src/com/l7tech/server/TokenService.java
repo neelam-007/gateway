@@ -23,10 +23,8 @@ import java.io.IOException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.security.GeneralSecurityException;
-import java.security.KeyStoreException;
 import java.security.PrivateKey;
 import java.security.SecureRandom;
-import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.Calendar;
 import java.util.Map;
@@ -60,13 +58,11 @@ public class TokenService {
         }
     }
 
-
-    public TokenService() {}
-
     /**
      * specify the server key and cert at construction time instead of letting the object try to retreive them
      */
     public TokenService(PrivateKey privateServerKey, X509Certificate serverCert) {
+        if (privateServerKey == null || serverCert == null) throw new IllegalArgumentException("Server key and server cert must be provided to create a TokenService");
         this.privateServerKey = privateServerKey;
         this.serverCert = serverCert;
     }
@@ -83,24 +79,9 @@ public class TokenService {
                                                            AuthenticationException, WssProcessor.BadContextException {
         // Pass request to the trogdorminator!
         WssProcessor trogdor = new WssProcessorImpl();
-        X509Certificate serverSSLcert = null;
-        PrivateKey sslPrivateKey = null;
-        try {
-            serverSSLcert = getServerCert();
-            sslPrivateKey = getServerKey();
-        } catch (CertificateException e) {
-            String msg = "Error getting server cert/private key";
-            logger.log(Level.SEVERE, msg, e);
-            throw new TokenServiceException(msg, e);
-        } catch (KeyStoreException e) {
-            String msg = "Error getting server cert/private key";
-            logger.log(Level.SEVERE, msg, e);
-            throw new TokenServiceException(msg, e);
-        } catch (IOException e){
-            String msg = "Error getting server cert/private key";
-            logger.log(Level.SEVERE, msg, e);
-            throw new TokenServiceException(msg, e);
-        }
+        X509Certificate serverSSLcert = getServerCert();
+        PrivateKey sslPrivateKey = getServerKey();
+
         // Authenticate the request, check who signed it
         WssProcessor.ProcessorResult wssOutput = trogdor.undecorateMessage(request,
                                                                            serverSSLcert,
@@ -152,7 +133,8 @@ public class TokenService {
             SamlAssertionGenerator.Options options = new SamlAssertionGenerator.Options();
             if (clientAddress != null) options.setClientAddress(InetAddress.getByName(clientAddress));
             options.setSignAssertion(true);
-            HolderOfKeyHelper hok = new HolderOfKeyHelper(null, options, creds, KeystoreUtils.getInstance().getSignerInfo());
+            SignerInfo signerInfo = new SignerInfo(getServerKey(), new X509Certificate[] { getServerCert() });
+            HolderOfKeyHelper hok = new HolderOfKeyHelper(null, options, creds, signerInfo);
             Document signedAssertionDoc = hok.createSignedAssertion(); // TODO use a better ID!
             responseXml.append(XmlUtil.nodeToString(signedAssertionDoc));
             responseXml.append(WST_RST_RESPONSE_INFIX);
@@ -212,24 +194,8 @@ public class TokenService {
             throw new TokenServiceException(e);
         }
 
-        X509Certificate serverSSLcert = null;
-        PrivateKey sslPrivateKey = null;
-        try {
-            serverSSLcert = getServerCert();
-            sslPrivateKey = getServerKey();
-        } catch (CertificateException e) {
-            String msg = "Error getting server cert/private key";
-            logger.log(Level.SEVERE, msg, e);
-            throw new TokenServiceException(msg, e);
-        } catch (KeyStoreException e) {
-            String msg = "Error getting server cert/private key";
-            logger.log(Level.SEVERE, msg, e);
-            throw new TokenServiceException(msg, e);
-        } catch (IOException e){
-            String msg = "Error getting server cert/private key";
-            logger.log(Level.SEVERE, msg, e);
-            throw new TokenServiceException(msg, e);
-        }
+        X509Certificate serverSSLcert = getServerCert();
+        PrivateKey sslPrivateKey = getServerKey();
 
         WssDecorator wssDecorator = new WssDecoratorImpl();
         WssDecorator.DecorationRequirements req = new WssDecorator.DecorationRequirements();
@@ -397,17 +363,11 @@ public class TokenService {
         return false;
     }
 
-    private synchronized PrivateKey getServerKey() throws KeyStoreException {
-        if (privateServerKey == null) {
-            privateServerKey = KeystoreUtils.getInstance().getSSLPrivateKey();
-        }
+    private synchronized PrivateKey getServerKey() {
         return privateServerKey;
     }
 
-    private synchronized X509Certificate getServerCert() throws IOException, CertificateException {
-        if (serverCert == null) {
-            serverCert = KeystoreUtils.getInstance().getSslCert();
-        }
+    private synchronized X509Certificate getServerCert() {
         return serverCert;
     }
 

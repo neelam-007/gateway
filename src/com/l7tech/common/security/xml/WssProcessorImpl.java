@@ -12,15 +12,13 @@ import com.l7tech.common.security.saml.SamlConstants;
 import com.l7tech.common.util.*;
 import com.l7tech.common.xml.InvalidDocumentFormatException;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
-import org.apache.xmlbeans.XmlException;
-import org.w3.x2000.x09.xmldsig.KeyInfoType;
-import org.w3.x2000.x09.xmldsig.X509DataType;
+import com.l7tech.server.saml.SamlAssertion;
+import com.l7tech.server.saml.SamlHolderOfKeyAssertion;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
-import x0Assertion.oasisNamesTcSAML1.*;
 
 import javax.xml.parsers.ParserConfigurationException;
 import java.io.IOException;
@@ -28,7 +26,6 @@ import java.security.GeneralSecurityException;
 import java.security.Key;
 import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
-import java.security.cert.CertificateException;
 import java.security.cert.CertificateExpiredException;
 import java.security.cert.CertificateNotYetValidException;
 import java.security.cert.X509Certificate;
@@ -75,6 +72,7 @@ public class WssProcessorImpl implements WssProcessor {
      * @throws InvalidDocumentFormatException if there is a problem with the document format that can't be ignored
      * @throws GeneralSecurityException if there is a problem with a key or certificate
      * @throws ProcessorException in case of some other problem
+     * @throws BadContextException if the message contains a WS-SecureConversation SecurityContextToken, but the securityContextFinder has no record of that session.
      */
     public WssProcessor.ProcessorResult undecorateMessage(Document soapMsg,
                                                           X509Certificate recipientCert,
@@ -334,7 +332,7 @@ public class WssProcessorImpl implements WssProcessor {
             if (maybeSecToken instanceof SecurityContextTokenImpl) {
                 sct = (SecurityContextTokenImpl)maybeSecToken;
                 String thisId = SoapUtil.getElementWsuId(sct.asElement());
-                // todo, match this against the id in case this refers to more than on context (unlikely)
+                // todo, match this against the id in case this refers to more than one context (unlikely)
                 break;
             }
         }
@@ -688,19 +686,14 @@ public class WssProcessorImpl implements WssProcessor {
     }
 
     private void processSamlSecurityToken( Element securityTokenElement, ProcessingStatusHolder context )
-        throws InvalidDocumentFormatException
+            throws InvalidDocumentFormatException
     {
         logger.finest("Processing saml:Assertion XML SecurityToken");
-        try {
-            AssertionType assertion = AssertionDocument.Factory.parse( securityTokenElement ).getAssertion();
-            SamlSecurityToken samlToken = new SamlSecurityTokenImpl(securityTokenElement, assertion);
-            context.securityTokens.add(samlToken);
-            context.x509TokensById.put(samlToken.getElementId(), samlToken);
+        SamlSecurityToken samlToken = new SamlSecurityTokenImpl(securityTokenElement);
+        context.securityTokens.add(samlToken);
+        context.x509TokensById.put(samlToken.getElementId(), samlToken);
 
-            // TODO verify sender-vouches + proof-of-possession
-        } catch (XmlException e) {
-            throw new InvalidDocumentFormatException("Couldn't parse SAML Assertion", e);
-        }
+        // TODO verify sender-vouches + proof-of-possession    (?? please explain?  -lyonsm)
     }
 
     private SigningSecurityTokenImpl resolveCertByRef(final Element parentElement, ProcessingStatusHolder cntx) {
@@ -1034,30 +1027,18 @@ public class WssProcessorImpl implements WssProcessor {
     }
 
     private static class SamlSecurityTokenImpl extends SigningSecurityTokenImpl implements SamlSecurityToken {
-        public SamlSecurityTokenImpl(Element element, AssertionType assertion) throws InvalidDocumentFormatException {
-            this.element = element;
-            this.assertion = assertion;
+        SamlHolderOfKeyAssertion assertion;
 
-            AuthenticationStatementType[] authStatements = assertion.getAuthenticationStatementArray();
-
-            AuthenticationStatementType authStatement = authStatements[0];
-            SubjectType subject = authStatement.getSubject();
-            SubjectConfirmationType subjectConfirmation = subject.getSubjectConfirmation();
-            KeyInfoType keyInfo = subjectConfirmation.getKeyInfo();
-            X509DataType[] x509datas = keyInfo.getX509DataArray();
-            X509DataType x509data = x509datas[0];
-
+        public SamlSecurityTokenImpl(Element element) throws InvalidDocumentFormatException {
             try {
-                this.certificate = CertUtils.decodeCert(x509data.getX509CertificateArray(0));
-            } catch ( CertificateException e ) {
-                final String msg = "Certificate in SAML assertion could not be parsed";
-                logger.log(Level.WARNING, msg, e );
+                this.assertion = new SamlHolderOfKeyAssertion(element);
+            } catch (SAXException e) {
                 throw new InvalidDocumentFormatException(e);
             }
         }
 
         public Element asElement() {
-            return element;
+            return assertion.asElement();
         }
 
         /**
@@ -1065,28 +1046,24 @@ public class WssProcessorImpl implements WssProcessor {
          * @return the X509Certificate from the SAML Assertion's //SubjectConfirmation/KeyInfo. May be null.
          */
         public X509Certificate getCertificate() {
-            return certificate;
+            return assertion.getSubjectCertificate();
         }
 
-        public AssertionType asAssertion() {
+        public SamlAssertion asSamlAssertion() {
             return assertion;
         }
 
         public X509Certificate getSubjectCertificate() {
-            return certificate;
+            return assertion.getSubjectCertificate();
         }
 
         public String getElementId() {
-            return element.getAttribute(SamlConstants.ATTR_ASSERTION_ID);
+            return assertion.getAssertionId();
         }
 
         public String toString() {
             return "SamlSecurityToken: " + assertion.toString();
         }
-
-        private Element element;
-        private AssertionType assertion;
-        private X509Certificate certificate;
     }
 
 

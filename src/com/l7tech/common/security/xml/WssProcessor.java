@@ -9,9 +9,9 @@ package com.l7tech.common.security.xml;
 import com.l7tech.common.xml.InvalidDocumentFormatException;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.message.SoapFaultDetail;
+import com.l7tech.server.saml.SamlAssertion;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
-import x0Assertion.oasisNamesTcSAML1.AssertionType;
 
 import javax.crypto.SecretKey;
 import java.security.GeneralSecurityException;
@@ -44,7 +44,7 @@ public interface WssProcessor {
     }
 
     public interface SamlSecurityToken extends SecurityToken {
-        AssertionType asAssertion();
+        SamlAssertion asSamlAssertion();
         X509Certificate getSubjectCertificate();
         boolean isPossessionProved();
     }
@@ -127,6 +127,7 @@ public interface WssProcessor {
      * @throws InvalidDocumentFormatException if the message is not SOAP or has some other problem that can't be ignored
      * @throws ProcessorException in case of some other problem
      * @throws GeneralSecurityException in case of problems with a key or certificate
+     * @throws BadContextException if the message contains a WS-SecureConversation SecurityContextToken, but the securityContextFinder has no record of that session.
      */
     ProcessorResult undecorateMessage(Document message,
                                       X509Certificate recipientCertificate,
