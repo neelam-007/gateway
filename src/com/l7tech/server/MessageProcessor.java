@@ -13,6 +13,7 @@ import com.l7tech.common.protocol.SecureSpanConstants;
 import com.l7tech.common.security.xml.decorator.DecorationRequirements;
 import com.l7tech.common.security.xml.decorator.WssDecorator;
 import com.l7tech.common.security.xml.processor.*;
+import com.l7tech.common.security.xml.SecurityActor;
 import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.xml.InvalidDocumentFormatException;
 import com.l7tech.common.xml.MessageNotSoapException;
@@ -262,6 +263,20 @@ public class MessageProcessor extends ApplicationObjectSupport {
                             }
                         }
 
+                        // if the request was processed on the noactor sec header instead of the l7 sec actor, then
+                        // the response's decoration requirements should map this (if applicable)
+                        if (reqXml.getProcessorResult() != null &&
+                            reqXml.getProcessorResult().getProcessedActor() != null &&
+                            reqXml.getProcessorResult().getProcessedActor() == SecurityActor.NOACTOR) {
+                            // go find the l7 decoreq and adjust the actor
+                            for (int i = 0; i < allrequirements.length; i++) {
+                                if (SecurityActor.L7ACTOR.equals(allrequirements[i].getSecurityHeaderActor())) {
+                                    allrequirements[i].setSecurityHeaderActor(SecurityActor.NOACTOR.getValue());
+                                }
+                            }
+                        }
+
+                        // do the actual decoration
                         for (int i = 0; i < allrequirements.length; i++) {
                             final DecorationRequirements responseDecoReq = allrequirements[i];
                             if (responseDecoReq != null) {

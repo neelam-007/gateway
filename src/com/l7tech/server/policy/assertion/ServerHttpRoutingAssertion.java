@@ -17,6 +17,8 @@ import com.l7tech.common.mime.NoSuchPartException;
 import com.l7tech.common.security.saml.SamlAssertionGenerator;
 import com.l7tech.common.security.saml.SubjectStatement;
 import com.l7tech.common.security.xml.SignerInfo;
+import com.l7tech.common.security.xml.SecurityActor;
+import com.l7tech.common.security.xml.processor.ProcessorResult;
 import com.l7tech.common.util.KeystoreUtils;
 import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.util.XmlUtil;
@@ -152,7 +154,12 @@ public class ServerHttpRoutingAssertion extends ServerRoutingAssertion {
                         Document doc = context.getRequest().getXmlKnob().getDocumentWritable();
                         Element defaultSecHeader = null;
                         try {
-                            defaultSecHeader = SoapUtil.getSecurityElement(doc);
+                            ProcessorResult pr = context.getRequest().getXmlKnob().getProcessorResult();
+                            if (pr != null && pr.getProcessedActor() == SecurityActor.L7ACTOR) {
+                                defaultSecHeader = SoapUtil.getSecurityElement(doc, SecurityActor.L7ACTOR.getValue());
+                            } else {
+                                defaultSecHeader = SoapUtil.getSecurityElement(doc);
+                            }
                         } catch (InvalidDocumentFormatException e) {
                             String msg = "this option is not supported for non-soap messages. this message is " +
                                          "supposed to be soap but does not appear to be";

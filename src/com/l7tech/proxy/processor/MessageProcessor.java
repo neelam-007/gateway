@@ -20,6 +20,7 @@ import com.l7tech.common.security.xml.decorator.DecoratorException;
 import com.l7tech.common.security.xml.decorator.WssDecorator;
 import com.l7tech.common.security.xml.decorator.WssDecoratorImpl;
 import com.l7tech.common.security.xml.processor.*;
+import com.l7tech.common.security.xml.SecurityActor;
 import com.l7tech.common.util.*;
 import com.l7tech.common.xml.InvalidDocumentFormatException;
 import com.l7tech.common.xml.MessageNotSoapException;
@@ -43,6 +44,7 @@ import com.l7tech.proxy.util.SslUtils;
 import org.apache.commons.httpclient.Cookie;
 import org.apache.commons.httpclient.protocol.Protocol;
 import org.w3c.dom.Document;
+import org.w3c.dom.Element;
 import org.xml.sax.SAXException;
 
 import javax.crypto.SecretKey;
@@ -797,6 +799,17 @@ public class MessageProcessor {
                         return new WssTimestampWrapper(wssTimestampRaw, ssg.getRuntime().getDateTranslatorFromSsg());
                     }
                 };
+
+                // the processed security header must be deleted *if* it was explicitely addressed to us
+                if (processorResult.getProcessedActor() != null &&
+                    processorResult.getProcessedActor() == SecurityActor.L7ACTOR) {
+                    Element eltodelete = SoapUtil.getSecurityElement(responseDocument, SecurityActor.L7ACTOR.getValue());
+                    if (eltodelete == null) {
+                        log.warning("the security element was already deleted somehow?"); // should not happen
+                    } else {
+                        eltodelete.getParentNode().removeChild(eltodelete);
+                    }
+                }
 
             } catch (MessageNotSoapException e) {
                 // Response is not SOAP.

@@ -14,8 +14,10 @@ import com.l7tech.common.message.*;
 import com.l7tech.common.security.saml.SamlAssertionGenerator;
 import com.l7tech.common.security.saml.SubjectStatement;
 import com.l7tech.common.security.xml.SignerInfo;
+import com.l7tech.common.security.xml.SecurityActor;
 import com.l7tech.common.security.xml.processor.BadSecurityContextException;
 import com.l7tech.common.security.xml.processor.ProcessorException;
+import com.l7tech.common.security.xml.processor.ProcessorResult;
 import com.l7tech.common.util.*;
 import com.l7tech.common.xml.InvalidDocumentFormatException;
 import com.l7tech.common.xml.MessageNotSoapException;
@@ -272,7 +274,12 @@ public class ServerBridgeRoutingAssertion extends ServerRoutingAssertion {
                     Document doc = context.getRequest().getXmlKnob().getDocumentWritable();
                     Element defaultSecHeader = null;
                     try {
-                        defaultSecHeader = SoapUtil.getSecurityElement(doc);
+                        ProcessorResult pr = context.getRequest().getXmlKnob().getProcessorResult();
+                        if (pr != null && pr.getProcessedActor() == SecurityActor.L7ACTOR) {
+                            defaultSecHeader = SoapUtil.getSecurityElement(doc, SecurityActor.L7ACTOR.getValue());
+                        } else {
+                            defaultSecHeader = SoapUtil.getSecurityElement(doc);
+                        }
                     } catch (InvalidDocumentFormatException e) {
                         String msg = "this option is not supported for non-soap messages. this message is " +
                                 "supposed to be soap but does not appear to be";
