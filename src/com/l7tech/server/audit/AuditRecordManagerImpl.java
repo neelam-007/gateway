@@ -19,9 +19,6 @@ import net.sf.hibernate.HibernateException;
 import net.sf.hibernate.Session;
 import net.sf.hibernate.expression.Expression;
 import net.sf.hibernate.type.Type;
-import org.springframework.beans.BeansException;
-import org.springframework.context.ApplicationContext;
-import org.springframework.context.ApplicationContextAware;
 
 import java.util.*;
 import java.util.logging.Level;
@@ -34,8 +31,7 @@ import java.util.logging.Level;
  * @author alex
  * @version $Revision$
  */
-public class AuditRecordManagerImpl extends HibernateEntityManager implements AuditRecordManager, ApplicationContextAware {
-    private ApplicationContext applicationCOntext;
+public class AuditRecordManagerImpl extends HibernateEntityManager implements AuditRecordManager {
     private EventManager eventManager;
 
     public AuditRecord findByPrimaryKey(long oid) throws FindException {
@@ -153,10 +149,6 @@ public class AuditRecordManagerImpl extends HibernateEntityManager implements Au
 
     public String getTableName() {
         return "audit";
-    }
-
-    public void setApplicationContext(ApplicationContext ctx) throws BeansException {
-        applicationCOntext = ctx;
     }
 
     public void setEventManager(EventManager eventManager) {
