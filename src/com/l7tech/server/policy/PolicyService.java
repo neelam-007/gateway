@@ -84,7 +84,7 @@ public class PolicyService {
     }
 
     /**
-     * @return the filtered policy or null if the target policy does not exist
+     * @return the filtered policy or null if the target policy does not exist or the requestor should not see it
      */
     public Document respondToPolicyDownloadRequest(String policyId,
                                                    User preAuthenticatedUser,
@@ -97,6 +97,13 @@ public class PolicyService {
             return null;
         }
         Assertion filteredAssertion = FilterManager.getInstance().applyAllFilters(preAuthenticatedUser, targetPolicy);
+        if (filteredAssertion == null) {
+            if (atLeastOnePathIsAnonymous(targetPolicy)) {
+                return XmlUtil.stringToDocument(WspWriter.getPolicyXml(null));
+            } else {
+                return null;
+            }
+        }
         return XmlUtil.stringToDocument(WspWriter.getPolicyXml(filteredAssertion));
     }
 
