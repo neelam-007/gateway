@@ -7,7 +7,11 @@
 package com.l7tech.policy.assertion.credential.wss;
 
 /**
- * @author alex
+ * This assertion verifies that the soap envelope of a request is digitally signed by a user.
+ * The signature is validated and the X509 cert is extracted in and wrapped in a PrincipalCredentials
+ * object.
+ *
+ * @author alex, flascell
  * @version $Revision$
  */
 public class WssClientCert extends WssCredentialSourceAssertion {
