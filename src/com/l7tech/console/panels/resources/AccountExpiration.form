@@ -56,7 +56,7 @@
       </grid>
       <component id="51001" class="javax.swing.JRadioButton" binding="noexpireradio">
         <constraints>
-          <xy x="5" y="5" width="157" height="23"/>
+          <xy x="5" y="5" width="153" height="23"/>
           <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0"/>
         </constraints>
         <properties>
@@ -83,41 +83,41 @@
         <children>
           <component id="56bb7" class="javax.swing.JSpinner" binding="yearspinner">
             <constraints>
-              <xy x="80" y="31" width="592" height="20"/>
+              <xy x="84" y="31" width="588" height="20"/>
               <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="6" anchor="8" fill="1"/>
             </constraints>
             <properties/>
           </component>
           <component id="fb66c" class="javax.swing.JSpinner" binding="monthspinner">
             <constraints>
-              <xy x="80" y="118" width="592" height="20"/>
+              <xy x="84" y="118" width="588" height="20"/>
               <grid row="1" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="6" anchor="8" fill="1"/>
             </constraints>
             <properties/>
           </component>
           <component id="b1de6" class="javax.swing.JSpinner" binding="dayspinner">
             <constraints>
-              <xy x="80" y="205" width="592" height="20"/>
+              <xy x="84" y="205" width="588" height="20"/>
               <grid row="2" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="6" anchor="8" fill="1"/>
             </constraints>
             <properties/>
           </component>
           <component id="d88a3" class="javax.swing.JLabel" binding="yearlabel">
             <constraints>
-              <xy x="35" y="33" width="26" height="15"/>
+              <xy x="35" y="33" width="30" height="15"/>
               <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0"/>
             </constraints>
             <properties>
-              <text value="Year"/>
+              <text value="Year:"/>
             </properties>
           </component>
           <component id="2377a" class="javax.swing.JLabel" binding="monthlabel">
             <constraints>
-              <xy x="35" y="120" width="35" height="15"/>
+              <xy x="35" y="120" width="39" height="15"/>
               <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0"/>
             </constraints>
             <properties>
-              <text value="Month"/>
+              <text value="Month:"/>
             </properties>
           </component>
           <component id="76891" class="javax.swing.JLabel" binding="daylabel">
@@ -126,7 +126,7 @@
               <grid row="2" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0"/>
             </constraints>
             <properties>
-              <text value="Day"/>
+              <text value="Day:"/>
             </properties>
           </component>
         </children>
