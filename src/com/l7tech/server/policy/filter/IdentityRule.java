@@ -1,6 +1,5 @@
 package com.l7tech.server.policy.filter;
 
-import com.l7tech.common.util.Locator;
 import com.l7tech.identity.*;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.assertion.Assertion;
@@ -12,8 +11,6 @@ import com.l7tech.policy.assertion.identity.SpecificUser;
 
 import java.util.Iterator;
 import java.util.logging.Level;
-
-import org.springframework.context.ApplicationContext;
 
 /**
  * If there is at least one identity assertion, and the user does not "pass" any of them, the result will be null
@@ -124,7 +121,7 @@ public class IdentityRule extends Filter {
         return canUserPassIDAssertion(idassertion, requestor, null);
     }
 
-    public static boolean canUserPassIDAssertion(IdentityAssertion idassertion, User user, ApplicationContext applicationContext) throws FilteringException {
+    public static boolean canUserPassIDAssertion(IdentityAssertion idassertion, User user, IdentityProviderConfigManager identityProviderConfigManager) throws FilteringException {
         if (user == null) return false;
         // check what type of assertion we have
         if (idassertion instanceof SpecificUser) {
@@ -139,7 +136,7 @@ public class IdentityRule extends Filter {
             long idprovider = grpmemship.getIdentityProviderOid();
             if (idprovider == user.getProviderId()) {
                 try {
-                    IdentityProvider prov = getIdentityProviderConfigManager().getIdentityProvider(idprovider);
+                    IdentityProvider prov = identityProviderConfigManager.getIdentityProvider(idprovider);
                     if (prov == null) {
                         logger.warning("IdentityProvider #" + idprovider + " no longer exists");
                         return false;
@@ -163,13 +160,7 @@ public class IdentityRule extends Filter {
         } else throw new FilteringException("unsupported IdentityAssertion type " + idassertion.getClass().getName());
     }
 
-    private static IdentityProviderConfigManager getIdentityProviderConfigManager() {
-        return (IdentityProviderConfigManager)Locator.getDefault().
-                                                lookup(IdentityProviderConfigManager.class);
-    }
-
     private User requestor = null;
     private boolean anIdentityAssertionWasFound = false;
     private boolean userPassedAtLeastOneIdentityAssertion = false;
-    private ApplicationContext applicationCOntext = null;
 }

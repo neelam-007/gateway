@@ -4,8 +4,6 @@
 
 package com.l7tech.objectmodel;
 
-import com.l7tech.common.util.Locator;
-
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -67,11 +65,6 @@ public abstract class PersistenceManager {
         _instance.doDelete( context, entityClass, oid );
     }
 
-    public static EntityManager getEntityManager(Class clazz) {
-        checkInstance();
-        EntityManager manager = (EntityManager)Locator.getDefault().lookup( clazz );
-        return manager;
-    }
 
     static void checkInstance() {
         if ( _instance == null ) throw new IllegalStateException( "A concrete PersistenceManager has not yet been initialized!");
