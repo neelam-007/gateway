@@ -43,15 +43,14 @@ public class PendingRequest {
 
     //private ClientProxy clientProxy;
     private final CredentialManager credentialManager = Managers.getCredentialManager();
-    private Document soapEnvelope;
-    private Document initialEnvelope;
+    private final Document undecoratedDocument;
     private final Ssg ssg;
     private final RequestInterceptor requestInterceptor;
-    private String soapAction = "";
-    private String uri = "";
+    private final PolicyAttachmentKey policyAttachmentKey;
+    private final URL originalUrl;
+    private final boolean isSoapRequest;
     private SsgResponse lastErrorResponse = null; // Last response received from SSG in the case of 401 or 500 status
     private boolean isPolicyUpdated = false;
-    private final URL originalUrl;
     private Long nonce = null; // nonce.  set on-demand, and only set once
     private HttpHeaders headers = null;
     private PasswordAuthentication pw = null;
@@ -62,11 +61,10 @@ public class PendingRequest {
     private Calendar secureConversationExpiryDate = null;
     private boolean multipart = false;
     private MultipartMessageReader multipartReader = null;
-    private boolean isSoapRequest = false;
 
     // Policy settings, filled in by traversing policy tree
     private static class PolicySettings {
-        private Document decoratedSoapEnvelope = null;
+        private Document decoratedDocument = null;
         private Policy activePolicy= null; // the policy that we most recently started applying to this request, if any
         private boolean isSslRequired = false;
         private boolean sslForbidden = false;  // ssl is forbidden for this request
@@ -82,9 +80,8 @@ public class PendingRequest {
      * Construct a PendingRequest around the given SOAPEnvelope going to the given SSG.
      * @deprecated this constructor is for legacy unit tests only; it does not make a proper origUrl
      */
-    public PendingRequest(Document soapEnvelope, Ssg ssg, RequestInterceptor requestInterceptor) {
-        this.soapEnvelope = soapEnvelope;
-        this.initialEnvelope = soapEnvelope;
+    public PendingRequest(Document soapEnvelope, Ssg ssg, RequestInterceptor requestInterceptor, PolicyAttachmentKey policyAttachmentKey) {
+        this.undecoratedDocument = soapEnvelope;
         this.ssg = ssg;
         this.requestInterceptor = requestInterceptor;
         try {
@@ -93,17 +90,20 @@ public class PendingRequest {
             throw new RuntimeException(e); // can't happen
         }
         this.headers = null;
+        this.policyAttachmentKey = policyAttachmentKey != null ? policyAttachmentKey : new PolicyAttachmentKey(null, null, null);
+        this.isSoapRequest = soapEnvelope == null ? false : SoapUtil.isSoapMessage(soapEnvelope);
     }
 
-    public PendingRequest(Document soapEnvelope, Ssg ssg, RequestInterceptor ri, URL origUrl, HttpHeaders headers) {
-        this.soapEnvelope = soapEnvelope;
-        this.initialEnvelope = soapEnvelope;
+    public PendingRequest(Document soapEnvelope, Ssg ssg, RequestInterceptor ri, PolicyAttachmentKey policyAttachmentKey, URL origUrl, HttpHeaders headers) {
+        this.undecoratedDocument = soapEnvelope;
         this.ssg = ssg;
         this.requestInterceptor = ri;
-        this.originalUrl = origUrl;
         this.headers = headers;
         if (origUrl == null)
             throw new IllegalArgumentException("An original URL must be provided.");
+        this.originalUrl = origUrl;
+        this.policyAttachmentKey = policyAttachmentKey != null ? policyAttachmentKey : new PolicyAttachmentKey(null, null, null);
+        this.isSoapRequest = soapEnvelope == null ? false : SoapUtil.isSoapMessage(soapEnvelope);
     }
 
     /**
@@ -111,7 +111,6 @@ public class PendingRequest {
      */
     public void reset() {
         policySettings = new PolicySettings();
-        soapEnvelope = initialEnvelope;
     }
 
     /**
@@ -232,14 +231,14 @@ public class PendingRequest {
      * Get the working copy of the Document representing the request.  This returns a copy that can be
      * modified freely.
      *
-     * If you want your changes to stick, you'll need to save them back by calling setSoapEnvelope().
+     * If you want your changes to stick, you'll need to save them back by calling setUndecoratedDocument().
      *
      * @return A copy of the SOAP envelope Document, which may be freely modified.
      */
     public Document getDecoratedDocument() {
-        if (policySettings.decoratedSoapEnvelope != null)
-            return policySettings.decoratedSoapEnvelope;
-        return policySettings.decoratedSoapEnvelope = (Document) soapEnvelope.cloneNode(true);
+        if (policySettings.decoratedDocument != null)
+            return policySettings.decoratedDocument;
+        return policySettings.decoratedDocument = (Document) undecoratedDocument.cloneNode(true);
     }
 
     /**
@@ -250,36 +249,11 @@ public class PendingRequest {
      * @return A reference to the original SOAP envelope Document, which must not be modified in any way.
      */
     public Document getUndecoratedDocument() {
-        return soapEnvelope;
-    }
-
-    /**
-     * Replace the active Soap Envelope with a new one.  The original envelope is in any case kept
-     * squirreled away so that reset() will work.
-     * @param newEnvelope
-     */
-    public void setSoapEnvelope(Document newEnvelope) {
-        soapEnvelope = newEnvelope;
+        return undecoratedDocument;
     }
 
     public Ssg getSsg() {
         return ssg;
-    }
-
-    public String getSoapAction() {
-        return soapAction;
-    }
-
-    public void setSoapAction(String soapAction) {
-        this.soapAction = soapAction;
-    }
-
-    public String getUri() {
-        return uri;
-    }
-
-    public void setUri(String uri) {
-        this.uri = uri;
     }
 
     public boolean isMultipart() {
@@ -345,6 +319,10 @@ public class PendingRequest {
     /** @return the original url, or null if there wasn't one. */
     public URL getOriginalUrl() {
         return originalUrl;
+    }
+
+    public PolicyAttachmentKey getPolicyAttachmentKey() {
+        return policyAttachmentKey;
     }
 
     public void setSslForbidden(boolean sslForbidden) {
@@ -599,9 +577,5 @@ public class PendingRequest {
 
     public boolean isSoapRequest() {
         return isSoapRequest;
-    }
-
-    public void setSoapRequest(boolean soapRequest) {
-        isSoapRequest = soapRequest;
     }
 }

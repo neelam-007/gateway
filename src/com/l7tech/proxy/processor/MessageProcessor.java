@@ -493,7 +493,7 @@ public class MessageProcessor {
         try {
             postMethod = new PostMethod(url.toString());
             setAuthenticationState(req, state, postMethod);
-            postMethod.addRequestHeader("SOAPAction", req.getSoapAction());
+            postMethod.addRequestHeader("SOAPAction", req.getPolicyAttachmentKey().getSoapAction());
             postMethod.addRequestHeader(SecureSpanConstants.HttpHeaders.ORIGINAL_URL, req.getOriginalUrl().toString());
 
             // Let the Gateway know what policy version we used for the request.

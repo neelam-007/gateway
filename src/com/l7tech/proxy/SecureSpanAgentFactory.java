@@ -10,6 +10,7 @@ import com.l7tech.common.security.xml.processor.BadSecurityContextException;
 import com.l7tech.common.security.xml.processor.ProcessorException;
 import com.l7tech.common.util.CausedIOException;
 import com.l7tech.common.util.XmlUtil;
+import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.xml.InvalidDocumentFormatException;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.proxy.datamodel.*;
@@ -147,8 +148,9 @@ public class SecureSpanAgentFactory {
 
         public SecureSpanAgent.Result send(String soapAction, Document message) throws SendException, IOException, CausedBadCredentialsException, CausedCertificateAlreadyIssuedException {
             final URL origUrl = new URL("http://layer7tech.com/agentapi/NoOriginalUri");
-            PendingRequest pr = new PendingRequest(message, ssg, nri, origUrl, null);
-            pr.setSoapAction(soapAction);
+            String namespaceUri = SoapUtil.getNamespaceUri(message);
+            PolicyAttachmentKey pak = new PolicyAttachmentKey(namespaceUri, soapAction, origUrl.getFile());
+            PendingRequest pr = new PendingRequest(message, ssg, nri, pak, origUrl, null);
             try {
                 final SsgResponse response = mp.processMessage(pr);
                 return new Result() {

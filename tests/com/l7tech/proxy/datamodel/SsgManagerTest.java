@@ -152,10 +152,10 @@ public class SsgManagerTest extends TestCase {
         final String SSG2P2_SA = "http://foaaao.bar.baz/afdsasdf/fdsa";
         final String SSG2P1_URI = "http://asdf.fasd.awgq/";
         final String SSG2P1_SA = "http://agarg.geqw.qrgq";
-        SSG1.attachPolicy(SSG1P1_URI, SSG1P1_SA, null, new Policy(policy1, "test"));
-        SSG1.attachPolicy(SSG1P2_URI, SSG1P2_SA, null, new Policy(policy2, "test"));
-        SSG2.attachPolicy(SSG2P2_URI, SSG2P2_SA, null, new Policy(policy2, "test"));
-        SSG2.attachPolicy(SSG2P1_URI, SSG2P1_SA, null, new Policy(policy1, "test"));
+        SSG1.attachPolicy(new PolicyAttachmentKey(SSG1P1_URI, SSG1P1_SA, null), new Policy(policy1, "test"));
+        SSG1.attachPolicy(new PolicyAttachmentKey(SSG1P2_URI, SSG1P2_SA, null), new Policy(policy2, "test"));
+        SSG2.attachPolicy(new PolicyAttachmentKey(SSG2P2_URI, SSG2P2_SA, null), new Policy(policy2, "test"));
+        SSG2.attachPolicy(new PolicyAttachmentKey(SSG2P1_URI, SSG2P1_SA, null), new Policy(policy1, "test"));
 
         sm.add(SSG1);
         sm.add(SSG2);
@@ -194,16 +194,16 @@ public class SsgManagerTest extends TestCase {
         assertTrue(loaded1 != null);
         assertTrue(loaded1.getSsgAddress() != null);
         assertTrue(loaded1.getLocalEndpoint().equals(SSG1.getLocalEndpoint()));
-        assertTrue(loaded1.lookupPolicy(SSG1P1_URI, SSG1P1_SA, null) == null); // policies not persisted
-        assertTrue(loaded1.lookupPolicy(SSG1P2_URI, SSG1P2_SA, null) == null);
-        assertTrue(loaded1.lookupPolicy("asdfasdf", "argaerg", null) == null);
+        assertTrue(loaded1.lookupPolicy(new PolicyAttachmentKey(SSG1P1_URI, SSG1P1_SA, null)) == null); // policies not persisted
+        assertTrue(loaded1.lookupPolicy(new PolicyAttachmentKey(SSG1P2_URI, SSG1P2_SA, null)) == null);
+        assertTrue(loaded1.lookupPolicy(new PolicyAttachmentKey("asdfasdf", "argaerg", null)) == null);
 
         Ssg loaded2 = sm.getSsgByEndpoint(SSG2.getLocalEndpoint());
         assertTrue(loaded2 != null);
         assertTrue(loaded2.getSsgAddress() != null);
         assertTrue(loaded2.getSsgAddress().equals(SSG2.getSsgAddress()));
-        assertTrue(loaded2.lookupPolicy(SSG2P1_URI, SSG2P1_SA, null) == null); // policies not persisted
-        assertTrue(loaded2.lookupPolicy(SSG2P2_URI, SSG2P2_SA, null) == null);
+        assertTrue(loaded2.lookupPolicy(new PolicyAttachmentKey(SSG2P1_URI, SSG2P1_SA, null)) == null); // policies not persisted
+        assertTrue(loaded2.lookupPolicy(new PolicyAttachmentKey(SSG2P2_URI, SSG2P2_SA, null)) == null);
         assertTrue(loaded2.getTrustedGateway() != SSG1); // (this doesn't HAVE to fail, but it'd be amazing if it worked)
         assertTrue(loaded2.getTrustedGateway() == sm.getSsgById(SSG1.getId()));
 

@@ -209,26 +209,6 @@ public class Ssg implements Serializable, Cloneable, Comparable {
 
     /**
      * Attach (or update) a policy for this SSG.  The policy will be filed
-     * under the specified URI and/or SOAPAction, at least one of which must
-     * be provided.
-     * @param uri
-     * @param soapAction
-     * @param policy
-     * @throws IllegalArgumentException if neither uri nor soapAction is specified, or policy is null
-     */
-    public synchronized void attachPolicy(String uri, String soapAction, String localUri, Policy policy )
-            throws IllegalArgumentException
-    {
-        if (uri == null)
-            uri = "";
-        if (soapAction == null)
-            soapAction = "";
-        PolicyAttachmentKey key = new PolicyAttachmentKey( uri, soapAction, localUri );
-        attachPolicy( key, policy );
-    }
-
-    /**
-     * Attach (or update) a policy for this SSG.  The policy will be filed
      * under the provided PolicyAttachmentKey.
      * @param key
      * @param policy
@@ -262,16 +242,6 @@ public class Ssg implements Serializable, Cloneable, Comparable {
      */
     public synchronized Policy lookupPolicy(PolicyAttachmentKey policyAttachmentKey) {
         return (Policy)policyMap.get(policyAttachmentKey);
-    }
-
-    /**
-     * Look up a policy by URI and SOAPAction.
-     * @param uri The namespace of the first element within the SOAP message body.
-     * @param soapAction the contents of the SOAPAction HTTP header.
-     * @return A policy if found, or null
-     */
-    public synchronized Policy lookupPolicy(String uri, String soapAction, String localUri) {
-        return lookupPolicy(new PolicyAttachmentKey(uri, soapAction, localUri));
     }
 
     /**

@@ -79,18 +79,17 @@ public class RequestHandler extends AbstractHttpHandler {
                 return sb.toString();
             }
         });
+        String sa = request.getField("SOAPAction");
+        String namespaceUri = SoapUtil.getNamespaceUri(requestEnvelope);
+        URL originalUrl = getOriginalUrl(request);
+        PolicyAttachmentKey pak = new PolicyAttachmentKey(namespaceUri, sa, originalUrl.getFile());
         PendingRequest pr = new PendingRequest(requestEnvelope,
                                                ssg,
                                                interceptor,
-                                               getOriginalUrl(request),
+                                               pak,
+                                               originalUrl,
                                                headers);
-        String sa = request.getField("SOAPAction");
-        if (sa != null)
-            pr.setSoapAction(sa);
-
-        pr.setUri(SoapUtil.getNamespaceUri(requestEnvelope));
-        pr.setSoapRequest(SoapUtil.isSoapMessage(requestEnvelope));
-        log.finer("Request SOAPAction=" + pr.getSoapAction() + "   BodyURI=" + pr.getUri() + "   isSoapRequest=" + pr.isSoapRequest());
+        log.finer("Request SOAPAction=" + sa + "   BodyURI=" + namespaceUri + "   isSoapRequest=" + pr.isSoapRequest());
         return pr;
     }
 
