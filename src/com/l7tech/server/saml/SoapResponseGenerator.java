@@ -103,8 +103,7 @@ class SoapResponseGenerator {
         try {
             Element exceptiondetails = null;
             if (e.getMessage() != null && e.getMessage().length() > 0) {
-                Document tmpdc = XmlUtil.stringToDocument("<more>" + e.getMessage() + "</more>");
-                exceptiondetails = tmpdc.getDocumentElement();
+                exceptiondetails = SoapFaultUtils.makeFaultDetailsSubElement("more", e.getMessage());
             }
             String fault = SoapFaultUtils.generateRawSoapFault(SoapFaultUtils.FC_SERVER, faultString, exceptiondetails, "");
             os.write(fault.getBytes());

@@ -27,6 +27,14 @@ public class SoapFaultUtils {
                                  faultActor);
     }
 
+    public static Element makeFaultDetailsSubElement(String elName, String subTextNode) throws IOException, SAXException {
+        Document tmp = XmlUtil.stringToDocument("<" + elName + "/>");
+        if (subTextNode != null) {
+            tmp.getDocumentElement().appendChild(XmlUtil.createTextNode(tmp, subTextNode));
+        }
+        return tmp.getDocumentElement();
+    }
+
     public static Document generateSoapFault(String faultCode,
                                              String faultString,
                                              Element faultDetails,

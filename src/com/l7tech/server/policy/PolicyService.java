@@ -255,8 +255,7 @@ public class PolicyService {
         try {
             Element detailEl = null;
             if (msg != null) {
-                Document ded = XmlUtil.stringToDocument("<more>" + msg + "</more>");
-                detailEl = ded.getDocumentElement();
+                detailEl = SoapFaultUtils.makeFaultDetailsSubElement("more", msg);
             }
             fault = SoapFaultUtils.generateSoapFault(SoapFaultUtils.FC_SERVER,
                                                      "unauthorized policy download",

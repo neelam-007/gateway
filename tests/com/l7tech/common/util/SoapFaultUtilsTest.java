@@ -32,6 +32,7 @@ public class SoapFaultUtilsTest extends TestCase {
 
     public void testSpecialCharacters() throws Exception {
         Document parsedBack = tryThis("<fault>", "![string]?", "\"details\"", ">actor=");
+        parsedBack = tryThis("<fault>", "![string]?", "<>blah", ">actor=");
     }
 
     public void testEmptyStuff() throws Exception {
@@ -42,8 +43,7 @@ public class SoapFaultUtilsTest extends TestCase {
 
         Element exceptiondetails = null;
         if (faultDetails != null && faultDetails.length() > 0) {
-            Document tmpdc = XmlUtil.stringToDocument("<more>" + faultDetails + "</more>");
-            exceptiondetails = tmpdc.getDocumentElement();
+            exceptiondetails = SoapFaultUtils.makeFaultDetailsSubElement("more", faultDetails);
         }
 
         String fault = SoapFaultUtils.generateRawSoapFault(faultCode, faultString, exceptiondetails, faultActor);

@@ -353,8 +353,7 @@ public class PolicyServlet extends AuthenticatableHttpServlet {
         try {
             Element exceptiondetails = null;
             if (details != null && details.length() > 0) {
-                Document tmpdc = XmlUtil.stringToDocument("<more>" + details + "</more>");
-                exceptiondetails = tmpdc.getDocumentElement();
+                exceptiondetails = SoapFaultUtils.makeFaultDetailsSubElement("more", details);
             }
             fault = SoapFaultUtils.generateSoapFault(SoapFaultUtils.FC_SERVER,
                                                      msg,
