@@ -38,6 +38,8 @@ public class ServerConfig implements ComponentConfig {
     public static final String PARAM_JMS_THREAD_POOL_SIZE = "jmsThreadPoolSize";
     public static final String PARAM_MULTICAST_ADDRESS = "multicastAddress";
     public static final String PARAM_CONFIG_DIRECTORY = "configDirectory";
+    public static final String PARAM_ATTACHMENT_DIRECTORY = "attachmentDirectory";
+    public static final String PARAM_ATTACHMENT_DISK_THRESHOLD = "attachmentDiskThreshold";
 
     public static final String PARAM_AUDIT_MESSAGE_THRESHOLD = "auditMessageThreshold";
     public static final String PARAM_AUDIT_ADMIN_THRESHOLD = "auditAdminThreshold";
@@ -322,6 +324,60 @@ public class ServerConfig implements ComponentConfig {
         }
 
         return _hostname;
+    }
+
+    public int getAttachmentDiskThreshold() {
+        String str = getProperty(PARAM_ATTACHMENT_DISK_THRESHOLD);
+
+        int ret = 0;
+        if (str != null && str.length() > 0) {
+            try {
+                ret = Integer.parseInt(str);
+            } catch (NumberFormatException nfe) {
+                // fallthrough
+            }
+        }
+
+        if (ret < 1) {
+            int def = 131071;
+            String errorMsg = "The property " + PARAM_ATTACHMENT_DIRECTORY + " is undefined or invalid. Please ensure the SecureSpan " +
+                    "Gateway is properly configured.  (Will use default of " + def + ")";
+            logger.severe(errorMsg);
+            return def;
+        }
+
+        return ret;
+    }
+
+    public File getAttachmentDirectory() {
+        String propsPath = getProperty(PARAM_ATTACHMENT_DIRECTORY);
+
+        if (propsPath == null || propsPath.length() <= 0) {
+            final String def = "/ssg/var/attachments";
+            String errorMsg = "The property " + PARAM_ATTACHMENT_DIRECTORY + " is not defined. Please ensure the SecureSpan " +
+                    "Gateway is properly configured.  (Will use default of " + def + ")";
+            logger.severe(errorMsg);
+            return new File(def);
+        }
+
+        File propsFile = new File(propsPath);
+        if (!propsFile.exists()) {
+            String errorMsg = "The property " + PARAM_ATTACHMENT_DIRECTORY + ", defined as the directory " + propsPath +
+                    ", is required for caching large attachments but was not found. Please ensure the " +
+                    "SecureSpan Gateway is properly installed.";
+            logger.severe(errorMsg);
+            throw new RuntimeException(errorMsg);
+        }
+
+        if (!propsFile.canWrite()) {
+            String errorMsg = "The property " + PARAM_ATTACHMENT_DIRECTORY + ", defined as the directory " + propsPath +
+                    ", is required for caching large attachments but was not writable by the Gateway process.  " +
+                    "Please ensure the SecureSpan Gateway is properly installed.";
+            logger.severe(errorMsg);
+            throw new RuntimeException(errorMsg);
+        }
+
+        return propsFile;
     }
 
     private int _serverId;

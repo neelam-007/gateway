@@ -11,6 +11,7 @@ import com.l7tech.common.util.CausedIOException;
 import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.util.XmlUtil;
 import com.l7tech.server.MessageProcessor;
+import com.l7tech.server.ServerConfig;
 import com.l7tech.server.attachments.ServerMultipartMessageReader;
 import com.l7tech.server.transport.jms.BytesMessageInputStream;
 import com.l7tech.server.transport.jms.JmsUtil;
@@ -35,6 +36,7 @@ import java.util.regex.Pattern;
 public abstract class XmlMessageAdapter extends MessageAdapter implements XmlMessage {
     private static final Logger logger = Logger.getLogger(XmlMessageAdapter.class.getName());
     public static final Pattern MULTIPART_DETECTOR_VAN = Pattern.compile("\\s*" + MimeUtil.MULTIPART_CONTENT_TYPE + "\\b.*");
+    private static int stashFileUnique = 1;
 
     public XmlMessageAdapter( TransportMetadata tm ) {
         super(tm);
@@ -49,6 +51,10 @@ public abstract class XmlMessageAdapter extends MessageAdapter implements XmlMes
         XmlPullParser xpp = MessageProcessor.getInstance().getPullParser();
         xpp.setInput( new StringReader( xml ) );
         return xpp;
+    }
+
+    private static synchronized int getStashFileUnique() {
+        return stashFileUnique++;
     }
 
     /**
@@ -79,7 +85,7 @@ public abstract class XmlMessageAdapter extends MessageAdapter implements XmlMes
             !soapPart.getContentType().getSubtype().equalsIgnoreCase("xml"))
             throw new IOException("Incoming message did not have text/xml as first part");
 
-        InputStream soapStream = soapPart.getInputStream(true); // don't bother saving soap part, since we will be parsing it
+        InputStream soapStream = soapPart.getInputStream(true); // don't bother saving soap part, since we will be parsing it immediately
 
         BufferedReader reader = new BufferedReader(
                 new InputStreamReader(soapStream, soapPart.getContentType().getEncoding()));
@@ -173,7 +179,9 @@ public abstract class XmlMessageAdapter extends MessageAdapter implements XmlMes
 
     private StashManager getStashManager() {
         if (stashManager == null) {
-            stashManager = new ByteArrayStashManager(); // TODO need to implement disk-based hybrid StashManager
+            stashManager = new HybridStashManager(ServerConfig.getInstance().getAttachmentDiskThreshold(),
+                                                  ServerConfig.getInstance().getAttachmentDirectory(),
+                                                  "att" + getStashFileUnique());
         }
         return stashManager;
     }
@@ -252,5 +260,4 @@ public abstract class XmlMessageAdapter extends MessageAdapter implements XmlMes
     protected Boolean soap = null;
     private MultipartMessage multipartMessage = null;
     private StashManager stashManager;
-
 }

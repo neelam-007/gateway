@@ -1140,6 +1140,9 @@
         <property name="install.src.logs" value="${install.src.base}/${install.rel.logs}"/>
         <property name="install.src.web-inf" value="${install.src.tomcat}/webapps/ROOT/WEB-INF"/>
         <property name="install.src.ldap" value="${install.src.base}/${install.rel.ldap}"/>
+        <property name="install.src.var" value="${install.src.base}/var"/>
+        <property name="install.src.var.attachments" value="${install.src.var}/attachments"/>
+
         <property name="install.rel.jdk" value="${install.jdk.dir}"/>
         <property name="install.rel.tomcat" value="${install.tomcat.dir}"/>
         <!-- Absolute target paths -->
@@ -1164,6 +1167,8 @@
         <mkdir dir="${install.src.keys}"/>
         <mkdir dir="${install.src.conf}"/>
         <mkdir dir="${install.src.logs}"/>
+        <mkdir dir="${install.src.var}" />
+        <mkdir dir="${install.src.var.attachments}" />
 
         <antcall target="INTERNAL-ssg-install-optional-1"/>
 
