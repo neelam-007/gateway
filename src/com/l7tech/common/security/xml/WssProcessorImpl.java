@@ -158,7 +158,9 @@ public class WssProcessorImpl implements WssProcessor {
                         if (securityContextFinder == null)
                             throw new ProcessorException("SecurityContextToken element found in message, but caller did not provide a SecurityContextFinder");                            
                         final SecurityContext secContext = securityContextFinder.getSecurityContext(identifier);
-                        SecurityContextTokenImpl secConTok = new SecurityContextTokenImpl(secContext, secConTokEl);
+                        SecurityContextTokenImpl secConTok = new SecurityContextTokenImpl(secContext,
+                                                                                          secConTokEl,
+                                                                                          identifier);
                         cntx.securityTokens.add(secConTok);
                     }
                 } else {
@@ -1228,10 +1230,12 @@ public class WssProcessorImpl implements WssProcessor {
     private static class SecurityContextTokenImpl implements WssProcessor.SecurityContextToken {
         private final WssProcessor.SecurityContext secContext;
         private final Element secConTokEl;
+        private final String identifier;
 
-        public SecurityContextTokenImpl(WssProcessor.SecurityContext secContext, Element secConTokEl) {
+        public SecurityContextTokenImpl(WssProcessor.SecurityContext secContext, Element secConTokEl, String identifier) {
             this.secContext = secContext;
             this.secConTokEl = secConTokEl;
+            this.identifier = identifier;
         }
 
         public WssProcessor.SecurityContext getSecurityContext() {
@@ -1242,6 +1246,10 @@ public class WssProcessorImpl implements WssProcessor {
         }
         public Element asElement() {
             return secConTokEl;
+        }
+
+        public String getContextIdentifier() {
+            return identifier;
         }
     }
 }
