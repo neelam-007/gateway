@@ -132,6 +132,10 @@ public class ServerHttpRoutingAssertion extends ServerRoutingAssertion {
 
                 postMethod = new PostMethod(url.toString());
 
+                // Set the HTTP version 1.0 for not accepting the chunked Transfer Encoding
+                // todo: check if we need to support HTTP 1.1.
+                postMethod.setHttp11(false);
+
                 if(request.isMultipart()) {
                     postMethod.setRequestHeader(XmlUtil.CONTENT_TYPE, XmlUtil.MULTIPART_CONTENT_TYPE +
                             "; type=\"" + XmlUtil.TEXT_XML + "\"" +
