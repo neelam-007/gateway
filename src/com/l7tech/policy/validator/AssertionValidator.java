@@ -15,5 +15,5 @@ import com.l7tech.policy.assertion.Assertion;
  * @version 1.0
  */
 public interface AssertionValidator {
-    public void validate( Assertion assertion, PolicyValidatorResult result );
+    void validate( Assertion assertion, PolicyValidatorResult result );
 }
