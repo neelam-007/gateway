@@ -119,31 +119,6 @@ public class TreeNodeAction {
   }
 
   /**
-   *
-   * @param node   EntityTreeNode  the node to determine if it
-   *               has properties
-   * @return true if the node can be expanded, false otherwise
-   */
-  public static boolean isBrowseable(EntityTreeNode node) {
-    Object o = node.getUserObject();
-    if (o instanceof BasicTreeNode) {
-      return isBrowseable((BasicTreeNode)o);
-    }
-    return false;
-  }
-
-  /**
-   * @param bn   BasicTreeNode  the object to determine if it
-   *               has properties
-   * @return true if the node has properties, false otherwise
-   */
-  public static boolean isBrowseable(BasicTreeNode bn) {
-    return
-      (bn instanceof ProvidersFolderNode ||
-       bn instanceof ProviderNode);
-  }
-
-  /**
    * @param node   DirectoryNode  the node to determine if it
    *               can be deleted
    * @return true if the node can be deleted, false otherwise

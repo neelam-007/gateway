@@ -20,15 +20,14 @@ import java.awt.event.ActionListener;
  * @see java.awt.event.ActionEvent#getActionCommand()
  */
 public class TreeNodeMenu extends JPopupMenu {
-    private Object dirObject;
-    private ActionListener listener;
+    private Object object;
+
 
     /**
      * creates a tree node menu for the particular Object and listener.
      */
-    private TreeNodeMenu(Object dirObject, ActionListener listener) {
-        this.dirObject = dirObject;
-        this.listener = listener;
+    private TreeNodeMenu(Object o) {
+        this.object = o;
     }
 
     /**
@@ -54,6 +53,8 @@ public class TreeNodeMenu extends JPopupMenu {
             retMenu = forAdminFolder((AdminFolderNode)object, listener);
         } else if (object instanceof UserFolderNode) {
             retMenu = forUserFolder((UserFolderNode)object, listener);
+        } else if (object instanceof UserNode) {
+                 retMenu = forUser((UserNode)object, listener);
         } else if (object instanceof GroupFolderNode) {
             retMenu = forGroupFolder((GroupFolderNode)object, listener);
         } else if (object instanceof ServicesFolderNode) {
@@ -62,19 +63,12 @@ public class TreeNodeMenu extends JPopupMenu {
 
         // if there is no menu yet make one..
         if (retMenu == null) {
-            retMenu = new TreeNodeMenu(node, listener);
+            retMenu = new TreeNodeMenu(node);
         }
 
         // have properties?
         if (TreeNodeAction.hasProperties(node)) {
             JMenuItem item = new JMenuItem(PROPERTIES);
-            item.addActionListener(listener);
-            retMenu.insert(item, 0);
-        }
-
-        // browseable?
-        if (TreeNodeAction.isBrowseable(node)) {
-            JMenuItem item = new JMenuItem(BROWSE);
             item.addActionListener(listener);
             retMenu.insert(item, 0);
         }
@@ -92,7 +86,7 @@ public class TreeNodeMenu extends JPopupMenu {
      * @return JpopUpMenu for the node
      */
     private static JPopupMenu forProvidersFolder(ProvidersFolderNode realm, ActionListener listener) {
-        TreeNodeMenu treeMenu = new TreeNodeMenu(realm, listener);
+        TreeNodeMenu treeMenu = new TreeNodeMenu(realm);
         treeMenu.add(NEW_PROVIDER).addActionListener(listener);
 
         return treeMenu;
@@ -108,7 +102,7 @@ public class TreeNodeMenu extends JPopupMenu {
      * @return JpopUpMenu for the node
      */
     private static JPopupMenu forProvider(ProviderNode provider, ActionListener listener) {
-        TreeNodeMenu treeMenu = new TreeNodeMenu(provider, listener);
+        TreeNodeMenu treeMenu = new TreeNodeMenu(provider);
         treeMenu.add(DELETE).addActionListener(listener);
 
         return treeMenu;
@@ -123,7 +117,7 @@ public class TreeNodeMenu extends JPopupMenu {
      * @return JpopUpMenu for the node
      */
     private static JPopupMenu forAdminFolder(AdminFolderNode admin, ActionListener listener) {
-        TreeNodeMenu treeMenu = new TreeNodeMenu(admin, listener);
+        TreeNodeMenu treeMenu = new TreeNodeMenu(admin);
         treeMenu.add(NEW_ADMINISTRATOR).addActionListener(listener);
 
         return treeMenu;
@@ -139,7 +133,7 @@ public class TreeNodeMenu extends JPopupMenu {
      * @return JpopUpMenu for the node
      */
     private static JPopupMenu forAdmin(UserNode entry, ActionListener listener) {
-        TreeNodeMenu treeMenu = new TreeNodeMenu(entry, listener);
+        TreeNodeMenu treeMenu = new TreeNodeMenu(entry);
         treeMenu.add(DELETE).addActionListener(listener);
 
         return treeMenu;
@@ -156,7 +150,7 @@ public class TreeNodeMenu extends JPopupMenu {
      * @return JpopUpMenu for the node
      */
     private static JPopupMenu forUserFolder(UserFolderNode user, ActionListener listener) {
-        TreeNodeMenu treeMenu = new TreeNodeMenu(user, listener);
+        TreeNodeMenu treeMenu = new TreeNodeMenu(user);
         treeMenu.add(NEW_USER).addActionListener(listener);
 
         return treeMenu;
@@ -172,7 +166,7 @@ public class TreeNodeMenu extends JPopupMenu {
      * @return JpopUpMenu for the node
      */
     private static JPopupMenu forGroupFolder(GroupFolderNode group, ActionListener listener) {
-        TreeNodeMenu treeMenu = new TreeNodeMenu(group, listener);
+        TreeNodeMenu treeMenu = new TreeNodeMenu(group);
         treeMenu.add(NEW_GROUP).addActionListener(listener);
 
         return treeMenu;
@@ -188,7 +182,7 @@ public class TreeNodeMenu extends JPopupMenu {
      * @return JpopUpMenu for the node
      */
     private static JPopupMenu forUser(UserNode entry, ActionListener listener) {
-        TreeNodeMenu treeMenu = new TreeNodeMenu(entry, listener);
+        TreeNodeMenu treeMenu = new TreeNodeMenu(entry);
         treeMenu.add(DELETE).addActionListener(listener);
 
         return treeMenu;
@@ -204,7 +198,7 @@ public class TreeNodeMenu extends JPopupMenu {
      * @return JpopUpMenu for the node
      */
     private static JPopupMenu forGroup(GroupNode entry, ActionListener listener) {
-        TreeNodeMenu treeMenu = new TreeNodeMenu(entry, listener);
+        TreeNodeMenu treeMenu = new TreeNodeMenu(entry);
         treeMenu.add(DELETE).addActionListener(listener);
         return treeMenu;
     }
@@ -219,7 +213,7 @@ public class TreeNodeMenu extends JPopupMenu {
      * @return JpopUpMenu for the node
      */
     private static JPopupMenu forServicesFolder(ServicesFolderNode node, ActionListener listener) {
-        TreeNodeMenu treeMenu = new TreeNodeMenu(node, listener);
+        TreeNodeMenu treeMenu = new TreeNodeMenu(node);
         treeMenu.add(NEW_SERVICE).addActionListener(listener);
         return treeMenu;
     }

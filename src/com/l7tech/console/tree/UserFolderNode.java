@@ -49,7 +49,7 @@ public class UserFolderNode implements BasicTreeNode {
      * Returns true if the receiver allows children.
      */
     public boolean getAllowsChildren() {
-        return false;
+        return true;
     }
 
     /**
