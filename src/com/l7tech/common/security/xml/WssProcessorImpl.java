@@ -781,7 +781,10 @@ public class WssProcessorImpl implements WssProcessor {
         X509Certificate signingCert = signingCertToken.asX509Certificate();
 
         // Try to resolve embedded cert
-        // TODO can this ever happen?  If so under what circumstances?  --mike
+        // can this ever happen?  If so under what circumstances?  --mike
+        // this is supporting the case where the KeyInfo will contain it's
+        // own cert directly instead of refering to a BinarySecurityToken
+        // --fla
         if (signingCert == null) {
             signingCert = resolveEmbeddedCert(keyInfoElement);
         }
