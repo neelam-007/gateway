@@ -57,6 +57,7 @@ public class ServerSecureConversation implements ServerAssertion {
                 if (session == null) {
                     logger.warning("The request referred to a SecureConversation token that is not recognized " +
                                    "on this server. Perhaps the session has expired. Returning AUTH_FAILED.");
+                    response.setPolicyViolated(true);
                     return AssertionStatus.AUTH_FAILED;
                 }
                 User authenticatedUser = session.getUsedBy();
@@ -67,6 +68,7 @@ public class ServerSecureConversation implements ServerAssertion {
                 return AssertionStatus.NONE;
             }
         }
+        response.setPolicyViolated(true);
         logger.info("This request did not seem to refer to a Secure Conversation token.");
         return AssertionStatus.AUTH_REQUIRED;
     }
