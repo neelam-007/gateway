@@ -143,7 +143,6 @@ public class ServiceCache {
                 logger.finest("resolution failed because no services in the cache");
                 return null;
             }
-            // todo, plug in the non soap resolver
             for (int i = 0; i < resolvers.length; i++) {
                 Set resolvedServices = resolvers[i].resolve(req, serviceSet);
                 if (resolvedServices == null || resolvedServices.isEmpty()) return null;
