@@ -90,9 +90,6 @@ public class SoapMessageProcessingServlet extends HttpServlet {
             } catch ( PolicyAssertionException pae ) {
                 logger.log(Level.SEVERE, null, pae);
                 sendFault( sreq, sresp, hrequest, hresponse, HttpServletResponse.SC_INTERNAL_SERVER_ERROR, SoapUtil.FC_SERVER, pae.toString() );
-            } catch ( MessageProcessingException mpe ) {
-                logger.log(Level.SEVERE, null, mpe);
-                sendFault( sreq, sresp, hrequest, hresponse, HttpServletResponse.SC_INTERNAL_SERVER_ERROR, SoapUtil.FC_SERVER, mpe.toString() );
             }
         } catch ( SOAPException se ) {
             logger.log(Level.SEVERE, null, se);
