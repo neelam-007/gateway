@@ -86,16 +86,19 @@ public class PublishedService extends NamedEntityImp {
      */
     public synchronized String getWsdlXml() throws IOException {
         if ( _wsdlXml == null ) {
-            // we must get the actual wsdl. delegate to the ServiceAdmin
-            // this avoids resolving the wsdl on the client side
-            ServiceAdmin svcAdmin = (ServiceAdmin)Locator.getDefault().
-                                        lookup(com.l7tech.service.ServiceAdmin.class);
-            if (svcAdmin == null) {
-                String msg = "could not resolve a ServiceAdmin implementation.";
-                logger.severe(msg);
-                throw new IOException(msg);
+            if (_wsdlUrl != null && _wsdlUrl.length() > 0) {
+                // we must get the actual wsdl. delegate to the ServiceAdmin
+                // this avoids resolving the wsdl on the client side
+                ServiceAdmin svcAdmin = (ServiceAdmin)Locator.getDefault().
+                                            lookup(com.l7tech.service.ServiceAdmin.class);
+                if (svcAdmin == null) {
+                    String msg = "could not resolve a ServiceAdmin implementation.";
+                    logger.severe(msg);
+                    throw new IOException(msg);
+                }
+
+                _wsdlXml = svcAdmin.resolveWsdlTarget(_wsdlUrl);
             }
-            _wsdlXml = svcAdmin.resolveWsdlTarget(_wsdlUrl);
         }
         return _wsdlXml;
     }
@@ -109,7 +112,9 @@ public class PublishedService extends NamedEntityImp {
         if ( _parsedWsdl == null ) {
             try {
                 String cachedWsdl = getWsdlXml();
-                _parsedWsdl = Wsdl.newInstance( null, new InputSource( new StringReader(cachedWsdl) ) );
+                if (cachedWsdl != null) {
+                    _parsedWsdl = Wsdl.newInstance( null, new InputSource( new StringReader(cachedWsdl) ) );
+                }
             } catch ( IOException ioe ) {
                 throw new WSDLException( ioe.getMessage(), ioe.toString(), ioe );
             }
