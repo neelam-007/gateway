@@ -92,7 +92,7 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion {
                 int timeout = data.getResponseTimeout();
                 Message jmsResponse = jmsConsumer.receive( timeout );
                 if ( jmsResponse == null ) {
-                    logger.fine( "Did not receive a routing reply within timeout of " +
+                    logger.warning( "Did not receive a routing reply within timeout of " +
                                  timeout + "ms. Will return empty response");
                     return AssertionStatus.FAILED;
                 } else {
@@ -123,11 +123,11 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion {
                     }
 
                     xresp.setParameter( Request.PARAM_HTTP_CONTENT_TYPE, ServerRoutingAssertion.TEXT_XML );
-
+                    logger.info( "Received response from protected service" );
                     request.setRoutingStatus( RoutingStatus.ROUTED );
                 }
             } else {
-                logger.finest( "No response expected from protected service" );
+                logger.info( "No response expected from protected service" );
                 request.setRoutingStatus( RoutingStatus.ROUTED );
             }
 
