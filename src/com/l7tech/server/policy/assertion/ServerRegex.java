@@ -67,11 +67,14 @@ public class ServerRegex implements ServerAssertion {
               context.getResponse().getMimeKnob().getFirstPart() :
               context.getRequest().getMimeKnob().getFirstPart();
 
-            byte[] message = HexUtils.slurpStream(firstPart.getInputStream(false));
+            final String replacement = regexAssertion.getReplacement();
+            final boolean haveReplacement = replacement != null;
+
+            byte[] message = HexUtils.slurpStream(firstPart.getInputStream(haveReplacement));
             final String encoding = firstPart.getContentType().getEncoding();
             Matcher matcher = regexPattern.matcher(new String(message, encoding));
-            if (regexAssertion.getReplacement() != null) {
-                String result = matcher.replaceAll(regexAssertion.getReplacement());
+            if (haveReplacement) {
+                String result = matcher.replaceAll(replacement);
                 firstPart.setBodyBytes(result.getBytes(encoding));
             } else {
                 logger.fine("No replace has been requested. Verifying match for pattern "+regexAssertion.getRegex());
