@@ -8,12 +8,7 @@ import java.util.Properties;
 import java.util.logging.*;
 
 /**
- * Layer 7 technologies, inc.
- * User: flascell
- * Date: Jul 3, 2003
- * Time: 11:42:08 AM
- *
- * Instance of the log manager that is meant to be used on the server-side.
+ * Instance of the log manager that is meant to be used on the server-side.<br/><br/>
  *
  * Reads properties from ssglog.properties file. Tries to get this file from
  * /ssg/etc/conf/ssglog.properties. If not present, gets is from
@@ -25,6 +20,12 @@ import java.util.logging.*;
  *
  * NOTE: Unusual exception handling because of the fact that logging subsystem
  * is not initialized yet.
+ * 
+ * <br/><br/>
+ * Layer 7 technologies, inc.<br/>
+ * User: flascell<br/>
+ * Date: Jul 3, 2003<br/>
+ * Time: 11:42:08 AM<br/><br/>
  */
 public class ServerLogManager extends LogManager {
 
