@@ -17,17 +17,14 @@ import com.ibm.xml.enc.type.EncryptedData;
 import com.ibm.xml.enc.type.EncryptionMethod;
 import com.l7tech.common.security.AesKey;
 import com.l7tech.common.security.JceProvider;
-import com.l7tech.common.util.CertUtils;
-import com.l7tech.common.util.HexUtils;
-import com.l7tech.common.util.SoapUtil;
-import com.l7tech.common.util.XmlUtil;
+import com.l7tech.common.util.*;
 import com.l7tech.common.xml.InvalidDocumentFormatException;
-import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.assertion.credential.CredentialFormat;
+import com.l7tech.policy.assertion.credential.LoginCredentials;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
-import org.w3c.dom.Text;
 import org.w3c.dom.NodeList;
+import org.w3c.dom.Text;
 
 import javax.crypto.Cipher;
 import java.io.IOException;
@@ -37,8 +34,6 @@ import java.security.cert.X509Certificate;
 import java.security.interfaces.DSAPrivateKey;
 import java.security.interfaces.RSAPrivateKey;
 import java.security.interfaces.RSAPublicKey;
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.logging.Logger;
 
@@ -518,9 +513,7 @@ public class WssDecoratorImpl implements WssDecorator {
         Document factory = timestamp.getOwnerDocument();
         Element element = factory.createElementNS(timestamp.getNamespaceURI(), createdElName);
         element.setPrefix(timestamp.getPrefix());
-        DateFormat dateFormat = new SimpleDateFormat(SoapUtil.DATE_FORMAT_PATTERN);
-        dateFormat.setTimeZone(SoapUtil.DATE_FORMAT_TIMEZONE);
-        element.appendChild(factory.createTextNode(dateFormat.format(time)));
+        element.appendChild(factory.createTextNode(ISO8601Date.format(time)));
         return element;
     }
 

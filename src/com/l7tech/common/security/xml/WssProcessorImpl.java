@@ -8,10 +8,7 @@ import com.ibm.xml.enc.StructureException;
 import com.ibm.xml.enc.type.EncryptedData;
 import com.l7tech.common.security.AesKey;
 import com.l7tech.common.security.JceProvider;
-import com.l7tech.common.util.CertUtils;
-import com.l7tech.common.util.HexUtils;
-import com.l7tech.common.util.SoapUtil;
-import com.l7tech.common.util.XmlUtil;
+import com.l7tech.common.util.*;
 import com.l7tech.common.xml.InvalidDocumentFormatException;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import org.w3c.dom.Document;
@@ -30,9 +27,7 @@ import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
-import java.text.DateFormat;
 import java.text.ParseException;
-import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -606,9 +601,7 @@ public class WssProcessorImpl implements WssProcessor {
         TimestampDate(Element createdOrExpiresElement) throws ParseException {
             element = createdOrExpiresElement;
             String dateString = XmlUtil.getTextValue(element);
-            DateFormat dateFormat = new SimpleDateFormat(SoapUtil.DATE_FORMAT_PATTERN);
-            dateFormat.setTimeZone(SoapUtil.DATE_FORMAT_TIMEZONE);
-            date = dateFormat.parse(dateString);
+            date = ISO8601Date.parse(dateString);
         }
 
         public Date asDate() {

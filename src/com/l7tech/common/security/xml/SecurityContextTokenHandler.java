@@ -1,10 +1,10 @@
 package com.l7tech.common.security.xml;
 
+import com.l7tech.common.util.ISO8601Date;
 import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.xml.MessageNotSoapException;
 import com.l7tech.common.xml.TooManyChildElementsException;
-import com.l7tech.common.xml.MessageNotSoapException;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
@@ -15,15 +15,13 @@ import sun.misc.BASE64Encoder;
 
 import java.io.IOException;
 import java.security.SecureRandom;
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
 import java.util.Date;
 
 /**
  * Appends and parses out xml security session information in/out of soap messages.
  * The specifications used here are WS-Secure Conversation and WS-Trust versions 1.1.
  *
- * @deprecated This is not yet plugged in and will eventually phase out the class SecureConversationTokenHandler.
+ * This is not yet plugged in and will eventually phase out the class SecureConversationTokenHandler.
  *
  * <p/>
  * <br/><br/>
@@ -192,9 +190,7 @@ public class SecurityContextTokenHandler {
         Element createdEl = securityCtxTokenEl.getOwnerDocument().createElementNS(WSU_NAMESPACE, CREATED_ELNAME);
         createdEl.setAttribute("xmlns:" + DEF_WSU_PREFIX, WSU_NAMESPACE);
         createdEl.setPrefix(DEF_WSU_PREFIX);
-        DateFormat dateFormat = new SimpleDateFormat(SoapUtil.DATE_FORMAT_PATTERN);
-        dateFormat.setTimeZone(SoapUtil.DATE_FORMAT_TIMEZONE);
-        String stamp = dateFormat.format(new Date(creationTimeStamp));
+        String stamp = ISO8601Date.format(new Date(creationTimeStamp));
         Text valNode = securityCtxTokenEl.getOwnerDocument().createTextNode(stamp);
         createdEl.appendChild(valNode);
         securityCtxTokenEl.insertBefore(createdEl, null);
