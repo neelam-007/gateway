@@ -6,6 +6,7 @@ import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.console.event.WizardListener;
 import com.l7tech.console.event.WizardEvent;
 import com.l7tech.console.event.WizardAdapter;
+import com.l7tech.console.action.Actions;
 
 import javax.swing.*;
 import javax.swing.border.EtchedBorder;
@@ -42,6 +43,13 @@ public class WsdlCreateWizard extends Wizard {
         def.setExtensionRegistry(new PopulatedExtensionRegistry());
         wizardInput = def;
         this.addWizardListener(wizardListener);
+
+        getButtonHelp().addActionListener( new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                Actions.invokeHelp(WsdlCreateWizard.this);
+            }
+        });
+
     }
 
     protected final JPanel createButtonPanel() {
