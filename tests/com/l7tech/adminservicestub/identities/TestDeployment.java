@@ -16,12 +16,18 @@ public class TestDeployment {
         IdentityWS servicePort = service.getidentities(new java.net.URL("http://localhost:8080/ssg/services/identities"));
 
         ListResultEntry[] res = servicePort.listProviders();
+        System.out.println("");
+        System.out.println("PROVIDERS");
         printres(res);
 
         res = servicePort.listGroupsInProvider(654);
+        System.out.println("");
+        System.out.println("GROUPS");
         printres(res);
 
         res = servicePort.listUsersInProvider(654);
+        System.out.println("");
+        System.out.println("USERS");
         printres(res);
     }
 
