@@ -236,7 +236,7 @@ public class KeystoreUtils {
                     } catch (FileNotFoundException fnfe) {
                     }
                 }
-                if (inputStream == null) logger.warning("Keystore properties file " + inputStream + " could not be found, using default properties");
+                if (inputStream == null) logger.info("Keystore properties file " + inputStream + " could not be found. Will try loading as resource");
             }
 
             if (inputStream == null) {
