@@ -168,7 +168,6 @@ public class ServerRoutingAssertion implements ServerAssertion {
 
             request.setRoutingStatus(RoutingStatus.ROUTED);
 
-
             return AssertionStatus.NONE;
         } catch (WSDLException we) {
             logger.log(Level.SEVERE, null, we);
