@@ -162,8 +162,13 @@ public class RSASigner {
 
         // serialize the cert to the path provided
         byte[] certbytes = cert.getEncoded();
-        FileOutputStream output = new FileOutputStream(args[5]);
-        output.write(certbytes);
+        FileOutputStream output = null;
+        try {
+            output = new FileOutputStream(args[5]);
+            output.write(certbytes);
+        } finally {
+            if ( output != null ) output.close();
+        }
     }
 
     /**
