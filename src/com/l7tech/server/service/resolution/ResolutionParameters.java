@@ -8,13 +8,13 @@ import java.io.Serializable;
 
 /**
  * Object representation of a row in the serviceresolution table.
- *
+ * <p/>
  * This bean class is used by the ResolutionManager to interact with
  * hibernate.
- *
+ * <p/>
  * <br/><br/>
  * LAYER 7 TECHNOLOGIES, INC<br/>
- *
+ * <p/>
  * User: flascell<br/>
  * Date: Nov 25, 2003<br/>
  * $Id$
@@ -22,6 +22,7 @@ import java.io.Serializable;
 public class ResolutionParameters extends EntityImp implements Serializable {
     // todo, ideally, this should fail at the database layer but mysql truncs silently
     public static final int MAX_LENGTH_RES_PARAMETER = 255;
+
     public String getSoapaction() {
         return soapaction;
     }
@@ -30,7 +31,7 @@ public class ResolutionParameters extends EntityImp implements Serializable {
         if (soapaction == null) soapaction = ""; // Oracle doesn't distinguish between "" and NULL
         if (soapaction.length() > MAX_LENGTH_RES_PARAMETER) {
             throw new ResolutionParameterTooLongException("The soapaction " + soapaction + " is too " +
-                                                          "long to remember as a resolution parameter.");
+              "long to remember as a resolution parameter.");
         }
         this.soapaction = soapaction;
     }
@@ -43,7 +44,7 @@ public class ResolutionParameters extends EntityImp implements Serializable {
         if (urn == null) urn = ""; // Oracle
         if (urn != null && urn.length() > MAX_LENGTH_RES_PARAMETER) {
             throw new ResolutionParameterTooLongException("The namespace " + urn + " is too " +
-                                                          "long to remember as a resolution parameter.");
+              "long to remember as a resolution parameter.");
         }
         this.urn = urn;
     }
@@ -64,11 +65,12 @@ public class ResolutionParameters extends EntityImp implements Serializable {
         if (uri == null) uri = ""; // Oracle
         if (uri != null && uri.length() > MAX_LENGTH_RES_PARAMETER) {
             throw new ResolutionParameterTooLongException("The URI " + uri + " is too " +
-                                                          "long to remember as a resolution parameter.");
+              "long to remember as a resolution parameter.");
         }
         this.uri = uri;
 
     }
+
     /**
      * this must be overriden (hibernate requirement for composite id classes)
      */
@@ -89,14 +91,46 @@ public class ResolutionParameters extends EntityImp implements Serializable {
     }
 
     /**
+     * Test whether two resolution parameters are equal. Two resolution
+     * parameters are equal if the uri, soap action and the urn are equal
+     *
+     * @param that the target <code>ResolutionParameters</code>
+     * @return true if equal, false oterwise
+     */
+    public boolean resolutionEquals(ResolutionParameters that) {
+        if (uri == null) {
+            if (uri != that.getUri()) return false;
+        } else if (!uri.equals(that.getUri())) return false;
+        if (soapaction == null) {
+            if (soapaction != that.getSoapaction()) return false;
+        } else if (!soapaction.equals(that.getSoapaction())) return false;
+        if (urn == null) {
+            if (urn != that.getUrn()) return false;
+        } else if (!urn.equals(that.getUrn())) return false;
+
+        return true;
+    }
+
+    /**
      * this must be overriden (hibernate requirement for composite id classes)
      */
     public int hashCode() {
-	    return HashCode.compute(new String[]{urn, soapaction, uri});
+        return HashCode.compute(new String[]{urn, soapaction, uri});
+    }
+
+
+    public String toString() {
+        return "ResolutionParameters{" +
+          "serviceid=" + serviceid +
+          ", soapaction='" + soapaction + "'" +
+          ", urn='" + urn + "'" +
+          ", uri='" + uri + "'" +
+          "}";
     }
 
     private String soapaction;
     private String urn;
     private String uri;
     private long serviceid;
+
 }
