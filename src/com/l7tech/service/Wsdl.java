@@ -20,7 +20,6 @@ import java.util.logging.Logger;
 import java.net.URL;
 import java.net.MalformedURLException;
 
-import com.l7tech.logging.LogManager;
 
 /**
  * <code>Wsdl</code> is the internal object structure for
@@ -362,5 +361,5 @@ public class Wsdl {
 
     private Definition definition;
 
-    private transient Logger logger = LogManager.getInstance().getSystemLogger();
+    private transient Logger logger = Logger.getLogger(getClass().getName());
 }
