@@ -1,4 +1,6 @@
-package com.l7tech.util.locator;
+package com.l7tech.common.locator;
+
+import com.l7tech.common.locator.AbstractLocator;
 
 import java.io.IOException;
 import java.io.InputStream;

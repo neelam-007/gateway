@@ -1,6 +1,6 @@
 package com.l7tech.jini.lookup;
 
-import com.l7tech.util.locator.ObjectFactory;
+import com.l7tech.common.locator.ObjectFactory;
 import net.jini.config.*;
 import net.jini.core.lookup.ServiceItem;
 import net.jini.core.lookup.ServiceTemplate;

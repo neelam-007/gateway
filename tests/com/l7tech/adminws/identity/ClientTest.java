@@ -38,7 +38,7 @@ public class ClientTest extends TestCase {
              * @throws Exception on error deleting the stub data store
              */
             protected void setUp() throws Exception {
-                System.setProperty("com.l7tech.util.locator.properties",
+                System.setProperty("com.l7tech.common.locator.properties",
                         "/com/l7tech/console/resources/services.properties");
             }
 

@@ -1,4 +1,4 @@
-package com.l7tech.util.locator;
+package com.l7tech.common.locator;
 
 import com.l7tech.common.util.Locator;
 

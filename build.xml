@@ -262,8 +262,8 @@
             <formatter type="plain"/>
             <sysproperty key="src.root" value="${src.root}"/>
             <test name="com.l7tech.identity.ldap.LdapIdentityProviderServerTest" haltonfailure="no"/>
-            <test name="com.l7tech.util.ThreadPoolTest" haltonfailure="no"/>
-            <test name="com.l7tech.util.locator.AbstractLocatorTest" haltonfailure="no"/>
+            <test name="com.l7tech.common.util.ThreadPoolTest" haltonfailure="no"/>
+            <test name="com.l7tech.common.locator.AbstractLocatorTest" haltonfailure="no"/>
             <test name="com.l7tech.proxy.datamodel.SsgManagerTest" haltonfailure="no"/>
             <test name="com.l7tech.proxy.FunctionalTest" haltonfailure="no"/>
             <test name="com.l7tech.proxy.ClientPolicyTest" haltonfailure="no"/>

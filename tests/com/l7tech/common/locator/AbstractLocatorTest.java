@@ -1,6 +1,7 @@
-package com.l7tech.util.locator;
+package com.l7tech.common.locator;
 
 import com.l7tech.common.util.Locator;
+import com.l7tech.common.locator.AbstractLocator;
 import com.l7tech.identity.IdentityProviderConfigManager;
 import com.l7tech.identity.StubDataStore;
 import junit.framework.Test;
@@ -45,7 +46,7 @@ public class AbstractLocatorTest extends TestCase {
                     f.delete();
                 }
 
-                System.setProperty("com.l7tech.util.locator.properties",
+                System.setProperty("com.l7tech.common.locator.properties",
                         "/com/l7tech/util/locator/test.properties");
 
             }

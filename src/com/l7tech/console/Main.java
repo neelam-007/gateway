@@ -53,7 +53,7 @@ public class Main {
             /* so it is visible in help/about */
             prefs.updateSystemProperties();
             // where locator looks for implementaitons
-            System.setProperty("com.l7tech.util.locator.properties",
+            System.setProperty("com.l7tech.common.locator.properties",
                     "/com/l7tech/console/resources/services.properties");
 
             main = Registry.getDefault().getWindowManager().getMainWindow();

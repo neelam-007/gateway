@@ -44,7 +44,7 @@ public class LogCLientTest extends TestCase {
                 if (f.exists()) {
                     f.delete();
                 }
-                System.setProperty("com.l7tech.util.locator.properties",
+                System.setProperty("com.l7tech.common.locator.properties",
                         "/com/l7tech/console/resources/services.properties");
             }
 

@@ -1,7 +1,7 @@
 package com.l7tech.common.util;
 
-import com.l7tech.util.locator.Locators;
-import com.l7tech.util.locator.PropertiesLocator;
+import com.l7tech.common.locator.Locators;
+import com.l7tech.common.locator.PropertiesLocator;
 
 import java.util.*;
 
@@ -54,7 +54,7 @@ public abstract class Locator {
         }
 
         String className =
-          System.getProperty("com.l7tech.util.locator");
+          System.getProperty("com.l7tech.common.locator");
         ClassLoader cl = Thread.currentThread().getContextClassLoader();
 
         try {
@@ -71,7 +71,7 @@ public abstract class Locator {
         // OK, none specified (successfully) in a system property.
         // Try PropertiesLookup as a default.
         String res =
-          System.getProperty("com.l7tech.util.locator.properties");
+          System.getProperty("com.l7tech.common.locator.properties");
         if (res == null) {
             res = PropertiesLocator.DEFAULT_PROPERTIES;
         }
