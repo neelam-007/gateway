@@ -3,7 +3,6 @@ package com.l7tech.identity;
 import com.l7tech.console.security.ClientCredentialManager;
 import com.l7tech.identity.IdentityProviderType;
 import com.l7tech.identity.IdentityAdmin;
-import com.l7tech.identity.ldap.LdapConfigSettings;
 import com.l7tech.common.util.Locator;
 import junit.extensions.TestSetup;
 import junit.framework.Test;
@@ -100,31 +99,6 @@ public class ClientTest extends TestCase {
 
 
         }
-    }
-
-    public void testCreateSpockLdapIDProviderConfig() throws Exception {
-        // IdentityService me = new Client();
-        IdentityAdmin me =
-                (IdentityAdmin)Locator.getDefault().lookup(IdentityAdmin.class);
-        if (me == null) throw new IllegalStateException("cannot obtain identity service reference");
-          
-
-        // test echo
-        System.out.println(me.echoVersion());
-
-        // create a ldap id provider config
-        com.l7tech.identity.IdentityProviderConfig cfg = new com.l7tech.identity.IdentityProviderConfig(IdentityProviderType.LDAP);
-
-        cfg.setName("spock directory");
-        cfg.setDescription("spock directory as seen from the kelowna office");
-
-        cfg.putProperty(LdapConfigSettings.LDAP_HOST_URL, "ldap://localhost:3899");
-        cfg.putProperty(LdapConfigSettings.LDAP_SEARCH_BASE, "dc=layer7-tech,dc=com");
-
-        // save it
-        long newcfgid = me.saveIdentityProviderConfig(cfg);
-
-        System.out.println("new config saved successfuly with id:" + newcfgid);
     }
 
     public static void main(String[] args) throws Exception {

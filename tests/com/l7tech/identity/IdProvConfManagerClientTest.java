@@ -3,7 +3,6 @@ package com.l7tech.identity;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.console.security.ClientCredentialManager;
 import com.l7tech.common.util.Locator;
-import com.l7tech.identity.ldap.LdapConfigSettings;
 import com.l7tech.identity.internal.InternalGroup;
 import com.l7tech.identity.internal.InternalUser;
 
@@ -36,21 +35,6 @@ public class IdProvConfManagerClientTest {
             EntityHeader obj = (EntityHeader)i.next();
             System.out.println(obj);
         }
-    }
-
-    public static void testAddAndDeleteIDProviderConfig(IdProvConfManagerClient testee) throws Exception {
-        com.l7tech.identity.IdentityProviderConfig cfg = new com.l7tech.identity.IdentityProviderConfig(IdentityProviderType.LDAP);
-        cfg.setName("spock directory");
-        //cfg.setDescription("spock directory as seen from the kelowna office");
-        cfg.putProperty(LdapConfigSettings.LDAP_HOST_URL, "ldap://directory.acme.com:389");
-        cfg.putProperty(LdapConfigSettings.LDAP_SEARCH_BASE, "dc=layer7-tech,dc=com");
-        System.out.println("created new id conf. saving it");
-        long newconfid = testee.save(cfg);
-        System.out.println("new id conf saved under id=" + newconfid);
-        cfg.setOid(newconfid);
-        System.out.println("deleting it now");
-        testee.delete(cfg);
-        System.out.println("done");
     }
 
     public static String testCreateGroup(IdProvConfManagerClient testee) throws Exception {
@@ -121,7 +105,6 @@ public class IdProvConfManagerClientTest {
 
         IdProvConfManagerClient manager = new IdProvConfManagerClient();
         testListContentOfInternalIDProvider(manager);
-        testAddAndDeleteIDProviderConfig(manager);
         String grp = testCreateGroup(manager);
         testAssignUserToGroup(manager, grp);
         //updateGroup(manager);
