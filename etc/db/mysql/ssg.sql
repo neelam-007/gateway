@@ -128,8 +128,8 @@ CREATE TABLE published_service (
   policy_xml text,
   wsdl_url varchar(255) NOT NULL,
   wsdl_xml text,
-  disabled TINYINT(1) NOT NULL,
-  soap TINYINT(1) NOT NULL,
+  disabled TINYINT(1) NOT NULL DEFAULT 0,
+  soap TINYINT(1) NOT NULL DEFAULT 1,
   routing_uri varchar(128),
   PRIMARY KEY  (objectid)
 ) TYPE=InnoDB;
