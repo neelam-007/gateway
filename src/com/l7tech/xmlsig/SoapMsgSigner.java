@@ -3,13 +3,20 @@ package com.l7tech.xmlsig;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
+import org.w3c.dom.Node;
+
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.interfaces.RSAPrivateKey;
 import java.security.interfaces.DSAPrivateKey;
 import java.security.cert.X509Certificate;
+import java.io.ByteArrayOutputStream;
+import java.io.Writer;
+import java.io.OutputStreamWriter;
+
 import com.ibm.xml.dsig.util.AdHocIDResolver;
 import com.ibm.xml.dsig.*;
+import com.ibm.dom.util.XPathCanonicalizer;
 
 /**
  * User: flascell
@@ -77,6 +84,8 @@ public class SoapMsgSigner {
         keyInfo.setX509Data(new KeyInfo.X509Data[]{x509Data});
         keyInfo.insertTo(envelopedSigEl, DS_PREFIX);
 
+        filterOutEmptyTextNodes(soapMsg.getDocumentElement());
+
         // Setup context and sign document
         SignatureContext sigContext = new SignatureContext();
         AdHocIDResolver idResolver = new AdHocIDResolver(soapMsg);
@@ -95,6 +104,9 @@ public class SoapMsgSigner {
      * @throws InvalidSignatureException if the signature is invalid, not in an expected format or is missing information
      */
     public X509Certificate validateSignature(Document soapMsg) throws SignatureNotFoundException, InvalidSignatureException, XSignatureException {
+
+        filterOutEmptyTextNodes(soapMsg.getDocumentElement());
+
         // find signature element
         Element sigElement = getSignatureHeaderElement(soapMsg);
         if (sigElement == null) {
@@ -130,8 +142,8 @@ public class SoapMsgSigner {
         PublicKey pubKey = cert.getPublicKey();
         Validity validity = sigContext.verify(sigElement, pubKey);
 
-        if (!validity.getCoreValidity() || !validity.getSignedInfoValidity()) {
-            throw new InvalidSignatureException("Validity not achieved!");
+        if (!validity.getCoreValidity()) {
+            throw new InvalidSignatureException("Validity not achieved: " + validity.getSignedInfoMessage());
         }
 
         // verify that the entire envelope is signed
@@ -191,6 +203,32 @@ public class SoapMsgSigner {
             return body;
         }
         else return (Element)list.item(0);
+    }
+
+    private void filterOutEmptyTextNodes(Element el) {
+        NodeList children = el.getChildNodes();
+        for (int i = 0; i < children.getLength(); i++) {
+            Node node = children.item(i);
+            // remove empty text nodes
+            if (node.getNodeType() == Node.TEXT_NODE) {
+                String val = node.getNodeValue();
+                boolean legitNode = false;
+                for (int j = 0; j < val.length(); j++) {
+                    char c = val.charAt(j);
+                    if (c == ' ' || c == '\n' || c == '\t' || c == '\r') continue;
+                    // a non-empty character was found, leave this node alone (should we trim the value?)
+                    legitNode = true;
+                    break;
+                }
+                if (!legitNode) {
+                    el.removeChild(node);
+                    filterOutEmptyTextNodes(el);
+                }
+            }
+            else if (node.getNodeType() == Node.ELEMENT_NODE) {
+                filterOutEmptyTextNodes((Element)node);
+            }
+        }
     }
 
     private static final String DS_PREFIX = "ds";
