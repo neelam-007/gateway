@@ -24,6 +24,7 @@ import java.security.cert.CertificateNotYetValidException;
 import java.security.cert.X509Certificate;
 import java.util.Map;
 import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * The server-side processing for HTTPS with client certificates.  Note that this
@@ -102,4 +103,6 @@ public class ServerHttpClientCert extends ServerCredentialSourceAssertion implem
     protected void challenge(PolicyEnforcementContext context, Map authParams) {
         // HOW DO I CHALLENGED X.509
     }
+
+    protected final Logger logger = Logger.getLogger(getClass().getName());    
 }

@@ -7,6 +7,7 @@
 package com.l7tech.server.policy.assertion.credential;
 
 import com.l7tech.common.message.Message;
+import com.l7tech.common.audit.Auditor;
 import com.l7tech.policy.assertion.AssertionResult;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
@@ -15,11 +16,11 @@ import com.l7tech.policy.assertion.credential.CredentialSourceAssertion;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.ServerAssertion;
+import com.l7tech.server.AssertionMessages;
 
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -42,6 +43,7 @@ public abstract class ServerCredentialSourceAssertion implements ServerAssertion
     public AssertionStatus checkRequest(PolicyEnforcementContext context) throws IOException, PolicyAssertionException
     {
         final HashMap authParams = new HashMap();
+        Auditor auditor = new Auditor(context.getAuditContext(), Logger.getLogger(getClass().getName()));
         try {
             LoginCredentials pc = context.getCredentials();
             if ( pc == null ) {
@@ -52,7 +54,7 @@ public abstract class ServerCredentialSourceAssertion implements ServerAssertion
             if ( pc == null ) {
                 context.setAuthenticationMissing();
                 challenge( context, authParams );
-                logger.info(AssertionStatus.AUTH_REQUIRED.getMessage());
+                auditor.logAndAudit(AssertionMessages.AUTH_REQUIRED);
                 return AssertionStatus.AUTH_REQUIRED;
             } else {
                 context.setCredentials( pc );
@@ -61,13 +63,14 @@ public abstract class ServerCredentialSourceAssertion implements ServerAssertion
         } catch ( CredentialFinderException cfe ) {
             AssertionStatus status = cfe.getStatus();
             if ( status == null ) {
-                logger.log(Level.SEVERE, cfe.getMessage(), cfe);
+                auditor.logAndAudit(AssertionMessages.EXCEPTION, null, cfe);
                 throw new PolicyAssertionException( cfe.getMessage(), cfe );
             } else {
                 context.addResult( new AssertionResult( _data, status, cfe.getMessage() ) );
                 challenge( context, authParams );
                 // Suppress exception trace by omitting exception argument
-                logger.warning( cfe.getMessage() );
+                auditor.logAndAudit(AssertionMessages.EXCEPTION, null, cfe);
+
                 if ( status == AssertionStatus.AUTH_REQUIRED )
                     context.setAuthenticationMissing();
                 else
@@ -110,8 +113,6 @@ public abstract class ServerCredentialSourceAssertion implements ServerAssertion
      * @param authParams  the authParams containing the challenge data collected by findCredentials().  May not be null.
      */
     protected abstract void challenge( PolicyEnforcementContext context, Map authParams );
-
-    protected final Logger logger = Logger.getLogger(getClass().getName());
 
     protected CredentialSourceAssertion _data;
 }
