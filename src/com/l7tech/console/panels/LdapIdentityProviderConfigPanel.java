@@ -30,7 +30,8 @@ public class LdapIdentityProviderConfigPanel extends IdentityProviderStepPanel {
         super(next);
         this.providerTypeSelectable = providerTypeSelectable;
         initResources();
-        initComponents();
+        setLayout(new BorderLayout());
+        add(getTypePanel(), BorderLayout.NORTH);
     }
 
     /**
@@ -136,10 +137,14 @@ public class LdapIdentityProviderConfigPanel extends IdentityProviderStepPanel {
      * This method is called from within the constructor to
      * initialize the dialog.
      */
-    private void initComponents() {
+    private JPanel getTypePanel() {
 
-        JPanel panel = new JPanel();
-        panel.setLayout(new GridBagLayout());
+        if(typePanel != null) return typePanel;
+
+        typePanel = new JPanel();
+        typePanel.setLayout(new GridBagLayout());
+        typePanel.setPreferredSize(new Dimension(400, 80));
+        typePanel.setMinimumSize(new Dimension(400, 50));
 
         GridBagConstraints constraints;
 
@@ -157,7 +162,7 @@ public class LdapIdentityProviderConfigPanel extends IdentityProviderStepPanel {
         constraints.anchor = GridBagConstraints.WEST;
         constraints.weightx = 0.0;
         constraints.insets = new Insets(12, 0, 0, 0);
-        panel.add(providerTypesLabel, constraints);
+        typePanel.add(providerTypesLabel, constraints);
 
         constraints = new GridBagConstraints();
         constraints.gridx = 1;
@@ -167,10 +172,11 @@ public class LdapIdentityProviderConfigPanel extends IdentityProviderStepPanel {
         constraints.anchor = GridBagConstraints.WEST;
         constraints.weightx = 0.0;
         constraints.insets = new Insets(12, 20, 0, 0);
-        panel.add(getProviderTypes(), constraints);
-        add(panel);
+        typePanel.add(getProviderTypes(), constraints);
 
         getProviderTypes().setEnabled(providerTypeSelectable);
+
+        return typePanel;
     }
 
     private JPanel getConfigPanel() {
@@ -179,7 +185,8 @@ public class LdapIdentityProviderConfigPanel extends IdentityProviderStepPanel {
         configPanel = new JPanel();
 
         configPanel.setLayout(new GridBagLayout());
-
+        configPanel.setPreferredSize(new Dimension(400, 400));
+        configPanel.setMinimumSize(new Dimension(400, 400));
         GridBagConstraints constraints;
 
         int rowIndex = 0;
@@ -378,7 +385,11 @@ public class LdapIdentityProviderConfigPanel extends IdentityProviderStepPanel {
 
                     if (o instanceof LdapIdentityProviderConfig) {
                         if(configPanel == null) {
-                            thisPanel.add(getConfigPanel());
+                            thisPanel.add(getConfigPanel(), BorderLayout.CENTER);
+
+                            JPanel dummyPanel = new JPanel();
+                            dummyPanel.setPreferredSize(new Dimension(400, 60));
+                            thisPanel.add(dummyPanel, BorderLayout.SOUTH);
                         } else {
                             getConfigPanel().setVisible(true);
                             updateControlButtonState();
@@ -555,5 +566,6 @@ public class LdapIdentityProviderConfigPanel extends IdentityProviderStepPanel {
     private boolean finishAllowed = false;
     private boolean advanceAllowed = false;
     private JPanel configPanel = null;
+    private JPanel typePanel = null;
 
 }
