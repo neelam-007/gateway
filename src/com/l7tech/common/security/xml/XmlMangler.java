@@ -21,12 +21,11 @@ import com.ibm.xml.enc.type.KeyName;
 import com.ibm.xml.enc.util.AdHocIdResolver;
 import com.l7tech.common.security.AesKey;
 import com.l7tech.common.util.SoapUtil;
-import org.apache.log4j.Category;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
-import org.w3c.dom.Text;
 import org.w3c.dom.NodeList;
+import org.w3c.dom.Text;
 import org.xml.sax.SAXException;
 
 import javax.xml.parsers.ParserConfigurationException;
@@ -42,8 +41,6 @@ import java.security.Provider;
  * Time: 11:07:41 AM
  */
 public class XmlMangler {
-    private static final Category log = Category.getInstance(XmlMangler.class);
-
     private static final Provider bcp = new BouncyCastleProvider();
     static {
         java.security.Security.addProvider(bcp);
