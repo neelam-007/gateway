@@ -62,7 +62,7 @@ public abstract class NameValueServiceResolver extends ServiceResolver {
             Object targetValue;
             for ( int j = 0; j < targetValues.length; j++ ) {
                 targetValue = targetValues[j];
-                if ( targetValue.equals(value) ) {
+                if ( targetValue != null && targetValue.equals(value) ) {
                     if ( resultSet == null ) resultSet = new HashSet();
                     resultSet.add(service);
                 }
