@@ -17,9 +17,13 @@ import org.w3c.dom.Element;
 import org.w3c.dom.Text;
 
 import java.io.IOException;
+import java.io.ByteArrayInputStream;
 import java.rmi.RemoteException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.Map;
+import java.util.Set;
+import java.util.Iterator;
 
 /**
  * A reference to an id provider.
@@ -173,6 +177,12 @@ public class IdProviderReference extends ExternalReference {
                     logger.log(Level.WARNING, "cannot get id provider config", e);
                     continue;
                 }
+                if (configOnThisSystem.getTypeVal() != getIdProviderTypeVal()) {
+                    logger.info("Type mismatch " + configOnThisSystem.getTypeVal() + " vs " + getIdProviderTypeVal());
+                    continue;
+                } else {
+                    logger.info("\n\n\n\nWe have type match\n\n\n\n");
+                }
                 String localProps = null;
                 try {
                     localProps = configOnThisSystem.getSerializedProps();
@@ -180,7 +190,7 @@ public class IdProviderReference extends ExternalReference {
                     logger.log(Level.WARNING, "Cannot get serialized properties");
                     return false;
                 }
-                if (localProps != null && localProps.equals(this.getIdProviderConfProps())) {
+                if (equalsProps(localProps, getIdProviderConfProps())) {
                     // WE GOT A MATCH!
                     localizeType = LocaliseAction.REPLACE;
                     locallyMatchingProviderId = configOnThisSystem.getOid();
@@ -192,6 +202,46 @@ public class IdProviderReference extends ExternalReference {
         // 3. Otherwise => this reference if 'not verified' and will require manual resolution.
         logger.fine("this reference cannot be established locally (" + getProviderName() + ").");
         return false;
+    }
+
+    private boolean equalsProps(String props1, String props2) {
+        if (props1 == null || props1.equals("")) {
+            if (props2 == null || props2.equals("")) return true;
+            return false;
+        }
+        if (props2 == null || props2.equals("")) return false;
+
+        ByteArrayInputStream in = new ByteArrayInputStream(props1.getBytes());
+        java.beans.XMLDecoder decoder = new java.beans.XMLDecoder(in);
+        Map map1 = (Map)decoder.readObject();
+        in = new ByteArrayInputStream(props2.getBytes());
+        decoder = new java.beans.XMLDecoder(in);
+        Map map2 = (Map)decoder.readObject();
+
+        return mapEquals(map1, map2);
+    }
+
+    private boolean mapEquals(Map map1, Map map2) {
+        if (map1 == null) {
+            if (map2 == null) return true;
+            return false;
+        }
+        if (map2 == null) return false;
+        // make sure that all objects in map1 are also in map2 and their values are the same
+        Set keys = map1.keySet();
+        for (Iterator iterator = keys.iterator(); iterator.hasNext();) {
+            Object key = (Object) iterator.next();
+            Object val1 = map1.get(key);
+            Object val2 = map2.get(key);
+            // either a map or a string
+            if (val1 instanceof Map) {
+                if (!mapEquals((Map)val1, (Map)val2)) return false;
+            } else if (!val1.equals(val2)) {
+                logger.info("Mismatch on properties " + key + "" + val1 + "" + val2);
+                return false;
+            }
+        }
+        return true;
     }
 
     /**
