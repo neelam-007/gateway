@@ -2,7 +2,10 @@ package com.l7tech.identity.ldap;
 
 import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.identity.UserManager;
-import com.l7tech.identity.User;
+import com.l7tech.identity.UserBean;
+import com.l7tech.objectmodel.DeleteException;
+import com.l7tech.objectmodel.SaveException;
+import com.l7tech.objectmodel.UpdateException;
 
 
 /**
@@ -24,10 +27,6 @@ public class LdapUserManagerServer extends AbstractLdapUserManagerServer impleme
 
     public AbstractLdapConstants getConstants() {
         return _constants;
-    }
-
-    protected String doGetGroupMembershipFilter(User user) {
-        return "(" + _constants.groupMemberAttribute() + "=" + user.getLogin() + ")";
     }
 
     private LdapConstants _constants = new LdapConstants();
