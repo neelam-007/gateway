@@ -13,6 +13,7 @@ import com.l7tech.common.xml.saml.SamlHolderOfKeyAssertion;
 import com.l7tech.proxy.RequestInterceptor;
 import com.l7tech.proxy.datamodel.exceptions.*;
 import com.l7tech.proxy.util.TokenServiceClient;
+import com.l7tech.message.MultipartMessageReader;
 import org.w3c.dom.Document;
 
 import java.io.IOException;
@@ -55,6 +56,8 @@ public class PendingRequest {
     private byte[] secureConversationSharedSecret = null;
     private SamlHolderOfKeyAssertion samlHolderOfKeyAssertion = null;
     private Calendar secureConversationExpiryDate = null;
+    private boolean multipart = false;
+    private MultipartMessageReader multipartReader = null;
 
     // Policy settings, filled in by traversing policy tree
     private static class PolicySettings {
@@ -258,6 +261,22 @@ public class PendingRequest {
 
     public void setUri(String uri) {
         this.uri = uri;
+    }
+
+    public boolean isMultipart() {
+        return multipart;
+    }
+
+    public void setMultipart(boolean multipart) {
+        this.multipart = multipart;
+    }
+
+    public MultipartMessageReader getMultipartReader() {
+        return multipartReader;
+    }
+
+    public void setMultipartReader(MultipartMessageReader multipartReader) {
+        this.multipartReader = multipartReader;
     }
 
     public RequestInterceptor getRequestInterceptor() {

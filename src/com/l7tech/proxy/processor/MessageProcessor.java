@@ -9,10 +9,7 @@ package com.l7tech.proxy.processor;
 import com.l7tech.common.protocol.SecureSpanConstants;
 import com.l7tech.common.security.AesKey;
 import com.l7tech.common.security.xml.*;
-import com.l7tech.common.util.CertificateDownloader;
-import com.l7tech.common.util.ExceptionUtils;
-import com.l7tech.common.util.SoapUtil;
-import com.l7tech.common.util.XmlUtil;
+import com.l7tech.common.util.*;
 import com.l7tech.common.xml.InvalidDocumentFormatException;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
@@ -26,15 +23,19 @@ import com.l7tech.proxy.policy.assertion.ClientDecorator;
 import com.l7tech.proxy.ssl.ClientProxySecureProtocolSocketFactory;
 import com.l7tech.proxy.ssl.HostnameMismatchException;
 import com.l7tech.proxy.util.CannedSoapFaults;
+import com.l7tech.message.Message;
 import org.apache.commons.httpclient.*;
 import org.apache.commons.httpclient.methods.PostMethod;
 import org.apache.commons.httpclient.protocol.Protocol;
+import org.apache.axis.Part;
+import org.apache.axis.attachments.AttachmentPart;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
 
 import javax.crypto.SecretKey;
 import javax.net.ssl.SSLException;
 import java.io.IOException;
+import java.io.Reader;
 import java.net.MalformedURLException;
 import java.net.PasswordAuthentication;
 import java.net.URL;
@@ -42,10 +43,12 @@ import java.security.*;
 import java.security.cert.CertificateException;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.Set;
 import java.util.regex.Pattern;
 import java.util.regex.Matcher;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.nio.ByteBuffer;
 
 /**
  * The core of the Client Proxy.
@@ -67,6 +70,7 @@ public class MessageProcessor {
     private PolicyManager policyManager;
     private WssProcessor wssProcessor = new WssProcessorImpl();
     private WssDecorator wssDecorator = new WssDecoratorImpl();
+    public static final String ENCODING = "UTF-8";
 
     static {
         // Configure SSL for outgoing connections
@@ -485,7 +489,6 @@ public class MessageProcessor {
         try {
             postMethod = new PostMethod(url.toString());
             setAuthenticationState(req, state, postMethod);
-            postMethod.addRequestHeader("Content-Type", "text/xml");
             postMethod.addRequestHeader("SOAPAction", req.getSoapAction());
             postMethod.addRequestHeader(SecureSpanConstants.HttpHeaders.ORIGINAL_URL, req.getOriginalUrl().toString());
 
@@ -501,7 +504,40 @@ public class MessageProcessor {
                 else
                     log.info("Posting to Gateway: " + postBody);
             }
-            postMethod.setRequestBody(postBody);
+
+            if(req.isMultipart()) {
+                postMethod.addRequestHeader(XmlUtil.CONTENT_TYPE, XmlUtil.MULTIPART_CONTENT_TYPE +
+                        "; type=" + XmlUtil.TEXT_XML  +
+                        "; " + XmlUtil.MULTIPART_BOUNDARY + "=" + req.getMultipartReader().getMultipartBoundary());
+
+                StringBuffer sb = new StringBuffer();
+                sb.append(XmlUtil.MULTIPART_BOUNDARY_PREFIX + req.getMultipartReader().getMultipartBoundary() + "\n");
+
+                Message.Part soapPart = req.getMultipartReader().getSoapPart();
+                Map headerMap = soapPart.getHeaders();
+                Set headerKeys = headerMap.keySet();
+                Iterator headerItr = headerKeys.iterator();
+                while(headerItr.hasNext()) {
+                    Message.HeaderValue headerValue = (Message.HeaderValue) headerMap.get(headerItr.next());
+                    if(headerValue.getName().equals(XmlUtil.CONTENT_TYPE)) {
+                        // replace the content type of the SOAP part with the one we use
+                        sb.append(XmlUtil.CONTENT_TYPE + ": " + XmlUtil.TEXT_XML +
+                                "; charset=" + ENCODING.toLowerCase() + "\n");
+                    } else {
+                        sb.append(headerValue.getName()).append(":").append(headerValue.getValue()).append("\n");
+                    }
+                }
+                // an blank line is required between the header block and the body block
+                sb.append("\n");
+                sb.append(postBody).append("\n");
+
+                String multipartBody = MultipartUtil.addAttachments(sb.toString(), req.getMultipartReader().getMessageAttachments(), req.getMultipartReader().getMultipartBoundary());
+
+                postMethod.setRequestBody(multipartBody);
+            } else {
+                postMethod.addRequestHeader("Content-Type", "text/xml");
+                postMethod.setRequestBody(postBody);
+            }
 
             log.info("Posting request to Gateway " + ssg + ", url " + url);
             CurrentRequest.setPeerSsg(ssg);

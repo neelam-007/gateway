@@ -9,6 +9,8 @@ import com.l7tech.proxy.datamodel.*;
 import com.l7tech.proxy.datamodel.exceptions.HttpChallengeRequiredException;
 import com.l7tech.proxy.datamodel.exceptions.SsgNotFoundException;
 import com.l7tech.proxy.processor.MessageProcessor;
+import com.l7tech.message.MultipartMessageReader;
+import com.l7tech.message.Message;
 import org.mortbay.http.HttpException;
 import org.mortbay.http.HttpRequest;
 import org.mortbay.http.HttpResponse;
@@ -186,8 +188,45 @@ public class RequestHandler extends AbstractHttpHandler {
 
         try {
             // TODO: PERF: this XML parsing is causing a performance bottleneck
-            Document envelope = XmlUtil.parse(request.getInputStream());
+            boolean multipart = false;
+
+            if(request.getContentType().startsWith(XmlUtil.MULTIPART_CONTENT_TYPE)) {
+                multipart = true;
+            }
+
+            Document envelope = null;
+            MultipartMessageReader  multipartReader = null;
+
+            String ctype = request.getField(XmlUtil.CONTENT_TYPE);
+            Message.HeaderValue contentTypeHeader = MultipartMessageReader.parseHeader(XmlUtil.CONTENT_TYPE + ": " + ctype);
+
+            if(ctype.startsWith(XmlUtil.MULTIPART_CONTENT_TYPE)) {
+                multipart = true;
+
+                String multipartBoundary = (String)contentTypeHeader.getParams().get(XmlUtil.MULTIPART_BOUNDARY);
+                if (multipartBoundary == null) throw new IOException("Multipart header did not contain a boundary");
+
+                String innerType = (String)contentTypeHeader.getParams().get(XmlUtil.MULTIPART_TYPE);
+                if (innerType.startsWith(XmlUtil.TEXT_XML)) {
+                multipartReader = new MultipartMessageReader(request.getInputStream(), multipartBoundary);
+
+                // get SOAP part
+                Message.Part soapPart = multipartReader.getSoapPart();
+                if (!soapPart.getHeader(XmlUtil.CONTENT_TYPE).getValue().equals(innerType)) throw new IOException("Content-Type of first part doesn't match type of Multipart header");
+
+                envelope = XmlUtil.stringToDocument(soapPart.getContent());
+
+                } else throw new IOException("Expected first part of multipart message to be XML");
+            } else {
+                envelope = XmlUtil.parse(request.getInputStream());
+            }
+
             pendingRequest = gatherRequest(request, envelope, ssg);
+            if(multipart) {
+                pendingRequest.setMultipart(true);
+                pendingRequest.setMultipartReader(multipartReader);
+            }
+
             if (ssg.isChainCredentialsFromClient())
                 pendingRequest.setCredentials(new PasswordAuthentication(reqUsername, reqPassword.toCharArray()));
             interceptor.onReceiveMessage(pendingRequest);
