@@ -294,6 +294,8 @@ public class LdapUserManager implements UserManager {
             //todo: consider using sasl features, to avoid sending passwords in clear
             //todo: could be determined during ldap provider setup phase
             //todo: see http://java.sun.com/products/jndi/tutorial/ldap/security/sasl.html
+            //todo: sasl is not supported by all directories, we could also use ssl to avoid
+            //todo: sending anything in clear env.put(Context.SECURITY_PROTOCOL, "ssl");
             env.put(Context.SECURITY_CREDENTIALS, passwd);
             env.put("com.sun.jndi.ldap.connect.pool", "true");
             env.put("com.sun.jndi.ldap.connect.timeout", LdapIdentityProvider.LDAP_CONNECT_TIMEOUT);
