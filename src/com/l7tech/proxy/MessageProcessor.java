@@ -53,6 +53,7 @@ import java.security.cert.X509Certificate;
 public class MessageProcessor {
     private static final Category log = Category.getInstance(MessageProcessor.class);
     private PolicyManager policyManager;
+    private static final int MAX_TRIES = 3;
 
     public MessageProcessor(PolicyManager policyManager) {
         this.policyManager = policyManager;
@@ -72,7 +73,7 @@ public class MessageProcessor {
     public String processMessage(PendingRequest pendingRequest)
             throws PolicyAssertionException, ConfigurationException, IOException, GeneralSecurityException
     {
-        if (pendingRequest.incrementTimesAttempted() > 10)
+        if (pendingRequest.incrementTimesAttempted() > MAX_TRIES)
             throw new ConfigurationException("Unable to fulfil request after 10 attempts to contact the SSG; giving up");
         Ssg ssg = pendingRequest.getSsg();
         Assertion policy = policyManager.getPolicy(pendingRequest);
@@ -176,7 +177,7 @@ public class MessageProcessor {
                 log.info("Will attempt to acquire cert.  Attempt #" + pendingRequest.getTimesAttempted());
                 installSsgServerCertificate(pendingRequest);
                 postMethod.releaseConnection(); // free up our thread's HTTP client
-                if (pendingRequest.incrementTimesAttempted() > 10)
+                if (pendingRequest.incrementTimesAttempted() > MAX_TRIES)
                     throw new ConfigurationException("Unable to fulfil request after 10 attempts to contact the SSG; giving up");
                 return callSsg(pendingRequest); // try again
             }
