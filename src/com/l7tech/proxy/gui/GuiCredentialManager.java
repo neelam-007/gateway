@@ -44,8 +44,10 @@ public class GuiCredentialManager implements CredentialManager {
      */
     public boolean getCredentials(final Ssg ssg) {
         // If this SSG isn't supposed to be hassling us with dialog boxes, stop now
-        if (!ssg.promptForUsernameAndPassword())
+        if (!ssg.promptForUsernameAndPassword()) {
+            log.info("Logon prompts disabled for SSG " + ssg);
             return false;
+        }
 
         long now = System.currentTimeMillis();
         synchronized(this) {
@@ -54,7 +56,7 @@ public class GuiCredentialManager implements CredentialManager {
                 return true;
 
             final PromptState promptState = new PromptState();
-
+            log.info("Displaying logon prompt for SSG " + ssg);
             try {
                 SwingUtilities.invokeAndWait(new Runnable() {
                     public void run() {
@@ -78,6 +80,8 @@ public class GuiCredentialManager implements CredentialManager {
                 log.error(e);
             }
 
+            log.info(promptState.credentialsObtained ? "New credentials noted for SSG " + ssg
+                                                     : "User canceled logon dialog for SSG " + ssg);
             return promptState.credentialsObtained;
         }
     }
