@@ -27,6 +27,7 @@ import com.l7tech.policy.assertion.credential.CredentialFormat;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Text;
+import org.w3c.dom.NodeList;
 
 import javax.crypto.Cipher;
 import java.io.IOException;
@@ -174,6 +175,18 @@ public class WssDecoratorImpl implements WssDecorator {
         }
         Element emptySignatureElement = template.getSignatureElement();
 
+        // Ensure that CanonicalizationMethod has required c14n subelemen
+        final Element signedInfoElement = template.getSignedInfoElement();
+        Element c14nMethod = XmlUtil.findFirstChildElementByName(signedInfoElement,
+                                                                 SoapUtil.DIGSIG_URI,
+                                                                 "CanonicalizationMethod");
+        addInclusiveNamespacesToElement(c14nMethod);
+
+        NodeList transforms = signedInfoElement.getElementsByTagNameNS(signedInfoElement.getNamespaceURI(), "Transform");
+        for (int i = 0; i < transforms.getLength(); ++i)
+            if (Transform.C14N_EXCLUSIVE.equals(((Element)transforms.item(i)).getAttribute("Algorithm")))
+                addInclusiveNamespacesToElement((Element)transforms.item(i));
+
         // Include KeyInfo element in signature and embed cert into subordinate X509Data element
         // add following KeyInfo
         // <KeyInfo>
@@ -222,6 +235,15 @@ public class WssDecoratorImpl implements WssDecorator {
         signatureElement.appendChild(keyInfoEl);
 
         return signatureElement;
+    }
+
+    /** Add a c14n:InclusiveNamespaces child element to the specified element with an empty PrefixList. */  
+    private void addInclusiveNamespacesToElement(Element element) {
+        Element inclusiveNamespaces = XmlUtil.createAndAppendElementNS(element,
+                                                                       "InclusiveNamespaces",
+                                                                       Transform.C14N_EXCLUSIVE,
+                                                                       "c14n");
+        inclusiveNamespaces.setAttribute("PrefixList", "");
     }
 
     private Element createUsernameToken(Element securityHeader, LoginCredentials usernameTokenCredentials) {
