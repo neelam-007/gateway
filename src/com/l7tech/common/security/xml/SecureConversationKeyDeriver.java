@@ -1,19 +1,17 @@
 package com.l7tech.common.security.xml;
 
-import org.w3c.dom.Element;
-
-import java.security.Key;
-import java.security.NoSuchAlgorithmException;
-import java.security.InvalidKeyException;
-import java.io.IOException;
-
-import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.util.HexUtils;
 import com.l7tech.common.util.SoapUtil;
+import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.xml.InvalidDocumentFormatException;
+import org.w3c.dom.Element;
 
-import javax.crypto.spec.SecretKeySpec;
 import javax.crypto.Mac;
+import javax.crypto.spec.SecretKeySpec;
+import java.io.IOException;
+import java.security.InvalidKeyException;
+import java.security.Key;
+import java.security.NoSuchAlgorithmException;
 
 /**
  * Implement mechanism described in WS-Secure Conversation to derive
@@ -74,20 +72,26 @@ public class SecureConversationKeyDeriver {
             throw new NoSuchAlgorithmException("Algorithm specified (" + algo + "). We only support default P_SHA-1");
         }
 
-        String generation = null;
-        String length = null;
+        String lengthVal = null;
         String label = null;
         String nonce = null;
-
+        int generation = 0;
         // get generation
         Element genNode = (Element)((XmlUtil.findChildElementsByName(derivedKeyToken, namespaceURI,  "Generation")).get(0));
         if (genNode != null) {
-            generation = XmlUtil.getTextValue(genNode);
+            String genVal = XmlUtil.getTextValue(genNode);
+            if (genVal != null && genVal.length() > 0) {
+                try {
+                    generation = Integer.parseInt(genVal);
+                } catch (NumberFormatException e) {
+                    throw new InvalidDocumentFormatException(e);
+                }
+            }
         }
         // get length
         Element lenNode = (Element)((XmlUtil.findChildElementsByName(derivedKeyToken, namespaceURI,  "Length")).get(0));
         if (lenNode != null) {
-            length = XmlUtil.getTextValue(lenNode);
+            lengthVal = XmlUtil.getTextValue(lenNode);
         }
 
         // get label
@@ -115,8 +119,15 @@ public class SecureConversationKeyDeriver {
         System.arraycopy(label.getBytes(), 0, seed, 0, label.length());
         System.arraycopy(nonceA, 0, seed, label.length(), nonceA.length);
 
+        if (lengthVal == null || lengthVal.length() < 1) {
+            throw new InvalidDocumentFormatException("Derived key length not specified");
+        }
+        int length = Integer.parseInt(lengthVal);
+        int offset = generation * length;
         try{
-            byte[] key = pSHA1(secret, seed, Integer.parseInt(length));
+            byte[] generated = pSHA1(secret, seed, offset+length);
+            byte[] key = new byte[length];
+            System.arraycopy(generated, offset, key, 0, length);
             Key dk = new SecretKeySpec(key, "SHA1");
             return dk;
         } catch (InvalidKeyException e) {
