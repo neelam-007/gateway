@@ -40,7 +40,6 @@ public class InternalUser extends PersistentUser {
         setEmail(imp.getEmail());
         setFirstName(imp.getFirstName());
         setLastName(imp.getLastName());
-        setTitle(imp.getTitle());
         setPassword( imp.getPassword() );
         setSubjectDn( imp.getSubjectDn() );
     }

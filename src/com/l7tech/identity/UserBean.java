@@ -49,10 +49,6 @@ public class UserBean implements User, Serializable {
         return _email;
     }
 
-    public String getTitle() {
-        return _title;
-    }
-
     public String getDepartment() {
         return _department;
     }
@@ -87,10 +83,6 @@ public class UserBean implements User, Serializable {
 
     public void setEmail(String email) {
         _email = email;
-    }
-
-    public void setTitle(String title) {
-        _title = title;
     }
 
     public void setDepartment(String department) {
@@ -188,7 +180,6 @@ public class UserBean implements User, Serializable {
     protected String _firstName;
     protected String _lastName;
     protected String _email;
-    protected String _title;
     protected String _department;
     protected String subjectDn;
     protected int _version;

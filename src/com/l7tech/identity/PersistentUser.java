@@ -101,10 +101,6 @@ public abstract class PersistentUser extends NamedEntityImp implements User {
         return bean.getEmail();
     }
 
-    public String getTitle() {
-        return bean.getTitle();
-    }
-
     public String getDepartment() {
         return bean.getDepartment();
     }
@@ -154,10 +150,6 @@ public abstract class PersistentUser extends NamedEntityImp implements User {
 
     public void setLastName( String lastName ) {
         bean.setLastName( lastName );
-    }
-
-    public void setTitle( String title ) {
-        bean.setTitle( title );
     }
 
     public void setPassword( String password ) {

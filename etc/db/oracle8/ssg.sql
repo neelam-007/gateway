@@ -70,8 +70,7 @@ CREATE TABLE internal_user (
   password varchar(32) NOT NULL ,
   first_name varchar(32) ,
   last_name varchar(32) ,
-  email varchar(128) ,
-  title varchar(64) 
+  email varchar(128)
 );
 
 alter table internal_user add unique ( login );
@@ -82,7 +81,7 @@ alter table internal_user add unique ( name );
 --
 
 
-INSERT INTO internal_user VALUES (3,0,'admin','admin','a41306e4b1b5858d3e3d705dd2e738e2','fname','lname','email','title');
+INSERT INTO internal_user VALUES (3,0,'admin','admin','a41306e4b1b5858d3e3d705dd2e738e2','fname','lname','email');
 
 --
 -- Table structure for table 'internal_user_group'
@@ -291,7 +290,6 @@ CREATE TABLE fed_user (
   login varchar(32),
   first_name varchar(32) default NULL,
   last_name varchar(32) default NULL,
-  title varchar(64) default NULL,
   PRIMARY KEY (objectid)
 );
 CREATE UNIQUE INDEX i_fu_name ON fed_user (provider_oid, name);

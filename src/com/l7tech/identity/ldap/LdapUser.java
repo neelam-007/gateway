@@ -49,10 +49,6 @@ public class LdapUser implements User, Serializable {
         return _userBean.getEmail();
     }
 
-    public String getTitle() {
-        return _userBean.getTitle();
-    }
-
     public String getDepartment() {
         return _userBean.getDepartment();
     }
@@ -100,10 +96,6 @@ public class LdapUser implements User, Serializable {
 
     public void setEmail(String email) {
         _userBean.setEmail( email );
-    }
-
-    public void setTitle(String title) {
-        _userBean.setTitle( title );
     }
 
     public void setDepartment(String department) {
@@ -191,7 +183,6 @@ public class LdapUser implements User, Serializable {
         setEmail(imp.getEmail());
         setFirstName(imp.getFirstName());
         setLastName(imp.getLastName());
-        setTitle(imp.getTitle());
         setPassword(imp.getPassword());
     }
 

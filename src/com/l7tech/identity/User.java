@@ -32,7 +32,6 @@ public interface User extends Principal {
     String getFirstName();
     String getLastName();
     String getEmail();
-    String getTitle();
     String getDepartment();
     String getSubjectDn();
 

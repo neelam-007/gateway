@@ -86,7 +86,6 @@ CREATE TABLE internal_user (
   first_name varchar(32) default NULL,
   last_name varchar(32) default NULL,
   email varchar(128) default NULL,
-  title varchar(64) default NULL,
   PRIMARY KEY  (objectid),
   UNIQUE KEY l_idx (login)
 ) TYPE=InnoDB;
@@ -96,7 +95,7 @@ CREATE TABLE internal_user (
 --
 
 
-INSERT INTO internal_user VALUES (3,0,'admin','admin','a41306e4b1b5858d3e3d705dd2e738e2','fname','lname','email','title');
+INSERT INTO internal_user VALUES (3,0,'admin','admin','a41306e4b1b5858d3e3d705dd2e738e2','fname','lname','email');
 
 --
 -- Table structure for table 'internal_user_group'
@@ -309,7 +308,6 @@ CREATE TABLE fed_user (
   login varchar(32),
   first_name varchar(32) default NULL,
   last_name varchar(32) default NULL,
-  title varchar(64) default NULL,
   PRIMARY KEY (objectid),
   INDEX i_provider_oid (provider_oid),
   INDEX i_email (email),
