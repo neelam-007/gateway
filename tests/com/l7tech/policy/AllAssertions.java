@@ -7,6 +7,7 @@
 package com.l7tech.policy;
 
 import com.l7tech.policy.assertion.*;
+import com.l7tech.policy.assertion.ext.CustomAssertion;
 import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.assertion.composite.ExactlyOneAssertion;
 import com.l7tech.policy.assertion.composite.OneOrMoreAssertion;
@@ -54,6 +55,15 @@ public class AllAssertions {
         // TODO new InetAddressAssertion(),
     };
 
+    private static CustomAssertionHolder CUSTOM_ASSERTION_HOLDER = new CustomAssertionHolder();
+    static {
+        CUSTOM_ASSERTION_HOLDER.setCustomAssertion(new CustomAssertion() {
+            public String getName() {
+                return "test custom assertion";
+            }
+        });
+    }
+
     /**
      * all assertions that the gateway must handle
      */
@@ -76,7 +86,7 @@ public class AllAssertions {
         new XmlResponseSecurity(),
         new XmlRequestSecurity(),
         new RequestXpathAssertion(),
-        new CustomAssertionHolder()
+        CUSTOM_ASSERTION_HOLDER
         // TODO new TimeOfDayAssertion(),
         // TODO new DateRangeAssertion(),
         // TODO new DayOfWeekAssertion(),
