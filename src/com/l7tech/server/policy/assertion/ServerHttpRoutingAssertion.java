@@ -11,6 +11,7 @@ import com.l7tech.common.security.xml.SignerInfo;
 import com.l7tech.common.util.KeystoreUtils;
 import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.util.XmlUtil;
+import com.l7tech.common.util.MultipartUtil;
 import com.l7tech.message.*;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.HttpRoutingAssertion;
@@ -137,7 +138,6 @@ public class ServerHttpRoutingAssertion extends ServerRoutingAssertion {
 
                 postMethod = new PostMethod(url.toString());
 
-                // TODO: Attachments
                 if(request.isMultipart()) {
                     postMethod.setRequestHeader(XmlUtil.CONTENT_TYPE, XmlUtil.MULTIPART_CONTENT_TYPE +
                             "; type=\"" + XmlUtil.TEXT_XML + "\"" +
@@ -252,11 +252,11 @@ public class ServerHttpRoutingAssertion extends ServerRoutingAssertion {
                             sb.append(XmlUtil.CONTENT_TYPE + ": " + XmlUtil.TEXT_XML +
                                                         "; charset=\"" + ENCODING.toLowerCase() + "\"\n");
                         } else {
-                            sb.append(headerValue.getName()).append("=").append(headerValue.getValue()).append("\n");
+                            sb.append(headerValue.getName()).append(":").append(headerValue.getValue()).append("\n");
                         }
                     }
                     sb.append(requestXml).append("\n");
-                    postMethod.setRequestBody(addAttachments(sb.toString(), request));
+                    postMethod.setRequestBody(MultipartUtil.addAttachments(sb.toString(), request.getRequestAttachments(), request.getMultipartBoundary()));
                 } else {
                     postMethod.setRequestBody(requestXml);
                 }
@@ -274,8 +274,6 @@ public class ServerHttpRoutingAssertion extends ServerRoutingAssertion {
                     logger.info("Protected service responded with status " + status);
 
                 response.setParameter(Response.PARAM_HTTP_STATUS, new Integer(status));
-
-                // TODO: Attachments
 
                 request.setRoutingStatus(RoutingStatus.ROUTED);
 
@@ -327,45 +325,6 @@ public class ServerHttpRoutingAssertion extends ServerRoutingAssertion {
         }
 
         return AssertionStatus.NONE;
-    }
-
-    private String addAttachments(String requestXml, XmlRequest request) throws IOException {
-        StringBuffer sb = new StringBuffer();
-
-        // append the SOAP part
-        sb.append(requestXml);
-
-        // add attachments
-        Map attachments = request.getRequestAttachments();
-        Set attachmentKeys = attachments.keySet();
-        Iterator itr = attachmentKeys.iterator();
-        while(itr.hasNext()) {
-            Object o = (Object) itr.next();
-            Message.Part part = (Message.Part) attachments.get(o);
-
-            sb.append("\n" + XmlUtil.MULTIPART_BOUNDARY_PREFIX + request.getMultipartBoundary() + "\n");
-
-            Map headers = part.getHeaders();
-            Set headerKeys = headers.keySet();
-            Iterator headerItr = headerKeys.iterator();
-            while(headerItr.hasNext()) {
-                String headerName = (String) headerItr.next();
-                Message.HeaderValue hv = (Message.HeaderValue) headers.get(headerName);
-                sb.append(hv.getName()).append("=").append(hv.getValue()).append("\n");
-
-                // append parameters of the header
-                Map parameters = hv.getParams();
-                Set paramKeys = parameters.keySet();
-                Iterator paramItr = paramKeys.iterator();
-                while(paramItr.hasNext()) {
-                    String paramName = (String) paramItr.next();
-                    sb.append(paramName).append("=").append(parameters.get(paramName)).append(";");
-                }
-            }
-            sb.append("\n" + part.getContent());
-        }
-
-        return sb.toString();
     }
 
     private URL getProtectedServiceUrl(PublishedService service, XmlRequest request) throws WSDLException, MalformedURLException {
