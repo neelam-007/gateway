@@ -227,4 +227,6 @@ public class AssertionMessages extends Messages {
     public static final M WSTRUST_RSTR_NOT_SAML           = m(6201, Level.WARNING, "WS-Trust response did not contain SAML assertion");
     public static final M WSTRUST_RSTR_STATUS_NON_200     = m(6202, Level.WARNING, "WS-Trust response had non-200 status");
     public static final M WSTRUST_NON_XML_MESSAGE         = m(6203, Level.INFO, "Can't replace security token in non-XML message");
+    public static final M WSTRUST_DECORATION_FAILED       = m(6204, Level.WARNING, "Unable to replace security token");
+    public static final M WSTRUST_ORIGINAL_TOKEN_NOT_XML  = m(6205, Level.WARNING, "Can't remove original security token; it does not appear to have been an Element");
 }
