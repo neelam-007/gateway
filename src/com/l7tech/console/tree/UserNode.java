@@ -1,6 +1,10 @@
 package com.l7tech.console.tree;
 
 import com.l7tech.objectmodel.EntityHeader;
+import com.l7tech.console.action.NewUserAction;
+import com.l7tech.console.action.UserPropertiesAction;
+
+import javax.swing.*;
 
 
 /**
@@ -22,6 +26,16 @@ public class UserNode extends EntityHeaderNode {
     public UserNode(EntityHeader e)
       throws IllegalArgumentException {
         super(e);
+    }
+
+     /**
+     * Get the set of actions associated with this node.
+     * This may be used e.g. in constructing a context menu.
+     *
+     * @return actions appropriate to the node
+     */
+    public Action[] getActions() {
+        return new Action[]{new UserPropertiesAction(this)};
     }
 
     /**

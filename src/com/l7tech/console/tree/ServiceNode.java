@@ -2,6 +2,7 @@ package com.l7tech.console.tree;
 
 import com.l7tech.console.tree.wsdl.WsdlTreeNode;
 import com.l7tech.console.util.Registry;
+import com.l7tech.console.action.ServicePolicyPropertiesAction;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.service.PublishedService;
@@ -9,6 +10,7 @@ import com.l7tech.service.Wsdl;
 
 import javax.swing.tree.TreeNode;
 import javax.swing.tree.MutableTreeNode;
+import javax.swing.*;
 import javax.wsdl.WSDLException;
 import java.io.StringReader;
 import java.io.IOException;
@@ -46,6 +48,16 @@ public class ServiceNode extends AbstractTreeNode {
               getServiceManager().findByPrimaryKey(eh.getOid());
         }
         return svc;
+    }
+
+    /**
+     * Get the set of actions associated with this node.
+     * This may be used e.g. in constructing a context menu.
+     *
+     * @return actions appropriate to the node
+     */
+    public Action[] getActions() {
+        return new Action[]{new ServicePolicyPropertiesAction(this)};
     }
 
     /**

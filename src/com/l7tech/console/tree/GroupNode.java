@@ -1,6 +1,9 @@
 package com.l7tech.console.tree;
 
+import com.l7tech.console.action.GroupPropertiesAction;
 import com.l7tech.objectmodel.EntityHeader;
+
+import javax.swing.*;
 
 
 /**
@@ -22,6 +25,17 @@ public class GroupNode extends EntityHeaderNode {
     public GroupNode(EntityHeader e)
       throws IllegalArgumentException {
         super(e);
+    }
+
+
+     /**
+     * Get the set of actions associated with this node.
+     * This may be used e.g. in constructing a context menu.
+     *
+     * @return actions appropriate to the node
+     */
+    public Action[] getActions() {
+        return new Action[]{new GroupPropertiesAction(this)};
     }
 
     /**

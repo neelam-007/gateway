@@ -18,11 +18,11 @@ import java.beans.PropertyChangeListener;
 import java.io.IOException;
 
 /**
- * <CODE>WorkBenchPanel</CODE> represents the main editing panel
+ * <CODE>WorkSpacePanel</CODE> represents the main editing panel
  * for elements such as policies.
  */
-public class WorkBenchPanel extends JPanel {
-    private static final Category log = Category.getInstance(WorkBenchPanel.class.getName());
+public class WorkSpacePanel extends JPanel {
+    private static final Category log = Category.getInstance(WorkSpacePanel.class.getName());
 
     private final JPanel listPane = new JPanel();
     private final JTabbedPane tabbedPane = new JTabbedPane();
@@ -34,7 +34,7 @@ public class WorkBenchPanel extends JPanel {
     /**
      * default constructor
      */
-    public WorkBenchPanel() {
+    public WorkSpacePanel() {
         try {
             layoutComponents();
         } catch (IOException e) {
@@ -84,7 +84,7 @@ public class WorkBenchPanel extends JPanel {
                         if ("lookAndFeel".equals(evt.getPropertyName())) {
                             SwingUtilities.invokeLater(new Runnable() {
                                 public void run() {
-                                    SwingUtilities.updateComponentTreeUI(WorkBenchPanel.this);
+                                    SwingUtilities.updateComponentTreeUI(WorkSpacePanel.this);
 
                                 }
                             });
@@ -246,7 +246,7 @@ public class WorkBenchPanel extends JPanel {
                 public void hierarchyChanged(HierarchyEvent e) {
                     long flags = e.getChangeFlags();
                     if ((flags & HierarchyEvent.SHOWING_CHANGED) == HierarchyEvent.SHOWING_CHANGED) {
-                        if (WorkBenchPanel.this.isShowing()) {
+                        if (WorkSpacePanel.this.isShowing()) {
                         } else {
                         }
                     }

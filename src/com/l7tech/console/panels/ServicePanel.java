@@ -1,14 +1,11 @@
 package com.l7tech.console.panels;
 
 import com.l7tech.console.tree.wsdl.WsdlTreeNode;
-import com.l7tech.console.util.IconManager;
 import com.l7tech.console.util.Registry;
 import com.l7tech.service.PublishedService;
 import com.l7tech.service.Wsdl;
 
 import javax.swing.*;
-import javax.swing.event.ChangeListener;
-import javax.swing.event.ChangeEvent;
 import javax.swing.border.EmptyBorder;
 import javax.swing.tree.*;
 import javax.wsdl.WSDLException;

@@ -3,7 +3,6 @@ package com.l7tech.console;
 import com.incors.plaf.kunststoff.KunststoffLookAndFeel;
 import com.incors.plaf.kunststoff.themes.KunststoffDesktopTheme;
 import com.l7tech.console.action.*;
-import com.l7tech.console.factory.JComponentFactory;
 import com.l7tech.console.panels.*;
 import com.l7tech.console.tree.*;
 import com.l7tech.console.util.Preferences;
@@ -90,7 +89,7 @@ public class MainWindow extends JFrame {
     private JPanel mainLeftJPanel = null;
 
     private JPanel mainSplitPaneRight = null;
-    private WorkBenchPanel workBenchPanel = null;
+    private WorkSpacePanel workBenchPanel = null;
 
     /* progress bar indicator */
     private JProgressBar progressBar = null;
@@ -309,7 +308,7 @@ public class MainWindow extends JFrame {
 
         menuItem = new JMenuItem(new HomeAction(getWorkBenchPanel()));
         gotoMenu.add(menuItem);
-     return gotoMenu;
+        return gotoMenu;
     }
 
     /**
@@ -588,10 +587,10 @@ public class MainWindow extends JFrame {
         return mainSplitPaneRight;
     }
 
-    private WorkBenchPanel getWorkBenchPanel() {
+    private WorkSpacePanel getWorkBenchPanel() {
         if (workBenchPanel != null)
             return workBenchPanel;
-        workBenchPanel = new WorkBenchPanel();
+        workBenchPanel = new WorkSpacePanel();
         return workBenchPanel;
 
     }
@@ -640,7 +639,8 @@ public class MainWindow extends JFrame {
         // palette tree paletteRootNode
 
         DefaultTreeModel treeModel = new FilteredTreeModel(null);
-        final AbstractTreeNode paletteRootNode =   new RootNode("Policy Assertions", treeModel);
+        final AbstractTreeNode paletteRootNode =
+          new RootNode("Policy Assertions", treeModel);
         treeModel.setRoot(paletteRootNode);
         getPaletteJTreeView().setRootVisible(true);
         getPaletteJTreeView().setModel(treeModel);
@@ -1179,11 +1179,6 @@ public class MainWindow extends JFrame {
      * Determine the panel for node, and if any found
      */
     private void activateWorkBenchPanel(Object o) {
-        if (o == null) return;
-        JComponentFactory jcf =
-          (JComponentFactory)Locator.getDefault().lookup(JComponentFactory.class);
-        JComponent jc = jcf.getJComponent(o);
-        getWorkBenchPanel().setComponent(jc);
     }
 
 

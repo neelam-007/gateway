@@ -1,7 +1,7 @@
 package com.l7tech.console.action;
 
 import com.l7tech.console.panels.NewUserDialog;
-import com.l7tech.console.panels.WorkBenchPanel;
+import com.l7tech.console.panels.WorkSpacePanel;
 import com.l7tech.console.tree.AbstractTreeNode;
 import com.l7tech.console.MainWindow;
 
@@ -19,10 +19,10 @@ import java.io.IOException;
  * @version 1.0
  */
 public class HomeAction extends BaseAction {
-   private WorkBenchPanel wpanel;
+   private WorkSpacePanel wpanel;
    private ClassLoader cl = getClass().getClassLoader();
 
-    public HomeAction(WorkBenchPanel panel) {
+    public HomeAction(WorkSpacePanel panel) {
         wpanel = panel;
     }
 

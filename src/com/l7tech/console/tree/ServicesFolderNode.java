@@ -1,12 +1,11 @@
 package com.l7tech.console.tree;
 
-import com.l7tech.service.ServiceManager;
-import com.l7tech.console.action.NewUserAction;
 import com.l7tech.console.action.PublishServiceAction;
+import com.l7tech.service.ServiceManager;
 
-import javax.swing.tree.MutableTreeNode;
-import javax.swing.tree.DefaultTreeModel;
 import javax.swing.*;
+import javax.swing.tree.DefaultTreeModel;
+import javax.swing.tree.MutableTreeNode;
 import java.util.Enumeration;
 
 
@@ -25,7 +24,7 @@ public class ServicesFolderNode extends AbstractTreeNode {
 
     /**
      * construct the <CODE>ServicesFolderNode</CODE> instance for
-     * a given servcie manager with the name.
+     * a given service manager with the name.
      */
     public ServicesFolderNode(ServiceManager sm, String name, DefaultTreeModel model) {
         super(null);

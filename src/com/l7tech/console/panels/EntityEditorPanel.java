@@ -1,7 +1,11 @@
 package com.l7tech.console.panels;
 
-import javax.swing.JPanel;
-import com.l7tech.console.panels.PanelListener;
+import com.l7tech.console.tree.EntityListener;
+import com.l7tech.console.tree.EntityEvent;
+import com.l7tech.objectmodel.EntityHeader;
+
+import javax.swing.*;
+import java.util.EventListener;
 
 /**
  * abstract class for implementing panels that allow editing of bean data
@@ -10,14 +14,78 @@ import com.l7tech.console.panels.PanelListener;
  */
 public abstract class EntityEditorPanel extends JPanel {
 
-  protected EntityEditorPanel() {
-  }
+    protected EntityEditorPanel() {
+    }
 
-  public abstract void edit(Object entity);
+    /**
+     * add the EntityListener
+     *
+     * @param listener the EntityListener
+     */
+    public void addEntityListener(EntityListener listener) {
+        listenerList.add(EntityListener.class, listener);
+    }
 
-  public void setPanelListener(PanelListener listener) {
-    this.panelListener = listener;
-  }
+    /**
+     * remove the the EntityListener
+     *
+     * @param listener the EntityListener
+     */
+    public void removeEntityListener(EntityListener listener) {
+        listenerList.remove(EntityListener.class, listener);
+    }
 
-  protected PanelListener panelListener;
+    /**
+     * Notifies all listeners that have registered interest for
+     * notification on this event type (entity update).
+     *
+     * @param eh the entity associated with the event
+     */
+    public void fireEntityUpdate(EntityHeader eh) {
+        EntityEvent event = new EntityEvent(eh);
+        EventListener[] listeners = listenerList.getListeners(EntityListener.class);
+        for (int i = 0; i < listeners.length; i++) {
+            ((EntityListener) listeners[i]).entityUpdated(event);
+        }
+    }
+
+    /**
+     * Notifies all listeners that have registered interest for
+     * notification on this event type (entity update).
+     *
+     * @param eh the entity associated with the event
+     */
+    public void fireEntityAdded(EntityHeader eh) {
+        EntityEvent event = new EntityEvent(eh);
+        EventListener[] listeners = listenerList.getListeners(EntityListener.class);
+        for (int i = 0; i < listeners.length; i++) {
+            ((EntityListener) listeners[i]).entityAdded(event);
+        }
+    }
+
+    /**
+     * Notifies all listeners that have registered interest for
+     * notification on this event type (entity update).
+     *
+     * @param eh the entity associated with the event
+     */
+    public void fireEntityRemoved(EntityHeader eh) {
+        EntityEvent event = new EntityEvent(eh);
+        EventListener[] listeners = listenerList.getListeners(EntityListener.class);
+        for (int i = 0; i < listeners.length; i++) {
+            ((EntityListener) listeners[i]).entityAdded(event);
+        }
+    }
+
+    /**
+     * invoke edit on the object
+     * @param entity  the object representing the entoty
+     */
+    public abstract void edit(Object entity);
+
+    public void setPanelListener(PanelListener listener) {
+        this.panelListener = listener;
+    }
+
+    protected PanelListener panelListener;
 }

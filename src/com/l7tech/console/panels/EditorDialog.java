@@ -27,14 +27,7 @@ public class EditorDialog extends JDialog {
     
     initEditorDialog();
   }
-  
-  public EditorDialog(JDialog parentDialog, JPanel panel) {
-    super(parentDialog, true);
-    this.panel = panel;
-    
-    initEditorDialog();
-  }
-  
+
   private void initEditorDialog() {
 
     setResizable(false);

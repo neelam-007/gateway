@@ -1,6 +1,5 @@
 package com.l7tech.console.action;
 
-import com.l7tech.console.panels.NewUserDialog;
 import com.l7tech.console.panels.PublishServiceWizard;
 import com.l7tech.console.tree.*;
 import com.l7tech.objectmodel.EntityHeader;
@@ -35,14 +34,14 @@ public class PublishServiceAction extends NodeAction {
      * @return the aciton description
      */
     public String getDescription() {
-        return "Punblish a service specigying access control";
+        return "Punblish a service specifying access control";
     }
 
     /**
      * specify the resource name for this action
      */
     protected String iconResource() {
-        return "com/l7tech/console/resources/New16.png";
+        return "com/l7tech/console/resources/New16.gif";
     }
 
     /** Actually perform the action.
