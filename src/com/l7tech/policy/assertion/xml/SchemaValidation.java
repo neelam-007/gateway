@@ -84,14 +84,13 @@ public class SchemaValidation extends Assertion {
         }
         potentiallists = typesel.getElementsByTagNameNS(W3C_XML_SCHEMA, TOP_SCHEMA_ELNAME);
         Element schemael = null;
-        switch (potentiallists.getLength()) {
-            case 0:
-                return null;
-            case 1:
-                schemael = (Element)potentiallists.item(0);
-                break;
-            default:
-                return null;
+        // todo, some wsdls may contain more than one schema in one types element
+        // those schemas cannot be combines since a schema can have only one targetNamespace
+        // therefore, the proper way to suppor this would be to redesign this assertion so
+        // that it can contain more than one schema to validate against.
+        // see bugzilla #915
+        if (potentiallists.getLength() > 0) {
+            schemael = (Element)potentiallists.item(0);
         }
         return schemael;
     }
