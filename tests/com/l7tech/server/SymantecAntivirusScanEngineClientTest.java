@@ -34,6 +34,7 @@ public class SymantecAntivirusScanEngineClientTest extends TestCase {
             System.setProperty("com.l7tech.server.savsePort", "7777");
             System.setProperty("com.l7tech.server.savseHost", "phlox.l7tech.com");
             scanner = new SymantecAntivirusScanEngineClient();
+            scanner.setServerConfig(ServerConfig.getInstance());
         }
     }
 

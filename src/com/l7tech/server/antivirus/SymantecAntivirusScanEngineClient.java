@@ -38,6 +38,7 @@ public class SymantecAntivirusScanEngineClient {
     private String scannerHostName;
     private Integer scannerPort;
     private static ThreadLocal socketHolder = new ThreadLocal();
+    private ServerConfig serverConfig;
 
     /**
      * Scan all message parts individually.
@@ -104,6 +105,10 @@ public class SymantecAntivirusScanEngineClient {
             throw new IOException("server did not return anything");
         }
         return new String(returnedfromsav, 0, read);
+    }
+
+    public void setServerConfig(ServerConfig serverConfig) {
+        this.serverConfig = serverConfig;
     }
 
     /**
@@ -374,7 +379,7 @@ public class SymantecAntivirusScanEngineClient {
 
     private synchronized String scannerHostName() {
         if (scannerHostName == null) {
-            scannerHostName = ServerConfig.getInstance().getProperty(ServerConfig.PARAM_ANTIVIRUS_HOST);
+            scannerHostName = serverConfig.getProperty(ServerConfig.PARAM_ANTIVIRUS_HOST);
             if (scannerHostName == null) {
                 // todo a special exception type for this type of event
                 throw new IllegalStateException("The property " + ServerConfig.PARAM_ANTIVIRUS_HOST +
@@ -386,7 +391,7 @@ public class SymantecAntivirusScanEngineClient {
 
     private synchronized int scannerPort() {
         if (scannerPort == null) {
-            String tmp = ServerConfig.getInstance().getProperty(ServerConfig.PARAM_ANTIVIRUS_PORT);
+            String tmp = serverConfig.getProperty(ServerConfig.PARAM_ANTIVIRUS_PORT);
             if (tmp == null) {
                 // todo a special exception type for this type of event
                 throw new IllegalStateException("The property " + ServerConfig.PARAM_ANTIVIRUS_PORT +
