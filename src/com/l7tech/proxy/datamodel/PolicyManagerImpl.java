@@ -7,17 +7,14 @@
 package com.l7tech.proxy.datamodel;
 
 import com.l7tech.policy.assertion.Assertion;
-import com.l7tech.policy.assertion.TrueAssertion;
 import com.l7tech.policy.wsp.WspReader;
 import com.l7tech.proxy.ConfigurationException;
-import com.l7tech.proxy.processor.ServerCertificateUntrustedException;
-import com.l7tech.proxy.processor.ClientCertificateException;
-import com.l7tech.proxy.policy.ClientPolicyFactory;
 import com.l7tech.proxy.policy.assertion.ClientAssertion;
 import com.l7tech.proxy.policy.assertion.ClientTrueAssertion;
+import com.l7tech.proxy.processor.ServerCertificateUntrustedException;
 import com.l7tech.proxy.util.ThreadLocalHttpClient;
-import org.apache.commons.httpclient.HttpClient;
 import org.apache.commons.httpclient.Header;
+import org.apache.commons.httpclient.HttpClient;
 import org.apache.commons.httpclient.UsernamePasswordCredentials;
 import org.apache.commons.httpclient.methods.GetMethod;
 import org.apache.log4j.Category;
@@ -35,8 +32,7 @@ import java.net.URL;
 public class PolicyManagerImpl implements PolicyManager {
     private static final Category log = Category.getInstance(PolicyManagerImpl.class);
     private static final PolicyManagerImpl INSTANCE = new PolicyManagerImpl();
-    private static final Assertion nullPolicy = TrueAssertion.getInstance();
-    private static final ClientAssertion nullClientPolicy = new ClientTrueAssertion( TrueAssertion.getInstance() );
+    private static final ClientAssertion nullClientPolicy = new ClientTrueAssertion();
 
     private PolicyManagerImpl() {
     }
@@ -99,8 +95,9 @@ public class PolicyManagerImpl implements PolicyManager {
                 try {
                     status = client.executeMethod(getMethod);
                 } catch (SSLHandshakeException e) {
-                        if (e.getCause() instanceof ServerCertificateUntrustedException)
-                            throw (ServerCertificateUntrustedException) e.getCause();
+                    if (e.getCause() instanceof ServerCertificateUntrustedException)
+                        throw (ServerCertificateUntrustedException) e.getCause();
+                    throw e;
                 }
             }
             // fla, end of my addition
