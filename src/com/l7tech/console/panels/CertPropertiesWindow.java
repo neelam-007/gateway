@@ -111,6 +111,7 @@ public class CertPropertiesWindow extends JDialog {
 
                     if (cert != null) {
                         try {
+                            tc.setOid(trustedCert.getOid());
                             tc.setCertificate(cert);
                             tc.setSubjectDn(trustedCert.getSubjectDn());
 
