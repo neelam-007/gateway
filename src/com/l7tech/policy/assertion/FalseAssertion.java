@@ -30,4 +30,8 @@ public class FalseAssertion extends Assertion {
     public AssertionStatus decorateRequest(PendingRequest requst) throws PolicyAssertionException {
         return AssertionStatus.FALSIFIED;
     }
+
+    public static FalseAssertion getInstance() {
+        return INSTANCE;
+    }
 }
