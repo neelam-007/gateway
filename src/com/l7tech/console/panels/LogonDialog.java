@@ -149,6 +149,16 @@ public class LogonDialog extends JDialog {
             }
         });
 
+        JLayeredPane layeredPane = getLayeredPane();
+        layeredPane.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW)
+          .put(KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0), "close-it");
+        layeredPane.getActionMap().put("close-it",
+          new AbstractAction() {
+              public void actionPerformed(ActionEvent evt) {
+                  windowAction(CMD_CANCEL);
+              }
+          });
+
         constraints = new GridBagConstraints();
 
         companyLogoJLabel = new JLabel();
@@ -618,10 +628,12 @@ public class LogonDialog extends JDialog {
 
         return serviceAvailable;
     }
+
     /**
      * Reinitialize ssl after the trust store has been updated.
      * Reinitializes the <code>HttpsURLConnection</code> and the jakarta http client.
-     * //todo: find a better place for this - em18032004 
+     * //todo: find a better place for this - em18032004
+     *
      * @throws KeyManagementException
      * @throws NoSuchAlgorithmException
      * @throws IOException
@@ -630,7 +642,7 @@ public class LogonDialog extends JDialog {
      */
     private void reinitializeSsl()
       throws KeyManagementException, NoSuchAlgorithmException,
-             IOException, CertificateException, KeyStoreException {
+      IOException, CertificateException, KeyStoreException {
 
         TrustManagerFactory tmf = TrustManagerFactory.getInstance("SunX509");
         final Preferences preferences = Preferences.getPreferences();
