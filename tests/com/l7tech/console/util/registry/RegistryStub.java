@@ -1,5 +1,6 @@
 package com.l7tech.console.util.registry;
 
+import com.l7tech.common.security.TrustedCertAdmin;
 import com.l7tech.common.transport.jms.JmsAdmin;
 import com.l7tech.console.util.Registry;
 import com.l7tech.identity.*;
@@ -69,6 +70,10 @@ public class RegistryStub extends Registry {
         return jmsAdmin;
     }
 
+    public TrustedCertAdmin getTrustedCertManager() {
+        return trustedCertAdmin;
+    }
+
     /**
      * @return the custome assertions registrar
      */
@@ -85,4 +90,5 @@ public class RegistryStub extends Registry {
     private JmsAdmin jmsAdmin = new JmsAdminStub();
     private CustomAssertionsRegistrar customAssertionsRegistrar = new CustomAssertionsRegistrarStub();
 
+    private TrustedCertAdmin trustedCertAdmin;
 }

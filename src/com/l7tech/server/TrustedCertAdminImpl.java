@@ -22,7 +22,6 @@ import java.net.URLConnection;
 import java.rmi.RemoteException;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
-import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -114,10 +113,8 @@ public class TrustedCertAdminImpl extends RemoteService implements TrustedCertAd
                                  public X509Certificate[] getAcceptedIssuers() {
                                      return new X509Certificate[0];
                                  }
-                                 public void checkClientTrusted( X509Certificate[] x509Certificates, String s ) throws CertificateException {
-                                 }
-                                 public void checkServerTrusted( X509Certificate[] x509Certificates, String s ) throws CertificateException {
-                                 }
+                                 public void checkClientTrusted( X509Certificate[] x509Certificates, String s ) { }
+                                 public void checkServerTrusted( X509Certificate[] x509Certificates, String s ) { }
                              } },
                              null);
         } catch ( NoSuchAlgorithmException e ) {

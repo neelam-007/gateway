@@ -1,13 +1,14 @@
 package com.l7tech.console.util;
 
+import com.l7tech.common.security.TrustedCertAdmin;
+import com.l7tech.common.transport.jms.JmsAdmin;
 import com.l7tech.common.util.Locator;
 import com.l7tech.identity.GroupManager;
 import com.l7tech.identity.IdentityProvider;
 import com.l7tech.identity.IdentityProviderConfigManager;
 import com.l7tech.identity.UserManager;
-import com.l7tech.common.transport.jms.JmsAdmin;
-import com.l7tech.service.ServiceAdmin;
 import com.l7tech.policy.assertion.ext.CustomAssertionsRegistrar;
+import com.l7tech.service.ServiceAdmin;
 
 
 /**
@@ -84,6 +85,8 @@ public abstract class Registry {
      */
     abstract public JmsAdmin getJmsManager();
 
+    abstract public TrustedCertAdmin getTrustedCertManager();
+
     /**
      * @return the custome assertions registrar
      */
@@ -128,6 +131,10 @@ public abstract class Registry {
         }
 
         public JmsAdmin getJmsManager() {
+            return null;
+        }
+
+        public TrustedCertAdmin getTrustedCertManager() {
             return null;
         }
 
