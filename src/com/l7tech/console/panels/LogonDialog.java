@@ -2,25 +2,28 @@ package com.l7tech.console.panels;
 
 import com.l7tech.common.BuildInfo;
 import com.l7tech.common.VersionException;
-import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.common.gui.util.ImageCache;
+import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.common.util.CertificateDownloader;
 import com.l7tech.common.util.ExceptionUtils;
+import com.l7tech.common.util.KeystoreUtils;
 import com.l7tech.common.util.Locator;
+import com.l7tech.console.MainWindow;
 import com.l7tech.console.action.ImportCertificateAction;
+import com.l7tech.console.event.ConnectionEvent;
 import com.l7tech.console.security.ClientCredentialManager;
 import com.l7tech.console.text.FilterDocument;
-import com.l7tech.console.util.Preferences;
 import com.l7tech.console.util.History;
-import com.l7tech.console.MainWindow;
-import com.l7tech.console.event.ConnectionEvent;
+import com.l7tech.console.util.Preferences;
+import org.apache.commons.httpclient.protocol.Protocol;
+import org.apache.commons.httpclient.protocol.SecureProtocolSocketFactory;
 
 import javax.net.ssl.*;
-import javax.security.auth.login.LoginException;
 import javax.security.auth.login.FailedLoginException;
+import javax.security.auth.login.LoginException;
 import javax.swing.*;
-import javax.swing.event.DocumentListener;
 import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
 import javax.swing.plaf.basic.BasicComboBoxEditor;
 import java.awt.*;
 import java.awt.event.*;
@@ -577,11 +580,13 @@ public class LogonDialog extends JDialog {
                 try {
                     log.log(Level.INFO, "LogonDialog: Attempting to update Gateway certificate");
                     importCertificate(url);
+                    if (conn != null) {
+                        conn.disconnect();
+                        conn = null;
+                    }
 
                     // Reinitialize the SSL context
-                    SSLContext ctx = SSLContext.getInstance("SSL");
-                    ctx.init(null, null, null);
-                    HttpsURLConnection.setDefaultSSLSocketFactory(ctx.getSocketFactory());
+                    reinitializeSsl();
 
                     importedCertificate = true;
 
@@ -612,6 +617,48 @@ public class LogonDialog extends JDialog {
         }
 
         return serviceAvailable;
+    }
+    /**
+     * Reinitialize ssl after the trust store has been updated.
+     * Reinitializes the <code>HttpsURLConnection</code> and the jakarta http client.
+     * //todo: find a better place for this - em18032004 
+     * @throws KeyManagementException
+     * @throws NoSuchAlgorithmException
+     * @throws IOException
+     * @throws CertificateException
+     * @throws KeyStoreException
+     */
+    private void reinitializeSsl()
+      throws KeyManagementException, NoSuchAlgorithmException,
+             IOException, CertificateException, KeyStoreException {
+
+        TrustManagerFactory tmf = TrustManagerFactory.getInstance("SunX509");
+        final Preferences preferences = Preferences.getPreferences();
+        final String trustStoreFile = preferences.getTrustStoreFile();
+        final char[] password = preferences.getTrustStorePassword().toCharArray();
+        tmf.init(KeystoreUtils.getKeyStore(trustStoreFile, password));
+        final SSLContext ctx = SSLContext.getInstance("SSL");
+        ctx.init(null, tmf.getTrustManagers(), null);
+        HttpsURLConnection.setDefaultSSLSocketFactory(ctx.getSocketFactory());
+
+        Protocol https = new Protocol("https",
+          new SecureProtocolSocketFactory() {
+              public Socket createSocket(Socket socket, String host, int port, boolean autoClose)
+                throws IOException, UnknownHostException {
+                  return ctx.getSocketFactory().createSocket(socket, host, port, autoClose);
+              }
+
+              public Socket createSocket(String host, int port, InetAddress clientAddress, int clientPort)
+                throws IOException, UnknownHostException {
+                  return ctx.getSocketFactory().createSocket(host, port, clientAddress, clientPort);
+              }
+
+              public Socket createSocket(String host, int port)
+                throws IOException, UnknownHostException {
+                  return ctx.getSocketFactory().createSocket(host, port);
+              }
+          }, 443);
+        Protocol.registerProtocol("https", https);
     }
 
     private void addSslHostNameVerifier(HttpURLConnection conn) {
@@ -741,7 +788,7 @@ public class LogonDialog extends JDialog {
           cause instanceof UnknownHostException ||
           cause instanceof FileNotFoundException) {
             log.log(Level.WARNING, "logon()", e);
-            String msg =  MessageFormat.format(dialog.resources.getString("logon.connect.error"), new Object[]{getHostPart(serviceUrl)});
+            String msg = MessageFormat.format(dialog.resources.getString("logon.connect.error"), new Object[]{getHostPart(serviceUrl)});
             JOptionPane.showMessageDialog(dialog, msg, "Error", JOptionPane.ERROR_MESSAGE);
         } else if (cause instanceof LoginException || cause instanceof FailedLoginException) {
             log.log(Level.WARNING, "logon()", e);
