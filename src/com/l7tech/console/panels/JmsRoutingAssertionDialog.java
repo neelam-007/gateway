@@ -9,6 +9,7 @@ import com.l7tech.console.util.Registry;
 import com.l7tech.policy.AssertionPath;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.JmsRoutingAssertion;
+import com.l7tech.policy.assertion.composite.CompositeAssertion;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
@@ -85,10 +86,14 @@ public class JmsRoutingAssertionDialog extends JDialog {
      * @param a the assertion
      */
     private void fireEventAssertionChanged(final Assertion a) {
+        final CompositeAssertion parent = a.getParent();
+        if (parent == null)
+          return;
+
         SwingUtilities.invokeLater(
           new Runnable() {
               public void run() {
-                  int[] indices = new int[a.getParent().getChildren().indexOf(a)];
+                  int[] indices = new int[parent.getChildren().indexOf(a)];
                   PolicyEvent event = new
                     PolicyEvent(this, new AssertionPath(a.getPath()), indices, new Assertion[]{a});
                   EventListener[] listeners = listenerList.getListeners(PolicyListener.class);
