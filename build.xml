@@ -1004,11 +1004,13 @@
         <unwar src="${install.src.war}" dest="${install.src.tomcat}/webapps/ROOT"/>
     </target>
 
-    <target name="INTERNAL-ssg-install-properties-full" if="install.full">
+    <target name="INTERNAL-ssg-install-properties-full" if="install.full" depends="db.properties">
         <!-- Copy hibernate.properties -->
         <property name="install.src.hibernate.properties" value="${install.src.conf}/hibernate.properties"/>
+<!--
         <property name="database.driver" value="${my.database.driver}"/>
         <property name="database.url" value="${my.database.url}"/>
+-->
 
         <copy file="${src.root}/etc/db/${database.type}/hibernate.properties" tofile="${install.src.hibernate.properties}"/>
 
