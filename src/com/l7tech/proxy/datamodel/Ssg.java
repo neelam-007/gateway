@@ -51,7 +51,7 @@ public class Ssg implements Serializable, Cloneable, Comparable {
     }
 
     private long id = 0;
-    private String localEndpoint = null;
+    private String localEndpoint = "";
     private String ssgAddress = "";
     private int ssgPort = SSG_PORT;
     private String ssgFile = SecureSpanConstants.SSG_FILE;
@@ -331,6 +331,10 @@ public class Ssg implements Serializable, Cloneable, Comparable {
     }
 
     public void setSsgAddress(final String ssgAddress) {
+        if (ssgAddress == null)
+            throw new IllegalArgumentException("ssgAddress may not be null");
+        if (ssgAddress.length() < 1)
+            throw new IllegalArgumentException("ssgAddress may not be the empty string");
         this.ssgAddress = ssgAddress;
     }
 
@@ -403,6 +407,8 @@ public class Ssg implements Serializable, Cloneable, Comparable {
     }
 
     public void setSsgFile(String ssgFile) {
+        if (ssgFile == null)
+            throw new IllegalArgumentException("ssgFile may not be null");
         this.ssgFile = ssgFile;
     }
 
