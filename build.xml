@@ -219,9 +219,9 @@
             ** TODO: make sure -security flag is added to the 'nightly' build/test
             ** Tomcat config. When done enable the tests below.
             **
-           <test name="com.l7tech.adminws.LogCLientTest" haltonfailure="no"/>
-           <test name="com.l7tech.adminws.identity.ClientTest" haltonfailure="no"/>
-           <test name="com.l7tech.adminws.service.ServiceManagerTest" haltonfailure="no"/>
+           <test name="com.l7tech.logging.LogCLientTest" haltonfailure="no"/>
+           <test name="com.l7tech.identity.ClientTest" haltonfailure="no"/>
+           <test name="com.l7tech.service.ServiceAdminTest" haltonfailure="no"/>
            -->
             <!--
               ** add tests here **
@@ -293,7 +293,6 @@
         <!-- the console jar -->
         <jar jarfile="${build.dir}/Manager.jar" manifest="${src.root}/etc/Manager.mf">
             <fileset dir="${build.dir}/classes">
-                <include name="com/l7tech/adminws/**/*"/>
                 <include name="com/l7tech/common/**/*"/>
                 <include name="com/l7tech/console/**/*"/>
                 <include name="com/l7tech/identity/**/*"/>
