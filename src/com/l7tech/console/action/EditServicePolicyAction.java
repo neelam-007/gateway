@@ -6,6 +6,7 @@ import com.l7tech.console.poleditor.PolicyEditorPanel;
 import com.l7tech.console.tree.ServiceNode;
 import com.l7tech.console.tree.policy.PolicyTree;
 import com.l7tech.console.util.TopComponents;
+import com.l7tech.console.MainWindow;
 import com.l7tech.objectmodel.FindException;
 
 import javax.swing.*;
@@ -90,6 +91,7 @@ public class EditServicePolicyAction extends NodeAction {
             final PolicyEditorPanel pep = new PolicyEditorPanel(serviceNode, policyTree, validate);
             wpanel.setComponent(pep);
             wpanel.addWorkspaceContainerListener(pep);
+            MainWindow.getMain().firePolicyEdit(pep);
         } catch (ActionVetoException e) {
             // action vetoed
         } catch (FindException e) {
