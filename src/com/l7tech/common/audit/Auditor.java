@@ -60,7 +60,6 @@ public class Auditor {
                             if (cname.equals(Auditor.class.getName())) continue;
                             sourceClassName = cname;
                             sourceMethodName = frame.getMethodName();
-                            needToInferCaller = false;
                             return;
                         } else {
                             seenMe = true;
