@@ -8,9 +8,9 @@ import com.l7tech.proxy.ClientProxy;
 import com.l7tech.proxy.datamodel.Policy;
 import com.l7tech.proxy.datamodel.PolicyAttachmentKey;
 import com.l7tech.proxy.datamodel.Ssg;
+import com.l7tech.proxy.datamodel.SsgEvent;
 import com.l7tech.proxy.datamodel.SsgKeyStoreManager;
 import com.l7tech.proxy.datamodel.SsgListener;
-import com.l7tech.proxy.datamodel.SsgEvent;
 import org.apache.log4j.Category;
 
 import javax.swing.*;
@@ -25,14 +25,12 @@ import java.security.NoSuchAlgorithmException;
 import java.security.cert.CertificateEncodingException;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
-import java.util.Arrays;
 
 /**
  * Panel for editing properties of an SSG object.
  * User: mike
  * Date: May 26, 2003
  * Time: 11:14:36 AM
- * To change this template use Options | File Templates.
  */
 public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
     private static final Category log = Category.getInstance(SsgPropertyDialog.class);
@@ -45,21 +43,17 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
 
     //   View for General pane
     private JComponent generalPane;
-    private JLabel fieldLocalEndpoint;
     private JTextField fieldServerAddress;
-    private JCheckBox cbDefault;
-    private JTextField fieldUsername;
-    private JButton buttonClearPassword;
-    private JButton buttonSetPassword;
-    private JCheckBox cbPromptForPassword;
-    private JLabel fieldPassword;
-    private char[] editPassword;
 
     //   View for Identity pane
     private JComponent identityPane;
+    private JTextField fieldUsername;
+    private JPasswordField fieldPassword;
 
     //   View for Network pane
     private JComponent networkPane;
+    private JLabel fieldLocalEndpoint;
+    private JCheckBox cbDefault;
 
     //   View for Policy pane
     private JComponent policiesPane;
@@ -76,7 +70,7 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
 
     /** Create an SsgPropertyDialog ready to edit an Ssg instance. */
     private SsgPropertyDialog(ClientProxy clientProxy, final Ssg ssg) {
-        super("SSG Properties");
+        super("Gateway Properties");
         this.clientProxy = clientProxy;
         tabbedPane.add("General", getGeneralPane());
         tabbedPane.add("Identity", getIdentityPane());
@@ -122,18 +116,6 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
         }
     }
 
-    private String passwordToString(char[] password) {
-        if (password == null) {
-            return "<Not set>";
-        } else if ("".equals(new String(password))) {
-            return "<Empty password>";
-        } else {
-            char[] stars = new char[password.length];
-            Arrays.fill(stars, '*');
-            return new String(stars);
-        }
-    }
-
     private JComponent getPoliciesPane() {
         if (policiesPane == null) {
             int y = 0;
@@ -141,7 +123,7 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
             policiesPane = new JScrollPane(pane);
             policiesPane.setBorder(BorderFactory.createEmptyBorder());
 
-            pane.add(new JLabel("SSG policies being cached by this client"),
+            pane.add(new JLabel("Policies being cached by this client"),
                      new GridBagConstraints(0, y++, 1, 1, 0.0, 0.0,
                                             GridBagConstraints.CENTER,
                                             GridBagConstraints.BOTH,
@@ -224,39 +206,6 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
             JPanel pane = new JPanel(new GridBagLayout());
             identityPane = new JScrollPane(pane);
             identityPane.setBorder(BorderFactory.createEmptyBorder());
-        }
-        return identityPane;
-    }
-
-    private JComponent getNetworkPane() {
-        if (networkPane == null) {
-            gridY = 0;
-            JPanel pane = new JPanel(new GridBagLayout());
-            networkPane = new JScrollPane(pane);
-            networkPane.setBorder(BorderFactory.createEmptyBorder());
-        }
-        return networkPane;
-    }
-
-    /** Create panel controls.  Should be called only from a constructor. */
-    private JComponent getGeneralPane() {
-        if (generalPane == null) {
-            gridY = 0;
-            JPanel pane = new JPanel(new GridBagLayout());
-            generalPane = new JScrollPane(pane);
-            generalPane.setBorder(BorderFactory.createEmptyBorder());
-
-            getFieldServerAddress();
-            pane.add(new JLabel("Gateway Hostname:"),
-                     new GridBagConstraints(0, gridY, 1, 1, 0.0, 0.0,
-                                            GridBagConstraints.EAST,
-                                            GridBagConstraints.NONE,
-                                            new Insets(10, 5, 0, 0), 0, 0));
-            pane.add(fieldServerAddress,
-                     new GridBagConstraints(1, gridY++, 1, 1, 1000.0, 0.0,
-                                            GridBagConstraints.WEST,
-                                            GridBagConstraints.HORIZONTAL,
-                                            new Insets(10, 5, 0, 5), 0, 0));
 
             // Authentication panel
 
@@ -287,7 +236,7 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
             JPanel passwordStuff = new JPanel();
             passwordStuff.setLayout(new GridBagLayout());
 
-            fieldPassword = new JLabel();
+            fieldPassword = new JPasswordField();
             authp.add(new JLabel("Password:"),
                       new GridBagConstraints(0, gridY, 1, 1, 0.0, 0.0,
                                              GridBagConstraints.EAST,
@@ -299,73 +248,7 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
                                                      GridBagConstraints.BOTH,
                                                      new Insets(0, 0, 0, 0), 0, 0));
 
-            buttonClearPassword = new JButton("Clear");
-            buttonClearPassword.addActionListener(new ActionListener() {
-                public void actionPerformed(ActionEvent e) {
-                    editPassword = null;
-                    fieldPassword.setText(passwordToString(editPassword));
-                }
-            });
-            passwordStuff.add(buttonClearPassword,
-                              new GridBagConstraints(1, 0, 1, 1, 0.0, 0.0,
-                                                     GridBagConstraints.EAST,
-                                                     GridBagConstraints.NONE,
-                                                     new Insets(0, 0, 0, 0), 0, 0));
-
-            buttonSetPassword = new JButton("Change");
-            buttonSetPassword.addActionListener(new ActionListener() {
-                public void actionPerformed(ActionEvent e) {
-                    char[] word = PasswordDialog.getPassword(Gui.getInstance().getFrame(), "Set Password");
-                    if (word != null) {
-                        editPassword = word;
-                        fieldPassword.setText(passwordToString(editPassword));
-                    }
-                }
-            });
-            passwordStuff.add(buttonSetPassword,
-                                new GridBagConstraints(2, 0, 1, 1, 0.0, 0.0,
-                                                       GridBagConstraints.EAST,
-                                                       GridBagConstraints.NONE,
-                                                       new Insets(0, 0, 0, 0), 0, 0));
-
-            Utilities.equalizeButtonSizes(new AbstractButton[] { buttonClearPassword, buttonSetPassword });
             authp.add(passwordStuff, new GridBagConstraints(1, gridY++, 1, 1, 1000.0, 0.0,
-                                                              GridBagConstraints.WEST,
-                                                              GridBagConstraints.HORIZONTAL,
-                                                              new Insets(5, 5, 0, 5), 0, 0));
-
-            cbPromptForPassword = new JCheckBox("Prompt for username and password as needed");
-            authp.add(cbPromptForPassword, new GridBagConstraints(1, gridY++, 1, 1, 1000.0, 0.0,
-                                                              GridBagConstraints.WEST,
-                                                              GridBagConstraints.HORIZONTAL,
-                                                              new Insets(5, 5, 0, 5), 0, 0));
-            gridY = oy;
-
-            // Endpoint panel
-
-            JPanel epp = new JPanel(new GridBagLayout());
-            epp.setBorder(BorderFactory.createTitledBorder("Local endpoint binding"));
-            pane.add(epp, new GridBagConstraints(0, gridY++, 2, 1, 1000.0, 0.0,
-                                                              GridBagConstraints.WEST,
-                                                              GridBagConstraints.HORIZONTAL,
-                                                              new Insets(14, 5, 0, 5), 0, 0));
-
-            oy = gridY;
-            gridY = 0;
-            fieldLocalEndpoint = new JLabel("");
-            fieldLocalEndpoint.setPreferredSize(new Dimension(120, 20));
-            epp.add(new JLabel("Endpoint:"), new GridBagConstraints(0, gridY, 1, 1, 0.0, 0.0,
-                                                              GridBagConstraints.EAST,
-                                                              GridBagConstraints.NONE,
-                                                              new Insets(5, 5, 0, 0), 0, 0));
-            epp.add(fieldLocalEndpoint, new GridBagConstraints(1, gridY++, 1, 1, 1000.0, 0.0,
-                                                              GridBagConstraints.WEST,
-                                                              GridBagConstraints.HORIZONTAL,
-                                                              new Insets(5, 5, 0, 5), 0, 0));
-
-            cbDefault = new JCheckBox("Route unknown endpoints to this SSG");
-            cbDefault.setPreferredSize(new Dimension(120, 20));
-            epp.add(cbDefault, new GridBagConstraints(1, gridY++, 1, 1, 1000.0, 0.0,
                                                               GridBagConstraints.WEST,
                                                               GridBagConstraints.HORIZONTAL,
                                                               new Insets(5, 5, 0, 5), 0, 0));
@@ -396,6 +279,85 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
                                             new Insets(5, 5, 5, 5), 0, 0));
 
             gridY = oy;
+
+            // Have a spacer eat any leftover space
+            pane.add(new JPanel(),
+                     new GridBagConstraints(0, gridY++, 1, 1, 1.0, 1.0,
+                                            GridBagConstraints.CENTER,
+                                            GridBagConstraints.BOTH,
+                                            new Insets(0, 0, 0, 0), 0, 0));
+
+        }
+        return identityPane;
+    }
+
+    private JComponent getNetworkPane() {
+        if (networkPane == null) {
+            gridY = 0;
+            JPanel pane = new JPanel(new GridBagLayout());
+            networkPane = new JScrollPane(pane);
+            networkPane.setBorder(BorderFactory.createEmptyBorder());
+            // Endpoint panel
+
+            JPanel epp = new JPanel(new GridBagLayout());
+            epp.setBorder(BorderFactory.createTitledBorder("Local endpoint binding"));
+            pane.add(epp, new GridBagConstraints(0, gridY++, 2, 1, 1000.0, 0.0,
+                                                              GridBagConstraints.WEST,
+                                                              GridBagConstraints.HORIZONTAL,
+                                                              new Insets(14, 5, 0, 5), 0, 0));
+
+            int oy = gridY;
+            gridY = 0;
+            fieldLocalEndpoint = new JLabel("");
+            fieldLocalEndpoint.setPreferredSize(new Dimension(120, 20));
+            epp.add(new JLabel("Endpoint:"), new GridBagConstraints(0, gridY, 1, 1, 0.0, 0.0,
+                                                              GridBagConstraints.EAST,
+                                                              GridBagConstraints.NONE,
+                                                              new Insets(5, 5, 0, 0), 0, 0));
+            epp.add(fieldLocalEndpoint, new GridBagConstraints(1, gridY++, 1, 1, 1000.0, 0.0,
+                                                              GridBagConstraints.WEST,
+                                                              GridBagConstraints.HORIZONTAL,
+                                                              new Insets(5, 5, 0, 5), 0, 0));
+
+            cbDefault = new JCheckBox("Route unknown endpoints to this SSG");
+            cbDefault.setPreferredSize(new Dimension(120, 20));
+            epp.add(cbDefault, new GridBagConstraints(1, gridY++, 1, 1, 1000.0, 0.0,
+                                                              GridBagConstraints.WEST,
+                                                              GridBagConstraints.HORIZONTAL,
+                                                              new Insets(5, 5, 0, 5), 0, 0));
+            gridY = oy;
+
+            // Have a spacer eat any leftover space
+            pane.add(new JPanel(),
+                     new GridBagConstraints(0, gridY++, 1, 1, 1.0, 1.0,
+                                            GridBagConstraints.CENTER,
+                                            GridBagConstraints.BOTH,
+                                            new Insets(0, 0, 0, 0), 0, 0));
+        }
+        return networkPane;
+    }
+
+    /** Create panel controls.  Should be called only from a constructor. */
+    private JComponent getGeneralPane() {
+        if (generalPane == null) {
+            gridY = 0;
+            JPanel pane = new JPanel(new GridBagLayout());
+            generalPane = new JScrollPane(pane);
+            generalPane.setBorder(BorderFactory.createEmptyBorder());
+
+            getFieldServerAddress();
+            pane.add(new JLabel("Gateway Hostname:"),
+                     new GridBagConstraints(0, gridY, 1, 1, 0.0, 0.0,
+                                            GridBagConstraints.EAST,
+                                            GridBagConstraints.NONE,
+                                            new Insets(10, 5, 0, 0), 0, 0));
+            pane.add(fieldServerAddress,
+                     new GridBagConstraints(1, gridY++, 1, 1, 1000.0, 0.0,
+                                            GridBagConstraints.WEST,
+                                            GridBagConstraints.HORIZONTAL,
+                                            new Insets(10, 5, 0, 5), 0, 0));
+
+
 
             // Have a spacer eat any leftover space
             pane.add(new JPanel(),
@@ -532,9 +494,8 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
                                        ssg.getLocalEndpoint());
         fieldServerAddress.setText(ssg.getSsgAddress());
         fieldUsername.setText(ssg.getUsername());
-        editPassword = ssg.password();
-        fieldPassword.setText(passwordToString(editPassword));
-        cbPromptForPassword.setSelected(ssg.promptForUsernameAndPassword());
+        boolean hasPassword = ssg.password() != null;
+        fieldPassword.setText(new String(hasPassword ? ssg.password() : "".toCharArray()));
         cbDefault.setSelected(ssg.isDefaultSsg());
         policyFlushRequested = false;
 
@@ -550,8 +511,18 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
         synchronized (ssg) {
             ssg.setSsgAddress(fieldServerAddress.getText().trim().toLowerCase());
             ssg.setUsername(fieldUsername.getText().trim());
-            ssg.password(editPassword);
-            ssg.promptForUsernameAndPassword(cbPromptForPassword.isSelected());
+
+            // We'll treat a blank password as though it's unconfigured.  If the user really needs to use
+            // a blank password to access a service, he can leave the password field blank in the logon
+            // dialog when it eventually appears.
+            char[] pass = fieldPassword.getPassword();
+
+            // If it's been changed, make sure prompting is enabled
+            if ((pass == null) != (ssg.password() == null) ||
+                    (ssg.password() != null && !new String(ssg.password()).equals(new String(pass))))
+                ssg.promptForUsernameAndPassword(true);
+            ssg.password(pass.length > 0 ? fieldPassword.getPassword() : null);
+
             ssg.setDefaultSsg(cbDefault.isSelected());
             if (policyFlushRequested)
                 ssg.clearPolicies();
