@@ -3,7 +3,7 @@ package com.l7tech.console.panels;
 import com.l7tech.console.table.LogTableModel;
 import com.l7tech.console.table.FilteredLogTableModel;
 import com.l7tech.console.table.FilteredLogTableSorter;
-import com.l7tech.console.util.ClusterInfoWorker;
+import com.l7tech.console.util.ClusterLogWorker;
 import com.l7tech.console.util.LogsWorker;
 import com.l7tech.console.icons.ArrowIcon;
 import com.l7tech.cluster.ClusterStatusAdmin;

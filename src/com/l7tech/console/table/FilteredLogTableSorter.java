@@ -7,7 +7,7 @@ import com.l7tech.cluster.ClusterStatusAdmin;
 import com.l7tech.cluster.LogRequest;
 import com.l7tech.cluster.GatewayStatus;
 import com.l7tech.console.panels.LogPanel;
-import com.l7tech.console.util.ClusterInfoWorker;
+import com.l7tech.console.util.ClusterLogWorker;
 
 import javax.swing.table.DefaultTableModel;
 import java.util.logging.Logger;
@@ -266,7 +266,7 @@ public class FilteredLogTableSorter extends FilteredLogTableModel {
         logsWorker.start();*/
 
                 // create a worker thread to retrieve the cluster info
-        final ClusterInfoWorker infoWorker = new ClusterInfoWorker(clusterStatusAdmin, logService, currentNodeList, requests) {
+        final ClusterLogWorker infoWorker = new ClusterLogWorker(clusterStatusAdmin, logService, currentNodeList, requests) {
             public void finished() {
 
                 // Note: the get() operation is a blocking operation.

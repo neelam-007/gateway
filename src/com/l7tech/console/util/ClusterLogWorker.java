@@ -21,7 +21,7 @@ import java.rmi.RemoteException;
  * $Id$
  */
 
-public class ClusterInfoWorker extends SwingWorker {
+public class ClusterLogWorker extends SwingWorker {
 
     private ClusterStatusAdmin clusterStatusService = null;
     private LogAdmin logService = null;
@@ -33,7 +33,7 @@ public class ClusterInfoWorker extends SwingWorker {
 
     static Logger logger = Logger.getLogger(ClusterStatusWorker.class.getName());
 
-    public ClusterInfoWorker(ClusterStatusAdmin clusterStatusService, LogAdmin logService, Hashtable currentNodeList, Vector requests) {
+    public ClusterLogWorker(ClusterStatusAdmin clusterStatusService, LogAdmin logService, Hashtable currentNodeList, Vector requests) {
         this.clusterStatusService = clusterStatusService;
         this.currentNodeList = currentNodeList;
         this.logService = logService;
