@@ -82,33 +82,38 @@ public class ServerXmlResponseSecurity implements ServerAssertion {
 
         // ENCRYPTION (optional)
         if (data.isEncryption()) {
-            // RETREIVE SESSION ID
-            // get the header containing the xml session id
-            String sessionIDHeaderValue = (String)request.getParameter( Request.PARAM_HTTP_XML_SESSID );
-            if (sessionIDHeaderValue == null || sessionIDHeaderValue.length() < 1) {
+            // RETRIEVE SESSION
+            Session xmlsession = null;
+            Object sessionObj = request.getParameter(Request.PARAM_HTTP_XML_SESSID);
+            if (sessionObj == null) {
                 String msg = "Could not encrypt response because xml session id was not provided by requestor.";
                 logger.severe(msg);
                 return AssertionStatus.FALSIFIED;
             }
-            // retrieve the session
-            Session xmlsession = null;
-            try {
-                xmlsession = SessionManager.getInstance().getSession(Long.parseLong(sessionIDHeaderValue));
-            } catch (SessionNotFoundException e) {
-                String msg = "Exception finding session with id=" + sessionIDHeaderValue;
-                response.setParameter( Response.PARAM_HTTP_SESSION_STATUS, "invalid" );
-                logger.log(Level.SEVERE, msg, e);
-                return AssertionStatus.FALSIFIED;
-            } catch (NumberFormatException e) {
-                String msg = "Session id is not long value : " + sessionIDHeaderValue;
-                response.setParameter( Response.PARAM_HTTP_SESSION_STATUS, "invalid" );
-                logger.log(Level.SEVERE, msg, e);
-                return AssertionStatus.FALSIFIED;
+            // construct Session object based on the type of the context's object
+            if (sessionObj instanceof Session) {
+                xmlsession = (Session)sessionObj;
+            } else if (sessionObj instanceof String) {
+                String sessionIDHeaderValue = (String)sessionObj;
+                // retrieve the session
+                try {
+                    xmlsession = SessionManager.getInstance().getSession(Long.parseLong(sessionIDHeaderValue));
+                } catch (SessionNotFoundException e) {
+                    String msg = "Exception finding session with id=" + sessionIDHeaderValue;
+                    response.setParameter( Response.PARAM_HTTP_SESSION_STATUS, "invalid" );
+                    logger.log(Level.SEVERE, msg, e);
+                    return AssertionStatus.FALSIFIED;
+                } catch (NumberFormatException e) {
+                    String msg = "Session id is not long value : " + sessionIDHeaderValue;
+                    response.setParameter( Response.PARAM_HTTP_SESSION_STATUS, "invalid" );
+                    logger.log(Level.SEVERE, msg, e);
+                    return AssertionStatus.FALSIFIED;
+                }
             }
 
             // encrypt the message
             try {
-                XmlMangler.encryptXml(soapmsg, xmlsession.getKeyRes(), sessionIDHeaderValue);
+                XmlMangler.encryptXml(soapmsg, xmlsession.getKeyRes(), Long.toString(xmlsession.getId()));
             } catch (GeneralSecurityException e) {
                 String msg = "Exception trying to encrypt response";
                 logger.log(Level.SEVERE, msg, e);
