@@ -20,6 +20,7 @@ import java.security.*;
 import java.security.cert.X509Certificate;
 import java.security.interfaces.RSAPublicKey;
 import java.util.Arrays;
+import java.util.Random;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -251,7 +252,7 @@ public class XencUtil {
      * @return the padded key
      * @throws java.security.KeyException if there are too many keyBytes to fit inside this modulus
      */
-    public static  byte[] padSymmetricKeyForRsaEncryption(byte[] keyBytes, int modulusBytes, SecureRandom rand)
+    public static  byte[] padSymmetricKeyForRsaEncryption(byte[] keyBytes, int modulusBytes, Random rand)
             throws KeyException
     {
         modulusBytes-=1;
@@ -278,10 +279,11 @@ public class XencUtil {
      * The encrypted key is then padded according to http://www.w3.org/2001/04/xmlenc#rsa-1_5 and then base64ed.
      * @param keyBytes the bytes of the symmetric key to encrypt
      * @param publicKey the public key of the recipient of the key
+     * @param rand should probably be SecureRandom
      * @return the base64 encoded padded and encrypted keyBytes for the passed publicKey recipient
      * @throws GeneralSecurityException
      */
-    public static String encryptKeyWithRsaAndPad(byte[] keyBytes, PublicKey publicKey, SecureRandom rand) throws GeneralSecurityException {
+    public static String encryptKeyWithRsaAndPad(byte[] keyBytes, PublicKey publicKey, Random rand) throws GeneralSecurityException {
         Cipher rsa = JceProvider.getRsaNoPaddingCipher();
         rsa.init(Cipher.ENCRYPT_MODE, publicKey);
         if (!(publicKey instanceof RSAPublicKey))
