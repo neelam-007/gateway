@@ -27,11 +27,12 @@
         <servlet-class>com.l7tech.identity.cert.CSRHandler</servlet-class>
         <init-param>
             <param-name>RootKeyStore</param-name>
-            <param-value>/usr/java/jakarta-tomcat-4.1.24/kstores/ssgroot</param-value>
+            <param-value>../../kstores/ssgroot</param-value>
         </init-param>
+        <!-- THIS VALUE IS UPDATED BY THE ROOTCAGEN.SH SCRIPT -->
+        <!-- LEAVE THE param-name AND param-value ELEMENTS ON SAME LINES -->
         <init-param>
-            <param-name>RootKeyStorePasswd</param-name>
-            <param-value>password</param-value>
+            <param-name>RootKeyStorePasswd</param-name><param-value>password</param-value>
         </init-param>
     </servlet>
 
