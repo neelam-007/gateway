@@ -479,10 +479,6 @@
                 <exclude name="com/l7tech/common/util/Pkcs12*.class"/>
                 <exclude name="com/l7tech/common/security/xml/processor/**/*"/>
                 <exclude name="com/l7tech/common/security/xml/decorator/**/*"/>
-                <exclude name="com/l7tech/common/security/xml/*SecurityProcessor*.class"/>
-                <exclude name="com/l7tech/common/security/xml/SoapMsgSigner.class"/>
-                <exclude name="com/l7tech/common/security/xml/XmlMangler.class"/>
-                <include name="com/l7tech/common/security/xml/ElementSecurity.class"/>
 
                 <include name="com/l7tech/cluster/ClusterNodeInfo.class"/>
                 <include name="com/l7tech/cluster/ClusterStatusAdmin.class"/>
