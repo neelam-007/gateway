@@ -3,7 +3,6 @@ package com.l7tech.console.panels;
 import com.l7tech.console.MainWindow;
 import com.l7tech.console.table.DynamicTableModel;
 import com.l7tech.console.tree.EntityHeaderNode;
-import com.l7tech.console.tree.EntityTreeNode;
 
 import javax.swing.*;
 import javax.swing.event.ListSelectionEvent;
@@ -25,6 +24,9 @@ public class FindDialog extends JDialog {
     static Map oTypes = new TreeMap(); // sorted
 
     static {
+        oTypes.put(SearchType.USER.getName(), SearchType.USER);
+        oTypes.put(SearchType.GROUP.getName(), SearchType.GROUP);
+        oTypes.put(SearchType.ALL.getName(), SearchType.ALL);
     }
 
     /**
@@ -67,8 +69,6 @@ public class FindDialog extends JDialog {
     private JTabbedPane searchTabs = new JTabbedPane();
     private Dimension origDimension = null;
 
-    /** the search context (where the search begins) */
-    private EntityHeaderNode entry = null;
     /** the search info with search expression and parameters */
     private SearchInfo searchInfo = new SearchInfo();
 
@@ -79,27 +79,13 @@ public class FindDialog extends JDialog {
      * @param modal  true for a modal dialog, false for one that
      *               allows others windows to be active at the
      *               same time
-     * @param n      the directory tree node (start context)
      *
      * @see javax.swing.JDialog
      */
-    public FindDialog(Frame parent, boolean modal,
-                      EntityTreeNode n) {
+    public FindDialog(Frame parent, boolean modal) {
         super(parent, modal);
-        if (n == null) {
-            throw new NullPointerException("node");
-        }
-        Object o = n.getUserObject();
-        if (o instanceof EntityHeaderNode) {
-            this.entry = (EntityHeaderNode)o;
-        } else {
-            throw new
-              IllegalArgumentException("node must contain Entry. received " + o.getClass());
-        }
-
         initResources();
         initComponents();
-        pack();
     }
 
     /**
@@ -224,7 +210,7 @@ public class FindDialog extends JDialog {
 
         // text field for context (from)
         fromField = new JTextField(15);
-        fromField.setText(entry.getName());
+        fromField.setText(" does this goes away?");
         fromField.setToolTipText(resources.getString("fromText.tooltip"));
         constraints = new GridBagConstraints();
         constraints.gridx = 1;
@@ -242,7 +228,7 @@ public class FindDialog extends JDialog {
         fromButton.
           addActionListener(new ActionListener() {
               public void actionPerformed(ActionEvent e) {
-                  // selectSearchBase(entry);
+                  // selectSearchBase();
               }
           });
 
@@ -678,6 +664,21 @@ public class FindDialog extends JDialog {
         }
     }
 
+    private static class SearchType {
+        public static final SearchType USER = new SearchType("Users");
+        public static SearchType GROUP = new SearchType("Groups");
+        public static SearchType ALL = new SearchType("ALL");
+
+        private SearchType(String name) {
+            this.name = name;
+        }
+
+        public String getName() {
+            return name;
+        }
+
+        String name;
+    }
 }
 
 

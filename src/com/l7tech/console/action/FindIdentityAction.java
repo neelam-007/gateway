@@ -1,7 +1,8 @@
 package com.l7tech.console.action;
 
 import com.l7tech.console.panels.Utilities;
-import com.l7tech.console.tree.policy.IdentityPolicyView;
+import com.l7tech.console.panels.FindDialog;
+//import com.l7tech.console.tree.policy.IdentityPolicyView;
 import com.l7tech.console.util.Registry;
 import com.l7tech.policy.assertion.identity.IdentityAssertion;
 
@@ -10,43 +11,41 @@ import java.util.logging.Logger;
 
 
 /**
- * The <code>IdentityPolicyAction</code> action views the identity
- * policy for user or group.
+ * The <code>FindIdentityAction</code> action invokes the searche identity
+ * dialog.
  *
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  * @version 1.0
  */
-public class IdentityPolicyAction extends BaseAction {
-    static final Logger log = Logger.getLogger(IdentityPolicyAction.class.getName());
-    IdentityAssertion assertion;
+public class FindIdentityAction extends BaseAction {
+    static final Logger log = Logger.getLogger(FindIdentityAction.class.getName());
+
 
     /**
-     * create the action that shows the identity assertion policy
-     * @param a the identity assertion
+     * create the action
      */
-    public IdentityPolicyAction(IdentityAssertion a) {
-        assertion = a;
+    public FindIdentityAction() {
     }
 
     /**
      * @return the action name
      */
     public String getName() {
-        return "View Identity policy";
+        return "Find";
     }
 
     /**
      * @return the aciton description
      */
     public String getDescription() {
-        return "View Identity policy assertion tree";
+        return "Find Identities";
     }
 
     /**
      * subclasses override this method specifying the resource name
      */
     protected String iconResource() {
-        return "com/l7tech/console/resources/policy16.gif";
+        return "com/l7tech/console/resources/Find16.gif";
     }
 
     /** Actually perform the action.
@@ -55,10 +54,16 @@ public class IdentityPolicyAction extends BaseAction {
      * without explicitly asking for the AWT event thread!
      */
     public void performAction() {
-       Frame f = Registry.getDefault().getWindowManager().getMainWindow();
+        Frame f =
+          Registry.getDefault().getWindowManager().getMainWindow();
+        FindDialog fd = new FindDialog(f, true);
+        fd.pack();
+        Utilities.centerOnScreen(fd);
+        fd.show();
+     /*   Frame f = Registry.getDefault().getWindowManager().getMainWindow();
         IdentityPolicyView pw = new IdentityPolicyView(f, assertion);
         pw.pack();
         Utilities.centerOnScreen(pw);
-        pw.show();
+        pw.show();*/
     }
 }

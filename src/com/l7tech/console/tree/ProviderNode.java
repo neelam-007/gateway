@@ -2,6 +2,7 @@ package com.l7tech.console.tree;
 
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.console.action.IdentityProviderPropertiesAction;
+import com.l7tech.console.action.FindIdentityAction;
 
 import javax.swing.*;
 import java.util.*;
@@ -41,6 +42,7 @@ public class ProviderNode extends EntityHeaderNode {
     public Action[] getActions() {
         java.util.List list = new ArrayList();
         list.add(new IdentityProviderPropertiesAction(this));
+        list.add(new FindIdentityAction());
         list.addAll(Arrays.asList(super.getActions()));
 
         return (Action[]) list.toArray(new Action[]{});
