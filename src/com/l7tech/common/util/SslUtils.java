@@ -113,7 +113,7 @@ public class SslUtils {
             // TODO: Verify using the CA public key for this SSG.
             log.info("FIXME: need to verify this cert using SSG's public key");
             if (!certNameString.equals(csrNameString))
-                throw new CertificateException("We got a certificate, but it's directory name didn't match what we asked for.");
+                throw new CertificateException("We got a certificate, but it's distinguished name didn't match what we asked for.");
             if (!cert.getPublicKey().equals(csr.getPublicKey()))
                 throw new CertificateException("We got a certificate, but it certified the wrong public key.");
 
