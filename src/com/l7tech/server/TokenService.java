@@ -1,10 +1,7 @@
 package com.l7tech.server;
 
 import com.l7tech.common.security.saml.Constants;
-import com.l7tech.common.security.xml.WssDecorator;
-import com.l7tech.common.security.xml.WssDecoratorImpl;
-import com.l7tech.common.security.xml.WssProcessor;
-import com.l7tech.common.security.xml.WssProcessorImpl;
+import com.l7tech.common.security.xml.*;
 import com.l7tech.common.util.*;
 import com.l7tech.common.xml.InvalidDocumentFormatException;
 import com.l7tech.identity.AuthenticationException;
@@ -20,16 +17,17 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.xml.sax.SAXException;
 
-import javax.crypto.Cipher;
 import javax.crypto.SecretKey;
 import javax.xml.soap.SOAPConstants;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
-import java.security.*;
+import java.security.GeneralSecurityException;
+import java.security.KeyStoreException;
+import java.security.PrivateKey;
+import java.security.SecureRandom;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
-import java.security.interfaces.RSAPublicKey;
 import java.util.Calendar;
 import java.util.Map;
 import java.util.logging.Level;
@@ -280,42 +278,14 @@ public class TokenService {
         }
         encryptedKeyXml.append("<xenc:CipherData>" +
                                 "<xenc:CipherValue>");
-        encryptedKeyXml.append(encryptWithRsa(sharedSecret.getEncoded(), requestorCert.getPublicKey()));
+        String encryptedKeyValue = XencUtil.encryptKeyWithRsaAndPad(sharedSecret.getEncoded(),
+                                                                    requestorCert.getPublicKey(),
+                                                                    rand);
+        encryptedKeyXml.append(encryptedKeyValue);
         encryptedKeyXml.append("</xenc:CipherValue>" +
                              "</xenc:CipherData>" +
                            "</xenc:EncryptedKey>");
         return encryptedKeyXml.toString();
-    }
-
-    // todo, this was copied from WssDecoratorImpl, should generalize
-    private String encryptWithRsa(byte[] keyBytes, PublicKey publicKey) throws GeneralSecurityException {
-        Cipher rsa = Cipher.getInstance("RSA");
-        rsa.init(Cipher.ENCRYPT_MODE, publicKey);
-        if (!(publicKey instanceof RSAPublicKey))
-            throw new KeyException("Unable to encrypt -- unsupported recipient public key type " +
-                                   publicKey.getClass().getName());
-        final int modulusLength = ((RSAPublicKey)publicKey).getModulus().toByteArray().length;
-        byte[] paddedKeyBytes = padSymmetricKeyForRsaEncryption(keyBytes, modulusLength);
-        byte[] encrypted = rsa.doFinal(paddedKeyBytes);
-        return HexUtils.encodeBase64(encrypted, true);
-    }
-
-    // todo, this was copied from WssDecoratorImpl, should generalize
-    private byte[] padSymmetricKeyForRsaEncryption(byte[] keyBytes, int modulusBytes) throws KeyException {
-        int padbytes = modulusBytes - 3 - keyBytes.length;
-        // Check just in case, although this should never happen in real life
-        if (padbytes < 8)
-            throw new KeyException("Recipient RSA public key has too few bits to encode this symmetric key");
-        byte[] padded = new byte[modulusBytes - 1];
-        int pos = 0;
-        padded[pos++] = 2;
-        while (padbytes > 0) {
-            padded[pos++] = (byte)(rand.nextInt(255) + 1);
-            padbytes--;
-        }
-        padded[pos++] = 0;
-        System.arraycopy(keyBytes, 0, padded, pos, keyBytes.length);
-        return padded;
     }
 
     private boolean isValidRequestForSecureConversationContext(Document request,

@@ -26,7 +26,6 @@ import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
 import org.w3c.dom.Text;
 
-import javax.crypto.Cipher;
 import javax.crypto.SecretKey;
 import java.io.IOException;
 import java.security.*;
@@ -34,7 +33,6 @@ import java.security.cert.CertificateEncodingException;
 import java.security.cert.X509Certificate;
 import java.security.interfaces.DSAPrivateKey;
 import java.security.interfaces.RSAPrivateKey;
-import java.security.interfaces.RSAPublicKey;
 import java.util.*;
 import java.util.logging.Logger;
 
@@ -515,7 +513,7 @@ public class WssDecoratorImpl implements WssDecorator {
 
         Element cipherData = XmlUtil.createAndAppendElementNS(encryptedKey, "CipherData", xencNs, xenc);
         Element cipherValue = XmlUtil.createAndAppendElementNS(cipherData, "CipherValue", xencNs, xenc);
-        final String base64 = encryptWithRsa(c, keyBytes, recipientCertificate.getPublicKey());
+        final String base64 = XencUtil.encryptKeyWithRsaAndPad(keyBytes, recipientCertificate.getPublicKey(), c.rand);
         cipherValue.appendChild(soapMsg.createTextNode(base64));
         Element referenceList = XmlUtil.createAndAppendElementNS(encryptedKey, "ReferenceList", xencNs, xenc);
 
@@ -595,18 +593,6 @@ public class WssDecoratorImpl implements WssDecorator {
             id = createWsuId(c, element, basename == null ? element.getLocalName() : basename);
         }
         return id;
-    }
-
-    private String encryptWithRsa(Context c, byte[] keyBytes, PublicKey publicKey) throws GeneralSecurityException {
-        Cipher rsa = Cipher.getInstance("RSA");
-        rsa.init(Cipher.ENCRYPT_MODE, publicKey);
-        if (!(publicKey instanceof RSAPublicKey))
-            throw new KeyException("Unable to encrypt -- unsupported recipient public key type " +
-                                   publicKey.getClass().getName());
-        final int modulusLength = ((RSAPublicKey)publicKey).getModulus().toByteArray().length;
-        byte[] paddedKeyBytes = XencUtil.padSymmetricKeyForRsaEncryption(keyBytes, modulusLength, c.rand);
-        byte[] encrypted = rsa.doFinal(paddedKeyBytes);
-        return HexUtils.encodeBase64(encrypted, true);
     }
 
     private void addKeyInfo(Element encryptedKey, byte[] idBytes, String valueType) {
