@@ -21,7 +21,7 @@ import java.util.logging.Logger;
 
 /**
  * The boot process class that registers the <code>ExtensibilitytAssertions</code> that are specified
- * in the the service property <i>ext.assertions.file</i>.
+ * in the the service property <i>custom.assertions.file</i>.
  *
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  */
@@ -38,7 +38,7 @@ public class CustomAssertionsBootProcess implements ServerComponentLifecycle {
     public void init(ComponentConfig config) throws LifecycleException {
         fileName = config.getProperty(KEY_CONFIG_FILE);
         if (fileName == null) {
-            logger.info("'ext.assertions.file' not specified");
+            logger.info("'"+KEY_CONFIG_FILE+"' not specified");
         }
     }
 
@@ -121,6 +121,7 @@ public class CustomAssertionsBootProcess implements ServerComponentLifecycle {
             Class sa = Class.forName(serverClass);
             CustomAssertionDescriptor eh = new CustomAssertionDescriptor(baseKey, a, ca, sa, category);
             CustomAssertions.register(eh);
+            logger.info("Registered custom assertion "+eh);
         } catch (ClassNotFoundException e) {
             StringBuffer sb = new StringBuffer("Cannot load class(es) for extensibility assertion, skipping...\n");
             sb.append("[ assertion class=" + assertionClass);
