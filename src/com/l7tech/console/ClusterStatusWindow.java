@@ -543,6 +543,7 @@ public class ClusterStatusWindow extends JFrame {
         return cs;
     }
 
+/*
     private void updateClusterRequestCounterCache(long newCount) {
 
         if (clusterRequestCounterCache.size() <= GatewayStatus.NUMBER_OF_SAMPLE_PER_MINUTE) {
@@ -566,6 +567,7 @@ public class ClusterStatusWindow extends JFrame {
 
         return totalCount;
     }
+*/
 
     private javax.swing.Timer getStatusRefreshTimer() {
 

@@ -88,7 +88,7 @@ public class ClusterStatusWorker extends SwingWorker {
 
              GatewayStatus nodeStatus = new GatewayStatus(cluster[i]);
 
-            if((node = currentNodeList.get(nodeStatus.getName())) != null){
+            if((node = currentNodeList.get(nodeStatus.getNodeId())) != null){
                 if(node instanceof GatewayStatus){
                     // set the caches that already exist
                     nodeStatus.setRequestCounterCache(((GatewayStatus) node).getRequestCounterCache());
@@ -103,7 +103,8 @@ public class ClusterStatusWorker extends SwingWorker {
             }
 
             // add the node to the new list
-            newNodeList.put(nodeStatus.getName(), nodeStatus);
+            newNodeList.put(nodeStatus.getNodeId(), nodeStatus);
+
         }
 
         // retrieve service usage
@@ -163,6 +164,7 @@ public class ClusterStatusWorker extends SwingWorker {
                 }
             }
 
+//            System.out.println("Node id is: " + serviceStats[i].getNodeid());
             // update counter in the node record for calculating load sharing and request failure percentage
             if((node = newNodeList.get(serviceStats[i].getNodeid())) != null){
                 if(node instanceof GatewayStatus){
@@ -170,6 +172,9 @@ public class ClusterStatusWorker extends SwingWorker {
 
                     gatewayNode.updateCompletedCounterCache(serviceStats[i].getCompleted());
                     gatewayNode.updateRequestCounterCache(serviceStats[i].getRequests());
+//                    System.out.println("Node is: " + gatewayNode.getName());
+//                    System.out.println("adding completedCount to cache: " + serviceStats[i].getCompleted());
+//                    System.out.println("adding AttempCount to cache: " + serviceStats[i].getRequests());
                 }
             }
         }

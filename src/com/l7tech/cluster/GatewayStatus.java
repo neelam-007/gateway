@@ -55,14 +55,20 @@ public class GatewayStatus {
     public int getRequestFailure() {
         long totalRequest = getTotalCountFromCache(requestCounterCache);
 
+        System.out.println("Node is: " + getName());
+        System.out.println("totalRequest : " + totalRequest);
         if(totalRequest > 0) {
             long totalCompleted = getTotalCountFromCache(completedCounterCache);
+            System.out.println("totalCompleted : " + totalCompleted);
 
             return (new Long((totalRequest - totalCompleted)*100/ totalRequest)).intValue();
         }
         else {
+            System.out.println("totalRequest : 0");
             return 0;
         }
+
+
     }
 
     /**
@@ -109,11 +115,13 @@ public class GatewayStatus {
 
     public void updateRequestCounterCache(long newCount) {
 
-        if(addCompletedCounterInCache){
+ //       System.out.println("Add new counter in requestCounterCache - flag: " + addRequestCounterInCache);
+
+        if(addRequestCounterInCache){
             updateCounterCache(requestCounterCache, newCount, true);
 
             // add a counter only the first time, reset the flag
-            addCompletedCounterInCache = false;
+            addRequestCounterInCache = false;
         }
         else{
             updateCounterCache(requestCounterCache, newCount, false);
@@ -122,6 +130,8 @@ public class GatewayStatus {
     }
 
     public void updateCompletedCounterCache(long newCount) {
+
+ //       System.out.println("Add new counter in completedCounterCache - flag: " + addCompletedCounterInCache);
 
         if(addCompletedCounterInCache){
             updateCounterCache(completedCounterCache, newCount, true);
@@ -196,10 +206,13 @@ public class GatewayStatus {
          return secondLastUpdateTimeStamp;
      }
 
-     public void setSecondLastUpdateTimeStamp(long secondLastUpdateTime) {
-         this.secondLastUpdateTimeStamp = secondLastUpdateTime;
-     }
+    public void setSecondLastUpdateTimeStamp(long secondLastUpdateTime) {
+        this.secondLastUpdateTimeStamp = secondLastUpdateTime;
+    }
 
+    public String getNodeId(){
+        return clusterInfo.getMac();
+    }
 
     private final ClusterNodeInfo clusterInfo;
     private int status;
