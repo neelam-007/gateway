@@ -41,12 +41,14 @@ public class AuthenticationAxisHandler extends InternalIDSecurityAxisHandler {
 
         // Process the Basic Auth stuff in the headers
         String tmp = (String)messageContext.getProperty(HTTPConstants.HEADER_AUTHORIZATION);
-
         if (tmp != null ) tmp = tmp.trim();
         if (tmp != null && tmp.startsWith("Basic ")) {
             // GET THE AUTH VALUE
             String login = null;
             String decodedAuthValue = new String(Base64.decode(tmp.substring(6)));
+            if (decodedAuthValue == null) {
+                throw new AxisFault("cannot decode basic header");
+            }
             int i = decodedAuthValue.indexOf( ':' );
             if (i == -1) login = decodedAuthValue;
             else login = decodedAuthValue.substring( 0, i);

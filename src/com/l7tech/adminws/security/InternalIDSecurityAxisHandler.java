@@ -79,6 +79,9 @@ public abstract class InternalIDSecurityAxisHandler extends org.apache.axis.hand
         } catch (FindException e) {
             e.printStackTrace(System.err);
             return null;
+        } catch (NullPointerException e){
+            e.printStackTrace(System.err);
+            return null;
         } finally {
             endTransaction();
         }
