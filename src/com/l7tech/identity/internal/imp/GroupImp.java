@@ -3,7 +3,7 @@
  */
 package com.l7tech.identity.internal.imp;
 
-import java.util.Collection;
+import java.util.Set;
 
 import com.l7tech.identity.Group;
 import com.l7tech.objectmodel.imp.NamedEntityImp;
@@ -20,21 +20,19 @@ public class GroupImp extends NamedEntityImp implements Group {
         return _description;
     }
 
-    public Collection getMembers() {
-        if (_members == null) _members = new java.util.ArrayList();
+    public Set getMembers() {
         return _members;
     }
 
-    public Collection getMemberHeaders() {
-        if (_memberHeaders == null) _memberHeaders = new java.util.ArrayList();
+    public Set getMemberHeaders() {
         return _memberHeaders;
     }
 
-    public void setMembers( Collection members ) {
+    public void setMembers( Set members ) {
         _members = members;
     }
 
-    public void setMemberHeaders( Collection memberHeaders ) {
+    public void setMemberHeaders( Set memberHeaders ) {
         _memberHeaders = memberHeaders;
     }
 
@@ -48,6 +46,6 @@ public class GroupImp extends NamedEntityImp implements Group {
 
     private long _providerOid;
     private String _description;
-    private Collection _members;
-    private Collection _memberHeaders;
+    private Set _members;
+    private Set _memberHeaders;
 }

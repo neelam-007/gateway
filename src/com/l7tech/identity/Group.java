@@ -2,17 +2,17 @@ package com.l7tech.identity;
 
 import com.l7tech.objectmodel.NamedEntity;
 
-import java.util.Collection;
+import java.util.Set;
 
 public interface Group extends NamedEntity {
     long getProviderOid();
     String getDescription();
 
-    Collection getMembers();
-    Collection getMemberHeaders();
+    Set getMembers();
+    Set getMemberHeaders();
 
-    void setMembers( Collection members );
-    void setMemberHeaders( Collection memberHeaders );
+    void setMembers( Set members );
+    void setMemberHeaders( Set memberHeaders );
 
     void setProviderOid( long oid );
     void setDescription( String description );
