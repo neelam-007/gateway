@@ -45,12 +45,11 @@ public class SsgPropertyDialogTest extends TestCase {
 
     public void testSomeStuff() throws Exception {
         Ssg ssg = new Ssg(1, "Test SSG", "http://blah.bloof.com");
-        log.info("SSG prompt bit: " + ssg.isPromptForUsernameAndPassword());
         ssg.attachPolicy("http://blah",  "http://gwerg.asd.gfa", new AllAssertion(Arrays.asList(new Assertion[] {
             new HttpBasic(),
             new SpecificUser(444, "blahuser"),
         })));
-        ssg.attachPolicy("http://example.com/Other",
+        ssg.attachPolicy("http://HugeTree.com/Other",
                          "http://example.com/soapaction/other",
                          new AllAssertion(Arrays.asList(new Assertion[] {
                              new OneOrMoreAssertion(Arrays.asList(new Assertion[] {
