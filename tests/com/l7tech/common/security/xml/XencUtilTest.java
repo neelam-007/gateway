@@ -84,9 +84,16 @@ public class XencUtilTest extends TestCase {
     }
 
     public void testWeirdLeadin0InSunJCE() throws Exception {
+        System.out.println("USING PROVIDER: " + JceProvider.getAsymmetricJceProvider().getName());
+        if (!JceProvider.getAsymmetricJceProvider().getName().equals("BC")) {
+            System.out.println("This test is meant to be ran with BC provider. Aborting.");
+            return;
+        }
         PrivateKey pkey = TestDocuments.getDotNetServerPrivateKey();
         String keypaddedandencryptedwithsunjce = "TK0T2LPWmCYDUtE32P7s7aVvjnfJ9flQm+GOiriGyY677g2/RgDbWncSJcPipm1zRmYRkmvKbNYFpReVl1SrVqsCbYudX/y8WQyI3LVInoc3TNfBPryphoVrxtjLDeAhfxxdsxYSq12Ze62RvLr3Y3k9vxaKotJcOejMtyHj9T4=";
         byte[] decrypted = XencUtil.decryptKey(keypaddedandencryptedwithsunjce, pkey);
+        byte[] originalBytes = HexUtils.unHexDump("954daf423cea7911cc5cb9b664d4c38d");
+        assertTrue(Arrays.equals(originalBytes, decrypted));
     }
 
 }
