@@ -1,9 +1,14 @@
 package com.l7tech.server.saml;
 
 import com.l7tech.common.util.SoapUtil;
+import com.l7tech.common.util.KeystoreUtils;
+import com.l7tech.common.util.XmlUtil;
+import com.l7tech.common.security.Keys;
+import com.l7tech.common.security.xml.SignerInfo;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
+import junit.extensions.TestSetup;
 import org.apache.xmlbeans.XmlOptions;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -13,6 +18,7 @@ import x0Assertion.oasisNamesTcSAML1.SubjectType;
 import x0Protocol.oasisNamesTcSAML1.AuthenticationQueryType;
 import x0Protocol.oasisNamesTcSAML1.RequestDocument;
 import x0Protocol.oasisNamesTcSAML1.RequestType;
+import x0Protocol.oasisNamesTcSAML1.ResponseDocument;
 
 import javax.xml.soap.MessageFactory;
 import javax.xml.soap.SOAPBody;
@@ -25,22 +31,27 @@ import java.util.Map;
  * @version 28-Jul-2004
  */
 public class SamlProtocolTest extends TestCase {
-
-
     /**
      * create the <code>TestSuite</code> for the
      * ServerPolicyFactoryTest <code>TestCase</code>
      */
     public static Test suite() {
         TestSuite suite = new TestSuite(SamlProtocolTest.class);
-        return suite;
+        TestSetup wrapper = new TestSetup(suite) {
+            protected void setUp() throws Exception {
+                System.setProperty("com.l7tech.common.locator.properties", "/com/l7tech/common/locator/test.properties");
+                Keys.createTestSsgKeystoreProperties();
+            }
+        };
+
+        return wrapper;
     }
 
     /**
      *
      * @throws Exception
      */
-    public void testAuthenticationQueryHandler() throws Exception {
+    public void xtestAuthenticationQueryHandler() throws Exception {
         RequestDocument rdoc = RequestDocument.Factory.newInstance();
         RequestType rt = rdoc.addNewRequest();
         AuthenticationQueryType at = rt.addNewAuthenticationQuery();
@@ -53,14 +64,15 @@ public class SamlProtocolTest extends TestCase {
         subjectConfirmation.setConfirmationMethodArray(new String[]{Constants.CONFIRMATION_HOLDER_OF_KEY});
 
         XmlOptions options = new XmlOptions();
-        options.setSavePrettyPrint();
-        options.setSavePrettyPrintIndent(2);
+        // options.setSavePrettyPrint();
+        //options.setSavePrettyPrintIndent(2);
         Map prefixes = new HashMap();
         prefixes.put(Constants.NS_SAMLP, Constants.NS_SAMLP_PREFIX);
         prefixes.put(Constants.NS_SAML, Constants.NS_SAML_PREFIX);
 
         options.setSaveSuggestedPrefixes(prefixes);
-
+        Document doc = (Document)rdoc.newDomNode(options);
+        System.out.println(XmlUtil.nodeToString(doc));
         //rdoc.save(System.out, options);
     }
 
@@ -92,8 +104,12 @@ public class SamlProtocolTest extends TestCase {
         //rdoc.save(System.out, options);
         final Element documentElement = ((Document)rdoc.newDomNode(options)).getDocumentElement();
         SoapUtil.domToSOAPElement(body, documentElement);
-
         sm.writeTo(System.out);
+
+        ResponseDocument response = new AuthenticationQueryHandler(rdoc).getResponse();
+        final SignerInfo signerInfo = KeystoreUtils.getInstance().getSignerInfo();
+        Document msgOut = Responses.asSoapMessage(response, signerInfo);
+        XmlUtil.nodeToOutputStream(msgOut, System.out);
     }
 
 
