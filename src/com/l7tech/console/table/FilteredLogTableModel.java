@@ -18,7 +18,7 @@ import java.util.Iterator;
 
 public class FilteredLogTableModel extends FilteredDefaultTableModel {
 
-    public static final int MAX_MESSAGE_BLOCK_SIZE = 100;
+    public static final int MAX_MESSAGE_BLOCK_SIZE = 600;
     public static final int MAX_NUMBER_OF_LOG_MESSGAES = 4096;
 
     protected Hashtable rawLogCache = new Hashtable();
