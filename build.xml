@@ -1209,6 +1209,7 @@
                 <include name="resetAdmin.sh"/>
                 <include name="md5passwd.pl"/>
                 <include name="rpass.pl"/>
+                <include name="install.pl"/>
                 <include name="ssgruntimedefs.sh"/>
                 <include name="clean_db.pl"/>
                 <include name="dbfaildetect.sh"/>
