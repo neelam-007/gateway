@@ -146,8 +146,8 @@ public class MessageViewerModel extends AbstractListModel implements RequestInte
      * Can be called from any thread.
      * @param reply
      */
-    public void onReceiveReply(final SOAPEnvelope reply) {
-        appendMessage(new SavedXmlMessage("From Server", reply));
+    public void onReceiveReply(final String reply) {
+        appendMessage(new SavedTextMessage("From Server", reply));
     }
 
     /**

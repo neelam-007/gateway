@@ -27,7 +27,7 @@ public class NullRequestInterceptor implements RequestInterceptor {
      * Fired when a reply is read from the SSG, but before it is parsed.
      * @param reply
      */
-    public void onReceiveReply(final SOAPEnvelope reply) {
+    public void onReceiveReply(final String reply) {
     }
 
     /**

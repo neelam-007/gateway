@@ -100,21 +100,21 @@ public class RequestHandler extends AbstractHttpHandler {
 
         final SOAPEnvelope requestEnvelope = getRequestEnvelope(request);
 
-        final SOAPEnvelope responseEnvelope = getServerResponse(request, ssg, requestEnvelope);
+        final String responseString = getServerResponse(request, ssg, requestEnvelope);
 
-        transmitResponse(response, responseEnvelope);
+        transmitResponse(response, responseString);
     }
 
     /**
      * Send the reponse SOAPEnvelope back to the client.
      * @param response          the interested client's HttpResponse
-     * @param responseEnvelope  the SOAPEnvelope we are to send them
+     * @param responseString  the response we are to send them
      * @throws IOException      if something went wrong
      */
-    private void transmitResponse(final HttpResponse response, final SOAPEnvelope responseEnvelope) throws IOException {
+    private void transmitResponse(final HttpResponse response, final String responseString) throws IOException {
         try {
             response.addField("Content-Type", "text/xml");
-            response.getOutputStream().write(responseEnvelope.toString().getBytes());
+            response.getOutputStream().write(responseString.getBytes());
             response.commit();
         } catch (IOException e) {
             interceptor.onReplyError(e);
@@ -183,7 +183,7 @@ public class RequestHandler extends AbstractHttpHandler {
      * @return                  the response it sends back
      * @throws HttpException    if there was Trouble
      */
-    private SOAPEnvelope getServerResponse(final HttpRequest request,
+    private String getServerResponse(final HttpRequest request,
                                            final Ssg ssg,
                                            final SOAPEnvelope requestEnvelope)
             throws HttpException
@@ -192,7 +192,7 @@ public class RequestHandler extends AbstractHttpHandler {
 
         try {
             PendingRequest pendingRequest = gatherRequest(request, requestEnvelope, ssg);
-            SOAPEnvelope reply = messageProcessor.processMessage(pendingRequest);
+            String reply = messageProcessor.processMessage(pendingRequest);
             interceptor.onReceiveReply(reply);
             log.info("Returning result");
             return reply;

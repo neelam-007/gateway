@@ -20,7 +20,7 @@ public interface RequestInterceptor {
      * Fired when a reply is read from the SSG, after it is parsed.
      * @param reply
      */
-    public void onReceiveReply(SOAPEnvelope reply);
+    public void onReceiveReply(String reply);
 
     /**
      * Fired when an error is encountered while reading the message from a client.

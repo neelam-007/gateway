@@ -1,12 +1,7 @@
 package com.l7tech.proxy;
 
-import com.l7tech.policy.assertion.Assertion;
-import com.l7tech.policy.assertion.SslAssertion;
 import com.l7tech.policy.assertion.TrueAssertion;
-import com.l7tech.policy.assertion.composite.AllAssertion;
-import com.l7tech.policy.assertion.composite.ExactlyOneAssertion;
 import com.l7tech.policy.assertion.credential.http.HttpBasic;
-import com.l7tech.policy.assertion.credential.http.HttpDigest;
 import com.l7tech.proxy.datamodel.PolicyManagerStub;
 import com.l7tech.proxy.datamodel.Ssg;
 import com.l7tech.proxy.datamodel.SsgManagerStub;
@@ -17,16 +12,20 @@ import org.apache.axis.AxisEngine;
 import org.apache.axis.AxisFault;
 import org.apache.axis.client.Call;
 import org.apache.axis.encoding.DeserializationContextImpl;
-import org.apache.axis.message.*;
+import org.apache.axis.message.MessageElement;
+import org.apache.axis.message.SOAPBodyElement;
+import org.apache.axis.message.SOAPEnvelope;
+import org.apache.axis.message.SOAPHandler;
+import org.apache.axis.message.SOAPHeader;
 import org.apache.axis.soap.SOAPConstants;
+import org.apache.log4j.Category;
 import org.mortbay.util.MultiException;
 import org.xml.sax.helpers.AttributesImpl;
 
 import javax.xml.soap.SOAPException;
+import java.io.IOException;
 import java.net.MalformedURLException;
 import java.rmi.RemoteException;
-import java.util.Arrays;
-import java.io.IOException;
 
 /**
  * Test message processing.
@@ -35,6 +34,7 @@ import java.io.IOException;
  * Time: 12:05:43 PM
  */
 public class FunctionalTest extends TestCase {
+    private static final Category log = Category.getInstance(FunctionalTest.class);
     private static final String pingNamespace = "http://services.l7tech.com/soap/demos/Ping";
     private static final String pingPrefix = "p";
     private static final String ssg0ProxyEndpoint = "ssg0";
@@ -48,6 +48,7 @@ public class FunctionalTest extends TestCase {
     private PolicyManagerStub policyManager = new PolicyManagerStub();
     private String ssgUrl;
     private String proxyUrl;
+    private Ssg ssgFake;
 
     public FunctionalTest(String name) {
         super(name);
@@ -89,7 +90,7 @@ public class FunctionalTest extends TestCase {
         // Configure the client proxy
         ssgManager = new SsgManagerStub();
         ssgManager.clear();
-        Ssg ssgFake = ssgManager.createSsg();
+        ssgFake = ssgManager.createSsg();
         ssgFake.setName("SSG Faker");
         ssgFake.setLocalEndpoint(ssg0ProxyEndpoint);
         ssgFake.setServerUrl(ssgUrl);
@@ -139,6 +140,8 @@ public class FunctionalTest extends TestCase {
         String payload = "ping 1 2 3";
         SOAPEnvelope reqEnvelope = makePingRequest(payload);
 
+        policyManager.setPolicy(new TrueAssertion());
+
         Call call = new Call(proxyUrl + ssg0ProxyEndpoint);
         SOAPEnvelope responseEnvelope = call.invoke(reqEnvelope);
 
@@ -147,6 +150,43 @@ public class FunctionalTest extends TestCase {
         MessageElement re = (MessageElement)responseEnvelope.getBody().getChildElements().next();
         MessageElement rec = (MessageElement)re.getChildren().get(0);
         assertTrue(rec.getValue().equals(payload));
+    }
+
+    public void testBasicAuthPing() throws SOAPException, RemoteException, MalformedURLException {
+        String payload = "ping 1 2 3";
+        SOAPEnvelope reqEnvelope = makePingRequest(payload);
+
+        policyManager.setPolicy(new HttpBasic());
+        ssgFake.setServerUrl(ssgUrl + "/basicauth");
+        ssgFake.setUsername("testuser");
+        ssgFake.setPassword("testpassword");
+
+        Call call = new Call(proxyUrl + ssg0ProxyEndpoint);
+        SOAPEnvelope responseEnvelope = call.invoke(reqEnvelope);
+
+        System.out.println("Client:  I Sent: " + reqEnvelope);
+        System.out.println("Client:  I Got back: " + responseEnvelope);
+        MessageElement re = (MessageElement)responseEnvelope.getBody().getChildElements().next();
+        MessageElement rec = (MessageElement)re.getChildren().get(0);
+        assertTrue(rec.getValue().equals(payload));
+    }
+
+    public void testSsgFault() throws Exception {
+        String payload = "ping 1 2 3";
+        SOAPEnvelope reqEnvelope = makePingRequest(payload);
+
+        ssgFake.setServerUrl(ssgUrl + "/throwfault");
+
+        boolean threwAxisFault = false;
+        try {
+            Call call = new Call(proxyUrl + ssg0ProxyEndpoint);
+            call.invoke(reqEnvelope);
+        } catch (AxisFault e) {
+            threwAxisFault = true;
+            log.error("EndUserClient: SOAP call to CP threw expected exception: " + e.getClass().getName());
+        }
+        assertTrue(threwAxisFault);
+
     }
 
     public void testSslBasicAuthPing() throws SOAPException, RemoteException, MalformedURLException {

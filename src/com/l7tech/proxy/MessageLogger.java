@@ -33,7 +33,7 @@ public class MessageLogger implements RequestInterceptor {
      * Fired when a reply is read from the SSG, after it is parsed.
      * @param reply
      */
-    public void onReceiveReply(SOAPEnvelope reply) {
+    public void onReceiveReply(String reply) {
         log.info("Received server response: " + reply);
     }
 

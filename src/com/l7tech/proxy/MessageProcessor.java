@@ -7,27 +7,27 @@
 package com.l7tech.proxy;
 
 import com.l7tech.policy.assertion.Assertion;
-import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.AssertionStatus;
+import com.l7tech.policy.assertion.PolicyAssertionException;
+import com.l7tech.proxy.datamodel.Managers;
 import com.l7tech.proxy.datamodel.PendingRequest;
 import com.l7tech.proxy.datamodel.PolicyManager;
 import com.l7tech.proxy.datamodel.Ssg;
-import com.l7tech.proxy.datamodel.Managers;
 import com.l7tech.proxy.util.ThreadLocalHttpClient;
-import org.apache.axis.message.SOAPEnvelope;
+import org.apache.commons.httpclient.Header;
 import org.apache.commons.httpclient.HttpClient;
 import org.apache.commons.httpclient.HttpState;
 import org.apache.commons.httpclient.UsernamePasswordCredentials;
-import org.apache.commons.httpclient.Header;
 import org.apache.commons.httpclient.methods.PostMethod;
 import org.apache.log4j.Category;
 import org.xml.sax.SAXException;
 
+import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.util.Arrays;
 
 /**
  * Class that processes messages in request->response fashion.
@@ -49,13 +49,13 @@ public class MessageProcessor {
      * Given a request from a client, decorates it according to policy, sends it to the SSG, and
      * returns the response.
      * @param pendingRequest
-     * @return the SOAP Envelope returned by the server
+     * @return String containing the message returned by the server
      * @throws PolicyAssertionException if the policy could not be fulfilled for this request to this SSG
      * @throws ConfigurationException if the SSG configuration is not valid
      * @throws IOException if there was a problem obtaining the response from the server
      * @throws SAXException if the response from the server was not a valid SOAP envelope
      */
-    public SOAPEnvelope processMessage(PendingRequest pendingRequest)
+    public String processMessage(PendingRequest pendingRequest)
             throws PolicyAssertionException, ConfigurationException, SAXException, IOException
     {
         Assertion policy = policyManager.getPolicy(pendingRequest);
@@ -77,14 +77,14 @@ public class MessageProcessor {
      * Transmit the modified request to the SSG and return its response.
      * We may make more than one call to the SSG if we need to resolve a policy.
      * @param pendingRequest
-     * @return SOAPEnvelope containing the response message from the server.
+     * @return String containing the response message from the server.
      * @throws ConfigurationException if the SSG configuration is not valid
      * @throws IOException if there was a problem obtaining the response from the server
      * @throws SAXException if the response from the server was not a valid SOAP envelope
      * @throws PolicyAssertionException if our internal recursive call to processMessage() threw it
      */
     // You might want to close your eyes for this part
-    private SOAPEnvelope callSsg(PendingRequest pendingRequest)
+    private String callSsg(PendingRequest pendingRequest)
             throws ConfigurationException, IOException, SAXException, PolicyAssertionException
     {
         Ssg ssg = pendingRequest.getSsg();
@@ -163,19 +163,13 @@ public class MessageProcessor {
 
             try {
                 final InputStream responseStream = postMethod.getResponseBodyAsStream();
-                SOAPEnvelope response = new SOAPEnvelope(new InputStream() {
-                    StringBuffer accum = new StringBuffer(1024);
-                    public int read() throws IOException {
-                        int c = responseStream.read();
-                        if (c == -1) {
-                            log.info("Read server response: " + accum);
-                        } else {
-                            accum.append((char)c);
-                        }
-                        return c;
-                    }
-                });
-                return response;
+                BufferedReader reader = new BufferedReader(new InputStreamReader(responseStream));
+                StringBuffer response = new StringBuffer();
+                String line;
+                while ((line = reader.readLine()) != null)
+                    response.append(line);
+                log.info("Got response from SSG: " + response);
+                return response.toString();
             } catch (NullPointerException e) {
                 log.error(e);
                 e.printStackTrace();
