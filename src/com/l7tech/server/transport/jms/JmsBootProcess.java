@@ -33,7 +33,7 @@ public class JmsBootProcess implements ServerComponentLifecycle {
         if ( _booted ) throw new LifecycleException( "Can't boot JmsBootProcess twice!" );
 
         try {
-            Collection connections = _manager.findAllHeaders();
+            Collection connections = _manager.findAll();
             for (Iterator i = connections.iterator(); i.hasNext();) {
                 JmsConnection conn = (JmsConnection)i.next();
                 _logger.info( "Initializing JMS receiver '" + conn.getName() + "'..." );
@@ -42,6 +42,7 @@ public class JmsBootProcess implements ServerComponentLifecycle {
                     JmsEndpoint requestEnd = (JmsEndpoint) j.next();
                     JmsEndpoint replyToEnd = requestEnd.getReplyEndpoint();
                     JmsEndpoint failureEnd = requestEnd.getFailureEndpoint();
+                    _logger.info( "Initializing JMS receiver for '" + conn.getName() + "/" + requestEnd.getName() + "'" );
                     JmsReceiver receiver = new JmsReceiver(
                             conn,
                             JmsReplyType.AUTOMATIC, // TODO Hardcoded
