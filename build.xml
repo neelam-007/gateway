@@ -139,8 +139,8 @@
           ** jaxrpc.jar and saaj.jar contain javax packages, so may not get picked up.
           ** Copy such libraries into $TOMCAT_HOME/common/lib
           **  -->
-        <copy todir="${tomcat.home}/lib/common">
-            <fileset dir="${build.dir}/lib" includes="jaxrpc.jar. saaj.jar"/>
+        <copy todir="${tomcat.home}/common/lib">
+            <fileset dir="${build.dir}/lib" includes="jaxrpc.jar, saaj.jar"/>
         </copy>
     </target>
 
