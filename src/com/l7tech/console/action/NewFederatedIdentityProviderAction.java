@@ -6,10 +6,14 @@ import com.l7tech.console.tree.identity.IdentityProvidersTree;
 import com.l7tech.console.panels.*;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.console.event.*;
+import com.l7tech.console.logging.ErrorManager;
 import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.common.util.Locator;
 import com.l7tech.identity.IdentityProviderConfigManager;
+import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.objectmodel.EntityHeader;
+import com.l7tech.objectmodel.EntityType;
+import com.l7tech.objectmodel.SaveException;
 
 import javax.swing.event.EventListenerList;
 import javax.swing.*;
@@ -18,6 +22,7 @@ import javax.swing.tree.DefaultTreeModel;
 import javax.swing.tree.TreeNode;
 import java.util.logging.Logger;
 import java.util.logging.Level;
+import java.util.EventListener;
 
 /**
  * <p> Copyright (C) 2004 Layer 7 Technologies Inc.</p>
@@ -67,12 +72,18 @@ public class NewFederatedIdentityProviderAction extends NodeAction {
             public void run() {
 
                 JFrame f = TopComponents.getInstance().getMainWindow();
-                FederatedIdentityProviderWindow w = new FederatedIdentityProviderWindow(f);
+
+                FederatedIPGeneralPanel configPanel = new FederatedIPGeneralPanel(
+                                               new FederatedIPX509CertPanel (
+                                               new FederatedIPSamlPanel(
+                                               new FederatedIPTrustedCertsPanel(null))));
+                CreateFederatedIPWizard w = new CreateFederatedIPWizard(f, configPanel);
+                //FederatedIdentityProviderWindow w = new FederatedIdentityProviderWindow(f);
 
                 // register itself to listen to the addEvent
-                w.addEntityListener(listener);
+                w.addWizardListener(wizardListener);
 
-                w.setSize(550, 400);
+                w.setSize(820, 500);
                 Utilities.centerOnScreen(w);
                 w.setVisible(true);
 
@@ -93,37 +104,51 @@ public class NewFederatedIdentityProviderAction extends NodeAction {
         return ipc;
     }
 
-    private EntityListener listener = new EntityListenerAdapter() {
-        /**
-         * Fired when an new entity is added.
-         *
-         * @param ev event describing the action
-         */
-        public void entityAdded(final EntityEvent ev) {
-            if (node == null) {
-                log.fine("Parent node has not been set - skipping notificaiton.");
-                return;
-            }
-            SwingUtilities.invokeLater(new Runnable() {
-                public void run() {
-                    EntityHeader eh = (EntityHeader)ev.getEntity();
-                    JTree tree = (JTree)TopComponents.getInstance().getComponent(IdentityProvidersTree.NAME);
-                    if (tree == null) {
-                        log.log(Level.WARNING, "Unable to reach the identity tree.");
-                        return;
-                    }
-                    if (tree.hasBeenExpanded(new TreePath(node.getPath()))) {
-                        DefaultTreeModel model = (DefaultTreeModel)tree.getModel();
 
-                        final AbstractTreeNode newChildNode = TreeNodeFactory.asTreeNode(eh);
-                        model.insertNodeInto(newChildNode, node, node.getInsertPosition(newChildNode));
-                        TreeNode[] nodePath = model.getPathToRoot(newChildNode);
-                        if (nodePath != null) {
-                            tree.setSelectionPath(new TreePath(nodePath));
-                        }
-                    }
-                }
-            });
+    private WizardListener wizardListener = new WizardAdapter() {
+        /**
+         * Invoked when the wizard has finished.
+         *
+         * @param we the event describing the wizard finish
+         */
+        public void wizardFinished(WizardEvent we) {
+
+            // update the provider
+            Wizard w = (Wizard) we.getSource();
+            final IdentityProviderConfig iProvider = (IdentityProviderConfig) w.getCollectedInformation();
+
+            if (iProvider != null) {
+
+                SwingUtilities.invokeLater(
+                        new Runnable() {
+                            public void run() {
+                                EntityHeader header = new EntityHeader();
+                                header.setName(iProvider.getName());
+                                header.setType(EntityType.ID_PROVIDER_CONFIG);
+                                try {
+                                    header.setOid(getProviderConfigManager().save(iProvider));
+                                } catch (SaveException e) {
+                                    ErrorManager.getDefault().notify(Level.WARNING, e, "Error saving the new identity provider: " + header.getName());
+                                    header = null;
+                                }
+                                if (header != null) fireEventProviderAdded(header);
+                            }
+                        });
+            }
         }
+
     };
+
+    /**
+     * notfy the listeners that the entity has been added
+     * @param header
+     */
+    private void fireEventProviderAdded(EntityHeader header) {
+        EntityEvent event = new EntityEvent(this, header);
+        EventListener[] listeners = listenerList.getListeners(EntityListener.class);
+        for (int i = 0; i < listeners.length; i++) {
+            ((EntityListener) listeners[i]).entityAdded(event);
+        }
+    }
+
 }
