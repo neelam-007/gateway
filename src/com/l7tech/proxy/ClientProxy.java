@@ -57,9 +57,9 @@ public class ClientProxy {
     private int minThreads;
     private int bindPort;
 
-    private boolean isRunning = false;
-    private boolean isDestroyed = false;
-    private boolean isInitialized = false;
+    private volatile boolean isRunning = false;
+    private volatile boolean isDestroyed = false;
+    private volatile boolean isInitialized = false;
 
     /**
      * Create a ClientProxy with the specified settings.
