@@ -307,7 +307,7 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
                                              GridBagConstraints.NONE,
                                              new Insets(5, 5, 0, 0), 0, 0));
 
-            cbChainFromClient = new JCheckBox("Use credentials from client (HTTP Basic)");
+            cbChainFromClient = new JCheckBox("Use credentials from client (HTTP Basic Authentication)");
             cbChainFromClient.addActionListener(new ActionListener() {
                 public void actionPerformed(ActionEvent e) {
                     updateIdentityEnableState();
