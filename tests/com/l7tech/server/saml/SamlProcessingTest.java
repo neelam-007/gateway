@@ -18,6 +18,7 @@ import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.HttpRoutingAssertion;
 import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
+import com.l7tech.policy.assertion.credential.http.HttpBasic;
 import com.l7tech.policy.assertion.xmlsec.RequestWssX509Cert;
 import com.l7tech.policy.assertion.xmlsec.SamlAttributeStatement;
 import com.l7tech.policy.assertion.xmlsec.SamlAuthenticationStatement;
@@ -159,9 +160,10 @@ public class SamlProcessingTest extends TestCase {
         samlOptions.setClientAddress(InetAddress.getLocalHost());
         samlOptions.setAttestingEntity(holderOfKeySigner);
         SamlAssertionGenerator samlGenerator = new SamlAssertionGenerator(authorityKeys.asSignerInfo());
-        SubjectStatement subjectStatement =
-          SubjectStatement.createAuthenticationStatement(LoginCredentials.makeCertificateCredentials(holderOfKeySigner.getCertificateChain()[0], RequestWssX509Cert.class),
-          SubjectStatement.SENDER_VOUCHES);
+        final String name = holderOfKeySigner.getCertificateChain()[0].getSubjectDN().getName();
+          final LoginCredentials credentials = LoginCredentials.makePasswordCredentials(name, new char[] {}, HttpBasic.class);
+
+        SubjectStatement subjectStatement = SubjectStatement.createAuthenticationStatement(credentials, SubjectStatement.SENDER_VOUCHES);
 
         for (int i = 0; i < serviceDescriptors.length; i++) {
             ServiceDescriptor serviceDescriptor = serviceDescriptors[i];
@@ -203,7 +205,8 @@ public class SamlProcessingTest extends TestCase {
         samlOptions.setClientAddress(InetAddress.getLocalHost());
         samlOptions.setAttestingEntity(holderOfKeySigner);
         SamlAssertionGenerator samlGenerator = new SamlAssertionGenerator(authorityKeys.asSignerInfo());
-        final LoginCredentials credentials = LoginCredentials.makeCertificateCredentials(holderOfKeySigner.getCertificateChain()[0], RequestWssX509Cert.class);
+        final String name = holderOfKeySigner.getCertificateChain()[0].getSubjectDN().getName();
+        final LoginCredentials credentials = LoginCredentials.makePasswordCredentials(name, new char[] {}, HttpBasic.class);
         SubjectStatement subjectStatement = SubjectStatement.createAuthorizationStatement(credentials,
           SubjectStatement.SENDER_VOUCHES, "http://wheel", null, null);
 

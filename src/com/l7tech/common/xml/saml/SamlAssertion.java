@@ -136,10 +136,32 @@ public class SamlAssertion implements SamlSecurityToken {
             SubjectConfirmationType subjectConfirmation = subject.getSubjectConfirmation();
 
             if (subjectConfirmation != null) {
+                String[] confMethods = subjectConfirmation.getConfirmationMethodArray();
+                if (confMethods == null || confMethods.length != 1) {
+                    throw new IllegalArgumentException("One and only one SubjectConfirmation/ConfirmationMethod must be present");
+                }
+                String confMethod = confMethods[0];
+                if (confMethod.indexOf("holder-of-key") >= 0) {
+                    confirmationMethod = HOLDER_OF_KEY;
+                    signingCertificate = subjectCertificate;
+                } else if (confMethod.indexOf("sender-vouches") >= 0) {
+                    confirmationMethod = SENDER_VOUCHES;
+                    signingCertificate = issuerCertificate;
+                } else {
+                    String msg = "Could not determine the saml ConfirmationMethod (neither holder-of-key nor sender-vouches)";
+                    logger.info(msg);
+                    confirmationMethod = null;
+                    signingCertificate = null;
+                }
+
                 KeyInfoType keyInfo = subjectConfirmation.getKeyInfo();
-                X509DataType[] x509datas = keyInfo.getX509DataArray();
-                X509DataType x509data = x509datas[0];
-                subjectCertificate = CertUtils.decodeCert(x509data.getX509CertificateArray(0));
+                if (keyInfo !=null) {
+                    X509DataType[] x509datas = keyInfo.getX509DataArray();
+                    if (x509datas !=null && x509datas.length > 0) {
+                        X509DataType x509data = x509datas[0];
+                        subjectCertificate = CertUtils.decodeCert(x509data.getX509CertificateArray(0));
+                    }
+                }
             }
 
             // Check if assertion is signed
@@ -159,25 +181,6 @@ public class SamlAssertion implements SamlSecurityToken {
                 if (issuerCertificate == null) throw new SAXException("SAML assertion is signed but unable to recover issuer certificate"); // can't happen
             }
 
-            if (subjectConfirmation != null) {
-                String[] confMethods = subjectConfirmation.getConfirmationMethodArray();
-                if (confMethods == null || confMethods.length != 1) {
-                    throw new IllegalArgumentException("One and only one SubjectConfirmation/ConfirmationMethod must be present");
-                }
-                String confMethod = confMethods[0];
-                if (confMethod.indexOf("holder-of-key") >= 0) {
-                    confirmationMethod = HOLDER_OF_KEY;
-                    signingCertificate = subjectCertificate;
-                } else if (confMethod.indexOf("sender-vouches") >= 0) {
-                    confirmationMethod = SENDER_VOUCHES;
-                    signingCertificate = issuerCertificate;
-                } else {
-                    String msg = "Could not determine the saml ConfirmationMethod (neither holder-of-key nor sender-vouches)";
-                    logger.info(msg);
-                    confirmationMethod = null;
-                    signingCertificate = null;
-                }
-            }
         } catch (XmlException e) {
             throw new SAXException(e);
         } catch ( CertificateException e ) {
