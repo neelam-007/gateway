@@ -2,6 +2,7 @@ package com.l7tech.console;
 
 import com.l7tech.console.util.*;
 import com.l7tech.console.panels.StatisticsPanel;
+import com.l7tech.console.panels.EditGatewayNameDialog;
 import com.l7tech.console.table.ClusterStatusTableSorter;
 import com.l7tech.console.table.LogTableModel;
 import com.l7tech.cluster.GatewayStatus;
@@ -10,6 +11,9 @@ import com.l7tech.console.icons.ArrowIcon;
 import com.l7tech.common.gui.util.ImageCache;
 import com.l7tech.common.util.Locator;
 import com.l7tech.service.ServiceAdmin;
+import com.l7tech.console.util.IconManager;
+import com.l7tech.objectmodel.UpdateException;
+import com.l7tech.objectmodel.DeleteException;
 
 import javax.swing.*;
 import javax.swing.table.*;
@@ -18,6 +22,7 @@ import java.util.logging.Logger;
 import java.awt.*;
 import java.awt.event.*;
 import java.text.SimpleDateFormat;
+import java.rmi.RemoteException;
 
 
 /*
@@ -37,6 +42,7 @@ public class ClusterStatusWindow extends JFrame {
     public static final int STATUS_TABLE_LOAD_AVERAGE_COLUMN_INDEX = 4;
     public static final int STATUS_TABLE_SERVER_UPTIME_COLUMN_INDEX = 5;
     public static final int STATUS_TABLE_IP_ADDDRESS_COLUMN_INDEX = 6;
+    public static final int STATUS_TABLE_NODE_ID_COLUMN_INDEX = 7;
     private javax.swing.JLabel serviceStatTitle = null;
     private javax.swing.JLabel clusterStatusTitle = null;
     private javax.swing.JLabel updateTimeStamp = null;
@@ -66,6 +72,7 @@ public class ClusterStatusWindow extends JFrame {
     public static final String RESOURCE_PATH = "com/l7tech/console/resources";
     private static ResourceBundle resapplication = java.util.ResourceBundle.getBundle("com.l7tech.console.resources.console");
     static Logger logger = Logger.getLogger(ClusterStatusWindow.class.getName());
+    private final ClassLoader cl = getClass().getClassLoader();
     private Icon upArrowIcon = new ArrowIcon(0);
     private Icon downArrowIcon = new ArrowIcon(1);
     private boolean canceled;
@@ -100,6 +107,15 @@ public class ClusterStatusWindow extends JFrame {
     private void exitMenuEventHandler() {
         getStatusRefreshTimer().stop();
         this.dispose();
+    }
+
+    /**
+     * Return the reference to the window object.
+     *
+     * @return JFrame
+     */
+    private JFrame getClusterStatusWindow() {
+        return this;
     }
 
     /**
@@ -213,6 +229,17 @@ public class ClusterStatusWindow extends JFrame {
         clusterStatusScrollPane.setViewportView(getClusterStatusTable());
         clusterStatusScrollPane.getViewport().setBackground(getClusterStatusTable().getBackground());
 
+        getClusterStatusTable().addMouseListener(new PopUpMouseListener() {
+            protected void popUpMenuHandler(MouseEvent mouseEvent) {
+                JPopupMenu menu = new JPopupMenu();
+                menu.add(new DeleteNodeEntryAction());
+                menu.add(new RenameNodeAction());
+                if (menu != null) {
+                    menu.show(mouseEvent.getComponent(), mouseEvent.getX(), mouseEvent.getY());
+                }
+            }
+        });
+
         clusterStatusPane.add(clusterStatusScrollPane, java.awt.BorderLayout.CENTER);
 
         clusterStatusTitle.setFont(new java.awt.Font("Dialog", 1, 18));
@@ -305,9 +332,13 @@ public class ClusterStatusWindow extends JFrame {
         clusterStatusTable.getColumnModel().getColumn(STATUS_TABLE_LOAD_SHARING_COLUMN_INDEX).setCellRenderer(loadShareRenderer);
         clusterStatusTable.getColumnModel().getColumn(STATUS_TABLE_REQUEST_ROUTED_COLUMN_INDEX).setCellRenderer(requestRoutedRenderer);
 
+        // don't show the following node status and id columns
         clusterStatusTable.getColumnModel().getColumn(STATUS_TABLE_NODE_STATUS_COLUMN_INDEX).setMinWidth(0);
         clusterStatusTable.getColumnModel().getColumn(STATUS_TABLE_NODE_STATUS_COLUMN_INDEX).setMaxWidth(0);
         clusterStatusTable.getColumnModel().getColumn(STATUS_TABLE_NODE_STATUS_COLUMN_INDEX).setPreferredWidth(0);
+        clusterStatusTable.getColumnModel().getColumn(STATUS_TABLE_NODE_ID_COLUMN_INDEX).setMinWidth(0);
+        clusterStatusTable.getColumnModel().getColumn(STATUS_TABLE_NODE_ID_COLUMN_INDEX).setMaxWidth(0);
+        clusterStatusTable.getColumnModel().getColumn(STATUS_TABLE_NODE_ID_COLUMN_INDEX).setPreferredWidth(0);
 
         clusterStatusTable.getColumnModel().getColumn(STATUS_TABLE_NODE_NAME_COLUMN_INDEX).setCellRenderer(
                 new DefaultTableCellRenderer() {
@@ -414,7 +445,7 @@ public class ClusterStatusWindow extends JFrame {
         Object[][] rows = new Object[][]{};
 
         String[] cols = new String[]{
-            "Status", "Gateway", "Load Sharing %", "Request Routed %", "Load Avg", "Uptime", "IP Address"
+            "Status", "Gateway", "Load Sharing %", "Request Routed %", "Load Avg", "Uptime", "IP Address", "Node Id"
         };
 
         clusterStatusTableSorter = new ClusterStatusTableSorter(new LogTableModel(rows, cols)) {};
@@ -775,6 +806,83 @@ public class ClusterStatusWindow extends JFrame {
             return this;
         }
     };
+
+    private class DeleteNodeEntryAction extends AbstractAction {
+        public DeleteNodeEntryAction() {
+            putValue(Action.NAME, "Delete Node");
+            putValue(Action.SHORT_DESCRIPTION, "Delete the node entry in the database");
+            putValue(Action.SMALL_ICON, new ImageIcon(cl.getResource(RESOURCE_PATH + "/delete.gif")));
+        }
+
+        /**
+         * Invoked when an action occurs.
+         */
+        public void actionPerformed(ActionEvent e) {
+
+            // get the selected row index
+            final int selectedRowIndexOld = getClusterStatusTable().getSelectedRow();
+            final String nodeNameSelected;
+
+            // save the number of selected message
+            if (selectedRowIndexOld >= 0) {
+                nodeNameSelected = (String) getClusterStatusTable().getValueAt(selectedRowIndexOld, STATUS_TABLE_NODE_NAME_COLUMN_INDEX);
+
+                // ask user to confirm                 // Make sure
+                if ((JOptionPane.showConfirmDialog(
+                        getClusterStatusWindow(),
+                        "Are you sure you wish to delete " +
+                        nodeNameSelected + "?",
+                        "Delete Stale Node",
+                        JOptionPane.YES_NO_OPTION)) == JOptionPane.YES_OPTION) {
+
+                    SwingUtilities.invokeLater(new Runnable() {
+                        public void run() {
+
+                            try {
+                                clusterStatusAdmin.removeStaleNode((String) getClusterStatusTable().getValueAt(selectedRowIndexOld, STATUS_TABLE_NODE_ID_COLUMN_INDEX));
+                                System.out.println("Delete the node: " + nodeNameSelected);
+
+                                //todo: update the display
+
+                            }catch (DeleteException e) {
+                                 logger.warning("Cannot delete the node: " + nodeNameSelected);
+                            }catch (RemoteException e) {
+                                 logger.warning("Remote Exception. Cannot delete the node: " + nodeNameSelected);
+                            }
+                        }
+                    });
+
+                }
+            } else {
+                nodeNameSelected = null;
+            }
+        }
+    }
+
+    private class RenameNodeAction extends AbstractAction {
+        public RenameNodeAction() {
+            putValue(Action.NAME, "Rename Node");
+            putValue(Action.SHORT_DESCRIPTION, "Change the node name");
+            putValue(Action.SMALL_ICON, new ImageIcon(cl.getResource(RESOURCE_PATH + "/Edit16.gif")));
+        }
+
+        /**
+         * Invoked when an action occurs.
+         */
+        public void actionPerformed(ActionEvent e) {
+            // get the selected row index
+             final int selectedRowIndexOld = getClusterStatusTable().getSelectedRow();
+             final String nodeNameSelected;
+
+             // save the number of selected message
+             if (selectedRowIndexOld >= 0) {
+                 nodeNameSelected = (String) getClusterStatusTable().getValueAt(selectedRowIndexOld, STATUS_TABLE_NODE_NAME_COLUMN_INDEX);
+
+            EditGatewayNameDialog dialog = new EditGatewayNameDialog(getClusterStatusWindow(), clusterStatusAdmin,  (String) getClusterStatusTable().getValueAt(selectedRowIndexOld, STATUS_TABLE_NODE_ID_COLUMN_INDEX), nodeNameSelected);
+            dialog.show();
+             }
+        }
+    }
 
 }
 

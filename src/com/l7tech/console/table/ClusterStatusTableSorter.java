@@ -129,6 +129,8 @@ public class ClusterStatusTableSorter extends FilteredDefaultTableModel {
                 }
             case ClusterStatusWindow.STATUS_TABLE_IP_ADDDRESS_COLUMN_INDEX:
                 return ((GatewayStatus) sortedData[row]).getAddress();
+            case ClusterStatusWindow.STATUS_TABLE_NODE_ID_COLUMN_INDEX:
+                return ((GatewayStatus) sortedData[row]).getNodeId();
             default:
                 throw new IllegalArgumentException("Bad Column");
         }
@@ -191,9 +193,13 @@ public class ClusterStatusTableSorter extends FilteredDefaultTableModel {
                     elementA = new Long(((GatewayStatus) a).getUptime());
                     elementB = new Long(((GatewayStatus) b).getUptime());
                     break;
-                 case ClusterStatusWindow.STATUS_TABLE_IP_ADDDRESS_COLUMN_INDEX:
+                case ClusterStatusWindow.STATUS_TABLE_IP_ADDDRESS_COLUMN_INDEX:
                     elementA = ((GatewayStatus) a).getAddress();
                     elementB = ((GatewayStatus) b).getAddress();
+                    break;
+                case ClusterStatusWindow.STATUS_TABLE_NODE_ID_COLUMN_INDEX:
+                    elementA = ((GatewayStatus) a).getNodeId();
+                    elementB = ((GatewayStatus) b).getNodeId();
                     break;
                 default:
                     logger.warning("Bad Cluster Status Table Column: " + column);

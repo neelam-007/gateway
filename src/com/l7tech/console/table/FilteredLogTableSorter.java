@@ -100,6 +100,15 @@ public class FilteredLogTableSorter extends FilteredLogTableModel {
             Vector logs = (Vector) nodeList.get(node);
             addData(node, logs, msgFilterLevel, true);
         }
+
+        // filter the logs
+        filterData(msgFilterLevel);
+
+        // sort the logs
+        sortData(columnToSort, false);
+
+        // populate the change to the display
+        realModel.fireTableDataChanged();
     }
 
    /**
@@ -140,14 +149,6 @@ public class FilteredLogTableSorter extends FilteredLogTableModel {
             // update the logsCache
             rawLogCache.put(nodeId, gatewayLogs);
 
-            // filter the logs
-            filterData(msgFilterLevel);
-
-            // sort the logs
-            sortData(columnToSort, false);
-
-            // populate the change to the display
-            realModel.fireTableDataChanged();
         }
     }
 
