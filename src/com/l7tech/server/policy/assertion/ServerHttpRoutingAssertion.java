@@ -136,6 +136,10 @@ public class ServerHttpRoutingAssertion extends ServerRoutingAssertion {
                 // todo: check if we need to support HTTP 1.1.
                 postMethod.setHttp11(false);
 
+                if (httpRoutingAssertion.getXmlSecurityActorToPromote() != null) {
+                    // todo, modify the request message here so the actor is promoted
+                }
+
                 final MimeKnob reqMime = context.getRequest().getMimeKnob();
                 postMethod.addRequestHeader(MimeUtil.CONTENT_TYPE, reqMime.getOuterContentType().getFullValue());
 
