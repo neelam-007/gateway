@@ -43,14 +43,15 @@ public abstract class IdentityAssertion extends Assertion {
                 LogManager.getInstance().getSystemLogger().log(Level.SEVERE, err);
                 throw new IllegalStateException( err );
             } else {
+                // Authentication is required for any IdentityAssertion
                 response.addResult( new AssertionResult( this, request, AssertionStatus.AUTH_REQUIRED ) );
+                // TODO: Some future IdentityAssertion might succeed, but this flag will remain true!
                 response.setAuthenticationMissing( true );
                 return AssertionStatus.AUTH_REQUIRED;
             }
         } else {
             // A CredentialFinder has already run.
             User user = pc.getUser();
-            byte[] credentials = pc.getCredentials();
 
             AssertionStatus status;
             if ( request.isAuthenticated() ) {
@@ -68,15 +69,17 @@ public abstract class IdentityAssertion extends Assertion {
                     if ( getIdentityProvider().authenticate( pc ) ) {
                         // Authentication succeeded
                         request.setAuthenticated(true);
+                        LogManager.getInstance().getSystemLogger().log(Level.FINER, "Authenticated " + user.getLogin() );
                         // Make sure this guy matches our criteria
                         status = doCheckUser( user );
                     } else {
                         // Authentication failure
                         status = AssertionStatus.AUTH_FAILED;
+                        LogManager.getInstance().getSystemLogger().log(Level.FINER, "Authentication failed for " + user.getLogin() );
                     }
                 } catch ( FindException fe ) {
                     String err = "Couldn't find identity provider!";
-                    LogManager.getInstance().getSystemLogger().log(Level.SEVERE, err, fe);
+                    LogManager.getInstance().getSystemLogger().log( Level.SEVERE, err, fe );
                     throw new IdentityAssertionException( err, fe );
                 }
 
