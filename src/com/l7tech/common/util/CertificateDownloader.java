@@ -8,7 +8,6 @@ package com.l7tech.common.util;
 
 import com.l7tech.common.protocol.SecureSpanConstants;
 
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -17,13 +16,8 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.security.cert.CertificateException;
-import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * Download a certificate from the SSG, check it for validity, and import it.
@@ -168,8 +162,7 @@ public class CertificateDownloader {
         HexUtils.Slurpage result = HexUtils.slurpUrl(remote);
         certBytes = result.bytes;
         Map headers = result.headers;
-        ByteArrayInputStream bais = new ByteArrayInputStream(certBytes);
-        cert = (X509Certificate) CertificateFactory.getInstance("X.509").generateCertificate(bais);
+        cert = CertUtils.decodeCert(certBytes);
         this.checks = new ArrayList();
 
         sawNoPass = false;

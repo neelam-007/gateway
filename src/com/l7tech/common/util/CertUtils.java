@@ -11,6 +11,7 @@ import org.bouncycastle.asn1.DERObjectIdentifier;
 import org.bouncycastle.asn1.x509.X509Name;
 
 import javax.security.auth.x500.X500Principal;
+import java.io.ByteArrayInputStream;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.Principal;
@@ -27,6 +28,35 @@ import java.util.*;
  * @version 1.0
  */
 public class CertUtils {
+    private static CertificateFactory certFactory;
+
+    public static X509Certificate decodeCert(byte[] bytes) throws CertificateException {
+        return (X509Certificate)getFactory().generateCertificate(new ByteArrayInputStream(bytes));
+    }
+
+    public static X509Certificate[] decodeCertChain(byte[] bytes) throws CertificateException {
+        Collection list = getFactory().generateCertificates(new ByteArrayInputStream(bytes));
+        ArrayList certs = new ArrayList(list.size());
+        for ( Iterator i = list.iterator(); i.hasNext(); ) {
+            Certificate certificate = (Certificate) i.next();
+            if (certificate instanceof X509Certificate)
+                certs.add(certificate);
+            else
+                throw new IllegalArgumentException("Certificate in chain was not X.509");
+        }
+        return (X509Certificate[])certs.toArray(new X509Certificate[0]);
+    }
+
+    public synchronized static CertificateFactory getFactory() {
+        try {
+            if (certFactory == null)
+                certFactory = CertificateFactory.getInstance(FACTORY_ALGORITHM);
+            return certFactory;
+        } catch ( CertificateException e ) {
+            throw new RuntimeException(e);
+        }
+    }
+
     public static final String X509_OID_SUBJECTKEYID = "2.5.29.14";
     private static final String[] KEY_USAGES = {
         "Digital Signature",
@@ -403,4 +433,6 @@ public class CertUtils {
 
         return cn;
     }
+
+    private static final String FACTORY_ALGORITHM = "X.509";
 }

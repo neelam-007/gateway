@@ -8,16 +8,16 @@ package com.l7tech.proxy.util;
 
 import com.l7tech.common.protocol.SecureSpanConstants;
 import com.l7tech.common.security.CertificateRequest;
+import com.l7tech.common.util.CertUtils;
 import com.l7tech.common.util.HexUtils;
 import com.l7tech.common.util.XmlUtil;
-import com.l7tech.proxy.datamodel.exceptions.BadCredentialsException;
-import com.l7tech.proxy.datamodel.exceptions.CertificateAlreadyIssuedException;
 import com.l7tech.proxy.datamodel.CurrentRequest;
 import com.l7tech.proxy.datamodel.Ssg;
+import com.l7tech.proxy.datamodel.exceptions.BadCredentialsException;
+import com.l7tech.proxy.datamodel.exceptions.CertificateAlreadyIssuedException;
 import org.apache.commons.httpclient.HttpClient;
 import org.apache.commons.httpclient.UsernamePasswordCredentials;
 import org.apache.commons.httpclient.methods.PostMethod;
-import org.xml.sax.SAXException;
 
 import javax.security.auth.x500.X500Principal;
 import java.io.ByteArrayInputStream;
@@ -28,10 +28,8 @@ import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
 import java.security.SignatureException;
 import java.security.cert.CertificateException;
-import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
 import java.util.logging.Logger;
-import java.util.logging.Level;
 
 /**
  * Utilities for SSL support.
@@ -142,7 +140,7 @@ public class SslUtils {
             if ( result == 401 ) throw new BadCredentialsException("HTTP POST to certificate signer returned status " + result );
             if ( result == 403 ) throw new CertificateAlreadyIssuedException("HTTP POST to certificate signer returned status " + result);
             if ( result != 200 ) throw new CertificateException( "HTTP POST to certificate signer generated status " + result );
-            X509Certificate cert = (X509Certificate) CertificateFactory.getInstance("X.509").generateCertificate(post.getResponseBodyAsStream());
+            X509Certificate cert = (X509Certificate)CertUtils.getFactory().generateCertificate(post.getResponseBodyAsStream());
             post.releaseConnection();
             post = null;
             X500Principal certName = new X500Principal(cert.getSubjectDN().toString());

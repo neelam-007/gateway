@@ -1,5 +1,6 @@
 package com.l7tech.server.identity.ldap;
 
+import com.l7tech.common.util.CertUtils;
 import com.l7tech.common.util.HexUtils;
 import com.l7tech.common.util.KeystoreUtils;
 import com.l7tech.common.util.Locator;
@@ -18,7 +19,6 @@ import javax.naming.Context;
 import javax.naming.NamingEnumeration;
 import javax.naming.NamingException;
 import javax.naming.directory.*;
-import java.io.ByteArrayInputStream;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -28,7 +28,6 @@ import java.security.NoSuchAlgorithmException;
 import java.security.SignatureException;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
-import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
 import java.sql.SQLException;
 import java.util.*;
@@ -154,8 +153,7 @@ public class LdapIdentityProvider implements IdentityProvider {
                 InputStream certStream = new FileInputStream(rootCertLoc);
                 byte[] rootcacertbytes = HexUtils.slurpStream(certStream, 16384);
                 certStream.close();
-                ByteArrayInputStream bais = new ByteArrayInputStream(rootcacertbytes);
-                rootcacert = CertificateFactory.getInstance("X.509").generateCertificate(bais);
+                rootcacert = CertUtils.decodeCert(rootcacertbytes);
             } catch (IOException e) {
                 String err = "Exception retrieving root cert " + e.getMessage();
                 logger.log(Level.SEVERE, err, e);
@@ -529,6 +527,10 @@ public class LdapIdentityProvider implements IdentityProvider {
             logger.fine("Test produced following error(s): " + error.toString());
             throw new InvalidIdProviderCfgException(error.toString());
         } else logger.finest("this ldap config was tested successfully");
+    }
+
+    public void preSaveClientCert( User user, X509Certificate cert ) throws ClientCertManager.VetoSave {
+        // ClientCertManagerImp's default rules are OK
     }
 
     /**

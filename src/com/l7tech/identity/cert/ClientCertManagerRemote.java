@@ -1,20 +1,19 @@
 package com.l7tech.identity.cert;
 
-import com.l7tech.common.util.Locator;
+import com.l7tech.common.util.CertUtils;
 import com.l7tech.common.util.HexUtils;
+import com.l7tech.common.util.Locator;
 import com.l7tech.identity.IdentityAdmin;
 import com.l7tech.identity.User;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.ObjectNotFoundException;
 import com.l7tech.objectmodel.UpdateException;
 
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.rmi.RemoteException;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateEncodingException;
 import java.security.cert.CertificateException;
-import java.security.cert.CertificateFactory;
 
 /**
  * Client side implementation of the ClientCertManager - the internal CA.
@@ -35,8 +34,7 @@ public class ClientCertManagerRemote implements ClientCertManager {
             if (certstr == null) return null;
 
             byte[] certbytes = HexUtils.decodeBase64(certstr);
-            return CertificateFactory.getInstance("X.509").
-                    generateCertificate(new ByteArrayInputStream(certbytes));
+            return CertUtils.decodeCert(certbytes);
         } catch (RemoteException e) {
             throw new FindException("could not resolve remote interface", e);
         } catch (CertificateEncodingException e) {

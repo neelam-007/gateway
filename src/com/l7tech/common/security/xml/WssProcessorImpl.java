@@ -26,13 +26,15 @@ import x0Assertion.oasisNamesTcSAML1.SubjectStatementAbstractType;
 import x0Assertion.oasisNamesTcSAML1.SubjectType;
 
 import javax.xml.parsers.ParserConfigurationException;
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.security.GeneralSecurityException;
 import java.security.Key;
 import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
-import java.security.cert.*;
+import java.security.cert.CertificateException;
+import java.security.cert.CertificateExpiredException;
+import java.security.cert.CertificateNotYetValidException;
+import java.security.cert.X509Certificate;
 import java.text.ParseException;
 import java.util.*;
 import java.util.logging.Level;
@@ -669,8 +671,7 @@ public class WssProcessorImpl implements WssProcessor {
             throw new InvalidDocumentFormatException("Unable to parse base64 BinarySecurityToken", e);
         }
         // create the x509 binary cert based on it
-        X509Certificate referencedCert = (X509Certificate)x509CertFactory.
-                                            generateCertificate(new ByteArrayInputStream(decodedValue));
+        X509Certificate referencedCert = CertUtils.decodeCert(decodedValue);
 
         // remember this cert
         final String wsuId = SoapUtil.getElementWsuId(binarySecurityTokenElement);
@@ -960,16 +961,6 @@ public class WssProcessorImpl implements WssProcessor {
     }
 
     private static final Logger logger = Logger.getLogger(WssProcessorImpl.class.getName());
-    private static final CertificateFactory x509CertFactory;
-    static {
-        try {
-            x509CertFactory = CertificateFactory.getInstance("X.509");
-        } catch ( CertificateException e ) {
-            logger.log(Level.SEVERE, e.getMessage(), e);
-            throw new RuntimeException("Couldn't initialize X.509 certificate factory", e);
-        }
-    }
-
 
     private class ProcessingStatusHolder {
         Document processedDocument = null;
@@ -1041,8 +1032,7 @@ public class WssProcessorImpl implements WssProcessor {
 
                 X509DataType x509data = x509datas[0];
                 try {
-                    this.certificate = (X509Certificate)x509CertFactory.generateCertificate(
-                            new ByteArrayInputStream(x509data.getX509CertificateArray(0)));
+                    this.certificate = CertUtils.decodeCert(x509data.getX509CertificateArray(0));
                     break;
                 } catch ( CertificateException e ) {
                     final String msg = "Certificate in SAML assertion could not be parsed";

@@ -48,7 +48,7 @@ import java.util.*;
  */
 public abstract class SamlAssertionHelper {
     SamlAssertionHelper(Document soapDom, SamlAssertionGenerator.Options options, LoginCredentials credentials, SignerInfo signer ) {
-        if (soapDom == null || signer == null || options.getExpiryMinutes() <= 0) {
+        if (signer == null || options.getExpiryMinutes() <= 0) {
             throw new IllegalArgumentException();
         }
 
@@ -275,9 +275,10 @@ public abstract class SamlAssertionHelper {
             x509.addX509SubjectName(dn);
             x509.addX509Certificate(cert.getEncoded());
         } else {
+            // TODO add email address etc.
             ni.setFormat(Constants.NAMEIDENTIFIER_UNSPECIFIED);
         }
-        if (credentials.getLogin() != null)
+        if (ni.getStringValue() == null && credentials.getLogin() != null)
             ni.setStringValue(credentials.getLogin());
         InetAddress clientAddress = options.getClientAddress();
         if (clientAddress != null) {

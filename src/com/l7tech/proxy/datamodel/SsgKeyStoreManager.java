@@ -8,9 +8,10 @@ package com.l7tech.proxy.datamodel;
 
 import com.l7tech.common.security.CertificateRequest;
 import com.l7tech.common.security.JceProvider;
+import com.l7tech.common.util.CausedIOException;
+import com.l7tech.common.util.CertUtils;
 import com.l7tech.common.util.CertificateDownloader;
 import com.l7tech.common.util.FileUtils;
-import com.l7tech.common.util.CausedIOException;
 import com.l7tech.proxy.datamodel.exceptions.*;
 import com.l7tech.proxy.util.SslUtils;
 
@@ -20,12 +21,11 @@ import java.security.*;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
-import java.security.cert.CertificateFactory;
+import java.util.ArrayList;
+import java.util.Enumeration;
+import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.Enumeration;
-import java.util.ArrayList;
-import java.util.List;
 
 /**
  * Maintain the SSG-specific KeyStores.
@@ -76,9 +76,8 @@ public class SsgKeyStoreManager {
      */
     private static X509Certificate convertToSunCertificate(X509Certificate generic) throws CertificateException {
         if (generic == null) return null;
-        CertificateFactory cf = CertificateFactory.getInstance("X.509");
         final byte[] encoded = generic.getEncoded();
-        return (X509Certificate)cf.generateCertificate(new ByteArrayInputStream(encoded));
+        return CertUtils.decodeCert(encoded);
     }
 
     /**

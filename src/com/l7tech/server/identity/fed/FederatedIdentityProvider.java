@@ -9,6 +9,7 @@ package com.l7tech.server.identity.fed;
 import com.l7tech.common.security.CertificateExpiry;
 import com.l7tech.common.security.TrustedCert;
 import com.l7tech.common.util.CertUtils;
+import com.l7tech.common.util.KeystoreUtils;
 import com.l7tech.common.util.Locator;
 import com.l7tech.identity.*;
 import com.l7tech.identity.cert.ClientCertManager;
@@ -270,6 +271,31 @@ public class FederatedIdentityProvider extends PersistentIdentityProvider {
 
     public void test() {
         // TODO
+    }
+
+    public void preSaveClientCert( User user, X509Certificate cert ) throws ClientCertManager.VetoSave {
+        FederatedUser u = (FederatedUser)userManager.cast(user);
+        final String userDn = u.getSubjectDn();
+        final String certDn = cert.getSubjectDN().getName();
+        if (userDn != certDn)
+            throw new ClientCertManager.VetoSave("User's X.509 Subject DN '" + userDn +
+                                                 "'doesn't match cert's Subject DN '" + certDn + "'");
+        try {
+            if (certsBySubjectDn.isEmpty()) {
+                byte[] caCertBytes = KeystoreUtils.getInstance().readRootCert();
+                X509Certificate caCert = CertUtils.decodeCert(caCertBytes);
+
+            } else {
+                String caDn = cert.getIssuerDN().getName();
+                TrustedCert caTrustedCert = (TrustedCert)certsBySubjectDn.get(caDn);
+                if (caTrustedCert == null) throw new ClientCertManager.VetoSave("User's cert was not signed by any of this identity provider's trusted certs");
+                X509Certificate caCert = caTrustedCert.getCertificate();
+            }
+        } catch ( Exception e ) {
+            final String msg = "Couldn't deserialize trusted cert";
+            logger.log(Level.SEVERE, msg, e);
+            throw new ClientCertManager.VetoSave(msg);
+        }
     }
 
     private final FederatedIdentityProviderConfig providerConfig;

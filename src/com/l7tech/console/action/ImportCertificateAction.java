@@ -1,5 +1,6 @@
 package com.l7tech.console.action;
 
+import com.l7tech.common.util.CertUtils;
 import com.l7tech.console.util.Preferences;
 import com.l7tech.console.util.TopComponents;
 
@@ -145,7 +146,7 @@ public class ImportCertificateAction extends BaseAction {
       throws IOException, CertificateException, KeyStoreException, NoSuchAlgorithmException {
 
         FileInputStream certfis = new FileInputStream(selectedFile);
-        CertificateFactory cf = CertificateFactory.getInstance("X.509");
+        CertificateFactory cf = CertUtils.getFactory();
         Collection c = cf.generateCertificates(certfis);
         Iterator i = c.iterator();
         if (i.hasNext()) {

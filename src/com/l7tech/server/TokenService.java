@@ -11,6 +11,8 @@ import com.l7tech.identity.AuthenticationException;
 import com.l7tech.identity.User;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.assertion.xmlsec.RequestWssX509Cert;
+import com.l7tech.server.saml.HolderOfKeyHelper;
+import com.l7tech.server.saml.SamlAssertionGenerator;
 import com.l7tech.server.secureconversation.DuplicateSessionException;
 import com.l7tech.server.secureconversation.SecureConversationContextManager;
 import com.l7tech.server.secureconversation.SecureConversationSession;
@@ -21,11 +23,11 @@ import org.xml.sax.SAXException;
 import javax.crypto.Cipher;
 import javax.crypto.SecretKey;
 import javax.xml.soap.SOAPConstants;
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.security.*;
 import java.security.cert.CertificateException;
-import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
 import java.security.interfaces.RSAPublicKey;
 import java.util.Calendar;
@@ -77,7 +79,7 @@ public class TokenService {
      * @param authenticator resolved credentials such as an X509Certificate to an actual user to associate the context with
      * @return
      */
-    public Document respondToRequestSecurityToken(Document request, CredentialsAuthenticator authenticator)
+    public Document respondToRequestSecurityToken(Document request, CredentialsAuthenticator authenticator, String clientAddress)
                                                     throws InvalidDocumentFormatException, TokenServiceException,
                                                            WssProcessor.ProcessorException, GeneralSecurityException,
                                                            AuthenticationException {
@@ -123,10 +125,9 @@ public class TokenService {
                 }
             }
         }
-        
-        User authenticatedUser = authenticator.authenticate(LoginCredentials.
-                                                                makeCertificateCredentials(clientCert,
-                                                                                           RequestWssX509Cert.class));
+
+        final LoginCredentials creds = LoginCredentials.makeCertificateCredentials(clientCert,RequestWssX509Cert.class);
+        User authenticatedUser = authenticator.authenticate(creds);
         if (authenticatedUser == null) {
             logger.info("Throwing AuthenticationException because credentials cannot be authenticated.");
             throw new AuthenticationException("Cert found, but cannot associate to a user.");
@@ -136,13 +137,37 @@ public class TokenService {
         Document response = null;
         if (isValidRequestForSecureConversationContext(wssOutput.getUndecoratedMessage(), wssOutput)) {
             response = handleSecureConversationContextRequest(authenticatedUser, clientCert);
-        } else if (isValidRequestForSAMLToken(request, wssOutput)) {
-            // todo, plug in your saml handling here alex --fla
+        } else if (isValidRequestForSAMLToken(wssOutput.getUndecoratedMessage(), wssOutput)) {
+            response = handleSamlRequest(creds, clientAddress);
         } else {
             throw new InvalidDocumentFormatException("This request cannot be recognized as a valid " +
                                                      "RequestSecurityToken");
         }
         return response;
+    }
+
+    private Document handleSamlRequest(LoginCredentials creds, String clientAddress)
+        throws TokenServiceException, GeneralSecurityException
+    {
+        StringBuffer responseXml = new StringBuffer(WST_RST_RESPONSE_PREFIX);
+        responseXml.append(WST_RST_RESPONSE_INFIX);
+        try {
+            SamlAssertionGenerator.Options options = new SamlAssertionGenerator.Options();
+            if (clientAddress != null) options.setClientAddress(InetAddress.getByName(clientAddress));
+            options.setSignAssertion(true);
+            HolderOfKeyHelper hok = new HolderOfKeyHelper(null, options, creds, KeystoreUtils.getInstance().getSignerInfo());
+            Element assertionElement = hok.createAssertion().getDocumentElement();
+            responseXml.append(XmlUtil.nodeToString(assertionElement));
+            responseXml.append(WST_RST_RESPONSE_SUFFIX);
+            Document response = XmlUtil.stringToDocument(responseXml.toString());
+            return prepareSignedResponse(response);
+        } catch ( UnknownHostException e ) {
+            throw new TokenServiceException("Couldn't resolve client IP address", e);
+        } catch ( IOException e ) {
+            throw new TokenServiceException("Couldn't read signing key", e);
+        } catch ( SAXException e ) {
+            throw new TokenServiceException("Couldn't read signing key", e);
+        }
     }
 
     private Document handleSecureConversationContextRequest(User requestor, X509Certificate requestorCert)
@@ -159,26 +184,18 @@ public class TokenService {
         exp.setTimeInMillis(newSession.getExpiration());
         String encryptedKeyRawXML = produceEncryptedKeyXml(newSession.getSharedSecret(), requestorCert);
         try {
-            String xmlStr = "<soap:Envelope xmlns:soap=\"" + SOAPConstants.URI_NS_SOAP_ENVELOPE + "\">" +
-                                "<soap:Body>" +
-                                  "<wst:RequestSecurityTokenResponse xmlns:wst=\"" + SoapUtil.WST_NAMESPACE + "\" " +
-                                                                    "xmlns:wsu=\"" + SoapUtil.WSU_NAMESPACE + "\" " +
-                                                                    "xmlns:wsse=\"" + SoapUtil.SECURITY_NAMESPACE + "\" " +
-                                                                    "xmlns:wsc=\"" + SoapUtil.WSSC_NAMESPACE + "\">" +
-                                    "<wst:RequestedSecurityToken>" +
+            String xmlStr = WST_RST_RESPONSE_PREFIX +
                                       "<wsc:SecurityContextToken>" +
                                         "<wsc:Identifier>" + newSession.getIdentifier() + "</wsc:Identifier>" +
                                       "</wsc:SecurityContextToken>" +
-                                    "</wst:RequestedSecurityToken>" +
+                            WST_RST_RESPONSE_INFIX +
                                     "<wst:RequestedProofToken>" +
                                       encryptedKeyRawXML +
                                     "</wst:RequestedProofToken>" +
                                     "<wst:Lifetime>" +
                                       "<wsu:Expires>" + ISO8601Date.format(exp.getTime()) + "</wsu:Expires>" +
                                     "</wst:Lifetime>" +
-                                  "</wst:RequestSecurityTokenResponse>" +
-                                "</soap:Body>" +
-                            "</soap:Envelope>";
+                                  WST_RST_RESPONSE_SUFFIX;
             response = XmlUtil.stringToDocument(xmlStr);
         } catch (IOException e) {
             throw new TokenServiceException(e);
@@ -186,13 +203,16 @@ public class TokenService {
             throw new TokenServiceException(e);
         }
 
+        return prepareSignedResponse( response );
+    }
+
+    private Document prepareSignedResponse( Document response ) throws TokenServiceException {
         Element body = null;
         try {
             body = SoapUtil.getBodyElement(response);
         } catch (InvalidDocumentFormatException e) {
             throw new TokenServiceException(e);
         }
-
 
         X509Certificate serverSSLcert = null;
         PrivateKey sslPrivateKey = null;
@@ -416,9 +436,7 @@ public class TokenService {
 
     private synchronized X509Certificate getServerCert() throws IOException, CertificateException {
         if (serverCert == null) {
-            byte[] buf = KeystoreUtils.getInstance().readSSLCert();
-            ByteArrayInputStream bais = new ByteArrayInputStream(buf);
-            serverCert = (X509Certificate)(CertificateFactory.getInstance("X.509").generateCertificate(bais));
+            serverCert = KeystoreUtils.getInstance().getSslCert();
         }
         return serverCert;
     }
@@ -431,4 +449,17 @@ public class TokenService {
     private final static String TOKTYPE_ELNAME = "TokenType";
     private final static String REQTYPE_ELNAME = "RequestType";
     private final static SecureRandom rand = new SecureRandom();
+
+    private final String WST_RST_RESPONSE_PREFIX = "<soap:Envelope xmlns:soap=\"" + SOAPConstants.URI_NS_SOAP_ENVELOPE + "\">" +
+                                    "<soap:Body>" +
+                                      "<wst:RequestSecurityTokenResponse xmlns:wst=\"" + SoapUtil.WST_NAMESPACE + "\" " +
+                                                                        "xmlns:wsu=\"" + SoapUtil.WSU_NAMESPACE + "\" " +
+                                                                        "xmlns:wsse=\"" + SoapUtil.SECURITY_NAMESPACE + "\" " +
+                                                                        "xmlns:wsc=\"" + SoapUtil.WSSC_NAMESPACE + "\">" +
+                                        "<wst:RequestedSecurityToken>";
+
+    private final String WST_RST_RESPONSE_SUFFIX = "</wst:RequestSecurityTokenResponse>" +
+                                                "</soap:Body>" +
+                                            "</soap:Envelope>";
+    private static final String WST_RST_RESPONSE_INFIX = "</wst:RequestedSecurityToken>";
 }

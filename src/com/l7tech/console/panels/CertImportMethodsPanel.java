@@ -1,30 +1,30 @@
 package com.l7tech.console.panels;
 
-import com.l7tech.common.security.TrustedCertAdmin;
-import com.l7tech.common.security.TrustedCert;
-import com.l7tech.common.util.Locator;
-import com.l7tech.common.util.HexUtils;
-import com.l7tech.common.util.CertUtils;
-import com.intellij.uiDesigner.core.GridLayoutManager;
 import com.intellij.uiDesigner.core.GridConstraints;
+import com.intellij.uiDesigner.core.GridLayoutManager;
 import com.intellij.uiDesigner.core.Spacer;
+import com.l7tech.common.security.TrustedCert;
+import com.l7tech.common.security.TrustedCertAdmin;
+import com.l7tech.common.util.CertUtils;
+import com.l7tech.common.util.HexUtils;
+import com.l7tech.common.util.Locator;
 
 import javax.swing.*;
-import javax.swing.event.ChangeListener;
 import javax.swing.event.ChangeEvent;
+import javax.swing.event.ChangeListener;
 import java.awt.*;
-import java.awt.event.ActionListener;
 import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.io.*;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.util.logging.Logger;
-import java.util.ResourceBundle;
-import java.util.Locale;
-import java.security.cert.CertificateFactory;
-import java.security.cert.CertificateException;
-import java.security.cert.X509Certificate;
 import java.security.cert.CertificateEncodingException;
+import java.security.cert.CertificateException;
+import java.security.cert.CertificateFactory;
+import java.security.cert.X509Certificate;
+import java.util.Locale;
+import java.util.ResourceBundle;
+import java.util.logging.Logger;
 
 /**
  * This class provides users with a form for specifying the source or contents of the trusted 
@@ -174,21 +174,10 @@ public class CertImportMethodsPanel extends WizardStepPanel {
         InputStream is = null;
         CertificateFactory cf = null;
 
-        try {
-            cf = CertificateFactory.getInstance("X.509");
-        } catch (CertificateException e) {
-            logger.severe(resources.getString("view.error.get.cert.factory"));
-            JOptionPane.showMessageDialog(this, resources.getString("view.error.get.cert.factory"),
-                                    resources.getString("view.error.title"),
-                                    JOptionPane.ERROR_MESSAGE);
-            return false;
-
-        }
-
         if (fileRadioButton.isSelected()) {
             try {
                 is = new FileInputStream(new File(certFileName.getText().trim()));
-                cert = (X509Certificate) cf.generateCertificate(is);
+                cert = (X509Certificate)CertUtils.getFactory().generateCertificate(is);
 
             } catch (FileNotFoundException fne) {
                 JOptionPane.showMessageDialog(this, resources.getString("view.error.filenotfound"),

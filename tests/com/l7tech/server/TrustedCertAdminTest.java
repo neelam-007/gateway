@@ -1,15 +1,14 @@
 package com.l7tech.server;
 
 import com.l7tech.common.security.TrustedCert;
+import com.l7tech.common.util.CertUtils;
 import com.l7tech.common.util.HexUtils;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
 
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.security.cert.CertificateException;
-import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -249,9 +248,8 @@ public class TrustedCertAdminTest extends TestCase {
     }
 
     private X509Certificate getCert() throws CertificateException, IOException {
-        CertificateFactory cfac = CertificateFactory.getInstance(TrustedCert.CERT_FACTORY_ALGORITHM);
         byte[] certBytes = HexUtils.decodeBase64(CERT_BASE64);
-        return (X509Certificate)cfac.generateCertificate(new ByteArrayInputStream(certBytes));
+        return CertUtils.decodeCert(certBytes);
     }
 
     /**

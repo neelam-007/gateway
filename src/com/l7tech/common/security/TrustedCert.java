@@ -6,15 +6,14 @@
 
 package com.l7tech.common.security;
 
+import com.l7tech.common.util.CertUtils;
 import com.l7tech.common.util.HexUtils;
 import com.l7tech.objectmodel.imp.NamedEntityImp;
 
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.Serializable;
 import java.security.cert.CertificateEncodingException;
 import java.security.cert.CertificateException;
-import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
 
 /**
@@ -86,9 +85,7 @@ public class TrustedCert extends NamedEntityImp implements Serializable, Cloneab
      */
     public synchronized X509Certificate getCertificate() throws CertificateException, IOException {
         if ( cachedCert == null ) {
-            if (certFactory == null ) certFactory = CertificateFactory.getInstance(CERT_FACTORY_ALGORITHM);
-            ByteArrayInputStream bais = new ByteArrayInputStream(HexUtils.decodeBase64(certBase64));
-            cachedCert = (X509Certificate)certFactory.generateCertificate(bais);
+            cachedCert = (X509Certificate)CertUtils.decodeCert(HexUtils.decodeBase64(certBase64));
         }
         return cachedCert;
     }
@@ -230,7 +227,6 @@ public class TrustedCert extends NamedEntityImp implements Serializable, Cloneab
     }
 
     private transient X509Certificate cachedCert;
-    private transient CertificateFactory certFactory;
 
     private String certBase64;
     private String subjectDn;

@@ -14,8 +14,10 @@ import java.util.Map;
 
 /**
  * Stores a reference to a User and its associated credentials (i.e. password).
- *
+ * <p>
  * Immutable.
+ * <p>
+ * Please don't ever make this class Serializable; we don't want to save anyone's password by accident.
  *
  * @author alex
  */

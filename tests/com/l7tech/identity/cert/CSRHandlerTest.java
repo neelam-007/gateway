@@ -1,12 +1,14 @@
 package com.l7tech.identity.cert;
 
+import com.l7tech.common.util.CertUtils;
 import com.l7tech.common.util.HexUtils;
 
-import java.net.*;
-import java.io.*;
-import java.security.cert.Certificate;
-import java.security.cert.CertificateFactory;
-import java.util.Enumeration;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.net.HttpURLConnection;
+import java.net.URL;
 
 /**
  * User: flascell
@@ -43,8 +45,7 @@ public class CSRHandlerTest {
             response = connection.getInputStream();
             if (response != null) {
                 byte[] responsecontents = HexUtils.slurpStream(response, 16384);
-                ByteArrayInputStream bais = new ByteArrayInputStream(responsecontents);
-                java.security.cert.Certificate dledcert = CertificateFactory.getInstance("X.509").generateCertificate(bais);
+                java.security.cert.Certificate dledcert = CertUtils.decodeCert(responsecontents);
                 System.out.println("Certificate downloaded successfully: " + dledcert.toString());
             }
         } catch (Exception e) {

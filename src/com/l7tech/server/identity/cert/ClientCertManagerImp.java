@@ -1,5 +1,6 @@
 package com.l7tech.server.identity.cert;
 
+import com.l7tech.common.util.CertUtils;
 import com.l7tech.common.util.HexUtils;
 import com.l7tech.identity.User;
 import com.l7tech.identity.cert.ClientCertManager;
@@ -9,9 +10,11 @@ import net.sf.hibernate.Query;
 import net.sf.hibernate.Session;
 import sun.security.x509.X500Name;
 
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.security.cert.*;
+import java.security.cert.Certificate;
+import java.security.cert.CertificateEncodingException;
+import java.security.cert.CertificateException;
+import java.security.cert.X509Certificate;
 import java.sql.SQLException;
 import java.util.Collections;
 import java.util.List;
@@ -139,9 +142,7 @@ public class ClientCertManagerImp implements ClientCertManager {
             }
 
             try {
-                byte[] certbytes = HexUtils.decodeBase64(dbcert);
-                Certificate cert = CertificateFactory.getInstance("X.509").
-                                    generateCertificate(new ByteArrayInputStream(certbytes));
+                Certificate cert = CertUtils.decodeCert(HexUtils.decodeBase64(dbcert));
                 return cert;
             } catch (CertificateException e) {
                 String msg = "Error in CertificateFactory.getInstance";

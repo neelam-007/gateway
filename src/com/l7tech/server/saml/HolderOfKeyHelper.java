@@ -50,7 +50,7 @@ public class HolderOfKeyHelper extends SamlAssertionHelper {
     }
 
     /**
-     * create saml sender vouches assertion
+     * create saml holder-of-key assertion
      *
      * @return the saml assertion as a dom.w3c.org document
      * @throws IOException

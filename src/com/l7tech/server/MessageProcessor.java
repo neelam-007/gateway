@@ -12,8 +12,8 @@ import com.l7tech.common.security.xml.WssProcessor;
 import com.l7tech.common.security.xml.WssProcessorImpl;
 import com.l7tech.common.util.KeystoreUtils;
 import com.l7tech.common.util.Locator;
-import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.util.SoapUtil;
+import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.xml.InvalidDocumentFormatException;
 import com.l7tech.message.*;
 import com.l7tech.objectmodel.FindException;
@@ -22,9 +22,9 @@ import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.RoutingStatus;
 import com.l7tech.server.policy.PolicyVersionException;
 import com.l7tech.server.policy.assertion.ServerAssertion;
+import com.l7tech.server.secureconversation.SecureConversationContextManager;
 import com.l7tech.server.service.ServiceManager;
 import com.l7tech.server.service.resolution.ServiceResolutionException;
-import com.l7tech.server.secureconversation.SecureConversationContextManager;
 import com.l7tech.service.PublishedService;
 import com.l7tech.service.ServiceStatistics;
 import org.w3c.dom.Document;
@@ -36,13 +36,11 @@ import org.xmlpull.v1.XmlPullParserFactory;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.security.GeneralSecurityException;
 import java.security.KeyStoreException;
 import java.security.PrivateKey;
 import java.security.cert.CertificateException;
-import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
 import java.util.Iterator;
 import java.util.logging.Level;
@@ -63,7 +61,7 @@ public class MessageProcessor {
             X509Certificate serverSSLcert = null;
             PrivateKey sslPrivateKey = null;
             try {
-                serverSSLcert = getServerCert();
+                serverSSLcert = KeystoreUtils.getInstance().getSslCert();
                 sslPrivateKey = getServerKey();
             } catch (CertificateException e) {
                 logger.log(Level.SEVERE, "Error getting server cert/private key", e);
@@ -267,15 +265,6 @@ public class MessageProcessor {
         return privateServerKey;
     }
 
-    private synchronized X509Certificate getServerCert() throws IOException, CertificateException {
-        if (serverCert == null) {
-            byte[] buf = KeystoreUtils.getInstance().readSSLCert();
-            ByteArrayInputStream bais = new ByteArrayInputStream(buf);
-            serverCert = (X509Certificate)(CertificateFactory.getInstance("X.509").generateCertificate(bais));
-        }
-        return serverCert;
-    }
-
     public static MessageProcessor getInstance() {
         /*if ( _instance == null )
             _instance = new MessageProcessor();
@@ -344,5 +333,4 @@ public class MessageProcessor {
     private static WssDecorator _wssDecorator = null;
 
     private PrivateKey privateServerKey = null;
-    private X509Certificate serverCert = null;
 }

@@ -6,10 +6,7 @@ import com.l7tech.server.ServerConfig;
 import java.io.*;
 import java.security.*;
 import java.security.cert.CertificateException;
-import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
-import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Properties;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -62,6 +59,20 @@ public class KeystoreUtils {
             certStream.close();
         }
         return cert;
+    }
+
+    public synchronized X509Certificate getRootCert() throws IOException, CertificateException {
+        if (cachedRootCert == null) {
+            cachedRootCert = CertUtils.decodeCert(this.readRootCert());
+        }
+        return cachedRootCert;
+    }
+
+    public synchronized X509Certificate getSslCert() throws IOException, CertificateException {
+        if (cachedSslCert == null) {
+            cachedSslCert = CertUtils.decodeCert(readSSLCert());
+        }
+        return cachedSslCert;
     }
 
     public String getRootKeystorePath() {
@@ -181,11 +192,9 @@ public class KeystoreUtils {
      */
     public SignerInfo getSignerInfo() throws IOException {
         byte[] buf = KeystoreUtils.getInstance().readSSLCert();
-        ByteArrayInputStream bais = new ByteArrayInputStream(buf);
         X509Certificate[] certChain;
         try {
-            Collection certChainC = CertificateFactory.getInstance("X.509").generateCertificates(bais);
-            certChain = (X509Certificate[])new ArrayList(certChainC).toArray( new X509Certificate[0] );
+            certChain = CertUtils.decodeCertChain(buf);
         } catch (CertificateException e) {
             String msg = "cannot generate cert from cert file";
             logger.severe(msg);
@@ -248,4 +257,6 @@ public class KeystoreUtils {
 
     private Properties props = null;
     private final Logger logger = Logger.getLogger(getClass().getName());
+    private X509Certificate cachedRootCert;
+    private X509Certificate cachedSslCert;
 }

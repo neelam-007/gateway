@@ -6,28 +6,23 @@
 
 package com.l7tech.common.security.xml;
 
+import com.l7tech.common.util.CertUtils;
+import com.l7tech.common.util.HexUtils;
+import com.l7tech.common.util.SoapUtil;
+import com.l7tech.common.util.XmlUtil;
+import com.l7tech.common.xml.InvalidDocumentFormatException;
 import org.w3c.dom.Element;
 
-import java.security.cert.X509Certificate;
-import java.security.cert.CertificateException;
-import java.security.cert.CertificateFactory;
+import javax.crypto.Cipher;
+import java.io.IOException;
 import java.security.GeneralSecurityException;
+import java.security.KeyException;
 import java.security.PrivateKey;
 import java.security.SecureRandom;
-import java.security.KeyException;
-import java.io.IOException;
-import java.io.ByteArrayInputStream;
+import java.security.cert.X509Certificate;
 import java.util.Arrays;
-import java.util.logging.Logger;
 import java.util.logging.Level;
-
-import com.l7tech.common.xml.InvalidDocumentFormatException;
-import com.l7tech.common.util.XmlUtil;
-import com.l7tech.common.util.SoapUtil;
-import com.l7tech.common.util.HexUtils;
-import com.l7tech.common.util.CertUtils;
-
-import javax.crypto.Cipher;
+import java.util.logging.Logger;
 
 /**
  * Utility methods to support XML Encryption, specifically EncryptedKey elements.
@@ -134,8 +129,7 @@ public class XencUtil {
             }
         } else if (valueType.equals(SoapUtil.VALUETYPE_X509)) {
             // It seems to be a complete certificate
-            X509Certificate referencedCert = (X509Certificate)CertificateFactory.getInstance("X.509").
-                    generateCertificate(new ByteArrayInputStream(keyIdValueBytes));
+            X509Certificate referencedCert = CertUtils.decodeCert(keyIdValueBytes);
             if (recipientCert.equals(referencedCert)) {
                 logger.fine("The Key recipient cert is recognized");
                 /* FALLTHROUGH */

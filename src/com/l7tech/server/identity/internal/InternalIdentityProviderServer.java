@@ -1,5 +1,6 @@
 package com.l7tech.server.identity.internal;
 
+import com.l7tech.common.util.CertUtils;
 import com.l7tech.common.util.HexUtils;
 import com.l7tech.common.util.KeystoreUtils;
 import com.l7tech.common.util.Locator;
@@ -15,14 +16,16 @@ import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.assertion.credential.http.HttpDigest;
 import com.l7tech.server.identity.PersistentIdentityProvider;
 
-import java.io.*;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.UnsupportedEncodingException;
 import java.security.GeneralSecurityException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.SignatureException;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
-import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
 import java.sql.SQLException;
 import java.util.Map;
@@ -99,8 +102,7 @@ public class InternalIdentityProviderServer extends PersistentIdentityProvider {
                         InputStream certStream = new FileInputStream(rootCertLoc);
                         byte[] rootcacertbytes = HexUtils.slurpStream(certStream, 16384);
                         certStream.close();
-                        ByteArrayInputStream bais = new ByteArrayInputStream(rootcacertbytes);
-                        rootcacert = CertificateFactory.getInstance("X.509").generateCertificate(bais);
+                        rootcacert = CertUtils.decodeCert(rootcacertbytes);
                     } catch (CertificateException e) {
                         String err = "Exception retrieving root cert " + e.getMessage();
                         logger.log(Level.SEVERE, err, e);
@@ -253,6 +255,10 @@ public class InternalIdentityProviderServer extends PersistentIdentityProvider {
             logger.warning("Testing an internal id provider with no good oid. Throwing InvalidIdProviderCfgException");
             throw new InvalidIdProviderCfgException("This internal ID provider config is not valid.");
         }
+    }
+
+    public void preSaveClientCert( User user, X509Certificate cert ) throws ClientCertManager.VetoSave {
+        // ClientCertManagerImp's default rules are OK
     }
 
     private final IdentityProviderConfig config;

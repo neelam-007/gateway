@@ -1,23 +1,20 @@
 package com.l7tech.common.xml;
 
+import com.l7tech.common.util.CertUtils;
+import com.l7tech.common.util.HexUtils;
+import com.l7tech.common.util.XmlUtil;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
 
+import javax.crypto.SecretKey;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.FileNotFoundException;
-import java.io.ByteArrayInputStream;
-import java.util.Properties;
+import java.security.GeneralSecurityException;
 import java.security.KeyStore;
 import java.security.PrivateKey;
-import java.security.GeneralSecurityException;
 import java.security.cert.X509Certificate;
-import java.security.cert.CertificateFactory;
-
-import com.l7tech.common.util.XmlUtil;
-import com.l7tech.common.util.HexUtils;
-
-import javax.crypto.SecretKey;
+import java.util.Properties;
 
 /**
  * The class is a container for test documents, SOAP tmessages etc
@@ -176,8 +173,7 @@ public final class TestDocuments {
             fis.close();
         }
         // construct the x509 based on the bytes
-        return dotNetServerCertificate = (X509Certificate)(CertificateFactory.getInstance("X.509").
-                                                    generateCertificate(new ByteArrayInputStream(certbytes)));
+        return dotNetServerCertificate = CertUtils.decodeCert(certbytes);
     }
 
     /** @return the SecretKey used in the .NET WS-SC derived key token examples. */

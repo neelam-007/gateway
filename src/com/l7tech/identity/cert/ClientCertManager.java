@@ -55,4 +55,13 @@ public interface ClientCertManager {
      * @throws UpdateException
      */
     void forbidCertReset(User user) throws UpdateException;
+
+    /**
+     * Thrown by a {@link com.l7tech.identity.UserManager} if it doesn't like the cert
+     */
+    public static class VetoSave extends Exception {
+        public VetoSave(String message) {
+            super(message);
+        }
+    }
 }
