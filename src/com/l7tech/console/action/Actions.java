@@ -297,6 +297,22 @@ public class Actions {
     }
 
     /**
+     * Update the input map of the JDialog's <code>JLayeredPane</code> so
+     * the ENTER keystroke invokes the passed action.
+     *
+     * @param d the dialog
+     * @param action the dialog action to invoke on Enter key
+     */
+    public static void setEnterAction(final JDialog d, final Action action) {
+        JLayeredPane layeredPane = d.getLayeredPane();
+        final KeyStroke enterKeyStroke = KeyStroke.getKeyStroke(KeyEvent.VK_ENTER, 0);
+        layeredPane.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(enterKeyStroke, "ok-it");
+        layeredPane.getInputMap(JComponent.WHEN_FOCUSED).put(enterKeyStroke, "ok-it");
+        layeredPane.getInputMap(JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT).put(enterKeyStroke, "ok-it");
+        layeredPane.getActionMap().put("ok-it", action);
+    }
+
+    /**
      * Update the input map of the JFrame's <code>JLayeredPane</code> so
      * the ESC keystroke invokes the passed action.
      *
