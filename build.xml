@@ -712,6 +712,11 @@
                 <include name="bcprov*.jar"/>
             </fileset>
 
+            <!-- the Systinet UDDI Client API -->
+            <fileset dir="${src.root}/lib/uddi/systinet">
+                <include name="*.jar"/>
+            </fileset>
+
             <fileset dir="${src.root}/lib/gateway/cluster">
                 <include name="*.jar"/>
             </fileset>
