@@ -1,6 +1,7 @@
 package com.l7tech.common.util;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
@@ -25,6 +26,7 @@ import java.util.logging.Logger;
  * @version 23-Apr-2004
  */
 public class JdkLoggerConfigurator {
+    private static Probe probe;
 
     /**
      * this class cannot be instantiated
@@ -42,6 +44,21 @@ public class JdkLoggerConfigurator {
      * @param shippedLoggingProperties the logging.properties to use if no locally-customized file is found,
      */
     public static synchronized void configure(String classname, String shippedLoggingProperties) {
+        configure(classname, shippedLoggingProperties, false);
+    }
+
+    /**
+     * initialize logging, try different strategies. First look for the system
+     * property <code>java.util.logging.config.file</code>, then look for
+     * <code>logging.properties</code>. If that fails fall back to the
+     * application-specified config file (ie,
+     * <code>com/l7tech/console/resources/logging.properties</code>).
+     *
+     * @param classname                the classname to use for logging info about which logging.properties was found
+     * @param shippedLoggingProperties the logging.properties to use if no locally-customized file is found
+     * @param reloading                whether to start the configuration reloading thread
+     */
+    public static synchronized void configure(String classname, String shippedLoggingProperties, boolean reloading) {
         InputStream in = null;
         try {
             System.setProperty("org.apache.commons.logging.Log", "org.apache.commons.logging.impl.Jdk14Logger");
@@ -55,6 +72,7 @@ public class JdkLoggerConfigurator {
 
             boolean configFound = false;
             String configCandidate = null;
+            File probeFile = null;
             final LogManager logManager = LogManager.getLogManager();
             for (Iterator iterator = configCandidates.iterator(); iterator.hasNext();) {
                 configCandidate = (String)iterator.next();
@@ -64,6 +82,7 @@ public class JdkLoggerConfigurator {
                     in = file.toURL().openStream();
                     if (in != null) {
                         logManager.readConfiguration(in);
+                        probeFile = file;
                         configFound = true;
                         break;
                     }
@@ -73,11 +92,20 @@ public class JdkLoggerConfigurator {
                 if (resource != null) {
                     logManager.readConfiguration(resource.openStream());
                     configFound = true;
+                    probeFile = new File(resource.getPath());
                     break;
                 }
             }
             if (configFound) {
                 Logger.getLogger(classname).info("Logging initialized from '" + configCandidate + "'");
+            }
+            if (reloading && probeFile != null) {
+                if (probe != null) { // kill the old probe
+                    probe.interrupt();
+                    probe = null;
+                }
+                probe = new Probe(probeFile);
+                probe.start();
             }
         } catch (IOException e) {
             e.printStackTrace(System.err);
@@ -89,19 +117,7 @@ public class JdkLoggerConfigurator {
             } catch (IOException e) { /*swallow*/
             }
         }
-    }
 
-    /**
-     * initialize logging, try different strategies. First look for the system
-     * property <code>java.util.logging.config.file</code>, then look for
-     * <code>logging.properties</code>. If that fails fall back to the
-     * application-specified config file (ie,
-     * <code>com/l7tech/console/resources/logging.properties</code>).
-     *
-     * @param classname                the classname to use for logging info about which logging.properties was found
-     * @param shippedLoggingProperties the logging.properties to use if no locally-customized file is found,
-     */
-    public static synchronized void configure(String classname, String shippedLoggingProperties, boolean reloading) {
     }
 
 
@@ -121,8 +137,7 @@ public class JdkLoggerConfigurator {
     /**
      * Thread to probe for config file changes and force reread
      */
-    private class Probe extends Thread {
-        private LogManager logManager = LogManager.getLogManager();
+    private static class Probe extends Thread {
 
         /**
          * Time in milliseconds between probes
@@ -145,29 +160,43 @@ public class JdkLoggerConfigurator {
             super("Logging config file probe");
             setDaemon(true);
             this.interval = interval;
-            prevModified = this.file.lastModified();
             this.file = file;
+            prevModified = this.file.lastModified();
         }
 
         public void run() {
             Logger logger = Logger.getLogger("com.l7tech");
             try {
                 while (interval > 0) {
-                    Thread.sleep(interval);
+                    Thread.sleep(interval * 1000);
+                    LogManager logManager = LogManager.getLogManager();
                     long lastModified = file.lastModified();
+
                     if (lastModified > 0 &&
                       (lastModified != prevModified)) {
+                        InputStream in = null;
                         try {
-                            logManager.readConfiguration();
+                            in = new FileInputStream(file);
+                            logManager.readConfiguration(in);
                             interval = getInterval();
                             logger.log(Level.CONFIG,
                               "logging config file reread complete," +
-                              " new interval is {0}",
+                              " new interval is {0} secs",
                               new Long(interval));
                         } catch (Throwable t) {
                             logger.log(Level.WARNING,
                               "exception reading logging config file",
                               t);
+                        } finally {
+                            if (in != null) {
+                                try {
+                                    in.close();
+                                } catch (IOException e) {
+                                    logger.log(Level.WARNING,
+                                      "exception closing logging config file",
+                                      e);
+                                }
+                            }
                         }
                         prevModified = lastModified;
                     }
@@ -177,6 +206,7 @@ public class JdkLoggerConfigurator {
                 logger.config("logging config file probe terminating");
             }
         }
+
     }
 
     /**
@@ -191,7 +221,7 @@ public class JdkLoggerConfigurator {
             } catch (NumberFormatException e) {
             }
         }
-        return 10;
+        return 5;
     }
 
 }
