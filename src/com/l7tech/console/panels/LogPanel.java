@@ -68,9 +68,6 @@ public class LogPanel extends JPanel {
         logSplitPane.setDividerLocation(0.5);
 
         add(logSplitPane, BorderLayout.CENTER);
-
-        //add(getMsgPane(), BorderLayout.NORTH);
-        //add(getMsgDetailsPane(), BorderLayout.CENTER);
         add(getSelectPane(), BorderLayout.SOUTH);
 
         getMsgTable().getSelectionModel().
@@ -227,18 +224,6 @@ public class LogPanel extends JPanel {
         controlPane = new JPanel();
         controlPane.setLayout(new FlowLayout());
 
-        if(details == null){
-            details = new JCheckBox();
-        }
-        details.setFont(new java.awt.Font("Dialog", 0, 11));
-        details.setText("Details");
-        details.setSelected(true);
-/*        details.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                detailsActionPerformed(evt);
-            }
-        });*/
-
          if(autoRefresh == null){
             autoRefresh = new JCheckBox();
         }
@@ -255,7 +240,6 @@ public class LogPanel extends JPanel {
             }
         });
         controlPane.add(autoRefresh);
-        controlPane.add(details);
         controlPane.add(msgTotal);
 
         return controlPane;
@@ -293,20 +277,6 @@ public class LogPanel extends JPanel {
     }
 
     /**
-     * Return LogPaneTop property value
-     * @return JSplitPane
-     */
-/*    private JSplitPane getLogPaneTop(){
-        if(logPaneTop != null)  return logPaneTop;
-
-        logPaneTop = new JSplitPane();
-        logPaneTop.setLeftComponent(getMsgTablePane());
-        logPaneTop.setRightComponent(getMsgDetailsPane());
-        logPaneTop.setResizeWeight(0.5);
-        return logPaneTop;
-    }*/
-
-    /**
      * Return MsgDetailsPane property value
      * @return JScrollPane
      */
@@ -319,7 +289,6 @@ public class LogPanel extends JPanel {
         msgDetailsPane.setPreferredSize(new java.awt.Dimension(1000, 150));
 
         JScrollPane msgDetailsScrollPane = new JScrollPane();
-      //  msgDetailsScrollPane.add(getMsgDetails());
         msgDetailsScrollPane.setViewportView(getMsgDetails());
         msgDetailsPane.addTab("Details", msgDetailsScrollPane);
 
@@ -341,21 +310,6 @@ public class LogPanel extends JPanel {
         return msgDetails;
     }
 
-    /**
-     * Return MsgPane property value
-     * @return JPanel
-     */
- /*   private JPanel getMsgPane(){
-        if(msgPane != null) return msgPane;
-
-        msgPane = new JPanel();
-        msgPane.setLayout(new BorderLayout());
-
-        msgPane.add(getMsgTablePane(), BorderLayout.CENTER);
-
-        return msgPane;
-    }
-*/
 
     /**
      * Return LogColumnModel property value
@@ -470,24 +424,6 @@ public class LogPanel extends JPanel {
             }
         }
     }
-/*
-
-    private void detailsActionPerformed(java.awt.event.ActionEvent evt) {
-        if (details.isSelected()) {
-            setLogPaneDividerLocation();
-            getMsgDetails().setVisible(true);
-        } else {
-            hideMsgDetails();
-        }
-    }
-
-    private void hideMsgDetails() {
-
-        saveLogDetailsDividerLocation();
-        getLogPaneTop().setDividerLocation(1.0);
-        getMsgDetails().setVisible(false);
-    }
-*/
 
     private void updateMsgFilterLevel(int newFilterLevel) {
 
