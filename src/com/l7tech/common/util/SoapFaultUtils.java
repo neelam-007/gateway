@@ -30,7 +30,14 @@ public class SoapFaultUtils {
         String rawXml = generateRawSoapFault(faultCode, faultString, faultDetails, faultActor);
         return XmlUtil.stringToDocument(rawXml);
     }
-    
+
+    public static String generateRawSoapFault(SoapFaultDetail soapFaultDetail, String faultActor) {
+        return generateRawSoapFault(soapFaultDetail.getFaultCode(),
+                                    soapFaultDetail.getFaultString(),
+                                    soapFaultDetail.getFaultDetails(),
+                                    faultActor);
+    }
+
     public static String generateRawSoapFault(String faultCode,
                                               String faultString,
                                               String faultDetails,
