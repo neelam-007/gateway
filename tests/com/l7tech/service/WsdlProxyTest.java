@@ -20,15 +20,18 @@ public class WsdlProxyTest {
         System.setProperty("javax.net.ssl.trustStore", System.getProperties().getProperty("user.home") + File.separator + ".l7tech" + File.separator + "trustStore");
         System.setProperty("javax.net.ssl.trustStorePassword", "password");
 
-        URL url = new URL("https://riker:8443/ssg/wsdl");
-        //https://riker:8443/ssg/wsdl
-        //https://riker:8443/ssg/wsdl?serviceoid=4980736
-        //https://riker:8443/ssg/wsdl?serviceoid=5373952
+        //URL url = new URL("https://riker:8443/ssg/wsdl?serviceoid=4980736");
+        URL url = new URL("https://riker:8443/ssg/wsil");
+        //URL url = new URL("https://riker:8443/ssg/wsdl");
+        //URL url = new URL("https://riker:8443/ssg/wsdl?serviceoid=5177347");
+
         HttpURLConnection connection = (HttpURLConnection)url.openConnection();
         connection.setRequestMethod("GET");
         connection.setDoOutput(true);
-        // authentication for ssgadmin/ssgadminpasswd
-        connection.setRequestProperty("Authorization", "Basic c3NnYWRtaW46c3NnYWRtaW5wYXNzd2Q=");
+        // authentication for ssgadmin/ssgadminpasswd Basic c3NnYWRtaW46c3NnYWRtaW5wYXNzd2Q=
+        // authentication for flascell/blahblah Basic Zmxhc2NlbGw6YmxhaGJsYWg=
+        connection.setRequestProperty("Authorization", "Basic Zmxhc2NlbGw6YmxhaGJsYWg=");
+
 
         int res  = connection.getResponseCode();
         System.out.println("Response: " + res + "\n" + connection.getResponseMessage());
