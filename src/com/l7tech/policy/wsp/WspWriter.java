@@ -15,6 +15,9 @@ import org.mortbay.util.WriterOutputStream;
  * Time: 4:06:17 PM
  */
 public class WspWriter {
+    private WspWriter() {
+    }
+
     /**
      * Write the policy tree rooted at assertion to the given output stream
      * as XML.

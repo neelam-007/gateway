@@ -13,6 +13,9 @@ import java.beans.XMLDecoder;
  * Time: 3:44:19 PM
  */
 public class WspReader {
+    private WspReader() {
+    }
+
     /**
      * Reads an XML-encoded policy document from the given input stream and
      * returns the corresponding policy tree.
