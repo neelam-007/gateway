@@ -867,9 +867,20 @@ public class LogonDialog extends JDialog {
         if (dialog.sslHostNameMismatchUserNotified) return;
         Throwable cause = ExceptionUtils.unnestToRoot(e);
         if (cause instanceof VersionException) {
+            VersionException versionex = (VersionException)cause;
             log.log(Level.WARNING, "logon()", e);
-            String msg = MessageFormat.format(dialog.resources.getString("logon.version.mismatch"),
-              new Object[]{BuildInfo.getProductVersion() + " build " + BuildInfo.getBuildNumber()});
+            String msg = null;
+            if (versionex.getExpectedVersion() != null && versionex.getReceivedVersion() != null) {
+                msg = MessageFormat.format(dialog.resources.getString("logon.version.mismatch2"),
+                                            new Object[]{
+                                                "'" + versionex.getReceivedVersion() + "'",
+                                                "'" + versionex.getExpectedVersion() + "'",
+                                                BuildInfo.getProductVersion() + " build " + BuildInfo.getBuildNumber()
+                                            });
+            } else {
+                msg = MessageFormat.format(dialog.resources.getString("logon.version.mismatch"),
+                  new Object[]{BuildInfo.getProductVersion() + " build " + BuildInfo.getBuildNumber()});
+            }
             JOptionPane.showMessageDialog(dialog, msg, "Warning", JOptionPane.ERROR_MESSAGE);
         } else if (cause instanceof ConnectException ||
           cause instanceof UnknownHostException ||
