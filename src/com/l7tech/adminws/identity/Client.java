@@ -164,13 +164,15 @@ public class Client {
     }
 
     public static void main(String[] args) throws Exception {
-        Client me = new Client("http://localhost:8080/ssg/services/identityAdmin", null, null);
+
+        Client me = new Client("http://localhost:8181/ssg/services/identityAdmin", "ssgadmin", "ssgadminpasswd");
 
         // test echo
         System.out.println(me.echoVersion());
 
         // test findAllIdentityProviderConfig
         com.l7tech.objectmodel.EntityHeader[] res = me.findAllIdentityProviderConfig();
+
         // com.l7tech.objectmodel.EntityHeader[] res = me.findAllIdentityProviderConfigByOffset(0, 10);
 
         for (int i = 0; i < res.length; i++) {
@@ -206,6 +208,7 @@ public class Client {
 
 
         }
+
     }
 
     // ************************************************
@@ -217,12 +220,12 @@ public class Client {
         org.apache.axis.client.Service service = new org.apache.axis.client.Service();
         // todo, should i reuse this object instead of re-instantiating every call?
         Call call = null;
-        if (username != null && username.length() > 0 && password != null && password.length() > 0) {
-            call.setUsername(username);
-            call.setPassword(password);
-        }
         try {
             call = (Call)service.createCall();
+            if (username != null && username.length() > 0 && password != null && password.length() > 0) {
+                call.setUsername(username);
+                call.setPassword(password);
+            }
         } catch (ServiceException e) {
             throw new java.rmi.RemoteException(e.getMessage(), e);
         }
