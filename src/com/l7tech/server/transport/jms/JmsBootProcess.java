@@ -44,7 +44,14 @@ public class JmsBootProcess implements ServerComponentLifecycle {
                 JmsConnection conn = (JmsConnection)i.next();
                 _logger.info( "Initializing JMS receiver '" + conn.getName() + "'..." );
                 Set endpoints = conn.getEndpoints();
-                for (Iterator j = endpoints.iterator(); j.hasNext();) {
+
+                Iterator j = endpoints.iterator();
+                if ( !j.hasNext() ) {
+                    _logger.warning( "No JMS endpoints could be found for connection '" + conn.getName() + "'" );
+                    continue;
+                }
+
+                while ( j.hasNext() ) {
                     JmsEndpoint requestEnd = (JmsEndpoint) j.next();
                     JmsEndpoint replyToEnd = requestEnd.getReplyEndpoint();
                     JmsEndpoint failureEnd = requestEnd.getFailureEndpoint();
