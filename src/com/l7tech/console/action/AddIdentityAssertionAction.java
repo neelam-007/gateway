@@ -60,7 +60,6 @@ public class AddIdentityAssertionAction extends BaseAction {
                 JFrame f =
                           Registry.getDefault().getWindowManager().getMainWindow();
                 JDialog d = new PolicyAddIdentitiesDialog(f, node);
-                d.setTitle("Add identity asssertions to the policy");
                 d.pack();
                 Utilities.centerOnScreen(d);
                 d.show();

@@ -1,7 +1,7 @@
 package com.l7tech.console.panels;
 
-import com.l7tech.console.tree.policy.RoutingAssertionTreeNode;
 import com.l7tech.credential.CredentialFormat;
+import com.l7tech.policy.assertion.RoutingAssertion;
 import com.l7tech.policy.assertion.credential.CredentialSourceAssertion;
 import com.l7tech.policy.assertion.credential.http.HttpBasic;
 import com.l7tech.policy.assertion.credential.http.HttpClientCert;
@@ -9,32 +9,34 @@ import com.l7tech.policy.assertion.credential.http.HttpDigest;
 import com.l7tech.policy.assertion.credential.wss.WssBasic;
 import com.l7tech.policy.assertion.credential.wss.WssClientCert;
 import com.l7tech.policy.assertion.credential.wss.WssDigest;
-import com.l7tech.service.PublishedService;
-import com.l7tech.service.Wsdl;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
-import javax.wsdl.WSDLException;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 
 
 /**
- * <code>PolicyEditProtectedServiceDialog</code> is the protected service
+ * <code>RoutingAssertionDialog</code> is the protected service
  * policy edit dialog.
  *
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  * @version 1.0
  */
-public class PolicyEditProtectedServiceDialog extends JDialog {
-      private PublishedService service = new PublishedService();
+public class RoutingAssertionDialog extends JDialog {
     private JCheckBox anonymousAccessCheckBox;
+    private RoutingAssertion assertion;
+    private JButton cancelButton;
+    private JPanel buttonPanel;
+    private JButton okButton;
 
 
     /** Creates new form ServicePanel */
-    public PolicyEditProtectedServiceDialog(Frame owner, RoutingAssertionTreeNode node) {
+    public RoutingAssertionDialog(Frame owner, RoutingAssertion a) {
         super(owner, true);
+        setTitle("Edit routing asssertion");
+        assertion = a;
         initComponents();
     }
 
@@ -47,10 +49,11 @@ public class PolicyEditProtectedServiceDialog extends JDialog {
         mainPanel = new JPanel();
         credentialsAndTransportPanel = new JPanel();
 
-        setLayout(new BorderLayout());
+        getContentPane().setLayout(new BorderLayout());
+        getServiceUrlPanel().setBorder(BorderFactory.createEmptyBorder(10, 5, 5, 10));
+        getContentPane().add(getServiceUrlPanel(), BorderLayout.NORTH);
 
-        add(getServiceUrlPanel(), BorderLayout.NORTH);
-        mainPanel.setLayout(new BoxLayout(mainPanel, BoxLayout.X_AXIS));
+        mainPanel.setLayout(new BoxLayout(mainPanel, BoxLayout.Y_AXIS));
         mainPanel.setBorder(new EmptyBorder(new Insets(10, 10, 10, 10)));
 
         credentialsAndTransportPanel.setLayout(new GridBagLayout());
@@ -73,7 +76,11 @@ public class PolicyEditProtectedServiceDialog extends JDialog {
 
         mainPanel.add(credentialsAndTransportPanel);
 
-        add(mainPanel, BorderLayout.CENTER);
+        // Add buttonPanel
+        mainPanel.add(getButtonPanel());
+
+
+        getContentPane().add(mainPanel, BorderLayout.CENTER);
     }
 
     /**
@@ -114,6 +121,9 @@ public class PolicyEditProtectedServiceDialog extends JDialog {
     }
 
     private JPanel getServiceUrlPanel() {
+        if (serviceUrlPanel !=null)
+            return serviceUrlPanel;
+
         serviceUrlPanel = new JPanel();
         serviceUrlPanel.setLayout(new BoxLayout(serviceUrlPanel, BoxLayout.X_AXIS));
 
@@ -123,24 +133,16 @@ public class PolicyEditProtectedServiceDialog extends JDialog {
         serviceUrlPanel.add(serviceUrlLabel);
 
         serviceUrlTextField = new JTextField();
-        serviceUrlTextField.setText("");
+        serviceUrlTextField.setText(assertion.getProtectedServiceUrl());
         serviceUrlTextField.setPreferredSize(new Dimension(100, 20));
         serviceUrlPanel.add(serviceUrlTextField);
 
         JButton buttonDefaultUrl = new JButton();
         buttonDefaultUrl.addActionListener( new ActionListener() {
             public void actionPerformed(ActionEvent e) {
-                try {
-                    Wsdl wsdl = service.parsedWsdl();
-                    if (wsdl !=null)
-                        serviceUrlTextField.setText(wsdl.getServiceURI());
-                } catch (WSDLException e1) {
-                    //todo: errormanger where are you?
-                }
-
             }
         });
-        buttonDefaultUrl.setText("Default");
+        buttonDefaultUrl.setText("Reset");
         serviceUrlPanel.add(buttonDefaultUrl);
 
         return serviceUrlPanel;
@@ -209,6 +211,7 @@ public class PolicyEditProtectedServiceDialog extends JDialog {
         realmPanel.add(Box.createRigidArea(new Dimension(20, 10)));
 
         realmTextField = new JTextField();
+        realmTextField.setText(assertion.getRealm());
         realmTextField.setPreferredSize(new Dimension(50, 20));
         realmPanel.add(realmTextField);
 
@@ -226,6 +229,7 @@ public class PolicyEditProtectedServiceDialog extends JDialog {
         identityPanel.add(Box.createRigidArea(new Dimension(20, 10)));
 
         identityTextField = new JTextField();
+        identityTextField.setText(assertion.getLogin());
         identityTextField.setPreferredSize(new Dimension(50, 20));
         identityPanel.add(identityTextField);
 
@@ -265,6 +269,83 @@ public class PolicyEditProtectedServiceDialog extends JDialog {
 
         return credentialsPanel;
     }
+
+
+    /** Returns buttonPanel */
+    private JPanel getButtonPanel() {
+        if (buttonPanel == null) {
+            buttonPanel = new JPanel();
+            buttonPanel.setLayout(new GridBagLayout());
+
+            Component hStrut = Box.createHorizontalStrut(8);
+
+            // add components
+            buttonPanel.add(hStrut,
+                    new GridBagConstraints(0, 0, 1, 1, 1.0, 1.0,
+                            GridBagConstraints.CENTER,
+                            GridBagConstraints.BOTH,
+                            new Insets(0, 0, 0, 0), 0, 0));
+
+            buttonPanel.add(getOKButton(),
+                    new GridBagConstraints(1, 0, 1, 1, 0.0, 0.0,
+                            GridBagConstraints.CENTER,
+                            GridBagConstraints.NONE,
+                            new Insets(5, 5, 5, 5), 0, 0));
+
+            buttonPanel.add(getCancelButton(),
+                    new GridBagConstraints(2, 0, 1, 1, 0.0, 0.0,
+                            GridBagConstraints.CENTER,
+                            GridBagConstraints.NONE,
+                            new Insets(5, 5, 5, 5), 0, 0));
+
+            JButton buttons[] = new JButton[]
+            {
+                getOKButton(),
+                getCancelButton()
+            };
+            Utilities.equalizeButtonSizes(buttons);
+        }
+        return buttonPanel;
+    }
+
+
+    /** Returns okButton */
+    private JButton getOKButton() {
+        // If button not already created
+        if (null == okButton) {
+            // Create button
+            okButton = new JButton("Save");
+
+            // Register listener
+            okButton.addActionListener(new ActionListener() {
+                public void actionPerformed(ActionEvent e) {
+                }
+            });
+        }
+
+        // Return button
+        return okButton;
+    }
+
+    /** Returns cancelButton */
+    private JButton getCancelButton() {
+        // If button not already created
+        if (null == cancelButton) {
+
+            // Create button
+            cancelButton = new JButton("cancel");
+
+            // Register listener
+            cancelButton.addActionListener(new ActionListener() {
+                public void actionPerformed(ActionEvent e) {
+                    RoutingAssertionDialog.this.dispose();
+                }
+            });
+        }
+        // Return button
+        return cancelButton;
+    }
+
 
     private JComboBox authenticationMethodComboBox;
     private JTextField identityTextField;
