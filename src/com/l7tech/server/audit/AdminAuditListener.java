@@ -11,6 +11,7 @@ import com.l7tech.common.audit.AdminAuditRecord;
 import com.l7tech.identity.User;
 import com.l7tech.objectmodel.Entity;
 import com.l7tech.objectmodel.NamedEntity;
+import com.l7tech.server.event.EntityChangeSet;
 import com.l7tech.server.event.Event;
 import com.l7tech.server.event.admin.*;
 import com.l7tech.server.service.ServiceEvent;
@@ -118,8 +119,31 @@ public class AdminAuditListener implements CreateListener, UpdateListener, Delet
         } else if (event instanceof Updated) {
             action = AdminAuditRecord.ACTION_UPDATED;
             msg.append(" updated");
+            EntityChangeSet changes = ((Updated)event).getChangeSet();
+            for (Iterator i = changes.getProperties(); i.hasNext();) {
+                String property = (String)i.next();
+                Object ovalue = changes.getOldValue(property);
+                Object nvalue = changes.getNewValue(property);
+                String verbed = null;
+                if (ovalue == null) {
+                    if (nvalue != null) {
+                        verbed = "set";
+                    }
+                } else if (nvalue == null) {
+                    if (ovalue != null) {
+                        verbed = "cleared";
+                    }
+                } else if (!ovalue.equals(nvalue)) {
+                    verbed = "changed";
+                }
+                if (verbed != null) {
+                    msg.append(" ").append(verbed).append(" ");
+                    msg.append(property);
+                    if (i.hasNext()) msg.append(",");
+                }
+            }
         } else {
-            action = 'X';
+            action = 'X'; // Shouldn't happen
         }
 
         String note = event.getNote();
