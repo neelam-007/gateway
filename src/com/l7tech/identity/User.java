@@ -136,10 +136,6 @@ public class User extends NamedEntityImp implements Principal {
         return (int)getOid();
     }
 
-    // ************************************************
-    // PRIVATES
-    // ************************************************
-
     public static String encodePasswd(String login, String passwd) {
         String toEncode = login + ":" + passwd;
 
@@ -165,6 +161,10 @@ public class User extends NamedEntityImp implements Principal {
         }
         return new String(buffer);
     }
+
+    // ************************************************
+    // PRIVATES
+    // ************************************************
 
     private boolean isAlreadyEncoded(String arg) {
         if (arg == null || arg.length() != 32) return false;
