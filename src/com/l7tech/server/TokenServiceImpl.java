@@ -17,6 +17,8 @@ import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.assertion.xmlsec.RequestWssX509Cert;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
+import com.l7tech.policy.assertion.composite.AllAssertion;
+import com.l7tech.policy.assertion.composite.OneOrMoreAssertion;
 import com.l7tech.server.saml.HolderOfKeyHelper;
 import com.l7tech.server.saml.SamlAssertionGenerator;
 import com.l7tech.server.secureconversation.DuplicateSessionException;
@@ -24,6 +26,7 @@ import com.l7tech.server.secureconversation.SecureConversationContextManager;
 import com.l7tech.server.secureconversation.SecureConversationSession;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.ServerAssertion;
+import com.l7tech.server.policy.ServerPolicyFactory;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.xml.sax.SAXException;
@@ -127,9 +130,18 @@ public class TokenServiceImpl implements TokenService {
     }
 
     private ServerAssertion getGenericEnforcementPolicy() {
-        // todo, construct a policy to enforce on token requests
-        // should allow for WSS signature, SAML auth, and transport level authentication
-        return null;
+        if (tokenServicePolicy == null) {
+            AllAssertion base = new AllAssertion();
+            OneOrMoreAssertion root = new OneOrMoreAssertion();
+            base.addChild(root);
+
+            // todo, construct a policy to enforce on token requests
+            // should allow for WSS signature, SAML auth, and transport level authentication
+
+            ServerPolicyFactory policyFactory = new ServerPolicyFactory();
+            tokenServicePolicy = policyFactory.makeServerPolicy(base);
+        }
+        return tokenServicePolicy;
     }
 
     /**
@@ -449,6 +461,7 @@ public class TokenServiceImpl implements TokenService {
 
     private PrivateKey privateServerKey = null;
     private X509Certificate serverCert = null;
+    private ServerAssertion tokenServicePolicy = null;
 
     private final Logger logger = Logger.getLogger(getClass().getName());
     private final static String RST_ELNAME = "RequestSecurityToken";
