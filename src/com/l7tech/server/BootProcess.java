@@ -8,6 +8,7 @@ package com.l7tech.server;
 
 import com.l7tech.common.BuildInfo;
 import com.l7tech.common.security.JceProvider;
+import com.l7tech.common.util.JdkLoggerConfigurator;
 import com.l7tech.common.util.Locator;
 import com.l7tech.logging.ServerLogManager;
 import com.l7tech.objectmodel.HibernatePersistenceManager;
@@ -30,6 +31,10 @@ import java.util.logging.Logger;
  * @version $Revision$
  */
 public class BootProcess implements ServerComponentLifecycle {
+    static {
+        JdkLoggerConfigurator.configure("com.l7tech", "com/l7tech/server/resources/logging.properties");
+    }
+
     private final ServerLogManager serverLogManager = ServerLogManager.getInstance();
     private final Logger logger = Logger.getLogger(getClass().getName());
     private List _components = new ArrayList();
