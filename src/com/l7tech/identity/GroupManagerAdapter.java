@@ -28,7 +28,11 @@ public class GroupManagerAdapter implements GroupManager {
         throw new UnsupportedOperationException();
     }
 
-    public long save(Group group) throws SaveException {
+    public void delete(String identifier) throws DeleteException {
+        throw new UnsupportedOperationException();
+    }
+
+    public String save(Group group) throws SaveException {
         throw new UnsupportedOperationException();
     }
 
@@ -72,11 +76,35 @@ public class GroupManagerAdapter implements GroupManager {
         throw new UnsupportedOperationException();
     }
 
-    public Set getGroups(User user) throws FindException {
+    public Set getGroupHeaders(User user) throws FindException {
         throw new UnsupportedOperationException();
     }
 
-    public Set getUsers(Group group) throws FindException {
+    public Set getGroupHeaders(String userId) throws FindException {
+        throw new UnsupportedOperationException();
+    }
+
+    public void setGroupHeaders(User user, Set groupHeaders) throws FindException, UpdateException {
+        throw new UnsupportedOperationException();
+    }
+
+    public void setGroupHeaders(String userId, Set groupHeaders) throws FindException, UpdateException {
+        throw new UnsupportedOperationException();
+    }
+
+    public Set getUserHeaders(Group group) throws FindException {
+        throw new UnsupportedOperationException();
+    }
+
+    public Set getUserHeaders(String groupId) throws FindException {
+        throw new UnsupportedOperationException();
+    }
+
+    public void setUserHeaders(Group group, Set groupHeaders) throws FindException, UpdateException {
+        throw new UnsupportedOperationException();
+    }
+
+    public void setUserHeaders(String groupId, Set groupHeaders) throws FindException, UpdateException {
         throw new UnsupportedOperationException();
     }
 
