@@ -47,6 +47,45 @@ public class SecureConversationContextManager implements WssProcessor.SecurityCo
     }
 
     /**
+     * Creates a new session and saves it
+     * @param sessionOwner
+     * @return the newly created session
+     */
+    public SecureConversationSession createContextForUser(User sessionOwner) throws DuplicateSessionException {
+        final byte[] sharedSecret = generateNewSecret();
+        String newSessionIdentifier = "http://www.layer7tech.com/uuid/" + randomuuid();
+        // make up a new session identifier and shared secret (using some random generator)
+        SecureConversationSession session = new SecureConversationSession();
+        session.setCreation(System.currentTimeMillis());
+        session.setExpiration(System.currentTimeMillis() + DEFAULT_SESSION_DURATION);
+        session.setIdentifier(newSessionIdentifier);
+        session.setSharedSecret(new SecretKey() {
+            public byte[] getEncoded() {
+                return sharedSecret;
+            }
+            public String getAlgorithm() {
+                return "l7 shared secret";
+            }
+            public String getFormat() {
+                return "l7 shared secret";
+            }
+        });
+        session.setUsedBy(sessionOwner);
+        saveSession(session);
+        return session;
+    }
+
+    private byte[] generateNewSecret() {
+        // todo, return some random secret
+        return new byte[0];
+    }
+
+    private String randomuuid() {
+        // todo, return some random encoded string
+        return "blah";
+    }
+
+    /**
      * For use by the WssProcessor on the ssg.
      */
     public WssProcessor.SecurityContext getSecurityContext(String securityContextIdentifier) {
@@ -102,4 +141,5 @@ public class SecureConversationContextManager implements WssProcessor.SecurityCo
     }
 
     private final Logger logger = Logger.getLogger(SecureConversationContextManager.class.getName());
+    private static final long DEFAULT_SESSION_DURATION = 1000*60*60*2; // 2 hrs?
 }
