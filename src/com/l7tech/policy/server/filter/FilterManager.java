@@ -3,6 +3,7 @@ package com.l7tech.policy.server.filter;
 import com.l7tech.service.PublishedService;
 import com.l7tech.identity.User;
 import com.l7tech.policy.assertion.Assertion;
+import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.wsp.WspReader;
 import com.l7tech.policy.wsp.WspWriter;
 import com.l7tech.logging.LogManager;
@@ -31,6 +32,8 @@ public class FilterManager {
      * @param policyRequestor or null is the requestor is anonymous
      * @param rootAssertion is modified by the filter(s)
      * @return the filtered policy, null if a filter decided that this user has absolutely no business with this policy
+     *         null can also mean that the policy was stripped of all its content. it should not be regrded as an error
+     *         if the policyRequestor arg was null
      * @throws FilteringException
      */
     public Assertion applyAllFilters(User policyRequestor, Assertion rootAssertion) throws FilteringException {
@@ -50,6 +53,11 @@ public class FilterManager {
             } catch (FilteringException e) {
                 throw new FilteringException("error while applying filter ", e);
             }
+        }
+        // check for empty assertion to avoid sending back an empty ALL
+        if (rootAssertion != null && rootAssertion instanceof AllAssertion) {
+            AllAssertion root = (AllAssertion)rootAssertion;
+            if (root.children() == null || !root.children().hasNext()) return null;
         }
         return rootAssertion;
     }
