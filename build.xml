@@ -792,9 +792,6 @@
         <property name="install.rel.ssl.csr" value="${install.rel.keys}/ssl.csr"/>
         <property name="install.rel.ssl.cer" value="${install.rel.keys}/ssl.cer"/>
 
-        <property name="install.rel.jdk" value="${install.jdk.dir}"/>
-        <property name="install.rel.tomcat" value="${install.tomcat.dir}"/>
-
         <!-- Absolute source paths -->
         <property name="install.src.base" value="${build.dir}/install/ssg"/>
         <property name="install.src.bin" value="${install.src.base}/${install.rel.bin}"/>
@@ -820,7 +817,8 @@
         <property name="install.src.logs" value="${install.src.base}/${install.rel.logs}"/>
         <property name="install.src.web-inf" value="${install.src.tomcat}/webapps/ROOT/WEB-INF"/>
         <property name="install.src.ldap" value="${install.src.base}/${install.rel.ldap}"/>
-
+        <property name="install.rel.jdk" value="${install.jdk.dir}"/>
+        <property name="install.rel.tomcat" value="${install.tomcat.dir}"/>
         <!-- Absolute target paths -->
         <property name="install.target.base" value="/ssg"/>
         <property name="install.target.keys" value="${install.target.base}/${install.rel.keys}"/>
@@ -1077,6 +1075,145 @@ ssgadmin.md5 = '${install.pass.ssgadmin.md5}'
         </exec>
         <echo>BUILD COMPLETE - Produced ${tarball}!</echo>
     </target>
+
+
+    <target name="make-tar-ball" depends="init-dev">
+         <fail unless="install.build.number" message="Set the install.build.number property before running this target!"/>
+         <property file="etc/install.properties"/>
+
+         <fail unless="install.tomcat.tar.gz" message="Set the install.tomcat.tar.gz property or create install.properties!"/>
+         <fail unless="install.jdk.tar.gz" message="Set the install.jdk.tar.gz property or create install.properties!"/>
+
+         <condition property="tomcat.exists">
+             <available file="${install.tomcat.tar.gz}"/>
+         </condition>
+
+         <condition property="jdk.exists">
+             <available file="${install.jdk.tar.gz}"/>
+         </condition>
+
+         <fail unless="tomcat.exists" message="Couldn't find ${install.tomcat.tar.gz}! Check your install.properties file!"/>
+         <fail unless="jdk.exists" message="Couldn't find ${install.jdk.tar.gz}! Check your install.properties file!"/>
+
+         <!-- Relative pathnames -->
+         <property name="install.rel.dist" value="dist"/>
+         <property name="install.rel.doc" value="doc"/>
+         <property name="install.rel.etc" value="etc"/>
+         <property name="install.rel.bin" value="bin"/>
+         <property name="install.rel.logs" value="logs"/>
+         <property name="install.rel.ldap" value="${install.rel.etc}/ldapTemplates"/>
+         <property name="install.rel.conf" value="${install.rel.etc}/conf"/>
+         <property name="install.rel.keys" value="${install.rel.etc}/keys"/>
+         <property name="install.rel.sql" value="${install.rel.etc}/sql"/>
+         <property name="install.rel.ca.keystore" value="${install.rel.keys}/ca.ks"/>
+         <property name="install.rel.ssl.keystore" value="${install.rel.keys}/ssl.ks"/>
+         <property name="install.rel.ssl.csr" value="${install.rel.keys}/ssl.csr"/>
+         <property name="install.rel.ssl.cer" value="${install.rel.keys}/ssl.cer"/>
+
+         <property name="install.rel.jdk" value="${install.jdk.dir}"/>
+         <property name="install.rel.tomcat" value="${install.tomcat.dir}"/>
+
+         <!-- Absolute source paths -->
+         <property name="install.src.base" value="${build.dir}/install/ssg"/>
+         <property name="install.src.bin" value="${install.src.base}/${install.rel.bin}"/>
+         <property name="install.src.lib" value="${install.src.base}/lib"/>
+         <property name="install.src.dist" value="${install.src.base}/${install.rel.dist}"/>
+         <property name="install.src.doc" value="${install.src.base}/${install.rel.doc}"/>
+         <property name="install.src.jdk" value="${install.src.base}/${install.rel.jdk}"/>
+         <property name="install.src.tomcat" value="${install.src.base}/${install.rel.tomcat}"/>
+
+         <property name="install.src.etc" value="${install.src.base}/${install.rel.etc}"/>
+         <property name="install.src.keys" value="${install.src.base}/${install.rel.keys}"/>
+         <property name="install.src.sql" value="${install.src.base}/${install.rel.sql}"/>
+
+         <property name="install.src.conf" value="${install.src.base}/${install.rel.conf}"/>
+         <property name="install.src.server.xml" value="${install.src.tomcat}/conf/server.xml"/>
+         <property name="install.src.logs" value="${install.src.base}/${install.rel.logs}"/>
+         <property name="install.src.web-inf" value="${install.src.tomcat}/webapps/ROOT/WEB-INF"/>
+         <property name="install.src.ldap" value="${install.src.base}/${install.rel.ldap}"/>
+
+         <!-- Absolute target paths -->
+         <property name="install.target.base" value="/ssg"/>
+         <property name="install.target.keys" value="${install.target.base}/${install.rel.keys}"/>
+         <property name="install.target.ldap" value="${install.target.base}/${install.rel.ldap}"/>
+         <property name="install.target.tomcat" value="${install.target.base}/${install.rel.tomcat}"/>
+         <property name="install.target.jdk" value="${install.target.base}/${install.rel.jdk}"/>
+         <property name="install.target.ssl.keystore" value="${install.target.keys}/${install.rel.ssl.keystore}"/>
+         <property name="install.target.logs" value="${install.target.base}/${install.rel.logs}"/>
+
+         <property name="install.alias.ca.keystore" value="ssgroot"/>
+         <property name="install.alias.ssl.keystore" value="tomcat"/>
+         <property name="install.src.war" value="${install.src.dist}/ROOT-b${install.build.number}.war"/>
+
+         <echo>Making directories...</echo>
+         <mkdir dir="${install.src.base}"/>
+         <mkdir dir="${install.src.lib}"/>
+         <mkdir dir="${install.src.dist}"/>
+         <mkdir dir="${install.src.doc}"/>
+         <mkdir dir="${install.src.etc}"/>
+         <mkdir dir="${install.src.sql}"/>
+         <mkdir dir="${install.src.ldap}"/>
+         <mkdir dir="${install.src.bin}"/>
+         <mkdir dir="${install.src.keys}"/>
+         <mkdir dir="${install.src.conf}"/>
+         <mkdir dir="${install.src.logs}"/>
+
+         <!-- Extract Tomcat & JDK tarballs -->
+         <untar src="${install.tomcat.tar.gz}" dest="${install.src.base}" compression="gzip"/>
+         <untar src="${install.jdk.tar.gz}" dest="${install.src.base}" compression="gzip"/>
+
+         <!-- Copy WAR file into position -->
+         <copy file="${build.dir}/${war}" tofile="${install.src.war}"/>
+         <!-- Copy server.xml & catalina.policy -->
+         <copy todir="${install.src.tomcat}/conf">
+             <fileset dir="${src.root}/etc/tomcat" includes="server.xml, catalina.policy"/>
+         </copy>
+
+         <!-- Copy LDAP templates -->
+         <copy todir="${install.src.ldap}">
+             <fileset dir="${src.root}/etc/ldapTemplates" includes="**/*.xml"/>
+         </copy>
+         <!-- Expand ROOT-bxxxx.war into tomcat/webapps -->
+         <echo>Expanding ${install.src.war}...</echo>
+         <unwar src="${install.src.war}" dest="${install.src.tomcat}/webapps/ROOT"/>
+
+         <!-- Copy misc. stuff -->
+         <copy todir="${install.src.sql}" file="${src.root}/etc/db/${database.type}/ssg.sql"/>
+         <copy todir="${install.src.bin}">
+             <fileset dir="${src.root}/etc">
+                 <include name="setkeys.sh"/>
+                 <include name="resetAdmin.sh"/>
+                 <include name="md5passwd.pl"/>
+                 <include name="rpass.pl"/>
+                 <include name="ssgruntimedefs.sh"/>
+             </fileset>
+         </copy>
+
+         <!-- Make scripts executable -->
+         <echo>Setting execute permissions on scripts...</echo>
+         <chmod perm="0755">
+             <fileset dir="${install.src.bin}">
+                 <include name="*.sh"/>
+                 <include name="*.pl"/>
+             </fileset>
+             <fileset dir="${install.src.jdk}">
+                 <include name="bin/*"/>
+                 <include name="jre/bin/*"/>
+             </fileset>
+             <fileset dir="${install.src.tomcat}/bin">
+                 <include name="*.sh"/>
+             </fileset>
+         </chmod>
+
+         <!-- Create tarball -->
+         <property name="tarball" value="${build.dir}/clean-ssg-b${install.build.number}.tar.gz"/>
+         <echo>Creating ${tarball}...</echo>
+         <exec executable="tar" dir="${build.dir}/install">
+             <arg line="-czf ${tarball}"/>
+             <arg line="."/>
+         </exec>
+         <echo>BUILD COMPLETE - Produced ${tarball}!</echo>
+     </target>
 
     <target name="OFFICIAL-build" depends="init-dev">
         <condition property="rightdir">
