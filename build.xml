@@ -245,7 +245,7 @@
           make the ssl cert and record it's keystore password in it
         -->
         <copy todir="${tomcat.home}/conf">
-            <fileset dir="${src.root}/etc" includes="server.xml"/>
+            <fileset dir="${src.root}/etc" includes="server.xml, catalina.policy"/>
         </copy>
     </target>
 
