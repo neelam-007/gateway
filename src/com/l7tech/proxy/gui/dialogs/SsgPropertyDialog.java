@@ -11,6 +11,10 @@ import com.l7tech.proxy.datamodel.Ssg;
 import com.l7tech.proxy.datamodel.SsgEvent;
 import com.l7tech.proxy.datamodel.SsgListener;
 import com.l7tech.proxy.datamodel.WsTrustSamlTokenStrategy;
+import com.l7tech.proxy.datamodel.exceptions.OperationCanceledException;
+import com.l7tech.proxy.datamodel.exceptions.KeyStoreCorruptException;
+import com.l7tech.proxy.datamodel.exceptions.BadCredentialsException;
+import com.l7tech.proxy.datamodel.exceptions.CertificateAlreadyIssuedException;
 import com.l7tech.proxy.gui.Gui;
 import com.l7tech.proxy.gui.util.IconManager;
 import com.l7tech.proxy.ssl.CurrentSslPeer;
@@ -25,12 +29,14 @@ import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
+import java.io.IOException;
 import java.security.GeneralSecurityException;
 import java.security.NoSuchAlgorithmException;
 import java.security.cert.CertificateEncodingException;
 import java.security.cert.X509Certificate;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.net.PasswordAuthentication;
 
 /**
  * Panel for editing properties of an SSG object.
@@ -212,6 +218,7 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
                     if (cert == null) {
                         NoClientCert dlg = new NoClientCert(SsgPropertyDialog.this, ssgName());
                         dlg.pack();
+                        Utilities.centerOnScreen(dlg);
                         dlg.show();
                         int r = dlg.getExitCondition();
                         /*
@@ -231,7 +238,21 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
                         if (r == NoClientCert.REQUESTED_IMPORT) {
                             importClientCertificate();
                         } else if (r == NoClientCert.REQUESTED_CSR) {
-                            manualCSR();
+                            try {
+                                manualCSR();
+                            } catch (CertificateAlreadyIssuedException csrex) {
+                                Gui.errorMessage("Unable to apply for certificate",
+                                                 "Unable to obtain certificate from the SecureSpan Gateway " +
+                                                 ssgName() + " because this account already has a valid " +
+                                                 "certificate. Contact the gateway administrator for more information",
+                                                 csrex);
+                            } catch (BadCredentialsException csrex) {
+                                Gui.errorMessage("Unable to apply for certificate",
+                                                 "Unable to obtain certificate from the SecureSpan Gateway " +
+                                                 ssgName() + " because of credentials provided. Contact the " +
+                                                 "gateway administrator for more information.",
+                                                 csrex);
+                            }
                         }
                         return;
                     }
@@ -272,8 +293,20 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
         return ssgIdentityPane;
     }
 
-    private void manualCSR() {
-        // Todo, fla
+    private void manualCSR() throws OperationCanceledException, GeneralSecurityException,
+                                    IOException, KeyStoreCorruptException, BadCredentialsException,
+                                    CertificateAlreadyIssuedException {
+        if (!(ssgIdentityPane instanceof TrustedSsgIdentityPanel))
+            throw new IllegalStateException("Not supported for federated SSG");
+
+        PasswordAuthentication creds = ssg.getRuntime().getCredentialManager().getCredentials(ssg);
+
+        if (ssg.getServerCertificate() == null) {
+            ssg.getRuntime().getSsgKeyStoreManager().installSsgServerCertificate(ssg, creds);
+        }
+
+        // PasswordAuthentication credentials
+        ssg.getRuntime().getSsgKeyStoreManager().obtainClientCertificate(creds);
     }
 
     private void importClientCertificate() {
