@@ -150,3 +150,15 @@ CREATE TABLE published_service (
 
 
 
+--
+-- Table structure for table 'client_cert'
+--
+
+DROP TABLE IF EXISTS client_cert;
+CREATE TABLE client_cert (
+  userid VARCHAR(64) NOT NULL default '',
+  consumed BOOL NOT NULL default '0',
+  regen_since_consumed INT,
+  cert BLOB NOT NULL,
+  PRIMARY KEY  (userid)
+) TYPE=InnoDB;
