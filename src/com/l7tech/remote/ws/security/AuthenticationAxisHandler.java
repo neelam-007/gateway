@@ -1,4 +1,4 @@
-package com.l7tech.adminws.security;
+package com.l7tech.remote.ws.security;
 
 import com.l7tech.common.util.Locator;
 import com.l7tech.identity.AuthenticationException;
@@ -43,7 +43,7 @@ import java.util.logging.Logger;
  * <transport name="http">
  *   <requestFlow>
  *     <handler type="URLMapper"/>
- *     <handler type="java:com.l7tech.adminws.security.AuthenticationAxisHandler"/>
+ *     <handler type="java:com.l7tech.remote.ws.security.AuthenticationAxisHandler"/>
  *   </requestFlow>
  * </transport>
  */
@@ -99,7 +99,7 @@ public class AuthenticationAxisHandler extends org.apache.axis.handlers.BasicHan
         }
 
         // WAS AUTHENTICATION COMPLETE?
-        if (authenticatedUser == null) throw new AxisFault("Server.Unauthorized", "com.l7tech.adminws.security.AuthenticationAxisHandler failed", null, null );
+        if (authenticatedUser == null) throw new AxisFault("Server.Unauthorized", "com.l7tech.remote.ws.security.AuthenticationAxisHandler failed", null, null );
 
         // NOW, PROCEED TO AUTHORIZATION
         if (authorizeAdminMembership(authenticatedUser)) {
@@ -111,7 +111,7 @@ public class AuthenticationAxisHandler extends org.apache.axis.handlers.BasicHan
         }
         else {
             logger.log(Level.SEVERE, "authorization failure for user " + authenticatedUser.getLogin());
-            throw new AxisFault("Server.Unauthorized", "com.l7tech.adminws.security.AuthenticationAxisHandler failed", null, null );
+            throw new AxisFault("Server.Unauthorized", "com.l7tech.remote.ws.security.AuthenticationAxisHandler failed", null, null );
         }
     }
 

@@ -198,7 +198,7 @@
   <requestFlow>
    <handler type="URLMapper"/>
    <!-- comment the following two handlers to bypass admin ws authentication mechanism -->
-   <handler type="java:com.l7tech.adminws.security.AuthenticationAxisHandler"/>
+   <handler type="java:com.l7tech.remote.ws.security.AuthenticationAxisHandler"/>
   </requestFlow>
  </transport>
  <transport name="local">
