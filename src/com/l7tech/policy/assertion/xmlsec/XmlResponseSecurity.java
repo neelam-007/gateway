@@ -32,5 +32,24 @@ public class XmlResponseSecurity extends Assertion implements XmlSecurityAsserti
         }
     }
 
+    /**
+     * Test if this assertion has an encryption element specified.
+     * <p/>
+     *
+     * @return true if this instance has encryption required for an
+     *         element, false otherwise
+     */
+    public boolean hasEncryptionElement() {
+        for (int i = 0; i < elements.length; i++) {
+            ElementSecurity elementSecurity = elements[i];
+            // authenticated if Xpath points to envelope
+            if (elementSecurity.isEncryption()) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+
     private ElementSecurity[] elements = new ElementSecurity[]{};
 }

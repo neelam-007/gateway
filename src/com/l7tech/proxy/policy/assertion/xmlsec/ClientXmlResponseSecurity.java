@@ -47,7 +47,7 @@ public class ClientXmlResponseSecurity extends ClientAssertion {
     private static final ClientLogger log = ClientLogger.getInstance(ClientHttpClientCert.class);
 
     public ClientXmlResponseSecurity(XmlResponseSecurity data) {
-        this.data = data.getElements();
+        xmlResponseSecurity = data;
         if (data == null) {
             throw new IllegalArgumentException("security elements is null");
         }
@@ -77,7 +77,7 @@ public class ClientXmlResponseSecurity extends ClientAssertion {
         request.setNonceRequired(true);
 
         // If the response will be encrypted, we'll need to ensure that there's a session open
-        if (isEncryption()) {
+        if (xmlResponseSecurity.hasEncryptionElement()) {
             log.info("According to policy, we're expecting an encrypted reply.  Verifying session.");
             request.getOrCreateSession();
         }
@@ -110,8 +110,8 @@ public class ClientXmlResponseSecurity extends ClientAssertion {
         if (session != null) {
             decryptionKey = new AesKey(session.getKeyRes(), 128);
         }
-
-        SecurityProcessor verifier = SecurityProcessor.getVerifier(request.getSession(), decryptionKey, data);
+        ElementSecurity[] elements = xmlResponseSecurity.getElements();
+        SecurityProcessor verifier = SecurityProcessor.getVerifier(request.getSession(), decryptionKey, elements);
         try {
             X509Certificate caCert = SsgKeyStoreManager.getServerCert(request.getSsg());
             SecurityProcessor.Result result = verifier.processInPlace(doc);
@@ -168,8 +168,9 @@ public class ClientXmlResponseSecurity extends ClientAssertion {
             throw new ResponseValidationException("Response from Gateway did not contain a nonce", e);
         }
 
-        for (int i = 0; i < data.length; i++) {
-            ElementSecurity elementSecurity = data[i];
+        ElementSecurity[] elements = xmlResponseSecurity.getElements();
+        for (int i = 0; i < elements.length; i++) {
+            ElementSecurity elementSecurity = elements[i];
 
             try {
                 // XPath match?
@@ -256,25 +257,13 @@ public class ClientXmlResponseSecurity extends ClientAssertion {
     }
 
     public String getName() {
-        return "XML Response Security - " + (isEncryption() ? "sign and encrypt" : "sign only");
+        return "XML Response Security - " + (xmlResponseSecurity.hasEncryptionElement() ? "sign and encrypt" : "sign only");
     }
 
     public String iconResource(boolean open) {
         return "com/l7tech/proxy/resources/tree/xmlencryption.gif";
     }
 
-    /**
-     * Tests whether any of the security elements requires encryption
-     *
-     * @return true if any of the lements requires encryption
-     */
-    private boolean isEncryption() {
-        for (int i = 0; i < data.length; i++) {
-            ElementSecurity elementSecurity = data[i];
-            if (elementSecurity.isEncryption()) return true;
-        }
-        return false;
-    }
 
-    private ElementSecurity[] data = null;
+    private XmlResponseSecurity xmlResponseSecurity;
 }

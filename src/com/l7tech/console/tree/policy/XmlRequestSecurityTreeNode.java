@@ -19,6 +19,6 @@ public class XmlRequestSecurityTreeNode extends XmlSecurityTreeNode {
      * @return the node name that is displayed
      */
     public String getBaseName() {
-        return "XML Request Security";
+        return "XML Request Security - Digital Signature Authentication";
     }
 }
