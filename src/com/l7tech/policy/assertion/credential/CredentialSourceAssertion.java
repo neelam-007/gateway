@@ -7,6 +7,14 @@
 package com.l7tech.policy.assertion.credential;
 
 import com.l7tech.policy.assertion.Assertion;
+import com.l7tech.policy.assertion.xmlsec.RequestWssX509Cert;
+import com.l7tech.policy.assertion.xmlsec.SecureConversation;
+import com.l7tech.policy.assertion.xmlsec.SamlSecurity;
+import com.l7tech.policy.assertion.credential.http.HttpBasic;
+import com.l7tech.policy.assertion.credential.http.HttpClientCert;
+import com.l7tech.policy.assertion.credential.http.HttpDigest;
+import com.l7tech.policy.assertion.credential.wss.WssBasic;
+import com.l7tech.policy.assertion.credential.wss.WssDigest;
 
 /**
  * Asserts that the requester's credentials were found, and using a particular authentication mechanism.
@@ -15,4 +23,14 @@ import com.l7tech.policy.assertion.Assertion;
  * @version $Revision$
  */
 public abstract class CredentialSourceAssertion extends Assertion {
+    public static final CredentialSourceAssertion[] ALL_CREDENTIAL_ASSERTIONS_TYPES = new CredentialSourceAssertion[] {
+        new HttpBasic(),
+        new HttpClientCert(),
+        new HttpDigest(),
+        new WssBasic(),
+        new WssDigest(),
+        new RequestWssX509Cert(),
+        new SecureConversation(),
+        new SamlSecurity()
+    };
 }
