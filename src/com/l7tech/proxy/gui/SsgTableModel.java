@@ -21,7 +21,7 @@ import java.util.logging.Logger;
  * Date: Jun 3, 2003
  * Time: 2:48:51 PM
  */
-public class SsgTableModel extends AbstractTableModel implements SsgListener {
+class SsgTableModel extends AbstractTableModel implements SsgListener {
     private static final Logger log = Logger.getLogger(SsgTableModel.class.getName());
     private final String SSG_TYPE_FEDERATED = "Federated";
     private final String SSG_TYPE_TRUSTED = "Trusted";
@@ -33,7 +33,7 @@ public class SsgTableModel extends AbstractTableModel implements SsgListener {
     private int sortColumn = 1;
     private boolean sortReverse = false;
 
-    public SsgTableModel(SsgManager ssgManager) {
+    SsgTableModel(SsgManager ssgManager) {
         super();
         if (ssgManager == null)
             throw new IllegalArgumentException("No SsgManager provided");
@@ -104,16 +104,16 @@ public class SsgTableModel extends AbstractTableModel implements SsgListener {
         abstract public int compare(Ssg ssg1, Ssg ssg2);
     }
 
-    public int getSortColumn() {
+    int getSortColumn() {
         return sortColumn;
     }
 
-    public boolean getSortingReverse() {
+    boolean getSortingReverse() {
         return sortReverse;
     }
 
     /** Sort the table by the specified column. */
-    public void setSortOrder(int sortColumn, final boolean reverse) {
+    void setSortOrder(int sortColumn, final boolean reverse) {
         this.sortColumn = sortColumn;
         this.sortReverse = reverse;
         if (sortColumn == 3) {
@@ -214,11 +214,11 @@ public class SsgTableModel extends AbstractTableModel implements SsgListener {
     }
 
     /** Get the SSG at the specified row, or null. */
-    public Ssg getSsgAtRow(final int rowNumber) {
+    Ssg getSsgAtRow(final int rowNumber) {
         return (Ssg) getValueAt(rowNumber, 0);
     }
 
-    public void addSsg(final Ssg ssg) {
+    void addSsg(final Ssg ssg) {
         if (ssgManager.add(ssg)) {
             saveSsgList();
             updateModel();
@@ -227,7 +227,7 @@ public class SsgTableModel extends AbstractTableModel implements SsgListener {
     }
 
     /** Remove the specified Ssg from the SsgManager (and hence from ssgs.xml) and also from the table model. */
-    public void removeSsg(final Ssg ssg) {
+    void removeSsg(final Ssg ssg) {
         try {
             ssgManager.remove(ssg);
             saveSsgList();
@@ -238,7 +238,7 @@ public class SsgTableModel extends AbstractTableModel implements SsgListener {
         ssgManager.onSsgUpdated(ssg);
     }
 
-    public void setDefaultSsg(Ssg ssg) {
+    void setDefaultSsg(Ssg ssg) {
         Ssg oldDefault = null;
         try {
             oldDefault = ssgManager.getDefaultSsg();
@@ -261,7 +261,7 @@ public class SsgTableModel extends AbstractTableModel implements SsgListener {
      * @param ssg
      * @return
      */
-    public int getRow(Ssg ssg) {
+    int getRow(Ssg ssg) {
         if (ssg == null)
             return -1;
 
@@ -274,13 +274,17 @@ public class SsgTableModel extends AbstractTableModel implements SsgListener {
         return -1;
     }
 
-    public void editedSsg(Ssg ssg) {
+    /**
+     * Called by SSG property dialog to notify us that the specified SSG has been edited.
+     * TODO: Figure out if this is still needed now that Ssg supports the SsgListener interface. 
+     */
+    void editedSsg(Ssg ssg) {
         saveSsgList();
         ssgManager.onSsgUpdated(ssg);
         fireSsgUpdated(ssg);
     }
 
-    public Ssg createSsg() {
+    Ssg createSsg() {
         return ssgManager.createSsg();
     }
 

@@ -648,6 +648,39 @@ public class SsgKeyStoreManager {
         return;
     }
 
+    /** Return the username in our client certificate, or null if we don't have an active client cert. */
+    public static String lookupClientCertUsername(Ssg ssg) {
+        boolean badKeystore = false;
+
+        try {
+            if (isClientCertAvailabile(ssg)) {
+                X509Certificate cert = null;
+                cert = getClientCert(ssg);
+                return CertUtils.extractUsernameFromClientCertificate(cert);
+            }
+        } catch (IllegalArgumentException e) {
+            // bad client certificate format
+            badKeystore = true; // TODO This will fail with arbitrary third-party PKI not using CN=username
+        } catch (KeyStoreCorruptException e) {
+            badKeystore = true;
+        }
+
+        if (badKeystore) {
+            try {
+                Ssg problemSsg = ssg.getTrustedGateway();
+                if (problemSsg == null) problemSsg = ssg;
+                Managers.getCredentialManager().notifyKeyStoreCorrupt(problemSsg);
+                deleteStores(problemSsg);
+                ssg.resetSslContext();
+                // FALLTHROUGH -- continue, with newly-blank keystore
+            } catch (OperationCanceledException e1) {
+                // FALLTHROUGH -- continue, pretending we had no keystore
+            }
+        }
+
+        return null;
+    }
+
     /** Exception thrown if the desired alias is not found in a keystore file. */
     public static class AliasNotFoundException extends Exception {
         public AliasNotFoundException() {

@@ -5,11 +5,8 @@ import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.common.gui.widgets.CertificatePanel;
 import com.l7tech.common.gui.widgets.ContextMenuTextField;
 import com.l7tech.common.gui.widgets.WrappingLabel;
-import com.l7tech.common.util.CertUtils;
 import com.l7tech.proxy.ClientProxy;
 import com.l7tech.proxy.datamodel.*;
-import com.l7tech.proxy.datamodel.exceptions.KeyStoreCorruptException;
-import com.l7tech.proxy.datamodel.exceptions.OperationCanceledException;
 import com.l7tech.proxy.gui.Gui;
 import com.l7tech.proxy.gui.SsgPropertyPanel;
 import com.l7tech.proxy.gui.policy.PolicyTreeCellRenderer;
@@ -418,7 +415,7 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
             return;
         }
 
-        String clientCertUsername = lookupClientCertUsername(ssg);
+        String clientCertUsername = SsgKeyStoreManager.lookupClientCertUsername(ssg);
         if (clientCertUsername != null)
             identityPane.getUsernameTextField().setText(clientCertUsername);
         updateIdentityEnableState();
@@ -436,7 +433,7 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
             identityPane.getSavePasswordCheckBox().setEnabled(true);
             identityPane.getUserPasswordField().setEnabled(true);
             identityPane.getUserPasswordField().setEditable(true);
-            identityPane.getUsernameTextField().setEditable(lookupClientCertUsername(ssg) == null);
+            identityPane.getUsernameTextField().setEditable(SsgKeyStoreManager.lookupClientCertUsername(ssg) == null);
         }
     }
 
@@ -750,39 +747,6 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
         return referenceSsg.getSsgPort() != ssg.getSsgPort() || referenceSsg.getSslPort() != ssg.getSslPort();
     }
 
-    /** Return the username in our client certificate, or null if we don't have an active client cert. */
-    private String lookupClientCertUsername(Ssg ssg) {
-        boolean badKeystore = false;
-
-        try {
-            if (SsgKeyStoreManager.isClientCertAvailabile(ssg)) {
-                X509Certificate cert = null;
-                cert = SsgKeyStoreManager.getClientCert(ssg);
-                return CertUtils.extractUsernameFromClientCertificate(cert);
-            }
-        } catch (IllegalArgumentException e) {
-            // bad client certificate format
-            badKeystore = true; // TODO This will fail with arbitrary third-party PKI not using CN=username
-        } catch (KeyStoreCorruptException e) {
-            badKeystore = true;
-        }
-
-        if (badKeystore) {
-            try {
-                Ssg problemSsg = ssg.getTrustedGateway();
-                if (problemSsg == null) problemSsg = ssg;
-                Managers.getCredentialManager().notifyKeyStoreCorrupt(problemSsg);
-                SsgKeyStoreManager.deleteStores(problemSsg);
-                ssg.resetSslContext();
-                // FALLTHROUGH -- continue, with newly-blank keystore
-            } catch (OperationCanceledException e1) {
-                // FALLTHROUGH -- continue, pretending we had no keystore
-            }
-        }
-
-        return null;
-    }
-
     /** Set the Ssg object being edited by this panel. */
     private void setSsg(final Ssg ssg) {
         this.ssg = ssg;
@@ -814,7 +778,7 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
                 radioNonstandardPorts.setSelected(customPorts);
                 identityPane.getSavePasswordCheckBox().setSelected(ssg.isSavePasswordToDisk());
                 identityPane.getUseClientCredentialCheckBox().setSelected(ssg.isChainCredentialsFromClient());
-                String clientCertUsername = lookupClientCertUsername(ssg);
+                String clientCertUsername = SsgKeyStoreManager.lookupClientCertUsername(ssg);
                 if (clientCertUsername != null) {
                     identityPane.getUsernameTextField().setText(clientCertUsername);
                     identityPane.getUsernameTextField().setEditable(false);
