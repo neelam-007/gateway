@@ -269,5 +269,37 @@ public class HexUtils {
         return slurpUrl(url, (InputStream)null, null);
     }
 
+    /**
+     * Join the specified array of CharSequence into a single StringBuffer, joined with the specified delimiter.
+     * @param start   a StringBuffer containing the starting text.  If null, a new StringBuffer will be created.
+     * @param delim   delimiter to join with.  may not be null.
+     * @param tojoin  array of eg. String to join.  May be null or empty.
+     * @return start, after having XdYdZ appended to it where X, Y and Z were memebers of tojoin and d is delim.
+     *         Returns a StringBuffer containing the empty string if tojoin is null or empty.
+     */
+    public static StringBuffer join(StringBuffer start, String delim, CharSequence[] tojoin) {
+        if (start == null)
+            start = new StringBuffer();
+        if (tojoin == null)
+            return start;
+        for (int i = 0; i < tojoin.length; i++) {
+            if (i > 0)
+                start.append(delim);
+            start.append(tojoin[i]);
+        }
+        return start;
+    }
+
+    /**
+     * Join the specified array of CharSequence into a single StringBuffer, joined with the specified delimiter.
+     * @param delim   delimiter to join with.  may not be null.
+     * @param tojoin  array of eg. String to join. may be null or empty.      
+     * @return a new StringBuffer containing XdYdZ where X, Y and Z were memebers of tojoin and d is delim.  Returns
+     *         a StringBuffer containing the empty string if tojoin is null or empty.
+     */
+    public static StringBuffer join(String delim, CharSequence[] tojoin) {
+        return join(null, delim, tojoin);
+    }
+
     private static ThreadLocal md5s = new ThreadLocal();
 }

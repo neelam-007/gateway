@@ -32,11 +32,14 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.*;
+import java.util.logging.Logger;
 
 /**
  * Contains the guts of the WspReader and WspWriter, and the registry of types we can serialize.
  */
 public class WspConstants {
+    private static final Logger log = Logger.getLogger(WspConstants.class.getName());
+
     public static final String WSP_POLICY_NS = "http://schemas.xmlsoap.org/ws/2002/12/policy";
     public static final String L7_POLICY_NS = "http://www.layer7tech.com/ws/policy";
     public static final String POLICY_ELNAME = "Policy";
@@ -49,29 +52,6 @@ public class WspConstants {
           double.class.equals(type) ||
           byte.class.equals(type) ||
           char.class.equals(type));
-    }
-
-    /**
-     * A reference that knows the nominal type of its target, even when it is null.
-     */
-    static class TypedReference {
-        public final Class type;
-        public final Object target;
-        public final String name;
-
-        TypedReference(Class type, Object target, String name) {
-            this.type = type;
-            this.target = target;
-            this.name = name;
-            if (type == null)
-                throw new IllegalArgumentException("A non-null concrete type must be provided");
-            if (name == null && target == null)
-                throw new IllegalArgumentException("Only named references may have a null target");
-        }
-
-        TypedReference(Class type, Object target) {
-            this(type, target, null);
-        }
     }
 
     interface TypeMapping {
@@ -104,7 +84,7 @@ public class WspConstants {
          * @param source
          * @return
          */
-        TypedReference thaw(Element source) throws InvalidPolicyStreamException;
+        TypedReference thaw(Element source, WspVisitor visitor) throws InvalidPolicyStreamException;
     }
 
     /**
@@ -188,28 +168,46 @@ public class WspConstants {
             return target.toString();
         }
 
-        public TypedReference thaw(Element source) throws InvalidPolicyStreamException {
+        public TypedReference thaw(Element source, WspVisitor visitor) throws InvalidPolicyStreamException {
+            return doThaw(source, visitor, false);
+        }
+
+        private TypedReference doThaw(Element source, WspVisitor visitor, boolean recursing)
+                throws InvalidPolicyStreamException
+        {
             NamedNodeMap attrs = source.getAttributes();
             switch (attrs.getLength()) {
                 case 0:
                     // Anonymous element
-                    return thawAnonymous(source);
+                    return thawAnonymous(source, visitor);
 
                 case 1:
                     // Named element
-                    return thawNamed(source);
+                    return thawNamed(source, visitor);
 
                 default:
-                    throw new InvalidPolicyStreamException("Policy contains a " + source.getNodeName() +
-                      " element with more than one attribute");
+                    final BadAttributeCountException e = new BadAttributeCountException(
+                            "Policy contains a " + source.getNodeName() +
+                            " element with more than one attribute");
+                    if (recursing) throw e;
+                    return doThaw((Element)source.getOwnerDocument().importNode(visitor.invalidElement(source, e), true), visitor, true);
             }
         }
 
-        protected TypedReference thawNamed(Element source) throws InvalidPolicyStreamException {
+        protected TypedReference thawNamed(Element source, WspVisitor visitor) throws InvalidPolicyStreamException {
+            return doThawNamed(source, visitor, false);
+        }
+
+        private TypedReference doThawNamed(Element source, WspVisitor visitor, boolean recursing) throws InvalidPolicyStreamException {
             NamedNodeMap attrs = source.getAttributes();
             if (attrs.getLength() != 1)
-                throw new InvalidPolicyStreamException("Policy contains a " + source.getNodeName() +
-                  " element that doesn't have exactly one attribute");
+            {
+                final BadAttributeCountException e = new BadAttributeCountException("Policy contains a " +
+                                                                                                       source.getNodeName() +
+                                                                                                       " element that doesn't have exactly one attribute");
+                if (recursing) throw e;
+                return doThawNamed((Element)source.getOwnerDocument().importNode(visitor.invalidElement(source, e), true), visitor, true);
+            }
             Node attr = attrs.item(0);
             String typeName = attr.getLocalName();
             String value = attr.getNodeValue();
@@ -217,17 +215,23 @@ public class WspConstants {
             if (typeName.endsWith("Null") && typeName.length() > 4) {
                 typeName = typeName.substring(0, typeName.length() - 4);
                 value = null;
-                if (!isNullable)
-                    throw new InvalidPolicyStreamException("Policy contains a null " + externalName);
+                if (!isNullable) {
+                    final InvalidPolicyStreamException e = new InvalidPolicyStreamException("Policy contains a null " + externalName);
+                    if (recursing) throw e;
+                    return doThawNamed((Element)source.getOwnerDocument().importNode(visitor.invalidElement(source, e), true), visitor, true);
+                }
             }
 
-            if (!externalName.equals(typeName))
-                throw new InvalidPolicyStreamException("TypeMapping for " + clazz + ": unrecognized attr " + typeName);
+            if (!externalName.equals(typeName)) {
+                final InvalidPolicyStreamException e = new InvalidPolicyStreamException("TypeMapping for " + clazz + ": unrecognized attr " + typeName);
+                if (recursing) throw e;
+                return doThawNamed((Element)source.getOwnerDocument().importNode(visitor.invalidElement(source, e), true), visitor, true);
+            }
 
             if (value == null)
                 return new TypedReference(clazz, null, source.getNodeName());
 
-            return createObject(source, value);
+            return createObject(source, value, visitor);
         }
 
         /**
@@ -240,12 +244,12 @@ public class WspConstants {
          * @return A TypedReference to the newly deserialized object
          * @throws InvalidPolicyStreamException if the element cannot be deserialized
          */
-        protected TypedReference createObject(Element element, String value) throws InvalidPolicyStreamException {
+        protected TypedReference createObject(Element element, String value, WspVisitor visitor) throws InvalidPolicyStreamException {
             if (value == null)
-                throw new InvalidPolicyStreamException("Null values not supported");
+                throw new InvalidPolicyStreamException("Null values not supported"); // can't happen
             TypedReference tr = new TypedReference(clazz, stringToObject(value), element.getNodeName());
             if (tr.target != null)
-                populateObject(tr, element);
+                populateObject(tr, element, visitor);
             return tr;
         }
 
@@ -255,11 +259,11 @@ public class WspConstants {
          * @param object the newly-created object that needs to have properties filled in from source. target may not be null
          * @param source the element from which object is being created
          */
-        protected void populateObject(TypedReference object, Element source) throws InvalidPolicyStreamException {
+        protected void populateObject(TypedReference object, Element source, WspVisitor visitor) throws InvalidPolicyStreamException {
             // no action required for simple types
         }
 
-        protected TypedReference thawAnonymous(Element source) throws InvalidPolicyStreamException {
+        protected TypedReference thawAnonymous(Element source, WspVisitor visitor) throws InvalidPolicyStreamException {
             throw new IllegalArgumentException("BasicTypeMapping supports only Named format");
         }
 
@@ -316,8 +320,8 @@ public class WspConstants {
             }
         }
 
-        protected TypedReference thawAnonymous(Element source) throws InvalidPolicyStreamException {
-            return createObject(source, "included");
+        protected TypedReference thawAnonymous(Element source, WspVisitor visitor) throws InvalidPolicyStreamException {
+            return createObject(source, "included", visitor);
         }
 
         protected String objectToString(Object value) throws InvalidPolicyTreeException {
@@ -340,7 +344,7 @@ public class WspConstants {
             }
         }
 
-        protected void populateObject(TypedReference object, Element source) throws InvalidPolicyStreamException {
+        protected void populateObject(TypedReference object, Element source, WspVisitor visitor) throws InvalidPolicyStreamException {
             Object target = object.target;
 
             // gather properties
@@ -349,17 +353,24 @@ public class WspConstants {
                 Element kid = (Element)i.next();
                 String parm = kid.getLocalName();
 
-                WspConstants.TypedReference thawedReference = typeMappingObject.thaw(kid);
-                Object thawed = thawedReference.target;
-                Class thawedType = thawedReference.type;
-
-                //System.out.println("Thawing: " + name + ".set" + parm + "((" + thawedType.getName() + ") " + thawed + ")");
-                callSetMethod(target, parm, thawed, thawedType);
+                TypedReference thawedReference = typeMappingObject.thaw(kid, visitor);
+                callSetMethod(source, kid, target, parm, thawedReference, visitor);
             }
         }
 
-        private void callSetMethod(Object target, String parm, Object parameter, Class tryType) throws InvalidPolicyStreamException {
+        private void callSetMethod(Element targetSource,
+                                   Element propertySource,
+                                   Object target,
+                                   String parm,
+                                   TypedReference value,
+                                   WspVisitor visitor)
+                throws InvalidPolicyStreamException
+        {
+            Object[] parameter = new Object[] { value.target };
+            Class tryType = value.type;
             String methodName = "set" + parm;
+            log.finest("Trying to set property: " + target.getClass() + ".set" + parm + "(" +
+                          (value.target == null ? "null" : value.target.getClass().getName()) + ")");
             try {
                 Method setter = null;
                 do {
@@ -367,18 +378,21 @@ public class WspConstants {
                         setter = target.getClass().getMethod(methodName, new Class[]{tryType});
                     } catch (NoSuchMethodException e) {
                         tryType = tryType.getSuperclass();
-                        if (tryType == null) // out of superclasses; buck stops here
-                            throw new InvalidPolicyStreamException("Policy contains reference to unsupported object property " + parm, e);
+                        if (tryType == null) {
+                            // out of superclasses; buck stops here
+                            visitor.unknownProperty(targetSource, propertySource, target, parm, value, null);
+                            return;
+                        }
                     }
                 } while (setter == null);
 
-                setter.invoke(target, new Object[]{parameter});
+                setter.invoke(target, parameter);
             } catch (SecurityException e) {
-                throw new InvalidPolicyStreamException("Policy contains reference to unsupported object property " + parm, e);
+                visitor.unknownProperty(targetSource, propertySource, target, parm, value, e);
             } catch (IllegalAccessException e) {
-                throw new InvalidPolicyStreamException("Policy contains reference to unsupported object property " + parm, e);
+                visitor.unknownProperty(targetSource, propertySource, target, parm, value, e);
             } catch (InvocationTargetException e) {
-                throw new InvalidPolicyStreamException("Policy contains invalid object property " + parm, e);
+                visitor.unknownProperty(targetSource, propertySource, target, parm, value, e);
             }
         }
     }
@@ -406,7 +420,11 @@ public class WspConstants {
             return super.freeze(object, container);
         }
 
-        public TypedReference thaw(Element source) throws InvalidPolicyStreamException {
+        public TypedReference thaw(Element source, WspVisitor visitor) throws InvalidPolicyStreamException {
+            return doThaw(source, visitor, false);
+        }
+
+        private TypedReference doThaw(Element source, WspVisitor visitor, boolean recursing) throws InvalidPolicyStreamException {
             if (!L7_POLICY_NS.equals(source.getNamespaceURI()))
                 throw new InvalidPolicyStreamException("Policy contains node \"" + source.getNodeName() +
                   "\" with unrecognized namespace URI \"" + source.getNamespaceURI() + "\"");
@@ -415,15 +433,23 @@ public class WspConstants {
             if (attrs.getLength() == 0) {
                 // Appears to be an anonymous element  <Typename>..</Typename>
                 TypeMapping tm = WspConstants.findTypeMappingByExternalName(source.getNodeName());
-                if (tm == null)
-                    throw new InvalidPolicyStreamException("Unrecognized anonymous element " + source.getNodeName());
-                return tm.thaw(source);
+                if (tm == null) {
+                    final InvalidPolicyStreamException e = new InvalidPolicyStreamException("Unrecognized anonymous element " + source.getNodeName());
+                    if (recursing) throw e;
+                    final Element newSource = (Element)source.getOwnerDocument().importNode(visitor.invalidElement(source, e), true);
+
+                    return doThaw(newSource, visitor, true);
+                }
+                return tm.thaw(source, visitor);
             }
 
             // Nope, must be a named element   <Refname typenameValue="..."/>
-            if (attrs.getLength() != 1)
-                throw new InvalidPolicyStreamException("Policy contains a " + source.getNodeName() +
-                  " element that doesn't have exactly one attribute");
+            if (attrs.getLength() != 1) {
+                final InvalidPolicyStreamException e = new BadAttributeCountException("Policy contains a " + source.getNodeName() +
+                                  " element that doesn't have exactly one attribute");
+                if (recursing) throw e;
+                return doThaw((Element)source.getOwnerDocument().importNode(visitor.invalidElement(source, e), true), visitor, true);
+            }
             Node attr = attrs.item(0);
             String typeName = attr.getLocalName();
             boolean isNull = false;
@@ -441,7 +467,7 @@ public class WspConstants {
             if (tm == null)
                 throw new InvalidPolicyStreamException("Policy contains unrecognized type name \"" + source.getNodeName() + "\"");
 
-            return tm.thaw(source);
+            return tm.thaw(source, visitor);
         }
     }
 
@@ -461,12 +487,12 @@ public class WspConstants {
             }
         }
 
-        protected TypedReference createObject(Element element, String value) throws InvalidPolicyStreamException {
+        protected TypedReference createObject(Element element, String value, WspVisitor visitor) throws InvalidPolicyStreamException {
             List objects = new ArrayList();
             List arrayElements = getChildElements(element, "item");
             for (Iterator i = arrayElements.iterator(); i.hasNext();) {
                 Element kidElement = (Element)i.next();
-                TypedReference ktr = typeMappingObject.thaw(kidElement);
+                TypedReference ktr = typeMappingObject.thaw(kidElement, visitor);
                 objects.add(ktr.target);
             }
             try {
@@ -511,7 +537,7 @@ public class WspConstants {
             }
         }
 
-        protected void populateObject(TypedReference object, Element source) throws InvalidPolicyStreamException {
+        protected void populateObject(TypedReference object, Element source, WspVisitor visitor) throws InvalidPolicyStreamException {
             // Do not deserialize any properties of the CompositeAssertion itself: shouldn't be any, and it'll include kid list
             // NO super.populateObject(object, source);
             CompositeAssertion cass = (CompositeAssertion)object.target;
@@ -521,7 +547,7 @@ public class WspConstants {
             List kids = WspConstants.getChildElements(source);
             for (Iterator i = kids.iterator(); i.hasNext();) {
                 Element kidNode = (Element)i.next();
-                TypedReference tr = typeMappingObject.thaw(kidNode);
+                TypedReference tr = typeMappingObject.thaw(kidNode, visitor);
                 if (tr.target == null)
                     throw new InvalidPolicyStreamException("CompositeAssertion " + cass + " has null child");
                 convertedKids.add(tr.target);
@@ -586,7 +612,7 @@ public class WspConstants {
             }
         }
 
-        protected void populateObject(TypedReference object, Element source) throws InvalidPolicyStreamException {
+        protected void populateObject(TypedReference object, Element source, WspVisitor visitor) throws InvalidPolicyStreamException {
             Map map = (Map)object.target;
             List entryElements = getChildElements(source, "entry");
             for (Iterator i = entryElements.iterator(); i.hasNext();) {
@@ -601,14 +627,14 @@ public class WspConstants {
                 if (valueElement == null || valueElement.getNodeType() != Node.ELEMENT_NODE || !"value".equals(valueElement.getLocalName()))
                     throw new InvalidPolicyStreamException("Map entry last child element is not a value element");
 
-                TypedReference ktr = typeMappingObject.thaw(keyElement);
+                TypedReference ktr = typeMappingObject.thaw(keyElement, visitor);
                 if (!String.class.equals(ktr.type))
                     throw new InvalidPolicyStreamException("Maps with non-string keys are not currently permitted within a policy");
                 if (ktr.target == null)
                     throw new InvalidPolicyStreamException("Maps with null keys are not currently permitted within a policy");
                 String key = (String)ktr.target;
 
-                TypedReference vtr = typeMappingObject.thaw(valueElement);
+                TypedReference vtr = typeMappingObject.thaw(valueElement, visitor);
                 if (!String.class.equals(vtr.type))
                     throw new InvalidPolicyStreamException("Maps with non-string values are not currently permitted within a policy");
                 String value = (String)vtr.target;
@@ -833,7 +859,7 @@ public class WspConstants {
      * @return A TypedReference with information about the object.  The name and/or target might be null.
      * @throws InvalidPolicyStreamException if we were unable to recover an object from this Element
      */
-    static TypedReference thawElement(Element source) throws InvalidPolicyStreamException {
-        return typeMappingObject.thaw(source);
+    static TypedReference thawElement(Element source, WspVisitor visitor) throws InvalidPolicyStreamException {
+        return typeMappingObject.thaw(source, visitor);
     }
 }

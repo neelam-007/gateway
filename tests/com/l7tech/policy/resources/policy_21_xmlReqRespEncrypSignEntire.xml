@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Policy xmlns="http://www.layer7tech.com/ws/policy">
+    <All>
+        <XmlRequestSecurity>
+            <Elements elementSecurityArrayValue="included">
+                <item elementSecurityValue="included">
+                    <Cipher stringValue="AES"/>
+                    <KeyLength intValue="128"/>
+                    <PreconditionXpath xpathExpressionValueNull="null"/>
+                    <ElementXpath xpathExpressionValue="included">
+                        <Expression stringValue="/soapenv:Envelope"/>
+                        <Namespaces mapValue="included">
+                            <entry>
+                                <key stringValue="xsi"/>
+                                <value stringValue="http://www.w3.org/2001/XMLSchema-instance"/>
+                            </entry>
+                            <entry>
+                                <key stringValue="s0"/>
+                                <value stringValue="http://warehouse.acme.com/ws"/>
+                            </entry>
+                            <entry>
+                                <key stringValue="xsd"/>
+                                <value stringValue="http://www.w3.org/2001/XMLSchema"/>
+                            </entry>
+                            <entry>
+                                <key stringValue="soapenv"/>
+                                <value stringValue="http://schemas.xmlsoap.org/soap/envelope/"/>
+                            </entry>
+                        </Namespaces>
+                    </ElementXpath>
+                    <Encryption booleanValue="true"/>
+                </item>
+            </Elements>
+        </XmlRequestSecurity>
+        <OneOrMore>
+            <SpecificUser>
+                <UserLogin stringValue="smoke24"/>
+                <IdentityProviderOid longValue="-2"/>
+            </SpecificUser>
+        </OneOrMore>
+        <HttpRoutingAssertion>
+            <AttachSamlSenderVouches booleanValue="false"/>
+            <TaiCredentialChaining booleanValue="false"/>
+            <UserAgent stringValueNull="null"/>
+            <ProtectedServiceUrl stringValue="http://hugh/ACMEWarehouseWS/Service1.asmx"/>
+            <Login stringValueNull="null"/>
+            <GroupMembershipStatement booleanValue="false"/>
+            <Password stringValueNull="null"/>
+            <Realm stringValueNull="null"/>
+            <MaxConnections intValue="100"/>
+            <SamlAssertionExpiry intValue="5"/>
+        </HttpRoutingAssertion>
+        <XmlResponseSecurity>
+            <Elements elementSecurityArrayValue="included">
+                <item elementSecurityValue="included">
+                    <Cipher stringValue="AES"/>
+                    <KeyLength intValue="128"/>
+                    <PreconditionXpath xpathExpressionValueNull="null"/>
+                    <ElementXpath xpathExpressionValue="included">
+                        <Expression stringValue="/soapenv:Envelope"/>
+                        <Namespaces mapValue="included">
+                            <entry>
+                                <key stringValue="xsi"/>
+                                <value stringValue="http://www.w3.org/2001/XMLSchema-instance"/>
+                            </entry>
+                            <entry>
+                                <key stringValue="s0"/>
+                                <value stringValue="http://warehouse.acme.com/ws"/>
+                            </entry>
+                            <entry>
+                                <key stringValue="xsd"/>
+                                <value stringValue="http://www.w3.org/2001/XMLSchema"/>
+                            </entry>
+                            <entry>
+                                <key stringValue="soapenv"/>
+                                <value stringValue="http://schemas.xmlsoap.org/soap/envelope/"/>
+                            </entry>
+                        </Namespaces>
+                    </ElementXpath>
+                    <Encryption booleanValue="true"/>
+                </item>
+            </Elements>
+        </XmlResponseSecurity>
+    </All>
+</Policy>

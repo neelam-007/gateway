@@ -1,7 +1,7 @@
 package com.l7tech.policy.wsp;
 
-import com.l7tech.policy.assertion.UnknownAssertion;
 import com.l7tech.common.util.XmlUtil;
+import com.l7tech.policy.assertion.UnknownAssertion;
 import org.apache.axis.encoding.Base64;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
@@ -24,7 +24,7 @@ class SerializedJavaClassMapping extends WspConstants.BeanTypeMapping {
         super(clazz, externalName);
     }
 
-    protected void populateElement(Element element, WspConstants.TypedReference object) {
+    protected void populateElement(Element element, TypedReference object) {
         if (!(object.target instanceof Serializable)) {
             throw new IllegalArgumentException("target not serializable");
         }
@@ -48,7 +48,7 @@ class SerializedJavaClassMapping extends WspConstants.BeanTypeMapping {
      * @return A TypedReference to the newly deserialized object
      * @throws InvalidPolicyStreamException if the element cannot be deserialized
      */
-    protected WspConstants.TypedReference createObject(Element element, String value) throws InvalidPolicyStreamException {
+    protected TypedReference createObject(Element element, String value, WspVisitor visitor) throws InvalidPolicyStreamException {
         if (value == null)
             throw new InvalidPolicyStreamException("Null values not supported");
 
@@ -67,13 +67,13 @@ class SerializedJavaClassMapping extends WspConstants.BeanTypeMapping {
         }
         Text textNode = (Text)node;
         try {
-            return new WspConstants.TypedReference(clazz, base64ToObject(textNode.getData()), element.getNodeName());
+            return new TypedReference(clazz, base64ToObject(textNode.getData()), element.getNodeName());
         } catch (IOException e) {
             throw new RuntimeException(e);
         } catch (ClassNotFoundException e) {
             UnknownAssertion ua = new UnknownAssertion();
             ua.setDetailMessage("Unknown assertion '" + e.getMessage() + "'");
-            return new WspConstants.TypedReference(UnknownAssertion.class, ua, element.getNodeName());
+            return new TypedReference(UnknownAssertion.class, ua, element.getNodeName());
         }
     }
 

@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Policy xmlns="http://www.layer7tech.com/ws/policy">
+    <ExactlyOne>
+        <All>
+            <TrueAssertion/>
+            <OneOrMore>
+                <HttpBasic>
+                    <Realm stringValueNull="null"/>
+                </HttpBasic>
+                <HttpClientCert>
+                    <Realm stringValueNull="null"/>
+                </HttpClientCert>
+                <HttpDigest>
+                    <NonceTimeout intValue="1800000"/>
+                    <Realm stringValueNull="null"/>
+                    <MaxNonceCount intValue="30"/>
+                </HttpDigest>
+                <WssBasic/>
+                <WssDigest/>
+                <All/>
+                <ExactlyOne/>
+                <OneOrMore/>
+                <FalseAssertion/>
+                <SslAssertion>
+                    <Option optionValue="Required"/>
+                </SslAssertion>
+                <HttpRoutingAssertion>
+                    <AttachSamlSenderVouches booleanValue="false"/>
+                    <TaiCredentialChaining booleanValue="false"/>
+                    <UserAgent stringValueNull="null"/>
+                    <ProtectedServiceUrl stringValueNull="null"/>
+                    <Login stringValueNull="null"/>
+                    <GroupMembershipStatement booleanValue="false"/>
+                    <Password stringValueNull="null"/>
+                    <Realm stringValueNull="null"/>
+                    <MaxConnections intValue="100"/>
+                    <SamlAssertionExpiry intValue="5"/>
+                </HttpRoutingAssertion>
+                <JmsRoutingAssertion>
+                    <GroupMembershipStatement booleanValue="false"/>
+                    <AttachSamlSenderVouches booleanValue="false"/>
+                    <TaiCredentialChaining booleanValue="false"/>
+                    <EndpointName stringValueNull="null"/>
+                    <EndpointOid boxedLongValueNull="null"/>
+                    <ResponseTimeout intValue="10000"/>
+                    <SamlAssertionExpiry intValue="5"/>
+                </JmsRoutingAssertion>
+                <TrueAssertion/>
+                <MemberOfGroup>
+                    <GroupId stringValueNull="null"/>
+                    <GroupName stringValueNull="null"/>
+                    <IdentityProviderOid longValue="-1"/>
+                </MemberOfGroup>
+                <SpecificUser>
+                    <UserLogin stringValueNull="null"/>
+                    <IdentityProviderOid longValue="-1"/>
+                </SpecificUser>
+                <XmlResponseSecurity>
+                    <Elements elementSecurityArrayValue="included"/>
+                </XmlResponseSecurity>
+                <XmlRequestSecurity>
+                    <Elements elementSecurityArrayValue="included"/>
+                </XmlRequestSecurity>
+                <RequestXpathAssertion>
+                    <NamespaceMap mapValueNull="null"/>
+                    <Pattern stringValueNull="null"/>
+                </RequestXpathAssertion>
+                <CustomAssertion>
+                    <base64SerializedValue>rO0ABXNyADFjb20ubDd0ZWNoLnBvbGljeS5hc3NlcnRpb24uQ3VzdG9tQXNzZXJ0aW9uSG9sZGVyZtcreFwddTICAAJMAAhjYXRlZ29yeXQAKkxjb20vbDd0ZWNoL3BvbGljeS9hc3NlcnRpb24vZXh0L0NhdGVnb3J5O0wAD2N1c3RvbUFzc2VydGlvbnQAMUxjb20vbDd0ZWNoL3BvbGljeS9hc3NlcnRpb24vZXh0L0N1c3RvbUFzc2VydGlvbjt4cgAlY29tLmw3dGVjaC5wb2xpY3kuYXNzZXJ0aW9uLkFzc2VydGlvbttfY5k8vaKxAgABTAAGcGFyZW50dAA6TGNvbS9sN3RlY2gvcG9saWN5L2Fzc2VydGlvbi9jb21wb3NpdGUvQ29tcG9zaXRlQXNzZXJ0aW9uO3hwcHBw</base64SerializedValue>
+                </CustomAssertion>
+                <UnknownAssertion>
+                    <DetailMessage stringValueNull="null"/>
+                </UnknownAssertion>
+            </OneOrMore>
+        </All>
+        <ExactlyOne>
+            <TrueAssertion/>
+            <FalseAssertion/>
+            <HttpRoutingAssertion>
+                <AttachSamlSenderVouches booleanValue="false"/>
+                <TaiCredentialChaining booleanValue="false"/>
+                <UserAgent stringValueNull="null"/>
+                <ProtectedServiceUrl stringValue="http://floomp.boomp.foomp/"/>
+                <Login stringValue="bob&amp;joe"/>
+                <GroupMembershipStatement booleanValue="false"/>
+                <Password stringValue="james;bloo=foo&amp;goo&quot;poo&quot;\sss\"/>
+                <Realm stringValue=""/>
+                <MaxConnections intValue="-5"/>
+                <SamlAssertionExpiry intValue="5"/>
+            </HttpRoutingAssertion>
+            <RequestXpathAssertion>
+                <NamespaceMap mapValue="included">
+                    <entry>
+                        <key stringValue="blee"/>
+                        <value stringValue="http://namespaces.nowhere.com/asdf/fdsa/qwer#blortch.1.2"/>
+                    </entry>
+                    <entry>
+                        <key stringValue="abc"/>
+                        <value stringValue="http://namespaces.somewhere.com/abc#bletch"/>
+                    </entry>
+                </NamespaceMap>
+                <Pattern stringValueNull="null"/>
+            </RequestXpathAssertion>
+        </ExactlyOne>
+        <TrueAssertion/>
+        <FalseAssertion/>
+    </ExactlyOne>
+</Policy>

@@ -172,6 +172,7 @@ public class SamplePolicyTest extends TestCase {
         }));
 
         String sxml = WspWriter.getPolicyXml(testin);
+        log.info("Serialized to: " + sxml);
         Assertion testout = WspReader.parse(sxml);
 
         Iterator it = testout.preorderIterator();

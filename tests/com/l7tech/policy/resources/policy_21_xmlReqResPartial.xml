@@ -1,0 +1,316 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Policy xmlns="http://www.layer7tech.com/ws/policy">
+    <All>
+        <HttpBasic>
+            <Realm stringValueNull="null"/>
+        </HttpBasic>
+        <OneOrMore>
+            <SpecificUser>
+                <UserLogin stringValue="smoke24"/>
+                <IdentityProviderOid longValue="-2"/>
+            </SpecificUser>
+        </OneOrMore>
+        <XmlRequestSecurity>
+            <Elements elementSecurityArrayValue="included">
+                <item elementSecurityValue="included">
+                    <Cipher stringValue="AES"/>
+                    <KeyLength intValue="128"/>
+                    <PreconditionXpath xpathExpressionValue="included">
+                        <Expression stringValue="/soapenv:Envelope/soapenv:Body/s0:listProducts"/>
+                        <Namespaces mapValue="included">
+                            <entry>
+                                <key stringValue="xsi"/>
+                                <value stringValue="http://www.w3.org/2001/XMLSchema-instance"/>
+                            </entry>
+                            <entry>
+                                <key stringValue="s0"/>
+                                <value stringValue="http://warehouse.acme.com/ws"/>
+                            </entry>
+                            <entry>
+                                <key stringValue="xsd"/>
+                                <value stringValue="http://www.w3.org/2001/XMLSchema"/>
+                            </entry>
+                            <entry>
+                                <key stringValue="soapenv"/>
+                                <value stringValue="http://schemas.xmlsoap.org/soap/envelope/"/>
+                            </entry>
+                        </Namespaces>
+                    </PreconditionXpath>
+                    <ElementXpath xpathExpressionValue="included">
+                        <Expression stringValue="/soapenv:Envelope/soapenv:Body/s0:listProducts"/>
+                        <Namespaces mapValue="included">
+                            <entry>
+                                <key stringValue="xsi"/>
+                                <value stringValue="http://www.w3.org/2001/XMLSchema-instance"/>
+                            </entry>
+                            <entry>
+                                <key stringValue="s0"/>
+                                <value stringValue="http://warehouse.acme.com/ws"/>
+                            </entry>
+                            <entry>
+                                <key stringValue="xsd"/>
+                                <value stringValue="http://www.w3.org/2001/XMLSchema"/>
+                            </entry>
+                            <entry>
+                                <key stringValue="soapenv"/>
+                                <value stringValue="http://schemas.xmlsoap.org/soap/envelope/"/>
+                            </entry>
+                        </Namespaces>
+                    </ElementXpath>
+                    <Encryption booleanValue="true"/>
+                </item>
+                <item elementSecurityValue="included">
+                    <Cipher stringValue="AES"/>
+                    <KeyLength intValue="128"/>
+                    <PreconditionXpath xpathExpressionValue="included">
+                        <Expression stringValue="/soapenv:Envelope/soapenv:Body/s0:getProductDetails"/>
+                        <Namespaces mapValue="included">
+                            <entry>
+                                <key stringValue="xsi"/>
+                                <value stringValue="http://www.w3.org/2001/XMLSchema-instance"/>
+                            </entry>
+                            <entry>
+                                <key stringValue="s0"/>
+                                <value stringValue="http://warehouse.acme.com/ws"/>
+                            </entry>
+                            <entry>
+                                <key stringValue="xsd"/>
+                                <value stringValue="http://www.w3.org/2001/XMLSchema"/>
+                            </entry>
+                            <entry>
+                                <key stringValue="soapenv"/>
+                                <value stringValue="http://schemas.xmlsoap.org/soap/envelope/"/>
+                            </entry>
+                        </Namespaces>
+                    </PreconditionXpath>
+                    <ElementXpath xpathExpressionValue="included">
+                        <Expression stringValue="/soapenv:Envelope/soapenv:Body/s0:getProductDetails/s0:productid"/>
+                        <Namespaces mapValue="included">
+                            <entry>
+                                <key stringValue="xsi"/>
+                                <value stringValue="http://www.w3.org/2001/XMLSchema-instance"/>
+                            </entry>
+                            <entry>
+                                <key stringValue="s0"/>
+                                <value stringValue="http://warehouse.acme.com/ws"/>
+                            </entry>
+                            <entry>
+                                <key stringValue="xsd"/>
+                                <value stringValue="http://www.w3.org/2001/XMLSchema"/>
+                            </entry>
+                            <entry>
+                                <key stringValue="soapenv"/>
+                                <value stringValue="http://schemas.xmlsoap.org/soap/envelope/"/>
+                            </entry>
+                        </Namespaces>
+                    </ElementXpath>
+                    <Encryption booleanValue="false"/>
+                </item>
+                <item elementSecurityValue="included">
+                    <Cipher stringValue="AES"/>
+                    <KeyLength intValue="128"/>
+                    <PreconditionXpath xpathExpressionValue="included">
+                        <Expression stringValue="/soapenv:Envelope/soapenv:Body/s0:placeOrder"/>
+                        <Namespaces mapValue="included">
+                            <entry>
+                                <key stringValue="xsi"/>
+                                <value stringValue="http://www.w3.org/2001/XMLSchema-instance"/>
+                            </entry>
+                            <entry>
+                                <key stringValue="s0"/>
+                                <value stringValue="http://warehouse.acme.com/ws"/>
+                            </entry>
+                            <entry>
+                                <key stringValue="xsd"/>
+                                <value stringValue="http://www.w3.org/2001/XMLSchema"/>
+                            </entry>
+                            <entry>
+                                <key stringValue="soapenv"/>
+                                <value stringValue="http://schemas.xmlsoap.org/soap/envelope/"/>
+                            </entry>
+                        </Namespaces>
+                    </PreconditionXpath>
+                    <ElementXpath xpathExpressionValue="included">
+                        <Expression stringValue="/soapenv:Envelope/soapenv:Body/s0:placeOrder/s0:productid"/>
+                        <Namespaces mapValue="included">
+                            <entry>
+                                <key stringValue="xsi"/>
+                                <value stringValue="http://www.w3.org/2001/XMLSchema-instance"/>
+                            </entry>
+                            <entry>
+                                <key stringValue="s0"/>
+                                <value stringValue="http://warehouse.acme.com/ws"/>
+                            </entry>
+                            <entry>
+                                <key stringValue="xsd"/>
+                                <value stringValue="http://www.w3.org/2001/XMLSchema"/>
+                            </entry>
+                            <entry>
+                                <key stringValue="soapenv"/>
+                                <value stringValue="http://schemas.xmlsoap.org/soap/envelope/"/>
+                            </entry>
+                        </Namespaces>
+                    </ElementXpath>
+                    <Encryption booleanValue="true"/>
+                </item>
+            </Elements>
+        </XmlRequestSecurity>
+        <HttpRoutingAssertion>
+            <AttachSamlSenderVouches booleanValue="false"/>
+            <TaiCredentialChaining booleanValue="false"/>
+            <UserAgent stringValueNull="null"/>
+            <ProtectedServiceUrl stringValue="http://hugh/ACMEWarehouseWS/Service1.asmx"/>
+            <Login stringValueNull="null"/>
+            <GroupMembershipStatement booleanValue="false"/>
+            <Password stringValueNull="null"/>
+            <Realm stringValueNull="null"/>
+            <MaxConnections intValue="100"/>
+            <SamlAssertionExpiry intValue="5"/>
+        </HttpRoutingAssertion>
+        <XmlResponseSecurity>
+            <Elements elementSecurityArrayValue="included">
+                <item elementSecurityValue="included">
+                    <Cipher stringValue="AES"/>
+                    <KeyLength intValue="128"/>
+                    <PreconditionXpath xpathExpressionValue="included">
+                        <Expression stringValue="/soapenv:Envelope/soapenv:Body/s0:listProductsResponse"/>
+                        <Namespaces mapValue="included">
+                            <entry>
+                                <key stringValue="xsi"/>
+                                <value stringValue="http://www.w3.org/2001/XMLSchema-instance"/>
+                            </entry>
+                            <entry>
+                                <key stringValue="s0"/>
+                                <value stringValue="http://warehouse.acme.com/ws"/>
+                            </entry>
+                            <entry>
+                                <key stringValue="xsd"/>
+                                <value stringValue="http://www.w3.org/2001/XMLSchema"/>
+                            </entry>
+                            <entry>
+                                <key stringValue="soapenv"/>
+                                <value stringValue="http://schemas.xmlsoap.org/soap/envelope/"/>
+                            </entry>
+                        </Namespaces>
+                    </PreconditionXpath>
+                    <ElementXpath xpathExpressionValue="included">
+                        <Expression stringValue="/soapenv:Envelope/soapenv:Body/s0:listProductsResponse/s0:listProductsResult"/>
+                        <Namespaces mapValue="included">
+                            <entry>
+                                <key stringValue="xsi"/>
+                                <value stringValue="http://www.w3.org/2001/XMLSchema-instance"/>
+                            </entry>
+                            <entry>
+                                <key stringValue="s0"/>
+                                <value stringValue="http://warehouse.acme.com/ws"/>
+                            </entry>
+                            <entry>
+                                <key stringValue="xsd"/>
+                                <value stringValue="http://www.w3.org/2001/XMLSchema"/>
+                            </entry>
+                            <entry>
+                                <key stringValue="soapenv"/>
+                                <value stringValue="http://schemas.xmlsoap.org/soap/envelope/"/>
+                            </entry>
+                        </Namespaces>
+                    </ElementXpath>
+                    <Encryption booleanValue="true"/>
+                </item>
+                <item elementSecurityValue="included">
+                    <Cipher stringValue="AES"/>
+                    <KeyLength intValue="128"/>
+                    <PreconditionXpath xpathExpressionValue="included">
+                        <Expression stringValue="/soapenv:Envelope/soapenv:Body/s0:getProductDetailsResponse"/>
+                        <Namespaces mapValue="included">
+                            <entry>
+                                <key stringValue="xsi"/>
+                                <value stringValue="http://www.w3.org/2001/XMLSchema-instance"/>
+                            </entry>
+                            <entry>
+                                <key stringValue="s0"/>
+                                <value stringValue="http://warehouse.acme.com/ws"/>
+                            </entry>
+                            <entry>
+                                <key stringValue="xsd"/>
+                                <value stringValue="http://www.w3.org/2001/XMLSchema"/>
+                            </entry>
+                            <entry>
+                                <key stringValue="soapenv"/>
+                                <value stringValue="http://schemas.xmlsoap.org/soap/envelope/"/>
+                            </entry>
+                        </Namespaces>
+                    </PreconditionXpath>
+                    <ElementXpath xpathExpressionValue="included">
+                        <Expression stringValue="/soapenv:Envelope/soapenv:Body/s0:getProductDetailsResponse/s0:getProductDetailsResult"/>
+                        <Namespaces mapValue="included">
+                            <entry>
+                                <key stringValue="xsi"/>
+                                <value stringValue="http://www.w3.org/2001/XMLSchema-instance"/>
+                            </entry>
+                            <entry>
+                                <key stringValue="s0"/>
+                                <value stringValue="http://warehouse.acme.com/ws"/>
+                            </entry>
+                            <entry>
+                                <key stringValue="xsd"/>
+                                <value stringValue="http://www.w3.org/2001/XMLSchema"/>
+                            </entry>
+                            <entry>
+                                <key stringValue="soapenv"/>
+                                <value stringValue="http://schemas.xmlsoap.org/soap/envelope/"/>
+                            </entry>
+                        </Namespaces>
+                    </ElementXpath>
+                    <Encryption booleanValue="true"/>
+                </item>
+                <item elementSecurityValue="included">
+                    <Cipher stringValue="AES"/>
+                    <KeyLength intValue="128"/>
+                    <PreconditionXpath xpathExpressionValue="included">
+                        <Expression stringValue="/soapenv:Envelope/soapenv:Body/s0:placeOrderResponse"/>
+                        <Namespaces mapValue="included">
+                            <entry>
+                                <key stringValue="xsi"/>
+                                <value stringValue="http://www.w3.org/2001/XMLSchema-instance"/>
+                            </entry>
+                            <entry>
+                                <key stringValue="s0"/>
+                                <value stringValue="http://warehouse.acme.com/ws"/>
+                            </entry>
+                            <entry>
+                                <key stringValue="xsd"/>
+                                <value stringValue="http://www.w3.org/2001/XMLSchema"/>
+                            </entry>
+                            <entry>
+                                <key stringValue="soapenv"/>
+                                <value stringValue="http://schemas.xmlsoap.org/soap/envelope/"/>
+                            </entry>
+                        </Namespaces>
+                    </PreconditionXpath>
+                    <ElementXpath xpathExpressionValue="included">
+                        <Expression stringValue="/soapenv:Envelope/soapenv:Body/s0:placeOrderResponse/s0:placeOrderResult"/>
+                        <Namespaces mapValue="included">
+                            <entry>
+                                <key stringValue="xsi"/>
+                                <value stringValue="http://www.w3.org/2001/XMLSchema-instance"/>
+                            </entry>
+                            <entry>
+                                <key stringValue="s0"/>
+                                <value stringValue="http://warehouse.acme.com/ws"/>
+                            </entry>
+                            <entry>
+                                <key stringValue="xsd"/>
+                                <value stringValue="http://www.w3.org/2001/XMLSchema"/>
+                            </entry>
+                            <entry>
+                                <key stringValue="soapenv"/>
+                                <value stringValue="http://schemas.xmlsoap.org/soap/envelope/"/>
+                            </entry>
+                        </Namespaces>
+                    </ElementXpath>
+                    <Encryption booleanValue="false"/>
+                </item>
+            </Elements>
+        </XmlResponseSecurity>
+    </All>
+</Policy>

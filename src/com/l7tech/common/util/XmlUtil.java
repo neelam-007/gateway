@@ -21,8 +21,8 @@ import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 import java.io.*;
 import java.util.*;
-import java.util.logging.Logger;
 import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Thread-local XML parsing and pretty-printing utilities.
@@ -158,6 +158,29 @@ public class XmlUtil {
         for ( int i = 0; i < children.getLength(); i++ ) {
             Node n = children.item(i);
             if ( n.getNodeType() == Node.ELEMENT_NODE ) return (Element)n;
+        }
+        return null;
+    }
+
+    /**
+     * Finds the first and only child Element of a parent Element, throwing if any extraneous additional
+     * child elements are detected.  Child nodes other than elements (text nodes, processing instructions,
+     * comments, etc) are ignored.
+     *
+     * @param parent the element in which to search for children.  Must be non-null.
+     * @return First child element or null if there aren't any.
+     * @throws TooManyChildElementsException if the parent has more than one child element.
+     */
+    public static Element findOnlyOneChildElement( Element parent ) throws TooManyChildElementsException {
+        NodeList children = parent.getChildNodes();
+        Element found = null;
+        for ( int i = 0; i < children.getLength(); i++ ) {
+            Node n = children.item(i);
+            if ( n.getNodeType() == Node.ELEMENT_NODE ) {
+                if (found != null)
+                    throw new TooManyChildElementsException(found.getNamespaceURI(), found.getLocalName());
+                found = (Element)n;
+            }
         }
         return null;
     }
