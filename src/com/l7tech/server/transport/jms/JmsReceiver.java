@@ -274,8 +274,8 @@ public class JmsReceiver implements ServerComponentLifecycle {
                         }
                     } catch ( Throwable e ) {
                         _logger.log( Level.WARNING,
-                                     "Unable to receive message from JMS endpoint " + _inboundRequestEndpoint,
-                                     e );
+                                     "Unable to receive message from JMS endpoint " +
+                                     _inboundRequestEndpoint, e );
 
                         if ( oopses++ <= MAXIMUM_OOPSES ) {
                             try {
@@ -285,7 +285,7 @@ public class JmsReceiver implements ServerComponentLifecycle {
                                 Thread.currentThread().interrupt();
                             }
                         } else {
-                            _logger.warning( "Too many (" + MAXIMUM_OOPSES + ") errors - listener for JMS endpoint " + _inboundRequestEndpoint + " will try again in " + OOPS_SLEEP + "ms" );
+                            _logger.warning( "Too many errors (" + MAXIMUM_OOPSES + ") - listener for JMS endpoint " + _inboundRequestEndpoint + " will try again in " + OOPS_SLEEP + "ms" );
                             try {
                                 Thread.sleep(OOPS_SLEEP);
                             } catch ( InterruptedException e1 ) {
