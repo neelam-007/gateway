@@ -7,11 +7,10 @@ import com.jgoodies.plaf.plastic.PlasticXPLookAndFeel;
 import com.jgoodies.plaf.plastic.theme.SkyBluerTahoma;
 import com.jgoodies.plaf.windows.ExtWindowsLookAndFeel;
 import com.l7tech.common.BuildInfo;
-import com.l7tech.common.util.FileUtils;
 import com.l7tech.common.gui.util.Utilities;
-import com.l7tech.console.util.Preferences;
-import com.l7tech.console.util.TopComponents;
+import com.l7tech.common.util.FileUtils;
 import com.l7tech.common.util.JdkLoggerConfigurator;
+import com.l7tech.console.util.Preferences;
 import net.jini.security.policy.DynamicPolicyProvider;
 import net.jini.security.policy.PolicyInitializationException;
 
@@ -20,10 +19,11 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
-import java.io.IOException;
-import java.io.InputStream;
 import java.io.File;
 import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.URL;
 import java.rmi.RMISecurityManager;
 import java.security.AccessController;
 import java.security.Permission;
@@ -31,7 +31,6 @@ import java.security.Policy;
 import java.security.PrivilegedAction;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.net.URL;
 
 /**
  * This class is the SSG console Main entry point.
@@ -72,12 +71,12 @@ public class Main {
             /* so it is visible in help/about */
             prefs.updateSystemProperties();
             try {
-                copyResources(new String[] {"com/l7tech/console/resources/logger.dtd"}, prefs.getHomePath());
+                copyResources(new String[]{"com/l7tech/console/resources/logger.dtd"}, prefs.getHomePath());
             } catch (IOException e) {
                 log.log(Level.WARNING, "error on copying resources", e);
             }
 
-            main = TopComponents.getInstance().getMainWindow();
+            main = new MainWindow();
             // Window listener
             main.addWindowListener(new WindowAdapter() {
                 /**
@@ -298,7 +297,7 @@ public class Main {
                 in.close();
                 in = null;
             }
-            } finally {
+        } finally {
             if (in != null) {
                 try {
                     in.close();

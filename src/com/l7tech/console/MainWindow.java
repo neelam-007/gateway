@@ -216,6 +216,7 @@ public class MainWindow extends JFrame {
 
     /**
      * The SSG URL this ssm is connected to (excluding the /ssg suffix).
+     *
      * @return
      */
     public String ssgURL() {
@@ -349,8 +350,6 @@ public class MainWindow extends JFrame {
     private JMenuItem getValidateMenuItem() {
         if (validateMenuItem == null) {
             validateMenuItem = new JMenuItem(getValidateAction());
-            Icon icon = new ImageIcon(cl.getResource(RESOURCE_PATH + "/validate.gif"));
-            validateMenuItem.setIcon(icon);
             int mnemonic = validateMenuItem.getText().toCharArray()[0];
             validateMenuItem.setMnemonic(mnemonic);
             validateMenuItem.setAccelerator(KeyStroke.getKeyStroke(mnemonic, ActionEvent.ALT_MASK));
@@ -362,6 +361,7 @@ public class MainWindow extends JFrame {
         if (validatePolicyAction == null) {
             validatePolicyAction = new ValidatePolicyAction();
             validatePolicyAction.setEnabled(false);
+            MainWindow.this.addLogonListener(validatePolicyAction);
         }
         return validatePolicyAction;
     }
@@ -595,7 +595,7 @@ public class MainWindow extends JFrame {
         }
         publishServiceAction = new PublishServiceAction();
         publishServiceAction.setEnabled(false);
-        this.addLogonListener((PublishServiceAction)publishServiceAction);
+        this.addLogonListener(publishServiceAction);
         return publishServiceAction;
     }
 

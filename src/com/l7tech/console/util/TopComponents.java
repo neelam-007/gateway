@@ -15,7 +15,6 @@ import java.util.Map;
  * Provides component unregister/register and access to the top
  * level components such as workspace, top level trees etc.
  *
- *
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  * @version 1.0
  */
@@ -31,34 +30,42 @@ public class TopComponents {
         return instance;
     }
 
-    /** Get the Main Window of the application.
+    /**
+     * Get the Main Window of the application.
      * This should be used for:
      * <UL>
-     *   <LI>using the Main Window as the parent for dialogs</LI>
-     *   <LI>using the Main Window's position for preplacement of windows</LI>
+     * <LI>using the Main Window as the parent for dialogs</LI>
+     * <LI>using the Main Window's position for preplacement of windows</LI>
      * </UL>
+     *
      * @return the applicaiton Main Window
      */
     public MainWindow getMainWindow() {
-        synchronized (componentsRegistry) {
-            MainWindow main = (MainWindow)getComponent(MainWindow.NAME);
-            if (main != null) return main;
-            MainWindow m = new MainWindow();
-            registerComponent(MainWindow.NAME, m);
-            return m;
+        Frame[] frames = JFrame.getFrames();
+        for (int i = 0; i < frames.length; i++) {
+            Frame frame = frames[i];
+            if (frame instanceof MainWindow) {
+                return (MainWindow)frame;
+            }
         }
+        return null;
     }
 
     /**
      * Has the Main Window initialized.
-     * <p>
+     * <p/>
      *
      * @return true if the main  Window has initialized,false otherwise
      */
     public boolean hasMainWindow() {
-        synchronized (componentsRegistry) {
-            return (getComponent(MainWindow.NAME) != null);
+        Frame[] frames = JFrame.getFrames();
+        for (int i = 0; i < frames.length; i++) {
+            Frame frame = frames[i];
+            if (frame instanceof MainWindow) {
+                return true;
+            }
         }
+        return false;
     }
 
 
@@ -105,6 +112,7 @@ public class TopComponents {
 
     /**
      * Registers the component with the given name
+     *
      * @param name the component name
      */
     public void registerComponent(String name, Component component) {
