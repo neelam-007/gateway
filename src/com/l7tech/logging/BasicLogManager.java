@@ -36,4 +36,8 @@ public class BasicLogManager extends LogManager {
     public LogRecord[] getRecorded(long startMsgNumber, long endMsgNumber, int size) {
         return new LogRecord[0];
     }
+
+    public SSGLogRecord[] getRecorded(String nodeId, long startMsgNumber, long endMsgNumber, int size) {
+        return new SSGLogRecord[0];
+    }
 }

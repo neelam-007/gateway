@@ -39,6 +39,24 @@ public abstract class LogManager {
      */
     public abstract LogRecord[] getRecorded(long startMsgNumber, long endMsgNumber, int size);
 
+    /**
+     * Retrieve the system logs in between the startMsgNumber and endMsgNumber specified
+     * up to the specified size.
+     * NOTE: the log messages whose message number equals to startMsgNumber and endMsgNumber
+     * are not returned.
+     *
+     * @param startMsgNumber the message number to locate the start point.
+     *                       Start from beginning of the message buffer if it equals to -1.
+     * @param endMsgNumber   the message number to locate the end point.
+     *                       Retrieve messages until the end of the message buffer is hit
+     *                       if it equals to -1.
+     * @param nodeId         the node id for which to retrieve server logs on. if left null, retreives
+     *                       log records for this node.
+     * @param size  the max. number of messages retrieved
+     * @return LogRecord[] the array of log records retrieved
+     */
+    public abstract SSGLogRecord[] getRecorded(String nodeId, long startMsgNumber, long endMsgNumber, int size);
+
     // ************************************************
     // PRIVATES
     // ************************************************

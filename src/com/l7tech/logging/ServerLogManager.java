@@ -1,11 +1,18 @@
 package com.l7tech.logging;
 
+import com.l7tech.objectmodel.HibernatePersistenceContext;
+import com.l7tech.objectmodel.PersistenceContext;
+import com.l7tech.objectmodel.TransactionException;
+
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Properties;
+import java.util.Collection;
+import java.util.Iterator;
 import java.util.logging.*;
+import java.sql.SQLException;
 
 /**
  * Instance of the log manager that is meant to be used on the server-side.<br/><br/>
@@ -42,8 +49,8 @@ public class ServerLogManager extends LogManager {
      * this is reset when the system restarts
      */
     public LogRecord[] getRecorded(int offset, int size) {
-        if (systemLogMemHandler == null) return new LogRecord[0];
-        return systemLogMemHandler.getRecords(offset, size);
+        // todo, remove this
+        return new LogRecord[0];
     }
 
     /**
@@ -61,8 +68,39 @@ public class ServerLogManager extends LogManager {
      * @return LogRecord[] the array of log records retrieved
      */
     public LogRecord[] getRecorded(long startMsgNumber, long endMsgNumber, int size) {
-        if (systemLogMemHandler == null) return new LogRecord[0];
-        return systemLogMemHandler.getRecords(startMsgNumber, endMsgNumber,  size);
+        Collection res = dbHandler.getLogRecords(null, startMsgNumber, endMsgNumber, size);
+        LogRecord[] output = new LogRecord[res.size()];
+        int cnt = 0;
+        for (Iterator i = res.iterator(); i.hasNext(); cnt++) {
+            output[cnt] = (LogRecord)i.next();
+        }
+        return output;
+    }
+
+    /**
+     * Retrieve the system logs in between the startMsgNumber and endMsgNumber specified
+     * up to the specified size.
+     * NOTE: the log messages whose message number equals to startMsgNumber and endMsgNumber
+     * are not returned.
+     *
+     * @param startMsgNumber the message number to locate the start point.
+     *                       Start from beginning of the message buffer if it equals to -1.
+     * @param endMsgNumber   the message number to locate the end point.
+     *                       Retrieve messages until the end of the message buffer is hit
+     *                       if it equals to -1.
+     * @param nodeId         the node id for which to retrieve server logs on. if left null, retreives
+     *                       log records for this node.
+     * @param size  the max. number of messages retrieved
+     * @return LogRecord[] the array of log records retrieved
+     */
+    public SSGLogRecord[] getRecorded(String nodeId, long startMsgNumber, long endMsgNumber, int size) {
+        Collection res = dbHandler.getLogRecords(nodeId, startMsgNumber, endMsgNumber, size);
+        SSGLogRecord[] output = new SSGLogRecord[res.size()];
+        int cnt = 0;
+        for (Iterator i = res.iterator(); i.hasNext(); cnt++) {
+            output[cnt] = (SSGLogRecord)i.next();
+        }
+        return output;
     }
 
     // ************************************************
@@ -86,11 +124,11 @@ public class ServerLogManager extends LogManager {
     }
 
     private void setLogHandlers(Logger logger) {
-        // add custom memory handler
+        /*// add custom memory handler
         if (systemLogMemHandler == null) {
             systemLogMemHandler = new MemHandler();
         }
-        logger.addHandler(systemLogMemHandler);
+        logger.addHandler(systemLogMemHandler);*/
 
         // add a file handler
         try {
@@ -102,9 +140,54 @@ public class ServerLogManager extends LogManager {
             FileHandler fileHandler = new FileHandler(pattern, getLogFilesSizeLimit(), getLogFileNr());
             fileHandler.setFormatter(new SimpleFormatter());
             logger.addHandler(fileHandler);
+            pluginServerLogHandler(logger);
         } catch (Throwable e) {
             System.err.println("can't set special handlers " + e.getMessage());
         }
+    }
+
+    private void pluginServerLogHandler(Logger logger) {
+        final Logger targetLogger = logger;
+        // let the initialization of the logger finish
+        Thread delayedOperation = new Thread() {
+            public void run() {
+                if (dbHandler != null) return;
+                dbHandler = new ServerLogHandler();
+                boolean initialized = false;
+                while (!initialized) {
+                    try {
+                        sleep(2000);
+                    } catch (InterruptedException e) {
+                        System.err.println("sleep interrupted " + e.getMessage());
+                    }
+                    try {
+                        HibernatePersistenceContext context = null;
+                        try {
+                            context = (HibernatePersistenceContext)PersistenceContext.getCurrent();
+                        } catch (SQLException e) {
+                            System.err.println("cannot get persistence context " + e.getMessage());
+                            initialized = false;
+                            continue;
+                        }
+                        context.beginTransaction();
+                        dbHandler.initialize();
+                        context.commitTransaction();
+                        context.close();
+                        initialized = true;
+                        break;
+                    } catch (IllegalStateException e) {
+                        System.err.println("error initializing trying again: " + e.getMessage());
+                        initialized = false;
+                    } catch (TransactionException e) {
+                        System.err.println("transaction exception: " + e.getMessage() +
+                                           " server log handler cannot be initialized");
+                        return;
+                    }
+                }
+                targetLogger.addHandler(dbHandler);
+            }
+        };
+        delayedOperation.start();
     }
 
     private Level getLevel() {
@@ -198,6 +281,6 @@ public class ServerLogManager extends LogManager {
 
     private Logger systemLogger = null;
     private static final String SYSTEM_LOGGER_NAME = "com.l7tech.server.log";
-    private MemHandler systemLogMemHandler = null;
+    private ServerLogHandler dbHandler = null;
     private Properties props = null;
 }
