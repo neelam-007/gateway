@@ -1,10 +1,8 @@
 package com.l7tech.console.tree.wsdl;
 
+
 import javax.wsdl.*;
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * Class DefinitionsTreeNode.
@@ -13,6 +11,12 @@ import java.util.Map;
  */
 public class DefinitionsTreeNode extends WsdlTreeNode {
     private final Definition definition;
+    private static final int ELEMENT_TYPE_MESSAGE = 1;
+    private static final int ELEMENT_TYPE_BINDING = 2;
+    private static final int ELEMENT_TYPE_PORT_TYPE = 3;
+    private static final int ELEMENT_TYPE_SERVICE = 4;
+
+
 
     DefinitionsTreeNode(Definition def, Options options) {
         super(null, options);
@@ -44,7 +48,7 @@ public class DefinitionsTreeNode extends WsdlTreeNode {
 
             public List list() {
                 List list = new ArrayList();
-                Map messages = definition.getMessages();
+                Map messages = getElements(definition, ELEMENT_TYPE_MESSAGE);
                 for (Iterator i = messages.values().iterator(); i.hasNext();) {
                     list.add(new MessageTreeNode((Message)i.next()));
                 }
@@ -64,7 +68,8 @@ public class DefinitionsTreeNode extends WsdlTreeNode {
 
             public List list() {
                 List list = new ArrayList();
-                Map portTypes = definition.getPortTypes();
+                Map portTypes = getElements(definition, ELEMENT_TYPE_PORT_TYPE);
+
                 for (Iterator i = portTypes.values().iterator(); i.hasNext();) {
                     list.add(new PortTypeTreeNode((PortType)i.next(), wsdlOptions));
                 }
@@ -85,7 +90,8 @@ public class DefinitionsTreeNode extends WsdlTreeNode {
 
             public List list() {
                 List list = new ArrayList();
-                Map bindings = definition.getBindings();
+                Map bindings = getElements(definition, ELEMENT_TYPE_BINDING);
+
                 for (Iterator i = bindings.values().iterator(); i.hasNext();) {
                     list.add(new BindingTreeNode((Binding)i.next(), wsdlOptions));
                 }
@@ -105,7 +111,7 @@ public class DefinitionsTreeNode extends WsdlTreeNode {
 
             public List list() {
                 List list = new ArrayList();
-                Map services = definition.getServices();
+                Map services = getElements(definition, ELEMENT_TYPE_SERVICE);
                 for (Iterator i = services.values().iterator(); i.hasNext();) {
                     list.add(new ServiceTreeNode((Service)i.next(), wsdlOptions));
                 }
@@ -114,6 +120,75 @@ public class DefinitionsTreeNode extends WsdlTreeNode {
         }, wsdlOptions);
 
         insert(svc, index++);
+    }
+
+    /**
+     * Retrieve the all elements of the specified type
+     * @param def  the wsdl defintion
+     * @param elementType  the element type (ELEMENT_TYPE_MESSAGE, ELEMENT_TYPE_BINDING, & ELEMENT_TYPE_PORT_TYPE)
+     * @return Map the list of elements of the specified type. Never null.
+     */
+    private Map getElements(Definition def, int elementType) {
+        Map allElements = new HashMap();
+        switch(elementType) {
+            case ELEMENT_TYPE_MESSAGE:
+                allElements = def.getMessages();
+
+                break;
+            case ELEMENT_TYPE_BINDING:
+                allElements = def.getBindings();
+
+                break;
+            case ELEMENT_TYPE_PORT_TYPE:
+                allElements = def.getPortTypes();
+                break;
+            case ELEMENT_TYPE_SERVICE:
+                allElements = def.getServices();
+                break;
+            default:
+                return new HashMap();
+        }
+        Import imp = null;
+        if(def.getImports().size() > 0) {
+            Iterator itr = def.getImports().keySet().iterator();
+            while(itr.hasNext()) {
+                Object importDef = itr.next();
+                Vector importList = (Vector) def.getImports().get(importDef);
+                for (int k = 0; k < importList.size(); k++) {
+                    imp = (Import) importList.elementAt(k);
+                    Map elements = null;
+                    switch(elementType) {
+                        case ELEMENT_TYPE_MESSAGE:
+                            elements = imp.getDefinition().getMessages();
+
+                            break;
+                        case ELEMENT_TYPE_BINDING:
+                            elements = imp.getDefinition().getBindings();
+
+                            break;
+                        case ELEMENT_TYPE_PORT_TYPE:
+                            elements = imp.getDefinition().getPortTypes();
+                            break;
+                        case ELEMENT_TYPE_SERVICE:
+                            elements = imp.getDefinition().getServices();
+                            break;
+                        default:
+                            return new HashMap();
+                    }
+                    if(elements.size() > 0) {
+                        allElements.putAll(elements);
+                    }
+                }
+            }
+        }
+
+        if(imp != null && imp.getDefinition() != null) {
+            Map moreElements = getElements(imp.getDefinition(), elementType);
+            if(moreElements.size() > 0) {
+                allElements.putAll(moreElements);
+            }
+        }
+        return allElements;
     }
 
     /**
