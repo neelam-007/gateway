@@ -1,13 +1,12 @@
 package com.l7tech.server;
 
-import com.l7tech.common.util.HexUtils;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
 
 import java.math.BigInteger;
-import java.util.Set;
 import java.util.HashSet;
+import java.util.Set;
 
 /**
  * @author alex
