@@ -219,7 +219,7 @@ public class HexUtils {
     /**
      * This ballistic podiatry version of slurpStream will slurp until memory is full.
      * If you wish to limit the size of the returned
-     * byte array, use slurpStream(InputStream, int).  If you wish to provider your own buffer to prevent
+     * byte array, use slurpStream(InputStream, int).  If you wish to provide your own buffer to prevent
      * copying, use slurpStream(InputStream, byte[]).
      *
      * @param stream  the stream to slurp

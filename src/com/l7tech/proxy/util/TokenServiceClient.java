@@ -484,8 +484,9 @@ public class TokenServiceClient {
                                                                   SoapUtil.SECURITY_CONTEXT_TOK_EL_NAME);
         if (scTokenEl != null) {
             // It's a SecurityContextToken
+            // TODO relax this if we need to do WS-SC without a client cert
             if (clientPrivateKey == null || clientCertificate == null)
-                throw new ProcessorException("Was not expecting to receive a SecurityContextToken"); // TODO relax this if we need to do WS-SC without a client cert
+                throw new ProcessorException("Was not expecting to receive a SecurityContextToken");
 
             return processSecurityContextToken(scTokenEl, rstr, clientCertificate, clientPrivateKey);
         }

@@ -99,7 +99,7 @@ public class MimeHeaders {
         if (clen == null)
             throw new IllegalStateException("No Content-Length header.");
         try {
-            return Long.parseLong(clen.getValue());
+            return Long.parseLong(clen.getMainValue());
         } catch (NumberFormatException nfe) {
             throw new CausedIOException("Content-Length is not a valid number", nfe);
         }
@@ -114,7 +114,7 @@ public class MimeHeaders {
         MimeHeader cid = get(MimeUtil.CONTENT_ID);
         if (cid == null)
             return null;
-        String value = cid.getValue().trim();
+        String value = cid.getMainValue().trim();
         if (value.length() < 1)
             return null;
         if (value.startsWith("<") && value.length() > 1)

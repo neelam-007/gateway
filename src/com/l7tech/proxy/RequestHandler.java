@@ -100,7 +100,7 @@ public class RequestHandler extends AbstractHttpHandler {
             ctype = ContentTypeHeader.parseValue(request.getContentType());
         } catch (IOException e) {
             ctype = ContentTypeHeader.XML_DEFAULT;
-            log.warning("Incoming message had missing or invalid outer Content-Type header; assuming " + ctype.getValue());
+            log.warning("Incoming message had missing or invalid outer Content-Type header; assuming " + ctype.getMainValue());
         }
         return ctype;
     }

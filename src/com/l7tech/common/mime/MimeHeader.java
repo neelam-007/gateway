@@ -6,6 +6,8 @@
 
 package com.l7tech.common.mime;
 
+import com.l7tech.common.http.HttpHeader;
+
 import javax.mail.internet.HeaderTokenizer;
 import javax.mail.internet.MimeUtility;
 import java.io.ByteArrayOutputStream;
@@ -16,15 +18,15 @@ import java.util.Iterator;
 import java.util.Map;
 
 /**
- * Encapsulates a MIME header and value, and optional extra parameters after the value.
+ * Encapsulates a MIME header and main value, and optional extra parameters after the main value.
  * Example:
  *    <code>Content-Type: text/html; charset=UTF-8</code>
  * would be encoded as
  *    name="Content-Type"
- *    value="text/html"
+ *    mainValue="text/html"
  *    params={charset=>"UTF-8"}
  */
-public class MimeHeader {
+public class MimeHeader implements HttpHeader {
     /** Encoding used by MIME headers.  Actually limited to 7-bit ASCII per RFC, but UTF-8 is a safer choice. */
     public static final String ENCODING = "UTF-8";
 
@@ -44,16 +46,17 @@ public class MimeHeader {
     }
 
     private final String name;
-    private final String value;
+    private final String mainValue;
     protected final Map params;
 
     protected byte[] serializedBytes;
 
     /**
+     * Create a new MimeHeader with the specified name, main value, and parameters.
      *
      * @param name   the name of the header, preferably in canonical form, not including the colon, ie "Content-Type".
      *               must not be empty or null.
-     * @param value  the value, ie "text/xml", not including any params that have already been parsed out into params.
+     * @param value  the mainValue, ie "text/xml", not including any params that have already been parsed out into params.
      *               May be empty, but must not be null.
      * @param params the parameters, ie {charset=>"utf-8"}.  May be empty or null.
      *               Caller must not modify this map after giving it to this constructor.
@@ -65,17 +68,17 @@ public class MimeHeader {
         if (name.length() < 1)
             throw new IllegalArgumentException("name must not be empty");
         this.name = name;
-        this.value = value;
+        this.mainValue = value;
         this.params = params == null ? Collections.EMPTY_MAP : Collections.unmodifiableMap(params);
     }
 
     /**
-     * Create a MIME header with the specified name, using the specified value (including parameters, if any).
+     * Create a MIME header with the specified name, using the specified full value (including parameters, if any).
      * If name is Content-Type, a ContentTypeHeader instance will be returned.  In any case the returned
      * object will be a MimeHeader.
      *
      * @param name the name, ie "Content-Type".  may not be null
-     * @param value the value, ie "text/xml; charset=utf-8".  may not be null
+     * @param value the full value, ie "text/xml; charset=utf-8".  may not be null
      * @return the parsed MimeHeader
      * @throws IOException if the value is not a valid MIME value.
      */
@@ -97,15 +100,18 @@ public class MimeHeader {
     }
 
     /**
-     * @return The value of this header, possibly including parameters.  Never null.
-     *         If this header was not one whose format was recognized (ie, was not Content-Type),
-     *         any parameters will have been left unparsed and will be returned as part of getValue().
-     *         <p>
-     *         For headers with a predefined value format (ie, "Content-Type: text/xml; charset=utf-8"),
-     *         this will return only the value (ie, "text/xml")
+     * Get the mainValue of this header, possibly not including parameters.
+     * <p>
+     * If this header was not one whose format was recognized (ie, was not Content-Type),
+     * any parameters will have been left unparsed and will be returned as part of getValue().
+     * <p>
+     * For headers with a predefined value format (ie, "Content-Type: text/xml; charset=utf-8"),
+     * this will return only the main value (ie, "text/xml")
+     *
+     * @return The mainValue of this header, possibly not including parameters.  Never null.
      */
-    public String getValue() {
-        return value;
+    public String getMainValue() {
+        return mainValue;
     }
 
     /** @return the specified parameter, or null if it didn't exist. */
@@ -129,15 +135,10 @@ public class MimeHeader {
         }
     }
 
-    /**
-     * @return The complete value of this header, including all parameters.  Never null.
-     *         This will return the complete value even for headers with a predefined value format.
-     *         (that is, it will return "text/xml; charset=utf-8" rather than "text/xml").
-     */
     public String getFullValue() {
         try {
             ByteArrayOutputStream out = new ByteArrayOutputStream(32);
-            writeValue(out);
+            writeFullValue(out);
             return out.toString(ENCODING);
         } catch (IOException e) {
             throw new RuntimeException(e); // can't happen
@@ -176,13 +177,13 @@ public class MimeHeader {
 
         os.write(getName().getBytes(ENCODING));
         os.write(COLON);
-        writeValue(os);
+        writeFullValue(os);
         os.write(CRLF);
     }
 
     /** Write just the complete value part of this header, including all params. */
-    void writeValue(OutputStream os) throws IOException {
-        os.write(getValue().getBytes(ENCODING));
+    void writeFullValue(OutputStream os) throws IOException {
+        os.write(getMainValue().getBytes(ENCODING));
         for (Iterator i = params.entrySet().iterator(); i.hasNext();) {
             Map.Entry entry = (Map.Entry)i.next();
             String name = (String)entry.getKey();
