@@ -10,6 +10,7 @@ import com.l7tech.common.gui.util.Utilities;
 import javax.swing.*;
 import javax.swing.table.TableCellRenderer;
 import javax.swing.table.TableColumn;
+import javax.swing.table.TableCellEditor;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -114,6 +115,10 @@ public class BeanEditor extends JPanel {
         TableColumn column = propertyTable.getColumnModel().getColumn(0);
         column.setCellRenderer(new ButtonRenderer());
         column = propertyTable.getColumnModel().getColumn(1);
+        TableCellEditor te = column.getCellEditor();
+        if (te !=null && te instanceof DefaultCellEditor) {
+            ((DefaultCellEditor)te).setClickCountToStart(1);
+        }
         JScrollPane ps = new JScrollPane();
         ps.getViewport().add(propertyTable);
         add(ps, BorderLayout.CENTER);
