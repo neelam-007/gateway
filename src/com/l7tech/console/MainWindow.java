@@ -1069,7 +1069,7 @@ public class MainWindow extends JFrame {
 
             progressBar.setBorder(BorderFactory.createEmptyBorder(4, 4, 4, 4));
 
-            rightPanel.add(progressBar, BorderLayout.EAST);
+            // rightPanel.add(progressBar, BorderLayout.EAST);
             getStatusBarPane().add(rightPanel, BorderLayout.EAST);
         }
         return statusBarPane;
