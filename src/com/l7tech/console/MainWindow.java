@@ -1053,19 +1053,26 @@ public class MainWindow extends JFrame {
                   if (item.isSelected()) {
                       getGatewayLogWindow().show();
                   } else {
-                      getGatewayLogWindow().hide();
+                      if(gatewayLogWindow != null) {
+                          gatewayLogWindow.dispose();
+                          gatewayLogWindow = null;
+                      }
                   }
               }
 
               ConnectionListener listener = new ConnectionListener() {
                   public void onConnect(ConnectionEvent e) {
                       setEnabled(true);
-                      getGatewayLogWindow().onConnect();
+                      if(gatewayLogWindow != null) {
+                          gatewayLogWindow.onConnect();
+                      }
                   }
 
                   public void onDisconnect(ConnectionEvent e) {
                       setEnabled(false);
-                      getGatewayLogWindow().onDisconnect();
+                      if(gatewayLogWindow != null) {
+                          gatewayLogWindow.onDisconnect();
+                      }
                   }
               };
 
@@ -1093,11 +1100,14 @@ public class MainWindow extends JFrame {
                * @see Action#removePropertyChangeListener
                */
               public void actionPerformed(ActionEvent event) {
-                  JCheckBoxMenuItem item = (JCheckBoxMenuItem)event.getSource();
+                  JCheckBoxMenuItem item = (JCheckBoxMenuItem) event.getSource();
                   if (item.isSelected()) {
                       getClusterStatusWindow().show();
                   } else {
-                      getClusterStatusWindow().hide();
+                      if (clusterStatusWindow != null) {
+                          clusterStatusWindow.dispose();
+                          clusterStatusWindow = null;
+                      }
                   }
               }
 
@@ -1105,14 +1115,18 @@ public class MainWindow extends JFrame {
                   public void onConnect(ConnectionEvent e) {
                       setEnabled(true);
                       if (getStatMenuItem().isSelected()) {
-                          getClusterStatusWindow().onConnect();
+                          if (clusterStatusWindow != null) {
+                              clusterStatusWindow.onConnect();
+                          }
                       }
                   }
 
                   public void onDisconnect(ConnectionEvent e) {
                       setEnabled(false);
                       if (getStatMenuItem().isSelected()) {
-                          getClusterStatusWindow().onDisconnect();
+                          if (clusterStatusWindow != null) {
+                              clusterStatusWindow.onDisconnect();
+                          }
                       }
                   }
               };
