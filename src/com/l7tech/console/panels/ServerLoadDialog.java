@@ -298,10 +298,6 @@ public class ServerLoadDialog extends JDialog {
             fiveminuteLoadText.setText("unavailable");
             fifteenminuteLoadText.setText("unavailable");
         } else {
-            // todo, fix this bug
-            System.out.println(metrics.getRawUptimeOutput());
-            metrics = new UptimeMetrics(metrics.getRawUptimeOutput());
-            //
             int days = metrics.getDays();
             int hrs = metrics.getHours();
             int minutes = metrics.getMinutes();
