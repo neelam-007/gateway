@@ -244,7 +244,8 @@ public class ClusterStatusWindow extends JFrame {
                             new ImageIcon(ImageCache.getInstance().getIcon(MainWindow.RESOURCE_PATH + "/connect2.gif"));
                     private Icon disconnectIcon =
                             new ImageIcon(ImageCache.getInstance().getIcon(MainWindow.RESOURCE_PATH + "/disconnect.gif"));
-
+                    private Icon unknownStatusIcon =
+                            new ImageIcon(ImageCache.getInstance().getIcon(MainWindow.RESOURCE_PATH + "/unknownstatus.gif"));
                     public Component getTableCellRendererComponent(JTable table,
                                                                    Object value,
                                                                    boolean isSelected,
@@ -260,7 +261,7 @@ public class ClusterStatusWindow extends JFrame {
                         } else if (s.toString().equals("0")) {
                             this.setIcon(disconnectIcon);
                         } else {
-
+                            this.setIcon(unknownStatusIcon);
                         }
                         return this;
                     }
@@ -411,19 +412,17 @@ public class ClusterStatusWindow extends JFrame {
                 su.incrementTimeStampUpdateFailureCount();
             }
             // the second last update time stamp is -1 the very first time when the node status is retrieved
-            if (su.getSecondLastUpdateTimeStamp() == -1 ||
-                    su.getLastUpdateTimeStamp() != su.getSecondLastUpdateTimeStamp()) {
+            // the node status is unknown in this case
+            if (su.getSecondLastUpdateTimeStamp() == -1){
+                su.setStatus(-1);
+            }
+            else if(su.getLastUpdateTimeStamp() != su.getSecondLastUpdateTimeStamp()) {
                 su.setStatus(1);
                 su.resetTimeStampUpdateFailureCount();
             } else {
                 if(su.getTimeStampUpdateFailureCount() >= GatewayStatus.MAX_UPDATE_FAILURE_COUNT){
                     su.setStatus(0);
                     su.resetTimeStampUpdateFailureCount();
-                }
-                else{
-                    if(su.getLastUpdateTimeStamp() != su.getSecondLastUpdateTimeStamp()){
-                        su.setStatus(1);
-                    }
                 }
             }
 
@@ -533,6 +532,8 @@ public class ClusterStatusWindow extends JFrame {
         getClusterConnectionStatusLabel().setText("      Error: Connection to the gateway cluster is down.");
         getClusterConnectionStatusLabel().setForeground(Color.red);
         getStatusRefreshTimer().stop();
+
+        setNodeStatusUnknown();
         serviceManager = null;
         clusterStatusAdmin = null;
     }
@@ -540,6 +541,20 @@ public class ClusterStatusWindow extends JFrame {
     private void initCaches() {
         currentNodeList = new Hashtable();
         clusterRequestCounterCache = new Vector();
+    }
+
+    public void setNodeStatusUnknown(){
+        Vector cs = new Vector();
+
+        for (Iterator i = currentNodeList.keySet().iterator(); i.hasNext();) {
+            GatewayStatus su = (GatewayStatus) currentNodeList.get(i.next());
+            su.setStatus(-1);
+            cs.add(su);
+        }
+
+        getClusterStatusTableModel().setData(cs);
+        getClusterStatusTableModel().getRealModel().setRowCount(cs.size());
+        getClusterStatusTableModel().fireTableDataChanged();
     }
 
     // This customized renderer can render objects of the type TextandIcon

@@ -100,7 +100,7 @@ public class ClusterStatusWorker extends SwingWorker {
         }
 
 //        System.out.println("Number of nodes in the new list is: " + cluster.length);
-//        System.out.println("Number of nodes in the old list is: " + currentNodeList.size());
+//       System.out.println("Number of nodes in the old list is: " + currentNodeList.size());
 
         Object node = null;
         for (int i = 0; i < cluster.length; i++) {
@@ -144,6 +144,7 @@ public class ClusterStatusWorker extends SwingWorker {
             return null;
         }
 
+//        System.out.println("Number of service usage records received is " + serviceStats.length);
         com.l7tech.objectmodel.EntityHeader[] entityHeaders = null;
 
         // create the statistics list
@@ -197,8 +198,7 @@ public class ClusterStatusWorker extends SwingWorker {
                     gatewayNode.updateCompletedCounterCache(serviceStats[i].getCompleted());
                     gatewayNode.updateRequestCounterCache(serviceStats[i].getRequests());
 //                    System.out.println("Node is: " + gatewayNode.getName());
-//                    System.out.println("adding completedCount to cache: " + serviceStats[i].getCompleted());
-//                    System.out.println("adding AttempCount to cache: " + serviceStats[i].getRequests());
+//                    System.out.println("adding completedCount to cache: " + serviceStats[i].getCompleted());                    System.out.println("adding AttempCount to cache: " + serviceStats[i].getRequests());
                 }
             }
 
