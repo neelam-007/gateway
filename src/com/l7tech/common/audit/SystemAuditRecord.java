@@ -39,7 +39,7 @@ public class SystemAuditRecord extends AuditRecord {
 
     /**
      * The code for the component this audit record relates to
-     * @see {@link com.l7tech.common.Component#getCode()} 
+     * @see com.l7tech.common.Component#getCode() 
      */
     public String getComponent() {
         return component;

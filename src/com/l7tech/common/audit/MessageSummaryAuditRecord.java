@@ -18,7 +18,7 @@ import java.util.logging.Level;
  * By default, these are not saved unless the {@link com.l7tech.policy.assertion.AuditAssertion} is used or the
  * SSG's message processing audit threshold is set to {@link Level#INFO} or lower.
  *
- * @see {@link com.l7tech.server.ServerConfig#PARAM_AUDIT_MESSAGE_THRESHOLD}
+ * @see com.l7tech.server.ServerConfig#PARAM_AUDIT_MESSAGE_THRESHOLD
  *
  * @author alex
  * @version $Revision$

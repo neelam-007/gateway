@@ -51,7 +51,7 @@ public class AdminAuditRecord extends AuditRecord {
     /**
      * The login ID of the administrator who triggered the event
      * @return the login ID of the administrator who triggered the event
-     * @see {@link com.l7tech.identity.IdentityAdmin#findUserByLogin(long, String)}
+     * @see com.l7tech.identity.IdentityAdmin#findUserByLogin(long, String)
      */
     public String getAdminLogin() {
         return adminLogin;
