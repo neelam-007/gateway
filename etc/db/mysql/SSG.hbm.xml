@@ -48,7 +48,7 @@
         <property name="description" type="string"/>
         <property name="name" type="string"/>
 
-        <set role="memberSet" lazy="false" table="internal_user_group">
+        <set role="members" lazy="false" table="internal_user_group">
             <key column="internal_group"/>
             <many-to-many class="com.l7tech.identity.User" column="internal_user"/>
         </set>
@@ -71,7 +71,7 @@
 	    <property name="cert" type="string"/>
         <property name="certResetCounter" column="cert_reset_counter" type="int"/>
 
-        <set role="groupSet" lazy="false" table="internal_user_group">
+        <set role="groups" lazy="false" table="internal_user_group">
             <key column="internal_user"/>
             <many-to-many class="com.l7tech.identity.Group" column="internal_group"/>
         </set>
