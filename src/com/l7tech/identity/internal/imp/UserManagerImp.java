@@ -10,7 +10,6 @@ import com.l7tech.identity.UserManager;
 import com.l7tech.identity.User;
 import com.l7tech.objectmodel.*;
 
-import java.util.Collection;
 import java.sql.SQLException;
 
 /**
