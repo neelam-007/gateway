@@ -2,8 +2,11 @@ package com.l7tech.console.action;
 
 import com.l7tech.console.tree.AssertionsTree;
 import com.l7tech.console.tree.EntityHeaderNode;
+import com.l7tech.console.tree.ProviderNode;
+import com.l7tech.console.tree.identity.IdentityProvidersTree;
 import com.l7tech.console.util.ComponentRegistry;
 import com.l7tech.objectmodel.ObjectNotFoundException;
+import com.l7tech.identity.IdentityProviderConfig;
 
 import javax.swing.*;
 import javax.swing.tree.DefaultTreeModel;
@@ -67,7 +70,12 @@ public class DeleteEntityAction extends BaseAction {
             deleted = true;
         }
         if (deleted) {
-            JTree tree = (JTree)ComponentRegistry.getInstance().getComponent(AssertionsTree.NAME);
+            JTree tree = null;
+            if(node instanceof ProviderNode) {
+                tree = (JTree)ComponentRegistry.getInstance().getComponent(IdentityProvidersTree.NAME);
+            } else {
+                tree = (JTree)ComponentRegistry.getInstance().getComponent(AssertionsTree.NAME);
+            }
             DefaultTreeModel model = (DefaultTreeModel)tree.getModel();
             model.removeNodeFromParent(node);
         }
