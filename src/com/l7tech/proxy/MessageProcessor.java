@@ -177,6 +177,7 @@ public class MessageProcessor {
                 });
                 return response;
             } catch (NullPointerException e) {
+                log.error(e);
                 throw new IOException("Unable to discern a SOAPEnvelope from the server's response: " + e.toString());
             }
         } finally {
