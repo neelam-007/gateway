@@ -43,7 +43,7 @@ public class AuditRecordManagerImpl extends HibernateEntityManager implements Au
      * @param fromTime the time of the earliest record to retrieve (null = one day ago)
      * @param toTime the time of the latest record to retrieve (null = now)
      * @param fromLevel the level of the least severe record to retrieve (null = {@link Level#INFO})
-     * @param toLevel the level of the most severe record to retrieve (null = {@link Level#INFO})
+     * @param toLevel the level of the most severe record to retrieve (null = {@link Level#SEVERE})
      * @param maxRecords the maximum number of records to retrieve (0 = 4096);
      * @return
      * @throws FindException
@@ -65,7 +65,7 @@ public class AuditRecordManagerImpl extends HibernateEntityManager implements Au
             crit.add(Expression.le(PROP_TIME, new Long(toTime.getTime())));
 
             if (fromLevel == null) fromLevel = Level.INFO;
-            if (toLevel == null) toLevel = Level.INFO;
+            if (toLevel == null) toLevel = Level.SEVERE;
 
             if (fromLevel.equals(toLevel)) {
                 crit.add(Expression.eq(PROP_LEVEL, fromLevel.getName()));
