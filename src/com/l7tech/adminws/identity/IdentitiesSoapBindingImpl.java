@@ -19,7 +19,21 @@ public class IdentitiesSoapBindingImpl implements com.l7tech.adminws.identity.Id
     public com.l7tech.adminws.identity.Header[] findAlllIdentityProviderConfig() throws java.rmi.RemoteException {
         //return returnTestHeaders();
         try {
-            return TypeTranslator.collectionToServiceHeaders(getIdentityProviderConfigManagerAndBeginTransaction().findAllHeaders());
+            //return TypeTranslator.collectionToServiceHeaders(getIdentityProviderConfigManagerAndBeginTransaction().findAllHeaders());
+            // while findallheaders is not yet implemented
+            java.util.Collection colOfConfigs = getIdentityProviderConfigManagerAndBeginTransaction().findAll();
+            java.util.Iterator iter = colOfConfigs.iterator();
+            com.l7tech.adminws.identity.Header[] output = new com.l7tech.adminws.identity.Header[colOfConfigs.size()];
+            int counter = 0;
+            while (iter.hasNext()) {
+                com.l7tech.identity.IdentityProviderConfig config = (com.l7tech.identity.IdentityProviderConfig)iter.next();
+                output[counter] = new com.l7tech.adminws.identity.Header();
+                output[counter].setName(config.getName());
+                output[counter].setOid(config.getOid());
+                output[counter].setType("com.l7tech.identity.IdentityProviderConfig");
+                ++counter;
+            }
+            return output;
         } catch (FindException e) {
             throw new RemoteException("FindException in findAlllIdentityProviderConfig", e);
         } finally {
