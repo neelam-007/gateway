@@ -836,7 +836,7 @@ public class XmlSecurityPropertiesDialog extends JDialog {
         final JRadioButton _4;
         _4 = new JRadioButton();
         messageParts = _4;
-        _4.setText("Sign/encrypt selected operations and elements in operatons");
+        _4.setText("Sign/encrypt selected operations and elements in operations");
         _2.add(_4, new com.intellij.uiDesigner.core.GridConstraints(2, 0, 1, 1, 8, 0, 3, 0, null, null, null));
         final JLabel _5;
         _5 = new JLabel();
