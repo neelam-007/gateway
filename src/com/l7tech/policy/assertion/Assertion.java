@@ -24,6 +24,8 @@ public abstract class Assertion implements Cloneable, Serializable {
     // 2.1 CustomAssertion compatibility
     private static final long serialVersionUID = -2639281346815614287L;
 
+    // TODO need new readObject for backward compat with 2.1 (must read and ignore the now-transient "parent" field)
+
     public Assertion() {
         this.parent = null;
         this.ordinal = 1;
