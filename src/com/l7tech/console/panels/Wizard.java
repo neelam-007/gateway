@@ -517,11 +517,11 @@ public class Wizard extends JDialog {
     private class WizardLabel extends JLabel implements WizardListener {
         private WizardStepPanel wizardPanel;
         boolean selected;
-
+        Font initialFont;
         WizardLabel(String label, WizardStepPanel panel, boolean selected) {
             this.wizardPanel = panel;
-            setFont(getFont().deriveFont(Font.BOLD, 12));
             setText(label);
+            initialFont = getFont();
             setSelected(selected);
         }
 
@@ -538,7 +538,7 @@ public class Wizard extends JDialog {
          */
         public void setSelected(boolean b) {
             selected = b;
-            setForeground(b ? Color.BLACK : Color.WHITE);
+            setFont(initialFont.deriveFont( selected ? Font.BOLD : Font.PLAIN, 12));
         }
 
         /**
