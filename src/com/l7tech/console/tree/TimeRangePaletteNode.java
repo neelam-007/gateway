@@ -59,7 +59,7 @@ public class TimeRangePaletteNode extends AbstractTreeNode {
     protected void loadChildren() {}
 
     public String getName() {
-        return "Time Range";
+        return "Time And Day Availability";
     }
 
     /**
