@@ -118,9 +118,10 @@ public class XMLEncSessionServlet extends HttpServlet {
                 IdentityProvider provider = (IdentityProvider) i.next();
                 try {
                     User u = provider.authenticate(creds);
+                    logger.fine("Authentication successful for user " + creds.getLogin() + " on identity provider: " + provider.getConfig().getName());
                     return u;
                 } catch (AuthenticationException e) {
-                    logger.fine("Authentication successful for user " + creds.getLogin() + " on identity provider: " + provider.getConfig().getName());
+                    logger.finer("Authentication failed for user " + creds.getLogin() + " on identity provider: " + provider.getConfig().getName());
                     continue;
                 }
             }
