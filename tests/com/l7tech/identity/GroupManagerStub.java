@@ -21,6 +21,11 @@ public class GroupManagerStub implements GroupManager {
         return (Group) dataStore.getGroups().get( new Long(oid) );
     }
 
+    public Group findByName(String name) throws FindException {
+        // TODO: Emil!
+        return null;
+    }
+
     public void delete(Group group) throws DeleteException {
         if (dataStore.getGroups().remove(new Long(group.getOid())) == null) {
             throw new DeleteException("Could not find group oid= " + group.getOid());

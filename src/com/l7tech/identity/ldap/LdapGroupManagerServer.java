@@ -23,7 +23,7 @@ import java.util.logging.Level;
  * List groups in a directory including the member users.
  * This version assumes usage of the posixGroup object class in the directory.
  * This member users are in the memberUid attributes.
- *  
+ *
  */
 public class LdapGroupManagerServer extends LdapManager implements GroupManager {
 
@@ -71,6 +71,11 @@ public class LdapGroupManagerServer extends LdapManager implements GroupManager 
             LogManager.getInstance().getSystemLogger().log(Level.SEVERE, null, e);
             throw new FindException(e.getMessage(), e);
         }
+    }
+
+    public Group findByName(String name) throws FindException {
+        // TODO: Francois!
+        return null;
     }
 
     public void delete(Group group) throws DeleteException {

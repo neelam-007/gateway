@@ -4,10 +4,12 @@ import com.l7tech.objectmodel.*;
 import com.l7tech.identity.GroupManager;
 import com.l7tech.identity.Group;
 import com.l7tech.identity.IdProvConfManagerServer;
+import com.l7tech.identity.User;
 import com.l7tech.logging.LogManager;
 
 import java.sql.SQLException;
 import java.util.*;
+import java.util.logging.Level;
 
 /**
  * Layer 7 Technologies, inc.
@@ -20,6 +22,28 @@ public class InternalGroupManagerServer extends HibernateEntityManager implement
         super();
     }
 
+    public Group findByName( String name ) throws FindException {
+        try {
+            List groups = _manager.find( getContext(), "from " + getTableName() + " in class " + getImpClass().getName() + " where " + getTableName() + ".name = ?", name, String.class );
+            switch ( groups.size() ) {
+            case 0:
+                return null;
+            case 1:
+                Group g = (Group)groups.get(0);
+                g.setProviderId( IdProvConfManagerServer.INTERNALPROVIDER_SPECIAL_OID );
+                return g;
+            default:
+                String err = "Found more than one group with the name " + name;
+                LogManager.getInstance().getSystemLogger().log(Level.SEVERE, err);
+                throw new FindException( err );
+            }
+        } catch ( SQLException se ) {
+            LogManager.getInstance().getSystemLogger().log(Level.SEVERE, null, se);
+            throw new FindException( se.toString(), se );
+        }
+
+    }
+
     public Group findByPrimaryKey(String oid) throws FindException {
         try {
             Group out = (Group)_manager.findByPrimaryKey( getContext(), getImpClass(), Long.parseLong(oid) );
@@ -27,6 +51,8 @@ public class InternalGroupManagerServer extends HibernateEntityManager implement
             return out;
         } catch ( SQLException se ) {
             throw new FindException( se.toString(), se );
+        } catch ( NumberFormatException nfe ) {
+            throw new FindException( "Can't find groups with non-numeric OIDs!", nfe );
         }
     }
 

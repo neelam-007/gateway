@@ -29,6 +29,11 @@ public class GroupManagerClient extends IdentityManagerClient implements GroupMa
         }
     }
 
+    public Group findByName(String name) throws FindException {
+        // TODO: Francois!
+        return null;
+    }
+
     public void delete(Group group) throws DeleteException {
         try {
             // todo, group must be refactored so that it's id is always a string
