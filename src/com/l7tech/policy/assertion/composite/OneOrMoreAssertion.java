@@ -26,23 +26,26 @@ import java.util.List;
  * @version $Revision$
  */
 public class OneOrMoreAssertion extends CompositeAssertion {
-    public OneOrMoreAssertion( List children ) {
-        super( children );
+    public OneOrMoreAssertion() {
     }
 
-    public OneOrMoreAssertion( CompositeAssertion parent, List children ) {
-        super( parent, children );
+    public OneOrMoreAssertion(List children) {
+        super(children);
     }
 
-    public AssertionError checkRequest( Request request, Response response ) throws PolicyAssertionException {
+    public OneOrMoreAssertion(CompositeAssertion parent, List children) {
+        super(parent, children);
+    }
+
+    public AssertionError checkRequest(Request request, Response response) throws PolicyAssertionException {
         Iterator kids = children();
         Assertion child;
         AssertionError result = null;
         AssertionError lastResult = AssertionError.FALSIFIED;
-        while ( kids.hasNext() ) {
+        while (kids.hasNext()) {
             child = (Assertion)kids.next();
-            result = child.checkRequest( request, response );
-            if ( result == AssertionError.NONE ) lastResult = result;
+            result = child.checkRequest(request, response);
+            if (result == AssertionError.NONE) lastResult = result;
         }
         return lastResult;
     }
