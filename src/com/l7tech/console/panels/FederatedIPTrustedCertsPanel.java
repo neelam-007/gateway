@@ -182,6 +182,8 @@ public class FederatedIPTrustedCertsPanel extends IdentityProviderStepPanel {
             d.addWizardListener(wizardListener);
             Utilities.centerOnScreen(d);
             d.setVisible(true);
+        } else {
+            return true;
         }
 
         return limitationsAccepted;
