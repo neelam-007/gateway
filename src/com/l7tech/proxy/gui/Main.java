@@ -17,6 +17,7 @@ import java.net.BindException;
  * Time: 3:33:14 PM
  */
 public class Main {
+    private static final String CVSTAG = "$Revision$"; // sorry emil
     private static final Category log = Category.getInstance(Main.class);
     private static final int DEFAULT_PORT = 7700;
     private static final int MIN_THREADS = 4;
