@@ -9,6 +9,10 @@ import com.l7tech.policy.assertion.ext.Category;
 import javax.swing.*;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.beans.BeanInfo;
+import java.beans.Introspector;
+import java.beans.IntrospectionException;
+import java.beans.PropertyDescriptor;
 
 /**
  * Class <code>CustomAssertionTreeNode</code> contains the custom
@@ -58,7 +62,20 @@ public class CustomAssertionTreeNode extends LeafAssertionTreeNode {
      * @return <code>null</code> indicating there should be none default action
      */
     public Action getPreferredAction() {
-        return new CustomAssertionPropertiesAction(this);
+        // check whether this custom assertion should be allowed editing based on whether it has properties to edit
+        try {
+            BeanInfo bi = Introspector.getBeanInfo(((CustomAssertionHolder)asAssertion()).getCustomAssertion().getClass());
+            PropertyDescriptor[] desc = bi.getPropertyDescriptors();
+            for (int i = 0; i < desc.length; i++) {
+                PropertyDescriptor propertyDescriptor = desc[i];
+                if (!propertyDescriptor.getName().equals("class") && !propertyDescriptor.getName().equals("name")) {
+                    return new CustomAssertionPropertiesAction(this);
+                }
+            }
+        } catch (IntrospectionException e) {
+            throw new RuntimeException("Could not introspect custom assertion", e);
+        }
+        return null;
     }
 
 
@@ -70,8 +87,10 @@ public class CustomAssertionTreeNode extends LeafAssertionTreeNode {
      */
     public Action[] getActions() {
         java.util.List list = new ArrayList();
-        Action a = new CustomAssertionPropertiesAction(this);
-        list.add(a);
+        Action a = getPreferredAction();
+        if (a != null) {
+            list.add(a);
+        }
         list.addAll(Arrays.asList(super.getActions()));
         return (Action[])list.toArray(new Action[]{});
     }
