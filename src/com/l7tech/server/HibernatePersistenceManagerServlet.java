@@ -91,6 +91,7 @@ public class HibernatePersistenceManagerServlet extends HttpServlet {
                 out.println( "<b>The <tt>op</tt> parameter must be one of { get, create, delete, list }</b>" );
             }
         } catch ( Exception e ) {
+            e.printStackTrace(out);
             throw new ServletException( e );
         } finally {
             try {

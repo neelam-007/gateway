@@ -41,13 +41,13 @@
     </path>
     <property name="test.class.path" refid="project.class.path"/>
 
-    <!-- 
-       * jars that go in $TOMCAT_HOME/common/lib 
-       * currently in ant this is used in conjunction with 
+    <!--
+       * jars that go in $TOMCAT_HOME/common/lib
+       * currently in ant this is used in conjunction with
        * fileset (look for patternset id usage throughout this
        * build.xml for examples)
     -->
-    <property name="common.lib.jars" 
+    <property name="common.lib.jars"
               value="saaj.jar,
                      jaxrpc.jar,
                      xerces-J_1.4.0.jar,
@@ -125,14 +125,14 @@
         <antcall target="package">
         </antcall>
 
-        <!-- 
+        <!--
         <move file="${tomcat.home}/conf/server.xml" tofile="${tomcat.home}/conf/server.xml_old"/>
         <xmltask source="${tomcat.home}/conf/server.xml_old" dest="${tomcat.home}/conf/server.xml">
             <remove path="//Context[@path='/${app.name}']"/>
             <remove path="//Context[@path='/${app.name}.war']"/>
             <insert path="Server/Service[@name='Tomcat-Standalone']/Engine/Host" file="${src.root}/etc/tomcat-serverxml-fragment-mysql.xml"/>
         </xmltask>
-            configure the server.xml file to include the datasource --> 
+            configure the server.xml file to include the datasource -->
 
         <!--
         <delete dir="${tomcat.home}/webapps/${app.name}"/>
@@ -211,7 +211,7 @@
     <target name="package" depends="compile">
         <!-- the ssg war -->
         <war warfile="${build.dir}/${war}" webxml="${build.etc}/web.xml">
-            <lib dir="${build.dir}/lib" 
+            <lib dir="${build.dir}/lib"
                  excludes="${common.lib.jars}, jh.jar, kunststoff.jar">
             </lib>
             <classes dir="${build.classes}"/>
@@ -248,7 +248,8 @@
         <!-- Resources -->
         <copy todir="${build.classes}">
             <fileset dir="${src.root}/etc">
-                <include name="hibernate.cfg.xml"/>
+                <!-- <include name="hibernate.cfg.xml"/> -->
+                <include name="hibernate.properties"/>
                 <include name="SSG.hbm.xml"/>
                 <include name="tyrex-domain.xml"/>
                 <include name="com/l7tech/objectmodel/hibernatepersistence.properties"/>

@@ -11,7 +11,6 @@ import com.l7tech.objectmodel.HibernatePersistenceManager;
 import javax.servlet.http.*;
 import javax.servlet.ServletException;
 import javax.servlet.ServletConfig;
-import javax.naming.NamingException;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.sql.SQLException;
@@ -26,11 +25,13 @@ public class BootServlet extends HttpServlet {
         try {
             HibernatePersistenceManager.initialize();
         } catch ( IOException ioe ) {
+            ioe.printStackTrace();
             throw new ServletException( ioe );
         } catch ( SQLException se ) {
+            se.printStackTrace();
             throw new ServletException( se );
-        } catch ( NamingException ne ) {
-            throw new ServletException( ne );
+        //} catch ( NamingException ne ) {
+        //    throw new ServletException( ne );
         }
     }
 

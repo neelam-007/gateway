@@ -29,6 +29,10 @@ public class OrganizationImp extends NamedEntityImp implements Organization {
         return _users;
     }
 
+    public void setUsers( Collection users ) {
+        _users = users;
+    }
+
     public void setAddress(Address address) {
         _address = address;
     }

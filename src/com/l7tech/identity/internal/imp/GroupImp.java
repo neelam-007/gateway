@@ -26,6 +26,14 @@ public class GroupImp extends NamedEntityImp implements Group {
         return _memberHeaders;
     }
 
+    public void setMembers( Collection members ) {
+        _members = members;
+    }
+
+    public void setMemberHeaders( Collection memberHeaders ) {
+        _memberHeaders = memberHeaders;
+    }
+
     public void setDescription(String description) {
         _description = description;
     }

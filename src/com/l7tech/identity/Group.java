@@ -10,5 +10,8 @@ public interface Group extends NamedEntity {
     Collection getMembers();
     Collection getMemberHeaders();
 
+    void setMembers( Collection members );
+    void setMemberHeaders( Collection memberHeaders );
+
     void setDescription( String description );
 }

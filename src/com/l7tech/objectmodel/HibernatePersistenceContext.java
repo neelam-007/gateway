@@ -10,7 +10,8 @@ import cirrus.hibernate.Session;
 
 import javax.transaction.UserTransaction;
 import javax.transaction.SystemException;
-import javax.naming.InitialContext;
+import javax.sql.DataSource;
+import java.sql.Connection;
 
 /**
  * @author alex
@@ -40,7 +41,9 @@ public class HibernatePersistenceContext extends PersistenceContext {
                 _session.flush();
             else
                 throw new IllegalStateException( "Can't commit when there's no session!" );
-            getUserTransaction().commit();
+
+            _htxn.commit();
+            //getUserTransaction().commit();
         } catch ( Exception e ) {
             throw new TransactionException( e.toString(), e );
         } finally {
@@ -53,18 +56,22 @@ public class HibernatePersistenceContext extends PersistenceContext {
     }
 
     protected UserTransaction getUserTransaction() throws TransactionException {
+        throw new UnsupportedOperationException( "UserTransactions are no longer supported!");
+        /*
         try {
             return (UserTransaction)new InitialContext().lookup("java:comp/UserTransaction");
         } catch ( Exception e ) {
             throw new TransactionException( e.toString(), e );
         }
+        */
     }
 
     public void beginTransaction() throws TransactionException {
         try {
-            getUserTransaction().begin();
+            //getUserTransaction().begin();
             if ( _session == null || !_session.isOpen() )
                 _session = _manager.getSession();
+            _htxn = _session.beginTransaction();
         } catch ( Exception e ) {
             throw new TransactionException( e.toString(), e );
         }
@@ -72,7 +79,8 @@ public class HibernatePersistenceContext extends PersistenceContext {
 
     public void rollbackTransaction() throws TransactionException {
         try {
-            getUserTransaction().rollback();
+            //getUserTransaction().rollback();
+            _htxn.rollback();
         } catch ( Exception e ) {
             throw new TransactionException( e.toString(), e );
         } finally {
@@ -86,4 +94,7 @@ public class HibernatePersistenceContext extends PersistenceContext {
 
     protected HibernatePersistenceManager _manager;
     protected Session _session;
+    protected DataSource _dataSource;
+    protected Connection _conn;
+    protected cirrus.hibernate.Transaction _htxn;
 }

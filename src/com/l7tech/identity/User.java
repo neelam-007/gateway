@@ -22,6 +22,9 @@ public interface User extends Entity {
     Collection getGroups();
     Collection getGroupHeaders();
 
+    void setGroups( Collection groups );
+    void setGroupHeaders( Collection groupHeaders );
+
     void setLogin( String login );
     void setPassword( String password );
     void setFirstName( String firstName );

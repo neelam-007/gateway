@@ -81,7 +81,7 @@ public class JDBCTestServlet extends HttpServlet {
                     out.println( "<table>" );
 
                     out.print( "<tr><td>oid</td>" );
-                    out.print( rs.getLong("oid") );
+                    out.print( oid );
                     out.println( "</td></tr>");
 
                     out.print( "<tr><td>name</td>" );
@@ -104,7 +104,6 @@ public class JDBCTestServlet extends HttpServlet {
                 Statement stmt = conn.createStatement();
 
                 String soid = request.getParameter("oid");
-                long oid = Long.parseLong( soid );
 
                 int affected = stmt.executeUpdate( "delete from identity_provider where oid = " + soid );
                 if ( affected == 0 )

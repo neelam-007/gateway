@@ -1,16 +1,18 @@
+<!-- Obsolete.  No more JNDI or Tyrex! -->
+
 <domain>
   <name>ssgDomain</name>
   <resources>
     <dataSource>
-      <name>ssg</name>
-      <jar>@TOMCAT_HOME@/common/lib/mysql-connector-java-3.0.7-stable-bin.jar</jar>
+      <name>ssgDatasource</name>
+      <jar>/opt/java/tomcat/common/lib/mysql-connector-java-3.0.7-stable-bin.jar</jar>
       <class>com.mysql.jdbc.jdbc2.optional.MysqlConnectionPoolDataSource</class>
       <config>
         <user>webuser</user>
         <password>resubew</password>
-        <serverName>localhost</serverName>
+        <serverName>spock</serverName>
         <port>3306</port>
-        <database>ssg</database>
+        <databaseName>ssg</databaseName>
       </config>
     </dataSource>
   </resources>

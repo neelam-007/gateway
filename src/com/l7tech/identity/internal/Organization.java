@@ -11,6 +11,7 @@ public interface Organization extends NamedEntity {
     Address getMailingAddress();
 
     Collection getUsers();
+    void setUsers( Collection users );
 
     void setAddress( Address address );
     void setBillingAddress( Address billingAddress );

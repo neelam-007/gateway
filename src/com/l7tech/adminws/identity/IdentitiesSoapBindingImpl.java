@@ -5,10 +5,7 @@ import com.l7tech.identity.*;
 import com.l7tech.util.Locator;
 import com.l7tech.objectmodel.*;
 
-import javax.naming.NamingException;
 import java.rmi.RemoteException;
-import java.io.IOException;
-import java.sql.SQLException;
 
 /**
  * Layer 7 Technologies, inc.
