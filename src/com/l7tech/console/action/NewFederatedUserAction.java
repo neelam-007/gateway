@@ -24,7 +24,7 @@ public class NewFederatedUserAction extends NodeAction {
      * @return the action name
      */
     public String getName() {
-        return "Create Federated User";
+        return "Create User";
     }
 
     /**
