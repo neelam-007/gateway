@@ -317,19 +317,13 @@ public class FederatedUserPanel extends UserPanel {
                         GridBagConstraints.BOTH,
                         new Insets(15, 10, 0, 10), 0, 0));
 
-        /* detailsPanel.add(getChangePassButton(),
-           new GridBagConstraints(1, 12, 1, 1, 0.0, 0.0,
-             GridBagConstraints.EAST,
-             GridBagConstraints.NONE,
-             new Insets(15, 10, 0, 10), 0, 0));
-
          Component strut = Box.createVerticalStrut(8);
 
          detailsPanel.add(strut,
            new GridBagConstraints(0, 13, 2, 1, 1.0, 1.0,
              GridBagConstraints.CENTER,
              GridBagConstraints.BOTH,
-             new Insets(10, 0, 0, 0), 0, 0));*/
+             new Insets(10, 0, 0, 0), 0, 0));
 
         Utilities.equalizeLabelSizes(new JLabel[]{
             getLastNameLabel(),
