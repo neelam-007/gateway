@@ -15,6 +15,9 @@ import java.util.logging.Logger;
 import com.l7tech.common.security.xml.TokenServiceClient;
 import com.l7tech.common.xml.TestDocuments;
 import com.l7tech.common.util.XmlUtil;
+import com.l7tech.identity.User;
+import com.l7tech.identity.UserBean;
+import com.l7tech.policy.assertion.credential.LoginCredentials;
 import org.w3c.dom.Document;
 
 /**
@@ -41,5 +44,21 @@ public class TokenServiceTest extends TestCase {
                                                                     TestDocuments.getDotNetServerPrivateKey(),
                                                                     TokenServiceClient.TOKENTYPE_SECURITYCONTEXT);
         log.info("Decorated token request (reformatted): " + XmlUtil.nodeToFormattedString(requestMsg));
+
+        final TokenService service = new TokenService(TestDocuments.getDotNetServerPrivateKey(),
+                                                      TestDocuments.getDotNetServerCertificate());
+        
+        final TokenService.CredentialsAuthenticator authenticator = new TokenService.CredentialsAuthenticator() {
+
+            public User authenticate(LoginCredentials creds) {
+                UserBean user = new UserBean();
+                user.setLogin("john");
+                user.setSubjectDn("cn=john");
+                return user;
+            }
+        };
+        Document responseMsg = service.respondToRequestSecurityToken(requestMsg, authenticator);
+
+        log.info("Decorated response (reformatted): " + XmlUtil.nodeToFormattedString(responseMsg));
     }
 }
