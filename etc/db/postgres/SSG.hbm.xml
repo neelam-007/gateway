@@ -182,6 +182,7 @@
         <property name="password" column="password" type="string"/>
 
         <set name="endpoints" table="jms_endpoint">
+            <key column="connection_oid"/>
             <one-to-many class="com.l7tech.common.transport.jms.JmsEndpoint"/>
         </set>
     </class>
