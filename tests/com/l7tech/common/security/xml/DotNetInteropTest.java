@@ -1,6 +1,7 @@
 package com.l7tech.common.security.xml;
 
 import com.l7tech.common.util.SoapUtil;
+import com.l7tech.common.util.FileUtils;
 import com.l7tech.common.xml.TestDocuments;
 import junit.framework.Test;
 import junit.framework.TestCase;
@@ -9,6 +10,10 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
 import java.security.cert.X509Certificate;
+import java.security.PrivateKey;
+import java.security.KeyStore;
+import java.io.FileInputStream;
+import java.io.InputStream;
 
 /**
  * Test xml digital signature and encryption interoperability with messages
@@ -50,6 +55,26 @@ public class DotNetInteropTest extends TestCase {
             signatureFailed = true;
         }
         assertTrue(signatureFailed);
+    }
+
+    public void testDecryptdotNetRequest() throws Exception {
+        Document encryptedDoc = getEncryptedDoc();
+        PrivateKey key = getRikerPrivateKey();
+        // todo
+    }
+
+    private PrivateKey getRikerPrivateKey() throws Exception {
+        KeyStore keyStore = KeyStore.getInstance(KeyStore.getDefaultType());
+        InputStream fis = TestDocuments.getInputStream(TestDocuments.SSL_KS);
+        //fis = FileUtils.loadFileSafely(sslkeystorepath);
+        keyStore.load(fis, "blahblah".toCharArray());
+        fis.close();
+        PrivateKey output = (PrivateKey)keyStore.getKey("tomcat", "blahblah".toCharArray());
+        return output;
+    }
+
+    private Document getEncryptedDoc() throws Exception {
+        return TestDocuments.getTestDocument(TestDocuments.DOTNET_ENCRYPTED_REQUEST);
     }
 
     private Document getSignedRequest() throws Exception {
