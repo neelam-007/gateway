@@ -1,14 +1,9 @@
 package com.l7tech.identity.internal;
 
-import com.l7tech.common.util.Locator;
-import com.l7tech.identity.*;
-import com.l7tech.objectmodel.FindException;
-import com.l7tech.objectmodel.EntityHeader;
+import com.l7tech.identity.IdProvConfManagerServer;
+import com.l7tech.identity.User;
+import com.l7tech.identity.UserBean;
 import com.l7tech.objectmodel.imp.NamedEntityImp;
-
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.Set;
 
 /**
  * Layer 7 Technologies, inc.
@@ -50,29 +45,6 @@ public class InternalUser extends NamedEntityImp implements User {
      */
     public void setProviderId( long providerId) {
         this.providerId = providerId;
-    }
-
-    public Set getGroups() {
-        try {
-            GroupManager gman = getGroupManager();
-            Set out = new HashSet();
-            for (Iterator i = getGroupHeaders().iterator(); i.hasNext();) {
-                EntityHeader entityHeader = (EntityHeader) i.next();
-                Group g = gman.findByPrimaryKey( entityHeader.getStrId() );
-                out.add( g );
-            }
-            return out;
-        } catch (FindException e) {
-            throw new RuntimeException( "Couldn't get user's groups!", e );
-        }
-    }
-
-    public Set getGroupHeaders() {
-        try {
-            return getGroupManager().getGroupHeaders( this );
-        } catch (FindException e) {
-            throw new RuntimeException( "Couldn't get user's groups!" );
-        }
     }
 
     public UserBean getUserBean() {
@@ -205,29 +177,6 @@ public class InternalUser extends NamedEntityImp implements User {
     // PRIVATES
     // ************************************************
 
-    private GroupManager getGroupManager() {
-        if ( _groupManager == null ) {
-            IdentityProviderConfigManager ipc =
-              (IdentityProviderConfigManager)Locator.
-              getDefault().lookup(IdentityProviderConfigManager.class);
-            if (ipc == null) {
-                throw new RuntimeException("Could not find " + IdentityProviderConfigManager.class);
-            }
-
-            IdentityProviderConfig config = null;
-            try {
-                config = ipc.findByPrimaryKey( providerId );
-            } catch (FindException e) {
-                throw new IllegalStateException( "User " + _userBean.getLogin() + "'s IdentityProviderConfig (id = " + providerId + ") has ceased to exist!" );
-            }
-            IdentityProvider provider = IdentityProviderFactory.makeProvider( config );
-            _groupManager = provider.getGroupManager();
-        }
-        return _groupManager;
-    }
-
     private UserBean _userBean;
-
-    private GroupManager _groupManager;
     private long providerId = IdProvConfManagerServer.INTERNALPROVIDER_SPECIAL_OID;
 }
