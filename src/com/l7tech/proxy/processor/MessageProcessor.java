@@ -75,6 +75,7 @@ public class MessageProcessor {
     public static final String PROPERTY_LOGRESPONSE = "com.l7tech.proxy.processor.logResponses";
     public static final String PROPERTY_LOGATTACHMENTS = "com.l7tech.proxy.processor.logAttachments";
     public static final String PROPERTY_REFORMATLOGGEDXML = "com.l7tech.proxy.processor.reformatLoggedXml";
+    public static final String PROPERTY_TIMESTAMP_EXPIRY = "com.l7tech.proxy.processor.timestampExpiryMillis";
     private static final Policy SSL_POLICY = new Policy(new SslAssertion(), null);
     private static Pattern findServiceid = Pattern.compile("^.*\\&?serviceoid=(.+?)(\\&.*|)", Pattern.DOTALL);
 
@@ -380,6 +381,9 @@ public class MessageProcessor {
                     if (request.isSoap()) {
                         log.info("Running pending request through WS-Security decorator");
                         context.getWssRequirements().setTimestampCreatedDate(context.getSsg().dateTranslatorToSsg().translate(new Date()));
+                        Integer expiryMillis = Integer.getInteger(PROPERTY_TIMESTAMP_EXPIRY);
+                        if (expiryMillis != null)
+                            context.getWssRequirements().setTimestampTimeoutMillis(expiryMillis.intValue());
                         wssDecorator.decorateMessage(requestDoc, context.getWssRequirements());
                     } else
                         log.info("Request isn't SOAP; skipping WS-Security decoration");
