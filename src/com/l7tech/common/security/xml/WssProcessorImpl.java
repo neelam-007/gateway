@@ -12,10 +12,8 @@ import com.l7tech.common.security.saml.SamlConstants;
 import com.l7tech.common.util.*;
 import com.l7tech.common.xml.InvalidDocumentFormatException;
 import com.l7tech.common.xml.saml.SamlAssertion;
+import com.l7tech.common.xml.saml.SamlHolderOfKeyAssertion;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
-import com.l7tech.common.xml.saml.SamlAssertion;
-import com.l7tech.common.xml.saml.SamlHolderOfKeyAssertion;
-import com.l7tech.common.xml.saml.SamlHolderOfKeyAssertion;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
@@ -687,6 +685,10 @@ public class WssProcessorImpl implements WssProcessor {
 
         // remember this cert
         final String wsuId = SoapUtil.getElementWsuId(binarySecurityTokenElement);
+        if (wsuId == null) {
+            logger.warning("This BinarySecurityToken does not have a recognized wsu:Id and may not be " +
+                           "referenced properly by a subsequent signature.");
+        }
         final X509Certificate finalcert = referencedCert;
         WssProcessor.SecurityToken rememberedSecToken = new X509SecurityTokenImpl(finalcert,
                                                                                   binarySecurityTokenElement);
