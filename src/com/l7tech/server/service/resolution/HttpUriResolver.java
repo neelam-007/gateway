@@ -36,12 +36,16 @@ public class HttpUriResolver extends NameValueServiceResolver {
 
     protected Object getRequestValue(Request request) throws ServiceResolutionException {
         String originalUrl = (String)request.getParameter( Request.PARAM_HTTP_ORIGINAL_URL );
-        if ( originalUrl == null )
-            return (String)request.getParameter( Request.PARAM_HTTP_REQUEST_URI );
-        else {
+        if ( originalUrl == null ) {
+            String uri = (String)request.getParameter( Request.PARAM_HTTP_REQUEST_URI );
+            logger.finest("returning uri " + uri);
+            return uri;
+        } else {
             try {
                 URL url = new URL( originalUrl );
-                return url.getFile();
+                String uri = url.getFile();
+                logger.finest("returning uri " + uri);
+                return uri; 
             } catch (MalformedURLException e) {
                 String err = "Invalid L7-Original-URL value: '" + originalUrl + "'";
                 logger.log( Level.WARNING, err, e );
