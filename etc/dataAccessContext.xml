@@ -81,6 +81,7 @@
              -->
              <idref bean="trustedCertManager"/>
              <idref bean="clientCertManager"/>
+             <idref bean="auditRecordManager"/>
              <idref bean="statusUpdateManager"/>
              <idref bean="serviceAdmin"/>
              <idref bean="trustedCertAdmin"/>
