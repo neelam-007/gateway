@@ -24,7 +24,7 @@ import java.security.cert.X509Certificate;
 public abstract class CredentialManager {
     public static final class ReasonHint {
         public static final ReasonHint NONE = new ReasonHint("");
-        public static final ReasonHint PRIVATE_KEY = new ReasonHint("for unlocking your Private Key ");
+        public static final ReasonHint PRIVATE_KEY = new ReasonHint("for your client certificate ");
         private final String r;
         private ReasonHint(String r) { this.r = r; }
         public String toString() { return r; }

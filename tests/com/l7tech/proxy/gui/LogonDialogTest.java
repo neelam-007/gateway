@@ -45,7 +45,7 @@ public class LogonDialogTest {
                                                           "Testuser",
                                                           true,
                                                           true,
-                                                          "for me to vigorously poop on "); // test longish hint string
+                                                          false ? "for me to vigorously poop on " : ""); // test longish hint string
             if (pw != null) {
                 log.info("Got username=" + pw.getUserName());
                 log.info("Got password=" + new String(pw.getPassword()));

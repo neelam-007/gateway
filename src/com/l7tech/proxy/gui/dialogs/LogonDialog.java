@@ -136,13 +136,18 @@ public class LogonDialog extends JDialog {
             constraints.insets = new Insets(15, 15, 5, 15);
             contents.add(icon, constraints);
 
-            JLabel badPasswordMessage = new JLabel("Your username or password was unauthorized.");
+            JLabel badPasswordMessage = new JLabel("<html>Your username or password was unauthorized.<br>Possible reasons:<ul>" +
+                                                   "<li> Incorrect user name" +
+                                                   "<li> Incorrect password for Gateway" +
+                                                   "<li> Incorrect password for client certificate" +
+                                                   "<li> Revoked client certificate" +
+                                                   "<li> Not authorized to use service");
             constraints.gridx = 1;
             constraints.gridy = 0;
             constraints.gridwidth = 3;
             constraints.gridheight = 1;
             constraints.anchor = GridBagConstraints.WEST;
-            constraints.insets = new Insets(10, 5, 15, 15);
+            constraints.insets = new Insets(10, 5, 0, 15);
             contents.add(badPasswordMessage, constraints);
 
             constraints.gridwidth = 1;
