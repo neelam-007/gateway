@@ -225,6 +225,14 @@
         <copy todir="${tomcat.home}/common/lib">
             <fileset dir="${src.root}/lib" includes="${common.lib.jars}"/>
         </copy>
+
+        <!--
+          this server.xml is ready to be modified by sslGen.sh who will later
+          make the ssl cert and record it's keystore password in it
+        -->
+        <copy todir="${tomcat.home}/conf">
+            <fileset dir="${src.root}/etc" includes="server.xml"/>
+        </copy>
     </target>
 
     <!--
