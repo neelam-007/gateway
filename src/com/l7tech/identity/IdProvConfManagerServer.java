@@ -20,6 +20,8 @@ import java.util.logging.Level;
  * This IdentityProviderConfigManager is the server side manager who manages the one and only
  * internal identity provider as well as the other providers (ldap) configured by the administrator.
  *
+ * TODO: Singleton?
+ *
  */
 public class IdProvConfManagerServer extends HibernateEntityManager implements IdentityProviderConfigManager {
 
