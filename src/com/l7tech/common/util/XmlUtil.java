@@ -21,6 +21,8 @@ import java.util.*;
 import java.util.logging.Logger;
 
 import com.l7tech.common.xml.TooManyChildElementsException;
+import com.ibm.xml.dsig.transform.W3CCanonicalizer2WC;
+import com.ibm.xml.dsig.Canonicalizer;
 
 /**
  * Thread-local XML parsing and pretty-printing utilities.
@@ -98,19 +100,17 @@ public class XmlUtil {
 
     private static ThreadLocal transparentXMLSerializer = new ThreadLocal() {
         protected synchronized Object initialValue() {
-            XMLSerializer xmlSerializer = new XMLSerializer();
-            return xmlSerializer;
+            return new W3CCanonicalizer2WC();
         }
     };
 
-    private static XMLSerializer getTransparentXMLSerializer() {
-        return (XMLSerializer) transparentXMLSerializer.get();
+    private static Canonicalizer getTransparentXMLSerializer() {
+        return (Canonicalizer)transparentXMLSerializer.get();
     }
 
     public static void documentToOutputStream(Document doc, OutputStream os) throws IOException {
-        XMLSerializer xmlSerializer = new XMLSerializer();
-        xmlSerializer.setOutputCharStream(new OutputStreamWriter(os));
-        xmlSerializer.serialize(doc);
+        Canonicalizer canon = getTransparentXMLSerializer();
+        canon.canonicalize(doc, os);
     }
 
     public static void documentToFormattedOutputStream(Document doc, OutputStream os) throws IOException {
@@ -119,11 +119,10 @@ public class XmlUtil {
     }
 
     public static String documentToString(Document doc) throws IOException {
-        final StringWriter sw = new StringWriter();
-        XMLSerializer xmlSerializer = getTransparentXMLSerializer();
-        xmlSerializer.setOutputCharStream(sw);
-        xmlSerializer.serialize(doc);
-        return sw.toString();
+        final ByteArrayOutputStream out = new ByteArrayOutputStream(1024);
+        Canonicalizer canon = getTransparentXMLSerializer();
+        canon.canonicalize(doc, out);
+        return out.toString();
     }
 
     public static String documentToFormattedString(Document doc) throws IOException {
@@ -134,10 +133,10 @@ public class XmlUtil {
     }
 
     public static String elementToString(Element element) throws IOException {
-        final StringWriter sw = new StringWriter();
-        getTransparentXMLSerializer().setOutputCharStream(sw);
-        getTransparentXMLSerializer().serialize(element);
-        return sw.toString();
+        final ByteArrayOutputStream out = new ByteArrayOutputStream(1024);
+        Canonicalizer canon = getTransparentXMLSerializer();
+        canon.canonicalize(element, out);
+        return out.toString();
     }
 
     public static String elementToFormattedString(Element element) throws IOException {
