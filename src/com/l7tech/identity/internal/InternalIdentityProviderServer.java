@@ -12,7 +12,6 @@ import com.l7tech.policy.assertion.credential.PrincipalCredentials;
 import com.l7tech.policy.assertion.credential.http.HttpDigest;
 import com.l7tech.util.KeystoreUtils;
 
-import javax.naming.NamingException;
 import java.io.*;
 import java.security.GeneralSecurityException;
 import java.security.MessageDigest;
@@ -92,17 +91,12 @@ public class InternalIdentityProviderServer implements IdentityProvider {
                     _log.log(Level.INFO, "Verifying client cert against current root cert...");
                     Certificate rootcacert = null;
                     try {
-                        javax.naming.Context cntx = new javax.naming.InitialContext();
                         String rootCertLoc = KeystoreUtils.getInstance().getRootCertPath();
                         InputStream certStream = new FileInputStream(rootCertLoc);
                         byte[] rootcacertbytes = HexUtils.slurpStream(certStream, 16384);
                         certStream.close();
                         ByteArrayInputStream bais = new ByteArrayInputStream(rootcacertbytes);
                         rootcacert = CertificateFactory.getInstance("X.509").generateCertificate(bais);
-                    } catch (NamingException e) {
-                        String err = "Exception retrieving root cert " + e.getMessage();
-                        LogManager.getInstance().getSystemLogger().log(Level.SEVERE, err , e);
-                        throw new AuthenticationException( err, e );
                     } catch (IOException e) {
                         String err = "Exception retrieving root cert " + e.getMessage();
                         LogManager.getInstance().getSystemLogger().log(Level.SEVERE, err, e);
