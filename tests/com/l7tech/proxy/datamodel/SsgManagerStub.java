@@ -1,5 +1,7 @@
 package com.l7tech.proxy.datamodel;
 
+import com.l7tech.proxy.datamodel.exceptions.SsgNotFoundException;
+
 import java.util.*;
 import java.io.IOException;
 
@@ -78,7 +80,7 @@ public class SsgManagerStub implements SsgManager {
      * Get the default SSG.
      * Returns the first SSG that has its Default flag set.  Usually there is only one such SSG.
      * @return the Default SSG
-     * @throws SsgNotFoundException if no Default SSG was found
+     * @throws com.l7tech.proxy.datamodel.exceptions.SsgNotFoundException if no Default SSG was found
      */
     public Ssg getDefaultSsg() throws SsgNotFoundException {
         for (Iterator i = ssgs.iterator(); i.hasNext();) {
@@ -97,7 +99,7 @@ public class SsgManagerStub implements SsgManager {
      * If this method returns, it's guaranteed that the specified Ssg
      * is in the Ssg list and is the only one with its Default flag set to true.
      * @param ssg the SSG that should be made the new default ssg
-     * @throws SsgNotFoundException if the specified SSG is not registered
+     * @throws com.l7tech.proxy.datamodel.exceptions.SsgNotFoundException if the specified SSG is not registered
      */
     public void setDefaultSsg(Ssg ssg) throws SsgNotFoundException {
         boolean found = false;

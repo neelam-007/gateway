@@ -60,7 +60,7 @@ public class ClientCertSslServer {
         KeyStore ks;
 
         public PrivateKey getPrivateKey(String s) {
-            log.info("MyKeyManager: getPrivateKey: s=" + s);
+            log.info("MyKeyManager: getClientCertPrivateKey: s=" + s);
             try {
                 ks = KeyStore.getInstance("JKS");
                 FileInputStream ksFile = new FileInputStream(KEYSTORE);

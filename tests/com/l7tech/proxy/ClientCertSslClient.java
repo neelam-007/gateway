@@ -68,7 +68,7 @@ public class ClientCertSslClient {
         }
 
         public PrivateKey getPrivateKey(String s) {
-            log.info("MyKeyManager: getPrivateKey: s=" + s);
+            log.info("MyKeyManager: getClientCertPrivateKey: s=" + s);
             try {
                 PrivateKey key = (PrivateKey) getKeyStore().getKey(s, KEYPASS.toCharArray());
                 if (key == null)
