@@ -174,8 +174,8 @@ public abstract class AbstractLdapIdentityProviderServer implements IdentityProv
                                  "(" + constants.userNameAttribute() + "=" + searchString + ")" +
                              ")" +
                              "(&" +
-                                 "(objectClass=" + AbstractLdapConstants.oUObjClassName() + ")" +
-                                 "(" + AbstractLdapConstants.oUObjAttrName() + "=" + searchString + ")" +
+                                 "(objectClass=" + constants.oUObjClassName() + ")" +
+                                 "(" + constants.oUObjAttrName() + "=" + searchString + ")" +
                              ")" +
                          ")";
             } else if (wantUsers) {
@@ -190,8 +190,8 @@ public abstract class AbstractLdapIdentityProviderServer implements IdentityProv
                               "(" + constants.groupNameAttribute() + "=" + searchString + ")" +
                             ")" +
                             "(&" +
-                              "(objectClass=" + AbstractLdapConstants.oUObjClassName() + ")" +
-                              "(" + AbstractLdapConstants.oUObjAttrName() + "=" + searchString + ")" +
+                              "(objectClass=" + constants.oUObjClassName() + ")" +
+                              "(" + constants.oUObjAttrName() + "=" + searchString + ")" +
                             ")" +
                          ")";
             }
@@ -217,8 +217,8 @@ public abstract class AbstractLdapIdentityProviderServer implements IdentityProv
                     if (tmp != null) {
                         header = new EntityHeader(dn, EntityType.USER, tmp.toString(), null);
                     }
-                } else if (objectclasses.contains(AbstractLdapConstants.oUObjClassName()) ||
-                           objectclasses.contains(AbstractLdapConstants.oUObjClassName().toLowerCase())) {
+                } else if (objectclasses.contains(constants.oUObjClassName()) ||
+                           objectclasses.contains(constants.oUObjClassName().toLowerCase())) {
                     header = new EntityHeader(dn, EntityType.GROUP, dn, null);
                 } else {
                     logger.warning("objectclass not supported for dn=" + dn);
