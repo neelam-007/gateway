@@ -232,6 +232,22 @@ public class WssDecoratorTest extends TestCase {
         runTest(getSigningOnlyTestDocument());
     }
 
+    public void testGoogleProblem() throws Exception {
+        runTest(getGoogleTestDocument());
+    }
+
+    public TestDocument getGoogleTestDocument() throws Exception {
+        Document googleDoc = TestDocuments.getTestDocument(TestDocuments.DIR + "badgoogle.xml");
+        final Context c = new Context(googleDoc);
+        return new TestDocument(c,
+                                TestDocuments.getEttkClientCertificate(),
+                                TestDocuments.getEttkClientPrivateKey(),
+                                TestDocuments.getDotNetServerCertificate(),
+                                TestDocuments.getDotNetServerPrivateKey(),
+                                true,
+                                new Element[] { c.body }, new Element[0]);
+    }
+
     public TestDocument getSigningOnlyTestDocument() throws Exception {
         final Context c = new Context();
         return new TestDocument(c,
