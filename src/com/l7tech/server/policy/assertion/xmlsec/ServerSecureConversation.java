@@ -9,9 +9,12 @@ import com.l7tech.policy.assertion.xmlsec.SecureConversation;
 import com.l7tech.message.Request;
 import com.l7tech.message.Response;
 import com.l7tech.message.SoapRequest;
+import com.l7tech.message.SoapResponse;
 import com.l7tech.common.security.xml.WssProcessor;
+import com.l7tech.common.security.xml.WssDecorator;
 import com.l7tech.identity.User;
 
+import javax.crypto.SecretKey;
 import java.io.IOException;
 import java.util.logging.Logger;
 
@@ -54,13 +57,41 @@ public class ServerSecureConversation implements ServerAssertion {
                 User authenticatedUser = session.getUsedBy();
                 request.setAuthenticated(true);
                 request.setUser(authenticatedUser);
-                // todo, add WssDecorator.Requirements so that the response is secured using same session
+                response.addDeferredAssertion(this, defferedSecureConversationResponseDecoration(session));
                 logger.fine("Secure COnversation session recognized for user " + authenticatedUser.getLogin());
                 return AssertionStatus.NONE;
             }
         }
         logger.info("This request did not seem to refer to a Secure Conversation token.");
         return AssertionStatus.AUTH_REQUIRED;
+    }
+
+    private final ServerAssertion defferedSecureConversationResponseDecoration(final SecureConversationSession session) {
+        return new ServerAssertion() {
+            public AssertionStatus checkRequest(Request request, Response response) throws IOException, PolicyAssertionException {
+                if (!(response instanceof SoapResponse))
+                    throw new PolicyAssertionException("This type of assertion is only supported with SOAP responses");
+                SoapResponse soapResponse = (SoapResponse)response;
+                WssDecorator.DecorationRequirements wssReq = soapResponse.getOrMakeDecorationRequirements();
+                wssReq.setSecureConversationSession(new WssDecorator.DecorationRequirements.SecureConversationSession() {
+                    public String getId() {
+                        return session.getIdentifier();
+                    }
+                    public SecretKey getSecretKey() {
+                        return session.getSharedSecret();
+                    }
+                    // todo, this makes no sense
+                    public int getGeneration() {
+                        return 0;
+                    }
+                    // todo, this makes no sense
+                    public int getLength() {
+                        return 20;
+                    }
+                });
+                return AssertionStatus.NONE;
+            }
+        };
     }
 
     private final Logger logger = Logger.getLogger(getClass().getName());
