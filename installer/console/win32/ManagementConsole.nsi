@@ -4,8 +4,8 @@
 
 !define J2RE "j2re1.4.2"  ;Name of directory containing JRE
 !define J2RE_PATH "C:\${J2RE}"   ;Full path to directory containing JRE (at .nsi compile-time)
-!define COMPANY "Layer 7 Technologies"
-!define MUI_PRODUCT "Policy Editor" ;Define your own software name here
+!define COMPANY "Layer7 Technologies"
+!define MUI_PRODUCT "Layer7 Management Console" ;Define your own software name here
 !define MUI_VERSION "0.9b" ;Define your own software version here
 !define BUILD_DIR "..\..\..\build" ;UneasyRooster\build dir, root of jar files and things
 
@@ -15,7 +15,7 @@
 ;Configuration
 
   ;General
-  OutFile "Layer 7 ${MUI_PRODUCT} ${MUI_VERSION} Installer.exe"
+  OutFile "${MUI_PRODUCT} ${MUI_VERSION} Installer.exe"
 
   ;Folder selection page
   InstallDir "$PROGRAMFILES\${COMPANY}\${MUI_PRODUCT} ${MUI_VERSION}"
@@ -72,10 +72,10 @@ Section "Policy Editor" SecCopyUI
   ;ADD YOUR OWN STUFF HERE!
 
   SetOutPath "$INSTDIR"
-  File "Policy Editor.exe"
-  File "Policy Editor.ini"
-  File "Policy Editor Debug.bat"
-  File "${BUILD_DIR}\PolicyEditor.jar"
+  File "Layer7 Management Console.exe"
+  File "Layer7 Management Console.ini"
+  File "Layer7 Management Console.bat"
+  File "${BUILD_DIR}\ManagementConsole.jar"
   File /r "${BUILD_DIR}\lib"
   File /r "${J2RE_PATH}"
   
@@ -86,9 +86,9 @@ Section "Policy Editor" SecCopyUI
     
     ;Create shortcuts
     CreateDirectory "$SMPROGRAMS\${MUI_STARTMENUPAGE_VARIABLE}"
-    CreateShortCut "$SMPROGRAMS\${MUI_STARTMENUPAGE_VARIABLE}\Start Policy Editor.lnk" "$INSTDIR\Policy Editor.exe" parameters "$INSTDIR\Policy Editor.exe" 0
-    CreateShortCut "$SMPROGRAMS\${MUI_STARTMENUPAGE_VARIABLE}\Start Policy Editor in Troubleshooting Mode.lnk" "$INSTDIR\Policy Editor Debug.bat" parameters "$INSTDIR\Policy Editor.exe" 1
-    CreateShortCut "$SMPROGRAMS\${MUI_STARTMENUPAGE_VARIABLE}\Uninstall Policy Editor.lnk" "$INSTDIR\Uninstall.exe"
+    CreateShortCut "$SMPROGRAMS\${MUI_STARTMENUPAGE_VARIABLE}\Layer7 Management Console.lnk" "$INSTDIR\Layer7 Management Console.exe" parameters "$INSTDIR\Layer7 Management Console.exe" 0
+    CreateShortCut "$SMPROGRAMS\${MUI_STARTMENUPAGE_VARIABLE}\Layer7 Management Console in Troubleshooting Mode.lnk" "$INSTDIR\Layer7 Management Console.bat" parameters "$INSTDIR\Layer7 Management Console.exe" 1
+    CreateShortCut "$SMPROGRAMS\${MUI_STARTMENUPAGE_VARIABLE}\Uninstall Layer7 Management Console.lnk" "$INSTDIR\Uninstall.exe"
   
   !insertmacro MUI_STARTMENU_WRITE_END
   
@@ -115,10 +115,10 @@ Section "Uninstall"
 
   ;ADD YOUR OWN STUFF HERE!
 
-  Delete "$INSTDIR\Policy Editor Debug.bat"
-  Delete "$INSTDIR\Policy Editor.exe"
-  Delete "$INSTDIR\Policy Editor.ini"
-  Delete "$INSTDIR\PolicyEditor.jar"
+  Delete "$INSTDIR\Layer7 Management Console.bat"
+  Delete "$INSTDIR\Layer7 Management Console.exe"
+  Delete "$INSTDIR\Layer7 Management Console.ini"
+  Delete "$INSTDIR\ManagementConsole.jar"
   RMDir /r "$INSTDIR\lib"
   RMDir /r "$INSTDIR\${J2RE}"
   Delete "$INSTDIR\Uninstall.exe"
@@ -128,9 +128,9 @@ Section "Uninstall"
 
   StrCmp ${TEMP} "" noshortcuts
   
-    Delete "$SMPROGRAMS\${TEMP}\Start Policy Editor.lnk"
-    Delete "$SMPROGRAMS\${TEMP}\Start Policy Editor in Troubleshooting Mode.lnk"
-    Delete "$SMPROGRAMS\${TEMP}\Uninstall Policy Editor.lnk"
+    Delete "$SMPROGRAMS\${TEMP}\Layer7 Management Console.lnk"
+    Delete "$SMPROGRAMS\${TEMP}\Layer7 Management Console in Troubleshooting Mode.lnk"
+    Delete "$SMPROGRAMS\${TEMP}\Uninstall Layer7 Management Console.lnk"
     RMDir "$SMPROGRAMS\${TEMP}" ;Only if empty, so it won't delete other shortcuts
     
   noshortcuts:
