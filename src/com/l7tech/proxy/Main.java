@@ -33,6 +33,7 @@ public class Main {
     /** Start a GUI-equipped client proxy and run it until it's shut down. */
     public static void main(final String[] argv) {
         clientProxy = new ClientProxy(Managers.getSsgManager(),
+                                      new MessageProcessor(Managers.getPolicyManager()),
                                       DEFAULT_PORT,
                                       MIN_THREADS,
                                       MAX_THREADS);

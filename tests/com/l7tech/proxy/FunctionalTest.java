@@ -2,6 +2,9 @@ package com.l7tech.proxy;
 
 import com.l7tech.proxy.datamodel.Ssg;
 import com.l7tech.proxy.datamodel.SsgManagerStub;
+import com.l7tech.proxy.datamodel.PolicyManager;
+import com.l7tech.policy.assertion.Assertion;
+import com.l7tech.policy.assertion.TrueAssertion;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
@@ -16,6 +19,7 @@ import org.xml.sax.helpers.AttributesImpl;
 import javax.xml.soap.SOAPException;
 import java.net.MalformedURLException;
 import java.rmi.RemoteException;
+import java.io.IOException;
 
 /**
  * Test message processing.
@@ -83,8 +87,15 @@ public class FunctionalTest extends TestCase {
         ssgFake.setServerUrl(ssgUrl);
         ssgManager.add(ssgFake);
 
+        // Make a do-nothing PolicyManager
+        MessageProcessor messageProcessor = new MessageProcessor(new PolicyManager() {
+            public Assertion getPolicy(Ssg ssg) throws IOException {
+                return new TrueAssertion();
+            }
+        });
+
         // Start the client proxy
-        clientProxy = new ClientProxy(ssgManager, DEFAULT_PORT, MIN_THREADS, MAX_THREADS);
+        clientProxy = new ClientProxy(ssgManager, messageProcessor, DEFAULT_PORT, MIN_THREADS, MAX_THREADS);
         proxyUrl = clientProxy.start().toString();
     }
 

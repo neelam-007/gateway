@@ -16,4 +16,12 @@ public class Managers {
     public static SsgManager getSsgManager() {
         return SsgManagerImpl.getInstance();
     }
+
+    /**
+     * Get the PolicyManager.
+     * @return the PolicyManager instance.
+     */
+    public static PolicyManager getPolicyManager() {
+        return PolicyManagerImpl.getInstance();
+    }
 }

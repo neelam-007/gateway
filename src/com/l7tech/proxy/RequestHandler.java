@@ -15,6 +15,7 @@ import java.net.MalformedURLException;
 import com.l7tech.proxy.datamodel.SsgFinder;
 import com.l7tech.proxy.datamodel.Ssg;
 import com.l7tech.proxy.datamodel.SsgNotFoundException;
+import com.l7tech.proxy.datamodel.PendingRequest;
 
 /**
  * Handle an incoming HTTP request, and proxy it if it's a SOAP request we know how to deal with.
@@ -26,6 +27,7 @@ import com.l7tech.proxy.datamodel.SsgNotFoundException;
 public class RequestHandler extends AbstractHttpHandler {
     private final Category log = Category.getInstance(RequestHandler.class);
     private SsgFinder ssgFinder;
+    private MessageProcessor messageProcessor;
     private RequestInterceptor interceptor = NullRequestInterceptor.INSTANCE;
 
     /**
@@ -34,8 +36,9 @@ public class RequestHandler extends AbstractHttpHandler {
      *
      * @param ssgFinder the list of SSGs (SSG URLs and local endpoints) we support.
      */
-    public RequestHandler(final SsgFinder ssgFinder) {
+    public RequestHandler(final SsgFinder ssgFinder, final MessageProcessor messageProcessor) {
         this.ssgFinder = ssgFinder;
+        this.messageProcessor = messageProcessor;
     }
 
     /**
@@ -148,30 +151,18 @@ public class RequestHandler extends AbstractHttpHandler {
      * @throws HttpException    if there was Trouble
      */
     private SOAPEnvelope getServerResponse(final Ssg ssg, final SOAPEnvelope requestEnvelope) throws HttpException {
-        log.info("Passing request on to " + ssg.getServerUrl());
+        log.info("Processing message to SSG " + ssg.getName());
 
-        Call call;
+        PendingRequest pendingRequest = new PendingRequest(requestEnvelope, ssg);
         try {
-            call = new Call(ssg.getServerUrl());
-        } catch (MalformedURLException e) {
-            final HttpException t = new HttpException(500, "Client Proxy: this SSG has an invalid server url: " +
-                                                     ssg.getServerUrl());
-            interceptor.onReplyError(t);
-            throw t;
-        }
-
-        final SOAPEnvelope responseEnvelope;
-        try {
-            responseEnvelope = call.invoke(requestEnvelope);
-        } catch (Exception e) {
+            SOAPEnvelope reply = messageProcessor.processMessage(pendingRequest);
+            interceptor.onReceiveReply(reply);
+            log.info("Returning result");
+            return reply;
+        } catch (HttpException e) {
             interceptor.onReplyError(e);
-            throw new HttpException(500, "Unable to obtain response from server: " + e.getMessage());
+            throw e;
         }
-
-        interceptor.onReceiveReply(responseEnvelope);
-        log.info("Returning result");
-
-        return responseEnvelope;
     }
 
     /**

@@ -1,14 +1,14 @@
 package com.l7tech.proxy;
 
 import com.l7tech.proxy.datamodel.SsgFinder;
-import org.mortbay.http.SocketListener;
+import org.apache.log4j.Category;
 import org.mortbay.http.HttpContext;
 import org.mortbay.http.HttpServer;
+import org.mortbay.http.SocketListener;
 import org.mortbay.util.MultiException;
-import org.apache.log4j.Category;
 
-import java.net.URL;
 import java.net.MalformedURLException;
+import java.net.URL;
 
 /**
  * Encapsulates an HTTP proxy that processes SOAP messages.
@@ -22,6 +22,7 @@ public class ClientProxy {
     private SsgFinder ssgFinder;
     private HttpServer httpServer;
     private RequestHandler requestHandler;
+    private MessageProcessor messageProcessor;
 
     private int maxThreads;
     private int minThreads;
@@ -34,8 +35,10 @@ public class ClientProxy {
      * Create a ClientProxy with the specified settings.
      * @param ssgFinder provides the list of SSGs to which we are proxying.
      */
-    ClientProxy(final SsgFinder ssgFinder, final int bindPort, final int minThreads, final int maxThreads) {
+    ClientProxy(final SsgFinder ssgFinder, final MessageProcessor messageProcessor,
+                final int bindPort, final int minThreads, final int maxThreads) {
         this.ssgFinder = ssgFinder;
+        this.messageProcessor = messageProcessor;
         this.bindPort = bindPort;
         this.minThreads = minThreads;
         this.maxThreads = maxThreads;
@@ -58,7 +61,7 @@ public class ClientProxy {
      */
     public synchronized RequestHandler getRequestHandler() {
         if (requestHandler == null) {
-            requestHandler = new RequestHandler(ssgFinder);
+            requestHandler = new RequestHandler(ssgFinder, messageProcessor);
         }
 
         return requestHandler;
