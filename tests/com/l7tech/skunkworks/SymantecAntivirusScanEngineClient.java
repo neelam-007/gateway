@@ -35,7 +35,7 @@ public class SymantecAntivirusScanEngineClient {
     private static final Logger logger =  Logger.getLogger(SymantecAntivirusScanEngineClient.class.getName());
     private static final String SCAN_REQ = "RESPMOD icap://{0}:{1}/AVSCAN?action=SCAN ICAP/1.0\r\n";
     private static final String DEF_HEADER = "Content-Type: application/octet-stream\r\n\r\n";
-    private  static final int TIMEOUT = 250; // in ms. this is used for both server connection and reading responses
+    private  static final int TIMEOUT = 500; // in ms. this is used for both server connection and reading responses
     private String scannerHostName;
     private Integer scannerPort;
     private static ThreadLocal socketHolder = new ThreadLocal();
@@ -49,6 +49,7 @@ public class SymantecAntivirusScanEngineClient {
             InetSocketAddress address = new InetSocketAddress(scannerHostName(), scannerPort());
             output = new Socket();
             output.connect(address, TIMEOUT);
+            output.setSoTimeout(TIMEOUT);
             socketHolder.set(output);
         }
         return output;
@@ -93,7 +94,7 @@ public class SymantecAntivirusScanEngineClient {
         byte[] returnedfromsav = new byte[4096];
         int read = readFromSocket(socket, returnedfromsav);
         if (read <= 0) {
-            throw new IOException("server did not return anything");
+            throw new IOException("server returned nothing");
         }
         String output = new String(returnedfromsav, 0, read);
         logger.fine("Response from sav scan engine:\n" + output);
@@ -109,17 +110,11 @@ public class SymantecAntivirusScanEngineClient {
         int offset = 0;
         InputStream stream = s.getInputStream();
         do {
-            if (stream.available() <= 0) {
-                try {
-                    Thread.sleep(TIMEOUT);
-                } catch (InterruptedException e) {
-                    String msg = "Reading from socket interupted";
-                    logger.log(Level.SEVERE, msg, e);
-                    throw new IOException(msg + e.getMessage());
-                }
+            try {
+                read = stream.read(buffer, offset, buffer.length-offset);
+            } catch (SocketTimeoutException e) {
+                read = 0;
             }
-            if (stream.available() <= 0) break;
-            read = stream.read(buffer, offset, buffer.length-offset);
             offset += read;
         } while (read > 0);
         return offset;
