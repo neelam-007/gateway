@@ -11,6 +11,7 @@ import org.w3c.dom.Node;
 
 import javax.xml.soap.*;
 import javax.xml.transform.dom.DOMSource;
+import javax.xml.rpc.NamespaceConstants;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -28,7 +29,7 @@ public class SoapUtil {
         ENVELOPE_URIS.add("urn:schemas-xmlsoap-org:soap.v1");
     }
 
-    public static final String SOAP_ENV_PREFIX = "soapenv";
+    public static final String SOAP_ENV_PREFIX = NamespaceConstants.NSPREFIX_SOAP_ENVELOPE;
 
     public static final String BODY_EL_NAME = "Body";
     public static final String HEADER_EL_NAME = "Header";
@@ -36,7 +37,14 @@ public class SoapUtil {
     public static final String SECURITY_NAMESPACE_PREFIX = "wsse";
     public static final String SECURITY_NAMESPACE = "http://schemas.xmlsoap.org/ws/2002/xx/secext";
     public static final String SECURITY_NAMESPACE2 = "http://schemas.xmlsoap.org/ws/2002/12/secext";
-   public static  final String XMLNS = "xmlns";
+    public static final String XMLNS = "xmlns";
+
+    /** soap envelope xpath '/soapenv:Envelope' */
+    public static final String SOAP_ENVELOPE_XPATH = "/" + NamespaceConstants.NSPREFIX_SOAP_ENVELOPE + ":Envelope";
+
+    /** soap body xpath '/soapenv:Envelope/soapenv:Body' */
+    public static final String SOAP_BODY_XPATH = SOAP_ENVELOPE_XPATH+"/"+NamespaceConstants.NSPREFIX_SOAP_ENVELOPE + ":Body";
+
 
     public static Element getEnvelope(Document request) {
         Element env = request.getDocumentElement();
@@ -232,7 +240,8 @@ public class SoapUtil {
 
     /**
      * Load the DOM document into the SOAP message
-     * <p>
+     * <p/>
+     *
      * @param doc the SOAP message as a DOM document
      * @return the corresponding SOAP message
      * @throws SOAPException on SOAP error
@@ -278,8 +287,8 @@ public class SoapUtil {
                 Node attr = DOMAttributes.item(i);
                 String attrPrefix = attr.getPrefix();
                 String attrLocalName = attr.getLocalName();
-                if ((!XMLNS.equals(attrPrefix))  &&
-                    (!XMLNS.equals(attrLocalName))) {
+                if ((!XMLNS.equals(attrPrefix)) &&
+                  (!XMLNS.equals(attrLocalName))) {
                     Name name = sf.createName(attr.getLocalName(), attr.getPrefix(), attr.getNamespaceURI());
                     soapElement.addAttribute(name, attr.getNodeValue());
                 }
@@ -316,8 +325,8 @@ public class SoapUtil {
      * Will import the importedDocument ointo the importingDocument under
      * the parentNode.
      *
-     * @param importingDocument  The document which will have a node import
-     * @param importedDocument The document that will be imported
+     * @param importingDocument The document which will have a node import
+     * @param importedDocument  The document that will be imported
      * @param parentNode        The node in importingDocument under which the node
      *                          is imported
      * @return The new version of importingDocument with imported document
