@@ -2,6 +2,7 @@ package com.l7tech.policy.validator;
 
 import com.l7tech.policy.*;
 import com.l7tech.policy.assertion.*;
+import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.assertion.credential.CredentialSourceAssertion;
 import com.l7tech.policy.assertion.credential.http.HttpBasic;
 import com.l7tech.policy.assertion.credential.http.HttpClientCert;
@@ -112,8 +113,16 @@ public class DefaultPolicyValidator extends PolicyValidator {
                 processAccessControl((IdentityAssertion)a);
             } else if (isRouting(a)) {
                 processRouting((RoutingAssertion)a);
+            } else if (a instanceof AllAssertion) {
+                processAllAss((AllAssertion)a);
             } else {
                 processUnknown();
+            }
+        }
+
+        private void processAllAss(AllAssertion a) {
+            if (a.getChildren().isEmpty()) {
+                result.addError(new PolicyValidatorResult.Error(a, "All assertion must contain at least one child.", null));
             }
         }
 
