@@ -151,6 +151,8 @@ public class Service {
             UserManager userManager = provider.getUserManager();
 
             User u = userManager.findByPrimaryKey(userId);
+            User output = new User();
+            output.copyFrom(u);
             Set groups = u.getGroups();
             // switch groups to group headers
             if (!groups.isEmpty()) {
@@ -162,10 +164,11 @@ public class Service {
                     gh = groupManager.groupToHeader(g);
                     groupHeaders.add( gh );
                 }
-                u.setGroupHeaders( groupHeaders );
-                u.setGroups(new HashSet());
+
+                output.setGroupHeaders( groupHeaders );
+                output.setGroups(new HashSet());
             }
-            return u;
+            return output;
         } catch (FindException e) {
             LogManager.getInstance().getSystemLogger().log(Level.SEVERE, null, e);
             throw new java.rmi.RemoteException("FindException in findUserByPrimaryKey", e);
@@ -190,30 +193,6 @@ public class Service {
             endTransaction();
         }
     }
-
-    /*private Map groupsToMap( Set groups ) {
-        Map result = Collections.EMPTY_MAP;
-        Group group;
-        String oid;
-        for (Iterator i = groups.iterator(); i.hasNext();) {
-            group = (Group) i.next();
-            oid = new Long( group.getOid() ).toString();
-            if ( result == Collections.EMPTY_MAP ) result = new HashMap();
-            result.put( oid, group );
-        }
-        return result;
-    }
-
-    private Map headersToMap(Set headers) {
-        Map result = Collections.EMPTY_MAP;
-        EntityHeader header;
-        for (Iterator i = headers.iterator(); i.hasNext();) {
-            header = (EntityHeader)i.next();
-            if ( result == Collections.EMPTY_MAP ) result = new HashMap();
-            result.put( header.getStrId(), header );
-        }
-        return result;
-    }*/
 
     public long saveUser(long identityProviderConfigId, com.l7tech.identity.User user) throws java.rmi.RemoteException {
         try {
@@ -280,9 +259,11 @@ public class Service {
             IdentityProvider provider = IdentityProviderFactory.makeProvider(cfg);
             GroupManager groupManager = provider.getGroupManager();
             UserManager userManager = provider.getUserManager();
-            Group output = groupManager.findByPrimaryKey(groupId);
+            Group existingGroup = groupManager.findByPrimaryKey(groupId);
+            Group output = new Group();
+            output.copyFrom(existingGroup);
             // transfer members into member headers
-            Set members = output.getMembers();
+            Set members = existingGroup.getMembers();
             if (members != null && members.size() > 0) {
                 Set memberHeaders = new HashSet();
                 for (Iterator i = members.iterator(); i.hasNext();) {
