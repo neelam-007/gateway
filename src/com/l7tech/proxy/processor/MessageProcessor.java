@@ -218,7 +218,8 @@ public class MessageProcessor {
                 String message = "Recieved password failure, but it worked with our keystore and the Gateway liked it when we double-checked it.  " +
                         "Most likely that your account exists but is not permitted to access this service.";
                 log.severe(message);
-                throw new ConfigurationException(message, e);
+                req.getNewCredentials();
+                return;
             }
             log.severe("The Gateway password that was used to obtain this client cert is no longer valid -- deleting the client cert");
             try {
