@@ -1,15 +1,13 @@
 package com.l7tech.identity.cert;
 
 import com.l7tech.identity.User;
-import com.l7tech.objectmodel.FindException;
-import com.l7tech.objectmodel.PersistenceManager;
-import com.l7tech.objectmodel.HibernatePersistenceManager;
-import com.l7tech.objectmodel.PersistenceContext;
+import com.l7tech.objectmodel.*;
 import com.l7tech.logging.LogManager;
 
 import java.security.cert.Certificate;
 import java.security.cert.CertificateFactory;
 import java.security.cert.CertificateException;
+import java.security.cert.CertificateEncodingException;
 import java.util.logging.Logger;
 import java.util.logging.Level;
 import java.util.List;
@@ -50,8 +48,41 @@ public class ClientCertManagerImp implements ClientCertManager {
         } else return true;
     }
 
-    public void recordNewUserCert(User user, Certificate cert) throws IllegalStateException {
-        // todo
+    public void recordNewUserCert(User user, Certificate cert) throws UpdateException {
+        PersistenceContext pc = null;
+        try {
+            pc = PersistenceContext.getCurrent();
+        } catch (SQLException e) {
+            String msg = "SQL exception getting context";
+            logger.log(Level.WARNING, msg, e);
+            throw new UpdateException(msg, e);
+        }
+        try {
+            pc.beginTransaction();
+            if (!userCanGenCert(user)) {
+                String msg = "this user is currently not allowed to generate a new cert: " + user.getLogin();
+                pc.rollbackTransaction();
+                throw new UpdateException(msg);
+            }
+            CertEntryRow userData = getFromTable(user);
+            userData.setResetCounter(userData.getResetCounter()+1);
+
+            sun.misc.BASE64Encoder encoder = new sun.misc.BASE64Encoder();
+            try {
+                String encodedcert = encoder.encode(cert.getEncoded());
+                userData.setCert(encodedcert);
+            } catch (CertificateEncodingException e) {
+                String msg = "Certificate encoding exception recording cert";
+                logger.log(Level.WARNING, msg, e);
+                pc.rollbackTransaction();
+                throw new UpdateException(msg, e);
+            }
+            pc.commitTransaction();
+        } catch (TransactionException e) {
+            String msg = "Transaction exception recording cert";
+            logger.log(Level.WARNING, msg, e);
+            throw new UpdateException(msg, e);
+        }
     }
 
     public Certificate getUserCert(User user) throws FindException {
@@ -80,8 +111,28 @@ public class ClientCertManagerImp implements ClientCertManager {
         return null;
     }
 
-    public void revokeUserCert(User user) {
-        // todo
+    public void revokeUserCert(User user) throws UpdateException {
+        PersistenceContext pc = null;
+        try {
+            pc = PersistenceContext.getCurrent();
+        } catch (SQLException e) {
+            String msg = "SQL exception getting context";
+            logger.log(Level.WARNING, msg, e);
+            throw new UpdateException(msg, e);
+        }
+        try {
+            pc.beginTransaction();
+            CertEntryRow currentdata = getFromTable(user);
+            if (currentdata != null) {
+                currentdata.setCert(null);
+                currentdata.setResetCounter(0);
+            }
+            pc.commitTransaction();
+        } catch (TransactionException e) {
+            String msg = "Transaction exception revoking cert";
+            logger.log(Level.WARNING, msg, e);
+            throw new UpdateException(msg, e);
+        }
     }
 
     /**
