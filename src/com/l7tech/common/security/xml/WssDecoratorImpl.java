@@ -93,11 +93,21 @@ public class WssDecoratorImpl implements WssDecorator {
         if (senderCertificate != null)
             bst = addX509BinarySecurityToken(securityHeader, senderCertificate);
 
-        if (elementsToEncrypt.length > 0)
-            addEncryptedKey(c, securityHeader, recipientCertificate, elementsToEncrypt);
+        Element signature = null;
+        if (elementsToSign.length > 0) {
+            if (senderPrivateKey == null)
+                throw new IllegalArgumentException("Signing is requested, but senderPrivateKey is null");
+            if (bst == null)
+                throw new IllegalArgumentException("Signing is requested, but no senderCertificate was supplied");            
+            signature = addSignature(c, senderPrivateKey, elementsToSign, securityHeader, bst);
+        }
+        
+        if (elementsToEncrypt.length > 0) {
+            if (recipientCertificate == null)
+                throw new IllegalArgumentException("Encryption is requested, but recipientCertificate is null");
+            addEncryptedKey(c, securityHeader, recipientCertificate, elementsToEncrypt, signature);
+        }
 
-        if (elementsToSign.length > 0)
-            addSignature(c, senderCertificate, senderPrivateKey, elementsToSign, securityHeader, bst);
     }
 
     private boolean isWrappingOrSame(Element potentialParent, Element element) {
@@ -111,7 +121,7 @@ public class WssDecoratorImpl implements WssDecorator {
         return false;
     }
 
-    private Element addSignature(Context c, X509Certificate senderCertificate, PrivateKey senderPrivateKey,
+    private Element addSignature(Context c, PrivateKey senderPrivateKey,
                                  Element[] elementsToSign, Element securityHeader,
                                  Element binarySecurityToken) throws DecoratorException {
 
@@ -192,20 +202,28 @@ public class WssDecoratorImpl implements WssDecorator {
     private Element addEncryptedKey(Context c,
                                     Element securityHeader,
                                     X509Certificate recipientCertificate,
-                                    Element[] elementsToEncrypt)
+                                    Element[] elementsToEncrypt,
+                                    Element desiredNextSibling)
             throws GeneralSecurityException, CausedDecoratorException
     {
         Document soapMsg = securityHeader.getOwnerDocument();
 
-        // Make a bulk encryption key
         byte[] keyBytes = new byte[16];
         c.rand.nextBytes(keyBytes);
 
-        // Stuff it into an EncryptedKey
         String xencNs = SoapUtil.XMLENC_NS;
-        Element encryptedKey = XmlUtil.createAndAppendElementNS(securityHeader,
-                                                                SoapUtil.ENCRYPTEDKEY_EL_NAME,
-                                                                xencNs, "xenc");
+
+        // Put the encrypted key in the right place
+        Element encryptedKey;
+        if (desiredNextSibling == null) {
+            encryptedKey = XmlUtil.createAndAppendElementNS(securityHeader,
+                                                            SoapUtil.ENCRYPTEDKEY_EL_NAME,
+                                                            xencNs, "xenc");
+        } else {
+            encryptedKey = XmlUtil.createAndInsertBeforeElementNS(desiredNextSibling,
+                                                                  SoapUtil.ENCRYPTEDKEY_EL_NAME,
+                                                                  xencNs, "xenc");
+        }
         String xenc = encryptedKey.getPrefix();
 
         Element encryptionMethod = XmlUtil.createAndAppendElementNS(encryptedKey, "EncryptionMethod", xencNs, xenc);
