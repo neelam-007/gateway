@@ -1,5 +1,8 @@
 package com.l7tech.console.panels;
 
+import com.intellij.uiDesigner.core.GridConstraints;
+import com.intellij.uiDesigner.core.GridLayoutManager;
+import com.intellij.uiDesigner.core.Spacer;
 import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.common.security.TrustedCert;
 import com.l7tech.common.security.TrustedCertAdmin;
@@ -8,9 +11,6 @@ import com.l7tech.common.util.Locator;
 import com.l7tech.objectmodel.SaveException;
 import com.l7tech.objectmodel.UpdateException;
 import com.l7tech.objectmodel.VersionException;
-import com.intellij.uiDesigner.core.GridLayoutManager;
-import com.intellij.uiDesigner.core.GridConstraints;
-import com.intellij.uiDesigner.core.Spacer;
 
 import javax.swing.*;
 import java.awt.*;
@@ -26,8 +26,6 @@ import java.util.Calendar;
 import java.util.Locale;
 import java.util.ResourceBundle;
 import java.util.logging.Logger;
-
-import org.bouncycastle.asn1.x509.KeyUsage;
 
 /**
  * This class provides a dialog for viewing a trusted certificate and its usage.
@@ -259,7 +257,7 @@ public class CertPropertiesWindow extends JDialog {
 
         // diasble the cert options that are not allowed based on the key usage specified in the cert
         boolean [] keyUsageArray = cert.getKeyUsage();
-        if(keyUsageArray != null && !keyUsageArray[KeyUsage.keyCertSign]) {
+        if(keyUsageArray != null && !keyUsageArray[CertUtils.KeyUsage.keyCertSign]) {
             signingServerCertCheckBox.setEnabled(false);
             signingSAMLTokenCheckBox.setEnabled(false);
             signingClientCertCheckBox.setEnabled(false);

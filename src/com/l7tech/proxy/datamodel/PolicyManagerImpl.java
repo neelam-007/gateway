@@ -103,6 +103,10 @@ public class PolicyManagerImpl implements PolicyManager {
 
             // fla, added - try again once after first 401
             if (status == 401) {
+                if (request.getSsg().getTrustedGateway() != null) {
+                    throw new ConfigurationException("Only anonymous policy downloads are supported when using a Federated Gateway");
+                }
+
                 getMethod.releaseConnection();
                 // was a new url provided ?
                 Header newURLHeader = getMethod.getResponseHeader(SecureSpanConstants.HttpHeaders.POLICYURL_HEADER);

@@ -71,10 +71,6 @@ public class PolicyServlet extends AuthenticatableHttpServlet {
 
             // See if it's actually a certificate download request
             if (getCert != null) {
-                if (nonce == null)
-                    throw new ServletException("Unable to fulfil cert request: a nonce is required");
-                if (username == null)
-                    throw new ServletException("Unable to fulfil cert request: a username is required");
                 try {
                     doCertDownload(httpServletResponse, username, nonce);
                 } catch (Exception e) {
@@ -207,6 +203,8 @@ public class PolicyServlet extends AuthenticatableHttpServlet {
      * If a username is given, we'll include a "Cert-Check-provId: " header containing
      * MD5(H(A1) . nonce . provId . cert . H(A1)), where H(A1) is the MD5 of "username:realm:password"
      * and provId is the ID of the identity provider that contained a matching username.
+     * @param username username for automatic cert checking, or null to disable cert check
+     * @param nonce nonce for automatic cert checking, or null to disable cert check
      */
     private void doCertDownload(HttpServletResponse response, String username, String nonce)
       throws FindException, IOException, NoSuchAlgorithmException {
@@ -216,7 +214,7 @@ public class PolicyServlet extends AuthenticatableHttpServlet {
         byte[] cert = KeystoreUtils.getInstance().readSSLCert();
 
         // Insert Cert-Check-NNN: headers if we can.
-        if (username != null) {
+        if (username != null && nonce != null) {
             MessageDigest md5 = MessageDigest.getInstance("MD5");
 
             ArrayList checks = findCheckInfos(username);

@@ -6,22 +6,20 @@
 
 package com.l7tech.proxy.ssl;
 
+import com.l7tech.common.util.CertUtils;
 import com.l7tech.proxy.datamodel.CurrentRequest;
 import com.l7tech.proxy.datamodel.Ssg;
 import com.l7tech.proxy.datamodel.SsgKeyStoreManager;
 import com.l7tech.proxy.datamodel.exceptions.KeyStoreCorruptException;
 import com.l7tech.proxy.datamodel.exceptions.ServerCertificateUntrustedException;
-import java.util.logging.Logger;
-import java.util.logging.Level;
-
-import com.l7tech.common.util.CertUtils;
 import sun.security.x509.X500Name;
 
 import javax.net.ssl.X509TrustManager;
 import java.io.IOException;
-import java.security.Principal;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Trust manager for the Client Proxy, which will decide whether a given connection is actually connected
@@ -73,22 +71,28 @@ public class ClientProxyTrustManager implements X509TrustManager {
             log.log(Level.SEVERE, e.getMessage(), e);
             // can't happen
         }
-        if (!cn.equals(expectedHostname))
+        if (!cn.equals(expectedHostname)) {
+            final String msg = "Server certificate name (" + cn +
+                    ") did not match the hostname we connected to (" + expectedHostname + ")";
+            log.log(Level.SEVERE, msg);
             throw new HostnameMismatchException(expectedHostname,
                                                 cn,
-                                                "Server certificate name (" + cn +
-                                                ") did not match the hostname we connected to (" +
-                                                expectedHostname + ")");
+                                                msg);
+        }
 
         // Get the trusted CA key for this SSG.
         X509Certificate trustedCert = null;
         try {
             trustedCert = SsgKeyStoreManager.getServerCert(ssg);
         } catch (KeyStoreCorruptException e) {
+            log.log(Level.SEVERE, "Unable to read keystore", e);
             throw new RuntimeException(e);
         }
-        if (trustedCert == null)
-            throw new ServerCertificateUntrustedException("We have not yet discovered this Gateway's server certificate");
+        if (trustedCert == null) {
+            final String msg = "We have not yet discovered this Gateway's server certificate";
+            log.log(Level.INFO, msg);
+            throw new ServerCertificateUntrustedException(msg);
+        }
 
         try {
             CertUtils.verifyCertificateChain( x509Certificates, trustedCert, 1 );

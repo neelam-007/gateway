@@ -135,7 +135,6 @@ public class PendingRequest {
 
     /**
      * Assert that credentials must be available to continue processing this request.
-     * The password will be loaded from the keystore if necessary.
      * The user will be prompted for credentials if necessary.
      * If this method returns, getUsername() and getPassword() are guaranteed to return non-null
      * values for the rest of the lifetime of this request.
@@ -145,8 +144,12 @@ public class PendingRequest {
      *                                    the logon dialog.
      */
     public PasswordAuthentication getCredentials() throws OperationCanceledException {
-        if (pw == null || pw.getUserName() == null || pw.getUserName().length() < 1 || pw.getPassword() == null)
-            pw = credentialManager.getCredentials(ssg);
+        if (pw == null || pw.getUserName() == null || pw.getUserName().length() < 1 || pw.getPassword() == null) {
+            if (ssg.getTrustedGateway() != null) {
+                pw = new PasswordAuthentication(ssg.getUsername() != null ? ssg.getUsername() : "", new char[0]);
+            } else
+                pw = credentialManager.getCredentials(ssg);
+        }
         return pw;
     }
 

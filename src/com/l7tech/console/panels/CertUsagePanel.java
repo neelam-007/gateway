@@ -1,6 +1,7 @@
 package com.l7tech.console.panels;
 
 import com.l7tech.common.security.TrustedCert;
+import com.l7tech.common.util.CertUtils;
 import com.intellij.uiDesigner.core.GridLayoutManager;
 import com.intellij.uiDesigner.core.GridConstraints;
 import com.intellij.uiDesigner.core.Spacer;
@@ -17,8 +18,6 @@ import java.util.logging.Logger;
 import java.security.cert.X509Certificate;
 import java.security.cert.CertificateException;
 import java.io.IOException;
-
-import org.bouncycastle.asn1.x509.KeyUsage;
 
 /**
  * <p> Copyright (C) 2004 Layer 7 Technologies Inc.</p>
@@ -148,7 +147,7 @@ public class CertUsagePanel extends WizardStepPanel {
         boolean [] keyUsageArray = cert.getKeyUsage();
 
 
-        if(keyUsageArray != null && !keyUsageArray[KeyUsage.keyCertSign]) {
+        if(keyUsageArray != null && !keyUsageArray[CertUtils.KeyUsage.keyCertSign]) {
             signingServerCertCheckBox.setEnabled(false);
             signingSAMLTokenCheckBox.setEnabled(false);
             signingClientCertCheckBox.setEnabled(false);

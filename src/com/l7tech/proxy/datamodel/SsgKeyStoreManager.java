@@ -205,7 +205,12 @@ public class SsgKeyStoreManager {
             if (ssg.privateKey() != null)
                 return ssg.privateKey();
         }
-        PasswordAuthentication pw = Managers.getCredentialManager().getCredentials(ssg);
+        PasswordAuthentication pw;
+        Ssg trusted = ssg.getTrustedGateway();
+        if (trusted != null)
+            pw = Managers.getCredentialManager().getCredentials(trusted);
+        else
+            pw = Managers.getCredentialManager().getCredentials(ssg);
         synchronized (ssg) {
             if (!isClientCertAvailabile(ssg))
                 return null;
@@ -502,6 +507,9 @@ public class SsgKeyStoreManager {
      * next attempt to connect to the SSG via SSL should at least get past the SSL handshake.  Uses the
      * specified credentials for the download.
      *
+     * @param ssg the ssg whose cert to discover. may not be null
+     * @param credentials the credentials for this SSG, if known, to enable automatic certificate trust, or null to
+     *                    force manual certificate trust.
      * @throws IOException if there was a network problem downloading the server cert
      * @throws IOException if there was a problem reading or writing the keystore for this SSG
      * @throws BadCredentialsException if the downloaded cert could not be verified with the SSG username and password
@@ -512,8 +520,8 @@ public class SsgKeyStoreManager {
             throws IOException, BadCredentialsException, OperationCanceledException, GeneralSecurityException, KeyStoreCorruptException
     {
         CertificateDownloader cd = new CertificateDownloader(ssg.getServerUrl(),
-                                                             credentials.getUserName(),
-                                                             credentials.getPassword());
+                                                             credentials != null ? credentials.getUserName() : null,
+                                                             credentials != null ? credentials.getPassword() : null);
 
         boolean isValidated = cd.downloadCertificate();
         if (!isValidated) {

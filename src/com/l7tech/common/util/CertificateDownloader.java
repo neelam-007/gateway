@@ -232,6 +232,6 @@ public class CertificateDownloader {
      * @return true if at least one Cert-Check-NNN: header contatining "NOPASS" was in the response
      */
     public boolean isUncheckablePassword() {
-        return sawNoPass;
+        return sawNoPass || password == null;
     }
 }

@@ -333,7 +333,7 @@ public class Ssg implements Serializable, Cloneable, Comparable {
 
     /**
      * Get the "Trusted Gateway" for this Ssg.  The "Trusted Gateway" is used to obtain authentication information
-     * instead of getting it directly from this Ssg. 
+     * instead of getting it directly from this Ssg.
      * @return
      */
     public Ssg getTrustedGateway() {
@@ -765,6 +765,8 @@ public class Ssg implements Serializable, Cloneable, Comparable {
     public PasswordAuthentication getCredentials() {
         String username = getUsername();
         char[] password = cmPassword();
+        if (username != null && getTrustedGateway() != null)
+            return new PasswordAuthentication(username, new char[0]); // shield actual password in federated case
         if (username != null && username.length() > 0 && password != null)
             return new PasswordAuthentication(username, password);
         return null;

@@ -128,7 +128,10 @@ public class MessageProcessor {
                             succeeded = true;
                             return res;
                         } catch (SSLException e) {
-                            handleSslException(req.getSsg(), req.getCredentials(), e);
+                            if (req.getSsg().getTrustedGateway() != null)
+                                handleSslException(req.getSsg(), null, e);
+                            else
+                                handleSslException(req.getSsg(), req.getCredentials(), e);
                             // FALLTHROUGH -- retry with new server certificate
                         } catch (ServerCertificateUntrustedException e) {
                             SsgKeyStoreManager.installSsgServerCertificate(ssg, req.getCredentials()); // might throw BadCredentialsException
@@ -218,8 +221,10 @@ public class MessageProcessor {
     {
         // Do we not have the right password to access our keystore?
         if (ExceptionUtils.causedBy(e, BadCredentialsException.class) ||
-                ExceptionUtils.causedBy(e, UnrecoverableKeyException.class))
+                ExceptionUtils.causedBy(e, UnrecoverableKeyException.class)) {
+            log.log(Level.INFO, "SSL handshake exception was apparently due to a password which doesn't match the keystore password", e);
             throw new BadCredentialsException(e);
+        }
 
         // Was this server cert untrusted?
         if (!ExceptionUtils.causedBy(e, ServerCertificateUntrustedException.class)) {

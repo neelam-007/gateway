@@ -182,23 +182,26 @@ public class FederatedIdentityProvider extends PersistentIdentityProvider {
         }
 
         FederatedUser u = userManager.findBySubjectDN(subjectDn);
-        if (u == null && trustedCerts.isEmpty())
-            throw new BadCredentialsException("No Federated User with DN = '" + subjectDn +
-                                              "' could be found, and virtual groups" +
-                                              " are not permitted without trusted certs");
-
-        X509Certificate importedCert = (X509Certificate)clientCertManager.getUserCert(u);
-        if ( importedCert == null ) {
-            // This is OK as long as it was signed by a trusted cert
-            if ( trustedCerts.isEmpty() ) {
-                // No trusted certs means the request cert must match a previously imported client cert
-                throw new BadCredentialsException("User " + u + " has no client certificate imported, " +
-                                                  "and this Federated Identity Provider has no CA certs " +
-                                                  "that are trusted");
+        if (u == null) {
+            if (trustedCerts.isEmpty()) {
+                throw new BadCredentialsException("No Federated User with DN = '" + subjectDn +
+                                                  "' could be found, and virtual groups" +
+                                                  " are not permitted without trusted certs");
             }
-        } else if ( !importedCert.equals(requestCert) ) {
-                throw new BadCredentialsException("Request certificate for user " + u +
-                                                  " does not match previously imported certificate");
+        } else {
+            X509Certificate importedCert = (X509Certificate)clientCertManager.getUserCert(u);
+            if ( importedCert == null ) {
+                // This is OK as long as it was signed by a trusted cert
+                if ( trustedCerts.isEmpty() ) {
+                    // No trusted certs means the request cert must match a previously imported client cert
+                    throw new BadCredentialsException("User " + u + " has no client certificate imported, " +
+                                                      "and this Federated Identity Provider has no CA certs " +
+                                                      "that are trusted");
+                }
+            } else if ( !importedCert.equals(requestCert) ) {
+                    throw new BadCredentialsException("Request certificate for user " + u +
+                                                      " does not match previously imported certificate");
+            }
         }
 
         final Class csa = pc.getCredentialSourceAssertion();

@@ -28,6 +28,30 @@ import org.bouncycastle.asn1.DERObjectIdentifier;
  * @version 1.0
  */
 public class CertUtils {
+    public static final String X509_OID_SUBJECTKEYID = "2.5.29.14";
+    private static final String[] KEY_USAGES = {
+        "Digital Signature",
+        "Non-Repudiation",
+        "Key Encipherment",
+        "Data Encipherment",
+        "Key Agreement",
+        "Certificate Signing",
+        "CRL Signing",
+        "Encipher Only",
+        "Decipher Only",
+    };
+    public static final class KeyUsage {
+        public static final int digitalSignature = 0;
+        public static final int nonRepudiation = 1;
+        public static final int keyEncipherment = 2;
+        public static final int dataEncipherment = 3;
+        public static final int keyAgreement = 4;
+        public static final int keyCertSign = 5;
+        public static final int cRLSign = 6;
+        public static final int encipherOnly = 7;
+        public static final int decipherOnly = 8;
+    }
+
     /**
      * Checks the validity period of the specified certificate.
      * @return a {@link CertificateExpiry} indicating how many days remain before the certificate will expire
@@ -122,7 +146,6 @@ public class CertUtils {
         return matches;
     }
 
-    public static final String X509_OID_SUBJECTKEYID = "2.5.29.14";
 
     /**
      * Display structured information about a certificate.
@@ -188,18 +211,6 @@ public class CertUtils {
 
         return l;
     }
-
-    private static final String[] KEY_USAGES = {
-        "digitalSignature",
-        "nonRepudiation",
-        "keyEncipherment",
-        "dataEncipherment",
-        "keyAgreement",
-        "keyCertSign",
-        "cRLSign",
-        "encipherOnly",
-        "decipherOnly",
-    };
 
     /**
      * @return A string such as "KeyEncipherment, caCert" that describes enabled key usages for a cert, or
