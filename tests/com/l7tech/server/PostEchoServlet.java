@@ -18,11 +18,27 @@ import java.io.OutputStream;
  * Echoes anything posted back to the response
  */
 public class PostEchoServlet extends HttpServlet {
+    private static final String WEB_XML = "<?xml version=\"1.0\" encoding=\"ISO-8859-1\"?>\n" +
+            "<!DOCTYPE web-app PUBLIC \"-//Sun Microsystems, Inc.//DTD Web Application 2.3//EN\" \"http://java.sun.com/dtd/web-app_2_3.dtd\">\n" +
+            "<web-app>\n" +
+            "    <servlet>\n" +
+            "        <servlet-name>PostEchoServlet</servlet-name>\n" +
+            "        <servlet-class>com.l7tech.server.PostEchoServlet</servlet-class>\n" +
+            "    </servlet>\n" +
+            "\n" +
+            "    <servlet-mapping>\n" +
+            "        <servlet-name>PostEchoServlet</servlet-name>\n" +
+            "        <url-pattern>/postecho</url-pattern>\n" +
+            "    </servlet-mapping>\n" +
+            "</web-app>";
+
+
     protected void doPost(HttpServletRequest servletRequest, HttpServletResponse servletResponse)
             throws ServletException, IOException 
     {
         servletResponse.setContentType(servletRequest.getContentType());
         servletResponse.setStatus(HttpServletResponse.SC_OK);
+        servletResponse.setContentLength(servletRequest.getContentLength());
         servletResponse.setBufferSize(0);
         InputStream in = servletRequest.getInputStream();
         OutputStream out = servletResponse.getOutputStream();
