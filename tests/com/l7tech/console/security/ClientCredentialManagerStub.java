@@ -1,4 +1,4 @@
-package com.l7tech.adminws;
+package com.l7tech.console.security;
 
 import com.l7tech.common.VersionException;
 

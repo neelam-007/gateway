@@ -1,7 +1,7 @@
 package com.l7tech.identity;
 
 import com.l7tech.objectmodel.EntityHeader;
-import com.l7tech.adminws.ClientCredentialManager;
+import com.l7tech.console.security.ClientCredentialManager;
 import com.l7tech.common.util.Locator;
 import com.l7tech.identity.ldap.LdapConfigSettings;
 

@@ -1,4 +1,4 @@
-package com.l7tech.adminws;
+package com.l7tech.console.security;
 
 import com.l7tech.console.event.ConnectionListener;
 import com.l7tech.console.event.ConnectionEvent;
@@ -26,7 +26,7 @@ public abstract class ClientCredentialManager implements ConnectionListener {
      * Subclasses implement this method to provide the concrete login implementation.
      *
      * @param creds the credentials to authenticate
-     * @see ClientCredentialManagerImpl
+     * @see com.l7tech.console.security.ClientCredentialManagerImpl
      */
     public abstract void login(PasswordAuthentication creds)
             throws LoginException, VersionException, RemoteException;

@@ -1,6 +1,6 @@
 package com.l7tech.adminws.identity;
 
-import com.l7tech.adminws.ClientCredentialManager;
+import com.l7tech.console.security.ClientCredentialManager;
 import com.l7tech.identity.IdentityProviderType;
 import com.l7tech.identity.IdentityAdmin;
 import com.l7tech.identity.ldap.LdapConfigSettings;

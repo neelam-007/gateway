@@ -1,6 +1,6 @@
 package com.l7tech.console;
 
-import com.l7tech.adminws.ClientCredentialManager;
+import com.l7tech.console.security.ClientCredentialManager;
 import com.l7tech.common.gui.util.ImageCache;
 import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.common.util.Locator;

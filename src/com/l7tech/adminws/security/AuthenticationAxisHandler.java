@@ -1,27 +1,26 @@
 package com.l7tech.adminws.security;
 
-import org.apache.axis.MessageContext;
-import org.apache.axis.AxisFault;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpSession;
-import org.apache.axis.encoding.Base64;
-import org.apache.axis.transport.http.HTTPConstants;
-import com.l7tech.identity.User;
+import com.l7tech.common.util.Locator;
+import com.l7tech.identity.AuthenticationException;
 import com.l7tech.identity.Group;
 import com.l7tech.identity.IdentityProviderConfigManager;
-import com.l7tech.identity.AuthenticationException;
-import com.l7tech.identity.internal.InternalIdentityProviderServer;
+import com.l7tech.identity.User;
 import com.l7tech.logging.LogManager;
 import com.l7tech.objectmodel.FindException;
-import com.l7tech.objectmodel.PersistenceContext;
 import com.l7tech.objectmodel.ObjectModelException;
-import com.l7tech.common.util.Locator;
+import com.l7tech.objectmodel.PersistenceContext;
 import com.l7tech.policy.assertion.credential.PrincipalCredentials;
+import org.apache.axis.AxisFault;
+import org.apache.axis.MessageContext;
+import org.apache.axis.encoding.Base64;
+import org.apache.axis.transport.http.HTTPConstants;
 
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpSession;
+import java.sql.SQLException;
+import java.util.Iterator;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.Iterator;
-import java.sql.SQLException;
 
 /**
  * Layer 7 Technologies, inc.

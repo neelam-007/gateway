@@ -6,7 +6,7 @@
 
 package com.l7tech.test;
 
-import com.l7tech.adminws.ClientCredentialManager;
+import com.l7tech.console.security.ClientCredentialManager;
 import com.l7tech.common.VersionException;
 import com.l7tech.identity.*;
 import com.l7tech.objectmodel.FindException;

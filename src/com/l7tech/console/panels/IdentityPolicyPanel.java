@@ -401,10 +401,10 @@ public class IdentityPolicyPanel extends JPanel {
         final JCheckBox _9;
         _9 = new JCheckBox();
         sslCheckBox = _9;
+        _9.setText("Require SSL/TLS encryption");
+        _9.setContentAreaFilled(true);
         _9.setMargin(new Insets(2, 2, 2, 0));
         _9.setHorizontalTextPosition(10);
-        _9.setContentAreaFilled(true);
-        _9.setText("Require SSL/TLS encryption");
         _6.add(_9, new com.intellij.uiDesigner.core.GridConstraints(0, 0, 1, 2, 4, 0, 3, 0, new Dimension(-1, -1), new Dimension(-1, -1), new Dimension(-1, -1)));
         final JLabel _10;
         _10 = new JLabel();
@@ -474,8 +474,8 @@ public class IdentityPolicyPanel extends JPanel {
         final JButton _27;
         _27 = new JButton();
         defaultUrlButton = _27;
-        _27.setText("Default");
         _27.setLabel("Default");
+        _27.setText("Default");
         _16.add(_27, new com.intellij.uiDesigner.core.GridConstraints(0, 3, 1, 1, 0, 1, 3, 0, new Dimension(-1, -1), new Dimension(-1, -1), new Dimension(-1, -1)));
         final com.intellij.uiDesigner.core.Spacer _28;
         _28 = new com.intellij.uiDesigner.core.Spacer();
