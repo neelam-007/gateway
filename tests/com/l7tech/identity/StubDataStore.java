@@ -4,7 +4,7 @@ import com.l7tech.identity.imp.IdentityProviderConfigImp;
 import com.l7tech.identity.internal.imp.GroupImp;
 import com.l7tech.identity.internal.imp.UserImp;
 import com.l7tech.objectmodel.EntityHeader;
-import com.l7tech.objectmodel.imp.EntityHeaderImp;
+import com.l7tech.objectmodel.EntityType;
 
 import java.beans.XMLDecoder;
 import java.beans.XMLEncoder;
@@ -182,7 +182,7 @@ public class StubDataStore {
 
     private EntityHeader fromUser(User u) {
         return
-                new EntityHeaderImp(u.getOid(), User.class, u.getName());
+                new EntityHeader(u.getOid(), EntityType.USER, u.getName(), null);
     }
 
     private Map providerConfigs = new HashMap();

@@ -1,7 +1,6 @@
 package com.l7tech.identity;
 
 import com.l7tech.objectmodel.*;
-import com.l7tech.objectmodel.imp.EntityHeaderImp;
 
 import java.util.*;
 
@@ -129,7 +128,7 @@ public class UserManagerStub implements UserManager {
 
     private EntityHeader fromUser(User u) {
         return
-                new EntityHeaderImp(u.getOid(), User.class, u.getName());
+                new EntityHeader(u.getOid(), EntityType.USER, u.getName(), null);
     }
 
     private StubDataStore dataStore;

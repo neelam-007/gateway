@@ -1,8 +1,6 @@
 package com.l7tech.identity;
 
 import com.l7tech.objectmodel.*;
-import com.l7tech.objectmodel.imp.EntityHeaderImp;
-
 import java.util.*;
 
 /**
@@ -125,6 +123,6 @@ public class GroupManagerStub implements GroupManager {
 
     private EntityHeader fromGroup(Group g) {
         return
-                new EntityHeaderImp(g.getOid(), Group.class, g.getName());
+                new EntityHeader(g.getOid(), EntityType.GROUP, g.getName(), null);
     }
 }

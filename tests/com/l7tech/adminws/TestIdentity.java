@@ -1,9 +1,5 @@
 package com.l7tech.adminws;
 
-import com.l7tech.adminws.identity.IdentityService;
-import com.l7tech.adminws.identity.IdentityServiceLocator;
-import com.l7tech.adminws.identity.Identity;
-import com.l7tech.adminws.identity.Header;
 import com.l7tech.identity.imp.IdentityProviderConfigManagerClient;
 import com.l7tech.identity.*;
 import com.l7tech.util.Locator;
@@ -62,7 +58,7 @@ public class TestIdentity {
 
     }
 
-    public static void printres(Header[] res) {
+    public static void printres(com.l7tech.objectmodel.EntityHeader[] res) {
         for (int i = 0; i < res.length; i++) {
             System.out.println(res[i].getName() + " - " + res[i].getType());
         }

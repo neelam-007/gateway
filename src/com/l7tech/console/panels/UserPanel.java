@@ -7,7 +7,6 @@ import com.l7tech.identity.User;
 import com.l7tech.identity.internal.imp.UserImp;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
-import com.l7tech.objectmodel.imp.EntityHeaderImp;
 import org.apache.log4j.Category;
 
 import javax.swing.*;
