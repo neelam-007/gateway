@@ -7,11 +7,14 @@ import EDU.oswego.cs.dl.util.concurrent.WriterPreferenceReadWriteLock;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.io.IOException;
 
 import com.l7tech.logging.LogManager;
 import com.l7tech.message.Request;
 import com.l7tech.service.resolution.*;
 import com.l7tech.objectmodel.DuplicateObjectException;
+import com.l7tech.server.policy.assertion.ServerAssertion;
+import com.l7tech.server.policy.ServerPolicyFactory;
 
 import javax.wsdl.WSDLException;
 
@@ -24,8 +27,8 @@ import javax.wsdl.WSDLException;
  * $Id$
  *
  * Contains cached services, entry point for resolution.
- * todo: cache corresponding server policies
- * 
+ * Thread safe.
+ *
  */
 public class ServiceCache {
 
@@ -77,6 +80,31 @@ public class ServiceCache {
         return output;
     }
 
+    /**
+     *
+     * @param serviceOid id of the service of which we want the parsed server side root assertion
+     * @return
+     */
+    public ServerAssertion getServerPolicy(long serviceOid) throws InterruptedException {
+        Sync read = rwlock.readLock();
+        try {
+            read.acquire();
+            serverPolicies.get(new Long(serviceOid));
+        } catch (InterruptedException e) {
+            logger.log(Level.WARNING, "interruption in service cache", e);
+            Thread.currentThread().interrupt();
+            throw e;
+        } finally {
+            if (read != null) read.release();
+        }
+        return null;
+    }
+
+    /**
+     * @param req the soap request to resolve the service from
+     * @return the cached version of the service that this request resolve to. null if no match
+     * @throws ServiceResolutionException
+     */
     public PublishedService resolve(Request req) throws ServiceResolutionException {
         Set services = null;
         try {
@@ -85,7 +113,7 @@ public class ServiceCache {
             throw new ServiceResolutionException(e.getMessage(), e);
         }
 
-        if ( services == null || services.isEmpty() ) {
+        if (services == null || services.isEmpty()) {
             logger.finest("resolution failed because no services in the cache");
             return null;
         }
@@ -113,7 +141,8 @@ public class ServiceCache {
      * adds or update a service to the cache. this should be called when the cache is initially populated and
      * when a service is saved or updated locally
      */
-    public void cache(PublishedService service) throws InterruptedException, DuplicateObjectException, WSDLException {
+    public void cache(PublishedService service) throws InterruptedException, DuplicateObjectException,
+                                                        WSDLException, IOException {
         Sync write = rwlock.writeLock();
         try {
             write.acquire();
@@ -128,14 +157,17 @@ public class ServiceCache {
                 logger.finest("updated service in cache. oid=" + service.getOid());
             } else {
                 // make sure no duplicate exist
-                validate(service);
+                //validate(service);
                 for (int i = 0; i < resolvers.length; i++) {
                     resolvers[i].serviceCreated(service);
                 }
                 logger.finest("added service in cache. oid=" + service.getOid());
             }
-
+            // cache the service
             services.put(key, service);
+            // cache the server policy for this service
+            ServerAssertion serverPolicy = ServerPolicyFactory.getInstance().makeServerPolicy(service.rootAssertion());
+            serverPolicies.put(key, serverPolicy);
         } catch (InterruptedException e) {
             logger.log(Level.WARNING, "interruption in service cache", e);
             Thread.currentThread().interrupt();
@@ -153,7 +185,9 @@ public class ServiceCache {
         Sync write = rwlock.writeLock();
         try {
             write.acquire();
-            services.remove(new Long(service.getOid()));
+            Long key = new Long(service.getOid());
+            services.remove(key);
+            serverPolicies.remove(key);
             for (int i = 0; i < resolvers.length; i++) {
                 resolvers[i].serviceDeleted(service);
             }
@@ -230,23 +264,29 @@ public class ServiceCache {
         }
     }
 
-    private void validate(PublishedService candidateService) throws WSDLException, DuplicateObjectException{
+    /**
+     * check for potential resolution conflicts
+     *
+     * @deprecated should use the new resolution table instead of this to ensure uniqueness of resolution parameters
+     */
+    public void validate(PublishedService candidateService) throws WSDLException, DuplicateObjectException{
         // Make sure WSDL is valid
         candidateService.parsedWsdl();
-        ServiceResolver resolver;
 
+        Map localServices = services;
         // Check for duplicate services
         for (int i = 0; i < resolvers.length; i++) {
-            services = resolvers[i].matchingServices( candidateService, services );
-            if ( services == null || services .size() == 0 ) {
+            localServices = resolvers[i].matchingServices(candidateService, localServices);
+            if (localServices == null || localServices.isEmpty()) {
                 return;
             }
         }
         throw new DuplicateObjectException( "Duplicate service resolution parameters!" );
     }
 
-    private Map services = new HashMap();
-    private ReadWriteLock rwlock = new WriterPreferenceReadWriteLock();
+    private Map services = new HashMap(); // not final because of replaceCache
+    private final Map serverPolicies = new HashMap();
+    private final ReadWriteLock rwlock = new WriterPreferenceReadWriteLock();
     private final Logger logger = LogManager.getInstance().getSystemLogger();
     private final NameValueServiceResolver[] resolvers = {new SoapActionResolver(), new UrnResolver()};
 
