@@ -27,6 +27,22 @@ public class SchemaValidationTest {
     public static void main(String[] args) throws Exception {
         SchemaValidationTest me = new SchemaValidationTest();
         me.testWarehouseValidations();
+        me.testCaseWith2BodyChildren();
+    }
+
+    private void testCaseWith2BodyChildren() throws Exception {
+        // create assertion based on the wsdl
+        SchemaValidation assertion = new SchemaValidation();
+        assertion.assignSchemaFromWsdl(getResAsDoc(DOCLIT_WSDL_WITH2BODYCHILDREN));
+        ServerSchemaValidation serverAssertion = new ServerSchemaValidation(assertion);
+
+        // try to validate a number of different soap messages
+        String[] resources = {DOCLIT_WITH2BODYCHILDREN_REQ};
+        for (int i = 0; i < resources.length; i++) {
+            AssertionStatus res = serverAssertion.checkRequest(getResAsDoc(resources[i]));
+            System.out.println("DOCUMENT " + resources[i] +
+                                (res == AssertionStatus.NONE ? " VALIDATES OK" : " DOES NOT VALIDATE"));
+        }
     }
 
     private void testWarehouseValidations() throws Exception {
@@ -65,4 +81,8 @@ public class SchemaValidationTest {
     private static final String LISTREQ_PATH = RESOURCE_PATH + "listProductsRequest.xml";
     private static final String BAD_LISTREQ_PATH = RESOURCE_PATH + "listProductsRequestIncorrect.xml";
     private static final String LISTRES_PATH = RESOURCE_PATH + "listProductResponse.xml";
+    private static final String DOCLIT_WSDL_WITH2BODYCHILDREN = RESOURCE_PATH + "axisDocumentLiteralWith2BodyParts.wsdl";
+    private static final String DOCLIT_WITH2BODYCHILDREN_REQ = RESOURCE_PATH + "requestWith2BodyChildren.xml";
+
+
 }
