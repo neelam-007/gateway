@@ -7,6 +7,7 @@ import com.l7tech.console.action.DeletePolicyTemplateAction;
 import javax.swing.*;
 import javax.swing.tree.DefaultTreeModel;
 import javax.swing.tree.TreePath;
+import javax.swing.tree.TreeSelectionModel;
 import java.awt.datatransfer.DataFlavor;
 import java.awt.datatransfer.Transferable;
 import java.awt.datatransfer.UnsupportedFlavorException;
@@ -64,6 +65,7 @@ public class AssertionsTree extends JTree {
         setCellRenderer(new EntityTreeCellRenderer());
         setDragEnabled(true);
         setTransferHandler(new AssertionTransferHandler());
+        getSelectionModel().setSelectionMode(TreeSelectionModel.SINGLE_TREE_SELECTION);
     }
 
     /**
