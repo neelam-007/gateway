@@ -681,7 +681,7 @@ public class SoapUtil {
         }
         try {
             SoapUtil.getEnvelopeElement(doc);
-            SoapUtil.getBodyElement(doc);
+            SoapUtil.getBodyElement(doc); // This returns null if there's no body, so Faults will still pass
             return true;
         } catch (InvalidDocumentFormatException e) {
             // not SOAP
