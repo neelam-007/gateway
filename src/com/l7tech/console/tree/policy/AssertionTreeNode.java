@@ -211,27 +211,3 @@ public abstract class AssertionTreeNode extends AbstractTreeNode {
     public abstract boolean accept(AbstractTreeNode node);
 }
 
-/**
- * Leaf policy nodes extend this node
- */
-abstract class LeafAssertionTreeNode extends AssertionTreeNode {
-    public LeafAssertionTreeNode(Assertion assertion) {
-        super(assertion);
-        if (assertion == null) {
-            throw new IllegalArgumentException();
-        }
-    }
-
-    protected void loadChildren() {
-    }
-
-    /**
-     * By default, the leaf node never accepts a node.
-     *
-     * @param node the node to accept
-     * @return always false
-     */
-    public boolean accept(AbstractTreeNode node) {
-        return node instanceof PolicyTemplateNode;
-    }
-}
