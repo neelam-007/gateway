@@ -15,7 +15,7 @@ import com.l7tech.common.xml.TarariProber;
 import com.l7tech.common.xml.tarari.TarariUtil;
 import com.l7tech.logging.ServerLogHandler;
 import com.l7tech.logging.ServerLogManager;
-import com.l7tech.server.audit.AuditContext;
+import com.l7tech.server.audit.AuditContextImpl;
 import com.l7tech.server.audit.SystemAuditListener;
 import com.l7tech.server.event.EventManager;
 import com.l7tech.server.event.system.*;
@@ -74,7 +74,7 @@ public class BootProcess extends ApplicationObjectSupport implements ServerCompo
 
     public void setServerConfig(ServerConfig config) throws LifecycleException {
         serverConfig = config;
-        auditor = new Auditor(AuditContext.getCurrent(serverConfig.getSpringContext()), Logger.getLogger(getClass().getName()));
+        auditor = new Auditor(AuditContextImpl.getCurrent(serverConfig.getSpringContext()), Logger.getLogger(getClass().getName()));
 
         if (TarariProber.isTarariPresent()) {
             auditor.logAndAudit(BootMessages.XMLHARDWARE_INIT);

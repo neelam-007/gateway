@@ -256,7 +256,7 @@ public class AuditAdminImpl extends HibernateDaoSupport implements AuditAdmin, A
 
 
     public Level serverMessageAuditThreshold() throws RemoteException {
-        return AuditContext.getSystemMessageThreshold();
+        return AuditContextImpl.getSystemMessageThreshold();
     }
 
     public int serverMinimumPurgeAge() throws RemoteException {

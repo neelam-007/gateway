@@ -26,12 +26,12 @@ import com.l7tech.policy.assertion.credential.CredentialSourceAssertion;
 import com.l7tech.policy.assertion.identity.IdentityAssertion;
 import com.l7tech.policy.assertion.xmlsec.SamlStatementAssertion;
 import com.l7tech.policy.wsp.WspWriter;
+import com.l7tech.server.audit.AuditContextImpl;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.ServerAssertion;
 import com.l7tech.server.policy.filter.FilterManager;
 import com.l7tech.server.policy.filter.FilteringException;
 import com.l7tech.server.secureconversation.SecureConversationContextManager;
-import com.l7tech.server.audit.AuditContext;
 import org.springframework.context.support.ApplicationObjectSupport;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -212,7 +212,7 @@ public class PolicyService extends ApplicationObjectSupport {
             logger.fine("Running meta-policy.");
             ServerAssertion policyPolicy = constructPolicyPolicy(targetPolicy);
             try {
-                context.setAuditContext(AuditContext.getCurrent(getApplicationContext()));                
+                context.setAuditContext(AuditContextImpl.getCurrent(getApplicationContext()));
                 status = policyPolicy.checkRequest(context);
             } catch (IOException e) {
                 response.initialize(exceptionToFault(e));

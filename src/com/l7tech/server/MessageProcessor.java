@@ -6,6 +6,7 @@
 
 package com.l7tech.server;
 
+import com.l7tech.common.audit.Auditor;
 import com.l7tech.common.message.Message;
 import com.l7tech.common.message.XmlKnob;
 import com.l7tech.common.protocol.SecureSpanConstants;
@@ -15,11 +16,11 @@ import com.l7tech.common.security.xml.processor.*;
 import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.xml.InvalidDocumentFormatException;
 import com.l7tech.common.xml.MessageNotSoapException;
-import com.l7tech.common.audit.Auditor;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.RoutingStatus;
+import com.l7tech.server.audit.AuditContextImpl;
 import com.l7tech.server.event.EventManager;
 import com.l7tech.server.event.MessageProcessed;
 import com.l7tech.server.message.PolicyEnforcementContext;
@@ -28,7 +29,6 @@ import com.l7tech.server.policy.assertion.ServerAssertion;
 import com.l7tech.server.secureconversation.SecureConversationContextManager;
 import com.l7tech.server.service.ServiceManager;
 import com.l7tech.server.service.resolution.ServiceResolutionException;
-import com.l7tech.server.audit.AuditContext;
 import com.l7tech.service.PublishedService;
 import com.l7tech.service.ServiceStatistics;
 import org.springframework.context.support.ApplicationObjectSupport;
@@ -103,8 +103,8 @@ public class MessageProcessor extends ApplicationObjectSupport {
     public AssertionStatus processMessage( PolicyEnforcementContext context )
             throws IOException, PolicyAssertionException, PolicyVersionException
     {
-        auditor = new Auditor(AuditContext.getCurrent(getApplicationContext()), logger);
-        context.setAuditContext(AuditContext.getCurrent(getApplicationContext()));
+        auditor = new Auditor(AuditContextImpl.getCurrent(getApplicationContext()), logger);
+        context.setAuditContext(AuditContextImpl.getCurrent(getApplicationContext()));
         try {
             currentContext.set(context);
             return reallyProcessMessage(context);
