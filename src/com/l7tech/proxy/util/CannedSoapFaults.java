@@ -37,7 +37,7 @@ public class CannedSoapFaults {
             " <soapenv:Body>\n" +
             "  <soapenv:Fault>\n" +
             "   <faultcode>soapenv:Server</faultcode>\n" +
-            "   <faultstring>Assertion Falsified</faultstring>\n" +
+            "   <faultstring>Response Smells</faultstring>\n" +
             "   <faultactor></faultactor>\n" +
             "   <detail>The response from the SSG smelled like week-old mackeral.</detail>\n" +
             "  </soapenv:Fault>\n" +

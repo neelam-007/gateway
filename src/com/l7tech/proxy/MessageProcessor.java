@@ -14,10 +14,12 @@ import com.l7tech.proxy.datamodel.PendingRequest;
 import com.l7tech.proxy.datamodel.PolicyManager;
 import com.l7tech.proxy.datamodel.Ssg;
 import com.l7tech.proxy.util.ThreadLocalHttpClient;
+import com.l7tech.proxy.util.CannedSoapFaults;
 import org.apache.commons.httpclient.Header;
 import org.apache.commons.httpclient.HttpClient;
 import org.apache.commons.httpclient.HttpState;
 import org.apache.commons.httpclient.UsernamePasswordCredentials;
+import org.apache.commons.httpclient.HttpConstants;
 import org.apache.commons.httpclient.methods.PostMethod;
 import org.apache.log4j.Category;
 import org.xml.sax.SAXException;
@@ -160,6 +162,10 @@ public class MessageProcessor {
                 if (policyUrlHeader == null)
                     Managers.getCredentialManager().notifyInvalidCredentials(ssg);
             }
+
+            Header contentType = postMethod.getResponseHeader("Content-Type");
+            if (contentType == null || !"text/xml".equalsIgnoreCase(contentType.getValue()))
+                return CannedSoapFaults.RESPONSE_NOT_XML;
 
             try {
                 final InputStream responseStream = postMethod.getResponseBodyAsStream();
