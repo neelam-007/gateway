@@ -47,12 +47,14 @@ public class TokenServiceClient {
         try {
             Document msg = XmlUtil.stringToDocument("<soap:Envelope xmlns:soap=\"" + SOAPConstants.URI_NS_SOAP_ENVELOPE + "\">" +
                                                     "<soap:Body>" +
-                                                    "<wst:RequestSecurityToken xmlns:wst=\"" + SoapUtil.WST_NAMESPACE + "\"/>" +
+                                                    "<wst:RequestSecurityToken xmlns:wst=\"" + SoapUtil.WST_NAMESPACE + "\">" +
+                                                    "<wst:RequestType>http://schemas.xmlsoap.org/ws/2004/04/security/trust/Issue</wst:RequestType>" +
+                                                    "</wst:RequestSecurityToken>" +
                                                     "</soap:Body></soap:Envelope>");
             Element env = msg.getDocumentElement();
             Element body = XmlUtil.findFirstChildElement(env);
             Element rst = XmlUtil.findFirstChildElement(body);
-            Element tokenType = XmlUtil.createAndAppendElementNS(rst, "TokenType", SoapUtil.WST_NAMESPACE, "wst");
+            Element tokenType = XmlUtil.createAndPrependElementNS(rst, "TokenType", SoapUtil.WST_NAMESPACE, "wst");
             tokenType.appendChild(msg.createTextNode(desiredTokenType));
 
             // Sign it
