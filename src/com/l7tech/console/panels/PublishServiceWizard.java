@@ -14,6 +14,7 @@ import com.l7tech.console.event.WizardEvent;
 import com.l7tech.console.event.EntityListener;
 import com.l7tech.console.event.EntityEvent;
 import com.l7tech.console.util.Registry;
+import com.l7tech.console.action.Actions;
 import com.l7tech.objectmodel.DuplicateObjectException;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.EntityHeader;
@@ -22,6 +23,8 @@ import javax.swing.*;
 import javax.swing.event.EventListenerList;
 import javax.wsdl.WSDLException;
 import java.awt.*;
+import java.awt.event.ActionListener;
+import java.awt.event.ActionEvent;
 import java.io.ByteArrayOutputStream;
 import java.util.ArrayList;
 import java.util.EventListener;
@@ -113,6 +116,11 @@ public class PublishServiceWizard extends Wizard {
             }
             public void wizardCanceled(WizardEvent e) {
                 // dont care
+            }
+        });
+        getButtonHelp().addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                Actions.invokeHelp(PublishServiceWizard.this);
             }
         });
     }
