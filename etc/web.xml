@@ -4,10 +4,7 @@
 <web-app>
     <display-name>Layer7 Secure Span Gateway</display-name>
 
-
-
     <!-- ssg boot servlet properties -->
-
     <servlet>
         <servlet-name>boot</servlet-name>
         <servlet-class>com.l7tech.server.BootServlet</servlet-class>
@@ -107,6 +104,27 @@
         <welcome-file>index.jws</welcome-file>
     </welcome-file-list>
 
+    <!-- enforce SSL in the admin Web service -->
+    <!-- uncomment security-constraint and login-config to enable
+    <security-constraint>
+        <web-resource-collection>
+            <web-resource-name>AdminService</web-resource-name>
+            <description>SSG Administration Web Service</description>
+            <url-pattern>/services/*</url-pattern>
+            <http-method>POST</http-method>
+            <http-method>GET</http-method>
+        </web-resource-collection>
+
+        <user-data-constraint>
+            <description>SSL required</description>
+            <transport-guarantee>CONFIDENTIAL</transport-guarantee>
+        </user-data-constraint>
+    </security-constraint>
+    <login-config>
+        <auth-method>BASIC</auth-method>
+        <realm-name></realm-name>
+    </login-config> -->
+
     <env-entry>
         <description>List of concrete ServiceResolver implementations</description>
         <env-entry-name>ServiceResolvers</env-entry-name>
@@ -117,19 +135,4 @@
         <env-entry-type>java.lang.String</env-entry-type>
     </env-entry>
 
-   <!-- jdbc configuration -->
-    <!-- No more JNDI! -->
-    <!--
-    <resource-ref>
-      <res-ref-name>ssg-my</res-ref-name>
-      <res-type>javax.sql.DataSource</res-type>
-      <res-auth>Container</res-auth>
-    </resource-ref>
-    -->
-    <!--
-    <login-config>
-        <auth-method>BASIC</auth-method>
-        <realm-name>Ssg Realm</realm-name>
-    </login-config>
-     -->
 </web-app>
