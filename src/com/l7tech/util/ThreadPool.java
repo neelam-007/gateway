@@ -26,7 +26,9 @@ import java.util.*;
  * Additionally pool supports <CODE>ThreadPoolListener</CODE> registrations
  * that receives pool events. The listener methods are invoked on the
  * thread that generated the event.
- * @version $Revision$, $Date$
+ * 
+ * @author <a href="mailto:emarceta@layer7-tech.com>Emil Marceta</a> 
+ * @version 1.1 $
  *
  * @see ThreadPoolListener
  */
