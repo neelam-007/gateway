@@ -23,7 +23,6 @@ public abstract class WizardStepPanel extends JPanel {
      */
     private void initComponents() {
         setLayout(new BorderLayout());
-
     }
 
     /**

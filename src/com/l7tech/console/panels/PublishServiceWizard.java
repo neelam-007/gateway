@@ -17,9 +17,9 @@ import java.awt.event.*;
 public class PublishServiceWizard extends JDialog {
     private WizardStepPanel[] panels =
             new WizardStepPanel[]{
-                new ServicePanel()
-/*         new EndpointCredentialsPanel(),  */
-/*         new IdentityProviderPanel()      */
+                new ServicePanel(),
+                new EndpointCredentialsPanel(),
+               new IdentityProviderPanel()
             };
 
     private int currentPanel = 0;
@@ -131,6 +131,8 @@ public class PublishServiceWizard extends JDialog {
         stepjPanel.setBorder(new EmptyBorder(new Insets(5, 10, 5, 10)));
         stepDescriptionjScrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
         stepDescriptionjTextArea.setEditable(false);
+        stepDescriptionjTextArea.setLineWrap(true);
+        stepDescriptionjTextArea.setWrapStyleWord(true);
         stepDescriptionjTextArea.setRows(5);
         stepDescriptionjScrollPane.setViewportView(stepDescriptionjTextArea);
 
@@ -194,13 +196,6 @@ public class PublishServiceWizard extends JDialog {
         dispose();
     }
 
-    /**
-     * @param args the command line arguments
-     */
-    public static void main(String args[]) {
-        new PublishServiceWizard(new JFrame(), true).show();
-    }
-
     private void updateButtonsNavigate() {
         buttonFinish.setEnabled(currentPanel > 0);
         buttonBack.setEnabled(currentPanel > 0);
@@ -239,9 +234,9 @@ public class PublishServiceWizard extends JDialog {
     private JTextArea stepDescriptionjTextArea;
     private JButton buttonBack;
     private JButton buttonHelp;
-    // End of variables declaration//GEN-END:variables
 
     private JLabel[] stepLabels = new JLabel[0];
+    // grab default foreground color for label
     private Color labelFgColor = new JLabel().getForeground();
 
 }
