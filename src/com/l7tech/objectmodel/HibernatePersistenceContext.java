@@ -20,10 +20,6 @@ import com.l7tech.logging.LogManager;
  * @author alex
  */
 public class HibernatePersistenceContext extends PersistenceContext {
-    Session getSession() {
-        return _session;
-    }
-
     public HibernatePersistenceContext( Session session ) {
         _session = session;
         _manager = (HibernatePersistenceManager)PersistenceManager.getInstance();
@@ -58,6 +54,22 @@ public class HibernatePersistenceContext extends PersistenceContext {
         }
     }
 
+    public void flush() throws ObjectModelException {
+        try {
+            if ( _htxn != null ) {
+                _htxn.commit();
+                _htxn = null;
+            }
+            if ( _session != null ) _session.flush();
+        } catch ( SQLException se ) {
+            LogManager.getInstance().getSystemLogger().log( Level.SEVERE, "in flush()", se );
+            throw new ObjectModelException( se.getMessage(), se );
+        } catch ( HibernateException he ) {
+            LogManager.getInstance().getSystemLogger().log( Level.SEVERE, "in flush()", he );
+            throw new ObjectModelException( he.getMessage(), he );
+        }
+    }
+
     public void close() throws ObjectModelException {
         try {
             if ( _htxn != null ) {
@@ -74,11 +86,15 @@ public class HibernatePersistenceContext extends PersistenceContext {
         }
     }
 
+    public Session getSession() throws HibernateException, SQLException {
+        if ( _session == null || !_session.isOpen() || !_session.isConnected() )
+            _session = _manager.makeSession();
+        return _session;
+    }
+
     public void beginTransaction() throws TransactionException {
         try {
-            if ( _session == null || !_session.isOpen() || !_session.isConnected() )
-                _session = _manager.getSession();
-            _htxn = _session.beginTransaction();
+            _htxn = getSession().beginTransaction();
         } catch ( Exception e ) {
             throw new TransactionException( e.toString(), e );
         }
