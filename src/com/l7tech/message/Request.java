@@ -24,6 +24,8 @@ public interface Request extends Message {
 
     public static final String PARAM_HTTP_AUTH_REALM        = PREFIX_HTTP + ".auth-realm";
 
+    public static final String PARAM_HTTP_AUTH_PARAMS       = PREFIX_HTTP + ".auth-params";
+
     public static final String PARAM_HTTP_SOAPACTION        = PREFIX_HTTP_HEADER + ".soapaction";
     public static final String PARAM_HTTP_AUTHORIZATION     = PREFIX_HTTP_HEADER + ".authorization";
     public static final String PARAM_HTTP_WWWAUTHENTICATE   = PREFIX_HTTP_HEADER + ".www-authenticate";
