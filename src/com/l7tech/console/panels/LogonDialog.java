@@ -454,15 +454,16 @@ public class LogonDialog extends JDialog {
 
 
         String serviceURL = null;
+        Container parentContainer = getParent();
         try {
             sslHostNameMismatchUserNotified = false;
-            getParent().setCursor(Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR));
+            parentContainer.setCursor(Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR));
 
             // service URL
             final String serverURL = (String)serverComboBox.getSelectedItem();
             serviceURL = serverURL + Preferences.SERVICE_URL_SUFFIX;
 
-            getParent().setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
+            parentContainer.setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
             final ClientCredentialManager credentialManager = getCredentialManager();
             credentialManager.onDisconnect(new ConnectionEvent(this, ConnectionEvent.DISCONNECTED));
 
@@ -530,9 +531,9 @@ public class LogonDialog extends JDialog {
             sw.start();
         } catch (Exception e) {
             handleLogonThrowable(e, this, serviceURL);
+        } finally {
+            parentContainer.setCursor(Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR));
         }
-
-        getParent().setCursor(Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR));
     }
 
 
