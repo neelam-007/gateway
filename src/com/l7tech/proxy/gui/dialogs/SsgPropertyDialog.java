@@ -485,7 +485,7 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
                                            GridBagConstraints.NONE,
                                            new Insets(0, 40, 5, 0), 0, 0));
             fieldSsgPort = new ContextMenuTextField("");
-            initDfg(fieldSsgPort);
+            Utilities.enableGrayOnDisabled(fieldSsgPort);
             fieldSsgPort.setDocument(new IntegerField(0, 65535));
             fieldSsgPort.setPreferredSize(new Dimension(50, 20));
             gpp.add(fieldSsgPort,
@@ -499,7 +499,7 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
                                            GridBagConstraints.NONE,
                                            new Insets(0, 15, 5, 0), 0, 0));
             fieldSslPort = new ContextMenuTextField("");
-            initDfg(fieldSslPort);
+            Utilities.enableGrayOnDisabled(fieldSslPort);
             fieldSslPort.setDocument(new IntegerField(0, 65535));
             fieldSslPort.setPreferredSize(new Dimension(50, 20));
             gpp.add(fieldSslPort,
@@ -601,8 +601,8 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
 
     private void updateCustomPortsEnableState() {
         boolean en = radioNonstandardPorts.isSelected();
-        setEnabled(fieldSsgPort, en);
-        setEnabled(fieldSslPort, en);
+        fieldSsgPort.setEnabled(en);
+        fieldSslPort.setEnabled(en);
     }
 
     private JButton getClientCertificateButton() {
@@ -673,10 +673,7 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
 
     /** Enable or disable the Ok button, depending on whether all input is acceptable. */
     private void checkOk() {
-        if (fieldServerAddress.getText().length() > 1)
-            SsgPropertyDialog.this.enableOk();
-        else
-            SsgPropertyDialog.this.disableOk();
+        getOkButton().setEnabled(fieldServerAddress.getText().length() > 1);
     }
 
     /** Get the Server URL text field. */

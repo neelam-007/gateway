@@ -15,7 +15,6 @@ import java.awt.event.*;
  * Time: 2:48:03 PM
  */
 public abstract class PropertyDialog extends JDialog {
-    private static final String DFG = "defaultForeground";
     protected static final Dimension MIN_SIZE = new Dimension(200, 150);
     protected JTabbedPane tabbedPane;
     protected JButton okButton;
@@ -113,7 +112,7 @@ public abstract class PropertyDialog extends JDialog {
     protected JButton getOkButton() {
         if (okButton == null) {
             okButton = new JButton("Ok");
-            initDfg(okButton);
+            Utilities.enableGrayOnDisabled(okButton);
             okButton.addActionListener(new ActionListener() {
                 public void actionPerformed(final ActionEvent e) {
                     commitChanges();
@@ -124,25 +123,6 @@ public abstract class PropertyDialog extends JDialog {
             });
         }
         return okButton;
-    }
-
-    protected static void initDfg(JComponent component) {
-        component.putClientProperty(DFG, component.getForeground());
-    }
-
-    protected static void setEnabled(JComponent component, boolean enabled) {
-        component.setEnabled(enabled);
-        component.setForeground(enabled ? (Color)component.getClientProperty(DFG) : Color.GRAY);
-    }
-
-    /** Grey out the Ok button. */
-    protected void disableOk() {
-        setEnabled(getOkButton(), false);
-    }
-
-    /** Enable the Ok button. */
-    protected void enableOk() {
-        setEnabled(getOkButton(), true);
     }
 
     /**
