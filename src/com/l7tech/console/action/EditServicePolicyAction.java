@@ -22,7 +22,7 @@ public class EditServicePolicyAction extends NodeAction {
     private final boolean validate;
 
     /**
-     * default constructor. invoke the policy vaslidate if
+     * default constructor. invoke the policy validate if
      * specified.
      * 
      * @param node the service node
@@ -39,7 +39,7 @@ public class EditServicePolicyAction extends NodeAction {
      * @param node the service node
      */
     public EditServicePolicyAction(ServiceNode node) {
-        this(node, false);
+        this(node, true);
     }
 
     /**

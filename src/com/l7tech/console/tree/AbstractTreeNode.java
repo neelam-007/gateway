@@ -21,7 +21,7 @@ import java.util.logging.Logger;
  * @version 1.0
  */
 public abstract class AbstractTreeNode extends DefaultMutableTreeNode {
-    static Logger logger = Logger.getLogger(AbstractTreeNode.class.getName());
+    static protected Logger logger = Logger.getLogger(AbstractTreeNode.class.getName());
     protected boolean hasLoadedChildren;
     protected WeakPropertyChangeSupport propChangeSupport = new WeakPropertyChangeSupport();
     private java.util.List cookies = new ArrayList();

@@ -25,10 +25,7 @@ import javax.swing.event.TreeModelListener;
 import javax.swing.text.EditorKit;
 import javax.swing.text.html.HTMLDocument;
 import javax.swing.text.html.HTMLEditorKit;
-import javax.swing.tree.DefaultMutableTreeNode;
-import javax.swing.tree.TreeNode;
-import javax.swing.tree.TreePath;
-import javax.swing.tree.TreeModel;
+import javax.swing.tree.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -361,6 +358,12 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
      * @param r the policy validation result
      */
     void displayPolicyValidateResult(PolicyValidatorResult r) {
+
+        for (Enumeration en = rootAssertion.preorderEnumeration(); en.hasMoreElements();) {
+            AssertionTreeNode an = (AssertionTreeNode)en.nextElement();
+            an.setValidatorMessages(r.messages(an.asAssertion()));
+        }
+        ((DefaultTreeModel)policyTree.getModel()).nodeChanged(rootAssertion.getRoot());
         overWriteMessageArea("");
         for (Iterator iterator = r.getErrors().iterator();
              iterator.hasNext();) {

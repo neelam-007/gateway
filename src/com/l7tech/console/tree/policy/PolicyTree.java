@@ -1,32 +1,36 @@
 package com.l7tech.console.tree.policy;
 
-import com.l7tech.console.action.DeleteAssertionAction;
 import com.l7tech.console.action.ActionManager;
-import com.l7tech.console.tree.*;
-import com.l7tech.console.util.PopUpMouseListener;
-import com.l7tech.console.util.ArrowImage;
+import com.l7tech.console.action.DeleteAssertionAction;
 import com.l7tech.console.panels.PolicyEditorPanel;
+import com.l7tech.console.tree.AbstractTreeNode;
+import com.l7tech.console.tree.AssertionsTree;
+import com.l7tech.console.tree.FilteredTreeModel;
+import com.l7tech.console.tree.TransferableTreePath;
+import com.l7tech.console.util.ArrowImage;
+import com.l7tech.console.util.PopUpMouseListener;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.composite.CompositeAssertion;
 
 import javax.swing.*;
-import javax.swing.Timer;
 import javax.swing.event.TreeModelEvent;
 import javax.swing.event.TreeModelListener;
 import javax.swing.tree.*;
+import java.awt.*;
 import java.awt.datatransfer.DataFlavor;
 import java.awt.datatransfer.Transferable;
 import java.awt.datatransfer.UnsupportedFlavorException;
-import java.awt.event.*;
 import java.awt.dnd.*;
-import java.awt.*;
-import java.awt.geom.Rectangle2D;
+import java.awt.event.*;
 import java.awt.geom.AffineTransform;
+import java.awt.geom.Rectangle2D;
 import java.awt.image.BufferedImage;
-import java.util.logging.Logger;
-import java.util.logging.Level;
-import java.util.*;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Enumeration;
+import java.util.Iterator;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Class PolicyTree is the extended <code>JTree</code> with addtional
@@ -90,7 +94,7 @@ public class PolicyTree extends JTree implements DragSourceListener,
 
         addKeyListener(new TreeKeyListener());
         addMouseListener(new TreeMouseListener());
-        setCellRenderer(new EntityTreeCellRenderer());
+        setCellRenderer(new PolicyTreeCellRenderer());
 
         ToolTipManager.sharedInstance().registerComponent(this);
     }
@@ -239,7 +243,7 @@ public class PolicyTree extends JTree implements DragSourceListener,
                 pathSource = null;
             }
         }
-        repaint();
+        //repaint();
     }
 
     public void dragExit(DragSourceEvent dse) {
@@ -328,7 +332,7 @@ public class PolicyTree extends JTree implements DragSourceListener,
     private void sayWhat(TreeModelEvent e) {
         log.fine(e.getTreePath().getLastPathComponent().toString());
         int[] nIndex = e.getChildIndices();
-        for (int i = 0; i < nIndex.length; i++) {
+        for (int i = 0; nIndex !=null && i < nIndex.length; i++) {
             log.fine(i + ". " + nIndex[i]);
         }
     }

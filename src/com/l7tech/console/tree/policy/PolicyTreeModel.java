@@ -1,28 +1,28 @@
 package com.l7tech.console.tree.policy;
 
+import com.l7tech.console.event.PolicyChangeVetoException;
+import com.l7tech.console.event.PolicyEvent;
 import com.l7tech.console.event.PolicyWillChangeListener;
 import com.l7tech.console.event.WeakEventListenerList;
-import com.l7tech.console.event.PolicyEvent;
-import com.l7tech.console.event.PolicyChangeVetoException;
 import com.l7tech.console.tree.AbstractTreeNode;
 import com.l7tech.console.tree.NodeFilter;
 import com.l7tech.console.tree.ServiceNode;
+import com.l7tech.objectmodel.FindException;
+import com.l7tech.policy.AssertionPath;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.wsp.WspReader;
-import com.l7tech.policy.AssertionPath;
 import com.l7tech.service.PublishedService;
-import com.l7tech.objectmodel.FindException;
 
 import javax.swing.event.EventListenerList;
 import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.DefaultTreeModel;
-import javax.swing.tree.TreeNode;
 import javax.swing.tree.MutableTreeNode;
+import javax.swing.tree.TreeNode;
 import java.io.IOException;
+import java.rmi.RemoteException;
+import java.util.EventListener;
 import java.util.Iterator;
 import java.util.Set;
-import java.util.EventListener;
-import java.rmi.RemoteException;
 
 
 /**
@@ -166,23 +166,24 @@ public class PolicyTreeModel extends DefaultTreeModel {
         Assertion p = ((AssertionTreeNode)parent).asAssertion();
         Assertion a = ((AssertionTreeNode)newChild).asAssertion();
         PolicyEvent event = new PolicyEvent(this,
-                                            new AssertionPath(p.getPath()),
-                                            new int[]{index}, new Assertion[]{a});
+          new AssertionPath(p.getPath()),
+          new int[]{index}, new Assertion[]{a});
 
         try {
             fireWillReceiveListeners(event);
             AssertionTreeNode assertionTreeNode = (AssertionTreeNode)getRoot();
             ServiceNode sn = assertionTreeNode.getServiceNodeCookie();
             PublishedService service = null;
-            if (sn !=null) {
+            if (sn != null) {
                 service = sn.getPublishedService();
             }
             Assertion policy = assertionTreeNode.asAssertion();
             PolicyTreeModelChange pc = new PolicyTreeModelChange(policy,
-                                                                 event,
-                                                                 service,
-                                                                 this, (AssertionTreeNode)newChild,
-                                                                 (AssertionTreeNode)parent, index);
+              event,
+              service,
+              this, (AssertionTreeNode)newChild,
+              (AssertionTreeNode)parent, index);
+            pc.advices = Advices.getAdvices(a);
             pc.proceed();
         } catch (PolicyChangeVetoException e) {
             // vetoed
@@ -209,11 +210,11 @@ public class PolicyTreeModel extends DefaultTreeModel {
      */
     private static class PolicyTreeModelChange extends PolicyChange {
         private PolicyTreeModel treeModel = null;
-        private Advice[] advices = null;
-        private int adviceIndex = 0;
         private AssertionTreeNode newChild;
         private AssertionTreeNode parent;
         private int childLocation;
+        protected Advice[] advices = null;
+        protected int adviceIndex = 0;
 
         /**
          * Construct the policy change that will invoke advices for a given policy
@@ -234,9 +235,37 @@ public class PolicyTreeModel extends DefaultTreeModel {
         }
 
         public void proceed() throws PolicyException {
-            advices = Advices.getAdvices(newChild.asAssertion());
             if (advices == null || this.adviceIndex == advices.length) {
                 treeModel.insertNodeIntoAdvised(newChild, parent, childLocation);
+            } else
+                this.advices[this.adviceIndex++].proceed(this);
+        }
+    }
+
+
+    /**
+     * Advices invocation. Supports invoking the policy change advice chain.
+     */
+    private static class PolicyTreeModelRemoveChange extends PolicyTreeModelChange {
+        private AssertionTreeNode childNode;
+
+        /**
+         * Construct the policy change that will invoke advices for a given policy
+         * change.
+         * 
+         * @param policy  the policy that will be changed
+         * @param event   the policy event describing the change
+         * @param service the service this policy belongs to
+         */
+        public PolicyTreeModelRemoveChange(Assertion policy, PolicyEvent event, PublishedService service,
+                                           PolicyTreeModel treeModel, AssertionTreeNode childNode,
+                                           AssertionTreeNode parent, int childLocation) {
+            super(policy, event, service, treeModel, childNode, parent, childLocation);
+            this.childNode = childNode;
+        }
+
+        public void proceed() throws PolicyException {
+            if (advices == null || this.adviceIndex == advices.length) {
             } else
                 this.advices[this.adviceIndex++].proceed(this);
         }
@@ -247,24 +276,47 @@ public class PolicyTreeModel extends DefaultTreeModel {
      * Message this to remove node from its parent.
      * Overriden to support the policy will change lsteners.
      */
-    public void removeNodeFromParent(MutableTreeNode node) {
+    public void removeNodeFromParent(final MutableTreeNode node) {
         checkArgumentIsAssertionTreeNode(node);
-        AssertionTreeNode parent = (AssertionTreeNode)node.getParent();
+        final AssertionTreeNode parent = (AssertionTreeNode)node.getParent();
         if (parent == null)
             throw new IllegalArgumentException("node does not have a parent.");
 
-        int[] childIndex = new int[1];
+        final int[] childIndex = new int[1];
         childIndex[0] = parent.getIndex(node);
         Assertion p = parent.asAssertion();
         Assertion a = ((AssertionTreeNode)node).asAssertion();
-        PolicyEvent event = new PolicyEvent(this,
-          new AssertionPath(p.getPath()),
-          childIndex, new Assertion[]{a});
+        final PolicyEvent event = new PolicyEvent(this, new AssertionPath(p.getPath()), childIndex, new Assertion[]{a});
         try {
             fireWillRemoveListeners(event);
             super.removeNodeFromParent(node);
+            AssertionTreeNode assertionTreeNode = (AssertionTreeNode)getRoot();
+            ServiceNode sn = assertionTreeNode.getServiceNodeCookie();
+            PublishedService service = null;
+            if (sn != null) {
+                try {
+                    service = sn.getPublishedService();
+                } catch (FindException e) {
+                    throw new RuntimeException(e);
+                } catch (RemoteException e) {
+                    throw new RuntimeException(e);
+                }
+            }
+            Assertion policy = assertionTreeNode.asAssertion();
+            PolicyTreeModelRemoveChange pc =
+              new PolicyTreeModelRemoveChange(policy,
+                event,
+                service,
+                PolicyTreeModel.this, (AssertionTreeNode)node,
+                (AssertionTreeNode)parent, childIndex[0]);
+            pc.advices = new Advice[]{new PolicyValidatorAdvice()};
+            try {
+                pc.proceed();
+            } catch (PolicyException e) {
+                throw new RuntimeException(e);
+            }
         } catch (PolicyChangeVetoException e) {
-            // vetoed
+            throw new RuntimeException(e);
         }
     }
 

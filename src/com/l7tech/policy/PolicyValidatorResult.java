@@ -2,9 +2,7 @@ package com.l7tech.policy;
 
 import com.l7tech.policy.assertion.Assertion;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 
 /**
  * This class represents the result of the policy validation.
@@ -15,6 +13,7 @@ import java.util.List;
 public class PolicyValidatorResult {
     private List errors = new ArrayList();
     private List warnings = new ArrayList();
+    private Map assertionMessages = new HashMap();
 
     /**
      * Returns the number of the errors that were collected
@@ -62,6 +61,13 @@ public class PolicyValidatorResult {
      */
     public void addError(Error err) {
         errors.add(err);
+        final Assertion assertion = err.getAssertion();
+        List list = (List)assertionMessages.get(assertion);
+        if (list == null) {
+            list = new ArrayList();
+            assertionMessages.put(assertion, list);
+        }
+        list.add(err);
     }
 
     /**
@@ -71,9 +77,28 @@ public class PolicyValidatorResult {
      */
     public void addWarning(Warning w) {
         warnings.add(w);
+        final Assertion assertion = w.getAssertion();
+        List list = (List)assertionMessages.get(assertion);
+        if (list == null) {
+            list = new ArrayList();
+            assertionMessages.put(assertion, list);
+        }
+        list.add(w);
     }
 
-
+    /**
+     * Retrieve the list of messages for a given assertion.
+     * @param a the assertion or <b>null</b> for messages that do not belong
+     *          to a particular assertion
+     * @return the list of assertion messages
+     */
+    public List messages(Assertion a) {
+        List messages = (List)assertionMessages.get(a);
+        if (messages !=null) {
+            return messages;
+        }
+        return Collections.EMPTY_LIST;
+    }
     /**
      * The class represents the policy validation error
      * todo: add warning and info levels

@@ -8,6 +8,7 @@ import com.l7tech.console.tree.ServiceNode;
 import com.l7tech.console.util.ComponentRegistry;
 import com.l7tech.console.util.Cookie;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.policy.PolicyValidatorResult;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.RoutingAssertion;
 
@@ -25,8 +26,8 @@ import java.rmi.RemoteException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
+import java.util.List;
 import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  * Class <code>AssertionTreeNode</code> is the base superclass for the
@@ -35,9 +36,7 @@ import java.util.logging.Logger;
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  */
 public abstract class AssertionTreeNode extends AbstractTreeNode {
-    private static final Logger log =
-      Logger.getLogger(AssertionTreeNode.class.getName());
-
+    private List validatorMessages = new ArrayList();
     /**
      * package private constructor accepting the asseriton
      * this node represents.
@@ -60,6 +59,37 @@ public abstract class AssertionTreeNode extends AbstractTreeNode {
      * @return the node name that is displayed
      */
     abstract public String getName();
+
+    /**
+     * Set the validator messages for this node.
+     * @param messages the messages
+     */
+    public void setValidatorMessages(List messages) {
+        this.validatorMessages = new ArrayList();
+        if (messages !=null) {
+            validatorMessages.addAll(messages);
+        }
+    }
+
+    /**
+     * Set the validator messages for this node.
+     * @return tthe list of validator messages
+     */
+    public List getValidatorMessages() {
+        return this.validatorMessages;
+    }
+
+    /**
+     * Tooltip override, if there is an validator message, shows as tooltip.
+     *
+     * @return the tooltip text or null
+     */
+    public String getTooltipText() {
+        if (validatorMessages.isEmpty()) {
+            return super.getTooltipText();
+        }
+        return ((PolicyValidatorResult.Message)validatorMessages.get(0)).getMessage();
+    }
 
     /**
      * Get the set of actions associated with this node.
@@ -202,14 +232,14 @@ public abstract class AssertionTreeNode extends AbstractTreeNode {
                 try {
                     bo.close();
                 } catch (IOException e) {
-                    log.log(Level.WARNING, "Error closing stream", e);
+                    logger.log(Level.WARNING, "Error closing stream", e);
                 }
             }
             if (fin != null) {
                 try {
                     fin.close();
                 } catch (IOException e) {
-                    log.log(Level.WARNING, "Error closing stream", e);
+                    logger.log(Level.WARNING, "Error closing stream", e);
                 }
             }
         }
@@ -243,18 +273,17 @@ public abstract class AssertionTreeNode extends AbstractTreeNode {
                     try {
                         url = sn.getPublishedService().parsedWsdl().getServiceURI();
                     } catch (WSDLException e) {
-                        log.log(Level.WARNING, "Wsdl error", e);
+                        logger.log(Level.WARNING, "Wsdl error", e);
                     } catch (FindException e) {
-                        log.log(Level.WARNING, "Service lookup failed, service gone?  " + sn.getEntityHeader().getOid());
+                        logger.log(Level.WARNING, "Service lookup failed, service gone?  " + sn.getEntityHeader().getOid());
                     } catch (RemoteException e) {
-                        log.log(Level.WARNING, "Remote service error", e);
+                        logger.log(Level.WARNING, "Remote service error", e);
                     }
                 }
             }
             RoutingAssertionTreeNode rn = (RoutingAssertionTreeNode)node;
             ((RoutingAssertion)rn.asAssertion()).setProtectedServiceUrl(url);
         }
-
         return node;
     }
 
