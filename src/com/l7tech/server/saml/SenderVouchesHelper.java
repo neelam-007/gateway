@@ -15,12 +15,12 @@ import java.util.Calendar;
 import java.util.logging.Logger;
 
 /**
- * Class <code>SenderVouchesHelper</code> is the package private class
+ * Class <code>SenderVouchesHelper</code> is the class
  * that provisions the sender voucher saml scenario.
  * 
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  */
-class SenderVouchesHelper extends SamlAssertionHelper {
+public class SenderVouchesHelper extends SamlAssertionHelper {
     static final Logger log = Logger.getLogger(SenderVouchesHelper.class.getName());
 
     /**
@@ -31,7 +31,7 @@ class SenderVouchesHelper extends SamlAssertionHelper {
      * @param creds
      * @param signer                the signer
      */
-    SenderVouchesHelper(Document soapDom, SamlAssertionGenerator.Options options, LoginCredentials creds, SignerInfo signer) {
+    public SenderVouchesHelper(Document soapDom, SamlAssertionGenerator.Options options, LoginCredentials creds, SignerInfo signer) {
         super(soapDom, options, creds, signer);
     }
 
