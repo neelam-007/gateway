@@ -3,10 +3,7 @@ package com.l7tech.console.logging;
 
 import com.l7tech.console.panels.Utilities;
 
-import java.awt.BorderLayout;
-import java.awt.Container;
-import java.awt.Dialog;
-import java.awt.Frame;
+import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.PrintWriter;
@@ -17,10 +14,11 @@ import javax.swing.*;
 
 
 /**
- * Class ExceptionDialog
+ * Class ExceptionDialog is the generic eror/exception dialog for SSL
+ * policy editor.
  *
- * @author <a href="mailto:jeff@shiftone.org">Jeff Drost</a>
- * @version $Revision$
+ * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
+ * @version 1.0
  */
 public class ExceptionDialog extends JDialog implements ActionListener {
     private JPanel main = new JPanel();
@@ -93,9 +91,10 @@ public class ExceptionDialog extends JDialog implements ActionListener {
         pane.setLayout(new BorderLayout());
         pane.add(tabPane, BorderLayout.CENTER);
         pane.add(buttons, BorderLayout.SOUTH);
-        Utilities.centerOnScreen(this);
+        //todo: dynamically resize
+        tabPane.setMaximumSize(new Dimension(650, 250));
+        tabPane.setPreferredSize(new Dimension(650, 250));
 
-        setSize(650, 250);
     }
 
     private int getDecorationStyle(Level level) {
