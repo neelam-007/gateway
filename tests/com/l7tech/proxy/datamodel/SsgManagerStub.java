@@ -15,10 +15,10 @@ import java.io.IOException;
  */
 public class SsgManagerStub implements SsgManager {
     List ssgs = new ArrayList(Arrays.asList(new Ssg[] {
-        new Ssg(0, "127.0.0.1"),
-        new Ssg(1, "127.0.0.1")
+        new Ssg(1, "127.0.0.1"),
+        new Ssg(2, "127.0.0.1")
     }));
-    private long nextId = 2;
+    private long nextId = 3;
 
     public List getSsgList() {
         return Collections.unmodifiableList(ssgs);
