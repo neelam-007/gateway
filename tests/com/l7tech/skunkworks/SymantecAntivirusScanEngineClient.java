@@ -60,46 +60,6 @@ public class SymantecAntivirusScanEngineClient {
                            "blahblahblahblahblahblahblahblahblahblahblah" +
                            "blahblahblahblahblahblahblahblah";
         String eicarVirusTest = "X5O!P%@AP[4\\PZX54(P^)7CC)7}$EICAR-STANDARD-ANTIVIRUS-TEST-FILE!$H+H*";
-        me.scan("localhost", 7777, eicarVirusTest.getBytes(), "blah94");
+        me.scan("localhost", 7777, something.getBytes(), "blah94");
     }
 }
-
-
-/*
-ICAP/1.0 200 OK
-Date: Thu Feb 17 01:14:47 2005 GMT
-Methods: RESPMOD
-Service: Symantec AntiVirus Scan Engine/4.3.0.15
-Service-ID: Respmod AV Scan
-ISTag: "1108599838"
-X-Definition-Info: 20030814.017
-Max-Connections: 128
-X-Allow-Out: X-OuterContainer-Is-Mime, X-Infection-Found, X-Definition-Info, X-AV-License
-X-Allow-Out: X-SAVSE-AV-Status
-X-Allow-Out: X-Violations-Found
-Allow: 204
-Options-TTL: 3600
-Preview: 4
-Transfer-Preview: *
-X-AV-License: 1
-Encapsulated: null-body=0
-
-ICAP/1.0 200 OK
-Date: Thu Feb 17 01:17:14 2005 GMT
-Methods: RESPMOD
-Service: Symantec AntiVirus Scan Engine/4.3.0.15
-Service-ID: Respmod AV Scan
-ISTag: "1108599838"
-X-Definition-Info: 20030814.017
-Max-Connections: 128
-X-Allow-Out: X-OuterContainer-Is-Mime, X-Infection-Found, X-Definition-Info, X-AV-License
-X-Allow-Out: X-SAVSE-AV-Status
-X-Allow-Out: X-Violations-Found
-Allow: 204
-Options-TTL: 3600
-Preview: 4
-Transfer-Preview: *
-X-AV-License: 1
-Encapsulated: null-body=0
-
-*/
