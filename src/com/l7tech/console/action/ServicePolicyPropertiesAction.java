@@ -6,6 +6,7 @@ import com.l7tech.console.panels.WorkSpacePanel;
 import com.l7tech.console.tree.ServiceNode;
 import com.l7tech.console.util.ComponentRegistry;
 import com.l7tech.console.util.Registry;
+import com.l7tech.console.event.ContainerVetoException;
 
 import javax.swing.*;
 import java.util.logging.Level;
@@ -63,6 +64,8 @@ public class ServicePolicyPropertiesAction extends NodeAction {
                       PolicyEditorPanel pep = new PolicyEditorPanel(serviceNode);
                       wpanel.setComponent(pep);
                       wpanel.addWorkspaceContainerListener(pep);
+                  } catch (ActionVetoException e) {
+                      // action vetoed
                   } catch (Exception e) {
                       ErrorManager.getDefault().
                         notify(Level.SEVERE, e, "Unable to retrieve service properties "+serviceNode.getName());
