@@ -132,8 +132,8 @@ public class MessageProcessor {
                 if ( status == AssertionStatus.NONE ) {
                     // Policy execution concluded successfully
                     authorized = true;
-                    if ( rstat == RoutingStatus.ROUTED || rstat == RoutingStatus.UNKNOWN ) {
-                        /* We include UNKNOWN because it's valid (albeit silly)
+                    if ( rstat == RoutingStatus.ROUTED || rstat == RoutingStatus.NONE ) {
+                        /* We include NONE because it's valid (albeit silly)
                         for a policy to contain no RoutingAssertion */
                         logger.fine("Request was completed with status " + " " + status.getNumeric() + " (" + status.getMessage() + ")");
                         if (stats != null) stats.completedRequest();

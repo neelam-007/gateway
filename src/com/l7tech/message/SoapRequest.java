@@ -144,7 +144,7 @@ public abstract class SoapRequest extends XmlMessageAdapter implements SoapMessa
     protected boolean _authenticated;
     protected Reader _requestReader;
     protected User _user;
-    protected RoutingStatus _routingStatus = RoutingStatus.UNKNOWN;
+    protected RoutingStatus _routingStatus = RoutingStatus.NONE;
 
     /** The cached XML document. */
     protected String _requestXml;

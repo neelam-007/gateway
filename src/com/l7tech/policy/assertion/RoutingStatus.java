@@ -11,7 +11,7 @@ package com.l7tech.policy.assertion;
  * @version $Revision$
  */
 public class RoutingStatus {
-    public static final RoutingStatus UNKNOWN = new RoutingStatus( -1, "None" );
+    public static final RoutingStatus NONE = new RoutingStatus( -1, "None" );
     public static final RoutingStatus ATTEMPTED = new RoutingStatus( 0, "Attempted" );
     public static final RoutingStatus ROUTED = new RoutingStatus( 1, "Routed" );
 
