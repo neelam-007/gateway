@@ -210,8 +210,10 @@ public class SsgListPanel extends JPanel {
                     log.info("Creating new Gateway registration " + newSsg);
                     if (ssgTableModel.getRowCount() < 1)
                         newSsg.setDefaultSsg(true);
-                        if (SsgPropertyDialog.makeSsgPropertyDialog(clientProxy, newSsg).runDialog())
+                        if (SsgPropertyDialog.makeSsgPropertyDialog(clientProxy, newSsg).runDialog()) {
                             ssgTableModel.addSsg(newSsg);
+                            selectSsg(newSsg);
+                        }
                 }
             };
             actionNewSsg.putValue(Action.SHORT_DESCRIPTION, "Register a new Gateway with this Agent");
@@ -224,10 +226,12 @@ public class SsgListPanel extends JPanel {
             actionSetDefaultSsg = new AbstractAction("Set Default", IconManager.getDefault()) {
                 public void actionPerformed(final ActionEvent e) {
                     final Ssg ssg = getSelectedSsg();
-                    log.info("Setting default Gateway to " + ssg);
-                    if (ssg != null)
+                    if (ssg != null) {
+                        log.info("Setting default Gateway to " + ssg);
                         ssgTableModel.setDefaultSsg(ssg);
-                    ssgTableModel.editedSsg();
+                        ssgTableModel.editedSsg();
+                        selectSsg(ssg);
+                    }
                 }
             };
             actionSetDefaultSsg.putValue(Action.SHORT_DESCRIPTION, "Set this Gateway as the default");
