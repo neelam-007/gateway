@@ -83,22 +83,6 @@ public class InternalUser extends NamedEntityImp implements User {
         _userBean.setLogin( login );
     }
 
-    public String getCert() {
-        return _cert;
-    }
-
-    public void setCert( String cert ) {
-        _cert = cert;
-    }
-
-    public int getCertResetCounter() {
-        return _certResetCounter;
-    }
-
-    public void setCertResetCounter(int certResetCounter) {
-        _certResetCounter = certResetCounter;
-    }
-
     /**
      * this is not persisted, it is set at run time by the provider who creates the object
      */
@@ -194,7 +178,6 @@ public class InternalUser extends NamedEntityImp implements User {
 
     public void setVersion(int version) {
         _userBean.setVersion(version);
-        super.setVersion(version);
     }
 
     /**
@@ -211,8 +194,6 @@ public class InternalUser extends NamedEntityImp implements User {
         setFirstName(imp.getFirstName());
         setLastName(imp.getLastName());
         setTitle(imp.getTitle());
-        setCert( imp.getCert() );
-        setCertResetCounter( imp.getCertResetCounter() );
         setPassword( imp.getPassword() );
     }
 
@@ -242,8 +223,6 @@ public class InternalUser extends NamedEntityImp implements User {
     }
 
     private UserBean _userBean;
-    private int _certResetCounter;
-    private String _cert;
 
     private GroupManager _groupManager;
     private long providerId = IdProvConfManagerServer.INTERNALPROVIDER_SPECIAL_OID;
