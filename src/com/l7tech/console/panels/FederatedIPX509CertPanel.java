@@ -36,7 +36,7 @@ public class FederatedIPX509CertPanel extends IdentityProviderStepPanel {
     }
 
     public String getDescription() {
-        return "Select the usage of the X.509 certificate credential source allowed by this identity provider.";
+        return "Select the usage of the X.509 certificate credential source.";
     }
 
     /**

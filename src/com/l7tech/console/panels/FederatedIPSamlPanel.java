@@ -49,8 +49,7 @@ public class FederatedIPSamlPanel extends IdentityProviderStepPanel {
     }
 
     public String getDescription() {
-        return "Select or enter the settings of SAML credentital source that can be handled by this identity provider, " +
-                "such as the name idenetitier format, confirmation method etc.";
+        return "Select or enter the settings of SAML credentital source.";
     }
 
     /**

@@ -39,8 +39,8 @@ public class FederatedIPGeneralPanel extends IdentityProviderStepPanel {
     }
 
     public String getDescription() {
-        return "Enter the identity provider name, " +
-                "and select the types of credential source this identity provider will handle.";
+        return "Enter the Identity Provider name, then select one or more credential " +
+               "source types that the Identity Provider will handle.";
     }
 
     /**
