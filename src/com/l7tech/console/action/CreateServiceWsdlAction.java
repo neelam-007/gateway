@@ -1,25 +1,43 @@
 package com.l7tech.console.action;
 
+import com.l7tech.adminws.service.ServiceManager;
+import com.l7tech.common.gui.util.Utilities;
+import com.l7tech.common.util.ExceptionUtils;
+import com.l7tech.console.MainWindow;
 import com.l7tech.console.event.*;
 import com.l7tech.console.panels.*;
 import com.l7tech.console.tree.ServicesTree;
 import com.l7tech.console.tree.TreeNodeFactory;
 import com.l7tech.console.util.ComponentRegistry;
 import com.l7tech.console.util.Registry;
+import com.l7tech.objectmodel.DuplicateObjectException;
 import com.l7tech.objectmodel.EntityHeader;
-import com.l7tech.common.gui.util.Utilities;
+import com.l7tech.objectmodel.EntityType;
+import com.l7tech.service.PublishedService;
+import com.l7tech.policy.wsp.WspWriter;
+import com.l7tech.policy.assertion.TrueAssertion;
 
 import javax.swing.*;
 import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.DefaultTreeModel;
 import javax.swing.tree.TreeNode;
 import javax.swing.tree.TreePath;
+import javax.wsdl.Definition;
+import javax.wsdl.Port;
+import javax.wsdl.Service;
+import javax.wsdl.extensions.soap.SOAPAddress;
+import javax.wsdl.factory.WSDLFactory;
+import javax.wsdl.xml.WSDLWriter;
+import java.io.StringWriter;
+import java.io.ByteArrayOutputStream;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.Map;
+import java.util.Iterator;
 
 /**
  * The <code>PublishServiceAction</code> action invokes the pubish
- * service wizard.                                             l
+ * service wizard.
  *
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  * @version 1.0
@@ -62,40 +80,98 @@ public class CreateServiceWsdlAction extends BaseAction implements ConnectionLis
         SwingUtilities.invokeLater(new Runnable() {
             public void run() {
                 WsdlDefinitionPanel defPanel =
-                      new WsdlDefinitionPanel(
-                        new WsdlMessagesPanel(
-                          new WsdlPortTypePanel(
-                            new WsdlPortTypeBindingPanel(
-                              new WsdlServicePanel(null))
-                        )
-                      ));
-                    WsdlCreateOverviewPanel p = new WsdlCreateOverviewPanel(defPanel);
-                    JFrame f = Registry.getDefault().getComponentRegistry().getMainWindow();
-                    Wizard w = new WsdlCreateWizard(f, p);
-                    w.pack();
-                    w.setSize(850, 500);
-                    Utilities.centerOnScreen(w);
-                    w.setVisible(true);
+                  new WsdlDefinitionPanel(
+                    new WsdlMessagesPanel(
+                      new WsdlPortTypePanel(
+                        new WsdlPortTypeBindingPanel(
+                          new WsdlServicePanel(null))
+                      )
+                    ));
+                WsdlCreateOverviewPanel p = new WsdlCreateOverviewPanel(defPanel);
+                JFrame f = Registry.getDefault().getComponentRegistry().getMainWindow();
+                Wizard w = new WsdlCreateWizard(f, p);
+                w.addWizardListener(wizardListener);
+                w.pack();
+                w.setSize(850, 500);
+                Utilities.centerOnScreen(w);
+                w.setVisible(true);
             }
         });
     }
 
-    private EntityListener listener = new EntityListenerAdapter() {
+    private WizardListener wizardListener = new WizardAdapter() {
         /**
-         * Fired when an new entity is added.
-         * @param ev event describing the action
+         * Invoked when the wizard has finished.
+         *
+         * @param we the event describing the wizard finish
          */
-        public void entityAdded(final EntityEvent ev) {
+        public void wizardFinished(WizardEvent we) {
+            PublishedService service = new PublishedService();
+            try {
+                Wizard w = (Wizard)we.getSource();
+                Definition def = (Definition)w.getCollectedInformation();
+                // assign empty policy
+                ByteArrayOutputStream bo = new ByteArrayOutputStream();
+                WspWriter.writePolicy(new TrueAssertion(), bo); // means no policy
+                service.setPolicyXml(bo.toString());
+
+                service.setDisabled(true);
+                WSDLFactory fac = WSDLFactory.newInstance();
+                WSDLWriter wsdlWriter = fac.newWSDLWriter();
+                StringWriter sw = new StringWriter();
+                wsdlWriter.writeWSDL(def, sw);
+                service.setName(def.getTargetNamespace());
+                service.setWsdlXml(sw.toString());
+                service.setWsdlUrl(getServiceAddress(def));
+
+                ServiceManager serviceManager = Registry.getDefault().getServiceManager();
+                long oid = serviceManager.savePublishedService(service);
+                EntityHeader header = new EntityHeader();
+                header.setType(EntityType.SERVICE);
+                header.setName(service.getName());
+                header.setOid(oid);
+                serviceAdded(header);
+            } catch (Exception e) {
+                MainWindow w = Registry.getDefault().getComponentRegistry().getMainWindow();
+                if (ExceptionUtils.causedBy(e, DuplicateObjectException.class)) {
+                    JOptionPane.showMessageDialog(w,
+                      "Unable to save the service '" + service.getName() + "'\n" +
+                      "because there an existing service already using that namespace URI\n" +
+                      "and SOAPAction combination.",
+                      "Service already exists",
+                      JOptionPane.ERROR_MESSAGE);
+                } else {
+                    e.printStackTrace();
+                    JOptionPane.showMessageDialog(w,
+                      "Unable to save the service '" + service.getName() + "'\n",
+                      "Error",
+                      JOptionPane.ERROR_MESSAGE);
+
+                }
+            }
+        }
+
+        /**
+         * Invoked when the wizard has been cancelled.
+         *
+         * @param e the event describinng the wizard cancel
+         */
+        public void wizardCanceled(WizardEvent e) {
+        }
+
+        /**
+         * Fired when an new service is added.
+         */
+        public void serviceAdded(final EntityHeader eh) {
             SwingUtilities.invokeLater(new Runnable() {
                 public void run() {
-                    EntityHeader eh = (EntityHeader) ev.getEntity();
-                    JTree tree = (JTree) ComponentRegistry.getInstance().getComponent(ServicesTree.NAME);
+                    JTree tree = (JTree)ComponentRegistry.getInstance().getComponent(ServicesTree.NAME);
                     if (tree != null) {
                         DefaultMutableTreeNode root = (DefaultMutableTreeNode)tree.getModel().getRoot();
                         TreeNode[] nodes = root.getPath();
                         TreePath nPath = new TreePath(nodes);
                         if (tree.hasBeenExpanded(nPath)) {
-                            DefaultTreeModel model = (DefaultTreeModel) tree.getModel();
+                            DefaultTreeModel model = (DefaultTreeModel)tree.getModel();
                             model.insertNodeInto(TreeNodeFactory.asTreeNode(eh), root, root.getChildCount());
                         }
                     } else {
@@ -104,7 +180,38 @@ public class CreateServiceWsdlAction extends BaseAction implements ConnectionLis
                 }
             });
         }
+
     };
+
+    /**
+     * determine the soap address of the first service/port
+     *
+     * @param def the WSDL definition model
+     * @return the soap address as String
+     * @throws IllegalArgumentException if the soap address is not found
+     *
+     */
+    private String getServiceAddress(Definition def)
+      throws IllegalArgumentException{
+        Map services = def.getServices();
+        if (services.isEmpty()) {
+            throw new IllegalArgumentException("missing service");
+        }
+        Service sv = (Service)services.values().iterator().next();
+        Map ports = sv.getPorts();
+        if (ports.isEmpty()) {
+            throw new IllegalArgumentException("missing service port definition");
+        }
+        Port port = (Port)ports.values().iterator().next();
+        java.util.List extensibilityElements = port.getExtensibilityElements();
+        for (Iterator iterator = extensibilityElements.iterator(); iterator.hasNext();) {
+            Object o = (Object)iterator.next();
+            if (o instanceof SOAPAddress) {
+                return ((SOAPAddress)o).getLocationURI();
+            }
+        }
+        throw new IllegalArgumentException("missing SOAP address port definition");
+    }
 
     public void onConnect(ConnectionEvent e) {
         setEnabled(true);

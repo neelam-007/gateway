@@ -49,8 +49,8 @@ public class WsdlDefinitionPanel extends WizardStepPanel {
           0
         );
 
-        nameSpaceDetailsModel.addRow(new String[] {"xsd", XSD_NAME_SPACE});
-        nameSpaceDetailsModel.addRow(new String[] {"soap", SOAP_NAME_SPACE});
+        nameSpaceDetailsModel.addRow(new String[]{"xsd", XSD_NAME_SPACE});
+        nameSpaceDetailsModel.addRow(new String[]{"soap", SOAP_NAME_SPACE});
         namespaceDetails.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         namespaceDetails.setModel(nameSpaceDetailsModel);
         namespaceDetailsScrollPane.getViewport().setBackground(namespaceDetails.getBackground());
@@ -74,7 +74,7 @@ public class WsdlDefinitionPanel extends WizardStepPanel {
                       String name = doc.getText(0, doc.getLength());
                       String s = targetNameSpaceField.getText();
                       int pos = s.lastIndexOf('/');
-                      s = s.substring(0, pos+1);
+                      s = s.substring(0, pos + 1);
                       targetNameSpaceField.setText(s + name + ".wsdl");
                   } catch (BadLocationException ex) {
                       // swallow?
@@ -103,6 +103,17 @@ public class WsdlDefinitionPanel extends WizardStepPanel {
     }
 
     /**
+     * Test whether the step is finished and it is safe to finish the wizard.
+     *
+     * @return true if the panel is valid, false otherwis
+     */
+
+    public boolean canFinish() {
+        return false;
+    }
+
+
+    /**
      * Provides the wizard panel with the opportunity to update the
      * settings with its current customized state.
      * Rather than updating its settings with every change in the GUI,
@@ -117,7 +128,7 @@ public class WsdlDefinitionPanel extends WizardStepPanel {
      */
     public void storeSettings(Object settings) throws IllegalArgumentException {
         if (!(settings instanceof Definition)) {
-            throw new IllegalArgumentException("expected "+Definition.class);
+            throw new IllegalArgumentException("expected " + Definition.class);
         }
         Definition def = (Definition)settings;
         def.setTargetNamespace(targetNameSpaceField.getText());

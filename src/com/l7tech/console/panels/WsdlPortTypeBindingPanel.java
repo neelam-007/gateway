@@ -9,6 +9,7 @@ import javax.wsdl.extensions.ExtensibilityElement;
 import javax.wsdl.extensions.ExtensionRegistry;
 import javax.wsdl.extensions.soap.SOAPBinding;
 import javax.wsdl.extensions.soap.SOAPOperation;
+import javax.xml.namespace.QName;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -19,7 +20,7 @@ import java.util.Map;
 /**
  *
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
- * @version 
+ * @version 1.0 
  */
 public class WsdlPortTypeBindingPanel extends WizardStepPanel {
     private JPanel mainPanel;
@@ -47,7 +48,7 @@ public class WsdlPortTypeBindingPanel extends WizardStepPanel {
         ComboBoxModel model =
           new DefaultComboBoxModel(new String[]{"rpc", "document"});
         portTypeBindingStyle.setModel(model);
-        portTypeBindingStyle.addActionListener( new ActionListener() {
+        portTypeBindingStyle.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 try {
                     collectSoapBinding(getEditedBinding());
@@ -74,6 +75,16 @@ public class WsdlPortTypeBindingPanel extends WizardStepPanel {
      */
     public boolean isValid() {
         return true;
+    }
+
+    /**
+     * Test whether the step is finished and it is safe to finish the wizard.
+     *
+     * @return true if the panel is valid, false otherwis
+     */
+
+    public boolean canFinish() {
+        return false;
     }
 
     /**
@@ -111,6 +122,29 @@ public class WsdlPortTypeBindingPanel extends WizardStepPanel {
           new WsdlBindingOperationsTableModel(definition, binding);
 
         bindingOperationsTable.setModel(model);
+    }
+
+    /**
+     * Provides the wizard panel with the opportunity to update the
+     * settings with its current customized state.
+     * Rather than updating its settings with every change in the GUI,
+     * it should collect them, and then only save them when requested to
+     * by this method.
+     *
+     * This is a noop version that subclasses implement.
+     *
+     * @exception IllegalArgumentException if the the data provided
+     * by the wizard are not valid.
+     * @param settings the object representing wizard panel state
+     */
+    public void storeSettings(Object settings) throws IllegalArgumentException {
+        Binding binding = null;
+        try {
+            binding = getEditedBinding();
+        } catch (WSDLException e) {
+            throw new RuntimeException(e);
+        }
+        binding.setQName(new QName(portTypeBindingNameField.getText()));
     }
 
     /**

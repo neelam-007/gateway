@@ -1,7 +1,17 @@
 package com.l7tech.console.panels;
 
+import com.ibm.wsdl.extensions.soap.SOAPConstants;
+
 import javax.swing.*;
+import javax.wsdl.*;
+import javax.wsdl.extensions.ExtensibilityElement;
+import javax.wsdl.extensions.ExtensionRegistry;
+import javax.wsdl.extensions.soap.SOAPAddress;
+import javax.xml.namespace.QName;
 import java.awt.*;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.Map;
 
 /**
  *
@@ -11,10 +21,11 @@ import java.awt.*;
 public class WsdlServicePanel extends WizardStepPanel {
     private JPanel mainPanel;
     private JPanel namePanel;
-    private JLabel nameLabel;
+    private JLabel bindingLabel;
     private JTextField nameField;
     private JTextField portNameField;
     private JTextField portAddressField;
+    private Definition definition;
 
 
     public WsdlServicePanel(WizardStepPanel next) {
@@ -28,9 +39,9 @@ public class WsdlServicePanel extends WizardStepPanel {
      * @return the wizard step description
      */
     public String getDescription() {
-        return "Specify the SOAP elements: port definition and URI of an endpoint\n" +
+        return "Specify the SOAP elements: port definition and address (URI) of an endpoint" +
           " or port where the Web service can be reached.\n" +
-          "Choose Finish when you are satisfied.;";
+          "Choose Finish when you are satisfied.";
     }
 
     /**
@@ -75,6 +86,21 @@ public class WsdlServicePanel extends WizardStepPanel {
      * by the wizard are not valid.
      */
     public void readSettings(Object settings) throws IllegalArgumentException {
+        if (settings instanceof Definition) {
+            definition = (Definition)settings;
+        } else {
+            throw new IllegalArgumentException("Unexpected type " + settings.getClass());
+        }
+        String s = nameField.getText();
+        if (s == null || "".equals(s)) {
+            nameField.setText(definition.getQName().getLocalPart() + "Service");
+        }
+        s = portAddressField.getText();
+        if (s == null || "".equals(s)) {
+            portAddressField.setText("http://localhost:8080/ws/" + nameField.getText());
+        }
+        portNameField.setText(definition.getQName().getLocalPart() + "Port");
+        bindingLabel.setText(getBinding(definition).getQName().getLocalPart());
     }
 
     /**
@@ -91,6 +117,17 @@ public class WsdlServicePanel extends WizardStepPanel {
      * @param settings the object representing wizard panel state
      */
     public void storeSettings(Object settings) throws IllegalArgumentException {
+        if (settings instanceof Definition) {
+            definition = (Definition)settings;
+        } else {
+            throw new IllegalArgumentException("Unexpected type " + settings.getClass());
+        }
+        definition.getServices().clear();
+        try {
+            getService(definition);
+        } catch (WSDLException e) {
+            //todo: error manager
+        }
     }
 
     /**
@@ -98,6 +135,74 @@ public class WsdlServicePanel extends WizardStepPanel {
      */
     public String getStepLabel() {
         return "Service";
+    }
+
+    private Service getService(Definition def) throws WSDLException {
+        Map services = def.getServices();
+        Service sv;
+        if (services.isEmpty()) {
+            sv = def.createService();
+            def.addService(sv);
+        } else {
+            sv = (Service)services.values().iterator().next();
+        }
+        sv.setQName(new QName(nameField.getText()));
+        getPort(sv);
+        return sv;
+    }
+
+    private Port getPort(Service service) throws WSDLException {
+        Map ports = service.getPorts();
+        Port port;
+        if (ports.isEmpty()) {
+            port = definition.createPort();
+            service.addPort(port);
+        } else {
+            port = (Port)ports.values().iterator().next();
+        }
+        port.setName(portNameField.getText());
+        port.setBinding(getBinding(definition));
+        collectSoapAddress(port);
+        return port;
+    }
+
+    private void collectSoapAddress(Port port) throws WSDLException {
+        ExtensionRegistry extensionRegistry = definition.getExtensionRegistry();
+        ExtensibilityElement ee = null;
+
+        java.util.List remove = new ArrayList();
+        java.util.List extensibilityElements = port.getExtensibilityElements();
+        for (Iterator iterator = extensibilityElements.iterator(); iterator.hasNext();) {
+            Object o = (Object)iterator.next();
+            if (ee instanceof SOAPAddress) {
+                remove.add(o);
+            }
+        }
+        extensibilityElements.removeAll(remove);
+
+        ee = extensionRegistry.createExtension(Port.class,
+          SOAPConstants.Q_ELEM_SOAP_ADDRESS);
+        if (ee instanceof SOAPAddress) {
+            SOAPAddress sa = (SOAPAddress)ee;
+            sa.setLocationURI(portAddressField.getText());
+        } else {
+            throw new RuntimeException("expected SOAPOperation, received " + ee.getClass());
+        }
+        port.addExtensibilityElement(ee);
+    }
+
+    /**
+     *
+     * @param def the service definition
+     * @return the currently edited binding
+     */
+    private Binding getBinding(Definition def) {
+        Map bindings = def.getBindings();
+        if (bindings.isEmpty()) {
+            throw new IllegalStateException("Should have at least one binding");
+        }
+        Binding binding = (Binding)bindings.values().iterator().next();
+        return binding;
     }
 
     {

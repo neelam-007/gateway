@@ -2,6 +2,7 @@ package com.l7tech.console.panels;
 
 import com.l7tech.console.event.WizardEvent;
 import com.l7tech.console.event.WizardListener;
+import com.l7tech.console.event.WizardAdapter;
 
 import javax.swing.*;
 import javax.swing.border.CompoundBorder;
@@ -42,6 +43,15 @@ public class Wizard extends JDialog {
         wizardIterator = new Wizard.Iterator(startPanel);
         layoutComponents();
         initialize();
+    }
+
+    /**
+     * access the informatin that the wizard collects
+     * @return the wizard information, typically user
+     * entered data
+     */
+    public final Object getCollectedInformation() {
+        return wizardInput;
     }
 
     /**
@@ -211,6 +221,9 @@ public class Wizard extends JDialog {
      * cancel the wizard
      */
     protected void finish(ActionEvent evt) {
+        if (wizardInput != null) {
+            wizardIterator.current().storeSettings(wizardInput);
+        }
         setVisible(false);
         dispose();
         fireWizardFinished();
@@ -247,7 +260,7 @@ public class Wizard extends JDialog {
         EventListener[] listeners = listenerList.getListeners(WizardListener.class);
         WizardEvent we = new WizardEvent(this, WizardEvent.FINISHED);
         for (int i = 0; i < listeners.length; i++) {
-            ((WizardListener)listeners[i]).wizardCanceled(we);
+            ((WizardListener)listeners[i]).wizardFinished(we);
         }
     }
 
@@ -320,7 +333,17 @@ public class Wizard extends JDialog {
         stepDescriptionTextArea.setLineWrap(true);
         stepDescriptionTextArea.setWrapStyleWord(true);
         stepDescriptionTextArea.setRows(5);
-
+        addWizardListener( new WizardAdapter() {
+            /**
+             * Invoked when the wizard page has been changed.
+             *
+             * @param e the event describing the selection change
+             */
+            public void wizardSelectionChanged(WizardEvent e) {
+                WizardStepPanel wp = (WizardStepPanel)e.getSource();
+                stepDescriptionTextArea.setText(wp.getDescription());
+            }
+        });
         return stepDescriptionTextArea;
     }
 
