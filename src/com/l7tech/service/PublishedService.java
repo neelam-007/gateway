@@ -7,6 +7,7 @@
 package com.l7tech.service;
 
 import com.l7tech.common.util.SoapUtil;
+import com.l7tech.common.util.Locator;
 import com.l7tech.common.xml.Wsdl;
 import com.l7tech.message.Request;
 import com.l7tech.objectmodel.imp.NamedEntityImp;
@@ -78,26 +79,11 @@ public class PublishedService extends NamedEntityImp {
      */
     public synchronized String getWsdlXml() throws IOException {
         if ( _wsdlXml == null ) {
-            URL url = null;
-            try {
-                url = new URL(_wsdlUrl);
-            } catch ( MalformedURLException mue ) {
-                throw new IOException(mue.toString());
-            }
-
-            Reader r = null;
-            try {
-                r = new BufferedReader( new InputStreamReader( url.openStream() ) );
-                StringBuffer xml = new StringBuffer();
-                char[] buf = new char[4096];
-                int num;
-                while ( ( num = r.read( buf ) ) != -1 ) {
-                    xml.append( buf, 0, num );
-                }
-                _wsdlXml = xml.toString();
-            } finally {
-                if ( r != null ) r.close();
-            }
+            // we must get the actual wsdl. delegate to the ServiceAdmin
+            // this avoids resolving the wsdl on the client side
+            ServiceManager serviceManagerInstance = (ServiceManager)Locator.getDefault().
+                                        lookup(com.l7tech.service.ServiceManager.class);
+            _wsdlXml = serviceManagerInstance.resolveWsdlTarget(_wsdlUrl);
         }
         return _wsdlXml;
     }
