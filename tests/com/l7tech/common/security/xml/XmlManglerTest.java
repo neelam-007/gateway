@@ -225,7 +225,7 @@ public class XmlManglerTest extends TestCase {
             element = (Element)i.next();
             element = (Element)element.getParentNode();
             System.out.println("Decrypting element: " + XmlUtil.elementToString(element));
-            XmlMangler.decryptElement((Element) element, encryptionKey);
+            XmlMangler.decryptElement((Element) element, encryptionKey, null);
             // log.info("Document after decryption "+i+" :\n" + documentToString(soapDocument));
         }
         nl = soapDocument.getElementsByTagNameNS(xmlencNS, "CipherValue");
@@ -259,7 +259,7 @@ public class XmlManglerTest extends TestCase {
         final int length = nl.getLength();
         for (int i = 0; i < length; i++) {
             Element element = (Element)nl.item(i);
-            XmlMangler.decryptElement((Element) element.getParentNode(), encryptionKey);
+            XmlMangler.decryptElement((Element) element.getParentNode(), encryptionKey, null);
             //log.info("Document after decryption "+i+" :\n" + documentToString(doc));
         }
         nl = doc.getElementsByTagNameNS(xmlencNS, "CipherValue");

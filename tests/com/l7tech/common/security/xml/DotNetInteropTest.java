@@ -2,6 +2,7 @@ package com.l7tech.common.security.xml;
 
 import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.util.FileUtils;
+import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.xml.TestDocuments;
 import junit.framework.Test;
 import junit.framework.TestCase;
@@ -15,6 +16,7 @@ import java.security.KeyStore;
 import java.security.Key;
 import java.io.FileInputStream;
 import java.io.InputStream;
+import java.util.List;
 
 /**
  * Test xml digital signature and encryption interoperability with messages
@@ -61,9 +63,11 @@ public class DotNetInteropTest extends TestCase {
     public void testDecryptdotNetRequest() throws Exception {
         Document encryptedDoc = getEncryptedDoc();
         PrivateKey privateServerKey = getRikerPrivateKey();
-        Key[] encryptionKeys = XmlMangler.getEncryptedKeyFromMessage(encryptedDoc, privateServerKey);
-        Element body = (Element)encryptedDoc.getElementsByTagNameNS(encryptedDoc.getDocumentElement().getNamespaceURI(), "Body").item(0);
-        XmlMangler.decryptElement(body, encryptionKeys[0]);
+        XmlMangler.ProcessedEncryptedKey[] encryptionKeys = XmlMangler.getEncryptedKeyFromMessage(encryptedDoc, privateServerKey);
+
+        Element body = SoapUtil.getBody(encryptedDoc);
+        Element encryptedPayload = (Element)((XmlUtil.findChildElementsByName(body, "http://www.w3.org/2001/04/xmlenc#", "EncryptedData")).get(0));
+        XmlMangler.decryptElement(body, encryptionKeys[0].decryptedKey, encryptionKeys[0].referenceList);
     }
 
     private PrivateKey getRikerPrivateKey() throws Exception {

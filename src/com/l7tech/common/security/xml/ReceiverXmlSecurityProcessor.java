@@ -153,7 +153,7 @@ class ReceiverXmlSecurityProcessor extends SecurityProcessor {
                         if (decryptionKey == null)
                             return Result.error(new SecurityProcessorException("No symmetric decryption key is available"));
                         try {
-                            XmlMangler.decryptElement( encryptedElement, decryptionKey );
+                            XmlMangler.decryptElement( encryptedElement, decryptionKey, null);
                         } catch ( ParserConfigurationException e ) {
                             return Result.error(e);
                         } catch ( SAXException e ) {
