@@ -444,11 +444,6 @@ public class GroupPanel extends EntityEditorPanel {
                 groupHeader.setOid(id);
             }
 
-            // Notify listener of this insert/update
-            if (null != panelListener) {
-                panelListener.onUpdate(groupHeader);
-            }
-
             // Cleanup
         } catch (Exception e) {
             StringBuffer msg = new StringBuffer();

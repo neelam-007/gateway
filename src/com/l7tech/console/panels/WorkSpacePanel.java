@@ -54,8 +54,8 @@ public class WorkSpacePanel extends JPanel {
         scrollPane.setViewportView(jc);
         if (jc !=null) {
             String name = jc.getName();
-            if (name == null)
-            tabbedPane.setTitleAt(0, jc.getName());
+            if (name != null)
+                tabbedPane.setTitleAt(0, jc.getName());
         }
     }
 

@@ -3,14 +3,13 @@ package com.l7tech.console;
 import com.incors.plaf.kunststoff.KunststoffLookAndFeel;
 import com.incors.plaf.kunststoff.themes.KunststoffDesktopTheme;
 import com.l7tech.console.action.*;
-import com.l7tech.console.panels.*;
+import com.l7tech.console.panels.PreferencesDialog;
+import com.l7tech.console.panels.Utilities;
+import com.l7tech.console.panels.WorkSpacePanel;
 import com.l7tech.console.tree.*;
 import com.l7tech.console.util.Preferences;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.WindowManager;
-import com.l7tech.objectmodel.EntityHeader;
-import com.l7tech.objectmodel.EntityType;
-import com.l7tech.util.Locator;
 import org.apache.log4j.Category;
 
 import javax.help.HelpBroker;
@@ -84,8 +83,6 @@ public class MainWindow extends JFrame {
     private JToolBar toolBarPane = null;
     private JToolBar policyToolBar = null;
 
-    private JTree paletteTreeView = null;
-    private JTree servicesTreeView = null;
     private JSplitPane mainJSplitPane = null;
     private JPanel mainLeftJPanel = null;
 
@@ -102,6 +99,8 @@ public class MainWindow extends JFrame {
     private Action assertionMoveDownAction;
     private Action deleteAssertionAction;
     private JMenu gotoMenu;
+    public static final String ASSERTION_PALETTE = "assertion.palette";
+    public static final String SERVICES_TREE = "services.treee";
 
     /**
      * MainWindow constructor comment.
@@ -290,6 +289,7 @@ public class MainWindow extends JFrame {
         viewMenu.add(jcm);
         return viewMenu;
     }
+
     /**
      * Return the newMenu property value.
      * @return JMenuItem
@@ -392,7 +392,7 @@ public class MainWindow extends JFrame {
                * @see Action#removePropertyChangeListener
                */
               public void actionPerformed(ActionEvent event) {
-                  JTree tree = getPaletteJTreeView();
+                  JTree tree = getAssertionPaletteTree();
                   EntityTreeNode node =
                     (EntityTreeNode)tree.getLastSelectedPathComponent();
 
@@ -462,7 +462,7 @@ public class MainWindow extends JFrame {
               public void actionPerformed(ActionEvent event) {
 //
 //                  EntityTreeNode context =
-//                    (EntityTreeNode)getPaletteJTreeView().getModel().getRoot();
+//                    (EntityTreeNode)getAssertionPaletteTree().getModel().getRoot();
 //                  JDialog d = new FindDialog(MainWindow.this, true, context, listenerBroker);
 //                  d.setLocation(MainWindow.this.getLocationOnScreen());
 //                  d.show();
@@ -511,13 +511,7 @@ public class MainWindow extends JFrame {
           new AbstractAction(atext, icon) {
               /** Invoked when an action occurs.*/
               public void actionPerformed(ActionEvent event) {
-                  JTree tree = getPaletteJTreeView();
-                  EntityTreeNode node =
-                    (EntityTreeNode)tree.getLastSelectedPathComponent();
-
-                  if (node != null) {
-                      removeNode(node);
-                  }
+                  JTree tree = getAssertionPaletteTree();
               }
           };
         removeNodeAction.putValue(Action.SHORT_DESCRIPTION, atext);
@@ -592,36 +586,40 @@ public class MainWindow extends JFrame {
      * Return the palette tree view property value.
      * @return JTree
      */
-    private JTree getPaletteJTreeView() {
-        if (paletteTreeView != null)
-            return paletteTreeView;
+    private JTree getAssertionPaletteTree() {
+        JTree tree =
+          (JTree)WindowManager.getInstance().getComponent(ASSERTION_PALETTE);
+        if (tree != null)
+            return tree;
 
-        paletteTreeView = new JTree();
-        paletteTreeView.setShowsRootHandles(true);
-        paletteTreeView.setLargeModel(true);
-        paletteTreeView.setCellRenderer(new EntityTreeCellRenderer());
-        paletteTreeView.putClientProperty("JTree.lineStyle", "Angled");
-        getPaletteJTreeView().setModel(null);
-
-        return paletteTreeView;
+        tree = new JTree();
+        tree.setShowsRootHandles(true);
+        tree.setLargeModel(true);
+        tree.setCellRenderer(new EntityTreeCellRenderer());
+        tree.putClientProperty("JTree.lineStyle", "Angled");
+        tree.setModel(null);
+        WindowManager.getInstance().registerComponent(ASSERTION_PALETTE, tree);
+        return tree;
     }
 
     /**
      * Return the JTreeView property value.
      * @return JTree
      */
-    private JTree getServicesTreeView() {
-        if (null != servicesTreeView) {
-            return servicesTreeView;
-        }
-        servicesTreeView = new JTree();
-        servicesTreeView.setShowsRootHandles(true);
-        servicesTreeView.setLargeModel(true);
-        servicesTreeView.setCellRenderer(new EntityTreeCellRenderer());
-        servicesTreeView.putClientProperty("JTree.lineStyle", "Angled");
-        servicesTreeView.setModel(null);
+    private JTree getServicesTree() {
+        JTree tree =
+          (JTree)WindowManager.getInstance().getComponent(SERVICES_TREE);
+        if (tree != null)
+            return tree;
 
-        return servicesTreeView;
+        tree = new JTree();
+        tree.setShowsRootHandles(true);
+        tree.setLargeModel(true);
+        tree.setCellRenderer(new EntityTreeCellRenderer());
+        tree.putClientProperty("JTree.lineStyle", "Angled");
+        tree.setModel(null);
+        WindowManager.getInstance().registerComponent(SERVICES_TREE, tree);
+        return tree;
     }
 
     /**
@@ -635,10 +633,10 @@ public class MainWindow extends JFrame {
         final AbstractTreeNode paletteRootNode =
           new RootNode("Policy Assertions", treeModel);
         treeModel.setRoot(paletteRootNode);
-        getPaletteJTreeView().setRootVisible(true);
-        getPaletteJTreeView().setModel(treeModel);
+        getAssertionPaletteTree().setRootVisible(true);
+        getAssertionPaletteTree().setModel(treeModel);
         TreePath path = new TreePath(paletteRootNode.getPath());
-        getPaletteJTreeView().setSelectionPath(path);
+        getAssertionPaletteTree().setSelectionPath(path);
 
 
         String rootTitle = "Services @ ";
@@ -651,13 +649,13 @@ public class MainWindow extends JFrame {
         }
         DefaultTreeModel servicesTreeModel = new FilteredTreeModel(null);
         final AbstractTreeNode servicesRootNode =
-                  new ServicesFolderNode(Registry.getDefault().getServiceManager(), rootTitle, servicesTreeModel);
+          new ServicesFolderNode(Registry.getDefault().getServiceManager(), rootTitle);
         servicesTreeModel.setRoot(servicesRootNode);
 
-        getServicesTreeView().setRootVisible(true);
-        getServicesTreeView().setModel(servicesTreeModel);
+        getServicesTree().setRootVisible(true);
+        getServicesTree().setModel(servicesTreeModel);
         TreePath initialPath = new TreePath(servicesRootNode.getPath());
-        getServicesTreeView().setSelectionPath(initialPath);
+        getServicesTree().setSelectionPath(initialPath);
     }
 
 
@@ -917,7 +915,7 @@ public class MainWindow extends JFrame {
         JTabbedPane treePanel = new JTabbedPane();
         treePanel.setTabPlacement(JTabbedPane.BOTTOM);
         //treePanel.setLayout(new BorderLayout());
-        treePanel.addTab("Assertions", getPaletteJTreeView());
+        treePanel.addTab("Assertions", getAssertionPaletteTree());
 
         JScrollPane js = new JScrollPane(treePanel);
         int mInc = js.getVerticalScrollBar().getUnitIncrement();
@@ -933,7 +931,7 @@ public class MainWindow extends JFrame {
 
         treePanel = new JTabbedPane();
         // treePanel.setLayout(new BorderLayout());
-        treePanel.addTab("Services", getServicesTreeView());
+        treePanel.addTab("Services", getServicesTree());
         treePanel.setTabPlacement(JTabbedPane.BOTTOM);
 
 
@@ -1005,7 +1003,7 @@ public class MainWindow extends JFrame {
 //                } else if (TreeNodeMenu.PROPERTIES.equals(e.getActionCommand())) {
 //                    panel = PanelFactory.getPanel(dNode, listenerBroker);
 //                } else if (TreeNodeMenu.BROWSE.equals(e.getActionCommand())) {
-//                    getPaletteJTreeView().expandPath(getPaletteJTreeView().getSelectionPath());
+//                    getAssertionPaletteTree().expandPath(getAssertionPaletteTree().getSelectionPath());
 //                } else {
 //                    JOptionPane.showMessageDialog(null,
 //                      "Not yet implemented.",
@@ -1051,11 +1049,11 @@ public class MainWindow extends JFrame {
         getStatusMsgLeft().setText("Disconnected");
         getStatusMsgRight().setText("");
 
-        getPaletteJTreeView().setModel(null);
+        getAssertionPaletteTree().setModel(null);
         getMainSplitPaneRight().removeAll();
         getMainSplitPaneRight().validate();
         getMainSplitPaneRight().repaint();
-        getServicesTreeView().setModel(null);
+        getServicesTree().setModel(null);
 
         updateActions(null);
         // if inactivityTimer is running stop
@@ -1064,107 +1062,6 @@ public class MainWindow extends JFrame {
         }
 
     }
-  // the PanelListener that handles the object events
-    // and performs the corresponding tree action
-    private PanelListener
-      paletteTreeObjectListener = new PanelListenerAdapter() {
-          /**
-           * invoked after insert
-           *
-           * @param object an arbitrary object set by the Panel
-           */
-          public void onInsert(Object object) {
-              EntityHeader entity = (EntityHeader)object;
-              AbstractTreeNode newNode =
-                TreeNodeFactory.asTreeNode(entity);
-              if (newNode.isLeaf()) return;
-
-              JTree tree;
-              if (EntityType.SERVICE.equals(entity.getType())) {
-                  tree = getServicesTreeView();
-              } else {
-                  tree = getPaletteJTreeView();
-              }
-
-              TreePath path = tree.getSelectionPath();
-              // do not add if never expanded
-              if (!tree.hasBeenExpanded(path)) return;
-
-              EntityTreeNode pNode =
-                (EntityTreeNode)tree.getLastSelectedPathComponent();
-
-              EntityTreeNode node = new EntityTreeNode(newNode);
-              pNode.add(node);
-              pNode.sortChildren(EntityTreeNode.DEFAULT_COMPARATOR);
-              DefaultTreeModel model = (DefaultTreeModel)tree.getModel();
-              model.nodeStructureChanged(pNode);
-          }
-
-
-          /**
-           * invoked after update
-           *
-           * @param object an arbitrary object set by the Panel
-           */
-          public void onUpdate(Object object) {
-              EntityHeader entity = (EntityHeader)object;
-              AbstractTreeNode newNode =
-                TreeNodeFactory.asTreeNode(entity);
-
-              JTree tree;
-              if (EntityType.SERVICE.equals(entity.getType())) {
-                  tree = getServicesTreeView();
-              } else {
-                  tree = getPaletteJTreeView();
-              }
-
-              TreePath path = tree.getSelectionPath();
-              // do not update if never expanded
-              if (!tree.hasBeenExpanded(path)) return;
-
-
-              DefaultMutableTreeNode node =
-                (DefaultMutableTreeNode)TreeNodeAction.
-                nodeByName(entity.getName(), (DefaultMutableTreeNode)path.getLastPathComponent());
-
-              if (node == null) {
-                  throw new
-                    IllegalStateException("Update of node that isn't in tree ( " + entity.getName() + " )");
-              }
-              node.setUserObject(newNode);
-          }
-
-          /**
-           * invoked after object delete
-           *
-           * @param object an arbitrary object set by the Panel
-           */
-          public void onDelete(Object object) {
-              if (!(object instanceof EntityHeaderNode)) return;
-
-              EntityHeaderNode eh = (EntityHeaderNode)object;
-              JTree tree;
-              if (EntityType.SERVICE.equals(eh.getEntityHeader().getType())) {
-                  tree = getServicesTreeView();
-              } else {
-                  tree = getPaletteJTreeView();
-              }
-
-              TreePath path = tree.getSelectionPath().getParentPath();
-
-              if (tree.hasBeenExpanded(path)) {
-                  DefaultMutableTreeNode node =
-                    (DefaultMutableTreeNode)TreeNodeAction.
-                    nodeByName(eh.getName(), (DefaultMutableTreeNode)path.getLastPathComponent());
-
-                  if (node == null) {
-                      throw new
-                        IllegalStateException("Update of node that isn't in tree ( " + eh.getName() + " )");
-                  }
-                  ((DefaultTreeModel)tree.getModel()).removeNodeFromParent(node);
-              }
-          }
-      };
 
     /**
      * Updates the right panel with the component that manages
@@ -1182,7 +1079,7 @@ public class MainWindow extends JFrame {
      */
     private void treeSelectionEventHandler(TreeSelectionEvent event) {
         // get the node and call panel factory
-        Object object = getServicesTreeView().getLastSelectedPathComponent();
+        Object object = getServicesTree().getLastSelectedPathComponent();
         // if not EntityTreeNode silently return
         if (object instanceof AbstractTreeNode) {
             AbstractTreeNode node = (AbstractTreeNode)object;
@@ -1200,7 +1097,7 @@ public class MainWindow extends JFrame {
      * @param node   the node to refresh
      */
     private void refreshNode(EntityTreeNode node) {
-        JTree tree = getPaletteJTreeView();
+        JTree tree = getAssertionPaletteTree();
 
         node.removeAllChildren();
         TreePath path = new TreePath(node.getPath());
@@ -1216,10 +1113,10 @@ public class MainWindow extends JFrame {
         TreeNode node =
           TreeNodeAction.
           nodeByName(name,
-            (DefaultMutableTreeNode)getPaletteJTreeView().getModel().getRoot());
+            (DefaultMutableTreeNode)getAssertionPaletteTree().getModel().getRoot());
         if (node != null) {
             TreePath path = new TreePath(((DefaultMutableTreeNode)node).getPath());
-            getPaletteJTreeView().setSelectionPath(path);
+            getAssertionPaletteTree().setSelectionPath(path);
         }
 
     }
@@ -1233,11 +1130,10 @@ public class MainWindow extends JFrame {
         // store the parent node to use as a panel for later
         EntityTreeNode parentNode = (EntityTreeNode)node.getParent();
         if (!TreeNodeAction.deleteNode(node)) return;
-        paletteTreeObjectListener.onDelete(node.getUserObject());
 
         // node deleted now change selection to parent
         TreePath tPath = new TreePath(parentNode.getPath());
-        getPaletteJTreeView().getSelectionModel().setSelectionPath(tPath);
+        getAssertionPaletteTree().getSelectionModel().setSelectionPath(tPath);
     }
 
     /**
@@ -1384,8 +1280,8 @@ public class MainWindow extends JFrame {
               }
           });
 
-        final JTree ptree = getPaletteJTreeView();
-        final JTree stree = getServicesTreeView();
+        final JTree ptree = getAssertionPaletteTree();
+        final JTree stree = getServicesTree();
         // JTree listeners
         TreeSelectionListener selectionListener =
           new TreeSelectionListener() {
@@ -1481,14 +1377,18 @@ public class MainWindow extends JFrame {
               public void keyPressed(KeyEvent e) {
                   TreePath path = ptree.getSelectionPath();
                   if (path == null) return;
-
-                  EntityTreeNode node =
-                    (EntityTreeNode)path.getLastPathComponent();
-                  if (node == null) return;
                   int keyCode = e.getKeyCode();
                   if (keyCode == KeyEvent.VK_DELETE) {
+                      EntityTreeNode node =
+                        (EntityTreeNode)path.getLastPathComponent();
+                      if (node == null) return;
+
                       removeNode(node);
                   } else if (keyCode == KeyEvent.VK_BACK_SPACE) {
+                      EntityTreeNode node =
+                        (EntityTreeNode)path.getLastPathComponent();
+                      if (node == null) return;
+
                       DefaultMutableTreeNode parent =
                         (DefaultMutableTreeNode)node.getParent();
                       if (parent == null) return;

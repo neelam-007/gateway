@@ -57,7 +57,6 @@ public class FindDialog extends JDialog {
 
     private JTable jTable = new JTable();
     private JPanel searchResultPanel = new JPanel();
-    private PanelListener pListener;
 
     /** cancle search */
     private JButton cancelSearchButton = null;

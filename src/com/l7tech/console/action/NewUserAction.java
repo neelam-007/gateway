@@ -1,9 +1,15 @@
 package com.l7tech.console.action;
 
 import com.l7tech.console.panels.NewUserDialog;
-import com.l7tech.console.tree.AbstractTreeNode;
+import com.l7tech.console.tree.*;
+import com.l7tech.console.util.WindowManager;
+import com.l7tech.console.MainWindow;
+import com.l7tech.objectmodel.EntityHeader;
 
 import javax.swing.*;
+import javax.swing.tree.DefaultTreeModel;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * The <code>NewUserAction</code> action adds the new user.
@@ -12,6 +18,7 @@ import javax.swing.*;
  * @version 1.0
  */
 public class NewUserAction extends NodeAction {
+    static final Logger log = Logger.getLogger(NewUserAction.class.getName());
 
     public NewUserAction(AbstractTreeNode node) {
         super(node);
@@ -50,9 +57,33 @@ public class NewUserAction extends NodeAction {
           new Runnable() {
             public void run() {
                 NewUserDialog dialog = new NewUserDialog(null);
+                dialog.addEntityListener(listener);
                 dialog.setResizable(false);
                 dialog.show();
             }
         });
     }
+
+
+    private EntityListener listener = new EntityListenerAdapter() {
+        /**
+         * Fired when an new entity is added.
+         * @param ev event describing the action
+         */
+        public void entityAdded(final EntityEvent ev) {
+            SwingUtilities.invokeLater(new Runnable() {
+                public void run() {
+                    EntityHeader eh = (EntityHeader)ev.getEntity();
+                    JTree tree = (JTree)WindowManager.getInstance().getComponent(MainWindow.ASSERTION_PALETTE);
+                    if (tree != null) {
+                        DefaultTreeModel model = (DefaultTreeModel)tree.getModel();
+                        model.insertNodeInto(TreeNodeFactory.asTreeNode(eh), node, node.getChildCount());
+                    } else {
+                        log.log(Level.WARNING, "Unable to reach the palette tree.");
+                    }
+                }
+            });
+        }
+    };
 }
+

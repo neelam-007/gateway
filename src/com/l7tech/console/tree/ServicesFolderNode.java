@@ -19,18 +19,15 @@ import java.util.Enumeration;
 public class ServicesFolderNode extends AbstractTreeNode {
     private ServiceManager serviceManager;
     private String title;
-    private DefaultTreeModel model;
-
 
     /**
      * construct the <CODE>ServicesFolderNode</CODE> instance for
      * a given service manager with the name.
      */
-    public ServicesFolderNode(ServiceManager sm, String name, DefaultTreeModel model) {
+    public ServicesFolderNode(ServiceManager sm, String name) {
         super(null);
         serviceManager = sm;
         title = name;
-        this.model = model;
     }
 
     /**
@@ -56,7 +53,7 @@ public class ServicesFolderNode extends AbstractTreeNode {
      * @return actions appropriate to the node
      */
     public Action[] getActions() {
-        return new Action[]{new PublishServiceAction(this, model)};
+        return new Action[]{new PublishServiceAction(this)};
     }
 
     /**

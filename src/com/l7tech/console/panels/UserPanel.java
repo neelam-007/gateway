@@ -573,11 +573,6 @@ public class UserPanel extends EntityEditorPanel {
                 userHeader.setOid(id);
             }
 
-            // Notify listener of this insert/update
-            if (null != panelListener) {
-                panelListener.onUpdate(userHeader);
-            }
-
             // Cleanup
             formModified = false;
         } catch (Exception e) {

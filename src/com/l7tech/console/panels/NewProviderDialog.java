@@ -1,28 +1,30 @@
 package com.l7tech.console.panels;
 
 import com.l7tech.console.text.FilterDocument;
+import com.l7tech.console.tree.EntityListener;
+import com.l7tech.console.tree.EntityEvent;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.SaveException;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.identity.IdentityProviderConfigManager;
 import com.l7tech.util.Locator;
-import org.apache.log4j.Category;
 
 import javax.swing.*;
+import javax.swing.event.EventListenerList;
 import java.awt.*;
 import java.awt.event.*;
 import java.util.Locale;
 import java.util.ResourceBundle;
+import java.util.EventListener;
 
 /**
  * This class is the New Provider dialog.
  */
 public class NewProviderDialog extends JDialog {
 
-    private PanelListener listener;
-    // todo, emil, not sure what is going on here. you should now specify the type of provider in constructor
     private IdentityProviderConfig iProvider = new IdentityProviderConfig();
+    private EventListenerList listenerList;
 
     /**
      * Create a new NewProviderDialog
@@ -38,13 +40,35 @@ public class NewProviderDialog extends JDialog {
     }
 
     /**
-     * set the PanelListener
+     * add the EntityListener
      *
-     * @param l the PanelListener
+     * @param listener the EntityListener
      */
-    public void setPanelListener(PanelListener l) {
-        listener = l;
+    public void addEntityListener(EntityListener listener) {
+        listenerList.add(EntityListener.class, listener);
     }
+
+    /**
+     * remove the the EntityListener
+     *
+     * @param listener the EntityListener
+     */
+    public void removeEntityListener(EntityListener listener) {
+        listenerList.remove(EntityListener.class, listener);
+    }
+
+    /**
+     * notfy the listeners
+     * @param header
+     */
+    private void fireEventProviderAdded(EntityHeader header) {
+        EntityEvent event = new EntityEvent(header);
+        EventListener[] listeners = listenerList.getListeners(EntityListener.class);
+        for (int i = 0; i < listeners.length; i++) {
+            ((EntityListener)listeners[i]).entityAdded(event);
+        }
+    }
+
 
     /**
      * Loads locale-specific resources: strings  etc
@@ -170,14 +194,14 @@ public class NewProviderDialog extends JDialog {
         providerNameTextField.setToolTipText(resources.getString("providerNameTextField.tooltip"));
 
         providerNameTextField.
-                setDocument(
-                        new FilterDocument(24,
-                                new FilterDocument.Filter() {
-                                    public boolean accept(String str) {
-                                        if (str == null) return false;
-                                        return true;
-                                    }
-                                }));
+          setDocument(
+            new FilterDocument(24,
+              new FilterDocument.Filter() {
+                  public boolean accept(String str) {
+                      if (str == null) return false;
+                      return true;
+                  }
+              }));
 
         return providerNameTextField;
     }
@@ -228,11 +252,11 @@ public class NewProviderDialog extends JDialog {
         createButton.setToolTipText(resources.getString("createButton.tooltip"));
         createButton.setActionCommand(CMD_OK);
         createButton.
-                addActionListener(new ActionListener() {
-                    public void actionPerformed(ActionEvent event) {
-                        windowAction(event.getActionCommand());
-                    }
-                });
+          addActionListener(new ActionListener() {
+              public void actionPerformed(ActionEvent event) {
+                  windowAction(event.getActionCommand());
+              }
+          });
         panel.add(createButton);
 
         // space
@@ -243,11 +267,11 @@ public class NewProviderDialog extends JDialog {
         cancelButton.setText(resources.getString("cancelButton.label"));
         cancelButton.setActionCommand(CMD_CANCEL);
         cancelButton.
-                addActionListener(new ActionListener() {
-                    public void actionPerformed(ActionEvent event) {
-                        windowAction(event.getActionCommand());
-                    }
-                });
+          addActionListener(new ActionListener() {
+              public void actionPerformed(ActionEvent event) {
+                  windowAction(event.getActionCommand());
+              }
+          });
         panel.add(cancelButton);
 
         // equalize buttons
@@ -291,21 +315,21 @@ public class NewProviderDialog extends JDialog {
         final EntityHeader header = new EntityHeader();
 
         SwingUtilities.invokeLater(
-                new Runnable() {
-                    public void run() {
-                        header.setName(iProvider.getName());
-                        header.setType(EntityType.ID_PROVIDER_CONFIG);
-                        try {
-                            getProviderConfigManager().save(iProvider);
-                            listener.onInsert(header);
-                        } catch (SaveException e) {
-                            e.printStackTrace();
-                        } catch (RuntimeException e) {
-                            e.printStackTrace();
-                        }
-                        NewProviderDialog.this.dispose();
-                    }
-                });
+          new Runnable() {
+              public void run() {
+                  header.setName(iProvider.getName());
+                  header.setType(EntityType.ID_PROVIDER_CONFIG);
+                  try {
+                      header.setOid(getProviderConfigManager().save(iProvider));
+                      fireEventProviderAdded(header);
+                  } catch (SaveException e) {
+                      e.printStackTrace();
+                  } catch (RuntimeException e) {
+                      e.printStackTrace();
+                  }
+                  NewProviderDialog.this.dispose();
+              }
+          });
     }
 
     /**
@@ -322,10 +346,10 @@ public class NewProviderDialog extends JDialog {
                 // yes the additional properties are to be defined
                 createThenEdit = false;
                 SwingUtilities.invokeLater(
-                        new Runnable() {
-                            public void run() {
-                            }
-                        });
+                  new Runnable() {
+                      public void run() {
+                      }
+                  });
             }
         }
     }
@@ -341,10 +365,10 @@ public class NewProviderDialog extends JDialog {
 
     private IdentityProviderConfigManager getProviderConfigManager() throws RuntimeException {
         IdentityProviderConfigManager ipc =
-        (IdentityProviderConfigManager)Locator.
-                getDefault().lookup(IdentityProviderConfigManager.class);
+          (IdentityProviderConfigManager)Locator.
+          getDefault().lookup(IdentityProviderConfigManager.class);
         if (ipc == null) {
-            throw new RuntimeException("Could not find registered "+IdentityProviderConfigManager.class);
+            throw new RuntimeException("Could not find registered " + IdentityProviderConfigManager.class);
         }
 
         return ipc;

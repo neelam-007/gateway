@@ -83,9 +83,4 @@ public abstract class EntityEditorPanel extends JPanel {
      */
     public abstract void edit(Object entity);
 
-    public void setPanelListener(PanelListener listener) {
-        this.panelListener = listener;
-    }
-
-    protected PanelListener panelListener;
 }

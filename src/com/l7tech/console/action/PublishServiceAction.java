@@ -2,10 +2,14 @@ package com.l7tech.console.action;
 
 import com.l7tech.console.panels.PublishServiceWizard;
 import com.l7tech.console.tree.*;
+import com.l7tech.console.util.WindowManager;
+import com.l7tech.console.MainWindow;
 import com.l7tech.objectmodel.EntityHeader;
 
 import javax.swing.*;
 import javax.swing.tree.DefaultTreeModel;
+import java.util.logging.Logger;
+import java.util.logging.Level;
 
 /**
  * The <code>PublishServiceAction</code> action invokes the pubish
@@ -15,12 +19,11 @@ import javax.swing.tree.DefaultTreeModel;
  * @version 1.0
  */
 public class PublishServiceAction extends NodeAction {
-    private DefaultTreeModel model;
+    static final Logger log = Logger.getLogger(PublishServiceAction.class.getName());
 
-    public PublishServiceAction(AbstractTreeNode node, DefaultTreeModel model) {
+    public PublishServiceAction(AbstractTreeNode node) {
         super(node);
         this.node = node;
-        this.model = model;
     }
 
     /**
@@ -70,7 +73,13 @@ public class PublishServiceAction extends NodeAction {
             SwingUtilities.invokeLater(new Runnable() {
                 public void run() {
                     EntityHeader eh = (EntityHeader)ev.getEntity();
-                    model.insertNodeInto(TreeNodeFactory.asTreeNode(eh), node, node.getChildCount());
+                    JTree tree = (JTree)WindowManager.getInstance().getComponent(MainWindow.SERVICES_TREE);
+                    if (tree != null) {
+                        DefaultTreeModel model = (DefaultTreeModel)tree.getModel();
+                        model.insertNodeInto(TreeNodeFactory.asTreeNode(eh), node, node.getChildCount());
+                    } else {
+                        log.log(Level.WARNING, "Service tree unreachable.");
+                    }
                 }
             });
         }

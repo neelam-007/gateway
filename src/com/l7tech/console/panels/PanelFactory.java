@@ -24,17 +24,15 @@ public class PanelFactory {
      * the object browser.
      *
      * @param node   the node for which the panel is requested
-
-     * @param pListener - the PanelListener for the given panel
      * @return the panel
      */
-    public static EntityEditorPanel getPanel(EntityTreeNode node, PanelListener pListener) {
+    public static EntityEditorPanel getPanel(EntityTreeNode node) {
         Object object = node.getUserObject();
         if (object == null) throw new IllegalArgumentException("node.getUserObject() returns null");
         if (object instanceof EntityHeaderNode) {
             EntityHeader entityHeader = ((EntityHeaderNode)object).getEntityHeader();
             EntityEditorPanel panel =
-                    getPanel(entityHeader.getType(), pListener);
+                    getPanel(entityHeader.getType());
             panel.edit(entityHeader);
             return panel;
         }
@@ -56,14 +54,12 @@ public class PanelFactory {
      * @return the <CODE>EntityEditorPanel</CODE> for given directory object, null
      *         if no panel assigned
      */
-    public static EntityEditorPanel getPanel(EntityType type, PanelListener l) {
+    public static EntityEditorPanel getPanel(EntityType type) {
         EntityEditorPanel panel = null;
         if (type.equals(EntityType.GROUP)) {
             panel = new GroupPanel();
-            panel.setPanelListener(l);
         } else if(type.equals(EntityType.USER)) {
             panel = new UserPanel();
-            panel.setPanelListener(l);
         }
         return panel;
     }

@@ -3,6 +3,7 @@ package com.l7tech.console.panels;
 import com.l7tech.console.text.FilterDocument;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.tree.EntityListener;
+import com.l7tech.console.tree.EntityEvent;
 import com.l7tech.identity.User;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.SaveException;
@@ -14,6 +15,7 @@ import java.awt.*;
 import java.awt.event.*;
 import java.util.Locale;
 import java.util.ResourceBundle;
+import java.util.EventListener;
 
 /**
  * New User dialog.
@@ -63,7 +65,6 @@ public class NewUserDialog extends JDialog {
         Utilities.centerOnScreen(this);
     }
 
-
     /**
      * add the EntityListener
      *
@@ -82,6 +83,17 @@ public class NewUserDialog extends JDialog {
         listenerList.remove(EntityListener.class, listener);
     }
 
+    /**
+     * notfy the listeners
+     * @param header
+     */
+    private void fireEventUserAdded(EntityHeader header) {
+        EntityEvent event = new EntityEvent(header);
+        EventListener[] listeners = listenerList.getListeners(EntityListener.class);
+        for (int i = 0; i < listeners.length; i++) {
+            ((EntityListener)listeners[i]).entityAdded(event);
+        }
+    }
 
     /**
      * Loads locale-specific resources: strings  etc
@@ -96,9 +108,7 @@ public class NewUserDialog extends JDialog {
      * initialize the dialog.
      */
     private void initComponents() {
-
         GridBagConstraints constraints = null;
-
         Container contents = getContentPane();
         JPanel panel = new JPanel();
         panel.setDoubleBuffered(true);
@@ -356,7 +366,6 @@ public class NewUserDialog extends JDialog {
                 }
             });
         }
-
         return additionalPropertiesCheckBox;
     }
 
@@ -442,6 +451,7 @@ public class NewUserDialog extends JDialog {
     /** insert user */
     private void insertUser() {
         user.setName(idTextField.getText());
+        user.setLogin(idTextField.getText());
         user.setPassword(new String(passwordField.getPassword()));
         SwingUtilities.invokeLater(
                 new Runnable() {
@@ -450,8 +460,8 @@ public class NewUserDialog extends JDialog {
                             EntityHeader header = new EntityHeader();
                             header.setType(EntityType.USER);
                             header.setName(user.getName());
-                            Registry.getDefault().getInternalUserManager().save(user);
-                            //panelListener.onInsert(header);
+                            header.setOid(Registry.getDefault().getInternalUserManager().save(user));
+                            fireEventUserAdded(header);
                             insertSuccess = true;
                         } catch (SaveException e) {
                             e.printStackTrace();
@@ -481,7 +491,7 @@ public class NewUserDialog extends JDialog {
                 SwingUtilities.invokeLater(
                         new Runnable() {
                             public void run() {
-                                EntityEditorPanel panel = PanelFactory.getPanel(EntityType.USER, null);
+                                EntityEditorPanel panel = PanelFactory.getPanel(EntityType.USER);
                                 if (panel == null) return;
                                 EntityHeader header = new EntityHeader();
                                 header.setType(EntityType.USER);

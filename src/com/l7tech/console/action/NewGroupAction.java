@@ -2,10 +2,14 @@ package com.l7tech.console.action;
 
 import com.l7tech.console.panels.NewGroupDialog;
 import com.l7tech.console.tree.*;
+import com.l7tech.console.util.WindowManager;
+import com.l7tech.console.MainWindow;
 import com.l7tech.objectmodel.EntityHeader;
 
 import javax.swing.*;
 import javax.swing.tree.DefaultTreeModel;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * The <code>NewGroupAction</code> action adds the new group.
@@ -14,12 +18,11 @@ import javax.swing.tree.DefaultTreeModel;
  * @version 1.0
  */
 public class NewGroupAction extends NodeAction {
-    private DefaultTreeModel model;
+    static final Logger log = Logger.getLogger(NewGroupAction.class.getName());
 
-    public NewGroupAction(AbstractTreeNode node, DefaultTreeModel model) {
+    public NewGroupAction(AbstractTreeNode node) {
         super(node);
         this.node = node;
-        this.model = model;
     }
 
     /**
@@ -69,12 +72,16 @@ public class NewGroupAction extends NodeAction {
         public void entityAdded(final EntityEvent ev) {
             SwingUtilities.invokeLater(new Runnable() {
                 public void run() {
-                    EntityHeader eh = (EntityHeader)ev.getEntity();
-                    model.insertNodeInto(TreeNodeFactory.asTreeNode(eh), node, node.getChildCount());
+                      EntityHeader eh = (EntityHeader)ev.getEntity();
+                    JTree tree = (JTree)WindowManager.getInstance().getComponent(MainWindow.ASSERTION_PALETTE);
+                    if (tree != null) {
+                        DefaultTreeModel model = (DefaultTreeModel)tree.getModel();
+                        model.insertNodeInto(TreeNodeFactory.asTreeNode(eh), node, node.getChildCount());
+                    } else {
+                        log.log(Level.WARNING, "Unable to reach the palette tree.");
+                    }
                 }
             });
         }
     };
-
-
 }

@@ -54,7 +54,7 @@ public class RootNode extends AbstractTreeNode {
           Arrays.asList(
             new AbstractTreeNode[]{
                 new UserFolderNode(r.getInternalUserManager()),
-                new GroupFolderNode(r.getInternalGroupManager(), model),
+                new GroupFolderNode(r.getInternalGroupManager()),
                 new ProvidersFolderNode(),
                 new PoliciesFolderNode()
             });

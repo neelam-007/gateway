@@ -301,7 +301,6 @@ public class NewGroupDialog extends JDialog {
      *               may be null
      */
     private void windowAction(String actionCommand) {
-
         if (actionCommand == null) {
             // do nothing
         } else if (actionCommand.equals(CMD_CANCEL)) {
@@ -327,8 +326,8 @@ public class NewGroupDialog extends JDialog {
                             EntityHeader header = new EntityHeader();
                             header.setType(EntityType.GROUP);
                             header.setName(group.getName());
-                            Registry.getDefault().getInternalGroupManager().save(group);
-                            NewGroupDialog.this.notify(header);
+                            header.setOid(Registry.getDefault().getInternalGroupManager().save(group));
+                            NewGroupDialog.this.fireEventGroupAdded(header);
                             insertSuccess = true;
                         } catch (SaveException e) {
                             e.printStackTrace();
@@ -341,7 +340,7 @@ public class NewGroupDialog extends JDialog {
 
     }
 
-    private void notify(EntityHeader header) {
+    private void fireEventGroupAdded(EntityHeader header) {
        EntityEvent event = new EntityEvent(header);
        EventListener[] listeners = listenerList.getListeners(EntityListener.class);
         for (int i = 0; i< listeners.length; i++) {
@@ -365,7 +364,7 @@ public class NewGroupDialog extends JDialog {
                 SwingUtilities.invokeLater(
                         new Runnable() {
                             public void run() {
-                                EntityEditorPanel panel = PanelFactory.getPanel(EntityType.GROUP, null);
+                                EntityEditorPanel panel = PanelFactory.getPanel(EntityType.GROUP);
                                 if (panel == null) return;
                                 EntityHeader header = new EntityHeader();
                                 header.setType(EntityType.GROUP);

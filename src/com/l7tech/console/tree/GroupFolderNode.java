@@ -20,17 +20,14 @@ import java.util.Enumeration;
  */
 public class GroupFolderNode extends AbstractTreeNode {
     private final GroupManager groupManager;
-    private DefaultTreeModel model;
 
     /**
      * construct the <CODE>GroupFolderNode</CODE> instance for
      * a given entry.
      */
-    public GroupFolderNode(GroupManager gm, DefaultTreeModel model) {
+    public GroupFolderNode(GroupManager gm) {
         super(null);
         groupManager = gm;
-        this.model = model;
-
     }
 
     /**
@@ -70,7 +67,7 @@ public class GroupFolderNode extends AbstractTreeNode {
      * @return actions appropriate to the node
      */
     public Action[] getActions() {
-        return new Action[]{new NewGroupAction(this, model)};
+        return new Action[]{new NewGroupAction(this)};
     }
 
     /**
