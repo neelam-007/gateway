@@ -211,21 +211,47 @@ public class Preferences extends PropertyChangeSupport {
     }
 
     /**
-     * initialize logging
+     * initialize logging, try differnet strategies. First look for the system
+     * property <code>java.util.logging.config.file</code>, then look for
+     * <code>logging.properties</code>. If that fails fall back to the
+     * <code>com/l7tech/console/resources/logging.properties</code>.
      */
     private void logIinitialize() {
         InputStream in = null;
-
         try {
-            System.setProperty("org.apache.commons.logging.Log",
-              "org.apache.commons.logging.impl.Jdk14Logger");
-            ClassLoader cl = getClass().getClassLoader();
-            in = cl.getResourceAsStream("com/l7tech/console/resources/logging.properties");
-            if (in != null) {
-                LogManager.getLogManager().readConfiguration(in);
-                Logger.getLogger("com.l7tech").info("Policy editor logging initialized");
-            } else {
-                System.err.println("Unable to load default log file");
+            System.setProperty("org.apache.commons.logging.Log", "org.apache.commons.logging.impl.Jdk14Logger");
+            String cf = System.getProperty("java.util.logging.config.file");
+            List configCandidates = new ArrayList(3);
+            if (cf != null) {
+                configCandidates.add(cf);
+            }
+            configCandidates.add("logging.properties");
+            configCandidates.add("com/l7tech/console/resources/logging.properties");
+
+            boolean configFound = false;
+            String configCandidate = null;
+            for (Iterator iterator = configCandidates.iterator(); iterator.hasNext();) {
+                configCandidate = (String)iterator.next();
+                final File file = new File(configCandidate);
+
+                if (file.exists()) {
+                    in = file.toURL().openStream();
+                    if (in != null) {
+                        LogManager.getLogManager().readConfiguration(in);
+                        configFound = true;
+                        break;
+                    }
+                }
+                ClassLoader cl = getClass().getClassLoader();
+                in = cl.getResourceAsStream(configCandidate);
+                if (in != null) {
+                    LogManager.getLogManager().readConfiguration(in);
+                    configFound = true;
+                    break;
+                }
+            }
+            if (configFound) {
+                Logger.getLogger("com.l7tech.console").info("Policy editor logging initialized from '" + configCandidate + "'");
             }
         } catch (IOException e) {
             e.printStackTrace(System.err);
@@ -246,22 +272,21 @@ public class Preferences extends PropertyChangeSupport {
         // JSSE SSLContext initialization on a separate thread,
         // attempt to improve performance on app startup. The
         // Sun SSL provider is hardcoded.
-        new Thread(
-          new Runnable() {
-              public void run() {
-                  try {
-                      long start = System.currentTimeMillis();
-                      javax.net.ssl.SSLContext ctx =
-                        javax.net.ssl.SSLContext.getInstance("SSL", "SunJSSE");
-                      // SSL init with defaults
-                      ctx.init(null, null, null);
-                      long end = System.currentTimeMillis();
-                      Preferences.this.log("SSLContext.init() - finished took " + (end - start) + " ms");
-                  } catch (java.security.GeneralSecurityException e) {
-                      Preferences.this.log("SSLContext.init()", e);
-                  }
-              }
-          }).start();
+        new Thread(new Runnable() {
+            public void run() {
+                try {
+                    long start = System.currentTimeMillis();
+                    javax.net.ssl.SSLContext ctx =
+                      javax.net.ssl.SSLContext.getInstance("SSL", "SunJSSE");
+                    // SSL init with defaults
+                    ctx.init(null, null, null);
+                    long end = System.currentTimeMillis();
+                    Preferences.this.log("SSLContext.init() - finished took " + (end - start) + " ms");
+                } catch (java.security.GeneralSecurityException e) {
+                    Preferences.this.log("SSLContext.init()", e);
+                }
+            }
+        }).start();
     }
 
     /**
@@ -511,27 +536,27 @@ public class Preferences extends PropertyChangeSupport {
     }
 
     /**
-       * Returns the policy messages visible property value.
-       *
-       * @return the policy messages visible value as boolean.
-       */
-      public boolean isPolicyMessageAreaVisible() {
-          // default set
-          if (props.getProperty(POLICY_MSG_AREA_VISIBLE) == null) {
-              return true;
-          }
-          return Boolean.
-            valueOf(props.getProperty(POLICY_MSG_AREA_VISIBLE)).booleanValue();
-      }
+     * Returns the policy messages visible property value.
+     *
+     * @return the policy messages visible value as boolean.
+     */
+    public boolean isPolicyMessageAreaVisible() {
+        // default set
+        if (props.getProperty(POLICY_MSG_AREA_VISIBLE) == null) {
+            return true;
+        }
+        return Boolean.
+          valueOf(props.getProperty(POLICY_MSG_AREA_VISIBLE)).booleanValue();
+    }
 
-      /**
-       * Set the policy messages visible property value.
-       *
-       * @param b the shortcut bar visible
-       */
-      public void setPolicyMessageAreaVisible(boolean b) {
-          putProperty(POLICY_MSG_AREA_VISIBLE, Boolean.toString(b));
-      }
+    /**
+     * Set the policy messages visible property value.
+     *
+     * @param b the shortcut bar visible
+     */
+    public void setPolicyMessageAreaVisible(boolean b) {
+        putProperty(POLICY_MSG_AREA_VISIBLE, Boolean.toString(b));
+    }
 
 
     /**
@@ -588,7 +613,7 @@ public class Preferences extends PropertyChangeSupport {
     }
 
     /**
-     * simple log (no log4j used here)
+     * simple log (no logger used here)
      * 
      * @param msg       the message to log
      * @param throwable throwable to log
@@ -682,22 +707,34 @@ public class Preferences extends PropertyChangeSupport {
         }
     }
 
-    /** look and feel key */
+    /**
+     * look and feel key
+     */
     public static final String LOOK_AND_FEEL = "look.and.feel";
 
-    /** look and feel key */
+    /**
+     * look and feel key
+     */
     public static final String INACTIVITY_TIMEOUT = "inactivity.timeout";
 
-    /** last login id */
+    /**
+     * last login id
+     */
     public static final String LAST_LOGIN_ID = "last.login.id";
 
-    /** remember last login id */
+    /**
+     * remember last login id
+     */
     public static final String SAVE_LAST_LOGIN_ID = "last.login.id.save";
 
-    /** toolbars property (icons, text, icons and text) */
+    /**
+     * toolbars property (icons, text, icons and text)
+     */
     public static final String STATUS_BAR_VISIBLE = "status.bar.enable";
 
-    /** toolbars property (icons, text, icons and text) */
+    /**
+     * toolbars property (icons, text, icons and text)
+     */
     public static final String POLICY_MSG_AREA_VISIBLE = "policy.msg.area.visible";
 
     // Screen size last time the app was started up
@@ -714,10 +751,14 @@ public class Preferences extends PropertyChangeSupport {
     public static final String LONG_24_HOUR_TIME_FORMAT = "HH:mm:ss z";
 
 
-    /** the file name for the preferences */
+    /**
+     * the file name for the preferences
+     */
     protected static final String STORE = "ssg.properties";
 
-    /** where is home (properties are stored there) */
+    /**
+     * where is home (properties are stored there)
+     */
     private final String CONSOLE_CONFIG =
       System.getProperties().getProperty("user.home") + File.separator + ".l7tech";
 
@@ -729,7 +770,6 @@ public class Preferences extends PropertyChangeSupport {
     String[] res =
       new String[]
       {
-          /*"log4j.properties",*/
           "trustStore"
       };
 
