@@ -19,7 +19,7 @@ import java.util.Enumeration;
  */
 public class PropertiesLocator extends AbstractLocator {
      /** The default resource name of the properties source.  */
-    public static final String DEFAULT_PROPERTIES = "/com/l7tech/util/locator/services.properties";
+    public static final String DEFAULT_PROPERTIES = "/com/l7tech/common/locator/services.properties";
     /**
      * Default constructor, uses this class cllassloader, and the default
      * service properties location
