@@ -11,6 +11,7 @@ import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
 
 import java.io.Serializable;
+import java.net.PasswordAuthentication;
 
 /**
  * A reference to a preconfigured JMS Destination (i.e. a Queue or Topic).
@@ -48,6 +49,16 @@ public class JmsEndpoint extends NamedEntityImp implements Serializable, Compara
         setMessageSource( other.isMessageSource() );
         setReplyEndpoint( other.getReplyEndpoint() );
         setFailureEndpoint( other.getFailureEndpoint() );
+    }
+
+    /**
+     * May be null.
+     * @return
+     */
+    public PasswordAuthentication getPasswordAuthentication() {
+        return _username != null && _password != null 
+               ? new PasswordAuthentication( _username, _password.toCharArray() )
+               : null;
     }
 
     public EntityHeader toEntityHeader() {

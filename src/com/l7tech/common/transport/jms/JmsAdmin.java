@@ -2,8 +2,6 @@ package com.l7tech.common.transport.jms;
 
 import com.l7tech.objectmodel.*;
 
-import javax.jms.JMSException;
-import javax.naming.NamingException;
 import java.rmi.Remote;
 import java.rmi.RemoteException;
 
@@ -75,9 +73,8 @@ public interface JmsAdmin extends Remote {
      *
      * @param connection  JmsConnection settings to test.  Might not yet have an OID.
      * @throws RemoteException
-     * @throws JMSException if a test connection could not be established
      */
-    void testConnection(JmsConnection connection) throws RemoteException, JMSException, NamingException;
+    void testConnection(JmsConnection connection) throws RemoteException, JmsTestException;
 
     /**
      * Test the specified JmsEndpoint, which may or may not exist in the database.  The JmsEndpoint's JmsConnection
@@ -85,8 +82,8 @@ public interface JmsAdmin extends Remote {
      * connection and attempt to verify the existence of a Destination for this JmsEndpoint.
      *
      * @param endpoint JmsEndpoint settings to test.  Might not yet have an OID, but its connectionOid must be valid.
+     * @throws FindException if the connection pointed to by the endpoint cannot be loaded
      * @throws RemoteException
-     * @throws JMSException if a test connection could not be established
      */
-    void testEndpoint(JmsEndpoint endpoint) throws RemoteException, JMSException;
+    void testEndpoint(JmsEndpoint endpoint) throws RemoteException, JmsTestException, FindException;
 }

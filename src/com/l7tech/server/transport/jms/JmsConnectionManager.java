@@ -87,7 +87,6 @@ public class JmsConnectionManager extends HibernateEntityManager {
             context = getContext();
             PersistenceManager.update(context, original);
             logger.info( "Updated JmsConnection #" + conn.getOid() );
-
         } catch ( SQLException se ) {
             logger.log( Level.SEVERE, se.toString(), se );
             throw new UpdateException( se.toString(), se );

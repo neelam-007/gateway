@@ -13,11 +13,13 @@ import com.l7tech.logging.LogManager;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.Entity;
+import com.l7tech.objectmodel.PersistenceContext;
 import com.l7tech.server.*;
 
 import java.util.*;
 import java.util.logging.Logger;
 import java.util.logging.Level;
+import java.sql.SQLException;
 
 /**
  * @author alex
@@ -96,10 +98,10 @@ public class JmsBootProcess implements ServerComponentLifecycle {
         ConnectionVersionChecker connectionChecker = new ConnectionVersionChecker( _connectionManager );
         EndpointVersionChecker endpointChecker = new EndpointVersionChecker( _endpointManager );
 
-        _connectionVersionTimer.schedule( connectionChecker, connectionChecker.getFrequency() * 2,
+        _versionTimer.schedule( connectionChecker, connectionChecker.getFrequency() * 2,
                                           connectionChecker.getFrequency() );
 
-        _endpointVersionTimer.schedule( endpointChecker, endpointChecker.getFrequency() * 2,
+        _versionTimer.schedule( endpointChecker, endpointChecker.getFrequency() * 2,
                                         endpointChecker.getFrequency() );
     }
 
@@ -114,16 +116,14 @@ public class JmsBootProcess implements ServerComponentLifecycle {
             stop(receiver);
         }
 
-        _connectionVersionTimer.cancel();
-        _endpointVersionTimer.cancel();
+        _versionTimer.cancel();
     }
 
     /**
      * Attempts to close all JMS receivers.
      */
     public synchronized void close() {
-        _connectionVersionTimer.cancel();
-        _endpointVersionTimer.cancel();
+        _versionTimer.cancel();
 
         for (Iterator i = _receivers.iterator(); i.hasNext();) {
             JmsReceiver receiver = (JmsReceiver)i.next();
@@ -174,10 +174,10 @@ public class JmsBootProcess implements ServerComponentLifecycle {
     private synchronized void connectionUpdated(JmsConnection updatedConnection) {
         long updatedOid = updatedConnection.getOid();
 
-        // Stop and remove any existing receivers for this connection
-        connectionDeleted( updatedOid );
-
         try {
+            // Stop and remove any existing receivers for this connection
+            connectionDeleted( updatedOid );
+
             EntityHeader[] endpoints = _endpointManager.findEndpointHeadersForConnection( updatedOid );
             for ( int i = 0; i < endpoints.length; i++ ) {
                 EntityHeader header = endpoints[i];
@@ -186,6 +186,16 @@ public class JmsBootProcess implements ServerComponentLifecycle {
             }
         } catch ( FindException e ) {
             _logger.log( Level.SEVERE, "Caught exception finding endpoints for a connection!", e );
+        } finally {
+            closeContext();
+        }
+    }
+
+    private void closeContext() {
+        try {
+            PersistenceContext.getCurrent().close();
+        } catch ( SQLException e ) {
+            _logger.log( Level.WARNING, "Caught exception while closing persistence context", e );
         }
     }
 
@@ -248,8 +258,7 @@ public class JmsBootProcess implements ServerComponentLifecycle {
     private JmsEndpointManager _endpointManager;
     private Set _receivers = new HashSet();
 
-    private final Timer _connectionVersionTimer = new Timer(true);
-    private final Timer _endpointVersionTimer = new Timer(true);
+    private final Timer _versionTimer = new Timer(true);
 
     private Logger _logger = LogManager.getInstance().getSystemLogger();
     private boolean _booted = false;

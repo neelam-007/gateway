@@ -116,7 +116,7 @@ public class Main {
 
     /**
      * install custom event queue as the default one does not pass the
-     * security info (Subject, AccessController.getContext()...)
+     * security info (Subject, AccessController.getJndiContext()...)
      */
     void installEventQueue() {
         EventQueue eq = Toolkit.getDefaultToolkit().getSystemEventQueue();

@@ -6,30 +6,26 @@
 
 package com.l7tech.server.transport.jms;
 
-import com.l7tech.common.transport.jms.JmsAdmin;
-import com.l7tech.common.transport.jms.JmsConnection;
-import com.l7tech.common.transport.jms.JmsEndpoint;
-import com.l7tech.common.transport.jms.JmsProvider;
+import com.l7tech.common.transport.jms.*;
 import com.l7tech.common.util.Locator;
+import com.l7tech.logging.LogManager;
 import com.l7tech.objectmodel.*;
 import com.l7tech.remote.jini.export.RemoteService;
-import com.l7tech.logging.LogManager;
 import com.sun.jini.start.LifeCycle;
 import net.jini.config.ConfigurationException;
 
-import javax.jms.JMSException;
-import javax.jms.ConnectionFactory;
-import javax.jms.Connection;
-import javax.jms.Session;
-import javax.naming.Context;
-import javax.naming.InitialContext;
+import javax.jms.*;
 import javax.naming.NamingException;
+import javax.naming.Context;
 import java.io.IOException;
 import java.rmi.RemoteException;
 import java.sql.SQLException;
-import java.util.*;
-import java.util.logging.Logger;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Iterator;
+import java.util.List;
 import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * @author alex
@@ -163,52 +159,24 @@ public class JmsAdminImpl extends RemoteService implements JmsAdmin {
      *
      * @param connection  JmsConnection settings to test.  Might not yet have an OID.
      * @throws RemoteException
-     * @throws JMSException if a test connection could not be established
-     * @throws NamingException if a JNDI failure occurs
+     * @throws JmsTestException if a test connection could not be established
      */
-    public void testConnection(JmsConnection connection) throws RemoteException, JMSException, NamingException {
-        String icf = connection.getInitialContextFactoryClassname();
-        String url = connection.getJndiUrl();
-        String dcfUrl = connection.getDestinationFactoryUrl();
-        String qcfUrl = connection.getQueueFactoryUrl();
-        String tcfUrl = connection.getTopicFactoryUrl();
-
-        String username = connection.getUsername();
-        String password = connection.getPassword();
-
-        Properties props = new Properties();
-        props.put( Context.PROVIDER_URL, url );
-        props.put( Context.INITIAL_CONTEXT_FACTORY, icf );
-        Context ctx = new InitialContext( props );
-
-        ConnectionFactory connFactory = null;
-        Connection conn = null;
-        Session sess = null;
-
+    public void testConnection(JmsConnection connection) throws RemoteException, JmsTestException {
         try {
-            String cfUrl = dcfUrl;
-            if ( cfUrl == null ) cfUrl = qcfUrl;
-            if ( cfUrl == null ) cfUrl = tcfUrl;
-
-            if ( cfUrl == null ) {
-                String msg = "The specified connection did not include at least one connection factory URL";
-                _logger.warning( msg );
-                throw new IllegalArgumentException( msg );
-            }
-
-            connFactory = (ConnectionFactory)ctx.lookup( cfUrl );
-            if ( username != null && password != null )
-                conn = connFactory.createConnection( username, password );
-            else
-                conn = connFactory.createConnection();
-
-            sess = conn.createSession( false, Session.AUTO_ACKNOWLEDGE );
-        } finally {
-            if ( sess != null ) sess.close();
-            if ( conn != null ) conn.close();
-            if ( ctx != null ) ctx.close();
+            JmsUtil.connect( connection ).close();
+        } catch ( JMSException e ) {
+            _logger.log( Level.INFO, "Caught JMSException while testing connection", e );
+            throw new JmsTestException( e.toString() );
+        } catch ( NamingException e ) {
+            _logger.log( Level.INFO, "Caught NamingException while testing connection", e );
+            throw new JmsTestException( e.toString() );
+        } catch ( JmsUtil.JmsConfigException e ) {
+            _logger.log( Level.INFO, "Caught JmsConfigException while testing connection", e );
+            throw new JmsTestException( e.toString() );
         }
     }
+
+
 
     /**
      * Test the specified JmsEndpoint, which may or may not exist in the database.  The JmsEndpoint's JmsConnection
@@ -217,10 +185,69 @@ public class JmsAdminImpl extends RemoteService implements JmsAdmin {
      *
      * @param endpoint JmsEndpoint settings to test.  Might not yet have an OID, but its connectionOid must be valid.
      * @throws RemoteException
-     * @throws JMSException if a test connection could not be established
+     * @throws FindException if the connection pointed to by the endpoint cannot be loaded
+     * @throws JmsTestException if a test connection could not be established
      */
-    public void testEndpoint(JmsEndpoint endpoint) throws RemoteException, JMSException {
-        throw new RuntimeException("Testing JMS endpoints is not yet implemented on this Gateway");
+    public void testEndpoint(JmsEndpoint endpoint) throws RemoteException, FindException, JmsTestException {
+        JmsConnection conn = getConnectionManager().findConnectionByPrimaryKey( endpoint.getConnectionOid() );
+        JmsBag bag = null;
+        MessageConsumer jmsQueueReceiver = null;
+        TopicSubscriber jmsTopicSubscriber = null;
+        Connection jmsConnection = null;
+
+        try {
+            _logger.finer( "Connecting to connection " + conn );
+            bag = JmsUtil.connect( conn, endpoint.getPasswordAuthentication() );
+
+            Context jndiContext = bag.getJndiContext();
+            jmsConnection = bag.getConnection();
+            jmsConnection.start();
+
+            _logger.finer( "Connected, getting Session..." );
+            Session jmsSession = bag.getSession();
+            _logger.finer( "Got Session..." );
+            if ( jmsSession instanceof QueueSession ) {
+                QueueSession qs = ((QueueSession)jmsSession);
+                Object o = jndiContext.lookup(endpoint.getDestinationName());
+                if ( !(o instanceof Queue) ) throw new JmsTestException( endpoint.getDestinationName() + " is not a Queue" );
+                Queue q = (Queue)o;
+                _logger.fine( "Creating queue receiver for " + q );
+                jmsQueueReceiver = qs.createReceiver( q );
+            } else if ( jmsSession instanceof TopicSession ) {
+                TopicSession ts = ((TopicSession)jmsSession);
+                Object o = jndiContext.lookup(endpoint.getDestinationName());
+                if ( !(o instanceof Topic) ) throw new JmsTestException( endpoint.getDestinationName() + " is not a Topic" );
+                Topic t = (Topic)o;
+                _logger.fine( "Creating topic subscriber for " + t );
+                jmsTopicSubscriber = ts.createSubscriber( t );
+            } else {
+                // Not much we can do here
+            }
+        } catch ( JMSException e ) {
+            _logger.log( Level.INFO, "Caught JMSException while testing endpoint", e );
+            throw new JmsTestException( e.toString() );
+        } catch ( NamingException e ) {
+            _logger.log( Level.INFO, "Caught NamingException while testing endpoint", e );
+            throw new JmsTestException( e.toString() );
+        } catch ( JmsUtil.JmsConfigException e ) {
+            _logger.log( Level.INFO, "Caught JmsConfigException while testing endpoint", e );
+            throw new JmsTestException( e.toString() );
+        } catch ( Throwable t ) {
+            _logger.log( Level.INFO, "Caught Throwable while testing endpoint", t );
+            throw new JmsTestException( t.toString() );
+        } finally {
+            try {
+                if ( jmsQueueReceiver != null ) jmsQueueReceiver.close();
+            } catch ( JMSException e ) {
+            }
+
+            try {
+                if ( jmsTopicSubscriber != null ) jmsTopicSubscriber.close();
+            } catch ( JMSException e ) {
+            }
+
+            if ( bag != null ) bag.close();
+        }
     }
 
     public long saveEndpoint( JmsEndpoint endpoint ) throws RemoteException, UpdateException,

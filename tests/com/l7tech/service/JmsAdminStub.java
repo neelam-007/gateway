@@ -6,10 +6,7 @@
 
 package com.l7tech.service;
 
-import com.l7tech.common.transport.jms.JmsAdmin;
-import com.l7tech.common.transport.jms.JmsConnection;
-import com.l7tech.common.transport.jms.JmsEndpoint;
-import com.l7tech.common.transport.jms.JmsProvider;
+import com.l7tech.common.transport.jms.*;
 import com.l7tech.identity.StubDataStore;
 import com.l7tech.objectmodel.*;
 
@@ -106,15 +103,15 @@ public class JmsAdminStub implements JmsAdmin {
         endpoints.remove(new Long(endpointOid));
     }
 
-    public void testConnection(JmsConnection connection) throws RemoteException, JMSException {
+    public void testConnection(JmsConnection connection) throws RemoteException, JmsTestException {
         // automatic success in stub mode, unless the name contains "FAIL"
         if (connection.getName().indexOf("FAIL") >= 0)
-            throw new JMSException("Invalid JMS connection settings");
+            throw new JmsTestException("Invalid JMS connection settings");
     }
 
-    public void testEndpoint(JmsEndpoint endpoint) throws RemoteException, JMSException {
+    public void testEndpoint(JmsEndpoint endpoint) throws RemoteException, JmsTestException {
         // automatic success in stub mode, unless the name contains "FAIL"
         if (endpoint.getName().indexOf("FAIL") >= 0)
-            throw new JMSException("Invalid Destination name");
+            throw new JmsTestException("Invalid Destination name");
     }
 }
