@@ -30,8 +30,8 @@ public class Pkcs12Importer {
         public static final int PRIVATE_CERTIFICATE = 1;
 
         protected KeyStore ks;
-        private String alias;
-        private int type;
+        protected String alias;
+        protected int type;
 
         protected Entry(KeyStore ks, String alias, int type) {
             this.ks = ks;
