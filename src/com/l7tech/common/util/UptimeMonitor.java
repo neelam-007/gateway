@@ -7,6 +7,7 @@
 package com.l7tech.common.util;
 
 import com.l7tech.logging.LogManager;
+import com.l7tech.server.ServerConfig;
 
 import java.io.BufferedInputStream;
 import java.io.FileNotFoundException;
@@ -147,7 +148,7 @@ public class UptimeMonitor {
         InputStream got = new BufferedInputStream(up.getInputStream());
         byte[] buff = HexUtils.slurpStream(got, 512);
         String uptimeOutput = new String(buff);
-        UptimeMetrics snapshot = new UptimeMetrics(uptimeOutput);
+        UptimeMetrics snapshot = new UptimeMetrics(uptimeOutput, ServerConfig.getInstance().getServerBootTime() );
         up.waitFor();
         return snapshot;
     }

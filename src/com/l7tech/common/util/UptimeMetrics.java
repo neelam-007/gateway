@@ -6,11 +6,9 @@
 
 package com.l7tech.common.util;
 
-import com.l7tech.server.ServerConfig;
-
-import java.util.regex.Pattern;
-import java.util.regex.Matcher;
 import java.io.Serializable;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * Class holding information gathered by UptimeMonitor.
@@ -34,9 +32,9 @@ public class UptimeMetrics implements Serializable {
     private final double load1;
     private final double load2;
     private final double load3;
-    private final long serverBootTime = ServerConfig.getInstance().getServerBootTime();
+    private final long serverBootTime;
 
-    UptimeMetrics(String rawUptimeOutput, long timestamp, int days, int hours, int minutes, double load1, double load2, double load3) {
+    UptimeMetrics(String rawUptimeOutput, long timestamp, int days, int hours, int minutes, double load1, double load2, double load3, long bootTime ) {
         this.rawUptimeOutput = rawUptimeOutput;
         this.timestamp = timestamp;
         this.days = days;
@@ -45,6 +43,7 @@ public class UptimeMetrics implements Serializable {
         this.load1 = load1;
         this.load2 = load2;
         this.load3 = load3;
+        this.serverBootTime = bootTime;
     }
 
     /**
@@ -59,16 +58,17 @@ public class UptimeMetrics implements Serializable {
      * @param rawUptimeOutput the uptime output to examine
      * @param timestamp the date and time this output was gathered, as from System.currentTimeMillis()
      */
-    public UptimeMetrics(String rawUptimeOutput, long timestamp) {
+    public UptimeMetrics(String rawUptimeOutput, long timestamp, long bootTime ) {
         this.rawUptimeOutput = rawUptimeOutput;
         this.timestamp = timestamp;
-        UptimeMetrics g = parseUptimeOutput(rawUptimeOutput);
+        UptimeMetrics g = parseUptimeOutput(rawUptimeOutput, bootTime );
         this.days = g.days;
         this.hours = g.hours;
         this.minutes = g.minutes;
         this.load1 = g.load1;
         this.load2 = g.load2;
         this.load3 = g.load3;
+        this.serverBootTime = bootTime;
     }
 
     /**
@@ -84,8 +84,8 @@ public class UptimeMetrics implements Serializable {
      * </pre>
      * @param rawUptimeOutput the uptime output to examine
      */
-    public UptimeMetrics(String rawUptimeOutput) {
-        this(rawUptimeOutput, System.currentTimeMillis());
+    public UptimeMetrics(String rawUptimeOutput, long bootTime ) {
+        this(rawUptimeOutput, System.currentTimeMillis(), bootTime );
     }
 
     /**
@@ -101,7 +101,7 @@ public class UptimeMetrics implements Serializable {
      * @param result  The string to parse, ie " 10:12:24 up 5 days, 17:05,  0 users,  load average: 0.00, 0.00, 0.00\n"
      * @return  An UptimeMetrics instance containing the pertinent information from this string.
      */
-    private static UptimeMetrics parseUptimeOutput(String result) {
+    private static UptimeMetrics parseUptimeOutput(String result, long bootTime ) {
         int days = 0;
         int hours = 0;
         int minutes = 0;
@@ -138,7 +138,8 @@ public class UptimeMetrics implements Serializable {
             load3 = strToDouble(matchLoads.group(3));
         }
 
-        UptimeMetrics um = new UptimeMetrics(result, 0, days, hours, minutes, load1, load2, load3);
+        UptimeMetrics um = new UptimeMetrics(result, 0, days, hours, minutes, load1, load2, load3, bootTime );
+
         return um;
     }
 

@@ -41,7 +41,8 @@ public class UptimeMonitorTest extends TestCase {
     }
 
     public void testUptimeMetrics() {
-        UptimeMetrics um = new UptimeMetrics(" 11:22:20  up 28 days, 18:57,  1 user,  load average: 1.43, 8.33, 0.12\n");
+        long time = System.currentTimeMillis();
+        UptimeMetrics um = new UptimeMetrics(" 11:22:20  up 28 days, 18:57,  1 user,  load average: 1.43, 8.33, 0.12\n", time );
         //logUptimeMetrics(um);
         assertTrue(um.getDays() == 28);
         assertTrue(um.getHours() == 18);
@@ -50,7 +51,7 @@ public class UptimeMonitorTest extends TestCase {
         assertTrue(um.getLoad2() > 8.32 && um.getLoad2() < 8.34);
         assertTrue(um.getLoad3() > 0.11 && um.getLoad3() < 0.13);
 
-        um = new UptimeMetrics("11:36AM  up 10 days, 14 hrs, 2 users, load averages: 102934.55, 8.09, 0.13\n");
+        um = new UptimeMetrics("11:36AM  up 10 days, 14 hrs, 2 users, load averages: 102934.55, 8.09, 0.13\n", time );
         //logUptimeMetrics(um);
         assertTrue(um.getDays() == 10);
         assertTrue(um.getHours() == 14);
@@ -59,7 +60,7 @@ public class UptimeMonitorTest extends TestCase {
         assertTrue(um.getLoad2() > 8.08 && um.getLoad2() < 8.10);
         assertTrue(um.getLoad3() > 0.12 && um.getLoad3() < 0.14);
 
-        um = new UptimeMetrics("10:47am  up 27 day(s), 50 mins,  1 user,	load average: 0.18, 0.26, 0.20\n");
+        um = new UptimeMetrics("10:47am  up 27 day(s), 50 mins,  1 user,	load average: 0.18, 0.26, 0.20\n", time );
         //logUptimeMetrics(um);
         assertTrue(um.getDays() == 27);
         assertTrue(um.getHours() == 0);
@@ -68,7 +69,7 @@ public class UptimeMonitorTest extends TestCase {
         assertTrue(um.getLoad2() > 0.25 && um.getLoad2() < 0.27);
         assertTrue(um.getLoad3() > 0.19 && um.getLoad3() < 0.21);
 
-        um = new UptimeMetrics(" 11:47:39 up 5 days, 18:40,  0 users,  load average: 0.02, 0.40, 5.00\n");
+        um = new UptimeMetrics(" 11:47:39 up 5 days, 18:40,  0 users,  load average: 0.02, 0.40, 5.00\n", time );
         //logUptimeMetrics(um);
         assertTrue(um.getDays() == 5);
         assertTrue(um.getHours() == 18);
@@ -77,7 +78,7 @@ public class UptimeMonitorTest extends TestCase {
         assertTrue(um.getLoad2() > 0.39 && um.getLoad2() < 0.41);
         assertTrue(um.getLoad3() > 4.99 && um.getLoad3() < 5.01);
 
-        um = new UptimeMetrics(" 12:28:55  up  3:24,  4 users,  load average: 0.20, 0.35, 0.43\n");
+        um = new UptimeMetrics(" 12:28:55  up  3:24,  4 users,  load average: 0.20, 0.35, 0.43\n", time );
         //logUptimeMetrics(um);
         assertTrue(um.getDays() == 0);
         assertTrue(um.getHours() == 3);
