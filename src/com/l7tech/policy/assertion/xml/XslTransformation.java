@@ -51,8 +51,17 @@ public class XslTransformation extends Assertion {
         this.direction = direction;
     }
 
+    public String getTransformName() {
+        return transformName;
+    }
+
+    public void setTransformName(String name) {
+        transformName = name;
+    }
+
     private int direction;
     private String xslSrc;
+    private String transformName;
     public static final int APPLY_TO_REQUEST = 1;
     public static final int APPLY_TO_RESPONSE = 2;
 }

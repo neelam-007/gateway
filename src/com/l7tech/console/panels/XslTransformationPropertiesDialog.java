@@ -108,6 +108,9 @@ public class XslTransformationPropertiesDialog extends JDialog {
         }
         // save new xslt
         subject.setXslSrc(contents);
+        // save the name
+        String name = nameTxtFld.getText();
+        subject.setTransformName(name);
         // save the direction
         Object selectedDirection = directionCombo.getSelectedItem();
         if (directions[0].equals(selectedDirection)) {
@@ -362,6 +365,7 @@ public class XslTransformationPropertiesDialog extends JDialog {
         toppanel.add(constructDirectionPanel());
         toppanel.add(constructLoadFromUrlPanel());
         toppanel.add(loadFromFilePanel());
+        toppanel.add(transformNamePanel());
 
         // panel that contains the xml display
         JPanel centerpanel = new JPanel();
@@ -375,6 +379,28 @@ public class XslTransformationPropertiesDialog extends JDialog {
         output.add(centerpanel, BorderLayout.CENTER);
 
         return output;
+    }
+
+    private JPanel transformNamePanel() {
+        JPanel blah = new JPanel();
+        blah.setLayout(new BorderLayout());
+        blah.add(new JLabel(resources.getString("xmlTransformName.name") + " "), BorderLayout.WEST);
+        blah.add(nameTxtFld, BorderLayout.CENTER);
+        if (subject != null && subject.getTransformName() != null) {
+            nameTxtFld.setText(subject.getTransformName());
+        }
+
+        // wrap this with border settings
+        GridBagConstraints constraints = new GridBagConstraints();
+        constraints.fill = GridBagConstraints.BOTH;
+        constraints.weightx = 1.0;
+        constraints.weighty = 1.0;
+        constraints.insets = new Insets(BORDER_PADDING, BORDER_PADDING, BORDER_PADDING, BORDER_PADDING);
+        JPanel bordered = new JPanel();
+        bordered.setLayout(new GridBagLayout());
+        bordered.add(blah, constraints);
+
+        return bordered;
     }
 
     private JPanel loadFromFilePanel() {
@@ -505,6 +531,7 @@ public class XslTransformationPropertiesDialog extends JDialog {
                                    resources.getString("directionCombo.response")};
         directionCombo = new JComboBox(directions);
         urlTxtFld = new JTextField();
+        nameTxtFld = new JTextField();
         resolveButton = new JButton();
         resolveButton.setText(resources.getString("resolveButton.name"));
         xmlTextArea = new JEditTextArea();
@@ -536,6 +563,7 @@ public class XslTransformationPropertiesDialog extends JDialog {
     private JComboBox directionCombo;
     private JButton resolveButton;
     private JTextField urlTxtFld;
+    private JTextField nameTxtFld;
     private JEditTextArea xmlTextArea;
     private String[] directions;
 

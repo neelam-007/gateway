@@ -30,10 +30,18 @@ public class XslTransformationTreeNode extends LeafAssertionTreeNode {
 
     public String getName() {
         if (nodeAssertion != null) {
-            String nodeName = "XSL transform ";
-            if (nodeAssertion.getDirection() == XslTransformation.APPLY_TO_REQUEST) nodeName += "request messages";
-            else if (nodeAssertion.getDirection() == XslTransformation.APPLY_TO_RESPONSE) nodeName += "response messages";
-            return nodeName;
+            StringBuffer nodeName = new StringBuffer("XSL transform ");
+            if (nodeAssertion.getDirection() == XslTransformation.APPLY_TO_REQUEST) {
+                nodeName.append("request messages");
+            } else if (nodeAssertion.getDirection() == XslTransformation.APPLY_TO_RESPONSE) {
+                nodeName.append("response messages");
+            }
+            if (nodeAssertion.getTransformName() != null &&
+                nodeAssertion.getTransformName().length() > 0 &&
+                nodeAssertion.getTransformName().trim().length() > 0) {
+                nodeName.append(" - " + nodeAssertion.getTransformName());
+            }
+            return nodeName.toString();
         } else return "XSL Transform";
     }
 
