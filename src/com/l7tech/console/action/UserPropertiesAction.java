@@ -3,6 +3,8 @@ package com.l7tech.console.action;
 import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.console.panels.EditorDialog;
 import com.l7tech.console.panels.GenericUserPanel;
+import com.l7tech.console.panels.UserPanel;
+import com.l7tech.console.panels.FederatedUserPanel;
 import com.l7tech.console.tree.AssertionsTree;
 import com.l7tech.console.tree.EntityHeaderNode;
 import com.l7tech.console.tree.UserNode;
@@ -60,7 +62,16 @@ public class UserPropertiesAction extends NodeAction {
                     config = getIdentityProviderConfig((EntityHeaderNode) node);
                 }
                 EntityHeader header = ((EntityHeaderNode) node).getEntityHeader();
-                GenericUserPanel panel = new GenericUserPanel();
+
+                UserPanel panel;
+                if(UserPropertiesAction.this instanceof GenericUserPropertiesAction) {
+                    panel = new GenericUserPanel();
+                } else if (UserPropertiesAction.this instanceof FederatedUserPropertiesAction) {
+                    panel = new FederatedUserPanel();
+                } else {
+                    throw new RuntimeException("Unsupported UserPropertiesAction.");
+                }
+
                 JFrame f = TopComponents.getInstance().getMainWindow();
                 EditorDialog dialog = new EditorDialog(f, panel);
                 try {
