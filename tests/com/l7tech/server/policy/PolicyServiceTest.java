@@ -6,25 +6,20 @@
 
 package com.l7tech.server.policy;
 
+import com.l7tech.common.util.XmlUtil;
+import com.l7tech.common.xml.TestDocuments;
+import com.l7tech.message.SoapRequest;
+import com.l7tech.message.SoapResponse;
+import com.l7tech.message.TestSoapRequest;
+import com.l7tech.message.TestSoapResponse;
+import com.l7tech.policy.assertion.composite.AllAssertion;
+import com.l7tech.proxy.util.PolicyServiceClient;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
+import org.w3c.dom.Document;
 
 import java.util.logging.Logger;
-import java.io.Reader;
-import java.io.IOException;
-
-import com.l7tech.proxy.util.PolicyServiceClient;
-import com.l7tech.common.util.XmlUtil;
-import com.l7tech.common.xml.TestDocuments;
-import com.l7tech.policy.assertion.composite.AllAssertion;
-import com.l7tech.message.SoapRequest;
-import com.l7tech.message.TestSoapRequest;
-import com.l7tech.message.TestSoapResponse;
-import com.l7tech.message.SoapResponse;
-import com.l7tech.server.transport.jms.JmsSoapRequest;
-import com.l7tech.server.transport.jms.JmsTransportMetadata;
-import org.w3c.dom.Document;
 
 /**
  * Unit tests for PolicyService.
