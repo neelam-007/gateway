@@ -232,12 +232,13 @@ public class HexUtils {
     }
 
     /**
-     * String compare that treats null as being less than any other string.
+     * Compare that treats null as being less than any other Comparable.
      *
-     * @param s1 a comparable object.  May be null.
-     * @param s2 a comparable object.  May be null.
+     * @param s1 a Comparable object.  May be null.
+     * @param s2 a Comparable object.  May be null.
      * @return  a negative integer, zero, or a positive integer as s1
-     *		is less than, equal to, or greater than s2.
+     *		is less than, equal to, or greater than s2; with null comparing
+     *      as equal to null and less than any non-null.
      *
      */
     public static int compareNullable(Comparable s1, Comparable s2) {
