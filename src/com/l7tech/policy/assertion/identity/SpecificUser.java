@@ -61,8 +61,10 @@ public class SpecificUser extends IdentityAssertion {
         try {
             if ( u.equals( getUser() ) )
                 return AssertionStatus.NONE;
-            else
-                return AssertionStatus.AUTH_FAILED;
+            else {
+                LogManager.getInstance().getSystemLogger().log(Level.INFO, "User does not match");
+                return AssertionStatus.UNAUTHORIZED;
+            }
         } catch ( FindException fe ) {
             LogManager.getInstance().getSystemLogger().log(Level.SEVERE, null, fe);
             return AssertionStatus.FAILED;

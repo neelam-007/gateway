@@ -66,7 +66,8 @@ public class MemberOfGroup extends IdentityAssertion {
             if ( targetGroup.getMembers().contains( user ) )
                 return AssertionStatus.NONE;
             else {
-                return AssertionStatus.AUTH_FAILED;
+                LogManager.getInstance().getSystemLogger().log(Level.INFO, "user not member of group");
+                return AssertionStatus.UNAUTHORIZED;
             }
         } catch (FindException fe) {
             LogManager.getInstance().getSystemLogger().log(Level.SEVERE, null, fe);
