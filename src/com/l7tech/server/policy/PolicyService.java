@@ -132,9 +132,19 @@ public class PolicyService {
             exceptionToFault(e, response);
         }
 
-        // todo
-        
+        Document policyDoc = null;
+        if (status == AssertionStatus.NONE) {
+            policyDoc = respondToPolicyDownloadRequest(policyId, request.getUser(), policyGetter);
+        } else {
+            // todo, some special soap fault
+        }
+
+        wrapFilteredPolicyInResponse(policyDoc, response);
         return;
+    }
+
+    private void wrapFilteredPolicyInResponse(Document policyDoc, SoapResponse response) {
+        // todo
     }
 
     private String getRequestedPolicyId(Document requestDoc) throws InvalidDocumentFormatException {
