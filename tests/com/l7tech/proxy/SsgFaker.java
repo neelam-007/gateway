@@ -34,7 +34,7 @@ import com.l7tech.common.util.HexUtils;
  * Time: 11:17:24 AM
  */
 public class SsgFaker {
-    private Category log = Category.getInstance(SsgFaker.class);
+    private static final Category log = Category.getInstance(SsgFaker.class);
 
     private HttpServer httpServer;
     private int maxThreads = 4;
