@@ -120,6 +120,8 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion {
                         return AssertionStatus.FAILED;
                     }
 
+                    xresp.setParameter( Request.PARAM_HTTP_CONTENT_TYPE, CONTENT_TYPE );
+
                     request.setRoutingStatus( RoutingStatus.ROUTED );
                 }
             } else {

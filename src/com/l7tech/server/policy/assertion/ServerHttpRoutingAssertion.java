@@ -46,11 +46,8 @@ import java.util.logging.Logger;
  * Server-side implementation of HTTP routing assertion.
  */
 public class ServerHttpRoutingAssertion extends ServerRoutingAssertion {
-public static final String CONTENT_TYPE = "Content-Type";
     public static final String USER_AGENT = "User-Agent";
     public static final String HOST = "Host";
-    public static final String TEXT_XML = "text/xml";
-    public static final String ENCODING = "UTF-8";
 
     public ServerHttpRoutingAssertion(HttpRoutingAssertion data) {
         _data = data;
@@ -64,7 +61,6 @@ public static final String CONTENT_TYPE = "Content-Type";
     public static final String PRODUCT = "Layer7-SecureSpan-Gateway";
 
     public static final String DEFAULT_USER_AGENT = PRODUCT + "/v" + BuildInfo.getProductVersion() + "-b" + BuildInfo.getBuildNumber();
-
 
     /**
      * Forwards the request along to a ProtectedService at the configured URL.
