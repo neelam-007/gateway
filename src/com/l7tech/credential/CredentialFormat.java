@@ -16,17 +16,17 @@ public class CredentialFormat {
     /**
      * The credentials are assumed to be a UTF-8 encoded String.
      */
-    public static final CredentialFormat CLEARTEXT  = new CredentialFormat( "Cleartext" );
+    public static final CredentialFormat CLEARTEXT = new CredentialFormat( "Cleartext" );
 
     /**
-     * The credentials are a bas64 encoded (basic auth)
+     * The credentials are a base64 encoded (basic auth)
      */
-    public static final CredentialFormat BASIC     = new CredentialFormat( "Basic" );
+    public static final CredentialFormat BASIC = new CredentialFormat( "Basic" );
 
     /**
      * The credentials are a hexadecimal-encoded H(A1) (i.e. MD5(user:pass[:realm])
      */
-    public static final CredentialFormat DIGEST     = new CredentialFormat( "Digest" );
+    public static final CredentialFormat DIGEST = new CredentialFormat( "Digest" );
 
     /**
      * The credentials are a client's certificate (TODO: encoded how?)
