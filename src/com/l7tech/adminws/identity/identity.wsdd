@@ -1,3 +1,13 @@
+<!--
+
+    Layer 7 Technologies, inc.
+    User: flascelles
+    Date: May 26, 2003
+
+    Axis WS descriptor for the identities admin service
+    handled by com.l7tech.adminws.identity.Service
+
+-->
 <deployment
     xmlns="http://xml.apache.org/axis/wsdd/"
     xmlns:java="http://xml.apache.org/axis/wsdd/providers/java">
@@ -59,9 +69,6 @@
           <parameter name="identityProviderConfigId" type="tns:long" xmlns:tns="http://www.w3.org/2001/XMLSchema"/>
           <parameter name="user" type="tns:User" xmlns:tns="http://www.layer7-tech.com/identity"/>
       </operation>
-
-
-      <!-- NEW STUFF -->
 
       <operation name="findAllGroups" qname="operNS:findAllGroups" xmlns:operNS="http://www.layer7-tech.com/identity" returnQName="findAllGroupsReturn" returnType="rtns:ArrayOfHeaders" xmlns:rtns="http://www.layer7-tech.com/identity">
           <parameter name="identityProviderConfigId" type="tns:long" xmlns:tns="http://www.w3.org/2001/XMLSchema"/>
