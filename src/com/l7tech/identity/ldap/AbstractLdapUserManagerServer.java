@@ -46,33 +46,51 @@ public abstract class AbstractLdapUserManagerServer implements UserManager {
             logger.log(Level.SEVERE, "invalid user manager");
             throw new FindException("invalid manager");
         }
+
+        DirContext context = null;
         try {
-            DirContext context = _ldapManager.getBrowseContext();
+            context = _ldapManager.getBrowseContext();
             Attributes attributes = context.getAttributes(dn);
-            LdapUser out = new LdapUser();
-            out.setProviderId(_config.getOid());
-            out.setDn(dn);
-            Object tmp = _ldapManager.extractOneAttributeValue(attributes, constants.userEmailAttribute() );
-            if (tmp != null) out.setEmail(tmp.toString());
-            tmp = _ldapManager.extractOneAttributeValue(attributes, constants.userFirstnameAttribute() );
-            if (tmp != null) out.setFirstName(tmp.toString());
-            tmp = _ldapManager.extractOneAttributeValue(attributes, constants.userLastnameAttribute() );
-            if (tmp != null) out.setLastName(tmp.toString());
-            tmp = _ldapManager.extractOneAttributeValue(attributes, constants.userLoginAttribute() );
-            if (tmp != null) out.setLogin(tmp.toString());
-            // this would override the dn
-            // tmp = extractOneAttributeValue(attributes, NAME_ATTR_NAME);
-            // if (tmp != null) out.setName(tmp.toString());
-            tmp = _ldapManager.extractOneAttributeValue(attributes, constants.userPasswordAttribute() );
-            if (tmp != null) {
-                byte[] tmp2 = (byte[])tmp;
-                out.setPassword(new String(tmp2));
+            Attribute classes = attributes.get( AbstractLdapConstants.OBJCLASS_ATTR );
+
+            // Check that it's really a user
+            for (int i = 0; i < classes.size(); i++) {
+                String oc = classes.get(i).toString();
+                if ( !constants.userObjectClass().equalsIgnoreCase( oc ) ) continue;
+
+                LdapUser out = new LdapUser();
+                out.setProviderId( _config.getOid() );
+                out.setDn(dn);
+                Object tmp = _ldapManager.extractOneAttributeValue(attributes, constants.userEmailAttribute() );
+                if (tmp != null) out.setEmail(tmp.toString());
+                tmp = _ldapManager.extractOneAttributeValue(attributes, constants.userFirstnameAttribute() );
+                if (tmp != null) out.setFirstName(tmp.toString());
+                tmp = _ldapManager.extractOneAttributeValue(attributes, constants.userLastnameAttribute() );
+                if (tmp != null) out.setLastName(tmp.toString());
+                tmp = _ldapManager.extractOneAttributeValue(attributes, constants.userLoginAttribute() );
+                if (tmp != null) out.setLogin(tmp.toString());
+                // this would override the dn
+                // tmp = extractOneAttributeValue(attributes, NAME_ATTR_NAME);
+                // if (tmp != null) out.setName(tmp.toString());
+                tmp = _ldapManager.extractOneAttributeValue(attributes, constants.userPasswordAttribute() );
+                if (tmp != null) {
+                    byte[] tmp2 = (byte[])tmp;
+                    out.setPassword(new String(tmp2));
+                }
+
+                return out;
             }
-            context.close();
-            return out;
-        } catch (NamingException e) {
-            logger.log(Level.SEVERE, null, e);
-            throw new FindException(e.getMessage(), e);
+            return null;
+        } catch ( NamingException ne ) {
+            logger.log( Level.SEVERE, ne.getMessage(), ne );
+            return null;
+        } finally {
+            try {
+                if ( context != null ) context.close();
+            } catch (NamingException e) {
+                logger.log( Level.SEVERE, e.getMessage(), e );
+                return null;
+            }
         }
     }
 
