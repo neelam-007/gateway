@@ -1,4 +1,4 @@
-package com.l7tech.adminws;
+package com.l7tech.logging;
 
 import com.l7tech.logging.LogAdmin;
 import com.l7tech.identity.StubDataStore;
