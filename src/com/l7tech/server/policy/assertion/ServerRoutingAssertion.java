@@ -26,6 +26,7 @@ import java.io.InputStreamReader;
 import java.net.URL;
 import java.net.MalformedURLException;
 import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * @author alex
@@ -136,14 +137,14 @@ public class ServerRoutingAssertion implements ServerAssertion {
 
             return AssertionStatus.NONE;
         } catch (WSDLException we) {
-            LogManager.getInstance().getSystemLogger().log(Level.SEVERE, null, we);
+            logger.log(Level.SEVERE, null, we);
             return AssertionStatus.FAILED;
         } catch (MalformedURLException mfe) {
-            LogManager.getInstance().getSystemLogger().log(Level.SEVERE, null, mfe);
+            logger.log(Level.SEVERE, null, mfe);
             return AssertionStatus.FAILED;
         } catch (IOException ioe) {
             // TODO: Worry about what kinds of exceptions indicate failed routing, and which are "unrecoverable"
-            LogManager.getInstance().getSystemLogger().log(Level.SEVERE, null, ioe);
+            logger.log(Level.SEVERE, null, ioe);
             return AssertionStatus.FAILED;
         } finally {
             if (postMethod != null) {
@@ -171,4 +172,5 @@ public class ServerRoutingAssertion implements ServerAssertion {
     protected transient MultiThreadedHttpConnectionManager _connectionManager;
     protected transient HttpState _httpState;
     protected transient UsernamePasswordCredentials _httpCredentials;
+    Logger logger = LogManager.getInstance().getSystemLogger();
 }

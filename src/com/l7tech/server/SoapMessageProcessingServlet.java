@@ -24,6 +24,7 @@ import javax.xml.soap.*;
 import java.io.*;
 import java.sql.SQLException;
 import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Receives SOAP requests via HTTP POST, passes them into the <code>MessageProcessor</code>
@@ -85,19 +86,19 @@ public class SoapMessageProcessingServlet extends HttpServlet {
                     sendFault( sreq, sresp, hrequest, hresponse, HttpServletResponse.SC_INTERNAL_SERVER_ERROR, status.getSoapFaultCode(), status.getMessage() );
                 }
             } catch ( PolicyAssertionException pae ) {
-                LogManager.getInstance().getSystemLogger().log(Level.SEVERE, null, pae);
+                logger.log(Level.SEVERE, null, pae);
                 sendFault( sreq, sresp, hrequest, hresponse, HttpServletResponse.SC_INTERNAL_SERVER_ERROR, SoapUtil.FC_SERVER, pae.toString() );
             } catch ( MessageProcessingException mpe ) {
-                LogManager.getInstance().getSystemLogger().log(Level.SEVERE, null, mpe);
+                logger.log(Level.SEVERE, null, mpe);
                 sendFault( sreq, sresp, hrequest, hresponse, HttpServletResponse.SC_INTERNAL_SERVER_ERROR, SoapUtil.FC_SERVER, mpe.toString() );
             }
         } catch ( SOAPException se ) {
-            LogManager.getInstance().getSystemLogger().log(Level.SEVERE, null, se);
+            logger.log(Level.SEVERE, null, se);
         } finally {
             try {
                 PersistenceContext.getCurrent().close();
             } catch ( SQLException se ) {
-                LogManager.getInstance().getSystemLogger().log(Level.SEVERE, null, se);
+                logger.log(Level.SEVERE, null, se);
                 throw new ServletException( se );
             }
 
@@ -158,4 +159,6 @@ public class SoapMessageProcessingServlet extends HttpServlet {
     private void sendChallenge( SoapRequest sreq, SoapResponse sresp, HttpServletRequest hreq, HttpServletResponse hresp ) throws SOAPException, IOException {
         sendFault( sreq, sresp, hreq, hresp, HttpServletResponse.SC_UNAUTHORIZED, SoapUtil.FC_CLIENT, "Authentication Required" );
     }
+
+    private Logger logger = LogManager.getInstance().getSystemLogger();
 }

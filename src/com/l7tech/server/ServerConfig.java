@@ -15,7 +15,7 @@ import javax.naming.InitialContext;
 import javax.naming.NamingException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
-import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * @author alex
@@ -46,7 +46,7 @@ public class ServerConfig {
             if ( sid != null && sid.length() > 0 )
                 _serverId = new Byte( sid ).byteValue();
         } catch ( NamingException ne ) {
-            LogManager.getInstance().getSystemLogger().log( Level.WARNING, "Parameter " + ne.getRemainingName() + " could not be read." );
+            logger.warning("Parameter " + ne.getRemainingName() + " could not be read.");
         } catch ( NumberFormatException nfe ) {
         }
 
@@ -65,11 +65,11 @@ public class ServerConfig {
                 InetAddress localhost = InetAddress.getLocalHost();
                 byte[] ip = localhost.getAddress();
                 _serverId = ip[3];
-                LogManager.getInstance().getSystemLogger().warning( "ServerId parameter not set, assigning server ID " + _serverId +
+                logger.warning( "ServerId parameter not set, assigning server ID " + _serverId +
                               " from server's IP address");
             } catch ( UnknownHostException e ) {
                 _serverId = 1;
-                LogManager.getInstance().getSystemLogger().severe( "Couldn't get server's local host!  Using server ID " + _serverId );
+                logger.severe( "Couldn't get server's local host!  Using server ID " + _serverId );
             }
         }
     }
@@ -96,4 +96,5 @@ public class ServerConfig {
     protected String _logLevel;
 
     private static ServerConfig _instance;
+    private Logger logger = LogManager.getInstance().getSystemLogger();
 }

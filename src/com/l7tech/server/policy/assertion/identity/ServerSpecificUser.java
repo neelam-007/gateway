@@ -50,16 +50,16 @@ public class ServerSpecificUser extends ServerIdentityAssertion implements Serve
             if ( requestingUser.equals( specifiedUser ) )
                 return AssertionStatus.NONE;
             else {
-                _log.log( Level.WARNING, "Requesting user " + requestingUser.getLogin() +
+                logger.log( Level.WARNING, "Requesting user " + requestingUser.getLogin() +
                                          " does not match specified user " + specifiedUser.getLogin() );
                 return AssertionStatus.UNAUTHORIZED;
             }
         } catch ( FindException fe ) {
-            LogManager.getInstance().getSystemLogger().log(Level.SEVERE, null, fe);
+            logger.log(Level.SEVERE, null, fe);
             return AssertionStatus.FAILED;
         }
     }
 
     protected SpecificUser _data;
-    protected Logger _log = LogManager.getInstance().getSystemLogger();
+    protected Logger logger = LogManager.getInstance().getSystemLogger();
 }

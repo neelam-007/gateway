@@ -16,6 +16,7 @@ import com.l7tech.policy.assertion.identity.MemberOfGroup;
 import com.l7tech.logging.LogManager;
 
 import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * @author alex
@@ -54,14 +55,15 @@ public class ServerMemberOfGroup extends ServerIdentityAssertion implements Serv
             if ( targetGroup.getMembers().contains( user ) )
                 return AssertionStatus.NONE;
             else {
-                LogManager.getInstance().getSystemLogger().log(Level.INFO, "user not member of group");
+                logger.info("user not member of group");
                 return AssertionStatus.UNAUTHORIZED;
             }
         } catch (FindException fe) {
-            LogManager.getInstance().getSystemLogger().log(Level.SEVERE, null, fe);
+            logger.log(Level.SEVERE, null, fe);
             return AssertionStatus.FAILED;
         }
     }
 
     protected MemberOfGroup _data;
+    private Logger logger = LogManager.getInstance().getSystemLogger();
 }

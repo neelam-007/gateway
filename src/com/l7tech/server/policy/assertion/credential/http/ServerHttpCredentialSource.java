@@ -19,6 +19,7 @@ import com.l7tech.server.policy.assertion.credential.ServerCredentialSourceAsser
 import java.util.Iterator;
 import java.util.Map;
 import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * @author alex
@@ -50,7 +51,7 @@ public abstract class ServerHttpCredentialSource extends ServerCredentialSourceA
     }
 
     protected void throwError( Level level, String err ) throws CredentialFinderException {
-        LogManager.getInstance().getSystemLogger().log( level, err );
+        logger.log( level, err );
         throw new CredentialFinderException( err );
     }
 
@@ -100,4 +101,5 @@ public abstract class ServerHttpCredentialSource extends ServerCredentialSourceA
     protected abstract String scheme();
 
     protected HttpCredentialSourceAssertion _data;
+    private Logger logger = LogManager.getInstance().getSystemLogger();
 }

@@ -19,6 +19,7 @@ import com.l7tech.logging.LogManager;
 
 import java.io.IOException;
 import java.util.logging.Level;
+import java.util.logging.Logger;
 import java.util.Map;
 import java.util.Collections;
 
@@ -82,7 +83,7 @@ public class ServerHttpBasic extends ServerHttpCredentialSource implements Serve
         } else {
             // No colons
             String err = "Invalid HTTP Basic format!";
-            LogManager.getInstance().getSystemLogger().log(Level.SEVERE, err);
+            logger.severe(err);
             throw new CredentialFinderException( err );
         }
     }
@@ -103,4 +104,5 @@ public class ServerHttpBasic extends ServerHttpCredentialSource implements Serve
     }
 
     protected HttpBasic _data;
+    private Logger logger = LogManager.getInstance().getSystemLogger();
 }
