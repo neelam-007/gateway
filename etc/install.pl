@@ -44,6 +44,7 @@ my $save_file="/etc/SSG_INSTALL";
 my $group_name="gateway";
 my $user_name="gateway";
 my $setkey="/ssg/bin/setkeys.sh";
+my $script_log="/tmp/install_ssg.log";
 
 # Files subject to configuration
 my $front_conf = "/etc/sysconfig/network-scripts/ifcfg-eth1";
@@ -57,8 +58,12 @@ my $dbconfig = "/ssg/etc/conf/hibernate.properties";
 
 # then change the local files as appropriate
 
+open (STDOUT, "| tee $script_log");
+print "INFO: STDOUT will be logged to <$script_log>\n"; 
+
 if ($ARGV[0] eq '-usage' ) {
         print usage();
+	close (STDOUT);
         exit;
 } elsif ($ARGV[0] eq '-apply' ) {
         if ( -e $save_file ) {
@@ -77,6 +82,7 @@ if ($ARGV[0] eq '-usage' ) {
                 $ans_proceed = trimwhitespace($ans_proceed);
                 if ($ans_proceed ne 'y') {
                         print "INFO: $0 exits\n";
+			close (STDOUT);
                         exit;
 		}
 		readconfig();
@@ -97,6 +103,8 @@ LOOP:
                 goto LOOP;
         }
 }
+
+close (STDOUT);
 
 sub change_os_config {
 	my $host = (split(/\./,$Conf{hostname}))[0];
@@ -363,6 +371,7 @@ EOF
 	if (! -e $cnf_rpm ) {
                 print "ERROR: $cnf_rpm distribution missing from rpm!\n";
 		print "INFO: $0 exits; please re-run $0\n";
+		close (STDOUT);
 		exit;
 	}
 
@@ -470,7 +479,24 @@ EOF
 
         # 6. inform user that the script is done
         print "INFO: If <$setkey> script ever being invoked by <$0> and error occurs, you just need to re-run <$setkey>\n";
-        print "INFO: <$0> script done\n" 
+	print "MANUAL TASK: MySQL - Re-start database service (as </etc/my.cnf> has just been configured by this script), then create ssg database, and ssg database tables if applicable:\n";
+        print "---(1)  re-start MySQL datbase service and purge database (if existed)\n";
+	print "------# service mysql stop\n";
+    	print "------# rm /var/lib/mysql/ib*\n";
+    	print "------# rm -Rf /var/lib/mysql/ssg\n";
+    	print "------# service mysql start\n";
+        print "---(2)  Observe MySQL log (tail -f /var/log/mysqld.log) to wait until the /var/lib/mysql/ib* schema is completed before continuing\n";
+	print "---(3)  Following steps of creating SSG database and tables only applicable if ssg database is running on this node - non cluster database, or first node of a cluster database, see note 1)\n"; 
+	print "---(3a) Create SSG database\n" ;
+	print "------# mysqladmin create ssg\n";
+	print "------or\n";
+	print "------# mysqladmin --password='<database root user password>' create ssg\n";
+        print "---(3b) Create SSG database tables with correct version of SQL script file\n";
+        print "------# mysql ssg < /ssg/etc/sql/ssg.sql\n";
+	print "------or\n";
+        print "------# mysql -p<database root user password> ssg < /ssg/etc/sql/ssg.sql\n";
+	print "note 1: if it is not the first node of the cluster database - base on the </etc/my.cnf>, SSG database will be replicating after you've started mysql on node 2; SSG database and tables will be created by the replicator as well, so you don't need to manually creating SSG database and tables on node 2\n";
+        print "INFO: <$0> script done\n"; 
 }
 	
 
@@ -532,6 +558,7 @@ REPEAT_PARAM:
 
 
 sub display {
+print "====================================================================================\n";
 	my $t = <<EOF;
 SSG Configuration script
 Current Configuration parameters:
@@ -599,6 +626,8 @@ DESCRIPTION
 
     $setkey will be run to generate CA and SSL keys if this is a non cluster SSG, or this node is the first node of a cluster SSG. 
     For the rest of the nodes (not the first node), CA and SSL keys will be copied from the first node of the cluster.
+
+    The STDOUT of $0 will be logged at $script_log
 
 OPTION
     -apply     Don't ask for config, run OS config using $save_file
