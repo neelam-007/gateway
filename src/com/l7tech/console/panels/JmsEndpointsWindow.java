@@ -100,8 +100,9 @@ public class JmsEndpointsWindow extends JDialog {
                 EndpointListItem i = (EndpointListItem) getEndpointListItems().get(rowIndex);
                 if (i.endpoint != null) {
                     try {
-                        i.endpoint.setMessageSource(((Boolean)aValue).booleanValue());
-                        Registry.getDefault().getJmsManager().saveEndpoint(i.endpoint);
+                        final boolean b = ((Boolean)aValue).booleanValue();
+                        Registry.getDefault().getJmsManager().setEndpointMessageSource(i.endpoint.getOid(), b);
+                        i.endpoint.setMessageSource(b);
                     } catch (Exception e) {
                         throw new RuntimeException("Unable to save changes to endpoint " + i.endpoint, e);
                     }

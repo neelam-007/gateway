@@ -53,6 +53,29 @@ public class JmsAdminImpl extends RemoteService implements JmsAdmin {
         return getConnectionManager().findConnectionByPrimaryKey( oid );
     }
 
+    public JmsEndpoint findEndpointByPrimaryKey(long oid) throws RemoteException, FindException {
+        return getEndpointManager().findByPrimaryKey( oid );
+    }
+
+    public void setEndpointMessageSource(long oid, boolean isMessageSource) throws RemoteException, FindException, UpdateException {
+        try {
+            PersistenceContext.getCurrent().beginTransaction();
+            JmsEndpoint endpoint = findEndpointByPrimaryKey(oid);
+            endpoint.setMessageSource(isMessageSource);
+            PersistenceContext.getCurrent().commitTransaction();
+        } catch (TransactionException e) {
+            throw new UpdateException(e.getMessage(), e);
+        } catch (SQLException e) {
+            throw new FindException(e.getMessage(), e);
+        } finally {
+            try {
+                PersistenceContext.getCurrent().close();
+            } catch (SQLException e) {
+                _logger.warning(e.getMessage());
+            }
+        }
+    }
+
     public EntityHeader[] findAllMonitoredEndpoints() throws RemoteException, FindException {
         Collection endpoints = getEndpointManager().findMessageSourceEndpoints();
         List list = new ArrayList();

@@ -15,6 +15,8 @@ public interface JmsAdmin extends Remote {
     JmsProvider[] getProviderList() throws RemoteException, FindException;
     JmsConnection[] findAllConnections() throws RemoteException, FindException;
     JmsConnection findConnectionByPrimaryKey( long oid ) throws RemoteException, FindException;
+    JmsEndpoint findEndpointByPrimaryKey( long oid ) throws RemoteException, FindException;
+    void setEndpointMessageSource( long oid, boolean isMessageSource ) throws RemoteException, FindException, UpdateException;
 
     /**
      * Save the specified JmsConnection, which may or may not have been newly created by the caller, to the database.

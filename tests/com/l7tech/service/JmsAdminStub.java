@@ -86,6 +86,11 @@ public class JmsAdminStub implements JmsAdmin {
             return e;
     }
 
+    public void setEndpointMessageSource(long oid, boolean isMessageSource) throws RemoteException, FindException {
+        JmsEndpoint endpoint = findEndpointByPrimaryKey(oid);
+        endpoint.setMessageSource(isMessageSource);        
+    }
+
     public synchronized long saveEndpoint(JmsEndpoint endpoint) throws RemoteException, UpdateException, SaveException, VersionException {
         long oid = endpoint.getOid();
         if (oid == 0 || oid == JmsEndpoint.DEFAULT_OID) {
