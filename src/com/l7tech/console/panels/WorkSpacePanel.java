@@ -17,8 +17,8 @@ import java.util.logging.Logger;
  * for elements such as policies.
  */
 public class WorkSpacePanel extends JPanel {
+    static public final String NAME = "workspace.panel";
     static final Logger log = Logger.getLogger(WorkSpacePanel.class.getName());
-
     private final JTabbedPane tabbedPane = new JTabbedPane();
     /* this class classloader */
     private final ClassLoader cl = getClass().getClassLoader();
