@@ -50,6 +50,11 @@ public class ResolutionManager {
         Collection distinctItemsToSave = getDistinct(service);
         Collection existingParameters = existingResolutionParameters(service);
 
+        if (isSameParameters(distinctItemsToSave, existingParameters)) {
+            logger.finest("resolution parameters unchanged");
+            return;
+        }
+
         // get the hibernate session
         HibernatePersistenceContext pc = null;
         Session session = null;
@@ -98,6 +103,12 @@ public class ResolutionManager {
             logger.log(Level.WARNING, msg, e);
             throw new DuplicateObjectException(msg, e);
         }
+    }
+
+    private boolean isSameParameters(Collection paramcol1, Collection paramcol2) {
+        if (paramcol1.size() != paramcol2.size()) return false;
+        if (!paramcol2.containsAll(paramcol1)) return false;
+        return true;
     }
 
     private Collection getDistinct(PublishedService service) {
