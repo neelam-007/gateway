@@ -100,7 +100,7 @@ public class InternalGroupManagerServer extends HibernateEntityManager implement
                 existingGrp = null;
             }
             if (existingGrp != null) {
-                throw new SaveException("This group cannot be saved because an existing group already uses the name" + group.getName()); 
+                throw new SaveException("This group cannot be saved because an existing group already uses the name '" + group.getName() + "'" );
             }
             return _manager.save( getContext(), group );
         } catch ( SQLException se ) {
