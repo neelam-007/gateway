@@ -52,7 +52,7 @@ public class MessageViewerModel extends AbstractListModel implements RequestInte
             this.when = new Date();
         }
 
-        abstract public Component getComponent();
+        abstract public Component getComponent(boolean reformat);
 
         public String toString() {
             return dateFormat.format(when) + ": " + title;
@@ -68,7 +68,7 @@ public class MessageViewerModel extends AbstractListModel implements RequestInte
             this.message = message;
         }
 
-        public Component getComponent() {
+        public Component getComponent(boolean reformat) {
             JTextArea ta = new ContextMenuTextArea(message);
             ta.setEditable(false);
             return ta;
@@ -85,7 +85,7 @@ public class MessageViewerModel extends AbstractListModel implements RequestInte
             this.policy = policy;
         }
 
-        public Component getComponent() {
+        public Component getComponent(boolean reformat) {
             JPanel panel = new JPanel(new GridBagLayout());
 
             final JLabel namespaceLabel = new JLabel("Body Namespace:  ");
@@ -138,10 +138,11 @@ public class MessageViewerModel extends AbstractListModel implements RequestInte
      * ASCII on-demand.
      */
     private static class SavedXmlMessage extends SavedMessage {
-        private String str;
-        private String unparsed;
-        private Document message;
-        private HttpHeaders headers;
+        private String str = null;
+        private boolean strWasFormatted = false;
+        private String unparsed = null;
+        private Document message = null;
+        private HttpHeaders headers = null;
 
         SavedXmlMessage(final String title, final Document msg, HttpHeaders headers) {
             super(title);
@@ -155,30 +156,31 @@ public class MessageViewerModel extends AbstractListModel implements RequestInte
             this.headers = headers;
         }
 
-        public String getMessageText() {
-            if (str != null)
+        public String getMessageText(boolean reformat) {
+            if (str != null && reformat == strWasFormatted)
                 return str;
             if (message == null) {
                 try {
                     message = XmlUtil.stringToDocument(unparsed);
-                    unparsed = null;
                 } catch (Exception e) {
                     log.error(e);
                     return headersToString(headers) + "\n" + unparsed;
                 }
             }
             try {
-                str = headersToString(headers) + "\n" + XmlUtil.nodeToString(message);
+                if (reformat)
+                    str = headersToString(headers) + "\n" + XmlUtil.nodeToFormattedString(message);
+                else
+                    str = headersToString(headers) + "\n" + XmlUtil.nodeToString(message);
             } catch (IOException e) {
                 str = headersToString(headers) + "Unable to read message: " + e;
             }
-            headers = null;
-            message = null;
+            strWasFormatted = reformat;
             return str;
         }
 
-        public Component getComponent() {
-            JTextArea ta = new ContextMenuTextArea(getMessageText());
+        public Component getComponent(boolean reformat) {
+            JTextArea ta = new ContextMenuTextArea(getMessageText(reformat));
             ta.setEditable(false);
             return ta;
         }
@@ -196,8 +198,8 @@ public class MessageViewerModel extends AbstractListModel implements RequestInte
      * @param idx
      * @return
      */
-    public Component getComponentAt(final int idx) {
-        return ((SavedMessage)messages.get(idx)).getComponent();
+    public Component getComponentAt(final int idx, boolean reformat) {
+        return ((SavedMessage)messages.get(idx)).getComponent(reformat);
     }
 
     /**

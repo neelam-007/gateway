@@ -25,6 +25,7 @@ public class MessageViewer extends JFrame {
     MessageViewerModel messageViewerModel = new MessageViewerModel();
     private JPanel messageView;
     private JList messageList;
+    private JCheckBox formatXmlCheckbox;
 
     private class MessageViewListener implements ListDataListener {
         public void intervalAdded(final ListDataEvent e) {
@@ -55,7 +56,8 @@ public class MessageViewer extends JFrame {
             messageList.setSelectedIndex(idx);
         messageView.removeAll();
         if (idx >= 0 && idx <= messageViewerModel.getSize()) {
-            JScrollPane messageViewPane = new JScrollPane(messageViewerModel.getComponentAt(idx));
+            JScrollPane messageViewPane = new JScrollPane(
+                    messageViewerModel.getComponentAt(idx, formatXmlCheckbox.isSelected()));
             messageView.add(messageViewPane,
                             new GridBagConstraints(0, 0, 1, 1, 1.0, 1.0,
                                                    GridBagConstraints.CENTER,
@@ -97,6 +99,13 @@ public class MessageViewer extends JFrame {
         final JScrollPane messageViewPane = new JScrollPane(messageView);
         messageViewPane.setMinimumSize(new Dimension(250, 400));
 
+        formatXmlCheckbox = new JCheckBox("Reformat XML");
+        formatXmlCheckbox.addActionListener(new ActionListener() {
+            public void actionPerformed(final ActionEvent e) {
+                setSelectedIndex(messageList.getSelectedIndex());
+            }
+        });
+
         final JButton clearButton = new JButton("Clear");
         clearButton.addActionListener(new ActionListener() {
             public void actionPerformed(final ActionEvent e) {
@@ -116,6 +125,8 @@ public class MessageViewer extends JFrame {
         Utilities.runActionOnEscapeKey(getRootPane(), hideAction);
         getRootPane().setDefaultButton(hideButton);
         final JPanel buttonPanel = new JPanel();
+        buttonPanel.add(formatXmlCheckbox);
+        buttonPanel.add(Box.createHorizontalStrut(60));
         buttonPanel.add(clearButton);
         buttonPanel.add(hideButton);
 
