@@ -209,11 +209,10 @@ public class PolicyServlet extends HttpServlet {
 
     private void outputPublishedServicePolicy(PublishedService service, HttpServletResponse response) throws IOException {
         if (service == null) {
-            response.addHeader(SecureSpanConstants.HttpHeaders.POLICY_VERSION,
-                               Long.toString(service.getOid()) + '|' + Long.toString(service.getVersion()));
             response.sendError(HttpServletResponse.SC_NOT_FOUND, "ERROR cannot resolve target service or you are not authorized to consult it");
             return;
         } else {
+            response.addHeader(SecureSpanConstants.HttpHeaders.POLICY_VERSION, Long.toString(service.getOid()) + '|' + Long.toString(service.getVersion()));
             response.setContentType("text/xml; charset=utf-8");
             response.getOutputStream().println(service.getPolicyXml());
         }
