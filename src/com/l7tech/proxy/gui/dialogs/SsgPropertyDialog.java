@@ -382,7 +382,7 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
         fc.setDialogType(JFileChooser.OPEN_DIALOG);
         FileFilter fileFilter = new FileFilter() {
             public boolean accept(File f) {
-                return (f.getName().endsWith(".p12") || f.getName().endsWith(".P12"));
+                return (f.isDirectory() || f.getName().endsWith(".p12") || f.getName().endsWith(".P12"));
             }
 
             public String getDescription() {
@@ -400,6 +400,8 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
         char[] pass = PasswordDialog.getPassword(Gui.getInstance().getFrame(),
                                                  "Enter pass phrase for this PKCS#12 file",
                                                  true);
+        if (pass == null)
+            return;
         try {
             SsgKeyStoreManager.importClientCertificate(ssg, certFile, pass, null, ssgPass);
         } catch (ClassCastException e) {
