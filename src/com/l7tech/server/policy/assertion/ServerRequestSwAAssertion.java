@@ -241,10 +241,6 @@ public class ServerRequestSwAAssertion implements ServerAssertion {
                             return AssertionStatus.NONE;
                         }
                     }  // while next operation of the binding found in assertion
-                    if(!operationElementFound) {
-                        logger.info("The operation specified in the request is invalid.");
-                        return AssertionStatus.FALSIFIED;
-                    }
                 }   // while next binding found in assertion
             } catch (SAXException e) {
                 logger.log(Level.WARNING, "Caught SAXException when retrieving xml document from request", e);
@@ -257,9 +253,13 @@ public class ServerRequestSwAAssertion implements ServerAssertion {
                 return AssertionStatus.SERVER_ERROR;
             }
         } else {
-
+            logger.finest("The operation specified in the request is invalid.");
+            return AssertionStatus.FAILED;
         }
-
-        return AssertionStatus.NONE;
+        
+        if(!operationElementFound) {
+            logger.info("The operation specified in the request is invalid.");
+        }
+        return AssertionStatus.FALSIFIED;
     }
 }
