@@ -16,6 +16,7 @@ set CLASSPATH=%SRC_ROOT%\lib\optional.jar;%CLASSPATH%
 set CLASSPATH=%SRC_ROOT%\lib\xercesImpl.jar;%CLASSPATH%
 set CLASSPATH=%SRC_ROOT%\lib\xml-apis.jar;%CLASSPATH%
 set CLASSPATH=%SRC_ROOT%\lib\junit.jar;%CLASSPATH%
+set CLASSPATH=%SRC_ROOT%\lib\xmltask.jar;%CLASSPATH%
 rem echo %CLASSPATH%
 rem Execute ANT to perform the requested build target
 java org.apache.tools.ant.Main -Dsrc.root=%SRC_ROOT% -Dtomcat.home=%TOMCAT_HOME% %1 %2 %3 %4 %5

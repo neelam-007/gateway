@@ -41,6 +41,21 @@
     </path>
     <property name="test.class.path" refid="project.class.path"/>
 
+    <!-- 
+       * jars that go in $TOMCAT_HOME/common/lib 
+       * currently in ant this is used in conjunction with 
+       * fileset (look for patternset id usage throughout this
+       * build.xml for examples)
+    -->
+    <property name="common.lib.jars" 
+              value="saaj.jar,
+                     jaxrpc.jar,
+                     xerces-J_1.4.0.jar,
+                     tyrex-1.0.jar,
+                     ots-jts_1.0.jar,
+                     jta-spec1_0_1.jar,
+                     mysql-connector-java-3.0.7-stable-bin.jar"/>
+
     <!--
       ** init dev target The "dev" target depends on this target.
       -->
@@ -134,7 +149,7 @@
           ** Copy such libraries into $TOMCAT_HOME/common/lib
           **  -->
         <copy todir="${tomcat.home}/common/lib">
-            <fileset dir="${build.dir}/lib" includes="jaxrpc.jar, saaj.jar"/>
+            <fileset dir="${src.root}/lib" includes="${common.lib.jars}"/>
         </copy>
     </target>
 
@@ -196,7 +211,9 @@
     <target name="package" depends="compile">
         <!-- the ssg war -->
         <war warfile="${build.dir}/${war}" webxml="${build.etc}/web.xml">
-            <lib dir="${build.dir}/lib" excludes="**/jh.jar, **/jaxrpc.jar, **/saaj.jar"/>
+            <lib dir="${build.dir}/lib" 
+                 excludes="${common.lib.jars}, jh.jar, kunststoff.jar">
+            </lib>
             <classes dir="${build.classes}"/>
             <zipfileset dir="${src.root}/etc" includes="server-config.wsdd" prefix="WEB-INF"/>
             <zipfileset dir="${src.root}/src/com/l7tech/util/locator" includes="services.properties" prefix="WEB-INF/classes/com/l7tech/util/locator"/>
@@ -220,7 +237,7 @@
         <copy todir="${build.lib}">
             <fileset dir="${src.root}/lib"
                 excludes="**/CVS/*,**/**ant*,**/optional.jar,**/*xml-apis.jar,
-                          **/*junit.jar, **/*xercesImpl.jar"/>
+                          **/*junit.jar, **/*xercesImpl.jar, **/*xmltask.jar"/>
         </copy>
 
         <!-- the web.xml -->

@@ -23,6 +23,14 @@ case "`uname`" in
   CYGWIN*) cygwin=true ;;
 esac 
 
+# For Cygwin, switch paths to Unix .
+if $cygwin; then
+  CLASSPATH=`cygpath --path --unix "$CLASSPATH"`
+  SRC_ROOT=`cygpath --path --unix "$SRC_ROOT"`
+  TOMCAT_HOME=`cygpath --path --unix "$TOMCAT_HOME"`
+  JAVA_HOME=`cygpath --path --unix "$JAVA_HOME"`
+fi
+
 if [ ! -e $JAVA_HOME/bin/java ]; then
     echo ""
     echo "The JDK wasn't found in directory ${JAVA_HOME}."
@@ -52,7 +60,7 @@ if [ ! -e $SRC_ROOT/build.sh ]; then
     exit 1
 fi
 
-ANT_JARS="$SRC_ROOT/lib/ant.jar:$SRC_ROOT/lib/optional.jar:$SRC_ROOT/lib/xercesImpl.jar:$SRC_ROOT/lib/xml-apis.jar:$SRC_ROOT/lib/junit.jar"
+ANT_JARS="$SRC_ROOT/lib/ant.jar:$SRC_ROOT/lib/optional.jar:$SRC_ROOT/lib/xercesImpl.jar:$SRC_ROOT/lib/xml-apis.jar:$SRC_ROOT/lib/junit.jar:$SRC_ROOT/lib/xmltask.jar"
 CLASSPATH="${JDK_CLASSES}:${ANT_JARS}"
 # For Cygwin, switch paths to Windows format before running java
 if $cygwin; then
