@@ -619,8 +619,9 @@ public class PolicyTree extends JTree implements DragSourceListener,
                 log.fine("DROPPING: " + transferData);
                 AbstractTreeNode node = (AbstractTreeNode)transferData;
                 TreePath path = getSelectionPath();
+                final Object root = getModel().getRoot();
                 if (path == null) {
-                    path = new TreePath(getModel().getRoot());
+                    path = new TreePath(root);
                 } else {
                     Point location = e.getLocation();
                     int row = getRowForLocation(location.x, location.y);
@@ -629,13 +630,13 @@ public class PolicyTree extends JTree implements DragSourceListener,
                         dropAsFirstContainerChild = true;
                     }
                     if (row == -1) {
-                        path = new TreePath(getModel().getRoot());
+                        path = new TreePath(root);
                     }
                 }
                 AssertionTreeNode target = (AssertionTreeNode)path.getLastPathComponent();
                 if (target.accept(node)) {
                     e.acceptDrop(e.getDropAction());
-                    if (dropAsFirstContainerChild || target instanceof CompositeAssertionTreeNode) {
+                    if (dropAsFirstContainerChild || (target instanceof CompositeAssertionTreeNode && target != root)) {
                         CompositeAssertionTreeNode compositeAssertionTreeNode = (CompositeAssertionTreeNode)target;
                         compositeAssertionTreeNode.receive(node, 0);
                     } else {
