@@ -54,6 +54,8 @@ public final class TestDocuments {
     public static final String WRAPED_L7ACTOR = DIR + "soapRequestWithUsernameTokenAndWrappedL7Actors.xml";
     public static final String MULTIPLE_WRAPED_L7ACTOR = DIR + "soapRequestWithUsernameTokenAndMultipleL7Actors.xml";
 
+    public static final String DOTNET_SEC_TOK_REQ = DIR + "dotNetSecurityTokenRequest.xml";
+
 
     public static final String ETTK_KS = DIR + "ibmEttkKeystore.db";
     public static final String ETTK_KS_PROPERTIES = DIR + "ibmEttkKeystore.properties";
