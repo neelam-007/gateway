@@ -44,18 +44,18 @@ public class ServerSpecificUser extends ServerIdentityAssertion implements Serve
      * @param requestingUser the <code>User</code> to check
      * @return <code>AssertionStatus.NONE</code> if the <code>User</code> matches.
      */
-    public AssertionStatus checkUser( User requestingUser ) {
+    public AssertionStatus checkUser(User requestingUser) {
         try {
             User specifiedUser = getUser();
-            if ( requestingUser.equals( specifiedUser ) )
-                return AssertionStatus.NONE;
-            else {
+            if (specifiedUser == null || !requestingUser.equals(specifiedUser)) {
                 logger.log( Level.WARNING, "Requesting user " + requestingUser.getLogin() +
-                                         " does not match specified user " + specifiedUser.getLogin() );
+                                         " does not match specified user " + _data.getUserLogin());
                 return AssertionStatus.UNAUTHORIZED;
             }
-        } catch ( FindException fe ) {
-            logger.log(Level.SEVERE, null, fe);
+            else
+                return AssertionStatus.NONE;
+        } catch (FindException e) {
+            logger.log(Level.SEVERE, "Exception getting user from provider", e);
             return AssertionStatus.FAILED;
         }
     }
