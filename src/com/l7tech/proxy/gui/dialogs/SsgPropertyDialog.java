@@ -565,8 +565,6 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
                 char[] pass = ssg.getRuntime().getCachedPassword();
                 boolean hasPassword = pass != null;
                 tp.getUserPasswordField().setText(new String(hasPassword ? pass : "".toCharArray()));
-                boolean customPorts = isPortsCustom(ssg);
-                getNetworkPane().setCustomPorts(customPorts);
                 tp.getSavePasswordCheckBox().setSelected(ssg.isSavePasswordToDisk());
                 tp.getUseClientCredentialCheckBox().setSelected(ssg.isChainCredentialsFromClient());
                 String clientCertUsername = ssg.getRuntime().getSsgKeyStoreManager().lookupClientCertUsername();
@@ -574,9 +572,11 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
                     tp.getUsernameTextField().setText(clientCertUsername);
                     tp.getUsernameTextField().setEditable(false);
                 }
-                updateIdentityEnableState();
             }
 
+            updateIdentityEnableState();
+            boolean customPorts = isPortsCustom(ssg);
+            getNetworkPane().setCustomPorts(customPorts);
             getNetworkPane().setLocalEndpoint("http://localhost:" + clientProxy.getBindPort() + "/" +
                                        ssg.getLocalEndpoint());
             getNetworkPane().setWsdlEndpoint("http://localhost:" + clientProxy.getBindPort() + "/" +
