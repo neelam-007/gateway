@@ -228,12 +228,12 @@ public class WssDecoratorImpl implements WssDecorator {
         Element dkt;
         if (desiredNextSibling == null)
             dkt = XmlUtil.createAndAppendElementNS(securityHeader,
-                                                   "DerivedKeyToken",
+                                                   SoapUtil.WSSC_DK_EL_NAME,
                                                    SoapUtil.WSSC_NAMESPACE,
                                                    "wssc");
         else
             dkt = XmlUtil.createAndInsertBeforeElementNS(desiredNextSibling,
-                                                         "DerivedKeyToken",
+                                                         SoapUtil.WSSC_DK_EL_NAME,
                                                          SoapUtil.WSSC_NAMESPACE,
                                                          "wssc");
         String wssc = dkt.getPrefix() == null ? "" : dkt.getPrefix() + ":";
