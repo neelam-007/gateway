@@ -31,6 +31,7 @@ public abstract class SoapRequest extends XmlMessageAdapter implements SoapMessa
         MessageProcessor.setCurrentRequest(this);
     }
 
+    // todo why is this here and not in one of the superinterfaces?  why would there be a "SoapRequest" instance that wasn't soap?
     public boolean isSoap() {
         if ( soap == null ) {
             Element docEl = null;
