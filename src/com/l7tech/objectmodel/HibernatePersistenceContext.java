@@ -37,7 +37,11 @@ public class HibernatePersistenceContext extends PersistenceContext {
             else
                 _session.flush();
 
-            if ( _htxn != null ) _htxn.commit();
+            if ( _htxn == null ) {
+                logger.warning( "Commit called with no transaction active!" );
+            } else {
+                _htxn.commit();
+            }
         } catch ( SQLException se ) {
             logger.throwing( getClass().getName(), "commitTransaction", se );
             close();
@@ -64,10 +68,15 @@ public class HibernatePersistenceContext extends PersistenceContext {
     public void flush() throws ObjectModelException {
         try {
             if ( _htxn != null ) {
+                logger.info( "Flush called with active transaction. Committing." );
                 _htxn.commit();
                 _htxn = null;
             }
-            if ( _session != null ) _session.flush();
+
+            if ( _session == null )
+                logger.warning( "Flush called with no session active!" );
+            else
+                _session.flush();
         } catch ( SQLException se ) {
             logger.log( Level.SEVERE, "in flush()", se );
             close();
@@ -81,6 +90,7 @@ public class HibernatePersistenceContext extends PersistenceContext {
     public void close() {
         try {
             if ( _htxn != null ) {
+                logger.warning( "Close called with active transaction. Rolling back." );
                 _htxn.rollback();
                 _htxn = null;
             }
