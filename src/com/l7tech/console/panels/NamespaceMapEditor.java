@@ -1,6 +1,8 @@
 package com.l7tech.console.panels;
 
 import javax.swing.*;
+import javax.swing.event.ListSelectionListener;
+import javax.swing.event.ListSelectionEvent;
 import javax.swing.table.TableModel;
 import javax.swing.table.AbstractTableModel;
 import java.awt.*;
@@ -11,7 +13,8 @@ import java.util.HashMap;
 
 /**
  * A dialog that lets the administrator specify a list of namespaces with corresponding
- * prefix in a Map for the XPath assertion.
+ * prefix in a Map for the XPath assertion. Some namespaces can be showed for viewing only
+ * so that they cannot be removed.
  * <p/>
  * <br/><br/>
  * LAYER 7 TECHNOLOGIES, INC<br/>
@@ -138,30 +141,17 @@ public class NamespaceMapEditor extends JDialog {
             }
         });
 
-        table1.addKeyListener(new KeyListener() {
-            public void keyPressed(KeyEvent e) {}
-            public void keyReleased(KeyEvent e) {
+        table1.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
+            public void valueChanged(ListSelectionEvent e) {
                 enableRemoveBasedOnSelection();
             }
-            public void keyTyped(KeyEvent e) {}
         });
-
-        table1.addMouseListener(new MouseListener() {
-            public void mouseClicked(MouseEvent e) {
-                enableRemoveBasedOnSelection();
-            }
-            public void mouseEntered(MouseEvent e) {}
-            public void mouseExited(MouseEvent e) {}
-            public void mousePressed(MouseEvent e) {}
-            public void mouseReleased(MouseEvent e) {}
-        });
-
     }
 
     private void enableRemoveBasedOnSelection() {
         // get new selection
         int selectedRow = table1.getSelectedRow();
-        // decide whether or not the remove button should be removed
+        // decide whether or not the remove button should be enabled
         if (selectedRow < 0) {
             removeButton.setEnabled(false);
             return;
