@@ -37,7 +37,7 @@ public class LdapGroupManager implements GroupManager {
         DirContext context = null;
         try {
             try {
-                context = parent.getBrowseContext(cfg);
+                context = LdapIdentityProvider.getBrowseContext(cfg);
                 Attributes attributes = context.getAttributes(dn);
 
                 GroupMappingConfig[] groupTypes = cfg.getGroupMappings();
@@ -222,12 +222,13 @@ public class LdapGroupManager implements GroupManager {
             sc.setSearchScope(SearchControls.SUBTREE_SCOPE);
             DirContext context = null;
             try {
-                context = parent.getBrowseContext(cfg);
+                context = LdapIdentityProvider.getBrowseContext(cfg);
             } catch (NamingException e) {
                 String msg = "cannot get context";
                 logger.log(Level.WARNING, msg, e);
                 throw new FindException(msg, e);
             }
+
             try {
                 NamingEnumeration answer = null;
                 try {
@@ -237,6 +238,7 @@ public class LdapGroupManager implements GroupManager {
                     logger.log(Level.WARNING, msg, e);
                     throw new FindException(msg, e);
                 }
+
                 try {
                     while (answer.hasMore()) {
                         SearchResult sr = (SearchResult)answer.next();
@@ -265,7 +267,7 @@ public class LdapGroupManager implements GroupManager {
                 }
             } finally {
                 try {
-                    context.close();
+                    if ( context != null ) context.close();
                 } catch (NamingException e) {
                     logger.info("error closing context " + e.getMessage());
                 }
@@ -418,7 +420,7 @@ public class LdapGroupManager implements GroupManager {
 
             LdapGroup groupImp = (LdapGroup)group;
             String dn = groupImp.getDn();
-            context = parent.getBrowseContext(cfg);
+            context = LdapIdentityProvider.getBrowseContext(cfg);
             Attributes attributes = context.getAttributes(dn);
 
             GroupMappingConfig[] groupTypes = cfg.getGroupMappings();
