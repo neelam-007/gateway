@@ -22,6 +22,7 @@ import javax.xml.parsers.ParserConfigurationException;
 import java.io.IOException;
 import java.security.GeneralSecurityException;
 import java.security.Key;
+import java.security.PrivateKey;
 import java.util.Iterator;
 import java.util.List;
 import java.util.logging.Logger;
@@ -300,6 +301,10 @@ public class XmlMangler {
             ParserConfigurationException, SAXException
     {
         decryptElement(soapMsg.getDocumentElement(), key);
+    }
+
+    public static void getEncryptedKeyFromMessage(Document soapMsg, PrivateKey recipientPrivateKey) {
+        // todo
     }
 
     // Use a logger that will work inside either the Agent or the Gateway.
