@@ -179,6 +179,14 @@ public class PolicyServlet extends HttpServlet {
         } catch (Exception e) {
             e.printStackTrace(System.err);
             return null;
+        } finally {
+            try {
+                endTransaction();
+            } catch ( SQLException se ) {
+                LogManager.getInstance().getSystemLogger().log(Level.WARNING, null, se);
+            } catch ( TransactionException te ) {
+                LogManager.getInstance().getSystemLogger().log(Level.WARNING, null, te);
+            }
         }
     }
 
@@ -211,23 +219,34 @@ public class PolicyServlet extends HttpServlet {
         IdentityProviderConfigManager configManager = new IdProvConfManagerServer();
 
         try {
-            User user = configManager.getInternalIdentityProvider().getUserManager().findByLogin(username);
-            if (user != null)
-                return user;
-        } catch (FindException e) {
-            // swallow, we'll try more stuff below
-        }
-
-        Collection idps = configManager.findAllIdentityProviders();
-        for (Iterator i = idps.iterator(); i.hasNext();) {
-            IdentityProvider provider = (IdentityProvider) i.next();
             try {
-                User user = provider.getUserManager().findByLogin(username);
+                User user = configManager.getInternalIdentityProvider().getUserManager().findByLogin(username);
                 if (user != null)
                     return user;
             } catch (FindException e) {
-                // Log it and continue
                 LogManager.getInstance().getSystemLogger().log(Level.WARNING, null, e);
+                            // swallow, we'll try more stuff below
+            }
+
+            Collection idps = configManager.findAllIdentityProviders();
+            for (Iterator i = idps.iterator(); i.hasNext();) {
+                IdentityProvider provider = (IdentityProvider) i.next();
+                try {
+                    User user = provider.getUserManager().findByLogin(username);
+                    if (user != null)
+                        return user;
+                } catch (FindException e) {
+                    // Log it and continue
+                    LogManager.getInstance().getSystemLogger().log(Level.WARNING, null, e);
+                }
+            }
+        } finally {
+            try {
+                endTransaction();
+            } catch (SQLException se) {
+                LogManager.getInstance().getSystemLogger().log(Level.WARNING, null, se);
+            } catch (TransactionException te) {
+                LogManager.getInstance().getSystemLogger().log(Level.WARNING, null, te);
             }
         }
 
@@ -243,7 +262,9 @@ public class PolicyServlet extends HttpServlet {
     }
 
     private void endTransaction() throws java.sql.SQLException, TransactionException {
-        PersistenceContext.getCurrent().commitTransaction();
+        PersistenceContext context = PersistenceContext.getCurrent();
+        context.commitTransaction();
+        context.close();
     }
 
     private synchronized void initialiseServiceManager() throws ClassCastException, RuntimeException {
