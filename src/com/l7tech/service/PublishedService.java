@@ -20,7 +20,7 @@ import org.xml.sax.InputSource;
  * @author alex
  */
 public class PublishedService extends NamedEntityImp {
-    public Assertion rootAssertion() {
+    public Assertion getRootAssertion() {
         if ( _rootAssertion == null ) {
             // TODO: Parse the policy
         }
