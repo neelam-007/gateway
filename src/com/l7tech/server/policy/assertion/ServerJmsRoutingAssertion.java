@@ -59,9 +59,12 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion {
             jmsInboundDest = jmsOutboundRequest.getJMSReplyTo();
 
             String corrId = jmsOutboundRequest.getJMSCorrelationID();
-            String selector = corrId == null
-                              ? null
-                              : "JMSCorrelationID = '" + escape( corrId ) + "'";
+            String selector = null;
+            if ( corrId != null && !( jmsInboundDest instanceof TemporaryQueue ) ) {
+                // TODO Heuristic use selector if temp queue, assuming otherwise it could be shared
+                logger.fine( "Inbound request queue is not temporary; using selector to filter responses to our message" );
+                selector = "JMSCorrelationID = '" + escape( corrId ) + "'";
+            }
 
             boolean inbound = request.isReplyExpected()
                               && jmsInboundDest != null;
@@ -69,13 +72,14 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion {
             if ( jmsSession instanceof QueueSession ) {
                 if ( !(jmsOutboundDest instanceof Queue ) ) throw new PolicyAssertionException( "Destination/Session type mismatch" );
                 jmsProducer = ((QueueSession)jmsSession).createSender( (Queue)jmsOutboundDest );
-                if ( inbound ) jmsConsumer = ((QueueSession)jmsSession).createReceiver( (Queue)jmsInboundDest, null );
+                if ( inbound )
+                    jmsConsumer = ((QueueSession)jmsSession).createReceiver( (Queue)jmsInboundDest, selector );
             } else if ( jmsSession instanceof TopicSession ) {
                 logger.log( Level.SEVERE, "Topics not supported!" );
                 return AssertionStatus.NOT_YET_IMPLEMENTED;
             } else {
                 jmsProducer = jmsSession.createProducer( jmsOutboundDest );
-                if ( inbound ) jmsConsumer = jmsSession.createConsumer( jmsInboundDest, null );
+                if ( inbound ) jmsConsumer = jmsSession.createConsumer( jmsInboundDest, selector );
             }
 
             logger.finer( "Routing request to protected service" );
