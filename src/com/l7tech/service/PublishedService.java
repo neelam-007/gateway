@@ -53,6 +53,11 @@ public class PublishedService extends NamedEntityImp {
         new URL( wsdlUrl );
     }
 
+    /**
+     * Loads the WSDL document from the _wsdlUrl if necessary.
+     * @return A String containing the WSDL document.
+     * @throws IOException
+     */
     public synchronized String getWsdlXml() throws IOException {
         if ( _wsdlXml == null ) {
             URL url = null;
