@@ -112,8 +112,8 @@ CREATE TABLE published_service (
   policy_xml clob NOT NULL ,
   wsdl_url varchar(255) NOT NULL ,
   wsdl_xml clob NOT NULL ,
-  disabled char(1) NOT NULL DEFAULT 0,
-  soap char(1) NOT NULL DEFAULT 1,
+  disabled char(1) NOT NULL DEFAULT 0 ,
+  soap char(1) NOT NULL DEFAULT 1 ,
   routing_uri varchar(128)
 );
 
@@ -275,10 +275,9 @@ CREATE TABLE trusted_cert (
   trusted_for_client char(1) default '0',
   trusted_for_server char(1) default '0',
   trusted_for_saml char(1) default '0',
-  primary key(objectid)
+  primary key(objectid),
+  unique(subject_dn)
 );
-CREATE UNIQUE INDEX i_tc_sdn on trusted_cert (subject_dn);
-CREATE UNIQUE INDEX i_tc_n   on trusted_cert (name);
 
 DROP TABLE fed_user;
 CREATE TABLE fed_user (
@@ -382,6 +381,7 @@ CREATE TABLE audit_message (
   status varchar(32) NOT NULL,
   request_id varchar(40) NOT NULL,
   service_oid number(38,0),
+  service_name varchar(128),
   user_name varchar(64),
   authenticated char(1),
   provider_oid number(38,0),
@@ -408,4 +408,9 @@ CREATE TABLE audit_system (
 CREATE INDEX i_audit_system_component ON audit_system (component);
 CREATE INDEX i_audit_system_action ON audit_system (action);
 
-
+DROP TABLE message_id;
+CREATE TABLE message_id (
+  messageid varchar(255) NOT NULL,
+  expires number(38,0) NOT NULL,
+  PRIMARY KEY (messageid)
+);

@@ -425,3 +425,9 @@ CREATE TABLE audit_system (
   KEY idx_component (component),
   KEY idx_action (action)
 ) TYPE=InnoDB;
+
+DROP TABLE IF EXISTS message_id;
+CREATE TABLE message_id (
+  messageid varchar(255) NOT NULL PRIMARY KEY,
+  expires bigint(20) NOT NULL
+) TYPE=InnoDB;

@@ -428,3 +428,10 @@ CREATE TABLE audit_system (
   INDEX idx_component (component),
   INDEX idx_action (action)
 );
+
+DROP TABLE message_id;
+CREATE TABLE message_id (
+  messageid varchar(255) NOT NULL,
+  expires bigint(20) NOT NULL,
+  PRIMARY KEY (messageid)
+);
