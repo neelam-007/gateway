@@ -139,10 +139,10 @@ public class PolicyServlet extends HttpServlet {
         // (this may be everything, if the user has no business seeing this policy)
         try {
             // finer, not logged by default. change log level in web.xml to see these
-            logger.finer("Policy before filtering: " + targetService.getPolicyXml());
+            logger.info("Policy before filtering: " + targetService.getPolicyXml());
             targetService = FilterManager.getInstance().applyAllFilters(user, targetService);
             // finer, not logged by default. change log level in web.xml to see these
-            logger.finer("Policy after filtering: " + ((targetService == null) ? "null" : targetService.getPolicyXml()));
+            logger.info("Policy after filtering: " + ((targetService == null) ? "null" : targetService.getPolicyXml()));
             if (targetService == null) logger.warning("requestor tried to download policy that he should not be allowed to see - will return error");
         } catch (FilteringException e) {
             logger.log(Level.SEVERE, "Could not filter policy", e);
