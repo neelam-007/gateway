@@ -4,7 +4,7 @@ import com.l7tech.common.util.CertUtils;
 import com.l7tech.common.util.HexUtils;
 import com.l7tech.common.util.KeystoreUtils;
 import com.l7tech.common.util.Locator;
-import com.l7tech.common.xml.saml.SamlHolderOfKeyAssertion;
+import com.l7tech.common.xml.saml.SamlAssertion;
 import com.l7tech.identity.*;
 import com.l7tech.identity.cert.ClientCertManager;
 import com.l7tech.identity.ldap.GroupMappingConfig;
@@ -238,8 +238,8 @@ public class LdapIdentityProvider implements IdentityProvider {
                 if (format == CredentialFormat.CLIENTCERT) {
                     requestCert = (X509Certificate)payload;
                 } else if (format == CredentialFormat.SAML) {
-                    if (payload instanceof SamlHolderOfKeyAssertion) {
-                        requestCert = ((SamlHolderOfKeyAssertion)payload).getSubjectCertificate();
+                    if (payload instanceof SamlAssertion) {
+                        requestCert = ((SamlAssertion)payload).getSubjectCertificate();
                     } else
                         throw new BadCredentialsException("Unsupported SAML Assertion type: " +
                                                           payload.getClass().getName());
