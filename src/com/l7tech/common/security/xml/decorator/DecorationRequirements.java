@@ -7,7 +7,6 @@
 package com.l7tech.common.security.xml.decorator;
 
 import com.l7tech.common.util.SoapUtil;
-import com.l7tech.common.security.xml.SecurityActor;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import org.w3c.dom.Element;
 
@@ -243,14 +242,6 @@ public class DecorationRequirements {
         this.securityHeaderActor = securityHeaderActor;
     }
 
-    public SecurityActor getSecurityActor() {
-        return securityActor;
-    }
-
-    public void setSecurityActor(SecurityActor sa) {
-        securityActor = sa;
-    }
-
     private X509Certificate recipientCertificate = null;
     private X509Certificate senderMessageSigningCertificate = null;
     private PrivateKey senderMessageSigningPrivateKey = null;
@@ -266,5 +257,4 @@ public class DecorationRequirements {
     private int timestampTimeoutMillis = 0;
     private String securityHeaderActor = null;
     private boolean includeSamlTokenInSignature = false;
-    private SecurityActor securityActor = SecurityActor.L7ACTOR;
 }
