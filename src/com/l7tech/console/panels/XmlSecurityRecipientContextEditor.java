@@ -175,16 +175,18 @@ public class XmlSecurityRecipientContextEditor extends JDialog {
             XmlSecurityAssertionBase xsecass = (XmlSecurityAssertionBase)toInspect;
             if (!xsecass.getRecipientContext().localRecipient()) {
                 String existingactor = xsecass.getRecipientContext().getActor();
-                X509Certificate existingcert = null;
-                try {
-                    existingcert = CertUtils.decodeCert(HexUtils.decodeBase64(
-                                                        xsecass.getRecipientContext().getBase64edX509Certificate(), true));
-                } catch (CertificateException e) {
-                    throw new RuntimeException(e); // should not happen
-                } catch (IOException e) {
-                    throw new RuntimeException(e); // should not happen
+                if (!xmlSecRecipientsFromOtherAssertions.containsKey(existingactor)) {
+                    X509Certificate existingcert = null;
+                    try {
+                        existingcert = CertUtils.decodeCert(HexUtils.decodeBase64(
+                                                            xsecass.getRecipientContext().getBase64edX509Certificate(), true));
+                    } catch (CertificateException e) {
+                        throw new RuntimeException(e); // should not happen
+                    } catch (IOException e) {
+                        throw new RuntimeException(e); // should not happen
+                    }
+                    xmlSecRecipientsFromOtherAssertions.put(existingactor, existingcert);
                 }
-                xmlSecRecipientsFromOtherAssertions.put(existingactor, existingcert);
             }
         }
     }
@@ -205,30 +207,42 @@ public class XmlSecurityRecipientContextEditor extends JDialog {
         if (assertion.getRecipientContext().localRecipient()) {
             specificRecipientRradio.setSelected(false);
             defaultRadio.setSelected(true);
-            String initialActorValue = null;
-            for (Iterator i = xmlSecRecipientsFromOtherAssertions.keySet().iterator(); i.hasNext();) {
-                initialActorValue = (String)i.next();
-                break;
-            }
-            X509Certificate initialcertvalue = (X509Certificate)xmlSecRecipientsFromOtherAssertions.get(initialActorValue);
-            certSubject.setText(initialcertvalue.getSubjectDN().getName());
+            setFirstExistingRecipient();
         } else {
             specificRecipientRradio.setSelected(true);
             defaultRadio.setSelected(false);
-            locallyDefinedActor = assertion.getRecipientContext().getActor();
-            try {
-                locallyDefinedRecipient = CertUtils.decodeCert(
-                                            HexUtils.decodeBase64(
-                                                    assertion.getRecipientContext().getBase64edX509Certificate(), true));
+            if (!xmlSecRecipientsFromOtherAssertions.containsKey(assertion.getRecipientContext().getActor())) {
+                locallyDefinedActor = assertion.getRecipientContext().getActor();
+                try {
+                    locallyDefinedRecipient = CertUtils.decodeCert(
+                                                HexUtils.decodeBase64(
+                                                        assertion.getRecipientContext().getBase64edX509Certificate(), true));
 
-            } catch (CertificateException e) {
-                throw new RuntimeException(e); // should not happen
-            } catch (IOException e) {
-                throw new RuntimeException(e); // should not happen
+                } catch (CertificateException e) {
+                    throw new RuntimeException(e); // should not happen
+                } catch (IOException e) {
+                    throw new RuntimeException(e); // should not happen
+                }
+                certSubject.setText(locallyDefinedRecipient.getSubjectDN().getName());
+                ((DefaultComboBoxModel)actorComboBox.getModel()).addElement(locallyDefinedActor);
+                ((DefaultComboBoxModel)actorComboBox.getModel()).setSelectedItem(locallyDefinedActor);
+            } else {
+                setFirstExistingRecipient();
             }
-            certSubject.setText(locallyDefinedRecipient.getSubjectDN().getName());
-            ((DefaultComboBoxModel)actorComboBox.getModel()).addElement(locallyDefinedActor);
-            ((DefaultComboBoxModel)actorComboBox.getModel()).setSelectedItem(locallyDefinedActor);
+        }
+    }
+
+    private void setFirstExistingRecipient() {
+        String initialActorValue = null;
+        for (Iterator i = xmlSecRecipientsFromOtherAssertions.keySet().iterator(); i.hasNext();) {
+            initialActorValue = (String)i.next();
+            break;
+        }
+        if (initialActorValue != null) {
+            X509Certificate initialcertvalue = (X509Certificate)xmlSecRecipientsFromOtherAssertions.
+                                                                    get(initialActorValue);
+            certSubject.setText(initialcertvalue.getSubjectDN().getName());
+            ((DefaultComboBoxModel)actorComboBox.getModel()).setSelectedItem(initialActorValue);
         }
     }
 
@@ -256,20 +270,24 @@ public class XmlSecurityRecipientContextEditor extends JDialog {
 
     private void ok() {
         // remember value
-        XmlSecurityRecipientContext newRecipientContext = new XmlSecurityRecipientContext();
-        newRecipientContext.setActor((String)actorComboBox.getSelectedItem());
-        X509Certificate cert = null;
-        if (newRecipientContext.getActor().equals(locallyDefinedActor)) {
-            cert = locallyDefinedRecipient;
+        if (specificRecipientRradio.isSelected()) {
+            XmlSecurityRecipientContext newRecipientContext = new XmlSecurityRecipientContext();
+            newRecipientContext.setActor((String)actorComboBox.getSelectedItem());
+            X509Certificate cert = null;
+            if (newRecipientContext.getActor().equals(locallyDefinedActor)) {
+                cert = locallyDefinedRecipient;
+            } else {
+                cert = (X509Certificate)xmlSecRecipientsFromOtherAssertions.get(newRecipientContext.getActor());
+            }
+            try {
+                newRecipientContext.setBase64edX509Certificate(HexUtils.encodeBase64(cert.getEncoded(), true));
+            } catch (CertificateEncodingException e) {
+                throw new RuntimeException("could not encode cert", e);
+            }
+            assertion.setRecipientContext(newRecipientContext);
         } else {
-            cert = (X509Certificate)xmlSecRecipientsFromOtherAssertions.get(newRecipientContext.getActor());
+            assertion.setRecipientContext(XmlSecurityRecipientContext.getLocalRecipient());
         }
-        try {
-            newRecipientContext.setBase64edX509Certificate(HexUtils.encodeBase64(cert.getEncoded(), true));
-        } catch (CertificateEncodingException e) {
-            throw new RuntimeException("could not encode cert", e);
-        }
-        assertion.setRecipientContext(newRecipientContext);
         // split!
         XmlSecurityRecipientContextEditor.this.dispose();
     }
