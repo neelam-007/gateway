@@ -57,6 +57,7 @@ public class AssertionTreeNodeFactory {
         assertionMap.put(SchemaValidation.class, SchemaValidationTreeNode.class);
         assertionMap.put(XslTransformation.class, XslTransformationTreeNode.class);
         assertionMap.put(TimeRange.class, TimeRangeTreeNode.class);
+        assertionMap.put(RemoteIpRange.class, RemoteIpRangeTreeNode.class);
         assertionMap.put(CustomAssertionHolder.class, CustomAssertionTreeNode.class);
     }
 
