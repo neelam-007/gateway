@@ -62,7 +62,7 @@ public class RegistrarLookupServlet extends HttpServlet {
                   " in the current classpath");
             }
             String cf = url.toString();
-            logger.info("Initializing servlet registrar lookup from " + cf);
+            logger.fine("Initializing servlet registrar lookup from " + cf);
             String[] configOptions = {cf};
             lookupConfig = ConfigurationProvider.getInstance(configOptions);
         } catch (ConfigurationNotFoundException e) {
@@ -90,7 +90,7 @@ public class RegistrarLookupServlet extends HttpServlet {
             }
 
             LookupLocator ll = getLookupLocator();
-            logger.info("Obtained locator");
+            logger.fine("Obtained locator");
             ServiceRegistrar sr = ll.getRegistrar(5000);
             if (sr == null) {
                 response.sendError(HttpServletResponse.SC_SERVICE_UNAVAILABLE);
@@ -106,7 +106,7 @@ public class RegistrarLookupServlet extends HttpServlet {
             response.setContentLength(size);
             bos.writeTo(response.getOutputStream());
             response.getOutputStream().close();
-            logger.info("Sending registrar as response to " + request.getRemoteAddr());
+            logger.info("Administrator login from " + request.getRemoteAddr());
         } catch (BadCredentialsException e) {
             logger.log(Level.WARNING, "Bad credentials received", e);
             response.sendError(HttpServletResponse.SC_UNAUTHORIZED);
