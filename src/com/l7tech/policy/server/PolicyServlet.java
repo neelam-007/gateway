@@ -151,14 +151,10 @@ public class PolicyServlet extends AuthenticatableHttpServlet {
                     boolean someonecanseethis = false;
                     for (Iterator i = users.iterator(); i.hasNext();) {
                         User user = (User) i.next();
-
-                        // finer, not logged by default. change log level in web.xml to see these
-                        logger.finer("Policy before filtering: " + targetService.getPolicyXml());
+                        // logger.finer("Policy before filtering: " + targetService.getPolicyXml());
                         PublishedService tempService = FilterManager.getInstance().applyAllFilters(user, targetService);
-                        // finer, not logged by default. change log level in web.xml to see these
-                        logger.finer("Policy after filtering: " +
-                                     ((tempService == null) ? "null" : tempService.getPolicyXml()));
-
+                        //logger.finer("Policy after filtering: " +
+                        //             ((tempService == null) ? "null" : tempService.getPolicyXml()));
                         if ( tempService != null ) {
                             targetService = tempService;
                             someonecanseethis = true;
