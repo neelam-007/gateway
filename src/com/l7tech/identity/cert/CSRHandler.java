@@ -11,12 +11,18 @@ import java.io.IOException;
  * User: flascelles
  * Date: Jul 25, 2003
  *
- * Servlet which handles the CSR requests coming from the Client Proxy.
- * The request must contain valid credentials embedded in basic auth header.
- * 
+ * Servlet which handles the CSR requests coming from the Client Proxy. Must come
+ * through ssl and must contain valid credentials embedded in basic auth header.
+ *
  */
 public class CSRHandler extends HttpServlet {
 
-    protected void doGet(HttpServletRequest httpServletRequest, HttpServletResponse httpServletResponse) throws ServletException, IOException {
+    protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+        if (!request.isSecure()) {
+            response.sendError(HttpServletResponse.SC_FORBIDDEN, "CSR requests must come through ssl port");
+            return;
+        }
+        // todo, authenticate user
+        // todo, get the CSR from the payload and do it
     }
 }
