@@ -809,10 +809,8 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
             } else {
                 ssg.setTrustedGateway(null);
 
-                ssg.setSsgAddress(fieldServerAddress.getText().trim().toLowerCase());
                 ssg.setUsername(identityPane.getUsernameTextField().getText().trim());
                 ssg.setSavePasswordToDisk(identityPane.getSavePasswordCheckBox().isSelected());
-                ssg.setUseSslByDefault(cbUseSslByDefault.isSelected());
                 ssg.setChainCredentialsFromClient(identityPane.getUseClientCredentialCheckBox().isSelected());
 
                 // We'll treat a blank password as though it's unconfigured.  If the user really needs to use
@@ -824,6 +822,10 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
                 ssg.promptForUsernameAndPassword(true);
                 ssg.cmPassword(pass.length > 0 ? identityPane.getUserPasswordField().getPassword() : null);
             }
+
+            // applicable to both trusted and federated SSG
+            ssg.setSsgAddress(fieldServerAddress.getText().trim().toLowerCase());
+            ssg.setUseSslByDefault(cbUseSslByDefault.isSelected());
 
             if (radioNonstandardPorts.isSelected()) {
                 ssg.setSsgPort(Integer.parseInt(fieldSsgPort.getText()));
