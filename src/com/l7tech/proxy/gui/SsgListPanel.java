@@ -399,6 +399,7 @@ public class SsgListPanel extends JPanel {
                                 // Succeeded, so update password and client cert
                                 ssg.cmPassword(newpass);
                                 SsgKeyStoreManager.deleteClientCert(ssg);
+                                SsgManagerImpl.getSsgManagerImpl().save();
                                 changeCompleted = true;
                             } catch (KeyStoreCorruptException e1) {
                                 try {
