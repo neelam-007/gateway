@@ -15,7 +15,7 @@ public class MessageNotSoapException extends InvalidDocumentFormatException {
     }
 
     public MessageNotSoapException() {
-        super();
+        super("Message is not SOAP");
     }
 
     public MessageNotSoapException(Throwable cause) {
