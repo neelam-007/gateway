@@ -47,6 +47,12 @@ public class WspWriterTest extends TestCase {
         return input.replaceAll("\\r\\n", "\n").replaceAll("\\n\\r", "\n").replaceAll("\\r", "\n");
     }
 
+    public void testWriteNullPolicy() {
+        Assertion policy = null;
+        String xml = WspWriter.getPolicyXml(policy);
+        log.info("Null policy serialized to this XML:\n---<snip>---\n" + xml + "---<snip>---\n");
+    }
+
     public void testWritePolicy() throws IOException {
         RequestXpathAssertion rxa = new RequestXpathAssertion();
         Map foo = new HashMap();
@@ -93,11 +99,11 @@ public class WspWriterTest extends TestCase {
         fos.write(knownStr.getBytes());
         fos.close();
 
+        assertTrue(knownStr.equals(gotXml));
+        log.info("Output matched expected XML.");
+
         Assertion tree = WspReader.parse(gotXml);
         log.info("After parsing: " + tree);
-
-        assertTrue(knownStr.equals(gotXml));
-
     }
 
     public static void main(String[] args) {
