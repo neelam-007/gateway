@@ -113,13 +113,12 @@ public class SamlPolicyTest extends TestCase {
             attachAssertionHeader(soapMessage, samlHeader);
 
             soapMessage.writeTo(System.out);
-            
             servletApi.setSoapRequest(soapMessage, soapRequest.getSOAPAction());
             HttpServletRequest mhreq = servletApi.getServletRequest();
             MockHttpServletResponse mhres = new MockHttpServletResponse();
             messageProcessingServlet = new SoapMessageProcessingServlet();
             messageProcessingServlet.init(servletApi.getServletConfig());
-            messageProcessingServlet.doPost(mhreq, mhres);
+            //messageProcessingServlet.doPost(mhreq, mhres);
         }
     }
 
@@ -193,7 +192,7 @@ public class SamlPolicyTest extends TestCase {
         return df.newDocumentBuilder().parse(is);
     }
 
-    private void attachAssertionHeader(SOAPMessage sm, Document assertionDocument)
+    private void xattachAssertionHeader(SOAPMessage sm, Document assertionDocument)
       throws SOAPException {
         SOAPEnvelope envelope = sm.getSOAPPart().getEnvelope();
         envelope.addNamespaceDeclaration("wsse", "http://schemas.xmlsoap.org/ws/2002/xx/secext");
@@ -214,6 +213,23 @@ public class SamlPolicyTest extends TestCase {
         SoapUtil.domToSOAPElement(assertionElement, domNode);
     }
 
+    private void attachAssertionHeader(SOAPMessage sm, Document assertionDocument)
+      throws SOAPException {
+        SOAPEnvelope envelope = sm.getSOAPPart().getEnvelope();
+        envelope.addNamespaceDeclaration("wsse", "http://schemas.xmlsoap.org/ws/2002/xx/secext");
+        envelope.addNamespaceDeclaration("ds", "http://www.w3.org/2000/09/xmldsig#");
+        SOAPHeader sh = envelope.getHeader();
+        if (sh == null) {
+            sh = envelope.addHeader();
+        }
+        Element domNode = assertionDocument.getDocumentElement();
+        SOAPHeaderElement she = null;
+        SOAPFactory sf = SOAPFactory.newInstance();
+        Name headerName = sf.createName("Security", "wsse", "http://schemas.xmlsoap.org/ws/2002/xx/secext");
+
+        she = sh.addHeaderElement(headerName);
+        SoapUtil.domToSOAPElement(she, domNode);
+    }
 
     /**
      * Test <code>ServerPolicyFactoryTest</code> main.

@@ -26,6 +26,7 @@ import java.util.*;
 public class SoapUtil {
 
     public static final List ENVELOPE_URIS = new ArrayList();
+
     static {
         ENVELOPE_URIS.add(SOAPConstants.URI_NS_SOAP_ENVELOPE);
         ENVELOPE_URIS.add("http://www.w3.org/2001/06/soap-envelope");
@@ -52,20 +53,24 @@ public class SoapUtil {
     public static final String L7_MESSAGEID_PREFIX = "L7a";
 
     public static final List SECURITY_URIS = new ArrayList();
+
     static {
         SECURITY_URIS.add(SECURITY_NAMESPACE);
         SECURITY_URIS.add(SECURITY_NAMESPACE2);
         SECURITY_URIS.add(SECURITY_NAMESPACE3);
         SECURITY_URIS.add(SECURITY_NAMESPACE4);
     }
+
     public static final String[] SECURITY_URIS_ARRAY = (String[])SECURITY_URIS.toArray(new String[0]);
 
     public static final String WSU_PREFIX = "wsu";
     public static final List WSU_URIS = new ArrayList();
+
     static {
         WSU_URIS.add(WSU_NAMESPACE);
         WSU_URIS.add(WSU_NAMESPACE2);
     }
+
     public static final String[] WSU_URIS_ARRAY = (String[])WSU_URIS.toArray(new String[0]);
 
     // Attribute names
@@ -114,18 +119,25 @@ public class SoapUtil {
     public static final String ROLE_VALUE_NEXT = "http://www.w3.org/2003/05/soap-envelope/role/next";
     public static final String ROLE_VALUE_ULTIMATE = "http://www.w3.org/2003/05/soap-envelope/role/ultimateReceiver";
 
-    /** soap envelope xpath '/soapenv:Envelope' */
+    /**
+     * soap envelope xpath '/soapenv:Envelope'
+     */
     public static final String SOAP_ENVELOPE_XPATH = "/" + NamespaceConstants.NSPREFIX_SOAP_ENVELOPE + ":" + ENVELOPE_EL_NAME;
 
-    /** soap body xpath '/soapenv:Envelope/soapenv:Body' */
-    public static final String SOAP_BODY_XPATH = SOAP_ENVELOPE_XPATH+"/"+NamespaceConstants.NSPREFIX_SOAP_ENVELOPE + ":Body";
+    /**
+     * soap body xpath '/soapenv:Envelope/soapenv:Body'
+     */
+    public static final String SOAP_BODY_XPATH = SOAP_ENVELOPE_XPATH + "/" + NamespaceConstants.NSPREFIX_SOAP_ENVELOPE + ":Body";
 
-    /** Timestamp date format */
+    /**
+     * Timestamp date format
+     */
     public static final String DATE_FORMAT_PATTERN = "yyyy-MM-dd'T'HH:mm:ss'Z'";
     public static final TimeZone DATE_FORMAT_TIMEZONE = TimeZone.getTimeZone("UTC");
 
     /**
      * Get the SOAP envelope from the message
+     *
      * @param message the message to examine
      * @return the SOAP:Envelope element.  never null
      * @throws MessageNotSoapException if the message isn't SOAP
@@ -141,6 +153,7 @@ public class SoapUtil {
 
     /**
      * The Header Element, or null if it's not present
+     *
      * @param soapMsg the message to examine
      * @return the Header element, or null if there wasn't one
      * @throws InvalidDocumentFormatException if the message is not SOAP or there is more than one Header element
@@ -153,6 +166,7 @@ public class SoapUtil {
 
     /**
      * The Body {@link Element}, or null if it's not present
+     *
      * @param message the message to examine
      * @return the body, or null if there isn't one
      * @throws InvalidDocumentFormatException if the message is not SOAP or there is more than one Body element
@@ -188,13 +202,13 @@ public class SoapUtil {
 
     /**
      * Find the Namespace URI of the given document, which is assumed to contain a SOAP Envelope.
-     * 
+     *
      * @param request the SOAP envelope to examine
      * @return the body's namespace URI, or null if not found or the document isn't SOAP.
      */
     public static String getNamespaceUri(Document request) throws InvalidDocumentFormatException {
         Element body = SoapUtil.getBodyElement(request);
-        if ( body == null ) return null;
+        if (body == null) return null;
         Node n = body.getFirstChild();
         while (n != null) {
             if (n.getNodeType() == Node.ELEMENT_NODE)
@@ -208,9 +222,9 @@ public class SoapUtil {
      * Finds or creates a Header element for a SOAP message, which may be partially-constructed and thus currently
      * invalid.
      * If the message does not have a header yet, one will be created and added to the envelope.
-     * <p>
+     * <p/>
      * If a body element exists, the header element will be inserted right before the body element.
-     * <p>
+     * <p/>
      * This method assumes that soapMsg is a partially-constructed SOAP message containing at least an Envelope.  No
      * validation is done on the message.
      * The existing envelope namespace is used for new Body or Header elements but is not checked for validity.
@@ -246,7 +260,7 @@ public class SoapUtil {
      * not currently valid. If the message does not have a Header yet, one is created.
      * If the Header already contains a default Security element, it is returned; otherwise a new one is created,
      * added to the Header, and then returned.
-     * <p>
+     * <p/>
      * Namespaces and element cardinality are not checked or enforced by this method.
      *
      * @param soapMsg DOM document containing the soap message.
@@ -269,6 +283,7 @@ public class SoapUtil {
      * and hence not currently valid.  If the message does not yet have a Header, one is created.
      * A new Security element is created and added at the top of the Header.
      * Existing Security elements, if any, are ignored.
+     *
      * @param soapMsg
      * @return
      */
@@ -310,6 +325,7 @@ public class SoapUtil {
      * Set a SOAP-specific attribute on the specified element.
      * The new attribute will be created using the namespace and prefix from the document element, which
      * is assumed to be a SOAP Envelope.
+     *
      * @param soapMsg
      * @param elementNeedingAttr
      * @param attrName
@@ -323,21 +339,21 @@ public class SoapUtil {
             // SOAP must be the default namespace.  We'll have to declare a prefix of our own.
             prefix = "soap8271"; // todo - find an unused prefix
             elementNeedingAttr.setAttributeNS(soapNs,
-                                                   prefix + ":" + attrName,
-                                                   attrValue);
+              prefix + ":" + attrName,
+              attrValue);
             if (elementNeedingAttr.getAttribute("xmlns:" + prefix).length() < 1)
                 elementNeedingAttr.setAttribute("xmlns:" + prefix, soapNs);
         } else {
             elementNeedingAttr.setAttributeNS(soapNs,
-                                                   prefix + ":" + attrName,
-                                                   attrValue);
+              prefix + ":" + attrName,
+              attrValue);
         }
     }
 
     /**
      * Resolves the element in the passed document that has the id passed in elementId.
      * The id attributes can be of any supported WSU namespaces.
-     * <p>
+     * <p/>
      * This method just does a linear search over the entire document from
      * top to bottom.
      *
@@ -347,7 +363,8 @@ public class SoapUtil {
         String url = null;
         if (elementId.charAt(0) == '#') {
             url = elementId.substring(1);
-        } else url = elementId;
+        } else
+            url = elementId;
         NodeList elements = doc.getElementsByTagName("*");
         for (int i = 0; i < elements.getLength(); i++) {
             Element element = (Element)elements.item(i);
@@ -360,6 +377,7 @@ public class SoapUtil {
 
     /**
      * Gets the WSU:Id attribute of the passed element using all supported WSU namespaces.
+     *
      * @return the string value of the attribute or null if the attribute is not present
      */
     public static String getElementWsuId(Element node) {
@@ -377,6 +395,7 @@ public class SoapUtil {
 
     /**
      * Check if the specified Security element is a default security element.
+     *
      * @param element the Security element to examine
      * @return True if this element has no role/actor, or a role/actor of "next"; false otherwise.
      */
@@ -425,6 +444,7 @@ public class SoapUtil {
 
     /**
      * Returns all Security elements.
+     *
      * @return never null
      * @throws InvalidDocumentFormatException if there is more than one soap:Header or the message isn't SOAP
      */
@@ -437,6 +457,7 @@ public class SoapUtil {
     /**
      * Get the security element from a specific header instead of the entire soap message.
      * This alternative is used in the case of nested soap messages.
+     *
      * @return null if element not present, the security element if it's in the doc
      */
     public static Element getSecurityElement(Element header) {
@@ -449,6 +470,7 @@ public class SoapUtil {
 
     /**
      * Get the L7a:MesageID element from the specified message, or null if there isn't one.
+     *
      * @param soapMsg the soap envelope to examine
      * @return the /Envelope/Header/L7a:MessageID element, or null if there isn't one.
      * @throws InvalidDocumentFormatException if the message isn't soap, or there is more than one Header or MessageID
@@ -475,7 +497,8 @@ public class SoapUtil {
 
     /**
      * Set the L7a:MessageID URI for the specified message, which must not already have a L7a:MessageID element.
-     * @param soapMsg the soap message to modify
+     *
+     * @param soapMsg   the soap message to modify
      * @param messageId the new L7a:MessageID value
      * @throws InvalidDocumentFormatException if the message isn't soap, has more than one header, or already has
      *                                        a MessageID
@@ -492,7 +515,8 @@ public class SoapUtil {
 
     /**
      * Set the L7a:RelatesTo URI for the specified message, which must not already have a L7a:RelatesTo element.
-     * @param soapMsg the soap message to modify
+     *
+     * @param soapMsg   the soap message to modify
      * @param relatesTo the new L7a:RelatesTo value
      * @throws InvalidDocumentFormatException if the message isn't soap, has more than one header, or already has
      *                                        a RelatesTo
@@ -509,6 +533,7 @@ public class SoapUtil {
 
     /**
      * Get the L7a:RelatesTo element from the specified message, or null if there isn't one.
+     *
      * @param soapMsg the soap envelope to examine
      * @return the /Envelope/Header/L7a:RelatesTo element, or null if there wasn't one
      * @throws InvalidDocumentFormatException if the message isn't soap, or there is more than one Header or RelatesTo
@@ -534,7 +559,7 @@ public class SoapUtil {
     }
 
     /**
-     * Load the DOM document into the SOAP message
+     * Transform the DOM document as a SOAP message
      * <p/>
      *
      * @param doc the SOAP message as a DOM document
@@ -558,7 +583,7 @@ public class SoapUtil {
      * of the DOM object's tree, and for each node in the tree creates a
      * javax.xml.soap.SOAPElement object and populates the SOAPElement with the contents
      * of the node.
-     * 
+     *
      * @param soapElement the soap element where the DOM Node is added
      * @param domNode     the DOM Node to add
      * @return the soap element containing the dom element marshalled into it
@@ -571,11 +596,42 @@ public class SoapUtil {
         if ((domNode.getNodeType()) != Node.ELEMENT_NODE)
             throw new SOAPException("DOM Node must of type ELEMENT_NODE. received " + domNode.getNodeType());
 
-
         SOAPFactory sf = SOAPFactory.newInstance();
+        return domNodeToSoapElement(domNode,soapElement, sf);
 
-        if (domNode.hasAttributes()) {
-            NamedNodeMap DOMAttributes = domNode.getAttributes();
+    }
+
+
+    /**
+     * Add the dom node, and its child nodes to the SOAP element.
+     *
+     * @param node the node to add
+     * @param soapElement the soap element (SOAPBody, SOAPHeader, SOAPElement etc)
+     * @param soapFactory the soap factory
+     *
+     * @throws SOAPException on soap error
+     */
+    private static SOAPElement domNodeToSoapElement(Node node, SOAPElement soapElement, SOAPFactory soapFactory)
+      throws SOAPException {
+        Name name = soapFactory.createName(node.getLocalName(), node.getPrefix(), node.getNamespaceURI());
+        if (soapElement instanceof SOAPBody) {
+            SOAPBody sb = (SOAPBody)soapElement;
+            SOAPBodyElement sbe = sb.addBodyElement(name);
+            return domChildrenToSoapElement(sbe, node, soapFactory);
+        } else if (soapElement instanceof SOAPHeader) {
+            SOAPHeader sh = (SOAPHeader)soapElement;
+            SOAPHeaderElement she = sh.addHeaderElement(name);
+            return domChildrenToSoapElement(she, node, soapFactory);
+        } else {
+            return soapElement.addChildElement(domChildrenToSoapElement(soapFactory.createElement(name), node, soapFactory));
+        }
+    }
+
+    private static SOAPElement domChildrenToSoapElement(SOAPElement soapElement, Node parentNode, SOAPFactory sf)
+      throws SOAPException {
+
+        if (parentNode.hasAttributes()) {
+            NamedNodeMap DOMAttributes = parentNode.getAttributes();
             int noOfAttributes = DOMAttributes.getLength();
             for (int i = 0; i < noOfAttributes; i++) {
 
@@ -590,31 +646,29 @@ public class SoapUtil {
             }
         }
 
-        if (domNode.hasChildNodes()) {
-            NodeList children = domNode.getChildNodes();
-            for (int i = 0; i < children.getLength(); i++) {
-                Node child = children.item(i);
+        NodeList children = parentNode.getChildNodes();
+        for (int i = 0; i < children.getLength(); i++) {
+            Node child = children.item(i);
 
-                switch (child.getNodeType()) {
-                    case Node.PROCESSING_INSTRUCTION_NODE:
-                    case Node.DOCUMENT_TYPE_NODE:
-                    case Node.CDATA_SECTION_NODE:
-                    case Node.COMMENT_NODE:
+            switch (child.getNodeType()) {
+                case Node.PROCESSING_INSTRUCTION_NODE:
+                case Node.DOCUMENT_TYPE_NODE:
+                case Node.CDATA_SECTION_NODE:
+                case Node.COMMENT_NODE:
+                    break;
+                case Node.TEXT_NODE:
+                    {
+                        soapElement.addTextNode(child.getNodeValue());
                         break;
-                    case Node.TEXT_NODE:
-                        {
-                            soapElement.addTextNode(child.getNodeValue());
-                            break;
-                        }
-                    default:
-                        Name name = sf.createName(child.getLocalName(), child.getPrefix(), child.getNamespaceURI());
-                        soapElement.addChildElement(domToSOAPElement(sf.createElement(name), child));
-                }
-
+                    }
+                default:
+                    domNodeToSoapElement(child, soapElement, sf);
             }
+
         }
         return soapElement;
     }
+
 
     /**
      * Will import the importedDocument ointo the importingDocument under
@@ -635,7 +689,7 @@ public class SoapUtil {
   
 
         //Import docFrag under the ownership of replacedDocument
-        Node importNode = ((importingDocument).importNode(docFrag, true));
+        Node importNode = importingDocument.importNode(docFrag, true);
 
     
         //In order to replace the node need to retrieve replacedNode's parent
@@ -643,7 +697,7 @@ public class SoapUtil {
         return importingDocument;
     }
 
-    public static SOAPMessage makeFaultMessage( String faultCode, String faultString, String faultActor ) {
+    public static SOAPMessage makeFaultMessage(String faultCode, String faultString, String faultActor) {
         SOAPMessage msg = makeMessage();
         try {
             SoapUtil.addFaultTo(msg, faultCode, faultString, faultActor);
@@ -653,11 +707,11 @@ public class SoapUtil {
         }
     }
 
-    public static String soapMessageToString( SOAPMessage msg, String encoding ) throws IOException, SOAPException {
-        return new String( soapMessageToByteArray( msg ), encoding );
+    public static String soapMessageToString(SOAPMessage msg, String encoding) throws IOException, SOAPException {
+        return new String(soapMessageToByteArray(msg), encoding);
     }
 
-    public static byte[] soapMessageToByteArray( SOAPMessage msg ) throws IOException, SOAPException {
+    public static byte[] soapMessageToByteArray(SOAPMessage msg) throws IOException, SOAPException {
         ByteArrayOutputStream baos = new ByteArrayOutputStream(4096);
         msg.writeTo(baos);
         return baos.toByteArray();
