@@ -117,6 +117,12 @@ public class SamlAuthorizationHandler extends FederatedAuthorizationHandler {
             }
 
             final String niFormat = assertion.getNameIdentifierFormat();
+
+            if ( (SamlConstants.NAMEIDENTIFIER_EMAIL.equals(niFormat) && !samlConfig.isNameIdEmail())
+                    || (SamlConstants.NAMEIDENTIFIER_WINDOWS.equals(niFormat) && !samlConfig.isNameIdWindowsDomain())
+                    || (SamlConstants.NAMEIDENTIFIER_X509_SUBJECT.equals(niFormat) && !samlConfig.isNameIdX509SubjectName()) )
+                throw new BadCredentialsException("NameIdentifier format '" + niFormat + "' not supported by this provider");
+
             final String niValue = assertion.getNameIdentifierValue();
             final String niQualifier = assertion.getNameQualifier();
             final String configNameQualifier = samlConfig.getNameQualifier();
