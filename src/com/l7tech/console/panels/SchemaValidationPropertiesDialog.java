@@ -259,7 +259,7 @@ public class SchemaValidationPropertiesDialog extends JDialog {
         }
         wsdlTextArea.setText(tmp.getSchema());
         wsdlTextArea.setCaretPosition(0);
-        okButton.setEnabled(true);
+        //okButton.setEnabled(true);
     }
 
     private void readFromFile() {
@@ -311,7 +311,7 @@ public class SchemaValidationPropertiesDialog extends JDialog {
             }
             wsdlTextArea.setText(printedSchema);
             wsdlTextArea.setCaretPosition(0);
-            okButton.setEnabled(true);
+            //okButton.setEnabled(true);
         } else {
             displayError(resources.getString("error.urlnoschema") + " " + filename, null);
         }
@@ -373,7 +373,7 @@ public class SchemaValidationPropertiesDialog extends JDialog {
             }
             wsdlTextArea.setText(printedSchema);
             wsdlTextArea.setCaretPosition(0);
-            okButton.setEnabled(true);
+            //okButton.setEnabled(true);
         } else {
             displayError(resources.getString("error.urlnoschema") + " " + urlstr, null);
         }
@@ -449,7 +449,7 @@ public class SchemaValidationPropertiesDialog extends JDialog {
             wsdlTextArea.setText(reformatxml(subject.getSchema()));
             wsdlTextArea.setCaretPosition(0);
         } else {
-            okButton.setEnabled(false);
+            //okButton.setEnabled(false);
         }
         wsdlTextArea.setCaretVisible(false);
 
@@ -545,7 +545,7 @@ public class SchemaValidationPropertiesDialog extends JDialog {
         resolveButton.setText(resources.getString("resolveButton.name"));
         wsdlTextArea = new JEditTextArea();
         wsdlTextArea.setDocument(new SyntaxDocument());
-        wsdlTextArea.setEditable(false);
+        wsdlTextArea.setEditable(true);
         wsdlTextArea.setTokenMarker(new XMLTokenMarker());
         loadFromFile = new JButton();
         loadFromFile.setText(resources.getString("loadFromFile.name"));
