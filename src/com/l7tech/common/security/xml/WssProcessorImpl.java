@@ -1073,7 +1073,7 @@ public class WssProcessorImpl implements WssProcessor {
                 if (signingCertToken != null) {
                     cntx.timestamp.setSigningSecurityToken(signingCertToken);
                 } else if (dkt != null) {
-                    cntx.timestamp.setSigningSecurityToken(dkt);
+                    cntx.timestamp.setSigningSecurityToken(dkt.getSecurityContextToken());
                 }
             }
         }
