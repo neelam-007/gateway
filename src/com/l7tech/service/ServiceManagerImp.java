@@ -19,6 +19,8 @@ import java.sql.SQLException;
 import org.apache.log4j.Category;
 
 /**
+ * Manages PublishedService instances.  Note that this object has state, so it should be effectively a Singleton--only get one from the Locator!
+ *
  * @author alex
  * @version $Revision$
  */
@@ -125,6 +127,7 @@ public class ServiceManagerImp extends HibernateEntityManager implements Service
     public long save(PublishedService service) throws SaveException {
         try {
             long oid = _manager.save( getContext(), service );
+            _allServices.add( service );
             fireCreated( service );
             return oid;
         } catch ( SQLException se ) {
@@ -144,6 +147,7 @@ public class ServiceManagerImp extends HibernateEntityManager implements Service
     public void delete( PublishedService service ) throws DeleteException {
         try {
             _manager.delete( getContext(), service );
+            _allServices.remove( service );
             fireDeleted( service );
         } catch ( SQLException se ) {
             throw new DeleteException( se.toString(), se );
@@ -192,6 +196,7 @@ public class ServiceManagerImp extends HibernateEntityManager implements Service
 
     protected transient Set _allServices;
     protected transient List _serviceListeners = new ArrayList();
+
     //protected transient Map _paramNameMap = new HashMap();
     //protected transient Map _paramToServiceMap = new HashMap();
 }
