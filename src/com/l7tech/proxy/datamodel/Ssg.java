@@ -182,7 +182,7 @@ public class Ssg implements Serializable, Cloneable, Comparable {
     }
 
     /** Fire a new POLICY_ATTACHED event. */
-    void firePolicyAttachedEvent(PolicyAttachmentKey pak, Policy policy) {
+    private void firePolicyAttachedEvent(PolicyAttachmentKey pak, Policy policy) {
         fireSsgEvent(SsgEvent.createPolicyAttachedEvent(this, pak, policy));
     }
 
@@ -369,7 +369,7 @@ public class Ssg implements Serializable, Cloneable, Comparable {
      * Get the protocol used to talk to the SSG.
      * @return Returns "http".
      */
-    public String getSsgProtocol() {
+    static String getSsgProtocol() {
         return SSG_PROTOCOL;
     }
 
