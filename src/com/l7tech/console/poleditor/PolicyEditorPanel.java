@@ -227,6 +227,13 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
         return policyTreePane;
     }
 
+    /** updates the service name, tab name etc */
+    private void updateHeadings() throws RemoteException, FindException {
+        this.service = serviceNode.getPublishedService();
+        setName(service.getName());
+        getSplitPane().setName(service.getName());
+    }
+
     /**
      * Render the service policy into the editor
      * 
@@ -235,11 +242,7 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
      */
     private void renderPolicy(boolean identityView)
       throws FindException, RemoteException {
-
-        this.service = serviceNode.getPublishedService();
-        if (service == null) throw new FindException("could not retrieve service");
-        setName(service.getName());
-        getSplitPane().setName(service.getName());
+        updateHeadings();
 
         TreeModel policyTreeModel;
         final PolicyToolBar pt = topComponents.getMainWindow().getPolicyToolBar();
@@ -676,6 +679,7 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
               log.info(evt.getPropertyName() + "changed");
               try {
                   if (SERVICENAME_PROPERTY.equals(evt.getPropertyName())) {
+                      updateHeadings();
                       renderPolicy(false);
                   } else if ("policy".equals(evt.getPropertyName())) {
                       rootAssertion = null;
