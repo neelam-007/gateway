@@ -21,6 +21,10 @@ import com.l7tech.util.Locator;
  * @version $Revision$
  */
 public abstract class CredentialSourceAssertion extends Assertion {
+    public CredentialSourceAssertion() {
+        super();
+    }
+
     public AssertionError checkRequest( Request request, Response response ) throws PolicyAssertionException {
         try {
             PrincipalCredentials pc = request.getPrincipalCredentials();
