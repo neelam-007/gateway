@@ -132,26 +132,21 @@ public class SamlAssertionValidate {
             }
 
             SigningSecurityToken senderVouchesSigningToken = signingTokens[0];
-            if (requestWssSaml.isRequireProofOfPosession()) {
-                if (assertion.isHolderOfKey()) {
-                    X509Certificate subjectCertificate = assertion.getSubjectCertificate();
-                    if (subjectCertificate == null) {
-                        validationResults.add(new Error("Subject Certificate is required for Holder-Of-Key Assertion", soapMessageDoc, null, null));
-                        return;
-                    }
+            if (assertion.isHolderOfKey() && requestWssSaml.isRequireHolderOfKeyWithMessageSignature()) {
+                X509Certificate subjectCertificate = assertion.getSubjectCertificate();
+                if (subjectCertificate == null) {
+                    validationResults.add(new Error("Subject Certificate is required for Holder-Of-Key Assertion", soapMessageDoc, null, null));
+                    return;
+                }
 
-                    if (!isBodySigned(assertion.getSignedElements())) {
-                        validationResults.add(new Error("Can't validate proof of posession; the SOAP Body has not been signed with Subject Certificate", soapMessageDoc, null, null));
-                        return;
-                    }
+                if (!isBodySigned(assertion.getSignedElements())) {
+                    validationResults.add(new Error("Can't validate proof of posession; the SOAP Body has not been signed with Subject Certificate", soapMessageDoc, null, null));
+                    return;
+                }
 
-                } else if (assertion.isSenderVouches()) {
-                    if (!isBodySigned(senderVouchesSigningToken.getSignedElements())) {
-                        validationResults.add(new Error("Can't validate proof of posession; the SOAP Body has not been signed", soapMessageDoc, null, null));
-                        return;
-                    }
-                } else {
-                    validationResults.add(new Error("Can't validate proof of posession for assertions that are not Holder-Of-Key or Sender-Vouches", soapMessageDoc, null, null));
+            } else if (assertion.isSenderVouches() && requestWssSaml.isRequireSenderVouchesWithMessageSignature()) {
+                if (!isBodySigned(senderVouchesSigningToken.getSignedElements())) {
+                    validationResults.add(new Error("Can't validate proof of posession; the SOAP Body has not been signed", soapMessageDoc, null, null));
                     return;
                 }
             } else {
@@ -224,13 +219,13 @@ public class SamlAssertionValidate {
         if (!now.before(notBefore)) {
             logger.finer("Condition 'Not Before' check failed, now :" + now.toString() + " Not Before:" + notBefore.toString());
             validationResults.add(new Error("Condition 'Not Before' check failed",
-                                            conditionsType.toString(), new Object[]{notBefore.toString(), now.toString()}, null));
+                conditionsType.toString(), new Object[]{notBefore.toString(), now.toString()}, null));
         }
 
         if (now.equals(notOnOrAfter) || !now.after(notOnOrAfter)) {
             logger.finer("Condition 'Not On Or After' check failed, now :" + now.toString() + " Not Before:" + notOnOrAfter.toString());
             validationResults.add(new Error("Condition 'Not On Or After' check failed",
-                                            conditionsType.toString(), new Object[]{notOnOrAfter.toString(), now.toString()}, null));
+                conditionsType.toString(), new Object[]{notOnOrAfter.toString(), now.toString()}, null));
         }
         final String audienceRestriction = requestWssSaml.getAudienceRestriction();
         if (audienceRestriction == null) {
@@ -251,7 +246,7 @@ public class SamlAssertionValidate {
         }
         if (!audienceRestrictionMatch) {
             validationResults.add(new Error("Audience Restriction Check Failed",
-                                            conditionsType.toString(), new Object[]{audienceRestriction}, null));
+                conditionsType.toString(), new Object[]{audienceRestriction}, null));
         }
     }
 
@@ -267,8 +262,8 @@ public class SamlAssertionValidate {
                 String presentedNameQualifier = nameIdentifierType.getNameQualifier();
                 if (!nameQualifier.equals(presentedNameQualifier)) {
                     validationResults.add(new Error("Name Qualifiers does not match presented/required",
-                                                    subjectStatementAbstractType.toString(),
-                                                    new Object[]{presentedNameQualifier, nameQualifier}, null));
+                        subjectStatementAbstractType.toString(),
+                        new Object[]{presentedNameQualifier, nameQualifier}, null));
                     return;
                 } else {
                     logger.fine("Matched Name Qualifier " + nameQualifier);
@@ -292,8 +287,8 @@ public class SamlAssertionValidate {
         }
         if (!nameFormatMatch) {
             validationResults.add(new Error("Name Format does not match presented/required",
-                                            subjectStatementAbstractType.toString(),
-                                            new Object[]{presentedNameFormat, Arrays.asList(nameFormats)}, null));
+                subjectStatementAbstractType.toString(),
+                new Object[]{presentedNameFormat, Arrays.asList(nameFormats)}, null));
             return;
         }
         String[] confirmations = requestWssSaml.getSubjectConfirmations();
@@ -322,8 +317,8 @@ public class SamlAssertionValidate {
                 acceptedConfirmations.add("None");
             }
             validationResults.add(new Error("Subject Confirmations mismatch presented/accepted {0}/{1}",
-                                            subjectStatementAbstractType.toString(),
-                                            new Object[]{presentedConfirmations, acceptedConfirmations}, null));
+                subjectStatementAbstractType.toString(),
+                new Object[]{presentedConfirmations, acceptedConfirmations}, null));
             return;
         }
     }
@@ -341,7 +336,7 @@ public class SamlAssertionValidate {
                 throw new IllegalArgumentException("Reason is required");
             }
             this.context = context;
-            this.values = (values != null ? values : new Object[] {});
+            this.values = (values != null ? values : new Object[]{});
             this.formattedReason = MessageFormat.format(reason, values);
             this.exception = exception;
         }
@@ -363,8 +358,8 @@ public class SamlAssertionValidate {
         }
 
         public String toString() {
-            final String exceptionMessage = exception == null ? "" : "Exception :"+exception.getMessage();
-            return "SAML Constraint Error: " + formattedReason +  exceptionMessage;
+            final String exceptionMessage = exception == null ? "" : "Exception :" + exception.getMessage();
+            return "SAML Constraint Error: " + formattedReason + exceptionMessage;
         }
     }
 

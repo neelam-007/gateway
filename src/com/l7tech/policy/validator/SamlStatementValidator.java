@@ -52,9 +52,8 @@ public class SamlStatementValidator implements AssertionValidator {
             }
         }
 
-        if (confirmations.contains(SamlConstants.CONFIRMATION_HOLDER_OF_KEY) ||
-            confirmations.contains(SamlConstants.CONFIRMATION_SENDER_VOUCHES)) {
-            if (!requestWssSaml.isRequireProofOfPosession()) {
+        if (confirmations.contains(SamlConstants.CONFIRMATION_HOLDER_OF_KEY)) {
+            if (!requestWssSaml.isRequireHolderOfKeyWithMessageSignature()) {
                 boolean hasSslAsCrendentialSource = false;
                 for (int i = 0; i < sslAssertions.length; i++) {
                     SslAssertion sslAssertion = sslAssertions[i];
@@ -64,13 +63,27 @@ public class SamlStatementValidator implements AssertionValidator {
                     }
                 }
                 if (!hasSslAsCrendentialSource) {
-                    String message = "SSL with Client Certificates must be used when No Proof Of Posession specified.";
+                    String message = "SSL with Client Certificates must be used when No Proof Of Posession specified for Holder-Of-Key.";
                     result.addError((new PolicyValidatorResult.Error(requestWssSaml, path, message, null)));
                 }
             }
         }
-
-
+        if (confirmations.contains(SamlConstants.CONFIRMATION_SENDER_VOUCHES)) {
+            if (!requestWssSaml.isRequireSenderVouchesWithMessageSignature()) {
+                boolean hasSslAsCrendentialSource = false;
+                for (int i = 0; i < sslAssertions.length; i++) {
+                    SslAssertion sslAssertion = sslAssertions[i];
+                    if (sslAssertion.isCredentialSource()) {
+                        hasSslAsCrendentialSource = true;
+                        break;
+                    }
+                }
+                if (!hasSslAsCrendentialSource) {
+                    String message = "SSL with Client Certificates must be used when No Proof Of Posession specified for Sender-Vouches.";
+                    result.addError((new PolicyValidatorResult.Error(requestWssSaml, path, message, null)));
+                }
+            }
+        }
     }
 
     private SslAssertion[] getSslAssertions(AssertionPath path) {
@@ -84,6 +97,4 @@ public class SamlStatementValidator implements AssertionValidator {
         }
         return (SslAssertion[])sslAssertions.toArray(new SslAssertion[] {});
     }
-
-    private static final String INCOMPATIBLE_WITH_PROOF_OF_POSSESION = "The subject confirmation {0} is not compatible with the proof of posession";
 }

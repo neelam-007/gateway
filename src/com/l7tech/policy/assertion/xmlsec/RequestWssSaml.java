@@ -115,9 +115,16 @@ public class RequestWssSaml extends Assertion implements SecurityHeaderAddressab
         this.recipientContext = recipientContext;
     }
 
-    public boolean isRequireProofOfPosession() {
-        return hasHolderOfKey() && requireHolderOfKeyWithMessageSignature ||
-                 hasSenderVouches() && requireSenderVouchesWithMessageSignature;
+    private boolean isRequireProofOfPosession() {
+        final boolean hasHolderOfKey = hasHolderOfKey();
+        final boolean hasSenderVouches = hasSenderVouches();
+        if (!(hasHolderOfKey || hasSenderVouches)) return false;
+        
+        boolean result = true;
+        if (hasHolderOfKey) result = result && requireHolderOfKeyWithMessageSignature;
+        if (hasSenderVouches) result = result && requireSenderVouchesWithMessageSignature;
+
+        return result;
     }
 
     private boolean hasHolderOfKey() {
