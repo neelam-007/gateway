@@ -48,7 +48,7 @@ public class GroupPanel extends EntityEditorPanel {
 
     // Titles/Labels
     private static final String DETAILS_LABEL = "General";
-    private static final String MEMBERSHIP_LABEL = "Memebership";
+    private static final String MEMBERSHIP_LABEL = "Membership";
     private static final String GROUP_DESCRIPTION_TITLE = "Description:";
 
     private static final String OK_BUTTON = "OK";
