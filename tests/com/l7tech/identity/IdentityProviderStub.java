@@ -45,6 +45,8 @@ public class IdentityProviderStub implements IdentityProvider {
         this.gm = gm;
     }
 
+    public boolean isReadOnly() { return false; }
+
     private IdentityProviderConfig icf = null;
     private UserManager um = null;
     private GroupManager gm = null;

@@ -33,6 +33,8 @@ public class LdapIdentityProviderClient implements com.l7tech.identity.IdentityP
         return false;
     }
 
+    public boolean isReadOnly() { return true; }
+
     // ************************************************
     // PRIVATES
     // ************************************************

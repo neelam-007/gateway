@@ -11,4 +11,8 @@ public interface IdentityProvider {
     UserManager getUserManager();
     GroupManager getGroupManager();
     boolean authenticate( Principal user, byte[] credentials );
+    /**
+     * If true, the save, update and delete methods wont be supported on the usermanager and groupmanager objects
+     */
+    boolean isReadOnly();
 }

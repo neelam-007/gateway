@@ -45,6 +45,8 @@ public class InternalIdentityProviderImp implements InternalIdentityProvider {
         return _identityProviderConfig;
     }
 
+    public boolean isReadOnly() { return false; }
+
     private IdentityProviderConfig _identityProviderConfig;
     private UserManagerImp _userManager;
     private GroupManagerImp _groupManager;

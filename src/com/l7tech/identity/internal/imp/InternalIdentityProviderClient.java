@@ -47,6 +47,8 @@ public class InternalIdentityProviderClient implements com.l7tech.identity.Ident
         return false;
     }
 
+    public boolean isReadOnly() { return false; }
+
     // ************************************************
     // PRIVATES
     // ************************************************
