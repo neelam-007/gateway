@@ -46,7 +46,6 @@ public final class TestDocuments {
     public static final String DOTNET_ENCRYPTED_USING_DERIVED_KEY_TOKEN = DIR + "dotNetSignedAndEncryptedUsingDKFromSCT.xml";
     public static final String DOTNET_USERNAME_TOKEN = DIR + "dotNetSoapRequestWithUsernameToken.xml";
     public static final String SOAP_WITH_ATTACHMENTS_REQUEST = DIR + "SOAPWithAttachmentsRequest.txt";
-    public static final String DOTNET_SCT_REQUEST = DIR + "dotNetSCTRequest.xml";
     public static final String ETTK_SIGNED_REQUEST = DIR + "ibmEttkSignedRequest.xml";
     public static final String ETTK_ENCRYPTED_REQUEST = DIR + "ibmEttkEncryptedRequest.xml";
     public static final String ETTK_SIGNED_ENCRYPTED_REQUEST = DIR + "ibmEttkSignedEncryptedRequest.xml";
