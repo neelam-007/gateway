@@ -55,6 +55,7 @@ public class MessageProcessor {
             throws IOException, PolicyAssertionException, PolicyVersionException {
 
         // WSS-Processing Step
+        /* uncomment once the assertions are refactored
         if (request instanceof SoapRequest) {
             SoapRequest req = (SoapRequest)request;
             WssProcessor trogdor = (WssProcessor)Locator.getDefault().lookup(WssProcessor.class);
@@ -91,7 +92,7 @@ public class MessageProcessor {
                 req.setDocument(wssOutput.getUndecoratedMessage());
             }
             logger.finest("WSS processing of request complete.");
-        }
+        }*/
         // Policy Verification Step
         try {
             ServiceManager manager = (ServiceManager)Locator.getDefault().lookup(ServiceManager.class);
