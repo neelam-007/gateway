@@ -75,6 +75,7 @@ public class RoutingAssertion extends Assertion implements Cloneable, Serializab
 
     public void setMaxConnections( int maxConnections ) {
         _maxConnections = maxConnections;
+        if ( _connectionManager != null ) _connectionManager.setMaxConnectionsPerHost( maxConnections );
     }
 
     public String getLogin() {
