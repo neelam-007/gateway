@@ -54,6 +54,36 @@ public class TrustedCertTableSorter extends FilteredDefaultTableModel {
     }
 
     /**
+     * Add a row to the table model
+     *
+     * @param rowData The new row to be stored.
+     */
+    public void addRow(Object rowData) {
+        this.rawdata.add(rowData);
+        sortData(columnToSort, false);
+    }
+
+    /**
+     * Delete a row from the table model
+     * @param rowIndex  The index of the row to be deleted.
+     */
+    public void deleteRow(int rowIndex) {
+
+        if(rowIndex < sortedData.length) {
+            TrustedCert tc = (TrustedCert) sortedData[rowIndex];
+
+            for (int i = 0; i < rawdata.size(); i++) {
+                TrustedCert cert = (TrustedCert) rawdata.elementAt(i);
+                if(cert.equals(tc)) {
+                    rawdata.remove(cert);
+                    sortData(columnToSort, false);
+                    break;
+                }
+            }
+        }
+    }
+
+    /**
      * Update the data of a row.
      * @param row  The row index.
      * @param data The new data to be stored.
@@ -124,6 +154,8 @@ public class TrustedCertTableSorter extends FilteredDefaultTableModel {
         Object[] sorted = rawdata.toArray();
         Arrays.sort(sorted, new TrustedCertTableSorter.ColumnSorter(columnToSort, ascending));
         sortedData = sorted;
+        getRealModel().setRowCount(sortedData.length);
+        fireTableDataChanged();
     }
 
     /**
