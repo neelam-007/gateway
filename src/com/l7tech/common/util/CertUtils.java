@@ -211,6 +211,15 @@ public class CertUtils {
         String certNameString = certName.getName(X500Principal.RFC2253);
         if (certNameString == null || !certNameString.substring(0, 3).equalsIgnoreCase("cn="))
             throw new IllegalArgumentException("Cert subject DN is not in the format CN=username");
-        return certNameString.substring(3);
+
+        String username = "";
+        int endIndex = certNameString.indexOf(",");
+        if (endIndex > 0) {
+            username = certNameString.substring(3, endIndex);
+        } else {
+            username = certNameString.substring(3, certNameString.length());
+        }
+
+        return username;
     }
 }
