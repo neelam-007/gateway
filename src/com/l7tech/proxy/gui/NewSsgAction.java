@@ -38,13 +38,13 @@ class NewSsgAction extends AbstractAction {
 
     public void actionPerformed(final ActionEvent e) {
         final Ssg newSsg = ssgTableModel.createSsg();
-        logger.info("Creating new Gateway registration " + newSsg);
+        logger.info("Creating new Gateway Account " + newSsg);
         newSsg.getRuntime().getSsgKeyStoreManager().deleteStores();
         if (ssgTableModel.getRowCount() < 1)
             newSsg.setDefaultSsg(true);
 
         NewSsgDialog newSsgDialog = new NewSsgDialog(newSsg, clientProxy.getSsgFinder(), Gui.getInstance().getFrame(),
-                                                     "Create Gateway Registration", true);
+                                                     "Create Gateway Account", true);
         newSsgDialog.pack();
         Utilities.centerOnScreen(newSsgDialog);
         newSsgDialog.show();

@@ -31,7 +31,7 @@ class DeleteSsgAction extends AbstractAction {
         super("Remove", IconManager.getRemove());
         this.ssgListPanel = ssgListPanel;
         this.clientProxy = clientProxy;
-        putValue(Action.SHORT_DESCRIPTION, "Remove this Gateway registration");
+        putValue(Action.SHORT_DESCRIPTION, "Remove this Gateway Account");
         putValue(Action.MNEMONIC_KEY, new Integer(KeyEvent.VK_R));
     }
 
@@ -71,7 +71,7 @@ class DeleteSsgAction extends AbstractAction {
         Object[] options = { "Remove", "Cancel" };
         int result = JOptionPane.showOptionDialog(null,
                                                   "Are you sure you want to remove the " +
-                                                  "registration for the Gateway " + ssg + "?\n" +
+                                                  "Gateway Account " + ssg + "?\n" +
                                                   "This action cannot be undone.",
                                                   "Delete Gateway?",
                                                   0, JOptionPane.WARNING_MESSAGE,

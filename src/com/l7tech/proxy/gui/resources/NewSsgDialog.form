@@ -3,7 +3,7 @@
   <grid id="3611a" binding="rootPanel" row-count="1" column-count="2" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
     <margin top="0" left="0" bottom="0" right="0"/>
     <constraints>
-      <xy x="29" y="22" width="551" height="359"/>
+      <xy x="29" y="22" width="936" height="322"/>
       <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3"/>
     </constraints>
     <properties/>
@@ -12,7 +12,7 @@
       <grid id="71c42" row-count="9" column-count="1" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
         <margin top="8" left="6" bottom="0" right="6"/>
         <constraints>
-          <xy x="111" y="0" width="440" height="359"/>
+          <xy x="277" y="0" width="659" height="322"/>
           <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3"/>
         </constraints>
         <properties/>
@@ -20,16 +20,16 @@
         <children>
           <component id="78863" class="javax.swing.JLabel">
             <constraints>
-              <xy x="6" y="11" width="259" height="14"/>
+              <xy x="6" y="11" width="320" height="14"/>
               <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0"/>
             </constraints>
             <properties>
-              <text value="What kind of Gateway registration should be created?"/>
+              <text value="Select the type of Gateway Account for the SecureSpan Gateway:"/>
             </properties>
           </component>
           <vspacer id="32c49">
             <constraints>
-              <xy x="214" y="249" width="11" height="82"/>
+              <xy x="324" y="249" width="11" height="45"/>
               <grid row="7" column="0" row-span="1" col-span="1" vsize-policy="6" hsize-policy="1" anchor="0" fill="2"/>
             </constraints>
           </vspacer>
@@ -54,7 +54,7 @@
           <grid id="51c94" row-count="1" column-count="2" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
             <margin top="0" left="0" bottom="0" right="0"/>
             <constraints>
-              <xy x="6" y="60" width="428" height="28"/>
+              <xy x="6" y="60" width="647" height="28"/>
               <grid row="2" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3"/>
             </constraints>
             <properties/>
@@ -62,11 +62,14 @@
             <children>
               <component id="1c75d" class="javax.swing.JLabel">
                 <constraints>
-                  <xy x="20" y="0" width="315" height="28"/>
-                  <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0"/>
+                  <xy x="20" y="0" width="400" height="28"/>
+                  <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="1" anchor="8" fill="0">
+                    <preferred-size width="400" height="-1"/>
+                    <maximum-size width="400" height="-1"/>
+                  </grid>
                 </constraints>
                 <properties>
-                  <text value="&lt;HTML&gt;A Trusted Gateway is allowed to know your password.&lt;p&gt;It may be able to issue a client certificate or other security token."/>
+                  <text value="&lt;HTML&gt;A Trusted Gateway knows the account password and may be able to issue a client certificate or other security token that is required  to gain access to a service."/>
                 </properties>
               </component>
               <hspacer id="ffc98">
@@ -82,7 +85,7 @@
           <grid id="976f1" row-count="1" column-count="2" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
             <margin top="0" left="0" bottom="0" right="0"/>
             <constraints>
-              <xy x="6" y="120" width="428" height="42"/>
+              <xy x="6" y="120" width="647" height="42"/>
               <grid row="4" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3"/>
             </constraints>
             <properties/>
@@ -90,11 +93,14 @@
             <children>
               <component id="b7738" class="javax.swing.JLabel">
                 <constraints>
-                  <xy x="20" y="0" width="294" height="42"/>
-                  <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0"/>
+                  <xy x="20" y="0" width="400" height="42"/>
+                  <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="1" anchor="8" fill="0">
+                    <preferred-size width="400" height="-1"/>
+                    <maximum-size width="400" height="-1"/>
+                  </grid>
                 </constraints>
                 <properties>
-                  <text value="&lt;HTML&gt;A Federated Gateway is &lt;em&gt;not&lt;/em&gt; allowed to know your password.&lt;p&gt;It will typically require a security token, obtained &lt;br&gt;elsewhere, before providing service."/>
+                  <text value="&lt;HTML&gt;A Federated Gateway  will not know the account password, and will typically require a security  token from one of the following sources in order to provide access to a  service."/>
                 </properties>
               </component>
               <hspacer id="9b71c">
@@ -110,7 +116,7 @@
           <grid id="8bf18" row-count="1" column-count="2" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
             <margin top="0" left="0" bottom="0" right="0"/>
             <constraints>
-              <xy x="6" y="167" width="428" height="22"/>
+              <xy x="6" y="167" width="647" height="22"/>
               <grid row="5" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3"/>
             </constraints>
             <properties/>
@@ -126,11 +132,11 @@
               </hspacer>
               <component id="3e76b" class="javax.swing.JRadioButton" binding="radioTokenOther">
                 <constraints>
-                  <xy x="32" y="0" width="330" height="22"/>
+                  <xy x="32" y="0" width="326" height="22"/>
                   <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0"/>
                 </constraints>
                 <properties>
-                  <text value="Obtain Security Tokens from a WS-Trust Security Token Service"/>
+                  <text value="Obtain security tokens from a WS-Trust  security token service"/>
                 </properties>
               </component>
             </children>
@@ -138,7 +144,7 @@
           <grid id="5d741" row-count="2" column-count="2" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
             <margin top="0" left="0" bottom="0" right="0"/>
             <constraints>
-              <xy x="6" y="194" width="428" height="50"/>
+              <xy x="6" y="194" width="647" height="50"/>
               <grid row="6" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3"/>
             </constraints>
             <properties/>
@@ -155,7 +161,7 @@
               <grid id="ec4" row-count="1" column-count="2" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
                 <margin top="0" left="0" bottom="0" right="0"/>
                 <constraints>
-                  <xy x="32" y="27" width="396" height="23"/>
+                  <xy x="32" y="27" width="615" height="23"/>
                   <grid row="1" column="1" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3"/>
                 </constraints>
                 <properties/>
@@ -171,7 +177,7 @@
                   </hspacer>
                   <component id="90741" class="javax.swing.JComboBox" binding="trustedSsgComboBox">
                     <constraints>
-                      <xy x="24" y="0" width="372" height="23"/>
+                      <xy x="24" y="0" width="591" height="23"/>
                       <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="2" anchor="8" fill="1"/>
                     </constraints>
                     <properties/>
@@ -180,11 +186,11 @@
               </grid>
               <component id="46f78" class="javax.swing.JRadioButton" binding="radioTokenTrustedGateway">
                 <constraints>
-                  <xy x="32" y="0" width="355" height="22"/>
+                  <xy x="32" y="0" width="408" height="22"/>
                   <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0"/>
                 </constraints>
                 <properties>
-                  <text value="Obtain Security Tokens from a Previously-Created Trusted Gateway:"/>
+                  <text value="Obtain security tokens from the following previously-created Trusted Gateway:"/>
                 </properties>
               </component>
             </children>
@@ -192,7 +198,7 @@
           <grid id="f6b3a" row-count="1" column-count="3" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
             <margin top="0" left="0" bottom="4" right="0"/>
             <constraints>
-              <xy x="6" y="331" width="428" height="28"/>
+              <xy x="6" y="294" width="647" height="28"/>
               <grid row="8" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3"/>
             </constraints>
             <properties/>
@@ -200,7 +206,7 @@
             <children>
               <component id="63cee" class="javax.swing.JButton" binding="cancelButton">
                 <constraints>
-                  <xy x="362" y="0" width="66" height="24"/>
+                  <xy x="581" y="0" width="66" height="24"/>
                   <grid row="0" column="2" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1"/>
                 </constraints>
                 <properties>
@@ -209,13 +215,13 @@
               </component>
               <hspacer id="d5e81">
                 <constraints>
-                  <xy x="0" y="6" width="285" height="11"/>
+                  <xy x="0" y="6" width="504" height="11"/>
                   <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="1" hsize-policy="6" anchor="0" fill="1"/>
                 </constraints>
               </hspacer>
               <component id="6712f" class="javax.swing.JButton" binding="createButton">
                 <constraints>
-                  <xy x="285" y="0" width="67" height="24"/>
+                  <xy x="504" y="0" width="67" height="24"/>
                   <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1"/>
                 </constraints>
                 <properties>
@@ -229,7 +235,7 @@
       <grid id="34ff1" binding="imagePanel" row-count="3" column-count="3" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
         <margin top="0" left="0" bottom="0" right="0"/>
         <constraints>
-          <xy x="0" y="0" width="101" height="359"/>
+          <xy x="0" y="0" width="267" height="322"/>
           <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3"/>
         </constraints>
         <properties/>
@@ -237,7 +243,7 @@
         <children>
           <component id="a1634" class="javax.swing.JLabel" binding="imageLabel">
             <constraints>
-              <xy x="20" y="179" width="0" height="0"/>
+              <xy x="20" y="161" width="0" height="0"/>
               <grid row="1" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="6" anchor="8" fill="0"/>
             </constraints>
             <properties>
@@ -246,7 +252,7 @@
           </component>
           <hspacer id="5c4bb">
             <constraints>
-              <xy x="81" y="174" width="20" height="11"/>
+              <xy x="247" y="155" width="20" height="11"/>
               <grid row="1" column="2" row-span="1" col-span="1" vsize-policy="1" hsize-policy="0" anchor="0" fill="1">
                 <minimum-size width="12" height="-1"/>
               </grid>
