@@ -1,6 +1,5 @@
 package com.l7tech.proxy.gui.dialogs;
 
-import com.l7tech.common.gui.NumberField;
 import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.common.gui.widgets.CertificatePanel;
 import com.l7tech.common.gui.widgets.ContextMenuTextField;
@@ -8,14 +7,16 @@ import com.l7tech.common.gui.widgets.WrappingLabel;
 import com.l7tech.proxy.ClientProxy;
 import com.l7tech.proxy.datamodel.*;
 import com.l7tech.proxy.gui.Gui;
-import com.l7tech.proxy.gui.SsgPropertyPanel;
 import com.l7tech.proxy.gui.policy.PolicyTreeCellRenderer;
 import com.l7tech.proxy.gui.policy.PolicyTreeModel;
 import com.l7tech.proxy.gui.util.IconManager;
 
 import javax.swing.*;
 import javax.swing.border.BevelBorder;
-import javax.swing.event.*;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
+import javax.swing.event.ListSelectionEvent;
+import javax.swing.event.ListSelectionListener;
 import javax.swing.filechooser.FileFilter;
 import javax.swing.table.AbstractTableModel;
 import javax.swing.tree.TreeModel;
@@ -57,13 +58,17 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
     private SsgPropertyPanel identityPane;
 
     //   View for Network pane
-    private JComponent networkPane;
-    private WrappingLabel fieldLocalEndpoint;
-    private WrappingLabel fieldWsdlEndpoint;
-    private JRadioButton radioStandardPorts;
-    private JRadioButton radioNonstandardPorts;
-    private JTextField fieldSsgPort;
-    private JTextField fieldSslPort;
+    private SsgNetworkPanel networkPane;
+    //private WrappingLabel fieldLocalEndpoint;
+    //private WrappingLabel fieldWsdlEndpoint;
+    //private JRadioButton radioStandardPorts;
+    //private JRadioButton radioNonstandardPorts;
+    //private JTextField fieldSsgPort;
+    //private JTextField fieldSslPort;
+    //private JRadioButton radioDefaultIpAddresses;
+    //private JRadioButton radioCustomIpAddresses;
+    //private JList jlistCustomIpAddresses;
+    //private JScrollPane scrollPaneCustomIpAddresses;
 
     //   View for Bridge Policy pane
     private JComponent bridgePolicyPane;
@@ -437,184 +442,9 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
         }
     }
 
-    private JComponent getNetworkPane() {
-        if (networkPane == null) {
-            gridY = 0;
-            JPanel pane = new JPanel(new GridBagLayout());
-            networkPane = new JScrollPane(pane);
-            networkPane.setBorder(BorderFactory.createEmptyBorder());
-
-            // Endpoint panel
-
-            JPanel epp = new JPanel(new GridBagLayout());
-            epp.setBorder(BorderFactory.createTitledBorder(" Incoming Requests to the Bridge "));
-            pane.add(epp, new GridBagConstraints(0, gridY++, 2, 1, 1000.0, 0.0,
-                                                 GridBagConstraints.WEST,
-                                                 GridBagConstraints.HORIZONTAL,
-                                                 new Insets(14, 5, 0, 5), 0, 0));
-
-            int oy = gridY;
-            gridY = 0;
-
-            WrappingLabel splain01 = new WrappingLabel("The SecureSpan Bridge listens for incoming messages at the " +
-                                                       "following local proxy URL, then routes the messages to the " +
-                                                       "SecureSpan Gateway.", 2);
-            epp.add(splain01,
-                    new GridBagConstraints(0, gridY++, 2, 1, 0.0, 0.0,
-                                           GridBagConstraints.WEST,
-                                           GridBagConstraints.HORIZONTAL,
-                                           new Insets(0, 5, 0, 0), 0, 0));
-
-            fieldLocalEndpoint = new WrappingLabel("");
-            fieldLocalEndpoint.setContextMenuEnabled(true);
-            epp.add(new JLabel("Proxy URL:"),
-                    new GridBagConstraints(0, gridY, 1, 1, 0.0, 0.0,
-                                           GridBagConstraints.EAST,
-                                           GridBagConstraints.NONE,
-                                           new Insets(5, 15, 5, 0), 0, 0));
-            epp.add(fieldLocalEndpoint,
-                    new GridBagConstraints(1, gridY++, 1, 1, 1000.0, 0.0,
-                                           GridBagConstraints.WEST,
-                                           GridBagConstraints.HORIZONTAL,
-                                           new Insets(5, 5, 5, 5), 0, 0));
-
-            WrappingLabel splain02 = new WrappingLabel("The SecureSpan Bridge offers proxied WSDL lookups at the " +
-                                                       "following local WSDL URL:", 1);
-            epp.add(splain02,
-                    new GridBagConstraints(0, gridY++, 2, 1, 0.0, 0.0,
-                                           GridBagConstraints.WEST,
-                                           GridBagConstraints.HORIZONTAL,
-                                           new Insets(10, 5, 0, 0), 0, 0));
-            fieldWsdlEndpoint = new WrappingLabel("");
-            fieldWsdlEndpoint.setContextMenuEnabled(true);
-            epp.add(new JLabel("WSDL URL:"),
-                    new GridBagConstraints(0, gridY, 1, 1, 0.0, 0.0,
-                                           GridBagConstraints.EAST,
-                                           GridBagConstraints.NONE,
-                                           new Insets(5, 15, 5, 0), 0, 0));
-            epp.add(fieldWsdlEndpoint,
-                    new GridBagConstraints(1, gridY++, 1, 1, 1000.0, 0.0,
-                                           GridBagConstraints.WEST,
-                                           GridBagConstraints.HORIZONTAL,
-                                           new Insets(5, 5, 5, 5), 0, 0));
-
-            gridY = oy;
-
-
-            // Gateway ports panel
-
-            JPanel gpp = new JPanel(new GridBagLayout());
-            gpp.setBorder(BorderFactory.createTitledBorder(" Outgoing Requests to the Gateway "));
-            pane.add(gpp,
-                     new GridBagConstraints(0, gridY++, 2, 1, 1000.0, 0.0,
-                                            GridBagConstraints.WEST,
-                                            GridBagConstraints.HORIZONTAL,
-                                            new Insets(14, 5, 0, 5), 0, 0));
-
-            gpp.add(new WrappingLabel("Configure standard or non-standard ports for the SecureSpan Gateway below.", 2),
-                    new GridBagConstraints(0, 0, 5, 1, 0.0, 0.0,
-                                           GridBagConstraints.WEST,
-                                           GridBagConstraints.HORIZONTAL,
-                                           new Insets(0, 5, 0, 0), 0, 0));
-
-            ButtonGroup bg = new ButtonGroup();
-            radioStandardPorts = new JRadioButton("Gateway Uses Standard Ports:", true);
-            radioStandardPorts.addChangeListener(new ChangeListener() {
-                public void stateChanged(ChangeEvent e) {
-                    updateCustomPortsEnableState();
-                }
-            });
-            bg.add(radioStandardPorts);
-            gpp.add(radioStandardPorts,
-                    new GridBagConstraints(0, 1, 5, 1, 0.0, 0.0,
-                                           GridBagConstraints.SOUTHWEST,
-                                           GridBagConstraints.NONE,
-                                           new Insets(5, 5, 0, 5), 0, 0));
-            gpp.add(new JLabel("HTTP Port:"),
-                    new GridBagConstraints(0, 2, 1, 1, 0.0, 0.0,
-                                           GridBagConstraints.WEST,
-                                           GridBagConstraints.NONE,
-                                           new Insets(0, 40, 5, 0), 0, 0));
-            final JLabel defaultSsgPortLabel = new JLabel(String.valueOf(referenceSsg.getSsgPort()));
-            Utilities.enableGrayOnDisabled(defaultSsgPortLabel);
-            gpp.add(defaultSsgPortLabel,
-                    new GridBagConstraints(1, 2, 1, 1, 0.0, 0.0,
-                                           GridBagConstraints.WEST,
-                                           GridBagConstraints.NONE,
-                                           new Insets(0, 5, 5, 5), 0, 0));
-            gpp.add(new JLabel("HTTPS Port:"),
-                    new GridBagConstraints(2, 2, 1, 1, 0.0, 0.0,
-                                           GridBagConstraints.WEST,
-                                           GridBagConstraints.NONE,
-                                           new Insets(0, 15, 5, 0), 0, 0));
-            final JLabel defaultSslPortLabel = new JLabel(String.valueOf(referenceSsg.getSslPort()));
-            gpp.add(defaultSslPortLabel,
-                    new GridBagConstraints(3, 2, 1, 1, 0.0, 0.0,
-                                           GridBagConstraints.WEST,
-                                           GridBagConstraints.NONE,
-                                           new Insets(0, 5, 5, 5), 0, 0));
-            gpp.add(new JPanel(),
-                    new GridBagConstraints(4, 2, 1, 1, 1000.0, 0.0,
-                                           GridBagConstraints.CENTER,
-                                           GridBagConstraints.HORIZONTAL,
-                                           new Insets(0, 0, 0, 0), 0, 0));
-
-            radioNonstandardPorts = new JRadioButton("Gateway Requires Custom Ports:", false);
-            radioNonstandardPorts.addChangeListener(new ChangeListener() {
-                public void stateChanged(ChangeEvent e) {
-                    updateCustomPortsEnableState();
-                }
-            });
-            bg.add(radioNonstandardPorts);
-            gpp.add(radioNonstandardPorts,
-                    new GridBagConstraints(0, 3, 5, 1, 0.0, 0.0,
-                                           GridBagConstraints.NORTHWEST,
-                                           GridBagConstraints.NONE,
-                                           new Insets(5, 5, 5, 0), 0, 0));
-
-            gpp.add(new JLabel("HTTP Port:"),
-                    new GridBagConstraints(0, 4, 1, 1, 0.0, 0.0,
-                                           GridBagConstraints.WEST,
-                                           GridBagConstraints.NONE,
-                                           new Insets(0, 40, 5, 0), 0, 0));
-            fieldSsgPort = new ContextMenuTextField("");
-            Utilities.enableGrayOnDisabled(fieldSsgPort);
-            Utilities.constrainTextFieldToIntegerRange(fieldSsgPort, 1, 65535);
-            fieldSsgPort.setDocument(new NumberField(6));
-            fieldSsgPort.setPreferredSize(new Dimension(50, 20));
-            gpp.add(fieldSsgPort,
-                    new GridBagConstraints(1, 4, 1, 1, 0.0, 0.0,
-                                           GridBagConstraints.WEST,
-                                           GridBagConstraints.NONE,
-                                           new Insets(0, 5, 5, 5), 0, 0));
-            gpp.add(new JLabel("HTTPS Port:"),
-                    new GridBagConstraints(2, 4, 1, 1, 0.0, 0.0,
-                                           GridBagConstraints.WEST,
-                                           GridBagConstraints.NONE,
-                                           new Insets(0, 15, 5, 0), 0, 0));
-            fieldSslPort = new ContextMenuTextField("");
-            Utilities.enableGrayOnDisabled(fieldSslPort);
-            Utilities.constrainTextFieldToIntegerRange(fieldSslPort, 1, 65535);
-            fieldSslPort.setDocument(new NumberField(6));
-            fieldSslPort.setPreferredSize(new Dimension(50, 20));
-            gpp.add(fieldSslPort,
-                    new GridBagConstraints(3, 4, 1, 1, 0.0, 0.0,
-                                           GridBagConstraints.WEST,
-                                           GridBagConstraints.NONE,
-                                           new Insets(0, 5, 5, 5), 0, 0));
-            gpp.add(new JPanel(),
-                    new GridBagConstraints(4, 4, 1, 1, 1000.0, 0.0,
-                                           GridBagConstraints.CENTER,
-                                           GridBagConstraints.HORIZONTAL,
-                                           new Insets(0, 0, 0, 0), 0, 0));
-
-            // Have a spacer eat any leftover space
-            pane.add(new JPanel(),
-                     new GridBagConstraints(0, gridY++, 1, 1, 1.0, 1.0,
-                                            GridBagConstraints.CENTER,
-                                            GridBagConstraints.BOTH,
-                                            new Insets(0, 0, 0, 0), 0, 0));
-        }
+    private SsgNetworkPanel getNetworkPane() {
+        if (networkPane == null)
+            networkPane = new SsgNetworkPanel();
         return networkPane;
     }
 
@@ -663,12 +493,6 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
         }
 
         return generalPane;
-    }
-
-    private void updateCustomPortsEnableState() {
-        boolean en = radioNonstandardPorts.isSelected();
-        fieldSsgPort.setEnabled(en);
-        fieldSslPort.setEnabled(en);
     }
 
     private class CertDialog extends JDialog {
@@ -774,8 +598,7 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
                 boolean hasPassword = pass != null;
                 identityPane.getUserPasswordField().setText(new String(hasPassword ? pass : "".toCharArray()));
                 boolean customPorts = isPortsCustom(ssg);
-                radioStandardPorts.setSelected(!customPorts);
-                radioNonstandardPorts.setSelected(customPorts);
+                getNetworkPane().setCustomPorts(customPorts);
                 identityPane.getSavePasswordCheckBox().setSelected(ssg.isSavePasswordToDisk());
                 identityPane.getUseClientCredentialCheckBox().setSelected(ssg.isChainCredentialsFromClient());
                 String clientCertUsername = SsgKeyStoreManager.lookupClientCertUsername(ssg);
@@ -786,17 +609,19 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
                 updateIdentityEnableState();
             }
 
-            fieldLocalEndpoint.setText("http://localhost:" + clientProxy.getBindPort() + "/" +
+            getNetworkPane().setLocalEndpoint("http://localhost:" + clientProxy.getBindPort() + "/" +
                                        ssg.getLocalEndpoint());
-            fieldWsdlEndpoint.setText("http://localhost:" + clientProxy.getBindPort() + "/" +
+            getNetworkPane().setWsdlEndpoint("http://localhost:" + clientProxy.getBindPort() + "/" +
                                       ssg.getLocalEndpoint() + ClientProxy.WSIL_SUFFIX);
             fieldServerAddress.setText(ssg.getSsgAddress());
 
             policyFlushRequested = false;
-            fieldSsgPort.setText(Integer.toString(ssg.getSsgPort()));
-            fieldSslPort.setText(Integer.toString(ssg.getSslPort()));
+            getNetworkPane().setSsgPort(ssg.getSsgPort());
+            getNetworkPane().setSslPort(ssg.getSslPort());
+            getNetworkPane().setUseOverrideIpAddresses(ssg.isUseOverrideIpAddresses());
+            getNetworkPane().setCustomIpAddresses(ssg.getOverrideIpAddresses());
             cbUseSslByDefault.setSelected(ssg.isUseSslByDefault());
-            updateCustomPortsEnableState();
+            getNetworkPane().updateCustomPortsEnableState();
             updatePolicyPanel();
         }
 
@@ -862,10 +687,12 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
             // applicable to both trusted and federated SSG
             ssg.setSsgAddress(fieldServerAddress.getText().trim().toLowerCase());
             ssg.setUseSslByDefault(cbUseSslByDefault.isSelected());
+            ssg.setUseOverrideIpAddresses(getNetworkPane().isUseOverrideIpAddresses());
+            ssg.setOverrideIpAddresses(getNetworkPane().getCustomIpAddresses());
 
-            if (radioNonstandardPorts.isSelected()) {
-                ssg.setSsgPort(Integer.parseInt(fieldSsgPort.getText()));
-                ssg.setSslPort(Integer.parseInt(fieldSslPort.getText()));
+            if (getNetworkPane().isCustomPorts()) {
+                ssg.setSsgPort(getNetworkPane().getSsgPort());
+                ssg.setSslPort(getNetworkPane().getSslPort());
             } else {
                 ssg.setSsgPort(referenceSsg.getSsgPort());
                 ssg.setSslPort(referenceSsg.getSslPort());

@@ -1,11 +1,11 @@
 package com.l7tech.console.panels;
 
 import com.l7tech.console.action.Actions;
-import com.l7tech.console.event.PolicyListener;
 import com.l7tech.console.event.PolicyEvent;
-import com.l7tech.policy.assertion.RemoteIpRange;
-import com.l7tech.policy.assertion.Assertion;
+import com.l7tech.console.event.PolicyListener;
 import com.l7tech.policy.AssertionPath;
+import com.l7tech.policy.assertion.Assertion;
+import com.l7tech.policy.assertion.RemoteIpRange;
 
 import javax.swing.*;
 import javax.swing.event.EventListenerList;
@@ -13,10 +13,10 @@ import javax.swing.text.NumberFormatter;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.util.StringTokenizer;
 import java.util.EventListener;
 import java.util.Locale;
 import java.util.ResourceBundle;
+import java.util.StringTokenizer;
 
 /**
  * Dialog for viewing and editing a RemoteIpRange assertion.

@@ -1,4 +1,4 @@
-package com.l7tech.proxy.gui;
+package com.l7tech.proxy.gui.dialogs;
 
 import com.l7tech.proxy.datamodel.Ssg;
 
@@ -10,7 +10,7 @@ import java.awt.*;
  * <p> @author fpang </p>
  * $Id$
  */
-public class SsgPropertyPanel extends JPanel {
+class SsgPropertyPanel extends JPanel {
     private JPanel mainPanel;
     private JRadioButton federatedSSGRadioButton;
     private JRadioButton trustedSSGRadioButton;

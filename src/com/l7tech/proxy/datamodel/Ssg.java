@@ -72,6 +72,8 @@ public class Ssg implements Serializable, Cloneable, Comparable {
     private boolean useSslByDefault = true;
     private boolean savePasswordToDisk = false;
     private byte[] persistPassword = null;
+    private boolean useOverrideIpAddresses = false;
+    private String[] overrideIpAddresses = null;
 
     // These fields are transient.  To prevent the bean serializer from saving them anyway,
     // they do not use the getFoo() / setFoo() naming convention in their accessors and mutators.
@@ -988,5 +990,21 @@ public class Ssg implements Serializable, Cloneable, Comparable {
             HttpClient hc = new HttpClient(getHttpConnectionManager());
             return hc;
         }
+    }
+
+    public boolean isUseOverrideIpAddresses() {
+        return useOverrideIpAddresses;
+    }
+
+    public void setUseOverrideIpAddresses(boolean useOverrideIpAddresses) {
+        this.useOverrideIpAddresses = useOverrideIpAddresses;
+    }
+
+    public String[] getOverrideIpAddresses() {
+        return overrideIpAddresses;
+    }
+
+    public void setOverrideIpAddresses(String[] overrideIpAddresses) {
+        this.overrideIpAddresses = overrideIpAddresses;
     }
 }

@@ -15,13 +15,10 @@ import com.l7tech.policy.assertion.credential.http.HttpBasic;
 import com.l7tech.policy.assertion.identity.SpecificUser;
 import com.l7tech.proxy.ClientProxy;
 import com.l7tech.proxy.datamodel.Policy;
+import com.l7tech.proxy.datamodel.PolicyAttachmentKey;
 import com.l7tech.proxy.datamodel.Ssg;
 import com.l7tech.proxy.datamodel.SsgManagerStub;
-import com.l7tech.proxy.datamodel.PolicyAttachmentKey;
 import com.l7tech.proxy.gui.dialogs.SsgPropertyDialog;
-import junit.framework.Test;
-import junit.framework.TestCase;
-import junit.framework.TestSuite;
 
 import java.util.Arrays;
 import java.util.logging.Logger;
@@ -32,19 +29,15 @@ import java.util.logging.Logger;
  * Date: Jul 3, 2003
  * Time: 10:33:34 AM
  */
-public class SsgPropertyDialogTest extends TestCase {
+public class SsgPropertyDialogTest {
     private static Logger log = Logger.getLogger(SsgPropertyDialogTest.class.getName());
 
-    public SsgPropertyDialogTest(String name) {
-        super(name);
-    }
-
-    public static Test suite() {
-        return new TestSuite(SsgPropertyDialogTest.class);
-    }
-
     public static void main(String[] args) {
-        junit.textui.TestRunner.run(suite());
+        try {
+            new SsgPropertyDialogTest().testSomeStuff();
+        } catch (Exception e) {
+            e.printStackTrace(System.err);
+        }
     }
 
     public void testSomeStuff() throws Exception {
