@@ -23,22 +23,22 @@ public interface SecureSpanAgent {
     /**
      * This is the result returned from a call to send().
      */
-    interface Result {
+    public static interface Result {
         int getHttpStatus();
         Document getResponse() throws IOException, SAXException;
     }
 
     /** Thrown if there is a problem sending a message to the Gateway. */
-    class SendException extends Exception {}
+    public static class SendException extends Exception {}
 
     /** Thrown if a bad username or password was detected. */
-    class BadCredentialsException extends Exception {}
+    public static class BadCredentialsException extends Exception {}
 
     /**
      * Thrown if a new client certificate cannot be obtained because the Gateway has already issued
      * a client certificate for this account.
      */
-    class CertificateAlreadyIssuedException extends Exception {}
+    public static class CertificateAlreadyIssuedException extends Exception {}
 
     /**
      * Send a message to the service through the Gateway.
