@@ -7,12 +7,65 @@
 # Defines JAVA_HOME, TOMCAT_HOME, etc
 # Edit at deployment time to ensure values are accurate
 #
+# This is an attempt at self tuning
+# 
+echo "Experimental ssgruntime setup"
+release=`cat /etc/redhat-release`
 
-default_java_opts="-Xmx768m -Xss1m -server"
+if [ "$release" = "Red Hat Linux release 8.0 (Psyche)" ]; then
+	old_rel=1;
+fi
+
+if [ "$release" = "Red Hat Linux release 9 (Shrike)" ]; then
+	old_rel=1;
+fi
+
+cpucount=`cat /proc/cpuinfo  |grep "cpu MHz" |wc -l| tr -d \ `
+
+let cpucount="$cpucount*1"; # sanitize
+
+system_ram=`cat /proc/meminfo |grep MemTotal |cut -c 15-23`
+
+multiplier="3/5"
+
+let java_ram="$system_ram*$multiplier" 
+
+default_java_opts="-Xms${java_ram}k -Xmx${java_ram}k -Xss256k -server "
+
+let maxnewsize="$java_ram/2"
+
+default_java_opts="$default_java_opts -XX:NewSize=${maxnewsize}k -XX:MaxNewSize=${maxnewsize}k "
+
+
+if [ -e /ssg/etc/conf/JVM ]; then
+	JAVA_HOME=`cat /ssg/etc/conf/JVM`
+	if [ $cpucount = 1 ]; then
+		echo -n ""
+		# single cpu
+	else
+		# java 1.5 doesn't seem to want the other options
+		default_java_opts="$default_java_opts -XX:+UseParNewGC -XX:ParallelGCThreads=$cpucount "
+	fi
+else
+	# default is 1.4.2
+	export JAVA_HOME="/ssg/j2sdk1.4.2_05"
+	if [ $old_rel = 1 ]; then 
+		export LD_ASSUME_KERNEL="2.2.5"
+	fi
+	if [ $cpucount = 1 ]; then
+		echo -n ""
+		# single cpu
+	else
+		default_java_opts="$default_java_opts -XX:+UseParNewGC -XX:ParallelGCThreads=$cpucount "
+		default_java_opts="$default_java_opts -XX:+UseConcMarkSweepGC -XX:CMSInitiatingOccupancyFraction=90"
+		default_java_opts="$default_java_opts -XX:SurvivorRatio=128 -XX:MaxTenuringThreshold=0"
+	fi
+fi
+
+ulimit -s 2048
+
 export SSG_HOME=/ssg
-JAVA_HOME=/ssg/j2sdk1.4.2_05
 TOMCAT_HOME=/ssg/tomcat/
-export LD_ASSUME_KERNEL="2.2.5"
 
 # Under cygwin?.
 cygwin=false;
