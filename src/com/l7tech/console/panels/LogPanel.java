@@ -310,7 +310,11 @@ public class LogPanel extends JPanel {
         msgDetailsPane.setMaximumSize(new java.awt.Dimension(1000, 150));
         msgDetailsPane.setMinimumSize(new java.awt.Dimension(400, 150));
         msgDetailsPane.setPreferredSize(new java.awt.Dimension(400, 150));
-        msgDetailsPane.addTab("Details", getMsgDetails());
+
+        JScrollPane msgDetailsScrollPane = new JScrollPane();
+      //  msgDetailsScrollPane.add(getMsgDetails());
+        msgDetailsScrollPane.setViewportView(getMsgDetails());
+        msgDetailsPane.addTab("Details", msgDetailsScrollPane);
 
         return msgDetailsPane;
     }
