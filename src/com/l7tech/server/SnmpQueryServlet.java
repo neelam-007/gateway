@@ -71,9 +71,6 @@ public class SnmpQueryServlet extends HttpServlet {
         String sw = matcher.group(1);
         String id = matcher.group(2);
 
-        // TODO remove logging here, or it'll get huge
-        logger.log(Level.FINER, "Received SNMP request: <" + sw + "> for id <" + id + ">");
-
         final boolean advance;
         if ("get".equalsIgnoreCase(sw)) {
             advance = false;
