@@ -1,12 +1,14 @@
 package com.l7tech.cluster;
 
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.UpdateException;
 import com.l7tech.remote.jini.export.RemoteService;
 import com.sun.jini.start.LifeCycle;
 import net.jini.config.ConfigurationException;
 
 import java.io.IOException;
 import java.util.Collection;
+import java.rmi.RemoteException;
 
 /**
  * Server side implementation of the ClusterStatusAdmin interface.
@@ -25,6 +27,9 @@ public class ClusterStatusAdminImp extends RemoteService implements ClusterStatu
         super(configOptions, lc);
     }
 
+    /**
+     * get status for all nodes recorded as part of the cluster.
+     */
     public ClusterNodeInfo[] getClusterStatus() throws FindException {
         Collection res = ciman.retrieveClusterStatus();
         Object[] resarray = res.toArray();
@@ -35,6 +40,9 @@ public class ClusterStatusAdminImp extends RemoteService implements ClusterStatu
         return output;
     }
 
+    /**
+     * get service usage as currently recorded in database.
+     */
     public ServiceUsage[] getServiceUsage() throws FindException {
         Collection res = suman.getAll();
         Object[] resarray = res.toArray();
@@ -43,6 +51,30 @@ public class ClusterStatusAdminImp extends RemoteService implements ClusterStatu
             output[i] = (ServiceUsage)resarray[i];
         }
         return output;
+    }
+
+    /**
+     * lets the administrator change the human readable name of a node part of the cluster. these
+     * names are originally automatically set by the server when they join the cluster.
+     *
+     * @param nodeid the mac of the node for which we want to change the name
+     * @param newName the new name of the node (must not be null)
+     */
+    public void changeNodeName(String nodeid, String newName) throws RemoteException, UpdateException {
+        // todo
+        throw new UnsupportedOperationException();
+    }
+
+    /**
+     * lets the administrator remove a node that is no longer part of the cluster. after this is called,
+     * the getClusterStatus calls will no longer refer to this node. this operation will not be permitted
+     * unless this node's status has not been updated for a while.
+     *
+     * @param nodeid the mac of the stale node to remove
+     */
+    public void removeStaleNode(String nodeid) throws RemoteException, UpdateException {
+        // todo
+        throw new UnsupportedOperationException();
     }
 
     private final ClusterInfoManager ciman = ClusterInfoManager.getInstance();
