@@ -434,6 +434,7 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
             identityPane.getUserPasswordField().setEditable(false);
         } else {
             identityPane.getSavePasswordCheckBox().setEnabled(true);
+            identityPane.getUserPasswordField().setEnabled(true);
             identityPane.getUserPasswordField().setEditable(true);
             identityPane.getUsernameTextField().setEditable(lookupClientCertUsername(ssg) == null);
         }
