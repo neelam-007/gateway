@@ -47,17 +47,20 @@ public abstract class IdentityAssertion extends Assertion {
             Principal principal = pc.getPrincipal();
             byte[] credentials = pc.getCredentials();
 
+            AssertionStatus status;
             if ( request.isAuthenticated() ) {
-                return doCheckPrincipal( principal );
+                status = doCheckPrincipal( principal );
             } else {
                 if ( _identityProvider.authenticate( principal, credentials ) ) {
                     request.setAuthenticated(true);
-                    return doCheckPrincipal( principal );
+                    status = doCheckPrincipal( principal );
                 } else {
-                    response.setAuthenticationMissing( true );
-                    return AssertionStatus.AUTH_FAILED;
+                    status = AssertionStatus.AUTH_FAILED;
                 }
             }
+
+            if ( status == AssertionStatus.AUTH_FAILED ) response.setAuthenticationMissing( true );
+            return status;
         }
     }
 
