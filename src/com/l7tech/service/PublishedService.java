@@ -83,6 +83,11 @@ public class PublishedService extends NamedEntityImp {
             // this avoids resolving the wsdl on the client side
             ServiceManager serviceManagerInstance = (ServiceManager)Locator.getDefault().
                                         lookup(com.l7tech.service.ServiceManager.class);
+            if (serviceManagerInstance == null) {
+                String msg = "could not resolve a ServiceManager implementation.";
+                logger.severe(msg);
+                throw new IOException(msg);
+            }
             _wsdlXml = serviceManagerInstance.resolveWsdlTarget(_wsdlUrl);
         }
         return _wsdlXml;
