@@ -638,7 +638,7 @@ public class Preferences extends PropertyChangeSupport {
 
     /** where is home (properties are stored there) */
     private final String CONSOLE_CONFIG =
-            System.getProperties().getProperty("user.home") + File.separator + ".ssg";
+            System.getProperties().getProperty("user.home") + File.separator + ".l7tech";
 
     private static final
     String[] res =
