@@ -127,7 +127,7 @@ public class User extends NamedEntityImp implements Principal {
         if (this == o) return true;
         if (!(o instanceof User)) return false;
         final User userImp = (User) o;
-        if (_oid != DEFAULT_OID ? !(_oid == userImp._oid) : userImp._oid != DEFAULT_OID ) return false;
+        if ( providerId != DEFAULT_OID ? !( providerId== userImp.providerId ) : userImp.providerId != DEFAULT_OID ) return false;
         if (_login != null ? !_login.equals(userImp._login) : userImp._login != null) return false;
         return true;
     }
@@ -153,7 +153,7 @@ public class User extends NamedEntityImp implements Principal {
         byte[] digest = md5Helper.digest(toEncode.getBytes());
         // ENCODE IT
         if (digest == null) return "";
-        char[] hexadecimal ={'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f'};
+        char[] hexadecimal = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f'};
         if (digest.length != 16) return "";
         char[] buffer = new char[32];
 
@@ -187,5 +187,5 @@ public class User extends NamedEntityImp implements Principal {
     private String _department;
     private Set _groups;
     private Set _groupHeaders;
-    private long providerId;
+    private long providerId = DEFAULT_OID;
 }
