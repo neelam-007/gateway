@@ -6,6 +6,7 @@ import com.l7tech.common.util.CertUtils;
 import com.l7tech.common.util.KeystoreUtils;
 import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.util.XmlUtil;
+import com.l7tech.common.xml.TestDocuments;
 import com.l7tech.policy.assertion.credential.CredentialFormat;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.assertion.xmlsec.RequestWssX509Cert;
@@ -101,6 +102,7 @@ public class SignedSamlTest extends TestCase {
 
         LoginCredentials creds = new LoginCredentials(null, null, CredentialFormat.CLIENTCERT, RequestWssX509Cert.class, null, clientCertChain[0]);
         SamlAssertionGenerator.Options samlOptions = new SamlAssertionGenerator.Options();
+        samlOptions.setExpiryMinutes(80);
         samlOptions.setClientAddress(InetAddress.getLocalHost());
         Document doc = new DocumentImpl();
         SignerInfo si = new SignerInfo(caPrivateKey, caCertChain);
