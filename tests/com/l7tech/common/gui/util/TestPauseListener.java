@@ -24,14 +24,7 @@ public class TestPauseListener extends JFrame implements PauseListener {
         super( "Test Pause Listener" );
         super.setDefaultCloseOperation( JFrame.EXIT_ON_CLOSE );
 
-/*
-        Dimension size = _textField.getSize();
-        size.height = size.height + 10;
-        _textField.setSize(size);
-*/
-
-        TextComponentPauseListenerManager.registerPauseListener(
-                _textField, this, 1000 );
+        TextComponentPauseListenerManager.registerPauseListener(_textField, this, 1000);
 
         Container cp = getContentPane();
         final GridBagLayout layout = new GridBagLayout();
