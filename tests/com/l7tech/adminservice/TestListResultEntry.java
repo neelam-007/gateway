@@ -14,16 +14,16 @@ public class TestListResultEntry extends TestCase {
     public void testListResultEntry() throws Exception {
         ListResultEntry tst = new ListResultEntry();
         assertTrue("ListResultEntry() constructor works", tst != null);
-        tst = new ListResultEntry(2, "blah");
+        tst = new ListResultEntry(2, "blah", "fsdfdsfsd");
         assertTrue("ListResultEntry(long, string) constructor works", tst != null);
-        tst = new ListResultEntry(-2, null);
+        tst = new ListResultEntry(-2, null, null);
         assertTrue("ListResultEntry(long, string) constructor works with bad arguments", tst != null);
     }
 
     public void testGetUid() throws Exception {
-        ListResultEntry tst = new ListResultEntry(45, "blah");
+        ListResultEntry tst = new ListResultEntry(45, "blah", "dsfds");
         assertTrue("getUid() returns correct value", tst.getUid() == 45);
-        tst = new ListResultEntry(-654, "blah");
+        tst = new ListResultEntry(-654, "blah", "dsfds");
         assertTrue("getUid() returns correct value", tst.getUid() == -654);
     }
 
@@ -36,14 +36,14 @@ public class TestListResultEntry extends TestCase {
     }
 
     public void testGetName() throws Exception {
-        ListResultEntry tst = new ListResultEntry(45, "blah");
+        ListResultEntry tst = new ListResultEntry(45, "blah", "fddsfs");
         assertTrue("getName() returns correct value", tst.getName().equals("blah"));
-        tst = new ListResultEntry(-22, null);
+        tst = new ListResultEntry(-22, null, null);
         assertTrue("getName() never returns null", tst.getName().equals(""));
     }
 
     public void testSetName() throws Exception {
-        ListResultEntry tst = new ListResultEntry(45, "blah");
-        tst = new ListResultEntry(-22, null);
+        ListResultEntry tst = new ListResultEntry(45, "blah", "fdsdfd");
+        tst = new ListResultEntry(-22, null, null);
     }
 }
