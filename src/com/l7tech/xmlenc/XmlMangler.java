@@ -27,8 +27,7 @@ import org.xml.sax.SAXException;
 import javax.xml.parsers.ParserConfigurationException;
 import java.io.IOException;
 import java.security.GeneralSecurityException;
-import java.security.PrivateKey;
-import java.security.PublicKey;
+import java.security.Key;
 
 /**
  * Class that encrypts and decrypts XML documents.
@@ -66,16 +65,16 @@ public class XmlMangler {
     }
 
     /**
-     * In-place encrypt of the specified SOAP document.  The document will be encrypted with RSA using the specified
-     * public key, which will be tagged with the specified KeyName.
+     * In-place encrypt of the specified SOAP document.  The document will be encrypted with AES256 using the specified
+     * AES256 key, which will be tagged with the specified KeyName.
      *
      * @param soapMsg  the SOAP document to encrypt
-     * @param publicKey  the RSA public key to use to encrypt it
-     * @param keyName    an identifier for this Key that will be meaningful to a future reader of the encrypted message
+     * @param key    the 32 byte AES256 symmetric key to use to encrypt it
+     * @param keyName    an identifier for this Key that will be meaningful to a consumer of the encrypted message
      * @throws GeneralSecurityException  if there was a problem with a key or a crypto provider
-     * @throws IOException  if there was a problem reading or writing a key or bit of xml
+     * @throws IOException  if there was a problem reading or writing a key or a bit of xml
      */
-    public static void encryptXml(Document soapMsg, PublicKey publicKey, KeyName keyName)
+    public static void encryptXml(Document soapMsg, Key key, KeyName keyName)
             throws GeneralSecurityException, IOException
     {
         Element body = (Element) soapMsg.getElementsByTagNameNS(soapNS, "Body").item(0);
@@ -84,7 +83,7 @@ public class XmlMangler {
         KeyInfo keyInfo = new KeyInfo();
         keyInfo.addKeyName(keyName);
         EncryptionMethod encMethod = new EncryptionMethod();
-        encMethod.setAlgorithm(EncryptionMethod.RSA_1_5);
+        encMethod.setAlgorithm(EncryptionMethod.AES256_CBC);
         EncryptedData encData = new EncryptedData();
         encData.setCipherData(cipherData);
         encData.setEncryptionMethod(encMethod);
@@ -104,7 +103,7 @@ public class XmlMangler {
         ec.setEncryptedType(encDataElement, EncryptedData.CONTENT,  null, null);
 
         ec.setData(body);
-        ec.setKey(publicKey);
+        ec.setKey(key);
 
         try {
             ec.encrypt();
@@ -160,18 +159,21 @@ public class XmlMangler {
     }
 
     /**
-     * In-place decrypt of the specified encrypted SOAP document.  Callers can use getKeyName() to decide which
-     * PrivateKey to use to decrypt the document.  If this method returns normally, the document will have been
-     * successfully decrypted.
+     * In-place decrypt of the specified encrypted SOAP document.  Caller is responsible for ensuring that the
+     * correct key is used for the document, of the proper format for the encryption scheme it used.  Callers can use
+     * getKeyName() to help decide which Key to use to decrypt the document.
+     *
+     * If this method returns normally the document will have been successfully decrypted.
      *
      * @param soapMsg  The SOAP document to decrypt.
-     * @param privateKey  The private key to use to decrypt it.
+     * @param key  The key to use to decrypt it. If the document was encrypted with
+     *             a call to encryptXml(), the Key will be a 32 byte AES256 symmetric key.
      * @throws GeneralSecurityException  if there was a problem with a key or crypto provider
      * @throws ParserConfigurationException  if there was a problem with the XML parser
      * @throws IOException  if there was an IO error while reading the document or a key
      * @throws SAXException  if there was a problem parsing the document
      */
-    public static void decryptXml(Document soapMsg, PrivateKey privateKey)
+    public static void decryptXml(Document soapMsg, Key key)
             throws GeneralSecurityException, ParserConfigurationException, IOException, SAXException
     {
         // Locate EncryptedData element by its reference in the Security header
@@ -188,7 +190,7 @@ public class XmlMangler {
         DecryptionContext dc = new DecryptionContext();
         dc.setAlgorithmFactory(new AlgorithmFactoryExtn());
         dc.setEncryptedType(encryptedDataEl, EncryptedData.CONTENT, null, null);
-        dc.setKey(privateKey);
+        dc.setKey(key);
 
         try {
             dc.decrypt();
