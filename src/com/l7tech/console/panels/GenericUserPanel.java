@@ -602,7 +602,7 @@ public class GenericUserPanel extends UserPanel {
           public void entityUpdated(EntityEvent ev) {
               try {
                   user =
-                    getIdentityAdmin().findUserByID(config.getOid(), userHeader.getStrId()).getUserBean();
+                    getIdentityAdmin().findUserByID(config.getOid(), userHeader.getStrId());
                   user = collectChanges();
                   boolean b = formModified;
                   setData(user);
@@ -652,7 +652,7 @@ public class GenericUserPanel extends UserPanel {
             lu.setFirstName(this.getFirstNameTextField().getText());
             lu.setEmail(getEmailTextField().getText());
         } else {
-            throw new RuntimeException("Unsupported user type"); // should not happen
+            throw new RuntimeException("Unsupported user type: " + user.getClass().getName()); // should not happen
         }
         return user;
     }
