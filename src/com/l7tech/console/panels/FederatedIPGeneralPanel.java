@@ -1,15 +1,15 @@
 package com.l7tech.console.panels;
 
-import com.l7tech.identity.fed.FederatedIdentityProviderConfig;
-import com.intellij.uiDesigner.core.GridLayoutManager;
 import com.intellij.uiDesigner.core.GridConstraints;
+import com.intellij.uiDesigner.core.GridLayoutManager;
 import com.intellij.uiDesigner.core.Spacer;
+import com.l7tech.identity.fed.FederatedIdentityProviderConfig;
 
 import javax.swing.*;
-import java.util.ResourceBundle;
-import java.util.Locale;
-import java.util.logging.Logger;
 import java.awt.*;
+import java.util.Locale;
+import java.util.ResourceBundle;
+import java.util.logging.Logger;
 
 /**
  * <p> Copyright (C) 2004 Layer 7 Technologies Inc.</p>
@@ -111,7 +111,6 @@ public class FederatedIPGeneralPanel extends IdentityProviderStepPanel {
         }
 
         java.util.ArrayList skippedPanels = new java.util.ArrayList();
-        if (!x509CertCheckbox.isSelected()) skippedPanels.add(FederatedIPX509CertPanel.class.getName());
         if (!samlCheckbox.isSelected()) skippedPanels.add(FederatedIPSamlPanel.class.getName());
 
         setSkippedPanels(skippedPanels.toArray());

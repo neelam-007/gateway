@@ -91,9 +91,8 @@ public class IdentityProviderPropertiesAction extends NodeAction {
 
                         } else if (iProvider.type() == IdentityProviderType.FEDERATED) {
                              configPanel = new FederatedIPGeneralPanel(
-                                               new FederatedIPX509CertPanel (
                                                new FederatedIPSamlPanel(
-                                               new FederatedIPTrustedCertsPanel(null))));
+                                               new FederatedIPTrustedCertsPanel(null)));
                              w = new EditFederatedIPWizard(f, configPanel, (FederatedIdentityProviderConfig) iProvider);
 
 
