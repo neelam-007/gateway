@@ -11,6 +11,7 @@ import java.util.Comparator;
 import java.util.Calendar;
 import java.io.IOException;
 import java.security.cert.CertificateException;
+import java.security.cert.X509Certificate;
 import java.text.SimpleDateFormat;
 
 /**
@@ -20,6 +21,12 @@ import java.text.SimpleDateFormat;
  * $Id$
  */
 public class TrustedCertTableSorter extends FilteredDefaultTableModel {
+
+    public static final int CERT_TABLE_CERT_NAME_COLUMN_INDEX = 0;
+    public static final int CERT_TABLE_ISSUER_NAME_COLUMN_INDEX = 1;
+    public static final int CERT_TABLE_CERT_EXPIRATION_DATE_COLUMN_INDEX = 2;
+    public static final int CERT_TABLE_CERT_USAGE_COLUMN_INDEX = 3;
+
     static Logger logger = Logger.getLogger(TrustedCertTableSorter.class.getName());
     private boolean ascending = true;
     private int columnToSort = 1;
@@ -126,22 +133,32 @@ public class TrustedCertTableSorter extends FilteredDefaultTableModel {
      * @return Object  The value at the specified table coordinate.
      */
     public Object getValueAt(int row, int col) {
-        switch (col) {             
-            case CertManagerWindow.CERT_TABLE_CERT_NAME_COLUMN_INDEX:
+
+        X509Certificate cert = null;
+        try {
+            cert = ((TrustedCert) sortedData[row]).getCertificate();
+        } catch (CertificateException e) {
+            e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+        } catch (IOException e) {
+            e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+        }
+
+        switch (col) {
+            case CERT_TABLE_CERT_NAME_COLUMN_INDEX:
                 return ((TrustedCert) sortedData[row]).getName();
-             case CertManagerWindow.CERT_TABLE_CERT_EXPIRATION_DATE_COLUMN_INDEX:
-                try {
-                    SimpleDateFormat sdf = new SimpleDateFormat("MM/dd/yyyy");
-                    Calendar cal = Calendar.getInstance();
-                    cal.setTime(((TrustedCert)sortedData[row]).getCertificate().getNotAfter());
-                    return sdf.format(cal.getTime());
-                } catch (CertificateException e) {
-                    e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
-                } catch (IOException e) {
-                    e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
-                }
-            case CertManagerWindow.CERT_TABLE_CERT_USAGE_COLUMN_INDEX:
+
+            case CERT_TABLE_ISSUER_NAME_COLUMN_INDEX:
+                return cert.getIssuerDN().getName();
+
+            case CERT_TABLE_CERT_EXPIRATION_DATE_COLUMN_INDEX:
+                SimpleDateFormat sdf = new SimpleDateFormat("MM/dd/yyyy");
+                Calendar cal = Calendar.getInstance();
+                cal.setTime(cert.getNotAfter());
+                return sdf.format(cal.getTime());
+
+            case CERT_TABLE_CERT_USAGE_COLUMN_INDEX:
                 return ((TrustedCert) sortedData[row]).getUsageDescription();
+
             default:
                 throw new IllegalArgumentException("Bad Column");
         }
@@ -180,11 +197,23 @@ public class TrustedCertTableSorter extends FilteredDefaultTableModel {
             Object elementB = new Object();
 
             switch (column) {
-                case CertManagerWindow.CERT_TABLE_CERT_NAME_COLUMN_INDEX:
+                case CERT_TABLE_CERT_NAME_COLUMN_INDEX:
                     elementA = ((TrustedCert) a).getName();
                     elementB = ((TrustedCert) b).getName();
                     break;
-                case CertManagerWindow.CERT_TABLE_CERT_EXPIRATION_DATE_COLUMN_INDEX:
+
+                case CERT_TABLE_ISSUER_NAME_COLUMN_INDEX:
+                    try {
+                        elementA = ((TrustedCert) a).getCertificate().getIssuerDN().getName();
+                        elementB = ((TrustedCert) b).getCertificate().getIssuerDN().getName();
+                    } catch (IOException e) {
+                        e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+                    } catch (CertificateException e) {
+                        e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+                    }
+                    break;
+
+                case CERT_TABLE_CERT_EXPIRATION_DATE_COLUMN_INDEX:
                     try {
                         elementA = new Long(((TrustedCert) a).getCertificate().getNotAfter().getTime());
                         elementB = new Long(((TrustedCert) b).getCertificate().getNotAfter().getTime());
@@ -194,7 +223,8 @@ public class TrustedCertTableSorter extends FilteredDefaultTableModel {
                         e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
                     }
                     break;
-                case CertManagerWindow.CERT_TABLE_CERT_USAGE_COLUMN_INDEX:
+
+                case CERT_TABLE_CERT_USAGE_COLUMN_INDEX:
                     elementA = ((TrustedCert) a).getUsageDescription();
                     elementB = ((TrustedCert) b).getUsageDescription();
                     break;
