@@ -4,6 +4,7 @@ import com.l7tech.common.security.xml.processor.ProcessorResult;
 import com.l7tech.policy.assertion.xmlsec.SamlAttributeStatement;
 import com.l7tech.policy.assertion.xmlsec.RequestWssSaml;
 import org.apache.xmlbeans.XmlObject;
+import org.apache.xmlbeans.XmlCursor;
 import org.springframework.context.ApplicationContext;
 import org.w3c.dom.Document;
 import x0Assertion.oasisNamesTcSAML1.AttributeStatementType;
@@ -73,28 +74,39 @@ class SamlAttributeStatementValidate extends SamlStatementValidate {
         String name = expectedAttribute.getName();
         String nameSpace = expectedAttribute.getNamespace();
         String value = expectedAttribute.getValue();
-        if (name == null || value == null) {
+        if (isEmpty(name) || isEmpty(value)) {
             validationResults.add(new SamlAssertionValidate.Error("Invalid Attribute constraint (name or value is null)", expectedAttribute, null, null));
+            return false;
         }
+
         for (int i = 0; i < receivedAttributes.length; i++) {
             AttributeType receivedAttribute = receivedAttributes[i];
             if (name.equals(receivedAttribute.getAttributeName())) {
-                if (nameSpace != null && !nameSpace.equals(receivedAttribute.getAttributeNamespace())) {
+                if (!isEmpty(nameSpace) && !nameSpace.equals(receivedAttribute.getAttributeNamespace())) {
                     continue;
                 }
                 XmlObject[] values = receivedAttribute.getAttributeValueArray();
                 for (int j = 0; j < values.length; j++) {
                     XmlObject presentedValue = values[j];
-                    if (presentedValue.compareTo(value) == XmlObject.EQUAL) {
-                        if (logger.isLoggable(Level.FINER)) {
-                            logger.finer(MessageFormat.format("Matched name {0}, value {1} ", new Object[]{name, value}));
+                    XmlCursor cursor = presentedValue.newCursor();
+                    try {
+                        if (cursor.getTextValue().equals(value)) {
+                            if (logger.isLoggable(Level.FINER)) {
+                                logger.finer(MessageFormat.format("Matched name {0}, value {1} ", new Object[]{name, value}));
+                            }
+                            return true;
                         }
-                        return true;
+                    } finally {
+                        cursor.dispose();
                     }
                 }
             }
         }
         return false;  //To change body of created methods use File | Settings | File Templates.
+    }
+
+    private boolean isEmpty(String value) {
+        return value == null || "".equals(value);
     }
 
 }
