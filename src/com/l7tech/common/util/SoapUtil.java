@@ -35,6 +35,7 @@ public class SoapUtil {
     public static final String SECURITY_NAMESPACE_PREFIX = "wsse";
     public static final String SECURITY_NAMESPACE = "http://schemas.xmlsoap.org/ws/2002/xx/secext";
     public static final String SECURITY_NAMESPACE2 = "http://schemas.xmlsoap.org/ws/2002/12/secext";
+   public static  final String XMLNS = "xmlns";
 
     public static Element getEnvelope(Document request) {
         Element env = request.getDocumentElement();
@@ -259,10 +260,15 @@ public class SoapUtil {
             NamedNodeMap DOMAttributes = domNode.getAttributes();
             int noOfAttributes = DOMAttributes.getLength();
             for (int i = 0; i < noOfAttributes; i++) {
+
                 Node attr = DOMAttributes.item(i);
-                Name name =
-                  sf.createName(attr.getLocalName(), attr.getPrefix(), attr.getNamespaceURI());
-                soapElement.addAttribute(name, attr.getNodeValue());
+                String attrPrefix = attr.getPrefix();
+                String attrLocalName = attr.getLocalName();
+                if ((!XMLNS.equals(attrPrefix))  &&
+                    (!XMLNS.equals(attrLocalName))) {
+                    Name name = sf.createName(attr.getLocalName(), attr.getPrefix(), attr.getNamespaceURI());
+                    soapElement.addAttribute(name, attr.getNodeValue());
+                }
             }
         }
 
