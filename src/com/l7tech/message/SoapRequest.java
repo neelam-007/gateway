@@ -36,7 +36,13 @@ public class SoapRequest extends XmlMessageAdapter implements SoapMessage, XmlRe
         return _document;
     }
 
-    public InputStream getRequestStream() {
+    public InputStream getRequestStream() throws IOException {
+        if ( _requestStream == null ) {
+            if ( _transportMetadata instanceof HttpTransportMetadata ) {
+                HttpTransportMetadata htm = (HttpTransportMetadata)_transportMetadata;
+                _requestStream = htm.getRequest().getInputStream();
+            }
+        }
         return _requestStream;
     }
 
