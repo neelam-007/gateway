@@ -15,6 +15,8 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.URL;
 import java.net.URLConnection;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -28,6 +30,20 @@ import java.util.regex.Pattern;
  * Time: 2:31:32 PM
  */
 public class HexUtils {
+    public static MessageDigest getMd5() {
+        MessageDigest md5 = (MessageDigest)md5s.get();
+        if (md5 == null) {
+            try {
+                md5 = MessageDigest.getInstance("MD5");
+                md5s.set(md5);
+            } catch ( NoSuchAlgorithmException e ) {
+                throw new RuntimeException(e);
+            }
+        }
+        md5.reset();
+        return md5;
+    }
+
     private static final Logger log = Logger.getLogger(HexUtils.class.getName());
 
     private HexUtils() {}
@@ -252,4 +268,6 @@ public class HexUtils {
     public static Slurpage slurpUrl(URL url) throws IOException {
         return slurpUrl(url, (InputStream)null, null);
     }
+
+    private static ThreadLocal md5s = new ThreadLocal();
 }

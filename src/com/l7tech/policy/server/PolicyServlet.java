@@ -40,7 +40,6 @@ import java.io.OutputStream;
 import java.rmi.RemoteException;
 import java.security.KeyStoreException;
 import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
@@ -307,7 +306,7 @@ public class PolicyServlet extends AuthenticatableHttpServlet {
      * @param nonce nonce for automatic cert checking, or null to disable cert check
      */
     private void doCertDownload(HttpServletResponse response, String username, String nonce)
-      throws FindException, IOException, NoSuchAlgorithmException {
+      throws FindException, IOException {
         logger.finest("Request for root cert");
         // Find our certificate
         //byte[] cert = KeystoreUtils.getInstance().readRootCert();
@@ -315,7 +314,6 @@ public class PolicyServlet extends AuthenticatableHttpServlet {
 
         // Insert Cert-Check-NNN: headers if we can.
         if (username != null && nonce != null) {
-            MessageDigest md5 = MessageDigest.getInstance("MD5");
 
             ArrayList checks = findCheckInfos(username);
             for (Iterator i = checks.iterator(); i.hasNext();) {
@@ -327,7 +325,7 @@ public class PolicyServlet extends AuthenticatableHttpServlet {
                         logger.info("Server does not have access to requestor's password and cannot send a cert check.");
                         hash = SecureSpanConstants.NOPASS;
                     } else {
-                        md5.reset();
+                        MessageDigest md5 = HexUtils.getMd5();
                         md5.update(info.ha1.getBytes());
                         md5.update(nonce.getBytes());
                         md5.update(String.valueOf(info.idProvider).getBytes());

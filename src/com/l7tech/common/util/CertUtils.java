@@ -12,8 +12,6 @@ import org.bouncycastle.asn1.x509.X509Name;
 
 import javax.security.auth.x500.X500Principal;
 import java.io.ByteArrayInputStream;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 import java.security.Principal;
 import java.security.PublicKey;
 import java.security.cert.*;
@@ -194,9 +192,8 @@ public class CertUtils {
      * @param cert The certificate to analyze
      * @return a single multi-line string that can be printed out
      * @throws CertificateEncodingException if the cert could not be decoded
-     * @throws NoSuchAlgorithmException if the cert required an algorithm that is not available
      */
-    public static String toString(X509Certificate cert) throws CertificateEncodingException, NoSuchAlgorithmException {
+    public static String toString(X509Certificate cert) throws CertificateEncodingException {
         StringBuffer sb = new StringBuffer();
         List p = getCertProperties(cert);
         for (Iterator i = p.iterator(); i.hasNext();) {
@@ -214,10 +211,9 @@ public class CertUtils {
      * @param cert The certificate to analyze
      * @return a list of String[] tuples, where each is of the form {"Label", "Value"}
      * @throws CertificateEncodingException if the cert could not be decoded
-     * @throws NoSuchAlgorithmException if the cert required an algorithm that is not available
      */
     public static ArrayList getCertProperties(X509Certificate cert)
-      throws CertificateEncodingException, NoSuchAlgorithmException {
+      throws CertificateEncodingException {
         ArrayList l = new ArrayList();
         if (cert == null) return l;
 
@@ -282,23 +278,19 @@ public class CertUtils {
      * @param cert      the certificate
      * @param algorithm the alghorithm (MD5 or SHA1)
      * @return the certificate fingerprint as a String
-     * @exception NoSuchAlgorithmException
-     *                      if the algorithm is not available.
      * @exception CertificateEncodingException
      *                      thrown whenever an error occurs while attempting to
      *                      encode a certificate.
      */
     public static String getCertificateFingerprint(X509Certificate cert, String algorithm)
-      throws NoSuchAlgorithmException, CertificateEncodingException {
+      throws CertificateEncodingException {
         if (cert == null) {
             throw new NullPointerException("cert");
         }
         StringBuffer buff = new StringBuffer();
         byte[] fingers = cert.getEncoded();
 
-        MessageDigest md = MessageDigest.getInstance(algorithm);
-        md.update(fingers);
-        byte[] digest = md.digest();
+        byte[] digest = HexUtils.getMd5().digest(fingers);
         // the algorithm
         buff.append(algorithm + ":");
 

@@ -6,21 +6,19 @@
 
 package com.l7tech.common.util;
 
+import com.l7tech.proxy.SsgFaker;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
 
-import java.util.logging.Logger;
-import java.util.Arrays;
-import java.util.List;
-import java.security.MessageDigest;
+import javax.xml.soap.SOAPConstants;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.net.URL;
-
-import com.l7tech.proxy.SsgFaker;
-
-import javax.xml.soap.SOAPConstants;
+import java.security.MessageDigest;
+import java.util.Arrays;
+import java.util.List;
+import java.util.logging.Logger;
 
 /**
  *
@@ -44,8 +42,7 @@ public class HexUtilsTest extends TestCase {
     }
 
     public void testEncodeMd5Digest() throws Exception {
-        MessageDigest md5 = MessageDigest.getInstance("MD5");
-        md5.reset();
+        MessageDigest md5 = HexUtils.getMd5();
         md5.update("484736327827227".getBytes());
         md5.update("-1".getBytes());
         md5.update("TheseAreSomeCertificateBytes".getBytes());

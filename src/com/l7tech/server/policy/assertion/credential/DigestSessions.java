@@ -6,12 +6,13 @@
 
 package com.l7tech.server.policy.assertion.credential;
 
-import com.l7tech.message.Request;
 import com.l7tech.common.util.HexUtils;
+import com.l7tech.message.Request;
 
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
-import java.util.*;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.SortedSet;
+import java.util.TreeSet;
 
 /**
  * @author alex
@@ -55,7 +56,7 @@ public class DigestSessions {
         String nonceValue = request.getParameter( Request.PARAM_REMOTE_ADDR ) + ":" +
             currentTime + ":" + NONCEKEY;
 
-        byte[] buffer = _md5.digest(nonceValue.getBytes());
+        byte[] buffer = HexUtils.getMd5().digest(nonceValue.getBytes());
         nonceValue = HexUtils.encodeMd5Digest(buffer);
 
         // Updating the value in the nonce hashtable
@@ -104,11 +105,6 @@ public class DigestSessions {
     }
 
     private DigestSessions() {
-        try {
-            _md5 = MessageDigest.getInstance( "MD5" );
-        } catch ( NoSuchAlgorithmException e ) {
-            throw new RuntimeException( e );
-        }
     }
 
     private class ExpireThread extends Thread {
@@ -121,5 +117,4 @@ public class DigestSessions {
     private static DigestSessions _instance;
     private Map _nonceInfos = new HashMap();
     private SortedSet _nonceInfoSet = new TreeSet();
-    private MessageDigest _md5 = null;
 }

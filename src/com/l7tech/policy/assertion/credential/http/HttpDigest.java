@@ -14,6 +14,7 @@ package com.l7tech.policy.assertion.credential.http;
  * @version $Revision$
  */
 public class HttpDigest extends HttpCredentialSourceAssertion {
+
     // Some handy constants for the Authorization and WWW-Authenticate headers
     public static final String PARAM_USERNAME = "username";
     public static final String PARAM_RESPONSE = "response";

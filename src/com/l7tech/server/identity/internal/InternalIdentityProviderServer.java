@@ -4,6 +4,7 @@ import com.l7tech.common.util.CertUtils;
 import com.l7tech.common.util.HexUtils;
 import com.l7tech.common.util.KeystoreUtils;
 import com.l7tech.common.util.Locator;
+import com.l7tech.common.xml.saml.SamlHolderOfKeyAssertion;
 import com.l7tech.identity.*;
 import com.l7tech.identity.cert.ClientCertManager;
 import com.l7tech.identity.internal.InternalUser;
@@ -15,15 +16,12 @@ import com.l7tech.policy.assertion.credential.CredentialFormat;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.assertion.credential.http.HttpDigest;
 import com.l7tech.server.identity.PersistentIdentityProvider;
-import com.l7tech.common.xml.saml.SamlHolderOfKeyAssertion;
 
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
 import java.security.GeneralSecurityException;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 import java.security.SignatureException;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
@@ -48,13 +46,6 @@ public class InternalIdentityProviderServer extends PersistentIdentityProvider {
         this.config = config;
         this.userManager = new InternalUserManagerServer( this );
         this.groupManager = new InternalGroupManagerServer( this );
-
-        try {
-            _md5 = MessageDigest.getInstance( "MD5" );
-        } catch (NoSuchAlgorithmException e) {
-            logger.log( Level.SEVERE, e.getMessage(), e );
-            throw new RuntimeException( e );
-        }
     }
 
     public UserManager getUserManager() {
@@ -192,7 +183,7 @@ public class InternalIdentityProviderServer extends PersistentIdentityProvider {
                         String a2 = (String)authParams.get( HttpDigest.PARAM_METHOD ) + ":" +
                                     (String)authParams.get( HttpDigest.PARAM_URI );
 
-                        String ha2 = HexUtils.encodeMd5Digest( _md5.digest( a2.getBytes() ) );
+                        String ha2 = HexUtils.encodeMd5Digest( HexUtils.getMd5().digest( a2.getBytes() ) );
 
                         String serverDigestValue;
                         if (!HttpDigest.QOP_AUTH.equals(qop))
@@ -205,7 +196,7 @@ public class InternalIdentityProviderServer extends PersistentIdentityProvider {
                                                 + cnonce + ":" + qop + ":" + ha2;
                         }
 
-                        String expectedResponse = HexUtils.encodeMd5Digest( _md5.digest( serverDigestValue.getBytes() ) );
+                        String expectedResponse = HexUtils.encodeMd5Digest( HexUtils.getMd5().digest( serverDigestValue.getBytes() ) );
                         String response = new String( credentials );
 
                         if ( response.equals( expectedResponse ) ) {
@@ -264,5 +255,4 @@ public class InternalIdentityProviderServer extends PersistentIdentityProvider {
     private final InternalGroupManagerServer groupManager;
 
     private final Logger logger = Logger.getLogger(getClass().getName());
-    private final MessageDigest _md5;
 }

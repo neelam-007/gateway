@@ -13,7 +13,6 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLEncoder;
 import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
@@ -84,13 +83,7 @@ public class CertificateDownloader {
     }
 
     private String getHa1(String realm) {
-        MessageDigest md5 = null;
-        try {
-            md5 = MessageDigest.getInstance("MD5");
-        } catch (NoSuchAlgorithmException e) {
-            throw new RuntimeException(e); // can't happen
-        }
-        md5.reset();
+        MessageDigest md5 = HexUtils.getMd5();
         md5.update((username == null ? "" : username).getBytes());
         md5.update(":".getBytes());
         md5.update((realm == null ? "" : realm).getBytes());
@@ -123,14 +116,8 @@ public class CertificateDownloader {
         }
 
         public boolean checkCert() {
-            MessageDigest md5;
-            try {
-                md5 = MessageDigest.getInstance("MD5");
-            } catch (NoSuchAlgorithmException e) {
-                throw new RuntimeException(e); // can't happen
-            }
+            MessageDigest md5 = HexUtils.getMd5();
             byte[] ha1 = getHa1(realm).getBytes();
-            md5.reset();
             md5.update(ha1);
             md5.update(nonce.getBytes());
             md5.update(oid.getBytes());

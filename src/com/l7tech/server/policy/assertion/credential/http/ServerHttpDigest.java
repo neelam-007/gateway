@@ -19,8 +19,6 @@ import com.l7tech.server.policy.assertion.ServerAssertion;
 import com.l7tech.server.policy.assertion.credential.DigestSessions;
 
 import java.io.IOException;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.StringTokenizer;
@@ -34,20 +32,6 @@ public class ServerHttpDigest extends ServerHttpCredentialSource implements Serv
     public ServerHttpDigest( HttpDigest data ) {
         super( data );
         _data = data;
-    }
-
-    private ThreadLocal md5s = new ThreadLocal();
-    private MessageDigest getMd5() {
-        MessageDigest md5 = (MessageDigest)md5s.get();
-        if (md5 == null) {
-            try {
-                md5 = MessageDigest.getInstance("MD5");
-                md5s.set(md5);
-            } catch ( NoSuchAlgorithmException e ) {
-                throw new RuntimeException(e);
-            }
-        }
-        return md5;
     }
 
     public static final String ENCODING = "UTF-8";
@@ -117,7 +101,7 @@ public class ServerHttpDigest extends ServerHttpCredentialSource implements Serv
         Map params = new HashMap();
         params.put( HttpDigest.PARAM_QOP, HttpDigest.QOP_AUTH );
         params.put( HttpDigest.PARAM_NONCE, nonce );
-        params.put( HttpDigest.PARAM_OPAQUE, HexUtils.encodeMd5Digest( getMd5().digest( nonce.getBytes() ) ) );
+        params.put( HttpDigest.PARAM_OPAQUE, HexUtils.encodeMd5Digest( HexUtils.getMd5().digest( nonce.getBytes() ) ) );
         return params;
     }
 

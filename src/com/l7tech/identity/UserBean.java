@@ -6,6 +6,7 @@
 
 package com.l7tech.identity;
 
+import com.l7tech.common.util.HexUtils;
 import com.l7tech.objectmodel.Entity;
 import com.l7tech.policy.assertion.credential.http.HttpDigest;
 
@@ -110,13 +111,7 @@ public class UserBean implements User, Serializable {
 
     private static String encodePasswd( String a1 ) {
         // MD5 IT
-        java.security.MessageDigest md5Helper = null;
-        try {
-            md5Helper = java.security.MessageDigest.getInstance("MD5");
-        } catch (java.security.NoSuchAlgorithmException e) {
-            throw new RuntimeException(e);
-        }
-        byte[] digest = md5Helper.digest( a1.getBytes() );
+        byte[] digest = HexUtils.getMd5().digest( a1.getBytes() );
         // ENCODE IT
         if (digest == null) return "";
         char[] hexadecimal = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f'};

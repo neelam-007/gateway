@@ -15,7 +15,6 @@ import com.l7tech.objectmodel.*;
 import com.l7tech.policy.assertion.credential.CredentialFormat;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.assertion.credential.http.HttpDigest;
-import com.l7tech.common.xml.saml.SamlHolderOfKeyAssertion;
 
 import javax.naming.Context;
 import javax.naming.NamingEnumeration;
@@ -25,8 +24,6 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.security.GeneralSecurityException;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 import java.security.SignatureException;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
@@ -55,12 +52,7 @@ public class LdapIdentityProvider implements IdentityProvider {
     public static final String LDAP_POOL_IDLE_TIMEOUT = new Integer(30 * 1000).toString();
 
     public LdapIdentityProvider(IdentityProviderConfig config) {
-        try {
-            this.config = (LdapIdentityProviderConfig)config;
-            _md5 = MessageDigest.getInstance( "MD5" );
-        } catch (NoSuchAlgorithmException e) {
-            throw new RuntimeException(e);
-        }
+        this.config = (LdapIdentityProviderConfig)config;
         userManager = new LdapUserManager(this.config, this);
         groupManager = new LdapGroupManager(this.config, this);
     }
@@ -109,7 +101,7 @@ public class LdapIdentityProvider implements IdentityProvider {
             String a2 = (String)authParams.get( HttpDigest.PARAM_METHOD ) + ":" +
                         (String)authParams.get( HttpDigest.PARAM_URI );
 
-            String ha2 = HexUtils.encodeMd5Digest( _md5.digest( a2.getBytes() ) );
+            String ha2 = HexUtils.encodeMd5Digest( HexUtils.getMd5().digest( a2.getBytes() ) );
 
             String serverDigestValue;
             if (!HttpDigest.QOP_AUTH.equals(qop))
@@ -122,7 +114,7 @@ public class LdapIdentityProvider implements IdentityProvider {
                         + cnonce + ":" + qop + ":" + ha2;
             }
 
-            String expectedResponse = HexUtils.encodeMd5Digest( _md5.digest( serverDigestValue.getBytes() ) );
+            String expectedResponse = HexUtils.encodeMd5Digest( HexUtils.getMd5().digest( serverDigestValue.getBytes() ) );
             String response = new String(credentials);
 
             String login = pc.getLogin();
@@ -624,7 +616,6 @@ public class LdapIdentityProvider implements IdentityProvider {
     public static final String DESCRIPTION_ATTRIBUTE_NAME = "description";
 
     private final LdapIdentityProviderConfig config;
-    private final MessageDigest _md5;
     private final LdapUserManager userManager;
     private final LdapGroupManager groupManager;
 
