@@ -8,8 +8,6 @@ package com.l7tech.message;
 
 import com.l7tech.policy.assertion.credential.PrincipalCredentials;
 
-import java.io.*;
-
 /**
  * @author alex
  */
@@ -19,6 +17,16 @@ public interface Request extends Message {
 
     /** The name of the parameter containing the SOAP Body Namespace URI from this request.  Currently unused. */
     public static final String PARAM_SOAP_URN               = PREFIX + ".soap.urn";
+
+    /** The name of the parameter containing the client's hostname or IP address */
+    public static final String PARAM_REMOTE_ADDR = PREFIX + ".remote-addr";
+    /** The name of the parameter containing the server's hostname for this <code>Request</code> */
+    public static final String PARAM_SERVER_NAME = PREFIX + ".server-name";
+    /** The name of the parameter containing the protocol used for this <code>Request</code>. */
+    public static final String PARAM_PROTOCOL = PREFIX + ".server-protocol";
+    /** The name of the parameter containing the TCP port on which this <code>Request</code> was served. */
+    public static final String PARAM_SERVER_PORT = PREFIX + ".server-port";
+
 
     /** The name of the parameter containing the HTTP authentication realm for this request. */
     public static final String PARAM_HTTP_AUTH_REALM        = PREFIX_HTTP + ".auth-realm";
@@ -54,15 +62,6 @@ public interface Request extends Message {
     public static final String PARAM_HTTP_METHOD            = PREFIX_HTTP + ".method";
     /** The name of the parameter containing the HTTP URI (i.e. /ssg/soap) */
     public static final String PARAM_HTTP_REQUEST_URI       = PREFIX_HTTP + ".request-uri";
-    /** The name of the parameter containing the client's hostname or IP address */
-    public static final String PARAM_HTTP_REMOTE_ADDR       = PREFIX_HTTP + ".remote-addr";
-    /** The name of the parameter containing the server's hostname for this <code>Request</code> */
-    public static final String PARAM_HTTP_SERVER_NAME       = PREFIX_HTTP + ".server-name";
-    /** The name of the parameter containing the protocol used for this <code>Request</code>. */
-    public static final String PARAM_HTTP_SERVER_PROTOCOL   = PREFIX_HTTP + ".server-protocol";
-    /** The name of the parameter containing the TCP port on which this <code>Request</code> was served. */
-    public static final String PARAM_HTTP_SERVER_PORT       = PREFIX_HTTP + ".server-port";
-
 
     /**
      * Returns the <code>PrincipalCredentials</code> associated with this request,
