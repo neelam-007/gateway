@@ -338,7 +338,8 @@ public class WssProcessorImpl implements WssProcessor {
                             byte[] ski = recipientCert.getExtensionValue(CertUtils.X509_OID_SUBJECTKEYID);
                             if (ski == null) {
                                 // this should never happen
-                                throw new ProcessorException("Our certificate does not have a ski.");
+                                throw new ProcessorException("Our certificate does not have a ski." +
+                                                             "This should never happen");
                             } else {
                                 // trim if necessary
                                 byte[] ski2 = ski;
