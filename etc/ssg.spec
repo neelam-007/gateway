@@ -9,6 +9,7 @@ Packager: Layer7 Technologies, <support@layer7tech.com>
 Source0: /tmp/ssg.tar.gz
 buildroot: %{_tmppath}/%{name}-builddir
 provides: ssg
+
 # Requires: anything
 # Prereq: mysql
 
@@ -17,6 +18,8 @@ provides: ssg
 
 %description
 Build number: BUILD_NUMBER RPM to install SSG on standard system
+Does: installs ssg, network config, profiles
+Does not: overwrite mysql config, set up db clustering, failover
 
 %clean 
 rm -fr %{buildroot}
@@ -49,16 +52,17 @@ rm -rf %{buildroot}/ssg/j2sdk1.4.2_05/demo
 /etc/init.d/tcp_tune
 /etc/profile.d/ssgruntimedefs.sh
 %config(noreplace) /etc/my.cnf.ssg
-%config /etc/sysconfig/iptables
+%config(noreplace) /etc/sysconfig/iptables
 
 %defattr(-,gateway,gateway)
 /ssg/*
 
 %post
 if [ -e /etc/SSG_INSTALL ]; then 
-	echo
+	echo "Running upgrade script"
+	/ssg/bin/upgrade.sh
 else 
-	echo "Run /ssg/bin/install.sh to configure this system"
+	echo "Run /ssg/bin/install.pl to configure this system"
 fi
 
 # replace 
@@ -69,11 +73,11 @@ fi
 
 
 %postun
-rm /etc/profile.d/ssgruntimedefs.sh
-rm /etc/SSG_INSTALL
+if [ -e /etc/SSG_INSTALL ]; then
+	rm /etc/SSG_INSTALL
+fi
 
 %changelog 
 
 * Thu Oct 28 2004 JWT 
-- First version
-
+- First version. Upgrade story planned
