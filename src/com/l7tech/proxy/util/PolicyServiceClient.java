@@ -11,6 +11,9 @@ import com.l7tech.common.security.xml.WssDecoratorImpl;
 import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.xml.InvalidDocumentFormatException;
+import com.l7tech.common.xml.MissingRequiredElementException;
+import com.l7tech.common.xml.MessageNotSoapException;
+import com.l7tech.proxy.datamodel.Policy;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.xml.sax.SAXException;
@@ -78,5 +81,14 @@ public class PolicyServiceClient {
             throw new RuntimeException(e); // can't happen
         }
         return msg;
+    }
+
+    public static Policy parseGetPolicyResponse(Document response) throws InvalidDocumentFormatException {
+        Element body = SoapUtil.getBodyElement(response);
+        if (body == null) throw new MessageNotSoapException("Policy server response is missing body");
+        Element payload = XmlUtil.findOnlyOneChildElementByName(body, SoapUtil.WSX_NAMESPACE, "GetPolicyResponse");
+        if (payload == null) throw new MissingRequiredElementException("Policy server response is missing wsx:GetPolicyResponse");
+        throw new RuntimeException("Not done yet"); // TODO
+
     }
 }

@@ -4,7 +4,7 @@
  * $Id$
  */
 
-package com.l7tech.server.saml;
+package com.l7tech.common.xml.saml;
 
 /**
  * Encapsulates an abstract saml:Assertion.

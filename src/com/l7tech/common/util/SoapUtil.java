@@ -166,7 +166,7 @@ public class SoapUtil {
     }
 
     /**
-     * The Header Element, or null if it's not present
+     * Get the Header Element, or null if it's not present
      *
      * @param soapMsg the message to examine
      * @return the Header element, or null if there wasn't one
@@ -179,7 +179,7 @@ public class SoapUtil {
     }
 
     /**
-     * The Body {@link Element}, or null if it's not present
+     * Get the Body {@link Element}, or null if it's not present
      *
      * @param message the message to examine
      * @return the body, or null if there isn't one
@@ -189,6 +189,22 @@ public class SoapUtil {
         Element env = getEnvelopeElement(message);
         String soapNs = env.getNamespaceURI();
         return XmlUtil.findOnlyOneChildElementByName(env, soapNs, BODY_EL_NAME);
+    }
+
+    /**
+     * Get the payload element, or null if it's not present.  The payload is the first child element of the Body
+     * element.  The Body is not permitted to have more than one child element, although this method
+     * does not currently enforce this.
+     *
+     * @param message the SOAP message to examine
+     * @return the payload element, or null if there isn't one
+     * @throws InvalidDocumentFormatException if the message is not SOAP or there is more than one Body
+     */
+    public static Element getPayloadElement(Document message) throws InvalidDocumentFormatException {
+        Element body = getBodyElement(message);
+        if (body != null)
+            return XmlUtil.findFirstChildElement(body);
+        return null;
     }
 
     public static SOAPMessage makeMessage() {

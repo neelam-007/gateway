@@ -10,10 +10,11 @@ import com.l7tech.common.security.xml.WssDecorator;
 import com.l7tech.common.util.HexUtils;
 import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.xml.InvalidDocumentFormatException;
+import com.l7tech.common.xml.saml.SamlHolderOfKeyAssertion;
 import com.l7tech.proxy.RequestInterceptor;
 import com.l7tech.proxy.datamodel.exceptions.*;
 import com.l7tech.proxy.util.TokenServiceClient;
-import com.l7tech.server.saml.SamlHolderOfKeyAssertion;
+import com.l7tech.common.xml.saml.SamlHolderOfKeyAssertion;
 import org.w3c.dom.Document;
 
 import java.io.IOException;

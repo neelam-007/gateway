@@ -4,7 +4,7 @@
  * $Id$
  */
 
-package com.l7tech.server.saml;
+package com.l7tech.common.xml.saml;
 
 import com.ibm.xml.dsig.IDResolver;
 import com.ibm.xml.dsig.SignatureContext;

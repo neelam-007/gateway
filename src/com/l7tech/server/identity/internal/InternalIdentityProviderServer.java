@@ -15,7 +15,7 @@ import com.l7tech.policy.assertion.credential.CredentialFormat;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.assertion.credential.http.HttpDigest;
 import com.l7tech.server.identity.PersistentIdentityProvider;
-import com.l7tech.server.saml.SamlHolderOfKeyAssertion;
+import com.l7tech.common.xml.saml.SamlHolderOfKeyAssertion;
 
 import java.io.FileInputStream;
 import java.io.IOException;

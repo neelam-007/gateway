@@ -8,6 +8,7 @@ package com.l7tech.server.identity.fed;
 
 import com.l7tech.common.security.TrustedCert;
 import com.l7tech.common.security.saml.SamlConstants;
+import com.l7tech.common.xml.saml.SamlHolderOfKeyAssertion;
 import com.l7tech.identity.AuthenticationException;
 import com.l7tech.identity.BadCredentialsException;
 import com.l7tech.identity.User;
@@ -17,7 +18,7 @@ import com.l7tech.identity.fed.FederatedUser;
 import com.l7tech.identity.fed.SamlConfig;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
-import com.l7tech.server.saml.SamlHolderOfKeyAssertion;
+import com.l7tech.common.xml.saml.SamlHolderOfKeyAssertion;
 
 import java.io.IOException;
 import java.security.GeneralSecurityException;

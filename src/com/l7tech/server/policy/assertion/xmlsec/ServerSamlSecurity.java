@@ -10,8 +10,9 @@ import com.l7tech.policy.assertion.credential.CredentialFormat;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.assertion.xmlsec.SamlSecurity;
 import com.l7tech.server.policy.assertion.ServerAssertion;
-import com.l7tech.server.saml.SamlAssertion;
-import com.l7tech.server.saml.SamlHolderOfKeyAssertion;
+import com.l7tech.common.xml.saml.SamlAssertion;
+import com.l7tech.common.xml.saml.SamlHolderOfKeyAssertion;
+import com.l7tech.common.xml.saml.SamlHolderOfKeyAssertion;
 import sun.security.x509.X500Name;
 
 import java.io.IOException;

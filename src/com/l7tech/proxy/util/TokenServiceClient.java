@@ -17,7 +17,7 @@ import com.l7tech.common.xml.InvalidDocumentFormatException;
 import com.l7tech.common.xml.MessageNotSoapException;
 import com.l7tech.proxy.datamodel.CurrentRequest;
 import com.l7tech.proxy.datamodel.Ssg;
-import com.l7tech.server.saml.SamlHolderOfKeyAssertion;
+import com.l7tech.common.xml.saml.SamlHolderOfKeyAssertion;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.xml.sax.SAXException;
