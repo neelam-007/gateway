@@ -235,13 +235,7 @@ public class XmlMangler {
         if (header == null)
             throw new XMLSecurityElementNotFoundException("EncryptedData is present, but there is no SOAP header");
 
-        Element security = XmlUtil.findFirstChildElementByName(header, SoapUtil.SECURITY_NAMESPACE2, "Security");
-        if (security == null)
-            security = XmlUtil.findFirstChildElementByName(header, SoapUtil.SECURITY_NAMESPACE, "Security");
-        if (security == null)
-            security = XmlUtil.findFirstChildElementByName(header, SoapUtil.SECURITY_NAMESPACE3, "Security");
-        if (security == null)
-            throw new XMLSecurityElementNotFoundException("EncryptedData is present, but there is no security element");
+        Element security = SoapUtil.getSecurityElement(header);
 
         List referenceListList = XmlUtil.findChildElementsByName(security, SoapUtil.XMLENC_NS, "ReferenceList");
         if (referenceListList == null)
@@ -384,7 +378,7 @@ public class XmlMangler {
                     logger.log(Level.WARNING, "decryption error", e);
                 }
                 output.add(new AesKey(decrypted, 128));
-                //todo, fix problem with AES key length not supported (?)
+                //todo, figure out padding issue
             }
         }
         if (output.isEmpty()) {
