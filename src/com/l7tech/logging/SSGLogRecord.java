@@ -67,21 +67,28 @@ public class SSGLogRecord extends LogRecord implements Serializable {
     }
 
     /**
-     * in a cluster, this is the node on which this log was generated
+     * Get node Id. The node is the one on which this log was generated.
+     *
+     * @return String  the node id.
      */
     public String getNodeId() {
         return nodeId;
     }
 
     /**
-     * in a cluster, this is the node on which this log was generated
+     * Set node Id. The node is the one on which this log was generated.
+     *
+     * @param nodeId  the node id.
      */
     public void setNodeId(String nodeId) {
         this.nodeId = nodeId;
     }
 
     /**
-     * the id of the request being processed when this log record was generated
+     * Get the id of the request being processed when this log record was generated.
+     *
+     * @return RequestId the id of the request associated with the log.
+     * @see RequestId
      */
     public RequestId getReqId() {
         if (requestId == null || requestId.length() <= 0) return null;
@@ -89,7 +96,9 @@ public class SSGLogRecord extends LogRecord implements Serializable {
     }
 
     /**
-     * the id of the request being processed when this log record was generated
+     * Set the id of the request being processed when this log record was generated.
+     * @param arg the <CODE>RequestId</CODE>.
+     * @see RequestId
      */
     public void setReqId(RequestId arg) {
         if (arg == null) requestId = null;
@@ -97,28 +106,32 @@ public class SSGLogRecord extends LogRecord implements Serializable {
     }
 
     /**
-     * for serialization purposes only
+     * Get the logging level of the log. For serialization purposes only.
+     * @return String the logging level.
      */
     public String getStrLvl() {
         return getLevel().getName();
     }
 
     /**
-     * for serialization purposes only
+     * Set the logging level of the log. For serialization purposes only.
+     * @param arg  the logging level of the log.
      */
     public void setStrLvl(String arg) {
         setLevel(Level.parse(arg));
     }
 
     /**
-     * for serialization purposes only
+     * Get the requestId of the log record. For serialization purposes only.
+     * @return String the request Id.
      */
     public String getStrRequestId() {
         return requestId;
     }
 
     /**
-     * for serialization purposes only
+     * Set the requestId of the log record. For serialization purposes only.
+     * @param requestId the request Id.
      */
     public void setStrRequestId(String requestId) {
         this.requestId = requestId;
