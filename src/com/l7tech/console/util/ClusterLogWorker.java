@@ -166,19 +166,21 @@ public class ClusterLogWorker extends SwingWorker {
                     rawLogs = logService.getSystemLog(logRequest.getNodeId(), logRequest.getStartMsgNumber(), logRequest.getEndMsgNumber(), FilteredLogTableModel.MAX_MESSAGE_BLOCK_SIZE);
 
                     //System.out.println("startMsgNumber: " + logRequest.getStartMsgNumber());
-                    // System.out.println("endMsgNumber: " + logRequest.getEndMsgNumber());
+                    //System.out.println("endMsgNumber: " + logRequest.getEndMsgNumber());
                     //System.out.println("NodeId: " + logRequest.getNodeId() + ", Number of logs received: " + rawLogs.length);
 
                     LogMessage logMsg = null;
 
                     if (rawLogs.length > 0) {
-
+                        long lowest = -1;
                         for (int j = 0; j < (rawLogs.length) && (newLogs.size() < FilteredLogTableModel.MAX_NUMBER_OF_LOG_MESSGAES); j++) {
-                            logMsg = new LogMessage(rawLogs[j]);
 
+                            logMsg = new LogMessage(rawLogs[j]);
+                            if (j == 0) lowest = logMsg.getMsgNumber();
+                            else if (lowest > logMsg.getMsgNumber()) lowest = logMsg.getMsgNumber();
                             newLogs.add(logMsg);
                         }
-                        logRequest.setStartMsgNumber(logMsg.getMsgNumber());
+                        logRequest.setEndMsgNumber(lowest);
 
                     }
                 } catch (RemoteException e) {
