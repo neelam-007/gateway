@@ -72,7 +72,7 @@ public class TokenServiceServlet extends HttpServlet {
         try {
             response = tokenService.respondToRequestSecurityToken(payload, authenticator());
         } catch (InvalidDocumentFormatException e) {
-            String msg = "Request is not formattted as expected. " + e.getMessage();
+            String msg = "Request is not formatted as expected. " + e.getMessage();
             logger.log(Level.INFO, msg, e);
             res.sendError(HttpServletResponse.SC_BAD_REQUEST, msg);
             return;
