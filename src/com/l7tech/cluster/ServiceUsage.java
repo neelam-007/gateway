@@ -109,10 +109,10 @@ public class ServiceUsage implements Serializable {
         ServiceUsage jghmx = (ServiceUsage)obj;
         if (serviceid != jghmx.serviceid) return false;
         if (!nodeid.equals(jghmx.nodeid)) return false;
-        if (requests != jghmx.requests) return false;
+        /*if (requests != jghmx.requests) return false;
         if (authorized != jghmx.authorized) return false;
         if (completed != jghmx.completed) return false;
-        if (serviceName != jghmx.serviceName) return false;
+        if (serviceName != jghmx.serviceName) return false;*/
         return true;
     }
 
