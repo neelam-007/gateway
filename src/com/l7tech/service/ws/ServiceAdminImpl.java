@@ -53,7 +53,11 @@ public class ServiceAdminImpl implements ServiceAdmin {
 
     public PublishedService findServiceByPrimaryKey(long oid) throws RemoteException, FindException {
         try {
-            return getServiceManager().findByPrimaryKey(oid);
+            PublishedService service = getServiceManager().findByPrimaryKey(oid);
+            if (service != null) {
+                logger.finest("Returning service id " + oid + ", version " + service.getVersion());
+            }
+            return service;
         } finally {
             closeContext();
         }
