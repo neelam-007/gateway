@@ -132,32 +132,36 @@ public class ServerRequestSwAAssertion implements ServerAssertion {
                                         String mimePartCID = href.getValue();
                                         logger.fine("The href of the parameter " + part.getName() + " is found in the request, value=" + mimePartCID);
 
-                                        MultipartUtil.Part mimepart = xreq.getMultipartReader().getMessagePart(mimePartCID);
+                                        MultipartUtil.Part mimepartRequest = xreq.getMultipartReader().getMessagePart(mimePartCID);
 
-                                        if(mimepart != null) {
+                                        if(mimepartRequest != null) {
                                             // validate the content type
                                             String requiredContentType = part.getContentType();
                                             if(requiredContentType.equals("text/enriched")) {
                                                 // text/enriched implies that text/plain is allowed
-                                                if(!(!mimepart.getHeader(XmlUtil.CONTENT_TYPE).getValue().equals(requiredContentType)) &&
-                                                        (mimepart.getHeader(XmlUtil.CONTENT_TYPE).getValue().equals("text/plain"))) {
-                                                    logger.info("The content type of the attachment must be: " + part.getContentType());
+                                                if(!(!mimepartRequest.getHeader(XmlUtil.CONTENT_TYPE).getValue().equals(requiredContentType)) &&
+                                                        (mimepartRequest.getHeader(XmlUtil.CONTENT_TYPE).getValue().equals("text/plain"))) {
+                                                    logger.info("The content type of the attachment " + mimePartCID + " must be: " + part.getContentType());
                                                     return AssertionStatus.FALSIFIED;
                                                 }
                                             } else {
-                                                if(!mimepart.getHeader(XmlUtil.CONTENT_TYPE).equals(part.getContentType())) {
-                                                    logger.info("The content type of the attachment must be: " + part.getContentType());
+                                                if(!mimepartRequest.getHeader(XmlUtil.CONTENT_TYPE).equals(part.getContentType())) {
+                                                    logger.info("The content type of the attachment " + mimePartCID + " must be: " + part.getContentType());
                                                     return AssertionStatus.FALSIFIED;
                                                 }
                                             }
 
                                             // check the max. length allowed
-                                            if(mimepart.getContent().length() > part.getMaxLength() * 1000) {
-                                                logger.info("The length of the attachment exceeds the limit: " + part.getMaxLength());
+                                            if(mimepartRequest.getContent().length() > part.getMaxLength() * 1000) {
+                                                logger.info("The length of the attachment " + mimePartCID + " exceeds the limit: " + part.getMaxLength());
                                                 return AssertionStatus.FALSIFIED;
                                             }
+
+                                            // the attachment is validated OK
+                                            // set the validated flag of the attachment to true
+                                            mimepartRequest.setValidated(true);
                                         } else {
-                                            logger.info("The required attachment is not found in the request. Content Id of the attachment required: " + mimePartCID);
+                                            logger.info("The required attachment " + mimePartCID + " is not found in the request");
                                             return AssertionStatus.FALSIFIED;
                                         }
                                     } else {
@@ -166,15 +170,30 @@ public class ServerRequestSwAAssertion implements ServerAssertion {
                                     }
 
                                 }
+
+
                             } // for each input parameter
 
-                            // all attachments are satisfied
 
                             // also check if there is any unexpected attachments in the request
                             if(xreq.getMultipartReader().hasNextMessagePart()) {
                                 logger.info( "Unexpected attachment(s) found in the request." );
                                 return AssertionStatus.FALSIFIED;
                             } else {
+
+                                // check if all parsed attachments in the request are validated
+                                Map attachments = xreq.getMultipartReader().getMessageAttachments();
+                                Iterator attItr = attachments.keySet().iterator();
+                                while(attItr.hasNext()) {
+                                    String attachmentName = (String) attItr.next();
+                                    MultipartUtil.Part attachment = (MultipartUtil.Part) attachments.get(attachmentName);
+                                    if(!attachment.isValidated()) {
+                                        logger.info( "Unexpected attachment " + attachmentName + " found in the request." );
+                                        return AssertionStatus.FALSIFIED;
+                                    }
+                                }
+
+                                // all attachments are satisfied
                                 return AssertionStatus.NONE;
                             }
                         } // operation element found in the request
