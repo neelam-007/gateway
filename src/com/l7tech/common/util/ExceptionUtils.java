@@ -14,8 +14,26 @@ package com.l7tech.common.util;
  * Time: 12:03:26 PM
  */
 public class ExceptionUtils {
+
     /**
-     * Return true iff. a throable assignable to cause appears within suspect's getCase() chain.
+     * Get the cause of this exception if it was caused by an instnace of class "cause", or null
+     * otherwise.
+     *
+     * @param suspect   The exception to examine.
+     * @param cause     The cause you wish to search for, which should be some Throwable class.
+     * @return          An instance of the cause class if it was a cause of suspect; otherwise null.
+     */
+    public static Throwable getCauseIfCausedBy(Throwable suspect, Class cause) {
+        while (suspect != null) {
+            if (cause.isAssignableFrom(suspect.getClass()))
+                return suspect;
+            suspect = suspect.getCause();
+        }
+        return null;
+    }
+
+    /**
+     * Return true iff. a throwable assignable to cause appears within suspect's getCase() chain.
      * Example:  <code>if (e instanceof SSLException && ExceptionUtils.causedBy(e, IOException.class)
      *              dealWithIOException(...);</code>
      *
@@ -25,12 +43,7 @@ public class ExceptionUtils {
      *                  false otherwise.
      */
     public static boolean causedBy(Throwable suspect, Class cause) {
-        while (suspect != null) {
-            if (cause.isAssignableFrom(suspect.getClass()))
-                return true;
-            suspect = suspect.getCause();
-        }
-        return false;
+        return getCauseIfCausedBy(suspect, cause) != null;
     }
 
     /**
