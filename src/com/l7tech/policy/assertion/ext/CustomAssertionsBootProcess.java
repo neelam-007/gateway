@@ -120,7 +120,10 @@ public class CustomAssertionsBootProcess implements ServerComponentLifecycle {
         }
         try {
             Class a = Class.forName(assertionClass);
-            Class ca = Class.forName(clientClass);
+            Class ca = null;
+            if (clientClass != null && !"".equals(clientClass)) {
+                ca = Class.forName(clientClass);
+            }
             Class sa = Class.forName(serverClass);
             SecurityManager sm = null;
             if (securityManagerClass != null) {
