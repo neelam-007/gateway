@@ -4,6 +4,7 @@ import com.l7tech.policy.*;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.SslAssertion;
 import com.l7tech.policy.assertion.RoutingAssertion;
+import com.l7tech.policy.assertion.xmlsec.XmlRequestSecurity;
 import com.l7tech.policy.assertion.identity.IdentityAssertion;
 import com.l7tech.policy.assertion.credential.CredentialSourceAssertion;
 
@@ -160,7 +161,8 @@ public class DefaultPolicyValidator extends PolicyValidator {
         }
 
         private boolean isCrendentialSource(Assertion a) {
-            return a instanceof CredentialSourceAssertion;
+            // todo Emil might want to double check this.  added signed request as a special case
+            return a instanceof CredentialSourceAssertion || a instanceof XmlRequestSecurity;
         }
 
         private boolean isPreconditionAssertion(Assertion a) {
