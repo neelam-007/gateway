@@ -34,7 +34,6 @@ public class LogPanel extends JPanel {
     public static final int MSG_FILTER_LEVEL_INFO = 3;
     public static final int MSG_FILTER_LEVEL_WARNING = 2;
     public static final int MSG_FILTER_LEVEL_SEVERE = 1;
-    public static final int MSG_FILTER_LEVEL_NONE = 0;
 
     public static final String MSG_TOTAL_PREFIX = "Total: ";
 
@@ -189,7 +188,7 @@ public class LogPanel extends JPanel {
      */
     private JSlider getFilterSlider(){
         if(slider == null){
-            slider = new JSlider(0, 160);
+            slider = new JSlider(0, 120);
         }
 
         slider.setMajorTickSpacing(40);
@@ -212,10 +211,6 @@ public class LogPanel extends JPanel {
         aLabel.setFont(new java.awt.Font("Dialog", 0, 11));
         table.put(new Integer(120), aLabel);
 
-        aLabel = new JLabel("off");
-        aLabel.setFont(new java.awt.Font("Dialog", 0, 11));
-        table.put(new Integer(160), aLabel);
-
         slider.setPaintLabels(true);
         slider.setLabelTable(table);
         slider.setSnapToTicks(true);
@@ -236,9 +231,6 @@ public class LogPanel extends JPanel {
                             break;
                         case 120:
                             updateMsgFilterLevel(MSG_FILTER_LEVEL_SEVERE);
-                            break;
-                        case 160:
-                            updateMsgFilterLevel(MSG_FILTER_LEVEL_NONE);
                             break;
                         default:
                             System.err.println("Unhandled value " + value);
@@ -291,40 +283,7 @@ public class LogPanel extends JPanel {
         controlPane.add(autoRefresh);
         controlPane.add(details);
         controlPane.add(msgTotal);
-/*
-        JButton Refresh = new JButton();
-        Refresh.setFont(new java.awt.Font("Dialog", 0, 11));
-        String atext = resapplication.getString("Refresh_MenuItem_text");
-        Refresh.setText(atext);
-        Refresh.setIconTextGap(1);
-        Refresh.setMargin(new java.awt.Insets(1, 3, 1, 3));
-       curBorder = Refresh.getBorder();
-        Refresh.setBorder(null);
-        Refresh.setRolloverEnabled(true);
 
-        ImageIcon icon = new ImageIcon(cl.getResource(MainWindow.RESOURCE_PATH + "/Refresh16.gif"));
-        //Refresh.setRolloverIcon(icon);
-        Refresh.setIcon(icon);
-        Refresh.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                refreshLogs();
-            }
-        });
-        Refresh.addMouseListener(new MouseAdapter() {
-            public void mouseEntered(MouseEvent e) {
-                JButton src = (JButton) e.getSource();
-                src.setBorder(curBorder);
-                src.setToolTipText("Resync with the Gateway");
-                }
-            public void mouseExited(MouseEvent e) {
-                JButton src = (JButton) e.getSource();
-                src.setBorder(null);
-                src.setToolTipText(null);
-                }
-        });
-
-        controlPane.add(Refresh);
-*/
         return controlPane;
     }
 
