@@ -81,6 +81,7 @@
     <resource-ref>
       <res-ref-name>jdbc/ssg</res-ref-name>
       <res-type>javax.sql.XADataSource</res-type>
+      <res-auth>Container</res-auth>
     </resource-ref>
 
 
@@ -89,5 +90,5 @@
         <auth-method>BASIC</auth-method>
         <realm-name>Ssg Realm</realm-name>
     </login-config>
-     --> 
+     -->
 </web-app>
