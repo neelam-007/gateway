@@ -35,14 +35,14 @@ public class PublishServiceAction extends SecureAction {
      * @return the action name
      */
     public String getName() {
-        return "Publish Web Service";
+        return "Publish SOAP Web Service";
     }
 
     /**
      * @return the aciton description
      */
     public String getDescription() {
-        return "Publish a Web service";
+        return "Publish a SOAP Web service";
     }
 
     /**

@@ -2,6 +2,7 @@ package com.l7tech.console.tree;
 
 import com.l7tech.console.action.CreateServiceWsdlAction;
 import com.l7tech.console.action.PublishServiceAction;
+import com.l7tech.console.action.PublishNonSoapServiceAction;
 import com.l7tech.service.ServiceAdmin;
 
 import javax.swing.*;
@@ -59,6 +60,7 @@ public class ServicesFolderNode extends AbstractTreeNode {
         return new Action[]{
             new PublishServiceAction(),
             new CreateServiceWsdlAction(),
+            new PublishNonSoapServiceAction(),
             new RefreshTreeNodeAction(this)
         };
     }
