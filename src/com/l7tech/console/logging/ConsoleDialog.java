@@ -14,14 +14,16 @@ import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.util.Dictionary;
 import java.util.Hashtable;
+import java.util.Enumeration;
 import java.util.logging.Handler;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.logging.LogManager;
 
 /**
  * This class implements a frame that displays the applicaiton
  * log.
- * todo: change the functionlaity is so it maps over the log output file.
+ * todo: change the functiona;ity is so it maps over the log output file.
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  */
 
@@ -37,6 +39,7 @@ public class ConsoleDialog extends JFrame {
 
 
     private JTextArea logTextArea;
+
     private ConsoleDialog() {
         super("Application Console and logs");
 
@@ -80,31 +83,31 @@ public class ConsoleDialog extends JFrame {
         slider.setPaintLabels(true);
         slider.setLabelTable(table);
         slider.setSnapToTicks(true);
-        slider.addChangeListener( new ChangeListener() {
+        slider.addChangeListener(new ChangeListener() {
             public void stateChanged(ChangeEvent e) {
                 JSlider source = (JSlider)e.getSource();
-                    if (!source.getValueIsAdjusting()) {
-                        int value = source.getValue();
-                        switch (value) {
-                            case   0:
-                                adjustHandlerLevel(Level.FINEST);
-                                break;
-                            case  40:
-                                adjustHandlerLevel(Level.INFO);
-                                break;
-                            case  80:
-                                adjustHandlerLevel(Level.WARNING);
-                                break;
-                            case 120:
-                                adjustHandlerLevel(Level.SEVERE);
-                                break;
-                            case 160:
-                                adjustHandlerLevel(Level.OFF);
-                                break;
-                            default:
-                                System.err.println("Unhandled value "+value);
-                        }
+                if (!source.getValueIsAdjusting()) {
+                    int value = source.getValue();
+                    switch (value) {
+                        case 0:
+                            adjustHandlerLevel(Level.FINEST);
+                            break;
+                        case 40:
+                            adjustHandlerLevel(Level.INFO);
+                            break;
+                        case 80:
+                            adjustHandlerLevel(Level.WARNING);
+                            break;
+                        case 120:
+                            adjustHandlerLevel(Level.SEVERE);
+                            break;
+                        case 160:
+                            adjustHandlerLevel(Level.OFF);
+                            break;
+                        default:
+                            System.err.println("Unhandled value " + value);
                     }
+                }
             }
         });
 
@@ -162,7 +165,7 @@ public class ConsoleDialog extends JFrame {
                       if (doc.getLength() >= MAX_LOG_SIZE) {
                           //todo: extend the Document as the default
                           // one is super slow for what we want
-                        doc.remove(0, MAX_LOG_SIZE/2);
+                          doc.remove(0, MAX_LOG_SIZE / 2);
                       }
                       doc.insertString(doc.getLength(), msg, null);
                   } catch (BadLocationException e) {
@@ -173,14 +176,20 @@ public class ConsoleDialog extends JFrame {
     }
 
     private void adjustHandlerLevel(Level l) {
-        Handler[] handlers = Logger.global.getHandlers();
-        System.err.println("Adjusting level "+l);
-        for (int i =0; i< handlers.length; i++) {
-            if (handlers[i] instanceof DefaultHandler) {
-                handlers[i].setLevel(l);
+        for (Enumeration e = LogManager.getLogManager().getLoggerNames();
+             e.hasMoreElements();) {
+            String name = (String)e.nextElement();
+            Logger.getLogger(name);
+            Handler[] handlers = Logger.getLogger(name).getHandlers();
+
+            for (int i = 0; i < handlers.length; i++) {
+                if (handlers[i] instanceof DefaultHandler) {
+                    handlers[i].setLevel(l);
+                }
             }
         }
+System.err.println("Adjusting level " + l);
     }
 
-    private static final int MAX_LOG_SIZE = 1024*1024;
+    private static final int MAX_LOG_SIZE = 1024 * 1024;
 }
