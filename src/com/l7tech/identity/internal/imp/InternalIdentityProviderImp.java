@@ -16,8 +16,8 @@ public class InternalIdentityProviderImp implements InternalIdentityProvider {
 
     public void initialize( IdentityProviderConfig config ) {
         _identityProviderConfig = config;
-        _userManager = (UserManager)PersistenceManager.getEntityManager( User.class );
-        _groupManager = (GroupManager)PersistenceManager.getEntityManager( Group.class );
+        _userManager = new UserManagerImp();
+        _groupManager = new GroupManagerImp();
         _userManager.setIdentityProviderOid( config.getOid() );
         _groupManager.setIdentityProviderOid( config.getOid() );
     }
