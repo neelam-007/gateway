@@ -92,7 +92,12 @@ public class LdapIdentityProviderConfigPanel extends IdentityProviderStepPanel {
         addButt = new JButton("Add");
         addButt.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
-                String newUrl = JOptionPane.showInputDialog("Enter new ldap URL");
+                String newUrl = (String)JOptionPane.showInputDialog(null,
+                                                            "Enter the LDAP URL:",
+                                                            "Add LDAP Host URL  ",
+                                                            JOptionPane.PLAIN_MESSAGE,
+                                                            null, null,
+                                                            "ldap://host:port");
                 DefaultComboBoxModel model = (DefaultComboBoxModel)getLdapHostList().getModel();
                 if (newUrl != null) {
                     if (model.getIndexOf(newUrl) < 0) {
