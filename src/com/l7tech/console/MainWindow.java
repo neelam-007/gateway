@@ -1658,13 +1658,6 @@ public class MainWindow extends JFrame {
         logMenuItem = new JCheckBoxMenuItem(getMainBottomTabbedPane().getShowLogToggleAction());
         logMenuItem.setEnabled(false);
 
-        logMenuItem.
-                addActionListener(new ActionListener() {
-                    public void actionPerformed(ActionEvent e) {
-                        getMainBottomTabbedPane().actionPerformed(e);
-                    }
-                });
-
         addWindowListener(new WindowAdapter() {
             /** Invoked when a window has been opened. */
             public void windowOpened(WindowEvent e) {
@@ -1701,12 +1694,6 @@ public class MainWindow extends JFrame {
 
         statMenuItem = new JCheckBoxMenuItem(getMainBottomTabbedPane().getShowStatToggleAction());
         statMenuItem.setEnabled(false);
-        statMenuItem.
-                addActionListener(new ActionListener() {
-                    public void actionPerformed(ActionEvent e) {
-                        getMainBottomTabbedPane().actionPerformed(e);
-                    }
-                });
 
         addWindowListener(new WindowAdapter() {
             /** Invoked when a window has been opened. */

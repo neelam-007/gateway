@@ -12,6 +12,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.io.IOException;
+import java.util.ResourceBundle;
 
 /**
  * Created by IntelliJ IDEA.
@@ -27,7 +28,9 @@ public class MonitorPanel extends JTabbedPane {
     private Action toggleShowStatAction = null;
     private LogPanel logPane = null;
     private StatisticsPanel statisticsPane = null;
-
+    private static
+    ResourceBundle resapplication =
+      java.util.ResourceBundle.getBundle("com.l7tech.console.resources.console");
 
     public MonitorPanel() {
         setTabPlacement(JTabbedPane.TOP);
@@ -61,10 +64,6 @@ public class MonitorPanel extends JTabbedPane {
 
     }
 
-    public void actionPerformed(ActionEvent e) {
-
-    }
-
     public void connectHandler(ConnectionEvent e) {
 
         if (componentRegistry.getMainWindow().getLogMenuItem().isSelected()) {
@@ -89,8 +88,7 @@ public class MonitorPanel extends JTabbedPane {
     public Action getShowLogToggleAction() {
         if (toggleShowLogAction != null) return toggleShowLogAction;
 
-        //String atext = resapplication.getString("toggle.log.display");
-        String atext = "Gateway Log";
+        String atext = resapplication.getString("toggle.log.display");
 
         toggleShowLogAction =
                 new AbstractAction(atext) {
@@ -123,8 +121,7 @@ public class MonitorPanel extends JTabbedPane {
 
     public Action getShowStatToggleAction() {
         if (toggleShowStatAction != null) return toggleShowStatAction;
-
-        String atext = "Statistics";
+        String atext = resapplication.getString("toggle.statistics.display");
 
         toggleShowStatAction =
                 new AbstractAction(atext) {
