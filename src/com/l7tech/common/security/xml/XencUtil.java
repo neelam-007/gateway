@@ -62,6 +62,10 @@ public class XencUtil {
         }
         byte[] output = new byte[keylength];
         System.arraycopy(paddedKey, pos+1, output, 0, keylength);
+
+        logger.severe("\n\n\nKEY LENGTH PROCESSED IS " + keylength + ". TOTAL INCLUDING PADDING IS " + paddedKey.length + "\n\n\n");
+
+
         return output;
     }
 
@@ -231,6 +235,7 @@ public class XencUtil {
     public static  byte[] padSymmetricKeyForRsaEncryption(byte[] keyBytes, int modulusBytes, SecureRandom rand)
             throws KeyException
     {
+        modulusBytes-=1;
         int padbytes = modulusBytes - 3 - keyBytes.length;
 
         // Check just in case, although this should never happen in real life
@@ -246,6 +251,8 @@ public class XencUtil {
         }
         padded[pos++] = 0;
         System.arraycopy(keyBytes, 0, padded, pos, keyBytes.length);
+
+        logger.severe("\n\n\nGENERATED PADDED KEY. UNPADDED LENGTH IS " + keyBytes.length + " FULL IS " + padded.length + "\n\n\n");
 
         return padded;
     }
