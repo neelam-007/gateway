@@ -4,6 +4,7 @@ import com.l7tech.policy.assertion.RoutingAssertion;
 import com.l7tech.service.PublishedService;
 import com.l7tech.service.Wsdl;
 import com.l7tech.common.gui.util.Utilities;
+import com.l7tech.common.gui.util.FontUtil;
 import com.l7tech.common.gui.widgets.ContextMenuTextField;
 
 import javax.swing.*;
@@ -229,7 +230,7 @@ public class ProtectedServiceWizardPanel extends WizardStepPanel {
         getServiceUrlTextField().setText("");
         getServiceUrlTextField().setPreferredSize(new Dimension(200, 20));
         serviceUrlPanel.add(getServiceUrlTextField());
-        serviceUrlPanel.add(getUrlButtonPanel());
+        serviceUrlPanel.add(getButtonChangeUrl());
 
         return serviceUrlPanel;
     }
@@ -367,22 +368,9 @@ public class ProtectedServiceWizardPanel extends WizardStepPanel {
         return serviceUrlTextField;
     }
 
-    private JPanel getUrlButtonPanel() {
-        if (urlButtonPanel == null) {
-            urlButtonPanel = new JPanel(new GridBagLayout());
-        }
-        return urlButtonPanel;
-    }
-
     private void doChangeUrl() {
         getServiceUrlTextField().setEditable(true);
-        getUrlButtonPanel().remove(getButtonChangeUrl());
-        getUrlButtonPanel().add(getButtonDefaultUrl(),
-                                new GridBagConstraints(0, 0, 1, 1, 0.0, 0.0,
-                                                       GridBagConstraints.WEST,
-                                                       GridBagConstraints.BOTH,
-                                                       new Insets(0, 0, 0, 0), 0, 0));
-        getUrlButtonPanel().validate();
+        getButtonChangeUrl().setText("default");
     }
 
     private void doDefaultUrl() {
@@ -394,37 +382,25 @@ public class ProtectedServiceWizardPanel extends WizardStepPanel {
             //todo: errormanger?
         }
         getServiceUrlTextField().setEditable(false);
-        getUrlButtonPanel().remove(getButtonDefaultUrl());
-        getUrlButtonPanel().add(getButtonChangeUrl(),
-                                new GridBagConstraints(0, 0, 1, 1, 0.0, 0.0,
-                                                       GridBagConstraints.WEST,
-                                                       GridBagConstraints.BOTH,
-                                                       new Insets(0, 0, 0, 0), 0, 0));
-        getUrlButtonPanel().validate();
+        getButtonChangeUrl().setText("change");
     }
 
     private JButton getButtonChangeUrl() {
         if (buttonChangeUrl == null) {
-            buttonChangeUrl = new JButton("Change");
+            buttonChangeUrl = new JButton("change");
+            FontUtil.resizeFont(buttonChangeUrl, 0.84);
             buttonChangeUrl.addActionListener(new ActionListener() {
                 public void actionPerformed(ActionEvent e) {
-                    doChangeUrl();
+                    buttonChangeUrl.setPreferredSize(buttonChangeUrl.getSize());
+                    if (getServiceUrlTextField().isEditable()) {
+                        doDefaultUrl();
+                    } else {
+                        doChangeUrl();
+                    }
                 }
             });
         }
         return buttonChangeUrl;
-    }
-
-    private JButton getButtonDefaultUrl() {
-        if (buttonDefaultUrl == null) {
-            buttonDefaultUrl = new JButton("Default");
-            buttonDefaultUrl.addActionListener( new ActionListener() {
-                public void actionPerformed(ActionEvent e) {
-                    doDefaultUrl();
-                }
-            });
-        }
-        return buttonDefaultUrl;
     }
 
     private Boolean wasValid = null;
@@ -439,8 +415,6 @@ public class ProtectedServiceWizardPanel extends WizardStepPanel {
     private JPanel credentialsAndTransportPanel;
     private JPanel serviceUrlPanel;
     private JTextField serviceUrlTextField;
-    private JPanel urlButtonPanel;
-    private JButton buttonDefaultUrl;
     private JButton buttonChangeUrl;
     private JPanel mainPanel;
 }
