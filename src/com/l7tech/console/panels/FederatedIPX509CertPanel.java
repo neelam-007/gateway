@@ -44,6 +44,15 @@ public class FederatedIPX509CertPanel extends IdentityProviderStepPanel {
     }
 
     /**
+     * Test whether the step is finished and it is safe to finish the wizard.
+     *
+     * @return true if the panel is valid, false otherwis
+     */
+    public boolean canFinish() {
+        return false;
+    }
+
+    /**
      * Populate the configuration data from the wizard input object to the visual components of the panel.
      *
      * @param settings The current value of configuration items in the wizard input object.

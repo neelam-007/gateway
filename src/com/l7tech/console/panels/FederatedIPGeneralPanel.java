@@ -48,6 +48,15 @@ public class FederatedIPGeneralPanel extends IdentityProviderStepPanel {
     }
 
     /**
+     * Test whether the step is finished and it is safe to finish the wizard.
+     *
+     * @return true if the panel is valid, false otherwis
+     */
+    public boolean canFinish() {
+        return false;
+    }
+
+    /**
      * Populate the configuration data from the wizard input object to the visual components of the panel.
      *
      * @param settings The current value of configuration items in the wizard input object.
@@ -89,6 +98,15 @@ public class FederatedIPGeneralPanel extends IdentityProviderStepPanel {
     }
 
     public boolean onNextButton() {
+
+        if(providerNameTextField.getText().length() < 3 || providerNameTextField.getText().length() > 24) {
+            JOptionPane.showMessageDialog(mainPanel, resources.getString("providerNameTextField.error.empty"),
+                            resources.getString("providerNameTextField.error.title"),
+                            JOptionPane.ERROR_MESSAGE);
+
+            return false;
+        }
+
         java.util.ArrayList skippedPanels = new java.util.ArrayList();
         if (!x509CertCheckbox.isSelected()) skippedPanels.add(FederatedIPX509CertPanel.class.getName());
         if (!samlCheckbox.isSelected()) skippedPanels.add(FederatedIPSamlPanel.class.getName());
