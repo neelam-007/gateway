@@ -59,9 +59,9 @@ public class ClientProxySecureProtocolSocketFactory implements SecureProtocolSoc
                     // can't happen
                 }
                 if (!cn.equals(expectedHostname))
-                    throw new RuntimeException("Server certificate name (" + cn +
-                                               ") did not match the hostname we connected to (" +
-                                               expectedHostname + ")");
+                    throw new HostnameMismatchException("Server certificate name (" + cn +
+                                                        ") did not match the hostname we connected to (" +
+                                                        expectedHostname + ")");
                 log.info("Server hostname verified successfully");
             } catch (SSLPeerUnverifiedException e) {
                 throw new RuntimeException("Server certificate was not verified");
