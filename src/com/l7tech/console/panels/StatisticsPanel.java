@@ -23,7 +23,6 @@ import java.awt.event.ComponentListener;
 import java.awt.event.ComponentEvent;
 import java.util.Vector;
 import java.util.HashMap;
-import java.util.logging.Logger;
 
 
 /**
@@ -40,7 +39,7 @@ public class StatisticsPanel extends JPanel {
     private static final String LAST_MINUTE_SERVER_LOAD_PREFIX = "Avg load (1 min): ";
     private static final String MIDDLE_SPACE = "     ";
     private static final String END_SPACE    = "   ";
-    Logger logger = null;
+
     LogAdmin logService = null;
     private ServiceAdmin serviceManager = null;
 
@@ -73,7 +72,7 @@ public class StatisticsPanel extends JPanel {
     private long serverUpTimeMinutues = 0;
     private long completedCountPerMinuteTotal = 0;
     private long lastMinuteCompletedCountTotal = 0;
-    private HashMap lastMinuteCompletedCountsCache = new HashMap();
+    private HashMap lastMinuteCompletedCountsCache;
 
     public StatisticsPanel() {
         setBorder(new javax.swing.border.LineBorder(new java.awt.Color(0, 0, 0)));
@@ -90,7 +89,6 @@ public class StatisticsPanel extends JPanel {
      * This function is called when a connection to the server is established.
      */
     public void onConnect(){
-        logger = Logger.getLogger(StatisticsPanel.class.getName());
 
         logService = (LogAdmin) Locator.getDefault().lookup(LogAdmin.class);
         if (logService == null) throw new IllegalStateException("Cannot obtain LogAdmin remote reference");
@@ -98,12 +96,16 @@ public class StatisticsPanel extends JPanel {
         serviceManager = (ServiceAdmin) Locator.getDefault().lookup(ServiceAdmin.class);
         if (serviceManager == null) throw new RuntimeException("Cannot obtain ServiceManager remote reference");
 
+        // intantiate the cache
+        lastMinuteCompletedCountsCache = new HashMap();
     }
 
     public void onDisconnect(){
-        logger = null;
+
         logService = null;
         serviceManager = null;
+        lastMinuteCompletedCountsCache = null;
+
         stopRefreshTimer();
         clearStatiistics();
     }

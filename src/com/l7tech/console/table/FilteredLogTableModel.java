@@ -7,7 +7,6 @@ import com.l7tech.console.panels.LogPanel;
 import com.l7tech.console.util.LogsWorker;
 
 import java.util.Vector;
-import java.util.logging.Logger;
 
 /**
  * Created by IntelliJ IDEA.
@@ -21,7 +20,6 @@ public class FilteredLogTableModel extends FilteredDefaultTableModel{
      public static final int MAX_MESSAGE_BLOCK_SIZE = 100;
      public static final int MAX_NUMBER_OF_LOG_MESSGAES = 4096;
      private LogAdmin logService = null;
-     private Logger logger = null;
 
      private Vector logsCache = new Vector();
 
@@ -47,14 +45,11 @@ public class FilteredLogTableModel extends FilteredDefaultTableModel{
      }
 
     public void onConnect() {
-        logger = Logger.getLogger(FilteredLogTableModel.class.getName());
-
         logService = (LogAdmin) Locator.getDefault().lookup(LogAdmin.class);
         if (logService == null) throw new IllegalStateException("cannot obtain LogAdmin remote reference");
     }
 
     public void onDisconnect(){
-        logger = null;
         logService = null;
     }
 
