@@ -118,10 +118,18 @@ public class XpathEvaluator {
             String uri = element.getNamespaceURI(prefix);
             namespaces.put(prefix, uri);
         }
+        Iterator itchildren = element.getChildElements();
+        while(itchildren.hasNext()) {
+            Object o = itchildren.next();
+            if (o instanceof SOAPElement) {
+                final SOAPElement childElement = (SOAPElement)o;
+                addNamespaces(namespaces, childElement);
+            }
+        }
     }
 
     /**
-     * Select the nodes that are eselectable with this expression against
+     * Select the nodes that are selectable with this expression against
      * this evaluator's Document.
      *
      * @param expression the XPath expression
