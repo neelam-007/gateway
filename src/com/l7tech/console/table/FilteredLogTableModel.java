@@ -47,6 +47,7 @@ public class FilteredLogTableModel extends FilteredDefaultTableModel{
          String[] rawLogs = new String[]{};
          long startMsgNumber = -1;
          long endMsgNumber;
+         boolean newLogsReceived = false;
          boolean cleanUp = true;
          Vector newLogsCache = new Vector();
 
@@ -56,13 +57,6 @@ public class FilteredLogTableModel extends FilteredDefaultTableModel{
              return;
          }
          else{
-             if (cleanUp) {
-                // logsCache = new Vector();
-                 while (realModel.getRowCount() > 0) {
-                     realModel.removeRow(0);
-                 }
-                 cleanUp = false;
-             }
 
              endMsgNumber = ((LogMessage) logsCache.firstElement()).getMsgNumber();
 
@@ -73,6 +67,17 @@ public class FilteredLogTableModel extends FilteredDefaultTableModel{
                      rawLogs = log.getSystemLog(startMsgNumber, endMsgNumber, MAX_MESSAGE_BLOCK_SIZE);
 
                      if (rawLogs.length > 0) {
+
+                         // table clean up required only for the first time
+                         if(cleanUp){
+                             while (realModel.getRowCount() > 0) {
+                                 realModel.removeRow(0);
+                             }
+                         }
+
+                         // indicate there is at least one new log received
+                         newLogsReceived = true;
+
                          Vector newLogs = new Vector();
                          for (int i = 0; i < rawLogs.length; i++) {
                              logMsg = new LogMessage(rawLogs[i]);
@@ -92,11 +97,15 @@ public class FilteredLogTableModel extends FilteredDefaultTableModel{
                  }
              } while (rawLogs.length == MAX_MESSAGE_BLOCK_SIZE);    // may be more messages for retrieval
 
-             updateLogTable(logsCache, msgFilterLevel);
-             realModel.fireTableDataChanged();
-             newLogsCache.addAll(logsCache);
+            // append the old logs to the new logs
+             if (newLogsReceived) {
 
-             logsCache = newLogsCache;
+                 updateLogTable(logsCache, msgFilterLevel);
+                 realModel.fireTableDataChanged();
+                 newLogsCache.addAll(logsCache);
+
+                 logsCache = newLogsCache;
+             }
          }
      }
 

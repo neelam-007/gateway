@@ -12,6 +12,8 @@ import javax.swing.event.*;
 import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.awt.event.ActionListener;
+import java.awt.event.ActionEvent;
 import java.util.Dictionary;
 import java.util.Hashtable;
 import java.util.ResourceBundle;
@@ -28,12 +30,14 @@ import java.io.IOException;
 public class LogPanel extends JPanel {
 
      // Titles/Labels
-//    private static final String LOG_LABEL = "Log";
     public static final int MSG_FILTER_LEVEL_ALL = 4;
     public static final int MSG_FILTER_LEVEL_INFO = 3;
     public static final int MSG_FILTER_LEVEL_WARNING = 2;
     public static final int MSG_FILTER_LEVEL_SEVERE = 1;
     public static final int MSG_FILTER_LEVEL_NONE = 0;
+
+    private final static int TWO_SECONDS = 2000;
+    private javax.swing.Timer logsRefreshTimer = null;
 
     private static ResourceBundle resapplication = java.util.ResourceBundle.getBundle("com.l7tech.console.resources.console");
     private final ClassLoader cl = getClass().getClassLoader();
@@ -50,7 +54,6 @@ public class LogPanel extends JPanel {
     private JTable msgTable = null;
     private JScrollPane msgDetailsPane = null;
     private JTextArea msgDetails = null;
- //   private JTabbedPane tabbedLogPane = null;
     private JSlider slider = null;
     private JCheckBox details = null;
     private DefaultTableModel logTableModel = null;
@@ -144,8 +147,10 @@ public class LogPanel extends JPanel {
      * Retrieve logs from server and display the logs.
      */
     public void showData(){
+        getLogsRefreshTimer().stop();
         ((FilteredLogTableModel)getMsgTable().getModel()).getLogs(msgFilterLevel);
         setVisible(true);
+        getLogsRefreshTimer().start();
     }
 
     /**
@@ -270,7 +275,7 @@ public class LogPanel extends JPanel {
             }
         });
         controlPane.add(details);
-
+/*
         JButton Refresh = new JButton();
         Refresh.setFont(new java.awt.Font("Dialog", 0, 11));
         String atext = resapplication.getString("Refresh_MenuItem_text");
@@ -286,7 +291,7 @@ public class LogPanel extends JPanel {
         Refresh.setIcon(icon);
         Refresh.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
-                refreshActionPerformed(evt);
+                refreshLogs();
             }
         });
         Refresh.addMouseListener(new MouseAdapter() {
@@ -303,7 +308,7 @@ public class LogPanel extends JPanel {
         });
 
         controlPane.add(Refresh);
-
+*/
         return controlPane;
     }
 
@@ -319,6 +324,7 @@ public class LogPanel extends JPanel {
         msgTable.setShowHorizontalLines(false);
         msgTable.setShowVerticalLines(false);
         msgTable.getSelectionModel().setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+        msgTable.setRowSelectionAllowed(true);
 
         return msgTable;
     }
@@ -455,8 +461,42 @@ public class LogPanel extends JPanel {
     }
 
 
-    private void refreshActionPerformed(java.awt.event.ActionEvent evt) {
+    private void refreshLogs() {
+        getLogsRefreshTimer().stop();
+
+        // get the selected row index
+        int selectedRowIndexOld = getMsgTable().getSelectedRow();
+        String msgNumSelected = null;
+
+        // save the number of selected message
+        if(selectedRowIndexOld >= 0) {
+            msgNumSelected = getMsgTable().getValueAt(selectedRowIndexOld, 0).toString();
+        }
+
+        // retrieve the new logs
         ((FilteredLogTableModel) getMsgTable().getModel()).refreshLogs(getMsgFilterLevel());
+
+
+        if (msgNumSelected != null) {
+            // keep the current row selection
+            int rowCount = getMsgTable().getRowCount();
+            boolean rowFound = false;
+            for (int i = 0; i < rowCount; i++) {
+                if (getMsgTable().getValueAt(i, 0).toString().equals(msgNumSelected)) {
+                    getMsgTable().setRowSelectionInterval(i, i);
+
+                    rowFound = true;
+                    break;
+                }
+            }
+
+            if (!rowFound) {
+                // clear the details text area
+                getMsgDetails().setText("");
+            }
+        }
+        // find the new index of the message selected
+        getLogsRefreshTimer().start();
     }
 
     private void detailsActionPerformed(java.awt.event.ActionEvent evt) {
@@ -481,9 +521,9 @@ public class LogPanel extends JPanel {
 
              msgFilterLevel = newFilterLevel;
 
-             ((FilteredLogTableModel)getMsgTable().getModel()).applyNewMsgFilter(msgFilterLevel);
+             ((FilteredLogTableModel)getMsgTable().getModel()).applyNewMsgFilter(newFilterLevel);
 
-              getMsgDetails().setText("");
+             getMsgDetails().setText("");
 
         }
 
@@ -493,22 +533,19 @@ public class LogPanel extends JPanel {
        ((FilteredLogTableModel)getMsgTable().getModel()).clearTable();
         getMsgDetails().setText("");
     }
-/*
-     private JTabbedPane getLogTabbedPane() {
-        // If tabbed pane not already created
-        if (tabbedLogPane == null) {
-            // Create tabbed pane
-            tabbedLogPane = new JTabbedPane();
 
-            // Add all tabs
-            tabbedLogPane.add(getLogPaneTop(), LOG_LABEL);
-        }
+    private javax.swing.Timer getLogsRefreshTimer() {
 
-        // Return tabbed pane
-        return tabbedLogPane;
-     }
- */
+        if (logsRefreshTimer != null) return logsRefreshTimer;
 
+        //Create a refresh logs timer.
+        logsRefreshTimer = new javax.swing.Timer(TWO_SECONDS, new ActionListener() {
+            public void actionPerformed(ActionEvent evt) {
+                refreshLogs();
+            }
+        });
 
+        return logsRefreshTimer;
+    }
 
 }
