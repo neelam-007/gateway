@@ -57,10 +57,6 @@ public class ServiceManagerStub implements ServiceManager {
         return (PublishedService)services.get(new Long(oid));
     }
 
-    public void addServiceListener( ServiceListener listener ) {
-        // Not applicable
-    }
-
     public Map serviceMap() {
         return Collections.unmodifiableMap( services );
     }
