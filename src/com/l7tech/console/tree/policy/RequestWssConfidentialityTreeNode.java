@@ -1,7 +1,6 @@
 package com.l7tech.console.tree.policy;
 
 
-import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.xmlsec.RequestWssIntegrity;
 
 /**
