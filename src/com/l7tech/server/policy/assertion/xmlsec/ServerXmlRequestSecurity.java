@@ -14,14 +14,19 @@ import com.l7tech.xmlsig.SoapMsgSigner;
 import com.l7tech.xmlsig.SignatureNotFoundException;
 import com.l7tech.xmlsig.InvalidSignatureException;
 import com.l7tech.identity.User;
+import com.l7tech.xmlenc.*;
 import com.ibm.xml.dsig.XSignatureException;
 import java.io.IOException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.security.cert.X509Certificate;
+import java.security.GeneralSecurityException;
+
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
 import sun.security.x509.X500Name;
+
+import javax.xml.parsers.ParserConfigurationException;
 
 /**
  * LAYER 7 TECHNOLOGIES, INC
@@ -98,9 +103,57 @@ public class ServerXmlRequestSecurity implements ServerAssertion {
         request.setPrincipalCredentials(new PrincipalCredentials(u, null, CredentialFormat.CLIENTCERT, null, clientCert));
 
         // if we must also do xml-encryption,
-        if (data.isEncryption()){
-            // todo, decypher the body
+        if (data.isEncryption()) {
+
+            // look for the "keyname" which should contain the xml session id
+            String keyname = null;
+            try {
+                keyname = XmlMangler.getKeyName(soapmsg);
+            } catch (NullPointerException e) {
+                // eat this, the following statement will catch it
+            }
+            if (keyname == null || keyname.length() < 1) {
+                String msg = "Could not extract key info from document's header";
+                logger.severe(msg);
+                throw new PolicyAssertionException(msg);
+            }
+
+            // retrieve the session id
+            Session xmlsession = null;
+            try {
+                xmlsession = SessionManager.getInstance().getSession(Long.parseLong(keyname));
+            } catch (SessionNotFoundException e) {
+                String msg = "Exception finding session with id=" + keyname;
+                logger.log(Level.SEVERE, msg, e);
+                throw new PolicyAssertionException(msg, e);
+            } catch (NumberFormatException e) {
+                String msg = "Session id is not long value : " + keyname;
+                logger.log(Level.SEVERE, msg, e);
+                throw new PolicyAssertionException(msg, e);
+            }
+
+            try {
+                XmlMangler.decryptXml(soapmsg, new AesKey(xmlsession.getKeyIn()));
+            } catch (GeneralSecurityException e) {
+                String msg = "Error decrypting request";
+                logger.log(Level.SEVERE, msg, e);
+                throw new PolicyAssertionException(msg, e);
+            } catch (ParserConfigurationException e) {
+                String msg = "Error decrypting request";
+                logger.log(Level.SEVERE, msg, e);
+                throw new PolicyAssertionException(msg, e);
+            } catch (IOException e) {
+                String msg = "Error decrypting request";
+                logger.log(Level.SEVERE, msg, e);
+                throw new PolicyAssertionException(msg, e);
+            } catch (SAXException e) {
+                String msg = "Error decrypting request";
+                logger.log(Level.SEVERE, msg, e);
+                throw new PolicyAssertionException(msg, e);
+            }
+            logger.info("Decrypted request successfully.");
         }
+
         return AssertionStatus.NONE;
     }
 
