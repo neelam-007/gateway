@@ -8,7 +8,10 @@ import javax.wsdl.Types;
 import javax.wsdl.WSDLException;
 import javax.wsdl.factory.WSDLFactory;
 import javax.wsdl.xml.WSDLReader;
+import javax.wsdl.xml.WSDLWriter;
 import java.io.Reader;
+import java.io.Writer;
+import java.io.OutputStream;
 import java.util.Collection;
 
 /**
@@ -46,7 +49,7 @@ public class Wsdl {
      * @param reader the character stream that contains the WSDL document,
      *               an XML document obeying the WSDL schema.
      *
-     * <p>The example: <pre>
+     * <p>The example reads the WSDL definition from StringReader: <pre>
      * // Retrieve the WSDL definition from the string representing
      * // the wsdl and iterate over the services.
      *
@@ -59,7 +62,7 @@ public class Wsdl {
      *                   throw on error parsing the WSDL definition
      */
     public static Wsdl newInstance(String documentBaseURI, Reader reader)
-            throws WSDLException {
+      throws WSDLException {
         InputSource source = new InputSource(reader);
         WSDLFactory fac = WSDLFactory.newInstance();
         WSDLReader wsdlReader = fac.newWSDLReader();
@@ -84,7 +87,7 @@ public class Wsdl {
      *                   throw on error parsing the WSDL definition
      */
     public static Wsdl newInstance(String documentBaseURI, Document wsdlDocument)
-            throws WSDLException {
+      throws WSDLException {
         WSDLFactory fac = WSDLFactory.newInstance();
         WSDLReader reader = fac.newWSDLReader();
         return new Wsdl(reader.readWSDL(documentBaseURI, wsdlDocument));
@@ -108,7 +111,7 @@ public class Wsdl {
      *                   throw on error parsing the WSDL definition
      */
     public static Wsdl newInstance(String documentBaseURI, InputSource inputSource)
-            throws WSDLException {
+      throws WSDLException {
         WSDLFactory fac = WSDLFactory.newInstance();
         WSDLReader reader = fac.newWSDLReader();
         return new Wsdl(reader.readWSDL(documentBaseURI, inputSource));
@@ -163,6 +166,65 @@ public class Wsdl {
     public Definition getDefinition() {
         return definition;
     }
+
+    /**
+     * Write the internal WSDL definition to the <code>Writer</code
+     * passed
+     * @param writer the writer where the
+     *
+     * <p>The example reads the WSDL definition from StringReader
+     * and then writes it ti the StringWriter:
+     * <p>
+     * <pre>
+     * // Retrieve the WSDL definition from the string representing
+     * // the wsdl and iterate over the services.
+     *
+     * Wsdl wsdl = Wsdl.newInstance(null, new StringReader(wsdlString));
+     * Iterator services = wsdl.getServices().iterator();
+     * ...
+     * StringWriter sw = new StringWriter();
+     * wsdl.toWriter(sw);
+     * System.out.println(sw.toString()):
+     * ...
+     * </pre>
+     *
+     * @exception WSDLException
+     *                   throw on error parsing the WSDL definition
+     */
+    public void toWriter(Writer writer) throws WSDLException {
+        WSDLFactory fac = WSDLFactory.newInstance();
+        WSDLWriter wsdlWriter = fac.newWSDLWriter();
+        wsdlWriter.writeWSDL(definition, writer);
+    }
+
+    /**
+     * Write the internal WSDL definition to the <code>OutputStream</code>
+     * @param os the output stream
+     *
+     * <p>The example reads the WSDL definition from StringReader
+     * and then writes it ti the file:
+     * <p>
+     * <pre>
+     * // Retrieve the WSDL definition from the string representing
+     * // the wsdl and iterate over the services.
+     *
+     * Wsdl wsdl = Wsdl.newInstance(null, new StringReader(wsdlString));
+     * Iterator services = wsdl.getServices().iterator();
+     * ...
+     * FileOutputStream fos = new FileOutputStream("./service.wsdl");
+     * wsdl.toOutputStream(fos);
+     * ...
+     * </pre>
+     *
+     * @exception WSDLException
+     *                   throw on error parsing the WSDL definition
+     */
+    public void toOutputStream(OutputStream os) throws WSDLException {
+        WSDLFactory fac = WSDLFactory.newInstance();
+        WSDLWriter wsdlWriter = fac.newWSDLWriter();
+        wsdlWriter.writeWSDL(definition, os);
+    }
+
 
     /**
      * Returens the instance string representatiton.
