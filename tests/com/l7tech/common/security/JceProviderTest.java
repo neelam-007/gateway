@@ -32,7 +32,7 @@ public class JceProviderTest {
     private static final Logger log = Logger.getLogger(JceProviderTest.class.getName());
     //$ ls c:/cygwin/kstores
     //ca.cer  ca.ks  ssl.csr  ssl.ks  ssl_self.cer
-    private static final String DIR = "/opt/java/tomcat/kstores/";
+    private static final String DIR = "/ssg/etc/keys/";
     private static String KEY_STORE = DIR + "ca.ks";
     private static String PK_PASS = "tralala";
     private static String ALIAS = "ssgroot";
