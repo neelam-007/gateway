@@ -21,14 +21,13 @@ import java.util.logging.Logger;
  * <p>
  * Call {@link #setCurrentRecord} to add any nubmer of {@link AuditRecord}s to the context.
  * <p>
- * Records that are added to the context will be persisted to the database later, when {@link #flush} or {#link #close}
+ * Records that are added to the context will be persisted to the database later, when {@link #flush}
  * is called, if their level meets or exceeds the corresponding threshold.  Call {@link ServerConfig#getProperty},
  * specifying {@link ServerConfig#PARAM_AUDIT_MESSAGE_THRESHOLD} or {@link ServerConfig#PARAM_AUDIT_MESSAGE_THRESHOLD}
  * as the parameter, to determine the current threshold for {@link MessageSummaryAuditRecord} and {@link AdminAuditRecord}
  * records, respectively.
  * <p>
- * By contrast, {@link com.l7tech.common.audit.SystemAuditRecord} records are persisted in {@link #flush} or
- * {@link #close} regardless of their level.
+ * By contrast, {@link com.l7tech.common.audit.SystemAuditRecord} records are persisted in {@link #flush} regardless of their level.
  *
  * @author alex
  * @version $Revision$
@@ -59,7 +58,6 @@ public class AuditContextImpl implements AuditContext {
      */
     public void setCurrentRecord(AuditRecord record) {
         if (record == null) throw new NullPointerException();
-        if (closed) throw new IllegalStateException("Can't set the current AuditRecord of a closed AuditContext");
         if (currentRecord != null) {
             throw new IllegalStateException("Only one audit record can be active at one time");
         }
@@ -69,7 +67,6 @@ public class AuditContextImpl implements AuditContext {
 
     public void addDetail(AuditDetail detail) {
         if (detail == null) throw new NullPointerException();
-        if (closed) throw new IllegalStateException("Can't set the current AuditRecord of a closed AuditContext");
 
         Level severity = MessageMap.getInstance().getSeverityLevelById(detail.getMessageId());
         if(severity == null) throw new RuntimeException("Cannot find the message (id=" + detail.getMessageId() + ")" + " in the Message Map.");
@@ -81,7 +78,6 @@ public class AuditContextImpl implements AuditContext {
     }
 
     public void flush() {
-        if (closed) throw new IllegalStateException("Can't flush a closed AuditContext");
         if (currentRecord == null) {
             if (details.isEmpty()) {
                 logger.warning("flush() called with AuditDetails but no AuditRecord");
@@ -119,31 +115,18 @@ public class AuditContextImpl implements AuditContext {
         } catch (SaveException e) {
             logger.log(Level.SEVERE, "Couldn't save audit records", e);
         } finally {
+            // Reinitialize in case this thread needs us again for a new request
             currentRecord = null;
             details.clear();
-            flushed = true;
-        }
-    }
-
-    public void close() {
-        try {
-            if (closed) throw new IllegalStateException("Already closed");
-            if (!flushed) flush();
-        } finally {
-            // Reinitialize in case this thread needs us again for a new request
-            closed = false;
-            flushed = false;
-            currentRecord = null;
-            details = new HashSet();
             highestLevelYetSeen = Level.ALL;
         }
     }
 
     protected void finalize() throws Throwable {
         try {
-            if (!flushed) {
+            if (currentRecord != null || !details.isEmpty()) {
                 logger.warning("AuditContext finalized before being flushed");
-                close();
+                flush();
             }
         } finally {
             super.finalize();
@@ -205,8 +188,6 @@ public class AuditContextImpl implements AuditContext {
     private final Level currentAdminThreshold;
     private final Level currentAssociatedLogsThreshold;
     private final AuditRecordManager auditRecordManager;
-    private boolean flushed = false;
-    private boolean closed = false;
 
     private AuditRecord currentRecord;
     private Set details = new HashSet();

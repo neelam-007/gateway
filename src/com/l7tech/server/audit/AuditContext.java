@@ -17,14 +17,13 @@ import java.util.logging.Level;
  * <p>
  * Records that are added to the context should be persisted to the database later, when {@link #flush} or {#link #close}
  * is called, if their level meets or exceeds the corresponding threshold.
- *
+ * <p>
  * Call {@link com.l7tech.server.ServerConfig#getProperty}, specifying {@link com.l7tech.server.ServerConfig#PARAM_AUDIT_MESSAGE_THRESHOLD} or
  * {@link com.l7tech.server.ServerConfig#PARAM_AUDIT_MESSAGE_THRESHOLD} as the parameter, to determine the current
  * threshold for {@link com.l7tech.common.audit.MessageSummaryAuditRecord} and {@link com.l7tech.common.audit.AdminAuditRecord}
  * records, respectively.
  * <p>
- * By contrast, {@link com.l7tech.common.audit.SystemAuditRecord} records are persisted in {@link #flush} or
- * {@link #close} regardless of their level.
+ * By contrast, {@link com.l7tech.common.audit.SystemAuditRecord} records are persisted in {@link #flush} regardless of their level.
  */
 public interface AuditContext {
     /** Message audit threshold to be used if {@link com.l7tech.server.ServerConfig#PARAM_AUDIT_MESSAGE_THRESHOLD} is unset or invalid */
@@ -47,14 +46,8 @@ public interface AuditContext {
 
     /**
      * Flushes the current {@link AuditRecord} and any associated {@link AuditDetail} records to the database.
+     * <p>
+     * The context can be reused once this operation has completed.
      */
     void flush();
-
-    /**
-     * Closes the current context, calling {@link #flush} beforehand if necessary.
-     *
-     * Once closed, a context cannot be reopened.
-     */
-    void close();
-
 }

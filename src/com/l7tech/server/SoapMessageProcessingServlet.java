@@ -199,7 +199,7 @@ public class SoapMessageProcessingServlet extends HttpServlet {
             }
         } finally {
             AuditContext auditContext = (AuditContext)applicationContext.getBean("auditContext");
-            auditContext.close();
+            auditContext.flush();
         }
     }
 
