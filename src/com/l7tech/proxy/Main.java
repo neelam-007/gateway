@@ -7,6 +7,7 @@ import java.util.logging.Logger;
 import java.util.logging.Level;
 
 import com.l7tech.common.BuildInfo;
+import com.l7tech.common.util.JdkLoggerConfigurator;
 
 /**
  * Begin execution of daemon-mode (no UI at all) client proxy.
@@ -35,6 +36,7 @@ public class Main {
 
     /** Start a text-only client proxy and run it until it's shut down. */
     public static void main(final String[] argv) {
+        JdkLoggerConfigurator.configure("com.l7tech.proxy", "com/l7tech/proxy/resources/logging.properties"); 
         log.info("Starting daemon mode Agent; " + BuildInfo.getLongBuildString());
 
         int port = getIntProperty("com.l7tech.proxy.listener.port", DEFAULT_PORT);

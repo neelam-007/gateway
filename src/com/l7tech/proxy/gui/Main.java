@@ -7,6 +7,7 @@ import com.l7tech.proxy.datamodel.Managers;
 import com.l7tech.proxy.datamodel.SsgManager;
 import com.l7tech.proxy.datamodel.SsgManagerImpl;
 import com.l7tech.common.BuildInfo;
+import com.l7tech.common.util.JdkLoggerConfigurator;
 import com.l7tech.common.security.JceProvider;
 import org.mortbay.util.MultiException;
 
@@ -37,6 +38,7 @@ public class Main {
 
     /** Start a GUI-equipped client proxy and run it until it's shut down. */
     public static void main(final String[] argv) {
+        JdkLoggerConfigurator.configure("com.l7tech.proxy", "com/l7tech/proxy/resources/logging.properties");
         log.info("Starting Agent; " + BuildInfo.getLongBuildString());
         JceProvider.init();
 
