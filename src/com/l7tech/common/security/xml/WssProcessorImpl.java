@@ -149,7 +149,17 @@ public class WssProcessorImpl implements WssProcessor {
         cntx.releventSecurityHeader.getParentNode().removeChild(cntx.releventSecurityHeader);
 
         // if there were other security headers and one with a special actor set by the agent, we
-        // want to change the actor here to set it back to default value todo
+        // want to change the actor here to set it back to default value
+        List remainingSecurityHeaders = SoapUtil.getSecurityElements(cntx.processedDocument);
+        for (Iterator secIt = remainingSecurityHeaders.iterator(); secIt.hasNext();) {
+            Element secHeader = (Element)secIt.next();
+            String actor = secHeader.getAttributeNS(currentSoapNamespace, SoapUtil.ACTOR_ATTR_NAME);
+            if (actor.equals(SoapUtil.ACTOR_LAYER7_WRAPPED)) {
+                logger.info("Unwraping wrapped security header");
+                secHeader.removeAttributeNS(currentSoapNamespace, SoapUtil.ACTOR_ATTR_NAME);
+                break;
+            }
+        }
 
         return produceResult(cntx);
     }
@@ -593,8 +603,7 @@ public class WssProcessorImpl implements WssProcessor {
         return null;
     }
 
-    private X509Certificate resolveEmbeddedCert(final Element parentElement,
-                                                ProcessingStatusHolder cntx) {
+    private X509Certificate resolveEmbeddedCert(final Element parentElement) {
         // Attempt to get the cert directly from the KeyInfo element
         KeyInfo keyInfo = null;
         try {
@@ -631,7 +640,7 @@ public class WssProcessorImpl implements WssProcessor {
         X509Certificate signingCert = resolveCertByRef(keyInfoElement, cntx);
         // Try to resolve embedded cert
         if (signingCert == null) {
-            signingCert = resolveEmbeddedCert(keyInfoElement, cntx);
+            signingCert = resolveEmbeddedCert(keyInfoElement);
         }
 
         if (signingCert == null) throw new ProcessorException("no cert to verify signature against.");
