@@ -64,6 +64,8 @@ public interface ServiceManager extends EntityManager {
      */
     public PublishedService resolveService( Request request ) throws ServiceResolutionException;
 
+    public void addServiceListener( ServiceListener listener );
+
     // NOTE:
     // add methods as they become necessary
 }
