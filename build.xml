@@ -203,6 +203,7 @@
             <test name="com.l7tech.policy.server.filter.FilterTest" haltonfailure="no"/>
             <test name="com.l7tech.common.util.ExceptionUtilsTest" haltonfailure="no"/>
             <test name="com.l7tech.server.policy.RequestXpathAssertionTest" haltonfailure="no"/>
+            <test name="com.l7tech.common.util.XmlUtilTest" haltonfailure="no"/>
 
             <!--
              ** add policy tests into the com.l7tech.policy.AllTests class
