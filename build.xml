@@ -284,14 +284,33 @@
         <delete dir="${build.lib}"/>
         <delete dir="${build.dir}"/>
         <delete includeEmptyDirs="true">
-	  <fileset dir="${src.root}/installer">
-            <include name="Manager-*"/>
-            <include name="Agent-*"/>
-          </fileset>
+            <fileset dir="${src.root}/installer">
+                <include name="Manager-*"/>
+                <include name="Agent-*"/>
+            </fileset>
+        </delete>
+        <delete includeEmptyDirs="true">
+            <fileset dir="${src.root}/">
+                <include name="TEST*"/>             
+            </fileset>
+        </delete>
+        <delete includeEmptyDirs="true">
+            <fileset dir="${src.root}/installer">
+                <include name="Manager-*/*"/>
+                <include name="Agent-*/*"/>
+                <include name="Manager-*"/>
+                <include name="Agent-*"/>
+            </fileset>
         </delete>
         <delete dir="${javadoc.home}"/>
-
+        <delete includeEmptyDirs="true">
+            <fileset dir="${src.root}">
+            <include name="WspWriter*"/>
+            <include name="stubdata*"/>
+          </fileset>
+        </delete>
         <delete file="${src.root}/src/com/l7tech/util/Version.java"/>
+        <delete file="${src.root}/tools/com/l7tech/tools/JarChecker.class"/>
     </target>
 
     <!-- javadoc target -->
