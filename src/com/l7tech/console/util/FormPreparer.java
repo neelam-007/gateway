@@ -13,9 +13,9 @@ import java.lang.reflect.InvocationTargetException;
 
 /**
  * The <code>FormPreparer</code> class processes the form elements and applies the
- * rules using the reflective {@link FormPreparer.ComponentPreparer} preparer. The
+ * rules using the reflective {@link FormPreparer.ComponentPreparer} instance. The
  * preparer implementations can define overloaded {@link FormPreparer.ComponentPreparer#prepare(java.awt.Component)}
- * methods, with the more speecific parameters from the <code>Component</code> class hierarchy.
+ * methods, with more specific parameter from the <code>Component</code> class hierarchy.
  *
  * @author emil
  * @version Sep 23, 2004
