@@ -6,6 +6,7 @@
 
 package com.l7tech.policy.wsp;
 
+import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.wsdl.BindingInfo;
 import com.l7tech.common.wsdl.BindingOperationInfo;
 import com.l7tech.common.wsdl.MimePartInfo;
@@ -43,7 +44,7 @@ import java.util.logging.Logger;
 public class WspConstants {
     private static final Logger log = Logger.getLogger(WspConstants.class.getName());
 
-    public static final String WSP_POLICY_NS = "http://schemas.xmlsoap.org/ws/2002/12/policy";
+    public static final String WSP_POLICY_NS = SoapUtil.WSP_NAMESPACE;
     public static final String L7_POLICY_NS = "http://www.layer7tech.com/ws/policy";
     public static final String POLICY_ELNAME = "Policy";
 

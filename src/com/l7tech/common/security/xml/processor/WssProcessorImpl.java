@@ -15,7 +15,6 @@ import com.l7tech.common.security.xml.XencUtil;
 import com.l7tech.common.util.*;
 import com.l7tech.common.xml.InvalidDocumentFormatException;
 import com.l7tech.common.xml.saml.SamlAssertion;
-import com.l7tech.policy.assertion.credential.LoginCredentials;
 import org.w3c.dom.*;
 import org.xml.sax.SAXException;
 
@@ -382,60 +381,9 @@ public class WssProcessorImpl implements WssProcessor {
     }
 
     private void processUsernameToken(final Element usernameTokenElement, ProcessingStatusHolder cntx)
-                                        throws ProcessorException, InvalidDocumentFormatException {
-        String applicableWsseNS = usernameTokenElement.getNamespaceURI();
-        // Get the Username child element
-        Element usernameEl = XmlUtil.findOnlyOneChildElementByName(usernameTokenElement,
-                                                                   applicableWsseNS,
-                                                                   SoapUtil.UNTOK_USERNAME_EL_NAME);
-        if (usernameEl == null) {
-            throw new InvalidDocumentFormatException("The usernametoken element does not contain a username element");
-        }
-        String username = XmlUtil.getTextValue(usernameEl).trim();
-        if (username.length() < 1) {
-            throw new InvalidDocumentFormatException("The usernametoken has an empty username element");
-        }
-        // Get the password element
-        Element passwdEl = XmlUtil.findOnlyOneChildElementByName(usernameTokenElement,
-                                                                 applicableWsseNS,
-                                                                 SoapUtil.UNTOK_PASSWORD_EL_NAME);
-        if (passwdEl == null) {
-            throw new InvalidDocumentFormatException("The usernametoken element does not contain a password element");
-        }
-        String passwd = XmlUtil.getTextValue(passwdEl).trim();
-        if (passwd.length() < 1) {
-            throw new InvalidDocumentFormatException("The usernametoken has an empty password element");
-        }
-        // Verify the password type to be supported
-        String passwdType = passwdEl.getAttribute(SoapUtil.UNTOK_PSSWD_TYPE_ATTR_NAME).trim();
-        if (passwdType.length() > 0) {
-            if (!passwdType.endsWith("PasswordText")) {
-                throw new ProcessorException("This username token password type is not supported: " + passwdType);
-            }
-        }
-        // Remember this as a security token
-        final LoginCredentials creds = new LoginCredentials(username, passwd.toCharArray(), null);
-        SecurityToken rememberedSecToken = new UsernameToken() {
-            public Element asElement() {
-                return usernameTokenElement;
-            }
-
-            public String getUsername() {
-                return creds.getLogin();
-            }
-
-            public LoginCredentials asLoginCredentials() {
-                return creds;
-            }
-
-            public String getElementId() {
-                return SoapUtil.getElementWsuId(usernameTokenElement);
-            }
-
-            public String toString() {
-                return "UsernameToken: " + creds.getLogin();
-            }
-        };
+                                        throws InvalidDocumentFormatException
+    {
+        UsernameTokenImpl rememberedSecToken = new UsernameTokenImpl(usernameTokenElement);
         cntx.securityTokens.add(rememberedSecToken);
     }
 

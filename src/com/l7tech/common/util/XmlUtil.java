@@ -79,6 +79,7 @@ public class XmlUtil {
     }
 
     public static Document createEmptyDocument(String rootElementName, String rootPrefix, String rootNs) {
+        // TODO make a better-performing version of this
         try {
             if (rootElementName == null || rootElementName.length() < 1) throw new IllegalArgumentException();
             final String xml;

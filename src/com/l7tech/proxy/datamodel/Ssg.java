@@ -44,7 +44,6 @@ public class Ssg implements Serializable, Cloneable, Comparable {
     private static final int SSG_PORT = 8080;
 
     // SAML timestamp stuff
-    private static final TimeZone UTC_TIME_ZONE = TimeZone.getTimeZone("UTC");
     private static final int SAML_PREEXPIRE_SEC = 30;
 
     // The file that contains our client cert private key for this Ssg
@@ -1035,7 +1034,8 @@ public class Ssg implements Serializable, Cloneable, Comparable {
             s = TokenServiceClient.obtainSamlAssertion(tokenServerSsg,
                                                        SsgKeyStoreManager.getClientCert(tokenServerSsg),
                                                        SsgKeyStoreManager.getClientCertPrivateKey(tokenServerSsg),
-                                                       SsgKeyStoreManager.getServerCert(tokenServerSsg));
+                                                       SsgKeyStoreManager.getServerCert(tokenServerSsg),
+                                                       TokenServiceClient.RequestType.ISSUE);
             log.log(Level.INFO, "Obtained SAML holder-of-key assertion from Gateway " + tokenServerSsg.toString());
             return s;
         }

@@ -17,6 +17,7 @@ import com.ibm.xml.enc.type.EncryptedData;
 import com.ibm.xml.enc.type.EncryptionMethod;
 import com.l7tech.common.security.AesKey;
 import com.l7tech.common.security.JceProvider;
+import com.l7tech.common.security.token.UsernameTokenImpl;
 import com.l7tech.common.security.xml.SecureConversationKeyDeriver;
 import com.l7tech.common.security.xml.XencUtil;
 import com.l7tech.common.util.CertUtils;
@@ -26,7 +27,10 @@ import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.xml.InvalidDocumentFormatException;
 import com.l7tech.policy.assertion.credential.CredentialFormat;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
-import org.w3c.dom.*;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
 import org.xml.sax.EntityResolver;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
@@ -422,33 +426,18 @@ public class WssDecoratorImpl implements WssDecorator {
         inclusiveNamespaces.setAttribute("PrefixList", "");
     }
 
-    private Element createUsernameToken(Element securityHeader, LoginCredentials usernameTokenCredentials) {
+    private static Element createUsernameToken(Element securityHeader, LoginCredentials creds) {
         // What this element looks like:
         // <wsse:UsernameToken>
         //    <wsse:Username>username</wsse:Username>
         //    <wsse:Password Type="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-username-token-profile-1.0#PasswordText">password</wsse:Password>
         // </wsse:UsernameToken>
         // create elements
-        Document doc = securityHeader.getOwnerDocument();
-        Element untokEl = doc.createElementNS(securityHeader.getNamespaceURI(), "UsernameToken");
-        untokEl.setPrefix(securityHeader.getPrefix());
-        Element usernameEl = doc.createElementNS(securityHeader.getNamespaceURI(), "Username");
-        usernameEl.setPrefix(untokEl.getPrefix());
-        Element passwdEl = doc.createElementNS(securityHeader.getNamespaceURI(), "Password");
-        passwdEl.setPrefix(untokEl.getPrefix());
-        // attach them
-        securityHeader.appendChild(untokEl);
-        untokEl.appendChild(usernameEl);
-        untokEl.appendChild(passwdEl);
-        // fill in username value
-        Text txtNode = XmlUtil.createTextNode(doc, usernameTokenCredentials.getLogin());
-        usernameEl.appendChild(txtNode);
-        // fill in password value and type
-        txtNode = XmlUtil.createTextNode(doc, new String(usernameTokenCredentials.getCredentials()));
-        passwdEl.appendChild(txtNode);
-        passwdEl.setAttribute("Type",
-                              "http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-username-token-profile-1.0#PasswordText");
-        return untokEl;
+        UsernameTokenImpl ut = new UsernameTokenImpl(creds.getLogin(),
+                                                     creds.getCredentials());
+        return ut.asElement(securityHeader.getOwnerDocument(),
+                            securityHeader.getNamespaceURI(),
+                            securityHeader.getPrefix());
     }
 
 

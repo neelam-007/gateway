@@ -9,6 +9,7 @@ package com.l7tech.server;
 import com.l7tech.common.ApplicationContexts;
 import com.l7tech.common.message.Message;
 import com.l7tech.common.security.saml.SamlConstants;
+import com.l7tech.common.security.token.SecurityTokenType;
 import com.l7tech.common.util.HexUtils;
 import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.xml.TestDocuments;
@@ -48,15 +49,11 @@ public class TokenServiceTest extends TestCase {
          TestSetup wrapper = new TestSetup(suite) {
 
              protected void setUp() throws Exception {
-                 applicationContext = createApplicationContext();
+                 applicationContext = ApplicationContexts.getTestApplicationContext();
              }
 
              protected void tearDown() throws Exception {
                  ;
-             }
-
-             private ApplicationContext createApplicationContext() {
-                 return ApplicationContexts.getTestApplicationContext();
              }
          };
          return wrapper;
@@ -69,8 +66,9 @@ public class TokenServiceTest extends TestCase {
     public void testTokenServiceClient() throws Exception {
         Document requestMsg = TokenServiceClient.createRequestSecurityTokenMessage(TestDocuments.getDotNetServerCertificate(),
                                                                     TestDocuments.getDotNetServerPrivateKey(),
-                                                                    TokenServiceClient.TOKENTYPE_SECURITYCONTEXT,
-                                                                    null);
+                                                                    SecurityTokenType.WSSC,
+                                                                    TokenServiceClient.RequestType.ISSUE,
+                                                                    null, null, null);
         log.info("Decorated token request (reformatted): " + XmlUtil.nodeToFormattedString(requestMsg));
 
         final TokenService service = new TokenServiceImpl(TestDocuments.getDotNetServerPrivateKey(),
@@ -117,8 +115,9 @@ public class TokenServiceTest extends TestCase {
         Document requestMsg = TokenServiceClient.createRequestSecurityTokenMessage(
                 subjectCertificate,
                 subjectPrivateKey,
-                "saml:Assertion",
-                null);
+                SecurityTokenType.SAML_AUTHENTICATION,
+                TokenServiceClient.RequestType.ISSUE,
+                null, null, null);
         requestMsg.getDocumentElement().setAttribute("xmlns:saml", SamlConstants.NS_SAML);
         log.info("Decorated token request (reformatted): " + XmlUtil.nodeToFormattedString(requestMsg));
 
@@ -171,5 +170,25 @@ public class TokenServiceTest extends TestCase {
 
     private HttpServletRequest getFakeServletRequest() {
         return new MockHttpServletRequest();
+    }
+
+    public void testCreateFimRst() throws Exception {
+/*
+        InputStream fimIs = getClass().getClassLoader().getResourceAsStream("com/l7tech/example/resources/tivoli/FIM_RST.xml");
+        final String origRst = XmlUtil.nodeToFormattedString(XmlUtil.parse(fimIs));
+
+        UsernameToken usernameToken = new UsernameTokenImpl("testuser", "passw0rd".toCharArray());
+
+       // TODO after FIM interop use AppliesTo like http://l7tech.com/services/TokenServiceTest instead
+        Document rstDoc = TokenServiceClient.createRequestSecurityTokenIssueMessage(null,
+                                                                                    TokenServiceClient.RequestType.VALIDATE,
+                                                                                    usernameToken,
+                                                                                    "http://samlpart.com/sso");
+        String rst = XmlUtil.nodeToFormattedString(rstDoc);
+
+        // TODO send this to the server
+        // assertEquals(rst, origRst);
+*/
+
     }
 }

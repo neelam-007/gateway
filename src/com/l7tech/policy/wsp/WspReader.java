@@ -36,6 +36,8 @@ public class WspReader {
             throw new InvalidPolicyStreamException("Unable to determine policy version");
 
         String ns = policyElement.getNamespaceURI();
+        // these are hardcoded since they historical namespaces: please do NOT change to SoapUtil.WSP_NAMESPACE
+        // (or whatever) since these namespaces are now historical data and hence set in stone.
         if ("http://www.layer7tech.com/ws/policy".equals(ns)) {
             return WspVersionImpl.VERSION_2_1;
         } else if ("http://schemas.xmlsoap.org/ws/2002/12/policy".equals(ns)) {

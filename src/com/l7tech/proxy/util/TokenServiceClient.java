@@ -9,9 +9,7 @@ package com.l7tech.proxy.util;
 import com.l7tech.common.mime.MimeUtil;
 import com.l7tech.common.protocol.SecureSpanConstants;
 import com.l7tech.common.security.saml.SamlConstants;
-import com.l7tech.common.security.token.SecurityToken;
-import com.l7tech.common.security.token.SignedElement;
-import com.l7tech.common.security.token.X509SecurityToken;
+import com.l7tech.common.security.token.*;
 import com.l7tech.common.security.xml.XencUtil;
 import com.l7tech.common.security.xml.decorator.DecorationRequirements;
 import com.l7tech.common.security.xml.decorator.DecoratorException;
@@ -52,9 +50,16 @@ import java.util.logging.Logger;
  */
 public class TokenServiceClient {
     public static final Logger log = Logger.getLogger(TokenServiceClient.class.getName());
-    public static final String TOKENTYPE_SECURITYCONTEXT = "http://schemas.xmlsoap.org/ws/2004/04/security/sc/sct";
-    public static final String TOKENTYPE_SAML = "urn:oasis:names:tc:SAML:1.0:assertion";
 
+    public static final class RequestType {
+        public static final RequestType ISSUE = new RequestType("http://schemas.xmlsoap.org/ws/2004/04/security/trust/Issue");
+        public static final RequestType VALIDATE = new RequestType("http://schemas.xmlsoap.org/ws/2004/04/security/trust/Validate");
+                                        
+        private final String uri;
+        private RequestType(String uri) { this.uri = uri; }
+        String getUri() { return uri; }
+    }
+    
     /**
      * Create a signed SOAP message containing a WS-Trust RequestSecurityToken message asking for the
      * specified token type.
@@ -62,17 +67,22 @@ public class TokenServiceClient {
      * @param clientCertificate  the certificate to use to sign the request
      * @param clientPrivateKey   the private key of the certificate to use to sign the request
      * @param desiredTokenType   the token type being applied for
+     * @param base
+     * @param appliesToAddress   wsa:Address to use for wsp:AppliesTo, or null to leave out the AppliesTo
      * @return a signed SOAP message containing a wst:RequestSecurityToken
      * @throws CertificateException if ther eis a problem with the clientCertificate
      */
     public static Document createRequestSecurityTokenMessage(X509Certificate clientCertificate,
-                                                      PrivateKey clientPrivateKey,
-                                                      String desiredTokenType,
-                                                      Date timestampCreatedDate)
+                                                             PrivateKey clientPrivateKey,
+                                                             SecurityTokenType desiredTokenType,
+                                                             RequestType requestType,
+                                                             SecurityToken base,
+                                                             String appliesToAddress,
+                                                             Date timestampCreatedDate)
             throws CertificateException
     {
         try {
-            Document msg = requestSecurityTokenMessageTemplate(desiredTokenType);
+            Document msg = requestSecurityTokenMessageTemplate(desiredTokenType, requestType, appliesToAddress, base);
             Element env = msg.getDocumentElement();
             Element body = XmlUtil.findFirstChildElement(env);
 
@@ -102,25 +112,62 @@ public class TokenServiceClient {
         }
     }
 
-    private static Document requestSecurityTokenMessageTemplate(String desiredTokenType) throws IOException, SAXException {
-        Document msg = XmlUtil.stringToDocument("<soap:Envelope xmlns:soap=\"" + SOAPConstants.URI_NS_SOAP_ENVELOPE + "\">" +
+    private static Document requestSecurityTokenMessageTemplate(SecurityTokenType desiredTokenType,
+                                                                RequestType requestType,
+                                                                String appliesToAddress,
+                                                                SecurityToken base)
+            throws IOException, SAXException 
+    {
+        // TODO fix or remove this hack: if a saml: qname will be used, declare saml NS in root element
+        String extraNs = "";
+        if (desiredTokenType != null && SamlSecurityToken.class.isAssignableFrom(desiredTokenType.getInterfaceClass()))
+            extraNs += " xmlns:saml=\"" + desiredTokenType.getWstPrototypeElementNs() + "\"";
+
+        Document msg = XmlUtil.stringToDocument("<soap:Envelope xmlns:soap=\"" + SOAPConstants.URI_NS_SOAP_ENVELOPE + "\"" + extraNs + ">" +
                                                     "<soap:Body>" +
                                                     "<wst:RequestSecurityToken xmlns:wst=\"" + SoapUtil.WST_NAMESPACE + "\">" +
-                                                    "<wst:RequestType>http://schemas.xmlsoap.org/ws/2004/04/security/trust/Issue</wst:RequestType>" +
                                                     "</wst:RequestSecurityToken>" +
                                                     "</soap:Body></soap:Envelope>");
         Element env = msg.getDocumentElement();
         Element body = XmlUtil.findFirstChildElement(env);
         Element rst = XmlUtil.findFirstChildElement(body);
-        Element tokenType = XmlUtil.createAndPrependElementNS(rst, "TokenType", SoapUtil.WST_NAMESPACE, "wst");
-        tokenType.appendChild(XmlUtil.createTextNode(msg, desiredTokenType));
+
+        // Add AppliesTo, if provided
+        if (appliesToAddress != null && appliesToAddress.length() > 0) {
+            Element appliesTo = XmlUtil.createAndAppendElementNS(rst, "AppliesTo", SoapUtil.WSP_NAMESPACE, "wsp");
+            Element endpointRef = XmlUtil.createAndAppendElementNS(appliesTo, "EndpointReference", SoapUtil.WSA_NAMESPACE, "wsa");
+            Element address = XmlUtil.createAndAppendElementNS(endpointRef, "Address", SoapUtil.WSA_NAMESPACE, "wsa");
+            address.appendChild(XmlUtil.createTextNode(address, appliesToAddress));
+        }
+
+        // Add TokenType, if meaningful with this token type
+        if (desiredTokenType != null) {
+            final String tokenTypeUri = desiredTokenType.getWstTokenTypeUri();
+            if (tokenTypeUri != null) {
+                // Add TokenType element
+                Element tokenType = XmlUtil.createAndPrependElementNS(rst, "TokenType", SoapUtil.WST_NAMESPACE, "wst");
+                tokenType.appendChild(XmlUtil.createTextNode(msg, tokenTypeUri));
+            }
+        }
+
+        // Add Base, if provided.  Base is not required to be the same token type as the token type we are requesting.
+        if (base != null) {
+            Element baseEl = XmlUtil.createAndPrependElementNS(rst, "Base", SoapUtil.WST_NAMESPACE, "wst");
+            baseEl.appendChild(msg.importNode(base.asElement(), true));
+        }
+
+        // Add RequestType
+        {
+            Element rt = XmlUtil.createAndAppendElementNS(rst, "RequestType", rst.getNamespaceURI(), "wst");
+            rt.appendChild(XmlUtil.createTextNode(msg, requestType.getUri()));
+        }
 
         return msg;
     }
 
-    public static Document createRequestSecurityTokenMessage(String desiredTokenType) {
+    public static Document createRequestSecurityTokenIssueMessage(SecurityTokenType desiredTokenType, RequestType requestType, SecurityToken base, String appliesToAddress) {
         try {
-            return requestSecurityTokenMessageTemplate(desiredTokenType);
+            return requestSecurityTokenMessageTemplate(desiredTokenType, requestType, appliesToAddress, base);
         } catch (IOException e) {
             throw new RuntimeException(e); // can't happen
         } catch (SAXException e) {
@@ -146,7 +193,7 @@ public class TokenServiceClient {
         URL url = new URL("http", ssg.getSsgAddress(), ssg.getSsgPort(), SecureSpanConstants.TOKEN_SERVICE_FILE);
         Date timestampCreatedDate = ssg.dateTranslatorToSsg().translate(new Date());
         Document requestDoc = createRequestSecurityTokenMessage(clientCertificate, clientPrivateKey,
-                                                                TOKENTYPE_SECURITYCONTEXT, timestampCreatedDate);
+                                                                SecurityTokenType.WSSC, RequestType.ISSUE, null, null, timestampCreatedDate);
         Object result = obtainResponse(clientCertificate, url, ssg, requestDoc, clientPrivateKey, serverCertificate);
 
         if (!(result instanceof SecureConversationSession))
@@ -161,24 +208,27 @@ public class TokenServiceClient {
             throws IOException, GeneralSecurityException, OperationCanceledException {
         URL url = new URL("https", ssg.getSsgAddress(), ssg.getSslPort(), SecureSpanConstants.TOKEN_SERVICE_FILE);
 
-        Document requestDoc = createRequestSecurityTokenMessage(TOKENTYPE_SECURITYCONTEXT);
+        Document requestDoc = createRequestSecurityTokenIssueMessage(SecurityTokenType.WSSC, RequestType.ISSUE, null, null);
         Object result = obtainResponse(url, ssg, requestDoc, serverCertificate);
 
         if (!(result instanceof SecureConversationSession))
             throw new IOException("Token server returned unwanted token type " + result.getClass());
         return (SecureConversationSession)result;
     }
-
+    
     public static SamlAssertion obtainSamlAssertion(Ssg ssg,
-                                                                          X509Certificate clientCertificate,
-                                                                          PrivateKey clientPrivateKey,
-                                                                          X509Certificate serverCertificate)
+                                                    X509Certificate clientCertificate,
+                                                    PrivateKey clientPrivateKey,
+                                                    X509Certificate serverCertificate, 
+                                                    RequestType requestType)
             throws IOException, GeneralSecurityException
     {
         URL url = new URL("http", ssg.getSsgAddress(), ssg.getSsgPort(), SecureSpanConstants.TOKEN_SERVICE_FILE);
         Date timestampCreatedDate = ssg.dateTranslatorToSsg().translate(new Date());
         Document requestDoc = createRequestSecurityTokenMessage(clientCertificate, clientPrivateKey,
-                                                                "saml:Assertion", timestampCreatedDate);
+                                                                SecurityTokenType.SAML_AUTHENTICATION,
+                                                                requestType,
+                                                                null, null, timestampCreatedDate);
         requestDoc.getDocumentElement().setAttribute("xmlns:saml", SamlConstants.NS_SAML);
         Object result = obtainResponse(clientCertificate, url, ssg, requestDoc, clientPrivateKey, serverCertificate);
 
