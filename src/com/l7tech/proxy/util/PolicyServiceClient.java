@@ -7,7 +7,12 @@
 package com.l7tech.proxy.util;
 
 import com.l7tech.common.protocol.SecureSpanConstants;
-import com.l7tech.common.security.xml.*;
+import com.l7tech.common.security.xml.ProcessorException;
+import com.l7tech.common.security.xml.decorator.DecorationRequirements;
+import com.l7tech.common.security.xml.decorator.DecoratorException;
+import com.l7tech.common.security.xml.decorator.WssDecorator;
+import com.l7tech.common.security.xml.decorator.WssDecoratorImpl;
+import com.l7tech.common.security.xml.processor.*;
 import com.l7tech.common.util.CausedIOException;
 import com.l7tech.common.util.HexUtils;
 import com.l7tech.common.util.SoapUtil;
@@ -77,7 +82,7 @@ public class PolicyServiceClient {
     {
         Document msg = createGetPolicyRequest(serviceId);
         WssDecorator decorator = new WssDecoratorImpl();
-        WssDecorator.DecorationRequirements req = new WssDecorator.DecorationRequirements();
+        DecorationRequirements req = new DecorationRequirements();
         if (samlAss != null)
             req.setSenderSamlToken(samlAss.asElement());
         req.setSenderCertificate(clientCert);
@@ -99,7 +104,7 @@ public class PolicyServiceClient {
             decorator.decorateMessage(msg, req);
         } catch (InvalidDocumentFormatException e) {
             throw new RuntimeException(e); // can't happen
-        } catch (WssDecorator.DecoratorException e) {
+        } catch (DecoratorException e) {
             throw new RuntimeException(e); // shouldn't happen
         }
         return msg;
@@ -164,19 +169,19 @@ public class PolicyServiceClient {
                    ServerCertificateUntrustedException, BadCredentialsException
     {
         WssProcessor wssProcessor = new WssProcessorImpl();
-        WssProcessor.ProcessorResult result;
+        ProcessorResult result;
         try {
             result = wssProcessor.undecorateMessage(response, clientCert, clientKey, null);
-        } catch (WssProcessor.BadContextException e) {
+        } catch (BadSecurityContextException e) {
             throw new ProcessorException(e); // can't happen
         }
 
-        WssProcessor.SecurityToken[] tokens = result.getSecurityTokens();
+        SecurityToken[] tokens = result.getSecurityTokens();
         X509Certificate signingCert = null;
         for (int i = 0; i < tokens.length; i++) {
-            WssProcessor.SecurityToken token = tokens[i];
-            if (token instanceof WssProcessor.X509SecurityToken) {
-                WssProcessor.X509SecurityToken x509Token = (WssProcessor.X509SecurityToken)token;
+            SecurityToken token = tokens[i];
+            if (token instanceof X509SecurityToken) {
+                X509SecurityToken x509Token = (X509SecurityToken)token;
                 if (x509Token.isPossessionProved()) {
                     if (signingCert != null)
                         throw new InvalidDocumentFormatException("Policy server response contained multiple proved X509 security tokens.");
@@ -188,8 +193,8 @@ public class PolicyServiceClient {
             }
         }
 
-        WssProcessor.SignedElement[] signedElements = result.getElementsThatWereSigned();
-        WssProcessor.Timestamp timestamp = result.getTimestamp();
+        SignedElement[] signedElements = result.getElementsThatWereSigned();
+        WssTimestamp timestamp = result.getTimestamp();
         final boolean timestampSigned = (timestamp != null && timestamp.asElement() != null &&
             ProcessorResultUtil.nodeIsPresent(timestamp.asElement(), signedElements));
         if (signedResponseRequired && !timestampSigned)
@@ -222,10 +227,10 @@ public class PolicyServiceClient {
     private static Policy parseGetPolicyResponse(Document originalRequest, Document response)
             throws InvalidDocumentFormatException, BadCredentialsException
     {
-        return parseGetPolicyResponse(originalRequest, response, (WssProcessor.ParsedElement[])null);
+        return parseGetPolicyResponse(originalRequest, response, (ParsedElement[])null);
     }
 
-    private static Policy parseGetPolicyResponse(Document originalRequest, Document response, WssProcessor.ParsedElement[] elementsThatWereSigned)
+    private static Policy parseGetPolicyResponse(Document originalRequest, Document response, ParsedElement[] elementsThatWereSigned)
             throws InvalidDocumentFormatException, BadCredentialsException
     {
         {

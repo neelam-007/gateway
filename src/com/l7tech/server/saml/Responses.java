@@ -2,8 +2,10 @@ package com.l7tech.server.saml;
 
 import com.l7tech.common.security.saml.SamlConstants;
 import com.l7tech.common.security.xml.SignerInfo;
-import com.l7tech.common.security.xml.WssDecorator;
-import com.l7tech.common.security.xml.WssDecoratorImpl;
+import com.l7tech.common.security.xml.decorator.DecorationRequirements;
+import com.l7tech.common.security.xml.decorator.DecoratorException;
+import com.l7tech.common.security.xml.decorator.WssDecorator;
+import com.l7tech.common.security.xml.decorator.WssDecoratorImpl;
 import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.xml.InvalidDocumentFormatException;
@@ -46,12 +48,12 @@ class Responses {
      * @throws SAXException                   on SAX parser error
      * @throws InvalidDocumentFormatException if document is invalid format
      * @throws GeneralSecurityException       thrown on security related error
-     * @throws WssDecorator.DecoratorException
+     * @throws com.l7tech.common.security.xml.decorator.DecoratorException
      *
      */
     static Document asSoapMessage(ResponseDocument rdoc, SignerInfo si)
       throws SOAPException, IOException, SAXException, InvalidDocumentFormatException,
-      GeneralSecurityException, WssDecorator.DecoratorException {
+      GeneralSecurityException, DecoratorException {
         SOAPMessage sm = SoapUtil.makeMessage();
         SOAPBody body = sm.getSOAPPart().getEnvelope().getBody();
 
@@ -63,7 +65,7 @@ class Responses {
 
         if (si != null) {
             WssDecorator wssd = getWssDecorator();
-            WssDecorator.DecorationRequirements wssRequirements = new WssDecorator.DecorationRequirements();
+            DecorationRequirements wssRequirements = new DecorationRequirements();
             wssRequirements.setSenderCertificate(si.getCertificateChain()[0]);
             wssRequirements.setSenderPrivateKey(si.getPrivate());
             try {

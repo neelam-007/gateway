@@ -6,6 +6,10 @@
 
 package com.l7tech.common.security.xml;
 
+import com.l7tech.common.security.xml.decorator.DecorationRequirements;
+import com.l7tech.common.security.xml.decorator.WssDecorator;
+import com.l7tech.common.security.xml.decorator.WssDecoratorImpl;
+import com.l7tech.common.security.xml.processor.*;
 import com.l7tech.common.util.XmlUtil;
 import junit.framework.Test;
 import junit.framework.TestCase;
@@ -18,8 +22,8 @@ import javax.crypto.SecretKey;
 import java.io.IOException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
-import java.util.List;
 import java.util.Arrays;
+import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -170,7 +174,7 @@ public class WssRoundTripTest extends TestCase {
         }
 
         log.info("Message before decoration (*note: pretty-printed):" + XmlUtil.nodeToFormattedString(message));
-        WssDecorator.DecorationRequirements reqs = new WssDecorator.DecorationRequirements();
+        DecorationRequirements reqs = new DecorationRequirements();
         if (td.senderSamlAssertion != null)
             reqs.setSenderSamlToken(td.senderSamlAssertion);
         else
@@ -180,7 +184,7 @@ public class WssRoundTripTest extends TestCase {
         reqs.setSignTimestamp(td.signTimestamp);
         reqs.setUsernameTokenCredentials(null);
         if (td.secureConversationKey != null)
-            reqs.setSecureConversationSession(new WssDecorator.DecorationRequirements.SecureConversationSession() {
+            reqs.setSecureConversationSession(new DecorationRequirements.SecureConversationSession() {
                 public String getId() { return SESSION_ID; }
                 public byte[] getSecretKey() { return td.secureConversationKey.getEncoded(); }
             });
@@ -208,7 +212,7 @@ public class WssRoundTripTest extends TestCase {
         assertTrue("Serialization did not affect the integrity of the XML message",
                    XmlUtil.nodeToString(message).equals(XmlUtil.nodeToString(incomingMessage)));
 
-        WssProcessor.ProcessorResult r = trogdor.undecorateMessage(incomingMessage,
+        ProcessorResult r = trogdor.undecorateMessage(incomingMessage,
                                                                    td.recipientCert,
                                                                    td.recipientKey,
                                                                    makeSecurityContextFinder(td.secureConversationKey));
@@ -216,23 +220,23 @@ public class WssRoundTripTest extends TestCase {
         Document undecorated = r.getUndecoratedMessage();
         log.info("After undecoration (*note: pretty-printed):" + XmlUtil.nodeToFormattedString(undecorated));
 
-        WssProcessor.ParsedElement[] encrypted = r.getElementsThatWereEncrypted();
+        ParsedElement[] encrypted = r.getElementsThatWereEncrypted();
         assertNotNull(encrypted);
-        WssProcessor.SignedElement[] signed = r.getElementsThatWereSigned();
+        SignedElement[] signed = r.getElementsThatWereSigned();
         assertNotNull(signed);
 
         // If timestamp was supposed to be signed, make sure it actually was
         if (td.signTimestamp) {
             assertTrue("Timestamp was supposed to have been signed", r.getTimestamp().isSigned());
-            WssProcessor.SecurityToken signer = r.getTimestamp().getSigningSecurityToken();
-            if (signer instanceof WssProcessor.X509SecurityToken) {
+            SecurityToken signer = r.getTimestamp().getSigningSecurityToken();
+            if (signer instanceof X509SecurityToken) {
                 assertTrue("Timestamp signing security token must match sender cert",
-                           ((WssProcessor.X509SecurityToken)signer).asX509Certificate().equals(td.senderCert));
-            } else if (signer instanceof WssProcessor.SamlSecurityToken) {
+                           ((X509SecurityToken)signer).asX509Certificate().equals(td.senderCert));
+            } else if (signer instanceof SamlSecurityToken) {
                 assertTrue("Timestamp signing security token must match sender cert",
-                           ((WssProcessor.SamlSecurityToken)signer).getSubjectCertificate().equals(td.senderCert));
-            } else if (signer instanceof WssProcessor.SecurityContextToken) {
-                WssProcessor.SecurityContextToken sct = (WssProcessor.SecurityContextToken)signer;
+                           ((SamlSecurityToken)signer).getSubjectCertificate().equals(td.senderCert));
+            } else if (signer instanceof SecurityContextToken) {
+                SecurityContextToken sct = (SecurityContextToken)signer;
                 assertTrue("SecurityContextToken was supposed to have proven possession", sct.isPossessionProved());
                 assertEquals("WS-Security session ID was supposed to match", sct.getContextIdentifier(), SESSION_ID);
                 assertTrue(Arrays.equals(sct.getSecurityContext().getSharedSecret().getEncoded(),
@@ -289,11 +293,11 @@ public class WssRoundTripTest extends TestCase {
         }
     }
 
-    private WssProcessor.SecurityContextFinder makeSecurityContextFinder(final SecretKey secureConversationKey) {
+    private SecurityContextFinder makeSecurityContextFinder(final SecretKey secureConversationKey) {
         if (secureConversationKey == null) return null;
-        return new WssProcessor.SecurityContextFinder() {
-            public WssProcessor.SecurityContext getSecurityContext(String securityContextIdentifier) {
-                return new WssProcessor.SecurityContext() {
+        return new SecurityContextFinder() {
+            public SecurityContext getSecurityContext(String securityContextIdentifier) {
+                return new SecurityContext() {
                     public SecretKey getSharedSecret() {
                         return secureConversationKey;
                     }

@@ -1,11 +1,12 @@
 package com.l7tech.proxy.policy.assertion.xmlsec;
 
 import com.l7tech.common.security.xml.ProcessorException;
-import com.l7tech.common.security.xml.ProcessorResultUtil;
-import com.l7tech.common.security.xml.WssProcessor;
+import com.l7tech.common.security.xml.processor.ProcessorResult;
+import com.l7tech.common.security.xml.processor.ProcessorResultUtil;
+import com.l7tech.common.security.xml.processor.SignedElement;
+import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.xml.InvalidDocumentFormatException;
 import com.l7tech.common.xml.XpathExpression;
-import com.l7tech.common.util.SoapUtil;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.xmlsec.ResponseWssIntegrity;
@@ -68,7 +69,7 @@ public class ClientResponseWssIntegrity extends ClientAssertion {
     public AssertionStatus unDecorateReply(PendingRequest request, SsgResponse response)
             throws ServerCertificateUntrustedException, IOException, SAXException, ResponseValidationException, KeyStoreCorruptException, InvalidDocumentFormatException, PolicyAssertionException {
         Document soapmsg = response.getResponseAsDocument();
-        WssProcessor.ProcessorResult wssRes = response.getProcessorResult();
+        ProcessorResult wssRes = response.getProcessorResult();
 
         String sentMessageId = request.getL7aMessageId();
         if (sentMessageId != null) {
@@ -108,8 +109,8 @@ public class ClientResponseWssIntegrity extends ClientAssertion {
         }
     }
 
-    private boolean wasElementSigned(WssProcessor.ProcessorResult wssResults, Node node) {
-        WssProcessor.SignedElement[] toto = wssResults.getElementsThatWereSigned();
+    private boolean wasElementSigned(ProcessorResult wssResults, Node node) {
+        SignedElement[] toto = wssResults.getElementsThatWereSigned();
         for (int j = 0; j < toto.length; j++) {
             if (toto[j].asElement() == node)
                 return true;

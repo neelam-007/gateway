@@ -1,6 +1,8 @@
 package com.l7tech.server.policy.assertion.xmlsec;
 
-import com.l7tech.common.security.xml.WssProcessor;
+import com.l7tech.common.security.xml.processor.ProcessorResult;
+import com.l7tech.common.security.xml.processor.SecurityToken;
+import com.l7tech.common.security.xml.processor.X509SecurityToken;
 import com.l7tech.message.Request;
 import com.l7tech.message.Response;
 import com.l7tech.message.SoapRequest;
@@ -38,12 +40,12 @@ public class ServerRequestWssX509Cert implements ServerAssertion {
             return AssertionStatus.BAD_REQUEST;
         }
         SoapRequest soapreq = (SoapRequest)request;
-        WssProcessor.ProcessorResult wssResults = soapreq.getWssProcessorOutput();
+        ProcessorResult wssResults = soapreq.getWssProcessorOutput();
         if (wssResults == null) {
             throw new IOException("This request was not processed for WSS level security.");
         }
 
-        WssProcessor.SecurityToken[] tokens = wssResults.getSecurityTokens();
+        SecurityToken[] tokens = wssResults.getSecurityTokens();
         if (tokens == null) {
             logger.info("No tokens were processed from this request. Returning AUTH_REQUIRED.");
             response.setAuthenticationMissing(true);
@@ -51,9 +53,9 @@ public class ServerRequestWssX509Cert implements ServerAssertion {
         }
         X509Certificate gotACertAlready = null;
         for (int i = 0; i < tokens.length; i++) {
-            WssProcessor.SecurityToken tok = tokens[i];
-            if (tok instanceof WssProcessor.X509SecurityToken) {
-                WssProcessor.X509SecurityToken x509Tok = (WssProcessor.X509SecurityToken)tok;
+            SecurityToken tok = tokens[i];
+            if (tok instanceof X509SecurityToken) {
+                X509SecurityToken x509Tok = (X509SecurityToken)tok;
                 if (x509Tok.isPossessionProved()) {
                     X509Certificate okCert = x509Tok.asX509Certificate();
                     // todo, it is possible that a request has more than one signature by more than one

@@ -825,7 +825,7 @@ public class SoapUtil {
         if (timestamp != null)
             now.setTime(timestamp);
         timestampEl.appendChild(makeTimestampChildElement(timestampEl, CREATED_EL_NAME, now.getTime()));
-        now.add(Calendar.SECOND, timeoutSec != 0 ? timeoutSec : 300);
+        now.add(Calendar.MILLISECOND, timeoutSec != 0 ? timeoutSec : 300000);
         timestampEl.appendChild(makeTimestampChildElement(timestampEl, EXPIRES_EL_NAME, now.getTime()));
         return timestampEl;
     }

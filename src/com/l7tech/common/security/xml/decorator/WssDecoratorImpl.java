@@ -4,7 +4,7 @@
  * $Id$
  */
 
-package com.l7tech.common.security.xml;
+package com.l7tech.common.security.xml.decorator;
 
 import com.ibm.xml.dsig.*;
 import com.ibm.xml.enc.AlgorithmFactoryExtn;
@@ -17,7 +17,12 @@ import com.ibm.xml.enc.type.EncryptedData;
 import com.ibm.xml.enc.type.EncryptionMethod;
 import com.l7tech.common.security.AesKey;
 import com.l7tech.common.security.JceProvider;
-import com.l7tech.common.util.*;
+import com.l7tech.common.security.xml.SecureConversationKeyDeriver;
+import com.l7tech.common.security.xml.XencUtil;
+import com.l7tech.common.util.CertUtils;
+import com.l7tech.common.util.HexUtils;
+import com.l7tech.common.util.SoapUtil;
+import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.xml.InvalidDocumentFormatException;
 import com.l7tech.policy.assertion.credential.CredentialFormat;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
@@ -30,7 +35,9 @@ import java.security.cert.CertificateEncodingException;
 import java.security.cert.X509Certificate;
 import java.security.interfaces.DSAPrivateKey;
 import java.security.interfaces.RSAPrivateKey;
-import java.util.*;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Set;
 import java.util.logging.Logger;
 
 /**
@@ -39,7 +46,7 @@ import java.util.logging.Logger;
 public class WssDecoratorImpl implements WssDecorator {
     private static final Logger logger = Logger.getLogger(WssDecorator.class.getName());
 
-    public static final int TIMESTAMP_TIMOUT_SEC = 300;
+    public static final int TIMESTAMP_TIMOUT_MILLIS = 300000;
     private static final int DERIVED_KEY_LENGTH = 16;
 
     private static class Context {
@@ -68,7 +75,13 @@ public class WssDecoratorImpl implements WssDecorator {
 
         // If we aren't signing the entire message, find extra elements to sign
         if (decorationRequirements.isSignTimestamp() || !signList.isEmpty()) {
-            Element timestamp = SoapUtil.addTimestamp(securityHeader, c.wsuNS, null, TIMESTAMP_TIMOUT_SEC);
+            int timeoutMillis = decorationRequirements.getTimestampTimeoutMillis();
+            if (timeoutMillis < 1)
+                timeoutMillis = TIMESTAMP_TIMOUT_MILLIS;
+            Element timestamp = SoapUtil.addTimestamp(securityHeader,
+                                                      c.wsuNS,
+                                                      decorationRequirements.getTimestampCreatedDate(), // null ok
+                                                      timeoutMillis);
             signList.add(timestamp);
         }
 
@@ -90,7 +103,7 @@ public class WssDecoratorImpl implements WssDecorator {
             bst = addX509BinarySecurityToken(securityHeader, decorationRequirements.getSenderCertificate(), c);
 
         Element sct = null;
-        WssDecorator.DecorationRequirements.SecureConversationSession session =
+        DecorationRequirements.SecureConversationSession session =
                                                             decorationRequirements.getSecureConversationSession();
         if (session != null) {
             if (session.getId() == null)
@@ -112,7 +125,7 @@ public class WssDecoratorImpl implements WssDecorator {
                 keyInfoValueTypeURI = SoapUtil.VALUETYPE_DERIVEDKEY;
                 if (session == null)
                     throw new IllegalArgumentException("Signing is requested with SecureConversationSession, but session is null");
-                DerivedKeyToken derivedKeyToken = addDerivedKeyToken(c, securityHeader, sct, null, session);
+                DerivedKeyToken derivedKeyToken = addDerivedKeyToken(c, securityHeader, null, session);
                 keyInfoReferenceTarget = derivedKeyToken.dkt;
                 senderSigningKey = new AesKey(derivedKeyToken.derivedKey, derivedKeyToken.derivedKey.length * 8);
             } else if (bst != null) {
@@ -154,7 +167,7 @@ public class WssDecoratorImpl implements WssDecorator {
                 // Encrypt using Secure Conversation session
                 if (session == null)
                     throw new IllegalArgumentException("Encryption is requested with SecureConversationSession, but session is null");
-                DerivedKeyToken derivedKeyToken = addDerivedKeyToken(c, securityHeader, sct, signature, session);
+                DerivedKeyToken derivedKeyToken = addDerivedKeyToken(c, securityHeader, signature, session);
                 Element keyInfoReferenceTarget = derivedKeyToken.dkt;
                 String keyInfoValueTypeURI = SoapUtil.VALUETYPE_DERIVEDKEY;
                 addEncryptedReferenceList(c,
@@ -211,9 +224,8 @@ public class WssDecoratorImpl implements WssDecorator {
     }
     private DerivedKeyToken addDerivedKeyToken(Context c,
                                                Element securityHeader,
-                                               Element sct,
                                                Element desiredNextSibling,
-                                               WssDecorator.DecorationRequirements.SecureConversationSession session)
+                                               DecorationRequirements.SecureConversationSession session)
             throws NoSuchAlgorithmException, InvalidKeyException
     {
         Document factory = securityHeader.getOwnerDocument();
@@ -469,7 +481,6 @@ public class WssDecoratorImpl implements WssDecorator {
                                               String keyInfoValueTypeURI)
             throws GeneralSecurityException, DecoratorException
     {
-        Document soapMsg = securityHeader.getOwnerDocument();
         String xencNs = SoapUtil.XMLENC_NS;
 
         // Put the ReferenceList in the right place

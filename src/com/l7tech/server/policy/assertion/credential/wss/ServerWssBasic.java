@@ -6,7 +6,9 @@
 
 package com.l7tech.server.policy.assertion.credential.wss;
 
-import com.l7tech.common.security.xml.WssProcessor;
+import com.l7tech.common.security.xml.processor.ProcessorResult;
+import com.l7tech.common.security.xml.processor.SecurityToken;
+import com.l7tech.common.security.xml.processor.UsernameToken;
 import com.l7tech.message.Request;
 import com.l7tech.message.Response;
 import com.l7tech.message.SoapRequest;
@@ -35,14 +37,14 @@ public class ServerWssBasic implements ServerAssertion {
             throw new PolicyAssertionException("This type of assertion is only supported with SOAP type of messages");
         }
         SoapRequest req = (SoapRequest)request;
-        WssProcessor.ProcessorResult wssResults = req.getWssProcessorOutput();
+        ProcessorResult wssResults = req.getWssProcessorOutput();
         if (wssResults == null) {
             throw new PolicyAssertionException("This request was not processed for WSS level security.");
         }
-        WssProcessor.SecurityToken[] tokens = wssResults.getSecurityTokens();
+        SecurityToken[] tokens = wssResults.getSecurityTokens();
         for (int i = 0; i < tokens.length; i++) {
-            if (tokens[i] instanceof WssProcessor.UsernameToken) {
-                LoginCredentials creds = ((WssProcessor.UsernameToken)tokens[i]).asLoginCredentials();
+            if (tokens[i] instanceof UsernameToken) {
+                LoginCredentials creds = ((UsernameToken)tokens[i]).asLoginCredentials();
                 if (creds.getFormat() == CredentialFormat.CLEARTEXT) {
                     creds.setCredentialSourceAssertion(WssBasic.class);
                     request.setPrincipalCredentials(creds);

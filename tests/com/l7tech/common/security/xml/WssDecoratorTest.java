@@ -7,6 +7,9 @@
 package com.l7tech.common.security.xml;
 
 import com.l7tech.common.security.JceProvider;
+import com.l7tech.common.security.xml.decorator.DecorationRequirements;
+import com.l7tech.common.security.xml.decorator.WssDecorator;
+import com.l7tech.common.security.xml.decorator.WssDecoratorImpl;
 import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.xml.TestDocuments;
@@ -137,7 +140,7 @@ public class WssDecoratorTest extends TestCase {
     private void runTest(final TestDocument d) throws Exception {
         WssDecorator decorator = new WssDecoratorImpl();
         log.info("Before decoration (*note: pretty-printed):" + XmlUtil.nodeToFormattedString(d.c.message));
-        WssDecorator.DecorationRequirements reqs = new WssDecorator.DecorationRequirements();
+        DecorationRequirements reqs = new DecorationRequirements();
         if (d.senderSamlAssertion != null)
             reqs.setSenderSamlToken(d.senderSamlAssertion);
         else
@@ -147,7 +150,7 @@ public class WssDecoratorTest extends TestCase {
         reqs.setSignTimestamp(d.signTimestamp);
         reqs.setUsernameTokenCredentials(null);
         if (d.secureConversationKey != null)
-            reqs.setSecureConversationSession(new WssDecorator.DecorationRequirements.SecureConversationSession() {
+            reqs.setSecureConversationSession(new DecorationRequirements.SecureConversationSession() {
                 public String getId() { return "http://www.layer7tech.com/uuid/mike/myfunkytestsessionid"; }
                 public byte[] getSecretKey() { return d.secureConversationKey.getEncoded(); }
             });
@@ -173,7 +176,7 @@ public class WssDecoratorTest extends TestCase {
         WssDecorator decorator = new WssDecoratorImpl();
         Document doc = TestDocuments.getTestDocument(TestDocuments.PLACEORDER_CLEARTEXT);
         log.info("Before decoration:" + XmlUtil.nodeToFormattedString(doc));
-        WssDecorator.DecorationRequirements reqs = new WssDecorator.DecorationRequirements();
+        DecorationRequirements reqs = new DecorationRequirements();
         reqs.setUsernameTokenCredentials(new LoginCredentials("franco", "blahblah".toCharArray(), WssBasic.class));
 
         decorator.decorateMessage(doc, reqs);

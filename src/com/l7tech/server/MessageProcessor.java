@@ -6,7 +6,13 @@
 
 package com.l7tech.server;
 
-import com.l7tech.common.security.xml.*;
+import com.l7tech.common.security.xml.ProcessorException;
+import com.l7tech.common.security.xml.decorator.WssDecorator;
+import com.l7tech.common.security.xml.decorator.WssDecoratorImpl;
+import com.l7tech.common.security.xml.processor.BadSecurityContextException;
+import com.l7tech.common.security.xml.processor.ProcessorResult;
+import com.l7tech.common.security.xml.processor.WssProcessor;
+import com.l7tech.common.security.xml.processor.WssProcessorImpl;
 import com.l7tech.common.util.KeystoreUtils;
 import com.l7tech.common.util.Locator;
 import com.l7tech.common.util.SoapUtil;
@@ -51,7 +57,7 @@ public class MessageProcessor {
     public AssertionStatus processMessage( Request request, Response response )
             throws IOException, PolicyAssertionException, PolicyVersionException {
 
-        WssProcessor.ProcessorResult wssOutput = null;
+        ProcessorResult wssOutput = null;
         // WSS-Processing Step
         if (request instanceof SoapRequest) {
             SoapRequest req = (SoapRequest)request;
@@ -85,7 +91,7 @@ public class MessageProcessor {
             } catch (SAXException e) {
                 logger.log(Level.SEVERE, "Error getting xml document from request", e);
                 return AssertionStatus.SERVER_ERROR;
-            } catch (WssProcessor.BadContextException e) {
+            } catch (BadSecurityContextException e) {
                 logger.log(Level.SEVERE, "Error in WSS processing of request", e);
                 response.setFaultDetail(e);
                 return AssertionStatus.FAILED;

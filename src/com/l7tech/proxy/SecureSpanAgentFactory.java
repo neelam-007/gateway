@@ -6,19 +6,14 @@
 
 package com.l7tech.proxy;
 
-import com.l7tech.common.util.XmlUtil;
-import com.l7tech.common.util.CausedIOException;
-import com.l7tech.common.xml.InvalidDocumentFormatException;
-import com.l7tech.common.security.xml.WssProcessor;
 import com.l7tech.common.security.xml.ProcessorException;
+import com.l7tech.common.security.xml.processor.BadSecurityContextException;
+import com.l7tech.common.util.CausedIOException;
+import com.l7tech.common.util.XmlUtil;
+import com.l7tech.common.xml.InvalidDocumentFormatException;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.proxy.datamodel.*;
-import com.l7tech.proxy.datamodel.exceptions.ClientCertificateException;
-import com.l7tech.proxy.datamodel.exceptions.CredentialsUnavailableException;
-import com.l7tech.proxy.datamodel.exceptions.HttpChallengeRequiredException;
-import com.l7tech.proxy.datamodel.exceptions.KeyStoreCorruptException;
-import com.l7tech.proxy.datamodel.exceptions.OperationCanceledException;
-import com.l7tech.proxy.datamodel.exceptions.ResponseValidationException;
+import com.l7tech.proxy.datamodel.exceptions.*;
 import com.l7tech.proxy.processor.MessageProcessor;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
@@ -30,11 +25,11 @@ import java.security.GeneralSecurityException;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
-import java.security.cert.X509Certificate;
 import java.security.cert.CertificateException;
-import java.util.Map;
-import java.util.HashMap;
+import java.security.cert.X509Certificate;
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * Obtain a SecureSpanAgent implementation.
@@ -191,7 +186,7 @@ public class SecureSpanAgentFactory {
                 throw new CausedSendException(e);
             } catch (ProcessorException e) {
                 throw new CausedSendException(e);
-            } catch (WssProcessor.BadContextException e) {
+            } catch (BadSecurityContextException e) {
                 throw new CausedSendException(e);
             }
         }

@@ -3,7 +3,8 @@ package com.l7tech.server.secureconversation;
 import EDU.oswego.cs.dl.util.concurrent.ReadWriteLock;
 import EDU.oswego.cs.dl.util.concurrent.Sync;
 import EDU.oswego.cs.dl.util.concurrent.WriterPreferenceReadWriteLock;
-import com.l7tech.common.security.xml.WssProcessor;
+import com.l7tech.common.security.xml.processor.SecurityContext;
+import com.l7tech.common.security.xml.processor.SecurityContextFinder;
 import com.l7tech.common.util.HexUtils;
 import com.l7tech.identity.User;
 
@@ -26,7 +27,7 @@ import java.util.logging.Logger;
  * Date: Aug 3, 2004<br/>
  * $Id$<br/>
  */
-public class SecureConversationContextManager implements WssProcessor.SecurityContextFinder {
+public class SecureConversationContextManager implements SecurityContextFinder {
 
     public static SecureConversationContextManager getInstance() {
         return SingletonHolder.singleton;
@@ -149,7 +150,7 @@ public class SecureConversationContextManager implements WssProcessor.SecurityCo
     /**
      * For use by the WssProcessor on the ssg.
      */
-    public WssProcessor.SecurityContext getSecurityContext(String securityContextIdentifier) {
+    public SecurityContext getSecurityContext(String securityContextIdentifier) {
         return getSession(securityContextIdentifier);
     }
 

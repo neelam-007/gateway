@@ -1,6 +1,13 @@
 package com.l7tech.server.policy;
 
-import com.l7tech.common.security.xml.*;
+import com.l7tech.common.security.xml.ProcessorException;
+import com.l7tech.common.security.xml.decorator.DecorationRequirements;
+import com.l7tech.common.security.xml.decorator.DecoratorException;
+import com.l7tech.common.security.xml.decorator.WssDecoratorImpl;
+import com.l7tech.common.security.xml.processor.BadSecurityContextException;
+import com.l7tech.common.security.xml.processor.ProcessorResult;
+import com.l7tech.common.security.xml.processor.WssProcessor;
+import com.l7tech.common.security.xml.processor.WssProcessorImpl;
 import com.l7tech.common.util.SoapFaultUtils;
 import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.util.XmlUtil;
@@ -21,10 +28,10 @@ import com.l7tech.policy.assertion.composite.CompositeAssertion;
 import com.l7tech.policy.assertion.composite.OneOrMoreAssertion;
 import com.l7tech.policy.assertion.credential.CredentialSourceAssertion;
 import com.l7tech.policy.assertion.identity.IdentityAssertion;
-import com.l7tech.server.policy.filter.FilterManager;
-import com.l7tech.server.policy.filter.FilteringException;
 import com.l7tech.policy.wsp.WspWriter;
 import com.l7tech.server.policy.assertion.ServerAssertion;
+import com.l7tech.server.policy.filter.FilterManager;
+import com.l7tech.server.policy.filter.FilteringException;
 import com.l7tech.server.secureconversation.SecureConversationContextManager;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -131,7 +138,7 @@ public class PolicyService {
         }
 
         // Process request for message level security stuff
-        WssProcessor.ProcessorResult wssOutput = null;
+        ProcessorResult wssOutput = null;
         try {
             wssOutput = processMessageLevelSecurity(requestDoc);
         } catch (ProcessorException e) {
@@ -143,7 +150,7 @@ public class PolicyService {
         } catch (GeneralSecurityException e) {
             exceptionToFault(e, response);
             return;
-        } catch (WssProcessor.BadContextException e) {
+        } catch (BadSecurityContextException e) {
             exceptionToFault(e, response);
             return;
         }
@@ -240,7 +247,7 @@ public class PolicyService {
         } catch (GeneralSecurityException e) {
             exceptionToFault(e, response);
             return;
-        } catch (WssDecorator.DecoratorException e) {
+        } catch (DecoratorException e) {
             exceptionToFault(e, response);
             return;
         }
@@ -269,7 +276,7 @@ public class PolicyService {
                                               String relatesTo,
                                               SoapResponse response,
                                               boolean signResponse)
-                            throws GeneralSecurityException, WssDecorator.DecoratorException {
+                            throws GeneralSecurityException, DecoratorException {
         Document responseDoc;
         try {
             responseDoc = XmlUtil.stringToDocument("<soap:Envelope xmlns:soap=\"" + SOAPConstants.URI_NS_SOAP_ENVELOPE + "\">" +
@@ -303,9 +310,9 @@ public class PolicyService {
         }
     }
 
-    private void signresponse(Document responseDoc, Element policyVersion, Element relatesTo) throws GeneralSecurityException, WssDecorator.DecoratorException {
+    private void signresponse(Document responseDoc, Element policyVersion, Element relatesTo) throws GeneralSecurityException, DecoratorException {
         WssDecoratorImpl decorator = new WssDecoratorImpl();
-        WssDecorator.DecorationRequirements reqmts = new WssDecorator.DecorationRequirements();
+        DecorationRequirements reqmts = new DecorationRequirements();
         reqmts.setSenderCertificate(serverCert);
         reqmts.setSenderPrivateKey(privateServerKey);
         reqmts.setSignTimestamp(true);
@@ -360,9 +367,9 @@ public class PolicyService {
         }
     }
 
-    private WssProcessor.ProcessorResult processMessageLevelSecurity(Document request)
+    private ProcessorResult processMessageLevelSecurity(Document request)
                                             throws ProcessorException, InvalidDocumentFormatException,
-                                                   GeneralSecurityException, WssProcessor.BadContextException {
+                                                   GeneralSecurityException, BadSecurityContextException {
         WssProcessor trogdor = new WssProcessorImpl();
         return trogdor.undecorateMessage(request,
                                          serverCert,

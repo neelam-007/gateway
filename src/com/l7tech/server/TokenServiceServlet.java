@@ -1,10 +1,10 @@
 package com.l7tech.server;
 
-import com.l7tech.common.security.xml.WssProcessor;
 import com.l7tech.common.security.xml.ProcessorException;
+import com.l7tech.common.security.xml.processor.BadSecurityContextException;
+import com.l7tech.common.util.KeystoreUtils;
 import com.l7tech.common.util.Locator;
 import com.l7tech.common.util.XmlUtil;
-import com.l7tech.common.util.KeystoreUtils;
 import com.l7tech.common.xml.InvalidDocumentFormatException;
 import com.l7tech.identity.AuthenticationException;
 import com.l7tech.identity.IdentityProvider;
@@ -114,7 +114,7 @@ public class TokenServiceServlet extends HttpServlet {
             logger.log(Level.SEVERE, msg, e);
             res.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, msg);
             return;
-        } catch (WssProcessor.BadContextException e) {
+        } catch (BadSecurityContextException e) {
             String msg = "Could not respond to RequestSecurityToken. " + e.getMessage();
             logger.log(Level.SEVERE, msg, e);
             res.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, msg);

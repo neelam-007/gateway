@@ -6,14 +6,14 @@
 
 package com.l7tech.proxy.datamodel;
 
-import com.l7tech.common.security.xml.WssDecorator;
+import com.l7tech.common.security.xml.decorator.DecorationRequirements;
 import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.xml.InvalidDocumentFormatException;
 import com.l7tech.common.xml.saml.SamlHolderOfKeyAssertion;
+import com.l7tech.message.MultipartMessageReader;
 import com.l7tech.proxy.RequestInterceptor;
 import com.l7tech.proxy.datamodel.exceptions.*;
 import com.l7tech.proxy.util.TokenServiceClient;
-import com.l7tech.message.MultipartMessageReader;
 import org.w3c.dom.Document;
 
 import java.io.IOException;
@@ -21,7 +21,10 @@ import java.net.PasswordAuthentication;
 import java.net.URL;
 import java.security.GeneralSecurityException;
 import java.security.SecureRandom;
-import java.util.*;
+import java.util.Calendar;
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.TimeZone;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -67,7 +70,7 @@ public class PendingRequest {
         private boolean sslForbidden = false;  // ssl is forbidden for this request
         private boolean isBasicAuthRequired = false;
         private boolean isDigestAuthRequired = false;
-        private WssDecorator.DecorationRequirements wssRequirements = new WssDecorator.DecorationRequirements();
+        private DecorationRequirements wssRequirements = new DecorationRequirements();
         private String messageId = null;
         private Map pendingDecorations = new LinkedHashMap();
     }
@@ -357,7 +360,7 @@ public class PendingRequest {
         this.policySettings.activePolicy = policy;
     }
 
-    public WssDecorator.DecorationRequirements getWssRequirements() {
+    public DecorationRequirements getWssRequirements() {
         return policySettings.wssRequirements;
     }
 

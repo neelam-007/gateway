@@ -7,8 +7,9 @@
 package com.l7tech.server.policy.assertion.xmlsec;
 
 import com.l7tech.common.security.xml.ProcessorException;
-import com.l7tech.common.security.xml.ProcessorResultUtil;
-import com.l7tech.common.security.xml.WssProcessor;
+import com.l7tech.common.security.xml.processor.ParsedElement;
+import com.l7tech.common.security.xml.processor.ProcessorResult;
+import com.l7tech.common.security.xml.processor.ProcessorResultUtil;
 import com.l7tech.message.Request;
 import com.l7tech.message.Response;
 import com.l7tech.message.SoapRequest;
@@ -40,7 +41,7 @@ public abstract class ServerRequestWssOperation implements ServerAssertion {
             return AssertionStatus.BAD_REQUEST;
         }
         SoapRequest soapreq = (SoapRequest)request;
-        WssProcessor.ProcessorResult wssResults = soapreq.getWssProcessorOutput();
+        ProcessorResult wssResults = soapreq.getWssProcessorOutput();
         if (wssResults == null) {
             throw new IOException("This request was not processed for WSS level security.");
         }
@@ -92,7 +93,7 @@ public abstract class ServerRequestWssOperation implements ServerAssertion {
      * @param wssResults the processor results to look at
      * @return either elementsThatWereSigned or elementsThatWereEncrypted
      */
-    protected abstract WssProcessor.ParsedElement[] getElementsFoundByProcessor(WssProcessor.ProcessorResult wssResults);
+    protected abstract ParsedElement[] getElementsFoundByProcessor(ProcessorResult wssResults);
 
     protected XpathBasedAssertion data;
 }

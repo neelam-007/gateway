@@ -6,7 +6,7 @@
 
 package com.l7tech.proxy.datamodel;
 
-import com.l7tech.common.security.xml.WssProcessor;
+import com.l7tech.common.security.xml.processor.ProcessorResult;
 import com.l7tech.common.util.SoapFaultUtils;
 import com.l7tech.common.util.XmlUtil;
 import org.apache.commons.httpclient.Header;
@@ -29,9 +29,9 @@ public class SsgResponse {
     private String responseString = null;
     private HttpHeaders headers;
     private int httpStatus = 0;
-    private WssProcessor.ProcessorResult processorResult = null;
+    private ProcessorResult processorResult = null;
 
-    public SsgResponse(Document wssProcessedResponse, WssProcessor.ProcessorResult wssProcessorResult,
+    public SsgResponse(Document wssProcessedResponse, ProcessorResult wssProcessorResult,
                        int httpStatus, HttpHeaders headers)
     {
         if (wssProcessedResponse == null) throw new IllegalArgumentException("response document must be non-null");
@@ -98,7 +98,7 @@ public class SsgResponse {
      * Get the result of running this response through WssProcessor.  Might be null.
      * @return The ProcessorResult, or null if the WssProcessor was not given or could not process the response.
      */
-    public WssProcessor.ProcessorResult getProcessorResult() {
+    public ProcessorResult getProcessorResult() {
         return processorResult;
     }
 }

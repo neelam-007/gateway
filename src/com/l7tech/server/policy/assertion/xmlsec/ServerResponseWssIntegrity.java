@@ -1,21 +1,24 @@
 package com.l7tech.server.policy.assertion.xmlsec;
 
 import com.l7tech.common.security.xml.SignerInfo;
-import com.l7tech.common.security.xml.WssDecorator;
+import com.l7tech.common.security.xml.decorator.DecorationRequirements;
 import com.l7tech.common.util.KeystoreUtils;
 import com.l7tech.common.xml.XpathEvaluator;
-import com.l7tech.message.*;
+import com.l7tech.message.Request;
+import com.l7tech.message.Response;
+import com.l7tech.message.SoapRequest;
+import com.l7tech.message.SoapResponse;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.xmlsec.ResponseWssIntegrity;
 import com.l7tech.server.policy.assertion.ServerAssertion;
+import org.jaxen.JaxenException;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
-import org.jaxen.JaxenException;
 
 import java.io.IOException;
-import java.util.logging.Logger;
 import java.util.List;
+import java.util.logging.Logger;
 
 /**
  * XML Digital signature on the soap response sent from the ssg server to the requestor (probably proxy). Also does
@@ -82,7 +85,7 @@ public class ServerResponseWssIntegrity implements ServerAssertion {
                 }
 
                 SignerInfo si = KeystoreUtils.getInstance().getSignerInfo();
-                WssDecorator.DecorationRequirements wssReq = soapResponse.getOrMakeDecorationRequirements();
+                DecorationRequirements wssReq = soapResponse.getOrMakeDecorationRequirements();
                 wssReq.setSenderCertificate(si.getCertificateChain()[0]);
                 wssReq.setSenderPrivateKey(si.getPrivate());
                 wssReq.getElementsToSign().addAll(selectedElements);

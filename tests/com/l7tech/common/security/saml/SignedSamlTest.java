@@ -1,8 +1,8 @@
 package com.l7tech.common.security.saml;
 
 import com.l7tech.common.security.xml.SignerInfo;
-import com.l7tech.common.security.xml.WssDecorator;
-import com.l7tech.common.security.xml.WssDecoratorImpl;
+import com.l7tech.common.security.xml.decorator.DecorationRequirements;
+import com.l7tech.common.security.xml.decorator.WssDecoratorImpl;
 import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.xml.TestDocuments;
@@ -104,7 +104,7 @@ public class SignedSamlTest extends TestCase {
                                                              "Body");
         assertNotNull(body);
 
-        WssDecorator.DecorationRequirements req = new WssDecorator.DecorationRequirements();
+        DecorationRequirements req = new DecorationRequirements();
         req.setSignTimestamp(true);
         req.getElementsToSign().add(body);
         req.setSenderCertificate(clientCertChain[0]);

@@ -1,15 +1,15 @@
 package com.l7tech.proxy.policy.assertion.xmlsec;
 
-import com.l7tech.common.security.xml.WssDecorator;
+import com.l7tech.common.security.xml.decorator.DecorationRequirements;
 import com.l7tech.common.xml.XpathEvaluator;
 import com.l7tech.common.xml.XpathExpression;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.xmlsec.RequestWssConfidentiality;
 import com.l7tech.proxy.datamodel.PendingRequest;
-import com.l7tech.proxy.datamodel.SsgResponse;
 import com.l7tech.proxy.datamodel.Ssg;
 import com.l7tech.proxy.datamodel.SsgKeyStoreManager;
+import com.l7tech.proxy.datamodel.SsgResponse;
 import com.l7tech.proxy.datamodel.exceptions.*;
 import com.l7tech.proxy.policy.assertion.ClientAssertion;
 import com.l7tech.proxy.policy.assertion.ClientDecorator;
@@ -76,7 +76,7 @@ public class ClientRequestWssConfidentiality extends ClientAssertion {
 
                     // get the client cert and private key
                     // We must have credentials to get the private key
-                    WssDecorator.DecorationRequirements wssReqs = request.getWssRequirements();
+                    DecorationRequirements wssReqs = request.getWssRequirements();
                     if (serverCert != null)
                         wssReqs.setRecipientCertificate(serverCert);
                     wssReqs.getElementsToEncrypt().addAll(elements);

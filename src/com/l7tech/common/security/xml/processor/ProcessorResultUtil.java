@@ -4,8 +4,9 @@
  * $Id$
  */
 
-package com.l7tech.common.security.xml;
+package com.l7tech.common.security.xml.processor;
 
+import com.l7tech.common.security.xml.ProcessorException;
 import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.xml.XpathEvaluator;
 import org.jaxen.JaxenException;
@@ -42,14 +43,14 @@ public class ProcessorResultUtil {
      * @param pastTenseOperationName A human-friendly past-tense name of the operation that was performed on
      *                               elementsFoundByProcessor, ie "signed" or "encrypted".
      * @return The result of the search.
-     * @throws ProcessorException if the xpath is invalid, or finds results other than Nodes.
+     * @throws com.l7tech.common.security.xml.ProcessorException if the xpath is invalid, or finds results other than Nodes.
      */
     public static SearchResult searchInResult(Logger logger,
                                               Document doc,
                                               final String xpath,
                                               final Map namespaces,
                                               final boolean allowIfEmpty,
-                                              final WssProcessor.ParsedElement[] elementsFoundByProcessor,
+                                              final ParsedElement[] elementsFoundByProcessor,
                                               String pastTenseOperationName)
             throws ProcessorException
     {
@@ -115,7 +116,7 @@ public class ProcessorResultUtil {
      * @param elementsFoundByProcessor the list of ParsedElement to see if it is in
      * @return true if node was found in the list.
      */
-    public static boolean nodeIsPresent(Node node, final WssProcessor.ParsedElement[] elementsFoundByProcessor) {
+    public static boolean nodeIsPresent(Node node, final ParsedElement[] elementsFoundByProcessor) {
         boolean found = false;
         for (int j = 0; j < elementsFoundByProcessor.length; j++) {
             if (elementsFoundByProcessor[j].asElement() == node) {

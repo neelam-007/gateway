@@ -1,7 +1,7 @@
 package com.l7tech.server.secureconversation;
 
+import com.l7tech.common.security.xml.processor.SecurityContext;
 import com.l7tech.identity.User;
-import com.l7tech.common.security.xml.WssProcessor;
 
 import javax.crypto.SecretKey;
 
@@ -14,7 +14,7 @@ import javax.crypto.SecretKey;
  * Date: Aug 3, 2004<br/>
  * $Id$<br/>
  */
-public class SecureConversationSession implements WssProcessor.SecurityContext {
+public class SecureConversationSession implements SecurityContext {
     public String getIdentifier() {
         return identifier;
     }

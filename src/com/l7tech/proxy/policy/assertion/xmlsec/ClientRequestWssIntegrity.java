@@ -1,6 +1,6 @@
 package com.l7tech.proxy.policy.assertion.xmlsec;
 
-import com.l7tech.common.security.xml.WssDecorator;
+import com.l7tech.common.security.xml.decorator.DecorationRequirements;
 import com.l7tech.common.xml.XpathEvaluator;
 import com.l7tech.common.xml.XpathExpression;
 import com.l7tech.policy.assertion.AssertionStatus;
@@ -71,7 +71,7 @@ public class ClientRequestWssIntegrity extends ClientAssertion {
 
                     // get the client cert and private key
                     // We must have credentials to get the private key
-                    WssDecorator.DecorationRequirements wssReqs = request.getWssRequirements();
+                    DecorationRequirements wssReqs = request.getWssRequirements();
                     wssReqs.getElementsToSign().addAll(elements);
                     return AssertionStatus.NONE;
                 } catch (JaxenException e) {

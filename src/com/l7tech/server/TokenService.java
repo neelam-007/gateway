@@ -1,7 +1,14 @@
 package com.l7tech.server;
 
 import com.l7tech.common.security.saml.SamlConstants;
-import com.l7tech.common.security.xml.*;
+import com.l7tech.common.security.xml.ProcessorException;
+import com.l7tech.common.security.xml.SignerInfo;
+import com.l7tech.common.security.xml.XencUtil;
+import com.l7tech.common.security.xml.decorator.DecorationRequirements;
+import com.l7tech.common.security.xml.decorator.DecoratorException;
+import com.l7tech.common.security.xml.decorator.WssDecorator;
+import com.l7tech.common.security.xml.decorator.WssDecoratorImpl;
+import com.l7tech.common.security.xml.processor.*;
 import com.l7tech.common.util.*;
 import com.l7tech.common.xml.InvalidDocumentFormatException;
 import com.l7tech.identity.AuthenticationException;
@@ -78,23 +85,23 @@ public class TokenService {
     public Document respondToRequestSecurityToken(Document request, CredentialsAuthenticator authenticator, String clientAddress)
                                                     throws InvalidDocumentFormatException, TokenServiceException,
                                                            ProcessorException, GeneralSecurityException,
-                                                           AuthenticationException, WssProcessor.BadContextException {
+                                                           AuthenticationException, BadSecurityContextException {
         // Pass request to the trogdorminator!
         WssProcessor trogdor = new WssProcessorImpl();
         X509Certificate serverSSLcert = getServerCert();
         PrivateKey sslPrivateKey = getServerKey();
 
         // Authenticate the request, check who signed it
-        WssProcessor.ProcessorResult wssOutput = trogdor.undecorateMessage(request,
+        ProcessorResult wssOutput = trogdor.undecorateMessage(request,
                                                                            serverSSLcert,
                                                                            sslPrivateKey,
                                                                            SecureConversationContextManager.getInstance());
-        WssProcessor.SecurityToken[] tokens = wssOutput.getSecurityTokens();
+        SecurityToken[] tokens = wssOutput.getSecurityTokens();
         X509Certificate clientCert = null;
         for (int i = 0; i < tokens.length; i++) {
-            WssProcessor.SecurityToken token = tokens[i];
-            if (token instanceof WssProcessor.X509SecurityToken) {
-                WssProcessor.X509SecurityToken x509token = (WssProcessor.X509SecurityToken)token;
+            SecurityToken token = tokens[i];
+            if (token instanceof X509SecurityToken) {
+                X509SecurityToken x509token = (X509SecurityToken)token;
                 if (x509token.isPossessionProved()) {
                     if (clientCert != null) {
                         String msg = "Request included more than one X509 security token whose key ownership " +
@@ -200,7 +207,7 @@ public class TokenService {
         PrivateKey sslPrivateKey = getServerKey();
 
         WssDecorator wssDecorator = new WssDecoratorImpl();
-        WssDecorator.DecorationRequirements req = new WssDecorator.DecorationRequirements();
+        DecorationRequirements req = new DecorationRequirements();
         req.setSignTimestamp(true);
         req.setSenderCertificate(serverSSLcert);
         req.setSenderPrivateKey(sslPrivateKey);
@@ -212,7 +219,7 @@ public class TokenService {
             throw new TokenServiceException(e);
         } catch (GeneralSecurityException e) {
             throw new TokenServiceException(e);
-        } catch (WssDecorator.DecoratorException e) {
+        } catch (DecoratorException e) {
             throw new TokenServiceException(e);
         }
         return response;
@@ -257,7 +264,7 @@ public class TokenService {
     }
 
     private boolean isValidRequestForSecureConversationContext(Document request,
-                                                               WssProcessor.ProcessorResult wssOutput)
+                                                               ProcessorResult wssOutput)
                                                                         throws InvalidDocumentFormatException {
         Element body = SoapUtil.getBodyElement(request);
         // body must include wst:RequestSecurityToken element
@@ -292,9 +299,9 @@ public class TokenService {
             return false;
         }
         // make sure body was signed
-        WssProcessor.SignedElement[] signedElements = wssOutput.getElementsThatWereSigned();
+        SignedElement[] signedElements = wssOutput.getElementsThatWereSigned();
         for (int i = 0; i < signedElements.length; i++) {
-            WssProcessor.SignedElement signedElement = signedElements[i];
+            SignedElement signedElement = signedElements[i];
             if (signedElement.asElement() == body) {
                 return true;
             }
@@ -303,7 +310,7 @@ public class TokenService {
         return false;
     }
 
-    private boolean isValidRequestForSAMLToken(Document request, WssProcessor.ProcessorResult wssOutput) throws InvalidDocumentFormatException {
+    private boolean isValidRequestForSAMLToken(Document request, ProcessorResult wssOutput) throws InvalidDocumentFormatException {
         Element body = SoapUtil.getBodyElement(request);
         Element maybeRSTEl = XmlUtil.findFirstChildElement(body);
 
@@ -335,9 +342,9 @@ public class TokenService {
         }
         // make sure body was signed
         boolean signed = false;
-        WssProcessor.SignedElement[] signedElements = wssOutput.getElementsThatWereSigned();
+        SignedElement[] signedElements = wssOutput.getElementsThatWereSigned();
         for (int i = 0; i < signedElements.length; i++) {
-            WssProcessor.SignedElement signedElement = signedElements[i];
+            SignedElement signedElement = signedElements[i];
             if (signedElement.asElement() == body) {
                 signed = true;
             }

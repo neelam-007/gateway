@@ -1,4 +1,4 @@
-package com.l7tech.common.security.xml;
+package com.l7tech.common.security.xml.processor;
 
 import com.ibm.xml.dsig.*;
 import com.ibm.xml.enc.AlgorithmFactoryExtn;
@@ -9,6 +9,9 @@ import com.ibm.xml.enc.type.EncryptedData;
 import com.l7tech.common.security.AesKey;
 import com.l7tech.common.security.JceProvider;
 import com.l7tech.common.security.saml.SamlConstants;
+import com.l7tech.common.security.xml.ProcessorException;
+import com.l7tech.common.security.xml.SecureConversationKeyDeriver;
+import com.l7tech.common.security.xml.XencUtil;
 import com.l7tech.common.util.*;
 import com.l7tech.common.xml.InvalidDocumentFormatException;
 import com.l7tech.common.xml.saml.SamlAssertion;
@@ -68,14 +71,14 @@ public class WssProcessorImpl implements WssProcessor {
      * @return a ProcessorResult object reffering to all the WSS related processing that happened.
      * @throws InvalidDocumentFormatException if there is a problem with the document format that can't be ignored
      * @throws GeneralSecurityException if there is a problem with a key or certificate
-     * @throws ProcessorException in case of some other problem
-     * @throws BadContextException if the message contains a WS-SecureConversation SecurityContextToken, but the securityContextFinder has no record of that session.
+     * @throws com.l7tech.common.security.xml.ProcessorException in case of some other problem
+     * @throws BadSecurityContextException if the message contains a WS-SecureConversation SecurityContextToken, but the securityContextFinder has no record of that session.
      */
-    public WssProcessor.ProcessorResult undecorateMessage(Document soapMsg,
+    public ProcessorResult undecorateMessage(Document soapMsg,
                                                           X509Certificate recipientCert,
                                                           PrivateKey recipientKey,
                                                           SecurityContextFinder securityContextFinder)
-            throws ProcessorException, InvalidDocumentFormatException, GeneralSecurityException, BadContextException
+            throws ProcessorException, InvalidDocumentFormatException, GeneralSecurityException, BadSecurityContextException
     {
         // Reset all potential outputs
         ProcessingStatusHolder cntx = new ProcessingStatusHolder();
@@ -157,7 +160,7 @@ public class WssProcessorImpl implements WssProcessor {
                                                          "did not provide a SecurityContextFinder");
                         final SecurityContext secContext = securityContextFinder.getSecurityContext(identifier);
                         if (secContext == null) {
-                            throw new BadContextException(identifier);
+                            throw new BadSecurityContextException(identifier);
                         }
                         SecurityContextTokenImpl secConTok = new SecurityContextTokenImpl(secContext,
                                                                                           secConTokEl,
@@ -407,7 +410,7 @@ public class WssProcessorImpl implements WssProcessor {
         }
         // Remember this as a security token
         final LoginCredentials creds = new LoginCredentials(username, passwd.toCharArray(), null);
-        WssProcessor.SecurityToken rememberedSecToken = new UsernameToken() {
+        SecurityToken rememberedSecToken = new UsernameToken() {
             public Element asElement() {
                 return usernameTokenElement;
             }
@@ -596,7 +599,7 @@ public class WssProcessorImpl implements WssProcessor {
         }
     }
 
-    private static class TimestampDate extends ParsedElementImpl implements WssProcessor.TimestampDate {
+    private static class TimestampDate extends ParsedElementImpl implements com.l7tech.common.security.xml.processor.WssTimestampDate {
         Date date;
 
         TimestampDate(Element createdOrExpiresElement) throws ParseException {
@@ -675,7 +678,7 @@ public class WssProcessorImpl implements WssProcessor {
                            "referenced properly by a subsequent signature.");
         }
         final X509Certificate finalcert = referencedCert;
-        WssProcessor.SecurityToken rememberedSecToken = new X509SecurityTokenImpl(finalcert,
+        SecurityToken rememberedSecToken = new X509SecurityTokenImpl(finalcert,
                                                                                   binarySecurityTokenElement);
         cntx.securityTokens.add(rememberedSecToken);
         cntx.x509TokensById.put(wsuId, rememberedSecToken);
@@ -931,25 +934,25 @@ public class WssProcessorImpl implements WssProcessor {
         }
     }
 
-    private WssProcessor.ProcessorResult produceResult(final ProcessingStatusHolder cntx) {
-        return new WssProcessor.ProcessorResult() {
+    private ProcessorResult produceResult(final ProcessingStatusHolder cntx) {
+        return new ProcessorResult() {
             public Document getUndecoratedMessage() {
                 return cntx.processedDocument;
             }
 
             public SignedElement[] getElementsThatWereSigned() {
-                return (WssProcessor.SignedElement[]) cntx.elementsThatWereSigned.toArray(PROTOTYPE_SIGNEDELEMENT_ARRAY);
+                return (SignedElement[]) cntx.elementsThatWereSigned.toArray(PROTOTYPE_SIGNEDELEMENT_ARRAY);
             }
 
             public ParsedElement[] getElementsThatWereEncrypted() {
                 return (ParsedElement[])cntx.elementsThatWereEncrypted.toArray(PROTOTYPE_ELEMENT_ARRAY);
             }
 
-            public WssProcessor.SecurityToken[] getSecurityTokens() {
-                return (WssProcessor.SecurityToken[])cntx.securityTokens.toArray(PROTOTYPE_SECURITYTOKEN_ARRAY);
+            public SecurityToken[] getSecurityTokens() {
+                return (SecurityToken[])cntx.securityTokens.toArray(PROTOTYPE_SECURITYTOKEN_ARRAY);
             }
 
-            public WssProcessor.Timestamp getTimestamp() {
+            public WssTimestamp getTimestamp() {
                 return cntx.timestamp;
             }
 
@@ -966,7 +969,7 @@ public class WssProcessorImpl implements WssProcessor {
                     return cntx.timestamp.asElement().getNamespaceURI();
                 } else if (cntx.securityTokens != null && !cntx.securityTokens.isEmpty()) {
                     for (Iterator i = cntx.securityTokens.iterator(); i.hasNext();) {
-                        WssProcessor.SecurityToken token = (WssProcessor.SecurityToken)i.next();
+                        SecurityToken token = (SecurityToken)i.next();
                         NamedNodeMap attributes = token.asElement().getAttributes();
                         for (int ii = 0; ii < attributes.getLength(); ii++) {
                             Attr n = (Attr)attributes.item(ii);
@@ -1087,7 +1090,7 @@ public class WssProcessorImpl implements WssProcessor {
     }
 
 
-    private static class TimestampImpl extends ParsedElementImpl implements WssProcessor.Timestamp {
+    private static class TimestampImpl extends ParsedElementImpl implements WssTimestamp {
         private final TimestampDate createdTimestampDate;
         private final TimestampDate expiresTimestampDate;
         private SecurityToken signingToken = null;
@@ -1098,11 +1101,11 @@ public class WssProcessorImpl implements WssProcessor {
             this.expiresTimestampDate = expiresTimestampDate;
         }
 
-        public WssProcessor.TimestampDate getCreated() {
+        public com.l7tech.common.security.xml.processor.WssTimestampDate getCreated() {
             return createdTimestampDate;
         }
 
-        public WssProcessor.TimestampDate getExpires() {
+        public com.l7tech.common.security.xml.processor.WssTimestampDate getExpires() {
             return expiresTimestampDate;
         }
 
@@ -1110,7 +1113,7 @@ public class WssProcessorImpl implements WssProcessor {
             return signingToken != null;
         }
 
-        public WssProcessor.SecurityToken getSigningSecurityToken() {
+        public SecurityToken getSigningSecurityToken() {
             return signingToken;
         }
 
@@ -1121,7 +1124,7 @@ public class WssProcessorImpl implements WssProcessor {
 
     private static final ParsedElement[] PROTOTYPE_ELEMENT_ARRAY = new ParsedElement[0];
     private static final SignedElement[] PROTOTYPE_SIGNEDELEMENT_ARRAY = new SignedElement[0];
-    private static final WssProcessor.SecurityToken[] PROTOTYPE_SECURITYTOKEN_ARRAY = new WssProcessor.SecurityToken[0];
+    private static final SecurityToken[] PROTOTYPE_SECURITYTOKEN_ARRAY = new SecurityToken[0];
 
     private static class DerivedKeyTokenImpl extends ParsedElementImpl implements SecurityToken {
         private final Key finalKey;
@@ -1152,21 +1155,21 @@ public class WssProcessorImpl implements WssProcessor {
         }
     }
 
-    private static class SecurityContextTokenImpl extends ParsedElementImpl implements WssProcessor.SecurityContextToken {
-        private final WssProcessor.SecurityContext secContext;
+    private static class SecurityContextTokenImpl extends ParsedElementImpl implements SecurityContextToken {
+        private final SecurityContext secContext;
         private final String identifier;
         private final String elementWsuId;
 
         private boolean possessionProved = false;
 
-        public SecurityContextTokenImpl(WssProcessor.SecurityContext secContext, Element secConTokEl, String identifier) {
+        public SecurityContextTokenImpl(SecurityContext secContext, Element secConTokEl, String identifier) {
             super(secConTokEl);
             this.secContext = secContext;
             this.identifier = identifier;
             this.elementWsuId = SoapUtil.getElementWsuId(secConTokEl);
         }
 
-        public WssProcessor.SecurityContext getSecurityContext() {
+        public SecurityContext getSecurityContext() {
             return secContext;
         }
 

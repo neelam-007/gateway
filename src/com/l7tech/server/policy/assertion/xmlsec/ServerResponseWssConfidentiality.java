@@ -1,25 +1,31 @@
 package com.l7tech.server.policy.assertion.xmlsec;
 
 import com.l7tech.common.security.xml.SignerInfo;
-import com.l7tech.common.security.xml.WssDecorator;
-import com.l7tech.common.security.xml.WssProcessor;
+import com.l7tech.common.security.xml.decorator.DecorationRequirements;
+import com.l7tech.common.security.xml.processor.ProcessorResult;
+import com.l7tech.common.security.xml.processor.SecurityContextToken;
+import com.l7tech.common.security.xml.processor.SecurityToken;
+import com.l7tech.common.security.xml.processor.X509SecurityToken;
 import com.l7tech.common.util.KeystoreUtils;
 import com.l7tech.common.xml.XpathEvaluator;
 import com.l7tech.common.xml.XpathExpression;
-import com.l7tech.message.*;
+import com.l7tech.message.Request;
+import com.l7tech.message.Response;
+import com.l7tech.message.SoapRequest;
+import com.l7tech.message.SoapResponse;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.xmlsec.ResponseWssConfidentiality;
 import com.l7tech.server.policy.assertion.ServerAssertion;
+import org.jaxen.JaxenException;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
-import org.jaxen.JaxenException;
 
 import java.io.IOException;
-import java.util.logging.Logger;
-import java.util.logging.Level;
-import java.util.List;
 import java.security.cert.X509Certificate;
+import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * XML encryption on the soap response sent from the ssg server to the requestor (probably proxy).
@@ -54,13 +60,13 @@ public class ServerResponseWssConfidentiality implements ServerAssertion {
         // or a SecureConversation in progress
 
         X509Certificate clientCert = null;
-        WssProcessor.SecurityContextToken secConvContext = null;
-        WssProcessor.ProcessorResult wssResult = soapRequest.getWssProcessorOutput();
-        WssProcessor.SecurityToken[] tokens = wssResult.getSecurityTokens();
+        SecurityContextToken secConvContext = null;
+        ProcessorResult wssResult = soapRequest.getWssProcessorOutput();
+        SecurityToken[] tokens = wssResult.getSecurityTokens();
         for (int i = 0; i < tokens.length; i++) {
-            WssProcessor.SecurityToken token = tokens[i];
-            if (token instanceof WssProcessor.X509SecurityToken) {
-                WssProcessor.X509SecurityToken x509token = (WssProcessor.X509SecurityToken)token;
+            SecurityToken token = tokens[i];
+            if (token instanceof X509SecurityToken) {
+                X509SecurityToken x509token = (X509SecurityToken)token;
                 if (x509token.isPossessionProved()) {
                     if (clientCert != null) {
                         logger.log( Level.WARNING, "Request included more than one X509 security token whose key ownership was proven" );
@@ -68,8 +74,8 @@ public class ServerResponseWssConfidentiality implements ServerAssertion {
                     }
                     clientCert = x509token.asX509Certificate();
                 }
-            } else if (token instanceof WssProcessor.SecurityContextToken) {
-                WssProcessor.SecurityContextToken secConvTok = (WssProcessor.SecurityContextToken)token;
+            } else if (token instanceof SecurityContextToken) {
+                SecurityContextToken secConvTok = (SecurityContextToken)token;
                 if (secConvTok.isPossessionProved()) {
                     secConvContext = secConvTok;
                 }
@@ -89,7 +95,7 @@ public class ServerResponseWssConfidentiality implements ServerAssertion {
     }
 
     private ServerAssertion defferedDecoration(final X509Certificate clientCert,
-                                               final WssProcessor.SecurityContextToken secConvTok) {
+                                               final SecurityContextToken secConvTok) {
         return new ServerAssertion() {
             public AssertionStatus checkRequest(Request request, Response response)
                     throws IOException, PolicyAssertionException
@@ -125,7 +131,7 @@ public class ServerResponseWssConfidentiality implements ServerAssertion {
                     return AssertionStatus.NONE;
                 }
 
-                WssDecorator.DecorationRequirements wssReq = soapResponse.getOrMakeDecorationRequirements();
+                DecorationRequirements wssReq = soapResponse.getOrMakeDecorationRequirements();
                 wssReq.getElementsToEncrypt().addAll(selectedElements);
 
                 if (clientCert != null) {

@@ -1,8 +1,8 @@
 package com.l7tech.proxy.policy.assertion.xmlsec;
 
 import com.l7tech.common.security.xml.ProcessorException;
-import com.l7tech.common.security.xml.ProcessorResultUtil;
-import com.l7tech.common.security.xml.WssProcessor;
+import com.l7tech.common.security.xml.processor.ProcessorResult;
+import com.l7tech.common.security.xml.processor.ProcessorResultUtil;
 import com.l7tech.common.xml.XpathExpression;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
@@ -49,7 +49,7 @@ public class ClientResponseWssConfidentiality extends ClientAssertion {
     public AssertionStatus unDecorateReply(PendingRequest request, SsgResponse response)
             throws ServerCertificateUntrustedException, IOException, SAXException, ResponseValidationException, KeyStoreCorruptException, PolicyAssertionException {
         Document soapmsg = response.getResponseAsDocument();
-        WssProcessor.ProcessorResult wssRes = response.getProcessorResult();
+        ProcessorResult wssRes = response.getProcessorResult();
 
         ProcessorResultUtil.SearchResult result = null;
         try {

@@ -1,6 +1,7 @@
 package com.l7tech.server.policy.assertion.xmlsec;
 
-import com.l7tech.common.security.xml.WssProcessor;
+import com.l7tech.common.security.xml.processor.ParsedElement;
+import com.l7tech.common.security.xml.processor.ProcessorResult;
 import com.l7tech.policy.assertion.xmlsec.RequestWssConfidentiality;
 
 import java.util.logging.Logger;
@@ -24,7 +25,7 @@ public class ServerRequestWssConfidentiality extends ServerRequestWssOperation {
         return "encrypted";
     }
 
-    protected WssProcessor.ParsedElement[] getElementsFoundByProcessor(WssProcessor.ProcessorResult wssResults) {
+    protected ParsedElement[] getElementsFoundByProcessor(ProcessorResult wssResults) {
         return wssResults.getElementsThatWereEncrypted();
     }
 

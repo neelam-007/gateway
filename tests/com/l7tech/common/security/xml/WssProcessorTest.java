@@ -6,6 +6,7 @@
 
 package com.l7tech.common.security.xml;
 
+import com.l7tech.common.security.xml.processor.*;
 import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.xml.TestDocuments;
 import com.l7tech.server.secureconversation.SecureConversationSession;
@@ -46,13 +47,13 @@ public class WssProcessorTest extends TestCase {
 
         log.info("Testing document: " + testDocument.name);
         log.info("Original decorated message (reformatted): " + XmlUtil.nodeToFormattedString(request));
-        WssProcessor.ProcessorResult result = wssProcessor.undecorateMessage(request,
+        ProcessorResult result = wssProcessor.undecorateMessage(request,
                                                                              recipientCertificate,
                                                                              recipientPrivateKey,
                                                                              testDocument.securityContextFinder);
         assertTrue(result != null);
 
-        WssProcessor.ParsedElement[] encrypted = result.getElementsThatWereEncrypted();
+        ParsedElement[] encrypted = result.getElementsThatWereEncrypted();
         assertTrue(encrypted != null);
         if (encrypted.length > 0) {
             log.info("The following elements were encrypted:");
@@ -63,7 +64,7 @@ public class WssProcessorTest extends TestCase {
         } else
             log.info("No elements were encrypted.");
 
-        WssProcessor.SignedElement[] signed = result.getElementsThatWereSigned();
+        SignedElement[] signed = result.getElementsThatWereSigned();
         assertTrue(signed != null);
         if (signed.length > 0) {
             log.info("The following elements were signed:");
@@ -75,17 +76,17 @@ public class WssProcessorTest extends TestCase {
             log.info("No elements were signed.");
 
 
-        WssProcessor.SecurityToken[] tokens = result.getSecurityTokens();
+        SecurityToken[] tokens = result.getSecurityTokens();
         assertTrue(tokens != null);
         if (tokens.length > 0) {
             log.info("The following security tokens were found:");
             for (int j = 0; j < tokens.length; j++) {
-                WssProcessor.SecurityToken token = tokens[j];
-                if (token instanceof WssProcessor.SamlSecurityToken) {
-                    log.info("Possession proved: " + ((WssProcessor.SamlSecurityToken)token).isPossessionProved());
-                    log.info("  " + ((WssProcessor.SamlSecurityToken)token).getSubjectCertificate());                    
-                } else if (token instanceof WssProcessor.X509SecurityToken) {
-                    log.info("Possession proved: " + ((WssProcessor.X509SecurityToken)token).isPossessionProved());
+                SecurityToken token = tokens[j];
+                if (token instanceof SamlSecurityToken) {
+                    log.info("Possession proved: " + ((SamlSecurityToken)token).isPossessionProved());
+                    log.info("  " + ((SamlSecurityToken)token).getSubjectCertificate());
+                } else if (token instanceof X509SecurityToken) {
+                    log.info("Possession proved: " + ((X509SecurityToken)token).isPossessionProved());
                     log.info("  " + token);
                 } else {
                     log.info("  " + token);
@@ -94,7 +95,7 @@ public class WssProcessorTest extends TestCase {
         } else
             log.info("No security tokens were found.");
 
-        WssProcessor.Timestamp timestamp = result.getTimestamp();
+        WssTimestamp timestamp = result.getTimestamp();
         if (timestamp != null) {
             log.info("Timestamp created = " + timestamp.getCreated().asDate());
             log.info("Timestamp expires = " + timestamp.getExpires().asDate());
@@ -113,9 +114,9 @@ public class WssProcessorTest extends TestCase {
         Document document;
         PrivateKey recipientPrivateKey;
         X509Certificate recipientCertificate;
-        WssProcessor.SecurityContextFinder securityContextFinder = null;
+        SecurityContextFinder securityContextFinder = null;
         TestDocument(String n, Document d, PrivateKey rpk, X509Certificate rc,
-                     WssProcessor.SecurityContextFinder securityContextFinder)
+                     SecurityContextFinder securityContextFinder)
         {
             this.name = n;
             this.document = d;
@@ -201,8 +202,8 @@ public class WssProcessorTest extends TestCase {
 
             // Set up a fake ws-sc session, in case this example will be needing it
             session.setSharedSecret(TestDocuments.getDotNetSecureConversationSharedSecret());
-            WssProcessor.SecurityContextFinder dotNetSecurityContextFinder = new WssProcessor.SecurityContextFinder() {
-                public WssProcessor.SecurityContext getSecurityContext(String securityContextIdentifier) {
+            SecurityContextFinder dotNetSecurityContextFinder = new SecurityContextFinder() {
+                public SecurityContext getSecurityContext(String securityContextIdentifier) {
                     return session;
                 }
             };

@@ -7,17 +7,23 @@
 package com.l7tech.proxy.util;
 
 import com.l7tech.common.protocol.SecureSpanConstants;
-import com.l7tech.common.security.xml.*;
 import com.l7tech.common.security.saml.SamlConstants;
+import com.l7tech.common.security.xml.ProcessorException;
+import com.l7tech.common.security.xml.XencUtil;
+import com.l7tech.common.security.xml.decorator.DecorationRequirements;
+import com.l7tech.common.security.xml.decorator.DecoratorException;
+import com.l7tech.common.security.xml.decorator.WssDecorator;
+import com.l7tech.common.security.xml.decorator.WssDecoratorImpl;
+import com.l7tech.common.security.xml.processor.*;
 import com.l7tech.common.util.CausedIOException;
 import com.l7tech.common.util.ISO8601Date;
 import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.xml.InvalidDocumentFormatException;
 import com.l7tech.common.xml.MessageNotSoapException;
+import com.l7tech.common.xml.saml.SamlHolderOfKeyAssertion;
 import com.l7tech.proxy.datamodel.CurrentRequest;
 import com.l7tech.proxy.datamodel.Ssg;
-import com.l7tech.common.xml.saml.SamlHolderOfKeyAssertion;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.xml.sax.SAXException;
@@ -74,7 +80,7 @@ public class TokenServiceClient {
 
             // Sign it
             WssDecorator wssDecorator = new WssDecoratorImpl();
-            WssDecorator.DecorationRequirements req = new WssDecorator.DecorationRequirements();
+            DecorationRequirements req = new DecorationRequirements();
             req.setSignTimestamp(true);
             req.setSenderCertificate(clientCertificate);
             req.setSenderPrivateKey(clientPrivateKey);
@@ -92,7 +98,7 @@ public class TokenServiceClient {
             throw e;  // invalid certificate
         } catch (GeneralSecurityException e) {
             throw new RuntimeException(e); // shouldn't happen
-        } catch (WssDecorator.DecoratorException e) {
+        } catch (DecoratorException e) {
             throw new RuntimeException(e); // shouldn't happen
         }
     }
@@ -206,13 +212,13 @@ public class TokenServiceClient {
             throws InvalidDocumentFormatException, GeneralSecurityException, ProcessorException
     {
         WssProcessor wssProcessor = new WssProcessorImpl();
-        WssProcessor.ProcessorResult result = null;
+        ProcessorResult result = null;
         try {
             result = wssProcessor.undecorateMessage(response,
                                                     clientCertificate,
                                                     clientPrivateKey,
                                                     null);
-        } catch (WssProcessor.BadContextException e) {
+        } catch (BadSecurityContextException e) {
             throw new InvalidDocumentFormatException("Response attempted to use a WS-SecureConversation SecurityContextToken, which we don't support when talking to the token server itself", e);
         }
         response = result.getUndecoratedMessage();
@@ -223,18 +229,18 @@ public class TokenServiceClient {
         Element rstr = XmlUtil.findOnlyOneChildElementByName(body, SoapUtil.WST_NAMESPACE, "RequestSecurityTokenResponse");
         if (rstr == null) throw new InvalidDocumentFormatException("Response body does not contain wst:RequestSecurityTokenResponse");
 
-        WssProcessor.SignedElement[] signedElements = result.getElementsThatWereSigned();
-        WssProcessor.SecurityToken signingSecurityToken = null;
+        SignedElement[] signedElements = result.getElementsThatWereSigned();
+        SecurityToken signingSecurityToken = null;
         for (int i = 0; i < signedElements.length; i++) {
-            WssProcessor.SignedElement signedElement = signedElements[i];
+            SignedElement signedElement = signedElements[i];
             if (XmlUtil.isElementAncestor(rstr, signedElement.asElement())) {
                 if (signingSecurityToken != null)
                     throw new InvalidDocumentFormatException("Response body was signed with more than one security token");
                 signingSecurityToken = signedElement.getSigningSecurityToken();
-                if (!(signingSecurityToken instanceof WssProcessor.X509SecurityToken))
+                if (!(signingSecurityToken instanceof X509SecurityToken))
                     throw new InvalidDocumentFormatException("Response body was signed, but not with an X509 Security Token");
-                WssProcessor.X509SecurityToken x509Token = null;
-                x509Token = (WssProcessor.X509SecurityToken)signingSecurityToken;
+                X509SecurityToken x509Token = null;
+                x509Token = (X509SecurityToken)signingSecurityToken;
                 X509Certificate signingCert = x509Token.asX509Certificate();
                 byte[] signingPublicKeyBytes = signingCert.getPublicKey().getEncoded();
                 byte[] desiredPublicKeyBytes = serverCertificate.getPublicKey().getEncoded();

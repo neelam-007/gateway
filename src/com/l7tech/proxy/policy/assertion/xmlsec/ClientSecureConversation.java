@@ -1,7 +1,9 @@
 package com.l7tech.proxy.policy.assertion.xmlsec;
 
-import com.l7tech.common.security.xml.WssDecorator;
-import com.l7tech.common.security.xml.WssProcessor;
+import com.l7tech.common.security.xml.decorator.DecorationRequirements;
+import com.l7tech.common.security.xml.processor.ProcessorResult;
+import com.l7tech.common.security.xml.processor.SecurityContextToken;
+import com.l7tech.common.security.xml.processor.SecurityToken;
 import com.l7tech.common.xml.InvalidDocumentFormatException;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
@@ -45,9 +47,9 @@ public class ClientSecureConversation extends ClientAssertion {
         // Configure outbound decoration to use WS-SecureConversation
         request.getPendingDecorations().put(this, new ClientDecorator() {
             public AssertionStatus decorateRequest(PendingRequest request) {
-                WssDecorator.DecorationRequirements wssReqs = request.getWssRequirements();
+                DecorationRequirements wssReqs = request.getWssRequirements();
                 wssReqs.setSignTimestamp(true);
-                wssReqs.setSecureConversationSession(new WssDecorator.DecorationRequirements.SecureConversationSession() {
+                wssReqs.setSecureConversationSession(new DecorationRequirements.SecureConversationSession() {
                     public String getId() {
                         return sessionId;
                     }
@@ -69,13 +71,13 @@ public class ClientSecureConversation extends ClientAssertion {
             PolicyAssertionException, InvalidDocumentFormatException
     {
         // Make sure the response's WssProcessor.Results contain a reference to the Secure Conversation
-        WssProcessor.ProcessorResult pr = response.getProcessorResult();
-        WssProcessor.SecurityToken[] tokens = pr.getSecurityTokens();
-        WssProcessor.SecurityContextToken sct = null;
+        ProcessorResult pr = response.getProcessorResult();
+        SecurityToken[] tokens = pr.getSecurityTokens();
+        SecurityContextToken sct = null;
         for (int i = 0; i < tokens.length; i++) {
-            WssProcessor.SecurityToken token = tokens[i];
-            if (token instanceof WssProcessor.SecurityContextToken) {
-                WssProcessor.SecurityContextToken checkSct = (WssProcessor.SecurityContextToken)token;
+            SecurityToken token = tokens[i];
+            if (token instanceof SecurityContextToken) {
+                SecurityContextToken checkSct = (SecurityContextToken)token;
                 if (!checkSct.isPossessionProved()) {
                     log.log(Level.FINE, "Ignoring SecurityContextToken that was not used to sign anything");
                     continue;

@@ -1,6 +1,6 @@
 package com.l7tech.server.policy.assertion.xmlsec;
 
-import com.l7tech.common.security.xml.WssProcessor;
+import com.l7tech.common.security.xml.processor.*;
 import com.l7tech.common.util.CertUtils;
 import com.l7tech.common.util.HexUtils;
 import com.l7tech.message.Request;
@@ -48,12 +48,12 @@ public class ServerRequestWssReplayProtection implements ServerAssertion {
             return AssertionStatus.BAD_REQUEST;
         }
         SoapRequest soapreq = (SoapRequest)request;
-        WssProcessor.ProcessorResult wssResults = soapreq.getWssProcessorOutput();
+        ProcessorResult wssResults = soapreq.getWssProcessorOutput();
         if (wssResults == null)
             throw new IOException("This request was not processed for WSS level security.");
 
         // Validate timestamp first
-        WssProcessor.Timestamp timestamp = wssResults.getTimestamp();
+        WssTimestamp timestamp = wssResults.getTimestamp();
         if (timestamp == null) {
             response.setPolicyViolated(true);
             logger.info("No timestamp present in request; assertion therefore fails.");
@@ -92,19 +92,19 @@ public class ServerRequestWssReplayProtection implements ServerAssertion {
             throw new IOException("Request timestamp contained Created older than the maximum message age hard cap");
         }
 
-        WssProcessor.SecurityToken signingToken = timestamp.getSigningSecurityToken();
+        SecurityToken signingToken = timestamp.getSigningSecurityToken();
 
         String messageIdStr = null;
-        if (signingToken instanceof WssProcessor.X509SecurityToken || signingToken instanceof WssProcessor.SamlSecurityToken) {
+        if (signingToken instanceof X509SecurityToken || signingToken instanceof SamlSecurityToken) {
             X509Certificate signingCert;
-            if (signingToken instanceof WssProcessor.X509SecurityToken) {
+            if (signingToken instanceof X509SecurityToken) {
                 // It was signed by a client certificate
                 logger.log(Level.FINER, "Timestamp was signed with an X509 BinarySecurityToken");
-                signingCert = ((WssProcessor.X509SecurityToken)signingToken).asX509Certificate();
+                signingCert = ((X509SecurityToken)signingToken).asX509Certificate();
             } else {
                 // It was signed by a SAML holder-of-key assertion
                 logger.log(Level.FINER, "Timestamp was signed with a SAML holder-of-key assertion");
-                signingCert = ((WssProcessor.SamlSecurityToken)signingToken).getSubjectCertificate();
+                signingCert = ((SamlSecurityToken)signingToken).getSubjectCertificate();
             }
 
             // Use cert info as sender id
@@ -118,10 +118,10 @@ public class ServerRequestWssReplayProtection implements ServerAssertion {
             sb.append(created);
             messageIdStr = sb.toString();
 
-        } else if (signingToken instanceof WssProcessor.SecurityContextToken) {
+        } else if (signingToken instanceof SecurityContextToken) {
             // It was signed by a WS-SecureConversation session's derived key
             logger.log(Level.FINER, "Timestamp was signed with a WS-SecureConversation derived key");
-            String sessionID = ((WssProcessor.SecurityContextToken)signingToken).getContextIdentifier();
+            String sessionID = ((SecurityContextToken)signingToken).getContextIdentifier();
 
             // Use session ID as sender ID
             StringBuffer sb = new StringBuffer();

@@ -2,7 +2,7 @@ package com.l7tech.message;
 
 import com.l7tech.cluster.DistributedMessageIdManager;
 import com.l7tech.common.RequestId;
-import com.l7tech.common.security.xml.WssProcessor;
+import com.l7tech.common.security.xml.processor.ProcessorResult;
 import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.util.XmlUtil;
 import com.l7tech.identity.User;
@@ -69,11 +69,11 @@ public abstract class SoapRequest extends XmlMessageAdapter implements SoapMessa
         return DistributedMessageIdManager.getInstance();
     }
 
-    public WssProcessor.ProcessorResult getWssProcessorOutput() {
+    public ProcessorResult getWssProcessorOutput() {
         return wssRes;
     }
 
-    public void setWssProcessorOutput(WssProcessor.ProcessorResult res) {
+    public void setWssProcessorOutput(ProcessorResult res) {
         wssRes = res;
     }
 
@@ -223,6 +223,6 @@ public abstract class SoapRequest extends XmlMessageAdapter implements SoapMessa
     protected String _requestXml;
     protected LoginCredentials _principalCredentials;
     
-    protected WssProcessor.ProcessorResult wssRes = null;
+    protected ProcessorResult wssRes = null;
 
 }

@@ -8,9 +8,14 @@ package com.l7tech.proxy.processor;
 
 import com.l7tech.common.protocol.SecureSpanConstants;
 import com.l7tech.common.security.AesKey;
-import com.l7tech.common.security.xml.*;
+import com.l7tech.common.security.xml.ProcessorException;
+import com.l7tech.common.security.xml.decorator.DecoratorException;
+import com.l7tech.common.security.xml.decorator.WssDecorator;
+import com.l7tech.common.security.xml.decorator.WssDecoratorImpl;
+import com.l7tech.common.security.xml.processor.*;
 import com.l7tech.common.util.*;
 import com.l7tech.common.xml.InvalidDocumentFormatException;
+import com.l7tech.message.Message;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.SslAssertion;
@@ -23,19 +28,18 @@ import com.l7tech.proxy.policy.assertion.ClientDecorator;
 import com.l7tech.proxy.ssl.ClientProxySecureProtocolSocketFactory;
 import com.l7tech.proxy.ssl.HostnameMismatchException;
 import com.l7tech.proxy.util.CannedSoapFaults;
-import com.l7tech.message.Message;
 import org.apache.commons.httpclient.*;
 import org.apache.commons.httpclient.methods.PostMethod;
 import org.apache.commons.httpclient.protocol.Protocol;
-import org.apache.axis.Part;
-import org.apache.axis.attachments.AttachmentPart;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
 
 import javax.crypto.SecretKey;
 import javax.net.ssl.SSLException;
 import java.io.IOException;
-import java.io.Reader;
+import java.lang.reflect.InvocationHandler;
+import java.lang.reflect.Method;
+import java.lang.reflect.Proxy;
 import java.net.MalformedURLException;
 import java.net.PasswordAuthentication;
 import java.net.URL;
@@ -44,11 +48,10 @@ import java.security.cert.CertificateException;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
-import java.util.regex.Pattern;
-import java.util.regex.Matcher;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.nio.ByteBuffer;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * The core of the Client Proxy.
@@ -71,6 +74,17 @@ public class MessageProcessor {
     private WssProcessor wssProcessor = new WssProcessorImpl();
     private WssDecorator wssDecorator = new WssDecoratorImpl();
     public static final String ENCODING = "UTF-8";
+
+    private static final Method METHOD_getTimestamp;
+    static {
+        final Method m;
+        try {
+            m = ProcessorResult.class.getMethod("getTimestamp", new Class[0]);
+        } catch (NoSuchMethodException e) {
+            throw new RuntimeException("Unable to find needed methods of ProcessorResult (wrong class version?)", e);
+        }
+        METHOD_getTimestamp = m;
+    }
 
     static {
         // Configure SSL for outgoing connections
@@ -116,7 +130,7 @@ public class MessageProcessor {
             throws ClientCertificateException, OperationCanceledException,
             ConfigurationException, GeneralSecurityException, IOException, SAXException,
             ResponseValidationException, HttpChallengeRequiredException, PolicyAssertionException,
-            InvalidDocumentFormatException, ProcessorException, WssProcessor.BadContextException
+            InvalidDocumentFormatException, ProcessorException, BadSecurityContextException
     {
         boolean succeeded = false;
         try {
@@ -167,7 +181,7 @@ public class MessageProcessor {
                     Managers.getCredentialManager().notifyKeyStoreCorrupt(ssg);
                     SsgKeyStoreManager.deleteStores(ssg);
                     // FALLTHROUGH -- retry, creating new keystore
-                } catch (WssDecorator.DecoratorException e) {
+                } catch (DecoratorException e) {
                     throw new ConfigurationException(e);
                 }
                 req.reset();
@@ -320,7 +334,7 @@ public class MessageProcessor {
             throws OperationCanceledException, GeneralSecurityException, BadCredentialsException,
             IOException, SAXException, ClientCertificateException, KeyStoreCorruptException,
             HttpChallengeRequiredException, PolicyRetryableException, PolicyAssertionException,
-            InvalidDocumentFormatException, WssDecorator.DecoratorException, ConfigurationException
+            InvalidDocumentFormatException, DecoratorException, ConfigurationException
     {
         Policy policy = policyManager.getPolicy(req);
         if (policy == null || !policy.isValid()) {
@@ -464,7 +478,7 @@ public class MessageProcessor {
             throws ConfigurationException, IOException, PolicyRetryableException, GeneralSecurityException,
             OperationCanceledException, ClientCertificateException, BadCredentialsException,
             KeyStoreCorruptException, HttpChallengeRequiredException, SAXException, NoSuchAlgorithmException,
-            InvalidDocumentFormatException, ProcessorException, WssProcessor.BadContextException
+            InvalidDocumentFormatException, ProcessorException, BadSecurityContextException
     {
         URL url = getUrl(req);
         Ssg ssg = req.getSsg();
@@ -632,13 +646,13 @@ public class MessageProcessor {
             Document responseDocument = XmlUtil.stringToDocument(responseString);
 
             log.info("Running SSG response through WS-Security undecorator");
-            WssProcessor.SecurityContextFinder scf = null;
+            SecurityContextFinder scf = null;
             final String sessionId = req.getSecureConversationId();
             if (sessionId != null) {
                 final byte[] sessionKey = req.getSecureConversationSharedSecret();
-                scf = new WssProcessor.SecurityContextFinder() {
-                    public WssProcessor.SecurityContext getSecurityContext(String securityContextIdentifier) {
-                        return new WssProcessor.SecurityContext() {
+                scf = new SecurityContextFinder() {
+                    public SecurityContext getSecurityContext(String securityContextIdentifier) {
+                        return new SecurityContext() {
                             public SecretKey getSharedSecret() {
                                 return new AesKey(sessionKey, sessionKey.length * 8);
                             }
@@ -648,12 +662,28 @@ public class MessageProcessor {
             }
 
             boolean haveKey = SsgKeyStoreManager.isClientCertUnlocked(ssg);
-            WssProcessor.ProcessorResult processorResult =
+            final ProcessorResult processorResultRaw =
                     wssProcessor.undecorateMessage(responseDocument,
                                                    haveKey ? SsgKeyStoreManager.getClientCert(ssg) : null,
                                                    haveKey ? SsgKeyStoreManager.getClientCertPrivateKey(ssg) : null,
                                                    scf);
-            responseDocument = processorResult.getUndecoratedMessage();
+            responseDocument = processorResultRaw.getUndecoratedMessage();
+            InvocationHandler handler = new InvocationHandler() {
+
+                public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
+                    if (METHOD_getTimestamp.equals(method)) {
+                        // Override getTimestamp
+
+                    }
+                    return method.invoke(processorResultRaw, args);
+                }
+            };
+            ProcessorResult processorResult =
+                    (ProcessorResult) Proxy.newProxyInstance(ProcessorResult.class.getClassLoader(),
+                                                                          new Class[] { ProcessorResult.class },
+                                                                          handler);
+
+
 
             SsgResponse response = new SsgResponse(responseDocument, processorResult, status, headers);
             if (status == 401 || status == 402) {

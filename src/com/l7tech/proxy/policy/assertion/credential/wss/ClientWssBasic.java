@@ -6,7 +6,7 @@
 
 package com.l7tech.proxy.policy.assertion.credential.wss;
 
-import com.l7tech.common.security.xml.WssDecorator;
+import com.l7tech.common.security.xml.decorator.DecorationRequirements;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.assertion.credential.wss.WssBasic;
@@ -58,7 +58,7 @@ public class ClientWssBasic extends ClientWssCredentialSource {
 
         request.getPendingDecorations().put(this, new ClientDecorator() {
             public AssertionStatus decorateRequest(PendingRequest request) {
-                WssDecorator.DecorationRequirements wssReq = request.getWssRequirements();
+                DecorationRequirements wssReq = request.getWssRequirements();
                 wssReq.setUsernameTokenCredentials(new LoginCredentials(username, password, WssBasic.class));
                 if (!request.getClientSidePolicy().isPlaintextAuthAllowed())
                     request.setSslRequired(true); // force SSL when using WSS basic

@@ -1,6 +1,8 @@
 package com.l7tech.server.policy.assertion.xmlsec;
 
-import com.l7tech.common.security.xml.WssProcessor;
+import com.l7tech.common.security.xml.processor.ProcessorResult;
+import com.l7tech.common.security.xml.processor.SamlSecurityToken;
+import com.l7tech.common.security.xml.processor.SecurityToken;
 import com.l7tech.common.xml.saml.SamlAssertion;
 import com.l7tech.common.xml.saml.SamlHolderOfKeyAssertion;
 import com.l7tech.message.Request;
@@ -15,9 +17,9 @@ import com.l7tech.server.policy.assertion.ServerAssertion;
 import sun.security.x509.X500Name;
 
 import java.io.IOException;
-import java.util.logging.Logger;
 import java.util.Calendar;
 import java.util.TimeZone;
+import java.util.logging.Logger;
 
 /**
  * Class <code>ServerSamlSecurity</code> represents the server side saml
@@ -57,11 +59,11 @@ public class ServerSamlSecurity implements ServerAssertion {
             return AssertionStatus.NOT_APPLICABLE;
         }
         SoapRequest soapreq = (SoapRequest)request;
-        WssProcessor.ProcessorResult wssResults = soapreq.getWssProcessorOutput();
+        ProcessorResult wssResults = soapreq.getWssProcessorOutput();
         if (wssResults == null)
             throw new IOException("This request was not processed for WSS level security.");
 
-        WssProcessor.SecurityToken[] tokens = wssResults.getSecurityTokens();
+        SecurityToken[] tokens = wssResults.getSecurityTokens();
         if (tokens == null) {
             logger.info("No tokens were processed from this request. Returning AUTH_REQUIRED.");
             response.setAuthenticationMissing(true);
@@ -70,9 +72,9 @@ public class ServerSamlSecurity implements ServerAssertion {
 
         SamlAssertion samlAssertion = null;
         for (int i = 0; i < tokens.length; i++) {
-            WssProcessor.SecurityToken tok = tokens[i];
-            if (tok instanceof WssProcessor.SamlSecurityToken) {
-                WssProcessor.SamlSecurityToken samlToken = (WssProcessor.SamlSecurityToken)tok;
+            SecurityToken tok = tokens[i];
+            if (tok instanceof SamlSecurityToken) {
+                SamlSecurityToken samlToken = (SamlSecurityToken)tok;
                 if (samlToken.isPossessionProved()) {
                     SamlAssertion gotAss = samlToken.asSamlAssertion();
                     if (samlAssertion != null) {
