@@ -283,7 +283,7 @@ public class DefaultPolicyValidator extends PolicyValidator {
             if (oid == null) {
                 result.addWarning(new PolicyValidatorResult.Warning(a,
                                     "The assertion might not work as configured." +
-                                    "\nThere is no protected service JMS endpoint defined.", null));
+                                    "\nThere is no protected service JMS queue defined.", null));
             } else {
                 // TODO: for now we just assume that any non-null oid is a valid JmsEndpoint
             }

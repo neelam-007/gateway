@@ -24,7 +24,7 @@ public class JmsRoutingAssertionTreeNode extends LeafAssertionTreeNode {
      * @return the node name that is displayed
      */
     public String getName() {
-        final String name = "Route to Jms Endpoint ";
+        final String name = "Route to Jms Queue ";
         JmsRoutingAssertion ass = (JmsRoutingAssertion) getUserObject();
         if (ass.getEndpointOid() == null)
             return name + "(NOT YET SPECIFIED)";

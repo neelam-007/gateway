@@ -286,7 +286,7 @@ public class JmsQueuePropertiesDialog extends JDialog {
                                                       "JMS Connection Successful",
                                                       JOptionPane.INFORMATION_MESSAGE);
                     } catch (RemoteException e1) {
-                        throw new RuntimeException("Unable to test this JMS endpoint", e1);
+                        throw new RuntimeException("Unable to test this JMS Queue", e1);
                     } catch (Exception e1) {
                         JOptionPane.showMessageDialog(JmsQueuePropertiesDialog.this,
                                                       "The Gateway was unable to find this JMS Queue:\n" +

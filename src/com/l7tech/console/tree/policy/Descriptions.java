@@ -130,12 +130,12 @@ public class Descriptions {
                 JmsRoutingAssertion ass = (JmsRoutingAssertion)assertion;
                 String s;
                 if (ass.getEndpointOid() == null) {
-                    s = "Route to as-yet-undefined JMS Endpoint";
+                    s = "Route to as-yet-undefined JMS Queue";
                 } else {
                     String name = ass.getEndpointName();
                     if (name == null)
                         name = "(unnamed)";
-                    s = "Route to JMS Endpoint " + name;
+                    s = "Route to JMS Queue " + name;
                 }
                 return new Object[]{s};
             } else {

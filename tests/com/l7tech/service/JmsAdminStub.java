@@ -50,7 +50,7 @@ public class JmsAdminStub implements JmsAdmin {
             JmsEndpoint endpoint = (JmsEndpoint) endpoints.get(i.next());
             found.add(new JmsTuple( findConnectionByPrimaryKey( endpoint.getConnectionOid() ), endpoint ));
         }
-        return (JmsTuple[]) found.toArray(new JmsEndpoint[0]);
+        return (JmsTuple[]) found.toArray(new JmsTuple[0]);
     }
 
     public synchronized JmsConnection findConnectionByPrimaryKey(long oid) throws RemoteException, FindException {
