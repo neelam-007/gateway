@@ -84,7 +84,7 @@ CREATE TABLE internal_user (
 --
 
 
-INSERT INTO internal_user VALUES (3,0,'ssgadmin','ssgadmin','309b9c7ab4c3ee2144fce9b071acd440','fname','lname','email','title', NULL, 0);
+INSERT INTO internal_user VALUES (3,0,'ssgadmin','ssgadmin','6ff419eba5e589f87c451dc8a4590c97','fname','lname','email','title', NULL, 0);
 
 --
 -- Table structure for table 'internal_user_group'
