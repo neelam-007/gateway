@@ -39,3 +39,4 @@ DEPLOYING THE SSG
 [GATEWAY] startssg (start the server)
 
 SSG SERVER NOW UP AND RUNNING
+
