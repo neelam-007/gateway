@@ -238,6 +238,9 @@ public class ServicePanel extends WizardStepPanel {
                     if (url != null)
                         sa.setRoutingAssertion(new HttpRoutingAssertion(url.toString()));
                 }
+                if (sa.getAssertion() != null && sa.getAssertion().getChildren().isEmpty()) {
+                    sa.getAssertion().addChild(sa.getRoutingAssertion());
+                }
             }
         } catch (Exception e) {
             e.printStackTrace();
