@@ -53,7 +53,7 @@ public class Birthday {
      * Compute the probability of encountering a birthday-paradox collision in the specified set.
      * Examples:
      * <p>The probability that 23 people chosen at random (but not including those born on leap days) include
-     * one pair of people who share the same birthday: pbirthday(23, 365) = 50.73%
+     * at least one pair of people who share the same birthday: pbirthday(23, 365) = 50.73%
      * <p>The probability that the least significant 53 bits of a strong hashing algorithm will have
      * produced a hash collision by coincidence after ten million hashes of different inputs is given by:
      * pbirthday(10000000, Math.pow(2, 53)) = 0.55%
