@@ -266,7 +266,7 @@ public class SoapMessageProcessingServlet extends HttpServlet {
             hresp.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
             PublishedService pserv = (PublishedService)sreq.getParameter(Request.PARAM_SERVICE);
             String purl = "";
-            if (pserv != null && sresp.isPolicyViolated()) {
+            if (pserv != null) {
                 purl = makePolicyUrl(hreq, pserv.getOid());
                 hresp.setHeader(SecureSpanConstants.HttpHeaders.POLICYURL_HEADER, purl);
             }
