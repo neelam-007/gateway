@@ -61,17 +61,17 @@ public class SoapMessageProcessingServlet extends HttpServlet {
             try {
                 AssertionStatus stat = MessageProcessor.getInstance().processMessage( sreq, sresp );
 
-                if ( sresp.isAuthenticationMissing() ) {
-                    sendChallenge( sreq, sresp, hrequest, hresponse );
-                } else if ( stat != AssertionStatus.NONE ) {
-                    sendFault( sreq, sresp, hrequest, hresponse, HttpServletResponse.SC_INTERNAL_SERVER_ERROR, stat.getSoapFaultCode(), stat.getMessage() );
-                } else {
+                if ( stat == AssertionStatus.NONE ) {
                     hresponse.setContentType( CONTENT_TYPE );
 
                     String protRespXml = sresp.getResponseXml();
                     respWriter = new BufferedWriter( new OutputStreamWriter( hresponse.getOutputStream(), ENCODING ) );
 
                     respWriter.write( protRespXml );
+                } else if ( sresp.isAuthenticationMissing() ) {
+                    sendChallenge( sreq, sresp, hrequest, hresponse );
+                } else {
+                    sendFault( sreq, sresp, hrequest, hresponse, HttpServletResponse.SC_INTERNAL_SERVER_ERROR, stat.getSoapFaultCode(), stat.getMessage() );
                 }
             } catch ( PolicyAssertionException pae ) {
                 LogManager.getInstance().getSystemLogger().log(Level.SEVERE, null, pae);
