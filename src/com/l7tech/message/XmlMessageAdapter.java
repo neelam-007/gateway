@@ -22,13 +22,13 @@ public abstract class XmlMessageAdapter extends MessageAdapter implements XmlMes
         super(tm);
     }
 
-    synchronized void parse( InputStream is ) throws SAXException, IOException {
+    synchronized void parse( String xml ) throws SAXException, IOException {
         DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
         dbf.setNamespaceAware( true );
         try {
             // TODO: Ensure this is a lazy parser
             DocumentBuilder parser = dbf.newDocumentBuilder();
-            _document = parser.parse( new InputSource( is ) );
+            _document = parser.parse( new InputSource( new StringReader( xml ) ) );
         } catch ( ParserConfigurationException pce ) {
             throw new SAXException( pce );
         }
