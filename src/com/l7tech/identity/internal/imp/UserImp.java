@@ -134,6 +134,10 @@ public class UserImp extends EntityImp implements User {
         _billingAddress = billingAddress;
     }
 
+    public String toString() {
+        return "com.l7tech.identity.internal.imp.UserImp. First name=" + _firstName + " Last name=" + _lastName + " Login=" + _login; 
+    }
+
     private long _providerOid;
     private String _login;
     private String _password;
