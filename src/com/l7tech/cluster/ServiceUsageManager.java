@@ -31,10 +31,10 @@ public class ServiceUsageManager {
      */
     public Collection getAll() throws FindException {
         try {
-        String queryall = "from " + TABLE_NAME + " in class " + ServiceUsage.class.getName();
-        HibernatePersistenceContext pc = (HibernatePersistenceContext)PersistenceContext.getCurrent();
-        Session session = pc.getSession();
-        session.find(queryall);
+            String queryall = "from " + TABLE_NAME + " in class " + ServiceUsage.class.getName();
+            HibernatePersistenceContext pc = (HibernatePersistenceContext)PersistenceContext.getCurrent();
+            Session session = pc.getSession();
+            return session.find(queryall);
         } catch (SQLException e) {
             String msg = "could not retreive service usage obj";
             logger.log(Level.SEVERE, msg, e);
@@ -44,7 +44,6 @@ public class ServiceUsageManager {
             logger.log(Level.SEVERE, msg, e);
             throw new FindException(msg, e);
         }
-        return null;
     }
 
     /**
