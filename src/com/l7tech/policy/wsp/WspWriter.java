@@ -3,7 +3,6 @@ package com.l7tech.policy.wsp;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.composite.CompositeAssertion;
 import org.apache.log4j.Category;
-import org.mortbay.util.WriterOutputStream;
 
 import java.io.IOException;
 import java.io.OutputStream;
@@ -60,9 +59,14 @@ public class WspWriter {
      * @return              a string containing XML
      */
     public static String getPolicyXml(Assertion assertion) {
-        StringWriter sw = new StringWriter();
+        final StringWriter sw = new StringWriter();
+        OutputStream swo = new OutputStream() {
+            public void write(int b) throws IOException {
+                sw.write(b);
+            }
+        };
         try {
-            writePolicy(assertion, new WriterOutputStream(sw));
+            writePolicy(assertion, swo);
         } catch (IOException e) {
             throw new RuntimeException("Unexpected IOException writing to StringWriter", e); // shouldn't ever happen
         }
