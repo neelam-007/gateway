@@ -12,6 +12,7 @@ import com.l7tech.proxy.ConfigurationException;
 import com.l7tech.proxy.policy.assertion.ClientAssertion;
 import com.l7tech.proxy.policy.assertion.ClientTrueAssertion;
 import com.l7tech.proxy.processor.ServerCertificateUntrustedException;
+import com.l7tech.proxy.processor.OperationCanceledException;
 import com.l7tech.proxy.util.ThreadLocalHttpClient;
 import org.apache.commons.httpclient.Header;
 import org.apache.commons.httpclient.HttpClient;
@@ -65,7 +66,7 @@ public class PolicyManagerImpl implements PolicyManager {
      * @throws ConfigurationException if a policy update was already attempted for this request
      * @throws IOException if the policy could not be read from the SSG
      */
-    public void updatePolicy(PendingRequest request, URL policyUrl) throws ConfigurationException, IOException, ServerCertificateUntrustedException {
+    public void updatePolicy(PendingRequest request, URL policyUrl) throws ConfigurationException, IOException, ServerCertificateUntrustedException, OperationCanceledException {
         HttpClient client = ThreadLocalHttpClient.getHttpClient();
         client.getState().setAuthenticationPreemptive(false);
         client.getState().setCredentials(null, null, null);
@@ -85,10 +86,18 @@ public class PolicyManagerImpl implements PolicyManager {
                     newUrl = newURLHeader.getValue();
                 }
                 log.info("Policy download unauthorized, trying again with credentials at " + newUrl);
+
+                // Make sure we actually have the credentials
+                Ssg ssg = request.getSsg();
+                if (!ssg.isCredentialsConfigured()) {
+                    if (!Managers.getCredentialManager().getCredentials(ssg))
+                        throw new OperationCanceledException("User declined to enter credentials");
+                }
+
                 client.getState().setAuthenticationPreemptive(true);
 
-                String username = request.getSsg().getUsername();
-                char[] password = request.getSsg().password();
+                String username = ssg.getUsername();
+                char[] password = ssg.password();
                 client.getState().setCredentials(null, null, new UsernamePasswordCredentials(username, new String(password)));
                 getMethod = new GetMethod(newUrl);
                 getMethod.setDoAuthentication(true);
