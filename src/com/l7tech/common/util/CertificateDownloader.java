@@ -6,10 +6,7 @@
 
 package com.l7tech.common.util;
 
-import com.l7tech.common.http.GenericHttpRequestParams;
-import com.l7tech.common.http.GenericHttpRequestParamsImpl;
-import com.l7tech.common.http.HttpHeader;
-import com.l7tech.common.http.SimpleHttpClient;
+import com.l7tech.common.http.*;
 import com.l7tech.common.protocol.SecureSpanConstants;
 
 import java.io.IOException;
@@ -115,7 +112,8 @@ public class CertificateDownloader {
         certBytes = result.getBytes();
         X509Certificate cert = CertUtils.decodeCert(certBytes);
 
-        HttpHeader[] headers = result.getHeaders();
+        HttpHeaders headerHolder = result.getHeaders();
+        HttpHeader[] headers = headerHolder.toArray();
         this.checks = new ArrayList();
 
         sawNoPass = false;
