@@ -69,8 +69,6 @@ public class FederatedUserPanel extends UserPanel {
     protected UserBean user;
     protected Set userGroups;
 
-    protected boolean formModified;
-
     // Titles/Labels
     private static final String DETAILS_LABEL = "General";
     private static final String MEMBERSHIP_LABEL = "Membership";
@@ -637,13 +635,9 @@ public class FederatedUserPanel extends UserPanel {
     }
 
 
-    private EntityListener
+/*    private EntityListener
             passwordChangeListener = new EntityListenerAdapter() {
-                /**
-                 * Fired when an set of children is updated.
-                 *
-                 * @param ev event describing the action
-                 */
+
                 public void entityUpdated(EntityEvent ev) {
                     try {
                         user = getIdentityAdmin().findUserByPrimaryKey(config.getOid(), userHeader.getStrId()).getUserBean();
@@ -656,7 +650,7 @@ public class FederatedUserPanel extends UserPanel {
                     }
 
                 }
-            };
+            };*/
 
     /**
      * Populates the form from the user bean
@@ -670,6 +664,7 @@ public class FederatedUserPanel extends UserPanel {
         getLastNameTextField().setText(user.getLastName());
         getEmailTextField().setText(user.getEmail());
         getLoginTextField().setText(user.getLogin());
+        getX509SubjectNameTextField().setText(user.getSubjectDn());
         setModified(false);
     }
 
@@ -684,6 +679,7 @@ public class FederatedUserPanel extends UserPanel {
         user.setFirstName(this.getFirstNameTextField().getText());
         user.setEmail(getEmailTextField().getText());
         user.setLogin(getLoginTextField().getText());
+        user.setSubjectDn(getX509SubjectNameTextField().getText());
         // user.setGroupHeaders(groupPanel.getCurrentGroups());
         return user;
     }
