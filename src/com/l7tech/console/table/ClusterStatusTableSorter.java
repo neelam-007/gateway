@@ -25,27 +25,12 @@ public class ClusterStatusTableSorter extends FilteredDefaultTableModel {
     private Object[] sortedData = null;
 
     /**
-     * Constructor
-     */
-    public ClusterStatusTableSorter() {
-    }
-
-    /**
      * Constructor taking <CODE>DefaultTableModel</CODE> as the input parameter.
      *
      * @param model  A table model.
      */
     public ClusterStatusTableSorter(DefaultTableModel model) {
-        setModel(model);
-    }
-
-   /**
-     * Set the table model.
-     *
-     * @param model  The table model to be set.
-     */
-    public void setModel(DefaultTableModel model) {
-        super.setRealModel(model);
+        setRealModel(model);
     }
 
     /**
