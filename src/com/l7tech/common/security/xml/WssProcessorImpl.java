@@ -621,9 +621,6 @@ public class WssProcessorImpl implements WssProcessor {
     private void processSignature(final Element signatureElement, ProcessingStatusHolder cntx) throws ProcessorException {
         logger.finest("Processing Signature");
 
-        // normalize the signature
-        SoapMsgSigner.normalizeDoc(signatureElement.getOwnerDocument());
-
         // 1st, process the KeyInfo
         Element keyInfoElement = KeyInfo.searchForKeyInfo(signatureElement);
         if (keyInfoElement == null) {
@@ -676,7 +673,6 @@ public class WssProcessorImpl implements WssProcessor {
                 throw new ProcessorException(msg);
             }
             // make reference to this element
-            // todo
             cntx.elementsThatWereSigned.add(elementCovered);
         }
     }
