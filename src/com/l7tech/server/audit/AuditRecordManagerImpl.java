@@ -57,19 +57,10 @@ public class AuditRecordManagerImpl extends HibernateEntityManager implements Au
             query.setMaxResults(maxRecords);
 
             Date fromTime = criteria.fromTime;
-            if (fromTime == null) {
-                Calendar cal = Calendar.getInstance(TimeZone.getTimeZone("UTC"));
-                cal.roll(Calendar.DAY_OF_YEAR, -1);
-                fromTime = cal.getTime();
-            }
-
             Date toTime = criteria.toTime;
-            if (toTime == null) toTime = new Date(System.currentTimeMillis());
 
-            if (!(toTime.equals(fromTime) || toTime.after(fromTime))) throw new IllegalArgumentException("toTime must not be before fromTime");
-
-            query.add(Expression.ge(PROP_TIME, new Long(fromTime.getTime())));
-            query.add(Expression.le(PROP_TIME, new Long(toTime.getTime())));
+            if (fromTime != null) query.add(Expression.ge(PROP_TIME, new Long(fromTime.getTime())));
+            if (toTime != null) query.add(Expression.le(PROP_TIME, new Long(toTime.getTime())));
 
             Level fromLevel = criteria.fromLevel;
             if (fromLevel == null) fromLevel = Level.FINEST;
