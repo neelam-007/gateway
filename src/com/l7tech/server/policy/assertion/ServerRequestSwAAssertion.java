@@ -67,6 +67,7 @@ public class ServerRequestSwAAssertion implements ServerAssertion {
         List result = null;
         boolean operationFound = false;
         XmlRequest xreq = (XmlRequest) request;
+        boolean assertionStatusOK = true;
 
         if (request instanceof SoapRequest && ((SoapRequest) request).isSoap()) {
 
@@ -105,7 +106,7 @@ public class ServerRequestSwAAssertion implements ServerAssertion {
 
                                 Iterator parameterItr = bo.getMultipart().keySet().iterator();
                                 // get parameter
-                                while(parameterItr.hasNext()) {
+                                while(assertionStatusOK && parameterItr.hasNext()) {
                                     String parameterName= (String) parameterItr.next();
                                     MimePartInfo part = (MimePartInfo) bo.getMultipart().get(parameterName);
 
@@ -122,26 +123,37 @@ public class ServerRequestSwAAssertion implements ServerAssertion {
                                                 logger.fine("The parameter " + part.getName() + " is found in the request");
                                                 Element parameterElement = (Element) n;
                                                 Attr href = parameterElement.getAttributeNode("href");
-                                                String mimePardCID = href.getValue();
-                                                logger.fine("The href of the parameter " + part.getName() + " is found in the request, value=" + mimePardCID);
+                                                String mimePartCID = href.getValue();
+                                                logger.fine("The href of the parameter " + part.getName() + " is found in the request, value=" + mimePartCID);
 
-                                                MultipartUtil.Part mimepart = xreq.getMultipartReader().getMessagePart(mimePardCID);
+                                                MultipartUtil.Part mimepart = xreq.getMultipartReader().getMessagePart(mimePartCID);
 
                                                 if(mimepart != null) {
                                                     // validate the content type
-                                                    if(mimepart.getHeader(XmlUtil.CONTENT_TYPE).equals(part.getContentType())) {
-                                                        logger.info("The content type of the attachment must be: " + part.getContentType());
-                                                        return AssertionStatus.NONE;
+                                                    String requiredContentType = part.getContentType();
+                                                    if(requiredContentType.equals("text/enriched")) {
+                                                        // text/enriched implies that text/plain is allowed
+                                                        if(!(!mimepart.getHeader(XmlUtil.CONTENT_TYPE).getValue().equals(requiredContentType)) &&
+                                                           (mimepart.getHeader(XmlUtil.CONTENT_TYPE).getValue().equals("text/plain"))) {
+                                                            logger.info("The content type of the attachment must be: " + part.getContentType());
+                                                            return AssertionStatus.FALSIFIED;
+                                                        }
+                                                    } else {
+                                                        if(!mimepart.getHeader(XmlUtil.CONTENT_TYPE).equals(part.getContentType())) {
+                                                            logger.info("The content type of the attachment must be: " + part.getContentType());
+                                                            return AssertionStatus.FALSIFIED;
+                                                        }
                                                     }
 
                                                     // check the max. length allowed
-                                                    if(mimepart.getContent().length() <= part.getMaxLength() * 1000) {
+                                                    if(mimepart.getContent().length() > part.getMaxLength() * 1000) {
                                                         logger.info("The length of the attachment exceeds the limit: " + part.getMaxLength());
-                                                        return AssertionStatus.NONE;
+                                                        return AssertionStatus.FALSIFIED;
                                                     }
+                                                } else {
+                                                    logger.info("The required attachment is not found in the request. Content Id of the attachment required: " + mimePartCID);
+                                                    return AssertionStatus.FALSIFIED;
                                                 }
-
-                                                return AssertionStatus.FALSIFIED;
                                             } else {
                                                 logger.info( "XPath pattern " + bo.getXpath() + "/" + part.getName() + " found some other node '" + n.toString() + "'" );
                                                 return AssertionStatus.FALSIFIED;
@@ -149,6 +161,13 @@ public class ServerRequestSwAAssertion implements ServerAssertion {
                                         }
                                     }
                                 }
+
+                                // all attachments are satisfied
+
+                                // also check if there is any unexpected attachments in the request
+
+                                return AssertionStatus.NONE;
+
                             }
                         }
                         operationFound = true;
