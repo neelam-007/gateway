@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <form xmlns="http://www.intellij.com/uidesigner/form/" version="1" bind-to-class="com.l7tech.console.panels.SamlPropertiesDialog">
-  <grid id="2238c" binding="mainPanel" row-count="4" column-count="1" hgap="-1" vgap="-1">
+  <grid id="2238c" binding="mainPanel" row-count="4" column-count="1" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
     <margin top="5" left="5" bottom="5" right="5"/>
     <constraints>
       <xy x="13" y="17" width="620" height="262"/>
@@ -9,10 +9,10 @@
     <properties/>
     <border type="none"/>
     <children>
-      <grid id="1fbe2" row-count="1" column-count="1" hgap="-1" vgap="-1">
-        <margin top="10" left="0" bottom="0" right="0"/>
+      <grid id="1fbe2" row-count="1" column-count="1" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
+        <margin top="0" left="0" bottom="0" right="0"/>
         <constraints>
-          <xy x="5" y="5" width="610" height="34"/>
+          <xy x="5" y="5" width="610" height="29"/>
           <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="1" fill="1"/>
         </constraints>
         <properties/>
@@ -20,19 +20,19 @@
         <children>
           <component id="c6c67" class="javax.swing.JLabel">
             <constraints>
-              <xy x="2" y="15" width="82" height="14"/>
+              <xy x="2" y="9" width="212" height="15"/>
               <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0"/>
             </constraints>
             <properties>
-              <text value="SAML constraints"/>
+              <text value="Select one or more SAML constraints:"/>
             </properties>
           </component>
         </children>
       </grid>
-      <grid id="3b7f0" row-count="1" column-count="4" hgap="-1" vgap="-1">
+      <grid id="3b7f0" row-count="1" column-count="4" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
         <margin top="5" left="0" bottom="0" right="0"/>
         <constraints>
-          <xy x="5" y="228" width="610" height="29"/>
+          <xy x="5" y="227" width="610" height="30"/>
           <grid row="3" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3"/>
         </constraints>
         <properties/>
@@ -40,7 +40,7 @@
         <children>
           <component id="26e6a" class="javax.swing.JButton" binding="helpButton">
             <constraints>
-              <xy x="555" y="5" width="55" height="24"/>
+              <xy x="549" y="5" width="61" height="25"/>
               <grid row="0" column="3" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1"/>
             </constraints>
             <properties>
@@ -49,7 +49,7 @@
           </component>
           <component id="684c6" class="javax.swing.JButton" binding="cancelButton">
             <constraints>
-              <xy x="479" y="5" width="66" height="24"/>
+              <xy x="467" y="5" width="72" height="25"/>
               <grid row="0" column="2" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1"/>
             </constraints>
             <properties>
@@ -58,7 +58,7 @@
           </component>
           <component id="cdef9" class="javax.swing.JButton" binding="okButton">
             <constraints>
-              <xy x="421" y="5" width="48" height="24"/>
+              <xy x="406" y="5" width="51" height="25"/>
               <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1"/>
             </constraints>
             <properties>
@@ -67,16 +67,16 @@
           </component>
           <hspacer id="c59e5">
             <constraints>
-              <xy x="0" y="11" width="421" height="11"/>
+              <xy x="0" y="12" width="406" height="11"/>
               <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="1" hsize-policy="6" anchor="0" fill="1"/>
             </constraints>
           </hspacer>
         </children>
       </grid>
-      <grid id="654f4" row-count="3" column-count="3" hgap="-1" vgap="-1">
+      <grid id="654f4" row-count="3" column-count="3" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
         <margin top="0" left="0" bottom="0" right="0"/>
         <constraints>
-          <xy x="5" y="44" width="610" height="89"/>
+          <xy x="5" y="39" width="610" height="71"/>
           <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3"/>
         </constraints>
         <properties/>
@@ -84,7 +84,7 @@
         <children>
           <component id="f7329" class="javax.swing.JCheckBox" binding="requireTimeValidity">
             <constraints>
-              <xy x="20" y="20" width="167" height="22"/>
+              <xy x="20" y="20" width="198" height="23"/>
               <grid row="1" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0"/>
             </constraints>
             <properties>
@@ -95,7 +95,7 @@
           </component>
           <component id="8f917" class="javax.swing.JCheckBox" binding="requireSignature">
             <constraints>
-              <xy x="20" y="67" width="125" height="22"/>
+              <xy x="20" y="48" width="147" height="23"/>
               <grid row="2" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0"/>
             </constraints>
             <properties>
@@ -105,7 +105,7 @@
           </component>
           <hspacer id="14ea4">
             <constraints>
-              <xy x="187" y="25" width="423" height="11"/>
+              <xy x="218" y="26" width="392" height="11"/>
               <grid row="1" column="2" row-span="1" col-span="1" vsize-policy="1" hsize-policy="6" anchor="0" fill="1">
                 <minimum-size width="100" height="-1"/>
                 <preferred-size width="100" height="-1"/>
@@ -116,7 +116,7 @@
       </grid>
       <vspacer id="ecf31">
         <constraints>
-          <xy x="304" y="138" width="11" height="90"/>
+          <xy x="304" y="115" width="11" height="112"/>
           <grid row="2" column="0" row-span="1" col-span="1" vsize-policy="6" hsize-policy="1" anchor="0" fill="2"/>
         </constraints>
       </vspacer>
