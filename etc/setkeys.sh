@@ -41,23 +41,22 @@ WAR_FILE="$TOMCAT_HOME/webapps/ROOT.war"
 # FIND OUT WHAT THE USER WANTS TO DO
 # -----------------------------------------------------------------------------
 echo
-echo
-echo "Do you want to create the root keys? (y/n)"
-read ANSWER_ROOTKEYS_CREATION
-if [ $ANSWER_ROOTKEYS_CREATION = "y" ]
+echo "-----------------------------"
+echo " 1. CREATE ROOT AND SSL KEYS "
+echo " 2. CREATE SSL KEYS ONLY     "
+echo "-----------------------------"
+echo "(please choose)"
+read MENU_CHOICE
+if [ $MENU_CHOICE = "1" ]
+then
+    ANSWER_ROOTKEYS_CREATION="y"
+    ANSWER_SSLKEYS_CREATION=y
+elif [ $MENU_CHOICE = "2" ]
 then
     ANSWER_SSLKEYS_CREATION=y
 else
-    echo
-    echo "Do you want to create the ssl keys? (y/n)"
-    read ANSWER_SSLKEYS_CREATION
-    if [ $ANSWER_SSLKEYS_CREATION = "y" ]
-    then
-            echo
-    else
-        echo "Nothing to do"
-        exit
-    fi
+    echo "invalid choice"
+    exit
 fi
 
 # -----------------------------------------------------------------------------
@@ -144,7 +143,6 @@ then
     $KEYTOOL -certreq -keyalg RSA -alias tomcat -file "$SSL_CSR_FILE" -keystore "$SSL_KEYSTORE_FILE" -storepass "$KEYSTORE_PASSWORD"
 
     # EDIT THE server.xml file so that the existing value is replaced by the actual password
-    echo "recording the password in tomcat's server.xml"
     perl -pi.bak -e s/keystorePass=\".*\"/keystorePass=\"$KEYSTORE_PASSWORD\"/ "$SERVER_XML_FILE"
 else
     # INFORM THE USER OF THE FAILURE
@@ -161,11 +159,9 @@ fi
 if [ -e "$KEYSTORE_PROPERTIES_FILE" ]; then
     echo
 else
-    echo "expanding the war file so that properties can be updated with kstore password"
     unzip $WAR_FILE -d $WEBAPPS_ROOT
 fi
 if [ -e "$KEYSTORE_PROPERTIES_FILE" ]; then
-    echo "Recording the keystore passwords"
     SUBSTITUTE_FROM=rootcakspasswd=.*
     SUBSTITUTE_TO=rootcakspasswd=${KEYSTORE_PASSWORD}
     perl -pi.bak -e s/$SUBSTITUTE_FROM/$SUBSTITUTE_TO/ "$KEYSTORE_PROPERTIES_FILE"
@@ -197,9 +193,8 @@ java -cp $CP com.l7tech.identity.cert.RSASigner $ROOT_KEYSTORE_FILE $KEYSTORE_PA
 
 # CHECK IF THE CERT WAS CREATED
 if [ -e "$SSL_CERT_FILE" ]; then
-        echo "Importing ssl cert back into ssl keystore"
-        $KEYTOOL -import -file $ROOT_CERT_FILE -alias ssgroot -keystore $SSL_KEYSTORE_FILE -storepass $KEYSTORE_PASSWORD
-        $KEYTOOL -import -file $SSL_CERT_FILE -alias tomcat -keystore $SSL_KEYSTORE_FILE -storepass $KEYSTORE_PASSWORD
+        $KEYTOOL -import -noprompt -file $ROOT_CERT_FILE -alias ssgroot -keystore $SSL_KEYSTORE_FILE -storepass $KEYSTORE_PASSWORD
+        $KEYTOOL -import -noprompt -file $SSL_CERT_FILE -alias tomcat -keystore $SSL_KEYSTORE_FILE -storepass $KEYSTORE_PASSWORD
 else
         # FAILURE
         echo "ERROR WILE SIGNING SSL CERT WITH ROOT CA"
