@@ -6,10 +6,9 @@
 
 package com.l7tech.common.util;
 
-import org.apache.log4j.Category;
-
 import java.util.regex.Pattern;
 import java.util.regex.Matcher;
+import java.io.Serializable;
 
 /**
  * Class holding information gathered by UptimeMonitor.
@@ -17,8 +16,7 @@ import java.util.regex.Matcher;
  * Date: Sep 17, 2003
  * Time: 10:04:47 AM
  */
-public class UptimeMetrics {
-    private static final Category log = Category.getInstance(UptimeMetrics.class);
+public class UptimeMetrics implements Serializable {
     private static Pattern findDaysHoursMinutes = Pattern.compile("^.*? up (\\d+) days?\\, (\\d+)\\:(\\d+)\\,.*$", Pattern.DOTALL);
     private static Pattern findDays = Pattern.compile("^.*? (\\d+) day.*$", Pattern.DOTALL);
     private static Pattern findHours = Pattern.compile("^.*? (\\d+) hr.*$", Pattern.DOTALL);
