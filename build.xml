@@ -311,6 +311,7 @@
                 <include name="com/l7tech/identity/User*"/>
                 <include name="com/l7tech/identity/Identity*"/>
                 <exclude name="com/l7tech/identity/*Server*"/>
+                <exclude name="com/l7tech/identity/IdentityProviderFactory.class"/>
                 <include name="com/l7tech/identity/internal/InternalUser.class"/>
                 <include name="com/l7tech/identity/internal/InternalGroup.class"/>
                 <include name="com/l7tech/identity/ldap/LdapUser.class"/>
