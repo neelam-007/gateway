@@ -15,6 +15,7 @@ import com.l7tech.server.policy.assertion.ServerAssertion;
 import com.l7tech.service.PublishedService;
 import com.l7tech.service.ServiceManager;
 import com.l7tech.service.resolution.ServiceResolutionException;
+import com.l7tech.logging.LogManager;
 
 import java.io.IOException;
 import java.util.logging.Level;
@@ -117,6 +118,6 @@ public class MessageProcessor {
     private static ThreadLocal _currentResponse = new ThreadLocal();
 
     private ServiceManager _serviceManager;
-    //private Logger _log = LogManager.getInstance().getSystemLogger();
-    private transient Logger _log = Logger.getLogger( this.getClass().getName() );
+    private Logger _log = LogManager.getInstance().getSystemLogger();
+    //private transient Logger _log = Logger.getLogger( this.getClass().getName() );
 }
