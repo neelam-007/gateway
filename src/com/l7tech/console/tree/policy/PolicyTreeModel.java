@@ -35,7 +35,7 @@ public class PolicyTreeModel extends DefaultTreeModel {
             return new PolicyTreeModel(WspReader.parse(service.getPolicyXml()));
         } catch (IOException e) {
             // TODO: FIXME Emil!
-            throw new IllegalStateException("Policy was unparseable");
+            throw new IllegalArgumentException("Policy was unparseable");
         }
     }
 }
