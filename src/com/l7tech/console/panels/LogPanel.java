@@ -52,7 +52,7 @@ public class LogPanel extends JPanel {
     private JCheckBox autoRefresh = null;
     private DefaultTableModel logTableModel = null;
     private FilteredLogTableModel logTableModelFilter = null;
-    private JLabel msgTotal = new JLabel(MSG_TOTAL_PREFIX + "0");
+    private JLabel msgTotal = null;
 
     /**
      * Constructor
@@ -227,7 +227,7 @@ public class LogPanel extends JPanel {
          if(autoRefresh == null){
             autoRefresh = new JCheckBox();
         }
-        autoRefresh.setFont(new java.awt.Font("Dialog", 0, 11));
+        autoRefresh.setFont(new java.awt.Font("Dialog", 0, 12));
         autoRefresh.setText("Auto-refresh");
         autoRefresh.setSelected(true);
         autoRefresh.addActionListener(new java.awt.event.ActionListener() {
@@ -239,10 +239,18 @@ public class LogPanel extends JPanel {
                 }
             }
         });
+
         controlPane.add(autoRefresh);
-        controlPane.add(msgTotal);
+        controlPane.add(getMsgTotal());
 
         return controlPane;
+    }
+
+    private JLabel getMsgTotal(){
+        if(msgTotal != null) return msgTotal;
+        msgTotal = new JLabel(MSG_TOTAL_PREFIX + "0");
+        msgTotal.setFont(new java.awt.Font("Dialog", 0, 12));
+        return msgTotal;
     }
 
     /**
