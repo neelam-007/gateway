@@ -17,6 +17,9 @@ import com.l7tech.policy.assertion.credential.http.HttpClientCert;
 import com.l7tech.policy.assertion.identity.SpecificUser;
 import com.l7tech.policy.assertion.xmlsec.RequestWssIntegrity;
 import com.l7tech.policy.assertion.xmlsec.RequestWssX509Cert;
+import com.l7tech.service.PublishedService;
+import com.l7tech.common.xml.TestDocuments;
+import com.l7tech.common.util.XmlUtil;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
@@ -24,6 +27,8 @@ import junit.framework.TestSuite;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
+
+import org.w3c.dom.Document;
 
 /**
  * Test the default policy assertion path validator functionality.
@@ -63,7 +68,7 @@ public class DefaultPolicyValidatorTest extends TestCase {
         AllAssertion aa = new AllAssertion();
         aa.setChildren(kids);
         PolicyValidator dfpv = PolicyValidator.getDefault();
-        PolicyValidatorResult result = dfpv.validate(aa, null);
+        PolicyValidatorResult result = dfpv.validate(aa, getBogusService());
         List messages = result.messages(httpRoutingAssertion);
         assertTrue("Expected errors/warnings for the " + HttpRoutingAssertion.class + " assertion, got 0", !messages.isEmpty(), messages);
 
@@ -76,9 +81,18 @@ public class DefaultPolicyValidatorTest extends TestCase {
           });
         aa = new AllAssertion();
         aa.setChildren(kids);
-        result = dfpv.validate(aa, null);
+        result = dfpv.validate(aa, getBogusService());
         messages = result.messages(httpRoutingAssertion);
         assertTrue("Expected no errors/warnings.", messages.isEmpty(), messages);
+    }
+
+    private PublishedService getBogusService() throws Exception {
+        PublishedService output = new PublishedService();
+        output.setSoap(true);
+        // set wsdl
+        Document wsdl = TestDocuments.getTestDocument(TestDocuments.WSDL_DOC_LITERAL3);
+        output.setWsdlXml(XmlUtil.nodeToFormattedString(wsdl));
+        return output;
     }
 
     /**
@@ -99,7 +113,7 @@ public class DefaultPolicyValidatorTest extends TestCase {
         AllAssertion aa = new AllAssertion();
         aa.setChildren(kids);
         PolicyValidator dfpv = PolicyValidator.getDefault();
-        PolicyValidatorResult result = dfpv.validate(aa, null);
+        PolicyValidatorResult result = dfpv.validate(aa, getBogusService());
         List messages = result.messages(specificUser);
         assertTrue("Expected errors/warnings for the " + HttpRoutingAssertion.class + " assertion, got 0 messages.", !messages.isEmpty());
 
@@ -114,7 +128,7 @@ public class DefaultPolicyValidatorTest extends TestCase {
         aa = new AllAssertion();
         aa.setChildren(kids);
         dfpv = PolicyValidator.getDefault();
-        result = dfpv.validate(aa, null);
+        result = dfpv.validate(aa, getBogusService());
         messages = result.messages(specificUser);
         assertTrue("Expected no errors/warnings.", messages.isEmpty(), messages);
     }
@@ -137,7 +151,7 @@ public class DefaultPolicyValidatorTest extends TestCase {
         AllAssertion aa = new AllAssertion();
         aa.setChildren(kids);
         PolicyValidator dfpv = PolicyValidator.getDefault();
-        PolicyValidatorResult result = dfpv.validate(aa, null);
+        PolicyValidatorResult result = dfpv.validate(aa, getBogusService());
         List messages = result.messages(xs);
         assertTrue("Expected errors/warnings for the " + RequestWssIntegrity.class + " assertion, got 0", !messages.isEmpty(), messages);
     }
@@ -160,7 +174,7 @@ public class DefaultPolicyValidatorTest extends TestCase {
         AllAssertion aa = new AllAssertion();
         aa.setChildren(kids);
         PolicyValidator dfpv = PolicyValidator.getDefault();
-        PolicyValidatorResult result = dfpv.validate(aa, null);
+        PolicyValidatorResult result = dfpv.validate(aa, getBogusService());
         List messages = result.messages(xs);
         assertTrue("Expected no errors/warnings", messages.isEmpty(), messages);
     }
@@ -185,7 +199,7 @@ public class DefaultPolicyValidatorTest extends TestCase {
         AllAssertion aa = new AllAssertion();
         aa.setChildren(kids);
         PolicyValidator dfpv = PolicyValidator.getDefault();
-        PolicyValidatorResult result = dfpv.validate(aa, null);
+        PolicyValidatorResult result = dfpv.validate(aa, getBogusService());
         List messages = result.getMessages();
         assertTrue("Expected no errors/warnings", messages.isEmpty(), messages);
 
@@ -198,7 +212,7 @@ public class DefaultPolicyValidatorTest extends TestCase {
           });
         aa = new AllAssertion();
         aa.setChildren(kids);
-        result = dfpv.validate(aa, null);
+        result = dfpv.validate(aa, getBogusService());
         messages = result.messages(httpClientCert);
         assertTrue("Expected errors/warnings for the " + HttpClientCert.class + " assertion, got 0", !messages.isEmpty());
     }
