@@ -134,7 +134,8 @@ public class TokenService {
                                                                                  null,
                                                                                  clientCert));
         if (authenticatedUser == null) {
-            // todo, some authentication exception
+            // todo, some authentication exception, dont allow creation of a context not associated with an identity
+            
         }
         // Actually handle the request
         Document response = null;
@@ -171,11 +172,13 @@ public class TokenService {
                                                                     "xmlns:wsc=\"" + SoapUtil.WSSC_NAMESPACE + "\">" +
                                     "<wst:RequestedSecurityToken>" +
                                         "<wsc:Identifier>" + newSession.getIdentifier() + "</wsc:Identifier>" +
-                                        "<wsu:Expires>" + ISO8601Date.format(exp.getTime()) + "</wsu:Expires>" +
                                     "</wst:RequestedSecurityToken>" +
                                     "<wst:RequestedProofToken>" +
                                       encryptedKeyRawXML +
                                     "</wst:RequestedProofToken>" +
+                                    "<wst:Lifetime>" +
+                                      "<wsu:Expires>" + ISO8601Date.format(exp.getTime()) + "</wsu:Expires>" +
+                                    "</wst:Lifetime>" +
                                   "</wst:RequestSecurityTokenResponse>" +
                                 "</soap:Body>" +
                             "</soap:Envelope>";
@@ -340,8 +343,6 @@ public class TokenService {
             WssProcessor.SignedElement signedElement = signedElements[i];
             if (signedElement.asElement() == body) {
                 return true;
-            } else {
-                logger.info("Not body element: " + signedElement.asElement().getLocalName());
             }
         }
         logger.warning("Seems like the body was not signed.");

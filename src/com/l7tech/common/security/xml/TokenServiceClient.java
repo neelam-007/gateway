@@ -182,16 +182,20 @@ public class TokenServiceClient {
         if (identifier == null || identifier.length() < 4) throw new InvalidDocumentFormatException("Response wsc:Identifier was empty or too short");
 
         // Extract optional expiry date
-        Element expiresEl = XmlUtil.findOnlyOneChildElementByName(rst, SoapUtil.WSU_URIS_ARRAY, "Expires");
+        Element lifeTimeEl = XmlUtil.findOnlyOneChildElementByName(rstr, SoapUtil.WST_NAMESPACE, "Lifetime");
         Date expires = null;
-        if (expiresEl != null) {
-            String expiresStr = XmlUtil.getTextValue(expiresEl).trim();
-            if (expiresStr != null && expiresStr.length() > 3)
-                try {
-                    expires = ISO8601Date.parse(expiresStr);
-                } catch (ParseException e) {
-                    throw new InvalidDocumentFormatException("Response contained an invalid IDO 8601 Expires date", e);
+        if (lifeTimeEl != null) {
+            Element expiresEl = XmlUtil.findOnlyOneChildElementByName(lifeTimeEl, SoapUtil.WSU_URIS_ARRAY, "Expires");
+            if (expiresEl != null) {
+                String expiresStr = XmlUtil.getTextValue(expiresEl).trim();
+                if (expiresStr != null && expiresStr.length() > 3) {
+                    try {
+                        expires = ISO8601Date.parse(expiresStr);
+                    } catch (ParseException e) {
+                        throw new InvalidDocumentFormatException("Response contained an invalid IDO 8601 Expires date", e);
+                    }
                 }
+            }
         }
 
         // Extract shared secret
