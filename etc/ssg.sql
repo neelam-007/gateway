@@ -29,7 +29,7 @@ CREATE TABLE identity_provider (
   oid bigint(20) NOT NULL default '0',
   version int(11) default NULL,
   name varchar(128) NOT NULL default '',
-  description mediumtext NOT NULL,
+  description mediumtext default '',
   type bigint(20) NOT NULL default '0',
   properties text,
   PRIMARY KEY  (oid)
