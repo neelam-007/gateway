@@ -1,6 +1,7 @@
 package com.l7tech.util;
 
 import com.l7tech.util.locator.Locators;
+import com.l7tech.util.locator.PropertiesLocator;
 
 import java.util.*;
 
@@ -55,10 +56,10 @@ public abstract class Locator {
         ClassLoader cl = Thread.currentThread().getContextClassLoader();
 
         try {
-            if (className !=null) {
-                Class c = Class.forName(className,true ,cl);
-            defaultLocator = (Locator) c.newInstance();
-             return defaultLocator;
+            if (className != null) {
+                Class c = Class.forName(className, true, cl);
+                defaultLocator = (Locator)c.newInstance();
+                return defaultLocator;
             }
         } catch (Exception ex) {
             // the lookup has not be found, do not use any error managers
@@ -67,7 +68,12 @@ public abstract class Locator {
         }
         // OK, none specified (successfully) in a system property.
         // Try PropertiesLookup as a default.
-        defaultLocator = Locators.propertiesLocator("bla", cl);
+        String res =
+                System.getProperty("com.l7tech.util.locator.properties");
+        if (res == null) {
+            res = PropertiesLocator.DEFAULT_PROPERTIES;
+        }
+        defaultLocator = Locators.propertiesLocator(res, cl);
 
         return defaultLocator;
 
@@ -90,7 +96,7 @@ public abstract class Locator {
     public Object lookup(Class clazz) {
         Matches res = lookup(new Template(clazz));
         Iterator it = res.allItems().iterator();
-        return it.hasNext() ? ((Item) it.next()).getInstance() : null;
+        return it.hasNext() ? ((Item)it.next()).getInstance() : null;
     }
 
     /** The general lookup method.
