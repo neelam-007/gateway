@@ -6,26 +6,21 @@
 
 package com.l7tech.service;
 
+import com.l7tech.logging.LogManager;
 import com.l7tech.message.Request;
 import com.l7tech.objectmodel.imp.NamedEntityImp;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.FalseAssertion;
 import com.l7tech.policy.wsp.WspReader;
 import com.l7tech.util.SoapUtil;
-import org.apache.log4j.Category;
 import org.xml.sax.InputSource;
 
 import javax.wsdl.Port;
-import javax.wsdl.Service;
 import javax.wsdl.WSDLException;
-import javax.wsdl.extensions.ExtensibilityElement;
-import javax.wsdl.extensions.soap.SOAPAddress;
 import java.io.*;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
+import java.util.logging.Logger;
 
 /**
  * @author alex
@@ -35,7 +30,7 @@ public class PublishedService extends NamedEntityImp {
     public synchronized Assertion rootAssertion() throws IOException {
         String policyXml = getPolicyXml();
         if ( policyXml == null || policyXml.length() == 0 ) {
-            _log.warn( "Service " + _oid + " an invalid or empty policy_xml field.  Using null policy." );
+            _log.warning( "Service " + _oid + " has an invalid or empty policy_xml field.  Using null policy." );
             return FalseAssertion.getInstance();
         } else {
             if ( _rootAssertion == null ) _rootAssertion = WspReader.parse( policyXml );
@@ -106,44 +101,7 @@ public class PublishedService extends NamedEntityImp {
         // TODO: Get the right Port for this request, rather than just the first one!
 
         if ( _wsdlPort == null ) {
-            Iterator services = parsedWsdl().getServices().iterator();
-            Service wsdlService = null;
-            Port pork = null;
-            Port soapPort = null;
-
-            int numServices = 0;
-            while ( services.hasNext() ) {
-                int numPorts = 0;
-                numServices++;
-                if ( wsdlService != null ) continue;
-
-                wsdlService = (Service)services.next();
-                Map ports = wsdlService.getPorts();
-                if ( ports == null ) continue;
-
-                Iterator portKeys = ports.keySet().iterator();
-                String portKey;
-                while ( portKeys.hasNext() ) {
-                    if ( soapPort == null ) {
-                        portKey = (String)portKeys.next();
-                        pork = (Port)ports.get(portKey);
-
-                        List elements = pork.getExtensibilityElements();
-                        ExtensibilityElement eel;
-                        // Find the first Port that contains a SOAPAddress eel
-                        for ( int i = 0; i < elements.size(); i++ ) {
-                            eel = (ExtensibilityElement)elements.get(i);
-                            if ( eel instanceof SOAPAddress ) {
-                                soapPort = pork;
-                                numPorts++;
-                            }
-                        }
-
-                    }
-                }
-                if ( numPorts > 1 ) _log.warn( "WSDL " + getWsdlUrl() + " has more than one port, used the first." );
-            }
-            if ( numServices > 1 ) _log.warn( "WSDL " + getWsdlUrl() + " has more than one service, used the first." );
+            Port soapPort = parsedWsdl().getSoapPort();
             _wsdlPort = soapPort;
         }
 
@@ -153,28 +111,15 @@ public class PublishedService extends NamedEntityImp {
     public synchronized URL serviceUrl( Request request ) throws WSDLException, MalformedURLException {
         if ( _serviceUrl == null ) {
             Port wsdlPort = wsdlPort( request );
-            List elements = wsdlPort.getExtensibilityElements();
-            URL url = null;
-            ExtensibilityElement eel;
-            int num = 0;
-            for ( int i = 0; i < elements.size(); i++ ) {
-                eel = (ExtensibilityElement)elements.get(i);
-                if ( eel instanceof SOAPAddress ) {
-                    SOAPAddress sadd = (SOAPAddress)eel;
-                    num++;
-                    url = new URL( sadd.getLocationURI() );
-                }
-            }
+            URL url = parsedWsdl().getUrlFromPort( wsdlPort );
 
             if ( url == null ) {
                 String err = "WSDL " + getWsdlUrl() + " did not contain a valid URL";
-                _log.error( err );
+                _log.severe( err );
                 throw new WSDLException( SoapUtil.FC_SERVER, err );
             }
 
             _serviceUrl = url;
-
-            if ( num > 1 ) _log.warn( "WSDL " + getWsdlUrl() + " contained multiple <soap:address> elements" );
         }
         return _serviceUrl;
     }
@@ -260,7 +205,7 @@ public class PublishedService extends NamedEntityImp {
     protected String _urn;
     protected boolean _disabled;
 
-    protected transient Category _log = Category.getInstance( getClass() );
+    protected transient Logger _log = LogManager.getInstance().getSystemLogger();
     protected transient Wsdl _parsedWsdl;
     protected transient Port _wsdlPort;
     protected transient URL _serviceUrl;
