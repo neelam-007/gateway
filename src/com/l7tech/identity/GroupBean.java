@@ -1,6 +1,7 @@
 package com.l7tech.identity;
 
 import java.io.Serializable;
+import java.util.Map;
 
 public class GroupBean implements Group, Serializable {
     public String getUniqueIdentifier() {
@@ -46,6 +47,14 @@ public class GroupBean implements Group, Serializable {
         return providerId;
     }
 
+    public Map getProperties() {
+        return properties;
+    }
+
+    public void setProperties( Map properties ) {
+        this.properties = properties;
+    }
+
     public boolean equals(Object o) {
         if (this == o) return true;
         if (!(o instanceof GroupBean)) return false;
@@ -76,5 +85,6 @@ public class GroupBean implements Group, Serializable {
     private String _name;
     private String _description;
     private long providerId = IdentityProviderConfigManager.INTERNALPROVIDER_SPECIAL_OID;
+    private Map properties;
     private int _version;
 }

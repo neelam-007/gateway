@@ -8,17 +8,56 @@ package com.l7tech.identity;
 
 import com.l7tech.objectmodel.imp.NamedEntityImp;
 
+import java.beans.XMLDecoder;
+import java.beans.XMLEncoder;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.util.Map;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
 /**
  * @author alex
  * @version $Revision$
  */
 public abstract class PersistentGroup extends NamedEntityImp implements Group {
+    public static final String PROPERTIES_ENCODING = "UTF-8";
+
     public PersistentGroup() {
         this.bean = new GroupBean();
     }
 
     public PersistentGroup(GroupBean bean) {
         this.bean = bean;
+    }
+
+    public void setXmlProperties(String xml) {
+        if (xml != null && xml.equals(xmlProperties)) return;
+        this.xmlProperties = xml;
+        if ( xml != null && xml.length() > 0 ) {
+            try {
+                XMLDecoder xd = new XMLDecoder(new ByteArrayInputStream(xml.getBytes(PROPERTIES_ENCODING)));
+                bean.setProperties((Map)xd.readObject());
+            } catch (Exception e) {
+                logger.log(Level.WARNING, "Corrupted XML properties", e);
+            }
+        }
+    }
+
+    public String getXmlProperties() {
+        if ( xmlProperties == null ) {
+            try {
+                Map properties = bean.getProperties();
+                if ( properties == null ) return null;
+                ByteArrayOutputStream baos = new ByteArrayOutputStream();
+                XMLEncoder xe = new XMLEncoder(baos);
+                xe.writeObject(properties);
+                xmlProperties = baos.toString(PROPERTIES_ENCODING);
+            } catch (Exception e) {
+                logger.log( Level.WARNING, "Corrupted XML properties", e );
+            }
+        }
+        return xmlProperties;
     }
 
     public void setOid( long oid ) {
@@ -103,4 +142,7 @@ public abstract class PersistentGroup extends NamedEntityImp implements Group {
     }
 
     protected GroupBean bean;
+    protected String xmlProperties;
+
+    private final Logger logger = Logger.getLogger(getClass().getName());
 }

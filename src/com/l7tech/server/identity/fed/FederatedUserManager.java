@@ -25,7 +25,6 @@ import java.util.List;
 public class FederatedUserManager extends InternalUserManagerServer {
     public FederatedUserManager( IdentityProvider provider ) {
         super(provider);
-
     }
 
     protected void preDelete( InternalUser user ) throws FindException, DeleteException {
