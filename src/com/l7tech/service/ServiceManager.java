@@ -1,6 +1,10 @@
 package com.l7tech.service;
 
-import com.l7tech.objectmodel.EntityManager;
+import com.l7tech.objectmodel.*;
+import com.l7tech.message.Request;
+
+import java.util.Map;
+import java.util.HashMap;
 
 /**
  * Layer 7 Technologies, inc.
@@ -10,15 +14,18 @@ import com.l7tech.objectmodel.EntityManager;
  * Service API. Get instance of this through the Locator class.
  */
 public interface ServiceManager extends EntityManager {
-
     /**
-     * Used by the console to retreive the actual wsdl located at a target
-     * as seen by the ssg.
      *
-     * @param url
-     * @return a string containing the xml document
+     * @param wsdlUrl
+     * @return
      */
-    public String resolveWsdlTarget(String url) throws java.rmi.RemoteException;
+    public ProtectedService createProtectedService( String wsdlUrl );
+
+    public long save( PublishedService service ) throws SaveException;
+    public void update( PublishedService service ) throws UpdateException;
+    public void delete( PublishedService service ) throws DeleteException;
+
+    public PublishedService resolveService( Request request );
 
     // NOTE:
     // add methods as they become necessary
