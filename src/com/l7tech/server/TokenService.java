@@ -137,7 +137,7 @@ public class TokenService {
                                                                                  clientCert));
         // Actually handle the request
         Document response = null;
-        if (isValidRequestForSecureConversationContext(request, wssOutput)) {
+        if (isValidRequestForSecureConversationContext(wssOutput.getUndecoratedMessage(), wssOutput)) {
             response = handleSecureConversationContextRequest(authenticatedUser, clientCert);
         } else if (isValidRequestForSAMLToken(request, wssOutput)) {
             // todo, plug in your saml handling here alex --fla
@@ -163,7 +163,8 @@ public class TokenService {
         try {
             String xmlStr = "<soap:Envelope xmlns:soap=\"" + SOAPConstants.URI_NS_SOAP_ENVELOPE + "\">" +
                                 "<soap:Body>" +
-                                  "<wst:RequestSecurityTokenResponse xmlns:wst=\"" + SoapUtil.WST_NAMESPACE + "\"" +
+                                  "<wst:RequestSecurityTokenResponse xmlns:wst=\"" + SoapUtil.WST_NAMESPACE + "\" " +
+                                                                    "xmlns:wsu=\"" + SoapUtil.WSU_NAMESPACE + "\" " +
                                                                     "xmlns:wsc=\"" + SoapUtil.WSSC_NAMESPACE + "\">" +
                                     "<wst:RequestedSecurityToken>" +
                                         "<wsc:Identifier>" + newSession.getIdentifier() + "</wsc:Identifier>" +
@@ -270,6 +271,8 @@ public class TokenService {
             WssProcessor.SignedElement signedElement = signedElements[i];
             if (signedElement.asElement() == body) {
                 return true;
+            } else {
+                logger.info("Not body element: " + signedElement.asElement().getLocalName());
             }
         }
         logger.warning("Seems like the body was not signed.");
