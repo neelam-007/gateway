@@ -25,6 +25,9 @@ import java.util.Collection;
 import java.util.Iterator;
 import java.util.logging.Level;
 
+import org.apache.commons.httpclient.HttpClient;
+import org.apache.commons.httpclient.methods.PostMethod;
+
 
 /**
  * Layer 7 Technologies, inc.
@@ -224,6 +227,15 @@ public class CSRHandler extends AuthenticatableHttpServlet {
     }
 
     private void proxyReqToSsgWithRootKStore(HttpServletRequest req, HttpServletResponse res) throws IOException {
+        // these requests should not be routed more than once!
+        String isalreadyrouted = req.getHeader(ROUTED_FROM_PEER);
+        if (isalreadyrouted != null && isalreadyrouted.length() > 0) {
+            String msg = "could not get root key for signing";
+            logger.warning(msg + ". request re-routed!");
+            res.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, msg);
+            return;
+        }
+
         // look for ip address of master server
         ClusterInfoManager manager = new ClusterInfoManager();
         Collection clusterNodes = null;
@@ -253,11 +265,38 @@ public class CSRHandler extends AuthenticatableHttpServlet {
             res.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, msg);
             return;
         }
+
         logger.finest("redirecting request to master " + masterhostname);
-        // todo, implement proxying of request
+        // reconstruct url with master server host name
+        String url = req.getProtocol() + "://" + masterhostname + ":" + req.getServerPort() + req.getRequestURI();
+        if (req.getQueryString() != null && req.getQueryString().length() > 0) {
+            url += "?" + req.getQueryString();
+        }
+        logger.finest("using url " + url);
+        HttpClient client = new HttpClient();
+        PostMethod postMethod = new PostMethod(url.toString());
+        postMethod.setRequestHeader(CONTENT_TYPE, req.getContentType());
+        postMethod.setRequestHeader(ROUTED_FROM_PEER, "Yes");
+        // set the auth header
+        postMethod.setRequestHeader(AUTH_HEADER_NAME, req.getHeader(AUTH_HEADER_NAME));
+        // set the csr
+        postMethod.setRequestBody(req.getInputStream());
+        // send the request
+        client.executeMethod(postMethod);
+        // send back to requestor whatever we are getting back from this server
+        int status = postMethod.getStatusCode();
+        res.setStatus(status);
+        res.setContentType(postMethod.getResponseHeader(CONTENT_TYPE).getValue());
+        byte[] certbytes = postMethod.getResponseBody();
+        if (certbytes != null && certbytes.length > 0) {
+            res.getOutputStream().write(certbytes);
+        }
         return;
     }
 
     private String rootkstore = null;
     private String rootkstorepasswd = null;
+    public static final String CONTENT_TYPE = "Content-Type";
+    public static final String AUTH_HEADER_NAME = "Authorization";
+    public static final String ROUTED_FROM_PEER = "Routed-From-Peer";
 }
