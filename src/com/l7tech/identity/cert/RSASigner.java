@@ -454,7 +454,7 @@ public class RSASigner {
         }*/
         X509Certificate cert = certgen.generateX509Certificate(privateKey);
         LogManager.getInstance().getSystemLogger().log(Level.FINE, "<makeBCCertificate()");
-        return (X509Certificate) cert;
+        return cert;
     }
     // makeBCCertificate
 
