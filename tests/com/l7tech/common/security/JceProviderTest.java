@@ -206,6 +206,6 @@ public class JceProviderTest {
                     r.run();
             }
         });
-        log.info("Timed " + count + " executions of " + name + ": " + t + " ms; " + (t/count) + " ms per execution");
+        log.info("Timed " + count + " executions of " + name + ": " + t + " ms; " + (((double)t)/count) + " ms per execution; " + (((double)count)/(t+1))*1000 + " per second");
     }
 }
