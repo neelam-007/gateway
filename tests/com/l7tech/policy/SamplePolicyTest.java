@@ -108,7 +108,7 @@ public class SamplePolicyTest extends TestCase {
             new HttpDigest(),
 
             // Authorize:
-            new MemberOfGroup( identityProvider, groupStaff ),
+            new MemberOfGroup( identityProvider, groupStaff, "666" ),
 
             // Route:
             new RoutingAssertion()
