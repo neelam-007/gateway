@@ -24,8 +24,10 @@ import org.apache.log4j.Category;
 import org.xml.sax.SAXException;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.Arrays;
 
 /**
  * Class that processes messages in request->response fashion.
@@ -160,7 +162,19 @@ public class MessageProcessor {
             }
 
             try {
-                SOAPEnvelope response = new SOAPEnvelope(postMethod.getResponseBodyAsStream());
+                final InputStream responseStream = postMethod.getResponseBodyAsStream();
+                SOAPEnvelope response = new SOAPEnvelope(new InputStream() {
+                    StringBuffer accum = new StringBuffer(1024);
+                    public int read() throws IOException {
+                        int c = responseStream.read();
+                        if (c == -1) {
+                            log.info("Read server response: " + accum);
+                        } else {
+                            accum.append((char)c);
+                        }
+                        return c;
+                    }
+                });
                 return response;
             } catch (NullPointerException e) {
                 throw new IOException("Unable to discern a SOAPEnvelope from the server's response: " + e.toString());
