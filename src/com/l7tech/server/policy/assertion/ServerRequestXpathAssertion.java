@@ -36,19 +36,21 @@ public class ServerRequestXpathAssertion implements ServerAssertion {
         _data = data;
     }
 
-    private DOMXPath getDOMXpath() throws JaxenException {
+    private synchronized DOMXPath getDOMXpath() throws JaxenException {
         if ( _domXpath == null ) {
-
             String pattern = _data.getPattern();
-
-            _domXpath = new DOMXPath(pattern);
-
             Map namespaceMap = _data.getNamespaceMap();
 
-            for (Iterator i = namespaceMap.keySet().iterator(); i.hasNext();) {
-                String key = (String) i.next();
-                String uri = (String)namespaceMap.get(key);
-                _domXpath.addNamespace( key, uri );
+            if ( pattern != null ) {
+                _domXpath = new DOMXPath(pattern);
+
+                if ( namespaceMap != null ) {
+                    for (Iterator i = namespaceMap.keySet().iterator(); i.hasNext();) {
+                        String key = (String) i.next();
+                        String uri = (String)namespaceMap.get(key);
+                        _domXpath.addNamespace( key, uri );
+                    }
+                }
             }
         }
 
@@ -58,12 +60,17 @@ public class ServerRequestXpathAssertion implements ServerAssertion {
     public AssertionStatus checkRequest(Request request, Response response) throws IOException, PolicyAssertionException {
         if ( request instanceof XmlRequest ) {
             try {
+                String pattern = _data.getPattern();
+
+                if ( pattern == null || pattern.length() == 0 ) {
+                    _logger.warning( "XPath pattern cannot be null or empty!" );
+                    return AssertionStatus.FALSIFIED;
+                }
+
                 XmlRequest xreq = (XmlRequest)request;
                 Document doc = xreq.getDocument();
 
                 List result = getDOMXpath().selectNodes(doc);
-
-                String pattern = _data.getPattern();
 
                 if ( result == null || result.size() == 0 ) {
                     _logger.info( "XPath pattern " + pattern  + " didn't match request!" );
@@ -106,10 +113,7 @@ public class ServerRequestXpathAssertion implements ServerAssertion {
             } catch (JaxenException e) {
                 _logger.log( Level.WARNING, "Caught JaxenException during XPath query", e );
                 return AssertionStatus.SERVER_ERROR;
-            } /*catch (WSDLException e) {
-                _logger.log( Level.SEVERE, "Caught WSDLException during XPath namespace resolution", e );
-                return AssertionStatus.SERVER_ERROR;
-            } */
+            }
         }
         _logger.warning( "RequestXPathAssertion only works on XML requests!" );
         return AssertionStatus.FALSIFIED;
