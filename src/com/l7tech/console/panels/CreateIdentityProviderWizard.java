@@ -32,8 +32,7 @@ public class CreateIdentityProviderWizard extends IdentityProviderWizard {
         setTitle("Create Identity Provider Wizard");
         setShowDescription(false);
         Actions.setEscKeyStrokeDisposes(this);
-        // create a holder for the new identity provider
-        // NOTE: we only support creating LDAP provider
+
         wizardInput = new LdapIdentityProviderConfig();
         ((IdentityProviderConfig)wizardInput).setTypeVal(IdentityProviderType.LDAP.toVal());
 
