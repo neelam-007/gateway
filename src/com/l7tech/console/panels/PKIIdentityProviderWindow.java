@@ -17,6 +17,8 @@ import java.util.logging.Logger;
 import java.awt.*;
 import java.awt.event.ActionListener;
 import java.awt.event.ActionEvent;
+import java.awt.event.KeyListener;
+import java.awt.event.KeyEvent;
 
 /**
  * <p> Copyright (C) 2004 Layer 7 Technologies Inc.</p>
@@ -32,6 +34,7 @@ public class PKIIdentityProviderWindow extends JDialog {
     private JButton propertiesButton;
     private JButton saveButton;
     private JButton cancelButton;
+    private JTextField providerNameTextField;
     private TrustedCertsTable trustedCertTable = null;
 
     private static ResourceBundle resources = ResourceBundle.getBundle("com.l7tech.console.resources.PKIIdentityProviderDialog", Locale.getDefault());
@@ -83,7 +86,22 @@ public class PKIIdentityProviderWindow extends JDialog {
 
         // initialize the button states
         enableOrDisableButtons();
+        initializeSaveButtonState();
 
+        providerNameTextField.addKeyListener(new KeyListener() {
+            public void keyPressed(KeyEvent e) {
+                // don't care
+            }
+
+            public void keyReleased(KeyEvent e) {
+                initializeSaveButtonState();
+            }
+
+            public void keyTyped(KeyEvent e) {
+                // don't care
+            }
+
+        });
         trustedCertTable.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
             /**
              * Called whenever the value of the selection changes.
@@ -160,6 +178,17 @@ public class PKIIdentityProviderWindow extends JDialog {
     }
 
     /**
+     * Initialize the saveButton state based on its length
+     */
+    private void initializeSaveButtonState() {
+        if (providerNameTextField.getText().length() > 0) {
+            saveButton.setEnabled(true);
+        } else {
+            saveButton.setEnabled(false);
+        }
+    }
+
+    /**
      * Enable or disable the fields based on the current selections.
      */
     private void enableOrDisableButtons() {
@@ -208,6 +237,7 @@ public class PKIIdentityProviderWindow extends JDialog {
         _2.add(_3, new com.intellij.uiDesigner.core.GridConstraints(0, 0, 1, 1, 8, 0, 0, 0, null, null, null));
         final JTextField _4;
         _4 = new JTextField();
+        providerNameTextField = _4;
         _2.add(_4, new com.intellij.uiDesigner.core.GridConstraints(0, 1, 1, 1, 8, 1, 6, 0, null, null, new Dimension(250, -1)));
         final JPanel _5;
         _5 = new JPanel();
