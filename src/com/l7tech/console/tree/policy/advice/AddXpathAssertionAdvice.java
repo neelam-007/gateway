@@ -91,15 +91,23 @@ public class AddXpathAssertionAdvice implements Advice {
             String s =
               (String)JOptionPane.showInputDialog(mw,
                 help,
-                "XPath Assertion properties",
+                "XPath Assertion Properties",
                 JOptionPane.PLAIN_MESSAGE,
                 null,
                 null,
                 xpathAssertion.getPattern());
             final boolean ok = (s != null) && (s.length() > 0);
-            if (ok) {
-                xpathAssertion.setPattern(s);
-                xpathAssertion.setNamespaceMap(namespaceMap);
+            if (s != null) {
+                if (s.length() > 0) {
+                    xpathAssertion.setPattern(s);
+                    xpathAssertion.setNamespaceMap(namespaceMap);
+                } else {
+
+                    JOptionPane.showMessageDialog(mw, "No XPath pattern specified.", "XPath Assertion Properties", JOptionPane.ERROR_MESSAGE);
+
+                    // re-prompt the user
+                    edit(xpathAssertion, service);
+                }
             }
             return ok;
         } catch (WSDLException e) {

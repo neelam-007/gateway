@@ -14,6 +14,7 @@ import com.l7tech.console.tree.policy.RequestXpathPolicyTreeNode;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.console.util.Cookie;
 import com.l7tech.console.util.Registry;
+import com.l7tech.console.MainWindow;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.assertion.RequestXpathAssertion;
 import com.l7tech.service.PublishedService;
@@ -107,18 +108,26 @@ public class EditXpathAssertionAction extends BaseAction {
             help = helpBuffer.toString();
         }
 
+        final MainWindow mw = TopComponents.getInstance().getMainWindow();
         String s =
-          (String)JOptionPane.showInputDialog(TopComponents.getInstance().getMainWindow(),
+          (String)JOptionPane.showInputDialog(mw,
             help,
-            "XPath Assertion properties",
+            "XPath Assertion Properties",
             JOptionPane.PLAIN_MESSAGE,
             new ImageIcon(_node.getIcon()),
             null,
             xpathAssertion.getPattern());
-        if ((s != null) && (s.length() > 0)) {
-            xpathAssertion.setPattern(s);
-            xpathAssertion.setNamespaceMap(namespaceMap);
-            assertionChanged();
+        if (s != null) {
+            if (s.length() > 0) {
+                xpathAssertion.setPattern(s);
+                xpathAssertion.setNamespaceMap(namespaceMap);
+                assertionChanged();
+            } else {
+                JOptionPane.showMessageDialog(mw, "No XPath pattern specified.", "XPath Assertion Properties", JOptionPane.ERROR_MESSAGE);
+
+                // re-prompt the user
+                performAction();
+            }
         }
     }
 
