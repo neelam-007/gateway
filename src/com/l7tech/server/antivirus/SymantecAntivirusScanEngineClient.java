@@ -4,13 +4,14 @@
  * User: flascell<br/>
  * Date: Feb 16, 2005<br/>
  */
-package com.l7tech.server;
+package com.l7tech.server.antivirus;
 
 import com.l7tech.common.message.Message;
 import com.l7tech.common.mime.PartIterator;
 import com.l7tech.common.mime.PartInfo;
 import com.l7tech.common.mime.NoSuchPartException;
 import com.l7tech.common.util.HexUtils;
+import com.l7tech.server.ServerConfig;
 
 import java.net.Socket;
 import java.net.UnknownHostException;
