@@ -136,5 +136,14 @@ public class AssertionMessages extends Messages {
     public static final M WSS_BASIC_NO_CREDENTIALS                          = m(5202, Level.INFO, "Request did not include WSS Basic credentials.");
     public static final M WSS_BASIC_CANNOT_FIND_CREDENTIALS                 = m(5203, Level.INFO, "cannot find credentials");
 
+    //ServerSslAssertion
+    public static final M SSL_REQUIRED_PRESENT                              = m(5300, Level.FINE, "SSL required and present");
+    public static final M SSL_REQUIRED_ABSENT                               = m(5301, Level.INFO, "SSL required but not present");
+    public static final M SSL_FORBIDDEN_PRESENT                             = m(5302, Level.INFO, "SSL forbidden but present");
+    public static final M SSL_FORBIDDEN_ABSENT                              = m(5303, Level.FINE, "SSL forbidden and not present");
+    public static final M SSL_OPTIONAL_PRESENT                              = m(5304, Level.FINE, "SSL optional and present");
+    public static final M SSL_OPTIONAL_ABSENT                               = m(5305, Level.FINE, "SSL optional and not present");
+
+
 
 }

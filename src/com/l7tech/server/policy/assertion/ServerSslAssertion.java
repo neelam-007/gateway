@@ -10,6 +10,8 @@ import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.SslAssertion;
 import com.l7tech.server.message.PolicyEnforcementContext;
+import com.l7tech.server.AssertionMessages;
+import com.l7tech.common.audit.Auditor;
 
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -27,36 +29,33 @@ public class ServerSslAssertion implements ServerAssertion {
         boolean ssl = context.getHttpServletRequest().isSecure();
         AssertionStatus status;
 
-        String message;
-        Level level;
         SslAssertion.Option option = _data.getOption();
+
+        Auditor auditor = new Auditor(context.getAuditContext(), logger);
         if ( option == SslAssertion.REQUIRED) {
             if (ssl) {
                 status = AssertionStatus.NONE;
-                message = "SSL required and present";
-                level = Level.FINE;
+                auditor.logAndAudit(AssertionMessages.SSL_REQUIRED_PRESENT);
             } else {
                 status = AssertionStatus.FALSIFIED;
-                message = "SSL required but not present";
-                level = Level.INFO;
+                auditor.logAndAudit(AssertionMessages.SSL_REQUIRED_ABSENT);
             }
         } else if ( option == SslAssertion.FORBIDDEN) {
             if (ssl) {
                 status = AssertionStatus.FALSIFIED;
-                message = "SSL forbidden but present";
-                level = Level.INFO;
+                auditor.logAndAudit(AssertionMessages.SSL_FORBIDDEN_PRESENT);
             } else {
                 status = AssertionStatus.NONE;
-                message = "SSL forbidden and not present";
-                level = Level.FINE;
+                auditor.logAndAudit(AssertionMessages.SSL_FORBIDDEN_ABSENT);
             }
         } else {
-            level = Level.FINE;
             status = AssertionStatus.NONE;
-            message = ssl ? "SSL optional and present" : "SSL optional and not present";
+            if(ssl) {
+                auditor.logAndAudit(AssertionMessages.SSL_OPTIONAL_PRESENT);
+            } else {
+                auditor.logAndAudit(AssertionMessages.SSL_OPTIONAL_ABSENT);
+            }
         }
-
-        logger.log(level, message);
 
         if (status == AssertionStatus.FALSIFIED)
             context.setRequestPolicyViolated();
