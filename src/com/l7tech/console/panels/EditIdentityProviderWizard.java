@@ -22,7 +22,7 @@ public class EditIdentityProviderWizard extends Wizard {
     public EditIdentityProviderWizard(Frame parent, WizardStepPanel panel, IdentityProviderConfig iProvider) {
         super(parent, panel);
         setResizable(true);
-        setTitle("Identity Provider Modification Wizard");
+        setTitle("Edit Identity Provider Properties Wizard");
         setShowDescription(false);
 
         // store the current settings

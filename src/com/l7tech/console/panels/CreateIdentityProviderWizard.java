@@ -24,7 +24,7 @@ public class CreateIdentityProviderWizard extends Wizard {
     public CreateIdentityProviderWizard(Frame parent, final WizardStepPanel panel) {
         super(parent, panel);
         setResizable(true);
-        setTitle("Identity Provider Creation Wizard");
+        setTitle("New Identity Provider Wizard");
         setShowDescription(false);
 
         // create a holder for the new identity provider
