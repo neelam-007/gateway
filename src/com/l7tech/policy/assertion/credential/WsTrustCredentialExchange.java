@@ -6,10 +6,7 @@
 package com.l7tech.policy.assertion.credential;
 
 import com.l7tech.policy.assertion.Assertion;
-
-import java.io.Serializable;
-import java.util.HashMap;
-import java.util.Map;
+import com.l7tech.common.xml.WsTrustRequestType;
 
 /**
  * An assertion that sends the current request's credentials to a WS-Trust token service and replaces them with
@@ -19,7 +16,7 @@ public class WsTrustCredentialExchange extends Assertion {
     public WsTrustCredentialExchange() {
     }
 
-    public WsTrustCredentialExchange(String tokenServiceUrl, String appliesTo, TokenServiceRequestType requestType) {
+    public WsTrustCredentialExchange(String tokenServiceUrl, String appliesTo, WsTrustRequestType requestType) {
         this.tokenServiceUrl = tokenServiceUrl;
         this.appliesTo = appliesTo;
         this.requestType = requestType;
@@ -41,44 +38,25 @@ public class WsTrustCredentialExchange extends Assertion {
         this.appliesTo = appliesTo;
     }
 
-    public TokenServiceRequestType getRequestType() {
+    public WsTrustRequestType getRequestType() {
         return requestType;
     }
 
-    public void setRequestType(TokenServiceRequestType requestType) {
+    public void setRequestType(WsTrustRequestType requestType) {
         this.requestType = requestType;
+    }
+
+    public String getIssuer() {
+        return issuer;
+    }
+
+    public void setIssuer(String issuer) {
+        this.issuer = issuer;
     }
 
     private String tokenServiceUrl;
     private String appliesTo;
-    private TokenServiceRequestType requestType;
+    private String issuer;
+    private WsTrustRequestType requestType;
 
-    public static final class TokenServiceRequestType implements Serializable {
-        private static final Map valueMap = new HashMap();
-        public static final TokenServiceRequestType ISSUE = new TokenServiceRequestType("Issue", "http://schemas.xmlsoap.org/ws/2004/04/security/trust/Issue");
-        public static final TokenServiceRequestType VALIDATE = new TokenServiceRequestType("Validate", "http://schemas.xmlsoap.org/ws/2004/04/security/trust/Validate");
-
-        private final String name;
-        private final String uri;
-
-        private TokenServiceRequestType(String name, String uri) {
-            this.name = name;
-            this.uri = uri;
-            valueMap.put(uri, this);
-        }
-
-        public String toString() {
-            return name;
-        }
-
-        public static TokenServiceRequestType fromString(String uri) {
-            return (TokenServiceRequestType)valueMap.get(uri);
-        }
-
-        protected Object readResolve() {
-            return fromString(uri);
-        }
-
-        public String getUri() { return uri; }
-    }
 }

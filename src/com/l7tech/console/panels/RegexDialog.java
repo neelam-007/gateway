@@ -50,6 +50,7 @@ public class RegexDialog extends JDialog {
     private JLabel replaceMentTextAreaLabel;
     private JLabel testInputTextAreaLabel;
     private JLabel testResultTextAreaLabel;
+    private JFormattedTextField mimePartField;
 
     public RegexDialog(Frame owner, Regex regexAssertion) throws HeadlessException {
         super(owner, true);
@@ -89,6 +90,14 @@ public class RegexDialog extends JDialog {
             replaceTextArea.setText(regexAssertion.getReplacement());
         }
 
+        caseInsensitivecheckBox.setSelected(regexAssertion.isCaseInsensitive());
+
+        if (regexAssertion.getMimePart() != null) {
+            mimePartField.setValue(regexAssertion.getMimePart());
+        } else {
+            mimePartField.setValue(new Integer(0));
+        }
+
         cancelButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 dispose();
@@ -103,6 +112,20 @@ public class RegexDialog extends JDialog {
                 regexAssertion.setReplacement(replaceTextArea.getText());
                 regexAssertion.setCaseInsensitive(caseInsensitivecheckBox.isSelected());
                 regexAssertion.setReplace(matchAndReplaceRadioButton.isSelected());
+                Object mimeValue = mimePartField.getValue();
+                Integer realValue = null;
+                if (mimeValue != null) {
+                    if (mimeValue instanceof Long) {
+                        realValue = new Integer(((Long)mimeValue).intValue());
+                    } else if (mimeValue instanceof String) {
+                        realValue = Integer.valueOf((String)mimeValue);
+                    } else if (mimeValue instanceof Integer) {
+                        realValue = (Integer) mimeValue;
+                    } else {
+                        throw new RuntimeException("Couldn't translate MIME part value '" + mimeValue.toString() + "' into an Integer");
+                    }
+                }
+                regexAssertion.setMimePart(realValue);
                 beanEditSupport.fireEditAccepted(regexAssertion);
             }
         });

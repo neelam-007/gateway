@@ -5,9 +5,11 @@ import com.l7tech.console.tree.policy.PolicyException;
 import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.assertion.alert.SnmpTrapAssertion;
 import com.l7tech.policy.assertion.credential.WsTrustCredentialExchange;
+import com.l7tech.policy.assertion.credential.XpathCredentialSource;
 import com.l7tech.policy.assertion.xml.SchemaValidation;
 import com.l7tech.policy.assertion.xml.XslTransformation;
 import com.l7tech.policy.assertion.xmlsec.RequestWssSaml;
+import com.l7tech.policy.assertion.xmlsec.SamlBrowserArtifact;
 
 import java.util.*;
 
@@ -90,6 +92,8 @@ public class Advices {
         advicesMap.put(RequestSwAAssertion.class, new Class[] {AddRequestSwAAssertionAdvice.class});
         advicesMap.put(RequestWssSaml.class, new Class[] {AddRequestWssSamlAdvice.class});
         advicesMap.put(WsTrustCredentialExchange.class, new Class[] {AddWsTrustCredentialExchangeAdvice.class});
+        advicesMap.put(XpathCredentialSource.class, new Class[] {AddXpathCredentialSourceAdvice.class});
+        advicesMap.put(SamlBrowserArtifact.class, new Class[] {AddSamlBrowserArtifactAdvice.class});
         advicesMap.put(Regex.class, new Class[] {RegexAdvice.class});
         advicesMap.put(SnmpTrapAssertion.class, new Class[] {AddSnmpTrapAssertionAdvice.class});
     }

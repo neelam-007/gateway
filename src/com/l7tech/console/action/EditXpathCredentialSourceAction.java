@@ -1,17 +1,12 @@
-/*
- * Copyright (C) 2004 Layer 7 Technologies Inc.
- *
- * $Id$
- */
 package com.l7tech.console.action;
 
 import com.l7tech.common.gui.util.Utilities;
-import com.l7tech.console.panels.WsTrustCredentialExchangePropertiesDialog;
 import com.l7tech.console.tree.AbstractTreeNode;
 import com.l7tech.console.tree.policy.AssertionTreeNode;
 import com.l7tech.console.tree.policy.PolicyTreeModel;
 import com.l7tech.console.util.TopComponents;
-import com.l7tech.policy.assertion.credential.WsTrustCredentialExchange;
+import com.l7tech.console.panels.XpathCredentialSourcePropertiesDialog;
+import com.l7tech.policy.assertion.credential.XpathCredentialSource;
 
 import javax.swing.*;
 import java.awt.*;
@@ -19,10 +14,9 @@ import java.util.logging.Level;
 
 /**
  * @author alex
- * @version $Revision$
  */
-public class EditWsTrustCredentialExchangeAction extends NodeAction {
-    private final WsTrustCredentialExchange wsTrustAssertion;
+public class EditXpathCredentialSourceAction extends NodeAction {
+    private final XpathCredentialSource xpathCredsAssertion;
 
     /**
      * constructor accepting the node that this action will
@@ -31,16 +25,16 @@ public class EditWsTrustCredentialExchangeAction extends NodeAction {
      *
      * @param node the node this action will acto on
      */
-    public EditWsTrustCredentialExchangeAction(AbstractTreeNode node) {
+    public EditXpathCredentialSourceAction(AbstractTreeNode node) {
         super(node);
-        if (!(node.asAssertion() instanceof WsTrustCredentialExchange)) {
+        if (!(node.asAssertion() instanceof XpathCredentialSource)) {
             throw new IllegalArgumentException();
         }
-        wsTrustAssertion = (WsTrustCredentialExchange)node.asAssertion();
+        xpathCredsAssertion = (XpathCredentialSource)node.asAssertion();
     }
 
     public String getName() {
-        return "View/Edit WS-Trust Credential Exchange Properties";
+        return "View/Edit XPath Credential Source Properties";
     }
 
     public String getDescription() {
@@ -53,7 +47,7 @@ public class EditWsTrustCredentialExchangeAction extends NodeAction {
 
     protected void performAction() {
         Frame parent = TopComponents.getInstance().getMainWindow();
-        WsTrustCredentialExchangePropertiesDialog dlg = new WsTrustCredentialExchangePropertiesDialog(wsTrustAssertion, parent, true);
+        XpathCredentialSourcePropertiesDialog dlg = new XpathCredentialSourcePropertiesDialog(xpathCredsAssertion, parent, true);
         dlg.pack();
         Utilities.centerOnScreen(dlg);
         dlg.show();
@@ -67,4 +61,5 @@ public class EditWsTrustCredentialExchangeAction extends NodeAction {
             }
         }
     }
+
 }

@@ -18,12 +18,12 @@ import com.l7tech.common.util.HexUtils;
 import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.xml.TestDocuments;
+import com.l7tech.common.xml.WsTrustRequestType;
 import com.l7tech.common.xml.saml.SamlAssertion;
 import com.l7tech.identity.User;
 import com.l7tech.identity.UserBean;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
-import com.l7tech.policy.assertion.credential.WsTrustCredentialExchange;
 import com.l7tech.server.audit.AuditContextStub;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.ServerPolicyFactory;
@@ -76,8 +76,8 @@ public class TokenServiceTest extends TestCase {
         Document requestMsg = TokenServiceClient.createRequestSecurityTokenMessage(TestDocuments.getDotNetServerCertificate(),
                                                                     TestDocuments.getDotNetServerPrivateKey(),
                                                                     SecurityTokenType.WSSC_CONTEXT,
-                                                                    WsTrustCredentialExchange.TokenServiceRequestType.ISSUE,
-                                                                    null, null, null);
+                                                                    WsTrustRequestType.ISSUE,
+                                                                    null, null, null, null);
         log.info("Decorated token request (reformatted): " + XmlUtil.nodeToFormattedString(requestMsg));
 
         final TokenService service = new TokenServiceImpl(TestDocuments.getDotNetServerPrivateKey(),
@@ -127,8 +127,8 @@ public class TokenServiceTest extends TestCase {
                 subjectCertificate,
                 subjectPrivateKey,
                 SecurityTokenType.SAML_ASSERTION,
-                WsTrustCredentialExchange.TokenServiceRequestType.ISSUE,
-                null, null, null);
+                WsTrustRequestType.ISSUE,
+                null, null, null, null);
         requestMsg.getDocumentElement().setAttribute("xmlns:saml", SamlConstants.NS_SAML);
         log.info("Decorated token request (reformatted): " + XmlUtil.nodeToFormattedString(requestMsg));
 
@@ -194,9 +194,9 @@ public class TokenServiceTest extends TestCase {
 
         // TODO after FIM interop use AppliesTo like http://l7tech.com/services/TokenServiceTest instead
         Document rstDoc = TokenServiceClient.createRequestSecurityTokenMessage(null,
-                                                                                    WsTrustCredentialExchange.TokenServiceRequestType.VALIDATE,
+                                                                                    WsTrustRequestType.VALIDATE,
                                                                                     usernameToken,
-                                                                                    "http://samlpart.com/sso");
+                                                                                    "http://samlpart.com/sso", null);
         assertNotNull(rstDoc);
 
         // TODO check this somehow, other than uncommenting below line and eyeballing the diff

@@ -3,9 +3,10 @@
  *
  * $Id$
  */
-package com.l7tech.common.gui;
+package com.l7tech.console.panels;
 
 import com.l7tech.policy.assertion.credential.WsTrustCredentialExchange;
+import com.l7tech.common.xml.WsTrustRequestType;
 
 import javax.swing.*;
 import javax.swing.event.DocumentEvent;
@@ -30,6 +31,7 @@ public class WsTrustCredentialExchangePropertiesDialog extends JDialog {
     private JComboBox requestTypeCombo;
     private JTextField appliesToField;
     private JTextField tokenServiceUrlField;
+    private JTextField issuerField;
 
     public WsTrustCredentialExchange getWsTrustAssertion() {
         return wsTrustAssertion;
@@ -38,9 +40,9 @@ public class WsTrustCredentialExchangePropertiesDialog extends JDialog {
     public WsTrustCredentialExchangePropertiesDialog(WsTrustCredentialExchange assertion, Frame owner, boolean modal) throws HeadlessException {
         super(owner, "Configure WS-Trust Credential Exchange", modal);
         this.wsTrustAssertion = assertion;
-        requestTypeCombo.setModel(new DefaultComboBoxModel(new WsTrustCredentialExchange.TokenServiceRequestType[] {WsTrustCredentialExchange.TokenServiceRequestType.ISSUE, WsTrustCredentialExchange.TokenServiceRequestType.VALIDATE}));
+        requestTypeCombo.setModel(new DefaultComboBoxModel(new WsTrustRequestType[] {WsTrustRequestType.ISSUE, WsTrustRequestType.VALIDATE}));
 
-        WsTrustCredentialExchange.TokenServiceRequestType type = assertion.getRequestType();
+        WsTrustRequestType type = assertion.getRequestType();
         if (type == null) {
             requestTypeCombo.setSelectedIndex(0);
         } else {
@@ -48,14 +50,16 @@ public class WsTrustCredentialExchangePropertiesDialog extends JDialog {
         }
         tokenServiceUrlField.setText(assertion.getTokenServiceUrl());
         appliesToField.setText(assertion.getAppliesTo());
+        issuerField.setText(assertion.getIssuer());
 
         getContentPane().add(mainPanel);
 
         okButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 wsTrustAssertion.setAppliesTo(appliesToField.getText());
+                wsTrustAssertion.setIssuer(issuerField.getText());
                 wsTrustAssertion.setTokenServiceUrl(tokenServiceUrlField.getText());
-                wsTrustAssertion.setRequestType((WsTrustCredentialExchange.TokenServiceRequestType)requestTypeCombo.getSelectedItem());
+                wsTrustAssertion.setRequestType((WsTrustRequestType)requestTypeCombo.getSelectedItem());
                 assertionChanged = true;
                 dispose();
             }
@@ -76,6 +80,7 @@ public class WsTrustCredentialExchangePropertiesDialog extends JDialog {
 
         tokenServiceUrlField.getDocument().addDocumentListener(updateListener);
         appliesToField.getDocument().addDocumentListener(updateListener);
+        issuerField.getDocument().addDocumentListener(updateListener);
 
         updateButtons();
     }
@@ -95,6 +100,7 @@ public class WsTrustCredentialExchangePropertiesDialog extends JDialog {
             ok = false;
         }
         ok = ok && appliesToField.getText() != null && appliesToField.getText().length() > 0;
+        ok = ok && issuerField.getText() != null && issuerField.getText().length() > 0;
         okButton.setEnabled(ok);
     }
 }

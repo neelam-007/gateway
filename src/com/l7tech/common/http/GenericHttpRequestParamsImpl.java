@@ -23,6 +23,7 @@ public class GenericHttpRequestParamsImpl implements GenericHttpRequestParams {
     private Long contentLength = null;
     private HttpHeader[] extraHeaders = new HttpHeader[0];
     private boolean preemptiveAuthentication = true;
+    private boolean followRedirects = false;
 
     /**
      * Create a new request description that does not yet have a target URL set.
@@ -160,6 +161,14 @@ public class GenericHttpRequestParamsImpl implements GenericHttpRequestParams {
 
     public HttpHeader[] getExtraHeaders() {
         return extraHeaders;
+    }
+
+    public boolean isFollowRedirects() {
+        return followRedirects;
+    }
+
+    public void setFollowRedirects(boolean followRedirects) {
+        this.followRedirects = followRedirects;
     }
 
     /**

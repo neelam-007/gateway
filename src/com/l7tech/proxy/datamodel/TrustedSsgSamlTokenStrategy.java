@@ -10,7 +10,7 @@ import com.l7tech.common.protocol.SecureSpanConstants;
 import com.l7tech.common.security.token.SecurityTokenType;
 import com.l7tech.common.security.wstrust.TokenServiceClient;
 import com.l7tech.common.xml.saml.SamlAssertion;
-import com.l7tech.policy.assertion.credential.WsTrustCredentialExchange;
+import com.l7tech.common.xml.WsTrustRequestType;
 import com.l7tech.proxy.datamodel.exceptions.BadCredentialsException;
 import com.l7tech.proxy.datamodel.exceptions.KeyStoreCorruptException;
 import com.l7tech.proxy.datamodel.exceptions.OperationCanceledException;
@@ -58,10 +58,11 @@ public class TrustedSsgSamlTokenStrategy extends AbstractSamlTokenStrategy {
                                                    timestampCreatedDate,
                                                    tokenServerSsg.getClientCertificate(),
                                                    tokenServerSsg.getClientCertificatePrivateKey(),
-                                                   WsTrustCredentialExchange.TokenServiceRequestType.ISSUE,
+                                                   WsTrustRequestType.ISSUE,
                                                    SecurityTokenType.SAML_ASSERTION,
                                                    null, // no base
                                                    null, // no appliesTo
+                                                   null, // no wstIssuer
                                                    true);
         log.log(Level.INFO, "Obtained SAML holder-of-key assertion from Gateway " + tokenServerSsg.toString());
         return s;

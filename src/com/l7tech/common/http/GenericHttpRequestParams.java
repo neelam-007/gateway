@@ -87,4 +87,9 @@ public interface GenericHttpRequestParams {
      * @return the array of extra HTTP headers to include with the request.  May be empty but never null.
      */
     HttpHeader[] getExtraHeaders();
+
+    /**
+     * @return true if this request should follow any redirects it might receive from the server
+     */
+    boolean isFollowRedirects();
 }

@@ -19,14 +19,9 @@ import com.l7tech.common.security.xml.decorator.WssDecorator;
 import com.l7tech.common.security.xml.decorator.WssDecoratorImpl;
 import com.l7tech.common.security.xml.processor.*;
 import com.l7tech.common.util.*;
-import com.l7tech.common.xml.InvalidDocumentFormatException;
-import com.l7tech.common.xml.MessageNotSoapException;
-import com.l7tech.common.xml.MissingRequiredElementException;
-import com.l7tech.common.xml.SoapFaultDetail;
+import com.l7tech.common.xml.*;
 import com.l7tech.common.xml.saml.SamlAssertion;
-import com.l7tech.policy.assertion.credential.WsTrustCredentialExchange;
-import org.w3c.dom.Document;
-import org.w3c.dom.Element;
+import org.w3c.dom.*;
 import org.xml.sax.SAXException;
 
 import javax.net.ssl.SSLException;
@@ -39,8 +34,7 @@ import java.security.PrivateKey;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.text.ParseException;
-import java.util.Arrays;
-import java.util.Date;
+import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -60,20 +54,23 @@ public class TokenServiceClient {
      * @param desiredTokenType   the token type being applied for
      * @param base
      * @param appliesToAddress   wsa:Address to use for wsp:AppliesTo, or null to leave out the AppliesTo
+     * @param wstIssuerAddress   wsa:Address to use for wst:Issuer, or null to leave out the Issuer
      * @return a signed SOAP message containing a wst:RequestSecurityToken
      * @throws CertificateException if ther eis a problem with the clientCertificate
      */
     public static Document createRequestSecurityTokenMessage(X509Certificate clientCertificate,
                                                              PrivateKey clientPrivateKey,
                                                              SecurityTokenType desiredTokenType,
-                                                             WsTrustCredentialExchange.TokenServiceRequestType requestType,
+                                                             WsTrustRequestType requestType,
                                                              SecurityToken base,
                                                              String appliesToAddress,
+                                                             String wstIssuerAddress,
                                                              Date timestampCreatedDate)
             throws CertificateException
     {
         try {
-            Document msg = requestSecurityTokenMessageTemplate(desiredTokenType, requestType, appliesToAddress, base);
+            Document msg = requestSecurityTokenMessageTemplate(desiredTokenType,
+                    requestType, appliesToAddress, wstIssuerAddress, base);
             Element env = msg.getDocumentElement();
             Element body = XmlUtil.findFirstChildElementByName(env, env.getNamespaceURI(), "Body");
 
@@ -106,9 +103,9 @@ public class TokenServiceClient {
     }
 
     private static Document requestSecurityTokenMessageTemplate(SecurityTokenType desiredTokenType,
-                                                                WsTrustCredentialExchange.TokenServiceRequestType requestType,
+                                                                WsTrustRequestType requestType,
                                                                 String appliesToAddress,
-                                                                SecurityToken base)
+                                                                String wstIssuerAddress, SecurityToken base)
             throws IOException, SAXException
     {
         // TODO fix or remove this hack: if a saml: qname will be used, declare saml NS in root element
@@ -133,6 +130,13 @@ public class TokenServiceClient {
             address.appendChild(XmlUtil.createTextNode(address, appliesToAddress));
         }
 
+        // Add Issuer, if provided
+        if (wstIssuerAddress != null && wstIssuerAddress.length() > 0) {
+            Element issuer = XmlUtil.createAndAppendElementNS(rst, "Issuer", SoapUtil.WST_NAMESPACE, "wst");
+            Element address = XmlUtil.createAndAppendElementNS(issuer, "Address", SoapUtil.WSA_NAMESPACE, "wsa");
+            address.appendChild(XmlUtil.createTextNode(address, wstIssuerAddress));
+        }
+
         // Add TokenType, if meaningful with this token type
         if (desiredTokenType != null) {
             final String tokenTypeUri = desiredTokenType.getWstTokenTypeUri();
@@ -146,7 +150,43 @@ public class TokenServiceClient {
         // Add Base, if provided.  Base is not required to be the same token type as the token type we are requesting.
         if (base != null) {
             Element baseEl = XmlUtil.createAndPrependElementNS(rst, "Base", SoapUtil.WST_NAMESPACE, "wst");
-            baseEl.appendChild(msg.importNode(base.asElement(), true));
+            Element tokenEl = base.asElement();
+
+            // Ensure all prefixes inherited from token's original context are available to the token
+            Node n = tokenEl;
+            Map declaredTokenNamespaces = new HashMap();
+            Map usedTokenNamespaces = new HashMap();
+            while (n != null) {
+                if (n.getPrefix() != null && n.getNamespaceURI() != null)
+                    usedTokenNamespaces.put(n.getPrefix(), n.getNamespaceURI());
+                if (n.getNodeType() == Node.ELEMENT_NODE) {
+                    NamedNodeMap attrs = ((Element)n).getAttributes();
+                    for (int i = 0; i < attrs.getLength(); i++) {
+                        Attr attr = (Attr) attrs.item(i);
+                        if ("xmlns".equalsIgnoreCase(attr.getPrefix())) {
+                            declaredTokenNamespaces.put(attr.getLocalName(), attr.getValue());
+                        } else if (attr.getPrefix() != null && attr.getNamespaceURI() != null) {
+                            usedTokenNamespaces.put(attr.getPrefix(), attr.getNamespaceURI());
+                        }
+                    }
+                }
+                Node next = n.getNextSibling();
+                if (next == null) next = n.getFirstChild();
+                n = next;
+            }
+
+            for (Iterator i = usedTokenNamespaces.keySet().iterator(); i.hasNext();) {
+                String prefix = (String) i.next();
+                String uri = (String)usedTokenNamespaces.get(prefix);
+                if (declaredTokenNamespaces.containsKey(prefix) && declaredTokenNamespaces.get(prefix).equals(uri)) {
+                    // Already there
+                } else {
+                    String newPrefix = XmlUtil.findUnusedNamespacePrefix(tokenEl, prefix);
+                    tokenEl.setAttribute("xmlns:" + newPrefix, uri);
+                }
+            }
+
+            baseEl.appendChild(msg.importNode(tokenEl, true));
         }
 
         // Add RequestType
@@ -158,9 +198,13 @@ public class TokenServiceClient {
         return msg;
     }
 
-    public static Document createRequestSecurityTokenMessage(SecurityTokenType desiredTokenType, WsTrustCredentialExchange.TokenServiceRequestType requestType, SecurityToken base, String appliesToAddress) {
+    public static Document createRequestSecurityTokenMessage(SecurityTokenType desiredTokenType, WsTrustRequestType requestType, SecurityToken base, String appliesToAddress, String wstIssuerAddress) {
         try {
-            return requestSecurityTokenMessageTemplate(desiredTokenType, requestType, appliesToAddress, base);
+            return requestSecurityTokenMessageTemplate(desiredTokenType,
+                    requestType,
+                    appliesToAddress,
+                    wstIssuerAddress,
+                    base);
         } catch (IOException e) {
             throw new RuntimeException(e); // can't happen
         } catch (SAXException e) {
@@ -185,7 +229,7 @@ public class TokenServiceClient {
             throws IOException, GeneralSecurityException
     {
         Document requestDoc = createRequestSecurityTokenMessage(clientCertificate, clientPrivateKey,
-                                                                SecurityTokenType.WSSC_CONTEXT, WsTrustCredentialExchange.TokenServiceRequestType.ISSUE, null, null, timestampCreatedDate);
+                                                                SecurityTokenType.WSSC_CONTEXT, WsTrustRequestType.ISSUE, null, null, null, timestampCreatedDate);
         Object result = obtainResponse(httpClient, clientCertificate, url, requestDoc, clientPrivateKey, serverCertificate, null, true);
 
         if (!(result instanceof SecureConversationSession))
@@ -202,7 +246,7 @@ public class TokenServiceClient {
             throws IOException, GeneralSecurityException
     {
         if (!("https".equals(url.getProtocol()))) throw new IllegalArgumentException("URL must be HTTPS");
-        Document requestDoc = createRequestSecurityTokenMessage(SecurityTokenType.WSSC_CONTEXT, WsTrustCredentialExchange.TokenServiceRequestType.ISSUE, null, null);
+        Document requestDoc = createRequestSecurityTokenMessage(SecurityTokenType.WSSC_CONTEXT, WsTrustRequestType.ISSUE, null, null, null);
         Object result = obtainResponse(httpClient, null, url, requestDoc, null, serverCertificate, httpBasicCredentials, false);
 
         if (!(result instanceof SecureConversationSession))
@@ -225,6 +269,7 @@ public class TokenServiceClient {
      * @param tokenType
      * @param base
      * @param appliesToAddress
+     * @param wstIssuerAddress
      * @param requireWssSignedResponse
      * @return
      * @throws IOException
@@ -237,10 +282,11 @@ public class TokenServiceClient {
                                                     Date timestampCreatedDate,
                                                     X509Certificate clientCertificate,
                                                     PrivateKey clientPrivateKey,
-                                                    WsTrustCredentialExchange.TokenServiceRequestType requestType,
+                                                    WsTrustRequestType requestType,
                                                     SecurityTokenType tokenType,
                                                     SecurityToken base,
                                                     String appliesToAddress,
+                                                    String wstIssuerAddress,
                                                     boolean requireWssSignedResponse)
             throws IOException, GeneralSecurityException
     {
@@ -253,6 +299,7 @@ public class TokenServiceClient {
                                                                 requestType,
                                                                 base,
                                                                 appliesToAddress,
+                                                                wstIssuerAddress,
                                                                 timestampCreatedDate);
         requestDoc.getDocumentElement().setAttribute("xmlns:saml", SamlConstants.NS_SAML);
         Object result = obtainResponse(httpClient, clientCertificate, url, requestDoc, clientPrivateKey, serverCertificate, httpBasicCredentials, requireWssSignedResponse);

@@ -67,6 +67,15 @@ public abstract class AbstractHttpResponseKnob implements HttpResponseKnob {
             this.name = name;
             this.value = value;
         }
+
+        public String getName() {
+            return name;
+        }
+
+        public Object getValue() {
+            return value;
+        }
+
         final String name;
         final Object value;
     }

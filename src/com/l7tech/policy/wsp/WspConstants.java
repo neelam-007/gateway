@@ -11,6 +11,7 @@ import com.l7tech.common.wsdl.BindingInfo;
 import com.l7tech.common.wsdl.BindingOperationInfo;
 import com.l7tech.common.wsdl.MimePartInfo;
 import com.l7tech.common.xml.XpathExpression;
+import com.l7tech.common.xml.WsTrustRequestType;
 import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.assertion.alert.SnmpTrapAssertion;
 import com.l7tech.policy.assertion.composite.AllAssertion;
@@ -89,13 +90,13 @@ public class WspConstants {
             }
         },
 
-        new BasicTypeMapping(WsTrustCredentialExchange.TokenServiceRequestType.class, "requestType") {
+        new BasicTypeMapping(WsTrustRequestType.class, "requestType") {
             protected Object stringToObject(String value) {
-                return WsTrustCredentialExchange.TokenServiceRequestType.fromString(value);
+                return WsTrustRequestType.fromString(value);
             }
 
             protected String objectToString(Object target) {
-                return ((WsTrustCredentialExchange.TokenServiceRequestType)target).getUri();
+                return ((WsTrustRequestType)target).getUri();
             }
         },
 

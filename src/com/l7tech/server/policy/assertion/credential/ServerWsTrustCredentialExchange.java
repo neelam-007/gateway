@@ -7,17 +7,24 @@ package com.l7tech.server.policy.assertion.credential;
 
 import com.l7tech.common.audit.AssertionMessages;
 import com.l7tech.common.audit.Auditor;
+import com.l7tech.common.http.GenericHttpHeader;
 import com.l7tech.common.http.GenericHttpRequestParamsImpl;
+import com.l7tech.common.http.HttpHeader;
 import com.l7tech.common.http.SimpleHttpClient;
 import com.l7tech.common.http.prov.jdk.UrlConnectionHttpClient;
 import com.l7tech.common.message.XmlKnob;
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.common.security.token.SecurityToken;
+import com.l7tech.common.security.token.UsernameToken;
 import com.l7tech.common.security.token.UsernameTokenImpl;
 import com.l7tech.common.security.wstrust.TokenServiceClient;
 import com.l7tech.common.security.xml.decorator.DecorationRequirements;
 import com.l7tech.common.security.xml.decorator.WssDecorator;
 import com.l7tech.common.security.xml.decorator.WssDecoratorImpl;
+import com.l7tech.common.security.xml.processor.ProcessorResult;
+import com.l7tech.common.security.xml.processor.WssProcessor;
+import com.l7tech.common.security.xml.processor.WssProcessorImpl;
+import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.xml.InvalidDocumentFormatException;
 import com.l7tech.common.xml.saml.SamlAssertion;
 import com.l7tech.policy.assertion.AssertionStatus;
@@ -54,6 +61,7 @@ public class ServerWsTrustCredentialExchange implements ServerAssertion {
     private final SimpleHttpClient httpClient = new SimpleHttpClient(new UrlConnectionHttpClient());
     private final URL tokenServiceUrl;
     private final SSLContext sslContext;
+    private WssProcessor trogdor = new WssProcessorImpl();
 
     public ServerWsTrustCredentialExchange(WsTrustCredentialExchange assertion, ApplicationContext springContext) {
         this.assertion = assertion;
@@ -83,69 +91,106 @@ public class ServerWsTrustCredentialExchange implements ServerAssertion {
     }
 
     public AssertionStatus checkRequest(PolicyEnforcementContext context) throws IOException, PolicyAssertionException {
-        LoginCredentials creds = context.getCredentials();
-        SecurityToken token = null;
-        Object payload = creds.getPayload();
-        if (payload instanceof SecurityToken) {
-            token = (SecurityToken)payload;
-        } else if (creds.getFormat() == CredentialFormat.CLEARTEXT) {
-            token = new UsernameTokenImpl(creds.getLogin(), creds.getCredentials());
-        // TODO } else if (creds.getClientCert() != null) {
-        } else {
+        XmlKnob requestXml = (XmlKnob)context.getRequest().getKnob(XmlKnob.class);
+        if (requestXml == null) {
+            auditor.logAndAudit(AssertionMessages.WSTRUST_NON_XML_MESSAGE);
+            return AssertionStatus.FAILED;
+        }
+
+        // Try to get credentials from WSS processor results
+        SecurityToken originalToken = null;
+        Element originalTokenElement = null;
+        ProcessorResult wssProcResult = requestXml.getProcessorResult();
+        if (wssProcResult != null) {
+            SecurityToken[] tokens = wssProcResult.getSecurityTokens();
+            for (int i = 0; i < tokens.length; i++) {
+                SecurityToken token = tokens[i];
+                if (token instanceof SamlAssertion || token instanceof UsernameToken) {
+                    if (originalToken == null) {
+                        originalToken = token;
+                        originalTokenElement = token.asElement();
+                    } else {
+                        auditor.logAndAudit(AssertionMessages.WSTRUST_MULTI_TOKENS);
+                        return AssertionStatus.FAILED;
+                    }
+                }
+            }
+        }
+
+        // Try to get non-WSS credentials
+        if (originalToken == null) {
+            LoginCredentials creds = context.getCredentials();
+
+            Object payload = creds.getPayload();
+            if (payload instanceof SecurityToken) {
+                originalToken = (SecurityToken)payload;
+            } else if (creds.getFormat() == CredentialFormat.CLEARTEXT) {
+                originalToken = new UsernameTokenImpl(creds.getLogin(), creds.getCredentials());
+            }
+        }
+
+        if (originalToken == null) {
             auditor.logAndAudit(AssertionMessages.WSTRUST_NO_SUITABLE_CREDENTIALS);
             return AssertionStatus.FAILED;
         }
+
+        // Create RST
         Document rstDoc = TokenServiceClient.createRequestSecurityTokenMessage(null,
                                                                                assertion.getRequestType(),
-                                                                               token,
-                                                                               assertion.getAppliesTo());
+                                                                               originalToken,
+                                                                               assertion.getAppliesTo(),
+                                                                               assertion.getIssuer());
 
         GenericHttpRequestParamsImpl params = new GenericHttpRequestParamsImpl(tokenServiceUrl);
         params.setContentType(ContentTypeHeader.XML_DEFAULT);
         params.setSslSocketFactory(sslContext.getSocketFactory());
+        params.setExtraHeaders(new HttpHeader[] { new GenericHttpHeader(SoapUtil.SOAPACTION, "\"\"") });
 
         try {
+            // Get RSTR
             SimpleHttpClient.SimpleXmlResponse response = httpClient.postXml(params, rstDoc);
             int status = response.getStatus();
             if (status == 200) {
                 Document rstrDoc = response.getDocument();
                 Object rstrObj = TokenServiceClient.parseUnsignedRequestSecurityTokenResponse(rstrDoc);
                 if (rstrObj instanceof SamlAssertion) {
-                    SamlAssertion samlAssertion = (SamlAssertion)rstrObj;
-                    context.setCredentials(LoginCredentials.makeSamlCredentials(samlAssertion, assertion.getClass()));
-                    // TODO remove credentials from message
-                    Element tokenElement = token.asElement();
-                    if (tokenElement == null) {
-                        auditor.logAndAudit(AssertionMessages.WSTRUST_DECORATION_FAILED);
-                        return AssertionStatus.FAILED;
-                    } else {
-                        XmlKnob xmlKnob = (XmlKnob)context.getRequest().getKnob(XmlKnob.class);
-                        if (xmlKnob == null) {
-                            auditor.logAndAudit(AssertionMessages.WSTRUST_NON_XML_MESSAGE);
-                            return AssertionStatus.FAILED;
+                    final SamlAssertion samlAssertion = (SamlAssertion) rstrObj;
+
+                    if (originalTokenElement != null) {
+                        Document requestDoc = requestXml.getDocumentWritable(); // Don't actually want the document; just want to invalidate bytes
+                        Node securityEl = originalTokenElement.getParentNode();
+                        securityEl.removeChild(originalTokenElement);
+                        // Check for empty Security header, remove
+                        // TODO make this optional?
+                        if (securityEl.getFirstChild() == null) {
+                            securityEl.getParentNode().removeChild(securityEl);
                         }
-                        Document requestDoc = xmlKnob.getDocumentWritable(); // Don't actually want the document; just want to invalidate bytes
-                        Node parent = tokenElement.getParentNode();
-                        parent.removeChild(tokenElement);
 
                         DecorationRequirements decoReq = new DecorationRequirements();
                         decoReq.setSenderSamlToken(samlAssertion.asElement(), false);
                         WssDecorator deco = new WssDecoratorImpl();
                         try {
                             deco.decorateMessage(requestDoc, decoReq);
+                            requestXml.setDocument(requestDoc);
+
+                            context.setCredentials(LoginCredentials.makeSamlCredentials(samlAssertion, assertion.getClass()));
+                            requestXml.setProcessorResult(trogdor.undecorateMessage(context.getRequest(), null, null, null));
                             return AssertionStatus.NONE;
                         } catch (Exception e) {
                             auditor.logAndAudit(AssertionMessages.WSTRUST_DECORATION_FAILED, null, e);
                             return AssertionStatus.FAILED;
                         }
+                    } else {
+                        auditor.logAndAudit(AssertionMessages.WSTRUST_ORIGINAL_TOKEN_NOT_XML);
+                        return AssertionStatus.NONE;
                     }
                 } else {
                     auditor.logAndAudit(AssertionMessages.WSTRUST_RSTR_NOT_SAML);
-                    return AssertionStatus.FAILED;
+                    return AssertionStatus.AUTH_REQUIRED;
                 }
             } else {
-                auditor.logAndAudit(AssertionMessages.RESPONSE_STATUS); // TODO use a better message
-                return AssertionStatus.FAILED;
+                auditor.logAndAudit(AssertionMessages.WSTRUST_RSTR_STATUS_NON_200); // TODO use a better message
+                return AssertionStatus.AUTH_REQUIRED;
             }
         } catch (SAXException e) {
             auditor.logAndAudit(AssertionMessages.ERROR_READING_RESPONSE, null, e);

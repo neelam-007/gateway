@@ -45,6 +45,7 @@ public class PolicyEnforcementContext extends ProcessingContext {
     private PublishedService service;
     private final Vector updatedCookies = new Vector();
     private AuditContext auditContext = null;
+    private final Map vars = new HashMap();
 
     public PolicyEnforcementContext(Message request, Message response) {
         super(request, response);
@@ -202,5 +203,13 @@ public class PolicyEnforcementContext extends ProcessingContext {
 
     public Vector getUpdatedCookies() {
         return updatedCookies;
+    }
+
+    public void setVariable(String name, Object value) {
+        vars.put(name, value);
+    }
+
+    public Object getVariable(String name) {
+        return vars.get(name);
     }
 }

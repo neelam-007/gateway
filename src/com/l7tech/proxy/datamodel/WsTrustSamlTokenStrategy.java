@@ -16,7 +16,7 @@ import com.l7tech.common.util.CertUtils;
 import com.l7tech.common.util.HexUtils;
 import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.xml.saml.SamlAssertion;
-import com.l7tech.policy.assertion.credential.WsTrustCredentialExchange;
+import com.l7tech.common.xml.WsTrustRequestType;
 import com.l7tech.proxy.datamodel.exceptions.BadCredentialsException;
 import com.l7tech.proxy.datamodel.exceptions.KeyStoreCorruptException;
 import com.l7tech.proxy.datamodel.exceptions.OperationCanceledException;
@@ -52,6 +52,7 @@ public class WsTrustSamlTokenStrategy extends AbstractSamlTokenStrategy implemen
     private String username;
     private char[] password;
     private String appliesTo;
+    private String wstIssuer;
     private String tokenServerCertB64;
 
     private transient X509Certificate tokenServerCert = null;
@@ -106,10 +107,11 @@ public class WsTrustSamlTokenStrategy extends AbstractSamlTokenStrategy implemen
                                                    null, // not overriding timestamp created date
                                                    null, // no client cert (not signing message)
                                                    null, // no client private key (not signing message)
-                                                   WsTrustCredentialExchange.TokenServiceRequestType.VALIDATE,
+                                                   WsTrustRequestType.VALIDATE,
                                                    null, // no token type (FIM doesn't like it)
                                                    usernameToken,
                                                    getAppliesTo(),
+                                                   getWstIssuer(),
                                                    false);
         log.log(Level.INFO, "Obtained SAML assertion from WS-Trust server " + wsTrustUrl);
         return s;
@@ -164,6 +166,14 @@ public class WsTrustSamlTokenStrategy extends AbstractSamlTokenStrategy implemen
 
     public void setAppliesTo(String appliesTo) {
         this.appliesTo = appliesTo;
+    }
+
+    public String getWstIssuer() {
+        return wstIssuer;
+    }
+
+    public void setWstIssuer(String wstIssuer) {
+        this.wstIssuer = wstIssuer;
     }
 
     public String getTokenServerCertB64() {
