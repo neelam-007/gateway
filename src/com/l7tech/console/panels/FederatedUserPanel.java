@@ -260,61 +260,61 @@ public class FederatedUserPanel extends UserPanel {
                         GridBagConstraints.BOTH,
                         new Insets(10, 10, 0, 10), 0, 0));
 
-        detailsPanel.add(getFirstNameLabel(),
+        detailsPanel.add(getX509SubjectNameLabel(),
                 new GridBagConstraints(0, 2, 1, 1, 0.0, 0.0,
                         GridBagConstraints.WEST,
                         GridBagConstraints.NONE,
                         new Insets(10, 10, 0, 0), 0, 0));
 
-        detailsPanel.add(getFirstNameTextField(),
+        detailsPanel.add(getX509SubjectNameTextField(),
                 new GridBagConstraints(1, 2, 1, 1, 1.0, 0.0,
                         GridBagConstraints.WEST,
                         GridBagConstraints.HORIZONTAL,
                         new Insets(10, 15, 0, 10), 0, 0));
 
-        detailsPanel.add(getLastNameLabel(),
+        detailsPanel.add(getLoginLabel(),
                 new GridBagConstraints(0, 3, 1, 1, 0.0, 0.0,
                         GridBagConstraints.WEST,
                         GridBagConstraints.NONE,
                         new Insets(10, 10, 0, 0), 0, 0));
 
-        detailsPanel.add(getLastNameTextField(),
+        detailsPanel.add(getLoginTextField(),
                 new GridBagConstraints(1, 3, 1, 1, 1.0, 0.0,
                         GridBagConstraints.WEST,
                         GridBagConstraints.HORIZONTAL,
                         new Insets(10, 15, 0, 10), 0, 0));
 
-        detailsPanel.add(getLoginLabel(),
+        detailsPanel.add(getEmailLabel(),
                 new GridBagConstraints(0, 4, 1, 1, 0.0, 0.0,
                         GridBagConstraints.WEST,
                         GridBagConstraints.NONE,
                         new Insets(10, 10, 0, 0), 0, 0));
 
-        detailsPanel.add(getLoginTextField(),
+        detailsPanel.add(getEmailTextField(),
                 new GridBagConstraints(1, 4, 1, 1, 1.0, 0.0,
                         GridBagConstraints.WEST,
                         GridBagConstraints.HORIZONTAL,
                         new Insets(10, 15, 0, 10), 0, 0));
 
-        detailsPanel.add(getEmailLabel(),
+        detailsPanel.add(getFirstNameLabel(),
                 new GridBagConstraints(0, 5, 1, 1, 0.0, 0.0,
                         GridBagConstraints.WEST,
                         GridBagConstraints.NONE,
                         new Insets(10, 10, 0, 0), 0, 0));
 
-        detailsPanel.add(getEmailTextField(),
+        detailsPanel.add(getFirstNameTextField(),
                 new GridBagConstraints(1, 5, 1, 1, 1.0, 0.0,
                         GridBagConstraints.WEST,
                         GridBagConstraints.HORIZONTAL,
                         new Insets(10, 15, 0, 10), 0, 0));
 
-        detailsPanel.add(getX509SubjectNameLabel(),
+        detailsPanel.add(getLastNameLabel(),
                 new GridBagConstraints(0, 6, 1, 1, 0.0, 0.0,
                         GridBagConstraints.WEST,
                         GridBagConstraints.NONE,
                         new Insets(10, 10, 0, 0), 0, 0));
 
-        detailsPanel.add(getX509SubjectNameTextField(),
+        detailsPanel.add(getLastNameTextField(),
                 new GridBagConstraints(1, 6, 1, 1, 1.0, 0.0,
                         GridBagConstraints.WEST,
                         GridBagConstraints.HORIZONTAL,
