@@ -67,7 +67,7 @@ public class ServerRegex implements ServerAssertion {
               context.getResponse().getMimeKnob().getFirstPart() :
               context.getRequest().getMimeKnob().getFirstPart();
 
-            byte[] message = HexUtils.slurpStream(firstPart.getInputStream(true));
+            byte[] message = HexUtils.slurpStream(firstPart.getInputStream(false));
             final String encoding = firstPart.getContentType().getEncoding();
             Matcher matcher = regexPattern.matcher(new String(message, encoding));
             if (regexAssertion.getReplacement() != null) {
