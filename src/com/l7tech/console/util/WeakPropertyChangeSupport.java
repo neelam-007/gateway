@@ -68,9 +68,9 @@ public class WeakPropertyChangeSupport {
 
     public void firePropertyChange(Object source, String propertyName,
                                    Object oldValue, Object newValue) {
-        if (oldValue != null && newValue != null && oldValue.equals(newValue)) {
+   /*     if (oldValue != null && newValue != null && oldValue.equals(newValue)) {
             return;
-        }
+        } */
         PropertyChangeListener la[];
         String isa[];
         int cnt;
