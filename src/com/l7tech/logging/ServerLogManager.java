@@ -140,7 +140,9 @@ public class ServerLogManager extends LogManager {
             FileHandler fileHandler = new FileHandler(pattern, getLogFilesSizeLimit(), getLogFileNr());
             fileHandler.setFormatter(new SimpleFormatter());
             logger.addHandler(fileHandler);
-            pluginServerLogHandler(logger);
+            if (startDbHandler()) {
+                pluginServerLogHandler(logger);
+            }
         } catch (Throwable e) {
             System.err.println("can't set special handlers " + e.getMessage());
         }
@@ -154,9 +156,10 @@ public class ServerLogManager extends LogManager {
                 if (dbHandler != null) return;
                 dbHandler = new ServerLogHandler();
                 boolean initialized = false;
+                int i = 0;
                 while (!initialized) {
                     try {
-                        sleep(2000);
+                        sleep(3000);
                     } catch (InterruptedException e) {
                         System.err.println("sleep interrupted " + e.getMessage());
                     }
@@ -181,6 +184,11 @@ public class ServerLogManager extends LogManager {
                     } catch (TransactionException e) {
                         System.err.println("transaction exception: " + e.getMessage() +
                                            " server log handler cannot be initialized");
+                        return;
+                    }
+                    ++i;
+                    if (i > 3) {
+                        // give up after a while
                         return;
                     }
                 }
@@ -218,6 +226,12 @@ public class ServerLogManager extends LogManager {
                                " instead");
         }
         return path;
+    }
+
+    private boolean startDbHandler() {
+        String val = getProps().getProperty(START_DBHANDLER_PROP);
+        if (val == null) return false;
+        return Boolean.valueOf(val).booleanValue();
     }
 
     private int getLogFilesSizeLimit() {
@@ -277,6 +291,7 @@ public class ServerLogManager extends LogManager {
     public static final String SIZELIMIT_PROP_NAME = "com.l7tech.server.log.FileHandler.limit";
     public static final String NRFILES_PROP_NAME = "com.l7tech.server.log.FileHandler.count";
     public static final String PROP_LOGPROPERTIES = "com.l7tech.server.logPropertiesPath";
+    public static final String START_DBHANDLER_PROP = "com.l7tech.server.log.HibHandler";
     public static final String DEFAULT_LOGPROPERTIES_PATH  = "/ssg/etc/conf/ssglog.properties";
 
     private Logger systemLogger = null;
