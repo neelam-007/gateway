@@ -50,6 +50,7 @@
                     <UserAgent stringValueNull="null"/>
                     <ProtectedServiceUrl stringValueNull="null"/>
                     <Login stringValueNull="null"/>
+                    <PolicyXml stringValueNull="null"/>
                     <GroupMembershipStatement booleanValue="false"/>
                     <Password stringValueNull="null"/>
                     <Realm stringValueNull="null"/>
@@ -174,7 +175,7 @@
                     <NamespaceMap mapValue="included"/>
                     <Bindings mapValue="included"/>
                 </RequestSwAAssertion>
-                <SamlAuthenticationStatement>
+                <RequestWssSaml>
                     <AudienceRestriction stringValueNull="null"/>
                     <SubjectConfirmations stringArrayValue="included"/>
                     <RecipientContext xmlSecurityRecipientContext="included">
@@ -184,40 +185,12 @@
                     <NameFormats stringArrayValue="included"/>
                     <RequireProofOfPosession booleanValue="true"/>
                     <CheckAssertionValidity booleanValue="true"/>
+                    <AttributeStatement samlAttributeInfoNull="null"/>
+                    <AuthenticationStatement samlAuthenticationInfoNull="null"/>
                     <NameQualifier stringValueNull="null"/>
                     <NoSubjectConfirmation booleanValue="false"/>
-                    <AuthenticationMethods stringArrayValue="included"/>
-                </SamlAuthenticationStatement>
-                <SamlAuthorizationStatement>
-                    <AudienceRestriction stringValueNull="null"/>
-                    <Action stringValueNull="null"/>
-                    <ActionNamespace stringValueNull="null"/>
-                    <SubjectConfirmations stringArrayValue="included"/>
-                    <RecipientContext xmlSecurityRecipientContext="included">
-                        <Base64edX509Certificate stringValueNull="null"/>
-                        <Actor stringValue=""/>
-                    </RecipientContext>
-                    <NameFormats stringArrayValue="included"/>
-                    <RequireProofOfPosession booleanValue="true"/>
-                    <CheckAssertionValidity booleanValue="true"/>
-                    <Resource stringValueNull="null"/>
-                    <NameQualifier stringValueNull="null"/>
-                    <NoSubjectConfirmation booleanValue="false"/>
-                </SamlAuthorizationStatement>
-                <SalmAttributeStatement>
-                    <AudienceRestriction stringValueNull="null"/>
-                    <SubjectConfirmations stringArrayValue="included"/>
-                    <RecipientContext xmlSecurityRecipientContext="included">
-                        <Base64edX509Certificate stringValueNull="null"/>
-                        <Actor stringValue=""/>
-                    </RecipientContext>
-                    <NameFormats stringArrayValue="included"/>
-                    <RequireProofOfPosession booleanValue="true"/>
-                    <CheckAssertionValidity booleanValue="true"/>
-                    <NameQualifier stringValueNull="null"/>
-                    <NoSubjectConfirmation booleanValue="false"/>
-                    <Attributes samlAttributeInfoArray="included"/>
-                </SalmAttributeStatement>
+                    <AuthorizationStatement samlAuthorizationInfoNull="null"/>
+                </RequestWssSaml>
                 <AuditAssertion>
                     <SaveRequest booleanValue="false"/>
                     <SaveResponse booleanValue="false"/>

@@ -1,20 +1,20 @@
 package com.l7tech.console.tree;
 
 import com.l7tech.policy.assertion.Assertion;
-import com.l7tech.policy.assertion.xmlsec.SamlAttributeStatement;
+import com.l7tech.policy.assertion.xmlsec.RequestWssSaml;
 
 import javax.swing.*;
 
 
 /**
- * The class represents the SAML attribute statement node element in the
+ * The class represents the SAML WSS constraint node element in the
  * assertion palette.
  *
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  * @version 1.0
  */
-public class SamlAttributeStatementNode extends AbstractTreeNode {
-    public SamlAttributeStatementNode(){
+public class RequestWssSamlNode extends AbstractTreeNode {
+    public RequestWssSamlNode(){
         super(null);
     }
 
@@ -35,7 +35,7 @@ public class SamlAttributeStatementNode extends AbstractTreeNode {
      * @return the assertion this node represnts
      */
     public Assertion asAssertion() {
-        return new SamlAttributeStatement();
+        return new RequestWssSaml();
     }
 
     /**
@@ -63,7 +63,7 @@ public class SamlAttributeStatementNode extends AbstractTreeNode {
      * @return the node name that is displayed
      */
     public String getName() {
-        return "SAML Attribute Statement";
+        return "SAML Authentication Statement";
 
     }
 
@@ -73,6 +73,6 @@ public class SamlAttributeStatementNode extends AbstractTreeNode {
      * @param open for nodes that can be opened, can have children
      */
     protected String iconResource(boolean open) {
-        return "com/l7tech/console/resources/SAMLAttributeStatement.gif";
+        return "com/l7tech/console/resources/SAMLAuthentication.gif";
     }
 }

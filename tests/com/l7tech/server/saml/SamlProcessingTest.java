@@ -19,10 +19,7 @@ import com.l7tech.policy.assertion.HttpRoutingAssertion;
 import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.assertion.credential.http.HttpBasic;
-import com.l7tech.policy.assertion.xmlsec.RequestWssX509Cert;
-import com.l7tech.policy.assertion.xmlsec.SamlAttributeStatement;
-import com.l7tech.policy.assertion.xmlsec.SamlAuthenticationStatement;
-import com.l7tech.policy.assertion.xmlsec.SamlAuthorizationStatement;
+import com.l7tech.policy.assertion.xmlsec.*;
 import com.l7tech.policy.wsp.WspWriter;
 import com.l7tech.server.MockServletApi;
 import com.l7tech.server.SoapMessageProcessingServlet;
@@ -316,9 +313,12 @@ public class SamlProcessingTest extends TestCase {
     }
 
     private static String getAttributeAssertionPolicy() {
+        SamlAttributeStatement samlAttributeStatement = new SamlAttributeStatement();
+        RequestWssSaml a = new RequestWssSaml();
+        a.setAttributeStatement(samlAttributeStatement);
         Assertion policy = new AllAssertion(Arrays.asList(new Assertion[]{
             // Saml Attribute statement:
-            new SamlAttributeStatement(),
+                    a,
             // Route:
             new HttpRoutingAssertion()
         }));
@@ -327,9 +327,12 @@ public class SamlProcessingTest extends TestCase {
     }
 
     private static String getAuthorizationAssertionPolicy() {
+        RequestWssSaml a = new RequestWssSaml();
+        SamlAuthorizationStatement samlAuthorizationStatement = new SamlAuthorizationStatement();
+        a.setAuthorizationStatement(samlAuthorizationStatement);
         Assertion policy = new AllAssertion(Arrays.asList(new Assertion[]{
             // Saml Authorization Statement:
-            new SamlAuthorizationStatement(),
+                    a,
             // Route:
             new HttpRoutingAssertion()
         }));
@@ -338,9 +341,12 @@ public class SamlProcessingTest extends TestCase {
     }
 
     private static String getAuthenticationAssertionPolicy() {
+        SamlAuthenticationStatement samlAuthenticationStatement = new SamlAuthenticationStatement();
+        RequestWssSaml a = new RequestWssSaml();
+        a.setAuthenticationStatement(samlAuthenticationStatement);
         Assertion policy = new AllAssertion(Arrays.asList(new Assertion[]{
             // Saml Authentication Statement:
-            new SamlAuthenticationStatement(),
+                    a,
             // Route:
             //new HttpRoutingAssertion()
         }));

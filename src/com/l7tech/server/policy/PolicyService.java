@@ -29,7 +29,7 @@ import com.l7tech.policy.assertion.credential.wss.WssBasic;
 import com.l7tech.policy.assertion.identity.IdentityAssertion;
 import com.l7tech.policy.assertion.xmlsec.RequestWssX509Cert;
 import com.l7tech.policy.assertion.xmlsec.SamlAuthenticationStatement;
-import com.l7tech.policy.assertion.xmlsec.SamlStatementAssertion;
+import com.l7tech.policy.assertion.xmlsec.RequestWssSaml;
 import com.l7tech.policy.assertion.xmlsec.SecureConversation;
 import com.l7tech.policy.wsp.WspWriter;
 import com.l7tech.server.audit.AuditContext;
@@ -74,7 +74,7 @@ public class PolicyService extends ApplicationObjectSupport {
      * allowd to download the policy */
     private static final Assertion[] ALL_CREDENTIAL_ASSERTIONS_TYPES = new Assertion[] {
         //new SamlAuthorizationStatement(),
-        new SamlAuthenticationStatement(),
+        new RequestWssSaml(),
         //new SamlAttributeStatement(),
         new RequestWssX509Cert(),
         new SecureConversation(),
@@ -103,11 +103,11 @@ public class PolicyService extends ApplicationObjectSupport {
             Assertion assertion = ALL_CREDENTIAL_ASSERTIONS_TYPES[i];
 
             // TODO confirm this change
-            if (assertion instanceof SamlStatementAssertion) {
+            if (assertion instanceof RequestWssSaml) {
                 // Lighed saml requirements for policy download
-                SamlStatementAssertion samlAuth = (SamlStatementAssertion)assertion;
-                samlAuth.setRequireProofOfPosession(false);
-                samlAuth.setCheckAssertionValidity(false);
+                RequestWssSaml requestWssSaml = (RequestWssSaml)assertion;
+                requestWssSaml.setRequireProofOfPosession(false);
+                requestWssSaml.setCheckAssertionValidity(false);
             }
 
             allCredentialAssertions.add(assertion);

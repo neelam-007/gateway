@@ -197,7 +197,7 @@ class PathValidator {
             seenSecureConversation = true;
         }
 
-        if (a instanceof SamlStatementAssertion)
+        if (a instanceof RequestWssSaml)
             setSeenSamlStatement(a, true);
 
         // Custom Assertion can only be used with HTTP Basic
@@ -452,7 +452,7 @@ class PathValidator {
           a instanceof RequestWssConfidentiality || a instanceof RequestWssIntegrity ||
           a instanceof RequestWssReplayProtection || a instanceof RequestWssX509Cert ||
           a instanceof ResponseWssConfidentiality || a instanceof ResponseWssIntegrity ||
-          a instanceof SamlStatementAssertion || a instanceof SwAAssertion)
+          a instanceof RequestWssSaml || a instanceof SwAAssertion)
             return true;
         return false;
     }

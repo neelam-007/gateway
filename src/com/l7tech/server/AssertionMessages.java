@@ -211,7 +211,7 @@ public class AssertionMessages extends Messages {
     public static final M JMS_ROUTING_SET_REPLYTO_CORRELCTIONID           = m(6018, Level.FINE, "Setting JMSReplyTo and JMSCorrelationID");
     public static final M JMS_ROUTING_NON_EXISTENT_ENDPOINT               = m(6019, Level.SEVERE, "JmsRoutingAssertion contains a reference to nonexistent JmsEndpoint #{0}");
 
-    // ServerSamlAuthenticationStatement
+    // ServerRequestWssSaml
     public static final M SAML_AUTHN_STMT_REQUEST_NOT_SOAP                     = m(6100, Level.FINEST, "Request not SOAP; cannot validate Saml Statement");
     public static final M SAML_AUTHN_STMT_NO_TOKENS_PROCESSED                  = m(6101, Level.INFO, "No tokens were processed from this request. Returning AUTH_REQUIRED.");
     public static final M SAML_AUTHN_STMT_MULTIPLE_SAML_ASSERTIONS_UNSUPPORTED = m(6102, Level.SEVERE, "We got a request that contained more than one SAML assertion. This is not currently supported.");

@@ -18,7 +18,7 @@ import com.l7tech.policy.assertion.identity.IdentityAssertion;
 import com.l7tech.policy.assertion.identity.MemberOfGroup;
 import com.l7tech.policy.assertion.identity.SpecificUser;
 import com.l7tech.policy.assertion.xmlsec.RequestWssX509Cert;
-import com.l7tech.policy.assertion.xmlsec.SamlStatementAssertion;
+import com.l7tech.policy.assertion.xmlsec.RequestWssSaml;
 import com.l7tech.policy.assertion.xmlsec.SecureConversation;
 import com.l7tech.server.identity.IdentityProviderFactory;
 import com.l7tech.server.transport.jms.JmsEndpointManager;
@@ -86,7 +86,7 @@ public class ServerPolicyValidator extends PolicyValidator
                 case ID_FIP:
                     for (Iterator iterator = pathContext.credentialSources.iterator(); iterator.hasNext();) {
                         Assertion credSrc = (Assertion)iterator.next();
-                        if (credSrc instanceof SamlStatementAssertion || credSrc instanceof RequestWssX509Cert ||
+                        if (credSrc instanceof RequestWssSaml || credSrc instanceof RequestWssX509Cert ||
                           credSrc instanceof SecureConversation || credSrc instanceof HttpClientCert)
                             ;
                         else {
@@ -103,7 +103,7 @@ public class ServerPolicyValidator extends PolicyValidator
                 case ID_SAMLONLY:
                     for (Iterator iterator = pathContext.credentialSources.iterator(); iterator.hasNext();) {
                         Assertion credSrc = (Assertion)iterator.next();
-                        if (!(credSrc instanceof SamlStatementAssertion)) {
+                        if (!(credSrc instanceof RequestWssSaml)) {
                             r.addError(new PolicyValidatorResult.Error(a,
                               ap,
                               "This identity can only authenticate with " +

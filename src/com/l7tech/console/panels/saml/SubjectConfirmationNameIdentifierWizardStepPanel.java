@@ -6,7 +6,7 @@
 package com.l7tech.console.panels.saml;
 
 import com.l7tech.console.panels.WizardStepPanel;
-import com.l7tech.policy.assertion.xmlsec.SamlStatementAssertion;
+import com.l7tech.policy.assertion.xmlsec.RequestWssSaml;
 import com.l7tech.common.security.saml.SamlConstants;
 
 import javax.swing.*;
@@ -56,14 +56,14 @@ public class SubjectConfirmationNameIdentifierWizardStepPanel extends WizardStep
      *                                  by the wizard are not valid.
      */
     public void readSettings(Object settings) throws IllegalArgumentException {
-        SamlStatementAssertion statement = (SamlStatementAssertion)settings;
-        statement.setNameQualifier(textFieldNameQualifier.getText());
+        RequestWssSaml requestWssSaml = (RequestWssSaml)settings;
+        requestWssSaml.setNameQualifier(textFieldNameQualifier.getText());
         for (Iterator iterator = nameFormatsMap.entrySet().iterator(); iterator.hasNext();) {
             Map.Entry entry = (Map.Entry)iterator.next();
             JCheckBox jc = (JCheckBox)entry.getValue();
             jc.setSelected(false);
         }
-        String[] formats = statement.getNameFormats();
+        String[] formats = requestWssSaml.getNameFormats();
         for (int i = 0; i < formats.length; i++) {
             String format = formats[i];
             JCheckBox jc = (JCheckBox)nameFormatsMap.get(format);
@@ -88,7 +88,7 @@ public class SubjectConfirmationNameIdentifierWizardStepPanel extends WizardStep
      *                                  by the wizard are not valid.
      */
     public void storeSettings(Object settings) throws IllegalArgumentException {
-        SamlStatementAssertion statement = (SamlStatementAssertion)settings;
+        RequestWssSaml requestWssSaml = (RequestWssSaml)settings;
         Collection formats = new ArrayList();
         for (Iterator iterator = nameFormatsMap.entrySet().iterator(); iterator.hasNext();) {
             Map.Entry entry = (Map.Entry)iterator.next();
@@ -97,8 +97,8 @@ public class SubjectConfirmationNameIdentifierWizardStepPanel extends WizardStep
                 formats.add(entry.getKey().toString());
             }
         }
-        statement.setNameFormats((String[])formats.toArray(new String[]{}));
-        statement.setNameQualifier(textFieldNameQualifier.getText());
+        requestWssSaml.setNameFormats((String[])formats.toArray(new String[]{}));
+        requestWssSaml.setNameQualifier(textFieldNameQualifier.getText());
     }
 
     private void initialize() {

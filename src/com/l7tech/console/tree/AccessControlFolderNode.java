@@ -59,9 +59,7 @@ public class AccessControlFolderNode extends AbstractTreeNode {
         insert(new WsTokenBasicAuthNode(), index++);
         insert(new RequestWssX509Node(), index++);
         insert(new SecureConversationNode(), index++);
-        insert(new SamlAuthenticationStatementNode(), index++);
-        insert(new SamlAuthorizationStatementNode(), index++);
-        insert(new SamlAttributeStatementNode(), index++);
+        insert(new RequestWssSamlNode(), index++);
 
         final CustomAssertionsRegistrar cr = Registry.getDefault().getCustomAssertionsRegistrar();
         try {

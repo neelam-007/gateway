@@ -736,9 +736,7 @@ public class WspConstants {
         new AssertionMapping(new RequestSwAAssertion(), "RequestSwAAssertion"),
         new AssertionMapping(new SecureConversation(), "SecureConversation"),
         new AssertionMapping(new RequestWssReplayProtection(), "RequestWssReplayProtection"),
-        new AssertionMapping(new SamlAuthenticationStatement(), "SamlAuthenticationStatement"),
-        new AssertionMapping(new SamlAuthorizationStatement(), "SamlAuthorizationStatement"),
-        new AssertionMapping(new SamlAttributeStatement(), "SalmAttributeStatement"),
+        new AssertionMapping(new RequestWssSaml(), "RequestWssSaml"),
         new AssertionMapping(new RequestXpathAssertion(), "RequestXpathAssertion"),
         new AssertionMapping(new ResponseXpathAssertion(), "ResponseXpathAssertion"),
         new AssertionMapping(new SchemaValidation(), "SchemaValidation"),
@@ -754,8 +752,11 @@ public class WspConstants {
         new BeanTypeMapping(BindingInfo.class, "wsdlBindingInfo"),
         new BeanTypeMapping(BindingOperationInfo.class, "wsdlBindingOperationInfo"),
         new BeanTypeMapping(MimePartInfo.class, "wsdlMimePartInfo"),
-        new BeanTypeMapping(SamlAttributeStatement.Attribute.class, "samlAttributeInfo"),
-        new ArrayTypeMapping(new SamlAttributeStatement.Attribute[0], "samlAttributeInfoArray"),
+        new BeanTypeMapping(SamlAttributeStatement.class, "samlAttributeInfo"),
+        new BeanTypeMapping(SamlAuthenticationStatement.class, "samlAuthenticationInfo"),
+        new BeanTypeMapping(SamlAuthorizationStatement.class, "samlAuthorizationInfo"),
+        new BeanTypeMapping(SamlAttributeStatement.Attribute.class, "samlAttributeElementInfo"),
+        new ArrayTypeMapping(new SamlAttributeStatement.Attribute[0], "samlAttributeElementInfoArray"),
     };
 
     /**

@@ -11,7 +11,7 @@ import com.l7tech.common.xml.InvalidDocumentFormatException;
 import com.l7tech.common.xml.saml.SamlAssertion;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
-import com.l7tech.policy.assertion.xmlsec.SamlAuthenticationStatement;
+import com.l7tech.policy.assertion.xmlsec.RequestWssSaml;
 import com.l7tech.proxy.datamodel.Ssg;
 import com.l7tech.proxy.datamodel.exceptions.*;
 import com.l7tech.proxy.message.PolicyApplicationContext;
@@ -31,11 +31,11 @@ import java.util.logging.Logger;
  * @author mike
  * @version 1.0
  */
-public class ClientSamlAuthenticationStatement extends ClientAssertion {
-    private static final Logger logger = Logger.getLogger(ClientSamlAuthenticationStatement.class.getName());
-    private SamlAuthenticationStatement data;
+public class ClientRequestWssSaml extends ClientAssertion {
+    private static final Logger logger = Logger.getLogger(ClientRequestWssSaml.class.getName());
+    private RequestWssSaml data;
 
-    public ClientSamlAuthenticationStatement(SamlAuthenticationStatement data) {
+    public ClientRequestWssSaml(RequestWssSaml data) {
         this.data = data;
     }
 

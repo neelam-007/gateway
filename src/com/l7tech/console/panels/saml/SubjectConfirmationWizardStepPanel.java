@@ -6,7 +6,7 @@
 package com.l7tech.console.panels.saml;
 
 import com.l7tech.console.panels.WizardStepPanel;
-import com.l7tech.policy.assertion.xmlsec.SamlStatementAssertion;
+import com.l7tech.policy.assertion.xmlsec.RequestWssSaml;
 import com.l7tech.common.security.saml.SamlConstants;
 
 import javax.swing.*;
@@ -60,13 +60,13 @@ public class SubjectConfirmationWizardStepPanel extends WizardStepPanel {
      *                                  by the wizard are not valid.
      */
     public void readSettings(Object settings) throws IllegalArgumentException {
-        SamlStatementAssertion statement = (SamlStatementAssertion)settings;
-        statement.getSubjectConfirmations();
+        RequestWssSaml requestWssSaml = (RequestWssSaml)settings;
+        requestWssSaml.getSubjectConfirmations();
         for (Iterator iterator = confirmationsMap.values().iterator(); iterator.hasNext();) {
             JCheckBox jCheckBox = (JCheckBox)iterator.next();
             jCheckBox.setSelected(false);
         }
-        String[] confirmations = statement.getSubjectConfirmations();
+        String[] confirmations = requestWssSaml.getSubjectConfirmations();
         for (int i = 0; i < confirmations.length; i++) {
             String confirmation = confirmations[i];
             JCheckBox jc = (JCheckBox)confirmationsMap.get(confirmation);
@@ -75,8 +75,8 @@ public class SubjectConfirmationWizardStepPanel extends WizardStepPanel {
             }
             jc.setSelected(true);
         }
-        checkBoxRequireProofOfPosession.setSelected(statement.isRequireProofOfPosession());
-        checkBoxNoSubjectConfirmation.setSelected(statement.isNoSubjectConfirmation());
+        checkBoxRequireProofOfPosession.setSelected(requestWssSaml.isRequireProofOfPosession());
+        checkBoxNoSubjectConfirmation.setSelected(requestWssSaml.isNoSubjectConfirmation());
     }
 
     /**
@@ -93,7 +93,7 @@ public class SubjectConfirmationWizardStepPanel extends WizardStepPanel {
      *                                  by the wizard are not valid.
      */
     public void storeSettings(Object settings) throws IllegalArgumentException {
-        SamlStatementAssertion statement = (SamlStatementAssertion)settings;
+        RequestWssSaml requestWssSaml = (RequestWssSaml)settings;
         Collection confirmations = new ArrayList();
         for (Iterator iterator = confirmationsMap.entrySet().iterator(); iterator.hasNext();) {
             Map.Entry entry = (Map.Entry)iterator.next();
@@ -102,9 +102,9 @@ public class SubjectConfirmationWizardStepPanel extends WizardStepPanel {
                 confirmations.add(entry.getKey().toString());
             }
         }
-        statement.setSubjectConfirmations((String[])confirmations.toArray(new String[]{}));
-        statement.setRequireProofOfPosession(checkBoxRequireProofOfPosession.isSelected());
-        statement.setNoSubjectConfirmation(checkBoxNoSubjectConfirmation.isSelected());
+        requestWssSaml.setSubjectConfirmations((String[])confirmations.toArray(new String[]{}));
+        requestWssSaml.setRequireProofOfPosession(checkBoxRequireProofOfPosession.isSelected());
+        requestWssSaml.setNoSubjectConfirmation(checkBoxNoSubjectConfirmation.isSelected());
     }
 
     private void initialize() {

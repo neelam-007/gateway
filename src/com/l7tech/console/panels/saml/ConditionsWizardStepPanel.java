@@ -6,7 +6,7 @@
 package com.l7tech.console.panels.saml;
 
 import com.l7tech.console.panels.WizardStepPanel;
-import com.l7tech.policy.assertion.xmlsec.SamlStatementAssertion;
+import com.l7tech.policy.assertion.xmlsec.RequestWssSaml;
 
 import javax.swing.*;
 import java.awt.*;
@@ -52,9 +52,9 @@ public class ConditionsWizardStepPanel extends WizardStepPanel {
      *                                  by the wizard are not valid.
      */
     public void storeSettings(Object settings) throws IllegalArgumentException {
-        SamlStatementAssertion statement = (SamlStatementAssertion)settings;
-        statement.setAudienceRestriction(textFieldAudienceRestriction.getText());
-        statement.setCheckAssertionValidity(checkBoxCheckAssertionValidity.isSelected());
+        RequestWssSaml requestWssSaml = (RequestWssSaml)settings;
+        requestWssSaml.setAudienceRestriction(textFieldAudienceRestriction.getText());
+        requestWssSaml.setCheckAssertionValidity(checkBoxCheckAssertionValidity.isSelected());
     }
 
     /**
@@ -67,9 +67,9 @@ public class ConditionsWizardStepPanel extends WizardStepPanel {
      *                                  by the wizard are not valid.
      */
     public void readSettings(Object settings) throws IllegalArgumentException {
-        SamlStatementAssertion statement = (SamlStatementAssertion)settings;
-        textFieldAudienceRestriction.setText(statement.getAudienceRestriction());
-        checkBoxCheckAssertionValidity.setSelected(statement.isCheckAssertionValidity());
+        RequestWssSaml requestWssSaml = (RequestWssSaml)settings;
+        textFieldAudienceRestriction.setText(requestWssSaml.getAudienceRestriction());
+        checkBoxCheckAssertionValidity.setSelected(requestWssSaml.isCheckAssertionValidity());
     }
 
     private void initialize() {

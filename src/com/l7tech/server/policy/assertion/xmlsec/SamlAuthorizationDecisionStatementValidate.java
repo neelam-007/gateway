@@ -1,31 +1,38 @@
 package com.l7tech.server.policy.assertion.xmlsec;
 
 import com.l7tech.common.security.xml.processor.ProcessorResult;
-import com.l7tech.policy.assertion.xmlsec.SamlStatementAssertion;
+import com.l7tech.policy.assertion.xmlsec.RequestWssSaml;
 import com.l7tech.policy.assertion.xmlsec.SamlAuthorizationStatement;
 import org.springframework.context.ApplicationContext;
 import org.w3c.dom.Document;
-import x0Assertion.oasisNamesTcSAML1.AuthorizationDecisionStatementType;
-import x0Assertion.oasisNamesTcSAML1.SubjectStatementAbstractType;
-import x0Assertion.oasisNamesTcSAML1.DecisionType;
 import x0Assertion.oasisNamesTcSAML1.ActionType;
+import x0Assertion.oasisNamesTcSAML1.AuthorizationDecisionStatementType;
+import x0Assertion.oasisNamesTcSAML1.DecisionType;
+import x0Assertion.oasisNamesTcSAML1.SubjectStatementAbstractType;
 
-import java.util.Collection;
 import java.text.MessageFormat;
+import java.util.Collection;
 
 /**
  * @author emil
  * @version 27-Jan-2005
  */
 class SamlAuthorizationDecisionStatementValidate extends SamlStatementValidate {
+    private SamlAuthorizationStatement authorizationStatementRequirements;
+
     /**
-     * Construct  the <code>SamlStatementValidate</code> for the statement assertion
+     * Construct  the <code>SamlAssertionValidate</code> for the statement assertion
      *
-     * @param statementAssertion the saml statement assertion
+     * @param requestWssSaml the saml statement assertion
      * @param applicationContext the application context to allow access to components and services
      */
-    SamlAuthorizationDecisionStatementValidate(SamlStatementAssertion statementAssertion, ApplicationContext applicationContext) {
-        super(statementAssertion, applicationContext);
+    SamlAuthorizationDecisionStatementValidate(RequestWssSaml requestWssSaml, ApplicationContext applicationContext) {
+        super(requestWssSaml, applicationContext);
+        authorizationStatementRequirements = requestWssSaml.getAuthorizationStatement();
+        if (authorizationStatementRequirements == null) {
+            throw new IllegalArgumentException("Authorization requirements have not been specified");
+        }
+
     }
 
     /**
@@ -36,43 +43,42 @@ class SamlAuthorizationDecisionStatementValidate extends SamlStatementValidate {
      * @param wssResults
      * @param validationResults     where the results are collected
      */
-    protected void validateStatement(Document document,
-                                     SubjectStatementAbstractType statementAbstractType,
-                                     ProcessorResult wssResults, Collection validationResults) {
+    protected void validate(Document document,
+                            SubjectStatementAbstractType statementAbstractType,
+                            ProcessorResult wssResults, Collection validationResults) {
         if (!(statementAbstractType instanceof AuthorizationDecisionStatementType)) {
             throw new IllegalArgumentException("Expected " + AuthorizationDecisionStatementType.class);
         }
         AuthorizationDecisionStatementType authorizationDecisionStatementType = (AuthorizationDecisionStatementType)statementAbstractType;
-        SamlAuthorizationStatement samlAuthorizationStatement = (SamlAuthorizationStatement)statementAssertionConstraints;
 
         String resource = authorizationDecisionStatementType.getResource();
         if (resource == null) {
-            validationResults.add(new Error("No Resource specified", authorizationDecisionStatementType.toString(), null, null));
+            validationResults.add(new SamlAssertionValidate.Error("No Resource specified", authorizationDecisionStatementType.toString(), null, null));
             return;
         }
 
-        if (!resource.equals(samlAuthorizationStatement.getResource())) {
-            validationResults.add(new Error(MessageFormat.format("Resource does not match, received {0}, expected {1}", new Object[]{resource, samlAuthorizationStatement.getResource()}),
+        if (!resource.equals(authorizationStatementRequirements.getResource())) {
+            validationResults.add(new SamlAssertionValidate.Error(MessageFormat.format("Resource does not match, received {0}, expected {1}", new Object[]{resource, authorizationStatementRequirements.getResource()}),
               authorizationDecisionStatementType.toString(), null, null));
             return;
         }
 
         DecisionType.Enum decision = authorizationDecisionStatementType.getDecision();
         if (decision == null) {
-            validationResults.add(new Error("No Decision specified", authorizationDecisionStatementType.toString(), null, null));
+            validationResults.add(new SamlAssertionValidate.Error("No Decision specified", authorizationDecisionStatementType.toString(), null, null));
             return;
         }
         if (!DecisionType.PERMIT.equals(decision)) {
-            validationResults.add(new Error("Permit Decision expected", authorizationDecisionStatementType.toString(), null, null));
+            validationResults.add(new SamlAssertionValidate.Error("Permit Decision expected", authorizationDecisionStatementType.toString(), null, null));
             return;
         }
-        String constraintsAction = samlAuthorizationStatement.getAction();
+        String constraintsAction = authorizationStatementRequirements.getAction();
         if (constraintsAction == null) {
-            validationResults.add(new Error("No Action specified", samlAuthorizationStatement, null, null));
+            validationResults.add(new SamlAssertionValidate.Error("No Action specified", authorizationStatementRequirements, null, null));
             return;
         }
 
-        String constraintsActionNameSpace = samlAuthorizationStatement.getActionNamespace();
+        String constraintsActionNameSpace = authorizationStatementRequirements.getActionNamespace();
         ActionType[] actionArray = authorizationDecisionStatementType.getActionArray();
 
         for (int i = 0; i < actionArray.length; i++) {
@@ -87,7 +93,7 @@ class SamlAuthorizationDecisionStatementValidate extends SamlStatementValidate {
                 return;
             }
         }
-        validationResults.add(new Error(MessageFormat.format("Could not match action/namespace {0}/{1}",
+        validationResults.add(new SamlAssertionValidate.Error(MessageFormat.format("Could not match action/namespace {0}/{1}",
           new Object[] {constraintsAction, constraintsActionNameSpace}), authorizationDecisionStatementType.toString(), null, null));
     }
 }

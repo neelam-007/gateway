@@ -7,6 +7,7 @@ package com.l7tech.console.panels.saml;
 
 import com.l7tech.console.panels.WizardStepPanel;
 import com.l7tech.policy.assertion.xmlsec.SamlAuthenticationStatement;
+import com.l7tech.policy.assertion.xmlsec.RequestWssSaml;
 import com.l7tech.common.security.saml.SamlConstants;
 
 import javax.swing.*;
@@ -68,7 +69,11 @@ public class AuthenticationMethodsWizardStepPanel extends WizardStepPanel {
      *                                  by the wizard are not valid.
      */
     public void readSettings(Object settings) throws IllegalArgumentException {
-        SamlAuthenticationStatement statement = (SamlAuthenticationStatement)settings;
+        RequestWssSaml assertion = (RequestWssSaml)settings;
+        SamlAuthenticationStatement statement = assertion.getAuthenticationStatement();
+        if (statement == null) {
+            throw new IllegalArgumentException();
+        }
 
         for (int i = 0; i < allMethods.length; i++) {
             JCheckBox method = allMethods[i];
@@ -100,7 +105,11 @@ public class AuthenticationMethodsWizardStepPanel extends WizardStepPanel {
      *                                  by the wizard are not valid.
      */
     public void storeSettings(Object settings) throws IllegalArgumentException {
-        SamlAuthenticationStatement statement = (SamlAuthenticationStatement)settings;
+        RequestWssSaml assertion = (RequestWssSaml)settings;
+         SamlAuthenticationStatement statement = assertion.getAuthenticationStatement();
+         if (statement == null) {
+             throw new IllegalArgumentException();
+         }
         List methodsSelected = new ArrayList();
         for (Iterator iterator = authenticationsMap.entrySet().iterator(); iterator.hasNext();) {
             Map.Entry entry = (Map.Entry)iterator.next();

@@ -8,7 +8,7 @@ package com.l7tech.console.panels.saml;
 import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.console.action.Actions;
 import com.l7tech.console.panels.WizardStepPanel;
-import com.l7tech.policy.assertion.xmlsec.SamlAuthorizationStatement;
+import com.l7tech.policy.assertion.xmlsec.RequestWssSaml;
 
 import javax.swing.*;
 import javax.swing.border.Border;
@@ -21,32 +21,36 @@ import java.util.ArrayList;
 import java.util.Collection;
 
 /**
- * The <code>AuthenticationStatementPropertiesPanel</code> edits the
+ * The <code>RequestWssSamlPropertiesPanel</code> edits the
  * configuration of the SAML authentication statement constraints.
  *
  * @author emil
  * @version Jan 18, 2005
  */
-public class AuthorizationStatementPropertiesPanel extends JDialog {
+public class RequestWssSamlPropertiesPanel extends JDialog {
     private JTabbedPane tabbedPane;
     private JButton buttonOk;
     private JButton buttonCancel;
     private JPanel mainPanel;
-    private SamlAuthorizationStatement assertion;
+    private RequestWssSaml assertion;
     private boolean assertionChanged;
     private WizardStepPanel[] wizardPanels;
 
     /**
      * Creates new wizard
      */
-    public AuthorizationStatementPropertiesPanel(SamlAuthorizationStatement assertion, Frame parent, boolean modal) {
+    public RequestWssSamlPropertiesPanel(RequestWssSaml assertion, Frame parent, boolean modal) {
         super(parent);
         if (assertion == null) {
             throw new IllegalArgumentException();
         }
         this.assertion = assertion;
-        setTitle("SAML Authorization Statement Constraints");
+        setTitle("SAML Constraints");
         setModal(modal);
+        Container contentPane = getContentPane();
+        contentPane.setLayout(new BorderLayout());
+        /** Set content pane */
+        contentPane.add(mainPanel, BorderLayout.CENTER);
         initialize();
     }
 
@@ -58,20 +62,26 @@ public class AuthorizationStatementPropertiesPanel extends JDialog {
     }
 
     private void initialize() {
-        Container contentPane = getContentPane();
-        contentPane.setLayout(new BorderLayout());
-        final Border mainPanelEemptyBorder = BorderFactory.createEmptyBorder(0, 0, 0, 10);
-
-        /** Set content pane */
-        mainPanel.setBorder(mainPanelEemptyBorder);
-        contentPane.add(mainPanel, BorderLayout.CENTER);
-
         final Border emptyBorder = BorderFactory.createEmptyBorder(10, 10, 5, 10);
         Collection panels = new ArrayList();
-        AuthorizationStatementWizardStepPanel authorizationStatementWizardStepPanel = new AuthorizationStatementWizardStepPanel(null, false);
-        authorizationStatementWizardStepPanel.setBorder(emptyBorder);
-        panels.add(authorizationStatementWizardStepPanel);
-
+        if (assertion.getAuthenticationStatement() !=null) {
+            AuthenticationMethodsWizardStepPanel authenticationMethodsWizardStepPanel = new AuthenticationMethodsWizardStepPanel(null, false);
+            authenticationMethodsWizardStepPanel.setBorder(emptyBorder);
+             panels.add(authenticationMethodsWizardStepPanel);
+             tabbedPane.add(authenticationMethodsWizardStepPanel.getStepLabel(), authenticationMethodsWizardStepPanel);
+        }
+        if (assertion.getAuthorizationStatement() !=null) {
+            AuthorizationStatementWizardStepPanel authorizationStatementWizardStepPanel = new AuthorizationStatementWizardStepPanel(null, false);
+            authorizationStatementWizardStepPanel.setBorder(emptyBorder);
+            panels.add(authorizationStatementWizardStepPanel);
+            tabbedPane.add(authorizationStatementWizardStepPanel.getStepLabel(), authorizationStatementWizardStepPanel);
+        }
+        if (assertion.getAttributeStatement() !=null) {
+            AttributeStatementWizardStepPanel attributeMethodsWizardStepPanel = new AttributeStatementWizardStepPanel(null, false);
+            attributeMethodsWizardStepPanel.setBorder(emptyBorder);
+            panels.add(attributeMethodsWizardStepPanel);
+            tabbedPane.add(attributeMethodsWizardStepPanel.getStepLabel(), attributeMethodsWizardStepPanel);
+        }
         SubjectConfirmationWizardStepPanel subjectConfirmationWizardStepPanel = new SubjectConfirmationWizardStepPanel(null, false);
         subjectConfirmationWizardStepPanel.setBorder(emptyBorder);
         panels.add(subjectConfirmationWizardStepPanel);
@@ -85,7 +95,6 @@ public class AuthorizationStatementPropertiesPanel extends JDialog {
         panels.add(conditionsWizardStepPanel);
         wizardPanels = (WizardStepPanel[])panels.toArray(new WizardStepPanel[]{});
 
-        tabbedPane.add(authorizationStatementWizardStepPanel.getStepLabel(), authorizationStatementWizardStepPanel);
         tabbedPane.add(subjectConfirmationWizardStepPanel.getStepLabel(), subjectConfirmationWizardStepPanel);
         tabbedPane.add(subjectConfirmationNameIdentifierWizardStepPanel.getStepLabel(), subjectConfirmationNameIdentifierWizardStepPanel);
         tabbedPane.add(conditionsWizardStepPanel.getStepLabel(), conditionsWizardStepPanel);

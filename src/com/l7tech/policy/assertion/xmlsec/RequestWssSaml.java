@@ -4,10 +4,11 @@ import com.l7tech.policy.assertion.Assertion;
 
 
 /**
- * The <code>SamlStatementAssertion</code> assertion describes
- * the common SAML constraints shared by Authentication Statement constraints.
+ * The <code>RequestWssSaml</code> assertion describes the common SAML constraints
+ * about subject, general SAML Assertion conditions and Statement constraints: for
+ * authentication, authorization and attribute statements.
  */
-public abstract class SamlStatementAssertion extends Assertion implements SecurityHeaderAddressable {
+public class RequestWssSaml extends Assertion implements SecurityHeaderAddressable {
     private String[] subjectConfirmations = new String[]{};
     private boolean noSubjectConfirmation = false;
     private String nameQualifier = null;
@@ -17,7 +18,11 @@ public abstract class SamlStatementAssertion extends Assertion implements Securi
     private boolean requireProofOfPosession = true;
     private boolean checkAssertionValidity = true;
 
-    SamlStatementAssertion() {
+    private SamlAuthenticationStatement authenticationStatement;
+    private SamlAuthorizationStatement authorizationStatement;
+    private SamlAttributeStatement attributeStatement;
+
+    public RequestWssSaml() {
     }
 
     /**
@@ -128,5 +133,53 @@ public abstract class SamlStatementAssertion extends Assertion implements Securi
      */
     public boolean isCredentialSource() {
         return isRequireProofOfPosession();
+    }
+
+    /**
+     * @return the authentication statement constraints or <b>null</b> if no
+     *          authentication statemement constraints have been sent
+     */
+    public SamlAuthenticationStatement getAuthenticationStatement() {
+        return authenticationStatement;
+    }
+
+    /**
+     * Set the authentication statement constraints
+     * @param authenticationStatement the authentication statement constraints
+     */
+    public void setAuthenticationStatement(SamlAuthenticationStatement authenticationStatement) {
+        this.authenticationStatement = authenticationStatement;
+    }
+
+    /**
+     * @return the authorization statement constraints or <b>null</b> if no
+     *          authorization statemement constraints have been sent
+     */
+    public SamlAuthorizationStatement getAuthorizationStatement() {
+        return authorizationStatement;
+    }
+
+    /**
+     * Set the authorization statement constraints
+     * @param authorizationStatement the authorization statement constraints
+     */
+    public void setAuthorizationStatement(SamlAuthorizationStatement authorizationStatement) {
+        this.authorizationStatement = authorizationStatement;
+    }
+
+    /**
+     * @return the attribute statement constraints or <b>null</b> if no
+     *          attribute statemement constraints have been sent
+     */
+    public SamlAttributeStatement getAttributeStatement() {
+        return attributeStatement;
+    }
+
+    /**
+     * Set the attribute statement constraints
+     * @param attributeStatement the atribute statement constraints
+     */
+    public void setAttributeStatement(SamlAttributeStatement attributeStatement) {
+        this.attributeStatement = attributeStatement;
     }
 }

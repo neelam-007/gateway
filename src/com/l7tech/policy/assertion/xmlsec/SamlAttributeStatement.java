@@ -1,10 +1,12 @@
 package com.l7tech.policy.assertion.xmlsec;
 
+import java.io.Serializable;
+
 /**
  * The <code>SamlAttributeStatementAssertion</code> assertion describes
  * the SAML Attribute Statement constraints.
  */
-public class SamlAttributeStatement extends SamlStatementAssertion {
+public class SamlAttributeStatement implements Serializable {
     private Attribute[] attributes = new Attribute[]{};
 
     public Attribute[] getAttributes() {

@@ -13,6 +13,7 @@ import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.credential.CredentialFormat;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.assertion.xmlsec.SamlAuthenticationStatement;
+import com.l7tech.policy.assertion.xmlsec.RequestWssSaml;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.ServerAssertion;
 import com.l7tech.server.AssertionMessages;
@@ -26,23 +27,23 @@ import java.util.Iterator;
 import java.util.logging.Logger;
 
 /**
- * Class <code>ServerSamlAuthenticationStatement</code> represents the server
- * side saml Authentication Statement security policy assertion element.
+ * Class <code>ServerRequestWssSaml</code> represents the server
+ * side saml Assertion that validates the SAML requestWssSaml.
  *
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  */
-public class ServerSamlAuthenticationStatement implements ServerAssertion {
-    private SamlAuthenticationStatement assertion;
+public class ServerRequestWssSaml implements ServerAssertion {
+    private RequestWssSaml requestWssSaml;
     private final Logger logger = Logger.getLogger(getClass().getName());
     private ApplicationContext applicationContext;
-    private SamlStatementValidate statementValidate;
+    private SamlAssertionValidate assertionValidate;
 
     /**
      * Create the server side saml security policy element
      *
      * @param sa the saml
      */
-    public ServerSamlAuthenticationStatement(SamlAuthenticationStatement sa, ApplicationContext context) {
+    public ServerRequestWssSaml(RequestWssSaml sa, ApplicationContext context) {
         if (sa == null) {
             throw new IllegalArgumentException();
         }
@@ -51,8 +52,8 @@ public class ServerSamlAuthenticationStatement implements ServerAssertion {
             throw new IllegalArgumentException("The Application Context is required");
         }
 
-        assertion = sa;
-        statementValidate = SamlStatementValidate.getValidate(assertion, context);
+        requestWssSaml = sa;
+        assertionValidate = new SamlAssertionValidate(requestWssSaml, context);
 
     }
 
@@ -108,13 +109,13 @@ public class ServerSamlAuthenticationStatement implements ServerAssertion {
                 return AssertionStatus.AUTH_REQUIRED;
             }
             Collection validateResults = new ArrayList();
-            statementValidate.validate(xmlKnob.getDocumentReadOnly(), wssResults, validateResults);
+            assertionValidate.validate(xmlKnob.getDocumentReadOnly(), wssResults, validateResults);
             if (validateResults.size() > 0) {
                 StringBuffer sb = new StringBuffer();
                 boolean firstPass = true;
                 for (Iterator iterator = validateResults.iterator(); iterator.hasNext();) {
                     if (!firstPass) sb.append("\n");
-                    SamlStatementValidate.Error error = (SamlStatementValidate.Error)iterator.next();
+                    SamlAssertionValidate.Error error = (SamlAssertionValidate.Error)iterator.next();
                     sb.append(error.getReason());
                     firstPass = false;
                 }

@@ -5,17 +5,18 @@
  */
 package com.l7tech.console.panels.saml;
 
-import com.l7tech.console.panels.WizardStepPanel;
 import com.l7tech.console.beaneditor.BeanAdapter;
+import com.l7tech.console.panels.WizardStepPanel;
+import com.l7tech.policy.assertion.xmlsec.RequestWssSaml;
 import com.l7tech.policy.assertion.xmlsec.SamlAttributeStatement;
 
 import javax.swing.*;
-import javax.swing.event.ListSelectionListener;
 import javax.swing.event.ListSelectionEvent;
+import javax.swing.event.ListSelectionListener;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
-import java.awt.event.ActionListener;
 import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.util.ArrayList;
 import java.util.Collection;
 
@@ -66,7 +67,12 @@ public class AttributeStatementWizardStepPanel extends WizardStepPanel {
      *                                  by the wizard are not valid.
      */
     public void storeSettings(Object settings) throws IllegalArgumentException {
-        SamlAttributeStatement statement = (SamlAttributeStatement)settings;
+        RequestWssSaml assertion = (RequestWssSaml)settings;
+        SamlAttributeStatement statement = assertion.getAttributeStatement();
+         if (statement == null) {
+             throw new IllegalArgumentException();
+         }
+
         int nrows = attributesTableModel.getRowCount();
         Collection attributes = new ArrayList();
         for (int i = 0; i < nrows; i++) {
@@ -89,7 +95,12 @@ public class AttributeStatementWizardStepPanel extends WizardStepPanel {
      *                                  by the wizard are not valid.
      */
     public void readSettings(Object settings) throws IllegalArgumentException {
-        SamlAttributeStatement statement = (SamlAttributeStatement)settings;
+        RequestWssSaml assertion = (RequestWssSaml)settings;
+        SamlAttributeStatement statement = assertion.getAttributeStatement();
+         if (statement == null) {
+             throw new IllegalArgumentException();
+         }
+
         // put in table
         attributesTableModel.setRowCount(0);
         attributesTableModel.fireTableDataChanged();

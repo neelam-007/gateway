@@ -99,9 +99,7 @@ public class AllAssertions {
         new ResponseXpathAssertion(),
         new RequestWssReplayProtection(),
         new RequestSwAAssertion(),
-        new SamlAuthenticationStatement(),
-        new SamlAuthorizationStatement(),
-        new SamlAttributeStatement(),
+        new RequestWssSaml(),
         new AuditAssertion(),
         CUSTOM_ASSERTION_HOLDER,
         new UnknownAssertion()
@@ -142,9 +140,7 @@ public class AllAssertions {
         new ResponseXpathAssertion(),
         new RequestWssReplayProtection(),
         new RequestSwAAssertion(),
-        new SamlAuthenticationStatement(),
-        new SamlAuthorizationStatement(),
-        new SamlAttributeStatement(),
+        new RequestWssSaml(),
         new AuditAssertion(),
         new CustomAssertionHolder(),
         new UnknownAssertion()
@@ -162,9 +158,7 @@ public class AllAssertions {
         new WssDigest(),
         new RequestWssX509Cert(),
         new SecureConversation(),
-        new SamlAuthenticationStatement(),
-        new SamlAuthorizationStatement(),
-        new SamlAttributeStatement()
+        new RequestWssSaml(),
     };
 
 }

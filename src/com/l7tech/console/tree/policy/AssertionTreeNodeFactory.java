@@ -66,9 +66,7 @@ public class AssertionTreeNodeFactory {
         assertionMap.put(RemoteIpRange.class, RemoteIpRangeTreeNode.class);
         assertionMap.put(CustomAssertionHolder.class, CustomAssertionTreeNode.class);
         assertionMap.put(AuditAssertion.class, AuditAssertionTreeNode.class);
-        assertionMap.put(SamlAuthenticationStatement.class, SamlAuthenticationStatementTreeNode.class);
-        assertionMap.put(SamlAuthorizationStatement.class, SamlAuthorizationStatementTreeNode.class);
-        assertionMap.put(SamlAttributeStatement.class, SamlAttributeStatementTreeNode.class);
+        assertionMap.put(RequestWssSaml.class, RequestWssSamlTreeNode.class);
     }
 
     /**

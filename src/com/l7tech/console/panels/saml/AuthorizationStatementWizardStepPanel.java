@@ -6,11 +6,12 @@
 package com.l7tech.console.panels.saml;
 
 import com.l7tech.console.panels.WizardStepPanel;
+import com.l7tech.policy.assertion.xmlsec.RequestWssSaml;
 import com.l7tech.policy.assertion.xmlsec.SamlAuthorizationStatement;
 
 import javax.swing.*;
-import javax.swing.event.DocumentListener;
 import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
 import java.awt.*;
 
 /**
@@ -56,7 +57,11 @@ public class AuthorizationStatementWizardStepPanel extends WizardStepPanel {
      *                                  by the wizard are not valid.
      */
     public void storeSettings(Object settings) throws IllegalArgumentException {
-        SamlAuthorizationStatement statement = (SamlAuthorizationStatement)settings;
+        RequestWssSaml assertion = (RequestWssSaml)settings;
+        SamlAuthorizationStatement statement = assertion.getAuthorizationStatement();
+         if (statement == null) {
+             throw new IllegalArgumentException();
+         }
         statement.setAction(textFieldAction.getText());
         statement.setActionNamespace(textFieldActionNamespace.getText());
         statement.setResource(textFieldResource.getText());
@@ -72,7 +77,12 @@ public class AuthorizationStatementWizardStepPanel extends WizardStepPanel {
      *                                  by the wizard are not valid.
      */
     public void readSettings(Object settings) throws IllegalArgumentException {
-        SamlAuthorizationStatement statement = (SamlAuthorizationStatement)settings;
+        RequestWssSaml assertion = (RequestWssSaml)settings;
+        SamlAuthorizationStatement statement = assertion.getAuthorizationStatement();
+         if (statement == null) {
+             throw new IllegalArgumentException();
+         }
+
         textFieldAction.setText(statement.getAction());
         textFieldActionNamespace.setText(statement.getActionNamespace());
         textFieldResource.setText(statement.getResource());

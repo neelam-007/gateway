@@ -8,7 +8,7 @@ package com.l7tech.policy.validator;
 import com.l7tech.policy.AssertionPath;
 import com.l7tech.policy.PolicyValidatorResult;
 import com.l7tech.policy.assertion.SslAssertion;
-import com.l7tech.policy.assertion.xmlsec.SamlStatementAssertion;
+import com.l7tech.policy.assertion.xmlsec.RequestWssSaml;
 import com.l7tech.service.PublishedService;
 
 import java.util.logging.Logger;
@@ -22,19 +22,19 @@ import java.util.logging.Logger;
  */
 public class SamlStatementValidator implements AssertionValidator {
     private static final Logger logger = Logger.getLogger(SamlStatementValidator.class.getName());
-    private final SamlStatementAssertion assertion;
+    private final RequestWssSaml requestWssSaml;
 
-    public SamlStatementValidator(SamlStatementAssertion sa) {
-        assertion = sa;
+    public SamlStatementValidator(RequestWssSaml sa) {
+        requestWssSaml = sa;
     }
 
     public void validate(AssertionPath path, PublishedService service, PolicyValidatorResult result) {
-        if (assertion.isRequireProofOfPosession()) {
+        if (requestWssSaml.isRequireProofOfPosession()) {
             return;
         }
         if (!path.contains(SslAssertion.class)) {
             String message = "SSL is recommended when no proof of posession specified.";
-            result.addWarning((new PolicyValidatorResult.Warning(assertion, path, message, null)));
+            result.addWarning((new PolicyValidatorResult.Warning(requestWssSaml, path, message, null)));
             logger.info(message);
         }
     }

@@ -262,7 +262,7 @@ public class DefaultPolicyPathBuilderTest extends TestCase {
         credentialsLocationList.add(new WssBasic());
         credentialsLocationList.add(new RequestWssX509Cert());
         credentialsLocationList.add(new SecureConversation());
-        credentialsLocationList.add(new SamlAuthenticationStatement());
+        credentialsLocationList.add(new RequestWssSaml());
 
         return credentialsLocationList;
     }

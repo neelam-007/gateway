@@ -2,33 +2,34 @@ package com.l7tech.console.tree.policy;
 
 
 import com.l7tech.policy.assertion.Assertion;
-import com.l7tech.policy.assertion.xmlsec.SamlAuthorizationStatement;
+import com.l7tech.policy.assertion.xmlsec.SamlAuthenticationStatement;
+import com.l7tech.policy.assertion.xmlsec.RequestWssSaml;
 import com.l7tech.console.action.EditXmlSecurityRecipientContextAction;
-import com.l7tech.console.action.EditSamlStatementAction;
+import com.l7tech.console.action.EditRequestWssSamlAction;
 
 import javax.swing.*;
 import java.util.ArrayList;
 import java.util.Arrays;
 
 /**
- * Class <code>SamlAuthorizationStatementTreeNode</code> specifies the policy
- * element that represents the Saml Authorization Statement.
+ * Class <code>RequestWssSamlTreeNode</code> specifies the policy
+ * element that represents the SAML Authentication Statement.
  * <p/>
  */
-public class SamlAuthorizationStatementTreeNode extends LeafAssertionTreeNode {
+public class RequestWssSamlTreeNode extends LeafAssertionTreeNode {
 
-    private SamlAuthorizationStatement data;
+    private RequestWssSaml data;
 
-    public SamlAuthorizationStatementTreeNode(Assertion assertion) {
+    public RequestWssSamlTreeNode(Assertion assertion) {
         super(assertion);
-        data = (SamlAuthorizationStatement)assertion;
+        data = (RequestWssSaml)assertion;
     }
 
     public String getName() {
         if (!data.getRecipientContext().localRecipient()) {
-            return "SAML Authorization Statement [\'" + data.getRecipientContext().getActor() + "\' actor]";
+            return "SAML Constraints [\'" + data.getRecipientContext().getActor() + "\' actor]";
         } else {
-            return "SAML Authorization Statement";
+            return "SAML Constriants";
         }
     }
 
@@ -40,7 +41,7 @@ public class SamlAuthorizationStatementTreeNode extends LeafAssertionTreeNode {
      */
     public Action[] getActions() {
         java.util.List list = new ArrayList();
-        list.add(new EditSamlStatementAction(this));
+        list.add(new EditRequestWssSamlAction(this));
         list.add(new EditXmlSecurityRecipientContextAction(this));
         list.addAll(Arrays.asList(super.getActions()));
         return (Action[])list.toArray(new Action[]{});
@@ -52,7 +53,7 @@ public class SamlAuthorizationStatementTreeNode extends LeafAssertionTreeNode {
      * @return <code>null</code> indicating there should be none default action
      */
     public Action getPreferredAction() {
-        return new EditSamlStatementAction(this);
+        return new EditRequestWssSamlAction(this);
     }
 
     /**
@@ -70,6 +71,6 @@ public class SamlAuthorizationStatementTreeNode extends LeafAssertionTreeNode {
      * @param open for nodes that can be opened, can have children
      */
     protected String iconResource(boolean open) {
-        return "com/l7tech/console/resources/SAMLAuthorization.gif";
+        return "com/l7tech/console/resources/SAMLAuthentication.gif";
     }
 }

@@ -1,10 +1,12 @@
 package com.l7tech.policy.assertion.xmlsec;
 
+import java.io.Serializable;
+
 /**
  * The <code>SamlAuthorizationStatementAssertion</code> assertion describes
  * the SAML Authorization Statement constraints.
  */
-public class SamlAuthorizationStatement extends SamlStatementAssertion {
+public class SamlAuthorizationStatement implements Serializable {
     private String resource;
     private String action;
     private String actionNamespace;

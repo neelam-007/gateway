@@ -88,8 +88,6 @@ public class Advices {
         advicesMap.put(RemoteIpRange.class, new Class[]{AddRemoteIpRangeAssertionAdvice.class});
         advicesMap.put(TimeRange.class, new Class[]{AddTimeRangeAssertionAdvice.class});
         advicesMap.put(RequestSwAAssertion.class, new Class[] {AddRequestSwAAssertionAdvice.class});
-        advicesMap.put(SamlAuthenticationStatement.class, new Class[] {AddSamlAuthenticationStatementAssertionAdvice.class});
-        advicesMap.put(SamlAuthorizationStatement.class, new Class[] {AddSamlAuthorizationStatementAssertionAdvice.class});
-        advicesMap.put(SamlAttributeStatement.class, new Class[] {AddSamlAttributeStatementAssertionAdvice.class});
+        advicesMap.put(SamlAuthenticationStatement.class, new Class[] {AddRequestWssSamlAdvice.class});
     }
 }
