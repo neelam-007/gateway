@@ -32,6 +32,7 @@ public class KeystoreUtils {
     public static final String SSL_KSTORE_NAME = "sslkstorename";
     public static final String SSL_KSTORE_PASSWD = "sslkspasswd";
     public static final String TOMCATALIAS = "tomcat";
+    private static final String KSTORE_TYPE = "keystoretype";
 
     public static final String PS = System.getProperty("file.separator");
 
@@ -74,6 +75,11 @@ public class KeystoreUtils {
     public String getRootKeystorePasswd() {
         return getProps().getProperty(ROOT_STOREPASSWD);
     }
+
+    public String getKeyStoreType() {
+        return getProps().getProperty(KSTORE_TYPE);
+    }
+
 
     public KeyStore getSSLKeyStore() throws KeyStoreException {
         try {
