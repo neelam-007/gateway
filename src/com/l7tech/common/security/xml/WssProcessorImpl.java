@@ -1064,7 +1064,11 @@ public class WssProcessorImpl implements WssProcessor {
                     throw new InvalidDocumentFormatException("Timestamp's Signature encountered before Timestamp element");
 
                 // Update timestamp with signature information
-                cntx.timestamp.setSigningSecurityToken(signingCertToken);
+                if (signingCertToken != null) {
+                    cntx.timestamp.setSigningSecurityToken(signingCertToken);
+                } else if (dkt != null) {
+                    cntx.timestamp.setSigningSecurityToken(dkt);
+                }
             }
         }
     }
@@ -1164,7 +1168,7 @@ public class WssProcessorImpl implements WssProcessor {
         private final TimestampDate createdTimestampDate;
         private final TimestampDate expiresTimestampDate;
         private final Element timestampElement;
-        private X509SecurityTokenImpl signingToken = null;
+        private SecurityToken signingToken = null;
 
         public TimestampImpl(TimestampDate createdTimestampDate, TimestampDate expiresTimestampDate, Element timestampElement) {
             this.createdTimestampDate = createdTimestampDate;
@@ -1188,7 +1192,7 @@ public class WssProcessorImpl implements WssProcessor {
             return signingToken;
         }
 
-        private void setSigningSecurityToken(X509SecurityTokenImpl token) {
+        private void setSigningSecurityToken(SecurityToken token) {
             this.signingToken = token;
         }
 
@@ -1201,7 +1205,7 @@ public class WssProcessorImpl implements WssProcessor {
     private static final SignedElement[] PROTOTYPE_SIGNEDELEMENT_ARRAY = new SignedElement[0];
     private static final WssProcessor.SecurityToken[] PROTOTYPE_SECURITYTOKEN_ARRAY = new WssProcessor.SecurityToken[0];
 
-    private static class DerivedKeyTokenImpl {
+    private static class DerivedKeyTokenImpl implements SecurityToken {
         private final Element dktel;
         private final Key finalKey;
         private final SecurityContextTokenImpl sct;
@@ -1218,10 +1222,10 @@ public class WssProcessorImpl implements WssProcessor {
         Key getComputedDerivedKey() {
             return finalKey;
         }
-        Object asObject() {
+        public Object asObject() {
             return finalKey;
         }
-        Element asElement() {
+        public Element asElement() {
             return dktel;
         }
         SecurityContextTokenImpl getSecurityContextToken() {
