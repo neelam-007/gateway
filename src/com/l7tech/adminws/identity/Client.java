@@ -1,15 +1,8 @@
 package com.l7tech.adminws.identity;
 
-import com.l7tech.objectmodel.FindException;
-import com.l7tech.objectmodel.SaveException;
-import com.l7tech.objectmodel.UpdateException;
-import com.l7tech.objectmodel.DeleteException;
-import com.l7tech.identity.IdentityProviderConfigManager;
 import org.apache.axis.client.Call;
 import javax.xml.namespace.QName;
 import javax.xml.rpc.ServiceException;
-
-import java.rmi.RemoteException;
 import java.net.MalformedURLException;
 
 /**
@@ -51,16 +44,11 @@ public class Client {
     public com.l7tech.identity.IdentityProviderConfig findIdentityProviderConfigByPrimaryKey(long oid) throws java.rmi.RemoteException {
         Call call = createStubCall();
         call.setOperationName(new QName(IDENTITY_URN, "findIdentityProviderConfigByPrimaryKey"));
-		// call.setReturnClass(com.l7tech.identity.imp.IdentityProviderConfigImp.class);
-        // call.setReturnClass(com.l7tech.identity.IdentityProviderConfig.class);
-        // call.addParameter(new javax.xml.namespace.QName("", "oid"), new javax.xml.namespace.QName("http://www.w3.org/2001/XMLSchema", "long"), long.class, javax.xml.rpc.ParameterMode.IN);
         return (com.l7tech.identity.IdentityProviderConfig)call.invoke(new Object[]{new java.lang.Long(oid)});
     }
     public long saveIdentityProviderConfig(com.l7tech.identity.IdentityProviderConfig identityProviderConfig) throws java.rmi.RemoteException {
         Call call = createStubCall();
         call.setOperationName(new QName(IDENTITY_URN, "saveIdentityProviderConfig"));
-        //call.setReturnClass(Long.class);
-        //call.addParameter(new javax.xml.namespace.QName("", "identityProviderConfig"), new javax.xml.namespace.QName(IDENTITY_URN, "IdentityProviderConfig"), com.l7tech.identity.imp.IdentityProviderConfigImp.class, javax.xml.rpc.ParameterMode.IN);
         Long res = (Long)call.invoke(new Object[]{identityProviderConfig});
         return res.longValue();
 
@@ -96,10 +84,6 @@ public class Client {
     public com.l7tech.identity.User findUserByPrimaryKey(long identityProviderConfigId, String userId) throws java.rmi.RemoteException {
         Call call = createStubCall();
         call.setOperationName(new QName(IDENTITY_URN, "findUserByPrimaryKey"));
-        //call.addParameter(new javax.xml.namespace.QName("", "identityProviderConfigId"), new javax.xml.namespace.QName("http://www.w3.org/2001/XMLSchema", "long"), long.class, javax.xml.rpc.ParameterMode.IN);
-        //call.addParameter(new javax.xml.namespace.QName("", "userId"), new javax.xml.namespace.QName("http://www.w3.org/2001/XMLSchema", "string"), String.class, javax.xml.rpc.ParameterMode.IN);
-        //call.setReturnClass(com.l7tech.identity.internal.imp.UserImp.class);
-        //call.setReturnClass(com.l7tech.identity.User.class);
         return (com.l7tech.identity.User)call.invoke(new Object[]{new java.lang.Long(identityProviderConfigId), userId});
     }
     public void deleteUser(long identityProviderConfigId, String userId) throws java.rmi.RemoteException {
@@ -114,7 +98,7 @@ public class Client {
         Call call = createStubCall();
         call.setOperationName(new QName(IDENTITY_URN, "saveUser"));
         call.addParameter(new javax.xml.namespace.QName("", "identityProviderConfigId"), new javax.xml.namespace.QName("http://www.w3.org/2001/XMLSchema", "long"), long.class, javax.xml.rpc.ParameterMode.IN);
-        call.addParameter(new javax.xml.namespace.QName("", "user"), new javax.xml.namespace.QName(IDENTITY_URN, "User"), com.l7tech.identity.internal.imp.UserImp.class, javax.xml.rpc.ParameterMode.IN);
+        call.addParameter(new javax.xml.namespace.QName("", "user"), new javax.xml.namespace.QName(IDENTITY_URN, "User"), com.l7tech.identity.User.class, javax.xml.rpc.ParameterMode.IN);
         call.setReturnClass(Long.class);
         Long res = (Long)call.invoke(new Object[]{new java.lang.Long(identityProviderConfigId), user});
         return res.longValue();
@@ -142,9 +126,6 @@ public class Client {
     public com.l7tech.identity.Group findGroupByPrimaryKey(long identityProviderConfigId, String groupId) throws java.rmi.RemoteException {
         Call call = createStubCall();
         call.setOperationName(new QName(IDENTITY_URN, "findGroupByPrimaryKey"));
-        // call.addParameter(new javax.xml.namespace.QName("", "identityProviderConfigId"), new javax.xml.namespace.QName("http://www.w3.org/2001/XMLSchema", "long"), long.class, javax.xml.rpc.ParameterMode.IN);
-        // call.addParameter(new javax.xml.namespace.QName("", "groupId"), new javax.xml.namespace.QName("http://www.w3.org/2001/XMLSchema", "string"), String.class, javax.xml.rpc.ParameterMode.IN);
-        // call.setReturnClass(com.l7tech.identity.internal.imp.GroupImp.class);
         return (com.l7tech.identity.Group)call.invoke(new Object[]{new java.lang.Long(identityProviderConfigId), groupId});
     }
     public void deleteGroup(long identityProviderConfigId, String groupId) throws java.rmi.RemoteException {
@@ -159,7 +140,7 @@ public class Client {
         Call call = createStubCall();
         call.setOperationName(new QName(IDENTITY_URN, "saveGroup"));
         call.addParameter(new javax.xml.namespace.QName("", "identityProviderConfigId"), new javax.xml.namespace.QName("http://www.w3.org/2001/XMLSchema", "long"), long.class, javax.xml.rpc.ParameterMode.IN);
-        call.addParameter(new javax.xml.namespace.QName("", "group"), new javax.xml.namespace.QName(IDENTITY_URN, "Group"), com.l7tech.identity.internal.imp.GroupImp.class, javax.xml.rpc.ParameterMode.IN);
+        call.addParameter(new javax.xml.namespace.QName("", "group"), new javax.xml.namespace.QName(IDENTITY_URN, "Group"), com.l7tech.identity.Group.class, javax.xml.rpc.ParameterMode.IN);
         call.setReturnClass(Long.class);
         Long res = (Long)call.invoke(new Object[]{new java.lang.Long(identityProviderConfigId), group});
         return res.longValue();
@@ -202,9 +183,9 @@ public class Client {
         qn = new QName(IDENTITY_URN, "IdentityProviderConfig");
         call.registerTypeMapping(com.l7tech.identity.IdentityProviderConfig.class, qn, new org.apache.axis.encoding.ser.BeanSerializerFactory(com.l7tech.identity.IdentityProviderConfig.class, qn), new org.apache.axis.encoding.ser.BeanDeserializerFactory(com.l7tech.identity.IdentityProviderConfig.class, qn));
         qn = new QName(IDENTITY_URN, "User");
-        call.registerTypeMapping(com.l7tech.identity.internal.imp.UserImp.class, qn, new org.apache.axis.encoding.ser.BeanSerializerFactory(com.l7tech.identity.internal.imp.UserImp.class, qn), new org.apache.axis.encoding.ser.BeanDeserializerFactory(com.l7tech.identity.internal.imp.UserImp.class, qn));
+        call.registerTypeMapping(com.l7tech.identity.User.class, qn, new org.apache.axis.encoding.ser.BeanSerializerFactory(com.l7tech.identity.User.class, qn), new org.apache.axis.encoding.ser.BeanDeserializerFactory(com.l7tech.identity.User.class, qn));
         qn = new QName(IDENTITY_URN, "Group");
-        call.registerTypeMapping(com.l7tech.identity.internal.imp.GroupImp.class, qn, new org.apache.axis.encoding.ser.BeanSerializerFactory(com.l7tech.identity.internal.imp.GroupImp.class, qn), new org.apache.axis.encoding.ser.BeanDeserializerFactory(com.l7tech.identity.internal.imp.GroupImp.class, qn));
+        call.registerTypeMapping(com.l7tech.identity.Group.class, qn, new org.apache.axis.encoding.ser.BeanSerializerFactory(com.l7tech.identity.Group.class, qn), new org.apache.axis.encoding.ser.BeanDeserializerFactory(com.l7tech.identity.Group.class, qn));
         qn = new QName(IDENTITY_URN, "LdapUser");
         call.registerTypeMapping(com.l7tech.identity.ldap.LdapUser.class, qn, new org.apache.axis.encoding.ser.BeanSerializerFactory(com.l7tech.identity.ldap.LdapUser.class, qn), new org.apache.axis.encoding.ser.BeanDeserializerFactory(com.l7tech.identity.ldap.LdapUser.class, qn));
         qn = new QName(IDENTITY_URN, "LdapGroup");
