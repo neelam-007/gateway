@@ -6,7 +6,7 @@
 
 package com.l7tech.common.gui.widgets;
 
-import com.l7tech.console.table.TableUtil;
+import com.l7tech.common.gui.util.TableUtil;
 
 import javax.swing.*;
 import javax.swing.table.AbstractTableModel;

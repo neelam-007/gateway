@@ -1,6 +1,6 @@
 package com.l7tech.console.panels;
 
-import com.l7tech.console.table.TableUtil;
+import com.l7tech.common.gui.util.TableUtil;
 import com.l7tech.console.util.Preferences;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.ComponentRegistry;

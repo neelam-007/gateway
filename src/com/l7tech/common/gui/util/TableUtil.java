@@ -1,4 +1,4 @@
-package com.l7tech.console.table;
+package com.l7tech.common.gui.util;
 
 import java.awt.*;
 import javax.swing.*;
@@ -30,7 +30,7 @@ public abstract class TableUtil {
    * Figures out the preferred width in pixels of the given object if rendered
    * in the given column.
    */
-  public static Dimension getCellPreferredSize(JTable table, 
+  public static Dimension getCellPreferredSize(JTable table,
                                                int row, 
                                                int col, 
                                                Object val) {
