@@ -68,11 +68,11 @@ public class InternalGroupManagerClient implements com.l7tech.identity.GroupMana
     }
 
     public Collection findAll() throws FindException {
-        throw new FindException("This version of the manager does not support this operation");
+        throw new FindException("Operation not supported in this manager implementation");
     }
 
     public Collection findAll(int offset, int windowSize) throws FindException {
-        throw new FindException("This version of the manager does not support this operation");
+        throw new FindException("Operation not supported in this manager implementation");
     }
 
     // ************************************************
