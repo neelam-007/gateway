@@ -161,7 +161,7 @@ CREATE TABLE published_service (
 -- Table structure for table 'client_cert'
 --
 
-DROP TABLE IF EXIST client_cert;
+DROP TABLE IF EXISTS client_cert;
 CREATE TABLE client_cert (
   objectid bigint NOT NULL default '0',
   provider bigint NOT NULL default '0',
@@ -179,7 +179,7 @@ CREATE TABLE client_cert (
 -- Table structure for table 'service_resolution'
 --
 
-DROP TABLE IF EXIST service_resolution;
+DROP TABLE IF EXISTS service_resolution;
 CREATE TABLE service_resolution (
   serviceid bigint NOT NULL default '0',
   soapaction varchar(128) NOT NULL default '',
@@ -191,7 +191,7 @@ CREATE TABLE service_resolution (
 -- Dumping data for table 'service_resolution'
 --
 
-DROP TABLE IF EXIST urlcache;
+DROP TABLE IF EXISTS urlcache;
 CREATE TABLE urlcache (
   oid bigint NOT NULL default '0',
   timestamp bigint NOT NULL default '0',
@@ -206,7 +206,8 @@ CREATE TABLE urlcache (
 -- Table structure for table 'cluster_info'
 --
 
-DROP TABLE cluster_info;
+DROP TABLE IF EXISTS cluster_info;
+
 CREATE TABLE cluster_info (
   mac varchar(18) NOT NULL default '',
   name varchar(128) NOT NULL default '',
@@ -215,7 +216,7 @@ CREATE TABLE cluster_info (
   uptime bigint NOT NULL default '0',
   avgload double NOT NULL default '0',
   statustimestamp bigint NOT NULL default '0',
-  PRIMARY KEY(nodeid)
+  PRIMARY KEY(mac)
 )  TYPE=InnoDB;
 
 --
@@ -226,7 +227,7 @@ CREATE TABLE cluster_info (
 -- Table structure for table 'service_usage'
 --
 
-DROP TABLE service_usage;
+DROP TABLE IF EXISTS service_usage;
 CREATE TABLE service_usage (
   serviceid bigint NOT NULL default '0',
   nodeid varchar(18) NOT NULL default '',
