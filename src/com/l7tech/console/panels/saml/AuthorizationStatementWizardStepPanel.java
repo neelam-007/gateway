@@ -57,9 +57,9 @@ public class AuthorizationStatementWizardStepPanel extends WizardStepPanel {
      */
     public void storeSettings(Object settings) throws IllegalArgumentException {
         SamlAuthorizationStatement statement = (SamlAuthorizationStatement)settings;
-        textFieldAction.setText(statement.getAction());
-        textFieldActionNamespace.setText(statement.getActionNamespace());
-        textFieldResource.setText(statement.getResource());
+        statement.setAction(textFieldAction.getText());
+        statement.setActionNamespace(textFieldActionNamespace.getText());
+        statement.setResource(textFieldResource.getText());
     }
 
     /**
@@ -73,9 +73,9 @@ public class AuthorizationStatementWizardStepPanel extends WizardStepPanel {
      */
     public void readSettings(Object settings) throws IllegalArgumentException {
         SamlAuthorizationStatement statement = (SamlAuthorizationStatement)settings;
-        statement.setAction(textFieldAction.getText());
-        statement.setActionNamespace(textFieldActionNamespace.getText());
-        statement.setResource(textFieldResource.getText());
+        textFieldAction.setText(statement.getAction());
+        textFieldActionNamespace.setText(statement.getActionNamespace());
+        textFieldResource.setText(statement.getResource());
     }
 
     private void initialize() {
@@ -87,7 +87,7 @@ public class AuthorizationStatementWizardStepPanel extends WizardStepPanel {
         } else {
             titleLabel.getParent().remove(titleLabel);
         }
-        
+
         textFieldResource.getDocument().addDocumentListener(new DocumentListener() {
             public void changedUpdate(DocumentEvent e) {
                 notifyListeners();
@@ -113,8 +113,8 @@ public class AuthorizationStatementWizardStepPanel extends WizardStepPanel {
 
     public String getDescription() {
         return
-        "<html>Specify the Resource [required] that the SAML statement MUST describe; the<br>" +
-          "Resource Action [optional] and the Action Namespace [optional]<br>" +
+        "<html>Specify the Resource [required] that the SAML statement MUST describe; the " +
+          "Resource Action [optional] and the Action Namespace [optional] " +
           "and whether the message signature is required as the proof material</html>";
     }
 
@@ -129,4 +129,12 @@ public class AuthorizationStatementWizardStepPanel extends WizardStepPanel {
         return (resource != null && !"".equals(resource));
     }
 
+    /**
+     * Test whether the step is finished and it is safe to finish the wizard.
+     *
+     * @return true if the panel is valid, false otherwis
+     */
+    public boolean canFinish() {
+        return false;
+    }
 }

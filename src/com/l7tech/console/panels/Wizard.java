@@ -390,6 +390,18 @@ public class Wizard extends JDialog {
      * @param wp the wizard panel
      */
     protected void updateWizardControls(WizardStepPanel wp) {
+        //todo: rework wizard to allow 'finish' to be set dynamically
+        /*
+        boolean finishEnabled = true;
+        Wizard.Iterator it = new Wizard.Iterator(startPanel);
+        while (it.hasNext()) {
+            WizardStepPanel p = it.next();
+            finishEnabled = p.canFinish() && p.canAdvance();
+        }
+
+        buttonFinish.setEnabled(finishEnabled);
+        
+        */
         buttonFinish.setEnabled(wp.canFinish());
         buttonNext.setEnabled(wp.canAdvance() && wizardIterator.hasNext());
         buttonBack.setEnabled(wizardIterator.hasPrevious());

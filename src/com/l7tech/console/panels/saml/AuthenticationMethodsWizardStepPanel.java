@@ -197,6 +197,15 @@ public class AuthenticationMethodsWizardStepPanel extends WizardStepPanel {
         return false;
     }
 
+    /**
+     * Test whether the step is finished and it is safe to finish the wizard.
+     *
+     * @return true if the panel is valid, false otherwis
+     */
+    public boolean canFinish() {
+        return false;
+    }
+
     public String getDescription() {
         return
           "<html>Specify one or more accepted authentication methods that the SAML statement must assert</html>";

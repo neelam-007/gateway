@@ -45,12 +45,8 @@ public class AuthorizationStatementPropertiesPanel extends JDialog {
             throw new IllegalArgumentException();
         }
         this.assertion = assertion;
-        setTitle("SAML Authentication Statement Constraints");
+        setTitle("SAML Authorization Statement Constraints");
         setModal(modal);
-        Container contentPane = getContentPane();
-        contentPane.setLayout(new BorderLayout());
-        /** Set content pane */
-        contentPane.add(mainPanel, BorderLayout.CENTER);
         initialize();
     }
 
@@ -62,6 +58,14 @@ public class AuthorizationStatementPropertiesPanel extends JDialog {
     }
 
     private void initialize() {
+        Container contentPane = getContentPane();
+        contentPane.setLayout(new BorderLayout());
+        final Border mainPanelEemptyBorder = BorderFactory.createEmptyBorder(0, 0, 0, 10);
+
+        /** Set content pane */
+        mainPanel.setBorder(mainPanelEemptyBorder);
+        contentPane.add(mainPanel, BorderLayout.CENTER);
+
         final Border emptyBorder = BorderFactory.createEmptyBorder(10, 10, 5, 10);
         Collection panels = new ArrayList();
         AuthorizationStatementWizardStepPanel authorizationStatementWizardStepPanel = new AuthorizationStatementWizardStepPanel(null, false);

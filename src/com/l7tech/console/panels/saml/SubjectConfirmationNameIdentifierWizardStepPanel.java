@@ -157,4 +157,12 @@ public class SubjectConfirmationNameIdentifierWizardStepPanel extends WizardStep
         return false;
     }
 
+    /**
+     * Test whether the step is finished and it is safe to finish the wizard.
+     *
+     * @return true if the panel is valid, false otherwis
+     */
+    public boolean canFinish() {
+        return false;
+    }
 }
