@@ -96,17 +96,21 @@ public class SamlAssertionValidate {
         } else {
 
             SignedElement[] signedElements = wssResults.getElementsThatWereSigned();
+            X509Certificate signingCert = null;
             for (int i = 0; i < signedElements.length; i++) {
                 SignedElement signedElement = signedElements[i];
                 if (signedElement == assertion.asElement()) {
+                    if (signingCert != null) {
+                        validationResults.add(new Error("SAML assertion was signed by more than one security token", soapMessageDoc, null, null));
+                        return;
+                    }
+
                     // This assertion is included in the message signature.
                     SigningSecurityToken signingToken = (SigningSecurityToken)signedElement.getSigningSecurityToken();
                     if (signingToken instanceof X509SigningSecurityToken) {
                         X509SigningSecurityToken x509SigningSecurityToken = (X509SigningSecurityToken)signingToken;
-                        X509Certificate signingCert = x509SigningSecurityToken.getMessageSigningCertificate();
-
-                        // Use the signing cert somehow
-                        // TODO use it here
+                        signingCert = x509SigningSecurityToken.getMessageSigningCertificate();
+                        break;
 
                     } else {
                         validationResults.add(new Error("Unsupported signing security token type", soapMessageDoc, null, null));
@@ -115,10 +119,13 @@ public class SamlAssertionValidate {
                 }
             }
 
-            if (!assertion.hasEmbeddedIssuerSignature()) {
+            if (signingCert == null && !assertion.hasEmbeddedIssuerSignature()) {
                 validationResults.add(new Error("Unsigned SAML assertion found in security Header", soapMessageDoc, null, null));
                 return;
             }
+
+            // Use the signing cert somehow
+            // TODO use it here
 
             if (requestWssSaml.isRequireProofOfPosession()) {
                 if (!assertion.isPossessionProved()) {
