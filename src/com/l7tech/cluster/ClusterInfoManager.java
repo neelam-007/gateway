@@ -158,6 +158,7 @@ public class ClusterInfoManager {
             selfCI.setLastUpdateTimeStamp(newboottimevalue);
             try {
                 String add = getIPAddress();
+                selfCI.setAddress(add);
             } catch (SocketException e) {
                 logger.warning("cannot get localhost address: " + e.getMessage());
             }
