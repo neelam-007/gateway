@@ -49,10 +49,8 @@ public class HttpRoutingAssertionDialog extends JDialog {
     private JPasswordField identityPasswordField;
     private JCheckBox taiCredentialChaining;
 
-    private JPanel credentialsPanel;
     private JPanel serviceUrlPanel;
     private JTextField serviceUrlTextField;
-    private JPanel mainPanel;
 
     private JRadioButton passwordMethod;
     private JRadioButton samlMethod;
@@ -120,8 +118,9 @@ public class HttpRoutingAssertionDialog extends JDialog {
      */
     private void initComponents() {
         GridBagConstraints gridBagConstraints;
-        mainPanel = new JPanel();
-        credentialsPanel = new JPanel();
+        JPanel mainPanel = new JPanel();
+        JPanel credentialsPanel = new JPanel();
+
 
         Container contentPane = getContentPane();
         contentPane.setLayout(new BorderLayout());
