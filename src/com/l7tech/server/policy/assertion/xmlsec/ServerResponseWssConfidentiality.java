@@ -52,8 +52,10 @@ public class ServerResponseWssConfidentiality implements ServerAssertion {
     public AssertionStatus checkRequest(Request request, Response response)
             throws IOException, PolicyAssertionException
     {
-        if (!(request instanceof SoapRequest))
-            throw new PolicyAssertionException("This type of assertion is only supported with SOAP requests");
+        if (!(request instanceof SoapRequest) || !((SoapRequest)request).isSoap()) {
+            logger.info("This type of assertion is only supported with SOAP type of messages");
+            return AssertionStatus.NOT_APPLICABLE;
+        }
         SoapRequest soapRequest = (SoapRequest)request;
 
         // Ecrypting the Response will require either the presence of a client cert (to encrypt the symmetric key)
@@ -100,8 +102,10 @@ public class ServerResponseWssConfidentiality implements ServerAssertion {
             public AssertionStatus checkRequest(Request request, Response response)
                     throws IOException, PolicyAssertionException
             {
-                if (!(response instanceof SoapResponse))
-                    throw new PolicyAssertionException("This type of assertion is only supported with SOAP responses");
+                if (!(response instanceof SoapResponse) || !((SoapResponse)response).isSoap()) {
+                    logger.warning("Service response was not SOAP, and this type of assertion is only supported with SOAP type of messages");
+                    return AssertionStatus.NOT_APPLICABLE;
+                }
                 SoapResponse soapResponse = (SoapResponse)response;
 
                 // GET THE DOCUMENT

@@ -9,10 +9,12 @@ package com.l7tech.message;
 import com.l7tech.common.util.MultipartMessageReader;
 import com.l7tech.common.util.MultipartUtil;
 import com.l7tech.common.util.XmlUtil;
+import com.l7tech.common.util.SoapUtil;
 import com.l7tech.server.MessageProcessor;
 import com.l7tech.server.transport.jms.BytesMessageInputStream;
 import com.l7tech.server.transport.jms.JmsUtil;
 import org.w3c.dom.Document;
+import org.w3c.dom.Element;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 import org.xmlpull.v1.XmlPullParser;
@@ -21,12 +23,14 @@ import org.xmlpull.v1.XmlPullParserException;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.ParserConfigurationException;
 import java.io.*;
+import java.util.Iterator;
 
 /**
  * @author alex
  * @version $Revision$
  */
 public abstract class XmlMessageAdapter extends MessageAdapter implements XmlMessage {
+
     public XmlMessageAdapter( TransportMetadata tm ) {
         super(tm);
     }
@@ -109,9 +113,38 @@ public abstract class XmlMessageAdapter extends MessageAdapter implements XmlMes
         }
     }
 
+    public boolean isSoap() {
+        if ( soap == null ) {
+            Element docEl = null;
+
+            boolean ok;
+            try {
+                docEl = getDocument().getDocumentElement();
+                ok = true;
+            } catch ( Exception e ) {
+                ok = false;
+            }
+
+            ok = ok && docEl.getNodeName().equals(SoapUtil.BODY_EL_NAME);
+            if ( ok ) {
+                String docUri = docEl.getNamespaceURI();
+
+                // Check that envelope is one of the recognized namespaces
+                for ( Iterator i = SoapUtil.ENVELOPE_URIS.iterator(); i.hasNext(); ) {
+                    String envUri = (String)i.next();
+                    if (envUri.equals(docUri)) ok = true;
+                }
+            }
+
+            soap = ok ? Boolean.TRUE : Boolean.FALSE;
+        }
+
+        return soap.booleanValue();
+    }
+
     protected Document _document;
     protected boolean soapPartParsed = false;
     protected boolean multipart = false;
     protected MultipartMessageReader multipartReader = null;
-
+    protected Boolean soap = null;
 }

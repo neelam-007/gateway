@@ -36,37 +36,6 @@ public abstract class SoapRequest extends XmlMessageAdapter implements SoapMessa
         MessageProcessor.setCurrentRequest(this);
     }
 
-    // todo why is this here and not in one of the superinterfaces?  why would there be a "SoapRequest" instance that wasn't soap?
-    public boolean isSoap() {
-        if ( soap == null ) {
-            Element docEl = null;
-
-            boolean ok;
-            try {
-                docEl = getDocument().getDocumentElement();
-                ok = true;
-            } catch ( Exception e ) {
-                ok = false;
-            }
-
-            ok = ok && docEl.getNodeName().equals(SoapUtil.BODY_EL_NAME);
-            if ( ok ) {
-                String docUri = docEl.getNamespaceURI();
-
-                // Check that envelope is one of the recognized namespaces
-                for ( Iterator i = SoapUtil.ENVELOPE_URIS.iterator(); i.hasNext(); ) {
-                    String envUri = (String)i.next();
-                    if (envUri.equals(docUri)) ok = true;
-                }
-            }
-
-            soap = ok ? Boolean.TRUE : Boolean.FALSE;
-        }
-
-        return soap.booleanValue();
-    }
-
-
     public MessageIdManager getMessageIdManager() {
         return DistributedMessageIdManager.getInstance();
     }
@@ -220,7 +189,6 @@ public abstract class SoapRequest extends XmlMessageAdapter implements SoapMessa
 
     protected RequestId _id;
     protected boolean _authenticated;
-    protected Boolean soap = null;
     protected InputStream _requestInputStream;
     protected User _user;
     protected RoutingStatus _routingStatus = RoutingStatus.NONE;

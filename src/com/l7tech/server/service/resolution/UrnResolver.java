@@ -52,7 +52,7 @@ public class UrnResolver extends WsdlOperationServiceResolver {
 
     protected Object getRequestValue(Request request) throws ServiceResolutionException {
         try {
-            if ( request instanceof SoapRequest ) {
+            if ( request instanceof SoapRequest && ((SoapRequest)request).isSoap() ) {
                 SoapRequest sreq = (SoapRequest)request;
                 XmlPullParser xpp = sreq.getPullParser();
                 String tag;

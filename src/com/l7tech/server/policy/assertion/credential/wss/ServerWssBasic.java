@@ -33,8 +33,9 @@ public class ServerWssBasic implements ServerAssertion {
     }
 
     public AssertionStatus checkRequest(Request request, Response response) throws IOException, PolicyAssertionException {
-        if (!(request instanceof SoapRequest)) {
-            throw new PolicyAssertionException("This type of assertion is only supported with SOAP type of messages");
+        if (!(request instanceof SoapRequest) || !((SoapRequest)request).isSoap()) {
+            logger.info("This type of assertion is only supported with SOAP type of messages");
+            return AssertionStatus.NOT_APPLICABLE;
         }
         SoapRequest req = (SoapRequest)request;
         ProcessorResult wssResults = req.getWssProcessorOutput();

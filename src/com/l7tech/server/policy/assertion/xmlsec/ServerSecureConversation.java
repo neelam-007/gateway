@@ -35,7 +35,7 @@ public class ServerSecureConversation implements ServerAssertion {
         // nothing to remember from the passed assertion
     }
     public AssertionStatus checkRequest(Request request, Response response) throws IOException, PolicyAssertionException {
-        if (!(request instanceof SoapRequest)) {
+        if (!(request instanceof SoapRequest) || !((SoapRequest)request).isSoap()) {
             logger.info("This type of assertion is only supported with SOAP type of messages");
             return AssertionStatus.BAD_REQUEST;
         }
@@ -78,8 +78,10 @@ public class ServerSecureConversation implements ServerAssertion {
     private final ServerAssertion deferredSecureConversationResponseDecoration(final SecureConversationSession session) {
         return new ServerAssertion() {
             public AssertionStatus checkRequest(Request request, Response response) throws IOException, PolicyAssertionException {
-                if (!(response instanceof SoapResponse))
-                    throw new PolicyAssertionException("This type of assertion is only supported with SOAP responses");
+                if (!(response instanceof SoapResponse) || !((SoapResponse)response).isSoap()) {
+                    logger.warning("Service response was not SOAP, and this type of assertion is only supported with SOAP type of messages");
+                    return AssertionStatus.NOT_APPLICABLE;                    
+                }
                 SoapResponse soapResponse = (SoapResponse)response;
                 DecorationRequirements wssReq = soapResponse.getOrMakeDecorationRequirements();
                 wssReq.setSignTimestamp(true);

@@ -56,7 +56,7 @@ public class MessageProcessor {
 
         ProcessorResult wssOutput = null;
         // WSS-Processing Step
-        if (request instanceof SoapRequest) {
+        if (request instanceof SoapRequest && ((SoapRequest)request).isSoap()) {
             SoapRequest req = (SoapRequest)request;
             WssProcessor trogdor = new WssProcessorImpl(); // no need for locator
             X509Certificate serverSSLcert = null;
@@ -82,6 +82,7 @@ public class MessageProcessor {
                 }
             } catch (MessageNotSoapException e) {
                 logger.log(Level.FINE, "Message is not SOAP; will not have any WSS results.");
+                // this shouldn't be possible now
                 // pass through, leaving wssOutput as null
             } catch (ProcessorException e) {
                 logger.log(Level.SEVERE, "Error in WSS processing of request", e);
@@ -183,6 +184,7 @@ public class MessageProcessor {
                 // Run response through WssDecorator if indicated
                 if (status == AssertionStatus.NONE &&
                         response instanceof SoapResponse &&
+                        ((SoapResponse)response).isSoap() &&
                         ((SoapResponse)response).getDecorationRequirements() != null)
                 {
                     SoapResponse soapResponse = (SoapResponse)response;
@@ -190,7 +192,7 @@ public class MessageProcessor {
                     try {
                         doc = soapResponse.getDocument();
 
-                        if (request instanceof SoapRequest) {
+                        if (request instanceof SoapRequest && ((SoapRequest)request).isSoap()) {
                             SoapRequest soapRequest = (SoapRequest)request;
                             final String messageId = SoapUtil.getL7aMessageId(soapRequest.getDocument());
                             if (messageId != null) {

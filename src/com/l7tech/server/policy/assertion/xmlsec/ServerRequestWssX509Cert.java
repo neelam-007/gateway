@@ -35,7 +35,7 @@ public class ServerRequestWssX509Cert implements ServerAssertion {
         this.subject = subject;
     }
     public AssertionStatus checkRequest(Request request, Response response) throws IOException, PolicyAssertionException {
-        if (!(request instanceof SoapRequest)) {
+        if (!(request instanceof SoapRequest) || !((SoapRequest)request).isSoap()) {
             logger.info("This type of assertion is only supported with SOAP type of messages");
             return AssertionStatus.BAD_REQUEST;
         }

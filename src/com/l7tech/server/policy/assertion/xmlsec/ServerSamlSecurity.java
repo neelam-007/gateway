@@ -54,7 +54,7 @@ public class ServerSamlSecurity implements ServerAssertion {
      */
     public AssertionStatus checkRequest(Request request, Response response)
             throws IOException, PolicyAssertionException {
-        if (!(request instanceof SoapRequest)) {
+        if (!(request instanceof SoapRequest) || !((SoapRequest)request).isSoap()) {
             logger.info("Request is not a SoapRequest; assertion therefore fails");
             return AssertionStatus.NOT_APPLICABLE;
         }
