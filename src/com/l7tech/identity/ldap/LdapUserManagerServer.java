@@ -50,7 +50,7 @@ public class LdapUserManagerServer implements UserManager {
             if (tmp != null) out.setName(tmp.toString());
             tmp = extractOneAttributeValue(attributes, PASSWD_ATTR_NAME);
             if (tmp != null) out.setPassword(tmp.toString());
-            // todo, record group memberships
+            // todo, record group memberships (use "groupMembership" attribute of user?)
             return out;
         } catch (NamingException e) {
             e.printStackTrace(System.err);
@@ -84,14 +84,16 @@ public class LdapUserManagerServer implements UserManager {
 
     public Collection findAllHeaders() throws FindException {
         Collection output = new ArrayList();
-        String[] attrToReturn = {LOGIN_ATTR_NAME, NAME_ATTR_NAME};
-
         if (config.getSearchBase() == null || config.getSearchBase().length() < 1) throw new FindException("No search base provided");
-
         try
         {
             NamingEnumeration answer = null;
-            answer = getAnonymousContext().search(config.getSearchBase(), null, attrToReturn);
+            String filter = "(objectclass=" + USER_OBJCLASS + ")";
+            SearchControls sc = new SearchControls();
+            // String[] attrToReturn = {LOGIN_ATTR_NAME, NAME_ATTR_NAME};
+            //answer = getAnonymousContext().search(config.getSearchBase(), null, attrToReturn);
+            sc.setSearchScope(SearchControls.SUBTREE_SCOPE);
+            answer = getAnonymousContext().search(config.getSearchBase(), filter, sc);
             while (answer.hasMore())
             {
                 String login = null;
@@ -199,21 +201,6 @@ public class LdapUserManagerServer implements UserManager {
             System.out.println(usr);
         }
 
-        /*
-        User usr = me.findByPrimaryKey("cn=flascelles,dc=layer7-tech,dc=com");
-        System.out.println(usr);
-
-        usr = me.findByPrimaryKey("cn=Alex Cruise,dc=layer7-tech,dc=com");
-        System.out.println(usr);
-
-        usr = me.findByPrimaryKey("cn=dsirota,dc=layer7-tech,dc=com");
-        System.out.println(usr);
-
-        usr = me.findByPrimaryKey("cn=stranger,dc=layer7-tech,dc=com");
-        System.out.println(usr);
-
-        me.findAllHeaders();
-        */
     }
 
     private Object extractOneAttributeValue(Attributes attributes, String attrName) {
@@ -256,4 +243,5 @@ public class LdapUserManagerServer implements UserManager {
     private static final String LASTNAME_ATTR_NAME = "sn";
     private static final String NAME_ATTR_NAME = "cn";
     private static final String PASSWD_ATTR_NAME = "userPassword";
+    private static final String USER_OBJCLASS = "inetOrgPerson";
 }
