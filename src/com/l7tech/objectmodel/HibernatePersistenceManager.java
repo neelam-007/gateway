@@ -58,7 +58,6 @@ public class HibernatePersistenceManager extends PersistenceManager {
     }
 
     private SessionFactory _sessionFactory;
-    // private InitialContext _initialContext;
 
     class ContextHolder {
         HibernatePersistenceContext _context;
