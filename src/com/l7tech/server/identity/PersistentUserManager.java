@@ -55,7 +55,10 @@ public abstract class PersistentUserManager extends HibernateEntityManager imple
 
     public User findByLogin( String login ) throws FindException {
         try {
-            List users = PersistenceManager.find( getContext(), "from " + getTableName() + " in class " + getImpClass().getName() + " where " + getTableName() + ".login = ?", login, String.class );
+            Criteria findByLogin = getContext().getSession().createCriteria(getImpClass());
+            findByLogin.add(Expression.eq("login", login));
+            addFindAllCriteria(findByLogin);
+            List users = findByLogin.list();
             switch ( users.size() ) {
             case 0:
                 return null;
@@ -71,6 +74,9 @@ public abstract class PersistentUserManager extends HibernateEntityManager imple
         } catch ( SQLException se ) {
             logger.log(Level.SEVERE, null, se);
             throw new FindException( se.toString(), se );
+        } catch ( HibernateException e ) {
+            logger.log(Level.SEVERE, null, e);
+            throw new FindException( e.toString(), e );
         }
     }
 
