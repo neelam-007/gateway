@@ -44,6 +44,6 @@ public class VirtualGroup extends FederatedGroup {
         bean.getProperties().put(PROP_X509_DN_PATTERN, x509SubjectDnPattern);
     }
 
-    private static final String PROP_SAML_EMAIL_PATTERN = "samlEmailPattern";
-    private static final String PROP_X509_DN_PATTERN = "x509SubjectDnPattern";
+    public static final String PROP_SAML_EMAIL_PATTERN = "samlEmailPattern";
+    public static final String PROP_X509_DN_PATTERN = "x509SubjectDnPattern";
 }
