@@ -37,7 +37,6 @@ import java.util.logging.Logger;
 public class IdentityAdminImpl extends HibernateDaoSupport  implements IdentityAdmin {
     private ClientCertManager clientCertManager;
 
-    public static final String SERVICE_DEPENDENT_URL_PORTION = "/services/identityAdmin";
     private final AccessManager accessManager;
 
     public IdentityAdminImpl(AccessManager accessManager) {

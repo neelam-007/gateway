@@ -1,44 +1,39 @@
 package com.l7tech.identity.ldap;
 
+import com.l7tech.common.ApplicationContexts;
 import com.l7tech.identity.GroupManager;
 import com.l7tech.identity.User;
+import com.l7tech.identity.cert.ClientCertManager;
 import com.l7tech.policy.assertion.credential.CredentialFormat;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.assertion.credential.http.HttpBasic;
+import com.l7tech.server.ServerConfig;
 import com.l7tech.server.identity.ldap.LdapConfigTemplateManager;
+import com.l7tech.server.identity.ldap.LdapGroupManager;
 import com.l7tech.server.identity.ldap.LdapIdentityProvider;
 import com.l7tech.server.identity.ldap.LdapUserManager;
-import com.l7tech.server.identity.ldap.LdapGroupManager;
-import com.l7tech.server.identity.cert.ClientCertManagerImp;
-import com.l7tech.server.ServerConfig;
-import com.l7tech.common.ApplicationContexts;
-import junit.framework.TestCase;
+import org.springframework.context.ApplicationContext;
 
 import java.io.IOException;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.Set;
 
-import org.springframework.context.ApplicationContext;
-
 /**
- * A test class for the ldap redesign.
- * todo: make this test work again
+ * A test class for the ldap providers
  * <br/><br/>
  * LAYER 7 TECHNOLOGIES, INC<br/>
  * User: flascell<br/>
  * Date: Jan 21, 2004<br/>
  * $Id$<br/>
- *
  */
-public class LdapIdentityProviderTest extends TestCase {
-
+public class LdapIdentityProviderTest {
     private LdapIdentityProviderConfig getConfigForSpock() throws IOException {
         LdapConfigTemplateManager templateManager = new LdapConfigTemplateManager();
         LdapIdentityProviderConfig spockTemplate = templateManager.getTemplate("GenericLDAP");
         //spockTemplate.setLdapUrl(new String[] {"ldap://riker:389", "ldap://localhost:3899", "ldap://sisko:389"});
         //spockTemplate.setLdapUrl(new String[] {"ldap://spock:389"});
-        spockTemplate.setLdapUrl(new String[] {"ldap://localhost:3899"});
+        spockTemplate.setLdapUrl(new String[]{"ldap://spock:389"});
         spockTemplate.setSearchBase("dc=layer7-tech,dc=com");
         return spockTemplate;
     }
@@ -46,7 +41,7 @@ public class LdapIdentityProviderTest extends TestCase {
     private LdapIdentityProviderConfig getConfigForSpockWithBadSearchBase() throws IOException {
         LdapConfigTemplateManager templateManager = new LdapConfigTemplateManager();
         LdapIdentityProviderConfig spockTemplate = templateManager.getTemplate("GenericLDAP");
-        spockTemplate.setLdapUrl(new String[] {"ldap://spock:3899"});
+        spockTemplate.setLdapUrl(new String[]{"ldap://spock:3899"});
         spockTemplate.setSearchBase("dc=layer8-tech,dc=com");
         return spockTemplate;
     }
@@ -55,7 +50,7 @@ public class LdapIdentityProviderTest extends TestCase {
         LdapConfigTemplateManager templateManager = new LdapConfigTemplateManager();
         LdapIdentityProviderConfig msadTemplate = templateManager.getTemplate("MicrosoftActiveDirectory");
         //msadTemplate.setLdapUrl("ldap://localhost:3899");
-        msadTemplate.setLdapUrl(new String[] {"ldap://mail.l7tech.com:3268"});
+        msadTemplate.setLdapUrl(new String[]{"ldap://mail.l7tech.com:3268"});
         msadTemplate.setSearchBase("ou=Layer 7 Users,dc=L7TECH,dc=LOCAL");
         msadTemplate.setBindDN("browse");
         msadTemplate.setBindPasswd("password");
@@ -65,7 +60,7 @@ public class LdapIdentityProviderTest extends TestCase {
     private LdapIdentityProviderConfig getConfigForTimTam() throws IOException {
         LdapConfigTemplateManager templateManager = new LdapConfigTemplateManager();
         LdapIdentityProviderConfig msadTemplate = templateManager.getTemplate("TivoliLdap");
-        msadTemplate.setLdapUrl(new String[] {"ldap://192.168.1.120:389"});
+        msadTemplate.setLdapUrl(new String[]{"ldap://192.168.1.120:389"});
         msadTemplate.setSearchBase("DC=IBM,DC=COM");
         msadTemplate.setBindDN("cn=root");
         msadTemplate.setBindPasswd("passw0rd");
@@ -76,7 +71,7 @@ public class LdapIdentityProviderTest extends TestCase {
         LdapConfigTemplateManager templateManager = new LdapConfigTemplateManager();
         LdapIdentityProviderConfig orclTemplate = templateManager.getTemplate("Oracle");
         //orclTemplate.setLdapUrl("ldap://localhost:3899");
-        orclTemplate.setLdapUrl(new String[] {"ldap://hugh.l7tech.com:389"});
+        orclTemplate.setLdapUrl(new String[]{"ldap://hugh.l7tech.com:389"});
         orclTemplate.setSearchBase("dc=l7tech,dc=com");
         orclTemplate.setBindDN("cn=orcladmin");
         orclTemplate.setBindPasswd("7layer");
@@ -102,40 +97,40 @@ public class LdapIdentityProviderTest extends TestCase {
     }
 
     private LdapIdentityProvider getSpockProviderWithBadSearchBase() throws IOException {
-        LdapIdentityProvider spock =  new LdapIdentityProvider(getConfigForSpockWithBadSearchBase());
+        LdapIdentityProvider spock = new LdapIdentityProvider(getConfigForSpockWithBadSearchBase());
         return spock;
     }
 
     private LdapIdentityProvider getSpockProvider() throws Exception {
-        LdapIdentityProvider spock =  new LdapIdentityProvider(getConfigForSpock());
+        LdapIdentityProvider spock = new LdapIdentityProvider(getConfigForSpock());
         LdapUserManager usman = new LdapUserManager(spock);
         spock.setUserManager(usman);
         LdapGroupManager grpman = new LdapGroupManager(spock);
         spock.setGroupManager(grpman);
-        spock.setClientCertManager(new ClientCertManagerImp());
-        spock.setServerConfig(ServerConfig.getInstance());
+        spock.setClientCertManager((ClientCertManager)applicationContext.getBean("clientCertManager"));
+        spock.setServerConfig((ServerConfig)applicationContext.getBean("serverConfig"));
 
         spock.afterPropertiesSet();
         return spock;
     }
 
     private LdapIdentityProvider getTimTamProvider() throws IOException {
-        LdapIdentityProvider timtam =  new LdapIdentityProvider(getConfigForTimTam());
+        LdapIdentityProvider timtam = new LdapIdentityProvider(getConfigForTimTam());
         return timtam;
     }
 
     private LdapIdentityProvider getMSADProvider() throws IOException {
-        LdapIdentityProvider spock =  new LdapIdentityProvider(getConfigForMSAD());
+        LdapIdentityProvider spock = new LdapIdentityProvider(getConfigForMSAD());
         return spock;
     }
 
     private LdapIdentityProvider getOracleProvider() throws IOException {
-        LdapIdentityProvider orcl =  new LdapIdentityProvider(getConfigForOracle());
+        LdapIdentityProvider orcl = new LdapIdentityProvider(getConfigForOracle());
         return orcl;
     }
 
     private LdapIdentityProvider getModifiedOracleProvider() throws IOException {
-        LdapIdentityProvider orcl =  new LdapIdentityProvider(getModifiedConfigForOracle());
+        LdapIdentityProvider orcl = new LdapIdentityProvider(getModifiedConfigForOracle());
         return orcl;
     }
 
@@ -145,7 +140,7 @@ public class LdapIdentityProviderTest extends TestCase {
             return;
         }
         Collection users = localProvider.getUserManager().findAll();
-        for (Iterator i = users.iterator(); i.hasNext(); ) {
+        for (Iterator i = users.iterator(); i.hasNext();) {
             LdapUser user = (LdapUser)i.next();
             System.out.println("found user " + user);
         }
@@ -158,11 +153,11 @@ public class LdapIdentityProviderTest extends TestCase {
         }
         GroupManager manager = localProvider.getGroupManager();
         Collection groups = manager.findAll();
-        for (Iterator i = groups.iterator(); i.hasNext(); ) {
+        for (Iterator i = groups.iterator(); i.hasNext();) {
             LdapGroup grp = (LdapGroup)i.next();
             System.out.println("found group " + grp);
             Set userheaders = manager.getUserHeaders(grp);
-            for (Iterator ii = userheaders.iterator(); ii.hasNext(); ) {
+            for (Iterator ii = userheaders.iterator(); ii.hasNext();) {
                 System.out.println("group member " + ii.next());
             }
         }
@@ -180,8 +175,8 @@ public class LdapIdentityProviderTest extends TestCase {
             User authenticated = null;
             try {
                 authenticated = localProvider.authenticate(
-                        new LoginCredentials(notauthenticated.getLogin(),
-                        passwd.toCharArray(), CredentialFormat.CLEARTEXT, HttpBasic.class, null, null));
+                  new LoginCredentials(notauthenticated.getLogin(),
+                                       passwd.toCharArray(), CredentialFormat.CLEARTEXT, HttpBasic.class, null, null));
             } catch (Exception e) {
                 System.out.println("creds do not authenticate.");
             }
@@ -196,7 +191,6 @@ public class LdapIdentityProviderTest extends TestCase {
 
     public static void main(String[] args) throws Exception {
         LdapIdentityProviderTest me = new LdapIdentityProviderTest();
-
         me.localProvider = me.getSpockProvider();
         //me.localProvider = me.getSpockProviderWithBadSearchBase();
         //me.localProvider = me.getMSADProvider();
