@@ -39,7 +39,7 @@ public class IdentityRule extends Filter {
     public Assertion filter(User policyRequestor, Assertion assertionTree) throws FilteringException {
         requestor = policyRequestor;
         if (assertionTree == null) return null;
-        applyRules(assertionTree, null);
+        applyRules(assertionTree, null, null);
         if (anIdentityAssertionWasFound && !userPassedAtLeastOneIdentityAssertion && requestor != null) {
             logger.severe("This user is not authorized to consume this service. Policy filter returning null.");
             return null;
@@ -47,12 +47,19 @@ public class IdentityRule extends Filter {
         return assertionTree;
     }
 
+    // results for apply rule
+    private static final int NOTHING_WAS_DELETED = 0;
+    private static final int SOMETHING_WAS_DELETED = 1;
+    private static final int ALL_SIBLINGS_SHOULD_BE_DELETED = 2;
     /**
-     * returns true if one or more assertion was deleted amoungs the siblings of this assertion
+     * @return see NOTHING_WAS_DELETED, SOMETHING_WAS_DELETED, or ALL_SIBLINGS_SHOULD_BE_DELETED
      */
-    private boolean applyRules(Assertion arg, Iterator parentIterator) throws FilteringException {
+    private int applyRules(Assertion arg, Iterator parentIterator, CompositeAssertion parent) throws FilteringException {
         // apply rules on this one
         if (arg instanceof IdentityAssertion) {
+            if (parent == null || parentIterator == null) {
+                throw new RuntimeException("ID assertions must have a parent. This is not a valid policy.");
+            }
             anIdentityAssertionWasFound = true;
             if (validateIdAssertion((IdentityAssertion)arg)) {
                 userPassedAtLeastOneIdentityAssertion = true;
@@ -61,38 +68,38 @@ public class IdentityRule extends Filter {
                 }
                 parentIterator.remove();
             } else {
-                if (parentIterator == null) {
-                    throw new RuntimeException("Invalid policy, all policies must have a composite assertion at the root");
-                }
-                Assertion parent = arg.getParent();
-                if (parent == null) {
-                    throw new RuntimeException("This should not happen");
-                } else if (parent instanceof AllAssertion) {
-                    parentIterator.remove();
-                    while (parentIterator.hasNext()) {
-                        parentIterator.next();
-                        parentIterator.remove();
-                    }
+                if (parent instanceof AllAssertion) {
+                    logger.severe("\n\n\nClearing the all\n\n\n");
+                    return ALL_SIBLINGS_SHOULD_BE_DELETED;
                 } else {
                     parentIterator.remove();
+                    logger.severe("\n\n\nNOT ALL?\n" + parent.getClass().getName());
                 }
             }
-            return true;
+            return SOMETHING_WAS_DELETED;
         } else if (arg instanceof CompositeAssertion) {
             // apply rules to children
             CompositeAssertion root = (CompositeAssertion)arg;
             Iterator i = root.getChildren().iterator();
+            boolean shouldClearTheAll = false;
             while (i.hasNext()) {
                 Assertion kid = (Assertion)i.next();
-                applyRules(kid, i);
+                if (applyRules(kid, i, root) == ALL_SIBLINGS_SHOULD_BE_DELETED) {
+                    shouldClearTheAll = true;
+                    break;
+                }
+            }
+            if (shouldClearTheAll) {
+                logger.severe("\n\n\nClearing the " + root + "\n\n\n");
+                root.getChildren().clear();
             }
             // if all children of this composite were removed, we have to remove it from it's parent
             if (root.getChildren().isEmpty() && parentIterator != null) {
                 parentIterator.remove();
-                return true;
+                return SOMETHING_WAS_DELETED;
             }
         }
-        return false;
+        return NOTHING_WAS_DELETED;
     }
 
     /**
