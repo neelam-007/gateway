@@ -37,8 +37,14 @@ public class StatisticsPanel extends JPanel {
     private static final String LAST_MINUTE_SERVER_LOAD_PREFIX = "Avg load (1 min): ";
     private static final String MIDDLE_SPACE = "     ";
     private static final String END_SPACE    = "   ";
-    private static final int STAT_REFRESH_TIMER = 5000;
-    private static final int NUMBER_OF_SAMPLE_PER_MINUTE = 12;
+
+    // IMPORTANT NOTE:
+    // 1. need to make sure that NUMBER_OF_SAMPLE_PER_MINUTE has no fraction when REFRESH_INTERVAL is changed
+    // 2. REFRESH_INTERVAL must be <= 60
+    private static final int REFRESH_INTERVAL = 5;
+    private static final int STAT_REFRESH_TIMER = 1000 * REFRESH_INTERVAL;
+    private static final int NUMBER_OF_SAMPLE_PER_MINUTE = 60 / REFRESH_INTERVAL;
+
     private com.l7tech.adminws.service.ServiceManager serviceManager = null;
     private JTable statTable = null;
     private JTable statTotalTable = null;
