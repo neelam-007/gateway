@@ -47,6 +47,14 @@ public class GroupManagerStub implements GroupManager {
         dataStore.getGroups().put(key, group);
     }
 
+    public EntityHeader groupToHeader(Group group) {
+        return null;
+    }
+
+    public Group headerToGroup(EntityHeader header) throws FindException {
+        return null;
+    }
+
     public void setIdentityProviderOid(long oid) {
         // unimplented
     }
