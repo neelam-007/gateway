@@ -75,7 +75,7 @@ public class RoutingAssertion extends Assertion implements Cloneable, Serializab
             PublishedService service = (PublishedService)request.getParameter( Request.PARAM_SERVICE );
             URL url;
             if ( _protectedServiceUrl == null ) {
-                url = service.getServiceUrl( request );
+                url = service.serviceUrl( request );
             } else {
                 url = new URL( _protectedServiceUrl );
             }
