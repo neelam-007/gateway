@@ -12,10 +12,7 @@ import com.l7tech.console.action.HomeAction;
 import com.l7tech.console.event.ConnectionEvent;
 import com.l7tech.console.event.ConnectionListener;
 import com.l7tech.console.event.WeakEventListenerList;
-import com.l7tech.console.panels.LogonDialog;
-import com.l7tech.console.panels.LogPanel;
-import com.l7tech.console.panels.PreferencesDialog;
-import com.l7tech.console.panels.WorkSpacePanel;
+import com.l7tech.console.panels.*;
 import com.l7tech.console.tree.*;
 import com.l7tech.console.tree.policy.PolicyToolBar;
 import com.l7tech.console.util.ComponentRegistry;
@@ -514,7 +511,11 @@ public class MainWindow extends JFrame {
              * @see Action#removePropertyChangeListener
              */
             public void actionPerformed(ActionEvent event) {
-                // todo
+                ServerLoadDialog dialog = new ServerLoadDialog(MainWindow.this, true);
+                dialog.pack();
+                Utilities.centerOnScreen(dialog);
+                dialog.setResizable(false);
+                dialog.setVisible(true);
             }
         };
         serverLoadAction.setEnabled(false);
