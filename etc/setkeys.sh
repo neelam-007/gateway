@@ -98,10 +98,12 @@ fi
 # -----------------------------------------------------------------------------
 # GET A HOSTNAME AND A PASSWORD
 # -----------------------------------------------------------------------------
-echo "Please provide host name [`hostname`]"
+dflt=`hostname -f`
+
+echo "Please provide host name [$dflt]"
 read HOST_NAME
 if [ -e $HOST_NAME ]; then
-    HOST_NAME=`hostname`
+    HOST_NAME=$dflt
 fi
 # IF WE START FROM SCRATCH, GET A BRAND NEW PASSWD
 if [ $ANSWER_ROOTKEYS_CREATION = "y" ]
@@ -144,7 +146,7 @@ then
         rm "$ROOT_KEYSTORE_FILE"
     fi
     # GENERATE THE KEYSTORE
-    $KEYTOOL -genkey -alias ssgroot -dname $DN -v -keystore "$ROOT_KEYSTORE_FILE" -keyalg RSA -keypass $KEYSTORE_PASSWORD -storepass "$KEYSTORE_PASSWORD" -validity 730
+    $KEYTOOL -genkey -alias ssgroot -dname $DN -v -keystore "$ROOT_KEYSTORE_FILE" -keyalg RSA -sigalg SHA1withRSA -keypass $KEYSTORE_PASSWORD -storepass "$KEYSTORE_PASSWORD" -validity 730
 
     # CHECK THAT THIS KEYSTORE WAS SET SUCCESSFULLY
     if [ -e "$ROOT_KEYSTORE_FILE" ]
@@ -171,7 +173,7 @@ DN="CN="$HOST_NAME
     if [ -e "$SSL_KEYSTORE_FILE" ]; then
         rm "$SSL_KEYSTORE_FILE"
     fi
-$KEYTOOL -genkey -v -alias tomcat -dname $DN -keystore "$SSL_KEYSTORE_FILE" -keyalg RSA -keypass $KEYSTORE_PASSWORD -storepass "$KEYSTORE_PASSWORD" -validity 730
+$KEYTOOL -genkey -v -alias tomcat -dname $DN -keystore "$SSL_KEYSTORE_FILE" -keyalg RSA -sigalg SHA1withRSA -keypass $KEYSTORE_PASSWORD -storepass "$KEYSTORE_PASSWORD" -validity 730
 # CHECK THAT THIS KEYSTORE WAS SET SUCCESSFULLY
 if [ -e "$SSL_KEYSTORE_FILE" ]
 then
@@ -179,7 +181,7 @@ then
     $KEYTOOL -export -alias tomcat -storepass "$KEYSTORE_PASSWORD" -file "$SSL_SELF_CERT_FILE" -keystore "$SSL_KEYSTORE_FILE"
 
     # GENERATE A LOCAL CERTIFICATE SIGNING REQUEST
-    $KEYTOOL -certreq -keyalg RSA -alias tomcat -file "$SSL_CSR_FILE" -keystore "$SSL_KEYSTORE_FILE" -storepass "$KEYSTORE_PASSWORD"
+    $KEYTOOL -certreq -keyalg RSA -sigalg SHA1withRSA -alias tomcat -file "$SSL_CSR_FILE" -keystore "$SSL_KEYSTORE_FILE" -storepass "$KEYSTORE_PASSWORD"
 
     # Edit the server.xml file so that the appropriate keystore location and paswords are remembered
     KS_QUOTED_SLASHES=${SSL_KEYSTORE_FILE//\//\\\/}
@@ -230,6 +232,13 @@ for filename in "$WEBAPPS_ROOT/WEB-INF/lib"/*.jar
 do
   CP=$CP:$filename
 done
+
+# 3. all jars in tomcat/common/classpath
+for filename in "$TOMCAT_HOME/common/classpath"/*.jar
+do
+  CP=$CP:$filename
+done
+
 
 if $cygwin; then
     CP=`cygpath --path --windows $CP`
