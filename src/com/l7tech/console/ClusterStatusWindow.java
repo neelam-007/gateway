@@ -22,6 +22,8 @@ import java.util.Vector;
 import java.awt.*;
 import java.awt.event.*;
 
+import java.rmi.RemoteException;
+
 
 /*
  * Copyright (C) 2003 Layer 7 Technologies Inc.
@@ -433,12 +435,20 @@ public class ClusterStatusWindow extends JFrame {
             cluster = clusterStatusService.getClusterStatus();
         } catch (FindException e) {
             System.err.println("ERROR " + e.getMessage());
+        } catch (RemoteException e) {
+            System.err.println("ERROR " + e.getMessage());
         }
         if (cluster != null) {
             System.out.println("Number of node is: " + cluster.length);
         }
 
-        GatewayStatus node1 = new GatewayStatus(cluster[0]);
+        Vector dummyData = new Vector();
+        for (int i = 0; i < cluster.length; i++) {
+            GatewayStatus node = new GatewayStatus(cluster[i]);
+            dummyData.add(node);
+        }
+
+        /*GatewayStatus node1 = new GatewayStatus(cluster[0]);
         GatewayStatus node2 = new GatewayStatus(cluster[1]);
         GatewayStatus node3 = new GatewayStatus(cluster[2]);
         GatewayStatus node4 = new GatewayStatus(cluster[3]);
@@ -455,12 +465,14 @@ public class ClusterStatusWindow extends JFrame {
         dummyData.add(node5);
         dummyData.add(node6);
         dummyData.add(node7);
-        dummyData.add(node8);
+        dummyData.add(node8);*/
 
         ServiceUsage[] serviceStat = new ServiceUsage[0];
         try {
             serviceStat = clusterStatusService.getServiceUsage();
         } catch (FindException e) {
+            System.err.println("ERROR " + e.getMessage());
+        } catch (RemoteException e) {
             System.err.println("ERROR " + e.getMessage());
         }
         if (serviceStat != null) {
