@@ -43,4 +43,8 @@ public class JmsReplyType implements Serializable, PersistentEnum {
     public int toInt() {
         return _num;
     }
+
+    public static JmsReplyType fromInt( int i ) {
+        return VALUES[i];
+    }
 }
