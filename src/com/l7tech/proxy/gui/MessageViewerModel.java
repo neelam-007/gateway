@@ -11,6 +11,7 @@ import java.io.StringWriter;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 
 /**
  * Keep track of messages that have come and gone.
@@ -23,7 +24,7 @@ public class MessageViewerModel extends AbstractListModel implements RequestInte
     private static final Category log = Category.getInstance(MessageViewerModel.class.getName());
     private static final int maxMessages = 32;
 
-    private ArrayList messages = new ArrayList(maxMessages);
+    private List messages = new ArrayList(maxMessages);
 
     /** Represents an intercept message we are keeping track of. */
     private static abstract class SavedMessage {
