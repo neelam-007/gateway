@@ -4,8 +4,8 @@ import com.l7tech.common.transport.jms.JmsAdmin;
 import com.l7tech.common.transport.jms.JmsConnection;
 import com.l7tech.common.transport.jms.JmsEndpoint;
 import com.l7tech.common.xml.InvalidDocumentFormatException;
-import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.JmsUtilities;
+import com.l7tech.console.util.Registry;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.JmsRoutingAssertion;
@@ -13,11 +13,10 @@ import org.w3c.dom.Element;
 import org.w3c.dom.Text;
 
 import java.rmi.RemoteException;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * A reference to a JMSConnection used by an assertion of type JmsRoutingAssertion
