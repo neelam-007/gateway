@@ -175,21 +175,21 @@ public class DefaultPolicyValidator extends PolicyValidator {
         }
 
         private void processCredentialSource(Assertion a) {
+            if (seenRouting) {
+                result.addWarning(new PolicyValidatorResult.Warning(a, "The assertion might get ignored.", null));
+            }
             // process XmlRequestSecurity first as it may not be credential assertion
             if (a instanceof XmlRequestSecurity) {
                 seenCredAssertionThatRequiresClientCert = true;
                 XmlRequestSecurity xmlSec = (XmlRequestSecurity)a;
-                if (!xmlSec.hasAuthenticationElement()) return;
+                if (!xmlSec.hasAuthenticationElement()) {
+                    return;
+                }
             }
-
 
             if (seenAccessControl) {
                 result.addError(new PolicyValidatorResult.
                   Error(a, "Access control already set, this assertion might get ignored.", null));
-            }
-
-            if (seenRouting) {
-                result.addWarning(new PolicyValidatorResult.Warning(a, "The assertion might get ignored.", null));
             }
 
             if (seenCredentials) {
