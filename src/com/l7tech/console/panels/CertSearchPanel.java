@@ -53,7 +53,7 @@ public class CertSearchPanel extends JDialog {
     private TrustedCertsTable trustedCertTable = null;
     private EventListenerList listenerList = new EventListenerList();
 
-    private final static String STARTS_WITH = "Starts with";
+    private final static String STARTS_WITH = "Starts With";
     private final static String EQUALS = "Equals";
     private final static int SEARCH_SELECTION_STARTS_WITH = 0;
     private final static int SEARCH_SELECTION_EQUALS = 1;

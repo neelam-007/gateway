@@ -60,7 +60,8 @@ public class FederatedIPTrustedCertsPanel extends IdentityProviderStepPanel {
      * @return String The description of the step
      */
     public String getDescription() {
-        return "Select the certificates that will be trusted by this identity provider from the SecureSpan Gateway's trusted certificate store.";
+        return "Select the certificates that will be trusted by this Identity Provider " +
+               "from the SecureSpan Gateway's trusted certificate store.";
     }
 
     /**

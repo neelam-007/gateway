@@ -68,7 +68,7 @@ public class FindIdentitiesDialog extends JDialog {
     /**
      * name search options
      */
-    private static final String[] NAME_SEARCH_OPTIONS = {"Equals", "Starts with"};
+    private static final String[] NAME_SEARCH_OPTIONS = {"Equals", "Starts With"};
 
 
     private JPanel mainPanel = null;
