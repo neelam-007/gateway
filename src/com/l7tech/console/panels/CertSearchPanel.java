@@ -120,6 +120,8 @@ public class CertSearchPanel extends JDialog {
         searchButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent event) {
                 cancelled = false;
+                searchButton.setEnabled(false);
+                stopButton.setEnabled(true);
                 loadTrustedCerts();
             }
         });
@@ -236,9 +238,6 @@ public class CertSearchPanel extends JDialog {
         SwingUtilities.invokeLater(new Runnable() {
             public void run() {
 
-                searchButton.setEnabled(false);
-                stopButton.setEnabled(true);
-
                 java.util.List certList = null;
                 try {
                     certList = getTrustedCertAdmin().findAllCerts();
@@ -264,7 +263,7 @@ public class CertSearchPanel extends JDialog {
                             resources.getString("load.error.title"),
                             JOptionPane.ERROR_MESSAGE);
                 }
-
+                
                 stopButton.setEnabled(false);
                 searchButton.setEnabled(true);
             }
