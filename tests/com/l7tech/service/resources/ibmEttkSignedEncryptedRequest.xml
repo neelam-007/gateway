@@ -81,12 +81,5 @@
       <wsu:Expires wsu:Id="tse_4879707046644704574_1088445286812">2004-07-28T17:54:46Z</wsu:Expires>
     </wsu:Timestamp>
   </soapenv:Header>
- <soapenv:Body wsu:Id="wssecurity_body_id_4843842999833076792_1088445286828" xmlns:wsu="http://schemas.xmlsoap.org/ws/2002/07/utility">
-     <EncryptedData Id="wssecurity_encryption_id_6112152807893586132_1088445286906" Type="http://www.w3.org/2001/04/xmlenc#Content" xmlns="http://www.w3.org/2001/04/xmlenc#">
-         <EncryptionMethod Algorithm="http://www.w3.org/2001/04/xmlenc#tripledes-cbc"/>
-         <CipherData>
-             <CipherValue>1aDswkt1X7pkCVcMSGQ+9A5Ptb6F8J4ByYl06IPArCfvAP7Q91W5oMHk1qBf+NnEf9rFiiPIXmgQ1bP17R3tTWnnHSLWtc7o31/gshxPAfCnqjR4T/uJQkX0/1Xi5a22KyOpNjab2AewbMghdvGE6zDGKDsgyHz3gSLV744CRBALT4o7Gs30rOLw0FDv55lbQ/mCxep2n1Apg/rLovZk9Qi+ZOxfcPa0RsWO06CTZ8N6AZbcmROjyl9EEWRUdQSO+3wU650wwRk=</CipherValue>
-         </CipherData>
-     </EncryptedData>
- </soapenv:Body>
+ <soapenv:Body wsu:Id="wssecurity_body_id_4843842999833076792_1088445286828" xmlns:wsu="http://schemas.xmlsoap.org/ws/2002/07/utility"><EncryptedData Id="wssecurity_encryption_id_6112152807893586132_1088445286906" Type="http://www.w3.org/2001/04/xmlenc#Content" xmlns="http://www.w3.org/2001/04/xmlenc#"><EncryptionMethod Algorithm="http://www.w3.org/2001/04/xmlenc#tripledes-cbc"/><CipherData><CipherValue>1aDswkt1X7pkCVcMSGQ+9A5Ptb6F8J4ByYl06IPArCfvAP7Q91W5oMHk1qBf+NnEf9rFiiPIXmgQ1bP17R3tTWnnHSLWtc7o31/gshxPAfCnqjR4T/uJQkX0/1Xi5a22KyOpNjab2AewbMghdvGE6zDGKDsgyHz3gSLV744CRBALT4o7Gs30rOLw0FDv55lbQ/mCxep2n1Apg/rLovZk9Qi+ZOxfcPa0RsWO06CTZ8N6AZbcmROjyl9EEWRUdQSO+3wU650wwRk=</CipherValue></CipherData></EncryptedData></soapenv:Body>
 </soapenv:Envelope>
