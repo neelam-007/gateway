@@ -44,7 +44,7 @@ public class ViewServiceWsdlAction extends BaseAction implements ConnectionListe
      * @return the action name
      */
     public String getName() {
-        return "View Service Wsdl";
+        return "View Service WSDL";
     }
 
     /**
@@ -100,7 +100,7 @@ public class ViewServiceWsdlAction extends BaseAction implements ConnectionListe
             wsdlPanel.setLayout(new FlowLayout(FlowLayout.LEFT));
             panel.add(wsdlPanel, BorderLayout.NORTH);
 
-            final JLabel l = new JLabel("WSDL Url: ");
+            final JLabel l = new JLabel("WSDL URL: ");
             l.setFont(l.getFont().deriveFont(Font.BOLD));
             wsdlPanel.add(l);
 

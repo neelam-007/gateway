@@ -16,7 +16,7 @@ import java.util.logging.Level;
 public class RmiErrorHandler implements ErrorHandler {
     private MainWindow mainFrame;
      private static final String ERROR_MESSAGE =
-      "<html><b>The Securespan Manager encountered an " +
+      "<html><b>The Secure Span Manager encountered an " +
       "gateway error or communication error and was unable to complete the operation.</b><br></html>";
 
     /**
@@ -33,7 +33,7 @@ public class RmiErrorHandler implements ErrorHandler {
                 level = Level.SEVERE;
             }
             e.getLogger().log(level, ERROR_MESSAGE, t);
-            ExceptionDialog d = new ExceptionDialog(getMainWindow(), "Securespan Manager - Gateway error", ERROR_MESSAGE, t, level);
+            ExceptionDialog d = new ExceptionDialog(getMainWindow(), "Secure Span Manager - Gateway error", ERROR_MESSAGE, t, level);
             d.pack();
             Utilities.centerOnScreen(d);
             d.show();

@@ -26,7 +26,7 @@ public class DefaultErrorHandler implements ErrorHandler {
         final Throwable t = e.getThrowable();
         final Level level = e.getLevel();
         e.getLogger().log(level, message, t);
-        ExceptionDialog d = new ExceptionDialog(getMainWindow(), "Securespan Manager - message", message, t, level);
+        ExceptionDialog d = new ExceptionDialog(getMainWindow(), "Secure Span Manager - Message", message, t, level);
         d.pack();
         Utilities.centerOnScreen(d);
         d.show();

@@ -88,7 +88,7 @@ public class PasswordDialog extends JDialog {
 
     private JButton getButtonOk() {
         if (buttonOk == null) {
-            buttonOk = new JButton("Ok");
+            buttonOk = new JButton("OK");
             buttonOk.putClientProperty(DFG, buttonOk.getForeground());
             buttonOk.addActionListener(new ActionListener() {
                 public void actionPerformed(ActionEvent e) {

@@ -308,8 +308,8 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
         messagesTab.setBorder(null);
         JScrollPane scrollPane = new JScrollPane(messagesTextPane);
         scrollPane.setBorder(null);
-        messagesTab.addTab("Messages", scrollPane);
-        messagesTab.setTabPlacement(JTabbedPane.BOTTOM);
+        messagesTab.addTab("Policy Validation Messages", scrollPane);
+        messagesTab.setTabPlacement(JTabbedPane.TOP);
         messagesTextPane.addMouseListener(new PopUpMouseListener() {
             protected void popUpMenuHandler(MouseEvent mouseEvent) {
                 JPopupMenu menu = new JPopupMenu();

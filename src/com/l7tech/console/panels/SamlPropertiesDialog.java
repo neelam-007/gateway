@@ -108,7 +108,7 @@ public class SamlPropertiesDialog extends JDialog {
         final JButton _7;
         _7 = new JButton();
         okButton = _7;
-        _7.setText("Ok");
+        _7.setText("OK");
         _4.add(_7, new com.intellij.uiDesigner.core.GridConstraints(0, 1, 1, 1, 0, 1, 3, 0, null, null, null));
         final com.intellij.uiDesigner.core.Spacer _8;
         _8 = new com.intellij.uiDesigner.core.Spacer();

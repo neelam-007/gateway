@@ -33,7 +33,7 @@ public class VersionMismatchErrorHandler implements ErrorHandler {
             final Throwable t = e.getThrowable();
             Level level = e.getLevel();
             e.getLogger().log(level, ERROR_MESSAGE, t);
-            ExceptionDialog d = new ExceptionDialog(getMainWindow(), "Securespan Manager - Gateway Warning", ERROR_MESSAGE, t, Level.WARNING);
+            ExceptionDialog d = new ExceptionDialog(getMainWindow(), "Secure Span Manager - Gateway Warning", ERROR_MESSAGE, t, Level.WARNING);
             d.pack();
             Utilities.centerOnScreen(d);
             d.show();

@@ -42,14 +42,14 @@ public class IdentityProviderPropertiesAction extends NodeAction {
      * @return the action name
      */
     public String getName() {
-        return "Provider properties";
+        return "Properties";
     }
 
     /**
      * @return the aciton description
      */
     public String getDescription() {
-        return "View/edit provider properties";
+        return "Edit Identity Provider properties";
     }
 
     /**

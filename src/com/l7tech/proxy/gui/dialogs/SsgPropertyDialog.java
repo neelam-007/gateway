@@ -661,7 +661,7 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
         }
 
         JButton getCloseButton() {
-            JButton cb = new JButton("Ok");
+            JButton cb = new JButton("OK");
             cb.addActionListener(new ActionListener() {
                 public void actionPerformed(ActionEvent e) {
                     CertDialog.this.hide();

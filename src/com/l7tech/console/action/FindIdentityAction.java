@@ -66,7 +66,7 @@ public class FindIdentityAction extends BaseAction {
      * @return the aciton description
      */
     public String getDescription() {
-        return "Find Identities";
+        return "Search for users and/or groups in this Identity Provider";
     }
 
     /**

@@ -921,7 +921,7 @@ public class MainWindow extends JFrame {
         TreePath path = new TreePath(paletteRootNode.getPath());
         assertionPaletteTree.setSelectionPath(path);
 
-        final AbstractTreeNode identitiesRootNode = new IdentitiesRootNode("Identities");
+        final AbstractTreeNode identitiesRootNode = new IdentitiesRootNode("Identity Providers");
         treeModel = new FilteredTreeModel(null);
         treeModel.setRoot(identitiesRootNode);
 
@@ -929,7 +929,7 @@ public class MainWindow extends JFrame {
         identitiesTree.setRootVisible(true);
         identitiesTree.setModel(treeModel);
 
-        String rootTitle = "Services @ ";
+        String rootTitle = "Web Services @ ";
         rootTitle +=
                 Preferences.getPreferences().getString(Preferences.SERVICE_URL);
         DefaultTreeModel servicesTreeModel = new FilteredTreeModel(null);
@@ -1387,7 +1387,7 @@ public class MainWindow extends JFrame {
         treePanel.setBorder(null);
         //treePanel.setLayout(new BorderLayout());
         treePanel.addTab("Assertions", getAssertionPaletteTree());
-        treePanel.addTab("Identities", getIdentitiesTree());
+        treePanel.addTab("Identity Providers", getIdentitiesTree());
 
         JScrollPane js = new JScrollPane(treePanel);
         js.setBorder(null);

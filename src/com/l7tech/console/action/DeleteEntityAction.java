@@ -71,7 +71,7 @@ public class DeleteEntityAction extends BaseAction {
      * @return the aciton description
      */
     public String getDescription() {
-        return "Delete";
+        return "Delete Identity Provider";
     }
 
     /**
@@ -93,7 +93,7 @@ public class DeleteEntityAction extends BaseAction {
             deleted = Actions.deleteEntity(node, provider);
         } catch (ObjectNotFoundException e) {
             JOptionPane.showMessageDialog(TopComponents.getInstance().getMainWindow(),
-              "The '" + node.getEntityHeader().getName() + "' no longer exists",
+              "The '" + node.getEntityHeader().getName() + "' Identity Provider no longer exists",
               "Warning", JOptionPane.WARNING_MESSAGE);
             deleted = true;
         }

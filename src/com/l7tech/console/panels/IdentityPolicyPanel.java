@@ -650,7 +650,7 @@ public class IdentityPolicyPanel extends JPanel {
         final JButton _40;
         _40 = new JButton();
         okButton = _40;
-        _40.setText("Ok");
+        _40.setText("OK");
         _37.add(_40, new com.intellij.uiDesigner.core.GridConstraints(0, 1, 1, 1, 0, 1, 3, 0, null, null, null));
         final com.intellij.uiDesigner.core.Spacer _41;
         _41 = new com.intellij.uiDesigner.core.Spacer();

@@ -49,7 +49,7 @@ public class AddRoutingAssertionAdvice implements Advice {
                     ra.setProtectedServiceUrl(url);
                 }
             } catch (WSDLException e) {
-                log.log(Level.WARNING, "Wsdl error", e);
+                log.log(Level.WARNING, "WSDL error", e);
             }
             pc.proceed();
         } else if (assertions[0] instanceof JmsRoutingAssertion) {

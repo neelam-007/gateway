@@ -46,7 +46,7 @@ public class MiscFolderNode extends AbstractTreeNode {
      * @return the FQ name as a String
      */
     public String getName() {
-        return "Miscellaneous";
+        return "Web Service Availability";
     }
 
     /**

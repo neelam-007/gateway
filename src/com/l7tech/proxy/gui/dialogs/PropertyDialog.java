@@ -111,7 +111,7 @@ public abstract class PropertyDialog extends JDialog {
     /** Get the OK button. */
     protected JButton getOkButton() {
         if (okButton == null) {
-            okButton = new JButton("Ok");
+            okButton = new JButton("OK");
             Utilities.enableGrayOnDisabled(okButton);
             okButton.addActionListener(new ActionListener() {
                 public void actionPerformed(final ActionEvent e) {

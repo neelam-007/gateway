@@ -35,7 +35,7 @@ public abstract class RefreshAction extends NodeAction {
      * @return the aciton description
      */
     public String getDescription() {
-        return "Refresh Web Services";
+        return "Refresh Identity Providers";
     }
 
     /**

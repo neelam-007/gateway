@@ -278,7 +278,7 @@ public class JmsRoutingAssertionDialog extends JDialog {
         // If button not already created
         if (null == okButton) {
             // Create button
-            okButton = new JButton("Ok");
+            okButton = new JButton("OK");
 
             // Register listener
             okButton.addActionListener(new ActionListener() {

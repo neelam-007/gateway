@@ -19,6 +19,6 @@ public class AwtErrorHandler {
         });
     }
     private static final String ERROR_MESSAGE =
-      "<html><b>The Securespan Manager encountered an " +
+      "<html><b>The Secure Span Manager encountered an " +
       "internal error or misconfiguration and was unable to complete the operation.</b><br></html>";
 }

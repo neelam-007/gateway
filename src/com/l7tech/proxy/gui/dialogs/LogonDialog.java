@@ -252,7 +252,7 @@ public class LogonDialog extends JDialog {
         // login button (global variable)
         loginButton = new JButton();
         initDfg(loginButton);
-        loginButton.setText("Ok");
+        loginButton.setText("OK");
         loginButton.setActionCommand(CMD_LOGIN);
         loginButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent event) {
