@@ -56,7 +56,7 @@ public class InternalIdentityProviderServer implements IdentityProvider {
 
                 if (pc.getFormat() == CredentialFormat.CLIENTCERT ||  pc.getFormat() == CredentialFormat.CLIENTCERT_X509_ASN1_DER) {
                     Certificate localcert = userManager.retrieveUserCert(Long.toString(dbUser.getOid()));
-                    // todo, compare cert
+                    // todo, get the cert from principal compare cert
                     return true;
                 }
                 else if ( pc.getFormat() == CredentialFormat.CLEARTEXT )
