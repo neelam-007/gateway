@@ -15,6 +15,7 @@ import com.l7tech.message.Response;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
+import com.l7tech.policy.assertion.AssertionResult;
 
 import java.io.IOException;
 import java.util.HashMap;
@@ -59,17 +60,27 @@ public abstract class CredentialSourceAssertion extends Assertion {
                 return doCheckRequest( request, response );
             }
         } catch ( CredentialFinderException cfe ) {
-            LogManager.getInstance().getSystemLogger().log(Level.SEVERE, null, cfe);
-            throw new PolicyAssertionException( cfe.getMessage(), cfe );
+            AssertionStatus status = cfe.getStatus();
+            if ( status == null ) {
+                LogManager.getInstance().getSystemLogger().log(Level.SEVERE, cfe.getMessage(), cfe);
+                throw new PolicyAssertionException( cfe.getMessage(), cfe );
+            } else {
+                response.addResult( new AssertionResult( this, request, status, cfe.getMessage() ) );
+                LogManager.getInstance().getSystemLogger().log(Level.INFO, cfe.getMessage(), cfe);
+                if ( status == AssertionStatus.AUTH_REQUIRED )
+                    response.setAuthenticationMissing(true);
+                else
+                    response.setPolicyViolated(true);
+
+                return status;
+            }
         } catch ( IllegalAccessException iae ) {
-            LogManager.getInstance().getSystemLogger().log(Level.SEVERE, null, iae);
+            LogManager.getInstance().getSystemLogger().log(Level.SEVERE, iae.getMessage(), iae);
             throw new PolicyAssertionException( iae.getMessage(), iae );
         } catch ( InstantiationException ie ) {
             LogManager.getInstance().getSystemLogger().log(Level.SEVERE, null, ie);
             throw new PolicyAssertionException( ie.getMessage(), ie );
         }
-
-
     }
 
     public abstract AssertionStatus doCheckRequest( Request request, Response response ) throws CredentialFinderException;
