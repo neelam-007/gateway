@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<wsp:Policy xmlns:wsp="http://schemas.xmlsoap.org/ws/2002/12/policy"
+    xmlns:wsse="http://schemas.xmlsoap.org/ws/2002/12/secext"
+    xmlns:l7="http://www.layer7-tech.com"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:noNamespaceSchemaLocation="Policy.xsd">
+    <!--
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+xsi:schemaLocation="http://schemas.xmlsoap.org/ws/2002/12/policy/"
+xsi:noNamespaceSchemaLocation="Policy.xsd"
+    -->
+
+    <!--
+      Need to specify integrity and confidentiality for both request and response. Strictly speaking, this
+      policy should account for both sides of the converstation.
+     -->
+
+    <!-- Need to specify URI of service here. Has implications on addressing  -->
+    <wsp:SpecVersion wsp:Usage="Required" URI="TBD">
+        <l7:Policy version="123"/>
+    </wsp:SpecVersion>
+
+    <wsp:ExactlyOne>
+        <wsp:All wsp:Preference="100">
+
+            <!-- Implies that SecurityToken does with WS-Security. Remove if SSL -->
+            <wsse:SecurityHeader wsp:Usage="wsp:Required"
+                MustPrepend="True"
+                MustManifestEncryption="True"/>
+
+            <wsse:SecurityToken wsp:Usage="wsp:Required">
+                <TokenType>wsse:UsernameToken</TokenType>
+                <Claims>
+                    <UsePassword wsp:Usage="wsp:Required" Type="wsse:PasswordText"/>
+                </Claims>
+            </wsse:SecurityToken>
+
+            <wsse:Integrity wsp:Usage="wsp:Required">
+                <wsse:Algorithm Type="wsse:AlgCanonicalization"
+                    URI="http://www.w3.org/Signature/Drafts/xml-exc-c14n"/>
+                <wsse:Algorithm Type="wsse:AlgSignature"
+                    URI=" http://www.w3.org/2000/09/xmldsig#rsa-sha1"/>
+                <wsse:TokenInfo>
+                    <wsse:SecurityToken>
+                        <wsse:TokenType>wsse:X509v3</wsse:TokenType>
+                    </wsse:SecurityToken>
+                </wsse:TokenInfo>
+                <wsse:Claims>
+                    <l7:TrustedAuthority DN="URI_of_SSG"/>
+                </wsse:Claims>
+                <MessageParts Dialect="http://www.w3c.org/TR/1999/REC-xpath-19991116"
+                    Signer="http://schemas.xmlsoap.org/2002/12/secext/originalSender">
+                    wsp:GetHeader()
+                    wsp:getBody()
+                </MessageParts>
+            </wsse:Integrity>
+
+            <wsse:Confidentiality wsp:Usage="wsp:Required">
+                <wsse:Algorithm Type="wsse:AlgEncryption"
+                    URI="http://www.w3.org/2001/04/xmlenc#3des-cbc"/>
+                <MessageParts>
+                    wsp:GetInfosetForNode(wsp:GetBody(.))
+                </MessageParts>
+            </wsse:Confidentiality>
+
+        </wsp:All>
+    </wsp:ExactlyOne>
+</wsp:Policy>

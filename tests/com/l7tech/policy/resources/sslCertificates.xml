@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<wsp:Policy xmlns:wsp="http://schemas.xmlsoap.org/ws/2002/12/policy"
+    xmlns:wsse="http://schemas.xmlsoap.org/ws/2002/12/secext"
+    xmlns:l7="http://www.layer7-tech.com"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:noNamespaceSchemaLocation="Policy.xsd">
+    <!--
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+xsi:schemaLocation="http://schemas.xmlsoap.org/ws/2002/12/policy/"
+xsi:noNamespaceSchemaLocation="Policy.xsd"
+    -->
+
+    <!--
+      Need to specify integrity and confidentiality for both request and response. Strictly speaking, this
+      policy should account for both sides of the converstation.
+     -->
+
+    <!-- Need to specify URI of service here. Has implications on addressing  -->
+    <wsp:SpecVersion wsp:Usage="Required" URI="TBD">
+        <l7:Policy version="123"/>
+    </wsp:SpecVersion>
+
+    <wsp:ExactlyOne>
+        <wsp:All wsp:Preference="100">
+
+            <wsse:SecurityToken wsp:Usage="wsp:Required">
+                <TokenType>wsse:X509v3</TokenType>
+                <!-- TokenIssuer must be DN of SSG -->
+                <TokenIssuer>TBD</TokenIssuer>
+            </wsse:SecurityToken>
+
+            <!-- Note we could potentially set encryption and integrity standards for SSL here. WOuld
+                 need to hack the SSL libraries on both sides, though. Might be a good selling feature
+                 to guard against downgrade attacks...
+             -->
+
+            <wsse:Integrity wsp:Usage="wsp:Required">
+                <wsse:Algorithm Type="l7:Ssl3.0"
+                    URI="http://wp.netscape.com/eng/ssl3/draft302.txt"/>
+            </wsse:Integrity>
+
+            <wsse:Confidentiality wsp:Usage="wsp:Required">
+                <wsse:Algorithm Type="l7:Ssl3.0"
+                    URI="http://wp.netscape.com/eng/ssl3/draft302.txt"/>
+            </wsse:Confidentiality>
+
+        </wsp:All>
+    </wsp:ExactlyOne>
+</wsp:Policy>

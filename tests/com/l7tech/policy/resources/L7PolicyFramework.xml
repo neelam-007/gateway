@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<wsp:Policy xmlns:wsp="http://schemas.xmlsoap.org/ws/2002/12/policy" xmlns:wsse="http://schemas.xmlsoap.org/ws/2002/12/secext" xmlns:l7="http://www.layer7-tech.com" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+	<!--
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+xsi:schemaLocation="http://schemas.xmlsoap.org/ws/2002/12/policy/"
+xsi:noNamespaceSchemaLocation="Policy.xsd"
+    -->
+	<!--
+      Need to specify integrity and confidentiality for both request and response. Strictly speaking, this
+      policy should account for both sides of the converstation.
+     -->
+
+	<!-- Need to specify URI of service here. Has implications on addressing  -->
+	<wsp:SpecVersion wsp:Usage="Required" URI="TBD">
+		<l7:Policy version="123"/>
+	</wsp:SpecVersion>
+
+	<wsp:All wsp:Preference="100">
+		<!-- Basic authentication -->
+		<wsse:SecurityToken wsp:Usage="wsp:Required">
+			<wsse:TokenType>wsse:UsernameToken</wsse:TokenType>
+			<wsse:Claims>
+				<wsse:UsePassword wsp:Usage="wsp:Required" Type="wsse:PasswordText"/>
+			</wsse:Claims>
+		</wsse:SecurityToken>
+
+		<!-- Certificate authentication -->
+		<wsse:SecurityToken wsp:Usage="wsp:Required">
+			<wsse:TokenType>wsse:X509v3</wsse:TokenType>
+			<!-- TokenIssuer must be DN of SSG -->
+			<wsse:TokenIssuer>TBD</wsse:TokenIssuer>
+		</wsse:SecurityToken>
+
+		<!-- Authentication Provider -->
+		<l7:AuthenticationProvider>
+			<l7:ProviderName>LDAP 123</l7:ProviderName>
+			<l7:ProviderType>LDAP</l7:ProviderType>
+		</l7:AuthenticationProvider>
+
+		<!-- Authorization list -->
+		<l7:Authorization>
+			<l7:UserList>
+				<l7:User>Scott</l7:User>
+			</l7:UserList>
+			<l7:GroupList>
+				<l7:Group>Development</l7:Group>
+			</l7:GroupList>
+		</l7:Authorization>
+
+		<!-- Routing Assertion -->
+		<l7:Routing>
+			<l7:DownstreamUrl>https://internal.l7.com/axis/servlet/soaprouter</l7:DownstreamUrl>
+			<l7:Credentials>
+				<wsse:SecurityToken wsp:Usage="wsp:Required">
+					<TokenType>wsse:UsernameToken</TokenType>
+					<Claims>
+						<UsePassword wsp:Usage="wsp:Required" Type="wsse:PasswordText"/>
+					</Claims>
+				</wsse:SecurityToken>
+				<l7:Username>nobody</l7:Username>
+				<l7:Password>123</l7:Password>
+			</l7:Credentials>
+		</l7:Routing>
+
+		<!--
+             Note we could potentially set encryption and integrity standards for SSL here. We would
+             need to hack the SSL libraries on both sides, though. Might be a good selling feature
+             to guard against downgrade attacks...
+         -->
+		<wsse:Confidentiality wsp:Usage="wsp:Required">
+			<wsse:Algorithm Type="l7:Ssl3.0" URI="http://wp.netscape.com/eng/ssl3/draft302.txt"/>
+		</wsse:Confidentiality>
+	</wsp:All>
+</wsp:Policy>
