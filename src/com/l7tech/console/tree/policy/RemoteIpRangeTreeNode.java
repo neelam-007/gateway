@@ -30,6 +30,9 @@ public class RemoteIpRangeTreeNode extends LeafAssertionTreeNode {
     public String getName() {
         String nodeName = "IP address range";
         if (nodeAssertion != null) {
+            if (nodeAssertion.isAllowRange()) {
+                nodeName += " includes";
+            } else nodeName += " excludes";
             nodeName += " [" + nodeAssertion.getStartIp() + "/" + nodeAssertion.getNetworkMask() + "]";
         }
         return nodeName;
