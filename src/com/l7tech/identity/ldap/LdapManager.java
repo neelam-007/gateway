@@ -2,12 +2,12 @@ package com.l7tech.identity.ldap;
 
 import com.l7tech.identity.IdentityProviderConfig;
 
-import javax.naming.directory.Attributes;
+import javax.naming.Context;
+import javax.naming.NamingException;
 import javax.naming.directory.Attribute;
+import javax.naming.directory.Attributes;
 import javax.naming.directory.DirContext;
 import javax.naming.directory.InitialDirContext;
-import javax.naming.NamingException;
-import javax.naming.Context;
 
 /**
  * Layer 7 Technologies, inc.
@@ -18,7 +18,6 @@ import javax.naming.Context;
  *
  */
 public class LdapManager {
-
     protected LdapManager(IdentityProviderConfig config) {
         this.config = config;
     }
@@ -31,24 +30,24 @@ public class LdapManager {
         return null;
     }
 
-    protected DirContext getAnonymousContext() throws NamingException {
-        //if (anonymousContext == null) createAnonymousContext();
-        //return anonymousContext;
-
+    protected DirContext getBrowseContext() throws NamingException {
         java.util.Hashtable env = new java.util.Hashtable();
+        env.put( "java.naming.ldap.version", "3" );
         env.put(Context.INITIAL_CONTEXT_FACTORY, "com.sun.jndi.ldap.LdapCtxFactory");
         env.put(Context.PROVIDER_URL, config.getProperty(LdapConfigSettings.LDAP_HOST_URL));
 
-        // Create the initial directory context. So anonymous bind for search
+        String dn = config.getProperty( LdapConfigSettings.LDAP_BIND_DN );
+        if ( dn != null && dn.length() > 0 ) {
+            String pass = config.getProperty( LdapConfigSettings.LDAP_BIND_PASS );
+            env.put( Context.SECURITY_AUTHENTICATION, "simple" );
+            env.put( Context.SECURITY_PRINCIPAL, dn );
+            env.put( Context.SECURITY_CREDENTIALS, pass );
+        }
+
+        // Create the initial directory context.
         return new InitialDirContext(env);
     }
 
     //protected DirContext anonymousContext = null;
     protected IdentityProviderConfig config;
-
-    static final String DESCRIPTION_ATTR = "description";
-    static final String NAME_ATTR_NAME = "cn";
-    static final String GROUPOBJ_MEMBER_ATTR = "memberUid";
-    static final String USER_OBJCLASS = "inetOrgPerson";
-    static final String LOGIN_ATTR_NAME = "uid";
 }

@@ -11,6 +11,8 @@ import com.l7tech.identity.IdentityProviderConfig;
 public class LdapConfigSettings {
     public static final String LDAP_HOST_URL = "ldapHostURL";
     public static final String LDAP_SEARCH_BASE = "ldapSearchBase";
+    public static final String LDAP_BIND_DN = "ldapBindDN";
+    public static final String LDAP_BIND_PASS = "ldapBindPass";
 
     /**
      * checks the format of an ldap id provider config.

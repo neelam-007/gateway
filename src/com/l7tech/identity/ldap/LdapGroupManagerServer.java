@@ -1,18 +1,7 @@
 package com.l7tech.identity.ldap;
 
-import com.l7tech.identity.GroupManager;
-import com.l7tech.identity.Group;
-import com.l7tech.identity.IdentityProviderConfig;
-import com.l7tech.identity.User;
-import com.l7tech.objectmodel.*;
-import com.l7tech.logging.LogManager;
-
-import javax.naming.directory.*;
-import javax.naming.NamingException;
-import javax.naming.NamingEnumeration;
-import java.util.*;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import com.l7tech.identity.*;
+import com.l7tech.objectmodel.FindException;
 
 /**
  * Layer 7 Technologies, inc.
@@ -24,245 +13,22 @@ import java.util.logging.Logger;
  * This member users are in the memberUid attributes.
  *
  */
-public class LdapGroupManagerServer extends LdapManager implements GroupManager {
-
+public class LdapGroupManagerServer extends AbstractLdapGroupManagerServer implements GroupManager {
     public LdapGroupManagerServer(IdentityProviderConfig config) {
         super(config);
     }
 
-    public Group findByPrimaryKey(String dn) throws FindException {
-        if (!valid) {
-            logger.severe("invalid group manager");
-            throw new FindException("invalid manager");
-        }
-        try {
-            DirContext context = getAnonymousContext();
-            Attributes attributes = context.getAttributes(dn);
-            Group out = new Group();
-            out.setProviderId(config.getOid());
-            out.setName(dn);
-            Object tmp = extractOneAttributeValue(attributes, DESCRIPTION_ATTR);
-            if (tmp != null) out.setDescription(tmp.toString());
-            // this would override the dn
-            // tmp = extractOneAttributeValue(attributes, NAME_ATTR_NAME);
-            // if (tmp != null) out.setName(tmp.toString());
-
-            // create a header for all "memberUid" attributes
-            Attribute valuesWereLookingFor = attributes.get(GROUPOBJ_MEMBER_ATTR);
-            if (valuesWereLookingFor != null) {
-                Set memberHeaders = new HashSet();
-                Set members = new HashSet();
-                User u;
-                for (int i = 0; i < valuesWereLookingFor.size(); i++) {
-                    Object val = valuesWereLookingFor.get(i);
-                    if (val != null) {
-                        String memberUid = val.toString();
-                        EntityHeader userHeader = getUserHeaderFromUid(memberUid);
-                        if (userHeader != null) {
-                            memberHeaders.add(userHeader);
-                            u = new User();
-                            u.setProviderId( config.getOid() );
-                            u.setName( userHeader.getStrId() );
-                            u.setLogin( memberUid );
-                            members.add( u );
-                        }
-                    }
-                }
-                out.setMembers( members );
-                out.setMemberHeaders(memberHeaders);
-            }
-            context.close();
-            return out;
-        } catch (NamingException e) {
-            logger.log(Level.SEVERE, null, e);
-            throw new FindException(e.getMessage(), e);
-        }
+    protected String groupMemberToLogin( String member ) {
+        return member;
     }
 
-    public Group findByName(String name) throws FindException {
-        // ldap group names are their dn
-        //StringBuffer dn = new StringBuffer( config.getProperty(LdapConfigSettings.LDAP_SEARCH_BASE) );
-        //dn.append( ",cn=" );
-        //dn.append( name );
-        return findByPrimaryKey( name );
+    protected AbstractLdapConstants getConstants() {
+        return _constants;
     }
 
-    public void delete(Group group) throws DeleteException {
-        throw new DeleteException("Not supported in LdapGroupManagerServer");
+    protected User getUserFromGroupMember(String member) throws FindException {
+        return getUserManager().findByLogin( member );
     }
 
-    public long save(Group group) throws SaveException {
-        throw new SaveException("Not supported in LdapGroupManagerServer");
-    }
-
-    public void update(Group group) throws UpdateException {
-        throw new UpdateException("Not supported in LdapGroupManagerServer");
-    }
-
-    public EntityHeader groupToHeader(Group group) {
-        return new EntityHeader(group.getName(), EntityType.GROUP, group.getName(), null);
-    }
-
-    public Group headerToGroup(EntityHeader header) throws FindException {
-        return findByPrimaryKey(header.getStrId());
-    }
-
-    public Collection findAllHeaders() throws FindException {
-        if (!valid) {
-            logger.severe("invalid group manager");
-            throw new FindException("invalid manager");
-        }
-        Collection output = new ArrayList();
-        if (config.getProperty(LdapConfigSettings.LDAP_SEARCH_BASE) == null ||
-            config.getProperty(LdapConfigSettings.LDAP_SEARCH_BASE).length() < 1) {
-            throw new FindException("No search base provided");
-        }
-        try
-        {
-            NamingEnumeration answer = null;
-            String filter = "(objectclass=" + GROUP_OBJCLASS + ")";
-            SearchControls sc = new SearchControls();
-            sc.setSearchScope(SearchControls.SUBTREE_SCOPE);
-            DirContext context = getAnonymousContext();
-            answer = context.search(config.getProperty(LdapConfigSettings.LDAP_SEARCH_BASE), filter, sc);
-            while (answer.hasMore())
-            {
-                String dn = null;
-                String cn = null;
-                SearchResult sr = (SearchResult)answer.next();
-                dn = sr.getName() + "," + config.getProperty(LdapConfigSettings.LDAP_SEARCH_BASE);
-                Attributes atts = sr.getAttributes();
-                Object tmp = extractOneAttributeValue(atts, NAME_ATTR_NAME);
-                if (tmp != null) cn = tmp.toString();
-
-                if (cn != null && dn != null) {
-                    EntityHeader header = new EntityHeader(dn, EntityType.GROUP, dn, null);
-                    output.add(header);
-                }
-            }
-            if (answer != null) answer.close();
-            context.close();
-        } catch (NamingException e) {
-            logger.log(Level.SEVERE, e.getMessage(), e);
-        }
-        return output;
-    }
-
-    public Collection findAllHeaders(int offset, int windowSize) throws FindException {
-        if (!valid) {
-            logger.severe("invalid group manager");
-            throw new FindException("invalid manager");
-        }
-        Collection output = new ArrayList();
-        if (config.getProperty(LdapConfigSettings.LDAP_SEARCH_BASE) == null ||
-            config.getProperty(LdapConfigSettings.LDAP_SEARCH_BASE).length() < 1) {
-            throw new FindException("No search base provided");
-        }
-        try
-        {
-            NamingEnumeration answer = null;
-            String filter = "(objectclass=" + GROUP_OBJCLASS + ")";
-            SearchControls sc = new SearchControls();
-            sc.setSearchScope(SearchControls.SUBTREE_SCOPE);
-            DirContext context = getAnonymousContext();
-            answer = context.search(config.getProperty(LdapConfigSettings.LDAP_SEARCH_BASE), filter, sc);
-            int count = 0;
-            while (answer.hasMore()) {
-                if (count < offset) {
-                    ++count;
-                    continue;
-                }
-                if (count >= offset+windowSize) {
-                    break;
-                }
-                ++count;
-                String dn = null;
-                String cn = null;
-                SearchResult sr = (SearchResult)answer.next();
-                dn = sr.getName() + "," + config.getProperty(LdapConfigSettings.LDAP_SEARCH_BASE);
-                Attributes atts = sr.getAttributes();
-                Object tmp = extractOneAttributeValue(atts, NAME_ATTR_NAME);
-                if (tmp != null) cn = tmp.toString();
-
-                if (cn != null && dn != null) {
-                    EntityHeader header = new EntityHeader(dn, EntityType.GROUP, cn, null);
-                    output.add(header);
-                }
-            }
-            if (answer != null) answer.close();
-            context.close();
-        } catch (NamingException e) {
-            logger.log(Level.SEVERE, null, e);
-        }
-        return output;
-    }
-
-    public Collection findAll() throws FindException {
-        if (!valid) {
-            logger.severe("invalid group manager");
-            throw new FindException("invalid manager");
-        }
-        Collection headers = findAllHeaders();
-        Collection output = new ArrayList();
-        Iterator i = headers.iterator();
-        while (i.hasNext()) {
-            EntityHeader header = (EntityHeader)i.next();
-            output.add(findByPrimaryKey(header.getStrId()));
-        }
-        return output;
-    }
-
-    public Collection findAll(int offset, int windowSize) throws FindException {
-        if (!valid) {
-            logger.severe("invalid group manager");
-            throw new FindException("invalid manager");
-        }
-        Collection headers = findAllHeaders(offset, windowSize);
-        Collection output = new ArrayList();
-        Iterator i = headers.iterator();
-        while (i.hasNext()) {
-            EntityHeader header = (EntityHeader)i.next();
-            output.add(findByPrimaryKey(header.getStrId()));
-        }
-        return output;
-    }
-
-    public void invalidate() {
-        valid = false;
-    }
-
-    // ************************************************
-    // PRIVATES
-    // ************************************************
-
-    private EntityHeader getUserHeaderFromUid(String uid) throws NamingException {
-        NamingEnumeration answer = null;
-        String filter = "(&(objectclass=" + USER_OBJCLASS + ")(" + LOGIN_ATTR_NAME + "=" + uid + "))";
-        SearchControls sc = new SearchControls();
-        sc.setSearchScope(SearchControls.SUBTREE_SCOPE);
-        DirContext context = getAnonymousContext();
-        answer = context.search(config.getProperty(LdapConfigSettings.LDAP_SEARCH_BASE), filter, sc);
-        while (answer.hasMore()) {
-            String login = null;
-            String dn = null;
-            SearchResult sr = (SearchResult)answer.next();
-            dn = sr.getName() + "," + config.getProperty(LdapConfigSettings.LDAP_SEARCH_BASE);
-            Attributes atts = sr.getAttributes();
-            Object tmp = extractOneAttributeValue(atts, LOGIN_ATTR_NAME);
-            if (tmp != null) login = tmp.toString();
-            if (login != null && dn != null) {
-                EntityHeader header = new EntityHeader(dn, EntityType.USER, login, null);
-                answer.close();
-                context.close();
-                return header;
-            }
-        }
-        answer.close();
-        context.close();
-        return null;
-    }
-
-    static final String GROUP_OBJCLASS = "posixGroup";
-    private volatile boolean valid = true;
-    private Logger logger = LogManager.getInstance().getSystemLogger();
+    protected LdapConstants _constants = new LdapConstants();
 }
