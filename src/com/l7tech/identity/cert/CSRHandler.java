@@ -166,6 +166,7 @@ public class CSRHandler extends HttpServlet {
 
     private synchronized RSASigner getSigner() {
         if (rsasigner == null) {
+            // todo, dont hard code these things
             rsasigner = new RSASigner("/usr/java/jakarta-tomcat-4.1.24/kstores/ssgroot", "password", "ssgroot", "password");
         }
         return rsasigner;
