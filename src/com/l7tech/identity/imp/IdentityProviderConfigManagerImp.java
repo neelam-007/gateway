@@ -1,7 +1,9 @@
 package com.l7tech.identity.imp;
 
 import com.l7tech.identity.*;
+import com.l7tech.identity.internal.imp.InternalIdentityProviderImp;
 import com.l7tech.objectmodel.*;
+import com.l7tech.util.Locator;
 
 import java.util.*;
 
@@ -19,6 +21,10 @@ public class IdentityProviderConfigManagerImp extends HibernateEntityManager imp
         _manager.delete( _context, identityProviderConfig );
     }
 
+    public Collection findAllIdentityProviders() throws FindException {
+        return IdentityProviderFactory.findAllIdentityProviders(this);
+    }
+
     public IdentityProviderConfig findByPrimaryKey( long oid ) throws FindException {
         return (IdentityProviderConfig)_manager.findByPrimaryKey( _context, IMPCLASS, oid );
     }
@@ -32,6 +38,6 @@ public class IdentityProviderConfigManagerImp extends HibernateEntityManager imp
     }
 
     public Collection findAll(int offset, int windowSize) throws FindException {
-        return null;
+        throw new IllegalArgumentException( "Not yet implemented!" );
     }
 }
