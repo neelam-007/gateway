@@ -1,5 +1,7 @@
 package com.l7tech.service.resolution;
 
+import java.io.Serializable;
+
 /**
  * LAYER 7 TECHNOLOGIES, INC
  *
@@ -13,7 +15,7 @@ package com.l7tech.service.resolution;
  * This bean class is used by the ResolutionManager to interact with
  * hibernate.
  */
-public class ResolutionParameters {
+public class ResolutionParameters implements Serializable {
     public String getSoapaction() {
         return soapaction;
     }
