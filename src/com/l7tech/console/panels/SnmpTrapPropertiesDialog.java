@@ -92,6 +92,7 @@ public class SnmpTrapPropertiesDialog extends JDialog {
         });        
 
         portField.setDocument(new NumberField(6));
+        Utilities.constrainTextFieldToIntegerRange(portField, 1, 65535);
         oidField.setDocument(new NumberField(9));
 
         pack();
@@ -154,16 +155,5 @@ public class SnmpTrapPropertiesDialog extends JDialog {
     /** @return the edited assertion if Ok was pressed, or null if the dialog was canceled or closed. */
     public SnmpTrapAssertion getResult() {
         return confirmed ? assertion : null;
-    }
-
-    public static void main(String[] args) {
-        Frame f = new JFrame();
-        f.show();
-        SnmpTrapAssertion ass = new SnmpTrapAssertion("foo.bar.com", 0, "s3cr3t", 8787, "ERROR ERROR!");
-        SnmpTrapPropertiesDialog d = new SnmpTrapPropertiesDialog(f, ass);
-        d.show();
-        d.dispose();
-        System.out.println("Got object: " + d.getResult());
-        f.dispose();
     }
 }

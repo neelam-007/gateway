@@ -69,6 +69,7 @@ public class EmailAlertPropertiesDialog extends JDialog {
         });
 
         portField.setDocument(new NumberField(6));
+        Utilities.constrainTextFieldToIntegerRange(portField, 1, 65535);
 
         final DocumentListener dl = new DocumentListener() {
                     public void changedUpdate(DocumentEvent e) { updateEnableDisableState(); }
