@@ -183,7 +183,7 @@ public class MultipartMessageReader {
      * @param cid  The content id of the part to be retrieved.
      * @return Part The part parsed.  Return NULL if not found.
      */
-    private MultipartUtil.Part getMessagePartFromMap(String cid) {
+    private MultipartUtil.Part getMessagePartFromMap(String cid) throws IOException {
 
         MultipartUtil.Part part = null;
 
@@ -192,13 +192,21 @@ public class MultipartMessageReader {
         Iterator itr = keys.iterator();
         while (itr.hasNext()) {
             String partName = (String) itr.next();
-            if(cid.equals(partName)) {
+            if(validateContentId(cid, partName))  {
                 MultipartUtil.Part currentPart = (MultipartUtil.Part) multipartParts.get(partName);
                 part = currentPart;
                 break;
             }
         }
         return part;
+    }
+
+    private boolean validateContentId(String cid, String partName) throws IOException {
+        if(cid.equals(partName) ||
+                   cid.endsWith(MultipartUtil.removeConentIdBrackets(partName))) {
+            return true;
+        }
+        return false;
     }
 
     private MultipartUtil.Part parseSoapPart() throws IOException {
@@ -537,8 +545,6 @@ public class MultipartMessageReader {
     private boolean isMultipartBoundaryFound(byte[] data, int startIndex, int endIndex) {
 
         // check if the length of the two objects are the same
-        if((multipartBoundary.length()) + 2 != (endIndex - startIndex - 4)) return false;
-
         StringBuffer sb = new StringBuffer();
         // convert the byte stream to string
         for(int i=0; i < endIndex - startIndex; i++ ) {
@@ -570,7 +576,7 @@ public class MultipartMessageReader {
         if((part = getMessagePartFromMap(cid)) != null) return part;
         String line;
 
-        while ((line = readLine()) != null)  {
+        while (!partFound && (line = readLine()) != null)  {
             part = new MultipartUtil.Part();
             boolean headers = true;
             do {
@@ -592,11 +598,9 @@ public class MultipartMessageReader {
                 part.setPostion(multipartParts.size());
                 String contentId = part.getHeader(XmlUtil.CONTENT_ID).getValue();
                 multipartParts.put(contentId, part);
-                if(cid.endsWith(contentId) ||
-                   cid.endsWith(MultipartUtil.removeConentIdBrackets(contentId))) {
+                if(validateContentId(cid, contentId)) {
                     // the requested MIME part is found, stop here.
                     partFound = true;
-                    break;
                 }
             }
         }
