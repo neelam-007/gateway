@@ -71,6 +71,7 @@ public class MessageProcessor {
 
     public static final String PROPERTY_LOGPOSTS    = "com.l7tech.proxy.processor.logPosts";
     public static final String PROPERTY_LOGRESPONSE = "com.l7tech.proxy.processor.logResponses";
+    public static final String PROPERTY_REFORMATLOGGEDXML = "com.l7tech.proxy.processor.reformatLoggedXml";
     private static final Policy SSL_POLICY = new Policy(new SslAssertion(), null);
 
     private static final int MAX_TRIES = 8;
@@ -431,8 +432,12 @@ public class MessageProcessor {
                 postMethod.addRequestHeader(SecureSpanConstants.HttpHeaders.POLICY_VERSION, policy.getVersion());
 
             String postBody = XmlUtil.nodeToString(req.getSoapEnvelopeDirectly());
-            if (logPosts())
-                log.info("Posting to Gateway: " + postBody);
+            if (logPosts()) {
+                if (reformatLogs())
+                    log.info("Posting to Gateway (reformatted): " + XmlUtil.nodeToFormattedString(req.getSoapEnvelopeDirectly()));
+                else
+                    log.info("Posting to Gateway: " + postBody);
+            }
             postMethod.setRequestBody(postBody);
 
             log.info("Posting request to Gateway " + ssg + ", url " + url);
@@ -500,8 +505,18 @@ public class MessageProcessor {
             HttpHeaders headers = new HttpHeaders(postMethod.getResponseHeaders());
 
             String responseString = postMethod.getResponseBodyAsString();
-            if (logResponse())
-                log.info("Got response from Gateway: " + responseString);
+            if (logResponse()) {
+                if (reformatLogs()) {
+                    String logStr = responseString;
+                    try {
+                        logStr = XmlUtil.nodeToFormattedString(XmlUtil.stringToDocument(responseString));
+                    } catch (Exception e) {
+                        logStr = responseString;
+                    }
+                    log.info("Got response from Gateway (reformatted): " + logStr);
+                } else
+                    log.info("Got response from Gateway: " + responseString);
+            }
 
             Header contentType = postMethod.getResponseHeader("Content-Type");
             log.info("Response Content-Type: " + contentType);
@@ -545,6 +560,7 @@ public class MessageProcessor {
     private static class LogFlags {
         private static final boolean logPosts = Boolean.getBoolean(PROPERTY_LOGPOSTS);
         private static final boolean logResponse = Boolean.getBoolean(PROPERTY_LOGRESPONSE);
+        private static final boolean reformatLoggedXml = Boolean.getBoolean(PROPERTY_REFORMATLOGGEDXML);
     }
 
     private boolean logPosts() {
@@ -553,6 +569,10 @@ public class MessageProcessor {
 
     private boolean logResponse() {
         return LogFlags.logResponse;
+    }
+
+    private boolean reformatLogs() {
+        return LogFlags.reformatLoggedXml;
     }
 
     /**
