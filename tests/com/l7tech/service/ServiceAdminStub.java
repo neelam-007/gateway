@@ -4,6 +4,7 @@ import com.l7tech.common.xml.Wsdl;
 import com.l7tech.identity.StubDataStore;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
+import com.l7tech.objectmodel.Entity;
 
 import javax.wsdl.WSDLException;
 import java.io.InputStreamReader;
@@ -67,7 +68,7 @@ public class ServiceAdminStub implements ServiceAdmin {
      */
     public long savePublishedService(PublishedService service) throws RemoteException {
         long oid = service.getOid();
-        if (oid == 0) {
+        if (oid == 0 || oid == Entity.DEFAULT_OID) {
             oid = StubDataStore.defaultStore().nextObjectId();
         }
         service.setOid(oid);
