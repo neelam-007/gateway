@@ -14,6 +14,12 @@ import java.util.ArrayList;
  * User: flascelles
  * Date: Jun 20, 2003
  *
+ * This IdentityProviderConfigManager is the server side manager who manages the one and only
+ * internal identity provider as well as the other providers (ldap) configured by the administrator.
+ *
+ * todo, rename this
+ * todo, refer to this from the locator instead of making this a singleton
+ * todo, make the client side mirror of this class and remove all other config managers
  */
 public class GlobalIdentityConfigManager implements IdentityProviderConfigManager {
 
