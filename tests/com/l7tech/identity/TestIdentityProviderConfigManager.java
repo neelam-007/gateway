@@ -44,6 +44,9 @@ public class TestIdentityProviderConfigManager extends TestCase {
             deleteAll();
 
             begin();
+
+            /*
+            alex, i commented this (fla)
             IdentityProviderTypeManager iptm = new IdentityProviderTypeManagerImp();
 
             _type = new IdentityProviderTypeImp();
@@ -54,6 +57,7 @@ public class TestIdentityProviderConfigManager extends TestCase {
             long typeOid = iptm.save( _type );
 
             assertTrue( "IdentityProviderType not created! (typeOid was " + typeOid + ")", typeOid >= 0 );
+            */
         } finally {
             commit();
         }
@@ -62,7 +66,7 @@ public class TestIdentityProviderConfigManager extends TestCase {
     public void tearDown() throws Exception {
         deleteAll();
         _manager = null;
-        _type = null;
+        //_type = null;
     }
 
     private void begin() throws Exception {
@@ -79,7 +83,7 @@ public class TestIdentityProviderConfigManager extends TestCase {
 
     private IdentityProviderConfig makeConfig() {
         IdentityProviderConfig config = new IdentityProviderConfigImp();
-        config.setType( _type );
+        //config.setType( _type );
         config.setName( CONFIG_NAME );
         config.setDescription( CONFIG_DESC );
         return config;
@@ -100,7 +104,7 @@ public class TestIdentityProviderConfigManager extends TestCase {
             config = _manager.findByPrimaryKey( oid );
             assertEquals( CONFIG_NAME, config.getName() );
             assertEquals( CONFIG_DESC, config.getDescription() );
-            assertEquals( _type.getOid(), config.getType().getOid() );
+            //assertEquals( _type.getOid(), config.getType().getOid() );
         } finally {
             commit();
         }
@@ -320,6 +324,6 @@ public class TestIdentityProviderConfigManager extends TestCase {
         rollback();
     }
 
-    private IdentityProviderType _type;
+    //private IdentityProviderType _type;
     private IdentityProviderConfigManager _manager;
 }

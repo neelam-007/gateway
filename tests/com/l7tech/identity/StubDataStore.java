@@ -92,10 +92,13 @@ public class StubDataStore {
         config.setOid(nextObjectId());
         config.setDescription("Internal identity provider (stub)");
 
+        /*
+        // emil, i leave this commented so you can see what i did
         IdentityProviderType type = new IdentityProviderTypeImp();
         type.setDescription("Internal identity provider test stub");
         type.setClassName(IdentityProviderStub.class.getName());
         config.setType(type);
+        */
         encoder.writeObject(config);
         populate(config);
         return config;

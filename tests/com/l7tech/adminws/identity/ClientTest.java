@@ -79,14 +79,6 @@ public class ClientTest extends junit.framework.TestCase {
         cfg.setLdapHostURL("ldap://localhost:3899");
         cfg.setSearchBase("dc=layer7-tech,dc=com");
 
-        com.l7tech.identity.imp.IdentityProviderTypeImp type = new com.l7tech.identity.imp.IdentityProviderTypeImp();
-        type.setClassName(com.l7tech.identity.ldap.LdapIdentityProviderServer.class.getName());
-        type.setDescription("LDAP Identity Provider");
-        type.setName("LDAP Identity Provider");
-        type.setOid(1925666);
-
-        cfg.setType(type);
-
         // save it
         long newcfgid = me.saveIdentityProviderConfig(cfg);
 

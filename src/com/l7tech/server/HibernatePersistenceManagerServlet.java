@@ -31,11 +31,11 @@ public class HibernatePersistenceManagerServlet extends HttpServlet {
         PrintWriter out = response.getWriter();
 
         IdentityProviderConfigManager ipcm;
-        IdentityProviderTypeManager iptm;
+        //IdentityProviderTypeManager iptm;
         try {
             PersistenceContext.getCurrent().beginTransaction();
             ipcm = new IdentityProviderConfigManagerImp();
-            iptm = new IdentityProviderTypeManagerImp();
+            //iptm = new IdentityProviderTypeManagerImp();
         } catch ( Exception e ) {
             throw new ServletException( e );
         }
@@ -73,15 +73,16 @@ public class HibernatePersistenceManagerServlet extends HttpServlet {
                     out.println( oid + " deleted." );
                 }
             } else if ( "create".equals(op) ) {
-                IdentityProviderType type = new IdentityProviderTypeImp();
+                /*IdentityProviderType type = new IdentityProviderTypeImp();
                 type.setClassName( "com.l7tech.identity.internal.InternalIdentityProvider" );
                 type.setName( "Internal IdentityAssertion Provider" );
                 iptm.save(type);
+                */
 
                 IdentityProviderConfig config = new IdentityProviderConfigImp();
                 config.setName( new Integer( new Random().nextInt() ).toString() );
                 config.setDescription("This object is bogus.");
-                config.setType( type );
+                //config.setType( type );
 
                 long oid = ipcm.save( config );
                 config.setName( "IdentityAssertion Provider #" + oid );

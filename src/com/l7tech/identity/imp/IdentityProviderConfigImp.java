@@ -15,16 +15,8 @@ public class IdentityProviderConfigImp extends NamedEntityImp implements Identit
         return _description;
     }
 
-    public IdentityProviderType getType() {
-        return _type;
-    }
-
     public void setDescription(String description) {
         _description = description;
-    }
-
-    public void setType(IdentityProviderType type) {
-        _type = type;
     }
 
     public boolean equals(Object o) {
@@ -34,7 +26,7 @@ public class IdentityProviderConfigImp extends NamedEntityImp implements Identit
         final IdentityProviderConfigImp identityProviderConfigImp = (IdentityProviderConfigImp) o;
 
         if (_description != null ? !_description.equals(identityProviderConfigImp._description) : identityProviderConfigImp._description != null) return false;
-        if (_type != null ? !_type.equals(identityProviderConfigImp._type) : identityProviderConfigImp._type != null) return false;
+        //if (_type != null ? !_type.equals(identityProviderConfigImp._type) : identityProviderConfigImp._type != null) return false;
 
         return true;
     }
@@ -42,10 +34,9 @@ public class IdentityProviderConfigImp extends NamedEntityImp implements Identit
     public int hashCode() {
         int result;
         result = (_description != null ? _description.hashCode() : 0);
-        result = 29 * result + (_type != null ? _type.hashCode() : 0);
+        //result = 29 * result + (_type != null ? _type.hashCode() : 0);
         return result;
     }
 
     private String _description;
-    private IdentityProviderType _type;
 }

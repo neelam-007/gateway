@@ -15,11 +15,6 @@ import com.l7tech.identity.imp.IdentityProviderTypeImp;
 public class LdapIdentityProviderConfig extends NamedEntityImp implements IdentityProviderConfig {
 
     public LdapIdentityProviderConfig() {
-        // construct default type
-        providertype = new IdentityProviderTypeImp();
-        providertype.setDescription("LDAP Identity Provider");
-        providertype.setName("LDAP");
-        providertype.setClassName(LdapIdentityProviderServer.class.getName());
         desc = "";
     }
 
@@ -29,14 +24,6 @@ public class LdapIdentityProviderConfig extends NamedEntityImp implements Identi
 
     public void setDescription(String description) {
         desc = description;
-    }
-
-    public IdentityProviderType getType() {
-        return providertype;
-    }
-
-    public void setType(IdentityProviderType type) {
-        providertype = type;
     }
 
     /**
@@ -79,7 +66,6 @@ public class LdapIdentityProviderConfig extends NamedEntityImp implements Identi
     // PRIVATES
     // ************************************************
 
-    private IdentityProviderType providertype;
     private String desc;
     private String ldapHostURL;
     private String searchBase;

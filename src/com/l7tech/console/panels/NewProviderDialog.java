@@ -291,9 +291,10 @@ public class NewProviderDialog extends JDialog {
     /** insert the provider */
     private void insertProvider() {
         iProvider.setName(providerNameTextField.getText());
-        IdentityProviderTypeImp ip = new IdentityProviderTypeImp();
-        ip.setClassName("bla");
-        iProvider.setType(ip);
+        // emil, i leave this commented so you can see what i did
+        //IdentityProviderTypeImp ip = new IdentityProviderTypeImp();
+        //ip.setClassName("bla");
+        //iProvider.setType(ip);
 
         final EntityHeader header = new EntityHeader();
 
