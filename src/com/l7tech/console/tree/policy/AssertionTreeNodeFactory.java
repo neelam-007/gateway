@@ -55,6 +55,7 @@ public class AssertionTreeNodeFactory {
         assertionMap.put(RequestWssConfidentiality.class, RequestWssConfidentialityTreeNode.class);
         assertionMap.put(ResponseWssConfidentiality.class, ResponseWssConfidentialityTreeNode.class);
         assertionMap.put(RequestXpathAssertion.class, RequestXpathPolicyTreeNode.class);
+        assertionMap.put(ResponseXpathAssertion.class, ResponseXpathPolicyTreeNode.class);
         assertionMap.put(SamlSecurity.class, SamlTreeNode.class);
         assertionMap.put(SchemaValidation.class, SchemaValidationTreeNode.class);
         assertionMap.put(XslTransformation.class, XslTransformationTreeNode.class);
