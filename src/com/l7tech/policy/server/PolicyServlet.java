@@ -8,6 +8,7 @@ import com.l7tech.objectmodel.PersistenceContext;
 import com.l7tech.objectmodel.TransactionException;
 import com.l7tech.policy.server.filter.FilterManager;
 import com.l7tech.policy.server.filter.FilteringException;
+import com.l7tech.policy.wsp.WspWriter;
 import com.l7tech.server.AuthenticatableHttpServlet;
 import com.l7tech.service.PublishedService;
 import com.l7tech.service.ServiceManager;
@@ -104,6 +105,9 @@ public class PolicyServlet extends AuthenticatableHttpServlet {
                 return;
             }
 
+            long serviceid = targetService.getOid();
+            int serviceversion = targetService.getVersion();
+
             // BEFORE SENDING BACK THIS POLICY, WE NEED TO DECIDE IF THE REQUESTOR IS ALLOWED TO SEE IT
             // if policy does not allow anonymous access, then it should not be accessible through http
             boolean anonymousok = policyAllowAnonymous(targetService);
@@ -170,6 +174,9 @@ public class PolicyServlet extends AuthenticatableHttpServlet {
                         logger.warning("requestor tried to download policy that " +
                                        "he should not be allowed to see - will return error");
                     }
+                } else {
+                    // even if the policy is anonymous, we might want to hide stuff
+                    targetService = FilterManager.getInstance().applyAllFilters(null, targetService);
                 }
             } catch (FilteringException e) {
                 logger.log(Level.SEVERE, "Could not filter policy", e);
@@ -179,7 +186,9 @@ public class PolicyServlet extends AuthenticatableHttpServlet {
             }
 
             // OUTPUT THE POLICY
-            outputPublishedServicePolicy(targetService, httpServletResponse);
+            if (anonymousok && targetService == null) {
+                outputEmptyPolicy(httpServletResponse, serviceid, serviceversion);
+            } else  outputPublishedServicePolicy(targetService, httpServletResponse);
         } catch (SQLException e) {
             logger.log( Level.SEVERE, e.getMessage(), e );
         } finally {
@@ -251,6 +260,13 @@ public class PolicyServlet extends AuthenticatableHttpServlet {
                 logger.log(Level.WARNING, null, te);
             }
         }
+    }
+
+    private void outputEmptyPolicy(HttpServletResponse res, long serviceid, int serviceversion) throws IOException {
+        res.addHeader(SecureSpanConstants.HttpHeaders.POLICY_VERSION,
+                           Long.toString(serviceid) + '|' + Long.toString(serviceversion));
+        res.setContentType("text/xml; charset=utf-8");
+        res.getOutputStream().println(WspWriter.getPolicyXml(null));
     }
 
     private void outputPublishedServicePolicy(PublishedService service, HttpServletResponse response) throws IOException {
