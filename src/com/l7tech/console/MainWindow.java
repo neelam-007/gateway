@@ -351,6 +351,7 @@ public class MainWindow extends JFrame {
 
         viewMenu.addSeparator();
 
+        viewMenu.add(getFindAction());
         viewMenu.add(getGotoSubmenu());
 
         JMenuItem item = new JMenuItem(getRefreshAction());
