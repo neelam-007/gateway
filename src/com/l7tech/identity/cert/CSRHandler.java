@@ -7,9 +7,7 @@ import com.l7tech.identity.AuthenticationException;
 import com.l7tech.logging.LogManager;
 import com.l7tech.common.util.Locator;
 import com.l7tech.common.util.KeystoreUtils;
-import com.l7tech.objectmodel.PersistenceContext;
-import com.l7tech.objectmodel.FindException;
-import com.l7tech.objectmodel.UpdateException;
+import com.l7tech.objectmodel.*;
 import com.l7tech.policy.assertion.credential.PrincipalCredentials;
 
 import javax.servlet.http.HttpServlet;
@@ -112,12 +110,32 @@ public class CSRHandler extends HttpServlet {
 
         // record new cert
         try {
+            PersistenceContext.getCurrent().beginTransaction();
             man.recordNewUserCert(authenticatedUser, cert);
         } catch (UpdateException e) {
             String msg = "Could not record cert. " + e.getMessage();
             response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, msg);
             logger.log(Level.SEVERE, msg, e);
             return;
+        } catch (SQLException e) {
+            String msg = "Could not record cert. " + e.getMessage();
+            response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, msg);
+            logger.log(Level.SEVERE, msg, e);
+            return;
+        } catch (TransactionException e) {
+            String msg = "Could not record cert. " + e.getMessage();
+            response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, msg);
+            logger.log(Level.SEVERE, msg, e);
+            return;
+        } finally {
+            try {
+                PersistenceContext.getCurrent().flush();
+                PersistenceContext.getCurrent().close();
+            } catch (SQLException e) {
+                logger.log(Level.WARNING, "exception flushing context", e);
+            } catch (ObjectModelException e) {
+                logger.log(Level.WARNING, "exception flushing context", e);
+            }
         }
 
         // verify that the CN in the subject equals the login name
