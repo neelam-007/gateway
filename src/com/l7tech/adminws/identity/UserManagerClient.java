@@ -30,7 +30,12 @@ public class UserManagerClient extends IdentityManagerClient implements UserMana
     }
 
     public User findByLogin(String login) throws FindException {
-        //todo
+        Collection users = findAll();
+        Iterator i = users.iterator();
+        while (i.hasNext()) {
+            User usr = (User)i.next();
+            if (usr.getLogin().equals(login)) return usr;
+        }
         return null;
     }
 
