@@ -30,6 +30,8 @@ public class JarChecker {
         } catch (Exception e) {
             fatalErr(e);
         }
+
+        System.exit(0);
     }
 
     private static void checkJar(String jar) throws IOException {
@@ -48,7 +50,7 @@ public class JarChecker {
                     try {
                         Class.forName(className);
                     } catch (ClassNotFoundException e) {
-                        System.err.println("ERROR: ClassNotFoundException: " + e.getMessage());
+                        fatalErr(e);
                     }
                 }
             }
@@ -60,7 +62,8 @@ public class JarChecker {
     }
 
     private static void fatalErr(Throwable e) {
-        System.err.println("Fatal error: " + e.getMessage());
+        System.err.println("ERROR: Fatal error: " + e.getMessage());
         e.printStackTrace(System.err);
+        System.exit(1);
     }
 }
