@@ -6,6 +6,7 @@ import com.l7tech.proxy.datamodel.Managers;
 import com.l7tech.proxy.datamodel.SsgKeyStoreManager;
 import com.l7tech.proxy.datamodel.exceptions.OperationCanceledException;
 import com.l7tech.proxy.datamodel.exceptions.BadCredentialsException;
+import com.l7tech.proxy.datamodel.exceptions.ServerCertificateUntrustedException;
 import com.l7tech.proxy.ssl.ClientProxyKeyManager;
 import com.l7tech.proxy.ssl.ClientProxySecureProtocolSocketFactory;
 import com.l7tech.proxy.ssl.ClientProxyTrustManager;
@@ -223,6 +224,7 @@ public class ClientProxy {
      * locally, and the SSL context for this Client Proxy will have been reinitialized.
      *
      * @param ssg   the Ssg to which we are sending our application
+     * @throws ServerCertificateUntrustedException if we haven't yet discovered the Ssg server cert
      * @throws GeneralSecurityException   if there was a problem making the CSR
      * @throws GeneralSecurityException   if we were unable to complete SSL handshake with the Ssg
      * @throws IOException                if there was a network problem
@@ -252,10 +254,14 @@ public class ClientProxy {
         int attempts = 0;
         for (;;) {
             try {
+                X509Certificate caCert = SsgKeyStoreManager.getServerCert(ssg);
+                if (caCert == null)
+                    throw new ServerCertificateUntrustedException(); // fault in the SSG cert
                 X509Certificate cert = SslUtils.obtainClientCertificate(ssg.getServerCertRequestUrl(),
                                                                         ssg.getUsername(),
                                                                         ssg.password(),
-                                                                        csr);
+                                                                        csr,
+                                                                        caCert);
                 // make sure private key is stored on disk encrypted with the password that was used to obtain it
                 SsgKeyStoreManager.saveClientCertificate(ssg, keyPair.getPrivate(), cert);
                 initializeSsl(); // reset global SSL state
