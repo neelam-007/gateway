@@ -65,6 +65,10 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
     private boolean messageAreaVisible = false;
     private JTabbedPane messagesTab;
     private boolean validating = false;
+    private SavePolicyAction saveAction;
+    private ValidatePolicyAction validateAction;
+    private ExportPolicyToFileAction exportPolicyAction;
+    private ImportPolicyFromFileAction importPolicyAction;
 
     /**
      * Instantiate the policy editor, optionally validating the policy.
@@ -359,6 +363,7 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
     final class PolicyEditToolBar extends JToolBar {
         JButton buttonSave;
         JButton buttonSaveTemplate;
+        JButton buttonImport;
         JButton buttonValidate;
         JToggleButton identityViewButton;
         JToggleButton policyViewButton;
@@ -370,15 +375,7 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
         }
 
         private void initComponents() {
-            buttonSave = new JButton(new SavePolicyAction() {
-                /**
-                 * Actually perform the action.
-                 */
-                public void performAction() {
-                    this.node = rootAssertion;
-                    super.performAction();
-                }
-            });
+            buttonSave = new JButton(getSaveAction());
 
             this.add(buttonSave);
             final BaseAction ba = (BaseAction)buttonSave.getAction();
@@ -403,24 +400,14 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
                 }
             });
 
-            buttonSaveTemplate = new JButton(new ExportPolicyToFileAction() {
-                public void performAction() {
-                    this.node = rootAssertion;
-                    super.performAction();
-                }
-            });
+            buttonValidate = new JButton(getValidateAction());
+            this.add(buttonValidate);
+
+            buttonSaveTemplate = new JButton(getExportAction());
             this.add(buttonSaveTemplate);
 
-            buttonValidate = new JButton(new ValidatePolicyAction() {
-                public void performAction() {
-                    PolicyValidatorResult result
-                      = PolicyValidator.getDefault().validate(rootAssertion.asAssertion());
-                    displayPolicyValidateResult(pruneDuplicates(result));
-
-                }
-
-            });
-            this.add(buttonValidate);
+            buttonImport = new JButton(getImportAction());
+            this.add(buttonImport);
 
             policyViewButton = new JToggleButton(new PolicyViewAction());
             policyViewButton.addActionListener(new ActionListener() {
@@ -456,6 +443,20 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
             }
             policyTree.getModel().addTreeModelListener(policyTreeModellistener);
         }
+    }
+
+    public Action getValidateAction() {
+        if (validateAction == null) {
+            validateAction = new ValidatePolicyAction() {
+                public void performAction() {
+                    PolicyValidatorResult result
+                      = PolicyValidator.getDefault().validate(rootAssertion.asAssertion());
+                    displayPolicyValidateResult(pruneDuplicates(result));
+
+                }
+            };
+        }
+        return validateAction;
     }
 
     /**
@@ -758,4 +759,50 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
         return pr;
     }
 
+    public Action getSaveAction() {
+        if (saveAction == null) {
+            saveAction = new SavePolicyAction() {
+                public void performAction() {
+                    this.node = rootAssertion;
+                    super.performAction();
+                }
+            };
+        }
+        return saveAction;
+    }
+
+    public Action getExportAction() {
+        if (exportPolicyAction == null) {
+            exportPolicyAction = new ExportPolicyToFileAction() {
+                public void performAction() {
+                    this.node = rootAssertion;
+                    super.performAction();
+                }
+            };
+        }
+        return exportPolicyAction;
+    }
+
+    public Action getImportAction() {
+        if (importPolicyAction == null) {
+            importPolicyAction = new ImportPolicyFromFileAction() {
+                public void performAction() {
+                    pubService = service;
+                    super.performAction();
+                    rootAssertion = null;
+                    try {
+                        renderPolicy(false);
+                    } catch (FindException e) {
+                        log.log(Level.WARNING,  "exception rendering policy", e);
+                    } catch (RemoteException e) {
+                        log.log(Level.WARNING,  "exception rendering policy", e);
+                    }
+                    policyEditorToolbar.buttonSave.setEnabled(true);
+                    policyEditorToolbar.buttonSave.getAction().setEnabled(true);
+                    validatePolicy();
+                }
+            };
+        }
+        return importPolicyAction;
+    }
 }
