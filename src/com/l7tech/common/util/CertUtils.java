@@ -7,6 +7,8 @@
 package com.l7tech.common.util;
 
 import com.l7tech.common.security.CertificateExpiry;
+import org.bouncycastle.asn1.DERObjectIdentifier;
+import org.bouncycastle.asn1.x509.X509Name;
 
 import javax.security.auth.x500.X500Principal;
 import java.security.MessageDigest;
@@ -18,9 +20,6 @@ import java.security.interfaces.DSAParams;
 import java.security.interfaces.DSAPublicKey;
 import java.security.interfaces.RSAPublicKey;
 import java.util.*;
-
-import org.bouncycastle.asn1.x509.X509Name;
-import org.bouncycastle.asn1.DERObjectIdentifier;
 
 /**
  *
@@ -62,7 +61,9 @@ public class CertUtils {
             throws CertificateNotYetValidException, CertificateExpiredException
     {
         certificate.checkValidity();
-        int days = (int)(.5f + ((System.currentTimeMillis() - certificate.getNotAfter().getTime()) * 1000 * 86400));
+        final long now = System.currentTimeMillis();
+        final long expires = certificate.getNotAfter().getTime();
+        int days = (int)(.5f + ((expires - now) * 1000 * 86400));
         return new CertificateExpiry(days);
     }
 
