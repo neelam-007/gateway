@@ -21,10 +21,7 @@ import com.l7tech.policy.assertion.identity.PermissiveIdentityAssertion;
 import com.l7tech.policy.assertion.xmlsec.RequestWssX509Cert;
 import com.l7tech.policy.assertion.xmlsec.SecureConversation;
 
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Map;
+import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -95,6 +92,9 @@ public class DefaultGatewayPolicies {
 
     private void updateIdentities() {
         try {
+            // Don't bother updating if it's been less than CHECK_DELAY since we did it last
+            if (lastVersionCheck >= (System.currentTimeMillis() - CHECK_DELAY)) return;
+
             Map versions = configManager.findVersionMap();
 
             for ( Iterator i = versions.keySet().iterator(); i.hasNext(); ) {
@@ -115,6 +115,7 @@ public class DefaultGatewayPolicies {
                     identities.getChildren().add(new PermissiveIdentityAssertion(providerOid.longValue()));
                 }
             }
+            lastVersionCheck = System.currentTimeMillis();
             providerVersionMap = versions;
         } catch ( FindException e ) {
             logger.log( Level.INFO, e.getMessage(), e );
@@ -130,5 +131,7 @@ public class DefaultGatewayPolicies {
     private final OneOrMoreAssertion certBasedCredentialSources;
     private final IdentityProviderConfigManager configManager;
 
-    private Map providerVersionMap = new HashMap();
+    private Map providerVersionMap = Collections.EMPTY_MAP;
+    private long lastVersionCheck;
+    public static final int CHECK_DELAY = 5000;
 }
