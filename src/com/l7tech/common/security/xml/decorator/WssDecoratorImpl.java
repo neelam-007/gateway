@@ -334,7 +334,7 @@ public class WssDecoratorImpl implements WssDecorator {
 
             Reference ref = template.createReference("#" + id);
             if (XmlUtil.isElementAncestor(securityHeader, element)) {
-                logger.info("Per policy, breaking Basic Security Profile rules with enveloped signature" +
+                logger.fine("Per policy, breaking Basic Security Profile rules with enveloped signature" +
                             " of element " + element.getLocalName() + " with Id=\"" + id + "\"");
                 ref.addTransform(Transform.ENVELOPED);
             }
@@ -513,7 +513,7 @@ public class WssDecoratorImpl implements WssDecorator {
             Element element = elementsToEncrypt[i];
 
             if (XmlUtil.elementIsEmpty(element)) {
-                logger.info("Element \"" + element.getNodeName() + "\" is empty; will not encrypt it");
+                logger.fine("Element \"" + element.getNodeName() + "\" is empty; will not encrypt it");
                 continue;
             }
 
@@ -598,7 +598,7 @@ public class WssDecoratorImpl implements WssDecorator {
         for (int i = 0; i < elementsToEncrypt.length; i++) {
             Element element = elementsToEncrypt[i];
             if (XmlUtil.elementIsEmpty(element)) {
-                logger.info("Element \"" + element.getNodeName() + "\" is empty; will not encrypt it");
+                logger.fine("Element \"" + element.getNodeName() + "\" is empty; will not encrypt it");
                 continue;
             }
             Element encryptedElement = encryptElement(element, keyBytes);
