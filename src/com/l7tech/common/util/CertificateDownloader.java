@@ -29,7 +29,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Downloads a certificate from the SSG, check it for validity, and import it.
+ * Download a certificate from the SSG, check it for validity, and import it.
  *
  * Typical usage:
  * <code>
