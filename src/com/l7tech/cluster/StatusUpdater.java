@@ -174,4 +174,5 @@ public class StatusUpdater extends Thread {
     private static final StatusUpdater updater = new StatusUpdater();
     private final Logger logger = LogManager.getInstance().getSystemLogger();
     public static final long UPDATE_FREQUENCY = 4000;
+    //public static final long UPDATE_FREQUENCY = 10;
 }

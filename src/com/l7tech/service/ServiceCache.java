@@ -40,6 +40,7 @@ import java.util.logging.Logger;
 public class ServiceCache {
 
     public static final long INTEGRITY_CHECK_FREQUENCY = 4000; // 4 seconds
+    //public static final long INTEGRITY_CHECK_FREQUENCY = 10;
 
     /**
      * get the service cache singleton
