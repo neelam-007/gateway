@@ -25,9 +25,6 @@ public class PendingRequest {
     private String lastErrorResponse = ""; // Last response received from SSG in the case of 401 or 500 status
     private boolean isPolicyUpdated = false;
 
-    /** Number of times credentials have been updated while processing this request. */
-    private int timesCredentialsUpdated = 0;
-
     // Policy settings, filled in by traversing policy tree
     private static class PolicySettings {
         private boolean isSslRequired = false;
@@ -164,19 +161,6 @@ public class PendingRequest {
 
     public void setPolicyUpdated(boolean policyUpdated) {
         isPolicyUpdated = policyUpdated;
-    }
-
-    public int getTimesCredentialsUpdated() {
-        return timesCredentialsUpdated;
-    }
-
-    public void setTimesCredentialsUpdated(int timesCredentialsUpdated) {
-        this.timesCredentialsUpdated = timesCredentialsUpdated;
-    }
-
-    /** Record that the credentials have been updated for this request.  Returns the new counter value. */
-    public int incrementTimesCredentialsUpdated() {
-        return ++this.timesCredentialsUpdated;
     }
 
     public boolean isCredentialsWouldHaveHelped() {
