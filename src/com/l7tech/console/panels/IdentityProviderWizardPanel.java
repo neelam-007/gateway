@@ -70,11 +70,6 @@ public class IdentityProviderWizardPanel extends WizardStepPanel {
 
         credentialsLocationComboBox = new JComboBox();
         credentialsLocationComboBox.setModel(Components.getCredentialsLocationComboBoxModelNonAnonymous());
-        credentialsLocationComboBox.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                populateIdentityTables();
-            }
-        });
 
         sslCheckBox = new JCheckBox();
 
@@ -95,9 +90,14 @@ public class IdentityProviderWizardPanel extends WizardStepPanel {
             }
         });
         providersComboBox.addActionListener(new ActionListener() {
+            Object oldSelectedItem = null;
+
             /** Invoked when an action occurs.  */
             public void actionPerformed(ActionEvent e) {
-                populateIdentityTables();
+                Object newSelectedItem = providersComboBox.getSelectedItem();
+                if (newSelectedItem != oldSelectedItem)
+                    populateIdentityTables();
+                oldSelectedItem = newSelectedItem;
             }
         });
 
