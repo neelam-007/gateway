@@ -70,6 +70,7 @@ if ($ARGV[0] eq '-usage' ) {
 } else {
 	if ( -e $save_file ) {
                 print "WARNING: SSG has been installed and configured - $save_file already existed!\n";
+		print "INFO: If you want to remove all default values from last installation, please exit from re-installing, manually remove $save_file, then re-invoke $0\n"; 
 		print "Do you want to re-installing/re-configuring SSG? (y/n)";
                 my $ans_proceed=<STDIN>;
                 chomp $ans_proceed;
@@ -190,7 +191,29 @@ EOF
        	}
 
 	# 3. hostname - file affected:$hosts_file, $network_file
-	# 3a. hostname for cluster - file affected: $cluster_hostname_file, $network_file
+	# 3a. hostname for cluster - file affected: $cluster_hostname_file
+	print "INFO: Configuring node hostname for $network_file\n";
+        if ( -e $network_file ) {
+                print "INFO: $network_file existed, now renaming $network_file to $network_file.bckup_$pid\n";
+                rename( $network_file, "$network_file.bckup_$pid");
+        }
+
+        open (NETWORK_FILE, ">$network_file") or die "Can't open $network_file!\n";
+        print NETWORK_FILE <<EOF;
+# Modified by /ssg/bin/install.pl
+# Will be replaced if you rerun!
+NETWORKING=yes
+HOSTNAME=$Conf{hostname}
+
+EOF
+        close NETWORK_FILE;
+        chmod 0644, "$network_file";
+
+        print "INFO: Gateway - $network_file file replaced\n";
+
+        print "INFO: Setting hostname to $Conf{hostname}\n";
+        system ("hostname $Conf{hostname}");
+
 	print "INFO: Configuring cluster hostname for $cluster_hostname_file & $hosts_file\n";
 	if ($Conf{gc_clusternm} && lc($Conf{gc_cluster}) eq "y") {
                 if ( -e $cluster_hostname_file ) {
@@ -224,26 +247,7 @@ EOF
 		close HOST;
 		chmod 0644, "$hosts_file";
 
-                if ( -e $network_file ) {
-                        print "INFO: $network_file existed, now renaming $network_file to $network_file.bckup_$pid\n";
-                        rename( $network_file, "$network_file.bckup_$pid");
-                }
-
-                open (NETWORK_FILE, ">$network_file") or die "Can't open $network_file!\n";
-                print NETWORK_FILE <<EOF;
-# Modified by /ssg/bin/install.pl
-# Will be replaced if you rerun!
-NETWORKING=yes
-HOSTNAME=$Conf{gc_clusternm}
-
-EOF
-                close NETWORK_FILE;
-                chmod 0644, "$network_file";
-
-                print "INFO: Setting hostname to $Conf{gc_clusternm}\n"; 
-		system ("hostname $Conf{gc_clusternm}");
-
-		print "INFO: Cluster Gateway - $cluster_hostname_file, $hosts_file and $network_file files replaced\n";
+		print "INFO: Cluster Gateway - $cluster_hostname_file and $hosts_file files replaced\n";
 	} else {
 		print "WARNING: $cluster_hostname_file not set (OK if SSG is not part of a cluster)\n";
 	}
@@ -269,21 +273,7 @@ EOF
                 close HOST;
                 chmod 0644, "/etc/hosts";
 
-                open (NETWORK_FILE, ">$network_file") or die "Can't open $network_file!\n";
-                print NETWORK_FILE <<EOF;
-# Modified by /ssg/bin/install.pl
-# Will be replaced if you rerun!
-NETWORKING=yes
-HOSTNAME=$Conf{hostname}
-
-EOF
-                close NETWORK_FILE;
-                chmod 0644, "$network_file";
-
-                print "INFO: Setting hostname to $Conf{hostname}\n";
-                system ("hostname $Conf{hostname}");
-
-                print "INFO: Non Cluster Gateway - $cluster_hostname_file removed (backup as $cluster_hostname_file.bckup_$pid), $hosts_file and $network_file files replaced\n";
+                print "INFO: Non Cluster Gateway - $cluster_hostname_file removed (backup as $cluster_hostname_file.bckup_$pid) and $hosts_file files replaced\n";
 	}
 
 	# 4. local config of db connection
@@ -372,6 +362,7 @@ EOF
 
 	if (! -e $cnf_rpm ) {
                 print "ERROR: $cnf_rpm distribution missing from rpm!\n";
+		print "INFO: $0 exits; please re-run $0\n";
 		exit;
 	}
 
@@ -505,20 +496,34 @@ EOF
 	{ my $i; @fieldlist= grep { ++$i % 2 } @fieldlist; }
 NEXT_PARAM:
 	foreach  my $f (@fieldlist) {
+REPEAT_PARAM:
 		# following pattern logic for prompt filtering depends on hash key of the @list, ensure this is updated when you modify hash key
-                if ( ($Conf{gc_cluster} eq 'n' && $f =~ /gc_(.*)/) 
-			|| ($Conf{dc_cluster} eq 'n' && $f =~ /dc_(.*)/)
-			|| ($Conf{dc_cluster} eq 'y' && ($f =~ /dblocal/ || $f =~ /dbhostname/))
-			|| ($Conf{dblocal} eq 'y' && $f =~ /dbhostname/)
-			|| ($Conf{net_front} eq 'n' && $f =~ /net_front_(.*)/) 
-			|| ($Conf{net_back} eq 'n' && $f =~ /net_back_(.*)/) ){
+                if ( ($Conf{gc_cluster} eq 'n' && $f ne "gc_cluster" && $f =~ /gc_(.*)/) #if not gateway cluster, omit cluster gateway prompts
+			|| ($Conf{dc_cluster} eq 'n' && $f ne "dc_cluster" && $f =~ /dc_(.*)/) #if not database cluster, omit cluster database prompts
+			|| ($Conf{dc_cluster} eq 'y' && $f ne "dc_cluster" && ($f eq "dblocal" || $f eq "dbhostname")) #if database cluster, omit standalone database prompts
+			|| ($Conf{dblocal} eq 'y' && $f eq "dbhostname") #if local database, omit remote database prompt
+			|| ($Conf{net_front} eq 'n' && $f =~ /net_front_(.*)/) #if no net_front, omit net_front prompts
+			|| ($Conf{net_back} eq 'n' && $f =~ /net_back_(.*)/) ){ #if no net_back, omit net_back prompts
+			$Conf{$f}=''; #purge omit values in case they are set by prior installation (reinstall)
 			next NEXT_PARAM;
 		} else { 
 			print "$c{$f} ($Conf{$f}) :";
 		}
+
 		my $newval=<STDIN>;
 		chomp $newval;
 		$newval = trimwhitespace($newval);
+		if ( ($f eq "hostname" && $Conf{$f} eq "" && $newval eq "")
+ 			|| ($f eq "host_ip" && $Conf{$f} eq "" && $newval eq "") 
+			|| ($f eq "gc_cluster" && ($Conf{$f} ne "y" && $Conf{$f} ne "n") && ($newval ne "y" && $newval ne "n")) 
+			|| ($f eq "dc_cluster" && ($Conf{$f} ne "y" && $Conf{$f} ne "n") && ($newval ne "y" && $newval ne "n"))
+			|| ($f eq "dbuser" && $Conf{$f} eq "" && $newval eq "")
+			|| ($f eq "dbpass" && $Conf{$f} eq "" && $newval eq "")
+			|| ($f eq "net_front" && ($Conf{$f} ne "y" && $Conf{$f} ne "n") && ($newval ne "y" && $newval ne "n")) 
+			|| ($f eq "net_back" && ($Conf{$f} ne "y" && $Conf{$f} ne "n") && ($newval ne "y" && $newval ne "n")) ) {
+			print "ERROR: Value for $f is mandatory\n";
+                        goto REPEAT_PARAM;
+		}
 		if ($newval ne "") {
 			$Conf{$f}=$newval;
 		}
