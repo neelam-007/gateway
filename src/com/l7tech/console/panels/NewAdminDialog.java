@@ -1,7 +1,7 @@
 package com.l7tech.console.panels;
 
 import com.l7tech.console.text.FilterDocument;
-import com.l7tech.console.tree.AdminFolderTreeNode;
+import com.l7tech.console.tree.AdminFolderNode;
 import org.apache.log4j.Category;
 
 import javax.swing.*;
@@ -36,8 +36,8 @@ public class NewAdminDialog extends JDialog {
   /* new Admincvs  Password */
   private char[] newPassword;
 
-  /* the AdminFolderTreeNode with Company/Realm Admin is added to */
-  private AdminFolderTreeNode adminFolder = null;
+  /* the AdminFolderNode with Company/Realm Admin is added to */
+  private AdminFolderNode adminFolder = null;
 
   /* the panel listenero */
   private PanelListener panelListener;
@@ -56,13 +56,13 @@ public class NewAdminDialog extends JDialog {
   public NewAdminDialog(JFrame parent, Object dobject) {
     super(parent, true);
 
-    if (!(dobject instanceof AdminFolderTreeNode)) {
+    if (!(dobject instanceof AdminFolderNode)) {
       throw new IllegalArgumentException("Invalid argument type: "
-                                         + "\nExpected: AdminFolderTreeNode"
+                                         + "\nExpected: AdminFolderNode"
                                          + "\nReceived: " + dobject.getClass().getName());
     }
     this.parent = parent;
-    adminFolder = (AdminFolderTreeNode)dobject;
+    adminFolder = (AdminFolderNode)dobject;
     initResources();
     initComponents();
     pack();

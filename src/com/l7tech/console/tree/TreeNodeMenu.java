@@ -44,16 +44,16 @@ public class TreeNodeMenu extends JPopupMenu {
     
     JPopupMenu retMenu = null;
 
-    if (object instanceof ProvidersFolderTreeNode) {
-      retMenu = forRealmFolder((ProvidersFolderTreeNode)object, listener);
-    } else if (object instanceof ProviderTreeNode) {
-      retMenu = forProvider((ProviderTreeNode)object, listener);
-    } else if (object instanceof AdminFolderTreeNode) {
-      retMenu = forAdminFolder((AdminFolderTreeNode)object, listener);
-    } else if (object instanceof UserFolderTreeNode) {
-      retMenu = forUserFolder((UserFolderTreeNode)object, listener);
-    } else if (object instanceof GroupFolderTreeNode) {
-         retMenu = forGroupFolder((GroupFolderTreeNode)object, listener);
+    if (object instanceof ProvidersFolderNode) {
+      retMenu = forRealmFolder((ProvidersFolderNode)object, listener);
+    } else if (object instanceof ProviderNode) {
+      retMenu = forProvider((ProviderNode)object, listener);
+    } else if (object instanceof AdminFolderNode) {
+      retMenu = forAdminFolder((AdminFolderNode)object, listener);
+    } else if (object instanceof UserFolderNode) {
+      retMenu = forUserFolder((UserFolderNode)object, listener);
+    } else if (object instanceof GroupFolderNode) {
+         retMenu = forGroupFolder((GroupFolderNode)object, listener);
     }
     
     // if there is no menu yet make one..
@@ -87,7 +87,7 @@ public class TreeNodeMenu extends JPopupMenu {
    *                 events will be sent.
    * @return JpopUpMenu for the node
    */
-  private static JPopupMenu forRealmFolder(ProvidersFolderTreeNode realm, ActionListener listener) {
+  private static JPopupMenu forRealmFolder(ProvidersFolderNode realm, ActionListener listener) {
     TreeNodeMenu treeMenu = new TreeNodeMenu(realm, listener);
     
     JMenu menu = new JMenu(NEW);
@@ -101,12 +101,12 @@ public class TreeNodeMenu extends JPopupMenu {
    * create the popup menu <CODE>JpopUpMenu</CODE> for the Realm
    * node passed.
    *
-   * @param provider   ProviderTreeNode node to create the menu for
+   * @param provider   ProviderNode node to create the menu for
    * @param listener the <CODE>ActionListener</CODE> where the
    *                 events will be sent.
    * @return JpopUpMenu for the node
    */
-  private static JPopupMenu forProvider(ProviderTreeNode provider, ActionListener listener) {
+  private static JPopupMenu forProvider(ProviderNode provider, ActionListener listener) {
     TreeNodeMenu treeMenu = new TreeNodeMenu(provider, listener);
     treeMenu.add(DELETE).addActionListener(listener);
     
@@ -121,7 +121,7 @@ public class TreeNodeMenu extends JPopupMenu {
    *                 events will be sent.
    * @return JpopUpMenu for the node
    */
-  private static JPopupMenu forAdminFolder(AdminFolderTreeNode admin, ActionListener listener) {
+  private static JPopupMenu forAdminFolder(AdminFolderNode admin, ActionListener listener) {
     TreeNodeMenu treeMenu = new TreeNodeMenu(admin, listener);
     
     JMenu menu = new JMenu(NEW);
@@ -140,7 +140,7 @@ public class TreeNodeMenu extends JPopupMenu {
    *                 events will be sent.
    * @return JpopUpMenu for the node
    */
-  private static JPopupMenu forAdmin(UserTreeNode entry, ActionListener listener) {
+  private static JPopupMenu forAdmin(UserNode entry, ActionListener listener) {
     TreeNodeMenu treeMenu = new TreeNodeMenu(entry, listener);
     treeMenu.add(DELETE).addActionListener(listener);
     
@@ -157,7 +157,7 @@ public class TreeNodeMenu extends JPopupMenu {
    *                 events will be sent.
    * @return JpopUpMenu for the node
    */
-  private static JPopupMenu forUserFolder(UserFolderTreeNode user, ActionListener listener) {
+  private static JPopupMenu forUserFolder(UserFolderNode user, ActionListener listener) {
     TreeNodeMenu treeMenu = new TreeNodeMenu(user, listener);
     
     JMenu menu = new JMenu(NEW);
@@ -178,7 +178,7 @@ public class TreeNodeMenu extends JPopupMenu {
    *                 events will be sent.
    * @return JpopUpMenu for the node
    */
-  private static JPopupMenu forGroupFolder(GroupFolderTreeNode group, ActionListener listener) {
+  private static JPopupMenu forGroupFolder(GroupFolderNode group, ActionListener listener) {
     TreeNodeMenu treeMenu = new TreeNodeMenu(group, listener);
 
     JMenu menu = new JMenu(NEW);
@@ -197,7 +197,7 @@ public class TreeNodeMenu extends JPopupMenu {
    *                 events will be sent.
    * @return JpopUpMenu for the node
    */
-  private static JPopupMenu forUser(UserTreeNode entry, ActionListener listener) {
+  private static JPopupMenu forUser(UserNode entry, ActionListener listener) {
     TreeNodeMenu treeMenu = new TreeNodeMenu(entry, listener);
     treeMenu.add(DELETE).addActionListener(listener);
     
@@ -213,7 +213,7 @@ public class TreeNodeMenu extends JPopupMenu {
    *                 events will be sent.
    * @return JpopUpMenu for the node
    */
-  private static JPopupMenu forGroup(GroupTreeNode entry, ActionListener listener) {
+  private static JPopupMenu forGroup(GroupNode entry, ActionListener listener) {
     TreeNodeMenu treeMenu = new TreeNodeMenu(entry, listener);
     treeMenu.add(DELETE).addActionListener(listener);
     return treeMenu;

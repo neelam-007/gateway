@@ -1,5 +1,4 @@
 package com.l7tech.console.tree;
-import com.l7tech.objectmodel.EntityHeader;
 
 import java.util.Collections;
 import java.util.Enumeration;
@@ -7,23 +6,18 @@ import java.util.Enumeration;
 
 /**
  * The class represents a node element in the TreeModel.
- * It represents the group.
+ * It represents the folder with services.
  *
  * @author <a href="mailto:emarceta@layer7-tech.com>Emil Marceta</a>
- * @version 1.2
+ * @version 1.1
  */
-public class GroupTreeNode implements BasicTreeNode {
+public class ServicesFolderNode implements BasicTreeNode {
     /**
-     * construct the <CODE>UserFolderTreeNode</CODE> instance for
+     * construct the <CODE>ServicesFolderNode</CODE> instance for
      * a given entry.
-     *
-     * @param entry  the Entry instance, must be Company
-     * @exception IllegalArgumentException
-     *                   thrown if the Entry instance is not a Comapny
      */
-    public GroupTreeNode(EntityHeader entry)
-      throws IllegalArgumentException {
-        this.entry = entry;
+    public ServicesFolderNode() {
+
     }
 
     /**
@@ -32,7 +26,7 @@ public class GroupTreeNode implements BasicTreeNode {
      * @return true if leaf, false otherwise
      */
     public boolean isLeaf() {
-        return true;
+        return false;
     }
 
     /**
@@ -43,14 +37,14 @@ public class GroupTreeNode implements BasicTreeNode {
      *                      retrieving child nodes.
      */
     public Enumeration children() throws Exception {
-      return Collections.enumeration(Collections.EMPTY_LIST);
+        return Collections.enumeration(Collections.EMPTY_LIST);
     }
 
     /**
      * Returns true if the receiver allows children.
      */
     public boolean getAllowsChildren() {
-        return false;
+        return true;
     }
 
     /**
@@ -61,23 +55,14 @@ public class GroupTreeNode implements BasicTreeNode {
      * @return the FQ name as a String
      */
     public String getFqName() {
-        if (fqName == null) {
-            if (!"".equals(entry.getName())) {
-                fqName = getLabel() + "." + entry.getName();
-            } else {
-                fqName = getLabel();
-            }
-        }
-        return fqName;
+        return getLabel();
     }
 
     /**
      * Returns the label
      */
     public String getLabel() {
-        return entry.getName();
+        return "Services";
     }
 
-    private EntityHeader entry;
-    private String fqName;
 }

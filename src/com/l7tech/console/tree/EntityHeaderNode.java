@@ -2,6 +2,7 @@ package com.l7tech.console.tree;
 
 import java.util.Enumeration;
 import java.util.Collections;
+
 import com.l7tech.objectmodel.EntityHeader;
 
 /**
@@ -16,10 +17,10 @@ public class EntityHeaderNode implements BasicTreeNode {
      * construct the <CODE>EntityHeaderNode</CODE> instance for a given
      * <CODE>id</CODE>
      *
-     * @param entry  the entry represented by this <CODE>EntityHeaderNode</CODE>
+     * @param e  the e represented by this <CODE>EntityHeaderNode</CODE>
      */
-    public EntityHeaderNode(EntityHeader entry) {
-        this.entry = entry;
+    public EntityHeaderNode(EntityHeader e) {
+        this.entity = e;
     }
 
     /**
@@ -36,7 +37,7 @@ public class EntityHeaderNode implements BasicTreeNode {
      * of EntryTreeNodes.
      */
     public Enumeration children() throws Exception {
-       return Collections.enumeration(Collections.EMPTY_LIST);
+        return Collections.enumeration(Collections.EMPTY_LIST);
     }
 
     /**
@@ -47,10 +48,20 @@ public class EntityHeaderNode implements BasicTreeNode {
     }
 
     /**
+     * Returns the entity this node contains.
+     *
+     * @return the <code>EntityHeader</code>
+     */
+    public EntityHeader getEntityHeader() {
+        return entity;
+    }
+
+
+    /**
      * Returns the Entry label, delegated to short name
      */
     public String getLabel() {
-        return entry.getName();
+        return entity.getName();
     }
 
     public String getFqName() {
@@ -67,5 +78,5 @@ public class EntityHeaderNode implements BasicTreeNode {
         return sb.toString();
     }
 
-    private final EntityHeader entry;
+    private final EntityHeader entity;
 }

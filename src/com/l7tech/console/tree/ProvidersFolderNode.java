@@ -11,11 +11,11 @@ import java.util.*;
  * @author <a href="mailto:emarceta@layer7-tech.com>Emil Marceta</a>
  * @version 1.1
  */
-public class ProvidersFolderTreeNode implements BasicTreeNode {
+public class ProvidersFolderNode implements BasicTreeNode {
     /**
-     * construct the <CODE>ProvidersFolderTreeNode</CODE> instance.
+     * construct the <CODE>ProvidersFolderNode</CODE> instance.
      */
-    public ProvidersFolderTreeNode() {
+    public ProvidersFolderNode() {
     }
 
     /**
@@ -39,7 +39,7 @@ public class ProvidersFolderTreeNode implements BasicTreeNode {
         EntityHeader[] res = new EntityHeader[0];
         List list =  new ArrayList();
         for (int i = 0;i<res.length;i++) {
-            list.add(new ProviderTreeNode(res[i]));
+            list.add(new ProviderNode(res[i]));
         }
         return Collections.enumeration(list);
     }

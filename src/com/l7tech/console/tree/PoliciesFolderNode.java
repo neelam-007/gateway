@@ -1,32 +1,23 @@
 package com.l7tech.console.tree;
 
-import com.l7tech.objectmodel.EntityHeader;
-
 import java.util.Collections;
 import java.util.Enumeration;
 
+
 /**
  * The class represents a node element in the TreeModel.
- * It represents the folder with admins for Root, Realm or
- * Company.
+ * It represents the folder with policies for a provider.
  *
  * @author <a href="mailto:emarceta@layer7-tech.com>Emil Marceta</a>
  * @version 1.1
  */
-public class AdminFolderTreeNode implements BasicTreeNode {
+public class PoliciesFolderNode implements BasicTreeNode {
     /**
-     * construct the <CODE>AdminFolderTreeNode</CODE> instance for
+     * construct the <CODE>PoliciesFolderNode</CODE> instance for
      * a given entry.
-     * The parameter entry must be Root, Realm or Company, otherwise
-     * the runtime IllegalArgumentException is thrown.
      *
-     * @param entry  the Entry instance
-     * @exception IllegalArgumentException
-     *                   thrown if the Entry instance is not a Root,
-     *                   Realm or Company Entry
      */
-    public AdminFolderTreeNode(EntityHeader entry) {
-        this.entry = entry;
+    public PoliciesFolderNode() {
     }
 
     /**
@@ -42,7 +33,7 @@ public class AdminFolderTreeNode implements BasicTreeNode {
      * Returns the children of the reciever as an Enumeration.
      *
      * @return the Enumeration of the child nodes.
-     * @exception Exception thrown when an erro is encountered when
+     * @exception Exception thrown when an error is encountered when
      *                      retrieving child nodes.
      */
     public Enumeration children() throws Exception {
@@ -64,17 +55,14 @@ public class AdminFolderTreeNode implements BasicTreeNode {
      * @return the FQ name as a String
      */
     public String getFqName() {
-        return "Administrators";
+        return getLabel();
     }
 
     /**
-     * Returns the label; constant "Administrators" is returned
+     * Returns the label
      */
     public String getLabel() {
-        return "Administrators";
+        return "Policies";
     }
-
-    private EntityHeader entry;
-    private String fqName;
 
 }

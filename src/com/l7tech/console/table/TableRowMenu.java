@@ -1,8 +1,8 @@
 package com.l7tech.console.table;
 
 import com.l7tech.console.tree.DirectoryTreeNode;
-import com.l7tech.console.tree.ProviderTreeNode;
-import com.l7tech.console.tree.ProvidersFolderTreeNode;
+import com.l7tech.console.tree.ProviderNode;
+import com.l7tech.console.tree.ProvidersFolderNode;
 import org.apache.log4j.Category;
 
 import javax.swing.*;
@@ -47,10 +47,10 @@ public class TableRowMenu extends JPopupMenu {
     
     JPopupMenu retMenu = null;
 
-    if (object instanceof ProvidersFolderTreeNode) {
-      retMenu = forRealmFolder((ProvidersFolderTreeNode)object, listener);
-    } else if (object instanceof ProviderTreeNode) {
-      retMenu = forRealm((ProviderTreeNode)object, listener);
+    if (object instanceof ProvidersFolderNode) {
+      retMenu = forRealmFolder((ProvidersFolderNode)object, listener);
+    } else if (object instanceof ProviderNode) {
+      retMenu = forRealm((ProviderNode)object, listener);
     }
     
     // if there is no menu yet make one..
@@ -84,7 +84,7 @@ public class TableRowMenu extends JPopupMenu {
    *                 events will be sent.
    * @return JpopUpMenu for the node
    */
-  private static JPopupMenu forRealmFolder(ProvidersFolderTreeNode realm, ActionListener listener) {
+  private static JPopupMenu forRealmFolder(ProvidersFolderNode realm, ActionListener listener) {
     TableRowMenu tableMenu = new TableRowMenu(realm, listener);
     
     JMenu menu = new JMenu(NEW);
@@ -98,12 +98,12 @@ public class TableRowMenu extends JPopupMenu {
    * create the popup menu <CODE>JpopUpMenu</CODE> for the Realm
    * node passed.
    *
-   * @param realm   ProviderTreeNode node to create the menu for
+   * @param realm   ProviderNode node to create the menu for
    * @param listener the <CODE>ActionListener</CODE> where the
    *                 events will be sent.
    * @return JpopUpMenu for the node
    */
-  private static JPopupMenu forRealm(ProviderTreeNode realm, ActionListener listener) {
+  private static JPopupMenu forRealm(ProviderNode realm, ActionListener listener) {
     TableRowMenu tableMenu = new TableRowMenu(realm, listener);
     tableMenu.add(DELETE).addActionListener(listener);
     

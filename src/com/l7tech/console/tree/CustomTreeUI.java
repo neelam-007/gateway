@@ -200,8 +200,8 @@ public final class CustomTreeUI {
 
     Class clazz = uObject.getClass();
     return
-      clazz.equals(AdminFolderTreeNode.class) ||
-      clazz.equals(GroupFolderTreeNode.class) ||
-      clazz.equals(UserFolderTreeNode.class);
+      clazz.equals(AdminFolderNode.class) ||
+      clazz.equals(GroupFolderNode.class) ||
+      clazz.equals(UserFolderNode.class);
   }
 }

@@ -1,23 +1,33 @@
 package com.l7tech.console.tree;
 
+
+import com.l7tech.objectmodel.EntityHeader;
+
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Enumeration;
+import java.util.List;
 
 
 /**
  * The class represents a node element in the TreeModel.
- * It represents the folder with policies for a provider.
+ * It represents the folder with groups.
  *
  * @author <a href="mailto:emarceta@layer7-tech.com>Emil Marceta</a>
  * @version 1.1
  */
-public class PoliciesFolderTreeNode implements BasicTreeNode {
+public class GroupFolderNode implements BasicTreeNode {
     /**
-     * construct the <CODE>PoliciesFolderTreeNode</CODE> instance for
+     * construct the <CODE>UserFolderNode</CODE> instance for
      * a given entry.
      *
+     * @param entry  the Entry instance, must be Company
+     * @exception IllegalArgumentException
+     *                   thrown if the entry is <b>null
      */
-    public PoliciesFolderTreeNode() {
+    public GroupFolderNode(EntityHeader entry)
+            throws IllegalArgumentException {
+        this.entry = entry;
     }
 
     /**
@@ -33,11 +43,16 @@ public class PoliciesFolderTreeNode implements BasicTreeNode {
      * Returns the children of the reciever as an Enumeration.
      *
      * @return the Enumeration of the child nodes.
-     * @exception Exception thrown when an error is encountered when
+     * @exception Exception thrown when an erro is encountered when
      *                      retrieving child nodes.
      */
     public Enumeration children() throws Exception {
-        return Collections.enumeration(Collections.EMPTY_LIST);
+        EntityHeader[] res = new EntityHeader[0];
+        List list = new ArrayList();
+        for (int i = 0; i < res.length; i++) {
+            list.add(new GroupNode(res[i]));
+        }
+        return Collections.enumeration(list);
     }
 
     /**
@@ -55,14 +70,23 @@ public class PoliciesFolderTreeNode implements BasicTreeNode {
      * @return the FQ name as a String
      */
     public String getFqName() {
-        return getLabel();
+        if (fqName == null) {
+            if (!"".equals(entry.getName())) {
+                fqName = getLabel() + "." + entry.getName();
+            } else {
+                fqName = getLabel();
+            }
+        }
+        return fqName;
     }
 
     /**
      * Returns the label
      */
     public String getLabel() {
-        return "Policies";
+        return "Groups";
     }
 
+    private EntityHeader entry;
+    private String fqName;
 }

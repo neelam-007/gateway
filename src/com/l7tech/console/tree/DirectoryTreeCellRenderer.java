@@ -66,12 +66,12 @@ public class DirectoryTreeCellRenderer
   private boolean isFolder(Object object) {
     Class clazz = object.getClass();
     return
-      clazz.equals(ProvidersFolderTreeNode.class) ||
-      clazz.equals(PoliciesFolderTreeNode.class) ||
-      clazz.equals(ServicesFolderTreeNode.class) ||
-      clazz.equals(AdminFolderTreeNode.class) ||
-      clazz.equals(GroupFolderTreeNode.class) ||
-      clazz.equals(UserFolderTreeNode.class);
+      clazz.equals(ProvidersFolderNode.class) ||
+      clazz.equals(PoliciesFolderNode.class) ||
+      clazz.equals(ServicesFolderNode.class) ||
+      clazz.equals(AdminFolderNode.class) ||
+      clazz.equals(GroupFolderNode.class) ||
+      clazz.equals(UserFolderNode.class);
   }
 
 }

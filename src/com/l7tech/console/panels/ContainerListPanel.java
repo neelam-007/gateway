@@ -264,7 +264,7 @@ public class ContainerListPanel extends EditorPanel {
 
     // could be usefull later..
     private String getColHeader(BasicTreeNode ptn) {
-        if (ptn instanceof ProvidersFolderTreeNode) return "Comments";
+        if (ptn instanceof ProvidersFolderNode) return "Comments";
         return "Description";
     }
 
@@ -361,21 +361,21 @@ public class ContainerListPanel extends EditorPanel {
     private JDialog getNewEntryDialog() {
         JDialog dlg = null;
         JFrame f = (JFrame) SwingUtilities.windowForComponent(ContainerListPanel.this);
-        if (parentBasicTreeNode instanceof AdminFolderTreeNode) {
-            AdminFolderTreeNode adminFolder =
-                    (AdminFolderTreeNode) parentBasicTreeNode;
+        if (parentBasicTreeNode instanceof AdminFolderNode) {
+            AdminFolderNode adminFolder =
+                    (AdminFolderNode) parentBasicTreeNode;
             NewAdminDialog dialog = new NewAdminDialog(f, adminFolder);
             dialog.setPanelListener(panelListener);
             dialog.setResizable(false);
             dlg = dialog;
-        } else if (parentBasicTreeNode instanceof UserFolderTreeNode) {
-            UserFolderTreeNode userFolder =
-                    (UserFolderTreeNode) parentBasicTreeNode;
+        } else if (parentBasicTreeNode instanceof UserFolderNode) {
+            UserFolderNode userFolder =
+                    (UserFolderNode) parentBasicTreeNode;
             NewUserDialog dialog = new NewUserDialog(f, null);
             dialog.setPanelListener(panelListener);
             dialog.setResizable(false);
             dlg = dialog;
-        } else if (parentBasicTreeNode instanceof ProvidersFolderTreeNode) {
+        } else if (parentBasicTreeNode instanceof ProvidersFolderNode) {
             NewProviderDialog dialog = new NewProviderDialog(f);
             dialog.setPanelListener(panelListener);
             dialog.setResizable(false);
@@ -462,9 +462,9 @@ public class ContainerListPanel extends EditorPanel {
                 private boolean isFolder(Object object) {
                     Class clazz = object.getClass();
                     return
-                            clazz.equals(ProvidersFolderTreeNode.class) ||
-                            clazz.equals(AdminFolderTreeNode.class) ||
-                            clazz.equals(UserFolderTreeNode.class);
+                            clazz.equals(ProvidersFolderNode.class) ||
+                            clazz.equals(AdminFolderNode.class) ||
+                            clazz.equals(UserFolderNode.class);
                 }
 
             };

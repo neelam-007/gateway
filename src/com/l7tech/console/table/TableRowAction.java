@@ -1,13 +1,13 @@
 package com.l7tech.console.table;
 
 
-import com.l7tech.console.tree.AdminFolderTreeNode;
+import com.l7tech.console.tree.AdminFolderNode;
 import com.l7tech.console.tree.BasicTreeNode;
 import com.l7tech.console.tree.DirectoryTreeNode;
 import com.l7tech.console.tree.EntityHeaderNode;
-import com.l7tech.console.tree.ProviderTreeNode;
-import com.l7tech.console.tree.ProvidersFolderTreeNode;
-import com.l7tech.console.tree.UserFolderTreeNode;
+import com.l7tech.console.tree.ProviderNode;
+import com.l7tech.console.tree.ProvidersFolderNode;
+import com.l7tech.console.tree.UserFolderNode;
 import org.apache.log4j.Category;
 
 import javax.swing.*;
@@ -85,8 +85,8 @@ public class TableRowAction {
      */
     public static boolean delete(BasicTreeNode dobj, boolean askQuestion) {
         boolean rb = false;
-        if (dobj instanceof ProviderTreeNode) {
-            rb = delete((ProviderTreeNode) dobj, askQuestion);
+        if (dobj instanceof ProviderNode) {
+            rb = delete((ProviderNode) dobj, askQuestion);
         } else if (dobj instanceof EntityHeaderNode) {
             rb = delete((EntityHeaderNode) dobj, askQuestion);
         } else {
@@ -148,10 +148,10 @@ public class TableRowAction {
      */
     public static boolean isBrowseable(BasicTreeNode dobj) {
         return
-                (dobj instanceof ProvidersFolderTreeNode ||
-                dobj instanceof AdminFolderTreeNode ||
-                dobj instanceof UserFolderTreeNode ||
-                dobj instanceof ProviderTreeNode);
+                (dobj instanceof ProvidersFolderNode ||
+                dobj instanceof AdminFolderNode ||
+                dobj instanceof UserFolderNode ||
+                dobj instanceof ProviderNode);
     }
 
     /**
@@ -161,9 +161,9 @@ public class TableRowAction {
      */
     public static boolean acceptNewChildren(BasicTreeNode dobj) {
         return
-                (dobj instanceof ProvidersFolderTreeNode) ||
-                (dobj instanceof AdminFolderTreeNode) ||
-                (dobj instanceof UserFolderTreeNode);
+                (dobj instanceof ProvidersFolderNode) ||
+                (dobj instanceof AdminFolderNode) ||
+                (dobj instanceof UserFolderNode);
     }
 
     /**
@@ -191,7 +191,7 @@ public class TableRowAction {
 
 
     // Deletes the given Realm
-    private static boolean delete(ProviderTreeNode realmTreeNode,
+    private static boolean delete(ProviderNode realmTreeNode,
                                   boolean askQuestion) {
         // Make sure
         if (askQuestion && ((JOptionPane.showConfirmDialog(null,

@@ -249,9 +249,9 @@ public class DirectoryTreeNode extends DefaultMutableTreeNode {
   private static boolean isFolder(Object object) {
     Class clazz = object.getClass();
     return
-    clazz.equals(ProvidersFolderTreeNode.class) ||
-    clazz.equals(AdminFolderTreeNode.class) ||
-    clazz.equals(UserFolderTreeNode.class);
+    clazz.equals(ProvidersFolderNode.class) ||
+    clazz.equals(AdminFolderNode.class) ||
+    clazz.equals(UserFolderNode.class);
   }
 
   boolean hasLoaded = false;

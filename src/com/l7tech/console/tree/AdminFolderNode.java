@@ -5,25 +5,27 @@ import com.l7tech.objectmodel.EntityHeader;
 import java.util.Collections;
 import java.util.Enumeration;
 
-
 /**
  * The class represents a node element in the TreeModel.
- * It represents the user.
+ * It represents the folder with admins for Root, Realm or
+ * Company.
  *
  * @author <a href="mailto:emarceta@layer7-tech.com>Emil Marceta</a>
- * @version 1.2
+ * @version 1.1
  */
-public class UserTreeNode implements BasicTreeNode {
+public class AdminFolderNode implements BasicTreeNode {
     /**
-     * construct the <CODE>UserFolderTreeNode</CODE> instance for
+     * construct the <CODE>AdminFolderNode</CODE> instance for
      * a given entry.
+     * The parameter entry must be Root, Realm or Company, otherwise
+     * the runtime IllegalArgumentException is thrown.
      *
-     * @param entry  the Entry instance, must be Company
+     * @param entry  the Entry instance
      * @exception IllegalArgumentException
-     *                   thrown if the Entry instance is not a Comapny
+     *                   thrown if the Entry instance is not a Root,
+     *                   Realm or Company Entry
      */
-    public UserTreeNode(EntityHeader entry)
-      throws IllegalArgumentException {
+    public AdminFolderNode(EntityHeader entry) {
         this.entry = entry;
     }
 
@@ -44,14 +46,14 @@ public class UserTreeNode implements BasicTreeNode {
      *                      retrieving child nodes.
      */
     public Enumeration children() throws Exception {
-      return Collections.enumeration(Collections.EMPTY_LIST);
+        return Collections.enumeration(Collections.EMPTY_LIST);
     }
 
     /**
      * Returns true if the receiver allows children.
      */
     public boolean getAllowsChildren() {
-        return false;
+        return true;
     }
 
     /**
@@ -62,23 +64,17 @@ public class UserTreeNode implements BasicTreeNode {
      * @return the FQ name as a String
      */
     public String getFqName() {
-        if (fqName == null) {
-            if (!"".equals(entry.getName())) {
-                fqName = getLabel() + "." + entry.getName();
-            } else {
-                fqName = getLabel();
-            }
-        }
-        return fqName;
+        return "Administrators";
     }
 
     /**
-     * Returns the label
+     * Returns the label; constant "Administrators" is returned
      */
     public String getLabel() {
-        return entry.getName();
+        return "Administrators";
     }
 
     private EntityHeader entry;
     private String fqName;
+
 }

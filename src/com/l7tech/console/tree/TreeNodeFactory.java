@@ -50,7 +50,7 @@ public class TreeNodeFactory {
      * closure (Decorator pattern) over an Enumeration.
      * It is used to create BasicTreeNode instances from enumerations
      * of Entry instances.
-     * For example the classes that are containers (ProvidersFolderTreeNode,
+     * For example the classes that are containers (ProvidersFolderNode,
      * CompanyFolderTreeNode etc) may use this class to create special
      * instances of BasicTreeNode for their respective children. This
      * allows the feasibility to create a (gui) hierarchy that consist

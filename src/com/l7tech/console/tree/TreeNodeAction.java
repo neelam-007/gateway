@@ -75,8 +75,8 @@ public class TreeNodeAction {
    */
   public static boolean delete(BasicTreeNode bn) {
     boolean rb = false;
-    if (bn instanceof ProviderTreeNode) {
-      rb = delete((ProviderTreeNode) bn);
+    if (bn instanceof ProviderNode) {
+      rb = delete((ProviderNode) bn);
     } else {
       // Unknown node type .. do nothing
       rb = false;
@@ -113,9 +113,9 @@ public class TreeNodeAction {
    */
   public static boolean hasProperties(BasicTreeNode bn) {
     return
-      bn instanceof ProviderTreeNode ||
-      bn instanceof GroupTreeNode ||
-      bn instanceof UserTreeNode;
+      bn instanceof ProviderNode ||
+      bn instanceof GroupNode ||
+      bn instanceof UserNode;
   }
 
   /**
@@ -139,8 +139,8 @@ public class TreeNodeAction {
    */
   public static boolean isBrowseable(BasicTreeNode bn) {
     return
-      (bn instanceof ProvidersFolderTreeNode ||
-       bn instanceof ProviderTreeNode);
+      (bn instanceof ProvidersFolderNode ||
+       bn instanceof ProviderNode);
   }
 
   /**
@@ -168,7 +168,7 @@ public class TreeNodeAction {
 
 
   // Deletes the given Realm
-  private static boolean delete(ProviderTreeNode node) {
+  private static boolean delete(ProviderNode node) {
     // Make sure
     if ((JOptionPane.showConfirmDialog(null,
                                        "Are you sure you wish to delete " +

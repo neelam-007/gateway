@@ -599,7 +599,7 @@ public class MainWindow extends JFrame {
      */
     private void setJtreeRootNode() {
         final DirectoryTreeNode node =
-                new DirectoryTreeNode(new RootTreeNode());
+                new DirectoryTreeNode(new RootNode());
         TreeModel treeModel = new FilteredTreeModel(node);
         getJTreeDirectoryView().setRootVisible(false);
         getJTreeDirectoryView().setModel(treeModel);
@@ -834,7 +834,7 @@ public class MainWindow extends JFrame {
                 if (TreeNodeMenu.DELETE.equals(e.getActionCommand())) {
                     removeNode(dNode);
                 } else if (TreeNodeMenu.NEW_ADMINISTRATOR.equals(e.getActionCommand())) {
-                    AdminFolderTreeNode adminFolder = (AdminFolderTreeNode)object;
+                    AdminFolderNode adminFolder = (AdminFolderNode)object;
                     NewAdminDialog dialog = new NewAdminDialog(MainWindow.this, adminFolder);
                     dialog.setResizable(false);
                     dialog.setPanelListener(listenerBroker);

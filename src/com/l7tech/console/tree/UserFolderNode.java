@@ -14,16 +14,16 @@ import java.util.ArrayList;
  * @author <a href="mailto:emarceta@layer7-tech.com>Emil Marceta</a>
  * @version 1.1
  */
-public class UserFolderTreeNode implements BasicTreeNode {
+public class UserFolderNode implements BasicTreeNode {
     /**
-     * construct the <CODE>UserFolderTreeNode</CODE> instance for
+     * construct the <CODE>UserFolderNode</CODE> instance for
      * a given entry.
      *
      * @param entry  the Entry instance, must be Company
      * @exception IllegalArgumentException
      *                   thrown if the Entry instance is not a Comapny
      */
-    public UserFolderTreeNode(EntityHeader entry)
+    public UserFolderNode(EntityHeader entry)
       throws IllegalArgumentException {
         this.entry = entry;
     }
@@ -48,7 +48,7 @@ public class UserFolderTreeNode implements BasicTreeNode {
         EntityHeader[] res = new EntityHeader[0];
         List list = new ArrayList();
         for (int i = 0; i < res.length; i++) {
-            list.add(new UserTreeNode(res[i]));
+            list.add(new UserNode(res[i]));
         }
         return Collections.enumeration(list);
     }

@@ -13,12 +13,12 @@ import java.util.List;
  * @author <a href="mailto:emarceta@layer7-tech.com>Emil Marceta</a>
  * @version 1.1
  */
-public class RootTreeNode implements BasicTreeNode {
+public class RootNode implements BasicTreeNode {
   /**
-   * construct the <CODE>RootTreeNode</CODE> instance for
+   * construct the <CODE>RootNode</CODE> instance for
    * a given entry.
    */
-  public RootTreeNode() {
+  public RootNode() {
   }
   /**
    * Returns true if the receiver is a leaf.
@@ -40,9 +40,9 @@ public class RootTreeNode implements BasicTreeNode {
        List list =
       Arrays.asList(
       new BasicTreeNode[] {
-      new ProvidersFolderTreeNode(),
-      new PoliciesFolderTreeNode(),
-      new ServicesFolderTreeNode()
+      new ProvidersFolderNode(),
+      new PoliciesFolderNode(),
+      new ServicesFolderNode()
     });
     return Collections.enumeration(list);
   }
