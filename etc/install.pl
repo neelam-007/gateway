@@ -139,7 +139,7 @@ NETMASK=$Conf{"net_back_mask"}
 
 EOF
 		close OUT;
-                print "INFO: Back end network configured $back_conf - IPADDR of $Conf{net_back_ip}; NETMASK of $Conf{net_back_mask}; GATEWAY of $Conf{net_back_rt}\n";
+                print "INFO: Back end network configured $back_conf - IPADDR of $Conf{net_back_ip}; NETMASK of $Conf{net_back_mask}\n";
 	} else {
                 open (OUT, ">$back_conf");
                 print OUT <<EOF;
