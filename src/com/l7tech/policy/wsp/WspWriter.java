@@ -124,7 +124,7 @@ public class WspWriter {
     }
 
     private void emitProperties(Assertion assertion, Element element)
-            throws InvocationTargetException, IllegalAccessException, IOException
+            throws InvocationTargetException, IllegalAccessException
     {
         Class ac = assertion.getClass();
         Map setters = new HashMap();
