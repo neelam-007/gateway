@@ -46,7 +46,6 @@ public class CSRHandler extends HttpServlet {
             response.sendError(HttpServletResponse.SC_FORBIDDEN, "CSR requests must come through ssl port");
             return;
         }
-
         // Process the Auth stuff in the headers
         String tmp = request.getHeader(HTTPConstants.HEADER_AUTHORIZATION);
         if (tmp != null ) tmp = tmp.trim();
@@ -70,8 +69,7 @@ public class CSRHandler extends HttpServlet {
         }
         LogManager.getInstance().getSystemLogger().log(Level.INFO, "User " + authenticatedUser.getLogin() + " has authenticated for CSR");
 
-        // check if user is allowed to generate a new cert
-        // todo
+        // todo, check if user is allowed to generate a new cert
         // ClientCertManager.userCanGenCert ...
 
         byte[] csr = readCSRFromRequest(request);
@@ -86,8 +84,7 @@ public class CSRHandler extends HttpServlet {
             return;
         }
 
-        // record cert
-        // todo
+        // todo, record cert
         // ClientCertManager.recordCert
 
         // send cert back
@@ -98,6 +95,7 @@ public class CSRHandler extends HttpServlet {
             response.setContentLength(certbytes.length);
             response.getOutputStream().write(certbytes);
             response.flushBuffer();
+            LogManager.getInstance().getSystemLogger().log(Level.INFO, "sent new cert to " + authenticatedUser.getLogin());
         } catch (CertificateEncodingException e) {
             response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, e.getMessage());
             LogManager.getInstance().getSystemLogger().log(Level.SEVERE, e.getMessage(), e);
@@ -180,15 +178,17 @@ public class CSRHandler extends HttpServlet {
         return identityProviderConfigManager;
     }
 
-    private synchronized RSASigner getSigner() {
-        if (rsasigner == null) {
+    private /*synchronized*/ RSASigner getSigner() {
+        return new RSASigner(rootkstore, rootkstorepasswd, "ssgroot", rootkstorepasswd);
+        /*if (rsasigner == null) {
             rsasigner = new RSASigner(rootkstore, rootkstorepasswd, "ssgroot", rootkstorepasswd);
         }
         return rsasigner;
+        */
     }
 
     private IdentityProviderConfigManager identityProviderConfigManager = null;
-    private RSASigner rsasigner = null;
+    //private RSASigner rsasigner = null;
     private String rootkstore = null;
     private String rootkstorepasswd = null;
 }
