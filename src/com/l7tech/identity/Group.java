@@ -31,9 +31,24 @@ public class Group extends NamedEntityImp implements Principal {
         _description = description;
     }
 
+    /**
+     * this is not persisted, it is set at run time by the provider who creates the object
+     */
+    public long getProviderId() {
+        return providerId;
+    }
+
+    /**
+     * this is not persisted, it is set at run time by the provider who creates the object
+     */
+    public void setProviderId(long providerId) {
+        this.providerId = providerId;
+    }
+
     public String toString() {
         return "com.l7tech.identity.Group." +
-                "\n\tName=" + _name;
+                "\n\tName=" + _name +
+                "\n\tproviderId=" + providerId;
     }
 
     public boolean equals(Object o) {
@@ -51,4 +66,5 @@ public class Group extends NamedEntityImp implements Principal {
     private String _description;
     private Set _members;
     private Set _memberHeaders;
+    private long providerId;
 }

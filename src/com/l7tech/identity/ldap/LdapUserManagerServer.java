@@ -42,6 +42,7 @@ public class LdapUserManagerServer extends LdapManager implements UserManager {
             DirContext context = getAnonymousContext();
             Attributes attributes = context.getAttributes(dn);
             User out = new User();
+            out.setProviderId(config.getOid());
             out.setName(dn);
             Object tmp = extractOneAttributeValue(attributes, EMAIL_ATTR_NAME);
             if (tmp != null) out.setEmail(tmp.toString());

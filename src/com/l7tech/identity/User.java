@@ -99,13 +99,28 @@ public class User extends NamedEntityImp implements Principal {
         _department = department;
     }
 
+    /**
+     * this is not persisted, it is set at run time by the provider who creates the object
+     */
+    public long getProviderId() {
+        return providerId;
+    }
+
+    /**
+     * this is not persisted, it is set at run time by the provider who creates the object
+     */
+    public void setProviderId(long providerId) {
+        this.providerId = providerId;
+    }
+
     public String toString() {
         return "com.l7tech.identity.User." +
                 "\n\tName=" + _name +
                 "\n\tFirst name=" + _firstName +
                 "\n\tLast name=" + _lastName +
                 "\n\tLogin=" + _login +
-                "\n\tPassword=" + _password;
+                "\n\tPassword=" + _password +
+                "\n\tproviderId=" + providerId;
     }
 
     public boolean equals(Object o) {
@@ -172,4 +187,5 @@ public class User extends NamedEntityImp implements Principal {
     private String _department;
     private Set _groups;
     private Set _groupHeaders;
+    private long providerId;
 }

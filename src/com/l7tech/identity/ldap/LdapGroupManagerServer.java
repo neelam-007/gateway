@@ -34,6 +34,7 @@ public class LdapGroupManagerServer extends LdapManager implements GroupManager 
             DirContext context = getAnonymousContext();
             Attributes attributes = context.getAttributes(dn);
             Group out = new Group();
+            out.setProviderId(config.getOid());
             out.setName(dn);
             Object tmp = extractOneAttributeValue(attributes, DESCRIPTION_ATTR);
             if (tmp != null) out.setDescription(tmp.toString());
