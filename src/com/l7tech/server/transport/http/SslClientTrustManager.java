@@ -30,12 +30,11 @@ public class SslClientTrustManager implements X509TrustManager {
     }
 
     public X509Certificate[] getAcceptedIssuers() {
-        // TODO does this need to return certs from the database too?
-        return delegate.getAcceptedIssuers();
+        throw new UnsupportedOperationException("This trust manager can only be used for outbound SSL connections");
     }
 
     public void checkClientTrusted(X509Certificate[] x509Certificates, String authType) throws CertificateException {
-        delegate.checkClientTrusted(x509Certificates,authType);
+        throw new UnsupportedOperationException("This trust manager can only be used for outbound SSL connections");
     }
 
     public void checkServerTrusted(X509Certificate[] certs, String authType) throws CertificateException {
