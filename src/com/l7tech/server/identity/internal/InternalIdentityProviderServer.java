@@ -145,15 +145,8 @@ public class InternalIdentityProviderServer extends PersistentIdentityProvider {
                         logger.finest("Authenticated user " + login + " using a client certificate" );
                         // remember that this cert was used at least once successfully
                         try {
-                            PersistenceContext.getCurrent().beginTransaction();
                             man.forbidCertReset(dbUser);
-                            PersistenceContext.getCurrent().commitTransaction();
-                            // dont close context here. the message processor will do it
                             return dbUser;
-                        } catch (SQLException e) {
-                            logger.log(Level.WARNING, "transaction error around forbidCertReset", e);
-                        } catch (TransactionException e) {
-                            logger.log(Level.WARNING, "transaction error around forbidCertReset", e);
                         } catch (ObjectModelException e) {
                             logger.log(Level.WARNING, "transaction error around forbidCertReset", e);
                         }
