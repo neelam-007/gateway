@@ -360,7 +360,7 @@ public class MessageProcessor {
             if (status == 401) {
                 req.setLastErrorResponse(response);
                 Header authHeader = postMethod.getResponseHeader("WWW-Authenticate");
-                log.info("Got auth header: " + authHeader.getValue());
+                log.info("Got auth header: " + (authHeader == null ? "<null>" : authHeader.getValue()));
                 throw new BadCredentialsException();
             }
 
