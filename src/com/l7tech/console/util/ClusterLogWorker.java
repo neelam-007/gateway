@@ -1,20 +1,21 @@
 package com.l7tech.console.util;
 
-import com.l7tech.common.gui.util.SwingWorker;
-import com.l7tech.objectmodel.FindException;
-import com.l7tech.cluster.ClusterStatusAdmin;
 import com.l7tech.cluster.ClusterNodeInfo;
+import com.l7tech.cluster.ClusterStatusAdmin;
 import com.l7tech.cluster.GatewayStatus;
 import com.l7tech.cluster.LogRequest;
-import com.l7tech.logging.LogAdmin;
+import com.l7tech.common.gui.util.SwingWorker;
+import com.l7tech.console.table.FilteredLogTableModel;
+import com.l7tech.logging.GenericLogAdmin;
 import com.l7tech.logging.LogMessage;
 import com.l7tech.logging.SSGLogRecord;
-import com.l7tech.console.table.FilteredLogTableModel;
+import com.l7tech.objectmodel.FindException;
 
-import java.util.*;
-import java.util.logging.Logger;
-import java.util.logging.Level;
 import java.rmi.RemoteException;
+import java.util.Hashtable;
+import java.util.Vector;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /*
  * This class performs the log retrieval from the cluster. The work is carried out on a separate thread.
@@ -28,7 +29,7 @@ import java.rmi.RemoteException;
 public class ClusterLogWorker extends SwingWorker {
 
     private ClusterStatusAdmin clusterStatusService = null;
-    private LogAdmin logService = null;
+    private GenericLogAdmin logService = null;
     private Hashtable newNodeList;
     private Hashtable currentNodeList;
     private Vector requests;
@@ -40,11 +41,11 @@ public class ClusterLogWorker extends SwingWorker {
     /**
      * A constructor
      * @param clusterStatusService  An object reference to the <CODE>ClusterStatusAdmin</CODE>service
-     * @param logService  An object reference to the <CODE>LogAdmin</CODE> service
+     * @param logService  An object reference to the <CODE>GenericLogAdmin</CODE> service
      * @param currentNodeList  A list of nodes obtained from the last retrieval
      * @param requests  A list of requests for retrieving logs. One request per node.
      */
-    public ClusterLogWorker(ClusterStatusAdmin clusterStatusService, LogAdmin logService, Hashtable currentNodeList, Vector requests) {
+    public ClusterLogWorker(ClusterStatusAdmin clusterStatusService, GenericLogAdmin logService, Hashtable currentNodeList, Vector requests) {
         this.clusterStatusService = clusterStatusService;
         this.currentNodeList = currentNodeList;
         this.logService = logService;
@@ -185,6 +186,7 @@ public class ClusterLogWorker extends SwingWorker {
                     }
                 } catch (RemoteException e) {
                     logger.log(Level.SEVERE, "Unable to retrieve logs from server", e);
+                    throw new RuntimeException(e);
                 }
 
                 if (newLogs.size() > 0) {

@@ -19,24 +19,24 @@ import java.awt.event.WindowEvent;
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  * @version 1.0
  */
-public class ViewGatewayLogsAction extends SecureAction {
-    private GatewayLogWindow gatewayLogWindow;
+public class ViewGatewayAuditsAction extends SecureAction {
+    private GatewayLogWindow gatewayAuditWindow;
 
-    public ViewGatewayLogsAction() {
+    public ViewGatewayAuditsAction() {
     }
 
     /**
      * @return the action name
      */
     public String getName() {
-        return "Analyze Gateway Log";
+        return "Analyze Gateway Audit Events";
     }
 
     /**
      * @return the aciton description
      */
     public String getDescription() {
-        return "View recent entries in the Gateway log";
+        return "View Gateway audit events";
     }
 
     /**
@@ -53,8 +53,8 @@ public class ViewGatewayLogsAction extends SecureAction {
      * without explicitly asking for the AWT event thread!
      */
     protected void performAction() {
-        getGatewayLogWindow().show();
-        getGatewayLogWindow().setState(Frame.NORMAL);
+        getGatewayAuditWindow().show();
+        getGatewayAuditWindow().setState(Frame.NORMAL);
     }
 
      /**
@@ -68,27 +68,27 @@ public class ViewGatewayLogsAction extends SecureAction {
     }
 
 
-    private GatewayLogWindow getGatewayLogWindow() {
-        if (gatewayLogWindow != null) return gatewayLogWindow;
+    private GatewayLogWindow getGatewayAuditWindow() {
+        if (gatewayAuditWindow != null) return gatewayAuditWindow;
 
-        gatewayLogWindow = new GatewayLogWindow(new GatewayLogWindow.Strategy() {
+        gatewayAuditWindow = new GatewayLogWindow(new GatewayLogWindow.Strategy() {
             public Locator getLogAdminLocator() {
                 return new AbstractLocator() {
                     public Object lookup(Class clazz) {
-                        return Registry.getDefault().getLogAdmin();
+                        return Registry.getDefault().getAuditAdmin();
                     }
                 };
             }
 
             public String getWindowTitle() {
-                return "SecureSpan Manager - Gateway Log";
+                return "SecureSpan Manager - Gateway Audit Events";
             }
 
             public String getPanelTitle() {
-                return "Log Browser";
+                return "Audit Events";
             }
         });
-        gatewayLogWindow.addWindowListener(new WindowAdapter() {
+        gatewayAuditWindow.addWindowListener(new WindowAdapter() {
             public void windowClosing(final WindowEvent e) {
                 destroyGatewayLogWindow();
             }
@@ -98,28 +98,28 @@ public class ViewGatewayLogsAction extends SecureAction {
             }
         });
 
-        Utilities.centerOnScreen(gatewayLogWindow);
-        return gatewayLogWindow;
+        Utilities.centerOnScreen(gatewayAuditWindow);
+        return gatewayAuditWindow;
     }
 
     private void destroyGatewayLogWindow() {
-        if (gatewayLogWindow == null)
+        if (gatewayAuditWindow == null)
             return;
-        gatewayLogWindow.dispose();
-        gatewayLogWindow = null;
+        gatewayAuditWindow.dispose();
+        gatewayAuditWindow = null;
     }
 
     public void onLogon(LogonEvent e) {
         super.onLogon(e);
-        if (gatewayLogWindow == null)
+        if (gatewayAuditWindow == null)
               return;
-          gatewayLogWindow.onLogon(e);
+          gatewayAuditWindow.onLogon(e);
     }
 
     public void onLogoff(LogonEvent e) {
         super.onLogoff(e);
-        if (gatewayLogWindow == null)
+        if (gatewayAuditWindow == null)
               return;
-          gatewayLogWindow.onLogoff(e);
+          gatewayAuditWindow.onLogoff(e);
     }
 }

@@ -1,9 +1,13 @@
 package com.l7tech.console.util.registry;
 
+import com.l7tech.common.audit.AuditAdmin;
+import com.l7tech.common.audit.AuditAdminStub;
 import com.l7tech.common.security.TrustedCertAdmin;
 import com.l7tech.common.transport.jms.JmsAdmin;
 import com.l7tech.console.util.Registry;
 import com.l7tech.identity.*;
+import com.l7tech.logging.LogAdmin;
+import com.l7tech.logging.LogAdminStub;
 import com.l7tech.policy.assertion.ext.CustomAssertionsRegistrar;
 import com.l7tech.policy.assertion.ext.CustomAssertionsRegistrarStub;
 import com.l7tech.service.JmsAdminStub;
@@ -61,12 +65,22 @@ public class RegistryStub extends Registry {
         return customAssertionsRegistrar;
     }
 
+    public AuditAdmin getAuditAdmin() {
+        return auditAdmin;
+    }
+
+    public LogAdmin getLogAdmin() {
+        return logAdmin;
+    }
+
     StubDataStore dataStore = StubDataStore.defaultStore();
 
     private IdentityAdmin identityAdmin = new IdentityAdminStub();
     private ServiceAdmin serviceManager = new ServiceAdminStub();
     private JmsAdmin jmsAdmin = new JmsAdminStub();
     private CustomAssertionsRegistrar customAssertionsRegistrar = new CustomAssertionsRegistrarStub();
+    private AuditAdmin auditAdmin = new AuditAdminStub();
+    private LogAdmin logAdmin = new LogAdminStub();
 
     private TrustedCertAdmin trustedCertAdmin;
 }

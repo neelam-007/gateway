@@ -2,9 +2,9 @@ package com.l7tech.logging;
 
 import com.l7tech.common.RequestId;
 
-import java.util.logging.LogRecord;
-import java.util.logging.Level;
 import java.io.Serializable;
+import java.util.logging.Level;
+import java.util.logging.LogRecord;
 
 /**
  * Log record that can be persisted.
@@ -42,6 +42,11 @@ public class SSGLogRecord extends LogRecord implements Serializable {
         setSourceMethodName(record.getSourceMethodName());
         setReqId(reqId);
         setNodeId(nodeId);
+    }
+
+    public SSGLogRecord(Level level, String nodeId, String msg) {
+        super(level, msg);
+        this.nodeId = nodeId;
     }
 
     /**

@@ -41,7 +41,7 @@ public class MessageSummaryAuditRecord extends AuditRecord {
             msg.append(" (").append(status.getNumeric()).append(")");
         }
         this.requestId = requestId;
-        this.message = msg.toString();
+        this.setMessage(msg.toString());
         this.status = status.getNumeric();
         this.clientAddr = clientAddr;
         this.requestXml = requestXml;
@@ -104,10 +104,6 @@ public class MessageSummaryAuditRecord extends AuditRecord {
         return responseContentLength;
     }
 
-    public String getRequestId() {
-        return requestId;
-    }
-
     /** @deprecated to be called only for serialization and persistence purposes! */
     public void setStatus( int status ) {
         this.status = status;
@@ -167,14 +163,6 @@ public class MessageSummaryAuditRecord extends AuditRecord {
     public void setResponseContentLength( int responseContentLength ) {
         this.responseContentLength = responseContentLength;
     }
-
-    /** @deprecated to be called only for serialization and persistence purposes! */
-    public void setRequestId( String requestId ) {
-        this.requestId = requestId;
-    }
-
-    /** ID of the request being processed */
-    protected String requestId;
 
     /** Status of the request so far, or AssertionStatus.UNDEFINED if it's not yet known. */
     protected int status;

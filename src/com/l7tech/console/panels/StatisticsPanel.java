@@ -1,23 +1,26 @@
 package com.l7tech.console.panels;
 
+import com.l7tech.cluster.GatewayStatus;
+import com.l7tech.cluster.ServiceUsage;
 import com.l7tech.console.table.StatisticsTableSorter;
 import com.l7tech.console.util.ArrowIcon;
 import com.l7tech.console.util.ColumnHeaderTooltips;
-import com.l7tech.logging.LogAdmin;
+import com.l7tech.logging.GenericLogAdmin;
 import com.l7tech.logging.StatisticsRecord;
-import com.l7tech.cluster.ServiceUsage;
-import com.l7tech.cluster.GatewayStatus;
 
 import javax.swing.*;
-import javax.swing.event.TableColumnModelListener;
 import javax.swing.event.ChangeEvent;
-import javax.swing.event.TableColumnModelEvent;
 import javax.swing.event.ListSelectionEvent;
+import javax.swing.event.TableColumnModelEvent;
+import javax.swing.event.TableColumnModelListener;
 import javax.swing.table.*;
 import java.awt.*;
-import java.awt.event.*;
-import java.util.Vector;
+import java.awt.event.ComponentEvent;
+import java.awt.event.ComponentListener;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.util.HashMap;
+import java.util.Vector;
 import java.util.logging.Logger;
 
 
@@ -31,7 +34,7 @@ import java.util.logging.Logger;
 
 public class StatisticsPanel extends JPanel {
 
-    LogAdmin logService = null;
+    GenericLogAdmin logService = null;
 //    private ServiceAdmin serviceManager = null;
     private Vector statsList = new Vector();
 

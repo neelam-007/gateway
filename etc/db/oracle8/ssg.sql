@@ -360,8 +360,9 @@ DROP TABLE audit_admin;
 CREATE TABLE audit_admin (
   objectid number(38,0) NOT NULL,
   admin_login varchar(32) NOT NULL,
-  entity_class varchar(255) default NULL,
-  entity_id number(38,0) default NULL,
+  entity_class varchar(255),
+  entity_id number(38,0),
+  action char(1),
   PRIMARY KEY  (objectid)
 );
 CREATE INDEX i_audit_admin_class ON audit_admin (entity_class);

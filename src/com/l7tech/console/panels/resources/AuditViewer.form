@@ -1,0 +1,283 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<form xmlns="http://www.intellij.com/uidesigner/form/" version="1" bind-to-class="com.l7tech.console.panels.AuditViewerFrame">
+  <splitpane id="e3c64" binding="mainComponent">
+    <constraints>
+      <xy x="34" y="17" width="805" height="519"/>
+      <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3">
+        <preferred-size width="700" height="500"/>
+      </grid>
+    </constraints>
+    <properties>
+      <continuousLayout value="true"/>
+      <dividerLocation value="400"/>
+      <enabled value="true"/>
+      <oneTouchExpandable value="false"/>
+      <orientation value="0"/>
+      <resizeWeight value="1.0"/>
+    </properties>
+    <border type="none"/>
+    <children>
+      <grid id="21ef0" row-count="1" column-count="1" hgap="-1" vgap="-1">
+        <margin top="0" left="0" bottom="0" right="0"/>
+        <constraints>
+          <splitpane position="right"/>
+        </constraints>
+        <properties/>
+        <border type="none"/>
+        <children>
+          <grid id="1c4a3" row-count="9" column-count="4" hgap="-1" vgap="-1">
+            <margin top="5" left="10" bottom="5" right="5"/>
+            <constraints>
+              <xy x="0" y="0" width="805" height="249"/>
+              <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="7" hsize-policy="3" anchor="0" fill="3"/>
+            </constraints>
+            <properties/>
+            <border type="none"/>
+            <children>
+              <component id="2a103" class="javax.swing.JLabel">
+                <constraints>
+                  <xy x="10" y="60" width="35" height="14"/>
+                  <grid row="2" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0"/>
+                </constraints>
+                <properties>
+                  <text value="Status:"/>
+                </properties>
+              </component>
+              <vspacer id="34435">
+                <constraints>
+                  <xy x="48" y="224" width="11" height="20"/>
+                  <grid row="8" column="0" row-span="1" col-span="1" vsize-policy="2" hsize-policy="1" anchor="0" fill="2"/>
+                </constraints>
+              </vspacer>
+              <component id="bf163" class="javax.swing.JLabel">
+                <constraints>
+                  <xy x="10" y="147" width="26" height="14"/>
+                  <grid row="5" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0"/>
+                </constraints>
+                <properties>
+                  <text value="User:"/>
+                </properties>
+              </component>
+              <component id="9f693" class="javax.swing.JLabel">
+                <constraints>
+                  <xy x="10" y="89" width="86" height="14"/>
+                  <grid row="3" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0"/>
+                </constraints>
+                <properties>
+                  <text value="Client IP Address:"/>
+                </properties>
+              </component>
+              <component id="86125" class="javax.swing.JLabel">
+                <constraints>
+                  <xy x="10" y="118" width="39" height="14"/>
+                  <grid row="4" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0"/>
+                </constraints>
+                <properties>
+                  <text value="Service:"/>
+                </properties>
+              </component>
+              <component id="d758b" class="javax.swing.JLabel">
+                <constraints>
+                  <xy x="10" y="176" width="44" height="14"/>
+                  <grid row="6" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0"/>
+                </constraints>
+                <properties>
+                  <text value="Request:"/>
+                </properties>
+              </component>
+              <component id="bdd4a" class="javax.swing.JLabel">
+                <constraints>
+                  <xy x="10" y="205" width="51" height="14"/>
+                  <grid row="7" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0"/>
+                </constraints>
+                <properties>
+                  <text value="Response:"/>
+                </properties>
+              </component>
+              <component id="b5ec1" class="javax.swing.JLabel">
+                <constraints>
+                  <xy x="10" y="33" width="26" height="14"/>
+                  <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0"/>
+                </constraints>
+                <properties>
+                  <text value="Time:"/>
+                </properties>
+              </component>
+              <component id="5b705" class="javax.swing.JButton">
+                <constraints>
+                  <xy x="493" y="55" width="106" height="24"/>
+                  <grid row="2" column="2" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1"/>
+                </constraints>
+                <properties>
+                  <text value="Filter Search"/>
+                </properties>
+              </component>
+              <component id="f9d25" class="javax.swing.JButton">
+                <constraints>
+                  <xy x="493" y="84" width="106" height="24"/>
+                  <grid row="3" column="2" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1"/>
+                </constraints>
+                <properties>
+                  <text value="Filter Search"/>
+                </properties>
+              </component>
+              <component id="a6c9c" class="javax.swing.JButton">
+                <constraints>
+                  <xy x="493" y="113" width="106" height="24"/>
+                  <grid row="4" column="2" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1"/>
+                </constraints>
+                <properties>
+                  <text value="Filter Search"/>
+                </properties>
+              </component>
+              <component id="9d7a0" class="javax.swing.JButton">
+                <constraints>
+                  <xy x="493" y="142" width="106" height="24"/>
+                  <grid row="5" column="2" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1"/>
+                </constraints>
+                <properties>
+                  <text value="Filter Search"/>
+                </properties>
+              </component>
+              <component id="ea110" class="javax.swing.JButton" binding="viewRequestButton">
+                <constraints>
+                  <xy x="493" y="171" width="106" height="24"/>
+                  <grid row="6" column="2" row-span="1" col-span="1" vsize-policy="1" hsize-policy="3" anchor="0" fill="1"/>
+                </constraints>
+                <properties>
+                  <text value="View Request"/>
+                </properties>
+              </component>
+              <component id="e69c" class="javax.swing.JButton" binding="viewResponseButton">
+                <constraints>
+                  <xy x="493" y="200" width="106" height="24"/>
+                  <grid row="7" column="2" row-span="1" col-span="1" vsize-policy="1" hsize-policy="3" anchor="0" fill="1"/>
+                </constraints>
+                <properties>
+                  <text value="View Response"/>
+                </properties>
+              </component>
+              <component id="f9fed" class="javax.swing.JLabel" binding="clientIpLabel">
+                <constraints>
+                  <xy x="108" y="89" width="36" height="14"/>
+                  <grid row="3" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="2" anchor="8" fill="0"/>
+                </constraints>
+                <properties>
+                  <text value="1.2.3.4"/>
+                </properties>
+              </component>
+              <component id="ba889" class="javax.swing.JLabel" binding="responseLabel">
+                <constraints>
+                  <xy x="108" y="205" width="99" height="14"/>
+                  <grid row="7" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="2" anchor="8" fill="0"/>
+                </constraints>
+                <properties>
+                  <text value="text/html; 300 bytes"/>
+                </properties>
+              </component>
+              <component id="efab9" class="javax.swing.JLabel" binding="requestLabel">
+                <constraints>
+                  <xy x="108" y="176" width="95" height="14"/>
+                  <grid row="6" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="2" anchor="8" fill="0"/>
+                </constraints>
+                <properties>
+                  <text value="text/xml; 512 bytes"/>
+                </properties>
+              </component>
+              <component id="9ada4" class="javax.swing.JLabel" binding="serviceLabel">
+                <constraints>
+                  <xy x="108" y="118" width="59" height="14"/>
+                  <grid row="4" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="2" anchor="8" fill="0"/>
+                </constraints>
+                <properties>
+                  <text value="Fooby (123)"/>
+                </properties>
+              </component>
+              <component id="93524" class="javax.swing.JLabel" binding="userLabel">
+                <constraints>
+                  <xy x="108" y="147" width="185" height="14"/>
+                  <grid row="5" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="2" anchor="8" fill="0"/>
+                </constraints>
+                <properties>
+                  <text value="bob (Authenticated, Internal provider)"/>
+                </properties>
+              </component>
+              <component id="f5ca1" class="javax.swing.JLabel" binding="dateLabel">
+                <constraints>
+                  <xy x="108" y="33" width="194" height="14"/>
+                  <grid row="1" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="2" anchor="8" fill="0"/>
+                </constraints>
+                <properties>
+                  <text value="January 10, 2004  23:33:57.1234 (UTC)"/>
+                </properties>
+              </component>
+              <component id="ab3e4" class="javax.swing.JLabel" binding="statusLabel">
+                <constraints>
+                  <xy x="108" y="60" width="25" height="14"/>
+                  <grid row="2" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="2" anchor="8" fill="0"/>
+                </constraints>
+                <properties>
+                  <text value="None"/>
+                </properties>
+              </component>
+              <component id="ddcb" class="javax.swing.JLabel">
+                <constraints>
+                  <xy x="10" y="8" width="88" height="14"/>
+                  <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="1" hsize-policy="1" anchor="8" fill="0"/>
+                </constraints>
+                <properties>
+                  <text value="Message number: "/>
+                </properties>
+              </component>
+              <component id="f82f2" class="javax.swing.JLabel" binding="messageNumberLabel">
+                <constraints>
+                  <xy x="108" y="8" width="18" height="14"/>
+                  <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="1" hsize-policy="6" anchor="8" fill="0"/>
+                </constraints>
+                <properties>
+                  <text value="234"/>
+                </properties>
+              </component>
+              <hspacer id="c1b88">
+                <constraints>
+                  <xy x="599" y="9" width="201" height="11"/>
+                  <grid row="0" column="3" row-span="1" col-span="1" vsize-policy="1" hsize-policy="6" anchor="0" fill="1"/>
+                </constraints>
+              </hspacer>
+            </children>
+          </grid>
+        </children>
+      </grid>
+      <grid id="9fd0d" row-count="1" column-count="2" hgap="-1" vgap="-1">
+        <margin top="0" left="0" bottom="0" right="0"/>
+        <constraints>
+          <splitpane position="left"/>
+        </constraints>
+        <properties/>
+        <border type="none"/>
+        <children>
+          <vspacer id="c700f">
+            <constraints>
+              <xy x="4" y="0" width="11" height="400"/>
+              <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="6" hsize-policy="1" anchor="0" fill="2"/>
+            </constraints>
+          </vspacer>
+          <scrollpane id="dc9ee">
+            <constraints>
+              <xy x="20" y="0" width="785" height="400"/>
+              <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="7" hsize-policy="7" anchor="0" fill="3"/>
+            </constraints>
+            <properties/>
+            <border type="none"/>
+            <children>
+              <component id="5aa1" class="javax.swing.JTable">
+                <constraints/>
+                <properties/>
+              </component>
+            </children>
+          </scrollpane>
+        </children>
+      </grid>
+    </children>
+  </splitpane>
+</form>

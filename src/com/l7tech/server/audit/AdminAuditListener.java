@@ -9,12 +9,12 @@ package com.l7tech.server.audit;
 import com.l7tech.cluster.ClusterInfoManager;
 import com.l7tech.common.audit.AdminAuditRecord;
 import com.l7tech.common.util.Locator;
+import com.l7tech.identity.User;
 import com.l7tech.objectmodel.Entity;
 import com.l7tech.objectmodel.SaveException;
 import com.l7tech.objectmodel.event.*;
 import com.l7tech.server.service.ServiceEvent;
 import com.l7tech.service.PublishedService;
-import com.l7tech.identity.User;
 import net.jini.export.ServerContext;
 import net.jini.io.context.ClientSubject;
 
@@ -89,26 +89,6 @@ public class AdminAuditListener implements CreateListener, UpdateListener, Delet
         return level;
     }
 
-    private String getAdminLogin() {
-        ClientSubject clientSubject = null;
-        try {
-            clientSubject = (ClientSubject)ServerContext.getServerContextElement(ClientSubject.class);
-        } catch ( ServerNotActiveException e ) {
-            return null;
-        }
-        if (clientSubject != null) {
-            Set principals = clientSubject.getClientSubject().getPrincipals();
-            if (principals != null && !principals.isEmpty()) {
-                Principal p = (Principal)principals.iterator().next();
-                String login = null;
-                if (p instanceof User) login = ((User)p).getLogin();
-                if (login == null) login = p.getName();
-                return login;
-            }
-        }
-        return null;
-    }
-
     public void entityCreated( Created created ) {
         String adminLogin = getAdminLogin();
         if (adminLogin == null) return;
@@ -138,6 +118,28 @@ public class AdminAuditListener implements CreateListener, UpdateListener, Delet
             logger.log( Level.SEVERE, "Couldn't save " + deleted, e );
         }
     }
+
+    private String getAdminLogin() {
+        ClientSubject clientSubject = null;
+        try {
+            clientSubject = (ClientSubject)ServerContext.getServerContextElement(ClientSubject.class);
+        } catch ( ServerNotActiveException e ) {
+            return null;
+        }
+        if (clientSubject != null) {
+            Set principals = clientSubject.getClientSubject().getPrincipals();
+            if (principals != null && !principals.isEmpty()) {
+                Principal p = (Principal)principals.iterator().next();
+                String login = null;
+                if (p instanceof User) login = ((User)p).getLogin();
+                if (login == null) login = p.getName();
+                return login;
+            }
+        }
+        logger.warning("Unable to determine current administrator login");
+        return null;
+    }
+
 
     private Map levelMappings = new HashMap();
     private final AuditRecordManager auditRecordManager;

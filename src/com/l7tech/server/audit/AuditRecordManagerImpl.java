@@ -7,6 +7,7 @@
 package com.l7tech.server.audit;
 
 import com.l7tech.common.audit.AuditRecord;
+import com.l7tech.common.audit.AuditSearchCriteria;
 import com.l7tech.objectmodel.Entity;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.HibernateEntityManager;
@@ -29,6 +30,7 @@ import java.util.logging.Level;
  * @version $Revision$
  */
 public class AuditRecordManagerImpl extends HibernateEntityManager implements AuditRecordManager {
+
     public AuditRecordManagerImpl() {
     }
 
@@ -40,47 +42,62 @@ public class AuditRecordManagerImpl extends HibernateEntityManager implements Au
 
     /**
      * Finds {@link AuditRecord}s based on the specified criteria.
-     * @param fromTime the time of the earliest record to retrieve (null = one day ago)
-     * @param toTime the time of the latest record to retrieve (null = now)
-     * @param fromLevel the level of the least severe record to retrieve (null = {@link Level#INFO})
-     * @param toLevel the level of the most severe record to retrieve (null = {@link Level#SEVERE})
-     * @param maxRecords the maximum number of records to retrieve (0 = 4096);
-     * @return
+     * @param criteria the {@link AuditSearchCriteria}
+     * @return a Collection of AuditRecords
      * @throws FindException
      */
-    public Collection find(Date fromTime, Date toTime, Level fromLevel, Level toLevel, Class[] recordClasses, int maxRecords) throws FindException {
+    public Collection find(AuditSearchCriteria criteria) throws FindException
+    {
         try {
-            Criteria crit = getContext().getAuditSession().createCriteria(getInterfaceClass());
+            Class findClass = criteria.recordClass;
+            if (findClass == null) findClass = getInterfaceClass();
+
+            Criteria query = getContext().getAuditSession().createCriteria(findClass);
+            int maxRecords = criteria.maxRecords;
             if (maxRecords <= 0) maxRecords = 4096;
-            crit.setMaxResults(maxRecords);
+            query.setMaxResults(maxRecords);
+
+            Date fromTime = criteria.fromTime;
             if (fromTime == null) {
                 Calendar cal = Calendar.getInstance(TimeZone.getTimeZone("UTC"));
                 cal.roll(Calendar.DAY_OF_YEAR, -1);
                 fromTime = cal.getTime();
             }
 
+            Date toTime = criteria.toTime;
             if (toTime == null) toTime = new Date(System.currentTimeMillis());
 
-            crit.add(Expression.ge(PROP_TIME, new Long(fromTime.getTime())));
-            crit.add(Expression.le(PROP_TIME, new Long(toTime.getTime())));
+            if (!(toTime.equals(fromTime) || toTime.after(fromTime))) throw new IllegalArgumentException("toTime must not be before fromTime");
 
+            query.add(Expression.ge(PROP_TIME, new Long(fromTime.getTime())));
+            query.add(Expression.le(PROP_TIME, new Long(toTime.getTime())));
+
+            Level fromLevel = criteria.fromLevel;
             if (fromLevel == null) fromLevel = Level.INFO;
+            Level toLevel = criteria.toLevel;
             if (toLevel == null) toLevel = Level.SEVERE;
 
             if (fromLevel.equals(toLevel)) {
-                crit.add(Expression.eq(PROP_LEVEL, fromLevel.getName()));
+                query.add(Expression.eq(PROP_LEVEL, fromLevel.getName()));
             } else {
                 if (fromLevel.intValue() > toLevel.intValue()) throw new FindException("fromLevel " + fromLevel.getName() + " is not lower in value than toLevel " + toLevel.getName());
                 Set levels = new HashSet();
                 for ( int i = 0; i < LEVELS_IN_ORDER.length; i++ ) {
                     Level level = LEVELS_IN_ORDER[i];
                     if (level.intValue() >= fromLevel.intValue() && level.intValue() <= toLevel.intValue()) {
-                        levels.add(level);
+                        levels.add(level.getName());
                     }
                 }
-                crit.add(Expression.in(PROP_LEVEL, levels));
+                query.add(Expression.in(PROP_LEVEL, levels));
             }
-            return crit.list();
+
+            if (criteria.startMessageNumber > 0) query.add(Expression.ge(PROP_OID, new Long(criteria.startMessageNumber)));
+            if (criteria.endMessageNumber > 0) query.add(Expression.le(PROP_OID, new Long(criteria.endMessageNumber)));
+
+            if (criteria.nodeId != null) query.add(Expression.eq(PROP_NODEID, criteria.nodeId));
+
+            List l = query.list();
+            return l;
         } catch ( HibernateException e ) {
             throw new FindException("Couldn't find Audit Records", e);
         } catch ( SQLException e ) {

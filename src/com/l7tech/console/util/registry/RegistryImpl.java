@@ -1,5 +1,6 @@
 package com.l7tech.console.util.registry;
 
+import com.l7tech.common.audit.AuditAdmin;
 import com.l7tech.common.security.TrustedCertAdmin;
 import com.l7tech.common.transport.jms.JmsAdmin;
 import com.l7tech.common.util.Locator;
@@ -7,6 +8,7 @@ import com.l7tech.console.util.Registry;
 import com.l7tech.identity.IdentityAdmin;
 import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.identity.IdentityProviderConfigManager;
+import com.l7tech.logging.LogAdmin;
 import com.l7tech.policy.assertion.ext.CustomAssertionsRegistrar;
 import com.l7tech.service.ServiceAdmin;
 
@@ -87,5 +89,27 @@ public class RegistryImpl extends Registry {
             throw new RuntimeException("Could not get " + CustomAssertionsRegistrar.class);
         }
         return cr;
+    }
+
+    /**
+     * @return the {@link AuditAdmin} implementation
+     */
+    public AuditAdmin getAuditAdmin() {
+        AuditAdmin aa = (AuditAdmin)Locator.getDefault().lookup(AuditAdmin.class);
+        if (aa == null) {
+            throw new RuntimeException("Could not get " + AuditAdmin.class);
+        }
+        return aa;
+    }
+
+    /**
+     * @return the {@link LogAdmin} implementation
+     */
+    public LogAdmin getLogAdmin() {
+        LogAdmin la = (LogAdmin)Locator.getDefault().lookup(LogAdmin.class);
+        if (la == null) {
+            throw new RuntimeException("Could not get " + LogAdmin.class);
+        }
+        return la;
     }
 }

@@ -82,6 +82,7 @@ public class MainWindow extends JFrame {
     private JMenuItem exitMenuItem = null;
     private JMenuItem menuItemPref = null;
     private JMenuItem logMenuItem = null;
+    private JMenuItem auditMenuItem = null;
     private JMenuItem statMenuItem = null;
     private JMenuItem manageJmsEndpointsMenuItem = null;
     private JMenuItem manageCertificatesMenuItem = null;
@@ -147,6 +148,7 @@ public class MainWindow extends JFrame {
     private static MainWindow singleMainWindow = null;
     private boolean disconnected = false;
     private String ssgURL;
+    private ViewGatewayAuditsAction viewGatewayAuditsWindowAction;
 
     /**
      * MainWindow constructor comment.
@@ -458,6 +460,7 @@ public class MainWindow extends JFrame {
             editMenu.addSeparator();
             editMenu.add(getStatMenuItem());
             editMenu.add(getLogMenuItem());
+            editMenu.add(getAuditMenuItem());
         }
         return editMenu;
     }
@@ -1210,6 +1213,14 @@ public class MainWindow extends JFrame {
         return viewGatewayLogWindowAction;
     }
 
+    private Action getGatewayAuditWindowAction() {
+        if (viewGatewayAuditsWindowAction != null) return viewGatewayAuditsWindowAction;
+        viewGatewayAuditsWindowAction = new ViewGatewayAuditsAction();
+        viewGatewayAuditsWindowAction.setEnabled(false);
+        this.addLogonListener(viewGatewayAuditsWindowAction);
+        return viewGatewayAuditsWindowAction;
+    }
+
     /**
      * Configure the specified item to be enabled only while we are connected to a gateway.
      */
@@ -1905,6 +1916,13 @@ public class MainWindow extends JFrame {
         logMenuItem = new JMenuItem(getGatewayLogWindowAction());
 
         return logMenuItem;
+    }
+
+    public JMenuItem getAuditMenuItem() {
+        if (auditMenuItem != null) return auditMenuItem;
+        auditMenuItem = new JMenuItem(getGatewayAuditWindowAction());
+
+        return auditMenuItem;
     }
 
     public JMenuItem getManageJmsEndpointsMenuItem() {

@@ -1,6 +1,7 @@
 package com.l7tech.console;
 
 import com.l7tech.common.gui.util.ImageCache;
+import com.l7tech.common.util.Locator;
 import com.l7tech.console.action.Actions;
 import com.l7tech.console.panels.LogPanel;
 import com.l7tech.console.security.LogonEvent;
@@ -33,17 +34,25 @@ public class GatewayLogWindow extends JFrame implements LogonListener {
     private javax.swing.JMenuItem helpTopicsMenuItem = null;
     private JPanel frameContentPane = null;
     private LogPanel logPane = null;
+    private final Strategy strategy;
+
     private static
     ResourceBundle resapplication =
       java.util.ResourceBundle.getBundle("com.l7tech.console.resources.console");
 
+    public interface Strategy {
+        Locator getLogAdminLocator();
+        String getWindowTitle();
+        String getPanelTitle();
+    }
+
     /**
      * Constructor
-     *
-     * @param title The window title
+     * @param strategy the {@link Strategy} for this window
      */
-    public GatewayLogWindow(final String title) {
-        super(title);
+    public GatewayLogWindow(final Strategy strategy) {
+        super(strategy.getWindowTitle());
+        this.strategy = strategy;
         ImageIcon imageIcon =
           new ImageIcon(ImageCache.getInstance().getIcon(RESOURCE_PATH + "/layer7_logo_small_32x32.png"));
         setIconImage(imageIcon.getImage());
@@ -192,7 +201,7 @@ public class GatewayLogWindow extends JFrame implements LogonListener {
         mainPane.setLayout(new java.awt.BorderLayout());
 
         gatewayLogTitle.setFont(new java.awt.Font("Dialog", 1, 18));
-        gatewayLogTitle.setText("  Log Browser");
+        gatewayLogTitle.setText("  " + strategy.getPanelTitle());
         gatewayLogTitle.setMaximumSize(new java.awt.Dimension(136, 40));
         gatewayLogTitle.setMinimumSize(new java.awt.Dimension(136, 40));
         gatewayLogTitle.setPreferredSize(new java.awt.Dimension(136, 40));
@@ -214,7 +223,7 @@ public class GatewayLogWindow extends JFrame implements LogonListener {
     public LogPanel getLogPane() {
         if (logPane != null) return logPane;
 
-        logPane = new LogPanel();
+        logPane = new LogPanel(strategy.getLogAdminLocator());
         return logPane;
     }
 

@@ -8,7 +8,9 @@ package com.l7tech.server.audit;
 
 import com.l7tech.common.audit.AuditAdmin;
 import com.l7tech.common.audit.AuditRecord;
+import com.l7tech.common.audit.AuditSearchCriteria;
 import com.l7tech.common.util.Locator;
+import com.l7tech.logging.SSGLogRecord;
 import com.l7tech.objectmodel.*;
 import com.l7tech.remote.jini.export.RemoteService;
 import com.sun.jini.start.LifeCycle;
@@ -18,8 +20,6 @@ import java.io.IOException;
 import java.rmi.RemoteException;
 import java.sql.SQLException;
 import java.util.Collection;
-import java.util.Date;
-import java.util.logging.Level;
 
 /**
  * @author alex
@@ -42,15 +42,28 @@ public class AuditAdminImpl extends RemoteService implements AuditAdmin {
         }
     }
 
-    public Collection find( final Date fromTime, final Date toTime, final Level fromLevel, final Level toLevel, final Class[] recordClasses, final int maxRecords ) throws FindException, RemoteException {
+    public Collection find(final AuditSearchCriteria criteria) throws FindException, RemoteException {
         try {
             return (Collection)doInTransactionAndClose(new PersistenceAction() {
                 public Object run() throws ObjectModelException {
-                    return getManager().find(fromTime, toTime, fromLevel, toLevel, recordClasses, maxRecords);
+                    return getManager().find(criteria);
                 }
             });
         } catch ( ObjectModelException e ) {
             throw new FindException("Couldn't find AuditRecords", e);
+        }
+    }
+
+    public SSGLogRecord[] getSystemLog(final String nodeid, final long startMsgNumber, final long endMsgNumber, final int size) throws RemoteException {
+        try {
+            Collection c = (Collection)doInTransactionAndClose(new PersistenceAction() {
+                public Object run() throws ObjectModelException {
+                    return getManager().find(new AuditSearchCriteria(nodeid, startMsgNumber, endMsgNumber, size));
+                }
+            });
+            return (SSGLogRecord[])c.toArray(new SSGLogRecord[0]);
+        } catch ( ObjectModelException e ) {
+            throw new RemoteException("Couldn't find AuditRecords", e);
         }
     }
 

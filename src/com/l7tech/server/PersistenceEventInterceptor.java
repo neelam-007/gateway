@@ -70,8 +70,11 @@ public class PersistenceEventInterceptor implements Interceptor {
                     public void postCommit() {
                         logger.log(Level.FINE, "Updated " + entity.getClass().getName() + " " + id );
                         EntityChangeSet changes = new EntityChangeSet(propertyNames, previousState, currentState);
-                        Updated event = new Updated((Entity)entity, changes);
-                        EventManager.fire(event);
+                        try {
+                            EventManager.fireInNewTransaction(new Updated((Entity)entity, changes));
+                        } catch (TransactionException e) {
+                            logger.log(Level.SEVERE, "Couldn't commit audit transaction", e);
+                        }
                     }
 
                     public void postRollback() { }
@@ -99,8 +102,11 @@ public class PersistenceEventInterceptor implements Interceptor {
                 HibernatePersistenceContext.getCurrent().registerTransactionListener(new TransactionListener() {
                     public void postCommit() {
                         logger.log(Level.FINE, "Created " + entity.getClass().getName() + " " + id );
-                        Created event = new Created((Entity)entity);
-                        EventManager.fire(event);
+                        try {
+                            EventManager.fireInNewTransaction(new Created((Entity)entity));
+                        } catch (TransactionException e) {
+                            logger.log(Level.SEVERE, "Couldn't commit audit transaction", e);
+                        }
                     }
 
                     public void postRollback() { }
@@ -123,8 +129,11 @@ public class PersistenceEventInterceptor implements Interceptor {
                 HibernatePersistenceContext.getCurrent().registerTransactionListener(new TransactionListener() {
                     public void postCommit() {
                         logger.log(Level.FINE, "Deleted " + entity.getClass().getName() + " " + id );
-                        Deleted event = new Deleted((Entity)entity);
-                        EventManager.fire(event);
+                        try {
+                            EventManager.fireInNewTransaction(new Deleted((Entity)entity));
+                        } catch (TransactionException e) {
+                            logger.log(Level.SEVERE, "Couldn't commit audit transaction");
+                        }
                     }
 
                     public void postRollback() { }

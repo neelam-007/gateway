@@ -382,8 +382,9 @@ DROP TABLE audit_admin;
 CREATE TABLE audit_admin (
   objectid bigint NOT NULL,
   admin_login varchar(32) NOT NULL,
-  entity_class varchar(255) default NULL,
-  entity_id bigint default NULL,
+  entity_class varchar(255),
+  entity_id number(38,0),
+  action char(1),
   PRIMARY KEY  (objectid),
   INDEX idx_class (entity_class),
   INDEX idx_oid (entity_id)

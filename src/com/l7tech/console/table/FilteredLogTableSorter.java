@@ -1,18 +1,19 @@
 package com.l7tech.console.table;
 
-import com.l7tech.logging.LogMessage;
-import com.l7tech.logging.LogAdmin;
-import com.l7tech.common.util.Locator;
 import com.l7tech.cluster.ClusterStatusAdmin;
-import com.l7tech.cluster.LogRequest;
 import com.l7tech.cluster.GatewayStatus;
+import com.l7tech.cluster.LogRequest;
+import com.l7tech.common.util.Locator;
 import com.l7tech.console.panels.LogPanel;
 import com.l7tech.console.util.ClusterLogWorker;
+import com.l7tech.logging.GenericLogAdmin;
+import com.l7tech.logging.LogAdmin;
+import com.l7tech.logging.LogMessage;
 
-import javax.swing.table.DefaultTableModel;
 import javax.swing.*;
-import java.util.logging.Logger;
+import javax.swing.table.DefaultTableModel;
 import java.util.*;
+import java.util.logging.Logger;
 
 /*
  * This class extends the <CODE>FilteredLogTableModel</CODE> class for providing the sorting functionality to the log display.
@@ -28,25 +29,22 @@ public class FilteredLogTableSorter extends FilteredLogTableModel {
     private int columnToSort = LogPanel.LOG_TIMESTAMP_COLUMN_INDEX;
     private Object[] sortedData = null;
     private ClusterStatusAdmin clusterStatusAdmin = null;
-    private LogAdmin logService = null;
+    private GenericLogAdmin logAdmin = null;
+    private final Locator logAdminLocator;
     private boolean canceled;
     private LogPanel logPanel;
 
-
-    /**
-     * Default constructor
-     */
-    public FilteredLogTableSorter() {
-    }
 
     /**
      * Constructor taking <CODE>DefaultTableModel</CODE> as the input parameter.
      *
      * @param logPanel The panel of log browser.
      * @param model  A table model.
+     * @param logAdminLocator A {@link Locator} that only needs to know how to locate the correct kind of {@link LogAdmin} implementation.
      */
-    public FilteredLogTableSorter(LogPanel logPanel, DefaultTableModel model) {
+    public FilteredLogTableSorter(LogPanel logPanel, DefaultTableModel model, Locator logAdminLocator) {
         this.logPanel = logPanel;
+        this.logAdminLocator = logAdminLocator;
         setModel(model);
     }
 
@@ -342,8 +340,8 @@ public class FilteredLogTableSorter extends FilteredLogTableModel {
      * Initialize the variables when the connection with the cluster is established.
      */
     public void onConnect() {
-        logService = (LogAdmin) Locator.getDefault().lookup(LogAdmin.class);
-        if (logService == null) throw new IllegalStateException("cannot obtain LogAdmin remote reference");
+        logAdmin = (GenericLogAdmin)logAdminLocator.lookup(GenericLogAdmin.class);
+        if (logAdmin == null) throw new IllegalStateException("cannot obtain GenericLogAdmin implementation");
 
         clusterStatusAdmin = (ClusterStatusAdmin) Locator.getDefault().lookup(ClusterStatusAdmin.class);
         if (clusterStatusAdmin == null) throw new RuntimeException("Cannot obtain ClusterStatusAdmin remote reference");
@@ -359,7 +357,7 @@ public class FilteredLogTableSorter extends FilteredLogTableModel {
      */
     public void onDisconnect() {
         clusterStatusAdmin = null;
-        logService = null;
+        logAdmin = null;
         canceled = true;
     }
 
@@ -438,7 +436,7 @@ public class FilteredLogTableSorter extends FilteredLogTableModel {
         }
 
         // create a worker thread to retrieve the cluster info
-        final ClusterLogWorker infoWorker = new ClusterLogWorker(clusterStatusAdmin, logService, currentNodeList, requests) {
+        final ClusterLogWorker infoWorker = new ClusterLogWorker(clusterStatusAdmin, logAdmin, currentNodeList, requests) {
             public void finished() {
 
                 if (isCanceled()) {

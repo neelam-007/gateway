@@ -1,10 +1,12 @@
 package com.l7tech.console.util;
 
+import com.l7tech.common.audit.AuditAdmin;
 import com.l7tech.common.security.TrustedCertAdmin;
 import com.l7tech.common.transport.jms.JmsAdmin;
 import com.l7tech.common.util.Locator;
 import com.l7tech.identity.IdentityAdmin;
 import com.l7tech.identity.IdentityProviderConfig;
+import com.l7tech.logging.LogAdmin;
 import com.l7tech.policy.assertion.ext.CustomAssertionsRegistrar;
 import com.l7tech.service.ServiceAdmin;
 
@@ -74,6 +76,15 @@ public abstract class Registry {
      */
     abstract public CustomAssertionsRegistrar getCustomAssertionsRegistrar();
 
+    /**
+     * @return the audit admin interface implementation.
+     */
+    abstract public AuditAdmin getAuditAdmin();
+
+    /**
+     * @return the log admin interface implementation.
+     */
+    abstract public LogAdmin getLogAdmin();
 
     /**
      * Implementation of the default 'no-op' registry
@@ -109,6 +120,14 @@ public abstract class Registry {
          * @return the custome assertions registrar
          */
         public CustomAssertionsRegistrar getCustomAssertionsRegistrar() {
+            return null;
+        }
+
+        public AuditAdmin getAuditAdmin() {
+            return null;
+        }
+
+        public LogAdmin getLogAdmin() {
             return null;
         }
     }

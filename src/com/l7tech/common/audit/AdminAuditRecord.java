@@ -24,6 +24,10 @@ import java.util.logging.Level;
  * @version $Revision$
  */
 public class AdminAuditRecord extends AuditRecord {
+    public static final char ACTION_CREATED = 'C';
+    public static final char ACTION_UPDATED = 'U';
+    public static final char ACTION_DELETED = 'D';
+
     public AdminAuditRecord(Level level, String nodeId, PersistenceEvent event, String adminLogin) {
         super(level, nodeId, null);
         if (adminLogin == null) throw new IllegalStateException("Couldn't determine current administrator login");
@@ -36,10 +40,13 @@ public class AdminAuditRecord extends AuditRecord {
         msg.append(" ");
         msg.append(entityOid);
         if (event instanceof Created) {
+            action = ACTION_CREATED;
             msg.append(" created");
         } else if (event instanceof Deleted) {
+            action = ACTION_DELETED;
             msg.append(" deleted");
         } else if (event instanceof Updated) {
+            action = ACTION_UPDATED;
             msg.append(" updated");
         }
 
@@ -47,7 +54,7 @@ public class AdminAuditRecord extends AuditRecord {
         if (note != null && note.length() > 0) {
             msg.append(" (").append(note).append(")");
         }
-        this.message = msg.toString();
+        this.setMessage(msg.toString());
     }
 
     /** @deprecated to be called only for serialization and persistence purposes! */
@@ -66,6 +73,10 @@ public class AdminAuditRecord extends AuditRecord {
         return entityOid;
     }
 
+    public char getAction() {
+        return action;
+    }
+
     /** @deprecated to be called only for serialization and persistence purposes! */
     public void setAdminLogin( String adminLogin ) {
         this.adminLogin = adminLogin;
@@ -81,7 +92,13 @@ public class AdminAuditRecord extends AuditRecord {
         this.entityOid = entityOid;
     }
 
+    /** @deprecated to be called only for serialization and persistence purposes! */
+    public void setAction(char action) {
+        this.action = action;
+    }
+
     protected String adminLogin;
     protected String entityClassname;
     protected long entityOid;
+    protected char action;
 }

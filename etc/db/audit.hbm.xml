@@ -17,14 +17,14 @@
 
         <!-- No version column required, since these never get modified -->
         <property name="nodeId" column="nodeid" type="string"/>
-        <property name="time" column="time" type="long"/>
+        <property name="millis" column="time" type="long"/>
         <property name="strLvl" column="level" type="string"/>
         <property name="message" column="message" type="string"/>
 
         <joined-subclass name="com.l7tech.common.audit.MessageSummaryAuditRecord" table="audit_message" >
             <key column="objectid"/>
             <property name="status" type="int"/>
-            <property name="requestId" column="request_id" type="string"/>
+            <property name="strRequestId" column="request_id" type="string"/>
             <property name="serviceOid" column="service_oid" type="long"/>
             <property name="serviceName" column="service_name" type="string"/>
             <property name="identityProviderOid" column="provider_oid" type="long"/>
@@ -43,6 +43,7 @@
             <property name="adminLogin" column="admin_login" type="string"/>
             <property name="entityClassname" column="entity_class" type="string"/>
             <property name="entityOid" column="entity_id" type="long"/>
+            <property name="action" column="action" type="char"/>
         </joined-subclass>
 
         <joined-subclass name="com.l7tech.common.audit.SystemAuditRecord" table="audit_system">

@@ -1,20 +1,23 @@
 package com.l7tech.console.panels;
 
+import com.l7tech.common.gui.widgets.ContextMenuTextArea;
+import com.l7tech.common.util.Locator;
 import com.l7tech.console.table.FilteredLogTableSorter;
 import com.l7tech.console.util.ArrowIcon;
-import com.l7tech.common.gui.widgets.ContextMenuTextArea;
 
 import javax.swing.*;
+import javax.swing.event.ChangeEvent;
+import javax.swing.event.ChangeListener;
+import javax.swing.event.ListSelectionEvent;
+import javax.swing.event.ListSelectionListener;
 import javax.swing.table.*;
-import javax.swing.event.*;
 import java.awt.*;
-
-import java.awt.event.ActionListener;
 import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
-import java.util.*;
 import java.text.SimpleDateFormat;
+import java.util.*;
 
 
 /*
@@ -65,11 +68,13 @@ public class LogPanel extends JPanel {
     private JLabel lastUpdateTimeLabel = null;
     private Icon upArrowIcon = new ArrowIcon(0);
     private Icon downArrowIcon = new ArrowIcon(1);
+    private final Locator logAdminLocator;
 
     /**
      * Constructor
      */
-    public LogPanel() {
+    public LogPanel(Locator logAdminLocator) {
+        this.logAdminLocator = logAdminLocator;
         setLayout(new BorderLayout());
 
         JSplitPane logSplitPane = new JSplitPane();
@@ -454,7 +459,7 @@ public class LogPanel extends JPanel {
     private FilteredLogTableSorter getFilteredLogTableSorter(){
         if(logTableSorter != null) return logTableSorter;
 
-        logTableSorter = new FilteredLogTableSorter(this, getLogTableModel());
+        logTableSorter = new FilteredLogTableSorter(this, getLogTableModel(), logAdminLocator);
 
         return logTableSorter;
     }

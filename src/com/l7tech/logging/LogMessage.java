@@ -32,8 +32,8 @@ public class LogMessage {
         cal.setTimeInMillis(log.getMillis());
         time = sdf.format(cal.getTime());
         severity = log.getLevel().toString();
-        msgClass = log.getSourceClassName().toString();
-        msgMethod = log.getSourceMethodName().toString();
+        msgClass = log.getSourceClassName() != null ? log.getSourceClassName().toString() : null;
+        msgMethod = log.getSourceMethodName() != null ? log.getSourceMethodName().toString() : null;
         msgDetails = log.getMessage();
         nodeId = log.getNodeId();
 
