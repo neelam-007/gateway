@@ -4,6 +4,7 @@
 # Startup script for SSG db fail over
 #
 # chkconfig: - 99 01
+# description: dbfaildetect
 # Property of Layer 7 Technologies
 #
 # by Jay Thorne - jthorne@layer7tech.com
