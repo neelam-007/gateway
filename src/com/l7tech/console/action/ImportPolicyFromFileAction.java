@@ -93,7 +93,7 @@ public class ImportPolicyFromFileAction extends SecureAction {
         }
 
         JFileChooser chooser = new JFileChooser(templateDir);
-        chooser.setDialogTitle("Import from ...");
+        chooser.setDialogTitle("Import Policy");
         chooser.setMultiSelectionEnabled(false);
         chooser.setFileFilter(new FileFilter() {
             public boolean accept(File f) {

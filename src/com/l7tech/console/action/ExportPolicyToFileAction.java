@@ -94,7 +94,7 @@ public class ExportPolicyToFileAction extends SecureAction {
         }
 
         JFileChooser chooser = new JFileChooser(templateDir);
-        chooser.setDialogTitle("Export to ...");
+        chooser.setDialogTitle("Export Policy");
         // Allow single selection only
         chooser.setMultiSelectionEnabled(false);
         chooser.setFileFilter(new FileFilter() {
