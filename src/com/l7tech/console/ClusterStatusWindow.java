@@ -75,6 +75,9 @@ public class ClusterStatusWindow extends JFrame {
     private Icon downArrowIcon = new ArrowIcon(1);
     private boolean canceled;
 
+    /** Resource bundle with default locale */
+    private ResourceBundle dsnDialogResources = null;
+
     /**
      * Constructor
      *
@@ -90,6 +93,7 @@ public class ClusterStatusWindow extends JFrame {
         getContentPane().setLayout(new BorderLayout());
         getContentPane().add(getJFrameContentPane(), BorderLayout.CENTER);
 
+        initResources();
         initAdminConnection();
         initCaches();
 
@@ -97,6 +101,14 @@ public class ClusterStatusWindow extends JFrame {
         refreshStatus();
 
         pack();
+    }
+
+    /**
+     * Loads locale-specific resources: strings, images, etc
+     */
+    private void initResources() {
+        Locale locale = Locale.getDefault();
+        dsnDialogResources = ResourceBundle.getBundle("com.l7tech.console.resources.DeleteStaleNodeDialog", locale);
     }
 
     /**
@@ -836,13 +848,35 @@ public class ClusterStatusWindow extends JFrame {
                     SwingUtilities.invokeLater(new Runnable() {
                         public void run() {
 
+                            if (clusterStatusAdmin == null) {
+                                logger.warning("ClusterStatusAdmin service is not available. Cannot delete the node: " + nodeNameSelected);
+
+                                JOptionPane.
+                                        showMessageDialog(getClusterStatusWindow(),
+                                                dsnDialogResources.getString("delete.stale.node.error.connection.lost"),
+                                                dsnDialogResources.getString("delete.stale.node.error.title"),
+                                                JOptionPane.ERROR_MESSAGE);
+                                return;
+                            }
+
                             try {
                                 clusterStatusAdmin.removeStaleNode((String) getClusterStatusTable().getValueAt(selectedRowIndexOld, STATUS_TABLE_NODE_ID_COLUMN_INDEX));
 
                             } catch (DeleteException e) {
                                 logger.warning("Cannot delete the node: " + nodeNameSelected);
+                                JOptionPane.
+                                        showMessageDialog(getClusterStatusWindow(),
+                                                dsnDialogResources.getString("delete.stale.node.error.delete"),
+                                                dsnDialogResources.getString("delete.stale.node.error.title"),
+                                                JOptionPane.ERROR_MESSAGE);
+
                             } catch (RemoteException e) {
                                 logger.warning("Remote Exception. Cannot delete the node: " + nodeNameSelected);
+                                JOptionPane.
+                                        showMessageDialog(getClusterStatusWindow(),
+                                                dsnDialogResources.getString("delete.stale.node.error.remote.exception"),
+                                                dsnDialogResources.getString("delete.stale.node.error.title"),
+                                                JOptionPane.ERROR_MESSAGE);
                             }
                         }
                     });
