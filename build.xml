@@ -106,6 +106,80 @@
         </antcall>
     </target>
 
+    <target name="build-component" depends="init-dev">
+        <property name="buildnumber.file" value="${src.root}/buildnumber.${component}"/>
+
+        <echo>(not) running cvs update ${buildnumber.file}</echo>
+        <!--
+        <cvs command="update ${buildnumber.file}"/>
+        -->
+
+        <antcall target="compile"/>
+        <antcall target="compile-tests"/>
+        <antcall target="test"/>
+        <antcall target="deploy"/>
+
+        <buildnumber file="${buildnumber.file}"/>
+
+        <echo>(not) running cvs commit ${buildnumber.file}</echo>
+        <!--
+        <cvs command="commit ${buildnumber.file}"/>
+        -->
+
+        <property name="tag" value="${component}-build${build.number}"/>
+
+        <echo>(not) running cvs tag -R ${tag} ${dirs}</echo>
+
+        <!--
+        <cvs command="tag -R ${tag} ${dirs}"/>
+        -->
+    </target>
+
+    <!-- Directories that should be tagged in an SSG build -->
+    <path id="ssg.tag.path">
+        <dirset dir="${src.root}">
+            <include name="etc"/>
+            <include name="web"/>
+            <include name="src/com/l7tech/credential"/>
+            <include name="src/com/l7tech/identity"/>
+            <include name="src/com/l7tech/message"/>
+            <include name="src/com/l7tech/policy"/>
+            <include name="src/com/l7tech/objectmodel"/>
+            <include name="src/com/l7tech/service"/>
+            <include name="src/com/l7tech/util"/>
+        </dirset>
+    </path>
+
+    <target name="build-ssg">
+        <pathconvert refid="ssg.tag.path" property="ssg.tag.dirs" pathSep=" "/>
+
+        <antcall target="build-component">
+            <param name="component" value="ssg"/>
+            <param name="dirs" value="${ssg.tag.dirs}"/>
+        </antcall>
+    </target>
+
+    <!-- Directories that should be tagged in a console build -->
+    <path id="console.tag.path">
+        <dirset dir="${src.root}">
+            <include name="etc"/>
+            <include name="src/com/l7tech/console"/>
+            <include name="src/com/l7tech/identity"/>
+            <include name="src/com/l7tech/objectmodel"/>
+            <include name="src/com/l7tech/policy"/>
+            <include name="src/com/l7tech/service"/>
+        </dirset>
+    </path>
+
+    <target name="build-console">
+        <pathconvert refid="console.tag.path" property="console.tag.dirs" pathSep=" "/>
+
+        <antcall target="build-component">
+            <param name="component" value="console"/>
+            <param name="dirs" value="${console.tag.dirs}"/>
+        </antcall>
+    </target>
+
     <!--
       ** configure and invoke developer's build for source files
       ** that match the pattern passed as -Dcompile.pattern
