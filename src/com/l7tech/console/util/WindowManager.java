@@ -60,7 +60,14 @@ public class WindowManager {
      * Current workspace.
      */
     public WorkSpacePanel getCurrentWorkspace() {
-        return workSpacePanel;
+         synchronized (componentsRegistry) {
+            WorkSpacePanel wp =
+              (WorkSpacePanel)getComponent(WorkSpacePanel.NAME);
+            if (wp != null) return wp;
+            wp = new WorkSpacePanel();
+            registerComponent(WorkSpacePanel.NAME, wp);
+            return wp;
+        }
     }
 
     /**
@@ -116,6 +123,5 @@ public class WindowManager {
     }
 
     private Map componentsRegistry = new HashMap();
-    private WorkSpacePanel workSpacePanel = new WorkSpacePanel();
 
 }
