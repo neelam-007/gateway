@@ -257,6 +257,7 @@ public class PolicyServiceClient {
     }
 
     private static void translateSoapFault(Element fault) throws InvalidDocumentFormatException, BadCredentialsException {
+        // TODO use a proper fault URI for this error 
         final String s = "unauthorized policy download";
         final String faultXml;
         try {
