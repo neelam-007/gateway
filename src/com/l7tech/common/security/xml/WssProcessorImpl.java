@@ -407,7 +407,7 @@ public class WssProcessorImpl implements WssProcessor {
         String value = XmlUtil.getTextValue(cipherValue);
         byte[] encryptedKeyBytes = new byte[0];
         try {
-            encryptedKeyBytes = HexUtils.decodeBase64(value);
+            encryptedKeyBytes = HexUtils.decodeBase64(value, true);
         } catch (IOException e) {
             throw new InvalidDocumentFormatException("Unable to parse base64 EncryptedKey CipherValue", e);
         }
