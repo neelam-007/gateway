@@ -39,8 +39,16 @@ public class Session {
         return highestSeq;
     }
 
-    public void setHighestSeq(long highestSeq) {
-        this.highestSeq = highestSeq;
+    /**
+     * Indicate that a sequence number was used by a message whose signature was validated.
+     * This will prevent that sequence number, or any lower number, from ever again being accepted
+     * within this session.
+     *
+     * @param num  A sequence number that was used inside a signed message whose signature was validated.
+     */
+    public synchronized void hitSequenceNumber(long num) {
+        if (num > this.highestSeq)
+            this.highestSeq = num;
     }
 
     public byte[] getKeyReq() {
@@ -75,7 +83,7 @@ public class Session {
         return nrRequestsUsed;
     }
 
-    public long incrementRequestsUsed() {
+    public synchronized long incrementRequestsUsed() {
         return ++nrRequestsUsed;
     }
 
