@@ -60,34 +60,36 @@ public class StatusUpdater extends Thread {
             try {
                 context = PersistenceContext.getCurrent();
             } catch (SQLException e) {
-                logger.log(Level.SEVERE, "error getting persistence context. " +
-                                         "this is stopping prematurely", e);
+                logger.log(Level.SEVERE, "error getting persistence context.", e);
                 return;
             }
-            try {
+            if (context != null) {
                 try {
-                    context.beginTransaction();
-                } catch (TransactionException e) {
-                    logger.log(Level.SEVERE, "error begining transaction. " +
-                                             "this is stopping prematurely", e);
-                    return;
-                }
-                try {
-                    updateNodeStatus();
-                    updateServiceUsage(context);
-                } catch (Throwable e) {
-                    logger.log(Level.SEVERE, "error in update", e);
-                } finally {
+                    boolean transactionok = true;
                     try {
-                        context.commitTransaction();
+                        context.beginTransaction();
                     } catch (TransactionException e) {
-                        logger.log(Level.SEVERE, "error commiting transaction. " +
-                                                 "this is stopping prematurely", e);
+                        logger.log(Level.SEVERE, "error begining transaction. ", e);
+                        transactionok = false;
                     }
+                    if (transactionok) {
+                        try {
+                            updateNodeStatus();
+                            updateServiceUsage(context);
+                        } catch (Throwable e) {
+                            logger.log(Level.SEVERE, "error in update", e);
+                        } finally {
+                            try {
+                                context.commitTransaction();
+                            } catch (TransactionException e) {
+                                logger.log(Level.SEVERE, "error commiting transaction. ", e);
+                            }
+                        }
+                    }
+                } finally {
+                    context.close();
+                    context = null;
                 }
-            } finally {
-                context.close();
-                context = null;
             }
 
             if (die) break;
