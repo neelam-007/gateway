@@ -218,21 +218,24 @@ public class MimePartsTableSorter  extends FilteredDefaultTableModel {
      */
     public Object getValueAt(int row, int col) {
 
-        MimePartInfo multipartInfo = (MimePartInfo) sortedData[row];
+        if(row < sortedData.length) {
+            MimePartInfo multipartInfo = (MimePartInfo) sortedData[row];
 
+            switch (col) {
+                case MIME_PART_TABLE_PARAM_NAME_COLUMN_INDEX:
+                    return multipartInfo.getName();
 
-        switch (col) {
-            case MIME_PART_TABLE_PARAM_NAME_COLUMN_INDEX:
-                return multipartInfo.getName();
+                case MIME_PART_TABLE_CONTENT_TYPE_COLUMN_INDEX:
+                    return multipartInfo.getContentType();
 
-            case MIME_PART_TABLE_CONTENT_TYPE_COLUMN_INDEX:
-                return multipartInfo.getContentType();
+                case MIME_PART_TABLE_MAX_LENGTH_COLUMN_INDEX:
+                    return new Integer(multipartInfo.getMaxLength());
 
-            case MIME_PART_TABLE_MAX_LENGTH_COLUMN_INDEX:
-                return new Integer(multipartInfo.getMaxLength());
-
-            default:
-                throw new IllegalArgumentException("Bad Column");
+                default:
+                    throw new IllegalArgumentException("Accessing a invalid column:" + col);
+            }
+        } else {
+            throw new IllegalArgumentException("Acessging a invalid row:" + row);
         }
     }
 
