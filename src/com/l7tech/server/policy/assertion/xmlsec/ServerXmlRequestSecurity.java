@@ -3,6 +3,7 @@ package com.l7tech.server.policy.assertion.xmlsec;
 import com.l7tech.common.security.AesKey;
 import com.l7tech.common.security.xml.*;
 import com.l7tech.common.util.SoapUtil;
+import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.xml.XpathEvaluator;
 import com.l7tech.common.xml.XpathExpression;
 import com.l7tech.logging.LogManager;
@@ -62,6 +63,7 @@ public class ServerXmlRequestSecurity implements ServerAssertion {
     public AssertionStatus checkRequest(Request request, Response response) throws IOException, PolicyAssertionException {
         // get the document
         Document soapmsg = extractDocumentFromRequest(request);
+ // XmlUtil.documentToOutputStream(soapmsg, System.out);
 
         // get the session
         Session xmlsecSession = null;
@@ -91,8 +93,6 @@ public class ServerXmlRequestSecurity implements ServerAssertion {
             // response.setPolicyViolated(true);
             return AssertionStatus.FALSIFIED;
         }
-        SOAPMessage soapMessage = null;
-        Map namespaces = null;
 
         for (int i = 0; i < data.length; i++) {
             ElementSecurity elementSecurity = data[i];
@@ -100,22 +100,16 @@ public class ServerXmlRequestSecurity implements ServerAssertion {
             List nodes = null;
             try {
                 XpathExpression xpath = elementSecurity.getXpathExpression();
-                if (soapMessage == null) {
-                    soapMessage = SoapUtil.asSOAPMessage(soapmsg);
+                nodes = XpathEvaluator.newEvaluator(soapmsg, xpath.getNamespaces()).select(xpath.getExpression());
+                if (nodes.isEmpty()) {
+                    logger.log(Level.WARNING, "XPath expression '"+xpath.getExpression()+"' returns no elements.");
+                    return AssertionStatus.FALSIFIED;
                 }
-                if (namespaces == null) {
-                    namespaces = XpathEvaluator.getNamespaces(soapMessage);
-                }
-                nodes = XpathEvaluator.newEvaluator(soapmsg, namespaces).select(xpath.getExpression());
-            } catch (SOAPException e) {
-                logger.log(Level.SEVERE, e.getMessage(), e);
-                return AssertionStatus.FALSIFIED;
             } catch (JaxenException e) {
                 logger.log(Level.SEVERE, e.getMessage(), e);
                 return AssertionStatus.FALSIFIED;
             }
 
-            if (nodes.isEmpty()) continue; // nothing selected
             Object o = nodes.get(0);
             if (!(o instanceof Element)) {
                 logger.log(Level.SEVERE, "Unexpected type returned by XPath expression " + o.getClass());
