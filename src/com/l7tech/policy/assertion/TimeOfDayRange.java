@@ -6,16 +6,19 @@
 
 package com.l7tech.policy.assertion;
 
+import java.io.Serializable;
 
 
 /**
  * Immutable.
- * * todo: consider switching to <code>java.util.Date</code> instead of <code>TimeOfDay</code>
  *
  * @author alex
  * @version $Revision$
  */
-public class TimeOfDayRange {
+public class TimeOfDayRange implements Serializable {
+    // default constructor for bean mapping purposes
+    public TimeOfDayRange() {
+    }
     public TimeOfDayRange( TimeOfDay from, TimeOfDay to ) {
         _from = from;
         _to = to;
@@ -29,6 +32,13 @@ public class TimeOfDayRange {
         return _to;
     }
 
-    protected final TimeOfDay _from;
-    protected final TimeOfDay _to;
+    public void setFrom(TimeOfDay arg) {
+        _from = arg;
+    }
+    public void setTo(TimeOfDay arg) {
+        _to = arg;
+    }
+
+    protected TimeOfDay _from;
+    protected TimeOfDay _to;
 }

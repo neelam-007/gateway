@@ -6,15 +6,21 @@
 
 package com.l7tech.policy.assertion;
 
+import java.io.Serializable;
+
 /**
  * Immutable.
  *
- * todo: consider replacing this class with <code>java.util.Date</code>.
  *
  * @author alex
  * @version $Revision$
  */
-public class TimeOfDay implements Comparable {
+public class TimeOfDay implements Comparable, Serializable {
+
+    // default constructor for bean serialization
+    public TimeOfDay() {
+    }
+
     /**
      * Construct a new TimeOfDay from a given hour, minute and second.  Assumed to be in 24-hour format!
      * @param hour
@@ -31,6 +37,20 @@ public class TimeOfDay implements Comparable {
     public int getHour() {return _hour;}
     public int getMinute() {return _minute;}
     public int getSecond() {return _second;}
+
+    public void setHour(int arg) {
+        _hour = arg;
+        _secondsSinceMidnight = ( _hour * 60 * 60 ) + ( _minute * 60 ) + _second;
+    }
+    public void setMinute(int arg) {
+        _minute = arg;
+        _secondsSinceMidnight = ( _hour * 60 * 60 ) + ( _minute * 60 ) + _second;
+    }
+
+    public void setSecond(int arg) {
+        _second = arg;
+        _secondsSinceMidnight = ( _hour * 60 * 60 ) + ( _minute * 60 ) + _second;
+    }
 
     public boolean before( TimeOfDay other ) {
         return _secondsSinceMidnight < other._secondsSinceMidnight;
@@ -67,9 +87,9 @@ public class TimeOfDay implements Comparable {
         return result;
     }
 
-    protected final int _hour;
-    protected final int _minute;
-    protected final int _second;
+    protected int _hour;
+    protected int _minute;
+    protected int _second;
 
-    protected final int _secondsSinceMidnight;
+    protected transient int _secondsSinceMidnight;
 }
