@@ -5,7 +5,12 @@ import com.l7tech.common.security.xml.WssProcessor;
 import com.l7tech.common.security.xml.WssProcessorImpl;
 import com.l7tech.common.xml.InvalidDocumentFormatException;
 import com.l7tech.common.util.KeystoreUtils;
+import com.l7tech.common.util.Locator;
 import com.l7tech.identity.User;
+import com.l7tech.identity.IdentityProviderConfigManager;
+import com.l7tech.server.identity.IdentityProviderFactory;
+import com.l7tech.objectmodel.FindException;
+import com.l7tech.policy.assertion.credential.LoginCredentials;
 
 import javax.crypto.SecretKey;
 import java.security.cert.X509Certificate;
@@ -16,6 +21,7 @@ import java.security.KeyStoreException;
 import java.security.GeneralSecurityException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.Collection;
 import java.io.IOException;
 import java.io.ByteArrayInputStream;
 
@@ -30,6 +36,26 @@ import java.io.ByteArrayInputStream;
  * $Id$<br/>
  */
 public class SecureConversationTokenService {
+
+    public interface CredentialsAuthenticator {
+        User authenticate(LoginCredentials creds);
+    }
+
+    /**
+     * Handles the request for a secure conversation security token.
+     * @param request the request for the secure conversation context
+     * @param manager the manager for the secure conversation context
+     * @param creds resolved credentials such as an X509Certificate to an actual user to associate the context with
+     * @return
+     */
+    public Document respondToRequestSecurityToken(Document request, SecureConversationContextManager manager, CredentialsAuthenticator creds) {
+        // todo
+        return null;
+    }
+
+
+    /*
+
     public SecureConversationSession getNewContext(Document request) {
         WssProcessor trogdor = new WssProcessorImpl();
 
@@ -127,6 +153,13 @@ public class SecureConversationTokenService {
     }
 
     private User getUserFromCert(X509Certificate clientCert) {
+        IdentityProviderConfigManager idpcm = (IdentityProviderConfigManager)Locator.getDefault().lookup(IdentityProviderConfigManager);
+        Collection providers = null;
+        try {
+            providers = IdentityProviderFactory.findAllIdentityProviders(idpcm);
+        } catch (FindException e) {
+
+        }
         // todo, go through providers, find user matching this cert
         return null;
     }
@@ -166,5 +199,5 @@ public class SecureConversationTokenService {
     private X509Certificate serverCert = null;
     private static final long DEFAULT_SESSION_DURATION = 1000*60*60*2; // 2 hrs?
 
-    private final Logger logger = Logger.getLogger(getClass().getName());
+    private final Logger logger = Logger.getLogger(getClass().getName());*/
 }

@@ -17,7 +17,6 @@ import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 import java.io.BufferedReader;
 import java.io.IOException;
-import java.security.cert.X509Certificate;
 import java.util.logging.Logger;
 
 /**
@@ -50,9 +49,10 @@ public class TokenServiceServlet extends HttpServlet {
             // todo, some error
         }
         SecureConversationTokenService tokenService = new SecureConversationTokenService();
-        SecureConversationSession session = tokenService.getNewContext(payload);
+        // todo , plug in new version
+        /*SecureConversationSession session = tokenService.getNewContext(payload);
         Document responseDoc = tokenService.sessionToRequestSecurityTokenResponse(session);
-        outputRequestSecurityTokenResponse(responseDoc, res);
+        outputRequestSecurityTokenResponse(responseDoc, res);*/
     }
 
     private void outputRequestSecurityTokenResponse(Document requestSecurityTokenResponse,
