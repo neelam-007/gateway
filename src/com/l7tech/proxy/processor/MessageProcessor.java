@@ -564,7 +564,8 @@ public class MessageProcessor {
             WssProcessor.ProcessorResult processorResult =
                     wssProcessor.undecorateMessage(responseDocument,
                                                    SsgKeyStoreManager.getClientCert(ssg),
-                                                   SsgKeyStoreManager.getClientCertPrivateKey(ssg));
+                                                   SsgKeyStoreManager.getClientCertPrivateKey(ssg),
+                                                   null); // TODO ws-sc
             responseDocument = processorResult.getUndecoratedMessage();
 
             SsgResponse response = new SsgResponse(responseDocument, processorResult, status, headers);

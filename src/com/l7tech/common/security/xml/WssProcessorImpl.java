@@ -75,7 +75,8 @@ public class WssProcessorImpl implements WssProcessor {
      */
     public WssProcessor.ProcessorResult undecorateMessage(Document soapMsg,
                                                           X509Certificate recipientCert,
-                                                          PrivateKey recipientKey)
+                                                          PrivateKey recipientKey,
+                                                          SecurityContextFinder securityContextFinder)
             throws WssProcessor.ProcessorException, InvalidDocumentFormatException, GeneralSecurityException
     {
         // Reset all potential outputs

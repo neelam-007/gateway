@@ -48,7 +48,8 @@ public class WssProcessorTest extends TestCase {
             log.info("Testing document: " + testDocument.name);
             WssProcessor.ProcessorResult result = wssProcessor.undecorateMessage(request,
                                                                                  recipientCertificate,
-                                                                                 recipientPrivateKey);
+                                                                                 recipientPrivateKey,
+                                                                                 null);
             assertTrue(result != null);
 
             Element[] encrypted = result.getElementsThatWereEncrypted();

@@ -174,7 +174,8 @@ public class WssRoundTripTest extends TestCase {
 
         WssProcessor.ProcessorResult r = trogdor.undecorateMessage(incomingMessage,
                                                                    td.recipientCert,
-                                                                   td.recipientKey);
+                                                                   td.recipientKey,
+                                                                   null);
 
         Document undecorated = r.getUndecoratedMessage();
         log.info("After undecoration (*note: pretty-printed):" + XmlUtil.nodeToFormattedString(undecorated));

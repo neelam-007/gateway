@@ -73,7 +73,8 @@ public class MessageProcessor {
             }
             WssProcessor.ProcessorResult wssOutput = null;
             try {
-                wssOutput = trogdor.undecorateMessage(req.getDocument(), serverSSLcert, sslPrivateKey);
+                // TODO ws-sc
+                wssOutput = trogdor.undecorateMessage(req.getDocument(), serverSSLcert, sslPrivateKey, null);
             } catch (WssProcessor.ProcessorException e) {
                 logger.log(Level.SEVERE, "Error in WSS processing of request", e);
                 return AssertionStatus.SERVER_ERROR;

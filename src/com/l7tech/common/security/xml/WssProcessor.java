@@ -16,6 +16,8 @@ import java.util.Date;
 
 import com.l7tech.common.xml.InvalidDocumentFormatException;
 
+import javax.crypto.SecretKey;
+
 /**
  * Consumes and removes the default Security header in a message, removes any associated decorations, and returns a
  * complete record of its activities.
@@ -43,6 +45,18 @@ public interface WssProcessor {
         X509Certificate asX509Certificate();
         boolean isPossessionProved();
         Element[] getElementsSignedWithThisCert(); // TODO remove this expensive method if it remains unneeded
+    }
+
+    public interface SecurityContextToken extends SecurityToken {
+        SecurityContext getSecurityContext();
+    }
+
+    public interface SecurityContext {
+        SecretKey getSecretKey();
+    }
+
+    public interface SecurityContextFinder {
+        SecurityContext getSecurityContext(String securityContextIdentifier);
     }
 
     public interface TimestampDate extends ParsedElement {
@@ -83,6 +97,7 @@ public interface WssProcessor {
      */
     ProcessorResult undecorateMessage(Document message,
                                       X509Certificate recipientCertificate,
-                                      PrivateKey recipientPrivateKey)
+                                      PrivateKey recipientPrivateKey,
+                                      SecurityContextFinder securityContextFinder)
             throws ProcessorException, InvalidDocumentFormatException, GeneralSecurityException;
 }
