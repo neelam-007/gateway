@@ -45,8 +45,12 @@
                     <UserLogin stringValueNull="null"/>
                     <IdentityProviderOid longValue="-1"/>
                 </SpecificUser>
-                <XmlResponseSecurity/>
-                <XmlRequestSecurity/>
+                <XmlResponseSecurity>
+                    <Elements elementSecurityArrayValue="included"/>
+                </XmlResponseSecurity>
+                <XmlRequestSecurity>
+                    <Elements elementSecurityArrayValue="included"/>
+                </XmlRequestSecurity>
                 <RequestXpathAssertion>
                     <NamespaceMap mapValueNull="null"/>
                     <Pattern stringValueNull="null"/>
