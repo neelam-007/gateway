@@ -33,6 +33,9 @@ public class StatisticsPanel extends JPanel {
     private static final String MIDDLE_SPACE = "        ";
     private static final String END_SPACE = "     ";
     private static final int STAT_REFRESH_TIMER = 5000;
+    private static final String ATTEMPTED_TOTAL_PREFIX = "Attempted Total: ";
+    private static final String AUTHORIZED_TOTAL_PREFIX = "Authorized Total: ";
+    private static final String COMPLETED_TOTAL_PREFIX = "Completed Total: ";
 
     private JTextArea data = new JTextArea("Hello");
     private com.l7tech.adminws.service.ServiceManager serviceManager = null;
@@ -47,7 +50,14 @@ public class StatisticsPanel extends JPanel {
     private JLabel serverUpTime = null;
     private JLabel lastMinuteServerLoad = null;
     private Log logstub = (Log) Locator.getDefault().lookup(Log.class);
-
+    private JPanel selectPaneRight = null;
+    private JPanel selectPaneLeft = null;
+    private JLabel attemptedTotalLabel = null;
+    private JLabel authorizedTotalLabel = null;
+    private JLabel completedTotalLabel = null;
+    private long attemptedCountTotal = 0;
+    private long authorizedCountTotal = 0;
+    private long completedCountTotal = 0;
     public StatisticsPanel() {
         setBorder(new javax.swing.border.LineBorder(new java.awt.Color(0, 0, 0)));
         setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
@@ -84,10 +94,10 @@ public class StatisticsPanel extends JPanel {
     private DefaultTableColumnModel getStatColumnModel() {
         DefaultTableColumnModel columnModel = new DefaultTableColumnModel();
 
-        columnModel.addColumn(new TableColumn(0, 400));
-        columnModel.addColumn(new TableColumn(1, 100));
-        columnModel.addColumn(new TableColumn(2, 100));
-        columnModel.addColumn(new TableColumn(3, 100));
+        columnModel.addColumn(new TableColumn(0, 500));
+        columnModel.addColumn(new TableColumn(1, 80));
+        columnModel.addColumn(new TableColumn(2, 80));
+        columnModel.addColumn(new TableColumn(3, 80));
         columnModel.getColumn(0).setHeaderValue(getStatTableModel().getColumnName(0));
         columnModel.getColumn(1).setHeaderValue(getStatTableModel().getColumnName(1));
         columnModel.getColumn(2).setHeaderValue(getStatTableModel().getColumnName(2));
@@ -118,6 +128,19 @@ public class StatisticsPanel extends JPanel {
         return statTableModel;
     }
 
+    private JPanel getSelectPaneRight(){
+        if(selectPaneRight != null) return selectPaneRight;
+
+        selectPaneRight = new JPanel();
+        selectPaneRight.setLayout(new FlowLayout());
+        selectPaneRight.add(getAttemptedTotalLabel());
+        selectPaneRight.add(getAuthorizedTotalLabel());
+        selectPaneRight.add(getCompletedTotalLabel());
+
+        return selectPaneRight;
+    }
+
+
     private JPanel getSelectPane() {
         if (selectPane == null) {
             selectPane = new JPanel();
@@ -125,12 +148,22 @@ public class StatisticsPanel extends JPanel {
 
         selectPane.setMinimumSize(new Dimension((int) selectPane.getSize().getWidth(), 35));
         selectPane.setLayout(new BorderLayout());
-        selectPane.add(getServerLoadPane(), BorderLayout.EAST);
-        selectPane.add(getControlPane(), BorderLayout.WEST);
+        selectPane.add(getSelectPaneLeft(), BorderLayout.WEST);
+        selectPane.add(getSelectPaneRight(), BorderLayout.EAST);
 
         return selectPane;
     }
 
+    private JPanel getSelectPaneLeft(){
+        if( selectPaneLeft != null) return selectPaneLeft;
+
+        selectPaneLeft = new JPanel();
+        selectPaneLeft.setLayout(new FlowLayout(FlowLayout.LEFT));
+        selectPaneLeft.add(getControlPane());
+        selectPaneLeft.add(getServerLoadPane());
+
+        return selectPaneLeft;
+    }
     private JPanel getServerLoadPane() {
         if (serverLoadPane != null) return serverLoadPane;
 
@@ -211,6 +244,9 @@ public class StatisticsPanel extends JPanel {
                     while (getStatTableModel().getRowCount() > 0) {
                         getStatTableModel().removeRow(0);
                     }
+                    attemptedCountTotal = 0;
+                    authorizedCountTotal = 0;
+                    completedCountTotal = 0;
                     cleanUp = false;
                 }
 
@@ -230,6 +266,9 @@ public class StatisticsPanel extends JPanel {
                             newRow.add(new Integer(stats.getCompletedRequestCount()));
 
                             getStatTableModel().addRow(newRow);
+                            attemptedCountTotal += stats.getAttemptedRequestCount();
+                            authorizedCountTotal += stats.getAuthorizedRequestCount();
+                            completedCountTotal += stats.getCompletedRequestCount();
                         }
 
                     } catch (Throwable t) {
@@ -243,15 +282,21 @@ public class StatisticsPanel extends JPanel {
         }
 
         getStatTableModel().fireTableDataChanged();
+        updateReqeustsTotal();
 
         // also update the server load statistics
-        loadValues();
+        loadServerMetricsValues();
 
         getStatRefreshTimer().start();
     }
 
+    private void updateReqeustsTotal(){
+        attemptedTotalLabel.setText(MIDDLE_SPACE + ATTEMPTED_TOTAL_PREFIX + attemptedCountTotal);
+        authorizedTotalLabel.setText(MIDDLE_SPACE + AUTHORIZED_TOTAL_PREFIX + authorizedCountTotal);
+        completedTotalLabel.setText(MIDDLE_SPACE + COMPLETED_TOTAL_PREFIX + completedCountTotal);
+    }
 
-    private void loadValues() {
+    private void loadServerMetricsValues() {
         UptimeMetrics metrics = null;
         try {
             metrics = logstub.getUptime();
@@ -259,7 +304,7 @@ public class StatisticsPanel extends JPanel {
             metrics = null;
         }
         if (metrics == null) {
-            serverUpTime.setText(SERVER_UP_TIME_PREFIX + STATISTICS_UNAVAILABLE + MIDDLE_SPACE);
+            serverUpTime.setText(MIDDLE_SPACE + SERVER_UP_TIME_PREFIX + STATISTICS_UNAVAILABLE + MIDDLE_SPACE);
             lastMinuteServerLoad.setText(LAST_MINUTE_SERVER_LOAD_PREFIX + STATISTICS_UNAVAILABLE + END_SPACE);
 
         } else {
@@ -291,7 +336,7 @@ public class StatisticsPanel extends JPanel {
             else{
                 uptimeString += Long.toString(minutes_remain) + " minutes " + MIDDLE_SPACE;
             }
-            serverUpTime.setText(SERVER_UP_TIME_PREFIX + uptimeString);
+            serverUpTime.setText(MIDDLE_SPACE + SERVER_UP_TIME_PREFIX + uptimeString);
             lastMinuteServerLoad.setText(LAST_MINUTE_SERVER_LOAD_PREFIX + Double.toString(metrics.getLoad1()) + END_SPACE);
 
         }
@@ -306,9 +351,38 @@ public class StatisticsPanel extends JPanel {
             getStatTableModel().removeRow(0);
         }
         getStatTableModel().fireTableDataChanged();
-        serverUpTime.setText(SERVER_UP_TIME_PREFIX + STATISTICS_UNAVAILABLE + MIDDLE_SPACE);
+        serverUpTime.setText(MIDDLE_SPACE + SERVER_UP_TIME_PREFIX + STATISTICS_UNAVAILABLE + MIDDLE_SPACE);
         lastMinuteServerLoad.setText(LAST_MINUTE_SERVER_LOAD_PREFIX + STATISTICS_UNAVAILABLE + END_SPACE);
+        attemptedTotalLabel.setText(MIDDLE_SPACE + ATTEMPTED_TOTAL_PREFIX + "0");
+        authorizedTotalLabel.setText(MIDDLE_SPACE + AUTHORIZED_TOTAL_PREFIX + "0");
+        completedTotalLabel.setText(MIDDLE_SPACE + COMPLETED_TOTAL_PREFIX + "0");
+    }
 
+    public JLabel getAttemptedTotalLabel() {
+        if(attemptedTotalLabel != null) return attemptedTotalLabel;
+
+        attemptedTotalLabel = new JLabel();
+        attemptedTotalLabel.setText(MIDDLE_SPACE + ATTEMPTED_TOTAL_PREFIX + "0");
+
+        return attemptedTotalLabel;
+    }
+
+    public JLabel getAuthorizedTotalLabel() {
+        if(authorizedTotalLabel != null) return authorizedTotalLabel;
+
+        authorizedTotalLabel = new JLabel();
+        authorizedTotalLabel.setText(MIDDLE_SPACE + AUTHORIZED_TOTAL_PREFIX + "0");
+
+       return authorizedTotalLabel;
+    }
+
+    public JLabel getCompletedTotalLabel() {
+        if(completedTotalLabel != null) return completedTotalLabel;
+
+        completedTotalLabel = new JLabel();
+        completedTotalLabel.setText(MIDDLE_SPACE + COMPLETED_TOTAL_PREFIX + "0");
+
+       return completedTotalLabel;
     }
 
 }
