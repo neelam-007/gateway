@@ -386,7 +386,7 @@ public class FindDialog extends JDialog {
     findButton.setActionCommand(CMD_FIND);
     findButton.addActionListener(new ActionListener() {
                                    public void actionPerformed(ActionEvent event) {
-                                     windowAction(event);
+                                     windowAction(event.getActionCommand());
                                    }
                                  });
     buttonPanel.add(findButton);
@@ -415,7 +415,7 @@ public class FindDialog extends JDialog {
     closeButton.setActionCommand(CMD_CLOSE);
     closeButton.addActionListener(new ActionListener() {
                                     public void actionPerformed(ActionEvent event) {
-                                      windowAction(event);
+                                      windowAction(event.getActionCommand());
                                     }
                                   });
 
@@ -441,22 +441,15 @@ public class FindDialog extends JDialog {
    *
    * @param actionCommand may be null
    */
-  private void windowAction(Object actionCommand) {
-    String cmd = null;
-    if (actionCommand != null) {
-      if (actionCommand instanceof ActionEvent) {
-        cmd = ((ActionEvent)actionCommand).getActionCommand();
-      } else {
-        cmd = actionCommand.toString();
-      }
-    }
-    if (cmd == null) {
+  private void windowAction(String actionCommand) {
+
+    if (actionCommand == null) {
       // do nothing
-    } else if (cmd.equals(CMD_CANCEL)) {
+    } else if (actionCommand.equals(CMD_CANCEL)) {
       ;
-    } else if (cmd.equals(CMD_CLOSE)) {
+    } else if (actionCommand.equals(CMD_CLOSE)) {
       ;
-    } else if (cmd.equals(CMD_FIND)) {
+    } else if (actionCommand.equals(CMD_FIND)) {
       return;
     }
     setVisible(false);

@@ -265,7 +265,7 @@ public class PreferencesDialog extends JDialog {
     okButton.setActionCommand(CMD_OK);
     okButton.addActionListener(new ActionListener() {
                                  public void actionPerformed(ActionEvent event) {
-                                   windowAction(event);
+                                   windowAction(event.getActionCommand());
                                  }
                                });
     buttonPanel.add(okButton);
@@ -279,7 +279,7 @@ public class PreferencesDialog extends JDialog {
     cancelButton.setActionCommand(CMD_CANCEL);
     cancelButton.addActionListener(new ActionListener() {
                                      public void actionPerformed(ActionEvent event) {
-                                       windowAction(event);
+                                       windowAction(event.getActionCommand());
                                      }
                                    });
     buttonPanel.add(cancelButton);
@@ -295,7 +295,7 @@ public class PreferencesDialog extends JDialog {
     helpButton.setActionCommand(CMD_HELP);
     helpButton.addActionListener(new ActionListener() {
                                    public void actionPerformed(ActionEvent event) {
-                                     windowAction(event);
+                                     windowAction(event.getActionCommand());
                                    }
                                  });
     buttonPanel.add(helpButton);
@@ -339,21 +339,14 @@ public class PreferencesDialog extends JDialog {
    */
   private void windowAction(Object actionCommand) {
     boolean closeWindow = false;
-    String cmd = null;
-    if (actionCommand != null) {
-      if (actionCommand instanceof ActionEvent) {
-        cmd = ((ActionEvent)actionCommand).getActionCommand();
-      } else {
-        cmd = actionCommand.toString();
-      }
-    }
-    if (cmd == null) {
+
+    if (actionCommand == null) {
       // do nothing
-    } else if (cmd.equals(CMD_CANCEL)) {
+    } else if (actionCommand.equals(CMD_CANCEL)) {
       closeWindow = true;
-    } else if (cmd.equals(CMD_HELP)) {
+    } else if (actionCommand.equals(CMD_HELP)) {
       ;
-    } else if (cmd.equals(CMD_OK)) {
+    } else if (actionCommand.equals(CMD_OK)) {
       if (validatePreferences()) {
         savePreferences();
         closeWindow = true;

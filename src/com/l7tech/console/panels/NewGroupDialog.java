@@ -254,7 +254,7 @@ public class NewGroupDialog extends JDialog {
         createButton.
                 addActionListener(new ActionListener() {
                     public void actionPerformed(ActionEvent event) {
-                        windowAction(event);
+                        windowAction(event.getActionCommand());
                     }
                 });
         panel.add(createButton);
@@ -269,7 +269,7 @@ public class NewGroupDialog extends JDialog {
         cancelButton.
                 addActionListener(new ActionListener() {
                     public void actionPerformed(ActionEvent event) {
-                        windowAction(event);
+                        windowAction(event.getActionCommand());
                     }
                 });
         panel.add(cancelButton);
@@ -289,21 +289,13 @@ public class NewGroupDialog extends JDialog {
      * @param actionCommand
      *               may be null
      */
-    private void windowAction(Object actionCommand) {
-        String cmd = null;
+    private void windowAction(String actionCommand) {
 
-        if (actionCommand != null) {
-            if (actionCommand instanceof ActionEvent) {
-                cmd = ((ActionEvent) actionCommand).getActionCommand();
-            } else {
-                cmd = actionCommand.toString();
-            }
-        }
-        if (cmd == null) {
+        if (actionCommand == null) {
             // do nothing
-        } else if (cmd.equals(CMD_CANCEL)) {
+        } else if (actionCommand.equals(CMD_CANCEL)) {
             this.dispose();
-        } else if (cmd.equals(CMD_OK)) {
+        } else if (actionCommand.equals(CMD_OK)) {
             if (!validateInput()) {
                 groupIdTextField.requestFocus();
                 return;

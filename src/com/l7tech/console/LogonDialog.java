@@ -281,7 +281,7 @@ public class LogonDialog extends JDialog {
     loginButton.setActionCommand(CMD_LOGIN);
     loginButton.addActionListener(new ActionListener() {
                                     public void actionPerformed(ActionEvent event) {
-                                      windowAction(event);
+                                      windowAction(event.getActionCommand());
                                     }
                                   });
     panel.add(loginButton);
@@ -295,7 +295,7 @@ public class LogonDialog extends JDialog {
     cancelButton.setActionCommand(CMD_CANCEL);
     cancelButton.addActionListener(new ActionListener() {
                                      public void actionPerformed(ActionEvent event) {
-                                       windowAction(event);
+                                       windowAction(event.getActionCommand());
                                      }
                                    });
     panel.add(cancelButton);
@@ -314,22 +314,14 @@ public class LogonDialog extends JDialog {
    * @param actionCommand
    *               may be null
    */
-  private void windowAction(Object actionCommand) {
-    String cmd = null;
-    authentication = new PasswordAuthentication("", new char[] {});
+  private void windowAction(String actionCommand) {
 
-    if (actionCommand != null) {
-      if (actionCommand instanceof ActionEvent) {
-        cmd = ((ActionEvent)actionCommand).getActionCommand();
-      } else {
-        cmd = actionCommand.toString();
-      }
-    }
-    if (cmd == null) {
+    authentication = new PasswordAuthentication("", new char[] {});
+    if (actionCommand == null) {
       // do nothing
-    } else if (cmd.equals(CMD_CANCEL)) {
+    } else if (actionCommand.equals(CMD_CANCEL)) {
       aborted = true;
-    } else if (cmd.equals(CMD_LOGIN)) {
+    } else if (actionCommand.equals(CMD_LOGIN)) {
       if (!validateInput(userNameTextField.getText())) {
         return;
       }

@@ -141,7 +141,7 @@ public class ServicePanel extends WizardStepPanel {
             throw new IllegalArgumentException();
         }
         try {
-            PublishedService publishedService = (PublishedService)settings;
+            PublishedService publishedService = (PublishedService) settings;
 
             publishedService.setName(service.getName());
             publishedService.setUrn(service.getUrn());
@@ -186,20 +186,15 @@ public class ServicePanel extends WizardStepPanel {
             super.getTreeCellRendererComponent(tree, value, selected, expanded, leaf, row, hasFocus);
 
             this.setBackgroundNonSelectionColor(tree.getBackground());
-            if (value instanceof WsdlTreeNode) {
-                WsdlTreeNode node = (WsdlTreeNode)value;
-                setText(node.toString());
-                Image image = expanded ? node.getOpenedIcon() : node.getIcon();
-                Icon icon = null;
-                if (image !=null) {
-                    icon = new ImageIcon(image);
-                }
-                setIcon(icon);
 
-            } else {
-                this.setIcon(null);
-                this.setText(null);
+            WsdlTreeNode node = (WsdlTreeNode) value;
+            setText(node.toString());
+            Image image = expanded ? node.getOpenedIcon() : node.getIcon();
+            Icon icon = null;
+            if (image != null) {
+                icon = new ImageIcon(image);
             }
+            setIcon(icon);
             return this;
         }
     };
