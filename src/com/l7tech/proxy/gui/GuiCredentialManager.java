@@ -240,7 +240,7 @@ public class GuiCredentialManager extends CredentialManager {
         invokeDialog(new Runnable() {
             public void run() {
                 Gui.errorMessage("You need a client certificate to communicate with the Gateway " + ssg + ", \n" +
-                                 "but it has already issed a client certificate to this account and cannot issue\n" +
+                                 "but it has already issued a client certificate to this account and cannot issue\n" +
                                  "a second one.  If you have lost your client certificate, you will need to\n" +
                                  "contact your Gateway administrator and have them revoke your old one before\n" +
                                  "you can obtain a new one.");
