@@ -96,16 +96,24 @@ public class LoggerNameFilter implements Filter, PropertyChangeListener {
     public boolean isLoggable(LogRecord record) {
         boolean included = includes.length == 0;
 
+        String loggerName = record.getLoggerName();
+        // if no logger name use source class name.
+        if (loggerName == null) {
+            loggerName = record.getSourceClassName();
+        }
+        if (loggerName == null) { // still null, use logging package name
+            loggerName = "com.l7tech.logging";
+        }
         for (int i = 0; i < includes.length; i++) {
             String include = includes[i];
-            if (record.getLoggerName().startsWith(include)) {
+            if (loggerName.startsWith(include)) {
                 included = true;
                 break;
             }
         }
         for (int i = 0; i < excludes.length; i++) {
             String exclude = excludes[i];
-            if (record.getLoggerName().startsWith(exclude)) {
+            if (loggerName.startsWith(exclude)) {
                 included = false;
                 break;
             }
