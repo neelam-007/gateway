@@ -13,6 +13,7 @@ import com.l7tech.credential.http.HttpDigestCredentialFinder;
 import com.l7tech.policy.assertion.AssertionError;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.proxy.datamodel.PendingRequest;
+import com.l7tech.proxy.datamodel.Ssg;
 
 /**
  * @author alex
@@ -35,7 +36,12 @@ public class HttpDigest extends HttpCredentialSourceAssertion {
      * @throws PolicyAssertionException if processing should not continue due to a serious error
      */
     public AssertionError decorateRequest(PendingRequest request) throws PolicyAssertionException {
-        // TODO: client-side support for HTTP Digest auth
-        return AssertionError.NOT_YET_IMPLEMENTED;
+        Ssg ssg = request.getSsg();
+        if (ssg.getUsername() == null || ssg.getPassword() == null || ssg.getUsername().length() < 1)
+            return AssertionError.NOT_FOUND;
+        request.setDigestAuthRequired(true);
+        request.setHttpDigestUsername(ssg.getUsername());
+        request.setHttpDigestPassword(ssg.getPassword());
+        return AssertionError.NONE;
     }
 }

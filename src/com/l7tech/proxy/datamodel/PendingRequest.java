@@ -23,6 +23,9 @@ public class PendingRequest {
     private boolean isBasicAuthRequired = false;
     private String httpBasicUsername = "";
     private String httpBasicPassword = "";
+    private boolean isDigestAuthRequired = false;
+    private String httpDigestUsername = "";
+    private String httpDigestPassword = "";
 
 
     /** Construct a PendingRequest around the given SOAPEnvelope going to the given SSG. */
@@ -72,5 +75,29 @@ public class PendingRequest {
 
     public void setHttpBasicPassword(String httpBasicPassword) {
         this.httpBasicPassword = httpBasicPassword;
+    }
+
+    public boolean isDigestAuthRequired() {
+        return isDigestAuthRequired;
+    }
+
+    public void setDigestAuthRequired(boolean digestAuthRequired) {
+        isDigestAuthRequired = digestAuthRequired;
+    }
+
+    public String getHttpDigestUsername() {
+        return httpDigestUsername;
+    }
+
+    public void setHttpDigestUsername(String httpDigestUsername) {
+        this.httpDigestUsername = httpDigestUsername;
+    }
+
+    public String getHttpDigestPassword() {
+        return httpDigestPassword;
+    }
+
+    public void setHttpDigestPassword(String httpDigestPassword) {
+        this.httpDigestPassword = httpDigestPassword;
     }
 }
