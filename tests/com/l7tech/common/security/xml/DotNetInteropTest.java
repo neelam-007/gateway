@@ -68,6 +68,8 @@ public class DotNetInteropTest extends TestCase {
         Element body = SoapUtil.getBody(encryptedDoc);
         Element encryptedPayload = (Element)((XmlUtil.findChildElementsByName(body, "http://www.w3.org/2001/04/xmlenc#", "EncryptedData")).get(0));
         XmlMangler.decryptElement(body, encryptionKeys[0].decryptedKey, encryptionKeys[0].referenceList);
+        String result = XmlUtil.documentToString(encryptedDoc);
+        System.out.println(result);
     }
 
     private PrivateKey getRikerPrivateKey() throws Exception {
