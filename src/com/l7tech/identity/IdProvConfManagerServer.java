@@ -62,7 +62,10 @@ public class IdProvConfManagerServer extends HibernateEntityManager implements I
 
     public long save(IdentityProviderConfig identityProviderConfig) throws SaveException {
         // we should not accept saving an internal type
-        if (identityProviderConfig.type() == IdentityProviderType.INTERNAL ) throw new SaveException("this type of config cannot be saved");
+        if (identityProviderConfig.type() == IdentityProviderType.INTERNAL ) {
+            logger.warning("Attempt to save internal id provider");
+            throw new SaveException("this type of config cannot be saved");
+        }
         if (!LdapConfigSettings.isValidConfigObject(identityProviderConfig)) {
             // not the food additive
             String msg = "This IdentityProviderConfig object does not meet the requirements for the IdentityProviderType.LDAP type.";
@@ -78,7 +81,10 @@ public class IdProvConfManagerServer extends HibernateEntityManager implements I
 
     public void update(IdentityProviderConfig identityProviderConfig) throws UpdateException {
         // we should not accept saving an internal type
-        if (identityProviderConfig.type() == IdentityProviderType.INTERNAL) throw new UpdateException("this type of config cannot be updated");
+        if (identityProviderConfig.type() == IdentityProviderType.INTERNAL) {
+            logger.warning("Attempt to update internal id provider");
+            throw new UpdateException("this type of config cannot be updated");
+        }
         try {
             IdentityProviderFactory.dropProvider(identityProviderConfig);
             _manager.update(getContext(), identityProviderConfig);
@@ -89,7 +95,10 @@ public class IdProvConfManagerServer extends HibernateEntityManager implements I
 
     public void delete(IdentityProviderConfig identityProviderConfig) throws DeleteException {
         // we should not accept deleting an internal type
-        if (identityProviderConfig.type() == IdentityProviderType.INTERNAL) throw new DeleteException("this type of config cannot be deleted");
+        if (identityProviderConfig.type() == IdentityProviderType.INTERNAL) {
+            logger.warning("Attempt to delete internal id provider");
+            throw new DeleteException("this type of config cannot be deleted");
+        }
         try {
             IdentityProvider prov = IdentityProviderFactory.makeProvider(identityProviderConfig);
             if (prov instanceof LdapIdentityProviderServer) {
