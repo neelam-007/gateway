@@ -48,6 +48,10 @@ public class LogAdminImpl implements LogAdmin {
         return logRecordsToStrings(records);
     }
 
+    public String[] getSystemLog(String nodeid, long startMsgNumber, long endMsgNumber, int size) throws RemoteException {
+        throw new UnsupportedOperationException();
+    }
+
     public UptimeMetrics getUptime() throws RemoteException {
         try {
             return UptimeMonitor.getLastUptime();

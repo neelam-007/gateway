@@ -79,6 +79,10 @@ public class LogAdminStub implements LogAdmin {
         return result;
     }
 
+    public String[] getSystemLog(String nodeid, long startMsgNumber, long endMsgNumber, int size) throws RemoteException {
+        return getSystemLog(startMsgNumber, endMsgNumber, size);
+    }
+
     public UptimeMetrics getUptime() throws RemoteException {
         long time = System.currentTimeMillis() - (25*60*60000 + 60000); // server uptime is 1 day 1 hour 1 minute
 
