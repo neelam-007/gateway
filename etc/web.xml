@@ -114,6 +114,11 @@
     </servlet-mapping>
 
     <servlet-mapping>
+       <servlet-name>WsdlProxy</servlet-name>
+       <url-pattern>/ssg/wsil</url-pattern>
+    </servlet-mapping>
+
+    <servlet-mapping>
         <servlet-name>AxisServlet</servlet-name>
         <url-pattern>*.jws</url-pattern>
     </servlet-mapping>
