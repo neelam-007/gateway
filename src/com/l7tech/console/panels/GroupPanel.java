@@ -414,7 +414,7 @@ public class GroupPanel extends EntityEditorPanel {
      */
     private Group collectChanges() {
         group.setDescription(this.getDescriptionTextField().getText());
-        group.setMemberHeaders(usersPanel.getCurrentUsers());
+        // group.setMemberHeaders(usersPanel.getCurrentUsers());
         return group;
     }
 

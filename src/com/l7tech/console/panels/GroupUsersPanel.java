@@ -164,6 +164,7 @@ class GroupUsersPanel extends JPanel {
             public void intervalAdded(ListDataEvent e) {
                 if (!isLoading) {
                     groupPanel.setModified(true);
+                    updateGroupMembers();
                 }
             }
 
@@ -174,7 +175,7 @@ class GroupUsersPanel extends JPanel {
             public void intervalRemoved(ListDataEvent e) {
                 if (!isLoading) {
                     groupPanel.setModified(true);
-
+                    updateGroupMembers();
                 }
             }
 
@@ -185,6 +186,16 @@ class GroupUsersPanel extends JPanel {
             public void contentsChanged(ListDataEvent e) {
                 if (!isLoading) {
                     groupPanel.setModified(true);
+                    updateGroupMembers();
+                }
+            }
+
+            private void updateGroupMembers() {
+                final Set memberHeaders = groupPanel.getGroup().getMemberHeaders();
+                memberHeaders.clear();
+                for (int i = 0; i < listInModel.getSize(); i++) {
+                    EntityHeader g = (EntityHeader) listInModel.getElementAt(i);
+                    memberHeaders.add(g);
                 }
             }
 
