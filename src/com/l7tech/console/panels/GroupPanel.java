@@ -14,6 +14,7 @@ import com.l7tech.identity.Group;
 import com.l7tech.identity.IdentityAdmin;
 import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.identity.PersistentGroup;
+import com.l7tech.identity.ldap.LdapGroup;
 import com.l7tech.identity.fed.VirtualGroup;
 import com.l7tech.objectmodel.*;
 
@@ -94,6 +95,8 @@ public abstract class GroupPanel extends EntityEditorPanel {
             if (g instanceof VirtualGroup) {
                 return newVirtualGroupPanel(config);
             } else if (g instanceof PersistentGroup) {
+                return newPhysicalGroupPanel(config);
+            } else if (g instanceof LdapGroup) {
                 return newPhysicalGroupPanel(config);
             } else {
                 throw new RuntimeException("Can't create a GroupPanel implementation for " + g.getClass().getName());
