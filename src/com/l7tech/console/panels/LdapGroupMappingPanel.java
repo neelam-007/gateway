@@ -6,6 +6,7 @@ import com.l7tech.identity.ldap.MemberStrategy;
 import com.l7tech.console.util.SortedListModel;
 
 import javax.swing.*;
+import javax.swing.border.EtchedBorder;
 import javax.swing.event.ListSelectionListener;
 import javax.swing.event.ListSelectionEvent;
 import java.awt.*;
@@ -34,6 +35,8 @@ public class LdapGroupMappingPanel extends WizardStepPanel {
         super(next);
         initResources();
         initComponents();
+        setLayout(new BorderLayout());
+        add(groupPanel, BorderLayout.CENTER);
     }
 
     /**
@@ -443,7 +446,7 @@ public class LdapGroupMappingPanel extends WizardStepPanel {
 
         groupListPanel.add(groupListScrollPane, java.awt.BorderLayout.CENTER);
 
-        groupListTitle.setText("Group Object Class List");
+        groupListTitle.setText("Group Object Classes");
         groupListTitle.setMaximumSize(new java.awt.Dimension(102, 40));
         groupListTitle.setMinimumSize(new java.awt.Dimension(102, 30));
         groupListTitle.setPreferredSize(new java.awt.Dimension(102, 40));
@@ -452,6 +455,7 @@ public class LdapGroupMappingPanel extends WizardStepPanel {
         groupPanel.add(groupListPanel, java.awt.BorderLayout.WEST);
 
         groupActionPanel.setLayout(new java.awt.FlowLayout(java.awt.FlowLayout.RIGHT));
+        groupActionPanel.setBorder(new EtchedBorder());
 
         groupActionPanel.setMinimumSize(new java.awt.Dimension(400, 36));
         groupActionPanel.setPreferredSize(new java.awt.Dimension(400, 36));
@@ -546,7 +550,7 @@ public class LdapGroupMappingPanel extends WizardStepPanel {
         gridBagConstraints.anchor = java.awt.GridBagConstraints.WEST;
         groupAttributesPanel.add(mappingTitle, gridBagConstraints);
 
-        objectClassLabel.setText("Object Class");
+        objectClassLabel.setText("Object Class Name");
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 0;
         gridBagConstraints.gridy = 0;
@@ -561,8 +565,7 @@ public class LdapGroupMappingPanel extends WizardStepPanel {
         groupAttributesPanel.add(getObjectClassField(), gridBagConstraints);
 
         groupPanel.add(groupAttributesPanel, java.awt.BorderLayout.CENTER);
-
-        add(groupPanel);
+        groupPanel.setBorder(new EtchedBorder());
     }
 
     /**
