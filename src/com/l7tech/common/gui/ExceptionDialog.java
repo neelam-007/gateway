@@ -3,6 +3,7 @@ package com.l7tech.common.gui;
 
 import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.common.gui.widgets.HyperlinkLabel;
+import com.l7tech.common.util.ExceptionUtils;
 
 import javax.swing.*;
 import javax.swing.event.HyperlinkEvent;
@@ -163,8 +164,9 @@ public class ExceptionDialog extends JDialog implements ActionListener {
       throws MalformedURLException {
         HyperlinkLabel label = null;
         if (t == null || (t.getMessage() == null || "".equals(t.getMessage())))
-            return null;
-        label = new HyperlinkLabel(t.getMessage(), null, "file://", SwingConstants.CENTER);
+            return new JLabel();
+        Throwable cause = ExceptionUtils.unnestToRoot(t);
+        label = new HyperlinkLabel(cause.getMessage(), null, "file://", SwingConstants.CENTER);
         label.addHyperlinkListener(new HyperlinkListener() {
             /**
              * Called when a hypertext link is updated.
@@ -237,11 +239,12 @@ public class ExceptionDialog extends JDialog implements ActionListener {
             value = "There are no additional mesaage details.";
             return value;
         }
+        Throwable cause = ExceptionUtils.unnestToRoot(throwable);
 
         StringWriter stringWriter = new StringWriter();
         PrintWriter printWriter = new PrintWriter(stringWriter);
 
-        throwable.printStackTrace(printWriter);
+        cause.printStackTrace(printWriter);
         printWriter.flush();
         value = stringWriter.toString();
 

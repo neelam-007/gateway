@@ -210,8 +210,9 @@ public abstract class AbstractLocator extends Locator {
                     }
                     return instance;
                 }
-            } catch (Exception e) {
-                e.printStackTrace(System.err);
+            } catch (InstantiationException e) {
+                throw new RuntimeException("error instantiating " + itemImplementation, e);
+            } catch (IllegalAccessException e) {
                 throw new RuntimeException("error instantiating " + itemImplementation, e);
             }
         }
