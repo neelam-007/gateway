@@ -69,6 +69,5 @@ public class ServerSslAssertion implements ServerAssertion {
     }
 
     protected SslAssertion _data;
-
-    protected transient Logger logger = LogManager.getInstance().getSystemLogger();
+    protected Logger logger = LogManager.getInstance().getSystemLogger();
 }
