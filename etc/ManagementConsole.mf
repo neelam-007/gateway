@@ -1,4 +1,4 @@
 Manifest-Version: 1.0
-Class-Path: lib/jh.jar lib/jnlp.jar lib/kunststoff.jar lib/odmg.jar lib/hibernate.jar lib/oswego-concurrent.jar lib/wsdl4j.jar lib/xercesImpl.jar lib/xml-apis.jar lib/bcprov-jdk14-119.jar lib/xss4j.jar lib/jini-core.jar lib/jini-ext.jar lib/reggie.jar lib/start.jar lib/axis.jar lib/commons-httpclient.jar lib/qname.jar lib/forms_rt.jar lib/jedit-syntax.jar
+Class-Path: lib/jh.jar lib/jnlp.jar lib/kunststoff.jar lib/odmg.jar lib/hibernate.jar lib/oswego-concurrent.jar lib/wsdl4j.jar lib/xercesImpl.jar lib/xml-apis.jar lib/bcprov-jdk14-119.jar lib/xss4j.jar lib/jini-core.jar lib/jini-ext.jar lib/reggie.jar lib/start.jar lib/axis.jar lib/commons-httpclient.jar lib/commons-lang.jar lib/commons-collections.jar lib/qname.jar lib/forms_rt.jar lib/jedit-syntax.jar
 Main-Class: com.l7tech.console.Main
 
