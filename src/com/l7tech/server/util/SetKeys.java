@@ -7,6 +7,7 @@
 package com.l7tech.server.util;
 
 import com.l7tech.common.security.JceProvider;
+import com.l7tech.common.security.RsaSignerEngine;
 import com.l7tech.common.security.prov.bc.BouncyCastleRsaSignerEngine;
 
 import java.io.File;
@@ -132,7 +133,7 @@ public class SetKeys {
             sslCert =
                 BouncyCastleRsaSignerEngine.makeSignedCertificate( SSL_DN_PREFIX + hostname,
                                                                    SSL_VALIDITY_DAYS,
-                                                                   sslkp.getPublic(), caCert, caPrivateKey );
+                                                                   sslkp.getPublic(), caCert, caPrivateKey, RsaSignerEngine.CertType.SSL );
             sslks.setKeyEntry( SSL_ALIAS, sslkp.getPrivate(), sslpass.toCharArray(),
                                new X509Certificate[] { sslCert, caCert } );
             FileOutputStream fos = null;

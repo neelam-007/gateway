@@ -86,7 +86,7 @@ public class BouncyCastleRsaSignerEngine implements RsaSignerEngine {
     }
 
     private static X509V3CertificateGenerator makeCertGenerator( X509Name subject, int validity,
-                                                                 PublicKey publicKey, boolean isCa ) {
+                                                                 PublicKey publicKey, CertType type ) {
         Calendar cal = Calendar.getInstance();
         // Set back startdate ten minutes to avoid some problems with wrongly set clocks.
         cal.add(Calendar.MINUTE, -10);
@@ -107,16 +107,17 @@ public class BouncyCastleRsaSignerEngine implements RsaSignerEngine {
         certgen.setSubjectDN(subject);
         certgen.setPublicKey(publicKey);
 
-        BasicConstraints bc = isCa ? new BasicConstraints(2) : new BasicConstraints(false);
+        BasicConstraints bc = type == CertType.CA ? new BasicConstraints(2) : new BasicConstraints(false);
         certgen.addExtension(X509Extensions.BasicConstraints.getId(), true, bc);
 
-        // Set key usage (signing only)
+        // Set key usage (signing only for CA certs)
         int usage = 0;
-        if ( isCa ) {
+        if ( type == CertType.CA ) {
             usage |= X509KeyUsage.keyCertSign;
         } else {
             usage |= X509KeyUsage.digitalSignature;
             usage |= X509KeyUsage.keyEncipherment;
+            usage |= X509KeyUsage.nonRepudiation;
         }
 
         certgen.addExtension(X509Extensions.KeyUsage, true, new X509KeyUsage(usage));
@@ -147,7 +148,7 @@ public class BouncyCastleRsaSignerEngine implements RsaSignerEngine {
             throws SignatureException, InvalidKeyException
     {
         X509Name subject = new X509Name(subjectDn);
-        X509V3CertificateGenerator certgen = makeCertGenerator(subject, validity, keypair.getPublic(), true);
+        X509V3CertificateGenerator certgen = makeCertGenerator(subject, validity, keypair.getPublic(), CertType.CA);
 
         // Self-signed, issuer == subject
         certgen.setIssuerDN(subject);
@@ -158,11 +159,11 @@ public class BouncyCastleRsaSignerEngine implements RsaSignerEngine {
 
     public static X509Certificate makeSignedCertificate(String subjectDn, int validity,
                                                         PublicKey subjectPublicKey,
-                                                        X509Certificate caCert, PrivateKey caKey)
+                                                        X509Certificate caCert, PrivateKey caKey, CertType type)
             throws IOException, SignatureException, InvalidKeyException
     {
         X509Name subject = new X509Name(subjectDn);
-        X509V3CertificateGenerator certgen = makeCertGenerator(subject, validity, subjectPublicKey, false );
+        X509V3CertificateGenerator certgen = makeCertGenerator(subject, validity, subjectPublicKey, type);
         certgen.setIssuerDN(new X509Name(caCert.getSubjectDN().getName()));
 
         // Add authority key info (fingerprint)
@@ -192,7 +193,7 @@ public class BouncyCastleRsaSignerEngine implements RsaSignerEngine {
         }
 
         X509Certificate cert = makeSignedCertificate(dn, CERT_DAYS_VALID, pkcs10.getPublicKey(),
-                                                     caCert, caPrivateKey);
+                                                     caCert, caPrivateKey, CertType.CLIENT);
         // Verify before returning
         cert.verify(caCert.getPublicKey());
         return cert;
