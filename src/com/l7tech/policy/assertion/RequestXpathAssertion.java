@@ -22,8 +22,6 @@ import java.util.HashMap;
  * @see com.l7tech.proxy.policy.assertion.ClientRequestXpathAssertion
  * @author alex
  *
- * TODO change this to be a subclass of XpathBasedAssertion
- *
  * @version $Revision$
  */
 public class RequestXpathAssertion extends XpathBasedAssertion {
