@@ -151,6 +151,12 @@ public class Client {
     // ************************************************
 
     private Call createStubCall() throws java.rmi.RemoteException {
+        if (sessionCall != null) {
+            sessionCall.clearOperation();
+            //sessionCall.clearHeaders();
+            //sessionCall.removeAllParameters();
+            return sessionCall;
+        }
         // create service, call
         org.apache.axis.client.Service service = new org.apache.axis.client.Service();
         // todo, should i reuse this object instead of re-instantiating every call?
@@ -161,6 +167,7 @@ public class Client {
                 call.setUsername(username);
                 call.setPassword(password);
             }
+            call.setMaintainSession(true);
         } catch (ServiceException e) {
             throw new java.rmi.RemoteException(e.getMessage(), e);
         }
@@ -170,6 +177,7 @@ public class Client {
             throw new java.rmi.RemoteException(e.getMessage(), e);
         }
         registerTypeMappings(call);
+        sessionCall = call;
         return call;
     }
 
@@ -192,4 +200,8 @@ public class Client {
     private String url;
     private String username;
     private String password;
+    // this static object is meant to maintain a session
+    // so that not all calls result in an authentication operation
+    // on the other side
+    private static Call sessionCall = null;
 }
