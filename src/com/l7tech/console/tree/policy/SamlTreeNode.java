@@ -1,11 +1,9 @@
 package com.l7tech.console.tree.policy;
 
 
-import com.l7tech.policy.assertion.Assertion;
-import com.l7tech.policy.assertion.xmlsec.XmlSecurityAssertion;
-import com.l7tech.policy.assertion.xmlsec.SamlSecurity;
-import com.l7tech.console.action.XmlSecurityPropertiesAction;
 import com.l7tech.console.action.SamlPropertiesAction;
+import com.l7tech.policy.assertion.Assertion;
+import com.l7tech.policy.assertion.xmlsec.SamlSecurity;
 
 import javax.swing.*;
 import java.util.ArrayList;
@@ -16,7 +14,6 @@ import java.util.Arrays;
  * element that represents the soap request signing requirement.
  * <p/>
  * 
- * @author flascell
  */
 public class SamlTreeNode extends LeafAssertionTreeNode {
 
