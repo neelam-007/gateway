@@ -7,6 +7,7 @@
 package com.l7tech.server.policy.assertion;
 
 import com.l7tech.common.BuildInfo;
+import com.l7tech.common.xml.InvalidDocumentFormatException;
 import com.l7tech.common.message.Message;
 import com.l7tech.common.message.MimeKnob;
 import com.l7tech.common.message.TcpKnob;
@@ -32,6 +33,7 @@ import org.apache.commons.httpclient.protocol.Protocol;
 import org.apache.commons.httpclient.protocol.SecureProtocolSocketFactory;
 import org.springframework.context.ApplicationContext;
 import org.w3c.dom.Document;
+import org.w3c.dom.Element;
 import org.xml.sax.SAXException;
 
 import javax.net.ssl.SSLContext;
@@ -137,7 +139,51 @@ public class ServerHttpRoutingAssertion extends ServerRoutingAssertion {
                 postMethod.setHttp11(false);
 
                 if (httpRoutingAssertion.getXmlSecurityActorToPromote() != null) {
-                    // todo, modify the request message here so the actor is promoted
+                    Document doc = context.getRequest().getXmlKnob().getDocumentWritable();
+                    String actorDeservingPromotion = httpRoutingAssertion.getXmlSecurityActorToPromote();
+                    // check if that actor is present
+                    Element secHeaderToPromote = null;
+                    try {
+                        secHeaderToPromote = SoapUtil.getSecurityElement(doc, actorDeservingPromotion);
+                    } catch (InvalidDocumentFormatException e) {
+                        // the manager does not allow you to set this
+                        // option for non-soap service therefore this
+                        // should not hapen
+                        String msg = "this option is not supported for non-soap messages. " +
+                                     "something is wrong with this policy";
+                        logger.warning(msg);
+                        throw new PolicyAssertionException(msg);
+                    }
+                    if (secHeaderToPromote != null) {
+                        // make sure there is not a default security header left
+                        Element defaultSecHeader = null;
+                        try {
+                            defaultSecHeader = SoapUtil.getSecurityElement(doc);
+                        } catch (InvalidDocumentFormatException e) {
+                            // the manager does not allow you to set this
+                            // option for non-soap service therefore this
+                            // should not hapen
+                            String msg = "this option is not supported for non-soap messages. " +
+                                         "something is wrong with this policy";
+                            logger.warning(msg);
+                            throw new PolicyAssertionException(msg);
+                        }
+                        if (defaultSecHeader != null) {
+                            String msg = "there was a default security header left. something must " +
+                                         "have gone wrong during processing of this message";
+                            logger.severe(msg);
+                            throw new PolicyAssertionException(msg);
+                        }
+                        // do it
+                        logger.fine("promoting actor " + actorDeservingPromotion);
+                        SoapUtil.nukeActorAttribute(secHeaderToPromote);
+                    } else {
+                        // this is not a big deal but might indicate something wrong
+                        // with the assertion => logging as info
+                        logger.info("routing assertion asked for security header with actor " +
+                                    actorDeservingPromotion + " be promoted but there was no such " +
+                                    "security header present in the message.");
+                    }
                 }
 
                 final MimeKnob reqMime = context.getRequest().getMimeKnob();

@@ -541,6 +541,14 @@ public class SoapUtil {
         return null; // no security header for us
     }
 
+    public static void nukeActorAttribute(Element el) {
+        el.removeAttribute(SoapUtil.ACTOR_ATTR_NAME);
+        for (Iterator i = ENVELOPE_URIS.iterator(); i.hasNext();) {
+            String ns = (String)i.next();
+            el.removeAttributeNS(ns, SoapUtil.ACTOR_ATTR_NAME);
+        }
+    }
+
     public static String getActorValue(Element element) {
         String localactor = element.getAttribute(SoapUtil.ACTOR_ATTR_NAME);
         if (localactor == null || localactor.length() < 1) {
