@@ -1,23 +1,23 @@
 package com.l7tech.service;
 
-import EDU.oswego.cs.dl.util.concurrent.Sync;
 import EDU.oswego.cs.dl.util.concurrent.ReadWriteLock;
+import EDU.oswego.cs.dl.util.concurrent.Sync;
 import EDU.oswego.cs.dl.util.concurrent.WriterPreferenceReadWriteLock;
+import com.l7tech.logging.LogManager;
+import com.l7tech.message.Request;
+import com.l7tech.objectmodel.DuplicateObjectException;
+import com.l7tech.server.policy.ServerPolicyFactory;
+import com.l7tech.server.policy.assertion.ServerAssertion;
+import com.l7tech.service.resolution.NameValueServiceResolver;
+import com.l7tech.service.resolution.ServiceResolutionException;
+import com.l7tech.service.resolution.SoapActionResolver;
+import com.l7tech.service.resolution.UrnResolver;
 
+import javax.wsdl.WSDLException;
+import java.io.IOException;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.io.IOException;
-
-import com.l7tech.logging.LogManager;
-import com.l7tech.message.Request;
-import com.l7tech.service.resolution.*;
-import com.l7tech.objectmodel.DuplicateObjectException;
-import com.l7tech.server.policy.assertion.ServerAssertion;
-import com.l7tech.server.policy.ServerPolicyFactory;
-import com.l7tech.common.util.Locator;
-
-import javax.wsdl.WSDLException;
 
 /**
  * LAYER 7 TECHNOLOGIES, INC
@@ -37,6 +37,8 @@ import javax.wsdl.WSDLException;
  */
 public class ServiceCache {
 
+    public static final long INTEGRITY_CHECK_FREQUENCY = 4000; // 4 seconds
+
     /**
      * get the service cache singleton
      */
@@ -44,13 +46,8 @@ public class ServiceCache {
         return SingletonHolder.singleton;
     }
 
-    /**
-     * initializes the cache
-     */ 
-    public static void initialize() {
-        // this will indirectly initialize the cache because the constructor of
-        // ServiceManagerImp will load all services and cache them
-        Locator.getDefault().lookup(ServiceManager.class);
+    public ServiceCache() {
+        checker.start();
     }
 
     /**
@@ -302,7 +299,6 @@ public class ServiceCache {
         throw new DuplicateObjectException( "Duplicate service resolution parameters!" );
     }
 
-
     /**
      * get statistics for cached service.
      * those stats are lazyly created
@@ -347,6 +343,57 @@ public class ServiceCache {
         }
     }
 
+    public void destroy() {
+        checker.die();
+    }
+
+    private class PeriodicIntegrityChecker extends Thread {
+        public void run() {
+            // wait thrice frequency before starting
+            try {
+                sleep(INTEGRITY_CHECK_FREQUENCY*3);
+            } catch (InterruptedException e) {
+                logger.log(Level.SEVERE, "interruption", e);
+                return;
+            }
+            logger.finest("initiating cache integrity check process");
+            while (true) {
+                if (die) break;
+                try {
+                    sleep(INTEGRITY_CHECK_FREQUENCY);
+                } catch (InterruptedException e) {
+                    logger.log(Level.SEVERE, "interruption", e);
+                    break;
+                }
+                try {
+                    check();
+                } catch (Throwable e) {
+                    logger.log(Level.WARNING, "unhandled exception", e);
+                }
+                lastCheck = System.currentTimeMillis();
+            }
+            logger.finest("cache integrity check process stopping");
+        }
+
+        private void check() {
+            // todo : integrity check
+        }
+
+        public long getLastCheck() {
+            return lastCheck;
+        }
+        public void die() {
+            die = true;
+        }
+
+        private long lastCheck = -1;
+        private boolean die = false;
+    }
+
+    private static class SingletonHolder {
+        private static ServiceCache singleton = new ServiceCache();
+    }
+
     // the cache data itself
     private final Map services = new HashMap();
     private final Map serverPolicies = new HashMap();
@@ -360,7 +407,5 @@ public class ServiceCache {
 
     private final Logger logger = LogManager.getInstance().getSystemLogger();
 
-    private static class SingletonHolder {
-        private static ServiceCache singleton = new ServiceCache();
-    }
+    private final PeriodicIntegrityChecker checker = new PeriodicIntegrityChecker();
 }
