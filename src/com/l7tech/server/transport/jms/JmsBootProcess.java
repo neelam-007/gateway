@@ -20,6 +20,7 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
 import java.util.logging.Logger;
+import java.util.logging.Level;
 
 /**
  * @author alex
@@ -28,6 +29,10 @@ import java.util.logging.Logger;
 public class JmsBootProcess implements ServerComponentLifecycle {
     public JmsBootProcess() {
         _manager = new JmsManager();
+    }
+
+    public String toString() {
+        return "JMS Boot Process";
     }
 
     public void init( ServerConfig config ) throws LifecycleException {
@@ -43,12 +48,19 @@ public class JmsBootProcess implements ServerComponentLifecycle {
                     JmsEndpoint requestEnd = (JmsEndpoint) j.next();
                     JmsEndpoint replyToEnd = requestEnd.getReplyEndpoint();
                     JmsEndpoint failureEnd = requestEnd.getFailureEndpoint();
+
                     _logger.info( "Initializing JMS receiver for '" + conn.getName() + "/" + requestEnd.getName() + "'" );
                     JmsReceiver receiver = new JmsReceiver(
                             conn,
                             JmsReplyType.AUTOMATIC, // TODO Hardcoded
                             requestEnd, replyToEnd, failureEnd );
-                    _receivers.add( receiver );
+
+                    try {
+                        receiver.init( config );
+                        _receivers.add( receiver );
+                    } catch ( LifecycleException e ) {
+                        _logger.log( Level.WARNING, "Receiver " + receiver + " failed to initialize!", e );
+                    }
                 }
             }
             _booted = true;
