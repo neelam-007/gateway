@@ -200,7 +200,7 @@ public class ServiceCache {
             for (int i = 0; i < resolvers.length; i++) {
                 resolvers[i].serviceUpdated(service);
             }
-            logger.finest("updated service in cache. oid=" + service.getOid());
+            logger.finest("updated service in cache. oid=" + service.getOid() + " version=" + service.getVersion());
         } else {
             // make sure no duplicate exist
             //validate(service);
