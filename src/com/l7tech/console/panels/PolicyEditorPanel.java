@@ -351,6 +351,15 @@ public class PolicyEditorPanel extends JPanel {
 
         public void treeNodesChanged(TreeModelEvent e) {
             policyEditorToolbar.buttonSave.setEnabled(true);
+            TreePath path = e.getTreePath();
+            TreeNode parent = (TreeNode)path.getLastPathComponent();
+            int[] indices = e.getChildIndices();
+            for (int i = 0; i < indices.length; i++) {
+                int indice = indices[i];
+                TreeNode node = parent.getChildAt(indice);
+                log.info("nodes changed received " + node);
+            }
+
         }
 
         public void treeNodesInserted(final TreeModelEvent e) {
@@ -403,7 +412,7 @@ public class PolicyEditorPanel extends JPanel {
           public void propertyChange(PropertyChangeEvent evt) {
               log.info(evt.getPropertyName() + "changed");
               if ("service.name".equals(evt.getPropertyName()) ||
-                  "policy".equals(evt.getPropertyName())) {
+                "policy".equals(evt.getPropertyName())) {
                   try {
                       renderService(serviceNode);
                       policyEditorToolbar.buttonSave.setEnabled(true);

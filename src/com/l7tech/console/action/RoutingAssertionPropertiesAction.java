@@ -6,14 +6,12 @@ import com.l7tech.console.event.PolicyListenerAdapter;
 import com.l7tech.console.panels.RoutingAssertionDialog;
 import com.l7tech.console.panels.Utilities;
 import com.l7tech.console.tree.policy.RoutingAssertionTreeNode;
-import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.ComponentRegistry;
+import com.l7tech.console.util.Registry;
 import com.l7tech.policy.assertion.RoutingAssertion;
 
 import javax.swing.*;
 import javax.swing.tree.DefaultTreeModel;
-import javax.swing.tree.TreeNode;
-import javax.swing.tree.TreePath;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -61,32 +59,28 @@ public class RoutingAssertionPropertiesAction extends NodeAction {
     public void performAction() {
         SwingUtilities.invokeLater(
           new Runnable() {
-            public void run() {
-                JFrame f = Registry.getDefault().getWindowManager().getMainWindow();
-                RoutingAssertionDialog d =
-                  new RoutingAssertionDialog(f, (RoutingAssertion)node.asAssertion());
-                d.addPolicyListener(listener);
-                d.pack();
-                Utilities.centerOnScreen(d);
-                d.show();
-            }
-        });
+              public void run() {
+                  JFrame f = Registry.getDefault().getWindowManager().getMainWindow();
+                  RoutingAssertionDialog d =
+                    new RoutingAssertionDialog(f, (RoutingAssertion)node.asAssertion());
+                  d.addPolicyListener(listener);
+                  d.pack();
+                  Utilities.centerOnScreen(d);
+                  d.show();
+              }
+          });
     }
 
     private final PolicyListener listener = new PolicyListenerAdapter() {
         public void assertionsChanged(PolicyEvent e) {
             JTree tree =
-                  (JTree)ComponentRegistry.getInstance().getPolicyTree();
-                if (tree != null) {
-                    TreeNode[] nodes = node.getPath();
-                    TreePath nPath = new TreePath(nodes);
-                    if (tree.hasBeenExpanded(nPath)) {
-                        DefaultTreeModel model = (DefaultTreeModel)tree.getModel();
-                        model.nodeChanged(node);
-                    }
-                } else {
-                    log.log(Level.WARNING, "Unable to reach the palette tree.");
-                }
+              (JTree)ComponentRegistry.getInstance().getPolicyTree();
+            if (tree != null) {
+                DefaultTreeModel model = (DefaultTreeModel)tree.getModel();
+                model.nodeChanged(node);
+            } else {
+                log.log(Level.WARNING, "Unable to reach the palette tree.");
+            }
         }
 
     };
