@@ -1,6 +1,7 @@
 package com.l7tech.identity.cert;
 
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.UpdateException;
 import com.l7tech.identity.User;
 
 import java.security.cert.Certificate;
@@ -30,10 +31,10 @@ public interface ClientCertManager {
      * Records new cert for the user (if user is allowed)
      *
      * @param cert the cert to record
-     * @throws IllegalStateException if user was not in a state that allowes the creation
-     * of a cert
+     * @throws UpdateException if user was not in a state that allowes the creation
+     * of a cert or if an internal error occurs
      */
-    void recordNewUserCert(User user, Certificate cert) throws IllegalStateException;
+    void recordNewUserCert(User user, Certificate cert) throws UpdateException;
 
     /**
      * retrieves existing cert for this user
@@ -43,5 +44,5 @@ public interface ClientCertManager {
     /**
      * revokes the cert (if applicable) for this user
      */
-    void revokeUserCert(User user);
+    void revokeUserCert(User user) throws UpdateException;
 }
