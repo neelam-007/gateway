@@ -38,6 +38,7 @@ public class ServerConfig {
     private static final String PARAM_HTTP_PORTS        = "HttpPorts";
     private static final String PARAM_HTTPS_PORTS       = "HttpsPorts";
     private static final String PARAM_HOSTNAME          = "Hostname";
+    private static final String PARAM_SYSTEMPROPS       = "SystemPropertiesPath";
     private static final String JNDI_PREFIX             = "java:comp/env/";
 
     private static final String JNDI_SERVICE_RESOLVERS  = JNDI_PREFIX + PARAM_SERVICE_RESOLVERS;
@@ -48,6 +49,7 @@ public class ServerConfig {
     private static final String JNDI_HTTP_PORTS         = JNDI_PREFIX + PARAM_HTTP_PORTS;
     private static final String JNDI_HTTPS_PORTS        = JNDI_PREFIX + PARAM_HTTPS_PORTS;
     private static final String JNDI_HOSTNAME           = JNDI_PREFIX + PARAM_HOSTNAME;
+    private static final String JNDI_SYSTEMPROPS        = JNDI_PREFIX + PARAM_SYSTEMPROPS;
 
     public static final String PROP_SERVER_ID = "com.l7tech.server.serverId";
     public static final String PROP_RESOLVERS = "com.l7tech.server.serviceResolvers";
@@ -57,9 +59,11 @@ public class ServerConfig {
     public static final String PROP_HTTP_PORTS = "com.l7tech.server.httpPorts";
     public static final String PROP_HTTPS_PORTS = "com.l7tech.server.httpsPorts";
     public static final String PROP_HOSTNAME = "com.l7tech.server.hostname";
+    public static final String PROP_SYSTEMPROPS = "com.l7tech.server.systemPropertiesPath";
 
     public static final String DEFAULT_KEYSTORE_PROPS_PATH = "/ssg/etc/conf/keystore.properties";
     public static final String DEFAULT_HIBERNATE_PROPS_PATH = "/ssg/etc/conf/hibernate.properties";
+    public static final String DEFAULT_SYSTEMPROPS_PATH = "/ssg/etc/conf/system.properties";
     public static final String DEFAULT_SERVICE_RESOLVERS =
         UrnResolver.class.getName() + " " +
         SoapActionResolver.class.getName() + " " +
@@ -100,6 +104,8 @@ public class ServerConfig {
         _serviceResolvers = getProperty( PROP_RESOLVERS, JNDI_SERVICE_RESOLVERS, DEFAULT_SERVICE_RESOLVERS );
         _keystorePropertiesPath = getProperty( PROP_KEYSTORE_PROPS_PATH, JNDI_KEYSTORE, DEFAULT_KEYSTORE_PROPS_PATH );
         _hibernatePropertiesPath = getProperty( PROP_HIBERNATE_PROPS_PATH, JNDI_HIBERNATE, DEFAULT_HIBERNATE_PROPS_PATH );
+        _systemPropertiesPath = getProperty( PROP_SYSTEMPROPS, JNDI_SYSTEMPROPS, DEFAULT_SYSTEMPROPS_PATH );
+
         _hostname = getProperty( PROP_HOSTNAME, JNDI_HOSTNAME, null );
 
         if ( _hostname == null ) {
@@ -259,6 +265,10 @@ public class ServerConfig {
         return _hibernatePropertiesPath;
     }
 
+    public String getSystemPropertiesPath() {
+        return _systemPropertiesPath;
+    }
+
     public Iterator getIpProtocolPorts() {
         return Collections.unmodifiableList(_ipProtocolPorts).iterator();
     }
@@ -272,6 +282,7 @@ public class ServerConfig {
     private String _serviceResolvers;
     private String _keystorePropertiesPath;
     private String _hibernatePropertiesPath;
+    private String _systemPropertiesPath;
     private ArrayList _ipProtocolPorts = new ArrayList();
     private String _hostname;
 
