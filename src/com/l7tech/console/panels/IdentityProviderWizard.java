@@ -7,6 +7,7 @@ import com.l7tech.identity.InvalidIdProviderCfgException;
 
 import javax.swing.*;
 import javax.swing.border.EtchedBorder;
+import javax.naming.CommunicationException;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -88,7 +89,11 @@ public class IdentityProviderWizard extends Wizard {
         } catch (InvalidIdProviderCfgException e) {
             errorMsg = e.getMessage();
         } catch (Exception e) {
-            errorMsg = resources.getString("test.error.runtime") + "\n" + e.getMessage();
+            errorMsg = resources.getString("test.error.runtime");
+            CommunicationException comex = lookForCommException(e);
+            if (comex != null && comex.getMessage() != null && comex.getMessage().length() > 0) {
+                errorMsg += "\n(" + comex.getMessage() +")";
+            }
         }
         if (errorMsg == null) {
             JOptionPane.showMessageDialog(this, resources.getString("test.res.ok"),
@@ -99,6 +104,14 @@ public class IdentityProviderWizard extends Wizard {
                     resources.getString("test.res.title"),
                     JOptionPane.ERROR_MESSAGE);
         }
+    }
+
+    private CommunicationException lookForCommException(Throwable e) {
+        if (e == null) return null;
+        if (e instanceof CommunicationException) {
+            return (CommunicationException)e;
+        }
+        return lookForCommException(e.getCause());
     }
 
     private IdentityAdmin getIdentityAdmin()
