@@ -233,20 +233,17 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
                                         break;
                                     } catch (KeyStoreCorruptException e1) {
                                         ssg.getRuntime().handleKeyStoreCorrupt();
+                                        /* FALLTHROUGH and retry */
                                     }
                                 }
                             } catch (CertificateAlreadyIssuedException csrex) {
-                                Gui.errorMessage("Unable to apply for certificate",
-                                                 "Unable to obtain certificate from the SecureSpan Gateway " +
+                                Gui.errorMessage("Unable to obtain certificate from the SecureSpan Gateway " +
                                                  ssgName() + " because this account already has a valid " +
-                                                 "certificate. Contact the gateway administrator for more information",
-                                                 csrex);
+                                                 "certificate. Contact the gateway administrator for more information");
                             } catch (BadCredentialsException csrex) {
-                                Gui.errorMessage("Unable to apply for certificate",
-                                                 "Unable to obtain certificate from the SecureSpan Gateway " +
+                                Gui.errorMessage("Unable to obtain certificate from the SecureSpan Gateway " +
                                                  ssgName() + " because of credentials provided. Contact the " +
-                                                 "gateway administrator for more information.",
-                                                 csrex);
+                                                 "gateway administrator for more information.");
                             }
                         }
                         return;
@@ -295,8 +292,8 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
     private void manualCSR() throws OperationCanceledException, GeneralSecurityException,
                                     IOException, KeyStoreCorruptException, BadCredentialsException,
                                     CertificateAlreadyIssuedException {
-        if (!(ssgIdentityPane instanceof TrustedSsgIdentityPanel))
-            throw new IllegalStateException("Not supported for federated SSG");
+        if (!(ssgIdentityPane instanceof TrustedSsgIdentityPanel) || ssg.isFederatedGateway())
+            throw new IllegalStateException("Not supported for Federated Gateway");
 
         PasswordAuthentication creds = ssg.getRuntime().getCredentialManager().getCredentials(ssg);
 
