@@ -18,7 +18,7 @@ import java.security.cert.X509Certificate;
  */
 public interface SSLTrustFailureHandler {
     /**
-     * HAndle the trust failure and return whether the connection should proceed or
+     * Handle the trust failure and return whether the connection should proceed or
      * fail.
      *
      * @param e the exception that caused the trust failure
