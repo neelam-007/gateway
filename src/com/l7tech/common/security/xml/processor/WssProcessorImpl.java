@@ -337,7 +337,12 @@ public class WssProcessorImpl implements WssProcessor {
             }
             DerivedKeyTokenImpl dktok = resolveDerivedKeyByRef(keyInfo, cntx);
             if (dktok == null) {
-                throw new InvalidDocumentFormatException("The DataReference's KeyInfo did not refer to a DerivedKey");
+                // there are some keyinfo formats that we do not support. in that case, we should see if
+                // the message can possibly just passthrough
+                logger.info("The DataReference's KeyInfo did not refer to a DerivedKey." +
+                            "This element will not be decrypted.");
+                cntx.encryptionIgnored = true;
+                return;
             }
             try {
                 decryptElement(encryptedDataElement, dktok.getComputedDerivedKey(), cntx);
