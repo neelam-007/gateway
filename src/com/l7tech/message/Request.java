@@ -9,7 +9,6 @@ package com.l7tech.message;
 import com.l7tech.credential.PrincipalCredentials;
 
 import java.io.InputStream;
-import java.util.Set;
 
 /**
  * @author alex
@@ -19,6 +18,7 @@ public interface Request extends Message {
 
     public static final String PARAM_URN        = PREFIX + ".urn";
     public static final String PARAM_SOAPACTION = PREFIX + ".soapaction";
+    public static final String PARAM_REMOTEADDR = PREFIX + ".remoteaddr";
 
     InputStream getRequestStream();
     PrincipalCredentials getPrincipalCredentials();
