@@ -77,11 +77,18 @@ public class PolicyDownloader {
                 if (ssg.isFederatedGateway()) {
                     // Federated SSG -- use a SAML token for authentication.
                     log.info("Trying SAML-authenticated policy download from Federated Gateway " + ssg);
-                    request.prepareClientCertificate();
+                    PrivateKey key = null;
+                    if (ssg.getTrustedGateway() != null) {
+                        request.prepareClientCertificate(); // TODO make client cert work with third-part WS-Trust
+                        key = ssg.getClientCertificatePrivateKey();
+                    }
                     SamlAssertion samlHok = request.getOrCreateSamlAssertion();
-                    PrivateKey key = ssg.getClientCertificatePrivateKey();
-                    if (key == null) throw new ConfigurationException("Unable to obtain client cert private key"); // shouldn't happen
-                    policy = PolicyServiceClient.downloadPolicyWithSamlAssertion(ssg, serviceId, serverCert, useSsl, samlHok, key);
+
+                    if (key == null) {
+                        policy = PolicyServiceClient.downloadPolicyWithSamlAssertion(ssg, serviceId, serverCert, true, samlHok, null);                        
+                    } else {
+                        policy = PolicyServiceClient.downloadPolicyWithSamlAssertion(ssg, serviceId, serverCert, useSsl, samlHok, key);
+                    }
                 } else if (ssg.getClientCertificate() != null) {
                     // Trusted SSG, but with a client cert -- use WSS signature for authentication.
                     log.info("Trying WSS-signature-authenticated policy download from Trusted Gateway " + ssg);
