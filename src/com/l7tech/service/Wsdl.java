@@ -286,9 +286,9 @@ public class Wsdl {
         while ( services.hasNext() ) {
             int numPorts = 0;
             numServices++;
-            if ( wsdlService != null ) continue;
 
             wsdlService = (Service)services.next();
+            if ( wsdlService == null ) continue;
             Map ports = wsdlService.getPorts();
             if ( ports == null ) continue;
 
