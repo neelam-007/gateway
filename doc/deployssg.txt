@@ -24,8 +24,9 @@ SSG deployment steps for a clean linux box
 		2. cvs -d :pserver:flascell@sarek:/home/cvsuser co UneasyRooster
 		3. cvs -d :pserver:flascell@sarek:/home/cvsuser logout
 
-[ROOT]  copy etc/ssgruntimedefs.sh to /etc/profile.d
-[SSG]  edit /etc/profile.d/ssgruntimedefs.sh. make sure JAVA_HOME and TOMCAT_HOME point to the right place
+[ROOT]  copy UneasyRooster/etc/ssgruntimedefs.sh to /etc/profile.d
+[SSG]   edit /etc/profile.d/ssgruntimedefs.sh. make sure JAVA_HOME and TOMCAT_HOME point to the right place
+[SSG]   edit UneasyRooster/etc/web.xml, uncomment security-constraint and login-config to enforce ssl on admin services
 
 [SSG]	edit default_build.properties change database username and password to "ssg" and it's password
 [SSG]	go to root of UneasyRooster and run "./build.sh deploy"
