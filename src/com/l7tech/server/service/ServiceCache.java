@@ -196,22 +196,14 @@ public class ServiceCache {
         if (services.get(key) != null) update = true;
         if (update) {
             for (int i = 0; i < resolvers.length; i++) {
-                if (!service.isSoap()) {
-                    nonSoapResolver.serviceUpdated(service);
-                } else {
-                    resolvers[i].serviceUpdated(service);
-                }
+                resolvers[i].serviceUpdated(service);
             }
             logger.finest("updated service in cache. oid=" + service.getOid() + " version=" + service.getVersion());
         } else {
             // make sure no duplicate exist
             //validate(service);
             for (int i = 0; i < resolvers.length; i++) {
-                if (!service.isSoap()) {
-                    nonSoapResolver.serviceCreated(service);
-                } else {
-                    resolvers[i].serviceCreated(service);
-                }
+                resolvers[i].serviceCreated(service);
             }
             logger.finest("added service in cache. oid=" + service.getOid());
         }
@@ -255,12 +247,8 @@ public class ServiceCache {
         services.remove(key);
         serverPolicies.remove(key);
         serviceStatistics.remove(key);
-        if (!service.isSoap()) {
-            nonSoapResolver.serviceDeleted(service);
-        } else {
-            for (int i = 0; i < resolvers.length; i++) {
-                resolvers[i].serviceDeleted(service);
-            }
+        for (int i = 0; i < resolvers.length; i++) {
+            resolvers[i].serviceDeleted(service);
         }
         logger.finest("removed service from cache. oid=" + service.getOid());
     }
@@ -486,8 +474,7 @@ public class ServiceCache {
     private final Map serviceStatistics = new HashMap();
 
     // the resolvers
-    private final NameValueServiceResolver[] resolvers = {new SoapActionResolver(), new UrnResolver()};
-    private final HttpUriResolver nonSoapResolver = new HttpUriResolver();
+    private final NameValueServiceResolver[] resolvers = {new HttpUriResolver(), new SoapActionResolver(), new UrnResolver()};
 
     // read-write lock for thread safety
     private final ReadWriteLock rwlock = new WriterPreferenceReadWriteLock();
