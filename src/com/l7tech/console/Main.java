@@ -47,9 +47,7 @@ public class Main {
      */
     public void run(String[] args) {
         try {
-            // AWT event dispatching thread error handler
-            System.setProperty("sun.awt.exception.handler", "com.l7tech.console.logging.AwtErrorHandler");
-            System.setProperty("java.security.policy", "etc/jini/policy.all");
+            setInitialEnvironment();
             ensureSecurityManager();
             installEventQueue();
 
@@ -64,12 +62,6 @@ public class Main {
             prefs.updateFromProperties(System.getProperties(), false);
             /* so it is visible in help/about */
             prefs.updateSystemProperties();
-            // where locator looks for implementaitons
-            System.setProperty("com.l7tech.common.locator.properties",
-              "/com/l7tech/console/resources/services.properties");
-            // Build information
-            System.setProperty("TopComponents.getInstance().l7tech.buildstring", BuildInfo.getBuildString());
-            System.setProperty("TopComponents.getInstance().l7tech.builddate", BuildInfo.getBuildDate() + BuildInfo.getBuildTime());
 
             main = TopComponents.getInstance().getMainWindow();
             // Window listener
@@ -233,10 +225,24 @@ public class Main {
         if (System.getSecurityManager() == null) {
             System.setSecurityManager(new RMISecurityManager() {
                 public void checkPermission(Permission perm) {}
+
                 public void checkPermission(Permission perm, Object context) {}
 
             });
         }
+    }
+
+    private void setInitialEnvironment() {
+        // AWT event dispatching thread error handler
+        System.setProperty("sun.awt.exception.handler", "com.l7tech.console.logging.AwtErrorHandler");
+        //System.setProperty("java.security.policy", "etc/jini/policy.all");
+        System.setProperty("java.protocol.handler.pkgs", "com.l7tech.remote.jini");
+
+        // where locator looks for implementaitons
+        System.setProperty("com.l7tech.common.locator.properties", "/com/l7tech/console/resources/services.properties");
+        // Build information
+        System.setProperty("com.l7tech.buildstring", BuildInfo.getBuildString());
+        System.setProperty("com.l7tech.builddate", BuildInfo.getBuildDate() + BuildInfo.getBuildTime());
     }
 
     /**
