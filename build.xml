@@ -430,6 +430,9 @@
                 <include name="com/l7tech/policy/assertion/ext/ServiceRequest.class"/>
                 <include name="com/l7tech/policy/assertion/ext/ServiceResponse.class"/>
                 <include name="com/l7tech/policy/assertion/ext/ServiceInvocation.class"/>
+                <include name="com/l7tech/server/ServerConfig.class"/>
+                <include name="com/l7tech/message/TransportProtocol.class"/>
+                <include name="com/l7tech/logging/LogManager.class"/>
             </fileset>
         </jar>
 
