@@ -1,3 +1,12 @@
+--
+-- $Id$
+--
+-- PostgreSQL version of SSG database creation script.
+--
+-- "oid" is a built-in column in PostgreSQL, so all columns named "oid" have been renamed to "objectid"
+--
+-- NOTE: all changes to this script must also be made to ../mysql/ssg.sql as well!
+--
 
 DROP TABLE hibernate_unique_key;
 
