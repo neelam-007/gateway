@@ -124,6 +124,15 @@ public class PublishedService extends NamedEntityImp {
     }
 
     /**
+     * get base URI
+     *
+     */
+     public String getBaseURI() {
+         if (_wsdlUrl == null) return null;
+         return Wsdl.extractBaseURI(_wsdlUrl);
+    }
+
+    /**
      * Gets the {@link Wsdl} object generated from this service's WSDL document or
      * <code>null</code> if wsdl xml document has not been set.
      *
@@ -134,7 +143,7 @@ public class PublishedService extends NamedEntityImp {
         if (_parsedWsdl == null) {
             String cachedWsdl = getWsdlXml();
             if (cachedWsdl != null) {
-                _parsedWsdl = Wsdl.newInstance(null, new InputSource(new StringReader(cachedWsdl)));
+                _parsedWsdl = Wsdl.newInstance(getBaseURI(), new InputSource(new StringReader(cachedWsdl)));
             }
         }
         return _parsedWsdl;
