@@ -82,6 +82,7 @@ public abstract class CompositeAssertion extends Assertion implements Cloneable,
     }
 
     public String toString() {
-        return "<" + this.getClass().getName() + " children=" + children + " parent=" + parent + ">";
+        return "<" + this.getClass().getName() + " children=" + children + " parent=" +
+                (parent == null ? "NULL" : parent.getClass().getName()) + ">";
     }
 }
