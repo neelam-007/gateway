@@ -36,14 +36,18 @@ public class SsgManagerTest extends TestCase {
             new Ssg(sm.nextId(), "bunky3.foo.bar");
     private static final Ssg SSG3_CLONE = SSG3.getCopy();
 
-    private static final Ssg[] TEST_SSGS = { SSG1, SSG2, SSG3, SSG3_CLONE };
-
     public SsgManagerTest(String name) {
         super(name);
     }
 
     public static Test suite() {
         return new TestSuite(SsgManagerTest.class);
+    }
+
+    protected void tearDown() throws Exception {
+        sm.clear();
+        sm.save();
+        super.tearDown();
     }
 
     public void eraseAllSsgs() {
@@ -53,22 +57,6 @@ public class SsgManagerTest extends TestCase {
             sm.save();
             sm.load();
         } catch (IOException e) {
-        }
-    }
-
-    /** Make sure the slate is clean before starting a test. */
-    public void removeBunkySsgsByName(SsgManagerImpl smi) {
-        for (int i = 0; i < TEST_SSGS.length; ++i) {
-                boolean found;
-                do {
-                    found = true;
-                    try {
-                        Ssg ssg = smi.getSsgByHostname(TEST_SSGS[i].getSsgAddress());
-                        smi.remove(ssg);
-                    } catch (SsgNotFoundException e) {
-                        found = false;
-                    }
-                } while (found);
         }
     }
 
