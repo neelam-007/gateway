@@ -103,6 +103,7 @@ public class PolicyExporter {
                                                             ExporterConstants.EXPORTED_DOCROOT_ELNAME);
         exportRoot.setAttribute("xmlns:" + ExporterConstants.EXPORTED_POL_PREFIX, ExporterConstants.EXPORTED_POL_NS);
         exportRoot.setPrefix(ExporterConstants.EXPORTED_POL_PREFIX);
+        exportRoot.setAttribute(ExporterConstants.VERSION_ATTRNAME, ExporterConstants.CURRENT_VERSION);
         Element referencesEl = originalPolicy.createElementNS(ExporterConstants.EXPORTED_POL_NS,
                                                               ExporterConstants.EXPORTED_REFERENCES_ELNAME);
         referencesEl.setPrefix(ExporterConstants.EXPORTED_POL_PREFIX);
