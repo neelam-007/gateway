@@ -233,17 +233,32 @@ public class CertUtils {
     private static String extractCommonName(Principal principal) {
         X500Principal certName = new X500Principal(principal.toString());
         String certNameString = certName.getName(X500Principal.RFC2253);
-        if (certNameString == null || !certNameString.substring(0, 3).equalsIgnoreCase("cn="))
-            throw new IllegalArgumentException("Cert subject DN is not in the format CN=username");
+        if (certNameString == null)
+            throw new IllegalArgumentException("Cert subject DN is NULL");
 
-        String username = "";
-        int endIndex = certNameString.indexOf(",");
-        if (endIndex > 0) {
-            username = certNameString.substring(3, endIndex);
+        String cn = "";
+        int index1 = certNameString.indexOf("cn=");
+        int index2 = certNameString.indexOf("CN=");
+        int startIndex = -1;
+        int endIndex = -1;
+
+        if (index1 >= 0) {
+            startIndex = index1 + 3;
+        } else if (index2 >= 0) {
+            startIndex = index2 + 3;
         } else {
-            username = certNameString.substring(3, certNameString.length());
+            throw new IllegalArgumentException("Cert subject DN is not in the format CN=username");
         }
 
-        return username;
+        if (startIndex >= 0) {
+            endIndex = certNameString.indexOf(",", startIndex);
+            if (endIndex > 0) {
+                cn = certNameString.substring(startIndex, endIndex);
+            } else {
+                cn = certNameString.substring(startIndex, certNameString.length());
+            }
+        }
+
+        return cn;
     }
 }
