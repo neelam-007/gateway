@@ -49,7 +49,7 @@ public class SsgFaker {
     /**
      * Create an SsgFaker with default settings.
      */
-    SsgFaker() {
+    public SsgFaker() {
     }
 
     /**
@@ -147,7 +147,7 @@ public class SsgFaker {
             throw e.getException(0);
         }
         log.info("SsgFaker started; listening for http connections on " + ssgUrl);
-        log.info("SsgFaker listeneing for https connections on " + sslUrl);
+        log.info("SsgFaker listening for https connections on " + sslUrl);
         return ssgUrl;
     }
 
@@ -188,7 +188,7 @@ public class SsgFaker {
      */
     public synchronized void destroy() {
         if (destroyed)
-            throw new IllegalStateException("this SsgFaker is no more");
+            return;
         stop();
         httpServer.destroy();
         destroyed = true;
