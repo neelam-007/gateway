@@ -138,8 +138,7 @@ public class MessageProcessor {
             if (req.isCredentialsWouldHaveHelped() || req.isClientCertWouldHaveHelped()) {
                 boolean gotCreds = false;
                 if (!ssg.isCredentialsConfigured()) {
-                    if (!Managers.getCredentialManager().getCredentials(ssg))
-                        throw new OperationCanceledException("User of Client Proxy declined to provide credentials.");
+                    Managers.getCredentialManager().getCredentials(ssg);
                     gotCreds = true;
                 }
                 if (req.isClientCertWouldHaveHelped()) {
@@ -180,7 +179,9 @@ public class MessageProcessor {
      * @throws IOException                if there was a network problem
      * @throws IllegalArgumentException   if no credentials are configured for this Ssg
      */
-    private void obtainClientCertificate(Ssg ssg) throws GeneralSecurityException, IOException {
+    private void obtainClientCertificate(Ssg ssg)
+            throws GeneralSecurityException, IOException, OperationCanceledException
+    {
         if (!ssg.isCredentialsConfigured())
             throw new IllegalArgumentException("need credentials to apply for a certificate");
         log.info("Generating new RSA key pair (could take several seconds)...");
@@ -191,12 +192,22 @@ public class MessageProcessor {
             PKCS10CertificationRequest csr = SslUtils.makeCsr(ssg.getUsername(),
                                                               keyPair.getPublic(),
                                                               keyPair.getPrivate());
-            X509Certificate cert = SslUtils.obtainClientCertificate(ssg.getServerCertRequestUrl(),
-                                                                    ssg.getUsername(),
-                                                                    ssg.password(),
-                                                                    csr);
-            SsgKeyStoreManager.saveClientCertificate(ssg, keyPair.getPrivate(), cert);
-            clientProxy.initializeSsl(); // reset global SSL state
+            for (int attempts = 0; attempts < 3; ++attempts) {
+                try {
+                    X509Certificate cert = SslUtils.obtainClientCertificate(ssg.getServerCertRequestUrl(),
+                                                                            ssg.getUsername(),
+                                                                            ssg.password(),
+                                                                            csr);
+                    // make sure private key is stored on disk encrypted with the password that was used to obtain it
+                    SsgKeyStoreManager.saveClientCertificate(ssg, keyPair.getPrivate(), cert);
+                    clientProxy.initializeSsl(); // reset global SSL state
+                    return;
+                } catch (SslUtils.BadCredentialsException e) {
+                    Managers.getCredentialManager().notifyInvalidCredentials(ssg);
+                    Managers.getCredentialManager().getCredentials(ssg);
+                    // retry with new password
+                }
+            }
         } finally {
             Managers.getCredentialManager().notifyLengthyOperationFinished(ssg);
         }
@@ -275,7 +286,7 @@ public class MessageProcessor {
             OutputFormat of = new OutputFormat();
             of.setIndent(4);
             xmlSerializer.setOutputFormat(of);
-            xmlSerializer.serialize(req.getSoapEnvelope());
+            xmlSerializer.serialize(req.getSoapEnvelopeDirectly());
 
             String postBody = sw.toString();
             //log.info("Posting to SSG: " + postBody);
@@ -341,8 +352,7 @@ public class MessageProcessor {
                 }
 
                 Managers.getCredentialManager().notifyInvalidCredentials(ssg);
-                if (!Managers.getCredentialManager().getCredentials(req.getSsg()))
-                    throw new OperationCanceledException("User declined to provide credentials");
+                Managers.getCredentialManager().getCredentials(req.getSsg());
                 throw new PolicyRetryableException();
             }
 
@@ -392,8 +402,7 @@ public class MessageProcessor {
             throws IOException, GeneralSecurityException, OperationCanceledException
     {
         if (!ssg.isCredentialsConfigured())
-            if (!Managers.getCredentialManager().getCredentials(ssg))
-                throw new OperationCanceledException("Client Proxy user declined to provide credentials.");
+            Managers.getCredentialManager().getCredentials(ssg);
 
         CertificateDownloader cd = new CertificateDownloader(ssg.getServerUrl(),
                                                              ssg.getUsername(),
@@ -405,7 +414,6 @@ public class MessageProcessor {
         }
 
         Managers.getCredentialManager().notifyInvalidCredentials(ssg);
-        if (!Managers.getCredentialManager().getCredentials(ssg))
-            throw new OperationCanceledException("User declined to provide credentials");
+        Managers.getCredentialManager().getCredentials(ssg);
     }
 }
