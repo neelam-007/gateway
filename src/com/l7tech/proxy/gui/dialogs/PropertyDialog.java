@@ -16,6 +16,7 @@ import java.awt.event.*;
  */
 public abstract class PropertyDialog extends JDialog {
     protected static final Dimension MIN_SIZE = new Dimension(200, 150);
+    private static final Dimension PREFERRED_SIZE = new Dimension(500, 470);
     protected JTabbedPane tabbedPane;
     protected JButton okButton;
     protected JButton cancelButton;
@@ -45,7 +46,7 @@ public abstract class PropertyDialog extends JDialog {
         getContentPane().setLayout(new GridBagLayout());
 
         tabbedPane = new JTabbedPane(JTabbedPane.NORTH, JTabbedPane.WRAP_TAB_LAYOUT);
-        tabbedPane.setPreferredSize(new Dimension(420, 450));
+        tabbedPane.setPreferredSize(PREFERRED_SIZE);
         getContentPane().add(tabbedPane,
                              new GridBagConstraints(0, 0, 1, 1, 1.0, 1.0,
                                                     GridBagConstraints.CENTER,
