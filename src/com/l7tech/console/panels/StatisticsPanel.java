@@ -3,10 +3,11 @@ package com.l7tech.console.panels;
 import com.l7tech.console.table.LogTableModel;
 import com.l7tech.console.table.StatisticsTableSorter;
 import com.l7tech.console.util.ArrowIcon;
-import com.l7tech.console.util.ArrowIcon;
+import com.l7tech.console.util.ColumnHeaderTooltips;
 import com.l7tech.logging.LogAdmin;
 import com.l7tech.logging.StatisticsRecord;
 import com.l7tech.cluster.ServiceUsage;
+import com.l7tech.cluster.GatewayStatus;
 
 import javax.swing.*;
 import javax.swing.event.TableColumnModelListener;
@@ -93,6 +94,16 @@ public class StatisticsPanel extends JPanel {
                 getStatTotalColumnModel().getColumn(5).setPreferredWidth(((JScrollBar) e.getSource()).getWidth() + 1);
             }
         });
+
+
+        ColumnHeaderTooltips htt = new ColumnHeaderTooltips();
+        htt.setToolTip(getStatColumnModel().getColumn(0), "Service name. Updated every " + StatisticsPanel.REFRESH_INTERVAL + " seconds");
+        htt.setToolTip(getStatColumnModel().getColumn(1), "Total requests attempted since the cluster is up. " + "Updated every " + GatewayStatus.REFRESH_INTERVAL + " seconds");
+        htt.setToolTip(getStatColumnModel().getColumn(2), "Total requests authorized since the cluster is up. " + "Updated every " + GatewayStatus.REFRESH_INTERVAL + " seconds");
+        htt.setToolTip(getStatColumnModel().getColumn(3), "Total requests routed since the cluster is up. " + "Updated every " + StatisticsPanel.REFRESH_INTERVAL + " seconds");
+        htt.setToolTip(getStatColumnModel().getColumn(4), "Total requests routed in the past 60 seconds. " + "Updated every " + StatisticsPanel.REFRESH_INTERVAL + " seconds");
+
+        getStatTable().getTableHeader().addMouseMotionListener(htt);
 
         return statTablePane;
     }
