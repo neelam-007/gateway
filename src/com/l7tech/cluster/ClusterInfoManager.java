@@ -110,25 +110,24 @@ public class ClusterInfoManager {
         return 0;
     }
 
-    /*
-    eth0    Link encap:Ethernet  HWaddr 00:0C:6E:69:8D:CA
-            inet addr:192.168.1.227  Bcast:192.168.1.255  Mask:255.255.255.0
-            UP BROADCAST RUNNING MULTICAST  MTU:1500  Metric:1
-            RX packets:5015473 errors:2 dropped:1 overruns:0 frame:0
-            TX packets:69559 errors:0 dropped:0 overruns:0 carrier:0
-            collisions:0 txqueuelen:100
-            RX bytes:357230125 (340.6 Mb)  TX bytes:6648567 (6.3 Mb)
-            Interrupt:11 Base address:0x1000
+    /**
+     * get the mac addresses for the network adapters on this server
+     *
+     * @return a collection containing strings representing mac addresses in the following format:
+     * XX:XX:XX:XX:XX:XX
+     */
+    private Collection getMacs() {
+        ArrayList output = new ArrayList();
+        output.addAll(getIfconfigMac());
+        output.addAll(getIpconfigMac());
+        return output;
+    }
 
-    lo      Link encap:Local Loopback
-            inet addr:127.0.0.1  Mask:255.0.0.0
-            UP LOOPBACK RUNNING  MTU:16436  Metric:1
-            RX packets:666667 errors:0 dropped:0 overruns:0 frame:0
-            TX packets:666667 errors:0 dropped:0 overruns:0 carrier:0
-            collisions:0 txqueuelen:0
-            RX bytes:90058336 (85.8 Mb)  TX bytes:90058336 (85.8 Mb)
-    */
-
+    /**
+     * called by getMacs()
+     *
+     * tries to get mac addresses by running unix ifconfig command
+     */
     private Collection getIfconfigMac() {
         Process up = null;
         InputStream got = null;
@@ -138,7 +137,7 @@ public class ClusterInfoManager {
             try {
                 up = Runtime.getRuntime().exec("/sbin/ifconfig");
                 got = new BufferedInputStream(up.getInputStream());
-                byte[] buff = HexUtils.slurpStream(got, 512);
+                byte[] buff = HexUtils.slurpStream(got, 4096);
                 ifconfigOutput = new String(buff);
                 up.waitFor();
             } finally {
@@ -152,8 +151,25 @@ public class ClusterInfoManager {
         } catch (InterruptedException e) {
             logger.log(Level.FINE, "error getting ifconfig", e);
         }
+        // ifconfig output pattern
+        //eth0    Link encap:Ethernet  HWaddr 00:0C:6E:69:8D:CA
+        //        inet addr:192.168.1.227  Bcast:192.168.1.255  Mask:255.255.255.0
+        //        UP BROADCAST RUNNING MULTICAST  MTU:1500  Metric:1
+        //        RX packets:5015473 errors:2 dropped:1 overruns:0 frame:0
+        //        TX packets:69559 errors:0 dropped:0 overruns:0 carrier:0
+        //        collisions:0 txqueuelen:100
+        //        RX bytes:357230125 (340.6 Mb)  TX bytes:6648567 (6.3 Mb)
+        //        Interrupt:11 Base address:0x1000
+        //
+        //lo      Link encap:Local Loopback
+        //        inet addr:127.0.0.1  Mask:255.0.0.0
+        //        UP LOOPBACK RUNNING  MTU:16436  Metric:1
+        //        RX packets:666667 errors:0 dropped:0 overruns:0 frame:0
+        //        TX packets:666667 errors:0 dropped:0 overruns:0 carrier:0
+        //        collisions:0 txqueuelen:0
+        //        RX bytes:90058336 (85.8 Mb)  TX bytes:90058336 (85.8 Mb)
         if (ifconfigOutput == null) return Collections.EMPTY_LIST;
-        String[] splitted = Pattern.compile("[\\s]+", Pattern.DOTALL).split(ifconfigOutput);
+        String[] splitted = breakIntoLines(ifconfigOutput);
         for (int i = 0; i < splitted.length; i++) {
             Matcher matchr = ifconfigMacPattern.matcher(splitted[i]);
             if (matchr.matches()) {
@@ -163,16 +179,67 @@ public class ClusterInfoManager {
         return output;
     }
 
+    /**
+     * called by getMacs().
+     *
+     * tries to get mac addresses by running windows ipconfig command
+     */
+    private Collection getIpconfigMac() {
+        Process up = null;
+        InputStream got = null;
+        String ipconfigOutput = null;
+        ArrayList output = new ArrayList();
+        try {
+            try {
+                up = Runtime.getRuntime().exec("ipconfig /all");
+                got = new BufferedInputStream(up.getInputStream());
+                byte[] buff = HexUtils.slurpStream(got, 4096);
+                ipconfigOutput = new String(buff);
+                up.waitFor();
+            } finally {
+                if (got != null)
+                    got.close();
+                if (up != null)
+                    up.destroy();
+            }
+        } catch (IOException e) {
+            logger.log(Level.FINE, "error getting ipconfig", e);
+        } catch (InterruptedException e) {
+            logger.log(Level.FINE, "error getting ipconfig", e);
+        }
+        // ipconfig output
+        // ... stuff
+        // Physical Address. . . . . . . . . . . : XX-XX-XX-XX-XX-XX
+        // ... more stuff
+        if (ipconfigOutput == null) return Collections.EMPTY_LIST;
+        String[] splitted = breakIntoLines(ipconfigOutput);
+        for (int i = 0; i < splitted.length; i++) {
+            Matcher matchr = ipconfigMacPattern.matcher(splitted[i]);
+            if (matchr.matches()) {
+                String match = matchr.group(1);
+                match = match.replace('-', ':');
+                output.add(match);
+            }
+        }
+        return output;
+    }
+
+    private static String[] breakIntoLines(String in) {
+        return Pattern.compile("$+", Pattern.MULTILINE).split(in);
+    }
+
     public static void main(String[] args) {
         ClusterInfoManager me = new ClusterInfoManager();
-        for (Iterator i = me.getIfconfigMac().iterator(); i.hasNext();) {
-            System.out.println("Match: " + i.next());
+        for (Iterator i = me.getMacs().iterator(); i.hasNext();) {
+            System.out.println("MAC Match: " + i.next());
         }
     }
 
     private  static final String TABLE_NAME = "cluster_info";
-    private static Pattern ifconfigMacPattern = Pattern.compile("(\\w\\w.\\w\\w.\\w\\w." +
-                                                                "\\w\\w.\\w\\w.\\w\\w)", Pattern.DOTALL);
+    private static Pattern ifconfigMacPattern = Pattern.compile(".*HWaddr\\s+(\\w\\w.\\w\\w.\\w\\w." +
+                                                                "\\w\\w.\\w\\w.\\w\\w).*", Pattern.DOTALL);
+    private static Pattern ipconfigMacPattern = Pattern.compile(".*Physical Address.*(\\w\\w.\\w\\w.\\w\\w." +
+                                                                "\\w\\w.\\w\\w.\\w\\w).*", Pattern.DOTALL);
     private final Logger logger = LogManager.getInstance().getSystemLogger();
     private int nrNodes = -1;
 }
