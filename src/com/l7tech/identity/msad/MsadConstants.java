@@ -13,6 +13,7 @@ import com.l7tech.identity.ldap.AbstractLdapConstants;
  * @version $Revision$
  */
 public class MsadConstants extends AbstractLdapConstants {
+    private static final String GROUP_NAME_ATTR = "cn";
     private static final String GROUPOBJ_MEMBER_ATTR = "member";
     private static final String LOGIN_ATTR_NAME = "mailNickName";
     private static final String GROUP_OBJCLASS = "group";
@@ -34,4 +35,8 @@ public class MsadConstants extends AbstractLdapConstants {
     public String userObjectClass() {
         return USER_OBJCLASS;
     }
+
+    public String groupNameAttribute() { return GROUP_NAME_ATTR;}
+
+    public String userNameAttribute() { return LOGIN_ATTR_NAME; }
 }
