@@ -219,15 +219,17 @@ public class FindDialog extends JDialog {
 
         providersComboBox = new JComboBox();
         providersComboBox.setModel(getProvidersComboBoxModel());
-        providersComboBox.setRenderer(new ListCellRenderer() {
+        providersComboBox.setRenderer(new DefaultListCellRenderer() {
             public Component getListCellRendererComponent(
               JList list,
               Object value,
               int index,
               boolean isSelected,
               boolean cellHasFocus) {
+                Component c = super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
                 IdentityProvider ip = (IdentityProvider)value;
-                return new JLabel(ip.getConfig().getName());
+                setText(ip.getConfig().getName());
+                return c;
             }
         });
 
