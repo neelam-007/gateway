@@ -107,28 +107,42 @@ public class MessageProcessor implements ServiceListener {
                 Assertion genericPolicy = service.rootAssertion();
                 Long oid = new Long( service.getOid() );
                 ServerAssertion serverPolicy;
-                Sync read = _policyCacheLock.readLock();
+                Sync read = null;
+                Sync write = null;
                 try {
+                    read = _policyCacheLock.readLock();
                     read.acquire();
                     serverPolicy = (ServerAssertion)_serverPolicyCache.get( oid );
                     if ( serverPolicy == null ) {
                         // Upgrade to a write lock
                         read.release();
-                        Sync write = _policyCacheLock.writeLock();
+                        read = null;
+                        write = _policyCacheLock.writeLock();
                         write.acquire();
 
                         serverPolicy = ServerPolicyFactory.getInstance().makeServerPolicy( genericPolicy );
                         _serverPolicyCache.put( oid, serverPolicy );
 
                         write.release();
+                        write = null;
                     } else {
                         read.release();
+                        read = null;
                     }
                 } catch ( InterruptedException ie ) {
                     String msg = "Interrupted while acquiring policy cache lock!";
                     logger.fine( msg );
                     Thread.currentThread().interrupt();
                     throw new PolicyAssertionException( msg, ie );
+                } finally {
+                    if (read != null) {
+                        read.release();
+                        read = null;
+                    }
+                    if (write != null) {
+                        write.release();
+                        write = null;
+                    }
                 }
 
                 // Run the policy
@@ -161,26 +175,40 @@ public class MessageProcessor implements ServiceListener {
     public ServiceStatistics getServiceStatistics( long serviceOid ) {
         Long oid = new Long( serviceOid );
         ServiceStatistics stats;
-        Sync read = _statsLock.readLock();
-        Sync write = _statsLock.writeLock();
+        Sync read = null;
+        Sync write = null;
         try {
+            read = _statsLock.readLock();
             read.acquire();
             stats = (ServiceStatistics)_serviceStatistics.get(oid);
             if ( stats == null ) {
                 // Upgrade read lock to write lock
                 read.release();
+                read = null;
                 stats = new ServiceStatistics( serviceOid );
+                write = _statsLock.writeLock();
                 write.acquire();
                 _serviceStatistics.put( oid, stats );
                 write.release();
+                write = null;
             } else {
                 read.release();
+                read = null;
             }
             return stats;
         } catch ( InterruptedException ie ) {
             logger.fine( "Interrupted while acquiring statistics lock!" );
             Thread.currentThread().interrupt();
             return null;
+        } finally {
+            if (read != null) {
+                read.release();
+                read = null;
+            }
+            if (write != null) {
+                write.release();
+                write = null;
+            }
         }
     }
 
