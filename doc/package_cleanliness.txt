@@ -1,0 +1,15 @@
+adminws			server.war
+common			everywhere
+console			console.jar
+identity		server.war, console.jar
+jini			server.war, console.jar
+logging			everywhere
+message			everywhere
+objectmodel		server.war, console.jar
+policy			everywhere
+proxy			clientproxy.jar
+server			server.war
+util			everywhere (common/util?)
+xmlenc			server.war, clientproxy.jar
+xmlsig			server.war, clientproxy.jar
+
