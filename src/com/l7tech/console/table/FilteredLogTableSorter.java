@@ -10,6 +10,7 @@ import com.l7tech.console.panels.LogPanel;
 import com.l7tech.console.util.ClusterLogWorker;
 
 import javax.swing.table.DefaultTableModel;
+import javax.swing.*;
 import java.util.logging.Logger;
 import java.util.*;
 
@@ -47,16 +48,24 @@ public class FilteredLogTableSorter extends FilteredLogTableModel {
         return ascending;
     }
 
+    private void appendData(Hashtable nodeList, int msgFilterLevel) {
+        for (Iterator i = nodeList.keySet().iterator(); i.hasNext();) {
+            String node = (String) i.next();
+            Vector logs = (Vector) nodeList.get(node);
+            addData(node, logs, msgFilterLevel, false);
+        }
+    }
+
     private void addData(Hashtable nodeList, int msgFilterLevel) {
         for (Iterator i = nodeList.keySet().iterator(); i.hasNext();) {
             String node = (String) i.next();
             Vector logs = (Vector) nodeList.get(node);
-            addData(node, logs, msgFilterLevel);
+            addData(node, logs, msgFilterLevel, true);
         }
     }
 
 
-    private void addData(String nodeId, Vector newLogs, int msgFilterLevel) {
+    private void addData(String nodeId, Vector newLogs, int msgFilterLevel, boolean front) {
 
         // add new logs to the cache
         if (newLogs.size() > 0) {
@@ -75,10 +84,14 @@ public class FilteredLogTableSorter extends FilteredLogTableModel {
                 gatewayLogs.remove(gatewayLogs.size() - 1);
             }
 
-            // append the old logs to the cache
-            newLogs.addAll(gatewayLogs);
+            if (front) {
+                // append the old logs to the cache
+                newLogs.addAll(gatewayLogs);
 
-            gatewayLogs = newLogs;
+                gatewayLogs = newLogs;
+            } else {
+                gatewayLogs.addAll(newLogs);
+            }
 
             // update the logsCache
             rawLogCache.put(nodeId, gatewayLogs);
@@ -248,30 +261,31 @@ public class FilteredLogTableSorter extends FilteredLogTableModel {
 
     }
 
-    public void refreshLogs(final int msgFilterLevel, final LogPanel logPane, final String msgNumSelected, final boolean restartTimer) {
+    public void refreshLogs(final int msgFilterLevel, final LogPanel logPane, final String msgNumSelected, final boolean restartTimer, Vector requests, final boolean newRefresh) {
 
         long endMsgNumber = -1;
-        Vector requests = new Vector();
+        //Vector requests = new Vector();
+        if (newRefresh) {
+            //todo: check if this is required anymore
+            requests = new Vector();
+            for (Iterator i = currentNodeList.keySet().iterator(); i.hasNext();) {
+                GatewayStatus gatewayStatus = (GatewayStatus) currentNodeList.get(i.next());
 
-        //todo: check if this is required anymore
-        for (Iterator i = currentNodeList.keySet().iterator(); i.hasNext(); ) {
-            GatewayStatus gatewayStatus = (GatewayStatus) currentNodeList.get(i.next());
+                Object logCache = null;
+                if ((logCache = rawLogCache.get(gatewayStatus.getNodeId())) != null) {
 
-            Object logCache = null;
-            if ((logCache = rawLogCache.get(gatewayStatus.getNodeId())) != null) {
+                    if (((Vector) logCache).size() > 0) {
+                        endMsgNumber = ((LogMessage) ((Vector) logCache).firstElement()).getMsgNumber();
+                    }
 
-                if (((Vector) logCache).size() > 0) {
-                    endMsgNumber = ((LogMessage) ((Vector) logCache).firstElement()).getMsgNumber();
+                    //todo: the following line should be moved out of this block - it is placed here for testing purpose only
+                    // maybe this doesn't matter as the node must be in the rawLogCache anyway
+                    requests.add(new LogRequest(gatewayStatus.getNodeId(), -1, endMsgNumber));
                 }
 
-                //todo: the following line should be moved out of this block - it is placed here for testing purpose only
-                // maybe this doesn't matter as the node must be in the rawLogCache anyway
-                requests.add(new LogRequest(gatewayStatus.getNodeId(), -1, endMsgNumber));
+                //requests.add(new LogRequest(gatewayStatus.getNodeId(),  -1, endMsgNumber));
             }
-
-            //requests.add(new LogRequest(gatewayStatus.getNodeId(),  -1, endMsgNumber));
         }
-
         // create a worker thread to retrieve the cluster info
         final ClusterLogWorker infoWorker = new ClusterLogWorker(clusterStatusAdmin, logService, currentNodeList, requests) {
             public void finished() {
@@ -279,17 +293,35 @@ public class FilteredLogTableSorter extends FilteredLogTableModel {
                 // Note: the get() operation is a blocking operation.
                 if (this.get() != null) {
 
-                    currentNodeList = getNewNodeList();
+                    if (newRefresh) {
+                        currentNodeList = getNewNodeList();
+                        addData(getNewLogs(), msgFilterLevel);
+                    } else {
+                        appendData(getNewLogs(), msgFilterLevel);
+                    }
 
                     logPane.updateTimeStamp();
 
-                    addData(getNewLogs(), msgFilterLevel);
+
 
                     logPane.updateMsgTotal();
                     logPane.setSelectedRow(msgNumSelected);
 
-                    if (restartTimer) {
-                        logPane.getLogsRefreshTimer().start();
+                    final Vector unfilledRequest = getUnfilledRequest();
+
+                    // if there unfilled requests
+                    if (unfilledRequest.size() > 0) {
+                        SwingUtilities.invokeLater(
+                                new Runnable() {
+                                    public void run() {
+                                        refreshLogs(msgFilterLevel, logPane, msgNumSelected, restartTimer, unfilledRequest, false);
+                                    }
+                                });
+
+                    } else {
+                        if (restartTimer) {
+                            logPane.getLogsRefreshTimer().start();
+                        }
                     }
                 } else {
                     if (isRemoteExceptionCaught()) {

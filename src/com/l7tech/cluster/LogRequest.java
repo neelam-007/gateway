@@ -11,15 +11,29 @@ public class LogRequest {
     private String nodeId;
     private long startMsgNumber;
     private long endMsgNumber;
+    private int retrievedLogCount;
 
     public LogRequest(String nodeId, long startMsgNumber, long endMsgNumber) {
         this.nodeId = nodeId;
         this.endMsgNumber = endMsgNumber;
         this.startMsgNumber = startMsgNumber;
+        retrievedLogCount = 0;
     }
 
     public String getNodeId() {
         return nodeId;
+    }
+
+    public int getRetrievedLogCount() {
+        return retrievedLogCount;
+    }
+
+    public void setRetrievedLogCount(int retrievedLogCount) {
+        this.retrievedLogCount = retrievedLogCount;
+    }
+
+    public void addRetrievedLogCount(int count) {
+        retrievedLogCount += count;
     }
 
     public void setNodeId(String nodeId) {

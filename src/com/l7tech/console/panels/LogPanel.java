@@ -1,15 +1,8 @@
 package com.l7tech.console.panels;
 
 import com.l7tech.console.table.LogTableModel;
-import com.l7tech.console.table.FilteredLogTableModel;
 import com.l7tech.console.table.FilteredLogTableSorter;
-import com.l7tech.console.util.ClusterLogWorker;
-import com.l7tech.console.util.LogsWorker;
 import com.l7tech.console.icons.ArrowIcon;
-import com.l7tech.cluster.ClusterStatusAdmin;
-import com.l7tech.common.util.Locator;
-import com.l7tech.logging.LogAdmin;
-import com.l7tech.logging.LogMessage;
 
 import javax.swing.*;
 import javax.swing.table.*;
@@ -20,10 +13,7 @@ import java.awt.event.ActionListener;
 import java.awt.event.ActionEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
-import java.util.Dictionary;
-import java.util.Hashtable;
-import java.util.ResourceBundle;
-import java.util.Calendar;
+import java.util.*;
 import java.text.SimpleDateFormat;
 
 
@@ -463,7 +453,7 @@ public class LogPanel extends JPanel {
         }
 
         // retrieve the new logs
-        ((FilteredLogTableSorter) getMsgTable().getModel()).refreshLogs(getMsgFilterLevel(), this, msgNumSelected, autoRefresh.isSelected());
+        ((FilteredLogTableSorter) getMsgTable().getModel()).refreshLogs(getMsgFilterLevel(), this, msgNumSelected, autoRefresh.isSelected(), new Vector(), true);
 
     }
 
