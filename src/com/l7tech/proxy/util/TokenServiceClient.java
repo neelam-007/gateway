@@ -193,18 +193,18 @@ public class TokenServiceClient {
      * @throws com.l7tech.common.security.xml.ProcessorException   if there is a problem undecorating the signed message
      */
     public static Object parseRequestSecurityTokenResponse(Document response,
-                                                    X509Certificate clientCertificate,
-                                                    PrivateKey clientPrivateKey,
-                                                    X509Certificate serverCertificate)
+                                                           X509Certificate clientCertificate,
+                                                           PrivateKey clientPrivateKey,
+                                                           X509Certificate serverCertificate)
             throws InvalidDocumentFormatException, GeneralSecurityException, ProcessorException
     {
         WssProcessor wssProcessor = new WssProcessorImpl();
         WssProcessor.ProcessorResult result = null;
         try {
             result = wssProcessor.undecorateMessage(response,
-                                                                                         clientCertificate,
-                                                                                         clientPrivateKey,
-                                                                                         null);
+                                                    clientCertificate,
+                                                    clientPrivateKey,
+                                                    null);
         } catch (WssProcessor.BadContextException e) {
             throw new InvalidDocumentFormatException("Response attempted to use a WS-SecureConversation SecurityContextToken, which we don't support when talking to the token server itself", e);
         }
