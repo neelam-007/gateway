@@ -217,7 +217,7 @@ public class ServerHttpRoutingAssertion extends ServerRoutingAssertion {
             cookieOut.setVersion(incomingCookie.getVersion());
             cookieOut.setComment(incomingCookie.getComment());
             // cookieOut.setExpiryDate(??); // how to translate the getMaxAge() to the date? em
-            logger.fine("Adding outgoing cookie "+cookieOut);
+            logger.fine("Adding outgoing cookie: name = "+ cookieOut.getName() + ", version = " + cookieOut.getVersion());
             state.addCookie(cookieOut);
         }
 
