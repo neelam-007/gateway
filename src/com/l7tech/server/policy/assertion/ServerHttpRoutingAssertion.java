@@ -103,6 +103,7 @@ public class ServerHttpRoutingAssertion extends ServerRoutingAssertion {
                 HostConfiguration hconf = null;
 
                 if ( "https".equals(url.getProtocol()) ) {
+                    final int port = url.getPort() == -1 ? 443 : url.getPort();
                     hconf = new HostConfiguration();
                     synchronized( this ) {
                         if ( protocol == null ) {
@@ -118,12 +119,12 @@ public class ServerHttpRoutingAssertion extends ServerRoutingAssertion {
                                 public Socket createSocket(String host, int port) throws IOException, UnknownHostException {
                                     return sslContext.getSocketFactory().createSocket(host,port);
                                 }
-                            }, url.getPort());
+                            }, port);
                         }
                     }
 
                     // TODO clear SSL Context when any TrustedCert changes
-                    hconf.setHost(url.getHost(), url.getPort(), protocol);
+                    hconf.setHost(url.getHost(), port, protocol);
                 }
 
                 postMethod = new PostMethod(url.toString());
