@@ -312,6 +312,20 @@ public class MessageProcessor {
             } else
                 log.info("SSG response contained no session status header");
 
+            Header certStatusHeader = postMethod.getResponseHeader(SecureSpanConstants.HttpHeaders.CERT_STATUS);
+            if (certStatusHeader != null && "invalid".equalsIgnoreCase(certStatusHeader.getValue())) {
+                log.info("SSG response contained a certficate status:invalid header.  Will get new client cert.");
+                // Try to get a new client cert; if this succeeds, it'll replace the old one
+                try {
+                    req.getClientProxy().obtainClientCertificate(ssg);
+                    throw new PolicyRetryableException(); // try again with the new cert
+                } catch (GeneralSecurityException e) {
+                    throw new ClientCertificateException("Unable to obtain new client certificate", e);
+                } catch (IOException e) {
+                    throw new ClientCertificateException("Unable to obtain new client certificate", e);
+                }
+            }
+
             Header policyUrlHeader = postMethod.getResponseHeader(SecureSpanConstants.HttpHeaders.POLICYURL_HEADER);
             if (policyUrlHeader != null) {
                 log.info("SSG response contained a PolicyUrl header: " + policyUrlHeader.getValue());
@@ -347,18 +361,6 @@ public class MessageProcessor {
                 req.setLastErrorResponse(response);
                 Header authHeader = postMethod.getResponseHeader("WWW-Authenticate");
                 log.info("Got auth header: " + authHeader.getValue());
-                if (authHeader == null && SsgKeyStoreManager.isClientCertAvailabile(ssg) && "https".equals(url.getProtocol())) {
-                    // 401 without an auth challenge, if the connection was made successfully over SSL,
-                    // means we should delete our client certificate and retry.
-                    log.info("SSG indicates that our client certificate is no longer valid; deleting it");
-                    try {
-                        SsgKeyStoreManager.deleteClientCert(ssg);
-                        req.getClientProxy().initializeSsl(); // flush all global SSL state
-                    } catch (Exception e) {
-                        throw new ClientCertificateException(e);
-                    }
-                }
-
                 throw new BadCredentialsException();
             }
 
