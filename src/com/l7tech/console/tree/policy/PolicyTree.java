@@ -502,7 +502,8 @@ public class PolicyTree extends JTree implements DragSourceListener,
                         TreePath pathNewChild = null;
 
                         final AssertionTreeNode an = (AssertionTreeNode)pathSource.getLastPathComponent();
-                        final AssertionTreeNode assertionTreeNodeCopy = AssertionTreeNodeFactory.asTreeNode(an.asAssertion());
+                        Assertion a = (Assertion)an.asAssertion().clone();
+                        final AssertionTreeNode assertionTreeNodeCopy = AssertionTreeNodeFactory.asTreeNode(a);
 
                         if (isExpanded(pathTarget) && !((TreeNode)pathTarget.getLastPathComponent()).isLeaf()) {
                             MutableTreeNode node = (MutableTreeNode)pathTarget.getLastPathComponent();
@@ -526,6 +527,8 @@ public class PolicyTree extends JTree implements DragSourceListener,
                     } catch (IOException ioe) {
                         log.log(Level.WARNING, "Internal error", ioe);
                         dropComplete = false;
+                    } catch (CloneNotSupportedException e1) {
+                        log.log(Level.SEVERE, "Assertion faile", e1);
                     }
                 }
             }
