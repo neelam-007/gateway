@@ -4,8 +4,10 @@ import com.l7tech.console.table.TableUtil;
 import com.l7tech.console.util.Preferences;
 import com.l7tech.console.util.Registry;
 import com.l7tech.identity.User;
+import com.l7tech.identity.UserManager;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.UpdateException;
+import com.l7tech.adminws.identity.UserManagerClient;
 
 import javax.swing.*;
 import javax.swing.table.AbstractTableModel;
@@ -311,7 +313,12 @@ class CertificatePanel extends JPanel {
     private void getUserCert() {
         // fla note, in the future the cert will come from some sort of CertManager instead of the interal user manager
         try {
-            Certificate clientCert = ((com.l7tech.adminws.identity.UserManagerClient)Registry.getDefault().getInternalUserManager()).retrieveUserCert(Long.toString(user.getOid()));
+            String uidStr = Long.toString(user.getOid());
+            Registry reg = Registry.getDefault();
+            UserManager um = reg.getInternalUserManager();
+            UserManagerClient umc = (UserManagerClient) um;
+            Certificate clientCert = umc.retrieveUserCert(uidStr);
+
             if (clientCert != null) {
               cert = (X509Certificate)clientCert;
             }
