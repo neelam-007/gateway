@@ -3,6 +3,7 @@ package com.l7tech.console.action;
 import com.l7tech.console.tree.policy.PolicyTreeModel;
 import com.l7tech.console.tree.policy.AssertionTreeNode;
 import com.l7tech.console.tree.policy.RequestSwAAssertionPolicyTreeNode;
+import com.l7tech.console.tree.ServiceNode;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.console.event.PolicyListener;
 import com.l7tech.console.event.PolicyListenerAdapter;
@@ -12,10 +13,12 @@ import com.l7tech.console.panels.WorkSpacePanel;
 import com.l7tech.console.poleditor.PolicyEditorPanel;
 import com.l7tech.policy.assertion.RequestSwAAssertion;
 import com.l7tech.common.gui.util.Utilities;
+import com.l7tech.objectmodel.FindException;
 
 import javax.swing.*;
 import java.util.logging.Logger;
 import java.util.logging.Level;
+import java.rmi.RemoteException;
 
 /**
  * <p> Copyright (C) 2004 Layer 7 Technologies Inc.</p>
@@ -66,13 +69,25 @@ public class RequestSwAAssertionPropertiesAction extends NodeAction {
                 if(currentPanel == null || !(currentPanel instanceof PolicyEditorPanel)) {
                     logger.warning("Internal error: current workspace is not a PolicyEditorPanel instance");
                 } else {
-                     RequestSwAAssertionDialog d =
-                            new RequestSwAAssertionDialog(f, (RequestSwAAssertion)node.asAssertion(), ((PolicyEditorPanel) currentPanel).getServiceNode());
-                    d.setModal(true);
-                    d.pack();
-                    Utilities.centerOnScreen(d);
-                    d.addPolicyListener(listener);
-                    d.show();
+                    ServiceNode servicenode = ((PolicyEditorPanel)currentPanel).getServiceNode();
+                    try {
+                        if (!(servicenode.getPublishedService().isSoap())) {
+                            JOptionPane.showMessageDialog(null, "This assertion is not supported by non-soap services.");
+                        } else {
+                            RequestSwAAssertionDialog d = new RequestSwAAssertionDialog(f,
+                                                                                        (RequestSwAAssertion)node.asAssertion(),
+                                                                                        servicenode);
+                            d.setModal(true);
+                            d.pack();
+                            Utilities.centerOnScreen(d);
+                            d.addPolicyListener(listener);
+                            d.show();
+                        }
+                    } catch (RemoteException e) {
+                        log.log(Level.INFO, "Error getting Published Service", e);
+                    } catch (FindException e) {
+                        log.log(Level.INFO, "Error getting Published Service", e);
+                    }
                 }
             }
         });
