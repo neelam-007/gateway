@@ -37,7 +37,7 @@ public class Main {
 
     /** Start a GUI-equipped client proxy and run it until it's shut down. */
     public static void main(final String[] argv) {
-        log.info("Starting Layer7 Client Proxy in GUI mode");
+        log.info("Starting SecureSpan Agent in GUI mode");
 
         SsgManager ssgManager = SsgManagerImpl.getSsgManagerImpl();
 
@@ -60,12 +60,12 @@ public class Main {
         try {
             clientProxy.start();
         } catch (Exception e) {
-            String message = "Unable to start the Client Proxy: " + e;
+            String message = "Unable to start the Agent: " + e;
             if (e instanceof BindException ||
                     (e instanceof MultiException && ((MultiException)e).getException(0) instanceof BindException))
             {
-                message = "The Layer7 Client Proxy is already running.  \nPlease shut down the existing " +
-                        "Layer7 Client Proxy and try again.";
+                message = "The SecureSpan Agent is already running.  \nPlease shut down the existing " +
+                        "Agent and try again.";
             }
 
             Gui.getInstance().errorMessage(message);
