@@ -249,12 +249,14 @@ public class IdentitiesSoapBindingImpl implements com.l7tech.adminws.identity.Id
     }
 
     private UserManager retrieveUserManagerAndBeginTransaction(long identityProviderConfigId) throws java.rmi.RemoteException {
-        if (userManagersMap == null) userManagersMap = new java.util.HashMap();
+        /*if (userManagersMap == null) userManagersMap = new java.util.HashMap();
         UserManager ret = (UserManager)userManagersMap.get(new Long(identityProviderConfigId));
-        if (ret == null) try {
+        if (ret == null) */
+        UserManager ret = null;
+        try {
             IdentityProvider provider = IdentityProviderFactory.makeProvider(identityProviderConfigManager.findByPrimaryKey(identityProviderConfigId));
             ret = provider.getUserManager();
-            userManagersMap.put(new Long(identityProviderConfigId), ret);
+            //userManagersMap.put(new Long(identityProviderConfigId), ret);
         } catch (FindException e) {
             e.printStackTrace(System.err);
             throw new RemoteException("RemoteException in retrieveUserManager", e);
@@ -272,12 +274,14 @@ public class IdentitiesSoapBindingImpl implements com.l7tech.adminws.identity.Id
     }
 
     private GroupManager retrieveGroupManagerAndBeginTransaction(long identityProviderConfigId) throws java.rmi.RemoteException {
-        if (groupManagersMap == null) groupManagersMap = new java.util.HashMap();
+        /*if (groupManagersMap == null) groupManagersMap = new java.util.HashMap();
         GroupManager ret = (GroupManager)groupManagersMap.get(new Long(identityProviderConfigId));
-        if (ret == null) try {
+        if (ret == null) */
+        GroupManager ret = null;
+        try {
             IdentityProvider provider = IdentityProviderFactory.makeProvider(identityProviderConfigManager.findByPrimaryKey(identityProviderConfigId));
             ret = provider.getGroupManager();
-            groupManagersMap.put(new Long(identityProviderConfigId), ret);
+            //groupManagersMap.put(new Long(identityProviderConfigId), ret);
         } catch (FindException e) {
             e.printStackTrace(System.err);
             throw new RemoteException("RemoteException in retrieveGroupManager", e);
@@ -324,6 +328,6 @@ public class IdentitiesSoapBindingImpl implements com.l7tech.adminws.identity.Id
     }
 
     IdentityProviderConfigManager identityProviderConfigManager = null;
-    java.util.HashMap userManagersMap = null;
-    java.util.HashMap groupManagersMap = null;
+    //java.util.HashMap userManagersMap = null;
+    //java.util.HashMap groupManagersMap = null;
 }
