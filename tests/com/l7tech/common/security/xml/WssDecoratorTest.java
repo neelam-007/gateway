@@ -160,7 +160,7 @@ public class WssDecoratorTest extends TestCase {
                                 TestDocuments.getDotNetServerPrivateKey(),
                                 true,
                                 new Element[0],
-                                new Element[] { SoapUtil.getBodyElement(c.message) });
+                                new Element[] { c.body });
     }
 
     public void testEncryptionOnly() throws Exception {
