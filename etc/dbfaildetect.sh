@@ -20,9 +20,9 @@ PING="/bin/ping"
 
 # globals and configuration
 PIDFILE=/var/run/dbfaildetect.pid
-EMAIL="hchan@layer7tech.com"
+EMAIL="NEED_A_REAL_EMAIL"
 
-DBHOST="10.7.7.77"
+DBHOST="NEED_A_REAL_DB_CLUSTER_ADDRESS"
 # cluster IP addresss
 
 DEFAULT_ROUTE=`/sbin/route -n | egrep ^0.0.0.0 | cut -c 17-32 | tr -d [:blank:]`
@@ -33,10 +33,9 @@ if [ -z "$DEFAULT_ROUTE" ] ;  then
 fi
 
 INTERFACE="eth0"
-INTERFACE_ALIAS="$INTERFACE:1"
-# alias interface
-
-# file on server to get
+# Main interface to the back end / most secure network
+INTERFACE_ALIAS="$INTERFACE:0"
+# alias interface for the db cluster communication
 
 PORT=3306
 # and port number
@@ -64,6 +63,7 @@ cat <<EOF
 
 This program will detect if a MySQL DB instance is available
 at $DBHOST / port $PORT.
+
 If it fails to connect to this DB after $tries tries, this script
 will attempt to perform an IP takeover of address $DBHOST
 if this machine has ICMP connectivity to its default route.
