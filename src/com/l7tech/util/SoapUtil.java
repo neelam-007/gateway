@@ -7,13 +7,11 @@
 package com.l7tech.util;
 
 import com.l7tech.message.Request;
-import com.l7tech.message.XmlRequest;
 import com.l7tech.message.Message;
 import com.l7tech.message.XmlMessage;
 import org.w3c.dom.*;
 import org.w3c.dom.Node;
 import org.xml.sax.SAXException;
-
 import javax.xml.soap.*;
 import java.util.List;
 import java.util.ArrayList;
@@ -37,6 +35,7 @@ public class SoapUtil {
     public static final String SECURITY_EL_NAME = "Security";
     public static final String SECURITY_NAMESPACE_PREFIX = "wsse";
     public static final String SECURITY_NAMESPACE = "http://schemas.xmlsoap.org/ws/2002/12/secext";
+    public static final String SECURITY_NAMESPACE2 = "http://schemas.xmlsoap.org/ws/2002/xx/secext";
 
     public static Document getDocument(Message soapmsg) throws SAXException, IOException {
         if ( soapmsg instanceof XmlMessage ) {
@@ -177,6 +176,9 @@ public class SoapUtil {
      */
     public static Element getOrMakeSecurityElement(Document soapMsg) {
         NodeList listSecurityElements = soapMsg.getElementsByTagNameNS(SECURITY_NAMESPACE, SECURITY_EL_NAME);
+        if (listSecurityElements.getLength() < 1) {
+            listSecurityElements = soapMsg.getElementsByTagNameNS(SECURITY_NAMESPACE2, SECURITY_EL_NAME);
+        }
         if (listSecurityElements.getLength() < 1) {
             // element does not exist
             Element header = SoapUtil.getOrMakeHeader(soapMsg);
