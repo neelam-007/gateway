@@ -6,10 +6,7 @@
 
 package com.l7tech.policy;
 
-import com.l7tech.message.Request;
-import com.l7tech.message.Response;
-import com.l7tech.message.SoapRequest;
-import com.l7tech.message.SoapResponse;
+import com.l7tech.message.*;
 import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.assertion.composite.ExactlyOneAssertion;
@@ -49,8 +46,8 @@ public class CompositeAssertionTest extends TestCase {
     }
 
     public void testSimpleLogic() throws IOException, PolicyAssertionException {
-        Request req = new SoapRequest(null);
-        Response resp = new SoapResponse(null);
+        Request req = new HttpSoapRequest(null);
+        Response resp = new HttpSoapResponse(null);
 
         {
             final List kidsTrueFalseTrue = Arrays.asList(new Assertion[] {
@@ -101,8 +98,8 @@ public class CompositeAssertionTest extends TestCase {
     }
 
     public void testCompositeLogic() throws IOException, PolicyAssertionException {
-        Request req = new SoapRequest(null);
-        Response resp = new SoapResponse(null);
+        Request req = new HttpSoapRequest(null);
+        Response resp = new HttpSoapResponse(null);
 
         final List kidsTrueFalseTrue = Arrays.asList(new Assertion[] {
             new TrueAssertion(),

@@ -20,6 +20,8 @@ import java.security.cert.X509Certificate;
 import java.security.cert.CertificateExpiredException;
 import java.security.cert.CertificateNotYetValidException;
 import java.util.logging.Level;
+import java.util.Map;
+import java.util.Collections;
 import java.io.IOException;
 
 import sun.security.x509.X500Name;
@@ -34,7 +36,7 @@ public class ServerHttpClientCert extends ServerHttpCredentialSource implements 
         _data = data;
     }
 
-    public PrincipalCredentials findCredentials(Request request) throws CredentialFinderException {
+    public PrincipalCredentials doFindCredentials( Request request, Response response ) throws CredentialFinderException {
         Object param = request.getParameter( Request.PARAM_HTTP_X509CERT );
         X509Certificate clientCert = null;
 
@@ -87,8 +89,18 @@ public class ServerHttpClientCert extends ServerHttpCredentialSource implements 
     }
 
     protected AssertionStatus doCheckCredentials(Request request, Response response) {
+        // TODO: Do we care?
         return AssertionStatus.NONE;
     }
 
+    protected Map challengeParams(Request request, Response response) {
+        return Collections.EMPTY_MAP;
+    }
+
+    protected String scheme() {
+        return SCHEME;
+    }
+
     protected HttpClientCert _data;
+    protected static final String SCHEME = "ClientCert";
 }

@@ -37,7 +37,7 @@ public class ServerWssBasic extends ServerWssCredentialSource implements ServerA
         _data = data;
     }
 
-    public PrincipalCredentials findCredentials(Request request) throws CredentialFinderException {
+    public PrincipalCredentials findCredentials( Request request, Response response ) throws IOException, CredentialFinderException {
         String xmlreq = null;
         try {
             xmlreq = request.getRequestXml();

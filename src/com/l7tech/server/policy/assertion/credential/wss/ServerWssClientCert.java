@@ -26,7 +26,8 @@ public class ServerWssClientCert extends ServerWssCredentialSource implements Se
         _data = data;
     }
 
-    protected PrincipalCredentials findCredentials(Request request) throws IOException, CredentialFinderException {
+    protected PrincipalCredentials findCredentials(Request request, Response response) throws IOException, CredentialFinderException {
+        // FIXME: Implement
         return null;
     }
 

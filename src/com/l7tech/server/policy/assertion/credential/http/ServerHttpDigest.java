@@ -7,23 +7,18 @@
 package com.l7tech.server.policy.assertion.credential.http;
 
 import com.l7tech.common.util.HexUtils;
-import com.l7tech.identity.User;
 import com.l7tech.message.Request;
 import com.l7tech.message.Response;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.credential.CredentialFinderException;
-import com.l7tech.policy.assertion.credential.CredentialFormat;
 import com.l7tech.policy.assertion.credential.PrincipalCredentials;
 import com.l7tech.policy.assertion.credential.http.HttpDigest;
 import com.l7tech.server.policy.assertion.ServerAssertion;
 
-import java.io.IOException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.StringTokenizer;
-import java.util.logging.Level;
 
 /**
  * @author alex
@@ -67,78 +62,6 @@ public class ServerHttpDigest extends ServerHttpCredentialSource implements Serv
 
         return nonceValue;
     }
-
-    public PrincipalCredentials findCredentials(Request request) throws IOException, CredentialFinderException {
-        String wwwAuthorize = (String)request.getParameter( Request.PARAM_HTTP_AUTHORIZATION );
-
-        if ( wwwAuthorize == null || wwwAuthorize.length() == 0 ) return null;
-
-        Map authParams = new HashMap();
-        StringTokenizer stok = new StringTokenizer( wwwAuthorize, " " );
-        String login = null, scheme = null, ha1 = null, realm = null;
-        String token, name, value;
-        while ( stok.hasMoreTokens() ) {
-            token = stok.nextToken();
-            int epos = token.indexOf("=");
-            if ( epos >= 0 ) {
-                name = token.substring(0,epos);
-                value = token.substring(1,epos+1);
-                if ( value.startsWith("\"") ) {
-                    if ( value.endsWith("\"") ) {
-                        // Single-word quoted string
-                        value = value.substring( 1, value.length() - 1 );
-                    } else {
-                        // Multi-word quoted string
-                        StringBuffer valueBuffer = new StringBuffer( value.substring(1) );
-                        value = null;
-                        while ( stok.hasMoreTokens() ) {
-                            token = stok.nextToken();
-                            if ( token.endsWith("\"") ) {
-                                valueBuffer.append( token.substring( 0, token.length()-1 ) );
-                                value = valueBuffer.toString();
-                                break;
-                            } else
-                                valueBuffer.append( token );
-                            valueBuffer.append( " " );
-                        }
-                        if ( value == null ) {
-                            CredentialFinderException cfe = new CredentialFinderException( "Unterminated quoted string in WWW-Authorize Digest header" );
-                            _log.log( Level.WARNING, cfe.toString(), cfe );
-                            throw cfe;
-                        }
-                    }
-                }
-
-                if ( HttpDigest.USERNAME.equals(name) )
-                    login = value;
-                else if ( HttpDigest.RESPONSE.equals( name ) )
-                    ha1 = value;
-                else if ( HttpDigest.REALM.equals( name ) )
-                    realm = value;
-
-                authParams.put( name, value );
-            } else {
-                if ( scheme == null )
-                    scheme = token;
-                else {
-                    CredentialFinderException cfe = new CredentialFinderException( "Unexpected value '" + token + "' in WWW-Authorize Digest header" );
-                    _log.log( Level.WARNING, cfe.toString(), cfe );
-                    throw cfe;
-                }
-                if ( !SCHEME.equals(scheme) ) {
-                    throwError( Level.FINE, "Invalid scheme '" + scheme + "' in WWW-Authorize: Digest header" );
-                }
-            }
-        }
-
-        request.setParameter( Request.PARAM_HTTP_AUTH_PARAMS, authParams );
-
-        User u = new User();
-        u.setLogin( login );
-
-        return new PrincipalCredentials( u, ha1.getBytes(ENCODING), CredentialFormat.DIGEST, realm );
-    }
-
 
     /**
      * Generates the WWW-Authenticate header.
@@ -186,16 +109,16 @@ public class ServerHttpDigest extends ServerHttpCredentialSource implements Serv
 
     protected AssertionStatus doCheckCredentials( Request request, Response response ) {
         Map authParams = (Map)request.getParameter( Request.PARAM_HTTP_AUTH_PARAMS );
-        String nonce = (String)authParams.get( HttpDigest.NONCE );
+        String nonce = (String)authParams.get( HttpDigest.PARAM_NONCE );
         StringBuffer challenge = new StringBuffer();
 
-        String userName = (String)authParams.get( HttpDigest.USERNAME );
-        String realmName = (String)authParams.get( HttpDigest.REALM );
-        String nOnce = (String)authParams.get( HttpDigest.NONCE );
-        String nc = (String)authParams.get( HttpDigest.NC );
-        String cnonce = (String)authParams.get( HttpDigest.CNONCE );
-        String qop = (String)authParams.get( HttpDigest.QOP );
-        String uri = (String)authParams.get( HttpDigest.URI );
+        String userName = (String)authParams.get( HttpDigest.PARAM_USERNAME );
+        String realmName = (String)authParams.get( HttpDigest.PARAM_REALM );
+        String nOnce = (String)authParams.get( HttpDigest.PARAM_NONCE );
+        String nc = (String)authParams.get( HttpDigest.PARAM_NC );
+        String cnonce = (String)authParams.get( HttpDigest.PARAM_CNONCE );
+        String qop = (String)authParams.get( HttpDigest.PARAM_QOP );
+        String uri = (String)authParams.get( HttpDigest.PARAM_URI );
         String digestResponse = null;
         String opaque = null;
         String method = (String)request.getParameter( Request.PARAM_HTTP_METHOD );
@@ -216,6 +139,21 @@ public class ServerHttpDigest extends ServerHttpCredentialSource implements Serv
         return ( authenticate(userName, digestResponse, nOnce, nc, cnonce, qop,
                                    realmName, md5a2));
 
+    }
+
+    protected PrincipalCredentials doFindCredentials( Request request, Response response ) throws CredentialFinderException {
+        Map authParams = (Map)request.getParameter( Request.PARAM_HTTP_AUTH_PARAMS );
+        // TODO
+        return null;
+    }
+
+    protected Map challengeParams(Request request, Response response) {
+        // TODO
+        return null;
+    }
+
+    protected String scheme() {
+        return SCHEME;
     }
 
     private AssertionStatus authenticate( String userName, String digestResponse, String nonce, String nc, String cnonce, String qop, String realmName, String md5a2 ) {

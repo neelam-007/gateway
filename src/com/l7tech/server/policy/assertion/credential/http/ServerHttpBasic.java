@@ -19,6 +19,8 @@ import com.l7tech.logging.LogManager;
 
 import java.io.IOException;
 import java.util.logging.Level;
+import java.util.Map;
+import java.util.Collections;
 
 import org.apache.axis.encoding.Base64;
 
@@ -30,9 +32,17 @@ public class ServerHttpBasic extends ServerHttpCredentialSource implements Serve
     public static final String ENCODING = "UTF-8";
     public static final String SCHEME = "Basic";
 
-    public PrincipalCredentials findCredentials( Request request ) throws IOException, CredentialFinderException {
+    public PrincipalCredentials doFindCredentials( Request request, Response response ) throws IOException, CredentialFinderException {
         String wwwAuthorize = (String)request.getParameter( Request.PARAM_HTTP_AUTHORIZATION );
         return findCredentials(wwwAuthorize);
+    }
+
+    protected Map challengeParams(Request request, Response response) {
+        return Collections.EMPTY_MAP;
+    }
+
+    protected String scheme() {
+        return SCHEME;
     }
 
     public PrincipalCredentials findCredentials( String wwwAuthorize ) throws IOException, CredentialFinderException {
@@ -42,7 +52,7 @@ public class ServerHttpBasic extends ServerHttpCredentialSource implements Serve
         if ( spos < 0 ) throwError( "Invalid HTTP Basic header format" );
         String scheme = wwwAuthorize.substring( 0, spos );
         String base64 = wwwAuthorize.substring( spos + 1 );
-        if ( !SCHEME.equals(scheme) ) throwError( "Invalid HTTP Basic header scheme" );
+        if ( !scheme().equals(scheme) ) throwError( "Invalid HTTP Basic header scheme" );
 
         String userPassRealm = new String( Base64.decode( base64 ), ENCODING );
         int cpos1 = userPassRealm.indexOf(":");
