@@ -54,12 +54,12 @@ class UserGroupsPanel extends JPanel {
     /**
      * The only constructor
      *
-     * @param groupPanel the parent userPanel
+     * @param panel the parent userPanel
      */
-    public UserGroupsPanel(UserPanel groupPanel) {
+    public UserGroupsPanel(UserPanel panel) {
         super();
         try {
-            this.userPanel = groupPanel;
+            this.userPanel = panel;
             layoutComponents();
             this.addHierarchyListener(hierarchyListener);
             this.setDoubleBuffered(true);
@@ -149,8 +149,8 @@ class UserGroupsPanel extends JPanel {
                      * 	       being compared by this Comparator.
                      */
                     public int compare(Object o1, Object o2) {
-                        EntityHeader e1 = (EntityHeader)o1;
-                        EntityHeader e2 = (EntityHeader)o2;
+                        EntityHeader e1 = (EntityHeader) o1;
+                        EntityHeader e2 = (EntityHeader) o2;
 
                         return e1.getName().compareTo(e2.getName());
                     }
@@ -164,6 +164,7 @@ class UserGroupsPanel extends JPanel {
             public void intervalAdded(ListDataEvent e) {
                 if (!isLoading) {
                     userPanel.setModified(true);
+                    updateUserHeaders();
                 }
             }
 
@@ -174,6 +175,7 @@ class UserGroupsPanel extends JPanel {
             public void intervalRemoved(ListDataEvent e) {
                 if (!isLoading) {
                     userPanel.setModified(true);
+                    updateUserHeaders();
                 }
             }
 
@@ -184,6 +186,16 @@ class UserGroupsPanel extends JPanel {
             public void contentsChanged(ListDataEvent e) {
                 if (!isLoading) {
                     userPanel.setModified(true);
+                    updateUserHeaders();
+                }
+            }
+
+            private void updateUserHeaders() {
+                final Set groupHeaders = userPanel.getUser().getGroupHeaders();
+                groupHeaders.clear();
+                for (int i = 0; i < listInModel.getSize(); i++) {
+                    EntityHeader g = (EntityHeader) listInModel.getElementAt(i);
+                    groupHeaders.add(g);
                 }
             }
         });
@@ -242,12 +254,12 @@ class UserGroupsPanel extends JPanel {
      */
     private JScrollPane getGroupInListJScrollPane() {
         if (groupInListJScrollPane != null)
-        return groupInListJScrollPane;
+            return groupInListJScrollPane;
 
-            groupInListJScrollPane = new JScrollPane();
-            groupInListJScrollPane.setMinimumSize(new Dimension(200, 120));
-            groupInListJScrollPane.setPreferredSize(new Dimension(200, 120));
-            groupInListJScrollPane.getViewport().setView(getGroupMemberList());
+        groupInListJScrollPane = new JScrollPane();
+        groupInListJScrollPane.setMinimumSize(new Dimension(200, 120));
+        groupInListJScrollPane.setPreferredSize(new Dimension(200, 120));
+        groupInListJScrollPane.getViewport().setView(getGroupMemberList());
 
         return groupInListJScrollPane;
     }
@@ -335,7 +347,7 @@ class UserGroupsPanel extends JPanel {
 
             groupAdd.addActionListener(new ActionListener() {
                 public void actionPerformed(ActionEvent e) {
-                    JDialog d = (JDialog)SwingUtilities.windowForComponent(UserGroupsPanel.this);
+                    JDialog d = (JDialog) SwingUtilities.windowForComponent(UserGroupsPanel.this);
 
                     JDialog dialog = new NewGroupForUserDialog(d, UserGroupsPanel.this);
                     dialog.setResizable(false);
@@ -416,7 +428,7 @@ class UserGroupsPanel extends JPanel {
 
             // Based on value type, determine cell contents
             setIcon(new ImageIcon(ImageCache.getInstance().getIcon(GroupPanel.GROUP_ICON_RESOURCE)));
-            EntityHeader eh = (EntityHeader)value;
+            EntityHeader eh = (EntityHeader) value;
             setText(eh.getName());
 
             return this;

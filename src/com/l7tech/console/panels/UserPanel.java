@@ -1,15 +1,14 @@
 package com.l7tech.console.panels;
 
+import com.l7tech.common.gui.util.ImageCache;
+import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.console.event.EntityEvent;
 import com.l7tech.console.event.EntityListener;
 import com.l7tech.console.event.EntityListenerAdapter;
 import com.l7tech.console.logging.ErrorManager;
 import com.l7tech.console.text.MaxLengthDocument;
-import com.l7tech.common.gui.util.ImageCache;
-import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.console.util.Registry;
 import com.l7tech.identity.User;
-import com.l7tech.identity.UserManager;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
 
@@ -566,7 +565,7 @@ public class UserPanel extends EntityEditorPanel {
         user.setLastName(this.getLastNameTextField().getText());
         user.setFirstName(this.getFirstNameTextField().getText());
         user.setEmail(getEmailTextField().getText());
-        user.setGroupHeaders(groupPanel.getCurrentGroups());
+        // user.setGroupHeaders(groupPanel.getCurrentGroups());
         return user;
     }
 
