@@ -55,11 +55,16 @@ import java.io.IOException;
  */
 public class PolicyService {
 
+    interface ServiceInfo {
+        Assertion getPolicy();
+        String getVersion();
+    }
+
     interface PolicyGetter {
         /**
          * @return the policy or null if service does not exist
          */
-        Assertion getPolicy(String serviceId);
+        ServiceInfo getPolicy(String serviceId);
     }
 
     public PolicyService(PrivateKey privateServerKey, X509Certificate serverCert) {
@@ -84,7 +89,7 @@ public class PolicyService {
                                                    PolicyGetter policyGetter) throws FilteringException,
                                                                                      IOException,
                                                                                      SAXException {
-        Assertion targetPolicy = policyGetter.getPolicy(policyId);
+        Assertion targetPolicy = policyGetter.getPolicy(policyId).getPolicy();
         if (targetPolicy == null) {
             logger.info("cannot find target policy from id: " + policyId);
             return null;
@@ -144,7 +149,8 @@ public class PolicyService {
         logger.finest("Policy requested is " + policyId);
 
         // Run the policy-policy
-        Assertion targetPolicy = policyGetter.getPolicy(policyId);
+        ServiceInfo si = policyGetter.getPolicy(policyId);
+        Assertion targetPolicy = si.getPolicy();
         if (targetPolicy == null) {
             logger.info("cannot find target policy from id: " + policyId);
             Document fault = null;
@@ -207,7 +213,7 @@ public class PolicyService {
             return;
         }
         try {
-            String policyVersion = "12345|11"; // TODO Need a real policy version
+            String policyVersion = policyId + "|" + si.getVersion();
             wrapFilteredPolicyInResponse(policyDoc, policyVersion, response);
         } catch (GeneralSecurityException e) {
             exceptionToFault(e, response);
