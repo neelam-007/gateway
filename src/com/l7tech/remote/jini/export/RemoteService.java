@@ -1,7 +1,7 @@
 package com.l7tech.remote.jini.export;
 
-import com.l7tech.identity.Group;
 import com.l7tech.common.Authorizer;
+import com.l7tech.identity.Group;
 import com.sun.jini.start.LifeCycle;
 import net.jini.config.Configuration;
 import net.jini.config.ConfigurationException;
@@ -27,9 +27,9 @@ import java.rmi.Remote;
 import java.rmi.server.ServerNotActiveException;
 import java.security.AccessControlException;
 import java.util.Collections;
-import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
-import java.util.Map;
+import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -50,8 +50,7 @@ public abstract class RemoteService implements Remote, ProxyAccessor {
      * If the impl gets GC'ed, then the server will be unexported.
      * Store the server instances here to prevent this.
      */
-    private static Map serverImpls =
-      Collections.synchronizedMap(new HashMap());
+    private static Set serverImpls = Collections.synchronizedSet(new HashSet());
 
     /* The configuration to use for configuring the server */
     protected final Configuration config;
@@ -68,22 +67,36 @@ public abstract class RemoteService implements Remote, ProxyAccessor {
         this.lifeCycle = lifeCycle;
         config = ConfigurationProvider.getInstance(configOptions);
         init();
-        serverImpls.put(this.getClass(), this);
+        serverImpls.add(this);
         logger.fine("The Service '" + getClass().getName() + "' is ready");
     }
 
     public static void unexportAll() {
-        for (Iterator iterator = serverImpls.keySet().iterator(); iterator.hasNext();) {
-            Object key = (Object)iterator.next();
-            RemoteService rs = (RemoteService)serverImpls.get(key);
-            logger.finer("Unexporting service " + key);
+        for (Iterator iterator = serverImpls.iterator(); iterator.hasNext();) {
+            RemoteService rs = (RemoteService)iterator.next();
 
             try {
                 rs.exporter.unexport(true);
+                logger.finer("Unexported service " + rs);
             } catch (Exception e) {
-                logger.log(Level.WARNING, "Error while unexporting service " + key, e);
+                logger.log(Level.WARNING, "Error while unexporting service " + rs, e);
             }
         }
+    }
+
+    public static Exported export(Remote impl) {
+        throw new IllegalStateException("not implemented");
+    }
+
+    public static class Exported {
+        private Exporter exporter;
+        private Object proxy;
+
+        public Exported(Exporter exporter, Object proxy) {
+            this.exporter = exporter;
+            this.proxy = proxy;
+        }
+
     }
 
     protected DiscoveryManagement getDiscoveryManager()
