@@ -1,16 +1,20 @@
 package com.l7tech.console.tree;
 
-import com.l7tech.console.action.DeleteEntityAction;
 import com.l7tech.console.action.Actions;
+import com.l7tech.console.action.DeleteEntityAction;
 import com.l7tech.console.action.DeletePolicyTemplateAction;
 
 import javax.swing.*;
 import javax.swing.tree.DefaultTreeModel;
 import javax.swing.tree.TreePath;
+import java.awt.datatransfer.DataFlavor;
+import java.awt.datatransfer.Transferable;
+import java.awt.datatransfer.UnsupportedFlavorException;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.util.logging.Logger;
 
 /**
  * Class ServiceTree is the speciaqliced <code>JTree</code> that
@@ -19,6 +23,20 @@ import java.awt.event.MouseEvent;
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  */
 public class AssertionsTree extends JTree {
+    static final Logger log = Logger.getLogger(AssertionsTree.class.getName());
+    /** assertion data flavor for DnD*/
+
+    public static final DataFlavor ASSERTION_DATAFLAVOR;
+    static {
+        DataFlavor df;
+        try {
+             df = new DataFlavor(DataFlavor.javaJVMLocalObjectMimeType + ";class="+AbstractTreeNode.class.getName());
+        } catch (ClassNotFoundException e) {
+            df = null;
+        }
+        ASSERTION_DATAFLAVOR = df;
+    }
+
     /** component name */
     public final static String NAME = "assertion.palette";
 
@@ -44,6 +62,8 @@ public class AssertionsTree extends JTree {
         addKeyListener(new TreeKeyListener());
         addMouseListener(new TreeMouseListener());
         setCellRenderer(new EntityTreeCellRenderer());
+        setDragEnabled(true);
+        setTransferHandler(new AssertionTransferHandler());
     }
 
     /**
@@ -137,6 +157,53 @@ public class AssertionsTree extends JTree {
                     }
                 }
             }
+        }
+    }
+
+    /**
+     * Assertion tree custom transfer handler
+     */
+    class AssertionTransferHandler extends TransferHandler {
+        public int getSourceActions(JComponent c) {
+            return COPY;
+        }
+
+        public Transferable createTransferable(JComponent c) {
+            TreePath path = getSelectionPath();
+            if (path != null) {
+                AbstractTreeNode node = (AbstractTreeNode)path.getLastPathComponent();
+                if (!node.isLeaf()) return null;
+                return new AssertionTransferable(node);
+            }
+
+            return null;
+        }
+
+        public boolean canImport(JComponent comp, DataFlavor[] transferFlavors) {
+            return false;
+        }
+    }
+
+    class AssertionTransferable implements Transferable {
+        private AbstractTreeNode node;
+
+        public AssertionTransferable(AbstractTreeNode an) {
+            this.node= an;
+        }
+
+        public DataFlavor[] getTransferDataFlavors() {
+            return new DataFlavor[]{ ASSERTION_DATAFLAVOR};
+        }
+
+        public boolean isDataFlavorSupported(DataFlavor flavor) {
+            return flavor.equals(ASSERTION_DATAFLAVOR);
+        }
+
+        public Object getTransferData(DataFlavor flavor) throws UnsupportedFlavorException {
+            if (isDataFlavorSupported(flavor)) {
+                return node;
+            }
+            throw new UnsupportedFlavorException(flavor);
         }
     }
 }

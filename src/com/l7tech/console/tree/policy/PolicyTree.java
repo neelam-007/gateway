@@ -1,17 +1,22 @@
 package com.l7tech.console.tree.policy;
 
+import com.l7tech.console.action.DeleteAssertionAction;
 import com.l7tech.console.tree.AbstractTreeNode;
 import com.l7tech.console.tree.EntityTreeCellRenderer;
+import com.l7tech.console.tree.AssertionsTree;
 import com.l7tech.console.util.PopUpMouseListener;
-import com.l7tech.console.action.DeleteAssertionAction;
 
 import javax.swing.*;
-import javax.swing.tree.TreeNode;
 import javax.swing.tree.TreePath;
+import java.awt.datatransfer.DataFlavor;
+import java.awt.datatransfer.Transferable;
+import java.awt.datatransfer.UnsupportedFlavorException;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
-import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.util.logging.Logger;
+import java.util.logging.Level;
+import java.io.IOException;
 
 /**
  * Class PolicyTree is the extended <code>JTree</code> with addtional
@@ -19,8 +24,10 @@ import java.awt.event.MouseEvent;
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  */
 public class PolicyTree extends JTree {
+    static final Logger log = Logger.getLogger(PolicyTree.class.getName());
     /** component name */
     public final static String NAME = "policy.tree";
+
     /**
      * Create the new policy tree with the policy model.
      *
@@ -43,6 +50,8 @@ public class PolicyTree extends JTree {
         addKeyListener(new TreeKeyListener());
         addMouseListener(new TreeMouseListener());
         setCellRenderer(new EntityTreeCellRenderer());
+        setDragEnabled(true);
+        setTransferHandler(new PolicyTransferHandler());
     }
 
     /**
@@ -106,4 +115,74 @@ public class PolicyTree extends JTree {
             }
         }
     }
+
+    /**
+     * Assertion tree custom transfer handler
+     */
+    class PolicyTransferHandler extends TransferHandler {
+        public int getSourceActions(JComponent c) {
+            return NONE;
+        }
+
+        public Transferable createTransferable(JComponent c) {
+            return null;
+        }
+
+        public boolean canImport(JComponent comp, DataFlavor[] transferFlavors) {
+            if (!nodeCanImport()) return false;
+
+            for (int i = 0; i < transferFlavors.length; i++) {
+                DataFlavor transferFlavor = transferFlavors[i];
+                if (transferFlavor.equals(AssertionsTree.ASSERTION_DATAFLAVOR)) return true;
+            }
+            return false;
+        }
+
+        public boolean importData(JComponent c, Transferable t) {
+            if (canImport(c, t.getTransferDataFlavors())) {
+                try {
+                    AbstractTreeNode node
+                      = (AbstractTreeNode)t.getTransferData(AssertionsTree.ASSERTION_DATAFLAVOR);
+
+                    TreePath path = getSelectionPath();
+                    if (path != null) {
+                        AssertionTreeNode target = (AssertionTreeNode)path.getLastPathComponent();
+                        if (target.accept(node)) {
+                            target.receive(node);
+                            return true;
+                        }
+                    }
+
+                    return false;
+                } catch (UnsupportedFlavorException ufe) {
+                    log.log(Level.WARNING, ufe.getMessage(), ufe);
+                } catch (IOException ioe) {
+                    log.log(Level.WARNING, ioe.getMessage(), ioe);
+                }
+            }
+            return false;
+        }
+
+        private boolean canImportAbstractTreeNode(AbstractTreeNode an) {
+            TreePath path = getSelectionPath();
+            if (path != null) {
+                AssertionTreeNode node = (AssertionTreeNode)path.getLastPathComponent();
+                if (node.isLeaf()) return false;
+
+                return node.accept(an);
+            }
+            return false;
+        }
+
+        private boolean nodeCanImport() {
+            log.info("nodeCanImport");
+            TreePath path = getSelectionPath();
+            if (path != null) {
+                AssertionTreeNode node = (AssertionTreeNode)path.getLastPathComponent();
+                return !node.isLeaf();
+           }
+           return false;
+        }
+    }
+
 }

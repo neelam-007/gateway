@@ -581,7 +581,6 @@ public class MainWindow extends JFrame {
         if (tree != null)
             return tree;
         tree = new AssertionsTree();
-        tree.setDragEnabled(true);
         ComponentRegistry.getInstance().registerComponent(AssertionsTree.NAME, tree);
         return tree;
     }
