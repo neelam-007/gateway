@@ -40,7 +40,7 @@ else
 fi
 
 # define tomcat home
-TOMCAT_HOME="/ssg/tomcat/"
+TOMCAT_HOME=/ssg/tomcat/
 if $cygwin; then
     TOMCAT_HOME=`cygpath --path --unix "$TOMCAT_HOME"`
 fi
