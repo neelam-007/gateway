@@ -10,6 +10,7 @@ import com.l7tech.credential.PrincipalCredentials;
 import com.l7tech.credential.CredentialFormat;
 import com.l7tech.credential.CredentialFinderException;
 import com.l7tech.message.Request;
+import com.l7tech.message.XmlRequest;
 import com.l7tech.util.SAXParsingCompleteException;
 import com.l7tech.logging.LogManager;
 import com.l7tech.identity.User;
