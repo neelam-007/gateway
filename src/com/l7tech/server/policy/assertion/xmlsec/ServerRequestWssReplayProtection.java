@@ -15,8 +15,8 @@ import com.l7tech.server.util.MessageIdManager;
 
 import java.io.IOException;
 import java.security.cert.X509Certificate;
-import java.util.logging.Logger;
 import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * This assertion verifies that the message contained an
@@ -55,6 +55,7 @@ public class ServerRequestWssReplayProtection implements ServerAssertion {
         // Validate timestamp first
         WssProcessor.Timestamp timestamp = wssResults.getTimestamp();
         if (timestamp == null) {
+            response.setPolicyViolated(true);
             logger.info("No timestamp present in request; assertion therefore fails.");
             return AssertionStatus.BAD_REQUEST;
         }
