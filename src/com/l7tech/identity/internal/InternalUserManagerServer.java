@@ -10,6 +10,9 @@ import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import net.sf.hibernate.Session;
+import net.sf.hibernate.HibernateException;
+
 /**
  * SSG-side implementation of the UserManager for the internal identity provider.
  * 
@@ -110,11 +113,13 @@ public class InternalUserManagerServer extends HibernateEntityManager implements
         return allHeadersQuery;
     }
 
+    /** Must be called in a transaction! */
     public void delete(User user) throws DeleteException, ObjectNotFoundException {
-        InternalUser imp = cast(user);
-
+        InternalUser userImp = cast(user);
+        HibernatePersistenceContext context = null;
         try {
-            InternalUser originalUser = (InternalUser)findByPrimaryKey( imp.getUniqueIdentifier() );
+            context = (HibernatePersistenceContext)getContext();
+            InternalUser originalUser = (InternalUser)findByPrimaryKey( userImp.getUniqueIdentifier() );
 
             if (originalUser == null) {
                 throw new ObjectNotFoundException("User "+user.getName());
@@ -126,14 +131,23 @@ public class InternalUserManagerServer extends HibernateEntityManager implements
                 throw new DeleteException(msg);
             }
 
-            PersistenceManager.delete( getContext(), imp );
-
-            revokeCert( imp );
+            Session s = context.getSession();
+            GroupManager groupManager = _provider.getGroupManager();
+            Set groupHeaders = groupManager.getGroupHeaders(userImp);
+            for ( Iterator i = groupHeaders.iterator(); i.hasNext(); ) {
+                EntityHeader groupHeader = (EntityHeader) i.next();
+                s.delete(new GroupMembership(userImp.getOid(), groupHeader.getOid()));
+            }
+            s.delete( userImp );
+            revokeCert( userImp );
         } catch ( SQLException se ) {
             logger.log(Level.SEVERE, null, se);
             throw new DeleteException( se.toString(), se );
         } catch ( FindException e ) {
             logger.log(Level.SEVERE, null, e);
+            throw new DeleteException( e.toString(), e );
+        } catch ( HibernateException e ) {
+            logger.log( Level.SEVERE, e.getMessage(), e );
             throw new DeleteException( e.toString(), e );
         }
     }
