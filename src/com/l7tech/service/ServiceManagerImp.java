@@ -208,6 +208,9 @@ public class ServiceManagerImp extends HibernateEntityManager implements Service
             context = (HibernatePersistenceContext)getContext();
             Session s = context.getSession();
             List results = s.find( getFieldQuery( new Long( policyId ).toString(), F_VERSION) );
+            if (results == null || results.isEmpty()) {
+                throw new FindException("cannot get version for service " + Long.toString(policyId));
+            }
             Integer i = (Integer)results.get(0);
             int res = i.intValue();
             return res;
