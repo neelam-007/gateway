@@ -74,6 +74,7 @@ public class SoapUtil {
     public static final String ROLE_ATTR_NAME = "role";    // SOAP 1.2
     public static final String MUSTUNDERSTAND_ATTR_NAME = "mustUnderstand"; // SOAP 1.1+
     public static final String REFERENCE_URI_ATTR_NAME = "URI";
+    public static final String UNTOK_PSSWD_TYPE_ATTR_NAME = "Type";
 
     // Element names
     public static final String ENVELOPE_EL_NAME = "Envelope";
@@ -91,6 +92,8 @@ public class SoapUtil {
     public static final String CREATED_EL_NAME = "Created";
     public static final String EXPIRES_EL_NAME = "Expires";
     public static final String USERNAME_TOK_EL_NAME = "UsernameToken";
+    public static final String UNTOK_USERNAME_EL_NAME = "Username";
+    public static final String UNTOK_PASSWORD_EL_NAME = "Password";
 
     // Misc
     public static final String FC_CLIENT = "Client";
