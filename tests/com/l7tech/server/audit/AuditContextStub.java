@@ -5,6 +5,7 @@
  */
 package com.l7tech.server.audit;
 
+import com.l7tech.common.audit.AuditContext;
 import com.l7tech.common.audit.AuditDetail;
 import com.l7tech.common.audit.AuditRecord;
 

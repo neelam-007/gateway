@@ -7,6 +7,7 @@
 package com.l7tech.server.message;
 
 import com.l7tech.common.RequestId;
+import com.l7tech.common.audit.AuditContext;
 import com.l7tech.common.message.Message;
 import com.l7tech.common.message.ProcessingContext;
 import com.l7tech.common.xml.SoapFaultDetail;
@@ -14,7 +15,6 @@ import com.l7tech.identity.User;
 import com.l7tech.policy.assertion.AssertionResult;
 import com.l7tech.policy.assertion.RoutingStatus;
 import com.l7tech.server.RequestIdGenerator;
-import com.l7tech.server.audit.AuditContext;
 import com.l7tech.server.policy.assertion.ServerAssertion;
 import com.l7tech.service.PublishedService;
 

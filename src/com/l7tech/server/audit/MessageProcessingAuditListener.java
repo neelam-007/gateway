@@ -6,6 +6,7 @@
 
 package com.l7tech.server.audit;
 
+import com.l7tech.common.audit.AuditContext;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.server.event.MessageProcessingEventListener;
 import com.l7tech.server.message.PolicyEnforcementContext;

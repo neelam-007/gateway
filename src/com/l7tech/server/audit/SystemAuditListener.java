@@ -8,6 +8,7 @@ package com.l7tech.server.audit;
 
 import com.l7tech.cluster.ClusterInfoManager;
 import com.l7tech.common.Component;
+import com.l7tech.common.audit.AuditContext;
 import com.l7tech.common.audit.SystemAuditRecord;
 import com.l7tech.server.event.Event;
 import com.l7tech.server.event.GenericListener;

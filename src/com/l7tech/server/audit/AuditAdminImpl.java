@@ -8,6 +8,7 @@ package com.l7tech.server.audit;
 
 import com.l7tech.admin.AccessManager;
 import com.l7tech.common.audit.AuditAdmin;
+import com.l7tech.common.audit.AuditContext;
 import com.l7tech.common.audit.AuditRecord;
 import com.l7tech.common.audit.AuditSearchCriteria;
 import com.l7tech.common.util.Background;

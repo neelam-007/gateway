@@ -1,7 +1,5 @@
 package com.l7tech.common.audit;
 
-import com.l7tech.server.audit.AuditContext;
-
 import java.util.logging.LogRecord;
 import java.util.logging.Logger;
 
@@ -21,13 +19,11 @@ public class Auditor {
     }
 
     public void logAndAudit(AuditDetailMessage msg, String[] params, Throwable e) {
-        if(context == null) throw new RuntimeException("AuditContext is NULL. Cannot add AuditDetail to the audit record.");
 
-        context.addDetail(new AuditDetail(msg,
-                params == null ? null : params,
-                e));
+        if (context != null)
+            context.addDetail(new AuditDetail(msg, params == null ? null : params, e));
 
-        if(logger == null) return;  // todo: log will be removed once the audit feature is enhanced to replace log
+        if(logger == null) return;
 
         LogRecord rec = new AuditHackLogRecord(msg);
         rec.setLoggerName(logger.getName());

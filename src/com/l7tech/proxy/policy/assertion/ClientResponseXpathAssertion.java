@@ -25,16 +25,15 @@ import java.util.List;
 import java.util.logging.Logger;
 
 /**
- * Client side support for RequestXpathAssertion.
+ * Client side support for ResponseXpathAssertion.
  * @author mike
  * @version 1.0
  */
-public class ClientResponseXpathAssertion extends ClientAssertion {
+public class ClientResponseXpathAssertion extends ClientXpathAssertion {
     private static final Logger log = Logger.getLogger(ClientResponseXpathAssertion.class.getName());
-    private ResponseXpathAssertion responseXpathAssertion;
 
     public ClientResponseXpathAssertion(ResponseXpathAssertion responseXpathAssertion) {
-        this.responseXpathAssertion = responseXpathAssertion;
+        super(responseXpathAssertion, false);
     }
 
     public AssertionStatus decorateRequest(PolicyApplicationContext context) {
@@ -46,7 +45,7 @@ public class ClientResponseXpathAssertion extends ClientAssertion {
             throws BadCredentialsException, OperationCanceledException, GeneralSecurityException, IOException,
             SAXException, ResponseValidationException, KeyStoreCorruptException, PolicyAssertionException
     {
-        final XpathExpression xpathExpression = responseXpathAssertion.getXpathExpression();
+        final XpathExpression xpathExpression = getXpathExpression();
         final XpathEvaluator eval = XpathEvaluator.newEvaluator(context.getResponse().getXmlKnob().getDocumentReadOnly(),
                                                                 xpathExpression.getNamespaces());
         try {
@@ -63,16 +62,5 @@ public class ClientResponseXpathAssertion extends ClientAssertion {
             throw new PolicyAssertionException("Unable to execute xpath expression \"" +
                                                xpathExpression.getExpression() + "\"", e);
         }
-    }
-
-    public String getName() {
-        String str = "";
-        if (responseXpathAssertion != null && responseXpathAssertion.pattern() != null)
-            str = " \"" + responseXpathAssertion.pattern() + '"';
-        return "Response must match XPath expression" + str;
-    }
-
-    public String iconResource(boolean open) {
-        return "com/l7tech/proxy/resources/tree/xmlencryption.gif";
     }
 }

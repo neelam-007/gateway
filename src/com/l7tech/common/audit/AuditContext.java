@@ -3,10 +3,7 @@
  *
  * $Id$
  */
-package com.l7tech.server.audit;
-
-import com.l7tech.common.audit.AuditDetail;
-import com.l7tech.common.audit.AuditRecord;
+package com.l7tech.common.audit;
 
 import java.util.logging.Level;
 
@@ -24,6 +21,8 @@ import java.util.logging.Level;
  * records, respectively.
  * <p>
  * By contrast, {@link com.l7tech.common.audit.SystemAuditRecord} records are persisted in {@link #flush} regardless of their level.
+ * <p>
+ * There is currently no implementation of this interface for use inside non-Gateway code.
  */
 public interface AuditContext {
     /** Message audit threshold to be used if {@link com.l7tech.server.ServerConfig#PARAM_AUDIT_MESSAGE_THRESHOLD} is unset or invalid */

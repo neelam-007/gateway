@@ -8,6 +8,7 @@ package com.l7tech.server.policy.assertion;
 
 import com.l7tech.common.BuildInfo;
 import com.l7tech.common.audit.AssertionMessages;
+import com.l7tech.common.audit.AuditContext;
 import com.l7tech.common.audit.Auditor;
 import com.l7tech.common.message.HttpServletRequestKnob;
 import com.l7tech.common.message.MimeKnob;
@@ -27,7 +28,6 @@ import com.l7tech.policy.assertion.HttpRoutingAssertion;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.RoutingStatus;
 import com.l7tech.server.StashManagerFactory;
-import com.l7tech.server.audit.AuditContext;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.transport.http.SslClientTrustManager;
 import com.l7tech.service.PublishedService;

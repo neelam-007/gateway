@@ -8,6 +8,7 @@ package com.l7tech.server.audit;
 
 import com.l7tech.cluster.ClusterInfoManager;
 import com.l7tech.common.audit.AdminAuditRecord;
+import com.l7tech.common.audit.AuditContext;
 import com.l7tech.identity.User;
 import com.l7tech.objectmodel.Entity;
 import com.l7tech.objectmodel.NamedEntity;

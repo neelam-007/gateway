@@ -24,16 +24,15 @@ import java.util.logging.Logger;
  * @author mike
  * @version 1.0
  */
-public class ClientRequestXpathAssertion extends ClientAssertion {
+public class ClientRequestXpathAssertion extends ClientXpathAssertion {
     private static final Logger log = Logger.getLogger(ClientRequestXpathAssertion.class.getName());
-    private RequestXpathAssertion requestXpathAssertion;
 
     public ClientRequestXpathAssertion(RequestXpathAssertion requestXpathAssertion) {
-        this.requestXpathAssertion = requestXpathAssertion;
+        super(requestXpathAssertion, true);
     }
 
     public AssertionStatus decorateRequest(PolicyApplicationContext context) throws PolicyAssertionException, SAXException, IOException {
-        final XpathExpression xpathExpression = requestXpathAssertion.getXpathExpression();
+        final XpathExpression xpathExpression = getXpathExpression();
         // Match the Original _undecorated_ document always, so operation-specific paths are deterministic
         final XpathEvaluator eval = XpathEvaluator.newEvaluator(context.getRequest().getXmlKnob().getOriginalDocument(),
                                                                 xpathExpression.getNamespaces());
@@ -55,16 +54,5 @@ public class ClientRequestXpathAssertion extends ClientAssertion {
 
     public AssertionStatus unDecorateReply(PolicyApplicationContext context) throws PolicyAssertionException, IOException, SAXException {
         return decorateRequest(context); // make sure we follow the same policy path when processing the response
-    }
-
-    public String getName() {
-        String str = "";
-        if (requestXpathAssertion != null && requestXpathAssertion.pattern() != null)
-            str = " \"" + requestXpathAssertion.pattern() + '"';
-        return "Request must match XPath expression" + str;
-    }
-
-    public String iconResource(boolean open) {
-        return "com/l7tech/proxy/resources/tree/xmlencryption.gif";
     }
 }

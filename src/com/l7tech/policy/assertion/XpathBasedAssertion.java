@@ -47,4 +47,17 @@ public abstract class XpathBasedAssertion extends Assertion {
         return sb.toString();
     }
 
+    /** Shortcut to get xpath pattern.  Name doesn't use get, to hide it from policy serializer. */
+    public String pattern() {
+        if (getXpathExpression() != null)
+            return getXpathExpression().getExpression();
+        return null;
+    }
+
+    /** Shortcut to get namespace map.  Name doesn't use get, to hide it from policy serializer. */
+    public Map namespaceMap() {
+        if (getXpathExpression() != null)
+            return getXpathExpression().getNamespaces();
+        return null;
+    }
 }
