@@ -1,7 +1,11 @@
 package com.l7tech.identity.cert;
 
+import com.l7tech.common.util.HexUtils;
+
 import java.net.*;
 import java.io.*;
+import java.security.cert.Certificate;
+import java.security.cert.CertificateFactory;
 
 /**
  * User: flascell
@@ -16,8 +20,7 @@ public class CSRHandlerTest {
         System.setProperty("javax.net.ssl.trustStore", System.getProperties().getProperty("user.home") + File.separator + ".l7tech" + File.separator + "trustStore");
         System.setProperty("javax.net.ssl.trustStorePassword", "password");
 
-
-        URL url = new URL("https://riker:8443/ssg/csr");
+        URL url = new URL("https://riker:8443/csr");
         HttpURLConnection connection = (HttpURLConnection)url.openConnection();
         connection.setRequestMethod("POST");
         connection.setDoOutput(true);
@@ -39,20 +42,21 @@ public class CSRHandlerTest {
 
         try {
             response = connection.getInputStream();
-            read = response.read(buf);
-            while (read > 0) {
-                System.out.print(new String(buf));
-                read = response.read(buf);
+            if (response != null) {
+                byte[] responsecontents = HexUtils.slurpStream(response, 16384);
+                ByteArrayInputStream bais = new ByteArrayInputStream(responsecontents);
+                java.security.cert.Certificate dledcert = CertificateFactory.getInstance("X.509").generateCertificate(bais);
+                System.out.println("Certificate downloaded successfully: " + dledcert.toString());
             }
         } catch (Exception e) {
             e.printStackTrace(System.out);
         }
-
-        System.out.println("END OF RESPONSE");
 
         try {
             response = connection.getErrorStream();
+            if (response == null) return;
             read = response.read(buf);
+            System.out.println("ERROR STREAM:");
             while (read > 0) {
                 System.out.print(new String(buf));
                 read = response.read(buf);
@@ -60,7 +64,5 @@ public class CSRHandlerTest {
         } catch (Exception e) {
             e.printStackTrace(System.out);
         }
-
-        System.out.println("END OF ERROR STREAM");
     }
 }
