@@ -165,7 +165,7 @@ public class ServiceNode extends EntityHeaderNode {
         } catch (Exception e) {
             ErrorManager.getDefault().
               notify(Level.SEVERE, e,
-                "Error loading service elements" + getEntityHeader().getOid());
+                "Error accessing service id=" + getEntityHeader().getOid());
         }
     }
 
@@ -177,16 +177,13 @@ public class ServiceNode extends EntityHeaderNode {
         try {
             PublishedService ps = getPublishedService();
             if (ps != null && ps.getRoutingUri() != null) {
-                nodeName = "<html>" +
-                              nodeName + " [on <a href=\"" + ps.getRoutingUri() + "\">" + ps.getRoutingUri() +
-                           "</a>]</html>";
+                nodeName = nodeName + " [ " + ps.getRoutingUri()+ " ]";
             }
-        } catch (FindException e) {
-
-        } catch (RemoteException e) {
-
+        } catch (Exception e) {
+            ErrorManager.getDefault().
+              notify(Level.SEVERE, e,
+                "Error accessing service id=" + getEntityHeader().getOid());
         }
-
         return nodeName;
     }
 
