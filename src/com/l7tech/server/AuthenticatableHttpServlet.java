@@ -266,7 +266,7 @@ public abstract class AuthenticatableHttpServlet extends HttpServlet {
             return null;
         }
 
-        ServerHttpBasic httpBasic = new ServerHttpBasic(new HttpBasic());
+        ServerHttpBasic httpBasic = new ServerHttpBasic(new HttpBasic(), applicationContext);
         LoginCredentials creds = null;
         try {
             creds = httpBasic.findCredentials(authorizationHeader);

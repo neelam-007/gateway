@@ -6,20 +6,20 @@
 
 package com.l7tech.server.policy.assertion;
 
+import com.l7tech.common.audit.AssertionMessages;
+import com.l7tech.common.audit.Auditor;
+import com.l7tech.common.security.xml.SecurityActor;
+import com.l7tech.common.security.xml.processor.ProcessorResult;
+import com.l7tech.common.util.SoapUtil;
+import com.l7tech.common.util.XmlUtil;
+import com.l7tech.common.xml.InvalidDocumentFormatException;
+import com.l7tech.policy.assertion.PolicyAssertionException;
+import com.l7tech.policy.assertion.RoutingAssertion;
+import com.l7tech.server.message.PolicyEnforcementContext;
 import org.springframework.context.ApplicationContext;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.xml.sax.SAXException;
-import com.l7tech.policy.assertion.RoutingAssertion;
-import com.l7tech.policy.assertion.PolicyAssertionException;
-import com.l7tech.common.security.xml.processor.ProcessorResult;
-import com.l7tech.common.security.xml.SecurityActor;
-import com.l7tech.common.util.SoapUtil;
-import com.l7tech.common.util.XmlUtil;
-import com.l7tech.common.xml.InvalidDocumentFormatException;
-import com.l7tech.common.audit.AssertionMessages;
-import com.l7tech.common.audit.Auditor;
-import com.l7tech.server.message.PolicyEnforcementContext;
 
 import java.io.IOException;
 import java.util.logging.Logger;
@@ -31,16 +31,18 @@ import java.util.logging.Logger;
 public abstract class ServerRoutingAssertion implements ServerAssertion {
     public static final String ENCODING = "UTF-8";
     private final Logger logger = Logger.getLogger(ServerRoutingAssertion.class.getName());
+    private final Auditor auditor;
 
     protected ServerRoutingAssertion(ApplicationContext applicationContext) {
         this.applicationContext = applicationContext;
+        this.auditor = new Auditor(this, applicationContext, logger);
     }
     
     protected void handleProcessedSecurityHeader(PolicyEnforcementContext context,
                                                  int secHeaderHandlingOption,
-                                                 String otherToPromote,
-                                                 Auditor auditor)
-                                                          throws SAXException, IOException, PolicyAssertionException {
+                                                 String otherToPromote)
+            throws SAXException, IOException, PolicyAssertionException
+    {
         if (context.getService().isSoap()) {
             // DELETE CURRENT SECURITY HEADER IF NECESSARY
             if (secHeaderHandlingOption == RoutingAssertion.REMOVE_CURRENT_SECURITY_HEADER ||

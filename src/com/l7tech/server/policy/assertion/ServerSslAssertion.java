@@ -16,6 +16,7 @@ import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.SslAssertion;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.credential.http.ServerHttpClientCert;
+import org.springframework.context.ApplicationContext;
 
 import javax.servlet.http.HttpServletRequest;
 import java.io.IOException;
@@ -26,8 +27,14 @@ import java.util.logging.Logger;
  * @version $Revision$
  */
 public class ServerSslAssertion implements ServerAssertion {
-    public ServerSslAssertion( SslAssertion data ) {
+    private final Auditor auditor;
+    private ApplicationContext springContext;
+
+    public ServerSslAssertion(SslAssertion data, ApplicationContext springContext) {
         _data = data;
+        this.springContext = springContext;
+        auditor = new Auditor(this, springContext, logger);
+        serverHttpClientCert = new ServerHttpClientCert(springContext);
     }
 
     public AssertionStatus checkRequest(PolicyEnforcementContext context) throws PolicyAssertionException, IOException {
@@ -42,7 +49,6 @@ public class ServerSslAssertion implements ServerAssertion {
 
         SslAssertion.Option option = _data.getOption();
 
-        Auditor auditor = new Auditor(context.getAuditContext(), logger);
         if ( option == SslAssertion.REQUIRED) {
             if (ssl) {
                 status = AssertionStatus.NONE;
@@ -101,6 +107,6 @@ public class ServerSslAssertion implements ServerAssertion {
     }
 
     protected SslAssertion _data;
-    private final ServerHttpClientCert serverHttpClientCert = new ServerHttpClientCert();
+    private final ServerHttpClientCert serverHttpClientCert;
     protected final Logger logger = Logger.getLogger(getClass().getName());
 }

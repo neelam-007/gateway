@@ -1,16 +1,16 @@
 package com.l7tech.server.policy.assertion.xml;
 
+import com.l7tech.common.audit.AssertionMessages;
+import com.l7tech.common.audit.Auditor;
 import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.util.XmlUtil;
-import com.l7tech.common.audit.Auditor;
-import com.l7tech.common.audit.AssertionMessages;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.RoutingStatus;
 import com.l7tech.policy.assertion.xml.SchemaValidation;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.ServerAssertion;
-import com.l7tech.common.audit.AssertionMessages;
+import org.springframework.context.ApplicationContext;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
@@ -28,7 +28,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -43,8 +42,11 @@ import java.util.logging.Logger;
  *
  */
 public class ServerSchemaValidation implements ServerAssertion {
-    public ServerSchemaValidation(SchemaValidation data) {
+    private Auditor auditor;
+
+    public ServerSchemaValidation(SchemaValidation data, ApplicationContext springContext) {
         this.data = data;
+        auditor = new Auditor(this, springContext, logger);
     }
 
     /**
@@ -54,7 +56,6 @@ public class ServerSchemaValidation implements ServerAssertion {
     public AssertionStatus checkRequest(PolicyEnforcementContext context) throws IOException,
                                                                               PolicyAssertionException {
 
-        Auditor auditor = new Auditor(context.getAuditContext(), logger);
 
         // decide which document to act upon based on routing status
         RoutingStatus routing = context.getRoutingStatus();
@@ -67,7 +68,7 @@ public class ServerSchemaValidation implements ServerAssertion {
                     return AssertionStatus.NOT_APPLICABLE;
                 }
 
-                return checkRequest(context.getResponse().getXmlKnob().getDocumentReadOnly(), auditor);
+                return checkRequest(context.getResponse().getXmlKnob().getDocumentReadOnly());
             } catch (SAXException e) {
                 throw new PolicyAssertionException("could not parse response document", e);
             }
@@ -80,7 +81,7 @@ public class ServerSchemaValidation implements ServerAssertion {
                     return AssertionStatus.NOT_APPLICABLE;
                 }
 
-                return checkRequest(context.getRequest().getXmlKnob().getDocumentReadOnly(), auditor);
+                return checkRequest(context.getRequest().getXmlKnob().getDocumentReadOnly());
             } catch (SAXException e) {
                 throw new PolicyAssertionException("could not parse request document", e);
             }
@@ -90,17 +91,10 @@ public class ServerSchemaValidation implements ServerAssertion {
     /**
      * validates the soap envelope's body's child against the schema passed in constructor
      * @param soapmsg the full soap envelope.
-     * @param auditor the object to add associated logs to audit record in the current context
      */
-    AssertionStatus checkRequest(Document soapmsg, Auditor auditor) throws IOException {
+    AssertionStatus checkRequest(Document soapmsg) throws IOException {
         String[] bodystr = null;
-        try {
-            bodystr = getXMLElementsToValidate(soapmsg);
-        } catch (ParserConfigurationException e) {
-            String msg = "parser configuration exception";
-            auditor.logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[] {msg}, e);
-            throw new IOException(msg + "-" + e.getMessage());
-        }
+        bodystr = getXMLElementsToValidate(soapmsg);
         if (bodystr == null || bodystr.length < 1) {
             auditor.logAndAudit(AssertionMessages.SCHEMA_VALIDATION_EMPTY_BODY);
             return AssertionStatus.FAILED;
@@ -144,7 +138,7 @@ public class ServerSchemaValidation implements ServerAssertion {
         return AssertionStatus.NONE;
     }
 
-    private String[] getXMLElementsToValidate(Document doc) throws IOException, ParserConfigurationException {
+    private String[] getXMLElementsToValidate(Document doc) throws IOException {
         if (SoapUtil.isSoapMessage(doc)) {
             return getRequestBodyChild(doc);
         } else {
@@ -152,7 +146,7 @@ public class ServerSchemaValidation implements ServerAssertion {
         }
     }
 
-    private String[] getRequestBodyChild(Document soapenvelope) throws IOException, ParserConfigurationException {
+    private String[] getRequestBodyChild(Document soapenvelope) throws IOException {
         NodeList bodylist = soapenvelope.getElementsByTagNameNS(soapenvelope.getDocumentElement().getNamespaceURI(),
                                                                 SoapUtil.BODY_EL_NAME);
         Element bodyel = null;

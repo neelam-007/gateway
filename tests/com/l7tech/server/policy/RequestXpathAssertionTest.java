@@ -1,5 +1,6 @@
 package com.l7tech.server.policy;
 
+import com.l7tech.common.ApplicationContexts;
 import com.l7tech.common.message.Message;
 import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.xml.TestDocuments;
@@ -59,7 +60,7 @@ public class RequestXpathAssertionTest extends TestCase {
 
     private ServerRequestXpathAssertion getAssertion(XpathExpression expression) {
         RequestXpathAssertion assertion = new RequestXpathAssertion(expression);
-        return new ServerRequestXpathAssertion(assertion);
+        return new ServerRequestXpathAssertion(assertion, ApplicationContexts.getTestApplicationContext());
     }
 
     /**

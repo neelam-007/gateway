@@ -12,6 +12,6 @@ import org.springframework.context.ApplicationContext;
  */
 public class ServerRequestAcceleratedXpathAssertion extends ServerAcceleratedXpathAssertion {
     public ServerRequestAcceleratedXpathAssertion(RequestAcceleratedXpathAssertion assertion, ApplicationContext applicationContext) {
-        super(assertion, applicationContext, new ServerRequestXpathAssertion(assertion));
+        super(assertion, applicationContext, new ServerRequestXpathAssertion(assertion, applicationContext));
     }
 }

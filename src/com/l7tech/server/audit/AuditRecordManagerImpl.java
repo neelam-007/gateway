@@ -13,7 +13,6 @@ import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.HibernateEntityManager;
 import com.l7tech.objectmodel.SaveException;
 import com.l7tech.server.ServerConfig;
-import com.l7tech.server.event.EventManager;
 import com.l7tech.server.event.admin.AuditPurgeInitiated;
 import com.l7tech.server.event.system.AuditPurgeEvent;
 import net.sf.hibernate.Criteria;
@@ -35,7 +34,6 @@ import java.util.logging.Level;
  * @version $Revision$
  */
 public class AuditRecordManagerImpl extends HibernateEntityManager implements AuditRecordManager {
-    private EventManager eventManager;
     private ServerConfig serverConfig;
 
     public AuditRecord findByPrimaryKey(long oid) throws FindException {
@@ -108,7 +106,7 @@ public class AuditRecordManagerImpl extends HibernateEntityManager implements Au
     }
 
     public void deleteOldAuditRecords() throws DeleteException {
-        eventManager.fire(new AuditPurgeInitiated(this));
+        serverConfig.getSpringContext().publishEvent(new AuditPurgeInitiated(this));
         try {
             String sMinAgeHours = serverConfig.getProperty(ServerConfig.PARAM_AUDIT_PURGE_MINIMUM_AGE);
             if (sMinAgeHours == null || sMinAgeHours.length() == 0) sMinAgeHours = "168";
@@ -129,7 +127,8 @@ public class AuditRecordManagerImpl extends HibernateEntityManager implements Au
             int numDeleted = s.delete( query.toString(),
                                        new Object[] { Level.SEVERE.getName(), new Long(maxTime) },
                                        new Type[] { Hibernate.STRING, Hibernate.LONG } );
-            eventManager.fire(new AuditPurgeEvent( this, numDeleted ));
+
+            serverConfig.getSpringContext().publishEvent(new AuditPurgeEvent( this, numDeleted ));
         } catch ( HibernateException e ) {
             throw new DeleteException("Couldn't purge audit events", e);
         }
@@ -145,10 +144,6 @@ public class AuditRecordManagerImpl extends HibernateEntityManager implements Au
 
     public String getTableName() {
         return "audit";
-    }
-
-    public void setEventManager(EventManager eventManager) {
-        this.eventManager = eventManager;
     }
 
     public void setServerConfig(ServerConfig serverConfig) {

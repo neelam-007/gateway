@@ -1,6 +1,8 @@
 package com.l7tech.server.policy.assertion.xmlsec;
 
 import com.l7tech.cluster.DistributedMessageIdManager;
+import com.l7tech.common.audit.AssertionMessages;
+import com.l7tech.common.audit.Auditor;
 import com.l7tech.common.security.token.SamlSecurityToken;
 import com.l7tech.common.security.token.SecurityContextToken;
 import com.l7tech.common.security.token.SecurityToken;
@@ -10,8 +12,6 @@ import com.l7tech.common.security.xml.processor.WssTimestamp;
 import com.l7tech.common.util.CausedIOException;
 import com.l7tech.common.util.CertUtils;
 import com.l7tech.common.util.HexUtils;
-import com.l7tech.common.audit.Auditor;
-import com.l7tech.common.audit.AssertionMessages;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.xmlsec.RequestWssReplayProtection;
@@ -19,14 +19,12 @@ import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.ServerAssertion;
 import com.l7tech.server.util.MessageId;
 import com.l7tech.server.util.MessageIdManager;
-import com.l7tech.common.audit.AssertionMessages;
 import org.springframework.context.ApplicationContext;
 import org.xml.sax.SAXException;
 
 import java.io.IOException;
 import java.security.MessageDigest;
 import java.security.cert.X509Certificate;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -46,11 +44,14 @@ public class ServerRequestWssReplayProtection implements ServerAssertion {
     private static final long MAXIMUM_MESSAGE_AGE_MILLIS = 1000L * 60 * 60 * 24 * 30; // hard cap of 30 days old
     private static final long CACHE_ID_EXTRA_TIME_MILLIS = 1000L * 60 * 5; // cache IDs for at least 5 min extra
     private static final long DEFAULT_EXPIRY_TIME = 1000L * 60 * 10; // if no Expires, assume expiry after 10 min
-    private ApplicationContext applicationContext;
+
+    private final ApplicationContext applicationContext;
+    private final Auditor auditor;
 
     public ServerRequestWssReplayProtection(RequestWssReplayProtection subject, ApplicationContext ctx) {
         this.subject = subject;
         this.applicationContext = ctx;
+        this.auditor = new Auditor(this, applicationContext, logger);
     }
 
     public AssertionStatus checkRequest(PolicyEnforcementContext context)
@@ -58,7 +59,6 @@ public class ServerRequestWssReplayProtection implements ServerAssertion {
     {
         ProcessorResult wssResults;
 
-        Auditor auditor = new Auditor(context.getAuditContext(), logger);
         try {
             if (!context.getRequest().isSoap()) {
                 auditor.logAndAudit(AssertionMessages.REQUEST_WSS_REPLAY_NON_SOAP);

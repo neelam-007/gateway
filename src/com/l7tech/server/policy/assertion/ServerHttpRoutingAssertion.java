@@ -8,7 +8,6 @@ package com.l7tech.server.policy.assertion;
 
 import com.l7tech.common.BuildInfo;
 import com.l7tech.common.audit.AssertionMessages;
-import com.l7tech.common.audit.AuditContext;
 import com.l7tech.common.audit.Auditor;
 import com.l7tech.common.message.HttpServletRequestKnob;
 import com.l7tech.common.message.MimeKnob;
@@ -61,6 +60,7 @@ public class ServerHttpRoutingAssertion extends ServerRoutingAssertion {
       ".sslSessionTimeoutSeconds";
     public static final int DEFAULT_SSL_SESSION_TIMEOUT = 10 * 60;
     private SignerInfo senderVouchesSignerInfo;
+    private final Auditor auditor;
 
     public ServerHttpRoutingAssertion(HttpRoutingAssertion assertion, ApplicationContext ctx) {
         super(ctx);
@@ -73,7 +73,7 @@ public class ServerHttpRoutingAssertion extends ServerRoutingAssertion {
         connectionManager.setMaxTotalConnections(max * 10);
         //connectionManager.setConnectionStaleCheckingEnabled( false );
 
-        Auditor auditor = new Auditor((AuditContext)applicationContext.getBean("auditContext"), logger);
+        auditor = new Auditor(this, applicationContext, logger);
         try {
             sslContext = SSLContext.getInstance("SSL");
             final SslClientTrustManager trustManager = (SslClientTrustManager)applicationContext.getBean("httpRoutingAssertionTrustManager");
@@ -105,7 +105,6 @@ public class ServerHttpRoutingAssertion extends ServerRoutingAssertion {
 
         PostMethod postMethod = null;
         InputStream inputStream = null;
-        Auditor auditor = new Auditor(context.getAuditContext(), logger);
 
         try {
             try {
@@ -148,8 +147,7 @@ public class ServerHttpRoutingAssertion extends ServerRoutingAssertion {
                 // DELETE CURRENT SECURITY HEADER IF NECESSARY
                 handleProcessedSecurityHeader(context,
                                               httpRoutingAssertion.getCurrentSecurityHeaderHandling(),
-                                              httpRoutingAssertion.getXmlSecurityActorToPromote(),
-                                              auditor);
+                                              httpRoutingAssertion.getXmlSecurityActorToPromote());
 
                 final MimeKnob reqMime = context.getRequest().getMimeKnob();
                 postMethod.addRequestHeader(MimeUtil.CONTENT_TYPE, reqMime.getOuterContentType().getFullValue());

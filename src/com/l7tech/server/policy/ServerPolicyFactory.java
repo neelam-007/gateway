@@ -46,10 +46,10 @@ public class ServerPolicyFactory extends PolicyFactory implements ApplicationCon
             // TODO find an abstraction for this assertion censorship
             if (TarariLoader.getGlobalContext() == null) {
                 if (genericAssertion instanceof RequestAcceleratedXpathAssertion)
-                    return new ServerRequestXpathAssertion((RequestXpathAssertion)genericAssertion);
+                    return new ServerRequestXpathAssertion((RequestXpathAssertion)genericAssertion, applicationContext);
 
                 if (genericAssertion instanceof ResponseAcceleratedXpathAssertion)
-                    return new ServerResponseXpathAssertion((ResponseXpathAssertion)genericAssertion);
+                    return new ServerResponseXpathAssertion((ResponseXpathAssertion)genericAssertion, applicationContext);
             }
 
             Class genericAssertionClass = genericAssertion.getClass();

@@ -7,7 +7,7 @@
 package com.l7tech.server.event.system;
 
 import com.l7tech.common.Component;
-import com.l7tech.server.event.Event;
+import org.springframework.context.ApplicationEvent;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
@@ -16,7 +16,7 @@ import java.net.UnknownHostException;
  * @author alex
  * @version $Revision$
  */
-public abstract class SystemEvent extends Event {
+public abstract class SystemEvent extends ApplicationEvent {
     public SystemEvent(Object source, Component component) {
         this(source, component, null);
     }

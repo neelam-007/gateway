@@ -1,13 +1,13 @@
 package com.l7tech.server.policy.assertion;
 
-import com.l7tech.common.message.TcpKnob;
-import com.l7tech.common.audit.Auditor;
 import com.l7tech.common.audit.AssertionMessages;
+import com.l7tech.common.audit.Auditor;
+import com.l7tech.common.message.TcpKnob;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.RemoteIpRange;
 import com.l7tech.server.message.PolicyEnforcementContext;
-import com.l7tech.common.audit.AssertionMessages;
+import org.springframework.context.ApplicationContext;
 
 import java.io.IOException;
 import java.util.StringTokenizer;
@@ -24,14 +24,16 @@ import java.util.logging.Logger;
  *
  */
 public class ServerRemoteIpRange implements ServerAssertion {
+    private final Auditor auditor;
 
-    public ServerRemoteIpRange(RemoteIpRange rule) {
+    public ServerRemoteIpRange(RemoteIpRange rule, ApplicationContext context) {
         this.rule = rule;
+        this.auditor = new Auditor(this, context, logger);
+
         calculateIPRange();
     }
 
     public AssertionStatus checkRequest(PolicyEnforcementContext context) throws IOException, PolicyAssertionException {
-        Auditor auditor = new Auditor(context.getAuditContext(), logger);
 
         // get remote address
         TcpKnob tcp = (TcpKnob)context.getRequest().getKnob(TcpKnob.class);

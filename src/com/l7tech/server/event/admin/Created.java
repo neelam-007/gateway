@@ -8,8 +8,6 @@ package com.l7tech.server.event.admin;
 
 import com.l7tech.objectmodel.Entity;
 
-import java.util.EventListener;
-
 /**
  * @author alex
  * @version $Revision$
@@ -21,12 +19,5 @@ public class Created extends PersistenceEvent {
 
     public Created(Entity entity) {
         super(entity);
-    }
-
-    public void sendTo(EventListener listener) {
-        if (listener instanceof CreateListener)
-            ((CreateListener)listener).entityCreated(this);
-        else
-            super.sendTo(listener);
     }
 }

@@ -6,8 +6,8 @@
 
 package com.l7tech.server.policy.assertion.credential;
 
-import com.l7tech.common.audit.Auditor;
 import com.l7tech.common.audit.AssertionMessages;
+import com.l7tech.common.audit.Auditor;
 import com.l7tech.common.message.Message;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.AssertionResult;
@@ -15,7 +15,6 @@ import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.credential.CredentialFinderException;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
-import com.l7tech.common.audit.AssertionMessages;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.ServerAssertion;
 
@@ -29,7 +28,9 @@ import java.util.logging.Logger;
  * @version $Revision$
  */
 public abstract class ServerCredentialSourceAssertion implements ServerAssertion {
-    public ServerCredentialSourceAssertion( Assertion data ) {
+    protected Auditor auditor;
+
+    protected ServerCredentialSourceAssertion(Assertion data) {
         if (data == null) {
             throw new IllegalArgumentException();
         }
@@ -50,7 +51,6 @@ public abstract class ServerCredentialSourceAssertion implements ServerAssertion
     public AssertionStatus checkRequest(PolicyEnforcementContext context) throws IOException, PolicyAssertionException
     {
         final HashMap authParams = new HashMap();
-        Auditor auditor = new Auditor(context.getAuditContext(), logger);
         try {
             LoginCredentials pc = context.getCredentials();
             if ( pc == null ) {

@@ -6,6 +6,7 @@
 
 package com.l7tech.server.policy.assertion.credential.http;
 
+import com.l7tech.common.audit.Auditor;
 import com.l7tech.common.message.HttpRequestKnob;
 import com.l7tech.common.message.Message;
 import com.l7tech.policy.assertion.AssertionStatus;
@@ -16,6 +17,7 @@ import com.l7tech.policy.assertion.credential.http.HttpCredentialSourceAssertion
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.ServerAssertion;
 import com.l7tech.server.policy.assertion.credential.ServerCredentialSourceAssertion;
+import org.springframework.context.ApplicationContext;
 import sun.security.x509.X500Name;
 
 import java.io.IOException;
@@ -42,13 +44,14 @@ import java.util.logging.Logger;
 public class ServerHttpClientCert extends ServerCredentialSourceAssertion implements ServerAssertion {
     public static final String PARAM_HTTP_X509CERT = "javax.servlet.request.X509Certificate";
 
-    public ServerHttpClientCert() {
+    public ServerHttpClientCert(ApplicationContext springContext) {
      super(new HttpCredentialSourceAssertion() {
             public String scheme() {
                 return SCHEME;
             }
             public static final String SCHEME = "ClientCert";
         });
+        this.auditor = new Auditor(this, springContext, logger);
     }
 
     protected LoginCredentials findCredentials(Message request, Map authParams)

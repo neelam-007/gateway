@@ -1,23 +1,22 @@
 package com.l7tech.server.policy.assertion.xmlsec;
 
+import com.l7tech.common.audit.AssertionMessages;
+import com.l7tech.common.audit.Auditor;
 import com.l7tech.common.security.xml.SignerInfo;
 import com.l7tech.common.security.xml.decorator.DecorationRequirements;
 import com.l7tech.common.util.CausedIOException;
 import com.l7tech.common.util.KeystoreUtils;
 import com.l7tech.common.xml.XpathEvaluator;
-import com.l7tech.common.audit.Auditor;
-import com.l7tech.common.audit.AssertionMessages;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.xmlsec.ResponseWssIntegrity;
 import com.l7tech.policy.assertion.xmlsec.XmlSecurityRecipientContext;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.ServerAssertion;
-import com.l7tech.common.audit.AssertionMessages;
 import org.jaxen.JaxenException;
+import org.springframework.context.ApplicationContext;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
-import org.springframework.context.ApplicationContext;
 
 import java.io.IOException;
 import java.security.cert.CertificateException;
@@ -40,11 +39,13 @@ import java.util.logging.Logger;
  */
 public class ServerResponseWssIntegrity implements ServerAssertion {
     private SignerInfo signerInfo;
+    private final Auditor auditor;
 
     public ServerResponseWssIntegrity(ResponseWssIntegrity data, ApplicationContext ctx) throws IOException {
         responseWssIntegrity = data;
         KeystoreUtils ku = (KeystoreUtils)ctx.getBean("keystore");
         signerInfo = ku.getSslSignerInfo();
+        auditor = new Auditor(this, ctx, logger);
     }
 
     /**
@@ -54,7 +55,6 @@ public class ServerResponseWssIntegrity implements ServerAssertion {
     public AssertionStatus checkRequest(PolicyEnforcementContext context)
             throws IOException, PolicyAssertionException
     {
-        Auditor auditor = new Auditor(context.getAuditContext(), logger);
         try {
             if (!context.getRequest().isSoap()) {
                 auditor.logAndAudit(AssertionMessages.RESPONSE_WSS_INT_REQUEST_NOT_SOAP);
@@ -70,8 +70,6 @@ public class ServerResponseWssIntegrity implements ServerAssertion {
             public AssertionStatus checkRequest(PolicyEnforcementContext context)
                     throws IOException, PolicyAssertionException
             {
-                Auditor auditor = new Auditor(context.getAuditContext(), logger);
-                
                 try {
                     if (!context.getResponse().isSoap()) {
                         auditor.logAndAudit(AssertionMessages.RESPONSE_WSS_INT_RESPONSE_NOT_SOAP);

@@ -3,6 +3,7 @@ package com.l7tech.server.policy.assertion.xmlsec;
 import com.l7tech.common.security.token.ParsedElement;
 import com.l7tech.common.security.xml.processor.ProcessorResult;
 import com.l7tech.policy.assertion.xmlsec.RequestWssIntegrity;
+import org.springframework.context.ApplicationContext;
 
 import java.util.logging.Logger;
 
@@ -17,8 +18,8 @@ import java.util.logging.Logger;
 public class ServerRequestWssIntegrity extends ServerRequestWssOperation {
     private static final Logger logger = Logger.getLogger(ServerRequestWssIntegrity.class.getName());
 
-    public ServerRequestWssIntegrity(RequestWssIntegrity data) {
-        super(logger, data);
+    public ServerRequestWssIntegrity(RequestWssIntegrity data, ApplicationContext springContext) {
+        super(logger, data, springContext);
     }
 
     protected String getPastTenseOperationName() {

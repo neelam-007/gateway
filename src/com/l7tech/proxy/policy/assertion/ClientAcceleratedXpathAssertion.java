@@ -34,7 +34,7 @@ import java.util.logging.Logger;
  */
 public class ClientAcceleratedXpathAssertion extends ClientXpathAssertion {
     private static final Logger logger = Logger.getLogger(ClientAcceleratedXpathAssertion.class.getName());
-    private static final Auditor auditor = new Auditor(null, logger);
+    private final Auditor auditor = new Auditor(this, null, logger);
     protected final String expr;
     protected final ClientAssertion softwareDelegate;
 

@@ -1,5 +1,7 @@
 package com.l7tech.server.policy.assertion.xmlsec;
 
+import com.l7tech.common.audit.AssertionMessages;
+import com.l7tech.common.audit.Auditor;
 import com.l7tech.common.security.token.SamlSecurityToken;
 import com.l7tech.common.security.token.SecurityContextToken;
 import com.l7tech.common.security.token.SecurityToken;
@@ -13,25 +15,21 @@ import com.l7tech.common.util.HexUtils;
 import com.l7tech.common.util.KeystoreUtils;
 import com.l7tech.common.xml.XpathEvaluator;
 import com.l7tech.common.xml.XpathExpression;
-import com.l7tech.common.audit.Auditor;
-import com.l7tech.common.audit.AssertionMessages;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.xmlsec.ResponseWssConfidentiality;
 import com.l7tech.policy.assertion.xmlsec.XmlSecurityRecipientContext;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.ServerAssertion;
-import com.l7tech.common.audit.AssertionMessages;
 import org.jaxen.JaxenException;
+import org.springframework.context.ApplicationContext;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
-import org.springframework.context.ApplicationContext;
 
 import java.io.IOException;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.List;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -49,11 +47,13 @@ import java.util.logging.Logger;
  */
 public class ServerResponseWssConfidentiality implements ServerAssertion {
     private SignerInfo signerInfo;
+    private final Auditor auditor;
 
     public ServerResponseWssConfidentiality(ResponseWssConfidentiality data, ApplicationContext ctx) throws IOException {
         responseWssConfidentiality = data;
         KeystoreUtils ku = (KeystoreUtils)ctx.getBean("keystore");
         signerInfo = ku.getSslSignerInfo();
+        this.auditor = new Auditor(this, ctx, logger);
     }
 
     /**
@@ -63,7 +63,6 @@ public class ServerResponseWssConfidentiality implements ServerAssertion {
     public AssertionStatus checkRequest(PolicyEnforcementContext context)
             throws IOException, PolicyAssertionException
     {
-        Auditor auditor = new Auditor(context.getAuditContext(), logger);
         try {
             if (!context.getRequest().isSoap()) {
                 auditor.logAndAudit(AssertionMessages.RESPONSE_WSS_CONF_REQUEST_NOT_SOAP);
@@ -158,8 +157,6 @@ public class ServerResponseWssConfidentiality implements ServerAssertion {
             public AssertionStatus checkRequest(PolicyEnforcementContext context)
                     throws IOException, PolicyAssertionException
             {
-                Auditor auditor = new Auditor(context.getAuditContext(), logger);
-
                 try {
                     if (!context.getResponse().isSoap()) {
                         auditor.logAndAudit(AssertionMessages.RESPONSE_WSS_CONF_RESPONSE_NOT_SOAP);

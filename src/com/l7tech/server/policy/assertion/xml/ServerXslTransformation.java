@@ -1,13 +1,13 @@
 package com.l7tech.server.policy.assertion.xml;
 
+import com.l7tech.common.audit.AssertionMessages;
+import com.l7tech.common.audit.Auditor;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.xml.XslTransformation;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.ServerAssertion;
-import com.l7tech.common.audit.AssertionMessages;
-import com.l7tech.common.audit.Auditor;
-import com.l7tech.common.audit.AssertionMessages;
+import org.springframework.context.ApplicationContext;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 import org.xml.sax.SAXException;
@@ -21,7 +21,6 @@ import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamSource;
 import java.io.IOException;
 import java.io.StringReader;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -35,10 +34,12 @@ import java.util.logging.Logger;
  *
  */
 public class ServerXslTransformation implements ServerAssertion {
+    private final Auditor auditor;
 
-    public ServerXslTransformation(XslTransformation assertion) {
+    public ServerXslTransformation(XslTransformation assertion, ApplicationContext springContext) {
         if (assertion == null) throw new IllegalArgumentException("must provide assertion");
         subject = assertion;
+        auditor = new Auditor(this, springContext, logger);
     }
 
     /**
@@ -47,7 +48,6 @@ public class ServerXslTransformation implements ServerAssertion {
      */
     public AssertionStatus checkRequest(PolicyEnforcementContext context) throws IOException, PolicyAssertionException {
 
-        Auditor auditor = new Auditor(context.getAuditContext(), logger);
         // 1. Get document to transform
         Document doctotransform = null;
         try {

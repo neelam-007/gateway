@@ -6,12 +6,13 @@
 
 package com.l7tech.server.policy.assertion;
 
+import com.l7tech.common.audit.AssertionMessages;
+import com.l7tech.common.audit.Auditor;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.UnknownAssertion;
 import com.l7tech.server.message.PolicyEnforcementContext;
-import com.l7tech.common.audit.AssertionMessages;
-import com.l7tech.common.audit.Auditor;
+import org.springframework.context.ApplicationContext;
 
 import java.io.IOException;
 import java.util.logging.Logger;
@@ -31,18 +32,16 @@ import java.util.logging.Logger;
  */
 public class ServerUnknownAssertion implements ServerAssertion {
     private final Logger logger = Logger.getLogger(getClass().getName());
-    private UnknownAssertion unknownAssertion;
+    private final UnknownAssertion unknownAssertion;
+    private final Auditor auditor;
 
-    public ServerUnknownAssertion(UnknownAssertion a) {
+    public ServerUnknownAssertion(UnknownAssertion a, ApplicationContext springContext) {
+        auditor = new Auditor(this, springContext, logger);
         unknownAssertion = a;
-
     }
-
-    public ServerUnknownAssertion() {}
 
     public AssertionStatus checkRequest(PolicyEnforcementContext context) throws IOException, PolicyAssertionException {
 
-        Auditor auditor = new Auditor(context.getAuditContext(), logger);
         final boolean hasDetailMessage = unknownAssertion != null && unknownAssertion.getDetailMessage() != null;
         String desc = hasDetailMessage ? unknownAssertion.getDetailMessage() : "No more description available";
 

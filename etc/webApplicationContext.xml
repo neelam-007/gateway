@@ -12,9 +12,6 @@
 <beans>
     <!-- SSG boot process -->
     <bean id="ssgBoot" class="com.l7tech.server.BootProcess">
-        <constructor-arg>
-            <ref bean="eventManager"/>
-        </constructor-arg>
         <property name="serverConfig">
             <ref local="serverConfig"/>
         </property>
@@ -240,9 +237,6 @@
         <property name="sessionFactory">
             <ref bean="sessionFactory"/>
         </property>
-        <property name="eventManager">
-            <ref bean="eventManager"/>
-        </property>
         <property name="serverConfig">
             <ref bean="serverConfig"/>
         </property>
@@ -253,8 +247,6 @@
             <ref bean="sessionFactory"/>
         </property>
     </bean>
-    <!-- server side Event Manager target -->
-    <bean id="eventManagerTarget" class="com.l7tech.server.event.EventManager"></bean>
     <!-- server side audit message factory -->
     <bean id="messageSummaryAuditFactory" class="com.l7tech.server.audit.MessageSummaryAuditFactory">
         <constructor-arg>
@@ -338,9 +330,6 @@
         </constructor-arg>
         <constructor-arg>
             <ref bean="sslKeystoreCertificate"/>
-        </constructor-arg>
-        <constructor-arg>
-            <ref bean="eventManager"/>
         </constructor-arg>
     </bean>
     <!-- server side policy service -->
@@ -442,4 +431,35 @@
             </list>
         </property>
     </bean>
+
+    <bean id="messageProcessingAuditListener" class="com.l7tech.server.audit.MessageProcessingAuditListener">
+        <constructor-arg>
+            <ref local="messageSummaryAuditFactory"/>
+        </constructor-arg>
+
+        <constructor-arg>
+            <ref local="auditContext"/>
+        </constructor-arg>
+    </bean>
+
+    <bean id="adminAuditListener" class="com.l7tech.server.audit.AdminAuditListener">
+        <constructor-arg>
+            <ref local="clusterInfoManager"/>
+        </constructor-arg>
+
+        <constructor-arg>
+            <ref local="auditContext"/>
+        </constructor-arg>
+    </bean>
+
+    <bean id="systemAuditListener" class="com.l7tech.server.audit.SystemAuditListener">
+        <constructor-arg>
+            <ref local="clusterInfoManager"/>
+        </constructor-arg>
+
+        <constructor-arg>
+            <ref local="auditContext"/>
+        </constructor-arg>
+    </bean>
+
 </beans>

@@ -1,13 +1,13 @@
 package com.l7tech.server.policy.assertion;
 
+import com.l7tech.common.audit.AssertionMessages;
+import com.l7tech.common.audit.Auditor;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.TimeOfDay;
 import com.l7tech.policy.assertion.TimeRange;
 import com.l7tech.server.message.PolicyEnforcementContext;
-import com.l7tech.common.audit.AssertionMessages;
-import com.l7tech.common.audit.Auditor;
-import com.l7tech.common.audit.AssertionMessages;
+import org.springframework.context.ApplicationContext;
 
 import java.io.IOException;
 import java.util.Calendar;
@@ -25,13 +25,15 @@ import java.util.logging.Logger;
  *
  */
 public class ServerTimeRange implements ServerAssertion {
-    public ServerTimeRange(TimeRange assertion) {
+    private final Auditor auditor;
+
+    public ServerTimeRange(TimeRange assertion, ApplicationContext springContext) {
         if (assertion == null) throw new IllegalArgumentException("must provide assertion");
         subject = assertion;
+        this.auditor = new Auditor(this, springContext, logger);
     }
 
     public AssertionStatus checkRequest(PolicyEnforcementContext context) throws IOException, PolicyAssertionException {
-        Auditor auditor = new Auditor(context.getAuditContext(), logger);
         if (!subject.isControlDay() && !subject.isControlTime()) {
             auditor.logAndAudit(AssertionMessages.TIME_RANGE_NOTHING_TO_CHECK);
             return AssertionStatus.NONE;

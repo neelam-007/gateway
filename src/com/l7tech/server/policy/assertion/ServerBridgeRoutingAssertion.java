@@ -7,7 +7,6 @@
 package com.l7tech.server.policy.assertion;
 
 import com.l7tech.common.audit.AssertionMessages;
-import com.l7tech.common.audit.AuditContext;
 import com.l7tech.common.audit.AuditDetailMessage;
 import com.l7tech.common.audit.Auditor;
 import com.l7tech.common.http.SimpleHttpClient;
@@ -74,10 +73,12 @@ public class ServerBridgeRoutingAssertion extends ServerRoutingAssertion {
     private final Ssg ssg;
     private final MessageProcessor messageProcessor;
     private X509Certificate serverCert;
+    private final Auditor auditor;
 
     public ServerBridgeRoutingAssertion(BridgeRoutingAssertion assertion, ApplicationContext ctx) {
         super(ctx);
         this.bridgeRoutingAssertion = assertion;
+        this.auditor = new Auditor(this, ctx, logger);
 
         final KeystoreUtils ku = (KeystoreUtils)applicationContext.getBean("keystore");
         try {
@@ -176,8 +177,6 @@ public class ServerBridgeRoutingAssertion extends ServerRoutingAssertion {
             }
 
             public PasswordAuthentication getNewCredentials(Ssg ssg, boolean displayBadPasswordMessage) throws OperationCanceledException {
-                AuditContext auditContext = (AuditContext)applicationContext.getBean("auditContext");
-                Auditor auditor = new Auditor(auditContext, logger);
                 auditor.logAndAudit(AssertionMessages.ACCESS_DENIED);
                 throw new OperationCanceledException(((AuditDetailMessage)AssertionMessages.ACCESS_DENIED).getMessage());
             }
@@ -246,8 +245,6 @@ public class ServerBridgeRoutingAssertion extends ServerRoutingAssertion {
     public AssertionStatus checkRequest(PolicyEnforcementContext context) throws IOException, PolicyAssertionException {
         context.setRoutingStatus(RoutingStatus.ATTEMPTED);
 
-        Auditor auditor = new Auditor(context.getAuditContext(), logger);
-
         if (messageProcessor == null || ssg == null) {
             auditor.logAndAudit(AssertionMessages.BRIDGE_BAD_CONFIG);
             return AssertionStatus.FAILED;
@@ -269,8 +266,7 @@ public class ServerBridgeRoutingAssertion extends ServerRoutingAssertion {
                 // DELETE CURRENT SECURITY HEADER IF NECESSARY
                 handleProcessedSecurityHeader(context,
                                               bridgeRoutingAssertion.getCurrentSecurityHeaderHandling(),
-                                              bridgeRoutingAssertion.getXmlSecurityActorToPromote(),
-                                              auditor);
+                                              bridgeRoutingAssertion.getXmlSecurityActorToPromote());
 
                 if (bridgeRoutingAssertion.isTaiCredentialChaining()) {
                     throw new PolicyAssertionException("BridgeRoutingAssertion unable to support TAI credential chaining");

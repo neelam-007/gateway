@@ -9,14 +9,13 @@ package com.l7tech.server.event;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.server.MessageProcessor;
 import com.l7tech.server.message.PolicyEnforcementContext;
-
-import java.util.EventListener;
+import org.springframework.context.ApplicationEvent;
 
 /**
  * @author alex
  * @version $Revision$
  */
-public class MessageProcessed extends Event {
+public class MessageProcessed extends ApplicationEvent {
     private final AssertionStatus status;
     private final PolicyEnforcementContext context;
 
@@ -26,10 +25,11 @@ public class MessageProcessed extends Event {
         this.status = status;
     }
 
-    public void sendTo(EventListener listener) {
-        if (listener instanceof MessageProcessingEventListener)
-            ((MessageProcessingEventListener)listener).messageProcessed(context, status);
-        else
-            super.sendTo(listener);
+    public AssertionStatus getStatus() {
+        return status;
+    }
+
+    public PolicyEnforcementContext getContext() {
+        return context;
     }
 }

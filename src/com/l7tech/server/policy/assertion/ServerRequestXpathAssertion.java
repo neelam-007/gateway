@@ -6,15 +6,16 @@
 
 package com.l7tech.server.policy.assertion;
 
-import com.l7tech.common.message.XmlKnob;
+import com.l7tech.common.audit.AssertionMessages;
 import com.l7tech.common.audit.Auditor;
+import com.l7tech.common.message.XmlKnob;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.RequestXpathAssertion;
 import com.l7tech.server.message.PolicyEnforcementContext;
-import com.l7tech.common.audit.AssertionMessages;
 import org.jaxen.JaxenException;
 import org.jaxen.dom.DOMXPath;
+import org.springframework.context.ApplicationContext;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 import org.xml.sax.SAXException;
@@ -35,9 +36,11 @@ import java.util.logging.Logger;
  * @see com.l7tech.proxy.policy.assertion.ClientRequestXpathAssertion
  */
 public class ServerRequestXpathAssertion implements ServerAssertion {
+    private final Auditor auditor;
 
-    public ServerRequestXpathAssertion(RequestXpathAssertion data) {
+    public ServerRequestXpathAssertion(RequestXpathAssertion data, ApplicationContext springContext) {
         _data = data;
+        auditor = new Auditor(this, springContext, _logger);
     }
 
     private synchronized DOMXPath getDOMXpath() throws JaxenException {
@@ -62,7 +65,6 @@ public class ServerRequestXpathAssertion implements ServerAssertion {
     }
 
     public AssertionStatus checkRequest(PolicyEnforcementContext context) throws IOException, PolicyAssertionException {
-        Auditor auditor = new Auditor(context.getAuditContext(), _logger);
         if (context.getRequest().getKnob(XmlKnob.class) == null) {
             auditor.logAndAudit(AssertionMessages.XPATH_REQUEST_NOT_XML);
             return AssertionStatus.BAD_REQUEST;

@@ -9,8 +9,6 @@ package com.l7tech.server.event.admin;
 import com.l7tech.objectmodel.Entity;
 import com.l7tech.server.event.EntityChangeSet;
 
-import java.util.EventListener;
-
 /**
  * Fired when a persistent {@link Entity} has been updated.
  * <p>
@@ -30,19 +28,8 @@ public class Updated extends PersistenceEvent {
         this(original, changes, null);
     }
 
-    public Class getListenerClass() {
-        return UpdateListener.class;
-    }
-
     public EntityChangeSet getChangeSet() {
         return changeSet;
-    }
-
-    public void sendTo(EventListener listener) {
-        if (listener instanceof UpdateListener)
-            ((UpdateListener)listener).entityUpdated(this);
-        else
-            super.sendTo(listener);
     }
 
     private final EntityChangeSet changeSet;

@@ -6,9 +6,9 @@
 
 package com.l7tech.server.policy.assertion.identity;
 
-import com.l7tech.common.protocol.SecureSpanConstants;
-import com.l7tech.common.audit.Auditor;
 import com.l7tech.common.audit.AssertionMessages;
+import com.l7tech.common.audit.Auditor;
+import com.l7tech.common.protocol.SecureSpanConstants;
 import com.l7tech.identity.*;
 import com.l7tech.objectmodel.Entity;
 import com.l7tech.objectmodel.FindException;
@@ -19,12 +19,10 @@ import com.l7tech.policy.assertion.identity.IdentityAssertion;
 import com.l7tech.server.identity.IdentityProviderFactory;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.ServerAssertion;
-import com.l7tech.common.audit.AssertionMessages;
 import org.springframework.context.ApplicationContext;
 
 import java.io.IOException;
 import java.security.cert.X509Certificate;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -37,12 +35,14 @@ import java.util.logging.Logger;
  */
 public abstract class ServerIdentityAssertion implements ServerAssertion {
     private final ApplicationContext applicationContext;
+    private final Auditor auditor;
 
     public ServerIdentityAssertion(IdentityAssertion data, ApplicationContext ctx) {
         _data = data;
         if (ctx == null) {
             throw new IllegalArgumentException("Application Conext is required");
         }
+        this.auditor = new Auditor(this, ctx, Logger.getLogger(getClass().getName()));
         this.applicationContext = ctx;
     }
 
@@ -56,7 +56,6 @@ public abstract class ServerIdentityAssertion implements ServerAssertion {
      * @return
      */
     public AssertionStatus checkRequest(PolicyEnforcementContext context) {
-        Auditor auditor = new Auditor(context.getAuditContext(), Logger.getLogger(getClass().getName()));
         LoginCredentials pc = context.getCredentials();
         if (pc == null && context.getAuthenticatedUser() == null) {
             // No credentials have been found yet
@@ -143,7 +142,6 @@ public abstract class ServerIdentityAssertion implements ServerAssertion {
             message.append(e.getMessage());
         }
         // fla note: this is debug information since ServerSpecificUser.checkUser is already logging failure or success
-        Auditor auditor = new Auditor(context.getAuditContext(), Logger.getLogger(getClass().getName()));
         auditor.logAndAudit(AssertionMessages.AUTHENTICATION_FAILED, new String[] {name});
         return AssertionStatus.AUTH_FAILED;
     }
@@ -160,8 +158,7 @@ public abstract class ServerIdentityAssertion implements ServerAssertion {
         IdentityProviderFactory ipf = (IdentityProviderFactory)applicationContext.getBean("identityProviderFactory");
         IdentityProvider provider = ipf.getProvider(_data.getIdentityProviderOid());
         if (provider == null) {
-            Auditor auditor = new Auditor(context.getAuditContext(), Logger.getLogger(getClass().getName()));
-            auditor.logAndAudit(AssertionMessages.ID_PROVIDER_NOT_EXIST);                                        
+            auditor.logAndAudit(AssertionMessages.ID_PROVIDER_NOT_EXIST);
             throw new FindException("id assertion refers to an id provider which does not exist anymore");
         } else {
             return provider;

@@ -115,23 +115,6 @@
         </property>
     </bean>
 
-    <!-- server side Event Manager tx proxy -->
-   <bean id="eventManager"
-       class="org.springframework.transaction.interceptor.TransactionProxyFactoryBean">
-       <property name="transactionManager">
-           <ref bean="transactionManager"/>
-       </property>
-       <property name="target">
-           <ref bean="eventManagerTarget"/>
-       </property>
-       <property name="transactionAttributes">
-           <props>
-               <prop key="fire">PROPAGATION_SUPPORTS</prop>
-               <prop key="fireInNewTransaction">PROPAGATION_REQUIRES_NEW</prop>
-           </props>
-       </property>
-   </bean>
-
     <!--
        BeanNameAutoProxyCreator with proxyTargetClass option handles all beans methods to use PROPAGATION_REQUIRED
    -->

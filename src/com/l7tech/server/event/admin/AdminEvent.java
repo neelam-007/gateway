@@ -8,7 +8,7 @@ package com.l7tech.server.event.admin;
 
 import com.l7tech.objectmodel.Entity;
 import com.l7tech.server.audit.AdminAuditListener;
-import com.l7tech.server.event.Event;
+import org.springframework.context.ApplicationEvent;
 
 import java.util.logging.Level;
 
@@ -17,7 +17,7 @@ import java.util.logging.Level;
  * @author alex
  * @version $Revision$
  */
-public abstract class AdminEvent extends Event {
+public abstract class AdminEvent extends ApplicationEvent {
     public AdminEvent(Object source) {
         super(source);
     }

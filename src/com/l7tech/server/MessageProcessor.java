@@ -23,7 +23,6 @@ import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.RoutingStatus;
-import com.l7tech.server.event.EventManager;
 import com.l7tech.server.event.MessageProcessed;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.PolicyVersionException;
@@ -33,6 +32,7 @@ import com.l7tech.server.service.ServiceManager;
 import com.l7tech.server.service.resolution.ServiceResolutionException;
 import com.l7tech.service.PublishedService;
 import com.l7tech.service.ServiceStatistics;
+import org.springframework.beans.factory.InitializingBean;
 import org.springframework.context.support.ApplicationObjectSupport;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
@@ -52,12 +52,11 @@ import java.util.logging.Logger;
  * @author alex
  * @version $Revision$
  */
-public class MessageProcessor extends ApplicationObjectSupport {
+public class MessageProcessor extends ApplicationObjectSupport implements InitializingBean {
     private final ServiceManager serviceManager;
     private final WssDecorator wssDecorator;
     private final PrivateKey serverPrivateKey;
     private final X509Certificate serverCertificate;
-    private final EventManager eventManager;
 
     /**
      * Create the new <code>MessageProcessor</code> instance with the service
@@ -69,7 +68,7 @@ public class MessageProcessor extends ApplicationObjectSupport {
      * @param pkey the server certificate
      * @throws IllegalArgumentException if any of the arguments is null
      */
-    public MessageProcessor(ServiceManager sm, WssDecorator wssd, PrivateKey pkey, X509Certificate cert, EventManager em)
+    public MessageProcessor(ServiceManager sm, WssDecorator wssd, PrivateKey pkey, X509Certificate cert)
         throws IllegalArgumentException {
         if (sm == null) {
             throw new IllegalArgumentException("Service Manager is required");
@@ -83,14 +82,10 @@ public class MessageProcessor extends ApplicationObjectSupport {
         if (cert == null) {
             throw new IllegalArgumentException("Server Certificate is required");
         }
-        if (em == null) {
-            throw new IllegalArgumentException("Event Manager is required");
-        }
         this.serviceManager = sm;
         this.wssDecorator = wssd;
         this.serverPrivateKey = pkey;
         this.serverCertificate = cert;
-        this.eventManager = em;
 
         try {
             _xppf = XmlPullParserFactory.newInstance();
@@ -99,14 +94,12 @@ public class MessageProcessor extends ApplicationObjectSupport {
         }
         _xppf.setNamespaceAware( true );
         _xppf.setValidating( false );
-
     }
 
     public AssertionStatus processMessage( PolicyEnforcementContext context )
             throws IOException, PolicyAssertionException, PolicyVersionException
     {
         AuditContext auditContext = (AuditContext)getApplicationContext().getBean("auditContext");
-        auditor = new Auditor(auditContext, logger);
         context.setAuditContext(auditContext);
         try {
             currentContext.set(context);
@@ -342,7 +335,7 @@ public class MessageProcessor extends ApplicationObjectSupport {
             return AssertionStatus.SERVER_ERROR;
         } finally {
             try {
-                eventManager.fire(new MessageProcessed(context, status, this));
+                getApplicationContext().publishEvent(new MessageProcessed(context, status, this));
             } catch (Throwable t) {
                 auditor.logAndAudit(MessageProcessingMessages.EVENT_MANAGER_EXCEPTION, null, t);
             }
@@ -377,4 +370,7 @@ public class MessageProcessor extends ApplicationObjectSupport {
     private Auditor auditor;
     final Logger logger = Logger.getLogger(getClass().getName());
 
+    public void afterPropertiesSet() throws Exception {
+        this.auditor = new Auditor(this, getApplicationContext(), logger);
+    }
 }

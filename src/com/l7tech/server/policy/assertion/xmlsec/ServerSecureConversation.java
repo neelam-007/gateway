@@ -1,12 +1,12 @@
 package com.l7tech.server.policy.assertion.xmlsec;
 
+import com.l7tech.common.audit.AssertionMessages;
+import com.l7tech.common.audit.Auditor;
 import com.l7tech.common.security.token.SecurityContextToken;
 import com.l7tech.common.security.token.SecurityToken;
 import com.l7tech.common.security.xml.decorator.DecorationRequirements;
 import com.l7tech.common.security.xml.processor.ProcessorResult;
 import com.l7tech.common.util.CausedIOException;
-import com.l7tech.common.audit.Auditor;
-import com.l7tech.common.audit.AssertionMessages;
 import com.l7tech.identity.User;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
@@ -15,11 +15,10 @@ import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.ServerAssertion;
 import com.l7tech.server.secureconversation.SecureConversationContextManager;
 import com.l7tech.server.secureconversation.SecureConversationSession;
-import com.l7tech.common.audit.AssertionMessages;
+import org.springframework.context.ApplicationContext;
 import org.xml.sax.SAXException;
 
 import java.io.IOException;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -33,13 +32,16 @@ import java.util.logging.Logger;
  * $Id$<br/>
  */
 public class ServerSecureConversation implements ServerAssertion {
-    public ServerSecureConversation(SecureConversation assertion) {
+    private final Auditor auditor;
+
+    public ServerSecureConversation(SecureConversation assertion, ApplicationContext springContext) {
         // nothing to remember from the passed assertion
+        auditor = new Auditor(this, springContext, logger);
     }
+
     public AssertionStatus checkRequest(PolicyEnforcementContext context) throws IOException, PolicyAssertionException {
         ProcessorResult wssResults;
 
-        Auditor auditor = new Auditor(context.getAuditContext(), logger);
         try {
             if (!context.getRequest().isSoap()) {
                 auditor.logAndAudit(AssertionMessages.SC_REQUEST_NOT_SOAP);
@@ -92,7 +94,6 @@ public class ServerSecureConversation implements ServerAssertion {
             public AssertionStatus checkRequest(PolicyEnforcementContext context) throws IOException {
                 DecorationRequirements wssReq;
 
-                Auditor auditor = new Auditor(context.getAuditContext(), logger);
                 try {
                     if (!context.getResponse().isSoap()) {
                         auditor.logAndAudit(AssertionMessages.SC_UNABLE_TO_ATTACH_SC_TOKEN);

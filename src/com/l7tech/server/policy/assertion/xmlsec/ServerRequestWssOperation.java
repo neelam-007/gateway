@@ -6,25 +6,24 @@
 
 package com.l7tech.server.policy.assertion.xmlsec;
 
+import com.l7tech.common.audit.AssertionMessages;
+import com.l7tech.common.audit.Auditor;
 import com.l7tech.common.security.token.ParsedElement;
 import com.l7tech.common.security.xml.processor.ProcessorException;
 import com.l7tech.common.security.xml.processor.ProcessorResult;
 import com.l7tech.common.security.xml.processor.ProcessorResultUtil;
 import com.l7tech.common.util.CausedIOException;
-import com.l7tech.common.audit.Auditor;
-import com.l7tech.common.audit.AssertionMessages;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.XpathBasedAssertion;
 import com.l7tech.policy.assertion.xmlsec.SecurityHeaderAddressable;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.ServerAssertion;
-import com.l7tech.common.audit.AssertionMessages;
+import org.springframework.context.ApplicationContext;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
 
 import java.io.IOException;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -32,15 +31,16 @@ import java.util.logging.Logger;
  */
 public abstract class ServerRequestWssOperation implements ServerAssertion {
     private Logger logger;
+    private final Auditor auditor;
 
-    protected ServerRequestWssOperation(Logger logger, XpathBasedAssertion data) {
+    protected ServerRequestWssOperation(Logger logger, XpathBasedAssertion data, ApplicationContext springContext) {
         this.logger = logger;
         this.data = data;
+        auditor = new Auditor(this, springContext, logger);
     }
 
     public AssertionStatus checkRequest(PolicyEnforcementContext context) throws IOException, PolicyAssertionException {
 
-        Auditor auditor = new Auditor(context.getAuditContext(), logger);
         if (data instanceof SecurityHeaderAddressable) {
             SecurityHeaderAddressable sha = (SecurityHeaderAddressable)data;
             if (!sha.getRecipientContext().localRecipient()) {

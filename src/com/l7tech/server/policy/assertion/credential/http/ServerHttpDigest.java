@@ -6,6 +6,7 @@
 
 package com.l7tech.server.policy.assertion.credential.http;
 
+import com.l7tech.common.audit.Auditor;
 import com.l7tech.common.message.Message;
 import com.l7tech.common.util.HexUtils;
 import com.l7tech.policy.assertion.AssertionStatus;
@@ -16,6 +17,7 @@ import com.l7tech.policy.assertion.credential.http.HttpCredentialSourceAssertion
 import com.l7tech.policy.assertion.credential.http.HttpDigest;
 import com.l7tech.server.policy.assertion.ServerAssertion;
 import com.l7tech.server.policy.assertion.credential.DigestSessions;
+import org.springframework.context.ApplicationContext;
 
 import java.io.IOException;
 import java.util.HashMap;
@@ -31,9 +33,10 @@ import java.util.logging.Logger;
 public class ServerHttpDigest extends ServerHttpCredentialSource implements ServerAssertion {
     private static final Logger logger = Logger.getLogger(ServerHttpDigest.class.getName());
 
-    public ServerHttpDigest( HttpDigest data ) {
-        super( data );
+    public ServerHttpDigest( HttpDigest data, ApplicationContext springContext ) {
+        super(data);
         _data = data;
+        auditor = new Auditor(this, springContext, logger);
     }
 
     public static final String ENCODING = "UTF-8";

@@ -1,5 +1,6 @@
 package com.l7tech.server.policy.assertion;
 
+import com.l7tech.common.ApplicationContexts;
 import com.l7tech.policy.assertion.RemoteIpRange;
 import junit.framework.Test;
 import junit.framework.TestCase;
@@ -28,7 +29,7 @@ public class ServerRemoteIpRangeTest extends TestCase {
 
     public void testInclusions() {
         RemoteIpRange rule = new RemoteIpRange("192.168.11.0", 24, true);
-        ServerRemoteIpRange testee = new ServerRemoteIpRange(rule);
+        ServerRemoteIpRange testee = new ServerRemoteIpRange(rule, ApplicationContexts.getTestApplicationContext());
 
         String addToTest = "192.168.11.0";
         boolean res = testee.assertAddress(addToTest);
@@ -61,7 +62,7 @@ public class ServerRemoteIpRangeTest extends TestCase {
 
     public void testExclusions() {
         RemoteIpRange rule = new RemoteIpRange("10.0.0.0", 24, false);
-        ServerRemoteIpRange testee = new ServerRemoteIpRange(rule);
+        ServerRemoteIpRange testee = new ServerRemoteIpRange(rule, ApplicationContexts.getTestApplicationContext());
 
         String addToTest = "10.1.0.1";
         boolean res = testee.assertAddress(addToTest);

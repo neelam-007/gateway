@@ -1,5 +1,7 @@
 package com.l7tech.server.policy.assertion;
 
+import com.l7tech.common.audit.AssertionMessages;
+import com.l7tech.common.audit.Auditor;
 import com.l7tech.common.mime.NoSuchPartException;
 import com.l7tech.common.mime.PartInfo;
 import com.l7tech.common.mime.PartIterator;
@@ -7,15 +9,13 @@ import com.l7tech.common.util.CausedIOException;
 import com.l7tech.common.wsdl.BindingInfo;
 import com.l7tech.common.wsdl.BindingOperationInfo;
 import com.l7tech.common.wsdl.MimePartInfo;
-import com.l7tech.common.audit.Auditor;
-import com.l7tech.common.audit.AssertionMessages;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.RequestSwAAssertion;
 import com.l7tech.server.message.PolicyEnforcementContext;
-import com.l7tech.common.audit.AssertionMessages;
 import org.jaxen.JaxenException;
 import org.jaxen.dom.DOMXPath;
+import org.springframework.context.ApplicationContext;
 import org.w3c.dom.Attr;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -37,10 +37,12 @@ import java.util.logging.Logger;
 public class ServerRequestSwAAssertion implements ServerAssertion {
     private final RequestSwAAssertion _data;
     private final Logger logger = Logger.getLogger(getClass().getName());
+    private final Auditor auditor;
 
-    public ServerRequestSwAAssertion(RequestSwAAssertion data) {
+    public ServerRequestSwAAssertion(RequestSwAAssertion data, ApplicationContext springContext) {
         if (data == null) throw new IllegalArgumentException("must provide assertion");
         _data = data;
+        auditor = new Auditor(this, springContext, logger);
     }
 
     private synchronized DOMXPath getDOMXpath(String pattern) throws JaxenException {
@@ -69,7 +71,6 @@ public class ServerRequestSwAAssertion implements ServerAssertion {
         boolean assertionStatusOK = true;
         boolean operationElementFound = false;
 
-        Auditor auditor = new Auditor(context.getAuditContext(), logger);
         try {
             if (!context.getRequest().isSoap()) {
                 auditor.logAndAudit(AssertionMessages.REQUEST_NOT_SOAP);

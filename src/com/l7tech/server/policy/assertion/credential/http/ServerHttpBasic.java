@@ -14,6 +14,7 @@ import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.assertion.credential.http.HttpBasic;
 import com.l7tech.server.policy.assertion.ServerAssertion;
 import org.apache.axis.encoding.Base64;
+import org.springframework.context.ApplicationContext;
 
 import java.io.IOException;
 import java.util.Collections;
@@ -84,8 +85,8 @@ public class ServerHttpBasic extends ServerHttpCredentialSource implements Serve
         }
     }
 
-    public ServerHttpBasic( HttpBasic data ) {
-        super( data );
+    public ServerHttpBasic( HttpBasic data, ApplicationContext springContext ) {
+        super(data);
         _data = data;
     }
 

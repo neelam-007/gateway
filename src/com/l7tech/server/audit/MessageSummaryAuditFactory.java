@@ -32,7 +32,6 @@ public class MessageSummaryAuditFactory {
             throw new IllegalArgumentException("Cluster Info Manager is required");
         }
         nodeId = clusterInfoManager.thisNodeId();
-
     }
 
     public MessageSummaryAuditRecord makeEvent(final PolicyEnforcementContext context, AssertionStatus status ) {

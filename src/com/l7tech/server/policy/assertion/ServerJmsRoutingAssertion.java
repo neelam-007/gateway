@@ -42,17 +42,18 @@ import java.util.regex.Pattern;
  */
 public class ServerJmsRoutingAssertion extends ServerRoutingAssertion {
     private JmsRoutingAssertion data;
+    private final Auditor auditor;
 
     public ServerJmsRoutingAssertion(JmsRoutingAssertion data, ApplicationContext ctx) {
         super(ctx);
         this.data = data;
+        auditor = new Auditor(this, ctx, logger);
     }
 
     // TODO synchronized?
     public synchronized AssertionStatus checkRequest(PolicyEnforcementContext context)
             throws IOException, PolicyAssertionException {
 
-        Auditor auditor = new Auditor(context.getAuditContext(), logger);
         context.setRoutingStatus( RoutingStatus.ATTEMPTED );
         Destination jmsInboundDest = null;
         MessageProducer jmsProducer = null;

@@ -1,5 +1,6 @@
 package com.l7tech.server.policy.assertion.xml;
 
+import com.l7tech.common.ApplicationContexts;
 import com.l7tech.common.util.HexUtils;
 import com.l7tech.common.util.XmlUtil;
 import com.l7tech.policy.assertion.xml.XslTransformation;
@@ -42,7 +43,7 @@ public class XslTransformationTest extends TestCase {
         XslTransformation assertion = new XslTransformation();
         assertion.setXslSrc(xslStr);
         assertion.setDirection(XslTransformation.APPLY_TO_REQUEST);
-        ServerXslTransformation transformer = new ServerXslTransformation(assertion);
+        ServerXslTransformation transformer = new ServerXslTransformation(assertion, ApplicationContexts.getTestApplicationContext());
         String res = XmlUtil.nodeToString(transformer.transform(getResAsDoc(SOAPMSG_WITH_WSSE)));
         // visual inspection - todo automate the verification of the transformation
         System.out.println(res);
@@ -53,7 +54,7 @@ public class XslTransformationTest extends TestCase {
         XslTransformation assertion = new XslTransformation();
         assertion.setXslSrc(xslStr);
         assertion.setDirection(XslTransformation.APPLY_TO_REQUEST);
-        ServerXslTransformation transformer = new ServerXslTransformation(assertion);
+        ServerXslTransformation transformer = new ServerXslTransformation(assertion, ApplicationContexts.getTestApplicationContext());
         String res = XmlUtil.nodeToString(transformer.transform(getResAsDoc(SOAPMSG_WITH_WSSE)));
         // visual inspection - todo automate the verification of the transformation
         System.out.println(res);

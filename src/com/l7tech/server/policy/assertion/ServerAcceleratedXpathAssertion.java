@@ -7,7 +7,6 @@
 package com.l7tech.server.policy.assertion;
 
 import com.l7tech.common.audit.AssertionMessages;
-import com.l7tech.common.audit.AuditContext;
 import com.l7tech.common.audit.Auditor;
 import com.l7tech.common.message.Message;
 import com.l7tech.common.message.TarariKnob;
@@ -37,6 +36,7 @@ public abstract class ServerAcceleratedXpathAssertion implements ServerAssertion
     protected final String expr;
     protected final boolean isReq;
     protected final ServerAssertion softwareDelegate;
+    private final Auditor auditor;
 
     /**
      * Prepare a hardware accelerated xpath assertion.
@@ -63,10 +63,10 @@ public abstract class ServerAcceleratedXpathAssertion implements ServerAssertion
             expr = null;
         }
         this.expr = expr;
+        auditor = new Auditor(this, applicationContext, logger);
     }
 
     public AssertionStatus checkRequest(PolicyEnforcementContext context) throws IOException, PolicyAssertionException {
-        Auditor auditor = new Auditor((AuditContext) applicationContext.getBean("auditContext"), logger);
         if (expr == null ) {
             auditor.logAndAudit(AssertionMessages.XPATH_PATTERN_INVALID);
             return AssertionStatus.SERVER_ERROR;

@@ -1,5 +1,7 @@
 package com.l7tech.common.audit;
 
+import org.springframework.context.ApplicationContext;
+
 import java.util.logging.LogRecord;
 import java.util.logging.Logger;
 
@@ -9,19 +11,22 @@ import java.util.logging.Logger;
  * $Id$
  */
 public class Auditor {
+    private final ApplicationContext context;
+    private final Object source;
+    private final Logger logger;
 
-    AuditContext context;
-    Logger logger;
+    public Auditor(Object source, ApplicationContext context, Logger logger) {
+        if(source  == null) throw new RuntimeException("Event source is NULL. Cannot add AuditDetail to the audit record.");
+        if(logger == null) throw new RuntimeException("ApplicationContext is NULL. Cannot add AuditDetail to the audit record.");
 
-    public Auditor(AuditContext context, Logger logger) {
+        this.source = source;
         this.context = context;
         this.logger = logger;
     }
 
     public void logAndAudit(AuditDetailMessage msg, String[] params, Throwable e) {
-
         if (context != null)
-            context.addDetail(new AuditDetail(msg, params == null ? null : params, e));
+            context.publishEvent(new AuditDetailEvent(source, new AuditDetail(msg, params == null ? null : params, e)));
 
         if(logger == null) return;
 

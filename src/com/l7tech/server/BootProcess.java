@@ -7,15 +7,12 @@ package com.l7tech.server;
 
 import com.l7tech.common.BuildInfo;
 import com.l7tech.common.Component;
-import com.l7tech.common.audit.AuditContext;
 import com.l7tech.common.audit.Auditor;
 import com.l7tech.common.audit.BootMessages;
 import com.l7tech.common.security.JceProvider;
 import com.l7tech.common.util.JdkLoggerConfigurator;
 import com.l7tech.common.xml.TarariLoader;
 import com.l7tech.common.xml.tarari.GlobalTarariContext;
-import com.l7tech.server.audit.SystemAuditListener;
-import com.l7tech.server.event.EventManager;
 import com.l7tech.server.event.system.*;
 import org.springframework.beans.factory.DisposableBean;
 import org.springframework.beans.factory.InitializingBean;
@@ -44,14 +41,13 @@ public class BootProcess extends ApplicationObjectSupport
 
     private List _components = new ArrayList();
     private ServerConfig serverConfig;
-    private EventManager eventManager;
     private Auditor auditor;
+    private Logger logger;
 
     /**
      * Constructor for bean usage via subclassing.
      */
-    public BootProcess(EventManager eventManager) {
-        this.eventManager = eventManager;
+    public BootProcess() {
     }
 
     private void deleteOldAttachments(File attachmentDir) {
@@ -76,9 +72,8 @@ public class BootProcess extends ApplicationObjectSupport
     }
 
     public void start() throws LifecycleException {
-        eventManager.fireInNewTransaction(new Starting(this, Component.GW_SERVER, ipAddress));
+        getApplicationContext().publishEvent(new Starting(this, Component.GW_SERVER, ipAddress));
         logger.info("Starting server");
-
 
         logger.info("Starting server components...");
         for (Iterator i = _components.iterator(); i.hasNext();) {
@@ -88,12 +83,12 @@ public class BootProcess extends ApplicationObjectSupport
         }
 
         logger.info(BuildInfo.getLongBuildString());
-        eventManager.fireInNewTransaction(new Started(this, Component.GW_SERVER, ipAddress));
+        getApplicationContext().publishEvent(new Started(this, Component.GW_SERVER, ipAddress));
         logger.info("Boot process complete.");
     }
 
     public void stop() throws LifecycleException {
-        eventManager.fireInNewTransaction(new Stopping(this, Component.GW_SERVER, ipAddress));
+        getApplicationContext().publishEvent(new Stopping(this, Component.GW_SERVER, ipAddress));
 
         logger.info("Stopping server components");
 
@@ -107,12 +102,12 @@ public class BootProcess extends ApplicationObjectSupport
             component.stop();
         }
 
-        eventManager.fire(new Stopped(this, Component.GW_SERVER, ipAddress));
+        getApplicationContext().publishEvent(new Stopped(this, Component.GW_SERVER, ipAddress));
         logger.info("Stopped.");
     }
 
     public void close() throws LifecycleException {
-        eventManager.fireInNewTransaction(new Closing(this, Component.GW_SERVER, ipAddress));
+        getApplicationContext().publishEvent(new Closing(this, Component.GW_SERVER, ipAddress));
 
         logger.info("Closing server components");
 
@@ -125,8 +120,7 @@ public class BootProcess extends ApplicationObjectSupport
             logger.info("Closing component " + component);
             component.close();
         }
-        eventManager.fire(new Closed(this, Component.GW_SERVER, ipAddress));
-        eventManager.removeListener(systemAuditListener);
+        getApplicationContext().publishEvent(new Closed(this, Component.GW_SERVER, ipAddress));
         logger.info("Closed.");
     }
 
@@ -157,7 +151,10 @@ public class BootProcess extends ApplicationObjectSupport
      *                   as failure to set an essential property) or if initialization fails.
      */
     public void afterPropertiesSet() throws Exception {
-        auditor = new Auditor((AuditContext)serverConfig.getSpringContext().getBean("auditContext"), Logger.getLogger(getClass().getName()));
+        final ApplicationContext springContext = serverConfig.getSpringContext();
+        logger = Logger.getLogger(BootProcess.class.getName());
+
+        auditor = new Auditor(this, springContext, logger);
 
         GlobalTarariContext context = TarariLoader.getGlobalContext();
         if (context != null) {
@@ -176,14 +173,10 @@ public class BootProcess extends ApplicationObjectSupport
 
         deleteOldAttachments(serverConfig.getAttachmentDirectory());
         try {
-            // Initialize database stuff
-            final ApplicationContext springContext = serverConfig.getSpringContext();
 
             // This needs to happen here, early enough that it will notice early events but after the database init
-            systemAuditListener = new SystemAuditListener(springContext);
-            eventManager.addListener(SystemEvent.class, systemAuditListener);
 
-            eventManager.fireInNewTransaction(new Initializing(this, Component.GW_SERVER, ipAddress));
+            getApplicationContext().publishEvent(new Initializing(this, Component.GW_SERVER, ipAddress));
             logger.info("Initializing server");
 
             setSystemProperties(serverConfig);
@@ -221,7 +214,7 @@ public class BootProcess extends ApplicationObjectSupport
                 }
             }
 
-            eventManager.fireInNewTransaction(new Initialized(this, Component.GW_SERVER, ipAddress));
+            getApplicationContext().publishEvent(new Initialized(this, Component.GW_SERVER, ipAddress));
 
             logger.info("Initialized server");
         } catch (IOException e) {
@@ -259,7 +252,6 @@ public class BootProcess extends ApplicationObjectSupport
         }
     }
 
-    private SystemAuditListener systemAuditListener;
     private String ipAddress;
     public static final String LOCALHOST_IP = "127.0.0.1";
 

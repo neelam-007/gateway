@@ -26,6 +26,7 @@ import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.assertion.ext.*;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.service.PublishedService;
+import org.springframework.context.ApplicationContext;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
 
@@ -54,13 +55,15 @@ public class ServerCustomAssertionHolder implements ServerAssertion {
     final private boolean isAuthAssertion;
     private CustomAssertionDescriptor descriptor;
     private ServiceInvocation serviceInvocation;
+    private final Auditor auditor;
 
-    public ServerCustomAssertionHolder(CustomAssertionHolder ca) {
+    public ServerCustomAssertionHolder(CustomAssertionHolder ca, ApplicationContext springContext) {
         if (ca == null || ca.getCustomAssertion() == null) {
             throw new IllegalArgumentException();
         }
         customAssertion = ca.getCustomAssertion(); // ignore hoder
         isAuthAssertion = Category.ACCESS_CONTROL.equals(ca.getCategory());
+        auditor = new Auditor(this, springContext, logger);
     }
 
     private void initialize() throws PolicyAssertionException {
@@ -98,7 +101,6 @@ public class ServerCustomAssertionHolder implements ServerAssertion {
         // Bugzilla #707 - removed the logger.entering()/exiting() as they are just for debugging purpose
         //logger.entering(ServerCustomAssertionHolder.class.getName(), "checkRequest");
 
-        Auditor auditor = new Auditor(context.getAuditContext(), logger);
         if(serviceInvocation == null) initialize();
 
         try {
