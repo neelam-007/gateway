@@ -43,9 +43,13 @@
                     <IdentityProviderOid longValue="-1"/>
                 </SpecificUser>
                 <XmlResponseSecurity>
+                    <Cipher stringValue="AES"/>
+                    <KeyLength intValue="128"/>
                     <Encryption booleanValue="false"/>
                 </XmlResponseSecurity>
                 <XmlRequestSecurity>
+                    <Cipher stringValue="AES"/>
+                    <KeyLength intValue="128"/>
                     <Encryption booleanValue="false"/>
                 </XmlRequestSecurity>
                 <RequestXpathAssertion>

@@ -82,6 +82,11 @@ public class ServerXmlResponseSecurity implements ServerAssertion {
 
         // ENCRYPTION (optional)
         if (data.isEncryption()) {
+            if (!"AES".equals(data.getCipher()))
+                throw new PolicyAssertionException("Unable to encrypt reply: unsupported cipher: " + data.getCipher());
+            if (128 != data.getKeyLength())
+                throw new PolicyAssertionException("Unable to encrypt reply: unsupported key length: " + data.getKeyLength());
+
             // RETRIEVE SESSION
             Session xmlsession = null;
             Object sessionObj = request.getParameter(Request.PARAM_HTTP_XML_SESSID);

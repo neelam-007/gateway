@@ -70,21 +70,21 @@ public class XmlMangler {
     }
 
     /**
-     * In-place encrypt of the specified SOAP document's body element.  The body element will be encrypted with AES256
-     * using the specified AES256 key, which will be tagged with the specified KeyName.
+     * In-place encrypt of the specified SOAP document's body element.  The body element will be encrypted with AES128
+     * using the specified AES128 key, which will be tagged with the specified KeyName.
      *
      * @param soapMsg  the SOAP document whose body to encrypt
-     * @param keyBytes   the 32 byte AES256 symmetric key to use to encrypt it
+     * @param keyBytes   the 16 byte AES128 symmetric key to use to encrypt it
      * @param keyName    an identifier for this Key that will be meaningful to a consumer of the encrypted message
-     * @throws IllegalArgumentException  if the key was not an array of exactly 32 bytes of key material
+     * @throws IllegalArgumentException  if the key was not an array of exactly 16 bytes of key material
      * @throws GeneralSecurityException  if there was a problem with a key or a crypto provider
      * @throws IOException  if there was a problem reading or writing a key or a bit of xml
      */
     public static void encryptXml(Document soapMsg, byte[] keyBytes, String keyName)
             throws GeneralSecurityException, IOException, IllegalArgumentException
     {
-        if (keyBytes.length != 32)
-            throw new IllegalArgumentException("keyBytes must be 32 bytes long for AES256");
+        if (keyBytes.length < 16)
+            throw new IllegalArgumentException("keyBytes must be at least 16 bytes long for AES128");
 
         Element body = SoapUtil.getBody(soapMsg);
         if (body == null)
@@ -98,7 +98,7 @@ public class XmlMangler {
         kn.setName(keyName);
         keyInfo.addKeyName(kn);
         EncryptionMethod encMethod = new EncryptionMethod();
-        encMethod.setAlgorithm(EncryptionMethod.AES256_CBC);
+        encMethod.setAlgorithm(EncryptionMethod.AES128_CBC);
         EncryptedData encData = new EncryptedData();
         encData.setCipherData(cipherData);
         encData.setEncryptionMethod(encMethod);
@@ -119,7 +119,7 @@ public class XmlMangler {
         ec.setEncryptedType(encDataElement, EncryptedData.CONTENT,  null, null);
 
         ec.setData(body);
-        ec.setKey(new AesKey(keyBytes));
+        ec.setKey(new AesKey(keyBytes, 128));
 
         try {
             ec.encrypt();
@@ -178,7 +178,7 @@ public class XmlMangler {
      *
      * @param soapMsg  The SOAP document to decrypt.
      * @param key  The key to use to decrypt it. If the document was encrypted with
-     *             a call to encryptXml(), the Key will be a 32 byte AES256 symmetric key.
+     *             a call to encryptXml(), the Key will be a 16 byte AES128 symmetric key.
      * @throws GeneralSecurityException  if there was a problem with a key or crypto provider
      * @throws ParserConfigurationException  if there was a problem with the XML parser
      * @throws IOException  if there was an IO error while reading the document or a key

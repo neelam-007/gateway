@@ -15,10 +15,13 @@ import javax.crypto.SecretKey;
 public class AesKey implements SecretKey {
     private byte[] bytes;
 
-    public AesKey(byte[] bytes) {
-        if (bytes.length != 16 && bytes.length != 24 && bytes.length != 32)
-            throw new IllegalArgumentException("Byte array is wrong length for AES128, AES192 or AES256");
-        this.bytes = bytes;
+    public AesKey(byte[] bytes, int keyBits) {
+        if (keyBits != 128 && keyBits != 192 && keyBits != 256)
+            throw new IllegalArgumentException("Unsupported AES key length " + keyBits + ".  Supported lengths are 128, 192 or 256");
+        if (bytes.length * 8 < keyBits)
+            throw new IllegalArgumentException("Byte array is too short for AES with " + keyBits + " bit key");
+        this.bytes = new byte[keyBits / 8];
+        System.arraycopy(bytes, 0, this.bytes, 0, this.bytes.length);
     }
 
     public String getAlgorithm() {

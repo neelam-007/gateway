@@ -141,13 +141,18 @@ public class ClientXmlResponseSecurity extends ClientAssertion {
 
         // must we also decrypt the body?
         if (data.isEncryption()) {
+            if (!"AES".equals(data.getCipher()))
+                throw new ResponseValidationException("Unable to decrypt response: unsupported cipher: " + data.getCipher());
+            if (128 != data.getKeyLength())
+                throw new ResponseValidationException("Unable to decrypt response: unsupported key length: " + data.getKeyLength());
+
             Session session = request.getSession();
             if (session == null)
                 // can't happen; a reference to the session is saved in request during decorateRequest()
                 throw new IllegalStateException("PendingRequest session is null");
 
             try {
-                Key keyres = new AesKey(session.getKeyRes());
+                Key keyres = new AesKey(session.getKeyRes(), 128);
                 XmlMangler.decryptXml(doc, keyres);
             } catch (GeneralSecurityException e) {
                 throw new ResponseValidationException("failure decrypting document", e);

@@ -43,13 +43,8 @@ public class WspWriterTest extends TestCase {
         return new TestSuite(WspWriterTest.class);
     }
 
-    private String fixJavaVersion(String input) {
-        return input.replaceAll("<java version=\"[^\"]*\" ", "<java ");
-    }
-
     private String fixLines(String input) {
-        return fixJavaVersion(
-                input.replaceAll("\\r\\n", "\n").replaceAll("\\n\\r", "\n").replaceAll("\\r", "\n"));
+        return input.replaceAll("\\r\\n", "\n").replaceAll("\\n\\r", "\n").replaceAll("\\r", "\n");
     }
 
     public void testWritePolicy() throws IOException {

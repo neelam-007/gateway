@@ -44,9 +44,9 @@ public class AcmeSoapClient extends TestCase {
 
     private static AesKey generateKey() {
         SecureRandom rand = new SecureRandom();
-        byte[] keyBytes = new byte[32];
+        byte[] keyBytes = new byte[16];
         rand.nextBytes(keyBytes);
-        return new AesKey(keyBytes);
+        return new AesKey(keyBytes, 128);
     }
 
     public static final String SIMPLE_REQ =

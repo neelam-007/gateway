@@ -92,6 +92,10 @@ public class ClientXmlRequestSecurity extends ClientAssertion {
 
         // ENCRYPTION
         if (data.isEncryption()) {
+            if (!"AES".equals(data.getCipher()))
+                throw new NoSuchAlgorithmException("Unable to encrypt request: unsupported cipher: " + data.getCipher());
+            if (128 != data.getKeyLength())
+                throw new SecurityException("Unable to encrypt request: unsupported key length: " + data.getKeyLength());
             XmlMangler.encryptXml(soapmsg, keyreq, Long.toString(sessId));
             log.info("Encrypted request OK");
         }

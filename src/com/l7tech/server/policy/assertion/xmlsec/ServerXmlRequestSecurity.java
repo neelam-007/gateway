@@ -119,8 +119,13 @@ public class ServerXmlRequestSecurity implements ServerAssertion {
 
         // if we must also do xml-encryption,
         if (data.isEncryption()) {
+            if (!"AES".equals(data.getCipher()))
+                throw new PolicyAssertionException("Unable to decrypt request: unsupported cipher: " + data.getCipher());
+            if (128 != data.getKeyLength())
+                throw new PolicyAssertionException("Unable to decrypt request: unsupported key length: " + data.getKeyLength());
+
             try {
-                XmlMangler.decryptXml(soapmsg, new AesKey(xmlsecSession.getKeyReq()));
+                XmlMangler.decryptXml(soapmsg, new AesKey(xmlsecSession.getKeyReq(), 128));
             } catch (GeneralSecurityException e) {
                 String msg = "Error decrypting request";
                 logger.log(Level.SEVERE, msg, e);
