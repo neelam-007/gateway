@@ -28,7 +28,7 @@ import java.util.Iterator;
  * $Id$
  */
 
-public class LdapUserMappingPanel extends WizardStepPanel {
+public class LdapUserMappingPanel extends IdentityProviderStepPanel {
 
     /**
      * Constructor - create a new user attribute mapping panel.

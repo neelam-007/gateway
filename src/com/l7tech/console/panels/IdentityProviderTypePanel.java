@@ -23,7 +23,7 @@ import java.awt.event.ActionEvent;
  * $Id$
  */
 
-public class IdentityProviderTypePanel extends WizardStepPanel {
+public class IdentityProviderTypePanel extends IdentityProviderStepPanel {
 
     /**
      * Constructor - create a new provider type panel.

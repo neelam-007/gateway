@@ -2,23 +2,18 @@ package com.l7tech.console.panels;
 
 import com.l7tech.identity.ldap.LdapIdentityProviderConfig;
 import com.l7tech.identity.IdentityProviderConfigManager;
-import com.l7tech.identity.IdentityProviderConfig;
-import com.l7tech.identity.IdentityProviderType;
-import com.l7tech.identity.InvalidIdProviderCfgException;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.common.util.Locator;
 
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.ActionListener;
-import java.awt.event.ActionEvent;
 import java.awt.event.KeyListener;
 import java.awt.event.KeyEvent;
 import java.util.Locale;
 import java.util.ResourceBundle;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.io.IOException;
+
 
 /*
  * Copyright (C) 2003 Layer 7 Technologies Inc.
@@ -26,7 +21,7 @@ import java.io.IOException;
  * $Id$
  */
 
-public class LdapIdentityProviderConfigPanel extends WizardStepPanel {
+public class LdapIdentityProviderConfigPanel extends IdentityProviderStepPanel {
 
     /** Creates new form ServicePanel */
     public LdapIdentityProviderConfigPanel(WizardStepPanel next, boolean showProviderType) {
@@ -306,19 +301,6 @@ public class LdapIdentityProviderConfigPanel extends WizardStepPanel {
         constraints.insets = new Insets( 12, 7, 0, 0 );
         panel.add( getLdapBindPassTextField(), constraints );
 
-        // test ldap
-        JButton testButton = new JButton();
-        testButton.setText(resources.getString("testLdapButton.label"));
-        testButton.setToolTipText(resources.getString("testLdapButton.tooltip"));
-        testButton.setActionCommand(CMD_TEST);
-
-        testButton.
-          addActionListener(new ActionListener() {
-              public void actionPerformed(ActionEvent event) {
-                  testSettings();
-              }
-          });
-
         constraints = new GridBagConstraints();
         constraints.gridx = 1;
         constraints.gridy = rowIndex++;
@@ -327,8 +309,6 @@ public class LdapIdentityProviderConfigPanel extends WizardStepPanel {
         constraints.anchor = GridBagConstraints.EAST;
         constraints.weightx = 0.0;
         constraints.insets = new Insets(12, 7, 0, 10);
-
-        panel.add(testButton, constraints);
 
         add(panel);
     }
@@ -368,20 +348,6 @@ public class LdapIdentityProviderConfigPanel extends WizardStepPanel {
 
       };
 
-    private void getNewSettings(IdentityProviderConfig config) {
-
-        if (config == null || !(config instanceof LdapIdentityProviderConfig)) {
-            throw new RuntimeException("unhandled provider config type");
-        }
-        IdentityProviderType type = config.type();
-        config.setTypeVal(type.toVal());
-        LdapIdentityProviderConfig convertedcfg = (LdapIdentityProviderConfig) config;
-        convertedcfg.setBindDN(ldapBindDNTextField.getText());
-        convertedcfg.setBindPasswd(ldapBindPassTextField.getText());
-        convertedcfg.setLdapUrl(ldapHostTextField.getText());
-        convertedcfg.setSearchBase(ldapSearchBaseTextField.getText());
-    }
-
     /**
       * Indicate this panel is not the last one. The user must go to the panel.
       *
@@ -401,41 +367,6 @@ public class LdapIdentityProviderConfigPanel extends WizardStepPanel {
          return advanceAllowed;
      }
 
-    private void testSettings() {
-        Object type = providerTypesCombo.getSelectedItem();
-        IdentityProviderConfig tmp = null;
-        if (type instanceof LdapIdentityProviderConfig) {
-            try {
-                tmp = new LdapIdentityProviderConfig((LdapIdentityProviderConfig)type);
-            } catch (IOException e) {
-                log.log(Level.SEVERE, "cannot instantiate new provider config based on template", e);
-                return;
-            }
-        } else {
-            log.severe("unhandled provider type");
-            return;
-        }
-
-        tmp.setName(providerNameTextField.getText());
-        getNewSettings(tmp);
-        String errorMsg = null;
-        try {
-            getProviderConfigManager().test(tmp);
-        } catch (InvalidIdProviderCfgException e) {
-            errorMsg = e.getMessage();
-        } catch (RuntimeException e) {
-            errorMsg = resources.getString("test.error.runtime") + "\n" + e.getMessage();
-        }
-        if (errorMsg == null) {
-            JOptionPane.showMessageDialog(this, resources.getString("test.res.ok"),
-                    resources.getString("test.res.title"),
-                    JOptionPane.INFORMATION_MESSAGE);
-        } else {
-            JOptionPane.showMessageDialog(this, errorMsg,
-                    resources.getString("test.res.title"),
-                    JOptionPane.ERROR_MESSAGE);
-        }
-    }
 
     /**
      * A method that returns a JCheckBox that indicates
@@ -554,7 +485,6 @@ public class LdapIdentityProviderConfigPanel extends WizardStepPanel {
     };
 
     private ResourceBundle resources = null;
-    private String CMD_TEST = "cmd.test";
     private JTextField providerNameTextField = null;
     private JTextField ldapBindPassTextField = null;
     private JTextField ldapBindDNTextField = null;

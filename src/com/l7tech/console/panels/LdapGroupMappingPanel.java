@@ -24,7 +24,7 @@ import java.util.ResourceBundle;
  * $Id$
  */
 
-public class LdapGroupMappingPanel extends WizardStepPanel {
+public class LdapGroupMappingPanel extends IdentityProviderStepPanel {
 
     /**
      * Constructor - create a new group attribute mapping panel.
