@@ -46,17 +46,18 @@ public class PublishedService extends NamedEntityImp {
 
     /**
      * Parses the policy and returns the {@link Assertion} at its root.
+     *
      * @return the {@link Assertion} at the root of the policy. May be null.
      * @throws IOException if the policy cannot be deserialized
      */
     public synchronized Assertion rootAssertion() throws IOException {
         String policyXml = getPolicyXml();
-        if ( policyXml == null || policyXml.length() == 0 ) {
-            logger.warning( "Service " + _oid + " has an invalid or empty policy_xml field.  Using null policy." );
+        if (policyXml == null || policyXml.length() == 0) {
+            logger.warning("Service " + _oid + " has an invalid or empty policy_xml field.  Using null policy.");
             return FalseAssertion.getInstance();
         } else {
-            if ( _rootAssertion == null )
-                _rootAssertion = WspReader.parse( policyXml );
+            if (_rootAssertion == null)
+                _rootAssertion = WspReader.parse(policyXml);
         }
 
         return _rootAssertion;
@@ -64,21 +65,23 @@ public class PublishedService extends NamedEntityImp {
 
     /**
      * Attempts to open a connection to the protected service
-     * @throws IOException if the connection to the protected service cannot be established
+     *
+     * @throws IOException   if the connection to the protected service cannot be established
      * @throws WSDLException if no valid URL can be found in the service's WSDL document.
      */
     public void ping() throws IOException, WSDLException {
         InputStream is = null;
         try {
-            URL url = serviceUrl( null );
+            URL url = serviceUrl(null);
             is = url.openStream();
         } finally {
-            if ( is != null ) is.close();
+            if (is != null) is.close();
         }
     }
 
     /**
      * Gets the URL from which the WSDL was originally downloaded
+     *
      * @return the URL from which the WSDL was originally downloaded.  Never null, but could be empty.
      */
     public String getWsdlUrl() {
@@ -88,13 +91,14 @@ public class PublishedService extends NamedEntityImp {
 
     /**
      * Sets the WSDL URL for this service
+     *
      * @param wsdlUrl the WSDL URL for this service
      * @throws MalformedURLException if the URL cannot be parsed
      */
-    public void setWsdlUrl( String wsdlUrl ) throws MalformedURLException {
-        if ( _wsdlUrl != null && !_wsdlUrl.equals(wsdlUrl) ) _wsdlXml = null;
+    public void setWsdlUrl(String wsdlUrl) throws MalformedURLException {
+        if (_wsdlUrl != null && !_wsdlUrl.equals(wsdlUrl)) _wsdlXml = null;
         if (wsdlUrl != null && wsdlUrl.length() > 0) {
-            new URL( wsdlUrl );
+            new URL(wsdlUrl);
             _wsdlUrl = wsdlUrl;
         } else {
             _wsdlUrl = null;
@@ -102,42 +106,36 @@ public class PublishedService extends NamedEntityImp {
     }
 
     /**
-     * Returns the contents of the WSDL document for this service.  Loads the WSDL document from the {@link #_wsdlUrl} if necessary.
-     * @return A String containing the WSDL document.  Never null.
-     * @throws IOException if the WSDL document cannot be retrieved
+     * Returns the contents of the WSDL document for this service.
+     *
+     * @return A String containing the WSDL document or  null if not set.
      */
-    public String getWsdlXml() throws IOException {
-        if ( _wsdlXml == null ) {
-            if (_wsdlUrl != null && _wsdlUrl.length() > 0) {
-                throw new IllegalStateException("No wsdl content has been set. The wsdl url is "+_wsdlUrl);
-            }
-        }
+    public String getWsdlXml() {
         return _wsdlXml;
     }
 
     /**
      * Sets the contents of the WSDL document for this service.
+     *
      * @param wsdlXml the contents of the WSDL document for this service.
      */
-    public synchronized void setWsdlXml( String wsdlXml ) {
+    public synchronized void setWsdlXml(String wsdlXml) {
         _wsdlXml = wsdlXml;
         _parsedWsdl = null;
     }
 
     /**
-     * Gets the {@link Wsdl} object generated from this service's WSDL document.
+     * Gets the {@link Wsdl} object generated from this service's WSDL document or
+     * <code>null</code> if wsdl xml document has not been set.
+     *
      * @return the {@link Wsdl} object generated from this service's WSDL document.
      * @throws WSDLException
      */
     public synchronized Wsdl parsedWsdl() throws WSDLException {
-        if ( _parsedWsdl == null ) {
-            try {
-                String cachedWsdl = getWsdlXml();
-                if (cachedWsdl != null) {
-                    _parsedWsdl = Wsdl.newInstance( null, new InputSource( new StringReader(cachedWsdl) ) );
-                }
-            } catch ( IOException ioe ) {
-                throw new WSDLException( ioe.getMessage(), ioe.toString(), ioe );
+        if (_parsedWsdl == null) {
+            String cachedWsdl = getWsdlXml();
+            if (cachedWsdl != null) {
+                _parsedWsdl = Wsdl.newInstance(null, new InputSource(new StringReader(cachedWsdl)));
             }
         }
         return _parsedWsdl;
@@ -145,14 +143,15 @@ public class PublishedService extends NamedEntityImp {
 
     /**
      * Gets the SOAP {@link Port} most appropriate for the given {@link Message} from this service's WSDL.
+     *
      * @param request the {@link Message} to use to select an appropriate {@link Port}. May be null.
      * @return the {@link Port} most appropriate for the given {@link Message}. May be null.
      * @throws WSDLException if the WSDL cannot be parsed
      */
-    public synchronized Port wsdlPort( Message request ) throws WSDLException {
+    public synchronized Port wsdlPort(Message request) throws WSDLException {
         // TODO: Get the right Port for this request, rather than just the first one!
 
-        if ( _wsdlPort == null ) {
+        if (_wsdlPort == null) {
             Port soapPort = parsedWsdl().getSoapPort();
             _wsdlPort = soapPort;
         }
@@ -162,23 +161,24 @@ public class PublishedService extends NamedEntityImp {
 
     /**
      * Gets the URL of the protected service most appropriate for the given {@link com.l7tech.common.message.Message} from this service's WSDL.
+     *
      * @param request the {@link com.l7tech.common.message.Message} to use in selecting an appropriate {@link Port}. May be null.
      * @return the protected service URL. May be null.
-     * @throws WSDLException if the WSDL could not be parsed
+     * @throws WSDLException         if the WSDL could not be parsed
      * @throws MalformedURLException if the protected service URL could not be parsed
      */
-    public synchronized URL serviceUrl( Message request ) throws WSDLException, MalformedURLException {
+    public synchronized URL serviceUrl(Message request) throws WSDLException, MalformedURLException {
         // todo: What is the Request parameter doing here? It is also unused. em24102003
         if (!isSoap()) return null;
-        if ( _serviceUrl == null ) {
-            Port wsdlPort = wsdlPort( request );
-            if ( wsdlPort == null ) return null;
-            URL url = parsedWsdl().getUrlFromPort( wsdlPort );
+        if (_serviceUrl == null) {
+            Port wsdlPort = wsdlPort(request);
+            if (wsdlPort == null) return null;
+            URL url = parsedWsdl().getUrlFromPort(wsdlPort);
 
-            if ( url == null ) {
+            if (url == null) {
                 String err = "WSDL " + getWsdlUrl() + " did not contain a valid URL";
-                logger.severe( err );
-                throw new WSDLException( SoapFaultUtils.FC_SERVER, err );
+                logger.severe(err);
+                throw new WSDLException(SoapFaultUtils.FC_SERVER, err);
             }
 
             _serviceUrl = url;
@@ -188,6 +188,7 @@ public class PublishedService extends NamedEntityImp {
 
     /**
      * Gets the XML serialized policy for this service.
+     *
      * @return the XML serialized policy for this service.
      */
     public String getPolicyXml() {
@@ -196,9 +197,10 @@ public class PublishedService extends NamedEntityImp {
 
     /**
      * Sets the XML serialized policy for this service.
+     *
      * @param policyXml the XML serialized policy for this service.
      */
-    public void setPolicyXml( String policyXml ) {
+    public void setPolicyXml(String policyXml) {
         _policyXml = policyXml;
         // Invalidate stale Root Assertion
         _rootAssertion = null;
@@ -211,6 +213,7 @@ public class PublishedService extends NamedEntityImp {
     /**
      * allows to set all properties from another object
      * the version is not copied and should be copied manually when needed
+     *
      * @param objToCopy
      */
     public void copyFrom(PublishedService objToCopy) throws MalformedURLException, IOException {
@@ -234,10 +237,10 @@ public class PublishedService extends NamedEntityImp {
         if (this == o) return true;
         if (!(o instanceof PublishedService)) return false;
 
-        final PublishedService publishedService = (PublishedService) o;
+        final PublishedService publishedService = (PublishedService)o;
 
         if (_wsdlUrl != null ? !_wsdlUrl.equals(publishedService._wsdlUrl) : publishedService._wsdlUrl != null) return false;
-        if (_oid != DEFAULT_OID ? _oid == publishedService._oid : publishedService._oid != DEFAULT_OID ) return false;
+        if (_oid != DEFAULT_OID ? _oid == publishedService._oid : publishedService._oid != DEFAULT_OID) return false;
 
         return true;
     }
@@ -262,6 +265,7 @@ public class PublishedService extends NamedEntityImp {
     /**
      * Sets the flag indicating whether or not this service is a SOAP service.
      * If not, then service does not have a WSDL and can only be resolved through its routing URI property.
+     *
      * @param isSoap true if the service is SOAP (i.e. has a WSDL), false otherwise.
      */
     public void setSoap(boolean isSoap) {
@@ -270,6 +274,7 @@ public class PublishedService extends NamedEntityImp {
 
     /**
      * URI portion of the requests that determine whether or not requests are meant for this service.
+     *
      * @return the HTTP URI (the part of a URL after the hostname) for this service.
      */
     public String getRoutingUri() {
@@ -278,6 +283,7 @@ public class PublishedService extends NamedEntityImp {
 
     /**
      * URI portion of the requests that determine whether or not requests are meant for this service.
+     *
      * @param routingUri the HTTP URI (the part of a URL after the hostname) for this service.
      */
     public void setRoutingUri(String routingUri) {
