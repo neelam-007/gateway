@@ -146,7 +146,7 @@ public class JMSEndpointReference extends ExternalReference {
         return true;
     }
 
-    private final Logger logger = Logger.getLogger(IdProviderReference.class.getName());
+    private final Logger logger = Logger.getLogger(JMSEndpointReference.class.getName());
 
     private long oid;
     private String initialContextFactoryClassname;
