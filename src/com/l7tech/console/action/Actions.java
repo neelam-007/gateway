@@ -1,13 +1,11 @@
 package com.l7tech.console.action;
 
-import com.l7tech.console.tree.EntityHeaderNode;
-import com.l7tech.console.tree.UserNode;
-import com.l7tech.console.tree.ServiceNode;
-import com.l7tech.console.tree.ProviderNode;
+import com.l7tech.console.tree.*;
 import com.l7tech.console.tree.policy.AssertionTreeNode;
 import com.l7tech.console.util.Registry;
 import com.l7tech.identity.User;
 import com.l7tech.identity.IdentityProviderConfig;
+import com.l7tech.identity.Group;
 import com.l7tech.objectmodel.EntityHeader;
 
 import javax.swing.*;
@@ -32,6 +30,8 @@ public class Actions {
         boolean rb = false;
         if (bn instanceof UserNode) {
             return deleteUser((UserNode)bn);
+        } else if (bn instanceof GroupNode) {
+           return deleteGroup((GroupNode)bn);
         } else if (bn instanceof ProviderNode) {
             return deleteProvider((ProviderNode)bn);
         } else {
@@ -78,6 +78,41 @@ public class Actions {
         }
         return false;
     }
+
+
+    // Deletes the given user
+    private static boolean deleteGroup(GroupNode node) {
+        // Make sure
+        if ((JOptionPane.showConfirmDialog(
+          getMainWindow(),
+          "Are you sure you wish to delete " +
+          node.getName() + "?",
+          "Delete Group",
+          JOptionPane.YES_NO_OPTION)) == 1) {
+            return false;
+        }
+
+        // Delete the  node and update the tree
+        try {
+            EntityHeader eh = node.getEntityHeader();
+            Group g = new Group();
+            g.setOid(eh.getOid());
+            Registry.getDefault().getInternalGroupManager().delete(g);
+            return true;
+        } catch (Exception e) {
+             log.log(Level.SEVERE, "Error deleting group", e);
+            // Error deleting realm - display error msg
+            JOptionPane.showMessageDialog(
+              getMainWindow(),
+              "Error encountered while deleting " +
+              node.getName() +
+              ". Please try again later.",
+              "Delete Group",
+              JOptionPane.ERROR_MESSAGE);
+        }
+        return false;
+    }
+
 
     // Deletes the given user
       private static boolean deleteProvider(ProviderNode node) {
