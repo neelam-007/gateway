@@ -287,8 +287,9 @@ class UserGroupsPanel extends JPanel {
      * enable/disable add/remove buttons
      */
     private void setAddRemoveButtons() {
-        getGroupRemove().setEnabled(listInModel.getSize() > 0);
-
+        if (!userPanel.getProvider().isReadOnly()) {
+            getGroupRemove().setEnabled(listInModel.getSize() > 0);
+        }
     }
 
     /**
