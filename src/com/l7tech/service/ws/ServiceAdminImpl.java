@@ -90,52 +90,68 @@ public class ServiceAdminImpl implements ServiceAdmin {
      * if the oid appears to be "virgin" a save is invoked, otherwise an update call is made.
      * @param service the object to be saved or upodated
      * @throws RemoteException
+     *
      */
     public long savePublishedService(PublishedService service) throws RemoteException,
                                     UpdateException, SaveException, VersionException {
-        com.l7tech.service.ServiceManagerImp manager = null;
-
-        beginTransaction();
-        long oid = PublishedService.DEFAULT_OID;
+        boolean transactionsuccessful = false;
+        ServiceManagerImp manager = getServiceManager();
+        PersistenceContext pc = null;
         try {
-            manager = getServiceManager();
+            pc = PersistenceContext.getCurrent();
+        } catch (SQLException e) {
+            String msg = "could not get persistence context";
+            logger.log(Level.WARNING, msg, e);
+            throw new UpdateException(msg, e);
+        }
 
-            // does that object have a history?
+        try {
+            long oid = PublishedService.DEFAULT_OID;
+            pc.beginTransaction();
+
             if (service.getOid() > 0) {
-                manager.update(service);
+                // UPDATING EXISTING SERVICE
                 oid = service.getOid();
-            } else { // ... or is it a new object
-                logger.info("Saving PublishedService: " + service.getOid());
+                logger.fine("Updating PublishedService: " + oid);
+                manager.update(service);
+            } else {
+                // SAVING NEW SERVICE
+                logger.fine("Saving new PublishedService");
                 oid = manager.save(service);
             }
+            pc.commitTransaction();
+            transactionsuccessful = true;
             return oid;
-        } finally {
-            PersistenceContext pc = null;
+        } catch (TransactionException e) {
+            String msg = "Transaction exception (duplicate resolution parameters?). Rolling back.";
+            logger.log(Level.WARNING, msg, e);
             try {
-                pc = PersistenceContext.getCurrent();
-                pc.commitTransaction();
-
-                if ( manager != null && oid != PublishedService.DEFAULT_OID ) {
-                    PublishedService newService = manager.findByPrimaryKey( service.getOid() );
-                    ServiceCache.getInstance().cache(newService);
+                pc.rollbackTransaction();
+            } catch (TransactionException e1) {
+                logger.log(Level.WARNING, "exception rolling back", e);
+            }
+            throw new UpdateException(msg, e);
+        } finally {
+            pc.close();
+            // update the cache after successful commit only
+            if (transactionsuccessful) {
+                try {
+                    // get service back because version might have changed
+                    PublishedService newSvc = manager.findByPrimaryKey(service.getOid());
+                    ServiceCache.getInstance().cache(newSvc);
+                } catch (InterruptedException e) {
+                    String msg = "exception caching service";
+                    logger.log(Level.SEVERE,  msg, e);
+                    throw new UpdateException(msg, e);
+                } catch (IOException e) {
+                    String msg = "exception caching service";
+                    logger.log(Level.SEVERE,  msg, e);
+                    throw new UpdateException(msg, e);
+                } catch (FindException e) {
+                    String msg = "exception caching service";
+                    logger.log(Level.SEVERE,  msg, e);
+                    throw new UpdateException(msg, e);
                 }
-            } catch ( TransactionException te ) {
-                logger.log( Level.WARNING, te.getMessage(), te );
-                throw new RemoteException( te.getMessage(), te );
-            } catch ( SQLException se ) {
-                logger.log( Level.SEVERE, se.getMessage(), se );
-                throw new RemoteException( se.getMessage(), se );
-            } catch ( FindException fe ) {
-                logger.log( Level.SEVERE, fe.getMessage(), fe );
-                throw new RemoteException( fe.getMessage(), fe );
-            } catch (InterruptedException e) {
-                logger.log(Level.SEVERE, e.getMessage(), e);
-                throw new RemoteException(e.getMessage(), e);
-            } catch (IOException e) {
-                logger.log(Level.SEVERE, e.getMessage(), e);
-                throw new RemoteException(e.getMessage(), e);
-            } finally {
-                if ( pc != null ) pc.close();
             }
         }
     }
@@ -229,7 +245,7 @@ public class ServiceAdminImpl implements ServiceAdmin {
     }
 
     private synchronized void initialiseServiceManager() throws RemoteException {
-        serviceManagerInstance = (com.l7tech.service.ServiceManagerImp)Locator.getDefault().
+        serviceManagerInstance = (ServiceManagerImp)Locator.getDefault().
                                     lookup(com.l7tech.service.ServiceManager.class);
         if (serviceManagerInstance == null) {
             throw new RemoteException("Cannot instantiate the ServiceManager");
