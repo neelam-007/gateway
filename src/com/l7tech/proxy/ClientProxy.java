@@ -57,6 +57,7 @@ public class ClientProxy {
                 final int bindPort, final int minThreads, final int maxThreads) {
         this.ssgFinder = ssgFinder;
         this.messageProcessor = messageProcessor;
+        messageProcessor.setClientProxy(this);
         this.bindPort = bindPort;
         this.minThreads = minThreads;
         this.maxThreads = maxThreads;
@@ -83,9 +84,14 @@ public class ClientProxy {
     {
         if (isInitialized)
             return;
-
         System.setProperty("httpclient.useragent", USER_AGENT);
+        initializeSsl();
+        isInitialized = true;
+    }
 
+    public synchronized void initializeSsl()
+            throws NoSuchAlgorithmException, NoSuchProviderException, KeyManagementException
+    {
         // Set up SSL context
         ClientProxyKeyManager keyManager = new ClientProxyKeyManager(ssgFinder);
         ClientProxyTrustManager trustManager = new ClientProxyTrustManager(ssgFinder);
@@ -95,7 +101,6 @@ public class ClientProxy {
                         null);
         Protocol https = new Protocol("https", new ClientProxySecureProtocolSocketFactory(sslContext), 443);
         Protocol.registerProtocol("https", https);
-        isInitialized = true;
     }
 
     /**
