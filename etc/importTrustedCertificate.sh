@@ -16,7 +16,7 @@
 #
 
 
-STOREDIR=$HOME/.ssg
+STOREDIR=$HOME/.l7tech
 STOREFILE=$STOREDIR/trustStore
 KEYTOOLBIN=$JAVA_HOME/bin/keytool
 

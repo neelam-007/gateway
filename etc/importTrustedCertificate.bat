@@ -16,7 +16,7 @@ rem
 rem -----------------------------------------------------------------------------
 rem
 rem Location of the file in Windows :
-set STOREDIR=%HOMEDRIVE%%HOMEPATH%\.ssg
+set STOREDIR=%HOMEDRIVE%%HOMEPATH%\.l7tech
 set STOREFILE=%STOREDIR%\trustStore
 set KEYTOOLBIN="%JAVA_HOME%\bin\keytool"
 
