@@ -198,7 +198,7 @@ public class NewFederatedUserDialog extends JDialog {
                         UserPropertiesAction ua =
                                 new FederatedUserPropertiesAction((UserNode) TreeNodeFactory.asTreeNode(header));
                         try {
-                            ua.setIdProviderConfig(Registry.getDefault().getInternalProviderConfig());
+                            ua.setIdProviderConfig(ipc);
                         } catch (Exception e) {
                             throw new RuntimeException(e);
                         }
