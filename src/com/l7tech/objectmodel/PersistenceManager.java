@@ -77,9 +77,9 @@ public abstract class PersistenceManager {
         _instance.doRollbackTransaction( context );
     }
 
-    public static PersistenceContext getContext() throws SQLException {
+    public static PersistenceContext makeContext() throws SQLException {
         checkInstance();
-        return _instance.doGetContext();
+        return _instance.doMakeContext();
     }
 
     public static EntityManager getEntityManager(Class clazz) {
@@ -103,7 +103,7 @@ public abstract class PersistenceManager {
     abstract long doSave( PersistenceContext context, Entity obj ) throws SaveException;
     abstract void doUpdate( PersistenceContext context, Entity obj ) throws UpdateException;
     abstract void doDelete( PersistenceContext context, Entity obj ) throws DeleteException;
-    abstract PersistenceContext doGetContext() throws SQLException;
+    abstract PersistenceContext doMakeContext() throws SQLException;
 
     static PersistenceManager _instance;
     static final List EMPTYLIST = Collections.unmodifiableList( new ArrayList() );

@@ -14,7 +14,7 @@ public abstract class PersistenceContext {
     public static PersistenceContext getCurrent() throws SQLException {
         PersistenceContext context = (PersistenceContext)_contextLocal.get();
         if ( context == null ) {
-            context = PersistenceManager.getContext();
+            context = PersistenceManager.makeContext();
             _contextLocal.set( context );
         }
         return context;
