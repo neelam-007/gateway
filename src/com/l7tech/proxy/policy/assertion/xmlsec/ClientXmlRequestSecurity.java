@@ -1,16 +1,9 @@
 package com.l7tech.proxy.policy.assertion.xmlsec;
 
 import com.l7tech.common.security.AesKey;
-import com.l7tech.common.security.xml.SecureConversationTokenHandler;
-import com.l7tech.common.security.xml.Session;
-import com.l7tech.common.security.xml.SignerInfo;
+import com.l7tech.common.security.xml.*;
+import com.l7tech.common.xml.MessageNotSoapException;
 import com.l7tech.policy.assertion.AssertionStatus;
-import com.l7tech.common.security.xml.ElementSecurity;
-import com.l7tech.common.security.xml.SecurityProcessor;
-import com.l7tech.common.security.xml.SecurityProcessorException;
-import com.l7tech.common.util.SoapUtil;
-import com.l7tech.common.xml.MessageNotSoapException;
-import com.l7tech.common.xml.MessageNotSoapException;
 import com.l7tech.policy.assertion.xmlsec.XmlRequestSecurity;
 import com.l7tech.proxy.datamodel.PendingRequest;
 import com.l7tech.proxy.datamodel.Ssg;
