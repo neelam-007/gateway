@@ -1,0 +1,40 @@
+#!/bin/bash
+#
+# Routing script for the Secure Span Gateway Server
+#
+# chkconfig: - 99 01
+# description: Layer7's Secure Span Gateway Routes
+
+# Source function library.
+. /etc/rc.d/init.d/functions
+
+BACK_NET=10.3.1.0
+BACK_ROUTER=10.3.1.252
+NET_MASK=255.255.255.0
+route=/sbin/route
+
+start() {
+	# Add back end routes
+	# 
+	$route add -net $BACK_NET netmask $NET_MASK gw $BACK_ROUTER
+	$route add -net 224.0.0.0 netmask 240.0.0.0 dev eth0	find_tomcat
+}
+stop() {
+}
+
+# See how we were called.
+case "$1" in
+  start)
+	start
+	;;
+  stop)
+	stop
+	;;
+  restart)
+	stop
+	start
+	;;
+esac
+
+exit 
+
