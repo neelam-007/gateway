@@ -58,6 +58,8 @@ public class Main {
         // Hook up the Message Viewer window
         clientProxy.getRequestHandler().setRequestInterceptor(Gui.getInstance().getRequestInterceptor());
 
+        Managers.setCredentialManager(GuiCredentialManager.createGuiCredentialManager(ssgManager));
+
         try {
             clientProxy.start();
         } catch (Exception e) {
@@ -82,8 +84,6 @@ public class Main {
                 System.exit(0);
             }
         });
-
-        Managers.setCredentialManager(GuiCredentialManager.createGuiCredentialManager(ssgManager));
 
         Gui.getInstance().start();
 
