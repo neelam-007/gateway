@@ -14,6 +14,7 @@ import com.l7tech.objectmodel.*;
 
 import java.io.IOException;
 import java.security.cert.CertificateException;
+import java.security.cert.X509Certificate;
 import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -103,6 +104,74 @@ public class TrustedCertManagerImp extends HibernateEntityManager implements Tru
         }
     }
 
+
+    /**
+     * Checks whether the certificate at the top of the specified chain is trusted for outbound SSL connections.
+     * <p>
+     * This will be true if either the specific certificate has the {@link com.l7tech.common.security.TrustedCert#isTrustedForSsl()}
+     * option set, or the signing cert that comes next in the chain has the {@link com.l7tech.common.security.TrustedCert#isTrustedForSigningServerCerts()}
+     * option set.
+     * <p>
+     * @param serverCertChain the certificate chain
+     * @throws CertificateException
+     */
+    public void checkSslTrust(X509Certificate[] serverCertChain) throws CertificateException {
+        String subjectDn = serverCertChain[0].getSubjectDN().getName();
+        String issuerDn = serverCertChain[0].getIssuerDN().getName();
+        try {
+            // Check if this cert is trusted as-is
+            try {
+                TrustedCert selfTrust = getCachedCertBySubjectDn(subjectDn, 30000);
+                if ( selfTrust != null ) {
+                    if ( !selfTrust.isTrustedForSsl() ) throw new CertificateException("Server cert '" + subjectDn + "' found but not trusted for SSL" );
+                    if ( !selfTrust.getCertificate().equals(serverCertChain[0]) ) throw new CertificateException("Server cert '" + subjectDn + "' found but doesn't match previously stored version" );
+                    return;
+                }
+            } catch (FindException e) {
+                logger.log(Level.WARNING, e.getMessage(), e);
+                throw new CertificateException(e.getMessage());
+            } catch (IOException e) {
+                final String msg = "Couldn't decode stored certificate";
+                logger.log(Level.SEVERE, msg, e);
+                throw new CertificateException(msg);
+            }
+
+            // Check that signer is trusted
+            TrustedCert caTrust = getCachedCertBySubjectDn(issuerDn, 30000);
+
+            if ( caTrust == null )
+                throw new FindException("Couldn't find CA cert with DN '" + issuerDn + "'" );
+
+            if ( !caTrust.isTrustedForSigningServerCerts() )
+                throw new CertificateException("CA Cert with DN '" + issuerDn + "' found but not trusted for signing SSL Server Certs");
+
+            if ( serverCertChain.length < 2 ) {
+                // TODO this might conceivably be normal
+                throw new CertificateException("Couldn't find CA Cert in chain");
+            } else if ( serverCertChain.length > 2 ) {
+                // TODO support more than two levels?
+                throw new CertificateException("Certificate chains with more than two levels are not supported");
+            }
+
+            X509Certificate caCert = serverCertChain[1];
+            X509Certificate caTrustCert = caTrust.getCertificate();
+
+            if ( !caCert.equals(caTrustCert) )
+                throw new CertificateException("CA cert from server didn't match stored version");
+
+            serverCertChain[0].verify(caTrustCert.getPublicKey());
+            return;
+        } catch (IOException e) {
+            final String msg = "Couldn't decode stored CA certificate with DN '" + issuerDn + "'";
+            logger.log(Level.SEVERE, msg, e);
+            throw new CertificateException(msg);
+        } catch (Exception e) {
+            logger.log(Level.WARNING, e.getMessage(), e);
+            throw new CertificateException(e.getMessage());
+        }
+    }
+
+
     public Class getImpClass() {
         return TrustedCert.class;
     }
@@ -115,10 +184,31 @@ public class TrustedCertManagerImp extends HibernateEntityManager implements Tru
         return "trusted_cert";
     }
 
-    public synchronized TrustedCert getCachedCertBySubjectDn( String dn, int maxAge ) throws FindException, IOException, CertificateException {
-        final Long oid = (Long)dnToOid.get(dn);
-        if (oid == null) return null;
-        return getCachedCertByOid(oid.longValue(), maxAge);
+    public TrustedCert getCachedCertBySubjectDn( String dn, int maxAge ) throws FindException, IOException, CertificateException {
+        Sync read = cacheLock.readLock();
+        Sync write = cacheLock.writeLock();
+        try {
+            read.acquire();
+            final Long oid = (Long)dnToOid.get(dn);
+            read.release(); read = null;
+            if (oid == null) {
+                TrustedCert cert = findBySubjectDn(dn);
+                if (cert == null) return null;
+                write.acquire();
+                checkAndCache(cert);
+                write.release(); write = null;
+                return cert;
+            } else {
+                return getCachedCertByOid(oid.longValue(), maxAge);
+            }
+        } catch (InterruptedException e) {
+            logger.log( Level.SEVERE, "Interrupted while acquiring cache lock", e );
+            Thread.currentThread().interrupt();
+            return null;
+        } finally {
+            if (write != null) write.release();
+            if (read != null) read.release();
+        }
     }
 
     public TrustedCert getCachedCertByOid( long o, int maxAge ) throws FindException, IOException, CertificateException {

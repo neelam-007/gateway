@@ -152,6 +152,7 @@ public abstract class AuthenticatableHttpServlet extends HttpServlet {
             IdentityProvider provider = (IdentityProvider)i.next();
             try {
                 User u = provider.authenticate(creds);
+                if (u == null) continue;
                 logger.fine("Authentication success for user " + creds.getLogin() + " on identity provider: " +
                   provider.getConfig().getName());
 

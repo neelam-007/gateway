@@ -24,7 +24,7 @@ public interface IdentityProvider {
      * {@link com.l7tech.server.policy.assertion.identity.ServerMemberOfGroup}.
      *
      * @param pc an identity and a set of credentials.
-     * @return a {@link User}. Must never be null.
+     * @return an authenticated {@link User}. May be null if no user matching the specified credentials can be found for this provider.
      */
     User authenticate( LoginCredentials pc ) throws AuthenticationException, FindException, IOException;
 

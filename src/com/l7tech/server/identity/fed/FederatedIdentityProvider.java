@@ -6,9 +6,7 @@
 
 package com.l7tech.server.identity.fed;
 
-import com.l7tech.common.security.CertificateExpiry;
 import com.l7tech.common.security.TrustedCert;
-import com.l7tech.common.util.CertUtils;
 import com.l7tech.common.util.KeystoreUtils;
 import com.l7tech.common.util.Locator;
 import com.l7tech.identity.*;
@@ -16,21 +14,13 @@ import com.l7tech.identity.cert.ClientCertManager;
 import com.l7tech.identity.cert.TrustedCertManager;
 import com.l7tech.identity.fed.FederatedIdentityProviderConfig;
 import com.l7tech.identity.fed.FederatedUser;
-import com.l7tech.identity.fed.X509Config;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.assertion.credential.CredentialFormat;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
-import com.l7tech.policy.assertion.credential.http.HttpClientCert;
 import com.l7tech.policy.assertion.credential.http.HttpDigest;
-import com.l7tech.policy.assertion.xmlsec.RequestWssX509Cert;
 import com.l7tech.server.identity.PersistentIdentityProvider;
 
 import java.io.IOException;
-import java.security.InvalidKeyException;
-import java.security.NoSuchAlgorithmException;
-import java.security.NoSuchProviderException;
-import java.security.SignatureException;
-import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.HashSet;
 import java.util.Set;
@@ -61,6 +51,9 @@ public class FederatedIdentityProvider extends PersistentIdentityProvider {
             Long oid = new Long(certOids[i]);
             certOidSet.add(oid);
         }
+
+        this.x509Handler = new X509AuthorizationHandler(this, trustedCertManager, clientCertManager, certOidSet);
+        this.samlHandler = new SamlAuthorizationHandler(this, trustedCertManager, clientCertManager, certOidSet);
     }
 
     public IdentityProviderConfig getConfig() {
@@ -77,120 +70,12 @@ public class FederatedIdentityProvider extends PersistentIdentityProvider {
 
     public User authenticate(LoginCredentials pc) throws AuthenticationException, FindException, IOException {
         if ( pc.getFormat() == CredentialFormat.CLIENTCERT )
-            return authorizeX509(pc);
+            return x509Handler.authorize(pc);
         else if ( pc.getFormat() == CredentialFormat.SAML ) {
-            return authorizeSaml(pc);
+            return samlHandler.authorize(pc);
         } else {
             throw new BadCredentialsException("Can't authenticate without SAML or X.509 certificate credentials");
         }
-    }
-
-    private User authorizeSaml( LoginCredentials pc ) throws AuthenticationException {
-        if ( !providerConfig.isSamlSupported() )
-            throw new AuthenticationException("This identity provider is not configured to support SAML credentials");
-        // TODO
-        throw new AuthenticationException("SAML authorization is not yet implemented");
-    }
-
-    private User authorizeX509( LoginCredentials pc ) throws IOException, AuthenticationException, FindException {
-        if ( !providerConfig.isX509Supported() )
-            throw new BadCredentialsException("This identity provider is not configured to support X.509 credentials");
-
-        final X509Config x509Config = providerConfig.getX509Config();
-
-        X509Certificate requestCert = (X509Certificate)pc.getPayload();
-        String subjectDn = requestCert.getSubjectDN().getName();
-
-        if ( !certOidSet.isEmpty() ) {
-            // There could be no trusted certs--this means that specific client certs
-            // are trusted no matter who signed them
-
-            try {
-                TrustedCert trustedCert = getTrustedCertForRequestCert( requestCert );
-                if ( trustedCert == null ) throw new BadCredentialsException("Signer is not trusted");
-                if ( !trustedCert.isTrustedForSigningClientCerts() )
-                    throw new BadCredentialsException("The trusted certificate with DN '" +
-                                                      trustedCert.getSubjectDn() +
-                                                      "' is not trusted for signing client certificates");
-                try {
-                    CertificateExpiry exp = CertUtils.checkValidity(trustedCert.getCertificate());
-                    if (exp.getDays() <= CertificateExpiry.FINE_DAYS)
-                        trustedCertManager.logWillExpire(trustedCert, exp);
-                } catch ( CertificateException e ) {
-                    trustedCertManager.logInvalidCert(trustedCert, e);
-                    throw new AuthenticationException(e.getMessage(), e);
-                }
-
-                // Check that cert was signed by CA key
-                requestCert.verify(trustedCert.getCertificate().getPublicKey());
-            } catch ( CertificateException e ) {
-                logger.log( Level.WARNING, e.getMessage(), e );
-                throw new BadCredentialsException(e.getMessage(), e);
-            } catch ( NoSuchAlgorithmException e ) {
-                logger.log( Level.SEVERE, e.getMessage(), e );
-                throw new BadCredentialsException(e.getMessage(), e);
-            } catch ( InvalidKeyException e ) {
-                logger.log( Level.SEVERE, e.getMessage(), e );
-                throw new BadCredentialsException(e.getMessage(), e);
-            } catch ( NoSuchProviderException e ) {
-                logger.log( Level.SEVERE, e.getMessage(), e );
-                throw new BadCredentialsException(e.getMessage(), e);
-            } catch ( SignatureException e ) {
-                logger.log( Level.SEVERE, e.getMessage(), e );
-                throw new BadCredentialsException(e.getMessage(), e);
-            }
-        }
-
-        FederatedUser u = userManager.findBySubjectDN(subjectDn);
-        if (u == null) {
-            if (certOidSet.isEmpty()) {
-                throw new BadCredentialsException("No Federated User with DN = '" + subjectDn +
-                                                  "' could be found, and virtual groups" +
-                                                  " are not permitted without trusted certs");
-            }
-        } else {
-            X509Certificate importedCert = (X509Certificate)clientCertManager.getUserCert(u);
-            if ( importedCert == null ) {
-                // This is OK as long as it was signed by a trusted cert
-                if (certOidSet.isEmpty() ) {
-                    // No trusted certs means the request cert must match a previously imported client cert
-                    throw new BadCredentialsException("User " + u + " has no client certificate imported, " +
-                                                      "and this Federated Identity Provider has no CA certs " +
-                                                      "that are trusted");
-                }
-            } else if ( !importedCert.equals(requestCert) ) {
-                    throw new BadCredentialsException("Request certificate for user " + u +
-                                                      " does not match previously imported certificate");
-            }
-        }
-
-        final Class csa = pc.getCredentialSourceAssertion();
-
-        if (csa == null) {
-            logger.info("credential source assertion is not set but required by the federated id provider.");
-        }
-
-        if ( ( x509Config.isWssBinarySecurityToken() && csa == RequestWssX509Cert.class ) ||
-             ( x509Config.isSslClientCert() && csa == HttpClientCert.class )) {
-            if ( u == null ) {
-                // Make a fake user so that a VirtualGroup can still resolve it
-                u = new FederatedUser();
-                u.setSubjectDn(subjectDn);
-            }
-            return u;
-        }
-
-        throw new BadCredentialsException("Federated IDP " + providerConfig.getName() + "(" + providerConfig.getOid() +
-                                          ") is not configured to trust certificates found with " +
-                                          csa.getName() );
-    }
-
-    private TrustedCert getTrustedCertForRequestCert( X509Certificate requestCert )
-            throws FindException, IOException, CertificateException
-    {
-        TrustedCert cert = trustedCertManager.getCachedCertBySubjectDn( requestCert.getIssuerDN().getName(), MAX_CACHE_AGE );
-        if (cert == null) certOidSet.remove(new Long(cert.getOid()));
-        return cert;
     }
 
     /**
@@ -224,7 +109,7 @@ public class FederatedIdentityProvider extends PersistentIdentityProvider {
                 TrustedCert caTrustedCert = trustedCertManager.getCachedCertBySubjectDn(caDn, MAX_CACHE_AGE);
                 if (caTrustedCert == null) throw new ClientCertManager.VetoSave("User's cert was not signed by any of this identity provider's trusted certs");
                 X509Certificate trustedCaCert = caTrustedCert.getCertificate();
-
+                // TODO 
             }
         } catch ( Exception e ) {
             final String msg = "Couldn't deserialize trusted cert";
@@ -232,6 +117,9 @@ public class FederatedIdentityProvider extends PersistentIdentityProvider {
             throw new ClientCertManager.VetoSave(msg);
         }
     }
+
+    private final X509AuthorizationHandler x509Handler;
+    private final SamlAuthorizationHandler samlHandler;
 
     private final FederatedIdentityProviderConfig providerConfig;
     private final FederatedUserManager userManager;

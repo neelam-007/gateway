@@ -80,34 +80,23 @@ public abstract class ServerIdentityAssertion implements ServerAssertion {
                 try {
                     IdentityProvider provider = getIdentityProvider();
                     User user = provider.authenticate( pc );
-
+                    if (user == null) authFailed(response, pc, null);
                     // Authentication succeeded
                     request.setAuthenticated(true);
                     request.setUser( user );
                     logger.log(Level.FINEST, "Authenticated " + user.getLogin() );
                     // Make sure this guy matches our criteria
                     return checkUser( user );
-                } catch ( BadCredentialsException bce ) {
-                    // Authentication failure
-                    response.addResult( new AssertionResult( _data, AssertionStatus.AUTH_FAILED, bce.getMessage(), bce ));
-                    logger.info("Authentication failed for " + pc.getLogin() );
-                    logger.info(bce.getMessage());
-                    return AssertionStatus.AUTH_FAILED;
                 } catch ( InvalidClientCertificateException icce ) {
-                    response.addResult( new AssertionResult( _data, AssertionStatus.AUTH_FAILED, icce.getMessage(), icce ));
                     logger.info("Invalid client cert for " + pc.getLogin() );
                     // set some response header so that the CP is made aware of this situation
                     response.setParameter(Response.PARAM_HTTP_CERT_STATUS, SecureSpanConstants.INVALID);
-                    return AssertionStatus.AUTH_FAILED;
+                    return authFailed(response, pc, icce);
                 } catch ( MissingCredentialsException mce ) {
                     response.setAuthenticationMissing(true);
-                    response.addResult( new AssertionResult( _data, AssertionStatus.AUTH_REQUIRED, mce.getMessage(), mce ));
-                    logger.info("Authentication failed for " + pc.getLogin() );
-                    return AssertionStatus.AUTH_REQUIRED;
+                    return authFailed(response, pc, mce);
                 } catch ( AuthenticationException ae ) {
-                    logger.info("Authentication failed for " + pc.getLogin() );
-                    response.addResult( new AssertionResult( _data, AssertionStatus.AUTH_FAILED, ae.getMessage(), ae ));
-                    return AssertionStatus.AUTH_FAILED;
+                    return authFailed( response, pc, ae);
                 } catch ( FindException fe ) {
                     String err = "Couldn't find identity provider!";
                     logger.log(Level.SEVERE, err, fe);
@@ -121,6 +110,19 @@ public abstract class ServerIdentityAssertion implements ServerAssertion {
                 }
             }
         }
+    }
+
+    private AssertionStatus authFailed( Response response, LoginCredentials pc, Exception e ) {
+        response.addResult( new AssertionResult( _data, AssertionStatus.AUTH_FAILED, e == null ? "" : e.getMessage(), e ));
+        StringBuffer message = new StringBuffer();
+        message.append("Authentication failed for ");
+        message.append(pc.getLogin());
+        if (e != null) {
+            message.append(": ");
+            message.append(e.getMessage());
+        }
+        logger.info(message.toString());
+        return AssertionStatus.AUTH_FAILED;
     }
 
     /**

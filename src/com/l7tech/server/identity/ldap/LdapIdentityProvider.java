@@ -14,6 +14,7 @@ import com.l7tech.objectmodel.*;
 import com.l7tech.policy.assertion.credential.CredentialFormat;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.assertion.credential.http.HttpDigest;
+import com.l7tech.server.saml.SamlHolderOfKeyAssertion;
 
 import javax.naming.Context;
 import javax.naming.NamingEnumeration;
@@ -78,12 +79,11 @@ public class LdapIdentityProvider implements IdentityProvider {
     public User authenticate(LoginCredentials pc) throws AuthenticationException, FindException, IOException {
         LdapUser realUser = null;
         realUser = (LdapUser)userManager.findByLogin( pc.getLogin());
-        if (realUser == null) {
-            logger.info("invalid user");
-            throw new BadCredentialsException("invalid user");
-        }
+        if (realUser == null) return null;
 
-        if (pc.getFormat() == CredentialFormat.CLEARTEXT) {
+        final CredentialFormat format = pc.getFormat();
+        final Object payload = pc.getPayload();
+        if (format == CredentialFormat.CLEARTEXT) {
             // basic authentication
             boolean res = userManager.authenticateBasic( realUser.getDn(), new String(pc.getCredentials()) );
             if (res) {
@@ -92,10 +92,10 @@ public class LdapIdentityProvider implements IdentityProvider {
             }
             logger.info("credentials did not authenticate for " + pc.getLogin());
             throw new BadCredentialsException("credentials did not authenticate");
-        } else if (pc.getFormat() == CredentialFormat.DIGEST) {
+        } else if (format == CredentialFormat.DIGEST) {
             String dbPassHash = realUser.getPassword();
             char[] credentials = pc.getCredentials();
-            Map authParams = (Map)pc.getPayload();
+            Map authParams = (Map)payload;
             if (authParams == null) {
                 String msg = "No Digest authentication parameters found in LoginCredentials payload!";
                 logger.log(Level.SEVERE, msg);
@@ -133,74 +133,76 @@ public class LdapIdentityProvider implements IdentityProvider {
                 logger.warning(msg);
                 throw new AuthenticationException(msg);
             }
-        } else if (pc.getFormat() == CredentialFormat.CLIENTCERT) {
-            Certificate dbCert = null;
-            X509Certificate dbCertX509 = null;
+        } else {
+            if (format == CredentialFormat.CLIENTCERT || format == CredentialFormat.SAML) {
+                X509Certificate dbCert = null;
 
-            // get the cert from the credentials
-            Certificate maybeCert = (Certificate)pc.getPayload();
-            if ( maybeCert == null ) {
-                String err = "Request was supposed to contain a certificate, but does not";
-                logger.severe(err);
-                throw new MissingCredentialsException( err );
-            }
-            // Check whether the client cert is valid (according to our root cert)
-            // (get the root cert)
-            logger.finest("Verifying client cert against current root cert...");
-            Certificate rootcacert = null;
-            try {
-                String rootCertLoc = KeystoreUtils.getInstance().getRootCertPath();
-                InputStream certStream = new FileInputStream(rootCertLoc);
-                byte[] rootcacertbytes = HexUtils.slurpStream(certStream, 16384);
-                certStream.close();
-                rootcacert = CertUtils.decodeCert(rootcacertbytes);
-            } catch (IOException e) {
-                String err = "Exception retrieving root cert " + e.getMessage();
-                logger.log(Level.SEVERE, err, e);
-                throw new AuthenticationException( err, e );
-            } catch (CertificateException e) {
-                String err = "Exception retrieving root cert " + e.getMessage();
-                logger.log(Level.SEVERE, err, e);
-                throw new AuthenticationException( err, e );
-            }
-            // (we have the root cert, verify client cert with it)
-            try {
-                maybeCert.verify(rootcacert.getPublicKey());
-            } catch (SignatureException e) {
-                String err = "client cert does not verify against current root ca cert. maybe our root cert changed since this cert was created.";
-                logger.log(Level.WARNING, err, e);
-                throw new BadCredentialsException( err, e );
-            } catch (GeneralSecurityException e) {
-                String err = "Exception verifying client cert " + e.getMessage();
-                logger.log(Level.SEVERE, err, e);
-                throw new BadCredentialsException( err, e );
-            }
-            logger.finest("Verification OK - client cert is valid.");
-            // End of Check
+                // get the cert from the credentials
+                X509Certificate requestCert = null;
+                if (format == CredentialFormat.CLIENTCERT) {
+                    requestCert = (X509Certificate)payload;
+                } else if (format == CredentialFormat.SAML) {
+                    if (payload instanceof SamlHolderOfKeyAssertion) {
+                        requestCert = ((SamlHolderOfKeyAssertion)payload).getSubjectCertificate();
+                    } else
+                        throw new BadCredentialsException("Unsupported SAML Assertion type: " +
+                                                          payload.getClass().getName());
+                }
 
-            ClientCertManager man = (ClientCertManager)Locator.getDefault().lookup(ClientCertManager.class);
-            try {
-                dbCert = man.getUserCert(realUser);
-            } catch (FindException e) {
-                logger.log(Level.SEVERE, "FindException exception looking for user cert", e);
-                dbCert = null;
-            }
-            if ( dbCert == null ) {
-                String err = "No certificate found for user " + realUser.getDn();
-                logger.warning(err);
-                throw new InvalidClientCertificateException( err );
-            } else if ( dbCert instanceof X509Certificate ) {
-                dbCertX509 = (X509Certificate)dbCert;
-                logger.fine("Stored cert serial# is " + dbCertX509.getSerialNumber().toString());
-            } else {
-                String err = "Stored cert is not an X509Certificate!";
-                logger.severe(err);
-                throw new AuthenticationException( err );
-            }
-            if ( maybeCert instanceof X509Certificate ) {
-                X509Certificate pcCert = (X509Certificate)maybeCert;
-                logger.fine("Request cert serial# is " + pcCert.getSerialNumber().toString());
-                if ( pcCert.equals( dbCertX509 ) ) {
+                if ( requestCert == null ) {
+                    String err = "Request was supposed to contain a certificate, but does not";
+                    logger.severe(err);
+                    throw new MissingCredentialsException( err );
+                }
+                // Check whether the client cert is valid (according to our root cert)
+                // (get the root cert)
+                logger.finest("Verifying client cert against current root cert...");
+                Certificate rootcacert = null;
+                try {
+                    String rootCertLoc = KeystoreUtils.getInstance().getRootCertPath();
+                    InputStream certStream = new FileInputStream(rootCertLoc);
+                    byte[] rootcacertbytes = HexUtils.slurpStream(certStream, 16384);
+                    certStream.close();
+                    rootcacert = CertUtils.decodeCert(rootcacertbytes);
+                } catch (IOException e) {
+                    String err = "Exception retrieving root cert " + e.getMessage();
+                    logger.log(Level.SEVERE, err, e);
+                    throw new AuthenticationException( err, e );
+                } catch (CertificateException e) {
+                    String err = "Exception retrieving root cert " + e.getMessage();
+                    logger.log(Level.SEVERE, err, e);
+                    throw new AuthenticationException( err, e );
+                }
+                // (we have the root cert, verify client cert with it)
+                try {
+                    requestCert.verify(rootcacert.getPublicKey());
+                } catch (SignatureException e) {
+                    String err = "client cert does not verify against current root ca cert. maybe our root cert changed since this cert was created.";
+                    logger.log(Level.WARNING, err, e);
+                    throw new BadCredentialsException( err, e );
+                } catch (GeneralSecurityException e) {
+                    String err = "Exception verifying client cert " + e.getMessage();
+                    logger.log(Level.SEVERE, err, e);
+                    throw new BadCredentialsException( err, e );
+                }
+                logger.finest("Verification OK - client cert is valid.");
+                // End of Check
+
+                ClientCertManager man = (ClientCertManager)Locator.getDefault().lookup(ClientCertManager.class);
+                try {
+                    dbCert = (X509Certificate)man.getUserCert(realUser);
+                } catch (FindException e) {
+                    logger.log(Level.SEVERE, "FindException exception looking for user cert", e);
+                    dbCert = null;
+                }
+                if ( dbCert == null ) {
+                    String err = "No certificate found for user " + realUser.getDn();
+                    logger.warning(err);
+                    throw new InvalidClientCertificateException( err );
+                }
+
+                logger.fine("Request cert serial# is " + requestCert.getSerialNumber().toString());
+                if ( requestCert.equals( dbCert ) ) {
                     logger.finest("Authenticated user " + realUser.getDn() + " using a client certificate" );
                     // remember that this cert was used at least once successfully
                     try {
@@ -223,15 +225,10 @@ public class LdapIdentityProvider implements IdentityProvider {
                     throw new InvalidClientCertificateException( err );
                 }
             } else {
-                String err = "Certificate for " + realUser.getDn() + " is not an X509Certificate";
-                logger.warning(err);
-                throw new InvalidClientCertificateException( err );
+                String msg = "Attempt to authenticate using unsupported method on this provider: " + pc.getFormat();
+                logger.log(Level.SEVERE, msg);
+                throw new AuthenticationException(msg);
             }
-        } else {
-
-            String msg = "Attempt to authenticate using unsupported method on this provider: " + pc.getFormat();
-            logger.log(Level.SEVERE, msg);
-            throw new AuthenticationException(msg);
         }
     }
 

@@ -55,6 +55,12 @@ public class SamlHolderOfKeyAssertion extends SamlAssertion {
             // Extract subject certificate
             AuthenticationStatementType authStatement = authStatements[0];
             SubjectType subject = authStatement.getSubject();
+            NameIdentifierType nameIdentifier = subject.getNameIdentifier();
+            if (nameIdentifier != null) {
+                this.nameIdentifierFormat = nameIdentifier.getFormat();
+                this.nameQualifier = nameIdentifier.getNameQualifier();
+                this.nameIdentifierValue = nameIdentifier.getStringValue();
+            }
             SubjectConfirmationType subjectConfirmation = subject.getSubjectConfirmation();
 
             KeyInfoType keyInfo = subjectConfirmation.getKeyInfo();
@@ -163,5 +169,19 @@ public class SamlHolderOfKeyAssertion extends SamlAssertion {
         }
     }
 
+    public String getNameIdentifierFormat() {
+        return nameIdentifierFormat;
+    }
 
+    public String getNameQualifier() {
+        return nameQualifier;
+    }
+
+    public String getNameIdentifierValue() {
+        return nameIdentifierValue;
+    }
+
+    private String nameIdentifierFormat;
+    private String nameQualifier;
+    private String nameIdentifierValue;
 }

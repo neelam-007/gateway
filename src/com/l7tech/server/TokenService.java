@@ -276,7 +276,6 @@ public class TokenService {
         }
         String value = XmlUtil.getTextValue(tokenTypeEl);
         if (!value.equals("http://schemas.xmlsoap.org/ws/2004/04/security/sc/sct")) {
-            logger.warning("TokenType not supported." + value);
             return false;
         }
         // validate <wst:RequestType>http://schemas.xmlsoap.org/ws/2004/04/security/trust/Issue</wst:RequestType>

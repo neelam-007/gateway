@@ -12,6 +12,7 @@ import com.l7tech.objectmodel.*;
 
 import java.io.IOException;
 import java.security.cert.CertificateException;
+import java.security.cert.X509Certificate;
 
 /**
  * Provides access to CRUD functionality for {@link TrustedCert} objects.
@@ -106,4 +107,16 @@ public interface TrustedCertManager extends EntityManager {
      * Logs a good warning message for a cert that will expire soon
      */
     void logWillExpire( TrustedCert cert, CertificateExpiry e );
+
+    /**
+     * Checks whether the certificate at the top of the specified chain is trusted for outbound SSL connections.
+     * <p>
+     * This will be true if either the specific certificate has the {@link com.l7tech.common.security.TrustedCert#isTrustedForSsl()}
+     * option set, or the signing cert that comes next in the chain has the {@link com.l7tech.common.security.TrustedCert#isTrustedForSigningServerCerts()}
+     * option set.
+     * <p>
+     * @param serverCertChain the certificate chain
+     * @throws CertificateException
+     */
+    void checkSslTrust(X509Certificate[] serverCertChain) throws CertificateException;
 }

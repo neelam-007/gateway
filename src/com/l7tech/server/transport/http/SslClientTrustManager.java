@@ -6,19 +6,15 @@
 
 package com.l7tech.server.transport.http;
 
-import com.l7tech.common.security.TrustedCert;
 import com.l7tech.common.util.Locator;
 import com.l7tech.identity.cert.TrustedCertManager;
-import com.l7tech.objectmodel.FindException;
 
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.TrustManagerFactory;
 import javax.net.ssl.X509TrustManager;
-import java.io.IOException;
 import java.security.KeyStore;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
-import java.security.NoSuchProviderException;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.logging.Level;
@@ -84,70 +80,10 @@ public class SslClientTrustManager implements X509TrustManager {
 
             // Not trusted by cartel, consult SSG trust store
             TrustedCertManager manager = (TrustedCertManager)Locator.getDefault().lookup(TrustedCertManager.class);
-
-            String subjectDn = serverCert.getSubjectDN().getName();
-            String issuerDn = serverCert.getIssuerDN().getName();
-
-            // Check if this cert is trusted as-is
-            try {
-                TrustedCert selfTrust = manager.getCachedCertBySubjectDn(subjectDn, MAX_CACHE_AGE);
-                if ( selfTrust != null ) {
-                    if ( !selfTrust.isTrustedForSsl() ) throw new CertificateException("Self-signed cert with DN '" + subjectDn + "' present but not trusted for SSL" );
-                    if ( !selfTrust.getCertificate().equals(serverCert) ) throw new CertificateException("Self-signed cert with DN '" + subjectDn + "' present but doesn't match" );
-                    return; // OK
-                }
-            } catch (FindException e) {
-                logger.log(Level.WARNING, e.getMessage(), e);
-                throw new CertificateException(e.getMessage());
-            } catch (IOException e) {
-                final String msg = "Couldn't decode stored certificate";
-                logger.log(Level.SEVERE, msg, e);
-                throw new CertificateException(msg);
-            }
-
-            // Check that signer is trusted
-            try {
-                TrustedCert caTrust = manager.getCachedCertBySubjectDn(issuerDn, MAX_CACHE_AGE);
-
-                if ( caTrust == null )
-                    throw new FindException("Couldn't find CA cert with DN '" + issuerDn + "'" );
-
-                if ( !caTrust.isTrustedForSigningServerCerts() )
-                    throw new CertificateException("CA Cert with DN '" + issuerDn + "' found but not trusted for signing SSL Server Certs");
-
-                if ( certs.length < 2 ) {
-                    // TODO this might conceivably be normal
-                    throw new CertificateException("Couldn't find CA Cert in chain");
-                } else if ( certs.length > 2 ) {
-                    // TODO support more than two levels?
-                    throw new CertificateException("Certificate chains with more than two levels are not supported");
-                }
-
-                X509Certificate caCert = certs[1];
-                X509Certificate caTrustCert = caTrust.getCertificate();
-
-                if ( !caCert.equals(caTrustCert) )
-                    throw new CertificateException("CA cert from server didn't match stored version");
-
-                serverCert.verify(caTrustCert.getPublicKey());
-            } catch (IOException e) {
-                final String msg = "Couldn't decode stored CA certificate with DN '" + issuerDn + "'";
-                logger.log(Level.SEVERE, msg, e);
-                throw new CertificateException(msg);
-            } catch (NoSuchProviderException e) {
-                logger.log(Level.SEVERE, e.getMessage(), e);
-                throw new CertificateException(e.getMessage());
-            } catch (NoSuchAlgorithmException e) {
-                logger.log(Level.SEVERE, e.getMessage(), e);
-                throw new CertificateException(e.getMessage());
-            } catch (Exception e) {
-                logger.log(Level.WARNING, e.getMessage(), e);
-                throw new CertificateException(e.getMessage());
-            }
+            manager.checkSslTrust(certs);
         }
     }
 
     private final X509TrustManager delegate;
     private final Logger logger = Logger.getLogger(this.getClass().getName());
-    private static final int MAX_CACHE_AGE = 30 * 1000;
 }

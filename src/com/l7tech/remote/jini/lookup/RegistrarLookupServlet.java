@@ -85,7 +85,7 @@ public class RegistrarLookupServlet extends HttpServlet {
             LoginCredentials creds = extractCredentials(authorizationHeader);
 
             User user = getConfigManager().getInternalIdentityProvider().authenticate(creds);
-            if (!hasPermission(user)) {
+            if (user == null || !hasPermission(user)) {
                 throw new AccessControlException(user.getName() + " does not have 'admin' privileges");
             }
 

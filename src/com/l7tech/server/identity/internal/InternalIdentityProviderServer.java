@@ -15,6 +15,7 @@ import com.l7tech.policy.assertion.credential.CredentialFormat;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.assertion.credential.http.HttpDigest;
 import com.l7tech.server.identity.PersistentIdentityProvider;
+import com.l7tech.server.saml.SamlHolderOfKeyAssertion;
 
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -77,15 +78,26 @@ public class InternalIdentityProviderServer extends PersistentIdentityProvider {
                 throw new AuthenticationException( err );
             } else {
                 CredentialFormat format = pc.getFormat();
+                X509Certificate dbCert = null;
+                if (format.isClientCert() || format == CredentialFormat.SAML) {
+                    X509Certificate requestCert = null;
+                    Object payload = pc.getPayload();
 
-                // TODO: This is really ugly.  Move to CredentialFormat subclasses?
-                if ( format.isClientCert() ) {
-                    Certificate dbCert = null;
-                    X509Certificate dbCertX509 = null;
+                    // TODO: This is really ugly.  Move to CredentialFormat subclasses?
+                    if ( format.isClientCert() ) {
+                        // get the cert from the credentials
+                        requestCert = (X509Certificate)payload;
+                    } else if (format == CredentialFormat.SAML) {
+                        if (payload instanceof SamlHolderOfKeyAssertion) {
+                            SamlHolderOfKeyAssertion assertion = (SamlHolderOfKeyAssertion)payload;
+                            requestCert = assertion.getSubjectCertificate();
+                        } else {
+                            throw new BadCredentialsException("Unsupported SAML Assertion type: " +
+                                                              payload.getClass().getName());
+                        }
+                    }
 
-                    // get the cert from the credentials
-                    Certificate maybeCert = (Certificate)pc.getPayload();
-                    if ( maybeCert == null ) {
+                    if ( requestCert == null ) {
                         String err = "Request was supposed to contain a certificate, but does not";
                         logger.severe(err);
                         throw new MissingCredentialsException( err );
@@ -97,7 +109,7 @@ public class InternalIdentityProviderServer extends PersistentIdentityProvider {
                     Certificate rootcacert = null;
                     try {
                         //todo: coonsider moving reading the rootCacert in ctor, or in lazy init; it may save few
-                        // cycles - em 20040520 
+                        // cycles - em 20040520
                         String rootCertLoc = KeystoreUtils.getInstance().getRootCertPath();
                         InputStream certStream = new FileInputStream(rootCertLoc);
                         byte[] rootcacertbytes = HexUtils.slurpStream(certStream, 16384);
@@ -110,7 +122,7 @@ public class InternalIdentityProviderServer extends PersistentIdentityProvider {
                     }
                     // (we have the root cert, verify client cert with it)
                     try {
-                        maybeCert.verify(rootcacert.getPublicKey());
+                        requestCert.verify(rootcacert.getPublicKey());
                     } catch (SignatureException e) {
                         String err = "client cert does not verify against current root ca cert. maybe our root cert changed since this cert was created.";
                         logger.log(Level.WARNING, err, e);
@@ -125,7 +137,7 @@ public class InternalIdentityProviderServer extends PersistentIdentityProvider {
 
                     ClientCertManager man = (ClientCertManager)Locator.getDefault().lookup(ClientCertManager.class);
                     try {
-                        dbCert = man.getUserCert(dbUser);
+                        dbCert = (X509Certificate)man.getUserCert(dbUser);
                     } catch (FindException e) {
                         logger.log(Level.SEVERE, "FindException exception looking for user cert", e);
                         dbCert = null;
@@ -135,42 +147,28 @@ public class InternalIdentityProviderServer extends PersistentIdentityProvider {
                         String err = "No certificate found for user " + login;
                         logger.warning(err);
                         throw new InvalidClientCertificateException( err );
-                    } else if ( dbCert instanceof X509Certificate ) {
-                        dbCertX509 = (X509Certificate)dbCert;
-                        logger.fine("Stored cert serial# is " + dbCertX509.getSerialNumber().toString());
-                    } else {
-                        String err = "Stored cert is not an X509Certificate!";
-                        logger.severe(err);
-                        throw new AuthenticationException( err );
                     }
 
-                    if ( maybeCert instanceof X509Certificate ) {
-                        X509Certificate pcCert = (X509Certificate)maybeCert;
-                        logger.fine("Request cert serial# is " + pcCert.getSerialNumber().toString());
-                        if ( pcCert.equals( dbCertX509 ) ) {
-                            logger.finest("Authenticated user " + login + " using a client certificate" );
-                            // remember that this cert was used at least once successfully
-                            try {
-                                PersistenceContext.getCurrent().beginTransaction();
-                                man.forbidCertReset(dbUser);
-                                PersistenceContext.getCurrent().commitTransaction();
-                                // dont close context here. the message processor will do it
-                                return dbUser;
-                            } catch (SQLException e) {
-                                logger.log(Level.WARNING, "transaction error around forbidCertReset", e);
-                            } catch (TransactionException e) {
-                                logger.log(Level.WARNING, "transaction error around forbidCertReset", e);
-                            } catch (ObjectModelException e) {
-                                logger.log(Level.WARNING, "transaction error around forbidCertReset", e);
-                            }
-                        } else {
-                            String err = "Failed to authenticate user " + login + " using a client certificate " +
-                                         "(request certificate doesn't match database's)";
-                            logger.warning(err);
-                            throw new InvalidClientCertificateException( err );
+                    logger.fine("Request cert serial# is " + requestCert.getSerialNumber().toString());
+                    if ( requestCert.equals( dbCert ) ) {
+                        logger.finest("Authenticated user " + login + " using a client certificate" );
+                        // remember that this cert was used at least once successfully
+                        try {
+                            PersistenceContext.getCurrent().beginTransaction();
+                            man.forbidCertReset(dbUser);
+                            PersistenceContext.getCurrent().commitTransaction();
+                            // dont close context here. the message processor will do it
+                            return dbUser;
+                        } catch (SQLException e) {
+                            logger.log(Level.WARNING, "transaction error around forbidCertReset", e);
+                        } catch (TransactionException e) {
+                            logger.log(Level.WARNING, "transaction error around forbidCertReset", e);
+                        } catch (ObjectModelException e) {
+                            logger.log(Level.WARNING, "transaction error around forbidCertReset", e);
                         }
                     } else {
-                        String err = "Certificate for " + login + " is not an X509Certificate";
+                        String err = "Failed to authenticate user " + login + " using a client certificate " +
+                                     "(request certificate doesn't match database's)";
                         logger.warning(err);
                         throw new InvalidClientCertificateException( err );
                     }
@@ -204,7 +202,7 @@ public class InternalIdentityProviderServer extends PersistentIdentityProvider {
                             String cnonce = (String)authParams.get( HttpDigest.PARAM_CNONCE );
 
                             serverDigestValue = dbPassHash + ":" + nonce + ":" + nc + ":"
-                                    + cnonce + ":" + qop + ":" + ha2;
+                                                + cnonce + ":" + qop + ":" + ha2;
                         }
 
                         String expectedResponse = HexUtils.encodeMd5Digest( _md5.digest( serverDigestValue.getBytes() ) );
