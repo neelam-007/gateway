@@ -2,6 +2,8 @@ package com.l7tech.policy.assertion.xmlsec;
 
 import com.l7tech.common.xml.XpathExpression;
 
+import java.io.Serializable;
+
 /**
  * Class <code>ElementSecurity</code> contains the security properties for an XML document
  * portion (document element).
@@ -22,7 +24,7 @@ import com.l7tech.common.xml.XpathExpression;
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  * @version 1.0
  */
-public class ElementSecurity {
+public class ElementSecurity implements Serializable {
     /**
      * The default cipher to use when encryption is enabled.
      */
@@ -35,7 +37,6 @@ public class ElementSecurity {
 
     private XpathExpression xPath;
     private XpathExpression preconditionXPath;
-    private String operation;
     private boolean encryption;
     private String cipher = DEFAULT_CIPHER;
     private int keyLength = DEFAULT_KEYBITS;
