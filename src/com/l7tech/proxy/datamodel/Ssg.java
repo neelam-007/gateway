@@ -44,7 +44,11 @@ public class Ssg implements Cloneable, Comparable {
     }
 
     public boolean equals(Object o) {
-        return compareTo(o) == 0;
+        if (this == o)
+            return true;
+        if (!this.getClass().equals(o.getClass()))
+            return false;
+        return hashCode() == o.hashCode();
     }
 
     public int hashCode() {
