@@ -203,16 +203,13 @@ public class WssDecoratorImpl implements WssDecorator {
 
         // Stuff it into an EncryptedKey
         String xencNs = SoapUtil.XMLENC_NS;
-        String xenc = "xenc";
-        Element encryptedKey = soapMsg.createElementNS(xencNs, SoapUtil.ENCRYPTEDKEY_EL_NAME);
-        encryptedKey.setPrefix(xenc);
-        encryptedKey.setAttribute("xmlns:" + xenc, xencNs);
-        securityHeader.appendChild(encryptedKey);
+        Element encryptedKey = XmlUtil.createAndAppendElementNS(securityHeader,
+                                                                SoapUtil.ENCRYPTEDKEY_EL_NAME,
+                                                                xencNs, "xenc");
+        String xenc = encryptedKey.getPrefix();
 
-        Element encryptionMethod = soapMsg.createElementNS(xencNs, "EncryptionMethod");
-        encryptionMethod.setPrefix(xenc);
+        Element encryptionMethod = XmlUtil.createAndAppendElementNS(encryptedKey, "EncryptionMethod", xencNs, xenc);
         encryptionMethod.setAttribute("Algorithm", SoapUtil.SUPPORTED_ENCRYPTEDKEY_ALGO);
-        encryptedKey.appendChild(encryptionMethod);
 
         // todo - need to do something reasonable here when there is no SKI in the recipient cert.
         // Options include omitting the KeyInfo (as we are doing now) and including a copy of the entire cert
@@ -220,27 +217,17 @@ public class WssDecoratorImpl implements WssDecorator {
         if (recipSki != null)
             addKeyInfo(encryptedKey, recipSki);
 
-        Element cipherData = soapMsg.createElementNS(xencNs, "CipherData");
-        cipherData.setPrefix(xenc);
-        encryptedKey.appendChild(cipherData);
-
-        Element cipherValue = soapMsg.createElementNS(xencNs,  "CipherValue");
-        cipherValue.setPrefix(xenc);
+        Element cipherData = XmlUtil.createAndAppendElementNS(encryptedKey, "CipherData", xencNs, xenc);
+        Element cipherValue = XmlUtil.createAndAppendElementNS(cipherData, "CipherValue", xencNs, xenc);
         cipherValue.appendChild(soapMsg.createTextNode(encryptWithRsa(keyBytes, recipientCertificate.getPublicKey())));
-        cipherData.appendChild(cipherValue);
-
-        Element referenceList = soapMsg.createElementNS(xencNs, "ReferenceList");
-        referenceList.setPrefix(xenc);
-        encryptedKey.appendChild(referenceList);
+        Element referenceList = XmlUtil.createAndAppendElementNS(encryptedKey, "ReferenceList", xencNs, xenc);
 
         for (int i = 0; i < elementsToEncrypt.length; i++) {
             Element element = elementsToEncrypt[i];
             Element encryptedElement = encryptElement(c, element, keyBytes);
 
-            Element dataReference = soapMsg.createElementNS(xencNs, "DataReference");
-            dataReference.setPrefix(xenc);
+            Element dataReference = XmlUtil.createAndAppendElementNS(referenceList, "DataReference", xencNs, xenc);
             dataReference.setAttribute("URI", "#" + getOrCreateWsuId(c, encryptedElement));
-            referenceList.appendChild(dataReference);
         }
 
         return encryptedKey;
@@ -331,19 +318,11 @@ public class WssDecoratorImpl implements WssDecorator {
         String wsseNs = encryptedKey.getParentNode().getNamespaceURI();
         String wssePrefix = encryptedKey.getParentNode().getPrefix();
 
-        Element keyInfo = soapMsg.createElementNS(SoapUtil.DIGSIG_URI, "KeyInfo");
-        keyInfo.setPrefix("dsig");
-        keyInfo.setAttribute("xmlns:dsig", SoapUtil.DIGSIG_URI);
-        encryptedKey.appendChild(keyInfo);
-
-        Element securityTokenRef = soapMsg.createElementNS(wsseNs, SoapUtil.SECURITYTOKENREFERENCE_EL_NAME);
-        securityTokenRef.setPrefix(wssePrefix);
-        keyInfo.appendChild(securityTokenRef);
-
-        Element keyId = soapMsg.createElementNS(wsseNs, SoapUtil.KEYIDENTIFIER_EL_NAME);
-        keyId.setPrefix(wssePrefix);
-        securityTokenRef.appendChild(keyId);
-
+        Element keyInfo = XmlUtil.createAndAppendElementNS(encryptedKey, "KeyInfo", SoapUtil.DIGSIG_URI, "dsig");
+        Element securityTokenRef = XmlUtil.createAndAppendElementNS(keyInfo, SoapUtil.SECURITYTOKENREFERENCE_EL_NAME,
+                                                                    wsseNs, wssePrefix);
+        Element keyId = XmlUtil.createAndAppendElementNS(securityTokenRef, SoapUtil.KEYIDENTIFIER_EL_NAME,
+                                                         wsseNs, wssePrefix);
         keyId.setAttribute("ValueType", KEYID_VALUETYPE_SKI);
         String recipSkiB64 = HexUtils.encodeBase64(recipSki, true);
         keyId.appendChild(soapMsg.createTextNode(recipSkiB64));
