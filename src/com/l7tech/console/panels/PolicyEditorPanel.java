@@ -27,7 +27,6 @@ import javax.swing.plaf.basic.BasicSplitPaneUI;
 import javax.swing.text.EditorKit;
 import javax.swing.text.Style;
 import javax.swing.text.StyleConstants;
-import javax.swing.text.html.HTMLDocument;
 import javax.swing.text.html.HTMLEditorKit;
 import javax.swing.text.html.StyleSheet;
 import javax.swing.tree.*;
@@ -295,7 +294,6 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
         Style style = ss.getStyle("body");
         if (style !=null){
             style.removeAttribute(StyleConstants.FontFamily);
-            System.out.println(style);
             final Font font = label.getFont();
             style.addAttribute(StyleConstants.FontFamily, font.getFamily());
             style.removeAttribute(StyleConstants.FontSize);
