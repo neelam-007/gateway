@@ -122,7 +122,7 @@ INSERT INTO internal_group VALUES(2, 0, "SSGAdmin", "Users having administration
 ---
 --- Creation of the initial admin user
 ---
-INSERT INTO internal_user VALUES(3, 0, 0, "ssgadmin", "ssgadmin", "309b9c7ab4c3ee2144fce9b071acd440", NULL, NULL, NULL, NULL, NULL, NULL);
+INSERT INTO internal_user VALUES(3, 0, "ssgadmin", "ssgadmin", "309b9c7ab4c3ee2144fce9b071acd440", NULL, NULL, NULL, NULL);
 
 ---
 --- Grant ssgadmin ssgadmin rights
