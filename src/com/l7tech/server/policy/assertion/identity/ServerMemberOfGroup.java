@@ -18,13 +18,15 @@ import com.l7tech.server.message.PolicyEnforcementContext;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import org.springframework.context.ApplicationContext;
+
 /**
  * @author alex
  * @version $Revision$
  */
 public class ServerMemberOfGroup extends ServerIdentityAssertion implements ServerAssertion {
-    public ServerMemberOfGroup( MemberOfGroup data ) {
-        super( data );
+    public ServerMemberOfGroup( MemberOfGroup data, ApplicationContext applicationContext ) {
+        super( data, applicationContext);
         _data = data;
     }
 

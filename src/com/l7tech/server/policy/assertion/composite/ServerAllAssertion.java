@@ -14,13 +14,15 @@ import com.l7tech.server.policy.assertion.ServerAssertion;
 
 import java.io.IOException;
 
+import org.springframework.context.ApplicationContext;
+
 /**
  * @author alex
  * @version $Revision$
  */
 public class ServerAllAssertion extends ServerCompositeAssertion implements ServerAssertion {
-    public ServerAllAssertion( AllAssertion data ) {
-        super( data );
+    public ServerAllAssertion(AllAssertion data, ApplicationContext applicationContext) {
+        super(data, applicationContext);
         this.data = data;
     }
 
@@ -29,10 +31,10 @@ public class ServerAllAssertion extends ServerCompositeAssertion implements Serv
         ServerAssertion[] kids = getChildren();
         ServerAssertion child;
         AssertionStatus result = null;
-        for ( int i = 0; i < kids.length; i++ ) {
+        for (int i = 0; i < kids.length; i++) {
             child = kids[i];
             result = child.checkRequest(context);
-            if ( result != AssertionStatus.NONE ) {
+            if (result != AssertionStatus.NONE) {
                 rollbackDeferredAssertions(context);
                 return result;
             }

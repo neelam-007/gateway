@@ -20,8 +20,8 @@ public class MessageProcessed extends Event {
     private final AssertionStatus status;
     private final PolicyEnforcementContext context;
 
-    public MessageProcessed(PolicyEnforcementContext context, AssertionStatus status) {
-        super(MessageProcessor.getInstance());
+    public MessageProcessed(PolicyEnforcementContext context, AssertionStatus status, MessageProcessor messageProcessor) {
+        super(messageProcessor);
         this.context = context;
         this.status = status;
     }

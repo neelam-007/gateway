@@ -39,9 +39,6 @@ import org.springframework.beans.BeansException;
 public class AuditRecordManagerImpl extends HibernateEntityManager implements AuditRecordManager, ApplicationContextAware {
     private ApplicationContext applicationCOntext;
 
-    public AuditRecordManagerImpl() {
-    }
-
     public AuditRecord findByPrimaryKey(long oid) throws FindException {
         Entity obj = findEntity(oid);
         if (obj == null) return null;

@@ -11,6 +11,7 @@ import com.l7tech.common.Component;
 import com.l7tech.common.security.JceProvider;
 import com.l7tech.common.util.JdkLoggerConfigurator;
 import com.l7tech.logging.ServerLogHandler;
+import com.l7tech.logging.ServerLogManager;
 import com.l7tech.objectmodel.HibernatePersistenceContext;
 import com.l7tech.objectmodel.HibernatePersistenceManager;
 import com.l7tech.objectmodel.PersistenceContext;
@@ -23,6 +24,7 @@ import com.l7tech.server.service.ServiceManager;
 import com.l7tech.server.service.ServiceManagerImp;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 import org.springframework.context.support.ApplicationObjectSupport;
+import org.springframework.context.ApplicationContext;
 
 import java.io.*;
 import java.net.InetAddress;
@@ -74,20 +76,21 @@ public class BootProcess extends ApplicationObjectSupport implements ServerCompo
             ipAddress = LOCALHOST_IP;
         }
 
-        deleteOldAttachments(((ServerConfig)config).getAttachmentDirectory());
+        deleteOldAttachments(config.getAttachmentDirectory());
         HibernatePersistenceContext context = null;
         try {
             // Initialize database stuff
-            HibernatePersistenceManager.initialize(config.getSpringContext());
+            final ApplicationContext springContext = config.getSpringContext();
+            HibernatePersistenceManager.initialize(springContext);
 
             // This needs to happen here, early enough that it will notice early events but after the database init
-            systemAuditListener = new SystemAuditListener();
+            systemAuditListener = new SystemAuditListener(springContext);
             EventManager.addListener(SystemEvent.class, systemAuditListener);
 
             // add the server handler programatically after the hibernate is initialized.
             // the handlers specified in the configuraiton get loaded by the system classloader and hibernate
             // stuff lives in the web app classloader
-            JdkLoggerConfigurator.addHandler(new ServerLogHandler());
+            JdkLoggerConfigurator.addHandler(new ServerLogHandler((ServerLogManager)springContext.getBean("serverLogManager")));
 
             context = (HibernatePersistenceContext)PersistenceContext.getCurrent();
             try {

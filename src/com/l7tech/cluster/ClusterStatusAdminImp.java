@@ -23,14 +23,30 @@ import java.util.logging.Logger;
  *
  */
 public class ClusterStatusAdminImp extends ApplicationObjectSupport implements ClusterStatusAdmin {
-
+    /**
+     * Constructs the new cluster status admin implementation.
+     * On constructir change update the spring bean definition
+     *
+     * @param clusterInfoManager
+     * @param serviceUsageManager
+     */
+    public ClusterStatusAdminImp(ClusterInfoManager clusterInfoManager, ServiceUsageManager serviceUsageManager) {
+        this.clusterInfoManager = clusterInfoManager;
+        this.serviceUsageManager = serviceUsageManager;
+        if (clusterInfoManager == null) {
+            throw new IllegalArgumentException("Cluster Info manager is required");
+        }
+        if (serviceUsageManager == null) {
+             throw new IllegalArgumentException("Service Usage manager is required");
+         }
+     }
 
     /**
      * get status for all nodes recorded as part of the cluster.
      */
     public ClusterNodeInfo[] getClusterStatus() throws FindException {
         try {
-            Collection res = ciman.retrieveClusterStatus();
+            Collection res = clusterInfoManager.retrieveClusterStatus();
             Object[] resarray = res.toArray();
             ClusterNodeInfo[] output = new ClusterNodeInfo[res.size()];
             for (int i = 0; i < resarray.length; i++) {
@@ -47,7 +63,7 @@ public class ClusterStatusAdminImp extends ApplicationObjectSupport implements C
      */
     public ServiceUsage[] getServiceUsage() throws FindException {
         try {
-            Collection res = suman.getAll();
+            Collection res = serviceUsageManager.getAll();
             Object[] resarray = res.toArray();
             ServiceUsage[] output = new ServiceUsage[res.size()];
             for (int i = 0; i < resarray.length; i++) {
@@ -78,7 +94,7 @@ public class ClusterStatusAdminImp extends ApplicationObjectSupport implements C
             RoleUtils.enforceAdminRole(getApplicationContext());
             try {
                 context.beginTransaction();
-                ciman.renameNode(nodeid, newName);
+                clusterInfoManager.renameNode(nodeid, newName);
                 context.commitTransaction();
             } catch (TransactionException e) {
                 logger.log(Level.WARNING, "transaction exception", e);
@@ -110,8 +126,8 @@ public class ClusterStatusAdminImp extends ApplicationObjectSupport implements C
             try {
                 logger.info("removing stale node: " + nodeid);
                 context.beginTransaction();
-                ciman.deleteNode(nodeid);
-                suman.clear(nodeid);
+                clusterInfoManager.deleteNode(nodeid);
+                serviceUsageManager.clear(nodeid);
 
                 // Bugzilla #842 - remote exception (outofmemory) is thrown by the server side in the
                 // case when SSG is trying to clean all log records of the stale node and the table contains
@@ -151,10 +167,10 @@ public class ClusterStatusAdminImp extends ApplicationObjectSupport implements C
      * @return String  The node name
      */
     public String getSelfNodeName() throws RemoteException {
-        return ciman.getSelfNodeInf().getName();
+        return clusterInfoManager.getSelfNodeInf().getName();
     }
 
-    private final ClusterInfoManager ciman = ClusterInfoManager.getInstance();
-    private final ServiceUsageManager suman = new ServiceUsageManager();
+    private final ClusterInfoManager clusterInfoManager;
+    private final ServiceUsageManager serviceUsageManager;
     private final Logger logger = Logger.getLogger(getClass().getName());
 }

@@ -10,6 +10,7 @@ import com.l7tech.identity.User;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.identity.PermissiveIdentityAssertion;
 import com.l7tech.server.message.PolicyEnforcementContext;
+import org.springframework.context.ApplicationContext;
 
 /**
  * Server implementation of {@link PermissiveIdentityAssertion}, which authorizes
@@ -22,8 +23,8 @@ import com.l7tech.server.message.PolicyEnforcementContext;
  * @version $Revision$
  */
 public class ServerPermissiveIdentityAssertion extends ServerIdentityAssertion {
-    public ServerPermissiveIdentityAssertion(PermissiveIdentityAssertion ass) {
-        super(ass);
+    public ServerPermissiveIdentityAssertion(PermissiveIdentityAssertion ass, ApplicationContext applicationContext) {
+        super(ass, applicationContext);
     }
 
     /**

@@ -14,13 +14,15 @@ import com.l7tech.server.message.PolicyEnforcementContext;
 
 import java.util.logging.Logger;
 
+import org.springframework.context.ApplicationContext;
+
 /**
  * @author alex
  * @version $Revision$
  */
 public class ServerSpecificUser extends ServerIdentityAssertion implements ServerAssertion {
-    public ServerSpecificUser( SpecificUser data ) {
-        super( data );
+    public ServerSpecificUser(SpecificUser data, ApplicationContext applicationContext) {
+        super(data, applicationContext);
         specificUser = data;
 
         requiredLogin = specificUser.getUserLogin();
@@ -31,9 +33,10 @@ public class ServerSpecificUser extends ServerIdentityAssertion implements Serve
     /**
      * Verifies that the authenticated <code>User</code> matches the <code>User</code>
      * corresponding to this Assertion's <code>userLogin</code> property.
+     *
      * @param requestingUser the <code>User</code> to check
-     * @return <code>AssertionStatus.NONE</code> if the <code>User</code> matches.
      * @param context
+     * @return <code>AssertionStatus.NONE</code> if the <code>User</code> matches.
      */
     public AssertionStatus checkUser(User requestingUser, PolicyEnforcementContext context) {
 
@@ -51,7 +54,7 @@ public class ServerSpecificUser extends ServerIdentityAssertion implements Serve
         // provider must always match
         if (requestProvider != requiredProvider) {
             logger.fine("Authentication failed because providers id did not " +
-                        "match (" + requestProvider + " instead of " + requiredProvider + ").");
+              "match (" + requestProvider + " instead of " + requiredProvider + ").");
             return AssertionStatus.AUTH_FAILED;
         }
 

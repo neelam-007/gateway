@@ -6,11 +6,12 @@
 
 package com.l7tech.server.policy.assertion.composite;
 
+import com.l7tech.policy.PolicyFactory;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.composite.CompositeAssertion;
 import com.l7tech.server.message.PolicyEnforcementContext;
-import com.l7tech.server.policy.ServerPolicyFactory;
 import com.l7tech.server.policy.assertion.ServerAssertion;
+import org.springframework.context.ApplicationContext;
 
 /**
  * @author alex
@@ -18,9 +19,15 @@ import com.l7tech.server.policy.assertion.ServerAssertion;
  */
 public abstract class ServerCompositeAssertion implements ServerAssertion {
     protected ServerAssertion[] children;
+    private ApplicationContext applicationContext;
 
-    public ServerCompositeAssertion( CompositeAssertion composite ) {
-        this.children = (ServerAssertion[])ServerPolicyFactory.getInstance().makeCompositePolicy( composite ).toArray( new ServerAssertion[0] );
+    public ServerCompositeAssertion( CompositeAssertion composite, ApplicationContext context ) {
+        this.applicationContext = context;
+        if (applicationContext == null) {
+            throw new IllegalArgumentException("The Application Context is required");
+        }
+        PolicyFactory pf = (PolicyFactory)applicationContext.getBean("policyFactory");
+        this.children = (ServerAssertion[])pf.makeCompositePolicy( composite ).toArray( new ServerAssertion[0] );
     }
 
     public ServerAssertion[] getChildren() {

@@ -9,6 +9,8 @@ import java.util.Iterator;
 import java.util.Set;
 import java.util.logging.Logger;
 
+import org.springframework.context.ApplicationContext;
+
 /**
  * SSG-side implementation of the UserManager for the internal identity provider.
  * <p/>
@@ -20,7 +22,9 @@ import java.util.logging.Logger;
  * @version $Revision$
  */
 public class InternalUserManagerServer extends PersistentUserManager {
-    public InternalUserManagerServer(IdentityProvider provider) {
+
+    public InternalUserManagerServer(IdentityProvider provider, ApplicationContext applicationContext) {
+        super(applicationContext);
         this.provider = provider;
     }
 

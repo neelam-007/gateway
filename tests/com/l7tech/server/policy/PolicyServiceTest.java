@@ -72,7 +72,6 @@ public class PolicyServiceTest extends TestCase {
     }
 
     protected void setUp() throws Exception {
-        System.setProperty("com.l7tech.common.locator", "com.l7tech.common.locator.TestLocator");
         UserBean francoBean = new UserBean();
         francoBean.setName(TESTUSER_LOGIN);
         francoBean.setLogin(TESTUSER_LOGIN);
@@ -89,7 +88,7 @@ public class PolicyServiceTest extends TestCase {
         Document requestDoc = null;
         Message request = new Message();
         Message response = new Message();
-        PolicyEnforcementContext context = new PolicyEnforcementContext(request, response, applicationContext);
+        PolicyEnforcementContext context = new PolicyEnforcementContext(request, response);
         context.setCredentials(loginCredentials);
         if (loginCredentials != null) {
             requestDoc = PolicyServiceClient.createGetPolicyRequest("123");
@@ -109,7 +108,8 @@ public class PolicyServiceTest extends TestCase {
 
     private Document getPolicyResponse(final Assertion policyToTest, PolicyEnforcementContext context) throws Exception {
         PolicyService ps = new PolicyService(TestDocuments.getDotNetServerPrivateKey(),
-                                             TestDocuments.getDotNetServerCertificate());
+                                             TestDocuments.getDotNetServerCertificate(),
+                                             (ServerPolicyFactory)applicationContext.getBean("policyFactory"));
         PolicyService.PolicyGetter policyGetter = new PolicyService.PolicyGetter() {
             public PolicyService.ServiceInfo getPolicy(String serviceId) {
                 return new PolicyService.ServiceInfo() {

@@ -11,9 +11,7 @@ import com.l7tech.common.message.XmlKnob;
 import com.l7tech.common.protocol.SecureSpanConstants;
 import com.l7tech.common.security.xml.decorator.DecorationRequirements;
 import com.l7tech.common.security.xml.decorator.WssDecorator;
-import com.l7tech.common.security.xml.decorator.WssDecoratorImpl;
 import com.l7tech.common.security.xml.processor.*;
-import com.l7tech.common.util.KeystoreUtils;
 import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.xml.InvalidDocumentFormatException;
 import com.l7tech.common.xml.MessageNotSoapException;
@@ -31,6 +29,7 @@ import com.l7tech.server.service.ServiceManager;
 import com.l7tech.server.service.resolution.ServiceResolutionException;
 import com.l7tech.service.PublishedService;
 import com.l7tech.service.ServiceStatistics;
+import org.springframework.context.support.ApplicationObjectSupport;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
 import org.xmlpull.v1.XmlPullParser;
@@ -39,9 +38,7 @@ import org.xmlpull.v1.XmlPullParserFactory;
 
 import java.io.IOException;
 import java.security.GeneralSecurityException;
-import java.security.KeyStoreException;
 import java.security.PrivateKey;
-import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.Iterator;
 import java.util.logging.Level;
@@ -51,7 +48,49 @@ import java.util.logging.Logger;
  * @author alex
  * @version $Revision$
  */
-public class MessageProcessor {
+public class MessageProcessor extends ApplicationObjectSupport {
+    private final ServiceManager serviceManager;
+    private final WssDecorator wssDecorator;
+    private final PrivateKey serverPrivateKey;
+    private final X509Certificate serverCertificate;
+
+    /**
+     * Create the new <code>MessageProcessor</code> instance with the service
+     * manager, Wss Decorator instance and the server private key.
+     * All arguments are required
+     * @param sm the service manager
+     * @param wssd the Wss Decorator
+     * @param pkey the server private key
+     * @param pkey the server certificate
+     * @throws IllegalArgumentException if any of the arguments is null
+     */
+    public MessageProcessor(ServiceManager sm, WssDecorator wssd, PrivateKey pkey, X509Certificate cert)
+        throws IllegalArgumentException {
+        if (sm == null) {
+            throw new IllegalArgumentException("Service Manager is required");
+        }
+        if (wssd == null) {
+            throw new IllegalArgumentException("Wss Decorator is required");
+        }
+        if (pkey == null) {
+            throw new IllegalArgumentException("Server Private Key is required");
+        }
+        if (cert == null) {
+            throw new IllegalArgumentException("Server Certificate is required");
+        }
+        this.serviceManager = sm;
+        this.wssDecorator = wssd;
+        this.serverPrivateKey = pkey;
+        this.serverCertificate = cert;
+
+        try {
+            _xppf = XmlPullParserFactory.newInstance();
+        } catch (XmlPullParserException e) {
+            throw new RuntimeException( e );
+        }
+        _xppf.setNamespaceAware( true );
+        _xppf.setValidating( false );
+    }
 
     public AssertionStatus processMessage( PolicyEnforcementContext context )
             throws IOException, PolicyAssertionException, PolicyVersionException
@@ -82,23 +121,11 @@ public class MessageProcessor {
 
         if (isSoap) {
             WssProcessor trogdor = new WssProcessorImpl(); // no need for locator
-            X509Certificate serverSSLcert = null;
-            PrivateKey sslPrivateKey = null;
-            try {
-                serverSSLcert = KeystoreUtils.getInstance().getSslCert();
-                sslPrivateKey = getServerKey();
-            } catch (CertificateException e) {
-                logger.log(Level.SEVERE, "Error getting server cert/private key", e);
-                return AssertionStatus.SERVER_ERROR;
-            } catch (KeyStoreException e) {
-                logger.log(Level.SEVERE, "Error getting server cert/private key", e);
-                return AssertionStatus.SERVER_ERROR;
-            }
             try {
                 final XmlKnob reqXml = request.getXmlKnob();
                 wssOutput = trogdor.undecorateMessage(reqXml.getDocument(),
-                                                      serverSSLcert,
-                                                      sslPrivateKey,
+                                                      serverCertificate,
+                                                      serverPrivateKey,
                                                       SecureConversationContextManager.getInstance());
                 // todo, refactor SoapRequest so that it keeps a hold on the original message
                 final Document message = wssOutput.getUndecoratedMessage();
@@ -132,8 +159,7 @@ public class MessageProcessor {
         // Policy Verification Step
         AssertionStatus status = AssertionStatus.UNDEFINED;
         try {
-            ServiceManager manager = (ServiceManager)context.getSpringContext().getBean("serviceManager");
-            PublishedService service = manager.resolve(context.getRequest());
+            PublishedService service = serviceManager.resolve(context.getRequest());
 
             if ( service == null ) {
                 logger.warning( "Service not found" );
@@ -179,7 +205,7 @@ public class MessageProcessor {
                 // Get the server policy
                 ServerAssertion serverPolicy = null;
                 try {
-                    serverPolicy = manager.getServerPolicy(service.getOid());
+                    serverPolicy = serviceManager.getServerPolicy(service.getOid());
                 } catch (FindException e) {
                     logger.log(Level.WARNING, "cannot get policy", e);
                     serverPolicy = null;
@@ -192,7 +218,7 @@ public class MessageProcessor {
                 logger.finest("Run the server policy");
                 ServiceStatistics stats = null;
                 try {
-                    stats = manager.getServiceStatistics(service.getOid());
+                    stats = serviceManager.getServiceStatistics(service.getOid());
                 } catch (FindException e) {
                     logger.log(Level.WARNING, "cannot get a stats object", e);
                 }
@@ -231,7 +257,7 @@ public class MessageProcessor {
                             }
                         }
 
-                        getWssDecorator().decorateMessage(doc, responseDecoReq);
+                        wssDecorator.decorateMessage(doc, responseDecoReq);
                         respXml.setDocument(doc);
                     } catch (Exception e) {
                         throw new PolicyAssertionException("Failed to apply WSS decoration to response", e);
@@ -285,7 +311,7 @@ public class MessageProcessor {
             return AssertionStatus.SERVER_ERROR;
         } finally {
             try {
-                EventManager.fire(new MessageProcessed(context, status));
+                EventManager.fire(new MessageProcessed(context, status, this));
             } catch (Throwable t) {
                 logger.log(Level.WARNING, "EventManager threw exception logging message processing result", t);
             }
@@ -305,42 +331,12 @@ public class MessageProcessor {
         return status;
     }
 
-    private synchronized PrivateKey getServerKey() throws KeyStoreException {
-        if (privateServerKey == null) {
-            privateServerKey = KeystoreUtils.getInstance().getSSLPrivateKey();
-        }
-        return privateServerKey;
-    }
-
-    public static MessageProcessor getInstance() {
-        return SingletonHolder.singleton;
-    }
-
     public XmlPullParser getPullParser() throws XmlPullParserException {
         return _xppf.newPullParser();
     }
 
-    private MessageProcessor() {
-        try {
-            _xppf = XmlPullParserFactory.newInstance();
-        } catch (XmlPullParserException e) {
-            throw new RuntimeException( e );
-        }
-        _xppf.setNamespaceAware( true );
-        _xppf.setValidating( false );
-    }
-
     public static PolicyEnforcementContext getCurrentContext() {
         return (PolicyEnforcementContext)currentContext.get();
-    }
-
-    private static class SingletonHolder {
-        private static MessageProcessor singleton = new MessageProcessor();
-    }
-
-    private static synchronized WssDecorator getWssDecorator() {
-        if (_wssDecorator != null) return _wssDecorator;
-        return _wssDecorator = new WssDecoratorImpl();
     }
 
     private static ThreadLocal currentContext = new ThreadLocal();
@@ -348,8 +344,5 @@ public class MessageProcessor {
     private final Logger logger = Logger.getLogger(getClass().getName());
 
     private XmlPullParserFactory _xppf;
-    private static WssDecorator _wssDecorator = null;
-
-    private PrivateKey privateServerKey = null;
     private static final Level DEFAULT_MESSAGE_AUDIT_LEVEL = Level.INFO;
 }

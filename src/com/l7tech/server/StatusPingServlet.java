@@ -7,6 +7,7 @@ import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.PersistenceContext;
 
 import javax.servlet.ServletException;
+import javax.servlet.ServletConfig;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -18,6 +19,9 @@ import java.util.Collection;
 import java.util.Iterator;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import org.springframework.web.context.support.WebApplicationContextUtils;
+import org.springframework.web.context.WebApplicationContext;
 
 /**
  * A servlet that sends status information for use by failover.
@@ -34,6 +38,17 @@ import java.util.logging.Logger;
  *
  */
 public class StatusPingServlet extends HttpServlet {
+    private WebApplicationContext applicationContext;
+
+    public void init(ServletConfig servletConfig) throws ServletException {
+        super.init(servletConfig);
+        applicationContext = WebApplicationContextUtils.getWebApplicationContext(getServletContext());
+
+        if (applicationContext == null) {
+            throw new ServletException("Configuration error; could not get application context");
+        }
+
+    }
 
     public void doGet(HttpServletRequest req, HttpServletResponse res) throws ServletException, IOException {
         Collection allStatuses = null;
@@ -46,7 +61,8 @@ public class StatusPingServlet extends HttpServlet {
             return;
         }
         try {
-            allStatuses = ClusterInfoManager.getInstance().retrieveClusterStatus();
+            ClusterInfoManager cim = (ClusterInfoManager)applicationContext.getBean("clusterInfoManager");
+            allStatuses = cim.retrieveClusterStatus();
         } catch (FindException e) {
             logger.log(Level.SEVERE, "error getting status ", e);
             outputError(res, e.getMessage());

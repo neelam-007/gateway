@@ -22,6 +22,8 @@ import net.sf.hibernate.expression.Expression;
 import java.sql.SQLException;
 import java.util.List;
 
+import org.springframework.context.ApplicationContext;
+
 /**
  * The {@link com.l7tech.identity.UserManager} for {@link FederatedIdentityProvider}s.
  * 
@@ -29,8 +31,8 @@ import java.util.List;
  * @version $Revision$
  */
 public class FederatedUserManager extends PersistentUserManager {
-    public FederatedUserManager( IdentityProvider provider ) {
-        super();
+    public FederatedUserManager(IdentityProvider provider, ApplicationContext applicationContext) {
+        super(applicationContext);
         this.provider = provider;
     }
 

@@ -37,13 +37,14 @@ import java.util.logging.*;
  */
 public class ServerLogHandler extends Handler implements PropertyChangeListener {
     private LogManager manager = LogManager.getLogManager();
-    private final ServerLogManager serverLogManager = ServerLogManager.getInstance();
+    private final ServerLogManager serverLogManager;
 
     /**
      * note the two phase construction ServerLogHandler.initialize()
      */
-    public ServerLogHandler() {
+    public ServerLogHandler(ServerLogManager serverLogManager) {
         super();
+        this.serverLogManager = serverLogManager;
         configure();
         manager.addPropertyChangeListener(this);
         flusherTask = new TimerTask() {
@@ -98,7 +99,7 @@ public class ServerLogHandler extends Handler implements PropertyChangeListener 
         // need to add new instance  again on change, as this handler was added programatically
         manager.removePropertyChangeListener(this);
         final Logger rootLogger = manager.getLogger("");
-        ServerLogHandler newHandler = new ServerLogHandler();
+        ServerLogHandler newHandler = new ServerLogHandler(serverLogManager);
         manager.addPropertyChangeListener(newHandler);
         rootLogger.addHandler(newHandler);
     }

@@ -12,15 +12,13 @@ import com.l7tech.server.policy.assertion.ServerAssertion;
 import com.l7tech.server.service.resolution.*;
 import com.l7tech.service.PublishedService;
 import com.l7tech.service.ServiceStatistics;
+import org.springframework.context.support.ApplicationObjectSupport;
 
 import java.io.IOException;
 import java.sql.SQLException;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-
-import org.springframework.context.support.ApplicationObjectSupport;
-import org.springframework.beans.factory.InitializingBean;
 
 /**
  * Contains cached services, with corresponding pre-parsed server-side policies and
@@ -37,11 +35,21 @@ import org.springframework.beans.factory.InitializingBean;
  * Date: Nov 26, 2003<br/>
  * $Id$
  */
-public class ServiceCache extends ApplicationObjectSupport implements InitializingBean {
+public class ServiceCache extends ApplicationObjectSupport {
 
     public static final long INTEGRITY_CHECK_FREQUENCY = 4000; // 4 seconds
+    private ServerPolicyFactory policyFactory;
     //public static final long INTEGRITY_CHECK_FREQUENCY = 10;
 
+    /**
+     * Constructor for bean usage via subclassing.
+     */
+    public ServiceCache(ServerPolicyFactory policyFactory) {
+        if (policyFactory == null) {
+            throw new IllegalArgumentException("Policy Factory is required");
+        }
+        this.policyFactory = policyFactory;
+    }
 
     public synchronized void initiateIntegrityCheckProcess() {
         if (!running) {
@@ -192,8 +200,7 @@ public class ServiceCache extends ApplicationObjectSupport implements Initializi
         }
         ServerAssertion serverPolicy = null;
         try {
-            serverPolicy = ServerPolicyFactory.getInstance().makeServerPolicy(service.rootAssertion());
-
+            serverPolicy = policyFactory.makeServerPolicy(service.rootAssertion());
             // cache the service
             services.put(key, service);
             // cache the server policy for this service
@@ -355,6 +362,7 @@ public class ServiceCache extends ApplicationObjectSupport implements Initializi
 
                 // get db versions
                 try {
+                    ServiceManager serviceManager = (ServiceManager)getApplicationContext().getBean("serviceManager");
                     dbversions = serviceManager.getServiceVersions();
                 } catch (FindException e) {
                     logger.log(Level.SEVERE, "error getting versions. " +
@@ -413,6 +421,7 @@ public class ServiceCache extends ApplicationObjectSupport implements Initializi
                             Long svcid = (Long)i.next();
                             PublishedService toUpdateOrAdd = null;
                             try {
+                                ServiceManager serviceManager = (ServiceManager)getApplicationContext().getBean("serviceManager");
                                 toUpdateOrAdd = serviceManager.findByPrimaryKey(svcid.longValue());
                             } catch (FindException e) {
                                 toUpdateOrAdd = null;
@@ -447,8 +456,8 @@ public class ServiceCache extends ApplicationObjectSupport implements Initializi
         }
     }
 
-    public void setServiceManager(ServiceManager serviceManager) {
-        this.serviceManager = serviceManager;
+    public void setPolicyFactory(ServerPolicyFactory policyFactory) {
+        this.policyFactory = policyFactory;
     }
 
     // the cache data itself
@@ -468,11 +477,4 @@ public class ServiceCache extends ApplicationObjectSupport implements Initializi
     // TODO replace with Jgroups notifications
     private final Timer checker = new Timer(true); // Don't use Background since this is high priority
     private boolean running = false;
-    private ServiceManager serviceManager;
-
-    public void afterPropertiesSet() throws Exception {
-        if (serviceManager == null) {
-            throw new IllegalArgumentException("Service Manager is required");
-        }
-    }
 }

@@ -9,7 +9,6 @@ package com.l7tech.server.identity.fed;
 import com.l7tech.common.security.TrustedCert;
 import com.l7tech.common.util.CertUtils;
 import com.l7tech.common.util.KeystoreUtils;
-import com.l7tech.common.util.Locator;
 import com.l7tech.identity.*;
 import com.l7tech.identity.cert.ClientCertManager;
 import com.l7tech.identity.cert.TrustedCertManager;
@@ -20,6 +19,7 @@ import com.l7tech.policy.assertion.credential.CredentialFormat;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.assertion.credential.http.HttpDigest;
 import com.l7tech.server.identity.PersistentIdentityProvider;
+import org.springframework.context.ApplicationContext;
 
 import java.io.IOException;
 import java.security.GeneralSecurityException;
@@ -30,8 +30,6 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-
-import org.springframework.context.ApplicationContext;
 
 /**
  * The Federated Identity Provider allows authorization of {@link User}s and {@link Group}s
@@ -50,11 +48,14 @@ public class FederatedIdentityProvider extends PersistentIdentityProvider {
             throw new IllegalArgumentException("Config must be an instance of FederatedIdentityProviderConfig");
         this.providerConfig = (FederatedIdentityProviderConfig)config;
         this.applicationContext = applicationContext;
+        if (applicationContext == null) {
+            throw new IllegalArgumentException("Application Context is required");
+        }
 
-        this.userManager = new FederatedUserManager(this);
+        this.userManager = new FederatedUserManager(this, applicationContext);
         this.groupManager = new FederatedGroupManager(this);
-        this.trustedCertManager = (TrustedCertManager)Locator.getDefault().lookup(TrustedCertManager.class);
-        this.clientCertManager = (ClientCertManager)Locator.getDefault().lookup(ClientCertManager.class);
+        this.trustedCertManager = (TrustedCertManager)applicationContext.getBean("trustedCertManager");
+        this.clientCertManager = (ClientCertManager)applicationContext.getBean("clientCertManager");
 
         long[] certOids = providerConfig.getTrustedCertOids();
         for ( int i = 0; i < certOids.length; i++ ) {

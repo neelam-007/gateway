@@ -6,7 +6,6 @@ import EDU.oswego.cs.dl.util.concurrent.WriterPreferenceReadWriteLock;
 import com.l7tech.common.util.CertUtils;
 import com.l7tech.common.util.HexUtils;
 import com.l7tech.common.util.KeystoreUtils;
-import com.l7tech.common.util.Locator;
 import com.l7tech.common.xml.saml.SamlAssertion;
 import com.l7tech.identity.*;
 import com.l7tech.identity.cert.ClientCertManager;
@@ -40,20 +39,23 @@ import java.util.logging.Logger;
 
 /**
  * Server-side implementation of the LDAP provider.
- *
+ * <p/>
  * This handles any type of directory thgough a LdapIdentityProviderConfig
- *
+ * <p/>
  * <br/><br/>
  * LAYER 7 TECHNOLOGIES, INC<br/>
  * User: flascell<br/>
  * Date: Jan 21, 2004<br/>
  * $Id$<br/>
- *
  */
 public class LdapIdentityProvider implements IdentityProvider {
-    /** LDAP connection attempts will fail after 5 seconds' wait */
+    /**
+     * LDAP connection attempts will fail after 5 seconds' wait
+     */
     public static final String LDAP_CONNECT_TIMEOUT = new Integer(5 * 1000).toString();
-    /** An unused LDAP connection will be closed after 30 seconds of inactivity */
+    /**
+     * An unused LDAP connection will be closed after 30 seconds of inactivity
+     */
     public static final String LDAP_POOL_IDLE_TIMEOUT = new Integer(30 * 1000).toString();
     private ApplicationContext applicationContext;
 
@@ -102,7 +104,7 @@ public class LdapIdentityProvider implements IdentityProvider {
 
     /**
      * @return The ldap url that was last used to successfully connect to the ldap directory. May be null if
-     * previous attempt failed on all available urls.
+     *         previous attempt failed on all available urls.
      */
     String getLastWorkingLdapUrl() {
         Sync read = fallbackLock.readLock();
@@ -136,11 +138,11 @@ public class LdapIdentityProvider implements IdentityProvider {
                     if (ldapUrls[i] == urlThatFailed) {
                         failurePos = i;
                         urlStatus[i] = new Long(System.currentTimeMillis());
-                        logger.info("Blacklisting url for next " + (retryFailedConnectionTimeout/1000) +
-                                    " seconds : " + ldapUrls[i]);
+                        logger.info("Blacklisting url for next " + (retryFailedConnectionTimeout / 1000) +
+                          " seconds : " + ldapUrls[i]);
                     }
                 }
-                if (failurePos > (ldapUrls.length-1)) {
+                if (failurePos > (ldapUrls.length - 1)) {
                     throw new RuntimeException("passed a url not in list"); // this should not happen
                 }
             }
@@ -183,7 +185,7 @@ public class LdapIdentityProvider implements IdentityProvider {
         final Object payload = pc.getPayload();
         if (format == CredentialFormat.CLEARTEXT) {
             // basic authentication
-            boolean res = userManager.authenticateBasic( realUser.getDn(), new String(pc.getCredentials()) );
+            boolean res = userManager.authenticateBasic(realUser.getDn(), new String(pc.getCredentials()));
             if (res) {
                 // success
                 return realUser;
@@ -203,27 +205,27 @@ public class LdapIdentityProvider implements IdentityProvider {
             String qop = (String)authParams.get(HttpDigest.PARAM_QOP);
             String nonce = (String)authParams.get(HttpDigest.PARAM_NONCE);
 
-            String a2 = (String)authParams.get( HttpDigest.PARAM_METHOD ) + ":" +
-                        (String)authParams.get( HttpDigest.PARAM_URI );
+            String a2 = (String)authParams.get(HttpDigest.PARAM_METHOD) + ":" +
+              (String)authParams.get(HttpDigest.PARAM_URI);
 
-            String ha2 = HexUtils.encodeMd5Digest( HexUtils.getMd5().digest( a2.getBytes() ) );
+            String ha2 = HexUtils.encodeMd5Digest(HexUtils.getMd5().digest(a2.getBytes()));
 
             String serverDigestValue;
             if (!HttpDigest.QOP_AUTH.equals(qop))
                 serverDigestValue = dbPassHash + ":" + nonce + ":" + ha2;
             else {
-                String nc = (String)authParams.get( HttpDigest.PARAM_NC );
-                String cnonce = (String)authParams.get( HttpDigest.PARAM_CNONCE );
+                String nc = (String)authParams.get(HttpDigest.PARAM_NC);
+                String cnonce = (String)authParams.get(HttpDigest.PARAM_CNONCE);
 
                 serverDigestValue = dbPassHash + ":" + nonce + ":" + nc + ":"
-                        + cnonce + ":" + qop + ":" + ha2;
+                  + cnonce + ":" + qop + ":" + ha2;
             }
 
-            String expectedResponse = HexUtils.encodeMd5Digest( HexUtils.getMd5().digest( serverDigestValue.getBytes() ) );
+            String expectedResponse = HexUtils.encodeMd5Digest(HexUtils.getMd5().digest(serverDigestValue.getBytes()));
             String response = new String(credentials);
 
             String login = pc.getLogin();
-            if ( response.equals( expectedResponse ) ) {
+            if (response.equals(expectedResponse)) {
                 logger.info("User " + login + " authenticated successfully with digest credentials.");
                 return realUser;
             } else {
@@ -244,13 +246,13 @@ public class LdapIdentityProvider implements IdentityProvider {
                         requestCert = ((SamlAssertion)payload).getSubjectCertificate();
                     } else
                         throw new BadCredentialsException("Unsupported SAML Assertion type: " +
-                                                          payload.getClass().getName());
+                          payload.getClass().getName());
                 }
 
-                if ( requestCert == null ) {
+                if (requestCert == null) {
                     String err = "Request was supposed to contain a certificate, but does not";
                     logger.severe(err);
-                    throw new MissingCredentialsException( err );
+                    throw new MissingCredentialsException(err);
                 }
                 // Check whether the client cert is valid (according to our root cert)
                 // (get the root cert)
@@ -265,11 +267,11 @@ public class LdapIdentityProvider implements IdentityProvider {
                 } catch (IOException e) {
                     String err = "Exception retrieving root cert " + e.getMessage();
                     logger.log(Level.SEVERE, err, e);
-                    throw new AuthenticationException( err, e );
+                    throw new AuthenticationException(err, e);
                 } catch (CertificateException e) {
                     String err = "Exception retrieving root cert " + e.getMessage();
                     logger.log(Level.SEVERE, err, e);
-                    throw new AuthenticationException( err, e );
+                    throw new AuthenticationException(err, e);
                 }
                 // (we have the root cert, verify client cert with it)
                 try {
@@ -277,31 +279,31 @@ public class LdapIdentityProvider implements IdentityProvider {
                 } catch (SignatureException e) {
                     String err = "client cert does not verify against current root ca cert. maybe our root cert changed since this cert was created.";
                     logger.log(Level.WARNING, err, e);
-                    throw new BadCredentialsException( err, e );
+                    throw new BadCredentialsException(err, e);
                 } catch (GeneralSecurityException e) {
                     String err = "Exception verifying client cert " + e.getMessage();
                     logger.log(Level.SEVERE, err, e);
-                    throw new BadCredentialsException( err, e );
+                    throw new BadCredentialsException(err, e);
                 }
                 logger.finest("Verification OK - client cert is valid.");
                 // End of Check
 
-                ClientCertManager man = (ClientCertManager)Locator.getDefault().lookup(ClientCertManager.class);
+                ClientCertManager man = (ClientCertManager)applicationContext.getBean("clientCertManager");
                 try {
                     dbCert = (X509Certificate)man.getUserCert(realUser);
                 } catch (FindException e) {
                     logger.log(Level.SEVERE, "FindException exception looking for user cert", e);
                     dbCert = null;
                 }
-                if ( dbCert == null ) {
+                if (dbCert == null) {
                     String err = "No certificate found for user " + realUser.getDn();
                     logger.warning(err);
-                    throw new InvalidClientCertificateException( err );
+                    throw new InvalidClientCertificateException(err);
                 }
 
                 logger.fine("Request cert serial# is " + requestCert.getSerialNumber().toString());
-                if ( CertUtils.certsAreEqual(requestCert, dbCert) ) {
-                    logger.finest("Authenticated user " + realUser.getDn() + " using a client certificate" );
+                if (CertUtils.certsAreEqual(requestCert, dbCert)) {
+                    logger.finest("Authenticated user " + realUser.getDn() + " using a client certificate");
                     // remember that this cert was used at least once successfully
                     try {
                         man.forbidCertReset(realUser);
@@ -311,9 +313,9 @@ public class LdapIdentityProvider implements IdentityProvider {
                     return realUser;
                 } else {
                     String err = "Failed to authenticate user " + realUser.getDn() + " using a client certificate " +
-                                 "(request certificate doesn't match database's)";
+                      "(request certificate doesn't match database's)";
                     logger.warning(err);
-                    throw new InvalidClientCertificateException( err );
+                    throw new InvalidClientCertificateException(err);
                 }
             } else {
                 String msg = "Attempt to authenticate using unsupported method on this provider: " + pc.getFormat();
@@ -326,7 +328,7 @@ public class LdapIdentityProvider implements IdentityProvider {
     /**
      * searches the ldap provider for identities
      *
-     * @param types any combination of EntityType.USER and or EntityType.GROUP
+     * @param types        any combination of EntityType.USER and or EntityType.GROUP
      * @param searchString the search string for the users and group names, use "*" for all
      * @return a collection containing EntityHeader objects
      */
@@ -337,7 +339,8 @@ public class LdapIdentityProvider implements IdentityProvider {
         boolean wantUsers = false;
         boolean wantGroups = false;
         for (int i = 0; i < types.length; i++) {
-            if (types[i] == EntityType.USER) wantUsers = true;
+            if (types[i] == EntityType.USER)
+                wantUsers = true;
             else if (types[i] == EntityType.GROUP) wantGroups = true;
         }
         if (!wantUsers && !wantGroups) {
@@ -346,8 +349,7 @@ public class LdapIdentityProvider implements IdentityProvider {
         Collection output = new TreeSet(new EntityHeaderComparator());
         DirContext context = null;
         String filter = null;
-        try
-        {
+        try {
             NamingEnumeration answer = null;
             // search string for users and or groups based on passed types wanted
             if (wantUsers && wantGroups) {
@@ -356,7 +358,8 @@ public class LdapIdentityProvider implements IdentityProvider {
                 // no group mapping is now allowed
                 if (grpFilter == null) {
                     filter = userFilter;
-                } else filter = "(|" + userFilter + grpFilter + ")";
+                } else
+                    filter = "(|" + userFilter + grpFilter + ")";
             } else if (wantUsers) {
                 filter = userSearchFilterWithParam(searchString);
             } else if (wantGroups) {
@@ -377,19 +380,21 @@ public class LdapIdentityProvider implements IdentityProvider {
                 String dn = sr.getName() + "," + config.getSearchBase();
                 EntityHeader header = searchResultToHeader(sr, dn);
                 // if we successfully constructed a header, add it to result list
-                if (header != null) output.add(header);
-                else logger.warning("entry not valid or objectclass not supported for dn=" + dn + ". this " +
-                                    "entry will not be presented as part of the search results.");
+                if (header != null)
+                    output.add(header);
+                else
+                    logger.warning("entry not valid or objectclass not supported for dn=" + dn + ". this " +
+                      "entry will not be presented as part of the search results.");
             }
             if (answer != null) answer.close();
         } catch (NamingException e) {
             logger.log(Level.WARNING, "error searching with filter: " + filter, e);
         } finally {
-            if ( context != null ) {
+            if (context != null) {
                 try {
                     context.close();
-                } catch ( NamingException e ) {
-                    logger.log( Level.WARNING, "Caught NamingException while closing LDAP Context", e );
+                } catch (NamingException e) {
+                    logger.log(Level.WARNING, "Caught NamingException while closing LDAP Context", e);
                 }
             }
         }
@@ -409,13 +414,13 @@ public class LdapIdentityProvider implements IdentityProvider {
         UserMappingConfig[] userTypes = config.getUserMappings();
         for (int i = 0; i < userTypes.length; i++) {
             output.append("(&" +
-                            "(objectClass=" + userTypes[i].getObjClass() + ")" +
-                            "(" + userTypes[i].getLoginAttrName() + "=" + param + ")" +
-                          ")");
+              "(objectClass=" + userTypes[i].getObjClass() + ")" +
+              "(" + userTypes[i].getLoginAttrName() + "=" + param + ")" +
+              ")");
             output.append("(&" +
-                            "(objectClass=" + userTypes[i].getObjClass() + ")" +
-                            "(" + userTypes[i].getNameAttrName() + "=" + param + ")" +
-                          ")");
+              "(objectClass=" + userTypes[i].getObjClass() + ")" +
+              "(" + userTypes[i].getNameAttrName() + "=" + param + ")" +
+              ")");
         }
         output.append(")");
         return output.toString();
@@ -423,6 +428,7 @@ public class LdapIdentityProvider implements IdentityProvider {
 
     /**
      * builds a search filter for all group object classes based on the config object
+     *
      * @return the search filter or null if no group mappings are declared for this config
      */
     public String groupSearchFilterWithParam(String param) {
@@ -432,9 +438,9 @@ public class LdapIdentityProvider implements IdentityProvider {
         StringBuffer output = new StringBuffer("(|");
         for (int i = 0; i < groupTypes.length; i++) {
             output.append("(&" +
-                            "(objectClass=" + groupTypes[i].getObjClass() + ")" +
-                            "(" + groupTypes[i].getNameAttrName() + "=" + param + ")" +
-                          ")");
+              "(objectClass=" + groupTypes[i].getObjClass() + ")" +
+              "(" + groupTypes[i].getNameAttrName() + "=" + param + ")" +
+              ")");
         }
         output.append(")");
         return output.toString();
@@ -454,8 +460,8 @@ public class LdapIdentityProvider implements IdentityProvider {
             // when getting javax.naming.CommunicationException at
             env.put(Context.PROVIDER_URL, ldapurl);
             env.put("com.sun.jndi.ldap.connect.pool", "true");
-            env.put("com.sun.jndi.ldap.connect.timeout", LDAP_CONNECT_TIMEOUT );
-            env.put("com.sun.jndi.ldap.connect.pool.timeout", LDAP_POOL_IDLE_TIMEOUT );
+            env.put("com.sun.jndi.ldap.connect.timeout", LDAP_CONNECT_TIMEOUT);
+            env.put("com.sun.jndi.ldap.connect.pool.timeout", LDAP_POOL_IDLE_TIMEOUT);
             String dn = config.getBindDN();
             if (dn != null && dn.length() > 0) {
                 String pass = config.getBindPasswd();
@@ -530,15 +536,15 @@ public class LdapIdentityProvider implements IdentityProvider {
                 continue;
             }
             filter = "(|" +
-                         "(&" +
-                            "(objectClass=" + userTypes[i].getObjClass() + ")" +
-                            "(" + userTypes[i].getLoginAttrName() + "=*)" +
-                         ")" +
-                         "(&" +
-                            "(objectClass=" + userTypes[i].getObjClass() + ")" +
-                            "(" + userTypes[i].getNameAttrName() + "=*)" +
-                         ")" +
-                      ")";
+              "(&" +
+              "(objectClass=" + userTypes[i].getObjClass() + ")" +
+              "(" + userTypes[i].getLoginAttrName() + "=*)" +
+              ")" +
+              "(&" +
+              "(objectClass=" + userTypes[i].getObjClass() + ")" +
+              "(" + userTypes[i].getNameAttrName() + "=*)" +
+              ")" +
+              ")";
             try {
                 answer = context.search(config.getSearchBase(), filter, sc);
                 while (answer.hasMore()) {
@@ -565,9 +571,9 @@ public class LdapIdentityProvider implements IdentityProvider {
         boolean atLeastOneGroup = false;
         for (int i = 0; i < groupTypes.length; i++) {
             filter = "(&" +
-                         "(objectClass=" + groupTypes[i].getObjClass() + ")" +
-                         "(" + groupTypes[i].getNameAttrName() + "=*)" +
-                     ")";
+              "(objectClass=" + groupTypes[i].getObjClass() + ")" +
+              "(" + groupTypes[i].getNameAttrName() + "=*)" +
+              ")";
             try {
                 answer = context.search(config.getSearchBase(), filter, sc);
                 while (answer.hasMore()) {
@@ -600,7 +606,7 @@ public class LdapIdentityProvider implements IdentityProvider {
             if (error.length() > 0) error.append('\n');
             error.append("The following user mapping(s) do not define login attribute.");
             for (Iterator iterator = userMappingsWithoutLoginAttribute.iterator(); iterator.hasNext();) {
-                UserMappingConfig userMappingConfig = (UserMappingConfig) iterator.next();
+                UserMappingConfig userMappingConfig = (UserMappingConfig)iterator.next();
                 error.append(" " + userMappingConfig.getObjClass());
             }
         }
@@ -609,11 +615,11 @@ public class LdapIdentityProvider implements IdentityProvider {
             if (error.length() > 0) error.append('\n');
             error.append("The following mappings caused errors:");
             for (Iterator iterator = offensiveUserMappings.iterator(); iterator.hasNext();) {
-                UserMappingConfig userMappingConfig = (UserMappingConfig) iterator.next();
+                UserMappingConfig userMappingConfig = (UserMappingConfig)iterator.next();
                 error.append(" User mapping " + userMappingConfig.getObjClass());
             }
             for (Iterator iterator = offensiveGroupMappings.iterator(); iterator.hasNext();) {
-                GroupMappingConfig groupMappingConfig = (GroupMappingConfig) iterator.next();
+                GroupMappingConfig groupMappingConfig = (GroupMappingConfig)iterator.next();
                 error.append(" Group mapping " + groupMappingConfig.getObjClass());
 
             }
@@ -633,10 +639,11 @@ public class LdapIdentityProvider implements IdentityProvider {
         if (error.length() > 0) {
             logger.fine("Test produced following error(s): " + error.toString());
             throw new InvalidIdProviderCfgException(error.toString());
-        } else logger.finest("this ldap config was tested successfully");
+        } else
+            logger.finest("this ldap config was tested successfully");
     }
 
-    public void preSaveClientCert( User user, X509Certificate[] certChain ) throws ClientCertManager.VetoSave {
+    public void preSaveClientCert(User user, X509Certificate[] certChain) throws ClientCertManager.VetoSave {
         // ClientCertManagerImp's default rules are OK
     }
 
@@ -646,19 +653,19 @@ public class LdapIdentityProvider implements IdentityProvider {
      * IF the attribute is present AND IF one of those attributes is set:
      * 0x00000002 	The user account is disabled.
      * 0x00000010 	The account is currently locked out.
-     *
+     * <p/>
      * Otherwise, will return true.
-     *
+     * <p/>
      * Note: not sure what to do about these flag:
      * 0x00800000 	The user password has expired. This flag is created by the system using data from the
-     *              Pwd-Last-Set attribute and the domain policy.
+     * Pwd-Last-Set attribute and the domain policy.
      * 0x00040000 	The user must log on using a smart card.
-     *
+     * <p/>
      * See bugzilla #1116 for the justification of this check.
      */
     private boolean isValidEntryBasedOnUserAccountControlAttribute(Attributes attibutes) {
-        final long DISABLED_FLAG    = 0x00000002;
-        final long LOCKED_FLAG      = 0x00000010;
+        final long DISABLED_FLAG = 0x00000002;
+        final long LOCKED_FLAG = 0x00000010;
         Attribute userAccountControlAttr = attibutes.get("userAccountControl");
         if (userAccountControlAttr != null && userAccountControlAttr.size() > 0) {
             Object found = null;
@@ -674,7 +681,7 @@ public class LdapIdentityProvider implements IdentityProvider {
                 value = (Long)found;
             } else {
                 logger.severe("FOUND userAccountControl attribute but " +
-                              "is of unexpected type: " + found.getClass().getName());
+                  "is of unexpected type: " + found.getClass().getName());
             }
             if (value != null) {
                 if ((value.longValue() & DISABLED_FLAG) == DISABLED_FLAG) {
@@ -691,9 +698,10 @@ public class LdapIdentityProvider implements IdentityProvider {
 
     /**
      * Constructs an EntityHeader for the dn passed.
+     *
      * @param sr
      * @return the EntityHeader for the dn or null if the object class is not supported or if the entity
-     * should be ignored (perhaps disabled)
+     *         should be ignored (perhaps disabled)
      */
     EntityHeader searchResultToHeader(SearchResult sr, String dn) {
         Attributes atts = sr.getAttributes();
@@ -701,7 +709,7 @@ public class LdapIdentityProvider implements IdentityProvider {
         Attribute objectclasses = atts.get("objectclass");
         // check if it's a user
         UserMappingConfig[] userTypes = config.getUserMappings();
-        for (int i = 0; i < userTypes.length; i ++) {
+        for (int i = 0; i < userTypes.length; i++) {
             String userclass = userTypes[i].getObjClass();
             if (attrContainsCaseIndependent(objectclasses, userclass)) {
                 if (!isValidEntryBasedOnUserAccountControlAttribute(atts)) return null;
@@ -736,7 +744,7 @@ public class LdapIdentityProvider implements IdentityProvider {
         }
         // check that it's a group
         GroupMappingConfig[] groupTypes = config.getGroupMappings();
-        for (int i = 0; i < groupTypes.length; i ++) {
+        for (int i = 0; i < groupTypes.length; i++) {
             if (attrContainsCaseIndependent(objectclasses, groupTypes[i].getObjClass())) {
                 String groupName = null;
                 Attribute valuesWereLookingFor = atts.get(groupTypes[i].getNameAttrName());
@@ -775,7 +783,7 @@ public class LdapIdentityProvider implements IdentityProvider {
     static Object extractOneAttributeValue(Attributes attributes, String attrName) throws NamingException {
         Attribute valuesWereLookingFor = attributes.get(attrName);
         if (valuesWereLookingFor != null && valuesWereLookingFor.size() > 0) {
-                return valuesWereLookingFor.get(0);
+            return valuesWereLookingFor.get(0);
         }
         return null;
     }

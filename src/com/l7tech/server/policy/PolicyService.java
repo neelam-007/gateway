@@ -30,10 +30,10 @@ import com.l7tech.server.policy.assertion.ServerAssertion;
 import com.l7tech.server.policy.filter.FilterManager;
 import com.l7tech.server.policy.filter.FilteringException;
 import com.l7tech.server.secureconversation.SecureConversationContextManager;
+import org.springframework.context.support.ApplicationObjectSupport;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.xml.sax.SAXException;
-import org.springframework.context.support.ApplicationObjectSupport;
 
 import javax.xml.soap.SOAPConstants;
 import java.io.IOException;
@@ -74,7 +74,7 @@ public class PolicyService extends ApplicationObjectSupport {
         ServiceInfo getPolicy(String serviceId);
     }
 
-    public PolicyService(PrivateKey privateServerKey, X509Certificate serverCert) {
+    public PolicyService(PrivateKey privateServerKey, X509Certificate serverCert, ServerPolicyFactory policyFactory) {
         // populate all possible credentials sources
         allCredentialAssertions = new ArrayList();
         for (int i = 0; i < CredentialSourceAssertion.ALL_CREDENTIAL_ASSERTIONS_TYPES.length; i++) {
@@ -85,7 +85,17 @@ public class PolicyService extends ApplicationObjectSupport {
             throw new IllegalArgumentException("Server key and server cert must be provided to create a TokenService");
         }
         this.privateServerKey = privateServerKey;
+        if (privateServerKey == null) {
+            throw new IllegalArgumentException("Private Key is required");
+        }
         this.serverCert = serverCert;
+        if (serverCert == null) {
+            throw new IllegalArgumentException("Server Certificate is required");
+        }
+        this.policyFactory = policyFactory;
+        if (policyFactory == null) {
+            throw new IllegalArgumentException("Policy Factory is required");
+        }
     }
 
 
@@ -377,7 +387,7 @@ public class PolicyService extends ApplicationObjectSupport {
         addIdAssertionToList(targetPolicy, allTargetIdentities);
         if (allTargetIdentities.size() > 0)
             base.addChild(new OneOrMoreAssertion(allTargetIdentities));
-        return ServerPolicyFactory.getInstance().makeServerPolicy(base);
+        return policyFactory.makeServerPolicy(base);
     }
 
     private void addIdAssertionToList(Assertion assertion, List receptacle) {
@@ -412,5 +422,6 @@ public class PolicyService extends ApplicationObjectSupport {
     private final List allCredentialAssertions;
     private final PrivateKey privateServerKey;
     private final X509Certificate serverCert;
+    private final ServerPolicyFactory policyFactory;
     private final Logger logger = Logger.getLogger(PolicyService.class.getName());
 }

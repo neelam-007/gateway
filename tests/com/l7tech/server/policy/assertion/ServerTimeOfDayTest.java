@@ -78,7 +78,7 @@ public class ServerTimeOfDayTest {
     }
 
     private void testCondition() throws Exception {
-        PolicyEnforcementContext context = new PolicyEnforcementContext(new Message(), new Message(), ApplicationContexts.NULL_CONTEXT);
+        PolicyEnforcementContext context = new PolicyEnforcementContext(new Message(), new Message());
         boolean result = ((new ServerTimeRange(condition)).checkRequest(context) == AssertionStatus.NONE);
         if (result) System.out.println("passed");
         else System.out.println("failed");

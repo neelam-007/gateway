@@ -9,12 +9,12 @@ package com.l7tech.server.audit;
 import com.l7tech.common.audit.AdminAuditRecord;
 import com.l7tech.common.audit.AuditRecord;
 import com.l7tech.common.audit.MessageSummaryAuditRecord;
-import com.l7tech.common.util.Locator;
 import com.l7tech.objectmodel.HibernatePersistenceContext;
 import com.l7tech.server.ServerConfig;
 import net.sf.hibernate.HibernateException;
 import net.sf.hibernate.Session;
 import net.sf.hibernate.Transaction;
+import org.springframework.context.ApplicationContext;
 
 import java.util.HashSet;
 import java.util.Iterator;
@@ -146,18 +146,21 @@ public class AuditContext {
         return output;
     }
 
-    private AuditContext() {
+    private AuditContext(ApplicationContext ctx) {
         currentAdminThreshold = systemAdminThreshold;
         currentMessageThreshold = systemMessageThreshold;
 
-        auditRecordManager = (AuditRecordManager)Locator.getDefault().lookup(AuditRecordManager.class);
+        auditRecordManager = (AuditRecordManager)ctx.getBean("auditRecordManager");
         if (auditRecordManager == null) throw new IllegalStateException("Couldn't locate AuditRecordManager");
     }
 
-    public static AuditContext getCurrent() {
+    public static AuditContext getCurrent(ApplicationContext applicationContext) {
+        if (applicationContext == null) {
+            throw new IllegalArgumentException("Application Context is required");
+        }
         AuditContext context = (AuditContext)contextLocal.get();
         if (context == null) {
-            context = new AuditContext();
+            context = new AuditContext(applicationContext);
             contextLocal.set(context);
         }
         return context;

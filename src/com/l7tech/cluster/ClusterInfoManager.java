@@ -20,6 +20,8 @@ import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import org.springframework.context.support.ApplicationObjectSupport;
+
 /**
  * Hibernate layer over the cluster_info table.
  *
@@ -36,15 +38,7 @@ import java.util.regex.Pattern;
  * $Id$
  *
  */
-public class ClusterInfoManager {
-
-    /**
-     * get the manager
-     */
-    public static ClusterInfoManager getInstance() {
-        return SingletonHolder.singleton;
-    }
-
+public class ClusterInfoManager extends ApplicationObjectSupport {
     /**
      * returns the node id to which this server applies to
      */

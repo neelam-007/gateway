@@ -5,9 +5,15 @@ import com.l7tech.identity.StubDataStore;
 import com.l7tech.objectmodel.Entity;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
+import com.l7tech.policy.PolicyValidator;
 import com.l7tech.policy.PolicyValidatorResult;
+import com.l7tech.policy.assertion.Assertion;
+import com.l7tech.policy.wsp.WspReader;
+import org.springframework.beans.factory.InitializingBean;
+import org.springframework.context.support.ApplicationObjectSupport;
 
 import javax.wsdl.WSDLException;
+import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.StringWriter;
 import java.net.URL;
@@ -19,14 +25,17 @@ import java.util.Map;
 
 /**
  * Class ServiceAdminStub.
- * @author <a href="mailto:emarceta@layer7-tech.com>Emil Marceta</a> 
+ *
+ * @author <a href="mailto:emarceta@layer7-tech.com>Emil Marceta</a>
  */
-public class ServiceAdminStub implements ServiceAdmin {
+public class ServiceAdminStub extends ApplicationObjectSupport implements ServiceAdmin, InitializingBean {
     private Map services;
+    private PolicyValidator policyValidator;
 
     public ServiceAdminStub() {
         services = StubDataStore.defaultStore().getPublishedServices();
     }
+
     /**
      * Retreive the actual PublishedService object from it's oid.
      *
@@ -63,6 +72,7 @@ public class ServiceAdminStub implements ServiceAdmin {
 
     /**
      * saves a published service along with it's policy assertions
+     *
      * @param service
      * @return
      * @throws RemoteException
@@ -80,11 +90,12 @@ public class ServiceAdminStub implements ServiceAdmin {
 
     /**
      * deletes the service
+     *
      * @param id service id
      * @throws RemoteException
      */
     public void deletePublishedService(String id) throws RemoteException {
-          if (services.remove(new Long(id)) == null) {
+        if (services.remove(new Long(id)) == null) {
             throw new RemoteException("Could not find service oid= " + id);
         }
 
@@ -92,8 +103,16 @@ public class ServiceAdminStub implements ServiceAdmin {
 
     public PolicyValidatorResult validatePolicy(String policyXml, long serviceId) throws RemoteException {
         // todo
-        return null;
+        try {
+            PublishedService service = findServiceByID(Long.toString(serviceId));
+            Assertion assertion = WspReader.parse(policyXml);
+            return policyValidator.validate(assertion, service);
+        } catch (IOException e) {
+            logger.warn("cannot parse passed policy xml: " + policyXml, e);
+            throw new RemoteException("cannot parse passed policy xml", e);
+        }
     }
+
 
     /**
      * Returns an unmodifiable collection of <code>EntityHeader</code>
@@ -103,13 +122,13 @@ public class ServiceAdminStub implements ServiceAdmin {
      * @return A <code>Collection</code> of EntityHeader objects.
      */
     public EntityHeader[] findAllPublishedServices() throws RemoteException {
-          Collection list = new ArrayList();
+        Collection list = new ArrayList();
         for (Iterator i =
-                services.keySet().iterator(); i.hasNext();) {
-            Long key = (Long) i.next();
-            list.add(fromService((PublishedService) services.get(key)));
+          services.keySet().iterator(); i.hasNext();) {
+            Long key = (Long)i.next();
+            list.add(fromService((PublishedService)services.get(key)));
         }
-        return (EntityHeader[]) list.toArray(new EntityHeader[] {});
+        return (EntityHeader[])list.toArray(new EntityHeader[]{});
     }
 
     /**
@@ -121,22 +140,32 @@ public class ServiceAdminStub implements ServiceAdmin {
      */
     public EntityHeader[] findAllPublishedServicesByOffset(int offset, int windowSize)
       throws RemoteException {
-         Collection list = new ArrayList();
+        Collection list = new ArrayList();
         int index = 0;
         int count = 0;
         for (Iterator i =
-                services.keySet().iterator(); i.hasNext(); index++) {
-            Long key = (Long) i.next();
+          services.keySet().iterator(); i.hasNext(); index++) {
+            Long key = (Long)i.next();
 
             if (index >= offset && count <= windowSize) {
-                list.add(fromService((PublishedService) services.get(key)));
+                list.add(fromService((PublishedService)services.get(key)));
                 count++;
             }
         }
-        return (EntityHeader[]) list.toArray(new EntityHeader[] {});
+        return (EntityHeader[])list.toArray(new EntityHeader[]{});
     }
 
     private EntityHeader fromService(PublishedService s) {
         return new EntityHeader(Long.toString(s.getOid()), EntityType.SERVICE, s.getName(), null);
+    }
+
+    public void setPolicyValidator(PolicyValidator policyValidator) {
+        this.policyValidator = policyValidator;
+    }
+
+    public void afterPropertiesSet() throws Exception {
+        if (policyValidator == null) {
+            throw new IllegalArgumentException("Policy Validator is required");
+        }
     }
 }

@@ -10,6 +10,8 @@ import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import org.springframework.context.support.ApplicationObjectSupport;
+
 /**
  * Hibernate abstraction of the service_usage table.
  *
@@ -22,7 +24,7 @@ import java.util.logging.Logger;
  * $Id$<br/>
  *
  */
-public class ServiceUsageManager {
+public class ServiceUsageManager extends ApplicationObjectSupport {
 
     /**
      * retrieves all service usage recorded in database

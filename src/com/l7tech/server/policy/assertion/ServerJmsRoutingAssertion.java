@@ -15,7 +15,6 @@ import com.l7tech.common.transport.jms.JmsEndpoint;
 import com.l7tech.common.transport.jms.JmsReplyType;
 import com.l7tech.common.util.CausedIOException;
 import com.l7tech.common.util.HexUtils;
-import com.l7tech.common.util.Locator;
 import com.l7tech.common.util.XmlUtil;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.assertion.AssertionStatus;
@@ -24,6 +23,7 @@ import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.RoutingStatus;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.transport.jms.*;
+import org.springframework.context.ApplicationContext;
 
 import javax.jms.*;
 import javax.naming.Context;
@@ -41,7 +41,8 @@ import java.util.regex.Pattern;
 public class ServerJmsRoutingAssertion extends ServerRoutingAssertion {
     private JmsRoutingAssertion data;
 
-    public ServerJmsRoutingAssertion(JmsRoutingAssertion data) {
+    public ServerJmsRoutingAssertion(JmsRoutingAssertion data, ApplicationContext ctx) {
+        super(ctx);
         this.data = data;
     }
 
@@ -313,7 +314,7 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion {
 
     private JmsEndpoint getRoutedRequestEndpoint() throws FindException {
         if ( routedRequestEndpoint == null ) {
-            JmsEndpointManager mgr = (JmsEndpointManager)Locator.getDefault().lookup( JmsEndpointManager.class );
+            JmsEndpointManager mgr = (JmsEndpointManager)applicationContext.getBean("jmsEndpointManager");
             routedRequestEndpoint = mgr.findByPrimaryKey(data.getEndpointOid().longValue());
         }
         return routedRequestEndpoint;
@@ -321,7 +322,7 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion {
 
     private JmsConnection getRoutedRequestConnection() throws FindException {
         if ( routedRequestConnection == null ) {
-            JmsConnectionManager mgr = (JmsConnectionManager)Locator.getDefault().lookup( JmsConnectionManager.class );
+            JmsConnectionManager mgr = (JmsConnectionManager)applicationContext.getBean("jmsConnectionManager");
             JmsEndpoint endpoint = getRoutedRequestEndpoint();
             if ( endpoint == null ) {
                 String msg = "JmsRoutingAssertion contains a reference to nonexistent JmsEndpoint #"

@@ -6,7 +6,6 @@
 
 package com.l7tech.server.identity;
 
-import com.l7tech.common.util.Locator;
 import com.l7tech.identity.IdentityProvider;
 import com.l7tech.identity.PersistentUser;
 import com.l7tech.identity.User;
@@ -18,6 +17,7 @@ import net.sf.hibernate.Hibernate;
 import net.sf.hibernate.HibernateException;
 import net.sf.hibernate.Session;
 import net.sf.hibernate.expression.Expression;
+import org.springframework.context.ApplicationContext;
 
 import java.sql.SQLException;
 import java.util.*;
@@ -28,6 +28,15 @@ import java.util.logging.Level;
  * @version $Revision$
  */
 public abstract class PersistentUserManager extends HibernateEntityManager implements UserManager {
+    protected ApplicationContext applicationContext;
+
+    public PersistentUserManager(ApplicationContext applicationContext) {
+        this.applicationContext = applicationContext;
+        if (applicationContext == null) {
+            throw new IllegalArgumentException("Application Context is required");
+        }
+    }
+
     public User findByPrimaryKey(String oid) throws FindException {
         try {
             if (oid == null) {
@@ -292,7 +301,7 @@ public abstract class PersistentUserManager extends HibernateEntityManager imple
     protected void preDelete(PersistentUser user) throws DeleteException { }
 
     protected void revokeCert(PersistentUser originalUser) throws ObjectNotFoundException {
-        ClientCertManager man = (ClientCertManager)Locator.getDefault().lookup(ClientCertManager.class);
+        ClientCertManager man = (ClientCertManager)applicationContext.getBean("clientCertManager");
         try {
             man.revokeUserCert(originalUser);
         } catch (UpdateException e) {

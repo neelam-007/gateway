@@ -38,7 +38,7 @@ public class ClusterBootProcess implements TransactionalComponent {
 
     public void setServerConfig( ServerConfig config ) throws LifecycleException {
         this.serverConfig = config;
-        clusterInfoManager = ClusterInfoManager.getInstance();
+        clusterInfoManager = (ClusterInfoManager)config.getSpringContext().getBean("clusterInfoManager");
         multicastAddress = config.getProperty(ServerConfig.PARAM_MULTICAST_ADDRESS);
         if (multicastAddress != null && multicastAddress.length() == 0) multicastAddress = null;
     }

@@ -32,6 +32,7 @@ import org.apache.commons.httpclient.protocol.Protocol;
 import org.apache.commons.httpclient.protocol.SecureProtocolSocketFactory;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
+import org.springframework.context.ApplicationContext;
 
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManager;
@@ -56,7 +57,8 @@ public class ServerHttpRoutingAssertion extends ServerRoutingAssertion {
       ".sslSessionTimeoutSeconds";
     public static final int DEFAULT_SSL_SESSION_TIMEOUT = 10 * 60;
 
-    public ServerHttpRoutingAssertion(HttpRoutingAssertion assertion) {
+    public ServerHttpRoutingAssertion(HttpRoutingAssertion assertion, ApplicationContext ctx) {
+        super(ctx);
         this.httpRoutingAssertion = assertion;
 
         int max = httpRoutingAssertion.getMaxConnections();
@@ -68,7 +70,8 @@ public class ServerHttpRoutingAssertion extends ServerRoutingAssertion {
 
         try {
             sslContext = SSLContext.getInstance("SSL");
-            sslContext.init(null, new TrustManager[]{SslClientTrustManager.getInstance()}, null);
+            final SslClientTrustManager trustManager = (SslClientTrustManager)applicationContext.getBean("httpRoutingAssertionTrustManager");
+            sslContext.init(null, new TrustManager[]{trustManager}, null);
             final int timeout = Integer.getInteger(PROP_SSL_SESSION_TIMEOUT, DEFAULT_SSL_SESSION_TIMEOUT).intValue();
             sslContext.getClientSessionContext().setSessionTimeout(timeout);
         } catch (Exception e) {

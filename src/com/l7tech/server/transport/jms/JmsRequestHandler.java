@@ -16,8 +16,8 @@ import com.l7tech.server.MessageProcessor;
 import com.l7tech.server.StashManagerFactory;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.PolicyVersionException;
-import org.xml.sax.SAXException;
 import org.springframework.context.ApplicationContext;
+import org.xml.sax.SAXException;
 
 import javax.jms.*;
 import java.io.ByteArrayInputStream;
@@ -33,12 +33,14 @@ import java.util.logging.Logger;
  */
 class JmsRequestHandler {
     final private ApplicationContext springContext;
+    final private MessageProcessor messageProcessor;
 
-    public JmsRequestHandler(ApplicationContext springContext) {
-        this.springContext = springContext;
-        if (springContext == null) {
+    public JmsRequestHandler(ApplicationContext ctx) {
+        this.springContext = ctx;
+        if (ctx == null) {
             throw new IllegalArgumentException("Spring Context is required");
         }
+        messageProcessor = (MessageProcessor)ctx.getBean("messageProcessor");
     }
 
     /**
@@ -76,8 +78,7 @@ class JmsRequestHandler {
             });
 
             final PolicyEnforcementContext context = new PolicyEnforcementContext(request,
-                                                                                  new com.l7tech.common.message.Message(),
-                                                                                  springContext);
+                                                                                  new com.l7tech.common.message.Message());
             AssertionStatus status = AssertionStatus.UNDEFINED;
 
             Message jmsResponse = null;
@@ -90,7 +91,7 @@ class JmsRequestHandler {
 
                 InputStream responseStream = null;
                 try {
-                    status = MessageProcessor.getInstance().processMessage(context);
+                    status = messageProcessor.processMessage(context);
                     _logger.finest("Policy resulted in status " + status);
                     responseStream = context.getResponse().getMimeKnob().getEntireMessageBodyAsInputStream();
                 } catch ( PolicyVersionException pve ) {

@@ -14,13 +14,15 @@ import com.l7tech.server.policy.assertion.ServerAssertion;
 
 import java.io.IOException;
 
+import org.springframework.context.ApplicationContext;
+
 /**
  * @author alex
  * @version $Revision$
  */
 public class ServerOneOrMoreAssertion extends ServerCompositeAssertion implements ServerAssertion {
-    public ServerOneOrMoreAssertion( OneOrMoreAssertion data ) {
-        super( data );
+    public ServerOneOrMoreAssertion( OneOrMoreAssertion data, ApplicationContext applicationContext) {
+        super(data, applicationContext);
         this.data = data;
     }
 

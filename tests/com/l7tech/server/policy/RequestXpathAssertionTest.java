@@ -5,7 +5,6 @@ import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.xml.TestDocuments;
 import com.l7tech.common.xml.XpathEvaluator;
 import com.l7tech.common.xml.XpathExpression;
-import com.l7tech.common.ApplicationContexts;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.RequestXpathAssertion;
 import com.l7tech.server.message.PolicyEnforcementContext;
@@ -52,7 +51,7 @@ public class RequestXpathAssertionTest extends TestCase {
         Message m = new Message();
         m.initialize(testDoc);
 
-        return serverAssertion.checkRequest(new PolicyEnforcementContext(m, new Message(), ApplicationContexts.NULL_CONTEXT));
+        return serverAssertion.checkRequest(new PolicyEnforcementContext(m, new Message()));
     }
 
     private ServerRequestXpathAssertion getAssertion(XpathExpression expression) {

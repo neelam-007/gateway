@@ -25,10 +25,18 @@ import com.l7tech.service.PublishedService;
  * @version $Revision$
  */
 public class MessageSummaryAuditFactory {
-    private MessageSummaryAuditFactory() {}
-    private static String nodeId = ClusterInfoManager.getInstance().thisNodeId();
+    private final ClusterInfoManager clusterInfoManager;
+    private final String nodeId;
+    public MessageSummaryAuditFactory(ClusterInfoManager clusterInfoManager) {
+        this.clusterInfoManager = clusterInfoManager;
+        if (clusterInfoManager == null) {
+            throw new IllegalArgumentException("Cluster Info Manager is required");
+        }
+        nodeId = clusterInfoManager.thisNodeId();
 
-    public static MessageSummaryAuditRecord makeEvent(final PolicyEnforcementContext context, AssertionStatus status ) {
+    }
+
+    public MessageSummaryAuditRecord makeEvent(final PolicyEnforcementContext context, AssertionStatus status ) {
         String requestXml = null;
         int requestContentLength = -1;
         String responseXml = null;

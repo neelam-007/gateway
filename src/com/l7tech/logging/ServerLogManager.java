@@ -12,6 +12,7 @@ import java.util.Collection;
 import java.util.Collections;
 
 import org.springframework.context.support.ApplicationObjectSupport;
+import org.springframework.beans.BeansException;
 
 /**
  * SSG log manager that sets the right handlers to the root logger and
@@ -37,10 +38,6 @@ import org.springframework.context.support.ApplicationObjectSupport;
  * Time: 11:42:08 AM<br/><br/>
  */
 public class ServerLogManager extends ApplicationObjectSupport {
-
-    public static ServerLogManager getInstance() {
-        return SingletonHolder.singleton;
-    }
 
     /**
      * Retrieve the system logs in between the startMsgNumber and endMsgNumber specified
@@ -106,13 +103,15 @@ public class ServerLogManager extends ApplicationObjectSupport {
         return res;
     }
 
-
+    protected void initApplicationContext() throws BeansException {
+        ClusterInfoManager cim = (ClusterInfoManager)getApplicationContext().getBean("clusterInfoManager");
+        nodeid = cim.thisNodeId();
+    }
     // ************************************************
     // PRIVATES
     // ************************************************
 
     private ServerLogManager() {
-        nodeid = ClusterInfoManager.getInstance().thisNodeId();
     }
 
     private Collection getRecordsInRange(String nodeId, int maxSize, HibernatePersistenceContext context,
@@ -212,12 +211,7 @@ public class ServerLogManager extends ApplicationObjectSupport {
         }
     }
 
-
-    private static class SingletonHolder {
-        private static ServerLogManager singleton = new ServerLogManager();
-    }
-
-    private final String nodeid;
+    private String nodeid;
 
     private static final String NODEID_COLNAME = "nodeId";
     private static final String OID_COLNAME = "oid";

@@ -6,8 +6,8 @@
 
 package com.l7tech.server.transport.http;
 
-import com.l7tech.common.util.Locator;
 import com.l7tech.identity.cert.TrustedCertManager;
+import org.springframework.beans.factory.InitializingBean;
 
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.TrustManagerFactory;
@@ -24,16 +24,10 @@ import java.util.logging.Logger;
  * @author alex
  * @version $Revision$
  */
-public class SslClientTrustManager implements X509TrustManager {
-    private static class SingletonHolder {
-        private static final SslClientTrustManager singleton = new SslClientTrustManager();
-    }
+public class SslClientTrustManager implements X509TrustManager, InitializingBean {
+    private TrustedCertManager trustedCertManager;
 
-    public static SslClientTrustManager getInstance() {
-        return SingletonHolder.singleton;
-    }
-
-    private SslClientTrustManager() {
+    public SslClientTrustManager() {
         TrustManagerFactory tmf = null;
         try {
             tmf = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
@@ -76,13 +70,20 @@ public class SslClientTrustManager implements X509TrustManager {
             return;
         } catch ( CertificateException unused ) {
             serverCert.checkValidity();
-
-            // Not trusted by cartel, consult SSG trust store
-            TrustedCertManager manager = (TrustedCertManager)Locator.getDefault().lookup(TrustedCertManager.class);
-            manager.checkSslTrust(certs);
+            trustedCertManager.checkSslTrust(certs);
         }
+    }
+
+    public void setTrustedCertManager(TrustedCertManager trustedCertManager) {
+        this.trustedCertManager = trustedCertManager;
     }
 
     private final X509TrustManager delegate;
     private final Logger logger = Logger.getLogger(this.getClass().getName());
+
+    public void afterPropertiesSet() throws Exception {
+        if (trustedCertManager == null) {
+            throw new IllegalArgumentException("Trusted Cert Manager is required");
+        }
+    }
 }

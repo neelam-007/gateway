@@ -17,12 +17,21 @@ import com.l7tech.server.event.system.SystemEvent;
 
 import java.util.logging.Level;
 
+import org.springframework.context.ApplicationContext;
+
 /**
  * @author alex
  * @version $Revision$
  */
 public class SystemAuditListener implements GenericListener {
-    private static String nodeId = ClusterInfoManager.getInstance().thisNodeId();
+    private final String nodeId;
+    private final ApplicationContext applicationContext;
+
+    public SystemAuditListener(ApplicationContext ctx) {
+        this.applicationContext = ctx;
+        ClusterInfoManager cim = (ClusterInfoManager)applicationContext.getBean("clusterInfoManager");
+        nodeId =  cim.thisNodeId();
+    }
 
     public void receive( final Event event ) {
         if (event instanceof SystemEvent) {
@@ -33,8 +42,8 @@ public class SystemAuditListener implements GenericListener {
             } if (se.getComponent() == Component.GW_AUDIT_SYSTEM) {
                 level = Level.SEVERE;
             }
-            AuditContext.getCurrent().add(new SystemAuditRecord(level, nodeId, se.getComponent(), se.getAction(), se.getIpAddress()));
-            AuditContext.getCurrent().flush();
+            AuditContext.getCurrent(applicationContext).add(new SystemAuditRecord(level, nodeId, se.getComponent(), se.getAction(), se.getIpAddress()));
+            AuditContext.getCurrent(applicationContext).flush();
         }
     }
 }

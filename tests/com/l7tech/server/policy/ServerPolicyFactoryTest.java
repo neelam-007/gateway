@@ -16,11 +16,15 @@ import junit.framework.TestSuite;
 
 import java.util.Arrays;
 
+import org.springframework.context.ApplicationContext;
+
 /**
  * @author alex
  * @version $Revision$
  */
 public class ServerPolicyFactoryTest extends TestCase {
+    private ApplicationContext testApplicationContext = ApplicationContexts.getTestApplicationContext();
+
     /**
      * test <code>ServerPolicyFactoryTest</code> constructor
      */
@@ -47,7 +51,7 @@ public class ServerPolicyFactoryTest extends TestCase {
 
     public void testCompleteness() throws Exception {
 
-        ServerPolicyFactory pfac = ServerPolicyFactory.getInstance();
+        ServerPolicyFactory pfac = (ServerPolicyFactory)testApplicationContext.getBean("policyFactory");
 
         ServerAssertion foo;
         Assertion[] everything = AllAssertions.GATEWAY_EVERYTHING;
@@ -91,10 +95,9 @@ public class ServerPolicyFactoryTest extends TestCase {
             new SamlSecurity(),
             new HttpRoutingAssertion()
         }));
+        ServerPolicyFactory pfac = (ServerPolicyFactory)testApplicationContext.getBean("policyFactory");
 
-        ServerPolicyFactory pfac = ServerPolicyFactory.getInstance();
-
-        PolicyEnforcementContext pp = new PolicyEnforcementContext(new Message(), new Message(), ApplicationContexts.NULL_CONTEXT);
+        PolicyEnforcementContext pp = new PolicyEnforcementContext(new Message(), new Message());
 
         ServerAssertion serverAllTrue = pfac.makeServerPolicy(allTrue);
         assertTrue(serverAllTrue.checkRequest(pp) == AssertionStatus.NONE);

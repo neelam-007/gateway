@@ -30,14 +30,24 @@ import java.util.logging.Logger;
 public class StatusUpdater extends Thread {
     private ApplicationContext springContext;
 
+    private StatusUpdater(ApplicationContext springContext) {
+        this.springContext = springContext;
+        if (springContext == null) {
+            throw new IllegalArgumentException("Spring Context is requuired");
+        }
+        clusterInfoManager = (ClusterInfoManager)springContext.getBean("clusterInfoManager");
+        serviceUsageManager = (ServiceUsageManager)springContext.getBean("serviceUsageManager");
+    }
+
     public static synchronized void initialize(ApplicationContext springContext) {
+        if (updater == null) {
+            updater = new StatusUpdater(springContext);
+        }
         if (updater.isAlive()) {
             logger.warning("updater is already alive.");
-        }
-        else {
+        } else {
             logger.info("starting status updater");
             // this thread should not prevent the VM from exiting
-            updater.springContext = springContext;
             updater.setDaemon(true);
             updater.start();
         }
@@ -169,10 +179,10 @@ public class StatusUpdater extends Thread {
     }
 
     private boolean die = false;
-    private final ClusterInfoManager clusterInfoManager = ClusterInfoManager.getInstance();
-    private final ServiceUsageManager serviceUsageManager = new ServiceUsageManager();
+    private final ClusterInfoManager clusterInfoManager;
+    private final ServiceUsageManager serviceUsageManager;
 
-    private static final StatusUpdater updater = new StatusUpdater();
+    private static StatusUpdater updater;
     private static final Logger logger = Logger.getLogger(StatusUpdater.class.getName());
     public static final long UPDATE_FREQUENCY = 4000;
     //public static final long UPDATE_FREQUENCY = 10;

@@ -6,8 +6,31 @@
      <bean id="identityProviderFactory" class="com.l7tech.server.identity.IdentityProviderFactory">
      </bean>
 
-    <!-- server side identity configuration manager -->
+    <!-- test identity configuration manager -->
     <bean id="identityProviderConfigManager" class="com.l7tech.server.identity.TestIdentityProviderConfigManager">
         <property name="identityProviderFactory"><ref bean='identityProviderFactory'/></property>
     </bean>
+
+    <!--  test service admin -->
+    <bean id="serviceAdmin" class="com.l7tech.service.ServiceAdminStub">
+        <property name="policyValidator"><ref bean="policyValidator"/></property>
+    </bean>
+
+    <!-- test config uses the policy validator without persistence -->
+    <bean id="policyValidator" class="com.l7tech.policy.validator.DefaultPolicyValidator">
+    </bean>
+
+    <!-- server side policy factory -->
+     <bean id="policyFactory" class="com.l7tech.server.policy.ServerPolicyFactory">
+     </bean>
+
+    <!-- server side trusted cert manager -->
+     <bean id="trustedCertManager" class="com.l7tech.server.identity.cert.TestTrustedCertManager">
+     </bean>
+
+    <!-- server side HTTP routing client trust manager -->
+      <bean id="httpRoutingAssertionTrustManager" class="com.l7tech.server.transport.http.SslClientTrustManager">
+          <property name="trustedCertManager"><ref bean="trustedCertManager"/></property>
+      </bean>
+
 </beans>

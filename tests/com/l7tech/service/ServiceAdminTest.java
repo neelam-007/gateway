@@ -1,13 +1,12 @@
 package com.l7tech.service;
 
-import com.l7tech.service.PublishedService;
-import com.l7tech.service.ServiceAdmin;
+import com.l7tech.common.ApplicationContexts;
 import com.l7tech.common.xml.Wsdl;
-import com.l7tech.common.util.Locator;
 import junit.extensions.TestSetup;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
+import org.springframework.context.ApplicationContext;
 
 import javax.wsdl.*;
 import javax.wsdl.extensions.ExtensibilityElement;
@@ -29,7 +28,7 @@ import java.util.List;
  */
 public class ServiceAdminTest extends TestCase {
 
-    static ServiceAdmin manager;
+    static ApplicationContext applicationContext = null;
     PublishedService service;
 
     /**
@@ -53,13 +52,8 @@ public class ServiceAdminTest extends TestCase {
              * @throws Exception on error deleting the stub data store
              */
             protected void setUp() throws Exception {
-                System.setProperty("com.l7tech.common.locator.properties",
-                        "/com/l7tech/console/resources/services.properties");
-                ServiceAdminTest.manager =
-                        (ServiceAdmin) Locator.getDefault().lookup(ServiceAdmin.class);
-                if (manager == null) {
-                    throw new RuntimeException("Cannot obtain the identity service");
-                }
+                applicationContext = ApplicationContexts.getTestApplicationContext();
+
             }
 
             protected void tearDown() throws Exception {
@@ -82,15 +76,15 @@ public class ServiceAdminTest extends TestCase {
         originalService.setWsdlUrl("http://test" + differentStringEverytime + "?wsdl");
         originalService.setWsdlXml(sw.toString());
         System.out.println("saving service");
-        long res = manager.savePublishedService(originalService);
+        ServiceAdmin sadmin = (ServiceAdmin)applicationContext.getBean("serviceAdmin");
+        long res = sadmin.savePublishedService(originalService);
         System.out.println("saved with id=" + res);
     }
 
     private Wsdl getTestWsdl(String append) throws FileNotFoundException, WSDLException {
         // relative path from $SRC_ROOT
-        String wsdlFile = "tests/com/l7tech/service/StockQuoteService.wsdl";
-        Wsdl wsdl =
-                Wsdl.newInstance(null, new FileReader(wsdlFile));
+        String wsdlFile = "tests/com/l7tech/service/resources/StockQuoteService.wsdl";
+        Wsdl wsdl = Wsdl.newInstance(null, new FileReader(wsdlFile));
 
         String targetNS =
                 wsdl.getDefinition().getTargetNamespace() + "test" + append;

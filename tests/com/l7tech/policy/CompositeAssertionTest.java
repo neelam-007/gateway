@@ -6,11 +6,11 @@
 
 package com.l7tech.policy;
 
+import com.l7tech.common.ApplicationContexts;
 import com.l7tech.common.io.EmptyInputStream;
 import com.l7tech.common.message.Message;
 import com.l7tech.common.mime.ByteArrayStashManager;
 import com.l7tech.common.mime.ContentTypeHeader;
-import com.l7tech.common.ApplicationContexts;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.FalseAssertion;
@@ -25,6 +25,7 @@ import com.l7tech.server.policy.assertion.composite.ServerOneOrMoreAssertion;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
+import org.springframework.context.ApplicationContext;
 
 import java.util.Arrays;
 import java.util.List;
@@ -39,7 +40,7 @@ import java.util.logging.Logger;
  */
 public class CompositeAssertionTest extends TestCase {
     private static Logger log = Logger.getLogger(CompositeAssertionTest.class.getName());
-
+    ApplicationContext applicationContext = ApplicationContexts.getTestApplicationContext();
     public CompositeAssertionTest(String name) {
         super(name);
     }
@@ -55,7 +56,7 @@ public class CompositeAssertionTest extends TestCase {
     public void testSimpleLogic() throws Exception {
         PolicyEnforcementContext context = new
           PolicyEnforcementContext(new Message(new ByteArrayStashManager(),
-                                   ContentTypeHeader.XML_DEFAULT, new EmptyInputStream()), new Message(), null, null, ApplicationContexts.NULL_CONTEXT);
+                                   ContentTypeHeader.XML_DEFAULT, new EmptyInputStream()), new Message(), null, null);
 
         {
             final List kidsTrueFalseTrue = Arrays.asList(new Assertion[] {
@@ -63,10 +64,10 @@ public class CompositeAssertionTest extends TestCase {
                 new FalseAssertion(),
                 new TrueAssertion()
             });
-            assertTrue(new ServerOneOrMoreAssertion( new OneOrMoreAssertion( kidsTrueFalseTrue ) ).checkRequest(context) == AssertionStatus.NONE);
-            assertFalse(new ServerExactlyOneAssertion( new ExactlyOneAssertion( kidsTrueFalseTrue ) ).checkRequest(context) == AssertionStatus.NONE);
-            assertFalse(new ServerAllAssertion( new AllAssertion( kidsTrueFalseTrue ) ).checkRequest(context) == AssertionStatus.NONE);
-            assertFalse(new ServerAllAssertion( new AllAssertion( kidsTrueFalseTrue ) ).checkRequest(context) == AssertionStatus.NONE);
+            assertTrue(new ServerOneOrMoreAssertion( new OneOrMoreAssertion( kidsTrueFalseTrue ), applicationContext ).checkRequest(context) == AssertionStatus.NONE);
+            assertFalse(new ServerExactlyOneAssertion( new ExactlyOneAssertion( kidsTrueFalseTrue ), applicationContext ).checkRequest(context) == AssertionStatus.NONE);
+            assertFalse(new ServerAllAssertion( new AllAssertion( kidsTrueFalseTrue ), applicationContext ).checkRequest(context) == AssertionStatus.NONE);
+            assertFalse(new ServerAllAssertion( new AllAssertion( kidsTrueFalseTrue ), applicationContext ).checkRequest(context) == AssertionStatus.NONE);
         }
 
         {
@@ -75,10 +76,10 @@ public class CompositeAssertionTest extends TestCase {
                 new TrueAssertion(),
                 new TrueAssertion()
             });
-            assertTrue(new ServerOneOrMoreAssertion( new OneOrMoreAssertion( kidsTrueTrueTrue ) ).checkRequest(context) == AssertionStatus.NONE);
-            assertFalse(new ServerExactlyOneAssertion( new ExactlyOneAssertion( kidsTrueTrueTrue ) ).checkRequest(context) == AssertionStatus.NONE);
-            assertTrue(new ServerAllAssertion( new AllAssertion( kidsTrueTrueTrue ) ).checkRequest(context) == AssertionStatus.NONE);
-            assertTrue(new ServerAllAssertion( new AllAssertion( kidsTrueTrueTrue ) ).checkRequest(context) == AssertionStatus.NONE);
+            assertTrue(new ServerOneOrMoreAssertion( new OneOrMoreAssertion( kidsTrueTrueTrue ), applicationContext ).checkRequest(context) == AssertionStatus.NONE);
+            assertFalse(new ServerExactlyOneAssertion( new ExactlyOneAssertion( kidsTrueTrueTrue ), applicationContext ).checkRequest(context) == AssertionStatus.NONE);
+            assertTrue(new ServerAllAssertion( new AllAssertion( kidsTrueTrueTrue ), applicationContext ).checkRequest(context) == AssertionStatus.NONE);
+            assertTrue(new ServerAllAssertion( new AllAssertion( kidsTrueTrueTrue ), applicationContext ).checkRequest(context) == AssertionStatus.NONE);
         }
 
         {
@@ -87,10 +88,10 @@ public class CompositeAssertionTest extends TestCase {
                 new TrueAssertion(),
                 new FalseAssertion()
             });
-            assertTrue(new ServerOneOrMoreAssertion( new OneOrMoreAssertion( kidsFalseTrueFalse ) ).checkRequest(context) == AssertionStatus.NONE);
-            assertTrue(new ServerExactlyOneAssertion( new ExactlyOneAssertion( kidsFalseTrueFalse) ).checkRequest(context) == AssertionStatus.NONE);
-            assertFalse(new ServerAllAssertion( new AllAssertion( kidsFalseTrueFalse) ).checkRequest(context) == AssertionStatus.NONE);
-            assertFalse(new ServerAllAssertion( new AllAssertion( kidsFalseTrueFalse) ).checkRequest(context) == AssertionStatus.NONE);
+            assertTrue(new ServerOneOrMoreAssertion( new OneOrMoreAssertion( kidsFalseTrueFalse ), applicationContext ).checkRequest(context) == AssertionStatus.NONE);
+            assertTrue(new ServerExactlyOneAssertion( new ExactlyOneAssertion( kidsFalseTrueFalse), applicationContext ).checkRequest(context) == AssertionStatus.NONE);
+            assertFalse(new ServerAllAssertion( new AllAssertion( kidsFalseTrueFalse), applicationContext ).checkRequest(context) == AssertionStatus.NONE);
+            assertFalse(new ServerAllAssertion( new AllAssertion( kidsFalseTrueFalse), applicationContext ).checkRequest(context) == AssertionStatus.NONE);
         }
 
         {
@@ -98,10 +99,10 @@ public class CompositeAssertionTest extends TestCase {
                 new FalseAssertion(),
                 new FalseAssertion()
             });
-            assertFalse(new ServerOneOrMoreAssertion( new OneOrMoreAssertion( kidsFalseFalse ) ).checkRequest(context) == AssertionStatus.NONE);
-            assertFalse(new ServerExactlyOneAssertion( new ExactlyOneAssertion( kidsFalseFalse ) ).checkRequest(context) == AssertionStatus.NONE);
-            assertFalse(new ServerAllAssertion( new AllAssertion( kidsFalseFalse ) ).checkRequest(context) == AssertionStatus.NONE);
-            assertFalse(new ServerAllAssertion( new AllAssertion( kidsFalseFalse ) ).checkRequest(context) == AssertionStatus.NONE);
+            assertFalse(new ServerOneOrMoreAssertion( new OneOrMoreAssertion( kidsFalseFalse ), applicationContext ).checkRequest(context) == AssertionStatus.NONE);
+            assertFalse(new ServerExactlyOneAssertion( new ExactlyOneAssertion( kidsFalseFalse ), applicationContext ).checkRequest(context) == AssertionStatus.NONE);
+            assertFalse(new ServerAllAssertion( new AllAssertion( kidsFalseFalse ), applicationContext ).checkRequest(context) == AssertionStatus.NONE);
+            assertFalse(new ServerAllAssertion( new AllAssertion( kidsFalseFalse ), applicationContext ).checkRequest(context) == AssertionStatus.NONE);
         }
     }
 
@@ -109,7 +110,7 @@ public class CompositeAssertionTest extends TestCase {
         PolicyEnforcementContext context =
           new PolicyEnforcementContext(new Message(new ByteArrayStashManager(),
                                        ContentTypeHeader.XML_DEFAULT, new EmptyInputStream()),
-                                       new Message(), null, null, ApplicationContexts.NULL_CONTEXT);
+                                       new Message(), null, null);
 
         final List kidsTrueFalseTrue = Arrays.asList(new Assertion[] {
             new TrueAssertion(),
@@ -144,13 +145,13 @@ public class CompositeAssertionTest extends TestCase {
         final AllAssertion false4 = new AllAssertion(kidsTrueFalse);
         final ExactlyOneAssertion true4 = new ExactlyOneAssertion(kidsTrueFalse);
 
-        assertTrue( new ServerOneOrMoreAssertion( true1 ).checkRequest(context) == AssertionStatus.NONE);
-        assertTrue( new ServerOneOrMoreAssertion( true2 ).checkRequest(context) == AssertionStatus.NONE);
-        assertTrue( new ServerAllAssertion( true3 ).checkRequest(context) == AssertionStatus.NONE);
-        assertTrue( new ServerExactlyOneAssertion( true4 ).checkRequest(context) == AssertionStatus.NONE);
-        assertFalse( new ServerExactlyOneAssertion( false1 ).checkRequest(context) == AssertionStatus.NONE);
-        assertFalse( new ServerAllAssertion( false2 ).checkRequest(context) == AssertionStatus.NONE);
-        assertFalse( new ServerOneOrMoreAssertion( false3 ).checkRequest(context) == AssertionStatus.NONE);
-        assertFalse( new ServerAllAssertion( false4 ).checkRequest(context) == AssertionStatus.NONE);
+        assertTrue( new ServerOneOrMoreAssertion( true1, applicationContext ).checkRequest(context) == AssertionStatus.NONE);
+        assertTrue( new ServerOneOrMoreAssertion( true2, applicationContext ).checkRequest(context) == AssertionStatus.NONE);
+        assertTrue( new ServerAllAssertion( true3, applicationContext ).checkRequest(context) == AssertionStatus.NONE);
+        assertTrue( new ServerExactlyOneAssertion( true4, applicationContext ).checkRequest(context) == AssertionStatus.NONE);
+        assertFalse( new ServerExactlyOneAssertion( false1, applicationContext ).checkRequest(context) == AssertionStatus.NONE);
+        assertFalse( new ServerAllAssertion( false2, applicationContext ).checkRequest(context) == AssertionStatus.NONE);
+        assertFalse( new ServerOneOrMoreAssertion( false3, applicationContext ).checkRequest(context) == AssertionStatus.NONE);
+        assertFalse( new ServerAllAssertion( false4, applicationContext ).checkRequest(context) == AssertionStatus.NONE);
     }
 }

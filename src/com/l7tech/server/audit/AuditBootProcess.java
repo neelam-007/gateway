@@ -13,6 +13,8 @@ import com.l7tech.server.event.EventManager;
 import com.l7tech.server.event.MessageProcessed;
 import com.l7tech.server.event.admin.AdminEvent;
 import com.l7tech.server.service.ServiceEventPromoter;
+import com.l7tech.cluster.ClusterInfoManager;
+import org.springframework.context.ApplicationContext;
 
 /**
  * Initializes the audit system.
@@ -22,12 +24,13 @@ import com.l7tech.server.service.ServiceEventPromoter;
  */
 public class AuditBootProcess implements ServerComponentLifecycle {
     public AuditBootProcess() {
-        messageAuditListener = new MessageProcessingAuditListener();
-        adminAuditListener = new AdminAuditListener();
-        servicePromoter = new ServiceEventPromoter();
     }
 
-    public void setServerConfig( ServerConfig config ) throws LifecycleException {
+    public void setServerConfig(ServerConfig config) throws LifecycleException {
+        ApplicationContext appCtx = config.getSpringContext();
+        messageAuditListener = new MessageProcessingAuditListener(appCtx);
+        adminAuditListener = new AdminAuditListener(appCtx);
+        servicePromoter = new ServiceEventPromoter();
     }
 
     public void start() throws LifecycleException {
@@ -45,7 +48,7 @@ public class AuditBootProcess implements ServerComponentLifecycle {
     public void close() throws LifecycleException {
     }
 
-    private final AdminAuditListener adminAuditListener;
-    private final ServiceEventPromoter servicePromoter;
-    private final MessageProcessingAuditListener messageAuditListener;
+    private AdminAuditListener adminAuditListener;
+    private ServiceEventPromoter servicePromoter;
+    private MessageProcessingAuditListener messageAuditListener;
 }

@@ -23,19 +23,31 @@
         <property name="identityProviderFactory"><ref bean='identityProviderFactory'/></property>
     </bean>
 
-
-    <!-- server side audit manager -->
-    <bean id="auditRecordManager" class="com.l7tech.server.audit.AuditRecordManagerImpl">
-    </bean>
-
     <!-- server side log manager -->
     <bean id="serverLogManager" class="com.l7tech.logging.ServerLogManager">
     </bean>
 
+    <!-- server side Cluster Info manager -->
+    <bean id="clusterInfoManager" class="com.l7tech.cluster.ClusterInfoManager">
+    </bean>
+
+    <!-- server side Service Usage  manager -->
+    <bean id="serviceUsageManager" class="com.l7tech.cluster.ServiceUsageManager">
+    </bean>
+
+    <!-- server side policy factory -->
+    <bean id="policyFactory" class="com.l7tech.server.policy.ServerPolicyFactory">
+    </bean>
+
     <!-- server side service manager -->
     <bean id="serviceCache" class="com.l7tech.server.service.ServiceCache">
-        <property name="serviceManager"><ref bean='serviceManager'/></property>
+        <constructor-arg><ref bean="policyFactory"/></constructor-arg>
     </bean>
+
+    <!-- server side HTTP routing client trust manager -->
+     <bean id="httpRoutingAssertionTrustManager" class="com.l7tech.server.transport.http.SslClientTrustManager">
+         <property name="trustedCertManager"><ref bean="trustedCertManager"/></property>
+     </bean>
 
     <!-- server side service manager -->
     <bean id="serviceManager" class="com.l7tech.server.service.ServiceManagerImp">
@@ -69,6 +81,15 @@
      <bean id="clientCertManager" class="com.l7tech.server.identity.cert.ClientCertManagerImp">
      </bean>
 
+    <!-- server side audit record manager -->
+    <bean id="auditRecordManager" class="com.l7tech.server.audit.AuditRecordManagerImpl">
+    </bean>
+
+    <!-- server side audit message factory -->
+    <bean id="messageSummaryAuditFactory" class="com.l7tech.server.audit.MessageSummaryAuditFactory">
+        <constructor-arg><ref bean="clusterInfoManager"/></constructor-arg>
+    </bean>
+
     <!-- ssl config  -->
     <bean id="sslKeystore" class="com.l7tech.common.util.KeystoreUtils" factory-method="getInstance" />
 
@@ -97,13 +118,26 @@
         <property name="targetMethod"><value>getSSLPrivateKey</value></property>
     </bean>
 
+    <!-- server Wss Decorator -->
+    <bean id="wssDecorator" class="com.l7tech.common.security.xml.decorator.WssDecoratorImpl">
+    </bean>
+
+    <!-- server Message Processor -->
+    <bean id="messageProcessor" class="com.l7tech.server.MessageProcessor">
+        <constructor-arg><ref bean="serviceManager"/></constructor-arg>
+        <constructor-arg><ref bean="wssDecorator"/></constructor-arg>
+        <constructor-arg><ref bean="sslKeystorePrivateKey"/></constructor-arg>
+        <constructor-arg><ref bean="sslKeystoreCertificate"/></constructor-arg>
+    </bean>
+
     <!-- server side policy service -->
      <bean id="policyService" class="com.l7tech.server.policy.PolicyService">
          <constructor-arg><ref bean="sslKeystorePrivateKey"/></constructor-arg>
          <constructor-arg><ref bean="sslKeystoreCertificate"/></constructor-arg>
+         <constructor-arg><ref bean="policyFactory"/></constructor-arg>
      </bean>
 
-    <!-- admin services -->
+    <!-- admin services, Rmi socket factories -->
     <bean id="rmiServerSocketFactory" class="com.l7tech.remote.rmi.ssl.SslRMIServerSocketFactory">
         <property name="keyStoreType"><ref local='sslKeystoreType'/></property>
         <property name="keyStoreFile"><ref local='sslKeystoreFile'/></property>
@@ -111,7 +145,6 @@
     </bean>
 
     <bean id="rmiClientSocketFactory" class="com.l7tech.remote.rmi.ssl.SslRMIClientSocketFactory"/>
-
 
     <bean id="adminSessionInvocationFactory" class="com.l7tech.remote.rmi.AdminSessionInvocationFactory"/>
 
@@ -245,5 +278,7 @@
       </bean>
       <!--    trusted cert admin servant -->
       <bean id="clusterStatusAdmin" class="com.l7tech.cluster.ClusterStatusAdminImp">
+          <constructor-arg><ref bean="clusterInfoManager"/></constructor-arg>
+          <constructor-arg><ref bean="serviceUsageManager"/></constructor-arg>
       </bean>
 </beans>

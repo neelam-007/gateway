@@ -27,19 +27,25 @@ import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import org.springframework.context.ApplicationContext;
+
 /**
  * @author alex
  * @version $Revision$
  */
 public class AdminAuditListener implements GenericListener, CreateListener, UpdateListener, DeleteListener {
+    private final ApplicationContext applicationContext;
+    private final ClusterInfoManager clusterInfoManager;
+    private final String nodeId;
+
     public void receive(Event event) {
         if (event instanceof PersistenceEvent) throw new IllegalArgumentException("PersistenceEvents should not be handled by receive()");
         if (!(event instanceof AdminEvent)) throw new IllegalArgumentException("Invalid event received--only AdminEvents should be handled here");
-        AuditContext.getCurrent().add(makeAuditRecord((AdminEvent)event));
-        AuditContext.getCurrent().flush();
+        final AuditContext currentAuditContext = AuditContext.getCurrent(applicationContext);
+        currentAuditContext.add(makeAuditRecord((AdminEvent)event));
+        currentAuditContext.flush();
     }
 
-    private static String nodeId = ClusterInfoManager.getInstance().thisNodeId();
     public static final Level DEFAULT_LEVEL = Level.INFO;
 
     public static class LevelMapping {
@@ -66,10 +72,14 @@ public class AdminAuditListener implements GenericListener, CreateListener, Upda
         private final Map eventClassesToLevels;
     }
 
-    public AdminAuditListener() {
-        Map levels;
-
-        levels = new HashMap();
+    public AdminAuditListener(ApplicationContext ctx) {
+        if (ctx == null) {
+            throw new IllegalArgumentException("Application Context is required");
+        }
+        applicationContext = ctx;
+        clusterInfoManager = (ClusterInfoManager)applicationContext.getBean("clusterInfoManager");
+        nodeId = clusterInfoManager.thisNodeId();
+        Map levels = new HashMap();
         levels.put(Deleted.class, Level.WARNING);
         levels.put(ServiceEvent.Disabled.class, Level.WARNING);
         LevelMapping lm = new LevelMapping(PublishedService.class, levels);
@@ -187,18 +197,21 @@ public class AdminAuditListener implements GenericListener, CreateListener, Upda
     }
 
     public void entityCreated( Created created ) {
-        AuditContext.getCurrent().add(makeAuditRecord(created));
-        AuditContext.getCurrent().flush();
+        final AuditContext current = AuditContext.getCurrent(applicationContext);
+        current.add(makeAuditRecord(created));
+        current.flush();
     }
 
     public void entityUpdated( Updated updated ) {
-        AuditContext.getCurrent().add(makeAuditRecord(updated));
-        AuditContext.getCurrent().flush();
+        final AuditContext current = AuditContext.getCurrent(applicationContext);
+        current.add(makeAuditRecord(updated));
+        current.flush();
     }
 
     public void entityDeleted( Deleted deleted ) {
-        AuditContext.getCurrent().add(makeAuditRecord(deleted));
-        AuditContext.getCurrent().flush();
+        final AuditContext current = AuditContext.getCurrent(applicationContext);
+        current.add(makeAuditRecord(deleted));
+        current.flush();
     }
 
     private AdminInfo getAdminInfo() {

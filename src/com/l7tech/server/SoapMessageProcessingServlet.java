@@ -55,6 +55,7 @@ public class SoapMessageProcessingServlet extends HttpServlet {
     public static final String PARAM_POLICYSERVLET_URI = "PolicyServletUri";
     public static final String DEFAULT_POLICYSERVLET_URI = "/policy/disco.modulator?serviceoid=";
     private WebApplicationContext applicationContext;
+    private MessageProcessor messageProcessor;
 
     public void init(ServletConfig config) throws ServletException {
         super.init(config);
@@ -62,6 +63,7 @@ public class SoapMessageProcessingServlet extends HttpServlet {
         if (applicationContext == null) {
             throw new ServletException("Configuration error; could not get application context");
         }
+        messageProcessor = (MessageProcessor)applicationContext.getBean("messageProcessor");
     }
 
     public void doGet(HttpServletRequest hrequest, HttpServletResponse hresponse) throws ServletException, IOException {
@@ -121,8 +123,7 @@ public class SoapMessageProcessingServlet extends HttpServlet {
         response.attachHttpResponseKnob(respKnob);
 
         final PolicyEnforcementContext context = new PolicyEnforcementContext(request, response, 
-                                                                              hrequest, hresponse,
-                                                                              applicationContext);
+                                                                              hrequest, hresponse);
 
         // TODO refactor the stash manager creation code into a home of its own
         final StashManager stashManager = StashManagerFactory.createStashManager();
@@ -132,7 +133,7 @@ public class SoapMessageProcessingServlet extends HttpServlet {
             try {
                 request.initialize(stashManager, ctype, hrequest.getInputStream());
                 AssertionStatus status = AssertionStatus.UNDEFINED;
-                status = MessageProcessor.getInstance().processMessage(context);
+                status = messageProcessor.processMessage(context);
 
                 // Send response headers
                 respKnob.beginResponse();

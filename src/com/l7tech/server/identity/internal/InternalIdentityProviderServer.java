@@ -46,7 +46,7 @@ public class InternalIdentityProviderServer extends PersistentIdentityProvider {
         if (config == null || applicationContext == null) {
             throw new IllegalArgumentException();
         }
-        this.userManager = new InternalUserManagerServer( this);
+        this.userManager = new InternalUserManagerServer(this, applicationContext);
         this.groupManager = new InternalGroupManagerServer(this);
     }
 

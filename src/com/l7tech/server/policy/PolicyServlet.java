@@ -97,7 +97,7 @@ public class PolicyServlet extends AuthenticatableHttpServlet {
             response.attachHttpResponseKnob(new HttpServletResponseKnob(servletResponse));
 
             PolicyEnforcementContext context = new PolicyEnforcementContext(request, response,
-                                                                            servletRequest, servletResponse, getApplicationContext());
+                                                                            servletRequest, servletResponse);
 
             // pass over to the service
             PolicyService service = null;
