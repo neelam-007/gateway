@@ -6,11 +6,11 @@
 
 package com.l7tech.policy.assertion;
 
-import java.util.Date;
-import java.util.Calendar;
+
 
 /**
  * Immutable.
+ * * todo: consider switching to <code>java.util.Date</code> instead of <code>TimeOfDay</code>
  *
  * @author alex
  * @version $Revision$

@@ -9,6 +9,8 @@ package com.l7tech.policy.assertion;
 /**
  * Immutable.
  *
+ * todo: consider replacing this class with <code>java.util.Date</code>.
+ *
  * @author alex
  * @version $Revision$
  */
