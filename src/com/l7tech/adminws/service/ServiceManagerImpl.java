@@ -1,7 +1,7 @@
 package com.l7tech.adminws.service;
 
 import com.l7tech.jini.export.RemoteService;
-import com.l7tech.objectmodel.EntityHeader;
+import com.l7tech.objectmodel.*;
 import com.l7tech.service.PublishedService;
 import com.l7tech.service.ServiceStatistics;
 import com.sun.jini.start.LifeCycle;
@@ -22,19 +22,20 @@ public class ServiceManagerImpl extends RemoteService implements ServiceManager 
         delegate = new Service();
     }
 
-    public String resolveWsdlTarget(String url) throws java.rmi.RemoteException {
+    public String resolveWsdlTarget(String url) throws RemoteException {
         return delegate.resolveWsdlTarget(url);
     }
 
-    public PublishedService findServiceByPrimaryKey(long oid) throws java.rmi.RemoteException {
+    public PublishedService findServiceByPrimaryKey(long oid) throws RemoteException, FindException {
         return delegate.findServiceByPrimaryKey(oid);
     }
 
-    public EntityHeader[] findAllPublishedServices() throws java.rmi.RemoteException {
+    public EntityHeader[] findAllPublishedServices() throws RemoteException, FindException {
         return delegate.findAllPublishedServices();
     }
 
-    public EntityHeader[] findAllPublishedServicesByOffset(int offset, int windowSize) throws java.rmi.RemoteException {
+    public EntityHeader[] findAllPublishedServicesByOffset(int offset, int windowSize)
+                    throws RemoteException, FindException {
         return delegate.findAllPublishedServicesByOffset(offset, windowSize);
     }
 
@@ -43,13 +44,14 @@ public class ServiceManagerImpl extends RemoteService implements ServiceManager 
      * the distinction happens on the server side by inspecting the oid of the object
      * if the oid appears to be "virgin" a save is invoked, otherwise an update call is made.
      * @param service the object to be saved or upodated
-     * @throws java.rmi.RemoteException
+     * @throws RemoteException
      */
-    public long savePublishedService(PublishedService service) throws java.rmi.RemoteException {
+    public long savePublishedService(PublishedService service)
+                    throws RemoteException, UpdateException, SaveException, VersionException {
         return delegate.savePublishedService(service);
     }
 
-    public void deletePublishedService(long oid) throws java.rmi.RemoteException {
+    public void deletePublishedService(long oid) throws RemoteException, DeleteException {
         delegate.deletePublishedService(oid);
     }
 

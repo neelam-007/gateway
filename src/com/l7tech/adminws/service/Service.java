@@ -51,33 +51,28 @@ public class Service implements ServiceManager {
         }
     }
 
-    public PublishedService findServiceByPrimaryKey(long oid) throws RemoteException {
+    public PublishedService findServiceByPrimaryKey(long oid) throws RemoteException, FindException {
         try {
             return getServiceManagerAndBeginTransaction().findByPrimaryKey(oid);
-        } catch (FindException e) {
-            throw new RemoteException(e.getMessage(), e);
         } finally {
             endTransaction();
         }
     }
 
-    public EntityHeader[] findAllPublishedServices() throws RemoteException {
+    public EntityHeader[] findAllPublishedServices() throws RemoteException, FindException {
         try {
             Collection res = getServiceManagerAndBeginTransaction().findAllHeaders();
             return collectionToHeaderArray(res);
-        } catch (FindException e) {
-            throw new RemoteException(e.getMessage(), e);
         } finally {
             endTransaction();
         }
     }
 
-    public EntityHeader[] findAllPublishedServicesByOffset(int offset, int windowSize) throws RemoteException {
+    public EntityHeader[] findAllPublishedServicesByOffset(int offset, int windowSize)
+                    throws RemoteException, FindException {
         try {
             Collection res = getServiceManagerAndBeginTransaction().findAllHeaders(offset, windowSize);
             return collectionToHeaderArray(res);
-        } catch (FindException e) {
-            throw new RemoteException(e.getMessage(), e);
         } finally {
             endTransaction();
         }
@@ -95,40 +90,31 @@ public class Service implements ServiceManager {
      * @param service the object to be saved or upodated
      * @throws java.rmi.RemoteException
      */
-    public long savePublishedService(PublishedService service) throws RemoteException {
+    public long savePublishedService(PublishedService service) throws RemoteException,
+                                    UpdateException, SaveException, VersionException {
         try {
             // does that object have a history?
             if (service.getOid() > 0) {
                 com.l7tech.service.ServiceManager manager = getServiceManagerAndBeginTransaction();
                 manager.update(service);
                 return service.getOid();
-            }
-            // ... or is it a new object
-            else {
+            } else { // ... or is it a new object
                 logger.info("Saving PublishedService: " + service.getOid());
                 return getServiceManagerAndBeginTransaction().save(service);
             }
-        } catch (UpdateException e) {
-            throw new RemoteException(e.getMessage(), e);
-        }  catch (SaveException e) {
-            throw new RemoteException(e.getMessage(), e);
-        }  catch (VersionException e) {
-            throw new RemoteException(e.getMessage(), e);
         } finally {
             endTransaction();
         }
     }
 
-    public void deletePublishedService(long oid) throws RemoteException {
+    public void deletePublishedService(long oid) throws RemoteException, DeleteException {
         try {
             com.l7tech.service.ServiceManager theManagerDude = getServiceManagerAndBeginTransaction();
             PublishedService theExecutionee = theManagerDude.findByPrimaryKey(oid);
             theManagerDude.delete(theExecutionee);
             logger.info("Deleted PublishedService: " + oid);
         } catch (FindException e) {
-            throw new RemoteException(e.getMessage(), e);
-        } catch (DeleteException e) {
-            throw new RemoteException(e.getMessage(), e);
+            throw new DeleteException("Could not find object to delete.", e);
         } finally {
             endTransaction();
         }
