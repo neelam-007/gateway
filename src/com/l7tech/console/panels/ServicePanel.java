@@ -188,7 +188,13 @@ public class ServicePanel extends WizardStepPanel {
             String wsdlXml = (String) result;
             wsdl = Wsdl.newInstance(null, new StringReader(wsdlXml));
 
-            service.setName(wsdl.getServiceName());
+            final String serviceName = wsdl.getServiceName();
+            // if service name not obtained service name is WSDL URL
+            if (serviceName == null || "".equals(serviceName)) {
+                service.setName(wsdlUrlTextField.getText());
+            } else {
+                service.setName(serviceName);
+            }
             service.setWsdlXml(wsdlXml);
             service.setWsdlUrl(wsdlUrlTextField.getText());
 
