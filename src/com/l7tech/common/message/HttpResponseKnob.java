@@ -40,11 +40,19 @@ public interface HttpResponseKnob extends MessageKnob {
     void setHeader(String name, String value);
 
     /**
-     * Adds a value to the specified header.
+     * Adds a value to the specified header.  Do not use this for WWW-Authenticate; see {@link #addChallenge} instead.
      * @param name the name of the header to add a value to. Must not be null or empty.
      * @param value the value to add. Must not be null.
      */
     void addHeader(String name, String value);
+
+    /**
+     * Add a WWW-Authenticate: challenge value to this response.  The actual challenge will not be sent unless
+     * the request turns out to fail.
+     *
+     * @param value the content of the WWW-Authenticate to send, if an HTTP challenge is performed.
+     */
+    void addChallenge(String value);
 
     /**
      * Returns true if the response already contains at least one value for the header with the specified name.

@@ -57,4 +57,10 @@ public interface TokenStrategy {
      * @return the {@link SecurityTokenType} of the token that would be returned from {@link #getIfPresent} and {@link #getOrCreate()}.
      */
     SecurityTokenType getType();
+
+    /**
+     * Report that the security token was not accepted by the recipient.  The token strategy might wish to
+     * forget any cached token and get a new one.
+     */
+    void onTokenRejected();
 }

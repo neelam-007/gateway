@@ -1,5 +1,7 @@
 package com.l7tech.server.policy.assertion.xmlsec;
 
+import com.l7tech.common.protocol.SecureSpanConstants;
+import com.l7tech.common.security.saml.SamlAssertionFaultDetail;
 import com.l7tech.common.security.token.SamlSecurityToken;
 import com.l7tech.common.security.token.SecurityToken;
 import com.l7tech.common.security.xml.processor.ProcessorResult;
@@ -16,8 +18,6 @@ import org.xml.sax.SAXException;
 import sun.security.x509.X500Name;
 
 import java.io.IOException;
-import java.util.Calendar;
-import java.util.TimeZone;
 import java.util.logging.Logger;
 
 /**
@@ -28,7 +28,6 @@ import java.util.logging.Logger;
  */
 public class ServerSamlSecurity implements ServerAssertion {
     private SamlSecurity assertion;
-    private static final TimeZone UTC_TIME_ZONE = TimeZone.getTimeZone("UTC");
 
     /**
      * Create the server side saml security policy element
@@ -68,15 +67,15 @@ public class ServerSamlSecurity implements ServerAssertion {
         }
         if (wssResults == null) {
             logger.info("This request did not contain any WSS level security.");
-            context.setAuthenticationMissing(true);
-            context.setPolicyViolated(true);
+            context.setAuthenticationMissing();
+            context.setRequestPolicyViolated();
             return AssertionStatus.FALSIFIED;
         }
 
         SecurityToken[] tokens = wssResults.getSecurityTokens();
         if (tokens == null) {
             logger.info("No tokens were processed from this request. Returning AUTH_REQUIRED.");
-            context.setAuthenticationMissing(true);
+            context.setAuthenticationMissing();
             return AssertionStatus.AUTH_REQUIRED;
         }
 
@@ -104,6 +103,7 @@ public class ServerSamlSecurity implements ServerAssertion {
                     logger.warning("We got a request that presented a valid signature from a SAML assertion, but " +
                                    "it was not a Holder-of-Key assertion. " +
                                    "This policy assertion requires hok type of confirmation.");
+                    context.setFaultDetail(new SamlAssertionFaultDetail(samlAssertion.getAssertionId()));
                     return AssertionStatus.BAD_REQUEST;
                 }
             } else if (assertion.getConfirmationMethodType() == SamlSecurity.CONFIRMATION_METHOD_SENDER_VOUCHES) {
@@ -111,17 +111,22 @@ public class ServerSamlSecurity implements ServerAssertion {
                     logger.warning("We got a request that presented a valid signature from a SAML assertion, but " +
                                    "it was not a Sender-vouches assertion. " +
                                    "This policy assertion requires sv type of confirmation.");
+                    context.setFaultDetail(new SamlAssertionFaultDetail(samlAssertion.getAssertionId()));
                     return AssertionStatus.BAD_REQUEST;
                 }
             }
 
             // Check expiry date
-            Calendar expires = samlAssertion.getExpires();
-            Calendar now = Calendar.getInstance(UTC_TIME_ZONE);
-            if (!expires.after(now)) {
-                logger.warning("SAML holder-of-key assertion in this request has expired; assertion therefore fails.");
+            if (samlAssertion.isExpiringSoon(0)) {
+                final String msg = "SAML holder-of-key assertion in this request has expired.";
+                logger.warning(msg);
+                context.setFaultDetail(new SamlAssertionFaultDetail(samlAssertion.getAssertionId(),
+                                                                    msg,
+                                                                    SecureSpanConstants.FAULTCODE_INVALIDSECURITYTOKEN,
+                                                                    SecureSpanConstants.FAULTDETAIL_SAML_REASON_CONDITION));
                 return AssertionStatus.AUTH_FAILED;
             }
+            // TODO check for not-yet-valid ticket
 
             // Save pincipal credential for later authentication
             X500Name x500name = new X500Name(samlAssertion.getSubjectCertificate().getSubjectX500Principal().getName());
@@ -137,7 +142,7 @@ public class ServerSamlSecurity implements ServerAssertion {
         }
 
         logger.info("This assertion did not find a proven SAML assertion to use as credentials. Returning AUTH_REQUIRED.");
-        context.setAuthenticationMissing(true);
+        context.setAuthenticationMissing();
         return AssertionStatus.AUTH_REQUIRED;
     }
 

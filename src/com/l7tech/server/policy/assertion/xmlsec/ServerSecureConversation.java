@@ -47,8 +47,8 @@ public class ServerSecureConversation implements ServerAssertion {
 
         if (wssResults == null) {
             logger.info("This request did not contain any WSS level security.");
-            context.setAuthenticationMissing(true);
-            context.setPolicyViolated(true);
+            context.setAuthenticationMissing();
+            context.setRequestPolicyViolated();
             return AssertionStatus.FALSIFIED;
         }
 
@@ -66,7 +66,7 @@ public class ServerSecureConversation implements ServerAssertion {
                 if (session == null) {
                     logger.warning("The request referred to a SecureConversation token that is not recognized " +
                                    "on this server. Perhaps the session has expired. Returning AUTH_FAILED.");
-                    context.setPolicyViolated(true);
+                    context.setRequestPolicyViolated();
                     return AssertionStatus.AUTH_FAILED;
                 }
                 User authenticatedUser = session.getUsedBy();
@@ -78,8 +78,8 @@ public class ServerSecureConversation implements ServerAssertion {
             }
         }
         logger.info("This request did not seem to refer to a Secure Conversation token.");
-        context.setAuthenticationMissing(true);
-        context.setPolicyViolated(true);
+        context.setAuthenticationMissing();
+        context.setRequestPolicyViolated();
         return AssertionStatus.AUTH_REQUIRED;
     }
 

@@ -9,20 +9,21 @@ package com.l7tech.proxy.processor;
 import com.l7tech.common.message.AbstractHttpResponseKnob;
 import com.l7tech.common.message.Message;
 import com.l7tech.common.message.MimeKnob;
-import com.l7tech.common.message.SoapKnob;
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.common.mime.MimeUtil;
 import com.l7tech.common.mime.NoSuchPartException;
 import com.l7tech.common.protocol.SecureSpanConstants;
 import com.l7tech.common.security.AesKey;
+import com.l7tech.common.security.token.SecurityTokenType;
+import com.l7tech.common.security.xml.decorator.DecorationRequirements;
 import com.l7tech.common.security.xml.decorator.DecoratorException;
 import com.l7tech.common.security.xml.decorator.WssDecorator;
 import com.l7tech.common.security.xml.decorator.WssDecoratorImpl;
-import com.l7tech.common.security.xml.decorator.DecorationRequirements;
 import com.l7tech.common.security.xml.processor.*;
 import com.l7tech.common.util.*;
 import com.l7tech.common.xml.InvalidDocumentFormatException;
 import com.l7tech.common.xml.MessageNotSoapException;
+import com.l7tech.common.xml.SoapFaultDetail;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.SslAssertion;
@@ -438,15 +439,18 @@ public class MessageProcessor {
         if (appliedPolicy == null)
             return;
 
+        Message response = context.getResponse();
+        SoapFaultDetail responseFaultDetail = null;
+        if (response.isSoap() && response.getSoapKnob().isFault())
+            responseFaultDetail = response.getSoapKnob().getFaultDetail();
+
+        // TODO refactor this fault handling into a routine of its own.  Should also deal with fault signing then.
         // Bug #1026 - If request used WS-SecureConversation, check if response is a BadContextToken fault.
         if (context.getSecureConversationId() != null) {
-            Message response = context.getResponse();
-            if (response.isSoap()) {
-                SoapKnob respSoap = response.getSoapKnob();
-                // TODO we should do a proper QNAME
-                if (respSoap.isFault() && respSoap.getFaultDetail().getFaultCode() != null &&
-                        respSoap.getFaultDetail().getFaultCode().trim().equals(SecureSpanConstants.FAULTCODE_BADCONTEXTTOKEN))
-                {
+            if (responseFaultDetail != null && responseFaultDetail.getFaultCode() != null)
+            {
+                final String faultCode = responseFaultDetail.getFaultCode().trim();
+                if (faultCode.equals(SecureSpanConstants.FAULTCODE_BADCONTEXTTOKEN)) {
                     // TODO we should only trust this fault if it is signed
                     log.info("Gateway reports " + SecureSpanConstants.FAULTCODE_BADCONTEXTTOKEN +
                              ".  Will throw away the current WS-SecureConversationSession and try again.");
@@ -455,6 +459,24 @@ public class MessageProcessor {
                 }
             }
             // TODO should we reject the response if isn't SOAP, but the request used WS-SC
+            // FALLTHROUGH: not handled by agent -- fall through and send it back to the client
+        }
+
+        if (responseFaultDetail != null &&
+                SecureSpanConstants.FAULTCODE_INVALIDSECURITYTOKEN.equals(responseFaultDetail.getFaultCode()))
+        {
+            // Invalid security token.  See if we need to drop a cached SAML assertion.
+            // We'll assume that, if we sent a SAML token with the request, it is that token being
+            // complained about.
+            // TODO check faultDetail for SamlFaultInfo then only drop our token if the AssertionID matches
+            if (context.getRequest().getXmlKnob().getOrMakeDecorationRequirements().getSenderSamlToken() != null) {
+                // TODO we should only trust this fault if it is signed
+                log.warning("Gateway reports " + responseFaultDetail.getFaultCode() +
+                            ".  Will throw away current SAML ticket and try again.");
+                context.getSsg().getTokenStrategy(SecurityTokenType.SAML_AUTHENTICATION).onTokenRejected();
+                throw new PolicyRetryableException("Flushed rejected SAML ticket.");
+            }
+            // FALLTHROUGH: not handled by agent -- fall through and send it back to the client
         }
 
         ClientAssertion rootAssertion = appliedPolicy.getClientAssertion();

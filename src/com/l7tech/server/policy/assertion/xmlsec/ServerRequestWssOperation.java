@@ -56,7 +56,7 @@ public abstract class ServerRequestWssOperation implements ServerAssertion {
         }
         if (wssResults == null) {
             logger.info("This request did not contain any WSS level security.");
-            context.setPolicyViolated(true);
+            context.setRequestPolicyViolated();
             return AssertionStatus.FALSIFIED;
         }
 
@@ -82,7 +82,7 @@ public abstract class ServerRequestWssOperation implements ServerAssertion {
             throw new PolicyAssertionException(e);
         }
         if (result.isFoundButWasntOperatedOn())
-            context.setPolicyViolated(true);
+            context.setRequestPolicyViolated();
         switch (result.getResultCode()) {
             case ProcessorResultUtil.NO_ERROR:
                 return AssertionStatus.NONE;

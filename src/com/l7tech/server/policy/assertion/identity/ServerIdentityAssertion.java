@@ -17,13 +17,12 @@ import com.l7tech.policy.assertion.identity.IdentityAssertion;
 import com.l7tech.server.identity.IdentityProviderFactory;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.ServerAssertion;
+import org.springframework.context.ApplicationContext;
 
 import java.io.IOException;
 import java.security.cert.X509Certificate;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-
-import org.springframework.context.ApplicationContext;
 
 /**
  * Subclasses of ServerIdentityAssertion are responsible for verifying that the entity
@@ -65,7 +64,7 @@ public abstract class ServerIdentityAssertion implements ServerAssertion {
                 // Authentication is required for any IdentityAssertion
                 context.addResult(new AssertionResult(_data, AssertionStatus.AUTH_REQUIRED));
                 // TODO: Some future IdentityAssertion might succeed, but this flag will remain true!
-                context.setAuthenticationMissing(true);
+                context.setAuthenticationMissing();
                 logger.fine("No credentials found");
                 return AssertionStatus.AUTH_REQUIRED;
             }
@@ -108,7 +107,7 @@ public abstract class ServerIdentityAssertion implements ServerAssertion {
                       SecureSpanConstants.INVALID);
                     return authFailed(context, pc, icce);
                 } catch (MissingCredentialsException mce) {
-                    context.setAuthenticationMissing(true);
+                    context.setAuthenticationMissing();
                     return authFailed(context, pc, mce);
                 } catch (AuthenticationException ae) {
                     return authFailed(context, pc, ae);

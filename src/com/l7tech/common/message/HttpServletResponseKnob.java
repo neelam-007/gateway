@@ -8,6 +8,7 @@ package com.l7tech.common.message;
 
 import javax.servlet.http.HttpServletResponse;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 
@@ -48,6 +49,23 @@ public class HttpServletResponseKnob extends AbstractHttpResponseKnob {
             } else {
                 response.addHeader(pair.name, (String)value);
             }
+        }
+    }
+
+    public boolean hasChallenge() {
+        return !challengesToSend.isEmpty();
+    }
+
+    /**
+     * Add the challenge headers to the response.  The challenges will be sorted in reverse alphabetical order
+     * so that Digest will be preferred over Basic, if both are present.
+     */
+    public void beginChallenge() {
+        Collections.sort(challengesToSend, String.CASE_INSENSITIVE_ORDER);
+        Collections.reverse(challengesToSend);
+        for (Iterator i = challengesToSend.iterator(); i.hasNext();) {
+            String challenge = (String)i.next();
+            response.addHeader("WWW-Authenticate", challenge);
         }
     }
 }

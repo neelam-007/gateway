@@ -204,7 +204,7 @@ public class MessageProcessor extends ApplicationObjectSupport {
                             }
                         }
                         if (wrongPolicyVersion) {
-                            context.setPolicyViolated(true);
+                            context.setRequestPolicyViolated();
                             throw new PolicyVersionException();
                         }
                     } else {

@@ -51,15 +51,15 @@ public class ServerRequestWssX509Cert implements ServerAssertion {
         }
         if (wssResults == null) {
             logger.info("This request did not contain any WSS level security.");
-            context.setPolicyViolated(true);
-            context.setAuthenticationMissing(true);
+            context.setRequestPolicyViolated();
+            context.setAuthenticationMissing();
             return AssertionStatus.FALSIFIED;
         }
 
         SecurityToken[] tokens = wssResults.getSecurityTokens();
         if (tokens == null) {
             logger.info("No tokens were processed from this request. Returning AUTH_REQUIRED.");
-            context.setAuthenticationMissing(true);
+            context.setAuthenticationMissing();
             return AssertionStatus.AUTH_REQUIRED;
         }
         X509Certificate gotACertAlready = null;
@@ -94,7 +94,7 @@ public class ServerRequestWssX509Cert implements ServerAssertion {
             return AssertionStatus.NONE;
         }
         logger.info("This assertion did not find a proven x509 cert to use as credentials. Returning AUTH_REQUIRED.");
-        context.setAuthenticationMissing(true);
+        context.setAuthenticationMissing();
         return AssertionStatus.AUTH_REQUIRED;
     }
 

@@ -95,6 +95,52 @@ public class SecureSpanConstants {
     /** SOAP faultcode for a stale or invalid WS-SecureConversation Security Context Token. */
     public static final String FAULTCODE_BADCONTEXTTOKEN = "wsc:BadContextToken";
 
+    /** SOAP faultcode: "An error was discovered processing the Security header". */
+    public static final String FAULTCODE_INVALIDSECURITY = "wsse:InvalidSecurity";
+
+    /** SOAP faultcode: "The issuer of an assertion is not acceptable to the receiver". */
+    public static final String FAULTCODE_INVALIDSECURITYTOKEN = "wsse:InvalidSecurityToken";
+
+    /** SOAP faultcode: "A referenced SAML assertion could not be retrieved." -saml token profile. */
+    public static final String FAULTCODE_SECURITYTOKENUNAVAILABLE = "wsse:SecurityTokenUnavailable";
+
+    /**
+     * SOAP faultcode:
+     *   "An assertion contains a saml:Condition element that the receiver does not understand."  or,
+     *   "The receiver does not understand the extension schema used in an assertion."
+     */
+    public static final String FAULTCODE_UNSUPPORTEDSECURITYTOKEN = "wsse:UnsupportedSecurityToken";
+
+    /** SOAP faultcode: "A signature within an assertion or referencing an assertion is invalid." */
+    public static final String FAULTCODE_FAILEDCHECK = "wsse:FailedCheck";
+
+    /** SOAP faultcode: "The security token could not be authenticated or authorized." */
+    public static final String FAULTCODE_FAILEDAUTH = "wsse:FailedAuthentication";
+
+    /** Namespace for reporting extra info in Layer 7's SAML SOAP faults. */
+    public static final String FAULTDETAIL_SAML_NS = "http://layer7tech.com/saml";
+
+    /** Element for reporting extra info in Layer 7's SAML SOAP faults. */
+    public static final String FAULTDETAIL_SAML = "SamlFaultInfo";
+
+    /** Element within {@link #FAULTDETAIL_SAML} for holding the problematic assertion ID in L7 SAML SOAP faults. */
+    public static final String FAULTDETAIL_SAML_ASSERTIONID = "AssertionID";
+
+    /** Elemetn within {@link #FAULTDETAIL_SAML} for holding the reason for the failure in L7 SAML SOAP faults. */
+    public static final String FAULTDETAIL_SAML_REASON = "Reason";
+
+    /** SAML failure reason: a condition did not hold true (ie, timestamp expired or not yet valid) */
+    public static final String FAULTDETAIL_SAML_REASON_CONDITION = "Condition";
+
+    /** SAML failure reason: a signature was not valid */
+    public static final String FAULTDETAIL_SAML_REASON_SIGNATURE = "Signature";
+
+    /** SAML failure reason: the issuer was not acceptable to the recipient. */
+    public static final String FAULTDETAIL_SAML_REASON_ISSUER = "Issuer";
+
+    /** SAML failure reason: the SAML assertion contained an unrecognized extension. */
+    public static final String FAULTDETAIL_SAML_REASON_FORMAT = "Format";
+
     /**
      * Special HTTP query parameters used by the protocol used between the SecureSpanBridge and the SecureSpanGateway.
      */

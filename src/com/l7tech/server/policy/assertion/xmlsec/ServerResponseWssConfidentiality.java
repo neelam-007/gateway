@@ -8,9 +8,9 @@ import com.l7tech.common.security.xml.SignerInfo;
 import com.l7tech.common.security.xml.decorator.DecorationRequirements;
 import com.l7tech.common.security.xml.processor.ProcessorResult;
 import com.l7tech.common.util.CausedIOException;
-import com.l7tech.common.util.KeystoreUtils;
 import com.l7tech.common.util.CertUtils;
 import com.l7tech.common.util.HexUtils;
+import com.l7tech.common.util.KeystoreUtils;
 import com.l7tech.common.xml.XpathEvaluator;
 import com.l7tech.common.xml.XpathExpression;
 import com.l7tech.policy.assertion.AssertionStatus;
@@ -24,8 +24,8 @@ import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
 
 import java.io.IOException;
-import java.security.cert.X509Certificate;
 import java.security.cert.CertificateException;
+import java.security.cert.X509Certificate;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -88,7 +88,7 @@ public class ServerResponseWssConfidentiality implements ServerAssertion {
 
             if (wssResult == null) {
                 logger.info("This request did not contain any WSS level security.");
-                context.setPolicyViolated(true);
+                context.setRequestPolicyViolated();
                 return AssertionStatus.FAILED;
             }
 
@@ -131,8 +131,8 @@ public class ServerResponseWssConfidentiality implements ServerAssertion {
             if (clientCert == null && secConvContext == null) {
                 logger.log( Level.WARNING, "Unable to encrypt response. Request did not included x509 " +
                                            "token or secure conversation." );
-                context.setAuthenticationMissing(true); // todo is it really, though?
-                context.setPolicyViolated(true);
+                context.setAuthenticationMissing(); // todo is it really, though?
+                context.setRequestPolicyViolated();
                 return AssertionStatus.FAILED; // todo verify that this return value is appropriate
             }
 

@@ -62,8 +62,8 @@ public class ServerRequestWssReplayProtection implements ServerAssertion {
             wssResults = context.getRequest().getXmlKnob().getProcessorResult();
             if (wssResults == null) {
                 logger.info("This request did not contain any WSS level security.");
-                context.setPolicyViolated(true);
-                context.setAuthenticationMissing(true);
+                context.setRequestPolicyViolated();
+                context.setAuthenticationMissing();
                 return AssertionStatus.FALSIFIED;
             }
 
@@ -74,7 +74,7 @@ public class ServerRequestWssReplayProtection implements ServerAssertion {
         // Validate timestamp first
         WssTimestamp timestamp = wssResults.getTimestamp();
         if (timestamp == null) {
-            context.setPolicyViolated(true);
+            context.setRequestPolicyViolated();
             logger.info("No timestamp present in request; assertion therefore fails.");
             return AssertionStatus.BAD_REQUEST;
         }

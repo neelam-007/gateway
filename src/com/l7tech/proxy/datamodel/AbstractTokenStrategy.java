@@ -21,4 +21,8 @@ public abstract class AbstractTokenStrategy implements TokenStrategy {
     public SecurityTokenType getType() {
         return tokenType;
     }
+
+    public void onTokenRejected() {
+        // ignore by default
+    }
 }

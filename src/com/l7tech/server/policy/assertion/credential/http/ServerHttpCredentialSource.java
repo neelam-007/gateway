@@ -92,8 +92,7 @@ public abstract class ServerHttpCredentialSource extends ServerCredentialSourceA
 
         logger.fine( "Sending WWW-Authenticate: " + challenge );
         HttpResponseKnob httpResponse = context.getResponse().getHttpResponseKnob();
-        httpResponse.addHeader("WWW-Authenticate", challenge);
-        // TODO worry about putting Digest first?
+        httpResponse.addChallenge(challenge);
     }
 
     /**

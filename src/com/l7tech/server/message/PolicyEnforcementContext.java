@@ -44,7 +44,7 @@ public class PolicyEnforcementContext extends ProcessingContext {
     private List assertionResults = Collections.EMPTY_LIST;
     private SoapFaultDetail faultDetail = null;
     private boolean isAuthenticationMissing = false;
-    private boolean isPolicyViolated = false;
+    private boolean isRequestPolicyViolated = false;
     private PublishedService service;
     private final Vector updatedCookies = new Vector();
 
@@ -158,21 +158,39 @@ public class PolicyEnforcementContext extends ProcessingContext {
         this.assertionResults = assertionResults;
     }
 
+    /**
+     * Check if some authentication credentials that were expected in the request were not found.
+     * This implies {@link #setRequestPolicyViolated}, as well.
+     */
     public boolean isAuthenticationMissing() {
         return isAuthenticationMissing;
     }
 
-    public void setAuthenticationMissing(boolean authenticationMissing) {
-        isAuthenticationMissing = authenticationMissing;
-        if ( isAuthenticationMissing ) isPolicyViolated = true;
+    /**
+     * Report that some authentication credentials that were expected in the request were not found.
+     * This implies requestPolicyViolated, as well.
+     */
+    public void setAuthenticationMissing() {
+        isAuthenticationMissing = true;
+        setRequestPolicyViolated();
     }
 
-    public boolean isPolicyViolated() {
-        return isPolicyViolated;
+    /**
+     * Check if a policy violation was detected while processing the request.
+     * If the policy processing turns out to fail, a Policy-URL: should be sent back
+     * to the requestor.
+     */
+    public boolean isRequestPolicyViolated() {
+        return isRequestPolicyViolated;
     }
 
-    public void setPolicyViolated(boolean policyViolated) {
-        isPolicyViolated = policyViolated;
+    /**
+     * Note that a policy violation was detected while processing the request.
+     * If the policy processing turns out to fail, a Policy-URL: should be sent back
+     * to the requestor.
+     */
+    public void setRequestPolicyViolated() {
+        isRequestPolicyViolated = true;
     }
 
     public void setService(PublishedService service) {

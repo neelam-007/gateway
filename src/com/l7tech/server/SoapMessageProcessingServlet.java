@@ -153,13 +153,14 @@ public class SoapMessageProcessingServlet extends HttpServlet {
                     HexUtils.copyStream(response.getMimeKnob().getEntireMessageBodyAsInputStream(),
                       hresponse.getOutputStream());
                     return;
-                } else if (context.isAuthenticationMissing() || status.isAuthProblem()) {
-                    logger.fine("servlet transport returning challenge");
-                    sendChallenge(context, hrequest, hresponse);
-                    return;
                 } else if (context.getFaultDetail() != null) {
                     logger.fine("returning special soap fault");
                     sendFault(context, context.getFaultDetail(), hrequest, hresponse);
+                    return;
+                } else if (respKnob.hasChallenge()) {
+                    logger.fine("servlet transport returning challenge");
+                    respKnob.beginChallenge();
+                    sendChallenge(context, hrequest, hresponse);
                     return;
                 } else {
                     logger.fine("servlet transport returning 500");
@@ -214,7 +215,7 @@ public class SoapMessageProcessingServlet extends HttpServlet {
             res.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
 
             PublishedService pserv = context.getService();
-            if (pserv != null && context.isPolicyViolated()) {
+            if (pserv != null && context.isRequestPolicyViolated()) {
                 String purl = makePolicyUrl(req, pserv.getOid());
                 res.setHeader(SecureSpanConstants.HttpHeaders.POLICYURL_HEADER, purl);
             }
@@ -253,12 +254,11 @@ public class SoapMessageProcessingServlet extends HttpServlet {
             responseStream = hresp.getOutputStream();
             String actor = hreq.getRequestURL().toString();
             hresp.setContentType(DEFAULT_CONTENT_TYPE);
-            // todo, fla soap faults should always return 500
-            hresp.setStatus(httpStatus);
+            hresp.setStatus(500); // soap faults "MUST" be sent with status 500 per Basic profile
 
             PublishedService pserv = context.getService();
             String purl = "";
-            if (pserv != null && context.isPolicyViolated()) {
+            if (pserv != null && context.isRequestPolicyViolated()) {
                 purl = makePolicyUrl(hreq, pserv.getOid());
                 hresp.setHeader(SecureSpanConstants.HttpHeaders.POLICYURL_HEADER, purl);
             }
@@ -278,7 +278,7 @@ public class SoapMessageProcessingServlet extends HttpServlet {
             hresp.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
             PublishedService pserv = context.getService();
             String purl = "";
-            if (pserv != null && context.isPolicyViolated()) {
+            if (pserv != null && context.isRequestPolicyViolated()) {
                 purl = makePolicyUrl(hreq, pserv.getOid());
                 hresp.setHeader(SecureSpanConstants.HttpHeaders.POLICYURL_HEADER, purl);
             }

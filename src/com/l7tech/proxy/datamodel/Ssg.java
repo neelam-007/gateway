@@ -717,20 +717,6 @@ public class Ssg implements Serializable, Cloneable, Comparable {
         return null;
     }
 
-    public SecurityToken getSecurityToken(SecurityTokenType tokenType) {
-        return null;
-/*
-        synchronized(this) {
-            SecurityToken token = (SecurityToken)tokenCache.get(tokenType);
-            if (token == null) {
-
-            } else {
-                TokenStrategy strategy = getTokenStrategy(tokenType);
-            }
-        }
-*/
-    }
-
     /**
      * Get the strategy for obtaining a specific type of security token.
      * <p>
@@ -1030,6 +1016,12 @@ public class Ssg implements Serializable, Cloneable, Comparable {
                                         SAML_PREEXPIRE_SEC + " seconds.  Will throw it away and get a new one.");
                     cachedAssertion = null;
                 }
+            }
+        }
+
+        public void onTokenRejected() {
+            synchronized (tokenServerSsg) {
+                cachedAssertion = null;
             }
         }
 

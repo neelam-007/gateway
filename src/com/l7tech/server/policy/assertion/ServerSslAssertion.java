@@ -59,7 +59,7 @@ public class ServerSslAssertion implements ServerAssertion {
         logger.log(level, message);
 
         if (status == AssertionStatus.FALSIFIED)
-            context.setPolicyViolated(true);
+            context.setRequestPolicyViolated();
 
         return status;
     }

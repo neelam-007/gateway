@@ -50,7 +50,7 @@ public abstract class ServerCredentialSourceAssertion implements ServerAssertion
             }
 
             if ( pc == null ) {
-                context.setAuthenticationMissing( true );
+                context.setAuthenticationMissing();
                 challenge( context, authParams );
                 logger.info(AssertionStatus.AUTH_REQUIRED.getMessage());
                 return AssertionStatus.AUTH_REQUIRED;
@@ -69,9 +69,9 @@ public abstract class ServerCredentialSourceAssertion implements ServerAssertion
                 // Suppress exception trace by omitting exception argument
                 logger.warning( cfe.getMessage() );
                 if ( status == AssertionStatus.AUTH_REQUIRED )
-                    context.setAuthenticationMissing(true);
+                    context.setAuthenticationMissing();
                 else
-                    context.setPolicyViolated(true);
+                    context.setRequestPolicyViolated();
                 return status;
             }
         }

@@ -78,6 +78,28 @@ public class XmlUtil {
         return (DocumentBuilder)documentBuilder.get();
     }
 
+    public static Document createEmptyDocument(String rootElementName, String rootPrefix, String rootNs) {
+        try {
+            if (rootElementName == null || rootElementName.length() < 1) throw new IllegalArgumentException();
+            final String xml;
+            if (rootNs != null) {
+                if (rootPrefix != null) {
+                    final String el = rootPrefix + ":" + rootElementName;
+                    xml = "<" + el + " xmlns:" + rootPrefix + "=\"" + rootNs + "\"/>";
+                } else {
+                    xml = "<" + rootElementName + " xmlns=\"" + rootNs + "\"/>";
+                }
+            } else {
+                xml = "<" + rootElementName + "/>";
+            }
+            return stringToDocument(xml);
+        } catch (IOException e) {
+            throw new RuntimeException(e); // can't happen
+        } catch (SAXException e) {
+            throw new RuntimeException(e); // can't happen
+        }
+    }
+
     public static Document stringToDocument(String inputXmlNotAUrl) throws IOException, SAXException {
         ByteArrayInputStream bis = new ByteArrayInputStream(inputXmlNotAUrl.getBytes());
         return parse(bis);

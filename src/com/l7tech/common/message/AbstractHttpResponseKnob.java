@@ -9,12 +9,15 @@ package com.l7tech.common.message;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.logging.Logger;
 
 /**
  * An abstract skeleton of an HttpResponseKnob implementation.
  */
 public abstract class AbstractHttpResponseKnob implements HttpResponseKnob {
+    private static final Logger logger = Logger.getLogger(AbstractHttpResponseKnob.class.getName());
     protected final List headersToSend = new ArrayList();
+    protected final List challengesToSend = new ArrayList();
     protected int statusToSet;
 
     public void setDateHeader(String name, long date) {
@@ -32,6 +35,10 @@ public abstract class AbstractHttpResponseKnob implements HttpResponseKnob {
             if (name.equals(pair.name)) i.remove();
         }
         headersToSend.add(new HttpServletResponseKnob.Pair(name, value));
+    }
+
+    public void addChallenge(String value) {
+        challengesToSend.add(value);
     }
 
     public void addHeader(String name, String value) {

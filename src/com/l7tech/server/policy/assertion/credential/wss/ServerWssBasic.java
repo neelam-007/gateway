@@ -49,8 +49,8 @@ public class ServerWssBasic implements ServerAssertion {
         }
         if (wssResults == null) {
             logger.info("Request did not include WSS Basic credentials.");
-            context.setAuthenticationMissing(true);
-            context.setPolicyViolated(true);
+            context.setAuthenticationMissing();
+            context.setRequestPolicyViolated();
             return AssertionStatus.AUTH_REQUIRED;
         }
         SecurityToken[] tokens = wssResults.getSecurityTokens();
@@ -67,7 +67,7 @@ public class ServerWssBasic implements ServerAssertion {
         logger.info("cannot find credentials");
         // we get here because there were no credentials found in the format we want
         // therefore this assertion was violated
-        context.setPolicyViolated(true);
+        context.setRequestPolicyViolated();
         return AssertionStatus.AUTH_REQUIRED;
     }
 
