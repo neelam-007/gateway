@@ -50,7 +50,9 @@ public class ClientWssBasic extends ClientWssCredentialSource {
     public AssertionStatus decorateRequest(PendingRequest request)
             throws OperationCanceledException, IOException, SAXException
     {
-        Document soapmsg = request.getSoapEnvelope();
+        // TODO needs rewrite for TROGDOR!!
+
+        Document soapmsg = request.getDecoratedSoapEnvelope();
         Element headerel = SoapUtil.getOrMakeHeader(soapmsg);
         if ( headerel == null ) {
             log.warn("Unable to attach WSS UsernameToken to non-SOAP message");

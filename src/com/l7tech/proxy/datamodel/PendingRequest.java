@@ -58,6 +58,7 @@ public class PendingRequest {
 
     // Policy settings, filled in by traversing policy tree
     private static class PolicySettings {
+        private Document decoratedSoapEnvelope = null;
         private Policy activePolicy= null; // the policy that we most recently started applying to this request, if any
         private boolean isSslRequired = false;
         private boolean sslForbidden = false;  // ssl is forbidden for this request
@@ -170,26 +171,27 @@ public class PendingRequest {
     // Getters and setters
 
     /**
-     * Get (a copy of) the Document representing the request.  This returns a copy that can be
-     * modified freely.  If you will not be modifying the returned Document in any way, you can
-     * get additional performance by using getSoapEnvelopeDirect() instead.
+     * Get the working copy of the Document representing the request.  This returns a copy that can be
+     * modified freely.
      *
      * If you want your changes to stick, you'll need to save them back by calling setSoapEnvelope().
      *
      * @return A copy of the SOAP envelope Document, which may be freely modified.
      */
-    public Document getSoapEnvelope() {
-        return (Document) soapEnvelope.cloneNode(true);
+    public Document getDecoratedSoapEnvelope() {
+        if (policySettings.decoratedSoapEnvelope != null)
+            return policySettings.decoratedSoapEnvelope;
+        return policySettings.decoratedSoapEnvelope = (Document) soapEnvelope.cloneNode(true);
     }
 
     /**
      * Get the actual Document representing the request, which should not be modified.  Any change
      * to this Document will prevent the reset() method from returning this PendingRequest to
-     * its original state.  If you need to change the Document, use getSoapEnvelope() instead.
+     * its original state.  If you need to change the Document, use getDecoratedSoapEnvelope() instead.
      *
-     * @return A reference to the SOAP envelope Document, which must not be modified in any way.
+     * @return A reference to the original SOAP envelope Document, which must not be modified in any way.
      */
-    public Document getSoapEnvelopeDirectly() {
+    public Document getUndecoratedSoapEnvelope() {
         return soapEnvelope;
     }
 

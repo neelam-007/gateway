@@ -78,7 +78,7 @@ public class ClientRequestWssIntegrity extends ClientAssertion {
         request.getPendingDecorations().put(this, new ClientDecorator() {
             public AssertionStatus decorateRequest(PendingRequest request) throws PolicyAssertionException {
                 final XpathExpression xpathExpression = requestWssIntegrity.getXpathExpression();
-                final XpathEvaluator eval = XpathEvaluator.newEvaluator(request.getSoapEnvelopeDirectly(),
+                final XpathEvaluator eval = XpathEvaluator.newEvaluator(request.getDecoratedSoapEnvelope(),
                                                                         xpathExpression.getNamespaces());
                 try {
                     List elements = eval.selectElements(xpathExpression.getExpression());
@@ -114,7 +114,10 @@ public class ClientRequestWssIntegrity extends ClientAssertion {
     }
 
     public String getName() {
-        return "XML Request Security - sign elements";
+        String str = "";
+        if (requestWssIntegrity != null && requestWssIntegrity.getXpathExpression() != null)
+            str = " matching XPath expression \"" + requestWssIntegrity.getXpathExpression().getExpression() + '"';
+        return "Request WSS Integrity - sign elements" + str;
     }
 
     public String iconResource(boolean open) {

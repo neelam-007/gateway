@@ -12,6 +12,8 @@ import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.security.xml.WssProcessor;
 import com.l7tech.common.security.xml.WssProcessorImpl;
+import com.l7tech.common.security.xml.WssDecoratorImpl;
+import com.l7tech.common.security.xml.WssDecorator;
 import com.l7tech.common.xml.InvalidDocumentFormatException;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.SslAssertion;
@@ -79,6 +81,7 @@ public class MessageProcessor {
     private static final int MAX_TRIES = 8;
     private PolicyManager policyManager;
     private WssProcessor wssProcessor = new WssProcessorImpl();
+    private WssDecorator wssDecorator = new WssDecoratorImpl();
 
     static {
         // Configure SSL for outgoing connections
@@ -278,7 +281,10 @@ public class MessageProcessor {
      * @throws ServerCertificateUntrustedException  if the Ssg certificate needs to be (re)imported.
      */
     private void enforcePolicy(PendingRequest req)
-            throws OperationCanceledException, GeneralSecurityException, BadCredentialsException, IOException, SAXException, ClientCertificateException, KeyStoreCorruptException, HttpChallengeRequiredException, PolicyRetryableException, PolicyAssertionException
+            throws OperationCanceledException, GeneralSecurityException, BadCredentialsException,
+            IOException, SAXException, ClientCertificateException, KeyStoreCorruptException,
+            HttpChallengeRequiredException, PolicyRetryableException, PolicyAssertionException,
+            InvalidDocumentFormatException, WssDecorator.DecoratorException
     {
         Policy policy = policyManager.getPolicy(req);
         if (policy == null || !policy.isValid()) {
@@ -307,6 +313,10 @@ public class MessageProcessor {
                     ClientDecorator decorator = (ClientDecorator)i.next();
                     decorator.decorateRequest(req);
                 }
+
+                // Do all WSS processing all at once
+                wssDecorator.decorateMessage(req.getDecoratedSoapEnvelope(), req.getWssRequirements());
+
             } catch (PolicyAssertionException e) {
                 // Before rethrowing, make sure we deactivate this cached policy.
                 policy.invalidate();
@@ -437,10 +447,10 @@ public class MessageProcessor {
             if (policy != null && policy.getVersion() != null)
                 postMethod.addRequestHeader(SecureSpanConstants.HttpHeaders.POLICY_VERSION, policy.getVersion());
 
-            String postBody = XmlUtil.nodeToString(req.getSoapEnvelopeDirectly());
+            String postBody = XmlUtil.nodeToString(req.getDecoratedSoapEnvelope());
             if (logPosts()) {
                 if (reformatLogs())
-                    log.info("Posting to Gateway (reformatted): " + XmlUtil.nodeToFormattedString(req.getSoapEnvelopeDirectly()));
+                    log.info("Posting to Gateway (reformatted): " + XmlUtil.nodeToFormattedString(req.getDecoratedSoapEnvelope()));
                 else
                     log.info("Posting to Gateway: " + postBody);
             }

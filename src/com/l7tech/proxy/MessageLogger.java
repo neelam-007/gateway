@@ -34,7 +34,7 @@ public class MessageLogger implements RequestInterceptor {
      */
     public void onReceiveMessage(PendingRequest message) {
         try {
-            log.info("Received client request: " + XmlUtil.nodeToString(message.getSoapEnvelopeDirectly()));
+            log.info("Received client request: " + XmlUtil.nodeToString(message.getUndecoratedSoapEnvelope()));
         } catch (IOException e) {
             log.error("Error examining client request", e);
         }
