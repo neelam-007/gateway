@@ -10,17 +10,14 @@ import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 
 import java.io.Serializable;
-import java.util.Collections;
-import java.util.Iterator;
-import java.util.LinkedList;
-import java.util.List;
+import java.util.*;
 
 /**
  * @author alex
  * @version $Revision$
  */
 public abstract class CompositeAssertion extends Assertion implements Cloneable, Serializable {
-    protected List children = Collections.EMPTY_LIST;
+    protected List children = new ArrayList();
 
     public CompositeAssertion() {
         super();
