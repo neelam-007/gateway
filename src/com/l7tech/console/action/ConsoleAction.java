@@ -17,7 +17,7 @@ public class ConsoleAction extends BaseAction {
      * @return the action name
      */
     public String getName() {
-        return "Manager log";
+        return "Manager Log";
     }
 
     /**
