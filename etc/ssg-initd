@@ -40,10 +40,10 @@ start() {
 	USER=`whoami`
         echo -n $"Starting $prog: "
 	if [ "$USER" == "root" ]; then
-        	su - $ssguser -c "$ssg start -security" > /dev/null 2>&1
+        	su - $ssguser -c "$ssg start" > /dev/null 2>&1
         	RETVAL=$?
 	elif [ "$USER" == "$ssguser" ]; then
-		$ssg start -security > /dev/null 2>&1
+		$ssg start > /dev/null 2>&1
 		RETVAL=$?
 	else
 		echo "Need to be root or $ssguser to run this script";
