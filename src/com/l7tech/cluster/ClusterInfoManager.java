@@ -138,7 +138,9 @@ public class ClusterInfoManager {
     }
 
     /**
-     * allows a node to update its boot timestamp in the cluster_info table
+     * this should be called
+     * when the server boots. it updates the boot time and the ip address in the cluster_status
+     * table.
      */
     public void updateSelfUptime() throws UpdateException {
         long newuptimevalue = System.currentTimeMillis();
@@ -146,6 +148,13 @@ public class ClusterInfoManager {
         if (selfCI != null) {
             selfCI.setUptime(newuptimevalue);
             selfCI.setLastUpdateTimeStamp(newuptimevalue);
+            try {
+                String add = null;
+                add = InetAddress.getLocalHost().getHostAddress();
+                selfCI.setAddress(add);
+            } catch (UnknownHostException e) {
+                logger.warning("cannot get localhost address: " + e.getMessage());
+            }
             try {
                 HibernatePersistenceContext pc = (HibernatePersistenceContext)PersistenceContext.getCurrent();
                 Session session = pc.getSession();
