@@ -5,7 +5,7 @@ import com.l7tech.common.util.KeystoreUtils;
 import com.l7tech.message.*;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
-import com.l7tech.policy.assertion.xmlsec.ResponseWssIntegrity;
+import com.l7tech.policy.assertion.xmlsec.ResponseWssConfidentiality;
 import com.l7tech.server.policy.assertion.ServerAssertion;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
@@ -30,8 +30,8 @@ import java.util.logging.Logger;
  */
 public class ServerResponseWssConfidentiality implements ServerAssertion {
 
-    public ServerResponseWssConfidentiality(ResponseWssIntegrity data) {
-        xmlResponseSecurity = data;
+    public ServerResponseWssConfidentiality(ResponseWssConfidentiality data) {
+        responseWssConfidentiality = data;
     }
 
     /**
@@ -98,5 +98,5 @@ public class ServerResponseWssConfidentiality implements ServerAssertion {
     }
 
     private final Logger logger = Logger.getLogger(getClass().getName());
-    private ResponseWssIntegrity xmlResponseSecurity;
+    private ResponseWssConfidentiality responseWssConfidentiality;
 }
