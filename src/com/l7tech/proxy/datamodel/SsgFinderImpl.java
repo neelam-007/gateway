@@ -6,8 +6,6 @@
 
 package com.l7tech.proxy.datamodel;
 
-import org.apache.log4j.Category;
-
 import java.beans.XMLDecoder;
 import java.io.File;
 import java.io.FileInputStream;
@@ -24,6 +22,7 @@ import java.util.HashMap;
 
 import com.l7tech.common.util.FileUtils;
 import com.l7tech.proxy.datamodel.exceptions.SsgNotFoundException;
+import com.l7tech.proxy.util.ClientLogger;
 
 /**
  * Provides read-only access to the ssgs.xml file.
@@ -33,7 +32,7 @@ import com.l7tech.proxy.datamodel.exceptions.SsgNotFoundException;
  * Time: 9:32:31 AM
  */
 public class SsgFinderImpl implements SsgFinder {
-    private static final Category log = Category.getInstance(SsgFinderImpl.class);
+    private static final ClientLogger log = ClientLogger.getInstance(SsgFinderImpl.class);
 
     protected static final String STORE_DIR = System.getProperty("user.home") + File.separator + ".l7tech";
     protected static final String STORE_FILE = STORE_DIR + File.separator + "ssgs.xml";

@@ -3,7 +3,7 @@ package com.l7tech.proxy.datamodel;
 import com.l7tech.common.protocol.SecureSpanConstants;
 import com.l7tech.common.security.xml.Session;
 import com.l7tech.proxy.ClientProxy;
-import org.apache.log4j.Category;
+import com.l7tech.proxy.util.ClientLogger;
 import sun.misc.BASE64Decoder;
 import sun.misc.BASE64Encoder;
 
@@ -31,7 +31,7 @@ import java.util.TreeSet;
  * Time: 11:09:04 AM
  */
 public class Ssg implements Serializable, Cloneable, Comparable {
-    private static final Category log = Category.getInstance(Ssg.class);
+    private static final ClientLogger log = ClientLogger.getInstance(Ssg.class);
     private static final String SSG_PROTOCOL = "http";
     private static final int SSG_SSL_PORT = 8443;
     private static final int SSG_PORT = 8080;

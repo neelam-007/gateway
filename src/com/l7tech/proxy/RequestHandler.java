@@ -10,8 +10,8 @@ import com.l7tech.proxy.datamodel.SsgFinder;
 import com.l7tech.proxy.datamodel.SsgResponse;
 import com.l7tech.proxy.datamodel.exceptions.SsgNotFoundException;
 import com.l7tech.proxy.processor.MessageProcessor;
+import com.l7tech.proxy.util.ClientLogger;
 import com.l7tech.service.Wsdl;
-import org.apache.log4j.Category;
 import org.mortbay.http.HttpException;
 import org.mortbay.http.HttpRequest;
 import org.mortbay.http.HttpResponse;
@@ -23,13 +23,12 @@ import org.w3c.dom.NodeList;
 
 import javax.wsdl.Port;
 import java.io.IOException;
-import java.io.OutputStream;
 import java.io.PrintStream;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.Enumeration;
-import java.util.List;
 import java.util.Iterator;
+import java.util.List;
 import java.util.regex.Pattern;
 
 /**
@@ -40,7 +39,7 @@ import java.util.regex.Pattern;
  * To change this template use Options | File Templates.
  */
 public class RequestHandler extends AbstractHttpHandler {
-    private static final Category log = Category.getInstance(RequestHandler.class);
+    private static final ClientLogger log = ClientLogger.getInstance(RequestHandler.class);
     private ClientProxy clientProxy;
     private SsgFinder ssgFinder;
     private MessageProcessor messageProcessor;

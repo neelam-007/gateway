@@ -13,11 +13,11 @@ import com.l7tech.proxy.datamodel.Ssg;
 import com.l7tech.proxy.datamodel.exceptions.BadCredentialsException;
 import com.l7tech.proxy.datamodel.exceptions.OperationCanceledException;
 import com.l7tech.proxy.datamodel.exceptions.ServerCertificateUntrustedException;
+import com.l7tech.proxy.util.ClientLogger;
 import com.l7tech.service.Wsdl;
 import org.apache.commons.httpclient.HttpClient;
 import org.apache.commons.httpclient.UsernamePasswordCredentials;
 import org.apache.commons.httpclient.methods.GetMethod;
-import org.apache.log4j.Category;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
 
@@ -39,7 +39,7 @@ import java.security.GeneralSecurityException;
  * Time: 5:12:42 PM
  */
 public class WsdlProxy {
-    private static final Category log = Category.getInstance(WsdlProxy.class);
+    private static final ClientLogger log = ClientLogger.getInstance(WsdlProxy.class);
 
     private interface StreamReader {
         Object readStream(InputStream is) throws WSDLException, IOException, SAXException;

@@ -15,8 +15,8 @@ import com.l7tech.proxy.processor.MessageProcessor;
 import com.l7tech.proxy.ssl.ClientProxyKeyManager;
 import com.l7tech.proxy.ssl.ClientProxySecureProtocolSocketFactory;
 import com.l7tech.proxy.ssl.ClientProxyTrustManager;
+import com.l7tech.proxy.util.ClientLogger;
 import org.apache.commons.httpclient.protocol.Protocol;
-import org.apache.log4j.Category;
 import org.bouncycastle.jce.PKCS10CertificationRequest;
 import org.bouncycastle.jce.provider.JDKKeyPairGenerator;
 import org.mortbay.http.HttpContext;
@@ -47,7 +47,7 @@ import java.security.cert.X509Certificate;
  * Time: 1:32:33 PM
  */
 public class ClientProxy {
-    private static final Category log = Category.getInstance(ClientProxy.class);
+    private static final ClientLogger log = ClientLogger.getInstance(ClientProxy.class);
     public static final String PROXY_CONFIG =
             System.getProperties().getProperty("user.home") + File.separator + ".l7tech";
 

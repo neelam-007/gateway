@@ -1,7 +1,5 @@
 package com.l7tech.proxy.gui;
 
-import org.apache.log4j.Category;
-
 import javax.swing.*;
 import javax.swing.event.ListDataEvent;
 import javax.swing.event.ListDataListener;
@@ -12,6 +10,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 
 import com.l7tech.proxy.gui.util.IconManager;
+import com.l7tech.proxy.util.ClientLogger;
 import com.l7tech.common.gui.util.Utilities;
 
 /**
@@ -21,7 +20,7 @@ import com.l7tech.common.gui.util.Utilities;
  * Time: 5:01:29 PM
  */
 public class MessageViewer extends JFrame {
-    private static final Category log = Category.getInstance(MessageViewer.class);
+    private static final ClientLogger log = ClientLogger.getInstance(MessageViewer.class);
 
     MessageViewerModel messageViewerModel = new MessageViewerModel();
     private JPanel messageView;

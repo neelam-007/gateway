@@ -7,13 +7,12 @@
 package com.l7tech.proxy;
 
 import com.l7tech.common.util.XmlUtil;
-import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.proxy.datamodel.PendingRequest;
+import com.l7tech.proxy.datamodel.Policy;
 import com.l7tech.proxy.datamodel.PolicyAttachmentKey;
 import com.l7tech.proxy.datamodel.Ssg;
 import com.l7tech.proxy.datamodel.SsgResponse;
-import com.l7tech.proxy.datamodel.Policy;
-import org.apache.log4j.Category;
+import com.l7tech.proxy.util.ClientLogger;
 
 import java.io.IOException;
 
@@ -24,7 +23,7 @@ import java.io.IOException;
  * Time: 10:52:55 AM
  */
 public class MessageLogger implements RequestInterceptor {
-    private final static Category log = Category.getInstance(MessageLogger.class);
+    private final static ClientLogger log = ClientLogger.getInstance(MessageLogger.class);
 
     public MessageLogger() {
     }

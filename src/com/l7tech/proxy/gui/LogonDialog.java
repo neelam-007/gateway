@@ -7,7 +7,7 @@
 package com.l7tech.proxy.gui;
 
 import com.l7tech.common.gui.util.Utilities;
-import org.apache.log4j.Category;
+import com.l7tech.proxy.util.ClientLogger;
 
 import javax.swing.*;
 import javax.swing.event.DocumentListener;
@@ -25,7 +25,7 @@ import java.net.PasswordAuthentication;
  * Copied and modified from Emil's com.l7tech.console.LogonDialog
  */
 public class LogonDialog extends JDialog {
-    static final Category log = Category.getInstance(LogonDialog.class);
+    static final ClientLogger log = ClientLogger.getInstance(LogonDialog.class);
     private static final String DFG = "defaultForeground";
 
     /* the PasswordAuthentication instance with user supplied credentials */

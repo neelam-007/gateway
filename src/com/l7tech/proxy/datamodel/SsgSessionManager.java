@@ -11,6 +11,7 @@ import com.l7tech.common.protocol.SecureSpanConstants;
 import com.l7tech.proxy.datamodel.exceptions.ServerCertificateUntrustedException;
 import com.l7tech.proxy.datamodel.exceptions.OperationCanceledException;
 import com.l7tech.proxy.datamodel.exceptions.BadCredentialsException;
+import com.l7tech.proxy.util.ClientLogger;
 
 import javax.net.ssl.SSLHandshakeException;
 
@@ -19,7 +20,6 @@ import org.apache.commons.httpclient.UsernamePasswordCredentials;
 import org.apache.commons.httpclient.HttpMethod;
 import org.apache.commons.httpclient.Header;
 import org.apache.commons.httpclient.methods.GetMethod;
-import org.apache.log4j.Category;
 
 import java.net.URL;
 import java.net.MalformedURLException;
@@ -35,7 +35,7 @@ import sun.misc.BASE64Decoder;
  * Time: 1:11:49 PM
  */
 public class SsgSessionManager {
-    private static final Category log = Category.getInstance(SsgSessionManager.class);
+    private static final ClientLogger log = ClientLogger.getInstance(SsgSessionManager.class);
 
     private static class InvalidSessionIdException extends IOException {
         public InvalidSessionIdException(String s, Throwable cause) {

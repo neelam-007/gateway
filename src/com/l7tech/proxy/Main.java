@@ -3,8 +3,8 @@ package com.l7tech.proxy;
 import com.l7tech.proxy.datamodel.Managers;
 import com.l7tech.proxy.datamodel.SsgFinderImpl;
 import com.l7tech.proxy.processor.MessageProcessor;
+import com.l7tech.proxy.util.ClientLogger;
 import com.l7tech.common.BuildInfo;
-import org.apache.log4j.Category;
 
 /**
  * Begin execution of daemon-mode (no UI at all) client proxy.
@@ -13,7 +13,7 @@ import org.apache.log4j.Category;
  * Time: 3:33:14 PM
  */
 public class Main {
-    private static final Category log = Category.getInstance(Main.class);
+    private static final ClientLogger log = ClientLogger.getInstance(Main.class);
     private static final int DEFAULT_PORT = 7700;
     private static final int MIN_THREADS = 4;
     private static final int MAX_THREADS = 20;

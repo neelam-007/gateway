@@ -1,14 +1,12 @@
 package com.l7tech.proxy.gui;
 
-import com.l7tech.proxy.datamodel.Managers;
 import com.l7tech.proxy.datamodel.Ssg;
 import com.l7tech.proxy.datamodel.SsgManager;
 import com.l7tech.proxy.datamodel.exceptions.SsgNotFoundException;
+import com.l7tech.proxy.util.ClientLogger;
 
 import javax.swing.*;
 import java.io.IOException;
-
-import org.apache.log4j.Category;
 
 /**
  * Provide a ListModel view of the current SSG list.
@@ -17,7 +15,7 @@ import org.apache.log4j.Category;
  * Time: 2:48:51 PM
  */
 public class SsgListModel extends AbstractListModel {
-    private static final Category log = Category.getInstance(SsgListModel.class);
+    private static final ClientLogger log = ClientLogger.getInstance(SsgListModel.class);
     private SsgManager ssgManager;
 
     public SsgListModel(SsgManager ssgManager) {

@@ -10,7 +10,7 @@ import com.l7tech.proxy.datamodel.CurrentRequest;
 import com.l7tech.proxy.datamodel.Ssg;
 import com.l7tech.proxy.datamodel.SsgKeyStoreManager;
 import com.l7tech.proxy.datamodel.exceptions.ServerCertificateUntrustedException;
-import org.apache.log4j.Category;
+import com.l7tech.proxy.util.ClientLogger;
 import sun.security.x509.X500Name;
 
 import javax.net.ssl.X509TrustManager;
@@ -28,7 +28,7 @@ import java.security.cert.X509Certificate;
  * Time: 8:49:58 PM
  */
 public class ClientProxyTrustManager implements X509TrustManager {
-    private static final Category log = Category.getInstance(ClientProxyTrustManager.class);
+    private static final ClientLogger log = ClientLogger.getInstance(ClientProxyTrustManager.class);
 
     public X509Certificate[] getAcceptedIssuers() {
         // Find our current ssg

@@ -9,7 +9,7 @@ package com.l7tech.proxy.datamodel;
 import com.l7tech.common.util.FileUtils;
 import com.l7tech.proxy.datamodel.exceptions.BadCredentialsException;
 import com.l7tech.proxy.datamodel.exceptions.OperationCanceledException;
-import org.apache.log4j.Category;
+import com.l7tech.proxy.util.ClientLogger;
 
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -34,7 +34,7 @@ import java.security.cert.X509Certificate;
  * Time: 7:36:04 PM
  */
 public class SsgKeyStoreManager {
-    private static final Category log = Category.getInstance(SsgKeyStoreManager.class);
+    private static final ClientLogger log = ClientLogger.getInstance(SsgKeyStoreManager.class);
     private static final String ALIAS = "clientProxy";
     private static final String SSG_ALIAS = "ssgCa";
 

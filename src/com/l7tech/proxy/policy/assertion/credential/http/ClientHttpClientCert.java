@@ -16,7 +16,7 @@ import com.l7tech.proxy.datamodel.exceptions.BadCredentialsException;
 import com.l7tech.proxy.datamodel.exceptions.ClientCertificateException;
 import com.l7tech.proxy.datamodel.exceptions.OperationCanceledException;
 import com.l7tech.proxy.policy.assertion.ClientAssertion;
-import org.apache.log4j.Category;
+import com.l7tech.proxy.util.ClientLogger;
 
 import java.io.IOException;
 import java.security.GeneralSecurityException;
@@ -27,7 +27,7 @@ import java.security.NoSuchAlgorithmException;
  * @version $Revision$
  */
 public class ClientHttpClientCert extends ClientAssertion {
-    private static final Category log = Category.getInstance(ClientHttpClientCert.class);
+    private static final ClientLogger log = ClientLogger.getInstance(ClientHttpClientCert.class);
     public ClientHttpClientCert( HttpClientCert data ) {
         this.data = data;
     }

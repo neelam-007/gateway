@@ -6,8 +6,6 @@
 
 package com.l7tech.proxy.util;
 
-import org.apache.log4j.Category;
-
 import java.util.StringTokenizer;
 
 /**
@@ -17,7 +15,7 @@ import java.util.StringTokenizer;
  * Time: 5:26:31 PM
  */
 public class JavaVersionChecker {
-    private static final Category log = Category.getInstance(JavaVersionChecker.class);
+    private static final ClientLogger log = ClientLogger.getInstance(JavaVersionChecker.class);
 
     /**
      * Check if the java.version is at least the requested version.

@@ -1,12 +1,12 @@
 package com.l7tech.proxy.gui;
 
 import com.l7tech.proxy.ClientProxy;
+import com.l7tech.proxy.util.ClientLogger;
 import com.l7tech.proxy.processor.MessageProcessor;
 import com.l7tech.proxy.datamodel.Managers;
 import com.l7tech.proxy.datamodel.SsgManager;
 import com.l7tech.proxy.datamodel.SsgManagerImpl;
 import com.l7tech.common.BuildInfo;
-import org.apache.log4j.Category;
 import org.mortbay.util.MultiException;
 
 import java.net.BindException;
@@ -18,7 +18,7 @@ import java.net.BindException;
  * Time: 3:33:14 PM
  */
 public class Main {
-    private static final Category log = Category.getInstance(Main.class);
+    private static final ClientLogger log = ClientLogger.getInstance(Main.class);
     private static final int DEFAULT_PORT = 7700;
     private static final int MIN_THREADS = 4;
     private static final int MAX_THREADS = 20;

@@ -18,7 +18,7 @@ import com.l7tech.proxy.datamodel.exceptions.OperationCanceledException;
 import com.l7tech.proxy.datamodel.exceptions.ServerCertificateUntrustedException;
 import com.l7tech.proxy.policy.assertion.ClientAssertion;
 import com.l7tech.proxy.policy.assertion.credential.http.ClientHttpClientCert;
-import org.apache.log4j.Category;
+import com.l7tech.proxy.util.ClientLogger;
 import org.w3c.dom.Document;
 
 import java.io.IOException;
@@ -44,6 +44,7 @@ import java.security.cert.X509Certificate;
  * @author flascell
  */
 public class ClientXmlRequestSecurity extends ClientAssertion {
+    private static final ClientLogger log = ClientLogger.getInstance(ClientHttpClientCert.class);
 
     public ClientXmlRequestSecurity(XmlRequestSecurity data) {
         this.data = data;
@@ -132,5 +133,4 @@ public class ClientXmlRequestSecurity extends ClientAssertion {
     }
 
     protected XmlRequestSecurity data;
-    private static final Category log = Category.getInstance(ClientHttpClientCert.class);
 }

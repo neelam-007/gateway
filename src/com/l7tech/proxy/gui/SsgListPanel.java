@@ -5,7 +5,7 @@ import com.l7tech.proxy.datamodel.SsgManager;
 import com.l7tech.proxy.datamodel.SsgKeyStoreManager;
 import com.l7tech.proxy.gui.util.IconManager;
 import com.l7tech.proxy.ClientProxy;
-import org.apache.log4j.Category;
+import com.l7tech.proxy.util.ClientLogger;
 
 import javax.swing.*;
 import java.awt.*;
@@ -21,7 +21,7 @@ import java.awt.event.MouseEvent;
  * To change this template use Options | File Templates.
  */
 public class SsgListPanel extends JPanel {
-    private final Category log = Category.getInstance(SsgListPanel.class);
+    private final ClientLogger log = ClientLogger.getInstance(SsgListPanel.class);
     private SsgListModel ssgListModel;
     private JList ssgList;
     private Action actionNewSsg;

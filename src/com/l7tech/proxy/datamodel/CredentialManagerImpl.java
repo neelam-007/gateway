@@ -6,8 +6,8 @@
 
 package com.l7tech.proxy.datamodel;
 
-import org.apache.log4j.Category;
 import com.l7tech.proxy.datamodel.exceptions.OperationCanceledException;
+import com.l7tech.proxy.util.ClientLogger;
 
 import java.net.PasswordAuthentication;
 
@@ -20,7 +20,7 @@ import java.net.PasswordAuthentication;
  * Time: 10:39:29 AM
  */
 public class CredentialManagerImpl extends CredentialManager {
-    private static final Category log = Category.getInstance(CredentialManagerImpl.class);
+    private static final ClientLogger log = ClientLogger.getInstance(CredentialManagerImpl.class);
     private static CredentialManagerImpl INSTANCE = new CredentialManagerImpl();
 
     private CredentialManagerImpl() {}

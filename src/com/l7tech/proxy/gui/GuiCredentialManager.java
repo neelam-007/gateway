@@ -12,7 +12,7 @@ import com.l7tech.proxy.datamodel.Ssg;
 import com.l7tech.proxy.datamodel.SsgManager;
 import com.l7tech.proxy.datamodel.SsgKeyStoreManager;
 import com.l7tech.proxy.datamodel.exceptions.OperationCanceledException;
-import org.apache.log4j.Category;
+import com.l7tech.proxy.util.ClientLogger;
 
 import javax.swing.*;
 import javax.security.auth.x500.X500Principal;
@@ -29,7 +29,7 @@ import java.security.cert.X509Certificate;
  * Time: 10:36:01 AM
  */
 public class GuiCredentialManager extends CredentialManager {
-    private static final Category log = Category.getInstance(GuiCredentialManager.class);
+    private static final ClientLogger log = ClientLogger.getInstance(GuiCredentialManager.class);
     private PleaseWaitDialog pleaseWaitDialog;
     private SsgManager ssgManager;
 

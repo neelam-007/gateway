@@ -2,7 +2,6 @@ package com.l7tech.proxy.datamodel;
 
 import com.l7tech.common.util.FileUtils;
 import com.l7tech.proxy.datamodel.exceptions.SsgNotFoundException;
-import org.apache.log4j.Category;
 
 import java.beans.XMLEncoder;
 import java.io.FileOutputStream;
@@ -16,8 +15,6 @@ import java.util.Iterator;
  * Time: 1:51:56 PM
  */
 public class SsgManagerImpl extends SsgFinderImpl implements SsgManager {
-    private static final Category log = Category.getInstance(SsgManagerImpl.class);
-
     private static class SsgManagerHolder {
         private static final SsgManagerImpl ssgManager = new SsgManagerImpl();
     }

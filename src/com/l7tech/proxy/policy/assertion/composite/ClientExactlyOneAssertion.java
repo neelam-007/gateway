@@ -16,7 +16,7 @@ import com.l7tech.proxy.datamodel.exceptions.OperationCanceledException;
 import com.l7tech.proxy.datamodel.exceptions.ClientCertificateException;
 import com.l7tech.proxy.datamodel.exceptions.ResponseValidationException;
 import com.l7tech.proxy.policy.assertion.ClientAssertion;
-import org.apache.log4j.Category;
+import com.l7tech.proxy.util.ClientLogger;
 import org.xml.sax.SAXException;
 
 import java.security.GeneralSecurityException;
@@ -27,7 +27,7 @@ import java.io.IOException;
  * @version $Revision$
  */
 public class ClientExactlyOneAssertion extends ClientCompositeAssertion {
-    private static final Category log = Category.getInstance(ClientExactlyOneAssertion.class);
+    private static final ClientLogger log = ClientLogger.getInstance(ClientExactlyOneAssertion.class);
 
     public ClientExactlyOneAssertion( ExactlyOneAssertion data ) {
         super( data );

@@ -7,7 +7,7 @@
 package com.l7tech.proxy.datamodel;
 
 import com.l7tech.common.util.XmlUtil;
-import org.apache.log4j.Category;
+import com.l7tech.proxy.util.ClientLogger;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
 
@@ -20,7 +20,7 @@ import java.io.IOException;
  * Time: 9:48:45 AM
  */
 public class SsgResponse {
-    private static final Category log = Category.getInstance(SsgResponse.class);
+    private static final ClientLogger log = ClientLogger.getInstance(SsgResponse.class);
     private String responseString = null;
     private Document responseDoc = null;
     private HttpHeaders headers;

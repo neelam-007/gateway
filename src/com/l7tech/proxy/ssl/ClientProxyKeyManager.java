@@ -11,7 +11,7 @@ import com.l7tech.proxy.datamodel.Ssg;
 import com.l7tech.proxy.datamodel.SsgKeyStoreManager;
 import com.l7tech.proxy.datamodel.exceptions.BadCredentialsException;
 import com.l7tech.proxy.datamodel.exceptions.OperationCanceledException;
-import org.apache.log4j.Category;
+import com.l7tech.proxy.util.ClientLogger;
 
 import javax.net.ssl.X509KeyManager;
 import java.net.Socket;
@@ -27,7 +27,7 @@ import java.security.cert.X509Certificate;
  * Time: 8:50:49 PM
  */
 public class ClientProxyKeyManager implements X509KeyManager {
-    private static final Category log = Category.getInstance(ClientProxyKeyManager.class);
+    private static final ClientLogger log = ClientLogger.getInstance(ClientProxyKeyManager.class);
     X509KeyManager defaultKeyManager = null;
 
     public PrivateKey getPrivateKey(String s) {

@@ -2,6 +2,7 @@ package com.l7tech.proxy.gui;
 
 import com.l7tech.common.util.XmlUtil;
 import com.l7tech.proxy.RequestInterceptor;
+import com.l7tech.proxy.util.ClientLogger;
 import com.l7tech.proxy.datamodel.HttpHeaders;
 import com.l7tech.proxy.datamodel.PendingRequest;
 import com.l7tech.proxy.datamodel.Policy;
@@ -11,7 +12,6 @@ import com.l7tech.proxy.datamodel.SsgResponse;
 import com.l7tech.proxy.gui.policy.PolicyTreeCellRenderer;
 import com.l7tech.proxy.gui.policy.PolicyTreeModel;
 import com.l7tech.proxy.policy.assertion.ClientAssertion;
-import org.apache.log4j.Category;
 import org.w3c.dom.Document;
 
 import javax.swing.*;
@@ -31,7 +31,7 @@ import java.util.List;
  * Time: 5:03:25 PM
  */
 public class MessageViewerModel extends AbstractListModel implements RequestInterceptor {
-    private static final Category log = Category.getInstance(MessageViewerModel.class.getName());
+    private static final ClientLogger log = ClientLogger.getInstance(MessageViewerModel.class);
     private static final int maxMessages = 32;
 
     private List messages = new ArrayList(maxMessages);

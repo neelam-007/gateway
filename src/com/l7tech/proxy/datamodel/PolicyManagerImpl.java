@@ -10,6 +10,7 @@ import com.l7tech.common.protocol.SecureSpanConstants;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.wsp.WspReader;
 import com.l7tech.proxy.ConfigurationException;
+import com.l7tech.proxy.util.ClientLogger;
 import com.l7tech.proxy.datamodel.exceptions.OperationCanceledException;
 import com.l7tech.proxy.datamodel.exceptions.ServerCertificateUntrustedException;
 import org.apache.commons.httpclient.Header;
@@ -17,7 +18,6 @@ import org.apache.commons.httpclient.HttpClient;
 import org.apache.commons.httpclient.HttpState;
 import org.apache.commons.httpclient.UsernamePasswordCredentials;
 import org.apache.commons.httpclient.methods.GetMethod;
-import org.apache.log4j.Category;
 
 import javax.net.ssl.SSLHandshakeException;
 import java.io.IOException;
@@ -31,7 +31,7 @@ import java.net.URL;
  * Time: 10:22:35 AM
  */
 public class PolicyManagerImpl implements PolicyManager {
-    private static final Category log = Category.getInstance(PolicyManagerImpl.class);
+    private static final ClientLogger log = ClientLogger.getInstance(PolicyManagerImpl.class);
     private static final PolicyManagerImpl INSTANCE = new PolicyManagerImpl();
 
     private PolicyManagerImpl() {

@@ -30,12 +30,12 @@ import com.l7tech.proxy.datamodel.exceptions.ResponseValidationException;
 import com.l7tech.proxy.datamodel.exceptions.ServerCertificateUntrustedException;
 import com.l7tech.proxy.ssl.HostnameMismatchException;
 import com.l7tech.proxy.util.CannedSoapFaults;
+import com.l7tech.proxy.util.ClientLogger;
 import org.apache.commons.httpclient.Header;
 import org.apache.commons.httpclient.HttpClient;
 import org.apache.commons.httpclient.HttpState;
 import org.apache.commons.httpclient.UsernamePasswordCredentials;
 import org.apache.commons.httpclient.methods.PostMethod;
-import org.apache.log4j.Category;
 import org.xml.sax.SAXException;
 
 import javax.net.ssl.SSLException;
@@ -54,10 +54,11 @@ import java.security.cert.CertificateException;
  * Time: 9:51:36 AM
  */
 public class MessageProcessor {
+    private static final ClientLogger log = ClientLogger.getInstance(MessageProcessor.class);
+
     public static final String PROPERTY_LOGPOSTS    = "com.l7tech.proxy.processor.logPosts";
     public static final String PROPERTY_LOGRESPONSE = "com.l7tech.proxy.processor.logResponses";
 
-    private static final Category log = Category.getInstance(MessageProcessor.class);
     private static final int MAX_TRIES = 8;
     private PolicyManager policyManager;
 

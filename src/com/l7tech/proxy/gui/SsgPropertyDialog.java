@@ -5,6 +5,7 @@ import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.common.gui.widgets.CertificatePanel;
 import com.l7tech.common.gui.widgets.WrappingLabel;
 import com.l7tech.proxy.ClientProxy;
+import com.l7tech.proxy.util.ClientLogger;
 import com.l7tech.proxy.datamodel.Policy;
 import com.l7tech.proxy.datamodel.PolicyAttachmentKey;
 import com.l7tech.proxy.datamodel.Ssg;
@@ -14,7 +15,6 @@ import com.l7tech.proxy.datamodel.SsgListener;
 import com.l7tech.proxy.gui.util.IconManager;
 import com.l7tech.proxy.gui.policy.PolicyTreeCellRenderer;
 import com.l7tech.proxy.gui.policy.PolicyTreeModel;
-import org.apache.log4j.Category;
 
 import javax.swing.*;
 import javax.swing.border.BevelBorder;
@@ -42,7 +42,7 @@ import java.util.ArrayList;
  * Time: 11:14:36 AM
  */
 public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
-    private static final Category log = Category.getInstance(SsgPropertyDialog.class);
+    private static final ClientLogger log = ClientLogger.getInstance(SsgPropertyDialog.class);
     private static final Ssg referenceSsg = new Ssg(); // SSG bean with default values for all
 
     // Model

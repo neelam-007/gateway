@@ -7,7 +7,6 @@
 package com.l7tech.proxy.ssl;
 
 import org.apache.commons.httpclient.protocol.SecureProtocolSocketFactory;
-import org.apache.log4j.Category;
 
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLSocket;
@@ -16,6 +15,8 @@ import java.net.InetAddress;
 import java.net.Socket;
 import java.net.UnknownHostException;
 
+import com.l7tech.proxy.util.ClientLogger;
+
 /**
  * New socket factory for SSL with the Jakarta Commons HTTP client.
  * User: mike
@@ -23,7 +24,7 @@ import java.net.UnknownHostException;
  * Time: 8:48:21 PM
  */
 public class ClientProxySecureProtocolSocketFactory implements SecureProtocolSocketFactory {
-    private static final Category log = Category.getInstance(ClientProxySecureProtocolSocketFactory.class);
+    private static final ClientLogger log = ClientLogger.getInstance(ClientProxySecureProtocolSocketFactory.class);
     private SSLContext sslContext;
 
     public ClientProxySecureProtocolSocketFactory(SSLContext ctx) {

@@ -8,7 +8,7 @@ import com.l7tech.proxy.RequestInterceptor;
 import com.l7tech.proxy.datamodel.SsgManager;
 import com.l7tech.proxy.gui.util.IconManager;
 import com.l7tech.proxy.util.JavaVersionChecker;
-import org.apache.log4j.Category;
+import com.l7tech.proxy.util.ClientLogger;
 import snoozesoft.systray4j.SysTrayMenu;
 import snoozesoft.systray4j.SysTrayMenuIcon;
 import snoozesoft.systray4j.SysTrayMenuItem;
@@ -32,7 +32,7 @@ import java.net.URL;
  * Time: 1:47:04 PM
  */
 public class Gui {
-    private static final Category log = Category.getInstance(Gui.class.getName());
+    private static final ClientLogger log = ClientLogger.getInstance(Gui.class);
     public static final String RESOURCE_PATH = "com/l7tech/proxy/resources";
     public static final String HELP_PATH = "com/l7tech/proxy/resources/helpset/proxy.hs";
 
