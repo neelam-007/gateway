@@ -85,6 +85,7 @@ public class ServerRequestWssConfidentiality implements ServerAssertion {
             }
         }
         logger.fine("The element was found in the request but does not appear to be encrypted. Returning FALSIFIED");
+        response.setPolicyViolated(true);
         return AssertionStatus.FALSIFIED;
     }
 

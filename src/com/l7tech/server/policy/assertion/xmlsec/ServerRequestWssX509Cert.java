@@ -46,6 +46,7 @@ public class ServerRequestWssX509Cert implements ServerAssertion {
         WssProcessor.SecurityToken[] tokens = wssResults.getSecurityTokens();
         if (tokens == null) {
             logger.info("No tokens were processed from this request. Returning AUTH_REQUIRED.");
+            response.setAuthenticationMissing(true);
             return AssertionStatus.AUTH_REQUIRED;
         }
         X509Certificate gotACertAlready = null;
@@ -79,6 +80,7 @@ public class ServerRequestWssX509Cert implements ServerAssertion {
             return AssertionStatus.NONE;
         }
         logger.info("This assertion did not find a proven x509 cert to use as credentials. Returning AUTH_REQUIRED.");
+        response.setAuthenticationMissing(true);
         return AssertionStatus.AUTH_REQUIRED;
     }
 

@@ -84,6 +84,7 @@ public class ServerRequestWssIntegrity implements ServerAssertion {
             }
         }
         logger.fine("The element was found in the request but does not appear to be signed. Returning FALSIFIED");
+        response.setPolicyViolated(true);
         return AssertionStatus.FALSIFIED;
     }
 
