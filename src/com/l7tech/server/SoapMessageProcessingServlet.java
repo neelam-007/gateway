@@ -117,10 +117,10 @@ public class SoapMessageProcessingServlet extends HttpServlet {
 
             // RequestAuditRecord rec = new RequestAuditRecord( "HTTP(s) SOAP Request", status );
 
-            if ( respWriter != null ) respWriter.close();
-            if ( respStream != null ) respStream.close();
-            if ( sreq != null ) sreq.close();
-            if ( sresp != null ) sresp.close();
+            try { if ( respWriter != null ) respWriter.close(); } catch (Throwable t) {}
+            try { if ( respStream != null ) respStream.close(); } catch (Throwable t) {}
+            try { if ( sreq != null ) sreq.close(); } catch (Throwable t) {}
+            try { if ( sresp != null ) sresp.close(); } catch (Throwable t) {}
         }
     }
 
