@@ -36,7 +36,7 @@ fi
 export PATH
 
 
-if [ -z $JAVA_OPTS ]; then
+if [ -z "$JAVA_OPTS" ]; then
     JAVA_OPTS=$default_java_opts
 else
     JAVA_OPTS="$JAVA_OPTS $default_java_opts"
