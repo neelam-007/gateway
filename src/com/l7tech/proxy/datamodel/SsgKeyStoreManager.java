@@ -246,7 +246,7 @@ public class SsgKeyStoreManager {
      * @throws IllegalStateException  if this SSG has not yet loaded its keystore
      * @throws IOException            if there was a problem writing the keystore to disk
      */
-    public static void saveKeyStore(final Ssg ssg) throws IllegalStateException, IOException {
+    private static void saveKeyStore(final Ssg ssg) throws IllegalStateException, IOException {
         synchronized (ssg) {
             if (ssg.keyStore() == null)
                 throw new IllegalStateException("SSG " + ssg + " hasn't yet loaded its keystore");
