@@ -39,10 +39,9 @@ import java.rmi.RemoteException;
  */
 public class CertManagerWindow extends JDialog {
 
-    public static final int CERT_TABLE_CERT_OID_COLUMN_INDEX = 0;
-    public static final int CERT_TABLE_CERT_NAME_COLUMN_INDEX = 1;
-    public static final int CERT_TABLE_CERT_EXPIRATION_DATE_COLUMN_INDEX = 2;
-    public static final int CERT_TABLE_CERT_USAGE_COLUMN_INDEX = 3;
+    public static final int CERT_TABLE_CERT_NAME_COLUMN_INDEX = 0;
+    public static final int CERT_TABLE_CERT_EXPIRATION_DATE_COLUMN_INDEX = 1;
+    public static final int CERT_TABLE_CERT_USAGE_COLUMN_INDEX = 2;
 
     private JPanel mainPanel;
     private JButton addButton;
@@ -126,8 +125,10 @@ public class CertManagerWindow extends JDialog {
 
         propertiesButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent event) {
+                int sr = getTrustedCertTable().getSelectedRow();
+                TrustedCert tc = (TrustedCert) getTrustedCertTableModel().getData(sr);
 
-                CertPropertiesWindow cpw = new CertPropertiesWindow(instance);
+                CertPropertiesWindow cpw = new CertPropertiesWindow(instance, tc);
                 cpw.show();
             }
         });
@@ -137,10 +138,10 @@ public class CertManagerWindow extends JDialog {
                 int sr = getTrustedCertTable().getSelectedRow();
 
                 String certName = (String) getTrustedCertTable().getValueAt(sr, CERT_TABLE_CERT_NAME_COLUMN_INDEX);
-                Long oid = (Long) getTrustedCertTable().getValueAt(sr, CERT_TABLE_CERT_OID_COLUMN_INDEX);
+                TrustedCert tc = (TrustedCert) getTrustedCertTableModel().getData(sr);
 
                 try {
-                    getTrustedCertAdmin().deleteCert(oid.longValue());
+                    getTrustedCertAdmin().deleteCert(tc.getOid());
                     
                     // reload all certs from server
                     loadTrustedCerts();
@@ -279,11 +280,6 @@ public class CertManagerWindow extends JDialog {
         trustedCertTable.getTableHeader().setReorderingAllowed(false);
         trustedCertTable.getSelectionModel().setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
 
-        // don't show the OID column
-        trustedCertTable.getColumnModel().getColumn(CERT_TABLE_CERT_OID_COLUMN_INDEX).setMinWidth(0);
-        trustedCertTable.getColumnModel().getColumn(CERT_TABLE_CERT_OID_COLUMN_INDEX).setMaxWidth(0);
-        trustedCertTable.getColumnModel().getColumn(CERT_TABLE_CERT_OID_COLUMN_INDEX).setPreferredWidth(0);
-
         trustedCertTable.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
                     /**
                      * Called whenever the value of the selection changes.
@@ -312,7 +308,7 @@ public class CertManagerWindow extends JDialog {
         Object[][] rows = new Object[][]{};
 
         String[] cols = new String[]{
-            "OID", "Name", "Expiration Date", "Usage"
+            "Name", "Expiration Date", "Usage"
         };
 
         trustedCertTableSorter = new TrustedCertTableSorter(new DefaultTableModel(rows, cols) {

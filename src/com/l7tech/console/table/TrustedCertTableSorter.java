@@ -54,6 +54,13 @@ public class TrustedCertTableSorter extends FilteredDefaultTableModel {
         return columnToSort;
     }
 
+    public Object getData(int index) {
+        if(index <= sortedData.length) {
+            return sortedData[index];
+        } else
+            return null;
+    }
+
     /**
      * The sorting order.
      *
@@ -95,9 +102,7 @@ public class TrustedCertTableSorter extends FilteredDefaultTableModel {
      * @return Object  The value at the specified table coordinate.
      */
     public Object getValueAt(int row, int col) {
-        switch (col) {
-             case CertManagerWindow.CERT_TABLE_CERT_OID_COLUMN_INDEX:
-                return new Long(((TrustedCert) sortedData[row]).getOid());
+        switch (col) {             
             case CertManagerWindow.CERT_TABLE_CERT_NAME_COLUMN_INDEX:
                 return ((TrustedCert) sortedData[row]).getName();
              case CertManagerWindow.CERT_TABLE_CERT_EXPIRATION_DATE_COLUMN_INDEX:
