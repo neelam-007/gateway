@@ -124,6 +124,49 @@ public class MultipleRecipientXmlSecurityTest extends TestCase {
         assertTrue("The body was signed", checkSignedElement(res, body));
     }
 
+    public void testEncapsulatingEncryptedElementsForDifferentRecipients() throws Exception {
+        Document doc = TestDocuments.getTestDocument(TestDocuments.PLACEORDER_CLEARTEXT);
+        Element body = SoapUtil.getBodyElement(doc);
+        Element prodidEl = getElementByName(doc, "productid");
+
+        logger.info("Original document:\n" + XmlUtil.nodeToFormattedString(doc) + "\n\n");
+
+        String alternaterecipient = "downstream";
+
+        // FIRST DECORATION
+        DecorationRequirements req = otherDecorationRequirements(doc, alternaterecipient);
+        req.getElementsToEncrypt().add(prodidEl);
+        decorator.decorateMessage(doc, req);
+
+        // SECOND DECORATION
+        req = defaultDecorationRequirements(doc);
+        req.getElementsToEncrypt().add(body);
+        decorator.decorateMessage(doc, req);
+
+        logger.info("Document signed for two recipients and encrypted for second:\n" + XmlUtil.nodeToFormattedString(doc) + "\n\n");
+
+        // FIRST PROCESSING
+        ProcessorResult res = process(doc);
+
+        assertTrue("The body was signed", checkSignedElement(res, body));
+        assertTrue("The body was encrypted", checkEncryptedElement(res, body));
+
+        logger.info("Document once processed by default recipient:\n" + XmlUtil.nodeToFormattedString(doc) + "\n\n");
+
+        // ACTOR PROMOTION
+        Element alternateSecHeader = SoapUtil.getSecurityElement(doc, alternaterecipient);
+        assertTrue("The security header for downstream actor is still present", alternateSecHeader != null);
+        alternateSecHeader.removeAttribute(SoapUtil.ACTOR_ATTR_NAME);
+
+        // SECOND PROCESSING
+        res = process(doc);
+
+        logger.info("Document once processed by both recipients:\n" + XmlUtil.nodeToFormattedString(doc) + "\n\n");
+
+        assertTrue("The body was signed", checkSignedElement(res, body));
+        assertTrue("The accountid was encrypted", checkEncryptedElement(res, prodidEl));
+    }
+
     public void testAdjacentEncryptedElementsForDifferentRecipients() throws Exception {
         Document doc = TestDocuments.getTestDocument(TestDocuments.PLACEORDER_CLEARTEXT);
         Element body = SoapUtil.getBodyElement(doc);
