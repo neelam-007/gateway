@@ -6,11 +6,8 @@
 
 package com.l7tech.policy.assertion;
 
-import com.l7tech.policy.PolicyValidatorResult;
 import com.l7tech.policy.assertion.composite.CompositeAssertion;
-import com.l7tech.policy.validator.AssertionValidator;
 
-import java.lang.reflect.InvocationTargetException;
 import java.util.Map;
 
 /**
@@ -40,23 +37,6 @@ public class RequestXpathAssertion extends Assertion {
 
     public void setNamespaceMap(Map namespaceMap) {
         _namespaceMap = namespaceMap;
-    }
-
-    public void validate( PolicyValidatorResult result ) {
-        try {
-            AssertionValidator validator = (AssertionValidator)
-                    Class.forName("com.l7tech.policy.validator.RequestXpathAssertionValidator").
-                                                            getConstructors()[0].newInstance(new Object[0]);
-            validator.validate(this, result);
-        } catch (ClassNotFoundException e) {
-            throw new RuntimeException(e); // can't happen
-        } catch (InstantiationException e) {
-            throw new RuntimeException(e); // can't happen
-        } catch (IllegalAccessException e) {
-            throw new RuntimeException(e); // can't happen
-        } catch (InvocationTargetException e) {
-            throw new RuntimeException(e); // shouldn't happen
-        }
     }
 
     public String toString() {

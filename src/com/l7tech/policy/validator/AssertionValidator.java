@@ -7,7 +7,6 @@
 package com.l7tech.policy.validator;
 
 import com.l7tech.policy.PolicyValidatorResult;
-import com.l7tech.policy.assertion.Assertion;
 
 /**
  *
@@ -15,5 +14,5 @@ import com.l7tech.policy.assertion.Assertion;
  * @version 1.0
  */
 public interface AssertionValidator {
-    void validate( Assertion assertion, PolicyValidatorResult result );
+    void validate(PolicyValidatorResult result);
 }
