@@ -2,6 +2,7 @@
 package com.l7tech.console.panels;
 
 import com.l7tech.common.gui.util.FontUtil;
+import com.l7tech.common.gui.util.SwingWorker;
 import com.l7tech.common.gui.widgets.ContextMenuTextField;
 import com.l7tech.common.gui.widgets.WrappingLabel;
 import com.l7tech.console.panels.PublishServiceWizard.ServiceAndAssertion;
@@ -140,24 +141,6 @@ public class ServicePanel extends WizardStepPanel {
         return isWsdlUrlSyntaxValid;
     }
 
-    private static class WsdlLookupCancelableOperation implements CancelableOperationDialog.CancelableOperation {
-        private String wsdlUrl = null;
-        private String wsdlXml = null;
-
-        private WsdlLookupCancelableOperation(String wsdlUrl) {
-            this.wsdlUrl = wsdlUrl;
-        }
-
-        public void runOperation() throws RemoteException, WSDLException {
-            wsdlXml =
-              Registry.getDefault().getServiceManager().resolveWsdlTarget(wsdlUrl);
-        }
-
-        private String getWsdlXml() {
-            return wsdlXml;
-        }
-    }
-
     /**
      * Attempt to resolve the WSDL.  Returns true if we have a valid one, or false otherwise.
      * Will pester the user with a dialog box if the WSDL could not be fetched.
@@ -168,9 +151,41 @@ public class ServicePanel extends WizardStepPanel {
         notifyListeners();
 
         try {
-            WsdlLookupCancelableOperation wlco = new WsdlLookupCancelableOperation(wsdlUrlTextField.getText());
-            new CancelableOperationDialog(wlco).runOperation();
-            String wsdlXml = wlco.getWsdlXml();
+            final String wsdlUrl = wsdlUrlTextField.getText();
+            Dialog rootDialog = (Dialog) SwingUtilities.getWindowAncestor(this);
+            final CancelableOperationDialog dlg = new CancelableOperationDialog(rootDialog,
+                                                                                "Resolving WSDL",
+                                                                                "Please wait, resolving WSDL...");
+            SwingWorker worker = new SwingWorker() {
+                public Object construct() {
+                    try {
+                        return Registry.getDefault().getServiceManager().resolveWsdlTarget(wsdlUrl);
+                    } catch (RemoteException e) {
+                        return e;
+                    }
+                }
+
+                public void finished() {
+                    dlg.hide();
+                }
+            };
+            worker.start();
+            dlg.show();
+            worker.interrupt();
+            Object result = worker.get();
+            if (result == null)
+                // canceled
+                return false;
+            if (!(result instanceof String)) {
+                if (result instanceof Throwable)
+                    ((Throwable) result).printStackTrace();
+                JOptionPane.showMessageDialog(null,
+                  "Unable to parse the WSDL at location '" + wsdlUrlTextField.getText() + "'\n",
+                  "Error",
+                  JOptionPane.ERROR_MESSAGE);
+                return false;
+            }
+            String wsdlXml = (String) result;
             wsdl = Wsdl.newInstance(null, new StringReader(wsdlXml));
 
             service.setName(wsdl.getServiceName());
@@ -179,15 +194,6 @@ public class ServicePanel extends WizardStepPanel {
 
             isWsdlDownloaded = true;
             notifyListeners();
-        } catch (CancelableOperationDialog.OperationCanceledException e1) {
-            // silenty cancel
-        } catch (InvocationTargetException e1) {
-            e1.printStackTrace();
-            JOptionPane.showMessageDialog(null,
-                                          "Unable to resolve the WSDL at location '" +
-                                                wsdlUrlTextField.getText() + "'\n",
-                                          "Error",
-                                          JOptionPane.ERROR_MESSAGE);
         } catch (WSDLException e1) {
             e1.printStackTrace();
             JOptionPane.showMessageDialog(null,
