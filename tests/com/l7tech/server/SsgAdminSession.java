@@ -8,6 +8,8 @@ package com.l7tech.server;
 
 import com.l7tech.common.security.TrustedCertAdmin;
 import com.l7tech.common.util.Locator;
+import com.l7tech.common.util.JdkLoggerConfigurator;
+import com.l7tech.common.locator.SpringLocator;
 import com.l7tech.console.security.SecurityProvider;
 import com.l7tech.console.util.Preferences;
 import com.l7tech.identity.IdentityAdmin;
@@ -17,6 +19,9 @@ import com.l7tech.service.ServiceAdmin;
 import javax.security.auth.Subject;
 import java.net.PasswordAuthentication;
 import java.security.PrivilegedExceptionAction;
+
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.support.ClassPathXmlApplicationContext;
 
 /**
  * @author alex
@@ -36,13 +41,15 @@ public abstract class SsgAdminSession {
                 _adminpass = args[2];
             }
         }
+        JdkLoggerConfigurator.configure("com.l7tech.console", "com/l7tech/console/resources/logging.properties");
 
         Preferences prefs = Preferences.getPreferences();
         prefs.updateFromProperties(System.getProperties(), false);
         /* so it is visible in help/about */
         prefs.updateSystemProperties();
-        System.setProperty("com.l7tech.common.locator.properties",
-          "/com/l7tech/console/resources/services.properties");
+        ApplicationContext ctx = createApplicationContext();
+        Locator.setDefault(new SpringLocator(ctx));
+
     }
 
     public Object doIt() throws Exception {
@@ -100,14 +107,14 @@ public abstract class SsgAdminSession {
         return _trustedCertAdmin;
     }
 
-    protected IdentityProviderConfigManager getIdentityProviderConfigManager() {
-        if (_identityProviderConfigManager == null) {
-            _identityProviderConfigManager = (IdentityProviderConfigManager)Locator.getDefault().lookup(IdentityProviderConfigManager.class);
-            if (_identityProviderConfigManager == null) {
-                throw new IllegalStateException("No IdentityProviderConfigManager configured in services");
-            }
+
+    private static ApplicationContext createApplicationContext() {
+        String ctxName = System.getProperty("ssm.application.context");
+        if (ctxName == null) {
+            ctxName = "com/l7tech/console/resources/beans-context.xml";
         }
-        return _identityProviderConfigManager;
+        ClassPathXmlApplicationContext context = new ClassPathXmlApplicationContext(new String[]{ctxName});
+        return context;
     }
 
     private String _adminlogin = "admin";
