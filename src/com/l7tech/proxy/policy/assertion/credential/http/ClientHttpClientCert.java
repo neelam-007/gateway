@@ -20,6 +20,7 @@ import com.l7tech.proxy.policy.assertion.ClientAssertion;
 import org.apache.log4j.Category;
 
 import java.security.GeneralSecurityException;
+import java.security.NoSuchAlgorithmException;
 import java.io.IOException;
 
 /**
@@ -53,6 +54,12 @@ public class ClientHttpClientCert extends ClientAssertion {
             } catch (IOException e) {
                 throw new PolicyAssertionException("Unable to obtain a client certificate with SSG " + ssg, e);
             }
+        }
+        try {
+            // Make sure the private key is available
+            SsgKeyStoreManager.getClientCertPrivateKey(ssg);
+        } catch (NoSuchAlgorithmException e) {
+            throw new RuntimeException(e); // can't happen
         }
         request.setSslRequired(true);  // client cert requires an SSL request
         return AssertionStatus.NONE;
