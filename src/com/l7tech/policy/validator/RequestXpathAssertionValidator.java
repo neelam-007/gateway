@@ -40,6 +40,5 @@ public class RequestXpathAssertionValidator implements AssertionValidator {
             logger.info("XPath pattern is not valid");
             return;
         }
-        logger.fine("XPath patern is valid");
     }
 }
