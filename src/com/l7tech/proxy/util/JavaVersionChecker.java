@@ -35,7 +35,7 @@ public class JavaVersionChecker {
         int count = 0;
         for (StringTokenizer tokenizer = new StringTokenizer(jv, "._"); tokenizer.hasMoreTokens(); ++count) {
             String s = tokenizer.nextToken();
-            int got = -1;
+            int got;
             try {
                 got = Integer.parseInt(s);
             } catch (NumberFormatException e) {
