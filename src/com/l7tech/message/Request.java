@@ -6,8 +6,10 @@
 
 package com.l7tech.message;
 
-import com.l7tech.policy.assertion.credential.PrincipalCredentials;
 import com.l7tech.common.protocol.SecureSpanConstants;
+import com.l7tech.identity.User;
+import com.l7tech.policy.assertion.RoutingStatus;
+import com.l7tech.policy.assertion.credential.LoginCredentials;
 
 /**
  * @author alex
@@ -71,27 +73,30 @@ public interface Request extends Message {
     public static final String PARAM_HTTP_POLICY_VERSION    = PREFIX_HTTP_HEADER + "." + SecureSpanConstants.HttpHeaders.POLICY_VERSION;
 
     /**
-     * Returns the <code>PrincipalCredentials</code> associated with this request,
+     * Returns the <code>LoginCredentials</code> associated with this request,
      * if any are present.
      *
-     * <b>NOTE:</b> the presence of <code>PrincipalCredentials</code> does <b>NOT</b>
+     * <b>NOTE:</b> the presence of <code>LoginCredentials</code> does <b>NOT</b>
      * imply that the request has been successfully authenticated, <b>ONLY</b> that
      * credentials were supplied and found.
      *
-     * @return The <code>PrincipalCredentials</code> associated with this request if they have already been found, or null otherwise.
+     * @return The <code>LoginCredentials</code> associated with this request if they have already been found, or null otherwise.
      */
-    PrincipalCredentials getPrincipalCredentials();
+    LoginCredentials getPrincipalCredentials();
+
+    User getUser();
+    void setUser( User user );
 
     /**
-     * Sets the <code>PrincipalCredentials</code> associated with this <code>Request</code>.
+     * Sets the <code>LoginCredentials</code> associated with this <code>Request</code>.
      * @param pc
      */
-    void setPrincipalCredentials( PrincipalCredentials pc );
+    void setPrincipalCredentials( LoginCredentials pc );
 
     /**
      * Returns <code>true</code> if this request has been <b>SUCCESSFULLY</b> authenticated.
      *
-     * <code>true</code> implies that the <code>PrincipalCredentials</code> will be non-null.
+     * <code>true</code> implies that the <code>LoginCredentials</code> will be non-null.
      * @return
      */
     boolean isAuthenticated();
@@ -105,18 +110,13 @@ public interface Request extends Message {
     void setAuthenticated( boolean authenticated );
 
     /**
-     * A flag indicating that the request was routed at least once.
-     *
-     * Implementations <b>MUST</b> return <code>false</code> until and unless <code>setRouted(true)</code> is called.
-     *
-     * @return
+     * A flag indicating whether the request was routed.
      */
-    boolean isRouted();
+    RoutingStatus getRoutingStatus();
 
     /**
-     * Sets the routed flag, indicating that the request was routed, if true.
-     * @param routed
+     * Sets the route status, indicating that the request was routed, if equal to RoutingStatus.ROUTED.
      */
-    void setRouted( boolean routed );
+    void setRoutingStatus( RoutingStatus status );
 
 }
