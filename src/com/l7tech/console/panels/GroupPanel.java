@@ -444,7 +444,7 @@ public abstract class GroupPanel extends EntityEditorPanel {
     protected void applyFormSecurity() {
         // list components that are subject to security (they require the full admin role)
         securityFormAuthorizationPreparer.prepare(new Component[]{
-            descriptionTextField
+            getDescriptionTextField()
         });
     }
 
