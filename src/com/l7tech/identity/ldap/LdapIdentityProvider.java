@@ -15,10 +15,7 @@ import javax.naming.NamingEnumeration;
 import javax.naming.NamingException;
 import javax.naming.Context;
 import javax.naming.directory.*;
-import java.util.Collection;
-import java.util.Map;
-import java.util.TreeSet;
-import java.util.Hashtable;
+import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.io.IOException;
@@ -360,6 +357,116 @@ public class LdapIdentityProvider implements IdentityProvider {
         }
         // Create the initial directory context.
         return new InitialDirContext(env);
+    }
+
+    public void test() throws InvalidIdProviderCfgException {
+        // make sure we can connect
+        DirContext context = null;
+        try {
+            context = getBrowseContext(cfg);
+        } catch (NamingException e) {
+            // note. i am not embedding the NamingException because it sometimes
+            // contains com.sun.jndi.ldap.LdapCtx which does not implement serializable
+            String msg = "cannot connect to this directory";
+            logger.log(Level.INFO, "ldap config test failure " + msg, e);
+            throw new InvalidIdProviderCfgException(msg);
+        }
+        NamingEnumeration answer = null;
+        String filter = null;
+        SearchControls sc = new SearchControls();
+        sc.setSearchScope(SearchControls.SUBTREE_SCOPE);
+        // check user mappings. make sure they work
+        boolean atLeastOneUser = false;
+        UserMappingConfig[] userTypes = cfg.getUserMappings();
+        Collection offensiveUserMappings = new ArrayList();
+        for (int i = 0; i < userTypes.length; i++) {
+            filter = "(|" +
+                         "(&" +
+                            "(objectClass=" + userTypes[i].getObjClass() + ")" +
+                            "(" + userTypes[i].getLoginAttrName() + "=*)" +
+                         ")" +
+                         "(&" +
+                            "(objectClass=" + userTypes[i].getObjClass() + ")" +
+                            "(" + userTypes[i].getNameAttrName() + "=*)" +
+                         ")" +
+                      ")";
+            try {
+                answer = context.search(cfg.getSearchBase(), filter, sc);
+                while (answer.hasMore()) {
+                    SearchResult sr = (SearchResult)answer.next();
+                    // set the dn (unique id)
+                    String dn = sr.getName() + "," + cfg.getSearchBase();
+                    EntityHeader header = searchResultToHeader(sr, dn);
+                    // if we successfully constructed a header, add it to result list
+                    if (header != null) {
+                        atLeastOneUser = true;
+                        break;
+                    }
+                }
+                answer.close();
+            } catch (NamingException e) {
+                offensiveUserMappings.add(userTypes[i]);
+                logger.log(Level.FINE, "error testing user mapping" + userTypes[i].getObjClass(), e);
+            }
+        }
+
+        // check group mappings. make sure they work
+        GroupMappingConfig[] groupTypes = cfg.getGroupMappings();
+        Collection offensiveGroupMappings = new ArrayList();
+        boolean atLeastOneGroup = false;
+        for (int i = 0; i < groupTypes.length; i++) {
+            filter = "(&" +
+                         "(objectClass=" + groupTypes[i].getObjClass() + ")" +
+                         "(" + groupTypes[i].getNameAttrName() + "=*)" +
+                     ")";
+            try {
+                answer = context.search(cfg.getSearchBase(), filter, sc);
+                while (answer.hasMore()) {
+                    SearchResult sr = (SearchResult)answer.next();
+                    // set the dn (unique id)
+                    String dn = sr.getName() + "," + cfg.getSearchBase();
+                    EntityHeader header = searchResultToHeader(sr, dn);
+                    // if we successfully constructed a header, add it to result list
+                    if (header != null) {
+                        atLeastOneGroup = true;
+                        break;
+                    }
+                }
+                answer.close();
+            } catch (NamingException e) {
+                offensiveGroupMappings.add(groupTypes[i]);
+                logger.log(Level.FINE, "error testing group mapping" + groupTypes[i].getObjClass(), e);
+            }
+        }
+        try {
+            context.close();
+        } catch (NamingException e) {
+            logger.log(Level.INFO, "error closing context", e);
+        }
+        // report results:
+        if (offensiveUserMappings.size() > 0 || offensiveGroupMappings.size() > 0) {
+            String error = "The following mappings caused errors:";
+            for (Iterator iterator = offensiveUserMappings.iterator(); iterator.hasNext();) {
+                UserMappingConfig userMappingConfig = (UserMappingConfig) iterator.next();
+                error += " User mapping " + userMappingConfig.getObjClass();
+            }
+            for (Iterator iterator = offensiveGroupMappings.iterator(); iterator.hasNext();) {
+                GroupMappingConfig groupMappingConfig = (GroupMappingConfig) iterator.next();
+                error += " Group mapping " + groupMappingConfig.getObjClass();
+
+            }
+            logger.info("test failed with error: " + error);
+            throw new InvalidIdProviderCfgException(error);
+        }
+
+        if (!atLeastOneUser) {
+            throw new InvalidIdProviderCfgException("This configuration did not yeild any users");
+        }
+
+        if (!atLeastOneGroup) {
+            throw new InvalidIdProviderCfgException("This configuration did not yeild any group");
+        }
+        logger.finest("this ldap config was tested successfully");
     }
 
     /**
