@@ -1,4 +1,4 @@
-package com.l7tech.console.icons;
+package com.l7tech.console.util;
 
 import javax.swing.*;
 import java.awt.*;

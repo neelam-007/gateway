@@ -2,7 +2,8 @@ package com.l7tech.console.panels;
 
 import com.l7tech.console.table.LogTableModel;
 import com.l7tech.console.table.StatisticsTableSorter;
-import com.l7tech.console.icons.ArrowIcon;
+import com.l7tech.console.util.ArrowIcon;
+import com.l7tech.console.util.ArrowIcon;
 import com.l7tech.logging.LogAdmin;
 import com.l7tech.logging.StatisticsRecord;
 import com.l7tech.cluster.ServiceUsage;

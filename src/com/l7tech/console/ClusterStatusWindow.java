@@ -7,7 +7,7 @@ import com.l7tech.console.table.ClusterStatusTableSorter;
 import com.l7tech.console.table.LogTableModel;
 import com.l7tech.cluster.GatewayStatus;
 import com.l7tech.cluster.ClusterStatusAdmin;
-import com.l7tech.console.icons.ArrowIcon;
+import com.l7tech.console.util.ArrowIcon;
 import com.l7tech.common.gui.util.ImageCache;
 import com.l7tech.common.util.Locator;
 import com.l7tech.service.ServiceAdmin;

@@ -2,7 +2,7 @@ package com.l7tech.console.panels;
 
 import com.l7tech.console.table.LogTableModel;
 import com.l7tech.console.table.FilteredLogTableSorter;
-import com.l7tech.console.icons.ArrowIcon;
+import com.l7tech.console.util.ArrowIcon;
 
 import javax.swing.*;
 import javax.swing.table.*;
