@@ -178,6 +178,7 @@ public class SoapMessageProcessingServlet extends HttpServlet {
             responseStream = hresp.getOutputStream();
             String actor = hreq.getRequestURL().toString();
             hresp.setContentType(DEFAULT_CONTENT_TYPE);
+            // todo, fla soap faults should always return 500
             hresp.setStatus(httpStatus);
 
             PublishedService pserv = (PublishedService)sreq.getParameter(Request.PARAM_SERVICE);
