@@ -83,11 +83,13 @@ public class WssProcessorTest extends TestCase {
                 WssProcessor.SecurityToken token = tokens[j];
                 if (token instanceof WssProcessor.SamlSecurityToken) {
                     log.info("Possession proved: " + ((WssProcessor.SamlSecurityToken)token).isPossessionProved());
+                    log.info("  " + ((WssProcessor.SamlSecurityToken)token).getSubjectCertificate());                    
                 } else if (token instanceof WssProcessor.X509SecurityToken) {
                     log.info("Possession proved: " + ((WssProcessor.X509SecurityToken)token).isPossessionProved());
+                    log.info("  " + token);
+                } else {
+                    log.info("  " + token);
                 }
-
-                log.info("  " + token);
             }
         } else
             log.info("No security tokens were found.");
