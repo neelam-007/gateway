@@ -2,10 +2,10 @@ package com.l7tech.policy.wsp;
 
 import com.l7tech.policy.assertion.Assertion;
 
-import java.io.InputStream;
+import java.beans.XMLDecoder;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.beans.XMLDecoder;
+import java.io.InputStream;
 import java.util.NoSuchElementException;
 
 /**

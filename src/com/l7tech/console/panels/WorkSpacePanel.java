@@ -36,11 +36,7 @@ public class WorkSpacePanel extends JPanel {
      * default constructor
      */
     public WorkSpacePanel() {
-        try {
-            layoutComponents();
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
+        layoutComponents();
         initializePropertiesListener();
     }
 
@@ -62,7 +58,7 @@ public class WorkSpacePanel extends JPanel {
     /**
      * layout components on this panel
      */
-    private void layoutComponents() throws IOException {
+    private void layoutComponents() {
         addHierarchyListener(hierarchyListener);
         setLayout(new BorderLayout());
 
@@ -113,133 +109,6 @@ public class WorkSpacePanel extends JPanel {
             // java.util.Logging does not specify explicit 'level' methods with
             // throwables as params. why?
             log.log(Level.WARNING, "error instantiaitng preferences", e);
-        }
-    }
-
-    /**
-     * Return the ToolBarForTable instance for a given node or null.
-     * @return ToolBarForTable
-     */
-    private ToolBarForTable getToolBar(AbstractTreeNode bn) {
-        ToolBarForTable tb = new ToolBarForTable();
-        tb.setFloatable(false);
-        return tb;
-    }
-
-    /**
-     * the empty toolbar for table class. The users of the
-     * populate the class with components (typically buttons).
-     */
-    final class ToolBarForTable
-            extends JToolBar implements ListSelectionListener {
-        JButton buttonUp;
-        JButton buttonOpen;
-        JButton buttonNew;
-        JButton buttonEdit;
-        JButton buttonDelete;
-
-        public ToolBarForTable() {
-            super();
-            this.putClientProperty("JToolBar.isRollover", Boolean.TRUE);
-            initComponents();
-        }
-
-        private void initComponents() {
-            buttonUp = new JButton();
-            buttonUp.setIcon(IconManager.getInstance().getUpOneLevelIcon());
-            buttonUp.setFont(new Font("Dialog", 1, 10));
-            buttonUp.setText("Up");
-            buttonUp.setMargin(new Insets(0, 0, 0, 0));
-
-            this.add(buttonUp);
-            buttonUp.addActionListener(
-                    new ActionListener() {
-                        /** Invoked when an action occurs.*/
-                        public void actionPerformed(ActionEvent e) {
-
-                        }
-                    });
-
-
-            buttonOpen = new JButton();
-            buttonOpen.setIcon(IconManager.getInstance().getOpenFolderIcon());
-            buttonOpen.setFont(new Font("Dialog", 1, 10));
-            buttonOpen.setText("Open");
-            buttonOpen.setMargin(new Insets(0, 0, 0, 0));
-
-            this.add(buttonOpen);
-            buttonOpen.addActionListener(
-                    new ActionListener() {
-                        /** Invoked when an action occurs.*/
-                        public void actionPerformed(ActionEvent e) {
-                        }
-                    });
-
-            buttonOpen.setEnabled(false);
-
-            buttonNew = new JButton();
-            buttonNew.setIcon(IconManager.getInstance().getDefaultNewIcon());
-            buttonNew.setFont(new Font("Dialog", 1, 10));
-            buttonNew.setText("New");
-            buttonNew.setMargin(new Insets(0, 0, 0, 0));
-            this.add(buttonNew);
-
-
-            buttonNew.addActionListener(
-                    new ActionListener() {
-                        /** Invoked when an action occurs.*/
-                        public void actionPerformed(ActionEvent e) {
-
-                        }
-                    });
-
-
-            buttonEdit = new JButton();
-            buttonEdit.setIcon(IconManager.getInstance().getDefaultEditIcon());
-            buttonEdit.setFont(new Font("Dialog", 1, 10));
-            buttonEdit.setText("Edit");
-            buttonEdit.setMargin(new Insets(0, 0, 0, 0));
-            this.add(buttonEdit);
-            buttonEdit.addActionListener(
-                    new ActionListener() {
-                        /** Invoked when an action occurs.*/
-                        public void actionPerformed(ActionEvent e) {
-                        }
-                    });
-
-            buttonEdit.setEnabled(false);
-
-            buttonDelete = new JButton();
-            buttonDelete.setIcon(IconManager.getInstance().getDefaultDeleteIcon());
-            buttonDelete.setFont(new Font("Dialog", 1, 10));
-            buttonDelete.setText("Delete");
-            buttonDelete.setMargin(new Insets(0, 0, 0, 0));
-            this.add(buttonDelete);
-            buttonDelete.addActionListener(
-                    new ActionListener() {
-                        /** Invoked when an action occurs.*/
-                        public void actionPerformed(ActionEvent e) {
-                        }
-                    });
-            buttonDelete.setEnabled(false);
-            Utilities.
-                    equalizeComponentSizes(
-                            new JComponent[]{
-                                buttonDelete,
-                                buttonEdit,
-                                buttonNew,
-                                buttonOpen,
-                                buttonUp
-                            });
-        }
-
-
-        /**
-         * Called whenever the value of the selection changes.
-         * @param e the event that characterizes the change.
-         */
-        public void valueChanged(ListSelectionEvent e) {
-
         }
     }
 

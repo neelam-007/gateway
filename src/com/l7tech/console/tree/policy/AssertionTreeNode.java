@@ -129,6 +129,24 @@ abstract class CompositeAssertionTreeNode extends AssertionTreeNode {
         }
     }
 
+
+    /**
+     * Get the set of actions associated with this node.
+     * This may be used e.g. in constructing a context menu.
+     *
+     * @return actions appropriate to the node
+     */
+    public Action[] getActions() {
+        java.util.List list = new ArrayList();
+        list.addAll(Arrays.asList(super.getActions()));
+        Action a = new AddAllAssertionAction(this);
+        list.add(a);
+        a = new AddOneOrMoreAssertionAction(this);
+        list.add(a);
+
+        return (Action[])list.toArray(new Action[]{});
+    }
+
     protected void loadChildren() {
         CompositeAssertion assertion = (CompositeAssertion)getUserObject();
         int index = 0;

@@ -8,9 +8,10 @@ package com.l7tech.policy.assertion.identity;
 
 import com.l7tech.identity.User;
 import com.l7tech.identity.UserManager;
-import com.l7tech.policy.assertion.AssertionStatus;
-import com.l7tech.objectmodel.FindException;
 import com.l7tech.logging.LogManager;
+import com.l7tech.objectmodel.FindException;
+import com.l7tech.policy.assertion.AssertionStatus;
+
 import java.util.logging.Level;
 
 /**

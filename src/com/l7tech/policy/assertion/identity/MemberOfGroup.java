@@ -6,10 +6,12 @@
 
 package com.l7tech.policy.assertion.identity;
 
-import com.l7tech.identity.*;
-import com.l7tech.policy.assertion.AssertionStatus;
-import com.l7tech.objectmodel.FindException;
+import com.l7tech.identity.Group;
+import com.l7tech.identity.GroupManager;
+import com.l7tech.identity.User;
 import com.l7tech.logging.LogManager;
+import com.l7tech.objectmodel.FindException;
+import com.l7tech.policy.assertion.AssertionStatus;
 
 import java.util.Set;
 import java.util.logging.Level;

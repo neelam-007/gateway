@@ -16,7 +16,10 @@ import java.io.IOException;
  * @version 1.0
  */
 public class PolicyTreeModel extends DefaultTreeModel {
+    public static final int POLICY_VIEW = 0;
+    public static final int IDENTITY_VIEW = 1;
     private PublishedService service;
+
     /**
      * Creates a new instance of PolicyTreeModel with root set
      * to the root assertion.

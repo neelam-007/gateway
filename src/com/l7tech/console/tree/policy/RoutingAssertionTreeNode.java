@@ -30,6 +30,6 @@ class RoutingAssertionTreeNode extends LeafAssertionTreeNode {
      * @param open for nodes that can be opened, can have children
      */
     protected String iconResource(boolean open) {
-        return "com/l7tech/console/resources/routing.gif";
+        return "com/l7tech/console/resources/server16.gif";
     }
 }

@@ -12,6 +12,7 @@ import com.l7tech.objectmodel.FindException;
 import com.l7tech.service.PublishedService;
 
 import javax.swing.*;
+import java.awt.*;
 
 /**
  * The <code>ServicePolicyPropertiesAction</code> invokes the.
@@ -59,14 +60,10 @@ public class ServicePolicyPropertiesAction extends NodeAction {
                   try {
                       WindowManager windowManager =
                         Registry.getDefault().getWindowManager();
-                      WorkSpacePanel wpanel =
-                        windowManager.getCurrentWorkspace();
+                      WorkSpacePanel wpanel = windowManager.getCurrentWorkspace();
+
                       PublishedService svc = ((ServiceNode)node).getPublishedService();
-                      PolicyTreeModel model = PolicyTreeModel.make(svc);
-                      JTree tree = windowManager.getPolicyTree();
-                      tree.setModel(model);
-                      tree.setName(svc.getName());
-                      wpanel.setComponent(tree);
+                      wpanel.setComponent(new PolicyEditorPanel(svc));
                   } catch (Exception e) {
                       //todo: ErroManager someday?
                       e.printStackTrace();
@@ -74,4 +71,5 @@ public class ServicePolicyPropertiesAction extends NodeAction {
               }
           });
     }
+
 }

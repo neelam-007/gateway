@@ -2,9 +2,9 @@ package com.l7tech.policy;
 
 import com.l7tech.policy.assertion.Assertion;
 
-import java.util.List;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.List;
 
 /**
  * This class represents the result of the policy validation.

@@ -104,7 +104,6 @@ public class MainWindow extends JFrame {
     public static final String TITLE = "SSG console";
     public static final String NAME = "main.window"; // registered
     private JTree policyTree;
-    private Action savePolicyAction;
 
     /**
      * MainWindow constructor comment.
@@ -377,17 +376,6 @@ public class MainWindow extends JFrame {
         return disconnectAction;
     }
 
-    /**
-     * create the save policy Action
-     *
-     * @return the save policy <CODE>Action</CODE> implementation
-     */
-    private Action getSavePolicyAction() {
-        if (savePolicyAction !=null) return savePolicyAction;
-        savePolicyAction = new SavePolicyAction();
-        savePolicyAction.setEnabled(false);
-        return savePolicyAction;
-    }
 
     /**
      * create the Action (the component that is used by several controls)
@@ -831,13 +819,6 @@ public class MainWindow extends JFrame {
         b.setText((String)getDisconnectAction().getValue(Action.NAME));
         b.setMargin(new Insets(0, 0, 0, 0));
         b.setHorizontalTextPosition(SwingConstants.RIGHT);
-
-        b = toolBarPane.add(getSavePolicyAction());
-        b.setFont(new Font("Dialog", 1, 10));
-        b.setText((String)getSavePolicyAction().getValue(Action.NAME));
-        b.setMargin(new Insets(0, 0, 0, 0));
-        b.setHorizontalTextPosition(SwingConstants.RIGHT);
-
 
         b = toolBarPane.add(getRefreshAction());
         b.setFont(new Font("Dialog", 1, 10));

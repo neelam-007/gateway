@@ -6,10 +6,10 @@
 
 package com.l7tech.policy.assertion.credential.wss;
 
-import com.l7tech.message.Request;
-import com.l7tech.message.Response;
 import com.l7tech.credential.CredentialFinderException;
 import com.l7tech.credential.wss.WssDigestCredentialFinder;
+import com.l7tech.message.Request;
+import com.l7tech.message.Response;
 import com.l7tech.policy.assertion.AssertionStatus;
 
 

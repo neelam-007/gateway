@@ -6,11 +6,14 @@
 
 package com.l7tech.policy.assertion;
 
-import com.l7tech.message.*;
+import com.l7tech.message.Request;
+import com.l7tech.message.Response;
+import com.l7tech.message.TransportMetadata;
+import com.l7tech.message.TransportProtocol;
 import com.l7tech.proxy.datamodel.PendingRequest;
 
-import java.util.Set;
 import java.util.Collections;
+import java.util.Set;
 
 /**
  * @author alex

@@ -6,21 +6,20 @@
 
 package com.l7tech.policy.assertion;
 
+import com.l7tech.credential.PrincipalCredentials;
+import com.l7tech.logging.LogManager;
 import com.l7tech.message.Request;
 import com.l7tech.message.Response;
 import com.l7tech.proxy.datamodel.PendingRequest;
 import com.l7tech.service.PublishedService;
-import com.l7tech.credential.PrincipalCredentials;
-import com.l7tech.logging.LogManager;
-
-import java.io.*;
-import java.net.URL;
-import java.net.MalformedURLException;
-import java.util.logging.Level;
-
 import org.apache.commons.httpclient.*;
 import org.apache.commons.httpclient.methods.PostMethod;
-import javax.wsdl.*;
+
+import javax.wsdl.WSDLException;
+import java.io.*;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.util.logging.Level;
 
 /**
  * @author alex

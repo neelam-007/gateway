@@ -1,12 +1,11 @@
 package com.l7tech.policy.wsp;
 
 import com.l7tech.policy.assertion.Assertion;
+import org.mortbay.util.WriterOutputStream;
 
+import java.beans.XMLEncoder;
 import java.io.OutputStream;
 import java.io.StringWriter;
-import java.beans.XMLEncoder;
-
-import org.mortbay.util.WriterOutputStream;
 
 /**
  * Given a policy tree, emit an XML version of it.

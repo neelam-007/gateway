@@ -3,6 +3,8 @@ package com.l7tech.console.action;
 import com.l7tech.console.panels.PolicyAddIdentitiesDialog;
 import com.l7tech.console.panels.Utilities;
 import com.l7tech.console.util.Registry;
+import com.l7tech.console.tree.policy.AssertionTreeNode;
+import com.l7tech.policy.assertion.composite.CompositeAssertion;
 
 import javax.swing.*;
 
@@ -15,6 +17,15 @@ import javax.swing.*;
  * @version 1.0
  */
 public class AddIdentityAssertionAction extends BaseAction {
+    private AssertionTreeNode node;
+
+    public AddIdentityAssertionAction(AssertionTreeNode n) {
+        node = n;
+         if (!(node.getUserObject() instanceof CompositeAssertion)) {
+            throw new IllegalArgumentException();
+        }
+    }
+
     /**
      * @return the action name
      */
@@ -48,7 +59,7 @@ public class AddIdentityAssertionAction extends BaseAction {
             public void run() {
                 JFrame f =
                           Registry.getDefault().getWindowManager().getMainWindow();
-                JDialog d = new PolicyAddIdentitiesDialog(f);
+                JDialog d = new PolicyAddIdentitiesDialog(f, node);
                 d.setTitle("Add identity asssertions to the policy");
                 d.pack();
                 Utilities.centerOnScreen(d);

@@ -3,6 +3,8 @@ package com.l7tech.console.tree.policy;
 
 import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.console.action.AddIdentityAssertionAction;
+import com.l7tech.console.action.AddAllAssertionAction;
+import com.l7tech.console.action.AddOneOrMoreAssertionAction;
 import com.l7tech.console.tree.AbstractTreeNode;
 
 import javax.swing.*;
@@ -37,7 +39,7 @@ class AllAssertionTreeNode extends CompositeAssertionTreeNode {
     public Action[] getActions() {
         java.util.List list = new ArrayList();
         list.addAll(Arrays.asList(super.getActions()));
-        Action a = new AddIdentityAssertionAction();
+        Action a = new AddIdentityAssertionAction(this);
         a.setEnabled(false);
         list.add(a);
         return (Action[]) list.toArray(new Action[]{});

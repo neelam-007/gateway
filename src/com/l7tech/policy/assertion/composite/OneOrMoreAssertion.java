@@ -8,15 +8,14 @@ package com.l7tech.policy.assertion.composite;
 
 import com.l7tech.message.Request;
 import com.l7tech.message.Response;
-import com.l7tech.policy.assertion.composite.CompositeAssertion;
+import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
-import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.proxy.datamodel.PendingRequest;
 
+import java.io.IOException;
 import java.util.Iterator;
 import java.util.List;
-import java.io.IOException;
 
 /**
  * Evaluate children until none left or one succeeds; returns last result evaluated.

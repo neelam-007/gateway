@@ -6,9 +6,9 @@
 
 package com.l7tech.policy.assertion.credential.wss;
 
-import com.l7tech.policy.assertion.credential.CredentialSourceAssertion;
-import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.AssertionStatus;
+import com.l7tech.policy.assertion.PolicyAssertionException;
+import com.l7tech.policy.assertion.credential.CredentialSourceAssertion;
 import com.l7tech.proxy.datamodel.PendingRequest;
 
 /**

@@ -6,15 +6,20 @@
 
 package com.l7tech.policy.assertion.credential;
 
-import com.l7tech.credential.*;
+import com.l7tech.credential.CredentialFinder;
+import com.l7tech.credential.CredentialFinderException;
+import com.l7tech.credential.PrincipalCredentials;
+import com.l7tech.logging.LogManager;
 import com.l7tech.message.Request;
 import com.l7tech.message.Response;
-import com.l7tech.policy.assertion.*;
-import com.l7tech.logging.LogManager;
+import com.l7tech.policy.assertion.Assertion;
+import com.l7tech.policy.assertion.AssertionStatus;
+import com.l7tech.policy.assertion.PolicyAssertionException;
+
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.logging.Level;
-import java.io.IOException;
 
 /**
  * Asserts that the requester's credentials were found, and using a particular authentication mechanism.

@@ -3,13 +3,19 @@ package com.l7tech.console.panels;
 import com.l7tech.console.util.IconManager;
 import com.l7tech.console.util.IconManager2;
 import com.l7tech.console.util.Registry;
+import com.l7tech.console.util.WindowManager;
+import com.l7tech.console.tree.policy.AssertionTreeNode;
+import com.l7tech.console.tree.policy.PolicyTree;
+import com.l7tech.console.tree.policy.AssertionTreeNodeFactory;
 import com.l7tech.identity.*;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.assertion.SslAssertion;
+import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.assertion.composite.OneOrMoreAssertion;
+import com.l7tech.policy.assertion.composite.CompositeAssertion;
 import com.l7tech.policy.assertion.credential.http.HttpBasic;
 import com.l7tech.policy.assertion.credential.http.HttpDigest;
 import com.l7tech.policy.assertion.credential.http.HttpClientCert;
@@ -22,8 +28,10 @@ import com.l7tech.policy.assertion.identity.SpecificUser;
 import com.l7tech.credential.PrincipalCredentials;
 
 import javax.swing.*;
+import javax.swing.tree.DefaultTreeModel;
 import javax.swing.border.EmptyBorder;
 import javax.swing.border.TitledBorder;
+import javax.swing.border.Border;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.TableCellRenderer;
@@ -31,6 +39,9 @@ import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.*;
+import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import java.security.Principal;
 
 
@@ -44,10 +55,14 @@ import java.security.Principal;
  */
 public class PolicyAddIdentitiesDialog extends JDialog {
     private DefaultComboBoxModel providersComboBoxModel;
+    private JButton addSelectedIdentitiesButton;
+    AssertionTreeNode targetNode;
+    private static final Logger log = Logger.getLogger(PolicyAddIdentitiesDialog.class.getName());
 
     /** Creates new form IdentityProviderPanel */
-    public PolicyAddIdentitiesDialog(Frame owner) {
+    public PolicyAddIdentitiesDialog(Frame owner, AssertionTreeNode node) {
         super(owner, true);
+        targetNode = node;
         initComponents();
         equalizeButtons();
     }
@@ -76,7 +91,7 @@ public class PolicyAddIdentitiesDialog extends JDialog {
         getContentPane().setLayout(new BorderLayout());
 
         providerSelectorPanel.setLayout(new BorderLayout());
-
+        providerSelectorPanel.setBorder(BorderFactory.createEmptyBorder(10, 5, 5, 0));
 
         providersComboBox.setModel(getProvidersComboBoxModel());
         providersComboBox.setRenderer(new ListCellRenderer() {
@@ -254,8 +269,9 @@ public class PolicyAddIdentitiesDialog extends JDialog {
 
         identitiesjPanel.add(buttonPanel);
         identitiesPanel.add(identitiesjPanel, BorderLayout.EAST);
-
         getContentPane().add(identitiesPanel, BorderLayout.WEST);
+        getContentPane().add(createButtonPanel(), BorderLayout.SOUTH);
+
     }
 
     /**
@@ -267,9 +283,7 @@ public class PolicyAddIdentitiesDialog extends JDialog {
 
         providersComboBoxModel = new DefaultComboBoxModel();
         try {
-
             providersComboBoxModel.addElement(NO_PROVIDER);
-            providersComboBoxModel.addElement(Registry.getDefault().getInternalProvider());
             Iterator providers =
               Registry.getDefault().getProviderConfigManager().findAllIdentityProviders().iterator();
             while (providers.hasNext()) {
@@ -306,28 +320,89 @@ public class PolicyAddIdentitiesDialog extends JDialog {
         return identitiesOutTableModel;
     }
 
-
     /**
-     * Provides the wizard with the current data
+     * Creates the panel of buttons that goes along the bottom
+     * of the dialog
      *
-     * @param settings the object representing wizard panel state
-     * @exception IllegalArgumentException if the the data provided
-     * by the wizard are not valid.
+     * Sets the variable loginButton
+     *
      */
-    public void readSettings(Object settings) throws IllegalArgumentException {
-        Iterator it = getIdentitiesInTableModel().getDataVector().iterator();
-        while (it.hasNext()) {
-            java.util.List row = (java.util.List)it.next();
-            EntityHeader eh = (EntityHeader)row.get(0);
-            if (EntityType.USER.equals(eh.getType())) {
-                User u = new User();
-                u.setName(eh.getName());
-                u.setLogin(eh.getName());
-            } else if (EntityType.GROUP.equals(eh.getType())) {
-                Group g = new Group();
-                g.setName(eh.getName());
+    private JPanel createButtonPanel() {
+        JPanel panel = new JPanel();
+        panel.setLayout(new FlowLayout(FlowLayout.TRAILING));
+        panel.setBorder(BorderFactory.createEmptyBorder(5, 0, 5, 0));
+        // login button (global variable)
+        addSelectedIdentitiesButton = new JButton();
+        addSelectedIdentitiesButton.setText("Save");
+        addSelectedIdentitiesButton.setToolTipText("Save assertions");
+
+        addSelectedIdentitiesButton.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent event) {
+                IdentityProvider ip = (IdentityProvider)providersComboBoxModel.getSelectedItem();
+
+                java.util.List identityAssertions = new ArrayList();
+
+                Iterator it = getIdentitiesInTableModel().getDataVector().iterator();
+                while (it.hasNext()) {
+                    java.util.List row = (java.util.List)it.next();
+                    EntityHeader eh = (EntityHeader)row.get(0);
+                    if (EntityType.USER.equals(eh.getType())) {
+                        User u = new User();
+                        u.setName(eh.getName());
+                        u.setLogin(eh.getName());
+                        identityAssertions.add(new SpecificUser(ip.getConfig().getOid(), u.getLogin()));
+                    } else if (EntityType.GROUP.equals(eh.getType())) {
+                        Group g = new Group();
+                        g.setName(eh.getName());
+                        identityAssertions.add(new MemberOfGroup(ip.getConfig().getOid(), g.getName()));
+                    }
+                }
+                System.out.println("identitiy assertions size = " + identityAssertions.size());
+                JTree tree =
+                  (JTree)WindowManager.
+                  getInstance().getComponent(PolicyTree.NAME);
+                if (tree != null) {
+                    DefaultTreeModel model = (DefaultTreeModel)tree.getModel();
+                    CompositeAssertion ca = (CompositeAssertion)targetNode.asAssertion();
+                    List kids = new ArrayList();
+                    kids.addAll(ca.getChildren());
+
+                    for (Iterator idit = identityAssertions.iterator(); it.hasNext();) {
+                        Assertion ass = (Assertion)idit.next();
+                        kids.add(ass);
+                        model.
+                          insertNodeInto(AssertionTreeNodeFactory.asTreeNode(ass),
+                            targetNode, targetNode.getChildCount());
+                    }
+                    ca.setChildren(kids);
+                } else {
+                    log.log(Level.WARNING, "Unable to reach the palette tree.");
+                }
+                dispose();
             }
-        }
+
+        });
+        panel.add(addSelectedIdentitiesButton);
+
+        // space
+        panel.add(Box.createRigidArea(new Dimension(5, 0)));
+
+        // cancel button
+        JButton cancelButton = new JButton();
+        cancelButton.setText("Cancel");
+
+        cancelButton.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent event) {
+                dispose();
+            }
+        });
+        panel.add(cancelButton);
+
+        Utilities.
+          equalizeButtonSizes(new JButton[]{
+              cancelButton, addSelectedIdentitiesButton
+          });
+        return panel;
     }
 
 
@@ -414,7 +489,6 @@ public class PolicyAddIdentitiesDialog extends JDialog {
           public GroupManager getGroupManager() {
               return null;
           }
-
           public boolean authenticate( PrincipalCredentials pc ) {
               return false;
           }

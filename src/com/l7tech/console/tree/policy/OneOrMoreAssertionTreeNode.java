@@ -37,7 +37,7 @@ class OneOrMoreAssertionTreeNode extends CompositeAssertionTreeNode {
     public Action[] getActions() {
         java.util.List list = new ArrayList();
         list.addAll(Arrays.asList(super.getActions()));
-        Action a = new AddIdentityAssertionAction();
+        Action a = new AddIdentityAssertionAction(this);
         list.add(a);
         return (Action[])list.toArray(new Action[]{});
     }

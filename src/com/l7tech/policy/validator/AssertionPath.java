@@ -1,11 +1,11 @@
 package com.l7tech.policy.validator;
 
-import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.PolicyValidatorResult;
+import com.l7tech.policy.assertion.Assertion;
 
-import java.util.List;
-import java.util.Collections;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 
 /**
  * Class AssertionPath represents a sequence of <code>Assertion</code>
@@ -20,9 +20,6 @@ public class AssertionPath {
      * @param a the root assertion
      */
     public AssertionPath(Assertion a) {
-        if (!DefaultPolicyValidator.isValidRoot(a)) {
-            addError(new PolicyValidatorResult.Error(a, "Invalid root", null));
-        }
         path.add(a);
     }
 
@@ -39,10 +36,6 @@ public class AssertionPath {
         path.add(a);
     }
 
-    public void addError(PolicyValidatorResult.Error err) {
-        pathErrors.add(err);
-    }
-
     public Assertion lastAssertion() {
         return (Assertion)path.get(path.size() - 1);
     }
@@ -53,5 +46,4 @@ public class AssertionPath {
 
     private List path = new ArrayList();
     private List pathErrors = new ArrayList();
-
 }

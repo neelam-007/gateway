@@ -1,13 +1,7 @@
 package com.l7tech.console.panels;
 
-import com.l7tech.service.PublishedService;
-
 import javax.swing.*;
-import javax.swing.event.ChangeListener;
-import javax.swing.event.ChangeEvent;
 import javax.swing.border.EmptyBorder;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.awt.*;
 
 
@@ -31,7 +25,6 @@ public class EndpointCredentialsPanel extends WizardStepPanel {
      */
     private void initComponents() {
         GridBagConstraints gridBagConstraints;
-
         serviceUrljPanel = new JPanel();
         panelTitlejLabel = new JLabel();
         jPanel3 = new JPanel();
@@ -144,6 +137,20 @@ public class EndpointCredentialsPanel extends WizardStepPanel {
      */
     public boolean isValid() {
         return true;
+    }
+
+    /**
+     * Provides the wizard with the current data--either
+     * the default data or already-modified settings. This is a
+     * noop version that subclasses implement.
+     *
+     * @param settings the object representing wizard panel state
+     * @exception IllegalArgumentException if the the data provided
+     * by the wizard are not valid.
+     */
+    public void readSettings(Object settings) throws IllegalArgumentException {
+        PublishServiceWizard.ServiceAndAssertion
+                collect = (PublishServiceWizard.ServiceAndAssertion)settings;
     }
 
     /** @return the wizard step label    */

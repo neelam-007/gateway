@@ -1,7 +1,6 @@
 package com.l7tech.policy;
 
 import com.l7tech.policy.assertion.Assertion;
-import com.l7tech.policy.validator.DefaultPolicyValidator;
 
 /**
  * A class for building policy assertion paths.
@@ -28,7 +27,7 @@ public abstract class PolicyPathBuilder {
      * @return the policy validator instance
      */
     public static PolicyPathBuilder getDefault() {
-        return null;
+        return new DefaultPolicyPathBuilder();
     }
 
     /**
