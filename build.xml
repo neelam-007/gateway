@@ -376,6 +376,10 @@
                 <include name="SSG.hbm.xml"/>
             </fileset>
 
+            <fileset dir="${src.root}/etc">
+                <include name="keystore.properties"/>
+            </fileset>
+
             <fileset dir="${src.root}/src">
                 <include name="**/resources/*"/>
             </fileset>
@@ -388,6 +392,11 @@
                 <include name="com/l7tech/proxy/resources/*"/>
             </fileset>
         </copy>
+
+        <!-- make sure that the tomcat path is properly referenced in the keystore properties -->
+        <propertyfile file="${build.classes}/keystore.properties">
+            <entry key="keystoredir" value="${tomcat.home}/kstores"/>
+        </propertyfile>
 
         <!-- html and other static web files -->
         <copy todir="${doc.root}">
