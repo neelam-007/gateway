@@ -37,7 +37,7 @@ public class UserPanel extends EntityEditorPanel {
     private JPanel buttonPanel;
 
     private JTabbedPane tabbedPane;
-    //private final UsersGroupPanel groupPanel = new UsersGroupPanel(this); // membership
+    private final UserGroupsPanel groupPanel = new UserGroupsPanel(this); // membership
 
     // Apply/Revert buttons
     private JButton okButton;
@@ -196,7 +196,7 @@ public class UserPanel extends EntityEditorPanel {
 
             // Add all tabs
             tabbedPane.add(getDetailsPanel(), DETAILS_LABEL);
-            //tabbedPane.add(usersPanel, MEMBERSHIP_LABEL);
+            tabbedPane.add(groupPanel, MEMBERSHIP_LABEL);
 
 
         // Return tabbed pane
