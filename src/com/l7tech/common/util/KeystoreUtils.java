@@ -1,22 +1,23 @@
 package com.l7tech.common.util;
 
+import com.l7tech.common.security.xml.SignerInfo;
 import com.l7tech.logging.LogManager;
-import com.l7tech.common.util.HexUtils;
-import com.l7tech.common.util.FileUtils;
 import com.l7tech.server.ServerConfig;
 
-import java.util.Properties;
-import java.util.logging.Logger;
-import java.util.logging.Level;
 import java.io.*;
 import java.security.*;
 import java.security.cert.CertificateException;
+import java.security.cert.CertificateFactory;
+import java.security.cert.X509Certificate;
+import java.util.Properties;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * User: flascell
  * Date: Aug 26, 2003
  * Time: 10:16:08 AM
- *
+ * <p/>
  * Knows about the location and passwords for keystores, server certificates, etc
  */
 public class KeystoreUtils {
@@ -31,7 +32,7 @@ public class KeystoreUtils {
     public static final String SSL_KSTORE_PASSWD = "sslkspasswd";
     public static final String TOMCATALIAS = "tomcat";
 
-    public static final String PS = System.getProperty( "file.separator" );
+    public static final String PS = System.getProperty("file.separator");
 
     public static KeystoreUtils getInstance() {
         return SingletonHolder.singleton;
@@ -117,6 +118,35 @@ public class KeystoreUtils {
         return output;
     }
 
+    /**
+     * Returns the signer info containing the private key, cert and the public
+     * key from this keystore.
+     * 
+     * @return the <code>SignerInfo</code> instance
+     */
+    public SignerInfo getSignerInfo() throws IOException {
+        X509Certificate cert = null;
+        byte[] buf = KeystoreUtils.getInstance().readSSLCert();
+        ByteArrayInputStream bais = new ByteArrayInputStream(buf);
+        try {
+            cert = (X509Certificate)CertificateFactory.getInstance("X.509").generateCertificate(bais);
+        } catch (CertificateException e) {
+            String msg = "cannot generate cert from cert file";
+            logger.severe(msg);
+            throw new IOException(msg);
+        }
+
+        PrivateKey pkey = null;
+        try {
+            pkey = KeystoreUtils.getInstance().getSSLPrivateKey();
+        } catch (KeyStoreException e) {
+            String msg = "cannot get ssl private key";
+            logger.severe(msg);
+            throw new IOException(msg);
+        }
+        return new SignerInfo(pkey, cert);
+    }
+
     private static class SingletonHolder {
         private static KeystoreUtils singleton = new KeystoreUtils();
     }
@@ -129,21 +159,21 @@ public class KeystoreUtils {
         if (props == null) {
             String propsPath = ServerConfig.getInstance().getKeystorePropertiesPath();
             InputStream inputStream = null;
-            if ( propsPath != null && propsPath.length() > 0 ) {
+            if (propsPath != null && propsPath.length() > 0) {
                 File f = new File(propsPath);
-                if ( f.exists() ) {
+                if (f.exists()) {
                     try {
-                        inputStream = new FileInputStream( propsPath );
-                        logger.info( "Loading keystore properties from " + propsPath );
-                    } catch ( FileNotFoundException fnfe ) {
+                        inputStream = new FileInputStream(propsPath);
+                        logger.info("Loading keystore properties from " + propsPath);
+                    } catch (FileNotFoundException fnfe) {
                     }
                 }
-                if ( inputStream == null ) logger.warning( "Keystore properties file " + inputStream + " could not be found, using default properties" );
+                if (inputStream == null) logger.warning("Keystore properties file " + inputStream + " could not be found, using default properties");
             }
 
-            if ( inputStream == null ) {
-                inputStream = getClass().getResourceAsStream( DEFAULT_PROPS_RESOURCE );
-                logger.info( "Loading keystore properties as resource" );
+            if (inputStream == null) {
+                inputStream = getClass().getResourceAsStream(DEFAULT_PROPS_RESOURCE);
+                logger.info("Loading keystore properties as resource");
             }
 
             props = new Properties();
