@@ -187,7 +187,7 @@
   </bean>
 
     <!-- server side service manager -->
- <bean id="serviceManager" class="com.l7tech.server.service.ServiceManagerImp">
+ <bean id="serviceManagerTarget" class="com.l7tech.server.service.ServiceManagerImp">
      <property name="serviceCache">
          <ref bean='serviceCache'/>
      </property>

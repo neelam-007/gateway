@@ -70,7 +70,10 @@
        <property name="beanNames">
            <list>
                <idref bean="identityProviderConfigManager"/>
+<!--
+                Removed here for performance reasons because some methods can be non-transactional (see below)
                <idref bean="serviceManager"/>
+-->
                <idref bean="trustedCertManager"/>
                <idref bean="clientCertManager"/>
                <idref bean="statusUpdateManager"/>
@@ -84,6 +87,28 @@
            </list>
        </property>
    </bean>
+
+
+    <bean id="serviceManager" class="org.springframework.transaction.interceptor.TransactionProxyFactoryBean">
+        <property name="transactionManager">
+            <ref bean="transactionManager"/>
+        </property>
+        <property name="target">
+            <ref bean="serviceManagerTarget"/>
+        </property>
+        <property name="transactionAttributes">
+            <props>
+                <!-- These methods only deal with cached data, so we can improve performance by avoiding transactions -->
+                <prop key="getServerPolicy">PROPAGATION_SUPPORTS</prop>
+                <prop key="resolve">PROPAGATION_SUPPORTS</prop>
+                <prop key="getServiceStatistics">PROPAGATION_SUPPORTS</prop>
+                <prop key="getAllServiceStatistics">PROPAGATION_SUPPORTS</prop>
+                <!-- All other methods can be transactional -->
+                <prop key="*">PROPAGATION_REQUIRED,-Throwable</prop>
+            </props>
+        </property>
+    </bean>
+
     <!--
        BeanNameAutoProxyCreator with proxyTargetClass option handles all beans methods to use PROPAGATION_REQUIRED
    -->
