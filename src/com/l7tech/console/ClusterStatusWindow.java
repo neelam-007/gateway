@@ -201,7 +201,7 @@ public class ClusterStatusWindow extends JFrame implements ConnectionListener {
         if (exitMenuItem != null) return exitMenuItem;
 
         exitMenuItem = new JMenuItem();
-        exitMenuItem.setText(resapplication.getString("ExitMenuItem_text"));
+        exitMenuItem.setText(resapplication.getString("ExitMenuItem.name"));
         int mnemonic = 'X';
         exitMenuItem.setMnemonic(mnemonic);
         exitMenuItem.setAccelerator(KeyStroke.getKeyStroke(mnemonic, ActionEvent.ALT_MASK));

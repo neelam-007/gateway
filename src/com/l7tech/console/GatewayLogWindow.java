@@ -169,7 +169,7 @@ public class GatewayLogWindow extends JFrame implements ConnectionListener {
     private JMenuItem getExitMenuItem() {
         if (exitMenuItem == null) {
             exitMenuItem = new JMenuItem();
-            exitMenuItem.setText(resapplication.getString("ExitMenuItem_text"));
+            exitMenuItem.setText(resapplication.getString("ExitMenuItem.name"));
             int mnemonic = 'X';
             exitMenuItem.setMnemonic(mnemonic);
             exitMenuItem.setAccelerator(KeyStroke.getKeyStroke(mnemonic, ActionEvent.ALT_MASK));
