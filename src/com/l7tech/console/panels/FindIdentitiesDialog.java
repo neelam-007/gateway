@@ -564,7 +564,7 @@ public class FindIdentitiesDialog extends JDialog {
                   if (row == -1) {
                       selectButton.setEnabled(false);
                   } else {
-                      selectButton.setEnabled(!searchInfo.getProvider().isReadOnly());
+                      selectButton.setEnabled(true);
                   }
               }
           });
