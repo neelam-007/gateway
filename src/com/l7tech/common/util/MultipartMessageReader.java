@@ -70,9 +70,6 @@ public class MultipartMessageReader {
      */
     public Map getMessageAttachments() throws IOException {
 
-        // parse all multiple parts
-        parseAllMultiparts();
-
         Map attachments = new HashMap();
 
         Set parts = multipartParts.keySet();
@@ -82,6 +79,8 @@ public class MultipartMessageReader {
             Object val  = (Object) multipartParts.get(o);
             if(val instanceof MultipartUtil.Part) {
                 MultipartUtil.Part part = (MultipartUtil.Part) val;
+
+                // excluding the SOAP part
                 if(part.getPosition() > 0) {
                     attachments.put(part.getHeader(XmlUtil.CONTENT_ID).getValue(), part);
                 }
@@ -477,47 +476,5 @@ public class MultipartMessageReader {
         } while(!newlineFound);
 
         return sb.toString().trim();
-    }
-
-    /**
-     * This parser only peels the the multipart message up to the part required.
-     *
-     * @throws IOException
-     */
-    private void parseAllMultiparts() throws IOException {
-
-        StringBuffer xml = new StringBuffer();
-        MultipartUtil.Part part = null;
-
-        String line;
-        while ((line = readLine()) != null) {
-            part = new MultipartUtil.Part();
-            boolean headers = true;
-            do {
-                if (headers) {
-                    if (line.length() == 0) {
-                        headers = false;
-                        continue;
-                    }
-                    MultipartUtil.HeaderValue header = MultipartUtil.parseHeader(line);
-                    part.headers.put(header.getName(), header);
-                } else {
-                    if (line.startsWith("--" + multipartBoundary)) {
-                        // The boundary is on a line by itself so the previous content doesn't actually contain the last \n
-                        // The next part is left in the reader for later
-                        if (xml.length() > 0 && xml.charAt(xml.length() - 1) == '\n')
-                            xml.deleteCharAt(xml.length() - 1);
-                        break;
-                    } else {
-                        xml.append(line);
-                        xml.append("\n");
-                    }
-                }
-            } while ((line = readLine()) != null);
-
-            part.content = xml.toString().getBytes();
-            part.setPostion(multipartParts.size());
-            multipartParts.put(part.getHeader(XmlUtil.CONTENT_ID).getValue(), part);
-        }
     }
 }
