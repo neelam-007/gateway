@@ -99,11 +99,7 @@ public class ClientXmlRequestSecurity extends ClientAssertion {
                 userPrivateKey = SsgKeyStoreManager.getClientCertPrivateKey(ssg);
                 userCert = SsgKeyStoreManager.getClientCert(ssg);
             } catch (NoSuchAlgorithmException e) {
-                throw new PolicyAssertionException(e);
-            } catch (BadCredentialsException e) {
-                throw new PolicyAssertionException(e);
-            } catch (OperationCanceledException e) {
-                throw new PolicyAssertionException(e);
+                throw new RuntimeException(e); // can't happen
             }
         }
 
