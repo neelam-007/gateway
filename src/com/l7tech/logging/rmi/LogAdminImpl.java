@@ -75,9 +75,10 @@ public class LogAdminImpl extends RemoteService implements LogAdmin {
      *                       Start from beginning of the SecureSpan Gateway message buffer if it equals to -1.
      * @param endMsgNumber   the message number to locate the end point.
      *                       Retrieve messages until the end of the SecureSpan Gateway message buffer is hit if it equals to -1.
-     * @param size  the max. number of messages retrieved
-     * @return String[] the array of messages retrieved
+     * @param size  the max. number of logs to be retrieved
+     * @return SSGLogRecord[] the array of logs retrieved
      * @see com.l7tech.cluster.ClusterStatusAdmin#getClusterStatus
+     * @see com.l7tech.logging.SSGLogRecord
      *
      */
     public SSGLogRecord[] getSystemLog(String nodeid, long startMsgNumber, long endMsgNumber, int size) throws RemoteException {
