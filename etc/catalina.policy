@@ -1,6 +1,6 @@
 // ============================================================================
 // catalina.policy - Security Policy Permissions for Tomcat 4.0
-// including the section for the Layer7 SSG (ROOT) web applicatin.
+// including the section for the Layer7 SSG (ROOT) web application.
 // This file should be copied over the $TOMCAT_HOME/conf/catalina.policy
 // or the section :
 //
