@@ -41,6 +41,11 @@ public class ResolveForeignIdentityProviderPanel extends WizardStepPanel {
         return "Fix missing provider " + unresolvedRef.getProviderName();
     }
 
+    public boolean canFinish() {
+        if (hasNextPanel()) return false;
+        return true;
+    }
+
     public boolean onNextButton() {
         // collect actions details and store in the reference for resolution
         if (manualResolvRadio.isSelected()) {
