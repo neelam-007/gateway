@@ -21,6 +21,8 @@ import java.util.Iterator;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import com.l7tech.server.Debug;
+
 /**
  * @author alex
  */
@@ -31,6 +33,13 @@ public class HibernatePersistenceContext extends PersistenceContext {
     public HibernatePersistenceContext( Session session ) {
         _session = session;
         _manager = (HibernatePersistenceManager)PersistenceManager.getInstance();
+        if ( Debug.isEnabled() ) {
+            try {
+                throw new Exception("HibernatePersistenceContext was created here");
+            } catch ( Exception e ) {
+                this.createdAt = e;
+            }
+        }
     }
 
     public void commitTransaction() throws TransactionException {
@@ -70,8 +79,14 @@ public class HibernatePersistenceContext extends PersistenceContext {
     }
 
     protected void finalize() throws Throwable {
-        close();
-        super.finalize();
+        try {
+            super.finalize();
+        } finally {
+            if ( Debug.isEnabled() && ( _htxn != null || _session != null ) ) {
+                logger.log(Level.SEVERE, "HibernatePersistenceContext finalized before being closed!", createdAt);
+            }
+            close();
+        }
     }
 
     public void flush() throws ObjectModelException {
@@ -252,4 +267,5 @@ public class HibernatePersistenceContext extends PersistenceContext {
     protected ArrayList txListenerList = new ArrayList();
 
     private final Logger logger = Logger.getLogger(getClass().getName());
+    private Exception createdAt;
 }

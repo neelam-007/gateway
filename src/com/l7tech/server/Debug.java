@@ -15,7 +15,7 @@ public class Debug {
         debug = Boolean.getBoolean("com.l7tech.server.debug");
     }
 
-    public static boolean on() {
+    public static boolean isEnabled() {
         if ( instance == null ) instance = new Debug();
         return instance.debug;
     }
