@@ -88,11 +88,7 @@ public class CSRHandler extends AuthenticatableHttpServlet {
             List users = null;
             try {
                 users = authenticateRequestBasic(request);
-            } catch (IOException e) {
-                response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "authentication error");
-                logger.log(Level.SEVERE, "Failed authentication", e);
-                return;
-            } catch (BadCredentialsException e) {
+            }  catch (BadCredentialsException e) {
                 response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "must provide valid credentials");
                 logger.log(Level.SEVERE, "Failed authentication", e);
                 return;
