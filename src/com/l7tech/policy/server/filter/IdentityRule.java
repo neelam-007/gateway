@@ -137,6 +137,8 @@ public class IdentityRule extends Filter {
                     }
 
                     Group grp = gman.findByPrimaryKey(grpmemship.getGroupId());
+                    if ( grp == null ) return false;
+                    
                     Set members = gman.getUserHeaders( grp );
                     for (Iterator jj = members.iterator(); jj.hasNext();) {
                         EntityHeader memberx = (EntityHeader)jj.next();
