@@ -477,7 +477,10 @@ public class SoapMessageGenerator {
                         n = nodeIterator.nextNode();
                         for (; n != null; n = nodeIterator.nextNode()) {
                             Element e = (Element)n;
-                            elements.add(new NameTypePair(e.getAttribute("name"), targetNamespace, e.getAttribute("type")));
+                            String nameAttribute = e.getAttribute("name");
+                            if (nameAttribute != null && !"".equals(nameAttribute)) {
+                                elements.add(new NameTypePair(nameAttribute, targetNamespace, e.getAttribute("type")));
+                            }
                         }
                         return (NameTypePair[])elements.toArray(new NameTypePair[]{});
                     }
