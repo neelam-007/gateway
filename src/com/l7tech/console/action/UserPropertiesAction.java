@@ -3,16 +3,17 @@ package com.l7tech.console.action;
 import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.console.panels.EditorDialog;
 import com.l7tech.console.panels.UserPanel;
+import com.l7tech.console.tree.AssertionsTree;
 import com.l7tech.console.tree.EntityHeaderNode;
 import com.l7tech.console.tree.UserNode;
+import com.l7tech.console.util.ComponentRegistry;
 import com.l7tech.console.util.Registry;
-import com.l7tech.identity.IdentityProviderConfigManager;
 import com.l7tech.identity.IdentityProvider;
 import com.l7tech.objectmodel.EntityHeader;
-import com.l7tech.objectmodel.EntityType;
 
 import javax.swing.*;
-import javax.swing.tree.TreeNode;
+import javax.swing.tree.DefaultTreeModel;
+import java.util.NoSuchElementException;
 
 /**
  * The <code>UserPropertiesAction</code> edits the user entity.
@@ -64,11 +65,14 @@ public class UserPropertiesAction extends NodeAction {
                 UserPanel panel = new UserPanel();
                 JFrame f = Registry.getDefault().getComponentRegistry().getMainWindow();
                 EditorDialog dialog = new EditorDialog(f, panel);
-
-                panel.edit(header, idProvider);
-                dialog.pack();
-                Utilities.centerOnScreen(dialog);
-                dialog.show();
+                try {
+                    panel.edit(header, idProvider);
+                    dialog.pack();
+                    Utilities.centerOnScreen(dialog);
+                    dialog.show();
+                } catch(NoSuchElementException e) {
+                    notifyUserDoesNotExist(header, f);
+                }
             }
         });
     }
@@ -77,5 +81,14 @@ public class UserPropertiesAction extends NodeAction {
         this.idProvider = idProvider;
     }
 
+    private void notifyUserDoesNotExist(EntityHeader header, JFrame f) {
+        final String name = header.getName();
+        JOptionPane.showMessageDialog(f, USER_DOES_NOT_EXIST_MSG, "Warning", JOptionPane.WARNING_MESSAGE);
+        JTree tree = (JTree)ComponentRegistry.getInstance().getComponent(AssertionsTree.NAME);
+        DefaultTreeModel model = (DefaultTreeModel)tree.getModel();
+        model.removeNodeFromParent(node);
+    }
+
     private IdentityProvider idProvider;
+    private final String USER_DOES_NOT_EXIST_MSG = "This user no longer exists";
 }

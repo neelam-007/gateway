@@ -8,9 +8,12 @@ import com.l7tech.console.event.EntityListenerAdapter;
 import com.l7tech.console.logging.ErrorManager;
 import com.l7tech.console.text.MaxLengthDocument;
 import com.l7tech.console.util.Registry;
-import com.l7tech.identity.*;
+import com.l7tech.identity.IdentityProvider;
+import com.l7tech.identity.User;
+import com.l7tech.identity.UserBean;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
+import com.l7tech.objectmodel.FindException;
 
 import javax.swing.*;
 import javax.swing.event.DocumentEvent;
@@ -20,10 +23,11 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.HierarchyEvent;
 import java.awt.event.HierarchyListener;
+import java.util.HashSet;
+import java.util.NoSuchElementException;
+import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.Set;
-import java.util.HashSet;
 
 /**
  * UserPanel - edits the <CODE>User/CODE> instances.
@@ -118,8 +122,9 @@ public class UserPanel extends EntityEditorPanel {
      * Retrieves the Group and constructs the Panel
      *
      * @param object
+     * @throws NoSuchElementException if the user cannot be retrieved
      */
-    public void edit(Object object) {
+    public void edit(Object object) throws NoSuchElementException {
         try {
             // Here is where we would use the node context to retrieve Panel content
             if (!(object instanceof EntityHeader)) {
@@ -148,16 +153,15 @@ public class UserPanel extends EntityEditorPanel {
             } else {
                 User u = idProvider.getUserManager().findByPrimaryKey(userHeader.getStrId());
                 if ( u == null )
-                    throw new RuntimeException("User missing " + userHeader.getOid());
+                    throw new NoSuchElementException("User missing " + userHeader.getOid());
                 user = u.getUserBean();
                 userGroups = idProvider.getGroupManager().getGroupHeaders(u.getUniqueIdentifier());
             }
             // Populate the form for insert/update
             initialize();
             setData(user);
-        } catch (Exception e) {
-            log.log(Level.SEVERE, "GroupPanel Edit Exception: " + e.toString());
-            e.printStackTrace();
+        } catch (FindException e) {
+            ErrorManager.getDefault().notify(Level.SEVERE, e, "Error whilee editing user " +userHeader.getName());
         }
     }
 
@@ -587,7 +591,7 @@ public class UserPanel extends EntityEditorPanel {
      *
      * @param user
      */
-    private void setData(UserBean user) throws Exception {
+    private void setData(UserBean user) {
         // Set tabbed panels (add/remove extranet tab)
         nameLabel.setText(user.getName());
         getFirstNameTextField().setText(user.getFirstName());

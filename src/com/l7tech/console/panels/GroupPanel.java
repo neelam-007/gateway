@@ -1,14 +1,15 @@
 package com.l7tech.console.panels;
 
 import com.l7tech.common.gui.util.Utilities;
+import com.l7tech.console.logging.ErrorManager;
 import com.l7tech.console.text.MaxLengthDocument;
-import com.l7tech.console.util.Registry;
+import com.l7tech.identity.Group;
 import com.l7tech.identity.GroupBean;
 import com.l7tech.identity.GroupManager;
-import com.l7tech.identity.Group;
 import com.l7tech.identity.IdentityProvider;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
+import com.l7tech.objectmodel.FindException;
 
 import javax.swing.*;
 import javax.swing.event.DocumentEvent;
@@ -19,6 +20,7 @@ import java.awt.event.ActionListener;
 import java.awt.event.HierarchyEvent;
 import java.awt.event.HierarchyListener;
 import java.util.HashSet;
+import java.util.NoSuchElementException;
 import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -140,14 +142,15 @@ public class GroupPanel extends EntityEditorPanel {
                 groupMembers = idProvider.getGroupManager().getUserHeaders( group.getUniqueIdentifier() );
 
                 if (group == null) {
-                    throw new RuntimeException("Group missing " + groupHeader.getOid());
+                    throw new NoSuchElementException("User missing " + groupHeader.getOid());
                 }
             }
             initialize();
             // Populate the form for insert/update
             setData(group);
-        } catch (Exception e) {
-            log.log(Level.SEVERE, "GroupPanel Edit Exception: " + e.toString(), e);
+        } catch (FindException e) {
+            ErrorManager.getDefault().notify(Level.SEVERE, e, "Error whilee editing user " +groupHeader.getName());
+
         }
     }
 
@@ -440,7 +443,7 @@ public class GroupPanel extends EntityEditorPanel {
      *
      * @param group
      */
-    private void setData(GroupBean group) throws Exception {
+    private void setData(GroupBean group) {
         // Set tabbed panels (add/remove extranet tab)
         nameLabel.setText(group.getName());
         getDescriptionTextField().setText(group.getDescription());

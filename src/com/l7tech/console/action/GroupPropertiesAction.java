@@ -3,20 +3,21 @@ package com.l7tech.console.action;
 import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.console.panels.EditorDialog;
 import com.l7tech.console.panels.GroupPanel;
+import com.l7tech.console.tree.AssertionsTree;
 import com.l7tech.console.tree.EntityHeaderNode;
 import com.l7tech.console.tree.GroupNode;
+import com.l7tech.console.util.ComponentRegistry;
 import com.l7tech.console.util.Registry;
-import com.l7tech.identity.IdentityProviderConfigManager;
 import com.l7tech.identity.IdentityProvider;
 import com.l7tech.objectmodel.EntityHeader;
-import com.l7tech.objectmodel.EntityType;
 
 import javax.swing.*;
-import javax.swing.tree.TreeNode;
+import javax.swing.tree.DefaultTreeModel;
+import java.util.NoSuchElementException;
 
 /**
  * The <code>GroupPropertiesAction</code> edits the group entity.
- *
+ * 
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  * @version 1.0
  */
@@ -47,9 +48,10 @@ public class GroupPropertiesAction extends NodeAction {
         return "com/l7tech/console/resources/Properties16.gif";
     }
 
-    /** Actually perform the action.
+    /**
+     * Actually perform the action.
      * This is the method which should be called programmatically.
-
+     * <p/>
      * note on threading usage: do not access GUI components
      * without explicitly asking for the AWT event thread!
      */
@@ -61,12 +63,16 @@ public class GroupPropertiesAction extends NodeAction {
                 }
                 GroupPanel panel = new GroupPanel();
                 JFrame f = Registry.getDefault().getComponentRegistry().getMainWindow();
+                final EntityHeader header = ((EntityHeaderNode)node).getEntityHeader();
                 EditorDialog dialog = new EditorDialog(f, panel);
-
-                panel.edit(((EntityHeaderNode)node).getEntityHeader(), idProvider);
-                dialog.pack();
-                Utilities.centerOnScreen(dialog);
-                dialog.show();
+                try {
+                    panel.edit(header, idProvider);
+                    dialog.pack();
+                    Utilities.centerOnScreen(dialog);
+                    dialog.show();
+                } catch (NoSuchElementException e) {
+                    notifyGroupDoesNotExist(header, f);
+                }
             }
         });
     }
@@ -75,5 +81,14 @@ public class GroupPropertiesAction extends NodeAction {
         this.idProvider = idProvider;
     }
 
+    private void notifyGroupDoesNotExist(EntityHeader header, JFrame f) {
+        JOptionPane.showMessageDialog(f, GROUP_DOES_NOT_EXIST_MSG, "Warning", JOptionPane.WARNING_MESSAGE);
+        JTree tree = (JTree)ComponentRegistry.getInstance().getComponent(AssertionsTree.NAME);
+        DefaultTreeModel model = (DefaultTreeModel)tree.getModel();
+        model.removeNodeFromParent(node);
+    }
+
     private IdentityProvider idProvider;
+    private final String GROUP_DOES_NOT_EXIST_MSG = "This group no longer exists";
+
 }
