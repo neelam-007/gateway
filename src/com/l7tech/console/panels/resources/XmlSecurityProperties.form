@@ -169,7 +169,7 @@
               <editable value="false"/>
               <focusCycleRoot value="false"/>
               <focusable value="true"/>
-              <text value="blahblah"/>
+              <text value="blahblahs"/>
               <toolTipText value="The Xpath to save in the assertion"/>
             </properties>
           </component>
