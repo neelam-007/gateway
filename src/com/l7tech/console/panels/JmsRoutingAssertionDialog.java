@@ -53,7 +53,7 @@ public class JmsRoutingAssertionDialog extends JDialog {
      */
     public JmsRoutingAssertionDialog(Frame owner, JmsRoutingAssertion a) {
         super(owner, true);
-        setTitle("Edit JMS Routing Assertion");
+        setTitle("JMS Routing Properties");
         assertion = a;
         initComponents();
         initFormData();
