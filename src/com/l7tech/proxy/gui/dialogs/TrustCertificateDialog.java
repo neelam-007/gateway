@@ -40,9 +40,9 @@ public class TrustCertificateDialog extends JDialog {
         try {
             cpan = new CertificatePanel(cert);
         } catch (CertificateEncodingException e) {
-            cpan = new JLabel("Can't display certificate -- could not decode it");
+            cpan = new JLabel("Can't display certificate -- could not decode it.");
         } catch (NoSuchAlgorithmException e) {
-            cpan = new JLabel("Can't display certificate -- it uses unknown algorithm");
+            cpan = new JLabel("Can't display certificate -- it uses unknown algorithm.");
         }
         c.add(cpan,
               new GridBagConstraints(0, 1, GridBagConstraints.REMAINDER, 1, 1000.0, 1000.0,
