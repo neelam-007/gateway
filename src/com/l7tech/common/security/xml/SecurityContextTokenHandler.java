@@ -7,6 +7,10 @@ import java.security.SecureRandom;
 import java.io.IOException;
 
 import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.NodeList;
+import org.w3c.dom.Text;
+import com.l7tech.common.util.SoapUtil;
 
 /**
  * Appends and parses out xml security session information in/out of soap messages.
@@ -59,10 +63,42 @@ public class SecurityContextTokenHandler {
         return decoder.decodeBuffer(uri.substring(URI_PREFIX.length()));
     }
 
+    /**
+     * This appends the sessionid to the message using ws-sc lingo.
+     */
     public static void appendSessionInfoToSoapMessage(Document soapmsg, byte[] sessionid, long seqnumber) {
-        // todo
+        Element securityCtxTokEl = getOrMakeSecurityContextTokenElement(soapmsg);
+        String currentwscPrefix = securityCtxTokEl.getPrefix();
+        Element idElement = securityCtxTokEl.getOwnerDocument().createElementNS(WSC_NAMESPACE, SCTOKEN_ID_ELNAME);
+        idElement.setPrefix(currentwscPrefix);
+        Text valNode = securityCtxTokEl.getOwnerDocument().createTextNode(sessionIdToURI(sessionid));
+        idElement.appendChild(valNode);
+        securityCtxTokEl.insertBefore(idElement, null);
+        // todo, the sequence number
+    }
+
+    /**
+     * Gets the WSC:SecurityContextToken element out of the message. If not present, creates it.
+     */
+    private static Element getOrMakeSecurityContextTokenElement(Document soapMsg) {
+        NodeList listSecurityElements = soapMsg.getElementsByTagNameNS(WSC_NAMESPACE, SCTOKEN_ELNAME);
+        if (listSecurityElements.getLength() < 1) {
+            // element does not exist
+            Element securityEl = SoapUtil.getOrMakeSecurityElement(soapMsg);
+            Element securityContxTokEl = soapMsg.createElementNS(WSC_NAMESPACE, SCTOKEN_ELNAME);
+            // use same prefix as parent
+            securityContxTokEl.setPrefix("wsc");
+            securityEl.insertBefore(securityContxTokEl, null);
+            return securityContxTokEl;
+        } else {
+            return (Element)listSecurityElements.item(0);
+        }
     }
 
     private static final SecureRandom rand = new SecureRandom();
-    private static final String URI_PREFIX = "uuid:";
+    public static final String URI_PREFIX = "uuid:";
+
+    public static final String WSC_NAMESPACE = "http://schemas.xmlsoap.org/ws/2004/04/sc";
+    public static final String SCTOKEN_ELNAME = "SecurityContextToken";
+    public static final String SCTOKEN_ID_ELNAME = "Identifier";
 }
