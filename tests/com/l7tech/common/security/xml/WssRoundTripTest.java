@@ -145,7 +145,8 @@ public class WssRoundTripTest extends TestCase {
         // Ooh, an incoming message has just arrived!
         Document incomingMessage = XmlUtil.stringToDocument(new String(decoratedMessage));
 
-        log.info("Message just before undecoration:" + XmlUtil.documentToFormattedString(message));
+        assertTrue("Serialization did not affect the integrity of the XML message",
+                   XmlUtil.documentToString(message).equals(XmlUtil.documentToString(incomingMessage)));
 
         WssProcessor.ProcessorResult r = trogdor.undecorateMessage(incomingMessage,
                                                                    td.recipientCert,
