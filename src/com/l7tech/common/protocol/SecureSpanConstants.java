@@ -227,5 +227,11 @@ public class SecureSpanConstants {
          * </ul>
          */
         public static final String HEADER_KEYRES = "keyres";
+
+        /**
+         * The console compares this value with the value returned by IdentityAdmin.echoVersion()
+         * this ensures that the console can talk to the server.
+         */
+        public static final String ADMIN_PROTOCOL_VERSION = "20031021";
     }
 }
