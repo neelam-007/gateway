@@ -10,7 +10,7 @@ import java.util.*;
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  * @version 1.0
  */
-public class GroupManagerStub implements GroupManager {
+public class GroupManagerStub extends GroupManagerAdapter {
     private StubDataStore dataStore;
 
     public GroupManagerStub(StubDataStore dataStore) {

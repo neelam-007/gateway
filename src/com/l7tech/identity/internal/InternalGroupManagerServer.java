@@ -4,6 +4,7 @@ import com.l7tech.objectmodel.*;
 import com.l7tech.identity.GroupManager;
 import com.l7tech.identity.Group;
 import com.l7tech.identity.IdProvConfManagerServer;
+import com.l7tech.identity.User;
 import com.l7tech.logging.LogManager;
 
 import java.sql.SQLException;
@@ -148,6 +149,32 @@ public class InternalGroupManagerServer extends HibernateEntityManager implement
         return findByPrimaryKey(header.getStrId());
     }
 
+    public void addUsers(Group group, Set users) throws FindException, UpdateException {
+    }
+
+    public void removeUsers(Group group, Set users) throws FindException, UpdateException {
+    }
+
+    public void addUser(User user, Set groups) throws FindException, UpdateException {
+    }
+
+    public void removeUser(User user, Set groups) throws FindException, UpdateException {
+    }
+
+    public void addUser(User user, Group group) throws FindException, UpdateException {
+    }
+
+    public void removeUser(User user, Group group) throws FindException, UpdateException {
+    }
+
+    public Set getGroups(User user) throws FindException {
+        return null;
+    }
+
+    public Set getUsers(Group group) throws FindException {
+        return null;
+    }
+
     public Set groupsToHeaders(Set groups) {
         Group group;
         EntityHeader header;
@@ -178,6 +205,11 @@ public class InternalGroupManagerServer extends HibernateEntityManager implement
         return result;
     }
 
+    private void createMembership( User user, Group group ) throws UpdateException {
+    }
+
+    private void removeMembership( User user, Group group ) throws UpdateException {
+    }
 
     public String getTableName() {
         return "internal_group";

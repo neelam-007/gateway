@@ -25,9 +25,10 @@ import java.util.*;
  * @author alex
  * @version $Revision$
  */
-public abstract class AbstractLdapUserManagerServer extends LdapManager implements UserManager {
+public abstract class AbstractLdapUserManagerServer implements UserManager {
     public AbstractLdapUserManagerServer( IdentityProviderConfig config ) {
-        super( config );
+        _ldapManager = new LdapManager( config );
+        _config = config;
         logger = LogManager.getInstance().getSystemLogger();
     }
 
@@ -46,23 +47,23 @@ public abstract class AbstractLdapUserManagerServer extends LdapManager implemen
             throw new FindException("invalid manager");
         }
         try {
-            DirContext context = getBrowseContext();
+            DirContext context = _ldapManager.getBrowseContext();
             Attributes attributes = context.getAttributes(dn);
             User out = new User();
-            out.setProviderId(config.getOid());
+            out.setProviderId(_config.getOid());
             out.setName(dn);
-            Object tmp = extractOneAttributeValue(attributes, constants.userEmailAttribute() );
+            Object tmp = _ldapManager.extractOneAttributeValue(attributes, constants.userEmailAttribute() );
             if (tmp != null) out.setEmail(tmp.toString());
-            tmp = extractOneAttributeValue(attributes, constants.userFirstnameAttribute() );
+            tmp = _ldapManager.extractOneAttributeValue(attributes, constants.userFirstnameAttribute() );
             if (tmp != null) out.setFirstName(tmp.toString());
-            tmp = extractOneAttributeValue(attributes, constants.userLastnameAttribute() );
+            tmp = _ldapManager.extractOneAttributeValue(attributes, constants.userLastnameAttribute() );
             if (tmp != null) out.setLastName(tmp.toString());
-            tmp = extractOneAttributeValue(attributes, constants.userLoginAttribute() );
+            tmp = _ldapManager.extractOneAttributeValue(attributes, constants.userLoginAttribute() );
             if (tmp != null) out.setLogin(tmp.toString());
             // this would override the dn
             // tmp = extractOneAttributeValue(attributes, NAME_ATTR_NAME);
             // if (tmp != null) out.setName(tmp.toString());
-            tmp = extractOneAttributeValue(attributes, constants.userPasswordAttribute() );
+            tmp = _ldapManager.extractOneAttributeValue(attributes, constants.userPasswordAttribute() );
             if (tmp != null) {
                 byte[] tmp2 = (byte[])tmp;
                 out.setPassword(new String(tmp2));
@@ -83,7 +84,7 @@ public abstract class AbstractLdapUserManagerServer extends LdapManager implemen
             throw new FindException("invalid manager");
         }
         try {
-            DirContext context = getBrowseContext();
+            DirContext context = _ldapManager.getBrowseContext();
             // Search using attribute list.
             /*Attributes matchAttrs = new BasicAttributes(true); // ignore attribute name case
             matchAttrs.put(new BasicAttribute( getConstants().userLoginAttribute(), login));*/
@@ -92,13 +93,13 @@ public abstract class AbstractLdapUserManagerServer extends LdapManager implemen
             SearchControls sc = new SearchControls();
             sc.setSearchScope(SearchControls.SUBTREE_SCOPE);
             NamingEnumeration answer = null;
-            answer = context.search(config.getProperty(LdapConfigSettings.LDAP_SEARCH_BASE), filter, sc);
+            answer = context.search(_config.getProperty(LdapConfigSettings.LDAP_SEARCH_BASE), filter, sc);
             // Close the anon context now that we're done with it
             context.close();
             String dn = null;
             if (answer.hasMore()) {
                 SearchResult sr = (SearchResult)answer.next();
-                dn = sr.getName() + "," + config.getProperty(LdapConfigSettings.LDAP_SEARCH_BASE);
+                dn = sr.getName() + "," + _config.getProperty(LdapConfigSettings.LDAP_SEARCH_BASE);
                 logger.finer("found dn:" + dn + " for login: " + login);
             } else {
                 logger.info("nothing has cn= " + login);
@@ -155,8 +156,8 @@ public abstract class AbstractLdapUserManagerServer extends LdapManager implemen
             throw new FindException("invalid manager");
         }
         Collection output = new ArrayList();
-        if (config.getProperty(LdapConfigSettings.LDAP_SEARCH_BASE) == null ||
-            config.getProperty(LdapConfigSettings.LDAP_SEARCH_BASE).length() < 1) {
+        if (_config.getProperty(LdapConfigSettings.LDAP_SEARCH_BASE) == null ||
+            _config.getProperty(LdapConfigSettings.LDAP_SEARCH_BASE).length() < 1) {
             throw new FindException("No search base provided");
         }
         try
@@ -165,18 +166,18 @@ public abstract class AbstractLdapUserManagerServer extends LdapManager implemen
             String filter = "(objectclass=" + constants.userObjectClass() + ")";
             SearchControls sc = new SearchControls();
             // String[] attrToReturn = {LOGIN_ATTR_NAME, NAME_ATTR_NAME};
-            //answer = getAnonymousContext().search(config.getSearchBase(), null, attrToReturn);
+            //answer = getAnonymousContext().search(_config.getSearchBase(), null, attrToReturn);
             sc.setSearchScope(SearchControls.SUBTREE_SCOPE);
-            DirContext context = getBrowseContext();
-            answer = context.search(config.getProperty(LdapConfigSettings.LDAP_SEARCH_BASE), filter, sc);
+            DirContext context = _ldapManager.getBrowseContext();
+            answer = context.search(_config.getProperty(LdapConfigSettings.LDAP_SEARCH_BASE), filter, sc);
             while (answer.hasMore())
             {
                 String login = null;
                 String dn = null;
                 SearchResult sr = (SearchResult)answer.next();
-                dn = sr.getName() + "," + config.getProperty(LdapConfigSettings.LDAP_SEARCH_BASE);
+                dn = sr.getName() + "," + _config.getProperty(LdapConfigSettings.LDAP_SEARCH_BASE);
                 Attributes atts = sr.getAttributes();
-                Object tmp = extractOneAttributeValue(atts, constants.userLoginAttribute() );
+                Object tmp = _ldapManager.extractOneAttributeValue(atts, constants.userLoginAttribute() );
                 if (tmp != null) login = tmp.toString();
                 if (login != null && dn != null) {
                     EntityHeader header = new EntityHeader(dn, EntityType.USER, login, null);
@@ -197,8 +198,8 @@ public abstract class AbstractLdapUserManagerServer extends LdapManager implemen
             throw new FindException("invalid manager");
         }
         Collection output = new ArrayList();
-        if (config.getProperty(LdapConfigSettings.LDAP_SEARCH_BASE) == null ||
-            config.getProperty(LdapConfigSettings.LDAP_SEARCH_BASE).length() < 1) {
+        if (_config.getProperty(LdapConfigSettings.LDAP_SEARCH_BASE) == null ||
+            _config.getProperty(LdapConfigSettings.LDAP_SEARCH_BASE).length() < 1) {
             throw new FindException("No search base provided");
         }
         try
@@ -207,10 +208,10 @@ public abstract class AbstractLdapUserManagerServer extends LdapManager implemen
             String filter = "(objectclass=" + getConstants().userObjectClass() + ")";
             SearchControls sc = new SearchControls();
             // String[] attrToReturn = {LOGIN_ATTR_NAME, NAME_ATTR_NAME};
-            //answer = getAnonymousContext().search(config.getSearchBase(), null, attrToReturn);
+            //answer = getAnonymousContext().search(_config.getSearchBase(), null, attrToReturn);
             sc.setSearchScope(SearchControls.SUBTREE_SCOPE);
-            DirContext context = getBrowseContext();
-            answer = context.search(config.getProperty(LdapConfigSettings.LDAP_SEARCH_BASE), filter, sc);
+            DirContext context = _ldapManager.getBrowseContext();
+            answer = context.search(_config.getProperty(LdapConfigSettings.LDAP_SEARCH_BASE), filter, sc);
             int count = 0;
             while (answer.hasMore())
             {
@@ -225,9 +226,9 @@ public abstract class AbstractLdapUserManagerServer extends LdapManager implemen
                 String login = null;
                 String dn = null;
                 SearchResult sr = (SearchResult)answer.next();
-                dn = sr.getName() + "," + config.getProperty(LdapConfigSettings.LDAP_SEARCH_BASE);
+                dn = sr.getName() + "," + _config.getProperty(LdapConfigSettings.LDAP_SEARCH_BASE);
                 Attributes atts = sr.getAttributes();
-                Object tmp = extractOneAttributeValue(atts, getConstants().userLoginAttribute() );
+                Object tmp = _ldapManager.extractOneAttributeValue(atts, getConstants().userLoginAttribute() );
                 if (tmp != null) login = tmp.toString();
                 if (login != null && dn != null) {
                     EntityHeader header = new EntityHeader(dn, EntityType.USER, login, null);
@@ -279,7 +280,7 @@ public abstract class AbstractLdapUserManagerServer extends LdapManager implemen
         }
         Hashtable env = new Hashtable();
         env.put(Context.INITIAL_CONTEXT_FACTORY, "com.sun.jndi.ldap.LdapCtxFactory");
-        env.put(Context.PROVIDER_URL, config.getProperty(LdapConfigSettings.LDAP_HOST_URL));
+        env.put(Context.PROVIDER_URL, _config.getProperty(LdapConfigSettings.LDAP_HOST_URL));
         env.put(Context.SECURITY_AUTHENTICATION, "simple");
         env.put(Context.SECURITY_PRINCIPAL, dn);
         env.put(Context.SECURITY_CREDENTIALS, passwd);
@@ -328,8 +329,8 @@ public abstract class AbstractLdapUserManagerServer extends LdapManager implemen
             String filter = doGetGroupMembershipFilter( user );
             SearchControls sc = new SearchControls();
             sc.setSearchScope(SearchControls.SUBTREE_SCOPE);
-            DirContext context = getBrowseContext();
-            answer = context.search(config.getProperty(LdapConfigSettings.LDAP_SEARCH_BASE), filter, sc);
+            DirContext context = _ldapManager.getBrowseContext();
+            answer = context.search(_config.getProperty(LdapConfigSettings.LDAP_SEARCH_BASE), filter, sc);
             while (answer.hasMore())
             {
                 SearchResult sr = (SearchResult)answer.next();
@@ -339,12 +340,12 @@ public abstract class AbstractLdapUserManagerServer extends LdapManager implemen
                 String description = null;
 
                 Attributes atts = sr.getAttributes();
-                Object tmp = extractOneAttributeValue(atts, constants.userNameAttribute() );
+                Object tmp = _ldapManager.extractOneAttributeValue(atts, constants.userNameAttribute() );
                 if (tmp != null) cn = tmp.toString();
-                tmp = extractOneAttributeValue(atts, constants.descriptionAttribute() );
+                tmp = _ldapManager.extractOneAttributeValue(atts, constants.descriptionAttribute() );
                 if (tmp != null) description = tmp.toString();
 
-                dn = sr.getName() + "," + config.getProperty(LdapConfigSettings.LDAP_SEARCH_BASE);
+                dn = sr.getName() + "," + _config.getProperty(LdapConfigSettings.LDAP_SEARCH_BASE);
                 EntityHeader grpheader = new EntityHeader(dn, EntityType.GROUP, cn, description);
                 out.add(grpheader);
             }
@@ -358,5 +359,7 @@ public abstract class AbstractLdapUserManagerServer extends LdapManager implemen
     }
 
     private volatile boolean valid = true;
+    private LdapManager _ldapManager;
+    private IdentityProviderConfig _config;
     protected Logger logger = null;
 }
