@@ -124,13 +124,13 @@ public class WssRoundTripTest extends TestCase {
     }
 
     // TODO make this pass
-    public void OFF_testSigningOnlyWithSecureConversation() throws Exception {
+    public void testSigningOnlyWithSecureConversation() throws Exception {
         runRoundTripTest(new NamedTestDocument("SigningOnlyWithSecureConversation",
                                                wssDecoratorTest.getSigningOnlyWithSecureConversationTestDocument()));
     }
 
     // TODO make this pass
-    public void OFF_testSigningAndEncryptionWithSecureConversation() throws Exception {
+    public void testSigningAndEncryptionWithSecureConversation() throws Exception {
         runRoundTripTest(new NamedTestDocument("SigningAndEncryptionWithSecureConversation",
                                                wssDecoratorTest.getSigningAndEncryptionWithSecureConversationTestDocument()));
     }
