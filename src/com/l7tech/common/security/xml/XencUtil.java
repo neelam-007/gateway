@@ -187,9 +187,25 @@ public class XencUtil {
             throw new InvalidDocumentFormatException(encryptedKeyElement.getLocalName() + " is missing CipherValue element");
         // we got the value, decrypt it
         String value = XmlUtil.getTextValue(cipherValue);
+        return decryptKey(value, recipientKey);
+    }
+
+    /**
+     * Caller is responsible for ensuring that
+     * this encrypted key is in fact addressed to the specified recipientKey, and that the algorithm is supported
+     * (perhaps by calling checkEncryptionMethod() and checkKeyInfo()).
+     * @param b64edEncryptedKey    the base64ed EncryptedKey value
+     * @param recipientKey         the private key to use to decrypt the element
+     * @return the decrypted key.  Will never be null.
+     * @throws com.l7tech.common.xml.InvalidDocumentFormatException  if there is a problem interpreting the EncryptedKey.
+     * @throws java.security.GeneralSecurityException if there was a crypto problem
+     */
+    public static byte[] decryptKey(String b64edEncryptedKey, PrivateKey recipientKey)
+            throws InvalidDocumentFormatException, GeneralSecurityException
+    {
         byte[] encryptedKeyBytes = new byte[0];
         try {
-            encryptedKeyBytes = HexUtils.decodeBase64(value, true);
+            encryptedKeyBytes = HexUtils.decodeBase64(b64edEncryptedKey, true);
         } catch (IOException e) {
             throw new InvalidDocumentFormatException("Unable to parse base64 EncryptedKey CipherValue", e);
         }
