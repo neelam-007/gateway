@@ -61,13 +61,13 @@ public class Wsdl {
      *                        an XML document obeying the WSDL schema.
      *                        <p/>
      *                        <p>The example reads the WSDL definition from StringReader: <pre>
-     *                        // Retrieve the WSDL definition from the string representing
-     *                        // the wsdl and iterate over the services.
-     *                        <p/>
-     *                        Wsdl wsdl = Wsdl.newInstance(null, new StringReader(wsdlString));
-     *                        Iterator services = wsdl.getServices().iterator();
-     *                        ...
-     *                        </pre>
+     *                                                                      // Retrieve the WSDL definition from the string representing
+     *                                                                      // the wsdl and iterate over the services.
+     *                                                                      <p/>
+     *                                                                      Wsdl wsdl = Wsdl.newInstance(null, new StringReader(wsdlString));
+     *                                                                      Iterator services = wsdl.getServices().iterator();
+     *                                                                      ...
+     *                                                                      </pre>
      * @throws javax.wsdl.WSDLException throw on error parsing the WSDL definition
      */
     public static Wsdl newInstance(String documentBaseURI, Reader reader)
@@ -225,17 +225,17 @@ public class Wsdl {
      *               and then writes it ti the StringWriter:
      *               <p/>
      *               <pre>
-     *               // Retrieve the WSDL definition from the string representing
-     *               // the wsdl and iterate over the services.
-     *               <p/>
-     *               Wsdl wsdl = Wsdl.newInstance(null, new StringReader(wsdlString));
-     *               Iterator services = wsdl.getServices().iterator();
-     *               ...
-     *               StringWriter sw = new StringWriter();
-     *               wsdl.toWriter(sw);
-     *               System.out.println(sw.toString()):
-     *               ...
-     *               </pre>
+     *                                           // Retrieve the WSDL definition from the string representing
+     *                                           // the wsdl and iterate over the services.
+     *                                           <p/>
+     *                                           Wsdl wsdl = Wsdl.newInstance(null, new StringReader(wsdlString));
+     *                                           Iterator services = wsdl.getServices().iterator();
+     *                                           ...
+     *                                           StringWriter sw = new StringWriter();
+     *                                           wsdl.toWriter(sw);
+     *                                           System.out.println(sw.toString()):
+     *                                           ...
+     *                                           </pre>
      * @throws javax.wsdl.WSDLException throw on error parsing the WSDL definition
      */
     public void toWriter(Writer writer) throws WSDLException {
@@ -253,16 +253,16 @@ public class Wsdl {
      *           and then writes it ti the file:
      *           <p/>
      *           <pre>
-     *           // Retrieve the WSDL definition from the string representing
-     *           // the wsdl and iterate over the services.
-     *           <p/>
-     *           Wsdl wsdl = Wsdl.newInstance(null, new StringReader(wsdlString));
-     *           Iterator services = wsdl.getServices().iterator();
-     *           ...
-     *           FileOutputStream fos = new FileOutputStream("./service.wsdl");
-     *           wsdl.toOutputStream(fos);
-     *           ...
-     *           </pre>
+     *                               // Retrieve the WSDL definition from the string representing
+     *                               // the wsdl and iterate over the services.
+     *                               <p/>
+     *                               Wsdl wsdl = Wsdl.newInstance(null, new StringReader(wsdlString));
+     *                               Iterator services = wsdl.getServices().iterator();
+     *                               ...
+     *                               FileOutputStream fos = new FileOutputStream("./service.wsdl");
+     *                               wsdl.toOutputStream(fos);
+     *                               ...
+     *                               </pre>
      * @throws javax.wsdl.WSDLException throw on error parsing the WSDL definition
      */
     public void toOutputStream(OutputStream os) throws WSDLException {
@@ -287,6 +287,7 @@ public class Wsdl {
      * First the binding operation style is checked and if noit found, then the
      * enclosing bindings style is searched for.
      * Note that the binding operation must be owned by this wsdl instance.
+     *
      * @param bo the binding operation
      * @return the operation style "rpc" | "document", if undefined "rpc" is returned
      */
@@ -307,23 +308,42 @@ public class Wsdl {
         while (bindings.hasNext()) {
             Binding binding = (Binding)bindings.next();
             if (binding.getBindingOperations().contains(bo)) {
-                elements = binding.getExtensibilityElements();
-                for (Iterator iterator = elements.iterator(); iterator.hasNext();) {
-                    Object o = (Object)iterator.next();
-                    if (o instanceof SOAPBinding) {
-                        SOAPBinding sb = (SOAPBinding)o;
-                        return sb.getStyle();
-                    } else if (o instanceof HTTPBinding) {
-                        return "document"; // GET/POST uses document?
-                    }
+                ExtensibilityElement bindingProtocol = getBindingProtocol(binding);
+                if (bindingProtocol == null ||
+                    bindingProtocol instanceof HTTPBinding) {
+                    return "document"; // GET/POST uses document?
+                } else if (bindingProtocol instanceof SOAPBinding) {
+                    SOAPBinding sb = (SOAPBinding)bindingProtocol;
+                    return sb.getStyle();
                 }
-                break;
             }
         }
-        return "rpc";
+        return "document"; //default
     }
 
-    
+    /**
+     * Return the protocol binding (soap, http etc) extensibility
+     * element for a given binding.
+     * <p/>
+     * The <code>ExtensibilityElement</code> subclass such as
+     * <code>SOAPBinding</code> or <code>HTTPBinding</code>
+     * is returned, or <b>null</b> if it cannot be determined.
+     *
+     * @param b the binding to
+     * @return the proticol binding or null if unspecified
+     */
+    public ExtensibilityElement getBindingProtocol(Binding b) {
+        List elements = b.getExtensibilityElements();
+        for (Iterator iterator = elements.iterator(); iterator.hasNext();) {
+            Object o = (Object)iterator.next();
+            if (o instanceof SOAPBinding) {
+                return (SOAPBinding)o;
+            } else if (o instanceof HTTPBinding) {
+                return (HTTPBinding)o;
+            }
+        }
+        return null;
+    }
 
     /**
      * Finds a single Port that contains a SOAPAddress from whatever Services are in the WSDL.
