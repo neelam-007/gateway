@@ -1,6 +1,7 @@
 package com.l7tech.server.secureconversation;
 
 import com.l7tech.common.security.xml.WssProcessor;
+import com.l7tech.common.util.HexUtils;
 import com.l7tech.server.identity.IdentityProviderFactory;
 import com.l7tech.identity.IdentityProvider;
 import com.l7tech.identity.User;
@@ -8,8 +9,10 @@ import com.l7tech.objectmodel.FindException;
 
 import javax.crypto.SecretKey;
 import java.util.HashMap;
+import java.util.Random;
 import java.util.logging.Logger;
 import java.util.logging.Level;
+import java.security.SecureRandom;
 
 /**
  * Server-side manager that manages the SecureConversation sessions.
@@ -76,13 +79,17 @@ public class SecureConversationContextManager implements WssProcessor.SecurityCo
     }
 
     private byte[] generateNewSecret() {
-        // todo, return some random secret
-        return new byte[0];
+        // return some random secret
+        byte[] output = new byte[256];
+        random.nextBytes(output);
+        return output;
     }
 
     private String randomuuid() {
-        // todo, return some random encoded string
-        return "blah";
+        // return some random encoded string
+        byte[] output = new byte[20];
+        random.nextBytes(output);
+        return HexUtils.hexDump(output);
     }
 
     /**
@@ -128,6 +135,7 @@ public class SecureConversationContextManager implements WssProcessor.SecurityCo
 
     private SecureConversationContextManager() {
         // maybe in the future we use some distributed cache?
+        // todo, something that deletes old sessions
     }
 
     /**
@@ -142,4 +150,5 @@ public class SecureConversationContextManager implements WssProcessor.SecurityCo
 
     private final Logger logger = Logger.getLogger(SecureConversationContextManager.class.getName());
     private static final long DEFAULT_SESSION_DURATION = 1000*60*60*2; // 2 hrs?
+    private static final Random random = new SecureRandom();
 }
