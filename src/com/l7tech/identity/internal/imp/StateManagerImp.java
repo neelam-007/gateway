@@ -33,6 +33,10 @@ public class StateManagerImp extends HibernateEntityManager implements StateMana
         return _manager.save( _context, state );
     }
 
+    public void update( State state ) throws UpdateException {
+        _manager.update( _context, state );
+    }
+
     public void setIdentityProviderOid(long oid) {
         _identityProviderOid = oid;
     }

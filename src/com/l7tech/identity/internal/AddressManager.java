@@ -11,4 +11,5 @@ public interface AddressManager extends EntityManager {
     public Address findByPrimaryKey( long oid ) throws FindException;
     public void delete( Address address ) throws DeleteException;
     public long save( Address address ) throws SaveException;
+    public void update( Address address ) throws UpdateException;
 }

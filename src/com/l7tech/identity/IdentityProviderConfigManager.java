@@ -11,6 +11,7 @@ import java.util.Collection;
 public interface IdentityProviderConfigManager extends EntityManager {
     public IdentityProviderConfig findByPrimaryKey( long oid ) throws FindException;
     public long save( IdentityProviderConfig identityProviderConfig ) throws SaveException;
+    public void update( IdentityProviderConfig identityProviderConfig ) throws UpdateException;
     public void delete( IdentityProviderConfig identityProviderConfig ) throws DeleteException;
 
     public Collection findAllIdentityProviders() throws FindException;

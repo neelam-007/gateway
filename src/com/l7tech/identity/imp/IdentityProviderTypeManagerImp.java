@@ -26,6 +26,10 @@ public class IdentityProviderTypeManagerImp extends HibernateEntityManager imple
         return _manager.save( _context, identityProviderType );
     }
 
+    public void update( IdentityProviderType identityProviderType ) throws UpdateException {
+        _manager.update( _context, identityProviderType );
+    }
+
     public Collection findAll() throws FindException {
         return _manager.find( _context, "from identity_provider_type in class com.l7tech.identity.imp.IdentityProviderTypeImp" );
     }

@@ -33,6 +33,10 @@ public class IdentityProviderConfigManagerImp extends HibernateEntityManager imp
         return _manager.save( _context, identityProviderConfig );
     }
 
+    public void update( IdentityProviderConfig identityProviderConfig ) throws UpdateException {
+        _manager.update( _context, identityProviderConfig );
+    }
+
     public Collection findAll() throws FindException {
         return _manager.find( _context, "from identity_provider in class com.l7tech.identity.imp.IdentityProviderConfigImp" );
     }

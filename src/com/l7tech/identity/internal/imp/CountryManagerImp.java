@@ -34,6 +34,10 @@ public class CountryManagerImp extends HibernateEntityManager implements Country
         return _manager.save( _context, country );
     }
 
+    public void update( Country country ) throws UpdateException {
+        _manager.update( _context, country );
+    }
+
     public void setIdentityProviderOid(long oid) {
         _identityProviderOid = oid;
     }

@@ -10,6 +10,7 @@ public interface GroupManager extends EntityManager {
     public Group findByPrimaryKey( long oid ) throws FindException;
     public void delete( Group group ) throws DeleteException;
     public long save( Group group ) throws SaveException;
+    public void update( Group group ) throws UpdateException;
 
     public void setIdentityProviderOid( long oid );
 }

@@ -12,5 +12,7 @@ public interface UserManager extends EntityManager {
     public User findByPrimaryKey( long oid ) throws FindException;
     public void delete( User user ) throws DeleteException;
     public long save( User user ) throws SaveException;
+    public void update( User user ) throws UpdateException;
+
     public void setIdentityProviderOid( long oid );
 }

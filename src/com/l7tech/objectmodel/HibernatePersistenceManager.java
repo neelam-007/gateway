@@ -159,6 +159,19 @@ public class HibernatePersistenceManager extends PersistenceManager {
         }
     }
 
+    void doUpdate( PersistenceContext context, Entity obj ) throws UpdateException {
+        ContextHolder h = getContextHolder( context );
+        Session s = h._session;
+
+        try {
+            s.saveOrUpdate( obj );
+        } catch ( HibernateException he ) {
+            throw new UpdateException( he.toString(), he );
+        } catch ( SQLException se ) {
+            throw new UpdateException( se.toString(), se );
+        }
+    }
+
     long doSave( PersistenceContext context, Entity obj) throws SaveException {
         ContextHolder h = getContextHolder( context );
         Session s = h._session;

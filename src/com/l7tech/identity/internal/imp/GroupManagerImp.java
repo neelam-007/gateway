@@ -33,6 +33,10 @@ public class GroupManagerImp extends HibernateEntityManager implements GroupMana
         return _manager.save( _context, group );
     }
 
+    public void update( Group group ) throws UpdateException {
+        _manager.update( _context, group );
+    }
+
     public void setIdentityProviderOid(long oid) {
         _identityProviderOid = oid;
     }

@@ -52,6 +52,11 @@ public abstract class PersistenceManager {
         return _instance.doSave( context, obj );
     }
 
+    public static void update( PersistenceContext context, Entity obj ) throws UpdateException {
+        checkInstance();
+        _instance.doUpdate( context, obj );
+    }
+
     public static void delete( PersistenceContext context, Entity obj ) throws DeleteException {
         checkInstance();
         _instance.doDelete( context, obj );
@@ -96,6 +101,7 @@ public abstract class PersistenceManager {
     abstract Entity doFindByPrimaryKey( PersistenceContext context, Class clazz, long oid ) throws FindException;
     abstract Entity doFindByPrimaryKey( PersistenceContext context, Class clazz, long oid, boolean forUpdate ) throws FindException;
     abstract long doSave( PersistenceContext context, Entity obj ) throws SaveException;
+    abstract void doUpdate( PersistenceContext context, Entity obj ) throws UpdateException;
     abstract void doDelete( PersistenceContext context, Entity obj ) throws DeleteException;
     abstract PersistenceContext doGetContext() throws SQLException;
 

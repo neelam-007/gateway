@@ -33,6 +33,10 @@ public class OrganizationManagerImp extends HibernateEntityManager implements Or
         return _manager.save( _context, organization );
     }
 
+    public void update( Organization organization ) throws UpdateException {
+        _manager.update( _context, organization );
+    }
+
     public void setIdentityProviderOid(long oid) {
         _identityProviderOid = oid;
     }

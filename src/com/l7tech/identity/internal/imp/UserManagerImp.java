@@ -34,6 +34,10 @@ public class UserManagerImp extends HibernateEntityManager implements UserManage
         return _manager.save( _context, user );
     }
 
+    public void update( User user ) throws UpdateException {
+        _manager.update( _context, user );
+    }
+
     public void setIdentityProviderOid(long oid) {
         _identityProviderOid = oid;
     }
