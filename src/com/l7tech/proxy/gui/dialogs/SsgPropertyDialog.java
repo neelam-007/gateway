@@ -5,30 +5,25 @@ import com.l7tech.common.gui.widgets.CertificatePanel;
 import com.l7tech.common.gui.widgets.ContextMenuTextField;
 import com.l7tech.common.gui.widgets.WrappingLabel;
 import com.l7tech.proxy.ClientProxy;
-import com.l7tech.proxy.datamodel.*;
+import com.l7tech.proxy.datamodel.Ssg;
+import com.l7tech.proxy.datamodel.SsgEvent;
+import com.l7tech.proxy.datamodel.SsgKeyStoreManager;
+import com.l7tech.proxy.datamodel.SsgListener;
 import com.l7tech.proxy.gui.Gui;
-import com.l7tech.proxy.gui.policy.PolicyTreeCellRenderer;
-import com.l7tech.proxy.gui.policy.PolicyTreeModel;
 import com.l7tech.proxy.gui.util.IconManager;
 
 import javax.swing.*;
 import javax.swing.border.BevelBorder;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
-import javax.swing.event.ListSelectionEvent;
-import javax.swing.event.ListSelectionListener;
 import javax.swing.filechooser.FileFilter;
-import javax.swing.table.AbstractTableModel;
-import javax.swing.tree.TreeModel;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
-import java.io.IOException;
 import java.security.NoSuchAlgorithmException;
 import java.security.cert.CertificateEncodingException;
 import java.security.cert.X509Certificate;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -60,29 +55,13 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
 
     //   View for Network pane
     private SsgNetworkPanel networkPane;
-    //private WrappingLabel fieldLocalEndpoint;
-    //private WrappingLabel fieldWsdlEndpoint;
-    //private JRadioButton radioStandardPorts;
-    //private JRadioButton radioNonstandardPorts;
-    //private JTextField fieldSsgPort;
-    //private JTextField fieldSslPort;
-    //private JRadioButton radioDefaultIpAddresses;
-    //private JRadioButton radioCustomIpAddresses;
-    //private JList jlistCustomIpAddresses;
-    //private JScrollPane scrollPaneCustomIpAddresses;
 
     //   View for Bridge Policy pane
     private JComponent bridgePolicyPane;
     private JCheckBox cbUseSslByDefault;
 
     //   View for Service Policies pane
-    private JComponent policiesPane;
-    private JTree policyTree;
-    private JTable policyTable;
-    private ArrayList displayPolicies;
-    private DisplayPolicyTableModel displayPolicyTableModel;
-    private JButton buttonFlushPolicies;
-    private boolean policyFlushRequested = false;
+    private SsgPoliciesPanel policiesPane;
 
     /** Create an SsgPropertyDialog ready to edit an Ssg instance. */
     private SsgPropertyDialog(ClientProxy clientProxy, final Ssg ssg, boolean isNew) {
@@ -113,29 +92,6 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
         return new SsgPropertyDialog(clientProxy, ssg, isNew);
     }
 
-    private class DisplayPolicyTableModel extends AbstractTableModel {
-        public int getRowCount() {
-            return displayPolicies.size();
-        }
-
-        public int getColumnCount() {
-            return 3;
-        }
-
-        public Object getValueAt(int rowIndex, int columnIndex) {
-            switch (columnIndex) {
-                case 0:
-                    return ((PolicyAttachmentKey)displayPolicies.get(rowIndex)).getUri();
-                case 1:
-                    return ((PolicyAttachmentKey)displayPolicies.get(rowIndex)).getSoapAction();
-                case 2:
-                    return ((PolicyAttachmentKey)displayPolicies.get(rowIndex)).getProxyUri();
-            }
-            log.log(Level.WARNING, "SsgPropertyDialog: policyTable: invalid columnIndex: " + columnIndex);
-            return null;
-        }
-    }
-
     private JComponent getBridgePolicyPane() {
         if (bridgePolicyPane == null) {
             int y = 0;
@@ -164,99 +120,11 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
         return bridgePolicyPane;
     }
 
-    private JComponent getPoliciesPane() {
+    private SsgPoliciesPanel getPoliciesPane() {
         if (policiesPane == null) {
-            int y = 0;
-            JPanel pane = new JPanel(new GridBagLayout());
-            policiesPane = new JScrollPane(pane);
-            policiesPane.setBorder(BorderFactory.createEmptyBorder());
-
-            pane.add(new JLabel("<HTML><h4>Service Policies Being Cached by Bridge</h4></HTML>"),
-                     new GridBagConstraints(0, y++, 1, 1, 0.0, 0.0,
-                                            GridBagConstraints.NORTHWEST,
-                                            GridBagConstraints.BOTH,
-                                            new Insets(14, 6, 6, 6), 3, 3));
-
-            pane.add(new JLabel("Web Services with Cached Policies:"),
-                     new GridBagConstraints(0, y++, 2, 1, 0.0, 0.0,
-                                            GridBagConstraints.CENTER,
-                                            GridBagConstraints.BOTH,
-                                            new Insets(6, 6, 0, 6), 3, 3));
-
-            buttonFlushPolicies = new JButton("Clear Policy Cache");
-            buttonFlushPolicies.addActionListener(new ActionListener() {
-                public void actionPerformed(ActionEvent e) {
-                    policyFlushRequested = true;
-                    updatePolicyPanel();
-                }
-            });
-            pane.add(buttonFlushPolicies,
-                     new GridBagConstraints(1, 0, 1, 1, 0.0, 0.0,
-                                            GridBagConstraints.EAST,
-                                            GridBagConstraints.NONE,
-                                            new Insets(14, 6, 0, 6), 0, 0));
-
-            displayPolicies = new ArrayList();
-            displayPolicyTableModel = new DisplayPolicyTableModel();
-            policyTable = new JTable(displayPolicyTableModel);
-            policyTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-            policyTable.setCellSelectionEnabled(false);
-            policyTable.setRowSelectionAllowed(true);
-            policyTable.setAutoResizeMode(JTable.AUTO_RESIZE_ALL_COLUMNS);
-            policyTable.setAutoCreateColumnsFromModel(true);
-            policyTable.getColumnModel().getColumn(0).setHeaderValue("Body Namespace");
-            policyTable.getColumnModel().getColumn(1).setHeaderValue("SOAPAction");
-            policyTable.getColumnModel().getColumn(2).setHeaderValue("Proxy URI");
-            policyTable.getTableHeader().setReorderingAllowed(false);
-            JScrollPane policyTableSp = new JScrollPane(policyTable);
-            policyTableSp.setPreferredSize(new Dimension(120, 120));
-            pane.add(policyTableSp,
-                     new GridBagConstraints(0, y++, 2, 1, 1.0, 1.0,
-                                            GridBagConstraints.CENTER,
-                                            GridBagConstraints.BOTH,
-                                            new Insets(0, 6, 3, 6), 0, 0));
-
-            pane.add(new JLabel("Associated Policy:"),
-                     new GridBagConstraints(0, y++, 2, 1, 0.0, 0.0,
-                                            GridBagConstraints.CENTER,
-                                            GridBagConstraints.BOTH,
-                                            new Insets(4, 6, 0, 6), 0, 0));
-
-            policyTree = new JTree((TreeModel)null);
-            policyTree.setCellRenderer(new PolicyTreeCellRenderer());
-            JScrollPane policyTreeSp = new JScrollPane(policyTree);
-            policyTreeSp.setPreferredSize(new Dimension(120, 120));
-            pane.add(policyTreeSp,
-                     new GridBagConstraints(0, y++, 2, 1, 100.0, 100.0,
-                                            GridBagConstraints.CENTER,
-                                            GridBagConstraints.BOTH,
-                                            new Insets(2, 6, 6, 6), 3, 3));
-
-            policyTable.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
-                public void valueChanged(ListSelectionEvent e) {
-                    displaySelectedPolicy();
-                }
-            });
+            policiesPane = new SsgPoliciesPanel();
         }
         return policiesPane;
-    }
-
-    private void displaySelectedPolicy() {
-        // do this?    if (e.getValueIsAdjusting()) return;
-        Policy policy = null;
-        int row = policyTable.getSelectedRow();
-        if (row >= 0 && row < displayPolicies.size())
-            try {
-                policy = ssg.rootPolicyManager().getPolicy((PolicyAttachmentKey)displayPolicies.get(row));
-            } catch (IOException e) {
-                log.log(Level.WARNING, "Unable to read policy: " + e.getMessage(), e); // TODO this should be an error dialog probably
-                policy = null;
-            }
-        policyTree.setModel((policy == null || policy.getClientAssertion() == null) ? null : new PolicyTreeModel(policy.getClientAssertion()));
-        int erow = 0;
-        while (erow < policyTree.getRowCount()) {
-            policyTree.expandRow(erow++);
-        }
     }
 
     private SsgPropertyPanel getIdentityPane(final Ssg ssg) {
@@ -564,15 +432,6 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
         return fieldServerAddress;
     }
 
-    /** Update the policy display panel with information from the Ssg bean. */
-    private void updatePolicyPanel() {
-        displayPolicies.clear();
-        if (!policyFlushRequested)
-            displayPolicies = new ArrayList(ssg.rootPolicyManager().getPolicyAttachmentKeys());
-        displayPolicyTableModel.fireTableDataChanged();
-        displaySelectedPolicy();
-    }
-
     private boolean isPortsCustom(Ssg ssg) {
         return referenceSsg.getSsgPort() != ssg.getSsgPort() || referenceSsg.getSslPort() != ssg.getSslPort();
     }
@@ -580,6 +439,7 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
     /** Set the Ssg object being edited by this panel. */
     private void setSsg(final Ssg ssg) {
         this.ssg = ssg;
+        getPoliciesPane().setPolicyManager(ssg.rootPolicyManager());
         synchronized (ssg) {
 
             // override the default (trusted SSG) if the ssg is a federated SSG
@@ -621,14 +481,14 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
                                       ssg.getLocalEndpoint() + ClientProxy.WSIL_SUFFIX);
             fieldServerAddress.setText(ssg.getSsgAddress());
 
-            policyFlushRequested = false;
+            getPoliciesPane().policyFlushRequested = false;
             getNetworkPane().setSsgPort(ssg.getSsgPort());
             getNetworkPane().setSslPort(ssg.getSslPort());
             getNetworkPane().setUseOverrideIpAddresses(ssg.isUseOverrideIpAddresses());
             getNetworkPane().setCustomIpAddresses(ssg.getOverrideIpAddresses());
             cbUseSslByDefault.setSelected(ssg.isUseSslByDefault());
             getNetworkPane().updateCustomPortsEnableState();
-            updatePolicyPanel();
+            getPoliciesPane().updatePolicyPanel();
         }
 
         if (!isNew) {
@@ -703,7 +563,7 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
                 ssg.setSsgPort(referenceSsg.getSsgPort());
                 ssg.setSslPort(referenceSsg.getSslPort());
             }
-            if (policyFlushRequested)
+            if (getPoliciesPane().policyFlushRequested)
                 ssg.rootPolicyManager().clearPolicies();
             ssg.resetSslContext();
         }
@@ -732,7 +592,7 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
      * @param evt
      */
     public void policyAttached(SsgEvent evt) {
-        updatePolicyPanel();
+        getPoliciesPane().updatePolicyPanel();
     }
 
     public void dataChanged(SsgEvent evt) {
