@@ -105,24 +105,7 @@ public class CertUsagePanel extends WizardStepPanel {
      * @return  String  The descritpion of the step.
      */
     public String getDescription() {
-        return  "Outbound SSL Connections:" +
-                "<br>Using HTTPS, the SecureSpan Gateway can connect to \n" +
-                "protected Web services hosted on SSL servers that use this certificate. If a \n" +
-                "Web service's SSL uses a self-signed certificate, then that certificate must \n" +
-                "be imported with this option.\n" +
-                "<p>Signing Certificates for Outbound SSL Connections:" +
-                "<br>Using HTTPS, the SecureSpan Gateway can connect to protected Web services hosted on SSL servers \n" +
-                "whose certificates were signed by this certificate authority. If several \n" +
-                "protected Web services' SSL server certificates are signed using an in-house \n" +
-                "certificate authority, then the SecureSpan Gateway can connect to all of them \n" +
-                "if the certificate authority's certificate is imported with this option.\n" +
-                "<p>Signing Client Certificates:" +
-                "<br>A Federated Identity Provider can be configured \n" +
-                "to authorize identities whose X.509 certificates were signed by this \n" +
-                "certificate authority certificate.\n" +
-                "<p>Signing SAML Tokens:" +
-                "<br>A Federated Identity Provider can be configured to \n" +
-                "authorize identities whose SAML Tokens were signed by this certificate.";
+        return  resources.getString("usage.desc");
     }
 
      /**
@@ -159,7 +142,7 @@ public class CertUsagePanel extends WizardStepPanel {
         panel1.setLayout(new GridLayoutManager(1, 1, new Insets(10, 0, 10, 0), -1, -1));
         certUsagePane.add(panel1, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null));
         headerLabel = new JLabel();
-        headerLabel.setText("Select one or more certificate usage  options:");
+        headerLabel.setText("Select one or more certificate usage options:");
         panel1.add(headerLabel, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null));
         signingServerCertCheckBox = new JCheckBox();
         signingServerCertCheckBox.setText("Signing Certificates for Outbound SSL Connections");
