@@ -85,6 +85,10 @@ public class ServiceManagerImp extends HibernateEntityManager implements Service
         return set;
     }
 
+    public Map serviceMap() {
+        return Collections.unmodifiableMap( _oidToServiceMap );
+    }
+
     public Iterator allServices() {
         return Collections.unmodifiableSet( serviceSet() ).iterator();
     }

@@ -4,6 +4,8 @@ import com.l7tech.objectmodel.*;
 import com.l7tech.message.Request;
 import com.l7tech.service.resolution.ServiceResolutionException;
 
+import java.util.Map;
+
 /**
  * Layer 7 Technologies, inc.
  * User: flascelles
@@ -67,4 +69,7 @@ public interface ServiceManager extends EntityManager {
     PublishedService resolveService( Request request ) throws ServiceResolutionException;
 
     void addServiceListener( ServiceListener listener );
+
+    /** Returns an unmodifiable Map of service OIDs to cached PublishedService instances. */
+    Map serviceMap();
 }

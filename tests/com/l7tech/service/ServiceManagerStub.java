@@ -7,10 +7,7 @@ import com.l7tech.identity.StubDataStore;
 
 import javax.wsdl.WSDLException;
 import java.rmi.RemoteException;
-import java.util.Collection;
-import java.util.Map;
-import java.util.ArrayList;
-import java.util.Iterator;
+import java.util.*;
 import java.io.InputStreamReader;
 import java.io.StringWriter;
 import java.net.URL;
@@ -39,6 +36,10 @@ public class ServiceManagerStub implements ServiceManager {
 
     public void addServiceListener( ServiceListener listener ) {
         // Not applicable
+    }
+
+    public Map serviceMap() {
+        return Collections.unmodifiableMap( services );
     }
 
     /**
