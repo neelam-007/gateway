@@ -26,25 +26,21 @@ public class FilteredLogTableModel extends FilteredDefaultTableModel {
     private int filterLevel = LogPanel.MSG_FILTER_LEVEL_WARNING;
     protected Hashtable currentNodeList;
 
-
+    /**
+     * Set the filter level.
+     *
+     * @param filterLevel  The filter level to be applied.
+     */
     public void setMsgFilterLevel(int filterLevel) {
         this.filterLevel = filterLevel;
     }
 
-/*    public void clearTable() {
-
-        while (realModel.getRowCount() > 0) {
-            realModel.removeRow(0);
-        }
-
-        realModel.fireTableDataChanged();
-
-        // clear the logsCache too
-        logsCache.removeAllElements();
-    }*/
-
-
-
+    /**
+     * Check if the message should be filtered out or not.
+     *
+     * @param logMsg  The message to be examined.
+     * @return  true if the message is filtered out, false otherwise.
+     */
     private boolean isFilteredMsg(LogMessage logMsg) {
 
         if ((((logMsg.getSeverity().toString().equals("FINEST")) ||
@@ -59,26 +55,11 @@ public class FilteredLogTableModel extends FilteredDefaultTableModel {
         }
     }
 
-/*    private void appendLogsToTable(Vector logs) {
-
-        for (int i = 0; i < logs.size(); i++) {
-
-            LogMessage logMsg = (LogMessage) logs.elementAt(i);
-
-            if (isFilteredMsg(logMsg)) {
-                Vector newRow = new Vector();
-
-                newRow.add(Long.toString(logMsg.getMsgNumber()));
-                newRow.add(logMsg.getTime());
-                newRow.add(logMsg.getSeverity());
-                newRow.add(logMsg.getMessageDetails());
-                newRow.add(logMsg.getMessageClass());
-                newRow.add(logMsg.getMessageMethod());
-                realModel.addRow(newRow);
-            }
-        }
-    }*/
-
+    /**
+     * Filtering messages with the specified filter level.
+     *
+     * @param msgFilterLevel
+     */
     protected void filterData(int msgFilterLevel) {
 
         setMsgFilterLevel(msgFilterLevel);
@@ -92,6 +73,11 @@ public class FilteredLogTableModel extends FilteredDefaultTableModel {
         }
     }
 
+    /**
+     * Filtering messages of the given node.
+     *
+     * @param nodeId  The Id of the node whose messages will be filtered.
+     */
     private void filterData(String nodeId) {
 
         Object node = null;
@@ -117,14 +103,4 @@ public class FilteredLogTableModel extends FilteredDefaultTableModel {
         }
     }
 
-/*    protected Vector getAllFilteredLogs() {
-
-        Vector allFilteredLogs = new Vector();
-
-        for (Iterator i = filteredLogCache.keySet().iterator(); i.hasNext(); ) {
-            Vector gatewayLogs = (Vector) filteredLogCache.get(i.next());
-            allFilteredLogs.add(gatewayLogs);
-        }
-        return allFilteredLogs;
-    }*/
 }

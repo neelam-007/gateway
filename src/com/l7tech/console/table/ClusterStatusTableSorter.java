@@ -1,8 +1,6 @@
 package com.l7tech.console.table;
 
-import com.l7tech.logging.StatisticsRecord;
 import com.l7tech.cluster.GatewayStatus;
-
 import javax.swing.table.DefaultTableModel;
 import java.util.logging.Logger;
 import java.util.Vector;
@@ -19,36 +17,69 @@ import java.util.Comparator;
 
 public class ClusterStatusTableSorter extends FilteredDefaultTableModel {
     static Logger logger = Logger.getLogger(ClusterStatusTableSorter.class.getName());
-    boolean ascending = true;
-    int columnToSort = 1;
-    int compares;
-    private Vector data;
+    private boolean ascending = true;
+    private int columnToSort = 1;
+    private Vector data = new Vector();
     private Object[] sortedData = null;
 
+    /**
+     * Constructor
+     */
     public ClusterStatusTableSorter() {
     }
 
+    /**
+     * Constructor taking <CODE>DefaultTableModel</CODE> as the input parameter.
+     *
+     * @param model  A table model.
+     */
     public ClusterStatusTableSorter(DefaultTableModel model) {
         setModel(model);
     }
 
+   /**
+     * Set the table model.
+     *
+     * @param model  The table model to be set.
+     */
     public void setModel(DefaultTableModel model) {
         super.setRealModel(model);
     }
 
+    /**
+     * Set the data object.
+     *
+     * @param data  The list of the node status of every gateways in the cluster (unsorted).
+     */
     public void setData(Vector data) {
         this.data = data;
         sortData(columnToSort, false);
     }
 
+    /**
+     * Return the column index of the sorted column.
+     *
+     * @return int  The column index of the sorted column.
+     */
     public int getSortedColumn(){
         return columnToSort;
     }
 
+    /**
+     * The sorting order.
+     *
+     * @return boolean  true if the sorting is in ascending order, false otherwise.
+     */
     public boolean isAscending(){
         return ascending;
     }
 
+    /**
+     * Perform the data sorting.
+     *
+     * @param column  The index of the table column to be sorted.
+     * @param orderToggle  true if the sorting order is toggled, false otherwise.
+     */
     public void sortData(int column, boolean orderToggle) {
 
         if(orderToggle){
@@ -67,6 +98,13 @@ public class ClusterStatusTableSorter extends FilteredDefaultTableModel {
         sortedData = sorted;
     }
 
+    /**
+     * Return the value of the table cell specified with its tbale coordinate.
+     *
+     * @param row  The row index.
+     * @param col  The column index.
+     * @return Object  The value at the specified table coordinate.
+     */
     public Object getValueAt(int row, int col) {
         switch (col) {
             case 0:
@@ -94,15 +132,33 @@ public class ClusterStatusTableSorter extends FilteredDefaultTableModel {
         }
     }
 
+    /**
+     * A class for determining the order of two objects by comparing their values.
+     */
     public class ColumnSorter implements Comparator {
         private boolean ascending;
         private int column;
 
+        /**
+         * Constructor
+         *
+         * @param column  The index of the table column on which the objects are sorted.
+         * @param ascending  true if the sorting order is ascending, false otherwise.
+         */
         ColumnSorter(int column, boolean ascending) {
             this.ascending = ascending;
             this.column = column;
         }
 
+        /**
+         * Compare the order of the two objects. A negative integer, zero, or a positive integer
+         * as the the specified String is greater than, equal to, or less than this String,
+         * ignoring case considerations.
+         *
+         * @param a  One of the two objects to be compared.
+         * @param b  The other one of the two objects to be compared.
+         * @return   -1 if a > b, 0 if a = b, and 1 if a < b.
+         */
         public int compare(Object a, Object b) {
 
             Object elementA = new Object();
