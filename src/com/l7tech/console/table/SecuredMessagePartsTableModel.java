@@ -256,7 +256,7 @@ public class SecuredMessagePartsTableModel extends AbstractTableModel {
      * @return false
      */
     public boolean isCellEditable(int rowIndex, int columnIndex) {
-        return columnIndex == 2;
+        return columnIndex != 0;
     }
 
     /**
