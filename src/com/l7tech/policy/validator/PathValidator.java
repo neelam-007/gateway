@@ -251,14 +251,14 @@ class PathValidator {
             }
             // REASON FOR THIS RULE:
             // it makes no sense to check something about the request after it's routed
-            if (!seenRouting) {
+            if (seenRouting) {
                 result.addWarning(new PolicyValidatorResult.Warning(a, assertionPath,
                   "This assertion should occur before the request is routed.", null));
             }
         } else if (a instanceof RequestWssConfidentiality) {
             // REASON FOR THIS RULE:
             // it makes no sense to check something about the request after it's routed
-            if (!seenRouting) {
+            if (seenRouting) {
                 result.addWarning(new PolicyValidatorResult.Warning(a, assertionPath,
                   "This assertion should occur before the request is routed.", null));
             }
