@@ -102,7 +102,7 @@ public class PublishServiceWizardTest extends Locator {
         }
         log.info("Property: " + System.getProperty("com.l7tech.common.locator"));
         PublishServiceWizard w = new PublishServiceWizard(new JFrame(), true);
-        w.setWsdlUrl("http://192.168.1.118/ACMEWarehouseWS/Service1.asmx?WSDL");
+        w.setWsdlUrl("http://data.l7tech.com/ACMEWarehouseWS/Service1.asmx?WSDL");
         w.show();
 
         EntityHeader[] services = TestRegistry.SERVICE_MANAGER_STUB.findAllPublishedServices();
