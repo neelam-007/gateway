@@ -60,7 +60,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * SSG imlementation of a routing assertion that uses the SSB.
+ * SSG implementation of a routing assertion that uses the SSB.
  */
 public class ServerBridgeRoutingAssertion extends ServerRoutingAssertion {
     private static final Logger logger = Logger.getLogger(ServerBridgeRoutingAssertion.class.getName());
