@@ -8,19 +8,18 @@ package com.l7tech.console;
 
 import com.l7tech.common.gui.util.ImageCache;
 import com.l7tech.console.action.Actions;
+import com.l7tech.console.action.DeleteAuditEventsAction;
+import com.l7tech.console.action.DownloadAuditEventsAction;
 import com.l7tech.console.panels.LogPanel;
 import com.l7tech.console.security.LogonEvent;
 import com.l7tech.console.security.LogonListener;
 import com.l7tech.console.util.TopComponents;
-import com.l7tech.logging.GenericLogAdmin;
 
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
-import java.util.Collection;
-import java.util.Iterator;
 import java.util.ResourceBundle;
 
 /**
@@ -41,26 +40,16 @@ public class GatewayAuditWindow extends JFrame implements LogonListener {
     private javax.swing.JMenuItem helpTopicsMenuItem = null;
     private JPanel frameContentPane = null;
     private LogPanel logPane = null;
-    private final Strategy strategy;
 
     private static
     ResourceBundle resapplication =
       java.util.ResourceBundle.getBundle("com.l7tech.console.resources.console");
 
-    public interface Strategy {
-        GenericLogAdmin getLogAdmin();
-        String getWindowTitle();
-        String getPanelTitle();
-        Collection getExtraFileMenuActions();
-    }
-
     /**
      * Constructor
-     * @param strategy the {@link Strategy} for this window
      */
-    public GatewayAuditWindow(final Strategy strategy) {
-        super(strategy.getWindowTitle());
-        this.strategy = strategy;
+    public GatewayAuditWindow() {
+        super("SecureSpan Manager - Gateway Audit Events");
         ImageIcon imageIcon =
           new ImageIcon(ImageCache.getInstance().getIcon(RESOURCE_PATH + "/layer7_logo_small_32x32.png"));
         setIconImage(imageIcon.getImage());
@@ -138,13 +127,15 @@ public class GatewayAuditWindow extends JFrame implements LogonListener {
         if (fileMenu == null) {
             fileMenu = new JMenu();
             fileMenu.setText(resapplication.getString("File"));
-            Collection extraActions = strategy.getExtraFileMenuActions();
-            if (extraActions != null) {
-                for (Iterator i = extraActions.iterator(); i.hasNext();) {
-                    Action action = (Action)i.next();
-                    fileMenu.add(new JMenuItem(action));
+            final DeleteAuditEventsAction deleteAuditEventsAction = new DeleteAuditEventsAction();
+
+            deleteAuditEventsAction.setChainAction(new AbstractAction() {
+                public void actionPerformed(ActionEvent e) {
+                    flushCachedLogs();
                 }
-            }
+            });
+            fileMenu.add(new JMenuItem(new DownloadAuditEventsAction()));
+            fileMenu.add(new JMenuItem(deleteAuditEventsAction));
             fileMenu.add(getExitMenuItem());
             int mnemonic = fileMenu.getText().toCharArray()[0];
             fileMenu.setMnemonic(mnemonic);
@@ -216,7 +207,7 @@ public class GatewayAuditWindow extends JFrame implements LogonListener {
         mainPane.setLayout(new java.awt.BorderLayout());
 
         gatewayLogTitle.setFont(new java.awt.Font("Dialog", 1, 18));
-        gatewayLogTitle.setText("  " + strategy.getPanelTitle());
+        gatewayLogTitle.setText(" Audit Events");
         gatewayLogTitle.setMaximumSize(new java.awt.Dimension(136, 40));
         gatewayLogTitle.setMinimumSize(new java.awt.Dimension(136, 40));
         gatewayLogTitle.setPreferredSize(new java.awt.Dimension(136, 40));
@@ -238,7 +229,7 @@ public class GatewayAuditWindow extends JFrame implements LogonListener {
     public LogPanel getLogPane() {
         if (logPane != null) return logPane;
 
-        logPane = new LogPanel(strategy.getLogAdmin());
+        logPane = new LogPanel();
         return logPane;
     }
 

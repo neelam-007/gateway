@@ -39,10 +39,9 @@ public class FilteredLogTableSorter extends FilteredLogTableModel {
      * @param logPanel The panel of log browser.
      * @param model  A table model.
      */
-    public FilteredLogTableSorter(LogPanel logPanel, DefaultTableModel model, GenericLogAdmin logAdmin) {
+    public FilteredLogTableSorter(LogPanel logPanel, DefaultTableModel model) {
         this.logPanel = logPanel;
         setModel(model);
-        this.logAdmin = logAdmin;
     }
 
     /**
@@ -340,7 +339,7 @@ public class FilteredLogTableSorter extends FilteredLogTableModel {
      */
     public void onConnect() {
         clusterStatusAdmin = Registry.getDefault().getClusterStatusAdmin();
-
+        logAdmin = Registry.getDefault().getAuditAdmin();
         currentNodeList = new Hashtable();
 
         clearLogCache();

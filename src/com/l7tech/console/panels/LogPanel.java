@@ -2,11 +2,9 @@ package com.l7tech.console.panels;
 
 import com.l7tech.common.audit.*;
 import com.l7tech.common.gui.widgets.ContextMenuTextArea;
-import com.l7tech.common.audit.MessageMap;
-import com.l7tech.console.table.FilteredLogTableSorter;
 import com.l7tech.console.table.AssociatedLogsTable;
+import com.l7tech.console.table.FilteredLogTableSorter;
 import com.l7tech.console.util.ArrowIcon;
-import com.l7tech.logging.GenericLogAdmin;
 import com.l7tech.logging.LogMessage;
 import com.l7tech.logging.SSGLogRecord;
 
@@ -21,9 +19,9 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
-import java.text.SimpleDateFormat;
-import java.text.MessageFormat;
 import java.text.FieldPosition;
+import java.text.MessageFormat;
+import java.text.SimpleDateFormat;
 import java.util.*;
 
 /*
@@ -77,15 +75,12 @@ public class LogPanel extends JPanel {
     private Icon downArrowIcon = new ArrowIcon(1);
     private JScrollPane detailsScrollPane;
     private LogMessage displayedLogMessage = null;
-    private GenericLogAdmin genericLogAdmin;
     private AssociatedLogsTable associatedLogsTable = null;
 
     /**
      * Constructor
-     * @param genericLogAdmin
      */
-    public LogPanel(GenericLogAdmin genericLogAdmin) {
-        this.genericLogAdmin  = genericLogAdmin;
+    public LogPanel() {
         setLayout(new BorderLayout());
 
         JSplitPane logSplitPane = new JSplitPane();
@@ -608,7 +603,7 @@ public class LogPanel extends JPanel {
     private FilteredLogTableSorter getFilteredLogTableSorter(){
         if(logTableSorter != null) return logTableSorter;
 
-        logTableSorter = new FilteredLogTableSorter(this, getLogTableModel(), genericLogAdmin);
+        logTableSorter = new FilteredLogTableSorter(this, getLogTableModel());
 
         return logTableSorter;
     }

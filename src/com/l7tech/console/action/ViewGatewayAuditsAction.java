@@ -73,36 +73,8 @@ public class ViewGatewayAuditsAction extends SecureAction {
     private GatewayAuditWindow getGatewayAuditWindow() {
         if (gatewayAuditWindow != null) return gatewayAuditWindow;
 
-        final DeleteAuditEventsAction deleteAuditEventsAction = new DeleteAuditEventsAction();
-        final java.util.List extraFileMenuActions = Arrays.asList(new Object[] {
-            new DownloadAuditEventsAction(),
-            deleteAuditEventsAction,
-        });
 
-        gatewayAuditWindow = new GatewayAuditWindow(new GatewayAuditWindow.Strategy() {
-
-            public GenericLogAdmin getLogAdmin() {
-                return Registry.getDefault().getAuditAdmin();
-            }
-
-            public String getWindowTitle() {
-                return "SecureSpan Manager - Gateway Audit Events";
-            }
-
-            public String getPanelTitle() {
-                return "Audit Events";
-            }
-
-            public Collection getExtraFileMenuActions() {
-                return extraFileMenuActions;
-            }
-        });
-
-        deleteAuditEventsAction.setChainAction(new AbstractAction() {
-            public void actionPerformed(ActionEvent e) {
-                getGatewayAuditWindow().flushCachedLogs();
-            }
-        });
+        gatewayAuditWindow = new GatewayAuditWindow();
 
 
         gatewayAuditWindow.addWindowListener(new WindowAdapter() {
