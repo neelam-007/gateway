@@ -1,0 +1,78 @@
+package com.l7tech.service;
+
+import com.l7tech.objectmodel.FindException;
+import com.l7tech.adminws.service.Client;
+
+import java.util.Collection;
+import java.io.IOException;
+
+
+/**
+ * Layer 7 Technologies, inc.
+ * User: flascelles
+ * Date: Jun 6, 2003
+ *
+ */
+public class ServiceManagerClientImp implements ServiceManager {
+    public String resolveWsdlTarget(String url) throws java.rmi.RemoteException {
+        return getStub().resolveWsdlTarget(url);
+    }
+
+    public Collection findAllHeaders() throws FindException {
+        return null;
+    }
+
+    public Collection findAllHeaders(int offset, int windowSize) throws FindException {
+        return null;
+    }
+
+    public Collection findAll() throws FindException {
+        return null;
+    }
+
+    public Collection findAll(int offset, int windowSize) throws FindException {
+        return null;
+    }
+
+    // ************************************************
+    // PRIVATES
+    // ************************************************
+
+    public static void main(String[] args) throws Exception {
+        com.l7tech.adminws.ClientCredentialManager.setCachedUsername("ssgadmin");
+        com.l7tech.adminws.ClientCredentialManager.setCachedPasswd("ssgadminpasswd");
+        ServiceManagerClientImp me = new ServiceManagerClientImp();
+        System.out.println(me.resolveWsdlTarget("tralala"));
+    }
+
+    private Client getStub() throws java.rmi.RemoteException {
+        if (localStub == null) {
+            try {
+                localStub = new Client(getServiceURL(), getAdminUsername(), getAdminPassword());
+            }
+            catch (Exception e) {
+                throw new java.rmi.RemoteException("Exception getting admin ws stub", e);
+            }
+            if (localStub == null) throw new java.rmi.RemoteException("Exception getting admin ws stub");
+        }
+        return localStub;
+    }
+    private String getServiceURL() throws IOException {
+        String prefUrl = com.l7tech.console.util.Preferences.getPreferences().getServiceUrl();
+        if (prefUrl == null || prefUrl.length() < 1 || prefUrl.equals("null/ssg")) {
+            System.err.println("com.l7tech.console.util.Preferences.getPreferences does not resolve a server address");
+            prefUrl = "http://localhost:8080/ssg";
+        }
+        prefUrl += "/services/serviceAdmin";
+        return prefUrl;
+        //return "http://localhost:8080/UneasyRooster/services/identities";
+    }
+    private String getAdminUsername() throws IOException {
+        return com.l7tech.adminws.ClientCredentialManager.getCachedUsername();
+    }
+    private String getAdminPassword() throws IOException {
+        return com.l7tech.adminws.ClientCredentialManager.getCachedPasswd();
+    }
+
+    private Client localStub = null;
+}
