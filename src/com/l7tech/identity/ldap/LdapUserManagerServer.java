@@ -2,24 +2,23 @@ package com.l7tech.identity.ldap;
 
 import com.l7tech.identity.UserManager;
 import com.l7tech.identity.User;
-import com.l7tech.objectmodel.FindException;
-import com.l7tech.objectmodel.DeleteException;
-import com.l7tech.objectmodel.SaveException;
-import com.l7tech.objectmodel.UpdateException;
+import com.l7tech.objectmodel.*;
 
 import javax.naming.Context;
 import javax.naming.NamingException;
 import javax.naming.NamingEnumeration;
-import javax.naming.directory.DirContext;
-import javax.naming.directory.InitialDirContext;
-import javax.naming.directory.Attributes;
-import javax.naming.directory.Attribute;
+import javax.naming.directory.*;
 import java.util.Collection;
+import java.util.ArrayList;
+import java.util.Iterator;
 
 /**
  * Layer 7 Technologies, inc.
  * User: flascelles
  * Date: Jun 13, 2003
+ *
+ * This manager class lists users in a ldap directory given a LdapIdentityProviderConfig object
+ * This manager does not support save, update or delete.
  *
  */
 public class LdapUserManagerServer implements UserManager {
@@ -51,6 +50,7 @@ public class LdapUserManagerServer implements UserManager {
             if (tmp != null) out.setName(tmp.toString());
             tmp = extractOneAttributeValue(attributes, PASSWD_ATTR_NAME);
             if (tmp != null) out.setPassword(tmp.toString());
+            // todo, record group memberships
             return out;
         } catch (NamingException e) {
             e.printStackTrace(System.err);
@@ -83,19 +83,99 @@ public class LdapUserManagerServer implements UserManager {
     }
 
     public Collection findAllHeaders() throws FindException {
-        return null;
+        Collection output = new ArrayList();
+        String[] attrToReturn = {LOGIN_ATTR_NAME, NAME_ATTR_NAME};
+
+        if (config.getSearchBase() == null || config.getSearchBase().length() < 1) throw new FindException("No search base provided");
+
+        try
+        {
+            NamingEnumeration answer = null;
+            answer = getAnonymousContext().search(config.getSearchBase(), null, attrToReturn);
+            while (answer.hasMore())
+            {
+                String login = null;
+                String dn = null;
+                SearchResult sr = (SearchResult)answer.next();
+                dn = sr.getName() + "," + config.getSearchBase();
+                Attributes atts = sr.getAttributes();
+                Object tmp = extractOneAttributeValue(atts, LOGIN_ATTR_NAME);
+                if (tmp != null) login = tmp.toString();
+                if (login != null && dn != null) {
+                    EntityHeader header = new EntityHeader(dn, EntityType.USER, login, null);
+                    output.add(header);
+                }
+            }
+        }
+        catch (NamingException e)
+        {
+            // if nothing can be found, just trace this exception and return empty collection
+            e.printStackTrace(System.err);
+        }
+        return output;
     }
 
     public Collection findAllHeaders(int offset, int windowSize) throws FindException {
-        return null;
+        Collection output = new ArrayList();
+        String[] attrToReturn = {LOGIN_ATTR_NAME, NAME_ATTR_NAME};
+
+        if (config.getSearchBase() == null || config.getSearchBase().length() < 1) throw new FindException("No search base provided");
+        try
+        {
+            int count = 0;
+            NamingEnumeration answer = null;
+            answer = getAnonymousContext().search(config.getSearchBase(), null, attrToReturn);
+            while (answer.hasMore())
+            {
+                if (count < offset) {
+                    ++count;
+                    continue;
+                }
+                if (count >= offset+windowSize) {
+                    break;
+                }
+                ++count;
+                String login = null;
+                String dn = null;
+                SearchResult sr = (SearchResult)answer.next();
+                dn = sr.getName() + "," + config.getSearchBase();
+                Attributes atts = sr.getAttributes();
+                Object tmp = extractOneAttributeValue(atts, LOGIN_ATTR_NAME);
+                if (tmp != null) login = tmp.toString();
+                if (login != null && dn != null) {
+                    EntityHeader header = new EntityHeader(dn, EntityType.USER, login, null);
+                    output.add(header);
+                }
+            }
+        }
+        catch (NamingException e)
+        {
+            // if nothing can be found, just trace this exception and return empty collection
+            e.printStackTrace(System.err);
+        }
+        return output;
     }
 
     public Collection findAll() throws FindException {
-        return null;
+        Collection headers = findAllHeaders();
+        Collection output = new ArrayList();
+        Iterator i = headers.iterator();
+        while (i.hasNext()) {
+            EntityHeader header = (EntityHeader)i.next();
+            output.add(findByPrimaryKey(header.getStrId()));
+        }
+        return output;
     }
 
     public Collection findAll(int offset, int windowSize) throws FindException {
-        return null;
+        Collection headers = findAllHeaders(offset, windowSize);
+        Collection output = new ArrayList();
+        Iterator i = headers.iterator();
+        while (i.hasNext()) {
+            EntityHeader header = (EntityHeader)i.next();
+            output.add(findByPrimaryKey(header.getStrId()));
+        }
+        return output;
     }
 
     // ************************************************
@@ -104,8 +184,22 @@ public class LdapUserManagerServer implements UserManager {
 
     public static void main(String[] args) throws Exception {
         LdapIdentityProviderConfig config = new LdapIdentityProviderConfig();
-        config.setLdapHostURL("ldap://localhost:3899/");
+        // use this url when ssh forwarding locally
+        config.setLdapHostURL("ldap://localhost:3899");
+        // use this url when in the office
+        //config.setLdapHostURL("ldap://spock:389");
+        config.setSearchBase("dc=layer7-tech,dc=com");
         LdapUserManagerServer me = new LdapUserManagerServer(config);
+
+        Collection headers = me.findAllHeaders();
+        Iterator i = headers.iterator();
+        while (i.hasNext()) {
+            EntityHeader header = (EntityHeader)i.next();
+            User usr = me.findByPrimaryKey(header.getStrId());
+            System.out.println(usr);
+        }
+
+        /*
         User usr = me.findByPrimaryKey("cn=flascelles,dc=layer7-tech,dc=com");
         System.out.println(usr);
 
@@ -117,6 +211,9 @@ public class LdapUserManagerServer implements UserManager {
 
         usr = me.findByPrimaryKey("cn=stranger,dc=layer7-tech,dc=com");
         System.out.println(usr);
+
+        me.findAllHeaders();
+        */
     }
 
     private Object extractOneAttributeValue(Attributes attributes, String attrName) {
@@ -142,10 +239,7 @@ public class LdapUserManagerServer implements UserManager {
         // Identify service provider to use
         java.util.Hashtable env = new java.util.Hashtable();
         env.put(Context.INITIAL_CONTEXT_FACTORY, "com.sun.jndi.ldap.LdapCtxFactory");
-        if (config.getSearchBase() != null && config.getSearchBase().length() > 0) {
-            env.put(Context.PROVIDER_URL, config.getLdapHostURL() + config.getSearchBase());
-        }
-        else env.put(Context.PROVIDER_URL, config.getLdapHostURL());
+        env.put(Context.PROVIDER_URL, config.getLdapHostURL());
 
         // Create the initial directory context. So anonymous bind for search
         anonymousContext = new InitialDirContext(env);
