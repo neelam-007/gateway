@@ -21,7 +21,7 @@ public class MultipartUtil {
         if(part == null) throw new IllegalArgumentException("The SOAP part is NULL");
         if(boundary == null) throw new IllegalArgumentException("The StringBuffer is NULL");
 
-        sbuf.append(XmlUtil.MULTIPART_BOUNDARY_PREFIX + boundary + XmlUtil.MULTIPART_BOUNDARY_PREFIX + "\n");        
+        sbuf.append(XmlUtil.MULTIPART_BOUNDARY_PREFIX + boundary + "\n");
         Map headerMap = part.getHeaders();
         Set headerKeys = headerMap.keySet();
         Iterator headerItr = headerKeys.iterator();
@@ -40,7 +40,7 @@ public class MultipartUtil {
             sbuf.append("\n");
         }
         sbuf.append("\n").append(modifiedSoapEnvelope).append("\n");
-        sbuf.append(XmlUtil.MULTIPART_BOUNDARY_PREFIX + boundary + XmlUtil.MULTIPART_BOUNDARY_PREFIX + "\n");
+        sbuf.append(XmlUtil.MULTIPART_BOUNDARY_PREFIX + boundary + "\n");
     }
 
 
@@ -50,10 +50,15 @@ public class MultipartUtil {
         if(multiparts == null) throw new IllegalArgumentException("The multiparts map is NULL");
         if(boundary == null) throw new IllegalArgumentException("The multiparts boundary is NULL");
 
+        boolean fisrtAttachment = true;
+
         // add attachments
         Set attachmentKeys = multiparts.keySet();
         Iterator itr = attachmentKeys.iterator();
         while (itr.hasNext()) {
+            if(!fisrtAttachment)
+                sbuf.append("\n" + XmlUtil.MULTIPART_BOUNDARY_PREFIX + boundary + "\n");
+
             Object o = (Object) itr.next();
             Message.Part part = (Message.Part) multiparts.get(o);
 
@@ -78,5 +83,8 @@ public class MultipartUtil {
             sbuf.append("\n" + part.getContent());
             sbuf.append("\n" + XmlUtil.MULTIPART_BOUNDARY_PREFIX + boundary + XmlUtil.MULTIPART_BOUNDARY_PREFIX + "\n");
         }
+
+        // the last boundary has delimiter after the boundary
+        sbuf.append("\n" + XmlUtil.MULTIPART_BOUNDARY_PREFIX + boundary + XmlUtil.MULTIPART_BOUNDARY_PREFIX + "\n");
     }
 }
