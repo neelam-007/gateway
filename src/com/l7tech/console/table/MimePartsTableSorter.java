@@ -103,27 +103,6 @@ public class MimePartsTableSorter  extends FilteredDefaultTableModel {
    }
 
     /**
-     * Delete a row from the table model
-     * @param rowIndex  The index of the row to be deleted.
-     */
- /*   public void deleteRow(int rowIndex) {
-
-        if(rowIndex < sortedData.length) {
-            TrustedCert tc = (TrustedCert) sortedData[rowIndex];
-
-            for (int i = 0; i < rawdata.size(); i++) {
-                TrustedCert cert = (TrustedCert) rawdata.elementAt(i);
-                if(cert.equals(tc)) {
-                    rawdata.remove(cert);
-                    sortData(columnToSort, false);
-                    break;
-                }
-            }
-        }
-    }*/
-
-
-    /**
      * Return the column index of the sorted column.
      *
      * @return int  The column index of the sorted column.
@@ -146,33 +125,6 @@ public class MimePartsTableSorter  extends FilteredDefaultTableModel {
         } else
             return null;
     }
-
-    /**
-     * Check if the object already exists in the table model
-     * @param tc  The trusted cert
-     * @return  true if the trusted cert already exists in the table model, false otherwise.
-     */
-/*    public boolean contains(TrustedCert tc) {
-
-        X509Certificate cert2 = null;
-        try {
-            X509Certificate cert1 = tc.getCertificate();
-            for (int i = 0; i < sortedData.length; i++) {
-                cert2 = ((TrustedCert) sortedData[i]).getCertificate();
-                if(cert1.getIssuerDN().equals(cert2.getIssuerDN()) &&
-                        cert1.getSubjectDN().equals(cert2.getSubjectDN())) {
-                     return true;
-                }
-            }
-        } catch (CertificateException e) {
-            logger.warning("Invalid certificate: " + e.getMessage());
-
-        } catch (IOException e) {
-            logger.warning("IO Exception caught when decoding the certificate:" + e.getMessage());
-        }
-
-        return false;
-    }*/
 
     /**
      * The sorting order.
