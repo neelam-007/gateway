@@ -142,8 +142,12 @@ public class MessageProcessor {
                     Managers.getCredentialManager().notifyInvalidCredentials(ssg);
             }
 
-            SOAPEnvelope response = new SOAPEnvelope(postMethod.getResponseBodyAsStream());
-            return response;
+            try {
+                SOAPEnvelope response = new SOAPEnvelope(postMethod.getResponseBodyAsStream());
+                return response;
+            } catch (NullPointerException e) {
+                throw new IOException("Unable to discern a SOAPEnvelope from the server's response: " + e.toString());
+            }
         } finally {
             postMethod.releaseConnection();
         }
