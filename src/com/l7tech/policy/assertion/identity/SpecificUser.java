@@ -31,7 +31,6 @@ public class SpecificUser extends IdentityAssertion {
     }
 
     public void setUserLogin( String userLogin ) {
-        if ( userLogin != _userLogin ) _user = null;
         _userLogin = userLogin;
     }
 
@@ -45,11 +44,8 @@ public class SpecificUser extends IdentityAssertion {
      * @throws FindException if
      */
     protected User getUser() throws FindException {
-        if ( _user == null ) {
-            UserManager uman = getIdentityProvider().getUserManager();
-            _user = uman.findByLogin( _userLogin );
-        }
-        return _user;
+        UserManager uman = getIdentityProvider().getUserManager();
+        return uman.findByLogin( _userLogin );
     }
 
     /**
@@ -72,5 +68,4 @@ public class SpecificUser extends IdentityAssertion {
     }
 
     protected String _userLogin;
-    protected User _user;
 }
