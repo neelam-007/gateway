@@ -36,8 +36,8 @@ import java.util.*;
 /**
  * Contains the guts of the WspReader and WspWriter, and the registry of types we can serialize.
  */
-class WspConstants {
-    static final String POLICY_NS = "http://www.layer7tech.com/ws/policy";
+public class WspConstants {
+    public static final String POLICY_NS = "http://www.layer7tech.com/ws/policy";
 
     static boolean isNullableType(Class type) {
         return !(int.class.equals(type) ||
