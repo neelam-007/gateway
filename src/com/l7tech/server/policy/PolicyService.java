@@ -137,6 +137,7 @@ public class PolicyService {
             exceptionToFault(e, response);
             return;
         }
+        logger.finest("Policy requested is " + policyId);
 
         // Run the policy-policy
         AllAssertion targetPolicy = policyGetter.getPolicy(policyId);
@@ -156,6 +157,7 @@ public class PolicyService {
                 return;
             }
             response.setDocument(fault);
+            return;
         }
         ServerAssertion policyPolicy = constructPolicyPolicy(targetPolicy);
         AssertionStatus status = null;
