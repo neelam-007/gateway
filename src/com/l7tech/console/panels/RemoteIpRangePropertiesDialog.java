@@ -31,10 +31,18 @@ public class RemoteIpRangePropertiesDialog extends JDialog {
         super(owner, modal);
         this.subject = subject;
         initialize();
+        oked = false;
     }
 
     public void addPolicyListener(PolicyListener listener) {
         listenerList.add(PolicyListener.class, listener);
+    }
+
+    /**
+     * @return false if the dialog was dismissed or canceled, true if it was oked.
+     */
+    public boolean wasOked() {
+        return oked;
     }
 
     private void initialize() {
@@ -94,8 +102,9 @@ public class RemoteIpRangePropertiesDialog extends JDialog {
             }
             subject.setStartIp(newaddress);
             subject.setNetworkMask(Integer.parseInt(suffixStr));
+            fireEventAssertionChanged(subject);
+            oked = true;
         }
-        fireEventAssertionChanged(subject);
         RemoteIpRangePropertiesDialog.this.dispose();
     }
 
@@ -280,7 +289,7 @@ public class RemoteIpRangePropertiesDialog extends JDialog {
     private JButton helpButton;
     private JButton okButton;
     private JButton cancelButton;
-
+    private boolean oked;
     private JComboBox includeExcludeCombo;
     private JFormattedTextField add1, add2, add3, add4, suffix;
 
