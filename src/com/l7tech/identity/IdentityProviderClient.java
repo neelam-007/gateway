@@ -42,7 +42,7 @@ public class IdentityProviderClient implements IdentityProvider {
     }
 
     public boolean isReadOnly() {
-        return true;
+        return !(config.getOid() == IdentityProviderConfigManager.INTERNALPROVIDER_SPECIAL_OID);
     }
 
     public Collection search(EntityType[] types, String searchString) throws FindException {

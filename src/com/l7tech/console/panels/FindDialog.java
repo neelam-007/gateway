@@ -3,6 +3,9 @@ package com.l7tech.console.panels;
 import com.l7tech.console.table.DynamicTableModel;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.logging.ErrorManager;
+import com.l7tech.console.tree.AbstractTreeNode;
+import com.l7tech.console.tree.TreeNodeFactory;
+import com.l7tech.console.action.BaseAction;
 import com.l7tech.identity.IdentityProvider;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.EntityHeader;
@@ -23,6 +26,7 @@ import java.util.logging.Level;
 
 /**
  * Find Dialog
+ * 
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  * @version 1.2
  */
@@ -35,9 +39,7 @@ public class FindDialog extends JDialog {
         oTypes.put(SearchType.ALL.getName(), SearchType.ALL);
     }
 
-    /**
-     * Resource bundle with default locale
-     */
+    /** Resource bundle with default locale */
     private ResourceBundle resources = null;
 
     /** Command string for a cancel action (e.g., a button or menu item). */
@@ -81,12 +83,11 @@ public class FindDialog extends JDialog {
 
     /**
      * Creates new FindDialog for a given context
-     *
+     * 
      * @param parent the Frame from which the dialog is displayed
      * @param modal  true for a modal dialog, false for one that
      *               allows others windows to be active at the
      *               same time
-     *
      * @see javax.swing.JDialog
      */
     public FindDialog(Frame parent, boolean modal) {
@@ -104,9 +105,7 @@ public class FindDialog extends JDialog {
     }
 
     /**
-     *
      * Called from the constructor to initialize this window
-     *
      */
     private void initComponents() {
 
@@ -120,7 +119,9 @@ public class FindDialog extends JDialog {
         });
 
         addComponentListener(new ComponentAdapter() {
-            /** Invoked when the component has been made visible.*/
+            /**
+             * Invoked when the component has been made visible.
+             */
             public void componentShown(ComponentEvent e) {
                 origDimension = FindDialog.this.getSize();
             }
@@ -293,7 +294,9 @@ public class FindDialog extends JDialog {
         searchNameOptions = new JComboBox(NAME_SEARCH_OPTIONS);
         searchNameOptions.
           addActionListener(new ActionListener() {
-              /**Invoked when an action occurs.*/
+              /**
+               * Invoked when an action occurs.
+               */
               public void actionPerformed(ActionEvent e) {
                   JComboBox c = (JComboBox)e.getSource();
                   String option = (String)c.getSelectedItem();
@@ -394,7 +397,7 @@ public class FindDialog extends JDialog {
     /**
      * The user has selected an option. Here we close and
      * dispose the dialog too.
-     *
+     * 
      * @param actionCommand may be null
      */
     private void windowAction(String actionCommand) {
@@ -503,13 +506,16 @@ public class FindDialog extends JDialog {
           addListSelectionListener(new ListSelectionListener() {
               /**
                * Called whenever the value of the selection changes.
+               * 
                * @param e the event that characterizes the change.
                */
               public void valueChanged(ListSelectionEvent e) {
                   int row = jTable.getSelectedRow();
-                  if (row == -1) return;
-
-                  //editButton.setEnabled(true);
+                  if (row == -1) {
+                      editButton.setEnabled(false);
+                  } else {
+                      editButton.setEnabled(!searchInfo.getProvider().isReadOnly());
+                  }
               }
           });
 
@@ -528,7 +534,9 @@ public class FindDialog extends JDialog {
 
         jTable.
           addKeyListener(new KeyAdapter() {
-              /** Invoked when a key has been pressed.*/
+              /**
+               * Invoked when a key has been pressed.
+               */
               public void keyPressed(KeyEvent e) {
                   int row = jTable.getSelectedRow();
                   if (row == -1) return;
@@ -653,19 +661,24 @@ public class FindDialog extends JDialog {
 
     /**
      * instantiate the dialog for given AbstractTreeNode
-     *
-     * @param o   the <CODE>AbstractTreeNode</CODE> instance
+     * 
+     * @param o the <CODE>AbstractTreeNode</CODE> instance
      */
     private void showEntityDialog(Object o) {
         EntityEditorPanel panel = null;
 
         if (o instanceof EntityHeader) {
             EntityHeader eh = (EntityHeader)o;
-            if (EntityType.GROUP.equals(eh.getType())) {
-                panel = new GroupPanel();
-            } else if (EntityType.USER.equals(eh.getType())) {
-                panel = new UserPanel();
+            AbstractTreeNode an = TreeNodeFactory.asTreeNode(eh);
+            final BaseAction a = (BaseAction)an.getPreferredAction();
+            if (a == null || searchInfo.getProvider().isReadOnly()) {
+                return;
             }
+            SwingUtilities.invokeLater(new Runnable() {
+                public void run() {
+                    a.performAction();
+                }
+            });
         }
 
         if (panel == null) return;
@@ -686,7 +699,9 @@ public class FindDialog extends JDialog {
           Icon groupIcon = new ImageIcon(Utilities.loadImage(GroupPanel.GROUP_ICON_RESOURCE));
           Icon userIcon = new ImageIcon(Utilities.loadImage(UserPanel.USER_ICON_RESOURCE));
 
-          /**  Returns the default table cell renderer.*/
+          /**
+           * Returns the default table cell renderer.
+           */
           public Component
             getTableCellRendererComponent(JTable table,
                                           Object value,
@@ -739,14 +754,18 @@ public class FindDialog extends JDialog {
     }
 
 
-    /** the class instances keep the search info. */
+    /**
+     * the class instances keep the search info.
+     */
     private class SearchInfo {
         IdentityProvider provider;
         String searchName;
         boolean exactName;
         SearchType searchType;
 
-        /** set the search by name and equals/contains. */
+        /**
+         * set the search by name and equals/contains.
+         */
         void setSearchName(String name, boolean b) {
             searchName = name;
             exactName = b;
