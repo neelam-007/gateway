@@ -233,7 +233,7 @@ public class PublishServiceWizard extends JDialog {
 
         stepsjPanel.add(stepsTitlejPanel);
 
-        mainjPanel.add(stepsjPanel, java.awt.BorderLayout.WEST);
+        mainjPanel.add(stepsjPanel, BorderLayout.WEST);
 
 
         stepjPanel.setLayout(new BorderLayout());

@@ -3,14 +3,18 @@ package com.l7tech.console.logging;
 import com.l7tech.console.panels.Utilities;
 
 import javax.swing.*;
+import javax.swing.event.ChangeEvent;
+import javax.swing.event.ChangeListener;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
-import java.io.*;
 import java.util.Dictionary;
 import java.util.Hashtable;
+import java.util.logging.Handler;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * This class implements a frame that displays the applicaiton
@@ -74,6 +78,34 @@ public class ConsoleDialog extends JFrame {
         slider.setPaintLabels(true);
         slider.setLabelTable(table);
         slider.setSnapToTicks(true);
+        slider.addChangeListener( new ChangeListener() {
+            public void stateChanged(ChangeEvent e) {
+                JSlider source = (JSlider)e.getSource();
+                    if (!source.getValueIsAdjusting()) {
+                        int value = source.getValue();
+                        switch (value) {
+                            case   0:
+                                adjustHandlerLevel(Level.FINEST);
+                                break;
+                            case  40:
+                                adjustHandlerLevel(Level.INFO);
+                                break;
+                            case  80:
+                                adjustHandlerLevel(Level.WARNING);
+                                break;
+                            case 120:
+                                adjustHandlerLevel(Level.SEVERE);
+                                break;
+                            case 160:
+                                adjustHandlerLevel(Level.OFF);
+                                break;
+                            default:
+                                System.err.println("Unhandled value "+value);
+                        }
+                    }
+            }
+        });
+
         panel.add(slider, BorderLayout.NORTH);
         return panel;
     }
@@ -126,5 +158,16 @@ public class ConsoleDialog extends JFrame {
                   logTextArea.append(msg);
               }
           });
+    }
+
+    private void adjustHandlerLevel(Level l) {
+        Handler[] handlers = Logger.global.getHandlers();
+        System.err.println("Adjusting level "+l);
+        for (int i =0; i< handlers.length; i++) {
+            if (handlers[i] instanceof DefaultHandler) {
+                handlers[i].setLevel(l);
+            }
+        }
+
     }
 }

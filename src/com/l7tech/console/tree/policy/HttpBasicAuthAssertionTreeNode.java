@@ -23,6 +23,12 @@ class HttpBasicAuthAssertionTreeNode extends LeafAssertionTreeNode {
     }
 
     /**
+     * @return the node name that is displayed
+     */
+    public String getName() {
+        return "Require HTTP BASIC authentication";
+    }
+    /**
      * subclasses override this method specifying the resource name
      *
      * @param open for nodes that can be opened, can have children

@@ -13,6 +13,12 @@ import com.l7tech.policy.assertion.SslAssertion;
 import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.assertion.composite.OneOrMoreAssertion;
 import com.l7tech.policy.assertion.credential.http.HttpBasic;
+import com.l7tech.policy.assertion.credential.http.HttpDigest;
+import com.l7tech.policy.assertion.credential.http.HttpClientCert;
+import com.l7tech.policy.assertion.credential.wss.WssBasic;
+import com.l7tech.policy.assertion.credential.wss.WssDigest;
+import com.l7tech.policy.assertion.credential.wss.WssClientCert;
+import com.l7tech.policy.assertion.credential.CredentialSourceAssertion;
 import com.l7tech.policy.assertion.identity.MemberOfGroup;
 import com.l7tech.policy.assertion.identity.SpecificUser;
 
@@ -25,9 +31,7 @@ import javax.swing.table.TableCellRenderer;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Iterator;
+import java.util.*;
 
 
 /**
@@ -40,6 +44,8 @@ import java.util.Iterator;
  */
 public class IdentityProviderPanel extends WizardStepPanel {
     private DefaultComboBoxModel providersComboBoxModel;
+    private ComboBoxModel credentialsLocationComboBoxModel;
+    private JCheckBox anonymousAccessCheckBox;
 
     /** Creates new form IdentityProviderPanel */
     public IdentityProviderPanel() {
@@ -72,11 +78,11 @@ public class IdentityProviderPanel extends WizardStepPanel {
         credentialsLocationjComboBox = new JComboBox();
         ssljCheckBox = new JCheckBox();
         ssljPanel = new JPanel();
+        anonymousAccessCheckBox = new JCheckBox();
 
-        setLayout(new java.awt.BorderLayout());
+        setLayout(new BorderLayout());
 
-        providerSelectorjPanel.setLayout(new java.awt.FlowLayout(java.awt.FlowLayout.LEFT));
-
+        providerSelectorjPanel.setLayout(new FlowLayout(FlowLayout.LEFT));
         selecProviderjLabel.setText("Select the identity provider:");
         selecProviderjLabel.setBorder(new EmptyBorder(new java.awt.Insets(2, 2, 2, 2)));
         providerSelectorjPanel.add(selecProviderjLabel);
@@ -120,11 +126,34 @@ public class IdentityProviderPanel extends WizardStepPanel {
                 }
             }
         });
+
         providerSelectorjPanel.add(providersjComboBox);
+        anonymousAccessCheckBox.setText("Anonymous access");
+        anonymousAccessCheckBox.setHorizontalTextPosition(SwingConstants.TRAILING);
+        anonymousAccessCheckBox.
+          addActionListener(new ActionListener() {
+              /** Invoked when an action occurs. */
+              public void actionPerformed(ActionEvent e) {
+                  JCheckBox cb = (JCheckBox)e.getSource();
+                  boolean enable = !cb.isSelected();
+                  jButtonAdd.setEnabled(enable);
+                  jButtonAddAll.setEnabled(enable);
+                  jButtonRemove.setEnabled(enable);
+                  jButtonRemoveAll.setEnabled(enable);
+                  identitiesInjTable.setEnabled(enable);
+                  identitiesInjTable.tableChanged(null);
+                  identitiesOutjTable.setEnabled(enable);
+                  identitiesOutjTable.tableChanged(null);
+                  credentialsLocationjComboBox.setEnabled(enable);
+                  providersjComboBox.setEnabled(enable);
+              }
+          });
+        providerSelectorjPanel.add(anonymousAccessCheckBox);
 
-        add(providerSelectorjPanel, java.awt.BorderLayout.NORTH);
+        add(providerSelectorjPanel, BorderLayout.NORTH);
 
-        identitiesPanel.setLayout(new java.awt.BorderLayout());
+
+        identitiesPanel.setLayout(new BorderLayout());
 
         identitiesjPanel.setLayout(new BoxLayout(identitiesjPanel, BoxLayout.X_AXIS));
 
@@ -250,13 +279,14 @@ public class IdentityProviderPanel extends WizardStepPanel {
 
         identitiesPanel.add(identitiesjPanel, java.awt.BorderLayout.EAST);
 
-        add(identitiesPanel, java.awt.BorderLayout.WEST);
+        add(identitiesPanel, BorderLayout.WEST);
         credentialsAndTransportjPanel.setLayout(new BoxLayout(credentialsAndTransportjPanel, BoxLayout.Y_AXIS));
 
         credentialsAndTransportjPanel.setBorder(new TitledBorder("Credentials/transport"));
         credentialsLocationjPanel.setLayout(new FlowLayout(FlowLayout.LEFT));
-        ssljPanel.setLayout(new java.awt.FlowLayout(FlowLayout.LEFT));
-        credentialsLocationjComboBox.setModel(new DefaultComboBoxModel(new String[]{"Anonymous access", "HTTP Basic", "HTTP Digest", "Message Basic"}));
+        ssljPanel.setLayout(new FlowLayout(FlowLayout.LEFT));
+        credentialsLocationjComboBox.setModel(getCredentialsLocationComboBoxModel());
+
         credentialsLocationjPanel.add(credentialsLocationjComboBox);
         credentialsAndTransportjPanel.add(credentialsLocationjPanel);
 
@@ -270,6 +300,15 @@ public class IdentityProviderPanel extends WizardStepPanel {
         credentialsAndTransportjPanel.add(ra);
 
         add(credentialsAndTransportjPanel, java.awt.BorderLayout.CENTER);
+    }
+
+    private ComboBoxModel getCredentialsLocationComboBoxModel() {
+        if (credentialsLocationComboBoxModel != null)
+            return credentialsLocationComboBoxModel;
+
+        credentialsLocationComboBoxModel =
+          new DefaultComboBoxModel(credentialsLocationMap.keySet().toArray());
+        return credentialsLocationComboBoxModel;
     }
 
     /**
@@ -344,37 +383,40 @@ public class IdentityProviderPanel extends WizardStepPanel {
     public void readSettings(Object settings) throws IllegalArgumentException {
         PublishServiceWizard.ServiceAndAssertion
           collect = (PublishServiceWizard.ServiceAndAssertion)settings;
-
-
         IdentityProvider ip = (IdentityProvider)providersComboBoxModel.getSelectedItem();
-        if (ip == null) {
-            collect.getService().setPolicyXml(null);
-        }
+
+        java.util.List allAssertions = new ArrayList();
         java.util.List identityAssertions = new ArrayList();
-        Iterator it = getIdentitiesInTableModel().getDataVector().iterator();
-        while (it.hasNext()) {
-            java.util.List row = (java.util.List)it.next();
-            EntityHeader eh = (EntityHeader)row.get(0);
-            if (EntityType.USER.equals(eh.getType())) {
-                User u = new User();
-                u.setName(eh.getName());
-                u.setLogin(eh.getName());
-                identityAssertions.add(new SpecificUser(ip, u));
-            } else if (EntityType.GROUP.equals(eh.getType())) {
-                Group g = new Group();
-                g.setName(eh.getName());
-                identityAssertions.add(new MemberOfGroup(ip, g));
+
+        if (!anonymousAccessCheckBox.isSelected()) {
+            Iterator it = getIdentitiesInTableModel().getDataVector().iterator();
+            while (it.hasNext()) {
+                java.util.List row = (java.util.List)it.next();
+                EntityHeader eh = (EntityHeader)row.get(0);
+                if (EntityType.USER.equals(eh.getType())) {
+                    User u = new User();
+                    u.setName(eh.getName());
+                    u.setLogin(eh.getName());
+                    identityAssertions.add(new SpecificUser(ip, u));
+                } else if (EntityType.GROUP.equals(eh.getType())) {
+                    Group g = new Group();
+                    g.setName(eh.getName());
+                    identityAssertions.add(new MemberOfGroup(ip, g));
+                }
+            }
+            // crenedtials location, safe
+            Object o = credentialsLocationjComboBox.getSelectedItem();
+            if (o != null) {
+                CredentialSourceAssertion ca =
+                  (CredentialSourceAssertion)credentialsLocationMap.get(o);
+                if (ca != null)
+                    allAssertions.add(ca);
             }
         }
 
-        java.util.List allAssertions =  new ArrayList();
 
         if (ssljCheckBox.isSelected()) {
             allAssertions.add(new SslAssertion());
-        }
-
-        if (credentialsLocationjComboBox.getSelectedIndex() > 0) {
-            allAssertions.add(new HttpBasic());
         }
 
         if (!allAssertions.isEmpty()) {
@@ -410,13 +452,19 @@ public class IdentityProviderPanel extends WizardStepPanel {
                                           boolean iss,
                                           boolean hasFocus,
                                           int row, int column) {
-              if (iss) {
-                  this.setBackground(table.getSelectionBackground());
-                  this.setForeground(table.getSelectionForeground());
+              if (!table.isEnabled()) {
+                  this.setEnabled(false);
               } else {
-                  this.setBackground(table.getBackground());
-                  this.setForeground(table.getForeground());
+                  this.setEnabled(true);
+                  if (iss) {
+                      this.setBackground(table.getSelectionBackground());
+                      this.setForeground(table.getSelectionForeground());
+                  } else {
+                      this.setBackground(table.getBackground());
+                      this.setForeground(table.getForeground());
+                  }
               }
+
               this.setFont(new Font("Dialog", Font.PLAIN, 12));
               EntityHeader h = (EntityHeader)value;
               EntityType type = h.getType();
@@ -446,8 +494,19 @@ public class IdentityProviderPanel extends WizardStepPanel {
         return null;
     }
 
+    static Map credentialsLocationMap = new TreeMap();
 
-    // Variables declaration - do not modify//GEN-BEGIN:variables
+    // maping assertion to tree nodes to
+    static {
+        credentialsLocationMap.put("HTTP basic", new HttpBasic());
+        credentialsLocationMap.put("HTTP digest", new HttpDigest());
+        // credentialsLocationMap.put("HTTP client cert", new HttpClientCert());
+
+        credentialsLocationMap.put("WSS token basic", new WssBasic());
+        credentialsLocationMap.put("WSS token digest", new WssDigest());
+        // credentialsLocationMap.put("WSS client cert", new WssClientCert());
+    }
+
     private JTable identitiesInjTable;
     private JTable identitiesOutjTable;
     private DefaultTableModel identitiesInTableModel;
