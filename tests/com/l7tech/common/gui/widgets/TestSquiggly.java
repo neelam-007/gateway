@@ -18,9 +18,11 @@ public class TestSquiggly extends JFrame {
         super( "Test squiggly" );
         setDefaultCloseOperation( JFrame.EXIT_ON_CLOSE );
         SquigglyTextField text = new SquigglyTextField(80);
-        text.setRange(5, SquigglyTextField.ALL);
-        text.setColor( Color.BLUE );
-        text.setStraight();
+//        text.setRange(5, SquigglyTextField.ALL);
+        text.setRange(5,10);
+        text.setColor( Color.RED);
+        text.setSquiggly();
+//        text.setStraight();
         getContentPane().add(text);
         pack();
         show();
