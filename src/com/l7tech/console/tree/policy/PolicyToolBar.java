@@ -160,17 +160,22 @@ public class PolicyToolBar extends JToolBar {
     }
 
     private void updateActions() {
-        if (lastAssertionNode == null) {
+        if (lastAssertionNode == null && lastPaletteNode == null) {
             disableAll();
             return;
         }
         SwingUtilities.invokeLater(new Runnable() {
             public void run() {
-                getAddAssertionAction().setEnabled(lastAssertionNode.accept(lastPaletteNode));
-                getDeleteAssertionAction().setEnabled(lastAssertionNode.canDelete());
-                getAssertionMoveDownAction().setEnabled(lastAssertionNode.canMoveDown());
-                getAssertionMoveUpAction().setEnabled(lastAssertionNode.canMoveUp());
-
+                if (lastAssertionNode !=null) {
+                    if (lastPaletteNode !=null) {
+                        getAddAssertionAction().setEnabled(
+                          lastPaletteNode !=null &&
+                          lastAssertionNode.accept(lastPaletteNode));
+                    }
+                    getDeleteAssertionAction().setEnabled(lastAssertionNode.canDelete());
+                    getAssertionMoveDownAction().setEnabled(lastAssertionNode.canMoveDown());
+                    getAssertionMoveUpAction().setEnabled(lastAssertionNode.canMoveUp());
+                }
             }
         });
     }

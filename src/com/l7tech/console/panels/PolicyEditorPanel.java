@@ -21,6 +21,7 @@ import javax.swing.event.TreeModelEvent;
 import javax.swing.text.EditorKit;
 import javax.swing.tree.TreeNode;
 import javax.swing.tree.DefaultMutableTreeNode;
+import javax.swing.tree.TreePath;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -66,9 +67,17 @@ public class PolicyEditorPanel extends JPanel {
         policyTree.putClientProperty("service", service);
         PolicyTreeModel model = PolicyTreeModel.make(service);
         rootAssertion = (AssertionTreeNode)model.getRoot();
-        policyTree.setModel(new FilteredTreeModel((TreeNode)model.getRoot()));
+        TreeNode root = (TreeNode)model.getRoot();
+        policyTree.setModel(new FilteredTreeModel(root));
         policyTree.setName(service.getName());
         JScrollPane scrollPane = new JScrollPane(policyTree);
+        final TreePath path = new TreePath(((DefaultMutableTreeNode)root).getPath());
+        SwingUtilities.invokeLater(new Runnable() {
+            public void run() {
+                policyTree.setSelectionPath(path);
+            }
+        });
+
         return scrollPane;
     }
 

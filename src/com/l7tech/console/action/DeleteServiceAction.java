@@ -1,6 +1,5 @@
 package com.l7tech.console.action;
 
-import com.l7tech.console.MainWindow;
 import com.l7tech.console.tree.ServiceNode;
 import com.l7tech.console.tree.ServicesTree;
 import com.l7tech.console.util.WindowManager;
