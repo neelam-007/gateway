@@ -197,6 +197,8 @@ public class ServerXmlRequestSecurity implements ServerAssertion {
         SecureConversationTokenHandler.consumeSessionInfoFromDocument(soapmsg);
 
         // clean empty security element and header if necessary
+        
+        SoapUtil.cleanEmptyRefList(soapmsg);
         SoapUtil.cleanEmptySecurityElement(soapmsg);
         SoapUtil.cleanEmptyHeaderElement(soapmsg);
 

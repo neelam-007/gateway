@@ -35,7 +35,7 @@ public class SecureConversationTokenHandlerTest extends TestCase {
         testSubject.appendNonceToDocument(doc, nonce);
         System.out.println("Doc with nonce");
         System.out.println(serializeDocWithXMLSerializer(doc));
-        Long nonce2 = testSubject.readNonceFromDocument(doc);
+        Long nonce2 = testSubject.takeNonceFromDocument(doc);
         assertTrue("Read nonce same as append one", nonce == nonce2.longValue());
     }
 

@@ -77,11 +77,11 @@ class ReceiverXmlSecurityProcessor extends SecurityProcessor {
                 if ( envelopeProcessed ) preconditionMatched = true;
 
                 // XPath precondition match?
-                XpathExpression xpath = elementSecurity.getPreconditionXpath();
-                if (xpath != null) {
-                    List nodes = XpathEvaluator.newEvaluator(document, xpath.getNamespaces()).select(xpath.getExpression());
+                XpathExpression preconditionXpath = elementSecurity.getPreconditionXpath();
+                if (preconditionXpath != null) {
+                    List nodes = XpathEvaluator.newEvaluator(document, preconditionXpath.getNamespaces()).select(preconditionXpath.getExpression());
                     if (nodes.isEmpty()) {
-                        logger.fine("The XPath precondition result is empty '" + xpath.getExpression() + "' skipping");
+                        logger.fine("The XPath precondition result is empty '" + preconditionXpath.getExpression() + "' skipping");
                         continue;
                     } else {
                         preconditionMatched = true;
@@ -89,11 +89,11 @@ class ReceiverXmlSecurityProcessor extends SecurityProcessor {
                 }
 
                 Element messagePartElement = null;
-                xpath = elementSecurity.getElementXpath();
-                if (xpath != null) {
-                    List nodes = XpathEvaluator.newEvaluator(document, xpath.getNamespaces()).select(xpath.getExpression());
+                preconditionXpath = elementSecurity.getElementXpath();
+                if (preconditionXpath != null) {
+                    List nodes = XpathEvaluator.newEvaluator(document, preconditionXpath.getNamespaces()).select(preconditionXpath.getExpression());
                     if (nodes.isEmpty()) {
-                        final String message = "The XPath result is empty '" + xpath.getExpression() + "'";
+                        final String message = "The XPath result is empty '" + preconditionXpath.getExpression() + "'";
                         String logmessage = message + "\nMessage is\n" + XmlUtil.documentToString(document);
                         logger.warning(logmessage);
                         throw new SecurityProcessorException(message);
@@ -114,9 +114,8 @@ class ReceiverXmlSecurityProcessor extends SecurityProcessor {
                         check(elementSecurity);
                         XmlMangler.decryptElement(messagePartElement, decryptionKey);
                     } else {
-                        logger.warning("Encrypt requested XPath '" + xpath.getExpression() + "'" + " but no child nodes exist, skipping encryption");
+                        logger.warning("Encrypt requested XPath '" + preconditionXpath.getExpression() + "'" + " but no child nodes exist, skipping encryption");
                     }
-
                 }
                 logger.fine("response message element decrypted");
             }
@@ -129,23 +128,31 @@ class ReceiverXmlSecurityProcessor extends SecurityProcessor {
                 if ( envelopeProcessed ) preconditionMatched = true;
 
                 // XPath precondition match?
-                XpathExpression xpath = elementSecurity.getPreconditionXpath();
-                if (xpath != null) {
-                    List nodes = XpathEvaluator.newEvaluator(document, xpath.getNamespaces()).select(xpath.getExpression());
+                XpathExpression preconditionXpath = elementSecurity.getPreconditionXpath();
+                if (preconditionXpath != null) {
+                    List nodes = XpathEvaluator.newEvaluator(document, preconditionXpath.getNamespaces()).select(preconditionXpath.getExpression());
                     if (nodes.isEmpty()) {
-                        logger.fine("The XPath precondition result is empty '" + xpath.getExpression() + "' skipping");
-                        continue;
+                        if ( elementSecurity.isEncryption() ) {
+                            // FALLTHROUGH: Speculatively decrypt the part to attempt to match the operation
+                            logger.fine("Operation did not match using XPath '" + preconditionXpath.getExpression() +
+                                        "'; will decrypt and retry");
+                        } else {
+                            logger.fine("Operation did not match using XPath '" + preconditionXpath.getExpression() +
+                                        "'; skipping");
+                            continue;
+                        }
                     } else {
                         preconditionMatched = true;
                     }
                 }
 
                 Element messagePartElement = null;
-                xpath = elementSecurity.getElementXpath();
-                if (xpath != null) {
-                    List nodes = XpathEvaluator.newEvaluator(document, xpath.getNamespaces()).select(xpath.getExpression());
+                preconditionXpath = elementSecurity.getElementXpath();
+                if (preconditionXpath != null) {
+                    List nodes = XpathEvaluator.newEvaluator(document, preconditionXpath.getNamespaces()).select(preconditionXpath.getExpression());
                     if (nodes.isEmpty()) {
-                        final String message = "The XPath result is empty '" + xpath.getExpression() + "'";
+                        if (!preconditionMatched) continue; // Request wasn't encrypted; it's just a non-matching request
+                        final String message = "The XPath result is empty '" + preconditionXpath.getExpression() + "'";
                         String logmessage = message + "\nMessage is\n" + XmlUtil.documentToString(document);
                         logger.warning(logmessage);
                         throw new SecurityProcessorException(message);
@@ -166,10 +173,23 @@ class ReceiverXmlSecurityProcessor extends SecurityProcessor {
                         check(elementSecurity);
                         XmlMangler.decryptElement(messagePartElement, decryptionKey);
                     } else {
-                        logger.warning("Encrypt requested XPath '" + xpath.getExpression() + "'" + " but no child nodes exist, skipping encryption");
+                        logger.warning("Encrypt requested XPath '" + preconditionXpath.getExpression() + "'" + " but no child nodes exist, skipping encryption");
                     }
 
+                    if (!preconditionMatched) {
+                        // Retry the precondition check now that we've decrypted
+                        List nodes = XpathEvaluator.newEvaluator(document, preconditionXpath.getNamespaces()).select(preconditionXpath.getExpression());
+                        if (!nodes.isEmpty())
+                            preconditionMatched = true;
+                    }
                 }
+
+                if (!preconditionMatched) {
+                    String msg = "Operation did not match, even after decryption.  Rejecting message.";
+                    logger.warning( msg );
+                    throw new SecurityProcessorException( msg );
+                }
+
                 logger.fine("response message element decrypted");
             }
 

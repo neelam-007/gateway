@@ -17,7 +17,6 @@ import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.util.CommonLogger;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
-import org.w3c.dom.NodeList;
 import org.w3c.dom.Text;
 import org.xml.sax.SAXException;
 
@@ -25,7 +24,6 @@ import javax.xml.parsers.ParserConfigurationException;
 import java.io.IOException;
 import java.security.GeneralSecurityException;
 import java.security.Key;
-import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.logging.Logger;
@@ -334,25 +332,7 @@ public class XmlMangler {
         }
 
         // clean up the document
-        cleanEmptyRefList(soapMsg);
-    }
-
-   private static void cleanEmptyRefList(Document soapMsg) {
-        List refs = new ArrayList();
-        {
-            NodeList listRefElements = soapMsg.getElementsByTagNameNS(SoapUtil.XMLENC_NS, "ReferenceList");
-            if (listRefElements.getLength() < 1)
-                return;
-            for (int i = 0; i < listRefElements.getLength(); ++i)
-                refs.add(listRefElements.item(i));
-            listRefElements = null;
-        }
-
-        for (Iterator iterator = refs.iterator(); iterator.hasNext();) {
-            Element refListEl = (Element)iterator.next();
-            if (!SoapUtil.elHasChildrenElements(refListEl))
-                refListEl.getParentNode().removeChild(refListEl);
-        }
+        SoapUtil.cleanEmptyRefList(soapMsg);
     }
 
     /**

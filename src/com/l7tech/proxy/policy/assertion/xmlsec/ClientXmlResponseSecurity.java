@@ -110,7 +110,7 @@ public class ClientXmlResponseSecurity extends ClientAssertion {
             if (!result.isPreconditionMatched())
                 return AssertionStatus.NONE;
 
-            Long responsenonce = SecureConversationTokenHandler.readNonceFromDocument(doc);
+            Long responsenonce = SecureConversationTokenHandler.takeNonceFromDocument(doc);
             if (responsenonce == null)
                 throw new ResponseValidationException("Response from Gateway did not contain a nonce");
             if (responsenonce.longValue() != request.getNonce())
@@ -125,6 +125,7 @@ public class ClientXmlResponseSecurity extends ClientAssertion {
         }
 
         // clean empty security element and header if necessary
+        SoapUtil.cleanEmptyRefList(doc);
         SoapUtil.cleanEmptySecurityElement(doc);
         SoapUtil.cleanEmptyHeaderElement(doc);
         response.setResponse(doc);

@@ -14,6 +14,7 @@ import javax.xml.transform.dom.DOMSource;
 import javax.xml.rpc.NamespaceConstants;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Iterator;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 
@@ -379,5 +380,23 @@ public class SoapUtil {
         msg.writeTo(baos);
         return baos.toByteArray();
     }
+
+    public static void cleanEmptyRefList(Document soapMsg) {
+         List refs = new ArrayList();
+         {
+             NodeList listRefElements = soapMsg.getElementsByTagNameNS(XMLENC_NS, "ReferenceList");
+             if (listRefElements.getLength() < 1)
+                 return;
+             for (int i = 0; i < listRefElements.getLength(); ++i)
+                 refs.add(listRefElements.item(i));
+             listRefElements = null;
+         }
+
+         for (Iterator iterator = refs.iterator(); iterator.hasNext();) {
+             Element refListEl = (Element)iterator.next();
+             if (!elHasChildrenElements(refListEl))
+                 refListEl.getParentNode().removeChild(refListEl);
+         }
+     }
 
 }

@@ -83,18 +83,20 @@ public class SecureConversationTokenHandler {
     }
 
     /**
-     * Look for a nonce in the soap document in the SecurityContextToken/Identifier element
-     * Document is not affected by this method.
+     * Look for a nonce in the soap document in the SecurityContextToken/Identifier element, and if it is found, remove the SecurityContextToken.
+     * Document IS affected by this method.
      *
      * @param soapmsg the xml document contiaining the soap msg. this document will not be affected by this method
      * @return the nonce in the SecurityContextToken/Identifier element
      */
-    public static Long readNonceFromDocument(Document soapmsg) {
+    public static Long takeNonceFromDocument(Document soapmsg) {
         Element secContxTokEl = getSecurityContextTokenElement(soapmsg);
         if (secContxTokEl == null)
             return null;
 
         String nonceValue = readIdentifierValueFromSecurityContextToken(secContxTokEl);
+
+        secContxTokEl.getParentNode().removeChild( secContxTokEl );
 
         return nonceValue == null ? null : new Long(nonceValue);
     }
@@ -194,10 +196,13 @@ public class SecureConversationTokenHandler {
     }
 
     private static Element getSecurityContextTokenElement(Document soapMsg) {
-        NodeList listSecurityElements = soapMsg.getElementsByTagNameNS(SoapUtil.SECURITY_NAMESPACE, SECURITY_CONTEXT_TOKEN_EL_NAME);
+        NodeList listSecurityElements = soapMsg.getElementsByTagNameNS(SoapUtil.SECURITY_NAMESPACE,
+                                                                       SECURITY_CONTEXT_TOKEN_EL_NAME);
         if (listSecurityElements.getLength() < 1) {
-            listSecurityElements = soapMsg.getElementsByTagNameNS(SoapUtil.SECURITY_NAMESPACE2, SECURITY_CONTEXT_TOKEN_EL_NAME);
+            listSecurityElements = soapMsg.getElementsByTagNameNS(SoapUtil.SECURITY_NAMESPACE2,
+                                                                  SECURITY_CONTEXT_TOKEN_EL_NAME);
         }
+
         if (listSecurityElements.getLength() < 1) {
             return null;
         } else {
