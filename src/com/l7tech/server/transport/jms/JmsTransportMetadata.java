@@ -8,6 +8,9 @@ package com.l7tech.server.transport.jms;
 
 import com.l7tech.message.TransportMetadata;
 import com.l7tech.message.TransportProtocol;
+import com.l7tech.message.Request;
+import com.l7tech.common.util.SoapUtil;
+import com.l7tech.common.protocol.SecureSpanConstants;
 
 import javax.jms.Message;
 import javax.jms.JMSException;
@@ -36,7 +39,11 @@ public class JmsTransportMetadata extends TransportMetadata {
 
     public Object getParameter( String name ) {
         try {
-            return _request.getObjectProperty( name );
+            Object value = _request.getObjectProperty( name );
+            if ( value == null && name.equals( Request.PARAM_HTTP_SOAPACTION ) )
+                return "";
+            else
+                return value;
         } catch ( JMSException e ) {
             return null;
         }
