@@ -39,6 +39,7 @@ public class FilterTest extends TestCase {
 
     public FilterTest(String name) throws Exception {
         super(name);
+        System.setProperty("com.l7tech.common.locator", "com.l7tech.common.locator.StubModeLocator");
     }
 
     public static Test suite() {
