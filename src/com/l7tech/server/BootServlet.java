@@ -26,9 +26,13 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.io.File;
+import java.io.FileInputStream;
 import java.sql.SQLException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.Properties;
+import java.util.Iterator;
 
 /**
  * @author alex
@@ -37,12 +41,15 @@ import java.util.logging.Logger;
 public class BootServlet extends HttpServlet {
     // private final Logger logger = Logger.getLogger(BootServlet.class.getName());
     private final Logger logger = LogManager.getInstance().getSystemLogger();
+    private final ServerConfig _config = ServerConfig.getInstance();
 
-    public void init( ServletConfig config ) throws ServletException {
-        ServerConfig.getInstance();
-        super.init( config );
+    public void init( ServletConfig sc ) throws ServletException {
+        super.init( sc );
+
         boolean failure = false;
         try {
+            setSystemProperties();
+
             initializeAdminServices();
             HibernatePersistenceManager.initialize();
             // make sure the ServiceManager is available
@@ -54,6 +61,8 @@ public class BootServlet extends HttpServlet {
             initializeClusterStatusUpdate();
             PersistenceContext.getCurrent().commitTransaction();
             PersistenceContext.getCurrent().close();
+
+
         } catch (SQLException e) {
             logger.log(Level.SEVERE, "SQL ERROR IN BOOT SERVLET", e);
             failure = true;
@@ -70,6 +79,28 @@ public class BootServlet extends HttpServlet {
 
         logger.info( BuildInfo.getLongBuildString() );
         logger.info("Boot servlet complete.");
+    }
+
+    private void setSystemProperties() throws IOException {
+        // Set system properties
+        String sysPropsPath = _config.getSystemPropertiesPath();
+        File propsFile = new File( sysPropsPath );
+        Properties props = new Properties();
+
+        // Set default properties
+        props.setProperty("com.sun.jndi.ldap.connect.pool.timeout", new Integer( 30 * 1000 ).toString() );
+        props.setProperty( ServerConfig.PROP_HOSTNAME, _config.getHostname() );
+
+        if ( propsFile.exists() ) {
+            FileInputStream fis = new FileInputStream( propsFile );
+            props.load(fis);
+        }
+
+        for (Iterator i = props.keySet().iterator(); i.hasNext();) {
+            String name = (String)i.next();
+            String value = (String)props.get(name);
+            System.setProperty( name, value );
+        }
     }
 
     public void doGet( HttpServletRequest request, HttpServletResponse response ) throws IOException, ServletException {
