@@ -16,6 +16,7 @@ import javax.naming.InitialContext;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.Iterator;
+import java.util.Random;
 
 /**
  * @author alex
@@ -86,11 +87,13 @@ public class HibernatePersistenceManagerServlet extends HttpServlet {
                 iptm.save(type);
 
                 IdentityProviderConfig config = new IdentityProviderConfigImp();
-                config.setName("Identity Provider #1");
+                config.setName( new Integer( new Random().nextInt() ).toString() );
                 config.setDescription("This object is bogus.");
                 config.setType( type );
 
                 long oid = ipcm.save( config );
+                config.setName( "Identity Provider #" + oid );
+                ipcm.update( config );
 
                 out.println( "Saved " + oid );
             }
