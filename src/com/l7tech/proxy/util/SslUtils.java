@@ -44,6 +44,12 @@ public class SslUtils {
     /** This is just a dummy body document, used as a placeholder in the password change POST. */
     private static final String PASSWORD_CHANGE_BODY = "<changePasswordAndRevokeClientCertificate/>";
 
+    public static final class PasswordNotWritableException extends Exception {
+        private PasswordNotWritableException(String message) {
+            super(message);
+        }
+    };
+
     /**
      * Change a user's password and revoke the current client certificate, if any.  This requires knowing the
      * old password.  As well, if you possess a client certificate on the target Gateway, you must possess it
@@ -62,10 +68,11 @@ public class SslUtils {
      * @throws BadCredentialsException  if the old password is incorrect, or the current client certificate was
      *                                  missing or invalid.
      * @throws BadPasswordFormatException if the new password was rejected by the server.
+     * @throws PasswordNotWritableException if the Gateway is unable to change this password.
      */
     public static void changePasswordAndRevokeClientCertificate(Ssg ssg, String username,
                                                                 char[] oldpassword, char[] newpassword)
-            throws IOException, BadCredentialsException, BadPasswordFormatException
+            throws IOException, BadCredentialsException, BadPasswordFormatException, PasswordNotWritableException
     {
         URL url = ssg.getServerPasswordChangeUrl();
         HttpClient hc = new HttpClient();
@@ -86,6 +93,7 @@ public class SslUtils {
             log.info("HTTPS POST to password change service returned HTTP status " + result);
             if (result == 400) throw new BadPasswordFormatException("Password change service rejected your new password (HTTP status " + result + ")");
             if (result == 401) throw new BadCredentialsException("Password change service indicates invalid current credentials (HTTP status " + result + ")");
+            if (result == 403) throw new PasswordNotWritableException("Password change service is unable to change the password for this account (HTTP status " + result + ")");
             if (result != 200) throw new IOException("HTTPS POST to password change service returned HTTP status " + result);
 
             post.releaseConnection();

@@ -446,6 +446,11 @@ public class SsgListPanel extends JPanel {
                                 Gui.errorMessage("Unable to change your password -- the Gateway has rejected your " +
                                                  "new password.");
                                 return;
+                            } catch (SslUtils.PasswordNotWritableException e1) {
+                                log.log(Level.WARNING, e1.getMessage(), e1);
+                                Gui.errorMessage("Unable to change your password -- the Gateway is unable to change " +
+                                                 "the password for this account");
+                                return;
                             } finally {
                                 CurrentRequest.clearCurrentRequest();
                             }
