@@ -32,6 +32,15 @@ public abstract class ServerCredentialSourceAssertion implements ServerAssertion
         _data = data;
     }
 
+    /**
+     * Server-side processing for all <code>CredentialSourceAssertion</code>s.
+     *
+     * @param request
+     * @param response
+     * @return
+     * @throws IOException
+     * @throws PolicyAssertionException
+     */
     public AssertionStatus checkRequest( Request request, Response response ) throws IOException, PolicyAssertionException {
         try {
             PrincipalCredentials pc = request.getPrincipalCredentials();
@@ -42,6 +51,7 @@ public abstract class ServerCredentialSourceAssertion implements ServerAssertion
 
             if ( pc == null ) {
                 response.setAuthenticationMissing( true );
+                challenge( request, response );
                 _log.log(Level.INFO, AssertionStatus.AUTH_REQUIRED.getMessage());
                 return AssertionStatus.AUTH_REQUIRED;
             } else {
@@ -55,6 +65,7 @@ public abstract class ServerCredentialSourceAssertion implements ServerAssertion
                 throw new PolicyAssertionException( cfe.getMessage(), cfe );
             } else {
                 response.addResult( new AssertionResult( _data, request, status, cfe.getMessage() ) );
+                challenge( request, response );
                 _log.log(Level.INFO, cfe.getMessage(), cfe);
                 if ( status == AssertionStatus.AUTH_REQUIRED )
                     response.setAuthenticationMissing(true);
@@ -66,8 +77,8 @@ public abstract class ServerCredentialSourceAssertion implements ServerAssertion
     }
 
     protected abstract PrincipalCredentials findCredentials( Request request, Response response ) throws IOException, CredentialFinderException;
-
     protected abstract AssertionStatus checkCredentials( Request request, Response response ) throws CredentialFinderException;
+    protected abstract void challenge( Request request, Response response );
 
     protected Logger _log = LogManager.getInstance().getSystemLogger();
     protected transient Map _credentialFinders = new HashMap();
