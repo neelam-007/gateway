@@ -5,6 +5,7 @@ import com.l7tech.console.text.MaxLengthDocument;
 import com.l7tech.console.util.Registry;
 import com.l7tech.identity.GroupBean;
 import com.l7tech.identity.GroupManager;
+import com.l7tech.identity.Group;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
 
@@ -114,9 +115,10 @@ public class GroupPanel extends EntityEditorPanel {
                 groupMembers = null;
             } else {
                 GroupManager gman = getGroupManager();
-                group = gman.findByPrimaryKey(groupHeader.getStrId()).getGroupBean();
+                Group g = gman.findByPrimaryKey( groupHeader.getStrId() );
+                group = g.getGroupBean();
                 groupMembers = gman.getUserHeaders( group.getUniqueIdentifier() );
-                // TODO load members
+
                 if (group == null) {
                     throw new RuntimeException("Group missing " + groupHeader.getOid());
                 }
