@@ -9,9 +9,7 @@ import com.l7tech.policy.assertion.credential.http.HttpBasic;
 import com.l7tech.policy.assertion.credential.http.HttpDigest;
 import com.l7tech.policy.assertion.identity.MemberOfGroup;
 import com.l7tech.policy.assertion.identity.SpecificUser;
-import com.l7tech.policy.assertion.xmlsec.XmlEncAssertion;
-import com.l7tech.policy.assertion.xmlsec.XmlDsigResAssertion;
-import com.l7tech.policy.assertion.xmlsec.XmlDsigReqAssertion;
+import com.l7tech.policy.assertion.xmlsec.*;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
@@ -179,7 +177,8 @@ public class Descriptions {
         descriptionsMap.put(HttpBasic.class, NoParam.class);
         descriptionsMap.put(HttpDigest.class, NoParam.class);
         descriptionsMap.put(RoutingAssertion.class, RoutingDescription.class);
-        descriptionsMap.put(XmlEncAssertion.class, NoParam.class);
+        descriptionsMap.put(XmlEncReqAssertion.class, NoParam.class);
+        descriptionsMap.put(XmlEncResAssertion.class, NoParam.class);
         descriptionsMap.put(XmlDsigReqAssertion.class, NoParam.class);
         descriptionsMap.put(XmlDsigResAssertion.class, NoParam.class);
     }
