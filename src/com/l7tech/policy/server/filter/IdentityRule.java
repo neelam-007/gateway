@@ -113,8 +113,8 @@ public class IdentityRule extends Filter {
                     if (grp.getName().equals(grpmemship.getGroupName())) return true;
                 }
             }
+            return false;
         } else throw new FilteringException("unsupported IdentityAssertion type " + idassertion.getClass().getName());
-        return true;
     }
 
     private User requestor = null;
