@@ -101,6 +101,8 @@ public class HomeAction extends BaseAction {
                         new NewUserAction(null).actionPerformed(null);
                     } else if (ADD_GROUP.equals(url)) {
                         new NewGroupAction(null).actionPerformed(null);
+                    }else if (ADD_ID_PROVIDER.equals(url)) {
+                        new NewProviderAction(null).actionPerformed(null);
                     }
                 }
             }
@@ -117,4 +119,5 @@ public class HomeAction extends BaseAction {
     private static final String CREATE_DEFINITION = "file://create.definition";
     private static final String ADD_USER = "file://add.user";
     private static final String ADD_GROUP = "file://add.group";
+    private static final String ADD_ID_PROVIDER = "file://add.identity.provider";
 }
