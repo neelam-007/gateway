@@ -232,6 +232,7 @@ public class ProtectedServiceWizardPanel extends WizardStepPanel {
             PublishedService publishedService = sa.getService();
 
             service.setWsdlUrl(publishedService.getWsdlUrl());
+            service.setWsdlXml(publishedService.getWsdlXml());
             String text = getServiceUrlTextField().getText();
             if (text == null || "".equals(text)) {
                 getServiceUrlTextField().setText(sa.getServiceURI());
@@ -410,8 +411,11 @@ public class ProtectedServiceWizardPanel extends WizardStepPanel {
     private void doDefaultUrl() {
         try {
             Wsdl wsdl = service.parsedWsdl();
-            if (wsdl !=null)
+            if (wsdl != null) {
                 getServiceUrlTextField().setText(wsdl.getServiceURI());
+            } else {
+                System.out.println("NO WSDL?");
+            }
         } catch (WSDLException e1) {
             //todo: errormanger?
         }
