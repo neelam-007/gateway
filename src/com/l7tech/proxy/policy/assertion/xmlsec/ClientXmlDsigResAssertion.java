@@ -5,6 +5,7 @@ import com.l7tech.proxy.datamodel.PendingRequest;
 import com.l7tech.proxy.datamodel.SsgResponse;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
+import com.l7tech.policy.assertion.xmlsec.XmlDsigResAssertion;
 import com.l7tech.xmlsig.SoapMsgSigner;
 import com.l7tech.xmlsig.SignatureNotFoundException;
 import com.l7tech.xmlsig.InvalidSignatureException;
@@ -28,6 +29,10 @@ import java.security.cert.X509Certificate;
  * @author flascell
  */
 public class ClientXmlDsigResAssertion implements ClientAssertion {
+
+    public ClientXmlDsigResAssertion(XmlDsigResAssertion data) {
+
+    }
 
     /**
      * i dont want to decorate a request but rather validate something in the response

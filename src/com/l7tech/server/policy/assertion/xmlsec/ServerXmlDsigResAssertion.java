@@ -3,6 +3,7 @@ package com.l7tech.server.policy.assertion.xmlsec;
 import com.l7tech.server.policy.assertion.ServerAssertion;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
+import com.l7tech.policy.assertion.xmlsec.XmlDsigResAssertion;
 import com.l7tech.message.Request;
 import com.l7tech.message.Response;
 import com.l7tech.util.SoapUtil;
@@ -37,6 +38,10 @@ import org.xml.sax.SAXException;
  * On the proxy side, this verifies that the Soap Response contains a valid xml d-sig for the entire envelope.
  */
 public class ServerXmlDsigResAssertion implements ServerAssertion {
+
+    public ServerXmlDsigResAssertion(XmlDsigResAssertion data) {
+    }
+
     public AssertionStatus checkRequest(Request request, Response response) throws IOException, PolicyAssertionException {
 
         Document soapmsg = null;
@@ -85,7 +90,7 @@ public class ServerXmlDsigResAssertion implements ServerAssertion {
             logger.log(Level.SEVERE, msg, e);
             throw new PolicyAssertionException(msg, e);
         }
-
+        logger.info("Response document signed successfully");
         return AssertionStatus.NONE;
     }
 
