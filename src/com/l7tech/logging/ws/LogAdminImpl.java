@@ -22,7 +22,8 @@ public class LogAdminImpl implements LogAdmin {
 
     /**
      * Retrieve the system logs of a node in between the startMsgNumber and endMsgNumber specified
-     * up to the specified size.
+     * up to the specified size. The retrieved block of logs will not contain the log whose
+     * message number is equal to startMsgNumber or endMsgNumber.
      *
      * The design principle of this log retrieval API is to facilitate the client to retrieve the latest
      * logs up to the number of logs that the client's buffer can hold in an efficient way. Hence, the
@@ -68,7 +69,7 @@ public class LogAdminImpl implements LogAdmin {
      * @param size  the max. number of messages retrieved
      * @return String[] the array of messages retrieved
      * @see com.l7tech.cluster.ClusterStatusAdmin#getClusterStatus
-     * 
+     *
      */
     public SSGLogRecord[] getSystemLog(String nodeid, long startMsgNumber, long endMsgNumber, int size) throws RemoteException {
         try {
