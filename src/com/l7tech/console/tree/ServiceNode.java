@@ -50,7 +50,10 @@ public class ServiceNode extends EntityHeaderNode {
         if (svc == null) {
             EntityHeader eh = getEntityHeader();
             svc = Registry.getDefault().getServiceManager().findServiceByPrimaryKey(eh.getOid());
-
+            // throw something if null, the service may have been deleted
+            if (svc == null) {
+                throw new FindException("The service '"+eh.getName()+"' does not exist any more.");
+            }
         }
         return svc;
     }
