@@ -64,7 +64,7 @@ public class ServiceManagerImp extends HibernateEntityManager implements Service
         return null;
     }
 
-    public ServiceManagerImp() throws NamingException, ObjectModelException {
+    public ServiceManagerImp() throws ObjectModelException {
         super();
 
         synchronized( this ) {
@@ -72,8 +72,14 @@ public class ServiceManagerImp extends HibernateEntityManager implements Service
             _allServices = new HashSet();
             _allServices.addAll(services);
 
-            InitialContext ic = new InitialContext();
-            String serviceResolvers = (String)ic.lookup( "java:comp/env/ServiceResolvers" );
+            String serviceResolvers = null;
+            try {
+                InitialContext ic = new InitialContext();
+                serviceResolvers = (String)ic.lookup( "java:comp/env/ServiceResolvers" );
+            } catch ( NamingException ne ) {
+                log.error( ne );
+            }
+
             if ( serviceResolvers == null ) {
                 StringBuffer classnames = new StringBuffer();
                 classnames.append( UrnResolver.class.getName() );
