@@ -37,7 +37,7 @@ public class HttpTransportMetadata extends TransportMetadata {
 
             if ( name.startsWith( Request.PREFIX_HTTP_HEADER ) ) {
                 // FIXME: Check punctuation
-                ppos = name.indexOf( ".", Request.PREFIX_HTTP_HEADER.length() + 1 );
+                ppos = name.indexOf( ".", Request.PREFIX_HTTP_HEADER.length() - 1 );
                 subname = name.substring( ppos + 1 );
                 value = _request.getHeader( subname );
             }
