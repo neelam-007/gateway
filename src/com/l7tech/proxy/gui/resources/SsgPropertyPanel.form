@@ -43,7 +43,7 @@
                   <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3"/>
                 </constraints>
                 <properties/>
-                <border type="etched" title="  Your user name and password  "/>
+                <border type="etched" title="  Account User Name and Password  "/>
                 <children>
                   <component id="58904" class="javax.swing.JLabel">
                     <constraints>
@@ -83,11 +83,11 @@
                     <children>
                       <component id="3bc6" class="javax.swing.JCheckBox" binding="savePasswordCheckBox">
                         <constraints>
-                          <xy x="0" y="0" width="202" height="22"/>
+                          <xy x="0" y="0" width="98" height="22"/>
                           <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0"/>
                         </constraints>
                         <properties>
-                          <text value="Save this password to your hard disk"/>
+                          <text value="Save Password"/>
                         </properties>
                       </component>
                       <component id="63ad4" class="javax.swing.JCheckBox" binding="useClientCredentialCheckBox">
@@ -96,7 +96,7 @@
                           <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0"/>
                         </constraints>
                         <properties>
-                          <text value="Use credentials from client (HTTP Basic Authentication)"/>
+                          <text value="Use Credentials from Client (HTTP Basic Authentication)"/>
                         </properties>
                       </component>
                     </children>
@@ -123,16 +123,16 @@
                 <children>
                   <component id="cb54f" class="javax.swing.JButton" binding="clientCertButton">
                     <constraints>
-                      <xy x="16" y="25" width="260" height="24"/>
+                      <xy x="16" y="25" width="249" height="24"/>
                       <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1"/>
                     </constraints>
                     <properties>
-                      <text value="View your client certificate"/>
+                      <text value="View Client Certificate"/>
                     </properties>
                   </component>
                   <component id="ac4c9" class="javax.swing.JButton" binding="trustedSSGCertButton">
                     <constraints>
-                      <xy x="286" y="25" width="259" height="24"/>
+                      <xy x="275" y="25" width="270" height="24"/>
                       <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1"/>
                     </constraints>
                     <properties>

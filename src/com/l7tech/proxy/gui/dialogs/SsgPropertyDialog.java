@@ -140,7 +140,7 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
             agentPolicyPane = new JScrollPane(outerPane);
             agentPolicyPane.setBorder(BorderFactory.createEmptyBorder());
             JPanel pane = new JPanel(new GridBagLayout());
-            pane.setBorder(BorderFactory.createTitledBorder("  Client-side policy  "));
+            pane.setBorder(BorderFactory.createTitledBorder("  Client-Side Policy  "));
             outerPane.add(pane,
                           new GridBagConstraints(0, 0, 1, 1, 1.0, 0.0,
                                                  GridBagConstraints.NORTHWEST,
@@ -151,7 +151,7 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
                                                  GridBagConstraints.CENTER,
                                                  GridBagConstraints.BOTH,
                                                  new Insets(0, 0, 0, 0), 0, 0));
-            cbUseSslByDefault = new JCheckBox("Use SSL by default");
+            cbUseSslByDefault = new JCheckBox("Use SSL By Default");
             pane.add(cbUseSslByDefault,
                      new GridBagConstraints(0, y++, 1, 1, 1.0, 0.0,
                                             GridBagConstraints.WEST,
@@ -168,13 +168,13 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
             policiesPane = new JScrollPane(pane);
             policiesPane.setBorder(BorderFactory.createEmptyBorder());
 
-            pane.add(new JLabel("<HTML><h4>Service Policies being cached by this Agent</h4></HTML>"),
+            pane.add(new JLabel("<HTML><h4>Service Policies Being Cached by this Agent</h4></HTML>"),
                      new GridBagConstraints(0, y++, 1, 1, 0.0, 0.0,
                                             GridBagConstraints.NORTHWEST,
                                             GridBagConstraints.BOTH,
                                             new Insets(14, 6, 6, 6), 3, 3));
 
-            pane.add(new JLabel("Web services with cached policies:"),
+            pane.add(new JLabel("Web Services with Cached Policies:"),
                      new GridBagConstraints(0, y++, 2, 1, 0.0, 0.0,
                                             GridBagConstraints.CENTER,
                                             GridBagConstraints.BOTH,
@@ -213,7 +213,7 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
                                             GridBagConstraints.BOTH,
                                             new Insets(0, 6, 3, 6), 0, 0));
 
-            pane.add(new JLabel("Associated policy:"),
+            pane.add(new JLabel("Associated Policy:"),
                      new GridBagConstraints(0, y++, 2, 1, 0.0, 0.0,
                                             GridBagConstraints.CENTER,
                                             GridBagConstraints.BOTH,
@@ -292,13 +292,13 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
                     if (cert == null) {
                         final String close = "   Close   ";
                         int r = JOptionPane.showOptionDialog(Gui.getInstance().getFrame(),
-                                                             "We don't currently have a client certificate\n" +
-                                                             "for the Gateway " + ssgName(),
-                                                             "No client certificate",
+                                                             "A client certificate for the SecureSpan Gateway " + ssgName() + "\n" +
+                                                             "was not found.  Import a client certificate below.",
+                                                             "Client Certificate Not Found",
                                                              JOptionPane.YES_NO_OPTION,
                                                              JOptionPane.INFORMATION_MESSAGE,
                                                              null,
-                                                             new String[] {"Import client certificate", close},
+                                                             new String[] {"Import Client Certificate", close},
                                                              close);
                         if (r == 0)
                             importClientCertificate();
@@ -308,8 +308,8 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
                 } catch (Exception e1) {
                     log.log(Level.SEVERE, "Unable to access client certificate", e1);
                     e1.printStackTrace();
-                    Gui.errorMessage("Unable to access client certificate",
-                                         "Unable to access client certificate for Gateway " + ssgName(),
+                    Gui.errorMessage("Unable to Access Client Certificate",
+                                         "Unable to access client certificate for the SecureSpan Gateway " + ssgName() + ".",
                                          e1);
                     }
                 }
@@ -321,9 +321,9 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
                     X509Certificate cert = SsgKeyStoreManager.getServerCert(ssg);
                     if (cert == null) {
                         JOptionPane.showMessageDialog(Gui.getInstance().getFrame(),
-                                "We haven't yet discovered the server certificate\n" +
-                                "for the Gateway " + ssgName(),
-                                "No server certificate",
+                                "A certificate for the SecureSpan gateway " + ssgName() + "\n" +
+                                "was not found.",
+                                "Gateway Certificate Not Found",
                                 JOptionPane.INFORMATION_MESSAGE);
                         return;
                     }
@@ -449,7 +449,7 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
             // Endpoint panel
 
             JPanel epp = new JPanel(new GridBagLayout());
-            epp.setBorder(BorderFactory.createTitledBorder(" Incoming requests to this Agent "));
+            epp.setBorder(BorderFactory.createTitledBorder(" Incoming Requests to the Agent "));
             pane.add(epp, new GridBagConstraints(0, gridY++, 2, 1, 1000.0, 0.0,
                                                  GridBagConstraints.WEST,
                                                  GridBagConstraints.HORIZONTAL,
@@ -458,8 +458,9 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
             int oy = gridY;
             gridY = 0;
 
-            WrappingLabel splain01 = new WrappingLabel("The Agent will listen for incoming messages at this local " +
-                                                       "URL, and route any such messages to this Gateway:", 2);
+            WrappingLabel splain01 = new WrappingLabel("The SecureSpan Agent listens for incoming messages at the " +
+                                                       "following local proxy URL, then routes the messages to the " +
+                                                       "SecureSpan Gateway.", 2);
             epp.add(splain01,
                     new GridBagConstraints(0, gridY++, 2, 1, 0.0, 0.0,
                                            GridBagConstraints.WEST,
@@ -479,7 +480,7 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
                                            GridBagConstraints.HORIZONTAL,
                                            new Insets(5, 5, 5, 5), 0, 0));
 
-            WrappingLabel splain02 = new WrappingLabel("The Agent will offer proxied WSDL lookups at this local URL:", 1);
+            WrappingLabel splain02 = new WrappingLabel("The SecureSpan Agent offers proxied WSDL lookups at the following local URL:", 1);
             epp.add(splain02,
                     new GridBagConstraints(0, gridY++, 2, 1, 0.0, 0.0,
                                            GridBagConstraints.WEST,
@@ -504,22 +505,21 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
             // Gateway ports panel
 
             JPanel gpp = new JPanel(new GridBagLayout());
-            gpp.setBorder(BorderFactory.createTitledBorder(" Outgoing requests to the Gateway "));
+            gpp.setBorder(BorderFactory.createTitledBorder(" Outgoing Requests to the Gateway "));
             pane.add(gpp,
                      new GridBagConstraints(0, gridY++, 2, 1, 1000.0, 0.0,
                                             GridBagConstraints.WEST,
                                             GridBagConstraints.HORIZONTAL,
                                             new Insets(14, 5, 0, 5), 0, 0));
 
-            gpp.add(new WrappingLabel("If your Gateway is listening on nonstandard ports, " +
-                                      "you can configure them here.", 2),
+            gpp.add(new WrappingLabel("Configure standard or non-standard ports for the SecureSpan Gateway below.", 2),
                     new GridBagConstraints(0, 0, 5, 1, 0.0, 0.0,
                                            GridBagConstraints.WEST,
                                            GridBagConstraints.HORIZONTAL,
                                            new Insets(0, 5, 0, 0), 0, 0));
 
             ButtonGroup bg = new ButtonGroup();
-            radioStandardPorts = new JRadioButton("Gateway is using standard ports:", true);
+            radioStandardPorts = new JRadioButton("Gateway Using Standard Ports:", true);
             radioStandardPorts.addChangeListener(new ChangeListener() {
                 public void stateChanged(ChangeEvent e) {
                     updateCustomPortsEnableState();
@@ -531,7 +531,7 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
                                            GridBagConstraints.SOUTHWEST,
                                            GridBagConstraints.NONE,
                                            new Insets(5, 5, 0, 5), 0, 0));
-            gpp.add(new JLabel("HTTP port:"),
+            gpp.add(new JLabel("HTTP Port:"),
                     new GridBagConstraints(0, 2, 1, 1, 0.0, 0.0,
                                            GridBagConstraints.WEST,
                                            GridBagConstraints.NONE,
@@ -543,7 +543,7 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
                                            GridBagConstraints.WEST,
                                            GridBagConstraints.NONE,
                                            new Insets(0, 5, 5, 5), 0, 0));
-            gpp.add(new JLabel("HTTPS port:"),
+            gpp.add(new JLabel("HTTPS Port:"),
                     new GridBagConstraints(2, 2, 1, 1, 0.0, 0.0,
                                            GridBagConstraints.WEST,
                                            GridBagConstraints.NONE,
@@ -560,7 +560,7 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
                                            GridBagConstraints.HORIZONTAL,
                                            new Insets(0, 0, 0, 0), 0, 0));
 
-            radioNonstandardPorts = new JRadioButton("Gateway requires custom ports:", false);
+            radioNonstandardPorts = new JRadioButton("Gateway Requires Custom Ports:", false);
             radioNonstandardPorts.addChangeListener(new ChangeListener() {
                 public void stateChanged(ChangeEvent e) {
                     updateCustomPortsEnableState();
@@ -573,7 +573,7 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
                                            GridBagConstraints.NONE,
                                            new Insets(5, 5, 5, 0), 0, 0));
 
-            gpp.add(new JLabel("HTTP port:"),
+            gpp.add(new JLabel("HTTP Port:"),
                     new GridBagConstraints(0, 4, 1, 1, 0.0, 0.0,
                                            GridBagConstraints.WEST,
                                            GridBagConstraints.NONE,
@@ -588,7 +588,7 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
                                            GridBagConstraints.WEST,
                                            GridBagConstraints.NONE,
                                            new Insets(0, 5, 5, 5), 0, 0));
-            gpp.add(new JLabel("HTTPS port:"),
+            gpp.add(new JLabel("HTTPS Port:"),
                     new GridBagConstraints(2, 4, 1, 1, 0.0, 0.0,
                                            GridBagConstraints.WEST,
                                            GridBagConstraints.NONE,
@@ -636,7 +636,7 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
                                             new Insets(25, 5, 0, 0), 0, 0));
 
             String splaintext = "Please enter the host name or Internet address " +
-                                "of the SecureSpan Gateway that will be processing your requests.";
+                                "of the SecureSpan Gateway that will be processing requests.";
             WrappingLabel splain01 = new WrappingLabel(splaintext, 3);
             pane.add(splain01,
                      new GridBagConstraints(0, gridY++, 2, 1, 1000.0, 0.0,
