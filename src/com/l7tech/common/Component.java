@@ -36,6 +36,7 @@ public class Component {
         componentsByCode.put(getCode(), this);
     }
 
+    /** @return the Component that uses code, or null if not found. */
     public static Component fromCode(String code) {
         if (componentsByCode == null) return null;
         return (Component)componentsByCode.get(code);
