@@ -52,9 +52,6 @@ public class GroupImp extends NamedEntityImp implements Group {
 
         if (_oid != DEFAULT_OID ? !(_oid == groupImp._oid) : groupImp._oid != DEFAULT_OID ) return false;
         if (_providerOid != groupImp._providerOid) return false;
-        if (_description != null ? !_description.equals(groupImp._description) : groupImp._description != null) return false;
-        if (_memberHeaders != null ? !_memberHeaders.equals(groupImp._memberHeaders) : groupImp._memberHeaders != null) return false;
-        if (_members != null ? !_members.equals(groupImp._members) : groupImp._members != null) return false;
 
         return true;
     }
@@ -62,9 +59,7 @@ public class GroupImp extends NamedEntityImp implements Group {
     public int hashCode() {
         int result;
         result = (int) (_providerOid ^ (_providerOid >>> 32));
-        result = 29 * result + (_description != null ? _description.hashCode() : 0);
-        result = 29 * result + (_members != null ? _members.hashCode() : 0);
-        result = 29 * result + (_memberHeaders != null ? _memberHeaders.hashCode() : 0);
+
         result = 29 * result + (int)_oid;
         return result;
     }
