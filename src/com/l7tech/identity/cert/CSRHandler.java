@@ -304,6 +304,7 @@ public class CSRHandler extends AuthenticatableHttpServlet {
         res.setStatus(status);
         connection.getContentType()
         res.setContentType();
+        todo finish this
         */
 
 
