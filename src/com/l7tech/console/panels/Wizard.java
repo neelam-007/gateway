@@ -5,10 +5,7 @@ import com.l7tech.console.event.WizardEvent;
 import com.l7tech.console.event.WizardListener;
 
 import javax.swing.*;
-import javax.swing.border.CompoundBorder;
-import javax.swing.border.EmptyBorder;
-import javax.swing.border.EtchedBorder;
-import javax.swing.border.MatteBorder;
+import javax.swing.border.*;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 import javax.swing.event.EventListenerList;
@@ -199,7 +196,7 @@ public class Wizard extends JDialog {
         JEditorPane da = getStepDescriptionTextPane();
         da.setBackground(descScrollPane.getBackground());
         descScrollPane.setViewportView(da);
-
+        descScrollPane.setBorder(new CompoundBorder(new EmptyBorder(new java.awt.Insets(10, 0, 0, 0)), new LineBorder(Color.GRAY)));
         wizardStepPanel.add(descScrollPane, BorderLayout.SOUTH);
 
         mainPanel.add(wizardStepPanel, BorderLayout.CENTER);
