@@ -107,7 +107,7 @@ public abstract class AuthenticatableHttpServlet extends HttpServlet {
      * First do the the standard user check {@link AuthenticatableHttpServlet#authenticateRequestBasic(javax.servlet.http.HttpServletRequest)},
      * and if non empty list has been returned stop there. If the list of users is empty, retrieve
      * custom assertions and check if there is a custom assertion in the service policy. If true,
-     * and the assertion is registered as <code>Category</code> {@link com.l7tech.policy.assertion.ext.Category#IDENTITY}
+     * and the assertion is registered as <code>Category</code> {@link com.l7tech.policy.assertion.ext.Category#ACCESS_CONTROL}
      * then we let that request through, since the custom assertion is responsible for validating the credentials.
      * If no custom assertion is found throws <code>BadCredentialsException</code>.
      * <p/>
@@ -200,6 +200,17 @@ public abstract class AuthenticatableHttpServlet extends HttpServlet {
         // logic: a policy allows anonymous if and only if it does not contains any CredentialSourceAssertion
         // com.l7tech.policy.assertion.credential.CredentialSourceAssertion
         Assertion rootassertion = WspReader.parse(policy.getPolicyXml());
+
+        Iterator it = rootassertion.preorderIterator();
+        while (it.hasNext()) {
+            Assertion a = (Assertion)it.next();
+            if (a instanceof CustomAssertionHolder) {
+                CustomAssertionHolder ca = (CustomAssertionHolder)a;
+                if (Category.ACCESS_CONTROL.equals(ca.getCategory())) {
+                    return true;
+                }
+            }
+        }
         if (findCredentialAssertion(rootassertion) != null) {
             logger.info("Policy does not allow anonymous requests.");
             return false;

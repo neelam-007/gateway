@@ -82,9 +82,8 @@ public class WsdlProxyServlet extends AuthenticatableHttpServlet {
             }
 
         } catch (BadCredentialsException e) {
-            logger.log(Level.SEVERE, "returning 401 to requestor because invalid creds were provided", e);
-            res.sendError(HttpServletResponse.SC_UNAUTHORIZED, e.getMessage());
-            return;
+            logger.log(Level.INFO, "Credentials do not authenticate against any of the providers, assuming anonymous");
+            users = null;
         }
 
         // NOTE: sending credentials over insecure channel is treated as an anonymous request

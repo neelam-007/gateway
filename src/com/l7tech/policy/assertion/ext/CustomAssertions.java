@@ -53,6 +53,15 @@ public class CustomAssertions {
         return descriptors;
     }
 
+    /**
+     * @return the set of all descriptors
+     */
+    static Set getDescriptors() {
+        Set descriptors = new HashSet();
+        descriptors.addAll(assertions.values());
+        return descriptors;
+    }
+
 
     /**
      * @return the set of all assertions registered

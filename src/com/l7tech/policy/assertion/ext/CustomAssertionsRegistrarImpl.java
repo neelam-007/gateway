@@ -43,7 +43,7 @@ public class CustomAssertionsRegistrarImpl implements CustomAssertionsRegistrar 
      * @throws java.rmi.RemoteException
      */
     public Collection getAssertions() throws RemoteException {
-        Set customAssertionDescriptors = CustomAssertions.getAssertions();
+        Set customAssertionDescriptors = CustomAssertions.getDescriptors();
         return asCustomAssertionHolders(customAssertionDescriptors);
     }
 
@@ -54,7 +54,7 @@ public class CustomAssertionsRegistrarImpl implements CustomAssertionsRegistrar 
      * @throws java.rmi.RemoteException
      */
     public Collection getAssertions(Category c) throws RemoteException {
-        final Set customAssertionDescriptors = CustomAssertions.getAssertions(c);
+        final Set customAssertionDescriptors = CustomAssertions.getDescriptors(c);
         return asCustomAssertionHolders(customAssertionDescriptors);
     }
 
@@ -112,10 +112,12 @@ public class CustomAssertionsRegistrarImpl implements CustomAssertionsRegistrar 
         Iterator it = customAssertionDescriptors.iterator();
         while (it.hasNext()) {
             try {
-                Class ca = (Class)it.next();
+                CustomAssertionDescriptor cd = (CustomAssertionDescriptor)it.next();
+                Class ca = cd.getAssertion();
                 CustomAssertionHolder ch = new CustomAssertionHolder();
                 final CustomAssertion cas = (CustomAssertion)ca.newInstance();
                 ch.setCustomAssertion(cas);
+                ch.setCategory(cd.getCategory());
                 result.add(ch);
             } catch (Exception e) {
                 logger.log(Level.WARNING, "Unable to instantiate custom assertion", e);
