@@ -313,7 +313,11 @@
                  excludes="${common.lib.jars}, jh.jar, kunststoff.jar, servlet.jar, xercesImpl.jar, xml-apis.jar">
             </lib>
             <classes dir="${build.classes}"/>
-            <zipfileset dir="${src.root}/etc" includes="server-config.wsdd" prefix="WEB-INF"/>
+
+            <zipfileset dir="${src.root}/etc" prefix="WEB-INF">
+                <include name="server-config.wsdd"/>
+                <include name="jboss-web.xml"/>
+            </zipfileset>
             <zipfileset dir="${src.root}/src/com/l7tech/util/locator" includes="services.properties" prefix="WEB-INF/classes/com/l7tech/util/locator"/>
             <zipfileset dir="${src.root}/web" includes="index.html" prefix="ssg"/>
             <zipfileset dir="${src.root}/web" includes="index.html"/>
