@@ -74,6 +74,15 @@ public class FederatedGroupManager extends PersistentGroupManager {
     public boolean isMember( User user, Group genericGroup ) throws FindException {
         PersistentGroup group = cast(genericGroup);
         if ( group instanceof VirtualGroup ) {
+            // fix for bugzilla 1101 virtual group membership enforces trusted fip cert
+            long[] provCerts = providerConfig.getTrustedCertOids();
+            if (provCerts == null || provCerts.length < 1) {
+                logger.warning("The virtual group " + group.getUniqueIdentifier() + " is itself invalid because " +
+                               "the parent provider has no trusted certs declared (virtual group must rely on fip " +
+                               "trusted cert). Returning false.");
+                return false;
+            }
+
             if (!checkProvider(user)) return false;
             SamlConfig samlConfig = providerConfig.getSamlConfig();
             if ( providerConfig.isX509Supported() || (providerConfig.isSamlSupported() && samlConfig.isNameIdX509SubjectName()) ) {
