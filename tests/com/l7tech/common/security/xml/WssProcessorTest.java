@@ -8,6 +8,7 @@ package com.l7tech.common.security.xml;
 
 import com.l7tech.common.security.xml.processor.*;
 import com.l7tech.common.util.XmlUtil;
+import com.l7tech.common.xml.MessageNotSoapException;
 import com.l7tech.common.xml.TestDocuments;
 import com.l7tech.server.secureconversation.SecureConversationSession;
 import junit.framework.Test;
@@ -181,6 +182,16 @@ public class WssProcessorTest extends TestCase {
     public void testSampleSignedSamlHolderOfKeyRequest() throws Exception {
         doTest(makeEttkTestDocument("sample signed SAML holder-of-key request",
                                     TestDocuments.SAMPLE_SIGNED_SAML_HOLDER_OF_KEY_REQUEST));
+    }
+
+    public void testNonSoapRequest() throws Exception {
+        try {
+            doTest(makeEttkTestDocument("non-SOAP request",
+                                        TestDocuments.NON_SOAP_REQUEST));
+            fail("Expected MessageNotSoapException was not thrown");
+        } catch (MessageNotSoapException e) {
+            // Ok
+        }
     }
 
     private TestDocument makeEttkTestDocument(String testname, String docname) {

@@ -51,6 +51,7 @@ public final class TestDocuments {
     public static final String AGENT_FAILING_SIGNED_REQUEST = DIR + "agentSignedRequest.xml";
     public static final String SAMPLE_SIGNED_SAML_HOLDER_OF_KEY_REQUEST = DIR + "sampleSignedSamlHolderOfKeyRequest.xml";
     public static final String GOOGLESEARCH_RESPONSE = DIR + "googlesearch-response.xml";
+    public static final String NON_SOAP_REQUEST = DIR + "nonSoapRequest.xml";
 
     public static final String WRAPED_L7ACTOR = DIR + "soapRequestWithUsernameTokenAndWrappedL7Actors.xml";
     public static final String MULTIPLE_WRAPED_L7ACTOR = DIR + "soapRequestWithUsernameTokenAndMultipleL7Actors.xml";

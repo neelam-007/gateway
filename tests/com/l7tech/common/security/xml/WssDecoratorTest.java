@@ -12,6 +12,7 @@ import com.l7tech.common.security.xml.decorator.WssDecorator;
 import com.l7tech.common.security.xml.decorator.WssDecoratorImpl;
 import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.util.XmlUtil;
+import com.l7tech.common.xml.MessageNotSoapException;
 import com.l7tech.common.xml.TestDocuments;
 import com.l7tech.policy.assertion.credential.CredentialFormat;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
@@ -88,10 +89,10 @@ public class WssDecoratorTest extends TestCase {
             this.message = message;
             soapNs = message.getDocumentElement().getNamespaceURI();
             body = (Element)message.getElementsByTagNameNS(soapNs, SoapUtil.BODY_EL_NAME).item(0);
-            assertNotNull(body);
-            payload = XmlUtil.findFirstChildElement(body);
-            assertNotNull(payload);
-            payloadNs = payload.getNamespaceURI();
+            if (body != null)
+                payload = XmlUtil.findFirstChildElement(body);
+            if (payload != null)
+                payloadNs = payload.getNamespaceURI();
         }
     }
 
@@ -473,4 +474,26 @@ public class WssDecoratorTest extends TestCase {
                                 new Element[0],
                                 new Element[] { ret });
     }
+
+    public void testNonSoapRequest() throws Exception {
+        try {
+            runTest(getNonSoapRequestTestDocument());
+            fail("Expected MessageNotSoapException was not thrown");
+        } catch (MessageNotSoapException e) {
+            // ok
+        }
+    }
+
+    public TestDocument getNonSoapRequestTestDocument() throws Exception {
+        final Context c = new Context(TestDocuments.getTestDocument(TestDocuments.NON_SOAP_REQUEST));
+        return new TestDocument(c,
+                                TestDocuments.getEttkClientCertificate(),
+                                TestDocuments.getEttkClientPrivateKey(),
+                                TestDocuments.getDotNetServerCertificate(),
+                                TestDocuments.getDotNetServerPrivateKey(),
+                                false,
+                                new Element[0],
+                                new Element[0]);
+    }
+
 }
