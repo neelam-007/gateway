@@ -1,6 +1,7 @@
 package com.l7tech.proxy.gui.dialogs;
 
 import com.l7tech.common.gui.IntegerField;
+import com.l7tech.common.gui.NumberField;
 import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.common.gui.widgets.CertificatePanel;
 import com.l7tech.common.gui.widgets.WrappingLabel;
@@ -486,7 +487,8 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
                                            new Insets(0, 40, 5, 0), 0, 0));
             fieldSsgPort = new ContextMenuTextField("");
             Utilities.enableGrayOnDisabled(fieldSsgPort);
-            fieldSsgPort.setDocument(new IntegerField(0, 65535));
+            Utilities.constrainTextFieldToIntegerRange(fieldSsgPort, 1, 65535);
+            fieldSsgPort.setDocument(new NumberField(6));
             fieldSsgPort.setPreferredSize(new Dimension(50, 20));
             gpp.add(fieldSsgPort,
                     new GridBagConstraints(1, 3, 1, 1, 0.0, 0.0,
@@ -500,7 +502,8 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
                                            new Insets(0, 15, 5, 0), 0, 0));
             fieldSslPort = new ContextMenuTextField("");
             Utilities.enableGrayOnDisabled(fieldSslPort);
-            fieldSslPort.setDocument(new IntegerField(0, 65535));
+            Utilities.constrainTextFieldToIntegerRange(fieldSslPort, 1, 65535);
+            fieldSslPort.setDocument(new NumberField(6));
             fieldSslPort.setPreferredSize(new Dimension(50, 20));
             gpp.add(fieldSslPort,
                     new GridBagConstraints(3, 3, 1, 1, 0.0, 0.0,

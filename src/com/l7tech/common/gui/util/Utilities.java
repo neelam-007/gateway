@@ -470,4 +470,37 @@ public class Utilities {
         if (m instanceof JComponent)
             ((JComponent)m).setToolTipText(null);
     }
+
+    /**
+     * Configure the specified text component (JTextField or JTextArea) to constrain itself to contain
+     * an integer within the specified range (from min to max inclusive).  The constraint will be imposed
+     * whenever the field loses focus.
+     * @param comp  The text component to constrain.
+     * @param min   The minimum integer value it may legally contain.
+     * @param max   The maximum integer value it may legally contain.
+     */
+    public static void constrainTextFieldToIntegerRange(final JTextComponent comp, final int min, final int max) {
+        final String minStr = String.valueOf(min);
+        final String maxStr = String.valueOf(max);
+        comp.addFocusListener(new FocusListener() {
+            public void focusGained(FocusEvent e) {}
+
+            public void focusLost(FocusEvent e) {
+                String val = comp.getText();
+                if (val == null || val.length() < 1) {
+                    comp.setText(minStr);
+                    return;
+                }
+                try {
+                    int ival = Integer.parseInt(val);
+                    if (ival < min)
+                        comp.setText(minStr);
+                    else if (ival > max)
+                        comp.setText(maxStr);
+                } catch (NumberFormatException nfe) {
+                    comp.setText(minStr);
+                }
+            }
+        });
+    }
 }
