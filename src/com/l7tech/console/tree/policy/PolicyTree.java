@@ -190,6 +190,7 @@ public class PolicyTree extends JTree implements DragSourceListener,
          */
         public void mouseClicked(MouseEvent e) {
             if (e.getClickCount() != 2) return;
+            if (isIdentityView()) return;
             JTree tree = (JTree)e.getSource();
             TreePath path = tree.getSelectionPath();
             if (path == null) return;
