@@ -3,6 +3,7 @@ package com.l7tech.common.security.xml;
 import com.l7tech.common.util.ISO8601Date;
 import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.util.XmlUtil;
+import com.l7tech.common.util.HexUtils;
 import com.l7tech.common.xml.MessageNotSoapException;
 import com.l7tech.common.xml.TooManyChildElementsException;
 import org.w3c.dom.Document;
@@ -10,8 +11,6 @@ import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
 import org.w3c.dom.Text;
 import org.xml.sax.SAXException;
-import sun.misc.BASE64Decoder;
-import sun.misc.BASE64Encoder;
 
 import java.io.IOException;
 import java.security.SecureRandom;
@@ -60,8 +59,8 @@ public class SecurityContextTokenHandler {
         if (rawSessionId == null || rawSessionId.length != SESSION_BYTES) {
             throw new IllegalArgumentException("Session ID is the wrong length");
         }
-        BASE64Encoder encoder = new BASE64Encoder();
-        return URI_PREFIX + encoder.encode(rawSessionId);
+
+        return URI_PREFIX + HexUtils.encodeBase64(rawSessionId, true);
     }
 
     /**
@@ -86,8 +85,8 @@ public class SecurityContextTokenHandler {
         if (uri == null || !uri.startsWith(URI_PREFIX)) {
             throw new IllegalArgumentException("This is not a proper sessionid URI (" + uri + ")");
         }
-        BASE64Decoder decoder = new BASE64Decoder();
-        return decoder.decodeBuffer(uri.substring(URI_PREFIX.length()));
+
+        return HexUtils.decodeBase64(uri.substring(URI_PREFIX.length()), true);
     }
 
     /**
