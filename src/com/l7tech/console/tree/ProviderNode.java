@@ -32,10 +32,6 @@ public class ProviderNode extends EntityHeaderNode {
         }
     }
 
-    public boolean isLeaf() {
-        return false;
-    }
-
     /**
      * Returns the children of the reciever as an Enumeration.
      *
