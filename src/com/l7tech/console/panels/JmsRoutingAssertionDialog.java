@@ -34,6 +34,7 @@ import java.util.logging.Logger;
 public class JmsRoutingAssertionDialog extends JDialog {
     static final Logger log = Logger.getLogger(LogonDialog.class.getName());
     private JmsRoutingAssertion assertion;
+    private boolean wasOkButtonPressed = false;
     private JButton cancelButton;
     private JPanel buttonPanel;
     private JButton okButton;
@@ -44,6 +45,7 @@ public class JmsRoutingAssertionDialog extends JDialog {
     private JLabel serviceEndpointName;
     private JPanel mainPanel;
     private JPanel credentialsPanel;
+    private JButton changeButton;
 
     private JRadioButton passwordMethod;
     private JRadioButton samlMethod;
@@ -60,6 +62,23 @@ public class JmsRoutingAssertionDialog extends JDialog {
         assertion = a;
         initComponents();
         initFormData();
+    }
+
+    public void show() {
+        if (isModal() && !isVisible()) {
+            // Automatically run the Change Endpoint dialog
+            SwingUtilities.invokeLater(new Runnable() {
+                public void run() {
+                    runChangeEndpointConnectionWindow();
+                }
+            });
+        }
+        super.show();
+    }
+
+    /** @return true unless the dialog was exited via the OK button. */
+    public boolean isCanceled() {
+        return !wasOkButtonPressed;
     }
 
     /**
@@ -221,15 +240,7 @@ public class JmsRoutingAssertionDialog extends JDialog {
                                                         GridBagConstraints.HORIZONTAL,
                                                         new Insets(0, 0, 0, 0), 0, 0));
 
-        JButton changeButton = new JButton("Change Endpoint");
-        changeButton.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                ChangeEndpointConnectionWindow checw = new ChangeEndpointConnectionWindow();
-                Utilities.centerOnScreen(checw);
-                checw.show();
-            }
-        });
-        serviceEndpointPanel.add(changeButton,
+        serviceEndpointPanel.add(getChangeButton(),
                                  new GridBagConstraints(2, 0, 1, 1, 0.0, 0.0,
                                                         GridBagConstraints.EAST,
                                                         GridBagConstraints.NONE,
@@ -237,6 +248,27 @@ public class JmsRoutingAssertionDialog extends JDialog {
 
 
         return serviceEndpointPanel;
+    }
+
+    private JButton getChangeButton() {
+        if (changeButton == null) {
+            changeButton = new JButton("Change Endpoint");
+            changeButton.addActionListener(new ActionListener() {
+                public void actionPerformed(ActionEvent e) {
+                    runChangeEndpointConnectionWindow();
+                }
+            });
+        }
+        return changeButton;
+    }
+
+    /**
+     * Run the "Change Endpoint" dialog sequence.
+     */
+    private void runChangeEndpointConnectionWindow() {
+        ChangeEndpointConnectionWindow checw = new ChangeEndpointConnectionWindow();
+        Utilities.centerOnScreen(checw);
+        checw.show();
     }
 
     private JPanel getSamlAssertionPanel() {
@@ -342,6 +374,7 @@ public class JmsRoutingAssertionDialog extends JDialog {
                     assertion.setAttachSamlSenderVouches(samlMethod.isSelected());
                     fireEventAssertionChanged(assertion);
                     JmsRoutingAssertionDialog.this.dispose();
+                    wasOkButtonPressed = true;
                 }
             });
         }
@@ -444,7 +477,7 @@ public class JmsRoutingAssertionDialog extends JDialog {
 
             Container p = getContentPane();
             p.setLayout(new GridBagLayout());
-            p.add(new JLabel("Which JMS Connection will providing the JMS Endpoint?"),
+            p.add(new JLabel("Which JMS Connection will be providing the JMS Endpoint?"),
                   new GridBagConstraints(0, 0, 3, 1, 0.0, 0.0,
                                          GridBagConstraints.WEST,
                                          GridBagConstraints.NONE,
