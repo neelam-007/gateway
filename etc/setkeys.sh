@@ -29,21 +29,33 @@ case "`uname`" in
   CYGWIN*) cygwin=true ;;
 esac
 
-KEYSTORE_DIR="$TOMCAT_HOME/kstores"
 KEYTOOL="$JAVA_HOME/bin/keytool"
-ROOT_KEYSTORE_FILE="$KEYSTORE_DIR/ca.ks"
-ROOT_CERT_FILE="$TOMCAT_HOME/kstores/ca.cer"
-SSL_KEYSTORE_FILE="$KEYSTORE_DIR/ssl.ks"
-SSL_SELF_CERT_FILE="$TOMCAT_HOME/kstores/ssl_self.cer"
-SSL_CSR_FILE="$TOMCAT_HOME/kstores/ssl.csr"
+WAR_FILE="$TOMCAT_HOME/webapps/ROOT.war"
 SERVER_XML_FILE="$TOMCAT_HOME/conf/server.xml"
-KEYSTORE_PROPERTIES_FILE="$TOMCAT_HOME/webapps/ROOT/WEB-INF/classes/keystore.properties"
 WEBAPPS_ROOT="$TOMCAT_HOME/webapps/ROOT"
 ROOT_KEY_ALIAS=ssgroot
-SSL_CERT_FILE="$TOMCAT_HOME/kstores/ssl.cer"
-WAR_FILE="$TOMCAT_HOME/webapps/ROOT.war"
+
+
+# -----------------------------------------------------------------------------
+# SET PATHS DEPENDING ON DIRECTORY STRUCTURE
+# -----------------------------------------------------------------------------
+if [ -e "/ssg/etc/conf/keystore.properties" ]; then
+    KEYSTORE_PROPERTIES_FILE=/ssg/etc/conf/keystore.properties
+    KEYSTORE_DIR="/ssg/etc/keys"
+else
+    KEYSTORE_PROPERTIES_FILE="$TOMCAT_HOME/webapps/ROOT/WEB-INF/classes/keystore.properties"
+    KEYSTORE_DIR="$TOMCAT_HOME/kstores"
+fi
+
+ROOT_KEYSTORE_FILE="$KEYSTORE_DIR/ca.ks"
+ROOT_CERT_FILE="$KEYSTORE_DIR/ca.cer"
+SSL_KEYSTORE_FILE="$KEYSTORE_DIR/ssl.ks"
+SSL_SELF_CERT_FILE="$KEYSTORE_DIR/ssl_self.cer"
+SSL_CSR_FILE="$KEYSTORE_DIR/ssl.csr"
+SSL_CERT_FILE="$KEYSTORE_DIR/ssl.cer"
 
 if $cygwin; then
+KEYSTORE_PROPERTIES_FILE=`cygpath --path --windows $KEYSTORE_PROPERTIES_FILE`
 KEYSTORE_DIR=`cygpath --path --windows $KEYSTORE_DIR`
 ROOT_KEYSTORE_FILE=`cygpath --path --windows $ROOT_KEYSTORE_FILE`
 ROOT_CERT_FILE=`cygpath --path --windows $ROOT_CERT_FILE`
@@ -51,7 +63,6 @@ SSL_KEYSTORE_FILE=`cygpath --path --windows $SSL_KEYSTORE_FILE`
 SSL_SELF_CERT_FILE=`cygpath --path --windows $SSL_SELF_CERT_FILE`
 SSL_CSR_FILE=`cygpath --path --windows $SSL_CSR_FILE`
 SERVER_XML_FILE=`cygpath --path --windows $SERVER_XML_FILE`
-KEYSTORE_PROPERTIES_FILE=`cygpath --path --windows $KEYSTORE_PROPERTIES_FILE`
 WEBAPPS_ROOT=`cygpath --path --windows $WEBAPPS_ROOT`
 SSL_CERT_FILE=`cygpath --path --windows $SSL_CERT_FILE`
 WAR_FILE=`cygpath --path --windows $WAR_FILE`
@@ -170,7 +181,6 @@ else
     echo
     exit
 fi
-
 
 # -----------------------------------------------------------------------------
 # REMEMBER THE KEYSTORE PASSWORDS IN THE KEYSTORE.PROPERTIES FILE
