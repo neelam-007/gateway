@@ -6,7 +6,6 @@ import com.l7tech.policy.assertion.composite.CompositeAssertion;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.credential.CredentialSourceAssertion;
 import com.l7tech.policy.assertion.identity.IdentityAssertion;
-import com.l7tech.policy.AllAssertions;
 import org.w3c.dom.Document;
 
 import java.util.ArrayList;
@@ -31,8 +30,8 @@ public class PolicyService {
     protected PolicyService() {
         // populate all possible credentials sources
         allCredentialAssertions = new ArrayList();
-        for (int i = 0; i < AllAssertions.CREDENTIAL_ASSERTIONS.length; i++) {
-            CredentialSourceAssertion assertion = AllAssertions.CREDENTIAL_ASSERTIONS[i];
+        for (int i = 0; i < CredentialSourceAssertion.ALL_CREDENTIAL_ASSERTIONS_TYPES.length; i++) {
+            CredentialSourceAssertion assertion = CredentialSourceAssertion.ALL_CREDENTIAL_ASSERTIONS_TYPES[i];
             allCredentialAssertions.add(assertion);
         }
     }
