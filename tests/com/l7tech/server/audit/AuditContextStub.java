@@ -3,11 +3,10 @@
  *
  * $Id$
  */
-package com.l7tech.server;
+package com.l7tech.server.audit;
 
-import com.l7tech.server.audit.AuditContext;
-import com.l7tech.common.audit.AuditRecord;
 import com.l7tech.common.audit.AuditDetail;
+import com.l7tech.common.audit.AuditRecord;
 
 /**
  * An AuditContext stub implementation. Does absolutely nothing except manage minimal internal state.
