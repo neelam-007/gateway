@@ -8,10 +8,10 @@ import com.ibm.xml.enc.StructureException;
 import com.ibm.xml.enc.type.EncryptedData;
 import com.l7tech.common.security.AesKey;
 import com.l7tech.common.security.JceProvider;
+import com.l7tech.common.util.CertUtils;
 import com.l7tech.common.util.HexUtils;
 import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.util.XmlUtil;
-import com.l7tech.common.util.CertUtils;
 import com.l7tech.common.xml.InvalidDocumentFormatException;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import org.w3c.dom.Document;
@@ -21,13 +21,13 @@ import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 
 import javax.crypto.Cipher;
-import javax.crypto.BadPaddingException;
-import javax.crypto.IllegalBlockSizeException;
-import javax.crypto.NoSuchPaddingException;
 import javax.xml.parsers.ParserConfigurationException;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.security.*;
+import java.security.GeneralSecurityException;
+import java.security.Key;
+import java.security.PrivateKey;
+import java.security.PublicKey;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
 import java.text.DateFormat;
@@ -177,7 +177,8 @@ public class WssProcessorImpl implements WssProcessor {
         }
 
         // remove Security element altogether
-        cntx.releventSecurityHeader.getParentNode().removeChild(cntx.releventSecurityHeader);
+        Element soapHeader = (Element) cntx.releventSecurityHeader.getParentNode();
+        soapHeader.removeChild(cntx.releventSecurityHeader);
 
         // if there were other security headers and one with a special actor set by the agent, we
         // want to change the actor here to set it back to default value
@@ -209,6 +210,11 @@ public class WssProcessorImpl implements WssProcessor {
             logger.info("Unwraping wrapped security header");
             secHeaderDeservingPromotion.removeAttributeNS(currentSoapNamespace, SoapUtil.ACTOR_ATTR_NAME);
         }
+
+        // If our work has left behind an empty SOAP Header, remove it too
+        if (XmlUtil.elementIsEmpty(soapHeader))
+            soapHeader.getParentNode().removeChild(soapHeader);
+
         return produceResult(cntx);
     }
 
