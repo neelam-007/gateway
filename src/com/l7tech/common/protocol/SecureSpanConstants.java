@@ -40,7 +40,7 @@ public class SecureSpanConstants {
      * This is the service that clients (currently just the Agent) can use to obtain a new client certificate.
      * The client must post an encoded PKCS10CertificationRequest to this url, over SSL, and providing
      * a valid username and password using HTTP Basic authentication.  After verifying that the credentials
-     * are correct, the user is permitted to obtain a certificate, and that the CSR is in the correct format
+     * are correct, that the user is permitted to obtain a certificate, and that the CSR is in the correct format
      * (with the proper username), this service will sign the CSR and return the new client certificate in
      * the response.
      */
