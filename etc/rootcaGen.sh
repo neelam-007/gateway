@@ -83,7 +83,7 @@ echo "This value must be equal to the host name that the client uses to reach th
 echo
 echo "PRESS ANY KEY TO CONTINUE"
 read
-$KEYTOOL -genkey -alias tomcat -keystore "$KEYSTORE_FILE_OSPATH" -keyalg RSA -keypass $KEYSTORE_PASSWORD -storepass "$KEYSTORE_PASSWORD"
+$KEYTOOL -genkey -alias ssgroot -keystore "$KEYSTORE_FILE_OSPATH" -keyalg RSA -keypass $KEYSTORE_PASSWORD -storepass "$KEYSTORE_PASSWORD"
 
 # CHECK THAT THIS KEYSTORE WAS SET SUCCESSFULLY
 if [ -e "$KEYSTORE_FILE" ]
