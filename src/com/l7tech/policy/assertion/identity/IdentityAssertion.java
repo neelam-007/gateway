@@ -6,56 +6,84 @@
 
 package com.l7tech.policy.assertion.identity;
 
-import com.l7tech.identity.IdentityProvider;
+import com.l7tech.identity.*;
 import com.l7tech.message.Request;
 import com.l7tech.message.Response;
 import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.credential.PrincipalCredentials;
 import com.l7tech.proxy.datamodel.PendingRequest;
+import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.Entity;
 
 import java.security.Principal;
 
+import org.apache.log4j.Category;
+
 /**
  * @author alex
+ * @version $Revision$
  */
 public abstract class IdentityAssertion extends Assertion {
-    protected IdentityAssertion( IdentityProvider provider ) {
-        _identityProvider = provider;
-    }
-
     protected IdentityAssertion() {
         super();
+    }
+
+    protected IdentityAssertion( long oid ) {
+        _identityProviderOid = oid;
     }
 
     public AssertionStatus checkRequest( Request request, Response response ) throws IdentityAssertionException {
         PrincipalCredentials pc = request.getPrincipalCredentials();
         if ( pc == null ) {
             // No credentials have been found yet
-            if ( request.isAuthenticated() )
-                throw new IllegalStateException( "Request is authenticated but request has no PrincipalCredentials!" );
-            else {
+            if ( request.isAuthenticated() ) {
+                String err = "Request is authenticated but request has no PrincipalCredentials!";
+                _log.error( err );
+                throw new IllegalStateException( err );
+            } else {
                 response.addResult( new AssertionResult( this, request, AssertionStatus.AUTH_REQUIRED ) );
                 response.setAuthenticationMissing( true );
                 return AssertionStatus.AUTH_REQUIRED;
             }
         } else {
+            // A CredentialFinder has already run.
             Principal principal = pc.getPrincipal();
             byte[] credentials = pc.getCredentials();
 
             AssertionStatus status;
             if ( request.isAuthenticated() ) {
+                // Is this possible?
+                _log.warn( "Weird! The request was already authenticated by someone else!" );
                 status = doCheckPrincipal( principal );
             } else {
+                if ( _identityProviderOid == Entity.DEFAULT_OID ) {
+                    String err = "Can't call checkRequest() when no valid identityProviderOid has been set!";
+                    _log.error( err );
+                    throw new IllegalStateException( err );
+                }
+
+                try {
+                    getIdentityProvider();
+                } catch ( FindException fe ) {
+                    String err = "Couldn't find identity provider!";
+                    _log.error( err, fe );
+                    throw new IdentityAssertionException( err, fe );
+                }
+
                 if ( _identityProvider.authenticate( principal, credentials ) ) {
+                    // Authentication succeeded
                     request.setAuthenticated(true);
+                    // Make sure this guy matches our criteria
                     status = doCheckPrincipal( principal );
                 } else {
+                    // Authentication failure
                     status = AssertionStatus.AUTH_FAILED;
                 }
             }
 
             if ( status == AssertionStatus.AUTH_FAILED ) response.setAuthenticationMissing( true );
+
             return status;
         }
     }
@@ -65,15 +93,27 @@ public abstract class IdentityAssertion extends Assertion {
         return AssertionStatus.NOT_APPLICABLE;
     }
 
-    public void setIdentityProvider( IdentityProvider provider ) {
-        _identityProvider = provider;
+    public void setIdentityProviderOid( long provider ) {
+        _identityProviderOid = provider;
     }
 
-    public IdentityProvider getIdentityProvider() {
+    private IdentityProvider getIdentityProvider() throws FindException {
+        if ( _identityProvider == null ) {
+            IdentityProviderConfigManager configManager = new IdProvConfManagerServer();
+            IdentityProviderConfig config = configManager.findByPrimaryKey( _identityProviderOid );
+            _identityProvider = IdentityProviderFactory.makeProvider( config );
+        }
         return _identityProvider;
+    }
+
+    public long getIdentityProviderOid() {
+        return _identityProviderOid;
     }
 
     protected abstract AssertionStatus doCheckPrincipal( Principal p );
 
-    protected IdentityProvider _identityProvider;
+    protected long _identityProviderOid = Entity.DEFAULT_OID;
+
+    protected transient Category _log = Category.getInstance( getClass() );
+    protected transient IdentityProvider _identityProvider;
 }
