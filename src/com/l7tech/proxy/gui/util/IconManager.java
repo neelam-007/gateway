@@ -7,11 +7,11 @@ import java.awt.*;
 import java.net.URL;
 
 /**
- * Created by IntelliJ IDEA.
+ * Provide easy access to the Client Proxy application-specific images.
+ *
  * User: mike
  * Date: May 29, 2003
  * Time: 2:25:29 PM
- * To change this template use Options | File Templates.
  */
 public class IconManager {
     private static final ClassLoader cl = IconManager.class.getClassLoader();
