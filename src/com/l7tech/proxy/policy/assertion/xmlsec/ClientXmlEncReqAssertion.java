@@ -16,6 +16,8 @@ import com.l7tech.policy.assertion.xmlsec.XmlEncReqAssertion;
  * $Id$
  *
  * Encrypts the body of the request
+ *
+ * todo, remove because this functionality has moved to ClientXmlRequestSecurity
  */
 public class ClientXmlEncReqAssertion extends ClientAssertion {
 

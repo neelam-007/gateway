@@ -26,6 +26,8 @@ import java.security.cert.X509Certificate;
  * On the proxy side, this verifies that the Soap Response contains a valid xml d-sig for the entire envelope.
  *
  * @author flascell
+ *
+ * todo, remove because this functionality has moved to ClientXmlResponseSecurity
  */
 public class ClientXmlDsigResAssertion extends ClientAssertion {
 

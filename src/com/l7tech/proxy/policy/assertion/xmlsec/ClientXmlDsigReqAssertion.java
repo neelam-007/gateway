@@ -35,6 +35,8 @@ import java.io.IOException;
  * as credentials.
  *
  * @author flascell
+ *
+ * todo, remove because this functionality has moved to ClientXmlRequestSecurity
  */
 public class ClientXmlDsigReqAssertion extends ClientAssertion {
 
