@@ -61,6 +61,9 @@ public class HttpRoutingAssertionDialog extends JDialog {
     private JLabel passwordLabel;
     private JLabel realmLabel;
 
+    private JCheckBox promoteActorCheck;
+    private JComboBox promoteActorCombo;
+
     /**
      * Creates new form ServicePanel
      */
@@ -178,18 +181,27 @@ public class HttpRoutingAssertionDialog extends JDialog {
         gridBagConstraints.insets = new Insets(0, 0, 20, 10);
         credentialsPanel.add(getSamlAssertionPanel(), gridBagConstraints);
 
- /*       gridBagConstraints = new GridBagConstraints();
-        gridBagConstraints.gridx = 0;
-        gridBagConstraints.gridy = 2;
-        gridBagConstraints.fill = GridBagConstraints.VERTICAL;
-        credentialsPanel.add(Box.createVerticalGlue(), gridBagConstraints);
-
-        gridBagConstraints.gridx = 2;
-        gridBagConstraints.gridy = 2;
-        gridBagConstraints.fill = GridBagConstraints.VERTICAL;
-        credentialsPanel.add(Box.createVerticalGlue(), gridBagConstraints);*/
-
         mainPanel.add(credentialsPanel);
+
+        // add xml security actor promotion controls
+        JPanel actorPromotionPanel = new JPanel();
+        actorPromotionPanel.setBorder(BorderFactory.createTitledBorder("Downstream XML Security Actor"));
+        actorPromotionPanel.setLayout(new BorderLayout());
+        promoteActorCheck = new JCheckBox("Promote XML Security Actor");
+        promoteActorCombo = new JComboBox();
+        promoteActorCombo.setEditable(true);
+        actorPromotionPanel.add(promoteActorCheck, BorderLayout.NORTH);
+        actorPromotionPanel.add(promoteActorCombo, BorderLayout.SOUTH);
+        promoteActorCheck.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                if (promoteActorCheck.isSelected()) {
+                    promoteActorCombo.setEnabled(true);
+                } else {
+                    promoteActorCombo.setEnabled(false);
+                }
+            }
+        });
+        mainPanel.add(actorPromotionPanel);
 
         // Add buttonPanel
         mainPanel.add(getButtonPanel());
@@ -209,6 +221,8 @@ public class HttpRoutingAssertionDialog extends JDialog {
         try {
             if (!service.getPublishedService().isSoap()) {
                 samlMethod.setEnabled(false);
+                promoteActorCheck.setEnabled(false);
+                promoteActorCombo.setEnabled(false);
             }
         } catch (FindException e) {
             log.log(Level.WARNING, "cannot get corresponding service", e);
@@ -557,5 +571,10 @@ public class HttpRoutingAssertionDialog extends JDialog {
                 passwordMethod.setSelected(!saml);
             }
         });
+
+        // read actor promotion information
+        // todo
+        promoteActorCheck.setSelected(false);
+        promoteActorCombo.setEnabled(false);
     }
 }
