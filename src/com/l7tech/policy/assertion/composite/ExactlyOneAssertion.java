@@ -17,6 +17,7 @@ import com.l7tech.proxy.datamodel.PendingRequest;
 import java.util.Iterator;
 import java.util.List;
 import java.io.Serializable;
+import java.io.IOException;
 
 /**
  * Asserts that one and only one child assertion returns a true value.
@@ -39,7 +40,7 @@ public class ExactlyOneAssertion extends CompositeAssertion implements Serializa
         super( parent, children );
     }
 
-    public AssertionStatus checkRequest(Request request, Response response) throws PolicyAssertionException {
+    public AssertionStatus checkRequest(Request request, Response response) throws IOException, PolicyAssertionException {
         mustHaveChildren();
         Iterator kids = children();
         Assertion child;
