@@ -14,15 +14,20 @@ import java.util.Iterator;
  */
 public class MultipartUtil {
 
-    static public String addModifiedSoapPart(String modifiedSoapEnvelope, Message.Part part, String boundary) throws IOException {
-        StringBuffer sb = new StringBuffer();
-        sb.append(XmlUtil.MULTIPART_BOUNDARY_PREFIX + boundary + "\n");
+    static public void addModifiedSoapPart(StringBuffer sbuf, String modifiedSoapEnvelope, Message.Part part, String boundary) {
+
+        if(sbuf == null) throw new IllegalArgumentException("The StringBuffer is NULL");
+        if(modifiedSoapEnvelope == null) throw new IllegalArgumentException("The modified SOAP envelope is NULL");
+        if(part == null) throw new IllegalArgumentException("The SOAP part is NULL");
+        if(boundary == null) throw new IllegalArgumentException("The StringBuffer is NULL");
+
+        sbuf.append(XmlUtil.MULTIPART_BOUNDARY_PREFIX + boundary + "\n");
         Map headerMap = part.getHeaders();
         Set headerKeys = headerMap.keySet();
         Iterator headerItr = headerKeys.iterator();
         while(headerItr.hasNext()) {
             Message.HeaderValue headerValue = (Message.HeaderValue) headerMap.get(headerItr.next());
-            sb.append(headerValue.getName()).append(":").append(headerValue.getValue());
+            sbuf.append(headerValue.getName()).append(":").append(headerValue.getValue());
 
             // append parameters of the header
             Map parameters = headerValue.getParams();
@@ -30,21 +35,20 @@ public class MultipartUtil {
             Iterator paramItr = paramKeys.iterator();
             while (paramItr.hasNext()) {
                 String paramName = (String) paramItr.next();
-                sb.append("; ").append(paramName).append("=").append(parameters.get(paramName));
+                sbuf.append("; ").append(paramName).append("=").append(parameters.get(paramName));
             }
-            sb.append("\n");
+            sbuf.append("\n");
         }
-        sb.append(modifiedSoapEnvelope).append("\n");
-        sb.append(XmlUtil.MULTIPART_BOUNDARY_PREFIX + boundary + "\n");
-        return sb.toString();
+        sbuf.append("\n").append(modifiedSoapEnvelope).append("\n");
+        sbuf.append(XmlUtil.MULTIPART_BOUNDARY_PREFIX + boundary + "\n");
     }
 
 
-    static public String addMultiparts(String requestXml, Map multiparts, String boundary) throws IOException {
-        StringBuffer sb = new StringBuffer();
+    static public void addMultiparts(StringBuffer sbuf, Map multiparts, String boundary) {
 
-        // append the SOAP part
-        sb.append(requestXml);
+        if(sbuf == null) throw new IllegalArgumentException("The StringBuffer is NULL");
+        if(multiparts == null) throw new IllegalArgumentException("The multiparts map is NULL");
+        if(boundary == null) throw new IllegalArgumentException("The multiparts boundary is NULL");
 
         // add attachments
         Set attachmentKeys = multiparts.keySet();
@@ -59,7 +63,7 @@ public class MultipartUtil {
             while (headerItr.hasNext()) {
                 String headerName = (String) headerItr.next();
                 Message.HeaderValue hv = (Message.HeaderValue) headers.get(headerName);
-                sb.append(hv.getName()).append(":").append(hv.getValue());
+                sbuf.append(hv.getName()).append(":").append(hv.getValue());
 
                 // append parameters of the header
                 Map parameters = hv.getParams();
@@ -67,14 +71,12 @@ public class MultipartUtil {
                 Iterator paramItr = paramKeys.iterator();
                 while (paramItr.hasNext()) {
                     String paramName = (String) paramItr.next();
-                    sb.append("; ").append(paramName).append("=").append(parameters.get(paramName)).append(";");
+                    sbuf.append("; ").append(paramName).append("=").append(parameters.get(paramName)).append(";");
                 }
-                sb.append("\n");
+                sbuf.append("\n");
             }
-            sb.append("\n" + part.getContent());
-            sb.append("\n" + XmlUtil.MULTIPART_BOUNDARY_PREFIX + boundary + "\n");
+            sbuf.append("\n" + part.getContent());
+            sbuf.append("\n" + XmlUtil.MULTIPART_BOUNDARY_PREFIX + boundary + "\n");
         }
-
-        return sb.toString();
     }
 }

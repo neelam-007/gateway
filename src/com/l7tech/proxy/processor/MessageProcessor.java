@@ -15,7 +15,6 @@ import com.l7tech.common.security.xml.decorator.WssDecoratorImpl;
 import com.l7tech.common.security.xml.processor.*;
 import com.l7tech.common.util.*;
 import com.l7tech.common.xml.InvalidDocumentFormatException;
-import com.l7tech.message.Message;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.SslAssertion;
@@ -47,7 +46,6 @@ import java.security.*;
 import java.security.cert.CertificateException;
 import java.util.Iterator;
 import java.util.Map;
-import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
@@ -525,34 +523,19 @@ public class MessageProcessor {
                         "; " + XmlUtil.MULTIPART_BOUNDARY + "=" + req.getMultipartReader().getMultipartBoundary());
 
                 StringBuffer sb = new StringBuffer();
-                sb.append(XmlUtil.MULTIPART_BOUNDARY_PREFIX + req.getMultipartReader().getMultipartBoundary() + "\n");
 
-                Message.Part soapPart = req.getMultipartReader().getSoapPart();
-                Map headerMap = soapPart.getHeaders();
-                Set headerKeys = headerMap.keySet();
-                Iterator headerItr = headerKeys.iterator();
-                while(headerItr.hasNext()) {
-                    Message.HeaderValue headerValue = (Message.HeaderValue) headerMap.get(headerItr.next());
-                    sb.append(headerValue.getName()).append(":").append(headerValue.getValue());
+                // add modified SOAP part
+                MultipartUtil.addModifiedSoapPart(sb,
+                        postBody,
+                        req.getMultipartReader().getSoapPart(),
+                        req.getMultipartReader().getMultipartBoundary());
 
-                    // append parameters of the header
-                    Map parameters = headerValue.getParams();
-                    Set paramKeys = parameters.keySet();
-                    Iterator paramItr = paramKeys.iterator();
-                    while (paramItr.hasNext()) {
-                        String paramName = (String) paramItr.next();
-                        sb.append("; ").append(paramName).append("=").append(parameters.get(paramName));
-                    }
-                    sb.append("\n");
-                }
-                // an blank line is required between the header block and the body block
-                sb.append("\n");
-                sb.append(postBody).append("\n");
-                sb.append(XmlUtil.MULTIPART_BOUNDARY_PREFIX + req.getMultipartReader().getMultipartBoundary() + "\n");
+                // add all attachments
+                MultipartUtil.addMultiparts(sb,
+                        req.getMultipartReader().getMessageAttachments(),
+                        req.getMultipartReader().getMultipartBoundary());
 
-                String multipartBody = MultipartUtil.addMultiparts(sb.toString(), req.getMultipartReader().getMessageAttachments(), req.getMultipartReader().getMultipartBoundary());
-
-                postMethod.setRequestBody(multipartBody);
+                postMethod.setRequestBody(sb.toString());
             } else {
                 postMethod.addRequestHeader("Content-Type", "text/xml");
                 postMethod.setRequestBody(postBody);
