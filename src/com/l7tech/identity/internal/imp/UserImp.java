@@ -14,6 +14,14 @@ import com.l7tech.objectmodel.imp.EntityImp;
  * @author alex
  */
 public class UserImp extends EntityImp implements User {
+    public String getName() {
+        return _login;
+    }
+
+    public void setName( String name ) {
+        _login = name;
+    }
+
     public long getProviderOid() {
         return _providerOid;
     }

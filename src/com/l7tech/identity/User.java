@@ -3,10 +3,11 @@ package com.l7tech.identity;
 import com.l7tech.identity.internal.Address;
 import com.l7tech.identity.internal.Organization;
 import com.l7tech.objectmodel.Entity;
+import com.l7tech.objectmodel.NamedEntity;
 
 import java.util.Collection;
 
-public interface User extends Entity {
+public interface User extends NamedEntity {
     long getProviderOid();
     String getLogin();
     String getPassword();
