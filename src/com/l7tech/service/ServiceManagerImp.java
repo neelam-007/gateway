@@ -20,6 +20,9 @@ import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import cirrus.hibernate.Session;
+import cirrus.hibernate.HibernateException;
+
 /**
  * Manages PublishedService instances.  Note that this object has state, so it should be effectively a Singleton--only get one from the Locator!
  *
@@ -82,7 +85,7 @@ public class ServiceManagerImp extends HibernateEntityManager implements Service
         return set;
     }
 
-    private void validate( PublishedService candidateService ) throws WSDLException, DuplicateObjectException {
+    private void validate( PublishedService candidateService ) throws WSDLException, DuplicateObjectException{
         // Make sure WSDL is valid
         candidateService.parsedWsdl();
         ServiceResolver resolver;
@@ -189,9 +192,29 @@ public class ServiceManagerImp extends HibernateEntityManager implements Service
         }
     }
 
+    public int getCurrentPolicyVersion(long policyId) throws FindException {
+        HibernatePersistenceContext context = null;
+        try {
+            context = (HibernatePersistenceContext)getContext();
+            Session s = context.getSession();
+            List results = s.find( getFieldQuery(policyId, F_VERSION) );
+            Integer i = (Integer)results.get(0);
+            int res = i.intValue();
+            return res;
+        } catch (HibernateException e) {
+            throw new FindException("cannot get version", e);
+        } catch (SQLException e) {
+            throw new FindException("cannot get version", e);
+        }
+    }
+
+    // todo, throw version exception directly
     public void update(PublishedService service) throws UpdateException {
         try {
+            // check if it's valid
             validate( service );
+
+            // update
             _manager.update( getContext(), service );
             putService( service );
             fireUpdated( service );
@@ -256,10 +279,32 @@ public class ServiceManagerImp extends HibernateEntityManager implements Service
         _serviceListeners.add( listener );
     }
 
+    private String getFieldQuery(long oid, String getfield ) {
+        String alias = getTableName();
+        StringBuffer sqlBuffer = new StringBuffer( "SELECT " );
+        sqlBuffer.append( alias );
+        sqlBuffer.append( "." );
+        sqlBuffer.append( getfield );
+        sqlBuffer.append( " FROM " );
+        sqlBuffer.append( alias );
+        sqlBuffer.append( " in class " );
+        sqlBuffer.append( getImpClass().getName() );
+        sqlBuffer.append( " WHERE " );
+        sqlBuffer.append( alias );
+        sqlBuffer.append( "." );
+        sqlBuffer.append( F_OID );
+        sqlBuffer.append( " = " );
+        sqlBuffer.append( Long.toString(oid) );
+        return sqlBuffer.toString();
+    }
+
     private static final Logger _log = LogManager.getInstance().getSystemLogger();
 
     protected SortedSet _resolvers;
 
     protected transient Map _oidToServiceMap = new HashMap();
     protected transient List _serviceListeners = new ArrayList();
+
+    private static final String F_VERSION = "version";
+    private static final String F_OID = "oid";
 }

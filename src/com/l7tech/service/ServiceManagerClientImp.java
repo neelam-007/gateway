@@ -93,9 +93,15 @@ public class ServiceManagerClientImp implements ServiceManager {
         }
     }
 
+    public int getCurrentPolicyVersion(long policyId) throws FindException {
+        throw new FindException("not implemented");
+    }
+
     public void update(PublishedService service) throws UpdateException {
         try {
             getStub().savePublishedService(service);
+            // if the update was successful, must increment version count
+            service.setVersion(service.getVersion()+1);
         } catch (RemoteException e) {
             throw new UpdateException(e.getMessage(), e);
         }

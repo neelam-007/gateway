@@ -19,7 +19,7 @@ public interface ServiceManager extends EntityManager {
      * @return
      * @throws FindException
      */
-    public PublishedService findByPrimaryKey( long oid ) throws FindException;
+    PublishedService findByPrimaryKey( long oid ) throws FindException;
 
     /**
      * Get what the server sees at that url.
@@ -28,7 +28,7 @@ public interface ServiceManager extends EntityManager {
      * @return the payload returned at that url (hopefully)
      * @throws java.rmi.RemoteException
      */
-    public String resolveWsdlTarget(String url) throws java.rmi.RemoteException;
+    String resolveWsdlTarget(String url) throws java.rmi.RemoteException;
 
     /**
      * saves a published service along with it's policy assertions
@@ -36,7 +36,9 @@ public interface ServiceManager extends EntityManager {
      * @return
      * @throws SaveException
      */
-    public long save( PublishedService service ) throws SaveException;
+    long save( PublishedService service ) throws SaveException;
+
+    public int getCurrentPolicyVersion(long policyId) throws FindException; 
 
     /**
      * updates a policy service. call this instead of save if the service
@@ -47,14 +49,14 @@ public interface ServiceManager extends EntityManager {
      * @param service
      * @throws UpdateException
      */
-    public void update( PublishedService service ) throws UpdateException;
+    void update( PublishedService service ) throws UpdateException;
 
     /**
      * deletes the service
      * @param service
      * @throws DeleteException
      */
-    public void delete( PublishedService service ) throws DeleteException;
+    void delete( PublishedService service ) throws DeleteException;
 
     /**
      * called at run time to discover which service is being invoked based
@@ -62,10 +64,7 @@ public interface ServiceManager extends EntityManager {
      * @param request
      * @return
      */
-    public PublishedService resolveService( Request request ) throws ServiceResolutionException;
+    PublishedService resolveService( Request request ) throws ServiceResolutionException;
 
-    public void addServiceListener( ServiceListener listener );
-
-    // NOTE:
-    // add methods as they become necessary
+    void addServiceListener( ServiceListener listener );
 }
