@@ -237,6 +237,22 @@ public class IdProviderReference extends ExternalReference {
                 if (!mapEquals((Map)val1, (Map)val2)) return false;
             } else if (val1 instanceof Object[] && val2 instanceof Object[]) {
                 if (!Arrays.equals((Object[])val1, (Object[])val2)) return false;
+            } else if (val1 instanceof long[] && val2 instanceof long[]) {
+                if (!Arrays.equals((long[])val1, (long[])val2)) return false;
+            } else if (val1 instanceof boolean[] && val2 instanceof boolean[]) {
+                if (!Arrays.equals((boolean[])val1, (boolean[])val2)) return false;
+            } else if (val1 instanceof byte[] && val2 instanceof byte[]) {
+                if (!Arrays.equals((byte[])val1, (byte[])val2)) return false;
+            } else if (val1 instanceof char[] && val2 instanceof char[]) {
+                if (!Arrays.equals((char[])val1, (char[])val2)) return false;
+            } else if (val1 instanceof double[] && val2 instanceof double[]) {
+                if (!Arrays.equals((double[])val1, (double[])val2)) return false;
+            } else if (val1 instanceof float[] && val2 instanceof float[]) {
+                if (!Arrays.equals((float[])val1, (float[])val2)) return false;
+            } else if (val1 instanceof int[] && val2 instanceof int[]) {
+                if (!Arrays.equals((int[])val1, (int[])val2)) return false;
+            } else if (val1 instanceof short[] && val2 instanceof short[]) {
+                if (!Arrays.equals((short[])val1, (short[])val2)) return false;
             } else if (!val1.equals(val2)) {
                 logger.info("Mismatch on properties " + key + "" + val1 + "" + val2);
                 return false;
