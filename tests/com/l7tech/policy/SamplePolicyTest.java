@@ -154,10 +154,10 @@ public class SamplePolicyTest extends TestCase {
         }
     }
 
-    public void disabledtestCustomAssertion() throws Exception {
+    public void testCustomAssertion() throws Exception {
         CustomAssertion customAssertion = new CustomAssertion();
         OneBean oneBean = new OneBean();
-        oneBean.setValue("aaaaaaaa");
+        oneBean.setValue("bu!");
         customAssertion.setCustomAssertionBean(oneBean);
         Assertion testin = new AllAssertion(Arrays.asList(new Assertion[] {
             new HttpBasic(),
