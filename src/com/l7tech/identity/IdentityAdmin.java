@@ -56,7 +56,7 @@ public interface IdentityAdmin  extends Remote {
     void deleteGroup(long idProvCfgId, String groupId) throws RemoteException, DeleteException;
 
     String saveGroup(long idProvCfgId, Group group, Set userHeaders )
-                                throws RemoteException, SaveException, UpdateException;
+      throws RemoteException, SaveException, UpdateException, ObjectNotFoundException;
 
     String getUserCert(User user) throws RemoteException, FindException, CertificateEncodingException;
 

@@ -605,11 +605,11 @@ public abstract class AbstractLdapGroupManagerServer implements GroupManager {
         throw new SaveException( UNSUPPORTED );
     }
 
-    public void update(Group group) throws UpdateException {
+    public void update(Group group) throws UpdateException, ObjectNotFoundException {
         throw new UpdateException( UNSUPPORTED );
     }
 
-    public void update(Group group, Set userHeaders) throws UpdateException {
+    public void update(Group group, Set userHeaders) throws UpdateException, ObjectNotFoundException {
         throw new UpdateException( UNSUPPORTED );
     }
 

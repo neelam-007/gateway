@@ -50,14 +50,14 @@ public class GroupManagerClient extends GroupManagerAdapter implements GroupMana
     public String save(Group group, Set userHeaders ) throws SaveException {
         try {
             return manager.getStub().saveGroup(config.getOid(), group, userHeaders);
-        } catch (UpdateException e) {
+        } catch (ObjectModelException e) {
             throw new SaveException(e.getMessage(), e);
         } catch (RemoteException e) {
             throw new SaveException(e.getMessage(), e);
         }
     }
 
-    public void update(Group group, Set userHeaders) throws UpdateException {
+    public void update(Group group, Set userHeaders) throws UpdateException, ObjectNotFoundException{
         try {
             manager.getStub().saveGroup(config.getOid(), group, userHeaders);
         } catch (SaveException e) {

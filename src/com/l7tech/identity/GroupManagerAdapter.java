@@ -6,10 +6,7 @@
 
 package com.l7tech.identity;
 
-import com.l7tech.objectmodel.DeleteException;
-import com.l7tech.objectmodel.FindException;
-import com.l7tech.objectmodel.SaveException;
-import com.l7tech.objectmodel.UpdateException;
+import com.l7tech.objectmodel.*;
 
 import java.util.Collection;
 import java.util.Set;
@@ -39,7 +36,7 @@ public class GroupManagerAdapter implements GroupManager {
         throw new UnsupportedOperationException();
     }
 
-    public void update(Group group) throws UpdateException {
+    public void update(Group group) throws UpdateException, ObjectNotFoundException {
         throw new UnsupportedOperationException();
     }
 
@@ -47,7 +44,7 @@ public class GroupManagerAdapter implements GroupManager {
         throw new UnsupportedOperationException();
     }
 
-    public void update(Group group, Set userHeaders) throws UpdateException {
+    public void update(Group group, Set userHeaders) throws UpdateException, ObjectNotFoundException {
         throw new UnsupportedOperationException();
     }
 

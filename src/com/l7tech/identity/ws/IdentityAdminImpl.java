@@ -254,7 +254,7 @@ public class IdentityAdminImpl implements IdentityAdmin {
     }
 
     public String saveGroup(long identityProviderConfigId, Group group, Set userHeaders )
-                                throws RemoteException, SaveException, UpdateException {
+      throws RemoteException, SaveException, UpdateException, ObjectNotFoundException {
         beginTransaction();
         try {
             IdentityProviderConfig cfg = getIdProvCfgMan().findByPrimaryKey(identityProviderConfigId);

@@ -196,11 +196,14 @@ public class InternalUserManagerServer extends HibernateEntityManager implements
      * checks if the user is the last standing admin account, throws if so
      * @param user existing user
      */
-    public void update( User user, Set groupHeaders ) throws UpdateException , ObjectNotFoundException{
+    public void update( User user, Set groupHeaders ) throws UpdateException , ObjectNotFoundException {
         InternalUser imp = cast( user );
 
         try {
-            InternalUser originalUser = (InternalUser)findByPrimaryKey( user.getUniqueIdentifier() );
+            InternalUser originalUser = (InternalUser)findByPrimaryKey(user.getUniqueIdentifier());
+            if (originalUser == null) {
+                throw new ObjectNotFoundException("User "+user.getName());
+            }
 
             // check for version conflict
             if (originalUser.getVersion() != imp.getVersion()) {

@@ -164,11 +164,11 @@ public class InternalGroupManagerServer extends HibernateEntityManager implement
         return imp;
     }
 
-    public void update( Group group ) throws UpdateException {
+    public void update( Group group ) throws UpdateException, ObjectNotFoundException {
         update( group, null );
     }
 
-    public void update(Group group, Set userHeaders) throws UpdateException {
+    public void update(Group group, Set userHeaders) throws UpdateException, ObjectNotFoundException {
         InternalGroup imp = cast( group );
 
         try {

@@ -13,9 +13,9 @@ public interface GroupManager extends EntityManager {
     void delete( Group group ) throws DeleteException;
     void delete( String identifier ) throws DeleteException;
     String save( Group group ) throws SaveException;
-    void update( Group group ) throws UpdateException;
+    void update( Group group ) throws UpdateException, ObjectNotFoundException;
     String save( Group group, Set userHeaders ) throws SaveException;
-    void update( Group group, Set userHeaders ) throws UpdateException;
+    void update( Group group, Set userHeaders ) throws UpdateException, ObjectNotFoundException;
 
     /**
      * Test whether a given User is a member of the specified Group.

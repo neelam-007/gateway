@@ -113,7 +113,8 @@ public class IdentityAdminImpl extends RemoteService implements IdentityAdmin {
         delegate.deleteGroup(idProvCfgId, groupId);
     }
 
-    public String saveGroup(long idProvCfgId, Group group, Set userHeaders ) throws RemoteException, SaveException, UpdateException {
+    public String saveGroup(long idProvCfgId, Group group, Set userHeaders )
+      throws RemoteException, SaveException, UpdateException, ObjectNotFoundException {
         return delegate.saveGroup(idProvCfgId, group, userHeaders );
     }
 

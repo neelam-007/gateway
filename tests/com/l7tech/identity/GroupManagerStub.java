@@ -53,7 +53,7 @@ public class GroupManagerStub extends GroupManagerAdapter {
         return imp.getUniqueIdentifier();
     }
 
-    public void update(Group group) throws UpdateException {
+    public void update(Group group) throws UpdateException, ObjectNotFoundException {
         InternalGroup imp = (InternalGroup)group;
         final String uniqueIdentifier = imp.getUniqueIdentifier();
         if (dataStore.getGroups().get(uniqueIdentifier) == null) {
