@@ -221,6 +221,7 @@ public class ServiceCache {
             // with this.
             logger.log(Level.SEVERE, "The service whose OID is " + service.getOid() + " cannot be read properly " +
                                      "and will be discarded from the service cache.", e);
+            service.setDisabled(true);
         }
     }
 
