@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<deployment xmlns="http://xml.apache.org/axis/wsdd/" xmlns:java="http://xml.apache.org/axis/wsdd/providers/java">
+ <globalConfiguration>
+  <parameter name="adminPassword" value="admin"/>
+  <parameter name="attachments.Directory" value="C:\Program Files\Apache Group\Tomcat 4.1\webapps\UneasyRooster\WEB-INF\attachments"/>
+  <parameter name="attachments.implementation" value="org.apache.axis.attachments.AttachmentsImpl"/>
+  <parameter name="sendXsiTypes" value="true"/>
+  <parameter name="sendMultiRefs" value="true"/>
+  <parameter name="sendXMLDeclaration" value="true"/>
+  <parameter name="axis.sendMinimizedElements" value="true"/>
+  <requestFlow>
+   <handler type="java:org.apache.axis.handlers.JWSHandler">
+    <parameter name="scope" value="session"/>
+   </handler>
+   <handler type="java:org.apache.axis.handlers.JWSHandler">
+    <parameter name="scope" value="request"/>
+    <parameter name="extension" value=".jwr"/>
+   </handler>
+  </requestFlow>
+ </globalConfiguration>
+ <handler name="LocalResponder" type="java:org.apache.axis.transport.local.LocalResponder"/>
+ <handler name="URLMapper" type="java:org.apache.axis.handlers.http.URLMapper"/>
+ <handler name="Authenticate" type="java:org.apache.axis.handlers.SimpleAuthenticationHandler"/>
+ <service name="AdminService" provider="java:MSG">
+  <parameter name="allowedMethods" value="AdminService"/>
+  <parameter name="enableRemoteAdmin" value="false"/>
+  <parameter name="className" value="org.apache.axis.utils.Admin"/>
+  <namespace>http://xml.apache.org/axis/wsdd/</namespace>
+ </service>
+ <service name="Version" provider="java:RPC">
+  <parameter name="allowedMethods" value="getVersion"/>
+  <parameter name="className" value="org.apache.axis.Version"/>
+ </service>
+ <service name="identities" provider="java:RPC">
+  <operation name="listProviders" qname="ns1:listProviders" returnQName="listProvidersReturn" returnType="ns1:ArrayOf_tns1_ListResultEntry" xmlns:ns1="http://www.layer7-tech.com/adminservice/identity"/>
+  <operation name="listUsersInProvider" qname="ns2:listUsersInProvider" returnQName="listUsersInProviderReturn" returnType="ns2:ArrayOf_tns1_ListResultEntry" xmlns:ns2="http://www.layer7-tech.com/adminservice/identity">
+   <parameter name="providerId" type="xsd:long" xmlns:xsd="http://www.w3.org/2001/XMLSchema"/>
+  </operation>
+  <operation name="listGroupsInProvider" qname="ns3:listGroupsInProvider" returnQName="listGroupsInProviderReturn" returnType="ns3:ArrayOf_tns1_ListResultEntry" xmlns:ns3="http://www.layer7-tech.com/adminservice/identity">
+   <parameter name="providerId" type="xsd:long" xmlns:xsd="http://www.w3.org/2001/XMLSchema"/>
+  </operation>
+  <parameter name="allowedMethods" value="listGroupsInProvider listProviders listUsersInProvider"/>
+  <parameter name="wsdlPortType" value="IdentityWS"/>
+  <parameter name="scope" value="Application"/>
+  <parameter name="className" value="com.l7tech.adminservice.identities.IdentityAdminSoapBindingImpl"/>
+  <parameter name="wsdlServicePort" value="identities"/>
+  <parameter name="wsdlTargetNamespace" value="http://www.layer7-tech.com/adminservice/identity"/>
+  <parameter name="wsdlServiceElement" value="IdentityWSService"/>
+  <typeMapping deserializer="org.apache.axis.encoding.ser.BeanDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" qname="ns4:ListResultEntry" serializer="org.apache.axis.encoding.ser.BeanSerializerFactory" type="java:com.l7tech.adminservice.ListResultEntry" xmlns:ns4="http://adminservice.l7tech.com"/>
+  <typeMapping deserializer="org.apache.axis.encoding.ser.ArrayDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" qname="ns5:ArrayOf_tns1_ListResultEntry" serializer="org.apache.axis.encoding.ser.ArraySerializerFactory" type="java:com.l7tech.adminservice.ListResultEntry[]" xmlns:ns5="http://www.layer7-tech.com/adminservice/identity"/>
+ </service>
+ <transport name="http">
+  <requestFlow>
+   <handler type="URLMapper"/>
+   <handler type="java:org.apache.axis.handlers.http.HTTPAuthHandler"/>
+  </requestFlow>
+ </transport>
+ <transport name="local">
+  <responseFlow>
+   <handler type="LocalResponder"/>
+  </responseFlow>
+ </transport>
+</deployment>
