@@ -1,24 +1,20 @@
 package com.l7tech.console.panels;
 
-import com.l7tech.service.PublishedService;
+import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.console.action.Actions;
 import com.l7tech.console.tree.policy.IdentityPath;
-import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.policy.assertion.Assertion;
-import com.l7tech.policy.assertion.SslAssertion;
 import com.l7tech.policy.assertion.RoutingAssertion;
+import com.l7tech.policy.assertion.SslAssertion;
 import com.l7tech.policy.assertion.credential.CredentialSourceAssertion;
+import com.l7tech.service.PublishedService;
 
 import javax.swing.*;
-import java.security.Principal;
 import java.awt.*;
-import java.awt.event.ActionListener;
 import java.awt.event.ActionEvent;
-import java.io.IOException;
-import java.util.Set;
-import java.util.Iterator;
-import java.util.Collection;
-import java.util.ArrayList;
+import java.awt.event.ActionListener;
+import java.security.Principal;
+import java.util.*;
 
 /**
  * The <code>IdentityPolicyPanel</code> is the policy panel that allows
@@ -43,10 +39,10 @@ public class IdentityPolicyPanel extends JPanel {
     private JTextField userRouteField;
     private JTextField passwordRouteField;
     private JTextField realmRouteField;
-    
+
     private Principal principal;
     private IdentityPath principalAssertionPaths;
-    private Set allPaths;
+    private Set otherPaths;
     private Assertion rootAssertion;
     private PublishedService service;
 
@@ -88,15 +84,15 @@ public class IdentityPolicyPanel extends JPanel {
         authMethodComboBox.setModel(Components.getCredentialsLocationComboBoxModel());
 
         principalAssertionPaths = IdentityPath.forIdentity(principal, rootAssertion);
-        allPaths = IdentityPath.getPaths(rootAssertion);
+        otherPaths = IdentityPath.getPaths(rootAssertion);
         Collection remove = new ArrayList();
-        for (Iterator iterator = allPaths.iterator(); iterator.hasNext();) {
+        for (Iterator iterator = otherPaths.iterator(); iterator.hasNext();) {
             IdentityPath ip = (IdentityPath)iterator.next();
             if (ip.getPrincipal().equals(principalAssertionPaths.getPrincipal())) {
                 remove.add(ip);
             }
         }
-        allPaths.removeAll(remove);
+        otherPaths.removeAll(remove);
         sslCheckBox.setEnabled(isSslAssertionModifiable());
         final boolean authMethodModifiable = isAuthMethodModifiable();
         authMethodComboBox.setEnabled(authMethodModifiable);
@@ -111,51 +107,65 @@ public class IdentityPolicyPanel extends JPanel {
     }
 
     private boolean isSslAssertionModifiable() {
-        for (Iterator iterator = allPaths.iterator(); iterator.hasNext();) {
+        Set othersSslAssertions = new HashSet();
+
+        for (Iterator iterator = otherPaths.iterator(); iterator.hasNext();) {
             IdentityPath ip = (IdentityPath)iterator.next();
-            for (Iterator iterator1 = ip.getPaths().iterator(); iterator1.hasNext();) {
-                Assertion[] assertions = (Assertion[])iterator1.next();
-                for (int i = 0; i < assertions.length; i++) {
-                    Assertion assertion = assertions[i];
-                    if (assertion instanceof SslAssertion) {
-                        return false;
-                    }
-                }
+            othersSslAssertions.addAll(ip.getEqualAssertions(SslAssertion.class));
+        }
+        if (othersSslAssertions.isEmpty()) {
+            return true;
+        }
+        if (othersSslAssertions.isEmpty()) return true;
+
+        Set principalSslAssertions = principalAssertionPaths.getEqualAssertions(SslAssertion.class);
+        for (Iterator iterator = principalSslAssertions.iterator(); iterator.hasNext();) {
+            Assertion assertion = (Assertion)iterator.next();
+            if (othersSslAssertions.contains(assertion)) {
+                return false;
             }
         }
+
         return true;
     }
 
     private boolean isAuthMethodModifiable() {
-        for (Iterator iterator = allPaths.iterator(); iterator.hasNext();) {
+        Set othersCredAssertions = new HashSet();
+        for (Iterator iterator = otherPaths.iterator(); iterator.hasNext();) {
             IdentityPath ip = (IdentityPath)iterator.next();
-            for (Iterator iterator1 = ip.getPaths().iterator(); iterator1.hasNext();) {
-                Assertion[] assertions = (Assertion[])iterator1.next();
-                for (int i = 0; i < assertions.length; i++) {
-                    Assertion assertion = assertions[i];
-                    if (assertion instanceof CredentialSourceAssertion) {
-                        return false;
-                    }
-                }
+            othersCredAssertions.addAll(ip.getAssignableAssertions(CredentialSourceAssertion.class));
+        }
+        if (othersCredAssertions.isEmpty()) return true;
+
+        Set principalCredAssertions = principalAssertionPaths.getAssignableAssertions(CredentialSourceAssertion.class);
+        for (Iterator iterator = principalCredAssertions.iterator(); iterator.hasNext();) {
+            Assertion assertion = (Assertion)iterator.next();
+            if (othersCredAssertions.contains(assertion)) {
+                return false;
             }
         }
+
         return true;
     }
 
     private boolean isRouteModifiable() {
-           for (Iterator iterator = allPaths.iterator(); iterator.hasNext();) {
-               IdentityPath ip = (IdentityPath)iterator.next();
-               for (Iterator iterator1 = ip.getPaths().iterator(); iterator1.hasNext();) {
-                   Assertion[] assertions = (Assertion[])iterator1.next();
-                   for (int i = 0; i < assertions.length; i++) {
-                       Assertion assertion = assertions[i];
-                       if (assertion instanceof RoutingAssertion) {
-                           return false;
-                       }
-                   }
-               }
-           }
-           return true;
+        Set othersRouteAssertions = new HashSet();
+        for (Iterator iterator = otherPaths.iterator(); iterator.hasNext();) {
+            IdentityPath ip = (IdentityPath)iterator.next();
+            othersRouteAssertions.addAll(ip.getEqualAssertions(RoutingAssertion.class));
+        }
+        if (othersRouteAssertions.isEmpty()) return true;
+
+        Set principalRouteAssertions = principalAssertionPaths.getEqualAssertions(RoutingAssertion.class);
+        for (Iterator iterator = principalRouteAssertions.iterator(); iterator.hasNext();) {
+            Assertion assertion = (Assertion)iterator.next();
+            if (principalRouteAssertions.contains(assertion)) {
+                return false;
+            }
+        }
+
+        return true;
+
     }
 
     {

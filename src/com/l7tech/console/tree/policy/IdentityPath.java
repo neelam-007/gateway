@@ -150,6 +150,54 @@ public class IdentityPath {
     }
 
     /**
+     * return a set of assertion instances from this identity path
+     * that are equal to the given type.
+     * @param cl the assertion type
+     * @return the <code>Set</code> of the assertion instances.
+     */
+    public Set getEqualAssertions(Class cl) {
+        Set resultSet = new HashSet();
+        if (cl == null || !Assertion.class.isAssignableFrom(cl)) {
+            return resultSet;
+        }
+
+        for (Iterator iterator = identityPaths.iterator(); iterator.hasNext();) {
+            Assertion[] assertions = (Assertion[])iterator.next();
+            for (int i = 0; i < assertions.length; i++) {
+                Assertion assertion = assertions[i];
+                if (assertion.getClass().equals(cl)) {
+                    resultSet.add(assertion);
+                }
+            }
+        }
+        return resultSet;
+    }
+
+    /**
+     * return a set of assertion instances from this identity path
+     * that are assignable to the given type.
+     * @param cl the assertion type
+     * @return the <code>Set</code> of the assertion instances.
+     */
+    public Set getAssignableAssertions(Class cl) {
+        Set resultSet = new HashSet();
+        if (cl == null || !Assertion.class.isAssignableFrom(cl)) {
+            return resultSet;
+        }
+
+        for (Iterator iterator = identityPaths.iterator(); iterator.hasNext();) {
+            Assertion[] assertions = (Assertion[])iterator.next();
+            for (int i = 0; i < assertions.length; i++) {
+                Assertion assertion = assertions[i];
+                if (cl.isAssignableFrom(assertion.getClass())) {
+                    resultSet.add(assertion);
+                }
+            }
+        }
+        return resultSet;
+    }
+
+    /**
      * is the object passed an identity
      * @param assertion
      * @return whether the assertion is an identity
