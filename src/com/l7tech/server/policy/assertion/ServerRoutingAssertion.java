@@ -42,7 +42,6 @@ public class ServerRoutingAssertion implements ServerAssertion {
         int max = data.getMaxConnections();
         _connectionManager.setMaxConnectionsPerHost( max );
         _connectionManager.setMaxTotalConnections( max * 10 );
-
     }
 
     /**
@@ -119,6 +118,7 @@ public class ServerRoutingAssertion implements ServerAssertion {
             response.setProtectedResponseStream(responseStream);
 
             request.setRouted(true);
+            _data.incrementRequestCount();
 
             return AssertionStatus.NONE;
         } catch (WSDLException we) {
