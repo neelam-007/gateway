@@ -722,8 +722,16 @@ ssgadmin.md5 = '${install.pass.ssgadmin.md5}'
 
         <!-- Hack hibernate.properties -->
         <echo>Patching ${install.src.web-inf}/classes/hibernate.properties...</echo>
-        <replaceregexp file="${install.src.web-inf}/classes/hibernate.properties}">
-            <regexp pattern="hibernate.connection.password\s*=\s*.*$"/>
+        <replaceregexp file="${install.src.web-inf}/classes/hibernate.properties">
+            <regexp pattern="hibernate.connection.url\s*=.*"/>
+            <substitution expression="hibernate.connection.url = ${install.db.url}"/>
+        </replaceregexp>
+        <replaceregexp file="${install.src.web-inf}/classes/hibernate.properties">
+            <regexp pattern="hibernate.connection.username\s*=.*"/>
+            <substitution expression="hibernate.connection.username = ${install.db.username}"/>
+        </replaceregexp>
+        <replaceregexp file="${install.src.web-inf}/classes/hibernate.properties">
+            <regexp pattern="hibernate.connection.password\s*=.*"/>
             <substitution expression="hibernate.connection.password = ${install.pass.dbuser}"/>
         </replaceregexp>
 
@@ -751,6 +759,8 @@ ssgadmin.md5 = '${install.pass.ssgadmin.md5}'
             </fileset>
         </copy>
 
+        <!-- Make scripts executable -->
+        <echo>Setting execute permissions on scripts...</echo>
         <chmod perm="0755">
             <fileset dir="${install.src.bin}">
                 <include name="*.sh"/>
@@ -765,7 +775,9 @@ ssgadmin.md5 = '${install.pass.ssgadmin.md5}'
             </fileset>
         </chmod>
 
+        <!-- Create tarball -->
         <property name="tarball" value="${build.dir}/ssg-${install.ssg.hostname}-b${install.build.number}.tar.gz"/>
+        <echo>Creating ${tarball}...</echo>
         <exec executable="tar" dir="${build.dir}/install" >
             <arg line="-czf ${tarball}"/>
             <arg line="."/>
