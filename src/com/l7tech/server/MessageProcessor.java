@@ -365,6 +365,11 @@ public class MessageProcessor implements ServiceListener {
     protected static final int VERSIONOK = 1;
     protected static final int VERSIONOUTDATED = 2;
     protected static final int SERVICENOTINDB = 0;
+    /**
+     * checks the version of the passed service against it's version in the database. meant for checking
+     * if a service from the cache is "up-to-date"
+     * @return VERSIONOK, VERSIONOUTDATED (cached version is outdated), or SERVICENOTINDB (service has been deleted)
+     */
     protected int checkVersionAgainstDB(PublishedService service) {
         try {
             int dbVersion = _serviceManager.getCurrentPolicyVersion(service.getOid());
