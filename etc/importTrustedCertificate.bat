@@ -16,23 +16,29 @@ rem
 rem -----------------------------------------------------------------------------
 rem
 rem Location of the file in Windows :
-set STOREDIR=%HOMEDRIVE%%HOMEPATH%\.l7tech
-set STOREFILE=%STOREDIR%\trustStore
+set STOREDIR="%HOMEDRIVE%%HOMEPATH%\.l7tech"
+set STOREFILE="%HOMEDRIVE%%HOMEPATH%\.l7tech\trustStore"
 set KEYTOOLBIN="%JAVA_HOME%\bin\keytool"
 
 rem CHECK THAT WE ARE RECIEVING THE CERTIFICATE FILE AS AN ARGUMENT
 IF "%1"=="" GOTO usage
 
-IF EXIST %STOREFILE% GOTO import
+IF EXIST %STOREFILE% GOTO deleteexisting
+
+IF NOT EXIST %STOREDIR% GOTO createdir
+
+:deleteexisting
+    del %STOREFILE%
+    GOTO import
 
 :createdir
     echo creating directory
-    md "%STOREDIR%"
+    md %STOREDIR%
     GOTO import
     
 :import
     @echo on
-    %KEYTOOLBIN% -import -v -trustcacerts -alias tomcat -file %1 -keystore "%STOREFILE%" -keypass password -storepass password
+    %KEYTOOLBIN% -import -v -trustcacerts -alias tomcat -file %1 -keystore %STOREFILE% -keypass password -storepass password
     @echo off
     GOTO end
 
