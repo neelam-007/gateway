@@ -149,6 +149,7 @@ public class ServerHttpRoutingAssertion extends ServerRoutingAssertion {
                     int whatToDoWithSecHeader = httpRoutingAssertion.getCurrentSecurityHeaderHandling();
 
                     // DELETE CURRENT SECURITY HEADER IF NECESSARY
+                    // todo, move this to util class to avoid duplication of code
                     if (whatToDoWithSecHeader == RoutingAssertion.REMOVE_CURRENT_SECURITY_HEADER ||
                         whatToDoWithSecHeader == RoutingAssertion.PROMOTE_OTHER_SECURITY_HEADER) {
                         Document doc = context.getRequest().getXmlKnob().getDocumentWritable();
@@ -184,6 +185,31 @@ public class ServerHttpRoutingAssertion extends ServerRoutingAssertion {
                                     header.getParentNode().removeChild(header);
                                 }
                             }
+                        }
+                    } else if (whatToDoWithSecHeader == RoutingAssertion.LEAVE_CURRENT_SECURITY_HEADER_AS_IS) {
+                        Document doc = context.getRequest().getXmlKnob().getDocumentWritable();
+                        try {
+                            ProcessorResult pr = context.getRequest().getXmlKnob().getProcessorResult();
+                            // leaving the processed security header for passthrough means that if the processed
+                            // actor was l7, we need to promote to default (unless there is a default present)
+                            if (pr != null && pr.getProcessedActor() == SecurityActor.L7ACTOR) {
+                                Element defaultSecHeader = SoapUtil.getSecurityElement(doc, SecurityActor.L7ACTOR.getValue());
+                                if (defaultSecHeader != null) {
+                                    Element noActorSecHeader = SoapUtil.getSecurityElement(doc);
+                                    if (noActorSecHeader != null && noActorSecHeader != defaultSecHeader) {
+                                        logger.info("we can't promote l7 sec header as no actor because " +
+                                                    "there is already a noactor one present. there may be " +
+                                                    "something wrong with this policy");
+                                    } else {
+                                        SoapUtil.removeSoapAttr(defaultSecHeader, SoapUtil.ACTOR_ATTR_NAME);
+                                    }
+                                }
+                            }
+                        } catch (InvalidDocumentFormatException e) {
+                            String msg = "this option is not supported for non-soap messages. this message is " +
+                                         "supposed to be soap but does not appear to be";
+                            auditor.logAndAudit(AssertionMessages.NON_SOAP_NOT_SUPPORTED_WRONG_FORMAT, null, e);
+                            throw new PolicyAssertionException(msg);
                         }
                     }
 
