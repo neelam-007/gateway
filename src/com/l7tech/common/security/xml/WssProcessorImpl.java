@@ -492,6 +492,7 @@ public class WssProcessorImpl implements WssProcessor {
         // todo, what namespaces are these attributes supposed to be in?  
         String valueType = binarySecurityTokenElement.getAttribute("ValueType");
         String encodingType = binarySecurityTokenElement.getAttribute("EncodingType");
+        // todo use proper qname comparator rather than this hacky suffix check
         if (!valueType.endsWith("X509v3"))
             throw new ProcessorException("BinarySecurityToken has unsupported ValueType " + valueType);
         if (!encodingType.endsWith("Base64Binary"))
