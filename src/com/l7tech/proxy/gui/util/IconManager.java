@@ -20,6 +20,7 @@ public class IconManager {
     private static ImageIcon iconEdit;
     private static ImageIcon iconRemove;
     private static Image iconAppIcon;
+    private static ImageIcon splashImage;
 
     private static ImageIcon loadImageIcon(String path) {
         URL url = cl.getResource(path);
@@ -54,5 +55,11 @@ public class IconManager {
         if (iconAppIcon == null)
             iconAppIcon = loadImage(Gui.RESOURCE_PATH + "/layer7_logo_small_32x32.png");
         return iconAppIcon;
+    }
+
+    public static ImageIcon getSplashImageIcon() {
+        if (splashImage == null)
+            splashImage = loadImageIcon(Gui.RESOURCE_PATH + "/agent_splash.png");
+        return splashImage;
     }
 }
