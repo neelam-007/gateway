@@ -80,7 +80,6 @@ public class MessageProcessor {
     private static Pattern findServiceid = Pattern.compile("^.*\\&?serviceoid=(.+?)(\\&.*|)", Pattern.DOTALL);
 
     private static final int MAX_TRIES = 8;
-    private PolicyManager policyManager;
     private WssProcessor wssProcessor = new WssProcessorImpl();
     private WssDecorator wssDecorator = new WssDecoratorImpl();
     public static final String ENCODING = "UTF-8";
@@ -94,11 +93,8 @@ public class MessageProcessor {
 
     /**
      * Construct a Client Proxy MessageProcessor.
-     *
-     * @param policyManager The PolicyManager to be used to determine what policy to apply to a given request
      */
-    public MessageProcessor(PolicyManager policyManager) {
-        this.policyManager = policyManager;
+    public MessageProcessor() {
     }
 
     /**
@@ -337,7 +333,7 @@ public class MessageProcessor {
       IOException, SAXException, ClientCertificateException, KeyStoreCorruptException,
       HttpChallengeRequiredException, PolicyRetryableException, PolicyAssertionException,
       InvalidDocumentFormatException, DecoratorException, ConfigurationException {
-        Policy policy = policyManager.getPolicy(context);
+        Policy policy = context.getSsg().rootPolicyManager().getPolicy(context.getPolicyAttachmentKey());
         if (policy == null || !policy.isValid()) {
             if (policy != null)
                 log.warning("Ignoring this policy -- it has previously failed to complete successfully.");
@@ -597,7 +593,7 @@ public class MessageProcessor {
                 } catch (CertificateAlreadyIssuedException e) {
                     // Bug #380 - if we haven't updated policy yet, try that first - mlyons
                     if (!context.isPolicyUpdated()) {
-                        Managers.getPolicyManager().flushPolicy(context);
+                        ssg.rootPolicyManager().flushPolicy(context.getPolicyAttachmentKey());
                         throw new PolicyRetryableException();
                     } else {
                         Managers.getCredentialManager().notifyCertificateAlreadyIssued(ssg);
@@ -628,7 +624,7 @@ public class MessageProcessor {
                     throw new ConfigurationException("Gateway sent us an invalid Policy URL.");
                 }
 
-                policyManager.updatePolicy(context, serviceid);
+                context.downloadPolicy(serviceid);
                 context.setPolicyUpdated(true);
                 if (status != 200) {
                     log.info("Retrying request with the new policy");
@@ -652,6 +648,16 @@ public class MessageProcessor {
             response.initialize(Managers.createStashManager(),
                                              outerContentType,
                                              responseBodyAsStream);
+            response.attachHttpResponseKnob(new AbstractHttpResponseKnob() {
+                public void addCookie(Cookie cookie) {
+                    // Agent currently stores cookies in the Ssg instance, and does not pass them on to the client
+                    throw new UnsupportedOperationException();
+                }
+
+                public void beginResponse() {
+                    throw new UnsupportedOperationException();
+                }
+            });
             final PostMethod postMethod1 = postMethod;
             context.runOnClose(new Runnable() {
                 public void run() {
@@ -723,16 +729,6 @@ public class MessageProcessor {
 
             response.attachKnob(HttpHeadersKnob.class, new HttpHeadersKnob(headers));
             response.getXmlKnob().setProcessorResult(processorResult);
-            response.attachHttpResponseKnob(new AbstractHttpResponseKnob() {
-                public void addCookie(Cookie cookie) {
-                    // Agent currently stores cookies in the Ssg instance, and does not pass them on to the client
-                    throw new UnsupportedOperationException();
-                }
-
-                public void beginResponse() {
-                    throw new UnsupportedOperationException();
-                }
-            });
             response.getHttpResponseKnob().setStatus(status);
             if (status == 401 || status == 402) {
                 Header authHeader = postMethod.getResponseHeader("WWW-Authenticate");

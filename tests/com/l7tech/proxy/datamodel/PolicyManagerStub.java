@@ -10,6 +10,8 @@ import com.l7tech.proxy.ConfigurationException;
 import com.l7tech.proxy.message.PolicyApplicationContext;
 
 import java.io.IOException;
+import java.util.Set;
+import java.util.Collections;
 
 /**
  * PolicyManager for testing.  Provides a fixed policy that is manually set.
@@ -17,24 +19,30 @@ import java.io.IOException;
  * Date: Jun 17, 2003
  * Time: 2:50:49 PM
  */
-public class PolicyManagerStub implements PolicyManager {
+public class PolicyManagerStub extends LocalPolicyManager {
     private Policy policy;
 
     public void setPolicy(Policy policy) {
         this.policy = policy;
     }
 
-    public Policy getPolicy() {
+    public synchronized void setPolicy(PolicyAttachmentKey key, Policy policy) {
+        // ignore
+    }
+
+    public synchronized void clearPolicies() {
+        // ignore
+    }
+
+    public void flushPolicy(PolicyAttachmentKey policyAttachmentKey) {
+        // ignore
+    }
+
+    public Policy getPolicy(PolicyAttachmentKey policyAttachmentKey) throws IOException {
         return policy;
     }
 
-    public Policy getPolicy(PolicyApplicationContext request) {
-        return policy;
-    }
-
-    public void flushPolicy(PolicyApplicationContext request) {
-    }
-
-    public void updatePolicy(PolicyApplicationContext request, String serviceId) throws ConfigurationException, IOException {
+    public Set getPolicyAttachmentKeys() {
+        return Collections.EMPTY_SET;
     }
 }

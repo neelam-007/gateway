@@ -248,7 +248,8 @@ public class RequestHandler extends AbstractHttpHandler {
             HttpResponseKnob respHttp = (HttpResponseKnob)context.getResponse().getKnob(HttpResponseKnob.class);
             if (respHttp != null && respHttp.getStatus() > 0)
                 status = respHttp.getStatus();
-            context.getResponse().getHttpResponseKnob().getStatus();
+            if (respHttp != null)
+                status = respHttp.getStatus();
             transmitResponse(status, httpResponse, context.getResponse());
         } finally {
             if (context != null)

@@ -12,9 +12,6 @@ import com.l7tech.proxy.policy.ClientPolicyFactory;
 
 /**
  * Holds a policy assertion tree along with versioning metadata.
- * User: mike
- * Date: Sep 2, 2003
- * Time: 4:47:28 PM
  */
 public class Policy {
     private final String version;

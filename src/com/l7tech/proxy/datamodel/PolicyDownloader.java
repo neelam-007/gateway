@@ -1,9 +1,3 @@
-/*
- * Copyright (C) 2003 Layer 7 Technologies Inc.
- *
- * $Id$
- */
-
 package com.l7tech.proxy.datamodel;
 
 import com.l7tech.common.util.CausedIOException;
@@ -23,75 +17,39 @@ import java.security.cert.X509Certificate;
 import java.util.logging.Logger;
 
 /**
- * The ClientProxy's default PolicyManager.  Loads policies from the SSG on-demand
- * User: mike
- * Date: Jun 17, 2003
- * Time: 10:22:35 AM
+ * A class that specializes in downloading policies from an Ssg.
+ * TODO move all request-specific code out of this class.  There should be one PolicyDownloader instance per Ssg,
+ * rather than one created per policy download attempt.
  */
-public class PolicyManagerImpl implements PolicyManager {
-    private static final Logger log = Logger.getLogger(PolicyManagerImpl.class.getName());
-    private static final PolicyManagerImpl INSTANCE = new PolicyManagerImpl();
-    public static final String PROPERTY_LOGPOLICIES    = "com.l7tech.proxy.datamodel.logPolicies";
+public class PolicyDownloader {
+    private static final Logger log = Logger.getLogger(PolicyDownloader.class.getName());
 
-    private PolicyManagerImpl() {
-    }
+    private final PolicyApplicationContext request;
+    private final Ssg ssg;
 
-    public static PolicyManagerImpl getInstance() {
-        return INSTANCE;
-    }
-
-    private static class LogFlags {
-        private static final boolean logPolicies = Boolean.getBoolean(PROPERTY_LOGPOLICIES);
+    public PolicyDownloader(PolicyApplicationContext context) {
+        if (context == null) throw new NullPointerException("context is null");
+        this.request = context;
+        Ssg ssg = context.getSsg();
+        if (ssg == null) throw new NullPointerException("context.ssg is null");
+        this.ssg = ssg;
     }
 
     /**
-     * Look up any cached policy for this request+SSG.  If we don't know it, or if our
-     * cached copy is out-of-date, no sweat: we'll get a SOAP fault from the server telling
-     * us to download a new policy.
+     * Notify the PolicyManager that a policy may be out-of-date and should be (re)loaded from the PolicyManager's
+     * underlying policy source.
      *
-     * @param request the request whose policy is to be found
-     * @return The Policy we found, or null if we didn't find one.
-     */
-    public Policy getPolicy(PolicyApplicationContext request) {
-        Policy policy = request.getSsg().lookupPolicy(request.getPolicyAttachmentKey());
-        if (policy != null) {
-            if (LogFlags.logPolicies)
-                log.info("PolicyManager: Found a policy for this request: " + policy.getAssertion());
-            else
-                log.info("PolicyManager: Found a policy for this request");
-        } else
-            log.info("PolicyManager: No policy found for this request");
-        return policy;
-    }
-
-    /**
-     * Notify the PolicyManager that a policy may be out-of-date and should be flushed from the cache.
-     * The PolicyManager will not attempt to download a replacement one at this time.
-     * @param request The request that failed in a way suggestive that its policy may be out-of-date.
-     */
-    public void flushPolicy(PolicyApplicationContext request) {
-        request.getSsg().removePolicy(request.getPolicyAttachmentKey());
-    }
-
-    /**
-     * Notify the PolicyManager that a policy may be out-of-date.
-     * The PolicyManager should attempt to update the policy if it needs to do so.
-     * @param request The request that failed in a way suggestive that its policy may be out-of-date.
-     * @param serviceId The ID of the service for which to load policy.
-     * @throws ConfigurationException if the PendingRequest did not contain enough information to construct a
-     *                                valid PolicyAttachmentKey
+     * @param serviceId The ID of the service for which to load the policy.
      * @throws IOException if the policy could not be read from the SSG
      * @throws com.l7tech.proxy.datamodel.exceptions.ServerCertificateUntrustedException if an SSL handshake with the SSG could not be established due to
      *                                             the SSG's SSL certificate being unrecognized
      * @throws com.l7tech.proxy.datamodel.exceptions.OperationCanceledException if credentials were required, but the user canceled the logon dialog
      */
-    public void updatePolicy(PolicyApplicationContext request, String serviceId)
-            throws ConfigurationException, IOException, GeneralSecurityException,
+    public Policy downloadPolicy(PolicyAttachmentKey pak, String serviceId)
+            throws IOException, GeneralSecurityException,
                    OperationCanceledException, HttpChallengeRequiredException, KeyStoreCorruptException,
-                   ClientCertificateException, PolicyRetryableException
+                   ClientCertificateException, PolicyRetryableException, ConfigurationException
     {
-        final PolicyAttachmentKey pak = request.getPolicyAttachmentKey();
-        final Ssg ssg = request.getSsg();
         final boolean useSsl = ssg.isUseSslByDefault();
         final X509Certificate serverCert = SsgKeyStoreManager.getServerCert(ssg);
         if (serverCert == null)
@@ -104,10 +62,7 @@ public class PolicyManagerImpl implements PolicyManager {
             else
                 log.info("Trying anonymous policy download from " + ssg);
             Policy policy = PolicyServiceClient.downloadPolicyWithNoAuthentication(ssg, serviceId, serverCert, useSsl);
-            request.getSsg().attachPolicy(pak, policy);
-            request.getRequestInterceptor().onPolicyUpdated(request.getSsg(), pak, policy);
-            log.info("New policy saved successfully");
-            return;
+            return policy;
         } catch (BadCredentialsException e) {
             // FALLTHROUGH and try again using credentials
             log.info("Policy service declined our anonymous download; will try again using credentials");
@@ -143,10 +98,7 @@ public class PolicyManagerImpl implements PolicyManager {
                 }
                 if (policy == null)
                     throw new ConfigurationException("Unable to obtain a policy."); // can't happen
-                request.getSsg().attachPolicy(pak, policy);
-                request.getRequestInterceptor().onPolicyUpdated(request.getSsg(), pak, policy);
-                log.info("New policy saved successfully");
-                return;
+                return policy;
             } catch (BadCredentialsException e) {
                 String msg = "Policy service denies access to this policy with current credentials";
                 if (ssg.getTrustedGateway() != null) {
@@ -154,7 +106,7 @@ public class PolicyManagerImpl implements PolicyManager {
                     log.info(msg);
                     throw new ConfigurationException(msg);
                 } else
-                    log.info(msg);                
+                    log.info(msg);
 
                 log.info("Prompting for new credentials");
                 request.getNewCredentials();

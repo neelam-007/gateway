@@ -22,14 +22,6 @@ public class Managers {
     private static int stashFileUnique = 1; // used to generate unique filenames for stashing large attachments
 
     /**
-     * Get the PolicyManager.
-     * @return the PolicyManager instance.
-     */
-    public static PolicyManager getPolicyManager() {
-        return PolicyManagerImpl.getInstance();
-    }
-
-    /**
      * Get the CredentialManager.
      * @return the current CredentialManager instance.
      */

@@ -24,6 +24,7 @@ import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
+import java.io.IOException;
 import java.security.NoSuchAlgorithmException;
 import java.security.cert.CertificateEncodingException;
 import java.security.cert.X509Certificate;
@@ -245,7 +246,12 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
         Policy policy = null;
         int row = policyTable.getSelectedRow();
         if (row >= 0 && row < displayPolicies.size())
-            policy = ssg.lookupPolicy((PolicyAttachmentKey)displayPolicies.get(row));
+            try {
+                policy = ssg.rootPolicyManager().getPolicy((PolicyAttachmentKey)displayPolicies.get(row));
+            } catch (IOException e) {
+                log.log(Level.WARNING, "Unable to read policy: " + e.getMessage(), e); // TODO this should be an error dialog probably
+                policy = null;
+            }
         policyTree.setModel((policy == null || policy.getClientAssertion() == null) ? null : new PolicyTreeModel(policy.getClientAssertion()));
         int erow = 0;
         while (erow < policyTree.getRowCount()) {
@@ -562,7 +568,7 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
     private void updatePolicyPanel() {
         displayPolicies.clear();
         if (!policyFlushRequested)
-            displayPolicies = new ArrayList(ssg.getPolicyAttachmentKeys());
+            displayPolicies = new ArrayList(ssg.rootPolicyManager().getPolicyAttachmentKeys());
         displayPolicyTableModel.fireTableDataChanged();
         displaySelectedPolicy();
     }
@@ -698,7 +704,7 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
                 ssg.setSslPort(referenceSsg.getSslPort());
             }
             if (policyFlushRequested)
-                ssg.clearPolicies();
+                ssg.rootPolicyManager().clearPolicies();
             ssg.resetSslContext();
         }
         setSsg(ssg);

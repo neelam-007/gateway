@@ -16,6 +16,7 @@ import com.l7tech.policy.assertion.credential.CredentialFormat;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.proxy.NullRequestInterceptor;
 import com.l7tech.proxy.RequestInterceptor;
+import com.l7tech.proxy.ConfigurationException;
 import com.l7tech.proxy.datamodel.*;
 import com.l7tech.proxy.datamodel.exceptions.*;
 import com.l7tech.proxy.util.TokenServiceClient;
@@ -342,7 +343,7 @@ public class PolicyApplicationContext extends ProcessingContext {
         } catch (CertificateAlreadyIssuedException e) {
             // Bug #380 - if we haven't updated policy yet, try that first - mlyons
             if (!isPolicyUpdated()) {
-                Managers.getPolicyManager().flushPolicy(this);
+                getSsg().rootPolicyManager().flushPolicy(getPolicyAttachmentKey());
                 throw new PolicyRetryableException();
             } else {
                 Managers.getCredentialManager().notifyCertificateAlreadyIssued(ssg);
@@ -574,6 +575,29 @@ public class PolicyApplicationContext extends ProcessingContext {
         ssg.samlHolderOfKeyAssertion(s);
         samlHolderOfKeyAssertion = s;
         return samlHolderOfKeyAssertion;
+    }
+
+    /**
+     * Download a new policy for this request.
+     * @param serviceid the service ID reported in the Policy-Url: header.
+     * @throws IOException if the policy could not be read from the SSG
+     * @throws com.l7tech.proxy.datamodel.exceptions.ServerCertificateUntrustedException if an SSL handshake with the SSG could not be established due to
+     *                                             the SSG's SSL certificate being unrecognized
+     * @throws com.l7tech.proxy.datamodel.exceptions.OperationCanceledException if credentials were required, but the user canceled the logon dialog
+     */
+    public void downloadPolicy(String serviceid)
+            throws OperationCanceledException, GeneralSecurityException, HttpChallengeRequiredException,
+                   IOException, ClientCertificateException, KeyStoreCorruptException, PolicyRetryableException,
+                   ConfigurationException
+    {
+        final Ssg ssg = getSsg();
+        final PolicyAttachmentKey pak = getPolicyAttachmentKey();
+        Policy policy = new PolicyDownloader(this).downloadPolicy(pak, serviceid);
+        ssg.rootPolicyManager().setPolicy(pak, policy);
+        if (requestInterceptor != null)
+            requestInterceptor.onPolicyUpdated(ssg, pak, policy);
+        setPolicyUpdated(true);
+        logger.info("New policy saved successfully");
     }
 
 }

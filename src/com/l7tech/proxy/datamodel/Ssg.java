@@ -73,11 +73,12 @@ public class Ssg implements Serializable, Cloneable, Comparable {
     private byte[] persistPassword = null;
     private boolean useOverrideIpAddresses = false;
     private String[] overrideIpAddresses = null;
+    private LocalPolicyManager persistentPolicyManager = new LocalPolicyManager(); // policy store that gets saved to disk
 
     // These fields are transient.  To prevent the bean serializer from saving them anyway,
     // they do not use the getFoo() / setFoo() naming convention in their accessors and mutators.
+    private transient LocalPolicyManager rootPolicyManager = null; // policy store that is not saved to disk
     private transient char[] password = null;
-    private transient HashMap policyMap = new HashMap(); /* Policy cache */
     private transient boolean promptForUsernameAndPassword = true;
     private transient KeyStore keyStore = null;
     private transient KeyStore trustStore = null;
@@ -149,12 +150,6 @@ public class Ssg implements Serializable, Cloneable, Comparable {
         this.ssgAddress = serverAddress;
     }
 
-    public Object clone() throws CloneNotSupportedException {
-        Ssg ssg = (Ssg)super.clone();
-        ssg.policyMap = (HashMap)this.policyMap.clone();
-        return ssg;
-    }
-
     public String toString() {
         return getSsgAddress();
     }
@@ -208,71 +203,45 @@ public class Ssg implements Serializable, Cloneable, Comparable {
         });
     }
 
-    /** Fire a new POLICY_ATTACHED event. */
-    private void firePolicyAttachedEvent(Policy policy) {
-        fireSsgEvent(SsgEvent.createPolicyAttachedEvent(this, policy));
-    }
-
     /** Fire a new DATA_CHANGED event. */
     private void fireDataChangedEvent() {
         fireSsgEvent(SsgEvent.createDataChangedEvent(this));
     }
 
     /**
-     * Attach (or update) a policy for this SSG.  The policy will be filed
-     * under the provided PolicyAttachmentKey.
-     * @param key
-     * @param policy
+     * @return the root PolicyManager for this SSG.  Never null.
      */
-    public synchronized void attachPolicy(PolicyAttachmentKey key, Policy policy ) {
-        policyMap.put(key, policy);
-        firePolicyAttachedEvent(policy);
+    public LocalPolicyManager rootPolicyManager() {
+        if (rootPolicyManager == null) {
+            synchronized (this) {
+                if (rootPolicyManager == null) {
+                    rootPolicyManager = new LocalPolicyManager(getPersistentPolicyManager());
+                }
+            }
+        }
+        return rootPolicyManager;
+    }
+
+    /** Replace the root policy manager.  This should never be called by a production class; it is here only for test purposes. */
+    public void rootPolicyManager(LocalPolicyManager p) {
+        rootPolicyManager = p;
     }
 
     /**
-     * Remove a cached policy for this SSG.
-     * @param key
+     * Get the PolicyManager whose cached policies are saved to disk.  Should be used only by GUI code
+     * and the bean serializer.
+     *
+     * @return the persistent policy manager.  Never null.
      */
-    public synchronized void removePolicy(PolicyAttachmentKey key) {
-        policyMap.remove(key);
+    public PolicyManager getPersistentPolicyManager() {
+        return persistentPolicyManager;
     }
 
-    /**
-     * Remove a cached policy for this SSG.
-     * @param uri The namespace of the first element within the SOAP message body.
-     * @param soapAction the contents of the SOAPAction HTTP header.
-     */
-    public synchronized void removePolicy(String uri, String soapAction, String localUri) {
-        policyMap.remove(new PolicyAttachmentKey(uri, soapAction, localUri));
+    /** @deprecated Needed for bean serializer only; do not use. */
+    public void setPersistentPolicyManager(LocalPolicyManager persistentPolicyManager) {
+        if (persistentPolicyManager == null) persistentPolicyManager = new LocalPolicyManager(); // just in case
+        this.persistentPolicyManager = persistentPolicyManager;
     }
-
-    /**
-     * Look up a policy by PolicyAttachmentKey.
-     * @param policyAttachmentKey the URI/SoapAction/etc to look up
-     * @return the associated policy, or null if no such policy was found
-     */
-    public synchronized Policy lookupPolicy(PolicyAttachmentKey policyAttachmentKey) {
-        return (Policy)policyMap.get(policyAttachmentKey);
-    }
-
-    /**
-     * Get the set of PolicyAttachmentKey that we currently know about.
-     * These can then be passed to lookupPolicy() to get the policies.
-     * @return a defensively-copied Set of PolicyAttachmentKey objects.
-     */
-    public synchronized Set getPolicyAttachmentKeys() {
-        Set setCopy = new TreeSet(policyMap.keySet());
-        return setCopy;
-    }
-
-    /**
-     * Clear all cached policies.
-     */
-    public synchronized void clearPolicies() {
-        policyMap.clear();
-    }
-
-    /* generated getters and setters */
 
     public long getId() {
         return id;

@@ -118,8 +118,7 @@ public class SecureSpanBridgeFactory {
                 }
             });
         }
-        final PolicyManager policyManager = PolicyManagerImpl.getInstance();
-        final MessageProcessor mp = new MessageProcessor(policyManager);
+        final MessageProcessor mp = new MessageProcessor();
         final RequestInterceptor nri = NullRequestInterceptor.INSTANCE;
         return new SecureSpanBridgeImpl(ssg, nri, mp, pw);
     }

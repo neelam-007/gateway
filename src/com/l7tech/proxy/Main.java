@@ -3,7 +3,6 @@ package com.l7tech.proxy;
 import com.l7tech.common.BuildInfo;
 import com.l7tech.common.security.JceProvider;
 import com.l7tech.common.util.JdkLoggerConfigurator;
-import com.l7tech.proxy.datamodel.Managers;
 import com.l7tech.proxy.datamodel.SsgFinder;
 import com.l7tech.proxy.datamodel.SsgFinderImpl;
 import com.l7tech.proxy.processor.MessageProcessor;
@@ -89,7 +88,7 @@ public class Main {
         int maxThreads = getIntProperty(PROPERTY_LISTENER_MAXTHREADS, MAX_THREADS);
 
         clientProxy = new ClientProxy(ssgFinder,
-          new MessageProcessor(Managers.getPolicyManager()),
+          new MessageProcessor(),
           port,
           minThreads,
           maxThreads);

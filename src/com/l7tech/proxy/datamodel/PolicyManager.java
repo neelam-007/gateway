@@ -12,6 +12,7 @@ import com.l7tech.proxy.message.PolicyApplicationContext;
 
 import java.io.IOException;
 import java.security.GeneralSecurityException;
+import java.util.Set;
 
 /**
  * Manages policies for SSGs.
@@ -22,31 +23,31 @@ import java.security.GeneralSecurityException;
 public interface PolicyManager {
 
     /**
-     * Obtain the policy for this pending request, possibly by downloading
-     * it over the network.
-     * @param request the request whos policy is to be found
-     * @return The root of policy Assertion tree.
-     */
-    Policy getPolicy(PolicyApplicationContext request);
-
-    /**
      * Notify the PolicyManager that a policy may be out-of-date and should be flushed from the cache.
-     * The PolicyManager will not attempt to download a replacement one at this time.
-     * @param request The request that failed in a way suggestive that its policy may be out-of-date.
+     * The PolicyManager will not attempt to obtain a replacement one at this time.
+     *
+     * @param policyAttachmentKey the {@link PolicyAttachmentKey} of the {@link Policy} to flush.  Must not be null.
      */
-    void flushPolicy(PolicyApplicationContext request);
+    void flushPolicy(PolicyAttachmentKey policyAttachmentKey);
 
     /**
-     * Notify the PolicyManager that a policy may be out-of-date.
-     * The PolicyManager should attempt to update the policy if it needs to do so.
-     * @param request The request that failed in a way suggestive that its policy may be out-of-date.
-     * @param serviceid The ID of the service for which to load the policy.
-     * @throws ConfigurationException if a policy for this request cannot be obtained for config reasons
-     * @throws IOException if there was a problem getting the policy from the server
-     * @throws com.l7tech.proxy.datamodel.exceptions.OperationCanceledException if the user canceled the login dialog
+     * Look up a policy in this PolicyFinder.  Depending on the implementation, this may be a quick cache lookup
+     * or may involve disk or network activity.
+     * <p>
+     * Even if this method fails to locate a policy, it may be possible to "try harder" and locate a policy
+     * in an underlying policy source.  {@see #updatePolicy}
+     *
+     * @param policyAttachmentKey the {@link PolicyAttachmentKey} describing the policy to locate.
+     * @return the requested {@link Policy}, or null if it was not found.
+     * @throws java.io.IOException if a disk or network problem prevented the policy lookup.
      */
-    void updatePolicy(PolicyApplicationContext request, String serviceid)
-            throws ConfigurationException, IOException, GeneralSecurityException, OperationCanceledException,
-                   HttpChallengeRequiredException, KeyStoreCorruptException, ClientCertificateException,
-                   PolicyRetryableException;
+    Policy getPolicy(PolicyAttachmentKey policyAttachmentKey) throws IOException;
+
+    /**
+     * Get the set of PolicyAttachmentKey that we currently know about.  These are the ones that
+     * are immediatley available from {@link #getPolicy} without requiring a call to {@link #updatePolicy}.
+     *
+     * @return a defensively-copied Set of PolicyAttachmentKey objects.  Might be read-only.  Never null.
+     */
+    Set getPolicyAttachmentKeys();
 }
