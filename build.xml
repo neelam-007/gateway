@@ -483,7 +483,6 @@
                 <exclude name="com/l7tech/policy/server/**/*"/>
                 <include name="com/l7tech/identity/**/*"/>
                 <include name="com/l7tech/common/**/*"/>
-                <exclude name="com/l7tech/common/message/**/*"/>
                 <exclude name="com/l7tech/common/security/prov/**/*"/>
                 <exclude name="com/l7tech/common/security/saml/**/*"/>
                 <exclude name="com/l7tech/common/xml/saml/**/*"/>
