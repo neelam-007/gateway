@@ -34,6 +34,10 @@ public class MimePartsTable extends JTable {
         if(cellEditor instanceof DefaultCellEditor) {
             ((DefaultCellEditor) cellEditor).setClickCountToStart(1);
         }
+
+        // this will force the cell editor stop editing
+        putClientProperty("terminateEditOnFocusLost", Boolean.TRUE);
+
         addMouseListenerToHeaderInTable();
     }
 
