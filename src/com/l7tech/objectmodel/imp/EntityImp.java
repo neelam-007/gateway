@@ -17,7 +17,14 @@ public class EntityImp implements Entity, Serializable {
 
     public EntityImp() {
         _oid = DEFAULT_OID;
+        _loadTime = System.currentTimeMillis();
+    }
+
+    public long getLoadTime() {
+        return _loadTime;
     }
 
 	protected long _oid;
+
+    protected transient long _loadTime;
 }
