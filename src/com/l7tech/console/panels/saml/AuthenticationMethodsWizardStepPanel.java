@@ -208,6 +208,7 @@ public class AuthenticationMethodsWizardStepPanel extends WizardStepPanel {
 
     public String getDescription() {
         return
-          "<html>Specify one or more accepted authentication methods that the SAML statement must assert</html>";
+          "<html>Specify one or more accepted authentication methods that the SAML statement must assert. " +
+            "At least one authentication method must be selected</html>";
     }
 }
