@@ -60,6 +60,9 @@ public class LdapUserManager implements UserManager {
                 // get in using certificate granted by ssg.
                 logger.warning("User " + dn + " is locked or disabled. Returning null.");
                 return null;
+            } else if (identityProvider.checkExpiredMSADAccount(attributes)) {
+                logger.warning("Account " + dn + " is expired. Returning null.");
+                return null;
             }
 
             UserMappingConfig[] userTypes = ldapIdentityProviderConfig.getUserMappings();

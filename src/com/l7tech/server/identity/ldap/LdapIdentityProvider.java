@@ -36,6 +36,7 @@ import java.security.cert.X509Certificate;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.math.BigInteger;
 
 /**
  * Server-side implementation of the LDAP provider.
@@ -726,6 +727,47 @@ public class LdapIdentityProvider implements IdentityProvider, InitializingBean 
     }
 
     /**
+     * this check is only relevent to msad directories, it should be generalized and parametrable when
+     * we discover other types of account expiration mechanism in other directory types.
+     *
+     * this looks at the attribute accountExpires if present and checks if the specific account
+     * is expired based on that value.
+     *
+     * @return true is account is expired, false otherwise
+     */
+    boolean checkExpiredMSADAccount(Attributes attibutes) {
+        Attribute accountExpiresAttr = attibutes.get("accountExpires");
+        if (accountExpiresAttr != null && accountExpiresAttr.size() > 0) {
+            Object found = null;
+            try {
+                found = accountExpiresAttr.get(0);
+            } catch (NamingException e) {
+                logger.log(Level.SEVERE, "Problem accessing the accountExpiresAttr attribute");
+            }
+            if (found != null) {
+                if (found instanceof String) {
+                    String value = (String)found;
+                    if (value.equals("0")) {
+                        return false;
+                    } else {
+                        BigInteger thisvalue = new BigInteger(value);
+                        BigInteger result = thisvalue.subtract(fileTimeConversionfactor).
+                                                            divide(fileTimeConversionfactor2);
+                        if (System.currentTimeMillis() > result.longValue()) {
+                            logger.info("The account is expired according to accountExpiresAttr value");
+                            return true;
+                        }
+                    }
+                } else {
+                    logger.severe("the attribute accountExpires was present but yielded a type not " +
+                                  "supported: " + found.getClass().getName());
+                }
+            }
+        }
+        return false;
+    }
+
+    /**
      * Constructs an EntityHeader for the dn passed.
      *
      * @param sr
@@ -741,7 +783,13 @@ public class LdapIdentityProvider implements IdentityProvider, InitializingBean 
         for (int i = 0; i < userTypes.length; i++) {
             String userclass = userTypes[i].getObjClass();
             if (attrContainsCaseIndependent(objectclasses, userclass)) {
-                if (!isValidEntryBasedOnUserAccountControlAttribute(atts)) return null;
+                if (!isValidEntryBasedOnUserAccountControlAttribute(atts)) {
+                    logger.fine("Account " + dn + " is disabled or blocked.");
+                    return null;
+                } else if (checkExpiredMSADAccount(atts)) {
+                    logger.fine("Account " + dn + " is expired.");
+                    return null;
+                }
                 Object tmp = null;
                 String login = null;
                 try {
@@ -830,4 +878,6 @@ public class LdapIdentityProvider implements IdentityProvider, InitializingBean 
     private Long[] urlStatus;
     private final Logger logger = Logger.getLogger(getClass().getName());
     private ServerConfig serverConfig;
+    private final BigInteger fileTimeConversionfactor = new BigInteger("116444736000000000");
+    private final BigInteger fileTimeConversionfactor2 = new BigInteger("10000");
 }
