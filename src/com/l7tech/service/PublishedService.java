@@ -155,6 +155,7 @@ public class PublishedService extends NamedEntityImp {
 
     /**
      * allows to set all properties from another object
+     * the version is not copied and should be copied manually when needed
      * @param objToCopy
      */
     public void copyFrom(PublishedService objToCopy) throws MalformedURLException, IOException {
@@ -162,7 +163,6 @@ public class PublishedService extends NamedEntityImp {
         setPolicyXml(objToCopy.getPolicyXml());
         setWsdlUrl(objToCopy.getWsdlUrl());
         setWsdlXml(objToCopy.getWsdlXml());
-        setVersion(objToCopy.getVersion());
         setDisabled(objToCopy.isDisabled());
     }
 
