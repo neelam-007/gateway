@@ -13,6 +13,7 @@ import com.l7tech.console.event.ConnectionEvent;
 import com.l7tech.console.event.ConnectionListener;
 import com.l7tech.console.event.WeakEventListenerList;
 import com.l7tech.console.panels.LogonDialog;
+import com.l7tech.console.panels.LogPanel;
 import com.l7tech.console.panels.PreferencesDialog;
 import com.l7tech.console.panels.WorkSpacePanel;
 import com.l7tech.console.tree.*;
@@ -42,6 +43,10 @@ import java.util.MissingResourceException;
 import java.util.ResourceBundle;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.Dictionary;
+import java.util.Hashtable;
+import javax.swing.event.ChangeEvent;
+import javax.swing.event.ChangeListener;
 
 
 /**
@@ -86,19 +91,24 @@ public class MainWindow extends JFrame {
     private Action removeNodeAction = null;
     private Action connectAction = null;
     private Action disconnectAction = null;
+    private Action logRefreshAction = null;
 
     private Action toggleStatusBarAction = null;
+    private Action toggleShowLogAction = null;
 
     private JPanel frameContentPane = null;
     private JPanel mainPane = null;
     private JPanel statusBarPane = null;
     private JLabel statusMsgLeft = null;
     private JLabel statusMsgRight = null;
+    private LogPanel logPane = LogPanel.instance();
+
 
     private JToolBar toolBarPane = null;
     private PolicyToolBar policyToolBar = null;
 
     private JSplitPane mainJSplitPane = null;
+    private JSplitPane mainJSplitPaneTop = null;
     private JPanel mainLeftJPanel = null;
 
     private JPanel mainSplitPaneRight = null;
@@ -331,10 +341,15 @@ public class MainWindow extends JFrame {
         // item.setIcon(null);
         item.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_F5, 0));
         viewMenu.add(item);
+
         int mnemonic = viewMenu.getText().toCharArray()[0];
         viewMenu.setMnemonic(mnemonic);
         viewMenu.add(getGotoSubmenu());
         viewMenu.addSeparator();
+
+        JCheckBoxMenuItem logItem = new JCheckBoxMenuItem(getShowLogToggleAction());
+        viewMenu.add(logItem);
+        logItem.setEnabled(false);
 
         final JCheckBoxMenuItem jcm =
                 new JCheckBoxMenuItem(getToggleStatusBarToggleAction());
@@ -348,9 +363,11 @@ public class MainWindow extends JFrame {
                 }
             }
         });
+
         viewMenu.add(jcm);
         return viewMenu;
     }
+
 
     /**
      * Return the newMenu property value.
@@ -437,6 +454,48 @@ public class MainWindow extends JFrame {
         return disconnectAction;
     }
 
+    // Francis
+    /**
+     * create the Action (the component that is used by several controls)
+     *
+     * @return the <CODE>Action</CODE> implementation that show/hide the Log window
+     */
+    private Action getShowLogToggleAction() {
+        if (toggleShowLogAction != null) return toggleShowLogAction;
+
+        //String atext = resapplication.getString("toggle.log.display");
+        String atext = "Debug Log";
+
+        toggleShowLogAction =
+          new AbstractAction(atext) {
+              /**
+               * Invoked when an action occurs.
+               *
+               * @param event  the event that occured
+               * @see Action#removePropertyChangeListener
+               */
+              public void actionPerformed(ActionEvent event) {
+                  JCheckBoxMenuItem item = (JCheckBoxMenuItem)event.getSource();
+  //                Component[] comps = getMainLeftJPanel().getComponents();
+   //               for (int i = comps.length - 1; i >= 0; i--) {
+     //                 if (comps[i] instanceof JSplitPane) {
+      //
+                              if(item.isSelected())
+                              {
+                                  logPane.getLogs();
+                              }
+                             logPane.getPane().setVisible(item.isSelected());
+                              mainJSplitPane.setDividerLocation(700);
+
+                              validate();
+                              repaint();
+                      }
+   //               }
+  //            }
+          };
+        toggleShowLogAction.putValue(Action.SHORT_DESCRIPTION, atext);
+        return toggleShowLogAction;
+    }
 
     /**
      * create the Action (the component that is used by several controls)
@@ -573,6 +632,7 @@ public class MainWindow extends JFrame {
         getFindAction().setEnabled(connected);
         getDisconnectAction().setEnabled(connected);
         getConnectAction().setEnabled(!connected);
+        getShowLogToggleAction().setEnabled(connected);
     }
 
 
@@ -588,7 +648,7 @@ public class MainWindow extends JFrame {
             getJFrameContentPane().add(getToolBarPane(), "North");
             // getJFrameContentPane().add(getStatusBarPane(), "South");
             getJFrameContentPane().add(getMainPane(), "Center");
-        }
+         }
         return frameContentPane;
     }
 
@@ -704,19 +764,20 @@ public class MainWindow extends JFrame {
     }
 
     /**
-     * Return the mainJSplitPane property value.
+     * Return the mainJSplitPaneTop property value.
      * @return JSplitPane
      */
-    private JSplitPane getMainJSplitPane() {
-        if (mainJSplitPane != null)
-            return mainJSplitPane;
+    private JSplitPane getMainJSplitPaneTop() {
+        if (mainJSplitPaneTop != null)
+            return mainJSplitPaneTop;
 
-        mainJSplitPane =
+
+        mainJSplitPaneTop =
                 new JSplitPane(JSplitPane.HORIZONTAL_SPLIT);
 
-        mainJSplitPane.add(getMainSplitPaneRight(), "right");
-        mainJSplitPane.add(getMainLeftJPanel(), "left");
-        mainJSplitPane.setDividerSize(2);
+        mainJSplitPaneTop.add(getMainSplitPaneRight(), "right");
+        mainJSplitPaneTop.add(getMainLeftJPanel(), "left");
+        mainJSplitPaneTop.setDividerSize(2);
         addWindowListener(new WindowAdapter() {
             /** Invoked when a window has been opened. */
             public void windowOpened(WindowEvent e) {
@@ -725,7 +786,7 @@ public class MainWindow extends JFrame {
                     String s = prefs.getString("main.split.divider.location");
                     if (s != null) {
                         int l = Integer.parseInt(s);
-                        mainJSplitPane.setDividerLocation(l);
+                        mainJSplitPaneTop.setDividerLocation(l);
                     }
                 } catch (IOException e1) {
 
@@ -737,7 +798,7 @@ public class MainWindow extends JFrame {
             public void windowClosed(WindowEvent e) {
                 try {
                     Preferences prefs = Preferences.getPreferences();
-                    int l = mainJSplitPane.getDividerLocation();
+                    int l = mainJSplitPaneTop.getDividerLocation();
                     prefs.putProperty("main.split.divider.location", Integer.toString(l));
                 } catch (IOException e1) {
                 } catch (NullPointerException e1) {
@@ -745,7 +806,7 @@ public class MainWindow extends JFrame {
             }
         });
 
-        return mainJSplitPane;
+        return mainJSplitPaneTop;
     }
 
     /**
@@ -757,9 +818,23 @@ public class MainWindow extends JFrame {
             mainPane = new JPanel();
             mainPane.setLayout(new BorderLayout());
             getMainPane().add(getMainJSplitPane(), "Center");
-        }
+         }
         return mainPane;
     }
+
+    // Francis
+     private JSplitPane getMainJSplitPane() {
+        if (mainJSplitPane == null) {
+            mainJSplitPane = new JSplitPane(JSplitPane.VERTICAL_SPLIT);
+            mainJSplitPane.setResizeWeight(0.75);
+             mainJSplitPane.setTopComponent(getMainJSplitPaneTop());
+            mainJSplitPane.setBottomComponent(logPane.getPane());
+           // mainJSplitPane.setDividerLocation(mainJSplitPane.getSize().getHeight() * 0.5);
+            mainJSplitPane.setDividerLocation(700);
+        }
+        return mainJSplitPane;
+    }
+
 
 
     /**
