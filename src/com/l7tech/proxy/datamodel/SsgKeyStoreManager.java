@@ -168,6 +168,23 @@ public class SsgKeyStoreManager {
         return getClientCert(ssg).getPublicKey();
     }
 
+    private static class KeyStoreCorruptException extends RuntimeException {
+        public KeyStoreCorruptException() {
+        }
+
+        public KeyStoreCorruptException(String message) {
+            super(message);
+        }
+
+        public KeyStoreCorruptException(String message, Throwable cause) {
+            super(message, cause);
+        }
+
+        public KeyStoreCorruptException(Throwable cause) {
+            super(cause);
+        }
+    }
+
     /**
      * Obtain a key store for this SSG.  If one is present on disk, it will be loaded.  If the one on disk
      * is missing or corrupt, a new keystore will be created in memory.  Call saveKeyStore() to safely
@@ -175,6 +192,7 @@ public class SsgKeyStoreManager {
      *
      * @param ssg The Ssg whose keystore we are setting up.  Must not be null.
      * @return an in-memory KeyStore object for this Ssg, either loaded from disk or newly created.
+     * @throws RuntimeException if the key store is damaged, but user doesn't want to replace it just yet
      */
     public static KeyStore getKeyStore(Ssg ssg) {
         synchronized (ssg) {
@@ -193,8 +211,14 @@ public class SsgKeyStoreManager {
                 } catch (Exception e) {
                     if (e instanceof FileNotFoundException)
                         log.info("Creating new key store " + ssg.getKeyStoreFile() + " for SSG " + ssg);
-                    else
+                    else {
                         log.error("Unable to load existing key store " + ssg.getKeyStoreFile() + " for SSG " + ssg + " -- will create new one", e);
+                        try {
+                            Managers.getCredentialManager().notifyKeyStoreCorrupt(ssg);
+                        } catch (OperationCanceledException e1) {
+                            throw new KeyStoreCorruptException(e1);
+                        }
+                    }
                     try {
                         keyStore.load(null, KEYSTORE_PASSWORD);
                     } catch (Exception e1) {
