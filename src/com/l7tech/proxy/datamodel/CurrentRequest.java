@@ -23,5 +23,9 @@ public class CurrentRequest {
     public static PendingRequest getCurrentRequest() {
         return (PendingRequest) currentRequest.get();
     }
+
+    public static void clearCurrentRequest() {
+        currentRequest.set(null);
+    }
 }
 
