@@ -79,6 +79,7 @@ public class XencUtil {
      * @param encryptedType the EncryptedKey or EncryptedData element.  Must include a KeyInfo child.
      * @param recipientCert
      * @throws InvalidDocumentFormatException  if there was a problem with the encryptedType, or the KeyInfo didn't match.
+     * @throws UnexpectedKeyInfoException      if the keyinfo did not match the recipientCert
      * @throws GeneralSecurityException        if there was a problem with the recipient certificate or a certificate
      *                                         embedded within the encryptedType.
      */
@@ -132,8 +133,8 @@ public class XencUtil {
                 } else {
                     String msg = "This " + encryptedType.getLocalName() + " has a KeyInfo that declares a specific SKI, " +
                             "but our certificate's SKI does not match.";
-                    logger.warning(msg);
-                    throw new GeneralSecurityException(msg);
+                    logger.fine(msg);
+                    throw new UnexpectedKeyInfoException(msg);
                 }
             }
         } else if (valueType.endsWith(SoapUtil.VALUETYPE_X509_SUFFIX)) {
@@ -147,7 +148,7 @@ public class XencUtil {
                 String msg = "This " + encryptedType.getLocalName() + " has a KeyInfo that declares a specific cert, " +
                         "but our certificate does not match.";
                 logger.warning(msg);
-                throw new GeneralSecurityException(msg);
+                throw new UnexpectedKeyInfoException(msg);
             }
         } else
             throw new InvalidDocumentFormatException("The EncryptedKey's KeyInfo uses an unsupported " +

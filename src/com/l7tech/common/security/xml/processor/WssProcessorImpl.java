@@ -16,6 +16,7 @@ import com.l7tech.common.security.token.*;
 import com.l7tech.common.security.xml.SecureConversationKeyDeriver;
 import com.l7tech.common.security.xml.SecurityActor;
 import com.l7tech.common.security.xml.XencUtil;
+import com.l7tech.common.security.xml.UnexpectedKeyInfoException;
 import com.l7tech.common.util.*;
 import com.l7tech.common.xml.InvalidDocumentFormatException;
 import com.l7tech.common.xml.saml.SamlAssertion;
@@ -433,7 +434,7 @@ public class WssProcessorImpl implements WssProcessor {
         // Check that this is for us by checking the ds:KeyInfo/wsse:SecurityTokenReference/wsse:KeyIdentifier
         try {
             XencUtil.checkKeyInfo(encryptedKeyElement, recipientCert);
-        } catch (GeneralSecurityException e) {
+        } catch (UnexpectedKeyInfoException e) {
             if (cntx.secHeaderActor == SecurityActor.L7ACTOR) {
                 logger.warning("We do not appear to be the intended recipient for this EncryptedKey however the " +
                                "security header is clearly addressed to us");
@@ -442,11 +443,9 @@ public class WssProcessorImpl implements WssProcessor {
                 logger.log(Level.INFO, "We do not appear to be the intended recipient for this " +
                                        "EncryptedKey. Will leave it alone since the security header is not " +
                                        "explicitely addressed to us.", e);
+                cntx.encryptionIgnored = true;
                 return;
-            } else {
-                throw new RuntimeException("cntx.secHeaderActor not set"); // should not happen unless there is a bug
             }
-
         }
 
         // verify that the algo is supported
@@ -903,6 +902,16 @@ public class WssProcessorImpl implements WssProcessor {
         Validity validity = sigContext.verify(sigElement, signingKey);
 
         if (!validity.getCoreValidity()) {
+            // if the signature does not match but an encrypted key was previously ignored,
+            // it is likely that this is caused by the fact that decryption did not occur.
+            // this is perfectly legal in wss passthrough mechanisms, we therefore ignores this
+            // signature altogether
+            if (cntx.encryptionIgnored) {
+                logger.info("the validity of a signature could not be computed however an " +
+                            "encryption element was previously ignored for passthrough " +
+                            "purposes. this signature will therefore be ignored.");
+                return;
+            }
             StringBuffer msg = new StringBuffer("Validity not achieved. " + validity.getSignedInfoMessage());
             for (int i = 0; i < validity.getNumberOfReferences(); i++) {
                 msg.append("\n\tElement " + validity.getReferenceURI(i) + ": " + validity.getReferenceMessage(i));
@@ -1047,6 +1056,7 @@ public class WssProcessorImpl implements WssProcessor {
         Map securityTokenReferenceElementToTargetElement = new HashMap();
         SecurityActor secHeaderActor;
         boolean documentModified = false;
+        boolean encryptionIgnored = false;
 
         public ProcessingStatusHolder(Message message, Document processedDocument) {
             this.message = message;
