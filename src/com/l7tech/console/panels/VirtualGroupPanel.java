@@ -24,9 +24,6 @@ import java.util.logging.Logger;
  * $Id$
  */
 public class VirtualGroupPanel extends GroupPanel {
-    public void setGroup( GroupBean group ) {
-        this.group = group;
-    }
 
     static Logger log = Logger.getLogger(VirtualGroupPanel.class.getName());
 
@@ -48,8 +45,7 @@ public class VirtualGroupPanel extends GroupPanel {
     }
 
     protected void loadedGroup( Group g ) {
-        //todo:
-
+        // do nothing - no group members will be shown
     }
 
     protected Group newGroup( EntityHeader groupHeader ) {
@@ -93,39 +89,17 @@ public class VirtualGroupPanel extends GroupPanel {
                 GridBagConstraints.NONE,
                 new Insets(10, 15, 0, 0), 0, 0));
 
+            detailsPanel.add(new JSeparator(JSeparator.HORIZONTAL),
+               new GridBagConstraints(0, 1, 2, 1, 0.0, 0.0,
+                 GridBagConstraints.WEST,
+                 GridBagConstraints.BOTH,
+                 new Insets(10, 10, 0, 10), 0, 0));
 
             detailsPanel.add(getVirtualGroupPanel(),
-               new GridBagConstraints(0, 1, 2, 1, 0.0, 0.0,
+               new GridBagConstraints(0, 2, 2, 1, 0.0, 0.0,
                 GridBagConstraints.WEST,
                 GridBagConstraints.BOTH,
                 new Insets(10, 10, 0, 10), 0, 0));
-/*
-            detailsPanel.add(new JSeparator(JSeparator.HORIZONTAL),
-              new GridBagConstraints(0, 1, 2, 1, 0.0, 0.0,
-                GridBagConstraints.WEST,
-                GridBagConstraints.BOTH,
-                new Insets(10, 10, 0, 10), 0, 0));
-
-
-            detailsPanel.add(getDescriptionLabel(),
-              new GridBagConstraints(0, 3, 1, 1, 0.0, 0.0,
-                GridBagConstraints.WEST,
-                GridBagConstraints.NONE,
-                new Insets(10, 10, 0, 0), 0, 0));
-
-            detailsPanel.add(getDescriptionTextField(),
-              new GridBagConstraints(1, 3, 1, 1, 1.0, 0.0,
-                GridBagConstraints.WEST,
-                GridBagConstraints.HORIZONTAL,
-                new Insets(10, 15, 0, 10), 0, 0));
-*/
-
-
-            detailsPanel.add(new JSeparator(JSeparator.HORIZONTAL),
-              new GridBagConstraints(0, 11, 2, 1, 0.0, 0.0,
-                GridBagConstraints.WEST,
-                GridBagConstraints.BOTH,
-                new Insets(15, 10, 0, 10), 0, 0));
 
             Component strut = Box.createVerticalStrut(8);
 
@@ -173,14 +147,15 @@ public class VirtualGroupPanel extends GroupPanel {
      * @return Group   the instance with changes applied
      */
     protected Group collectChanges() {
-        Group g = super.collectChanges();
-
-        //todo:
-        return g;
+        VirtualGroup vGroup = (VirtualGroup) group;
+        vGroup.getGroupBean().setDescription(virtualGroupDetailsPanel.getGroupDescTextField().getText());
+        vGroup.setSamlEmailPattern(virtualGroupDetailsPanel.getEmailTextField().getText());
+        vGroup.setX509SubjectDnPattern(virtualGroupDetailsPanel.getX509SubjectDNTextField().getText());
+        return group;
     }
 
     protected String save() throws RemoteException, SaveException, UpdateException, ObjectNotFoundException {
-        return getIdentityAdmin().saveGroup(config.getOid(), group, null);
+        return getIdentityAdmin().saveGroup(config.getOid(), group, emptyMembers);
     }
 }
 
