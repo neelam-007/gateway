@@ -13,7 +13,6 @@ import com.l7tech.common.security.saml.SamlConstants;
 import org.w3c.dom.*;
 import org.w3c.dom.Node;
 import org.xml.sax.SAXException;
-import org.apache.xmlbeans.XmlException;
 
 import javax.xml.rpc.NamespaceConstants;
 import javax.xml.soap.*;
@@ -21,7 +20,10 @@ import javax.xml.transform.dom.DOMSource;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Iterator;
+import java.util.List;
 
 /**
  * @author alex
@@ -194,18 +196,6 @@ public class SoapUtil {
         } catch (SOAPException e) {
             throw new RuntimeException(e); // can't happen
         }
-    }
-
-    public static SOAPFault addFaultTo(SOAPMessage message, String faultCode, String faultString, String faultActor) throws SOAPException {
-        SOAPPart spart = message.getSOAPPart();
-        SOAPEnvelope senv = spart.getEnvelope();
-        SOAPBody body = senv.getBody();
-        SOAPFault fault = body.addFault();
-        fault.setFaultCode(faultCode);
-        fault.setFaultString(faultString);
-        if (faultActor != null)
-            fault.setFaultActor(faultActor);
-        return fault;
     }
 
     /**
@@ -753,16 +743,6 @@ public class SoapUtil {
         //In order to replace the node need to retrieve replacedNode's parent
         parentNode.insertBefore(importNode, null);
         return importingDocument;
-    }
-
-    public static SOAPMessage makeFaultMessage(String faultCode, String faultString, String faultActor) {
-        SOAPMessage msg = makeMessage();
-        try {
-            SoapUtil.addFaultTo(msg, faultCode, faultString, faultActor);
-            return msg;
-        } catch (SOAPException e) {
-            throw new RuntimeException(e); // can't happen
-        }
     }
 
     public static String soapMessageToString(SOAPMessage msg, String encoding) throws IOException, SOAPException {
