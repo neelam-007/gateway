@@ -2,11 +2,10 @@ package com.l7tech.identity;
 
 import com.l7tech.objectmodel.imp.NamedEntityImp;
 
-import java.util.Set;
 import java.util.HashSet;
-import java.security.Principal;
+import java.util.Set;
 
-public class Group extends NamedEntityImp implements Principal {
+public class Group extends NamedEntityImp {
 
     public static final String ADMIN_GROUP_NAME = "SSGAdmin";
 
@@ -15,12 +14,12 @@ public class Group extends NamedEntityImp implements Principal {
     }
 
     public Set getMembers() {
-        if (_members == null) _members = new HashSet();
+        if ( _members == null ) return new HashSet();
         return _members;
     }
 
     public Set getMemberHeaders() {
-        if (_memberHeaders == null) _memberHeaders = new HashSet();
+        if ( _memberHeaders == null ) return new HashSet();
         return _memberHeaders;
     }
 
