@@ -34,12 +34,12 @@ public abstract class Filter {
     }
 
     protected void removeSelfFromParent(Assertion arg, boolean removeAlsoNextSiblings) throws FilteringException {
+        CompositeAssertion parent = arg.getParent();
         // special case, empty root assertion (anonymous access?)
-        if (arg.getParent() == null) {
+        if (parent == null) {
             logger.warning("Filter action resulted in removing all assertions from policy.");
             return;
         }
-        CompositeAssertion parent = arg.getParent();
         List newKids = new LinkedList();
         Iterator i = parent.getChildren().iterator();
         boolean pastSelf = false;
@@ -51,6 +51,15 @@ public abstract class Filter {
             else if (!removeAlsoNextSiblings ) newKids.add(kid);
         }
         parent.setChildren(newKids);
+    }
+
+    protected void removeSelfAndAllSiblings(Assertion arg)  throws FilteringException {
+        CompositeAssertion parent = arg.getParent();
+        if (parent == null) {
+            logger.warning("Filter action resulted in removing all assertions from policy.");
+            return;
+        }
+        parent.setChildren(new LinkedList());
     }
 
     protected Logger logger = null;
