@@ -42,8 +42,10 @@ public class InternalUserManagerServer extends HibernateEntityManager implements
             out.setProviderId(IdProvConfManagerServer.INTERNALPROVIDER_SPECIAL_OID);
             return out;
         } catch ( SQLException se ) {
+            logger.log(Level.SEVERE, null, se);
             throw new FindException( se.toString(), se );
         } catch ( NumberFormatException nfe ) {
+            logger.log(Level.SEVERE, null, nfe);
             throw new FindException( nfe.toString(), nfe );
         }
     }
