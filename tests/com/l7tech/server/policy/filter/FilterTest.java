@@ -19,6 +19,7 @@ import com.l7tech.policy.assertion.credential.http.HttpClientCert;
 import com.l7tech.policy.assertion.credential.http.HttpDigest;
 import com.l7tech.policy.assertion.identity.SpecificUser;
 import com.l7tech.common.ApplicationContexts;
+import com.l7tech.common.security.Keys;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
@@ -50,6 +51,7 @@ public class FilterTest extends TestCase {
         TestSetup wrapper = new TestSetup(suite) {
 
             protected void setUp() throws Exception {
+                Keys.createTestSsgKeystoreProperties();
                 applicationContext = createApplicationContext();
                 filterManager = (FilterManager)applicationContext.getBean("policyFilterManager");
 
