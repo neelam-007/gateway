@@ -59,7 +59,12 @@ public class ServerLogManager extends LogManager {
         if (systemLogger == null) {
             systemLogger = Logger.getLogger(SYSTEM_LOGGER_NAME);
             // create system Logger
-            systemLogger.setLevel(getLevel());
+            try {
+                systemLogger.setLevel(getLevel());
+            } catch (RuntimeException e) {
+                System.err.println("Can't initialize server log.");
+                // continue without those special log handlers
+            }
             // add custom memory handler
             systemLogMemHandler = new MemHandler();
             systemLogger.addHandler(systemLogMemHandler);
@@ -118,7 +123,7 @@ public class ServerLogManager extends LogManager {
         }
     }
 
-    private synchronized Properties getProps() {
+    private synchronized Properties getProps() throws RuntimeException {
         if (props == null) {
             try {
                 InputStream inputStream = null;
@@ -141,6 +146,7 @@ public class ServerLogManager extends LogManager {
                 }
 
                 props = new Properties();
+                if (props == null) throw new RuntimeException("can't read properties");
                 props.load(inputStream);
             } catch (IOException e) {
                 throw new RuntimeException(e);
