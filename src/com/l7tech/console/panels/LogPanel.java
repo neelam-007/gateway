@@ -26,12 +26,10 @@ import java.text.SimpleDateFormat;
  */
 
 public class LogPanel extends JPanel {
-
-     // Titles/Labels
-    public static final int MSG_FILTER_LEVEL_ALL = 4;
-    public static final int MSG_FILTER_LEVEL_INFO = 3;
-    public static final int MSG_FILTER_LEVEL_WARNING = 2;
     public static final int MSG_FILTER_LEVEL_SEVERE = 1;
+    public static final int MSG_FILTER_LEVEL_WARNING = 2;
+    public static final int MSG_FILTER_LEVEL_INFO = 3;
+    public static final int MSG_FILTER_LEVEL_ALL = 4;
 
     public static final int LOG_MSG_NUMBER_COLUMN_INDEX = 0;
     public static final int LOG_NODE_NAME_COLUMN_INDEX = 1;
@@ -52,7 +50,6 @@ public class LogPanel extends JPanel {
     private int msgFilterLevel = MSG_FILTER_LEVEL_WARNING;
     private JPanel selectPane = null;
     private JPanel filterPane = null;
-
     private JPanel controlPane = null;
     private JScrollPane msgTablePane = null;
     private JPanel statusPane = null;
@@ -96,7 +93,6 @@ public class LogPanel extends JPanel {
 
                         if (row == -1) return;
 
-                        //msg = "The selected row is: " + row + "\n";
                         msg = "";
                         //if (getMsgTable().getModel().getValueAt(row, LOG_MSG_NUMBER_COLUMN_INDEX) != null)
                         //    msg = msg + "Message #: " + getMsgTable().getModel().getValueAt(row, LOG_MSG_NUMBER_COLUMN_INDEX).toString() + "\n";
@@ -129,16 +125,25 @@ public class LogPanel extends JPanel {
         return msgFilterLevel;
     }
 
+    /**
+     * Stop the refresh timer.
+     */
     public void stopRefreshTimer(){
         getLogsRefreshTimer().stop();
     }
 
+    /**
+     * Performs the necessary initialization when the connection with the cluster is established.
+     */
     public void onConnect(){
         getFilteredLogTableSorter().onConnect();
         clearMsgTable();
         getLogsRefreshTimer().start();
     }
 
+    /**
+     * Performs the necessary cleanup when the connection with the cluster went down.
+     */
     public void onDisconnect(){
         getLogsRefreshTimer().stop();
         getFilteredLogTableSorter().onDisconnect();
@@ -274,6 +279,10 @@ public class LogPanel extends JPanel {
         return controlPane;
     }
 
+    /**
+     * Return the total number of the messages being displayed.
+     * @return
+     */
     private JLabel getMsgTotal(){
         if(msgTotal != null) return msgTotal;
         msgTotal = new JLabel(MSG_TOTAL_PREFIX + "0");
@@ -335,7 +344,7 @@ public class LogPanel extends JPanel {
 
     /**
      * Return MsgDetails property value
-     * @return JTextArea
+     * @return  JTextArea
      */
     private JTextArea getMsgDetails()
     {
@@ -343,11 +352,14 @@ public class LogPanel extends JPanel {
 
         msgDetails = new JTextArea();
         msgDetails.setEditable(false);
-       // msgDetails.setMinimumSize(new Dimension(0, 0));
 
         return msgDetails;
     }
 
+    /**
+     * Return statusPane property value
+     * @return  JPanel
+     */
     private JPanel getStatusPane() {
         if(statusPane != null)  return statusPane;
 
@@ -358,16 +370,20 @@ public class LogPanel extends JPanel {
         return statusPane;
     }
 
+    /**
+     * Return lastUpdateTimeLabel property value
+     * @return  JLabel
+     */
     private JLabel getLastUpdateTimeLabel() {
 
         if(lastUpdateTimeLabel != null) return lastUpdateTimeLabel;
 
         lastUpdateTimeLabel = new JLabel();
-//        lastUpdateTimeLabel.setVerticalTextPosition(JLabel.CENTER);
         lastUpdateTimeLabel.setFont(new java.awt.Font("Dialog", 0, 12));
         lastUpdateTimeLabel.setText("");
         return lastUpdateTimeLabel;
     }
+
     /**
      * Return LogColumnModel property value
      * @return  DefaultTableColumnModel
@@ -448,7 +464,9 @@ public class LogPanel extends JPanel {
         return logTableModel;
     }
 
-
+    /**
+     * Performs the log retrieval. This function is called when the refresh timer is expired.
+     */
     public void refreshLogs() {
         getLogsRefreshTimer().stop();
 
@@ -466,6 +484,11 @@ public class LogPanel extends JPanel {
 
     }
 
+    /**
+     * Set the row of the log table which is currenlty selected by the user for viewing the details of the log message.
+     *
+     * @param msgNumber  The message number of the log being selected.
+     */
     public void setSelectedRow(String msgNumber) {
         if (msgNumber != null) {
             // keep the current row selection
@@ -487,6 +510,11 @@ public class LogPanel extends JPanel {
         }
     }
 
+    /**
+     * Update the filter level.
+     *
+     * @param newFilterLevel  The new filter level to be applied.
+     */
     private void updateMsgFilterLevel(int newFilterLevel) {
 
         if (msgFilterLevel != newFilterLevel) {
@@ -511,15 +539,19 @@ public class LogPanel extends JPanel {
         }
     }
 
-
+    /**
+     *  Clear the message table
+     */
     public void clearMsgTable(){
-       //todo: clear table
-        //((FilteredLogTableSorter)getMsgTable().getModel()).clearTable();
         getMsgDetails().setText("");
         msgTotal.setText(MSG_TOTAL_PREFIX + "0");
     }
 
-
+    /**
+     * Return lgsRefreshTimer propery value
+     *
+     * @return javax.swing.Timer
+     */
     public javax.swing.Timer getLogsRefreshTimer() {
 
         if (logsRefreshTimer != null) return logsRefreshTimer;
@@ -534,16 +566,22 @@ public class LogPanel extends JPanel {
         return logsRefreshTimer;
     }
 
+    /**
+     * Update the message total.
+     */
     public void updateMsgTotal(){
          msgTotal.setText(MSG_TOTAL_PREFIX + msgTable.getRowCount());
     }
 
+    /**
+     * Update the timestamp of the "last updated" label.
+     */
     public void updateTimeStamp() {
         SimpleDateFormat sdf = new SimpleDateFormat("MMM d yyyy hh:mm:ss aaa");
         getLastUpdateTimeLabel().setText("Last updated: " + sdf.format(Calendar.getInstance().getTime()) + "      ");
     }
 
-        // This customized renderer can render objects of the type TextandIcon
+    // This customized renderer can render objects of the type TextandIcon
     TableCellRenderer iconHeaderRenderer = new DefaultTableCellRenderer() {
         public Component getTableCellRendererComponent(JTable table, Object value,
                                                        boolean isSelected, boolean hasFocus, int row, int column) {
@@ -578,8 +616,10 @@ public class LogPanel extends JPanel {
         }
     };
 
-    // Add a mouse listener to the Table to trigger a table sort
-    // when a column heading is clicked in the JTable.
+    /**
+     * Add a mouse listener to the Table to trigger a table sorting
+     * when a column heading is clicked in the JTable.
+     */
     public void addMouseListenerToHeaderInTable(JTable table) {
 
         final JTable tableView = table;
