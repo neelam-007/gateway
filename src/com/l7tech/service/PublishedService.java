@@ -37,12 +37,12 @@ public class PublishedService {
         this.name = name;
     }
 
-    public long getAssociatedProtectedServiceOid() {
-        return associatedProtectedServiceOid;
+    public ProtectedService getProtectedService() {
+        return _protectedService;
     }
 
-    public void setAssociatedProtectedServiceOid(long associatedProtectedServiceOid) {
-        this.associatedProtectedServiceOid = associatedProtectedServiceOid;
+    public void setProtectedService( ProtectedService protServ ) {
+        _protectedService = protServ;
     }
 
     // ************************************************
@@ -51,5 +51,5 @@ public class PublishedService {
     protected long oid;
     protected Assertion _rootAssertion;
     protected String name;
-    protected long associatedProtectedServiceOid;
+    protected ProtectedService _protectedService;
 }
