@@ -1,4 +1,4 @@
-package com.l7tech.policy.validator;
+package com.l7tech.policy;
 
 import com.l7tech.policy.PolicyValidatorResult;
 import com.l7tech.policy.assertion.Assertion;
@@ -29,7 +29,6 @@ public class AssertionPath {
             throw new IllegalArgumentException();
         }
         path.addAll(ap.path);
-        pathErrors.addAll(ap.pathErrors);
     }
 
     public void addAssertion(Assertion a) {
@@ -45,5 +44,4 @@ public class AssertionPath {
     }
 
     private List path = new ArrayList();
-    private List pathErrors = new ArrayList();
 }
