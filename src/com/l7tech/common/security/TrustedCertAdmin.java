@@ -57,6 +57,12 @@ public interface TrustedCertAdmin extends Remote {
      */
     public void deleteCert(long oid) throws FindException, DeleteException, RemoteException;
 
+    public static class HostnameMismatchException extends Exception {
+        public HostnameMismatchException(String certName, String hostname) {
+            super("SSL Certificate with DN '" + certName + "' does not match the expected hostname '" + hostname + "'");
+        }
+    }
+
     /**
      * Retrieves the {@link X509Certificate} chain from the specified URL.
      * @param url the url from which to retrieve the cert.
@@ -65,6 +71,6 @@ public interface TrustedCertAdmin extends Remote {
      * @throws IllegalArgumentException if the URL does not start with "https://"
      * @throws RemoteException
      */
-    public X509Certificate[] retrieveCertFromUrl(String url) throws RemoteException, IOException;
-    public X509Certificate[] retrieveCertFromUrl(String url, boolean ignoreHostname) throws RemoteException, IOException;
+    public X509Certificate[] retrieveCertFromUrl(String url) throws RemoteException, IOException, HostnameMismatchException;
+    public X509Certificate[] retrieveCertFromUrl(String url, boolean ignoreHostname) throws RemoteException, IOException, HostnameMismatchException;
 }

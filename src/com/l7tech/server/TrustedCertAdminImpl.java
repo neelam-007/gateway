@@ -97,11 +97,12 @@ public class TrustedCertAdminImpl extends RemoteService implements TrustedCertAd
         }
     }
 
-    public X509Certificate[] retrieveCertFromUrl( String purl ) throws IOException, RemoteException {
+    public X509Certificate[] retrieveCertFromUrl( String purl ) throws IOException, RemoteException, HostnameMismatchException {
         return retrieveCertFromUrl(purl, false);
     }
 
-    public X509Certificate[] retrieveCertFromUrl( String purl, boolean ignoreHostname ) throws IOException, RemoteException {
+    public X509Certificate[] retrieveCertFromUrl( String purl, boolean ignoreHostname )
+            throws IOException, RemoteException, HostnameMismatchException {
         if ( !purl.startsWith("https://") ) throw new IllegalArgumentException("Can't load certificate from non-https URLs");
         URL url = new URL(purl);
 
@@ -136,7 +137,17 @@ public class TrustedCertAdminImpl extends RemoteService implements TrustedCertAd
                     }
                 });
             }
-            conn.connect();
+
+            try {
+                conn.connect();
+            } catch ( IOException e ) {
+                logger.log(Level.WARNING, "SSL server hostname didn't match cert", e);
+                X509Certificate cert = (X509Certificate)conn.getServerCertificates()[0];
+                if ( e.getMessage().startsWith("HTTPS hostname wrong") ) {
+                    throw new HostnameMismatchException(cert.getSubjectDN().getName(), url.getHost());
+                }
+            }
+
             return (X509Certificate[])conn.getServerCertificates();
         } else throw new IOException("URL resulted in a non-HTTPS connection");
     }
