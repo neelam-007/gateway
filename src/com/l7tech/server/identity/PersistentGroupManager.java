@@ -14,8 +14,8 @@ import com.l7tech.objectmodel.*;
 import com.l7tech.objectmodel.ObjectNotFoundException;
 import net.sf.hibernate.*;
 import net.sf.hibernate.expression.Expression;
+import org.springframework.dao.DataAccessException;
 
-import java.sql.SQLException;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -88,12 +88,10 @@ public abstract class PersistentGroupManager extends HibernateEntityManager impl
                 logger.fine("findByPrimaryKey called with null arg.");
                 return null;
             }
-            PersistentGroup out = (PersistentGroup)PersistenceManager.findByPrimaryKey(getContext(), getImpClass(), Long.parseLong(oid));
+            PersistentGroup out = (PersistentGroup)findByPrimaryKey(getImpClass(), Long.parseLong(oid));
             if (out == null) return null;
             out.setProviderId(getProviderOid());
             return out;
-        } catch (SQLException se) {
-            throw new FindException(se.toString(), se);
         } catch (NumberFormatException nfe) {
             throw new FindException("Can't find groups with non-numeric OIDs!", nfe);
         }
@@ -267,7 +265,7 @@ public abstract class PersistentGroupManager extends HibernateEntityManager impl
 
             PersistentGroup imp = cast(group);
             preSave(imp);
-            String oid = Long.toString(PersistenceManager.save(getContext(), (NamedEntity)imp));
+            String oid = getHibernateTemplate().save(imp).toString();
 
             if (userHeaders != null) {
                 try {
@@ -282,7 +280,7 @@ public abstract class PersistentGroupManager extends HibernateEntityManager impl
             }
 
             return oid;
-        } catch (SQLException se) {
+        } catch (DataAccessException se) {
             throw new SaveException(se.toString(), se);
         }
     }
@@ -311,10 +309,10 @@ public abstract class PersistentGroupManager extends HibernateEntityManager impl
             setUserHeaders(group.getUniqueIdentifier(), userHeaders);
 
             originalGroup.copyFrom(imp);
-            PersistenceManager.update(getContext(), originalGroup);
+            getHibernateTemplate().update(originalGroup);
         } catch (FindException e) {
             throw new UpdateException("Update called on group that does not already exist", e);
-        } catch (SQLException se) {
+        } catch (DataAccessException se) {
             throw new UpdateException(se.toString(), se);
         }
     }

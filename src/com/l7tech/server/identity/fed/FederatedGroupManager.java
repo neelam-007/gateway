@@ -11,13 +11,11 @@ import com.l7tech.identity.*;
 import com.l7tech.identity.fed.*;
 import com.l7tech.identity.internal.GroupMembership;
 import com.l7tech.objectmodel.FindException;
-import com.l7tech.objectmodel.PersistenceManager;
 import com.l7tech.objectmodel.SaveException;
 import com.l7tech.server.identity.PersistentGroupManager;
 import net.sf.hibernate.Criteria;
 import net.sf.hibernate.expression.Expression;
 
-import java.sql.SQLException;
 import java.util.Set;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
@@ -72,14 +70,12 @@ public class FederatedGroupManager extends PersistentGroupManager {
         try {
             Group g = super.findByPrimaryKey(oid);
             if ( g == null ) {
-                g = (PersistentGroup)PersistenceManager.findByPrimaryKey(getContext(), VirtualGroup.class, Long.parseLong(oid));
+                g = (PersistentGroup)findByPrimaryKey(VirtualGroup.class, Long.parseLong(oid));
                 if (g != null) {
                     g.setProviderId(providerConfig.getOid());
                 }
             }
             return g;
-        } catch (SQLException se) {
-            throw new FindException(se.toString(), se);
         } catch (NumberFormatException nfe) {
             throw new FindException("Can't find groups with non-numeric OIDs!", nfe);
         }

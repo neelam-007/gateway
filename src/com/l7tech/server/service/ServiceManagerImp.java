@@ -42,11 +42,7 @@ public class ServiceManagerImp extends HibernateEntityManager implements Service
     }
 
     public PublishedService findByPrimaryKey(long oid) throws FindException {
-        try {
-            return (PublishedService)PersistenceManager.findByPrimaryKey(getContext(), getImpClass(), oid);
-        } catch (SQLException se) {
-            throw new FindException(se.toString(), se);
-        }
+        return (PublishedService)findByPrimaryKey(getImpClass(), oid);
     }
 
     public long save(PublishedService service) throws SaveException, ResolutionParameterTooLongException {

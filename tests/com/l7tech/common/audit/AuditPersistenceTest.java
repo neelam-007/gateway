@@ -1,21 +1,8 @@
 package com.l7tech.common.audit;
 
-import com.l7tech.common.util.Locator;
-import com.l7tech.objectmodel.HibernatePersistenceContext;
-import com.l7tech.objectmodel.HibernatePersistenceManager;
-import com.l7tech.policy.assertion.AssertionStatus;
-import com.l7tech.server.RequestIdGenerator;
-import com.l7tech.server.audit.AuditRecordManager;
-import com.l7tech.service.PublishedService;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
-import net.sf.hibernate.Session;
-
-import java.net.InetAddress;
-import java.util.Collection;
-import java.util.Iterator;
-import java.util.logging.Level;
 
 /**
  * todo: restore this test

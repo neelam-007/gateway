@@ -5,8 +5,8 @@ import com.l7tech.identity.ldap.LdapIdentityProviderConfig;
 import com.l7tech.objectmodel.*;
 import com.l7tech.server.identity.internal.InternalIdentityProvider;
 import com.l7tech.server.identity.ldap.LdapConfigTemplateManager;
+import org.springframework.dao.DataAccessException;
 
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -28,11 +28,7 @@ public class IdProvConfManagerServer
         if (oid == INTERNALPROVIDER_SPECIAL_OID)
             return internalProvider.getConfig();
         else
-            try {
-                return (IdentityProviderConfig)PersistenceManager.findByPrimaryKey(getContext(), getImpClass(), oid);
-            } catch (SQLException se) {
-                throw new FindException(se.toString(), se);
-            }
+            return (IdentityProviderConfig)findByPrimaryKey(getImpClass(), oid);
     }
 
     /**
@@ -75,28 +71,23 @@ public class IdProvConfManagerServer
         // first, check that there isn't an existing provider with same name
         try {
             List existingProvidersWithSameName =
-              PersistenceManager.find(getContext(),
-                "from " + getTableName() + " in class " + getImpClass().getName() +
-              " where " + getTableName() + ".name = ?",
-                identityProviderConfig.getName(), String.class);
+              getHibernateTemplate().find("from " + getTableName() + " in class " + getImpClass().getName() +
+              " where " + getTableName() + ".name = ?", identityProviderConfig.getName());
 
             if (existingProvidersWithSameName != null && !(existingProvidersWithSameName.isEmpty())) {
                 logger.fine("sending error back to requestor because existing provider with same name exists");
                 throw new DuplicateObjectException("The name " + identityProviderConfig.getName() + " is already used by " +
                   "another id provider.");
             }
-        } catch (SQLException e) {
-            logger.log(Level.INFO, "problem trying to check for provider with same name as " +
-              identityProviderConfig.getName(), e);
-        } catch (FindException e) {
+        } catch (DataAccessException e) {
             logger.log(Level.INFO, "problem trying to check for provider with same name as " +
               identityProviderConfig.getName(), e);
         }
 
         // then, try to save it
         try {
-            return PersistenceManager.save(getContext(), identityProviderConfig);
-        } catch (SQLException se) {
+            return ((Long)getHibernateTemplate().save(identityProviderConfig)).longValue();
+        } catch (DataAccessException se) {
             throw new SaveException(se.toString(), se);
         }
     }
@@ -109,8 +100,8 @@ public class IdProvConfManagerServer
         }
         try {
             identityProviderFactory.dropProvider(identityProviderConfig);
-            PersistenceManager.update(getContext(), identityProviderConfig);
-        } catch (SQLException se) {
+            getHibernateTemplate().update(identityProviderConfig);
+        } catch (DataAccessException se) {
             throw new UpdateException(se.toString(), se);
         }
     }
@@ -123,8 +114,8 @@ public class IdProvConfManagerServer
         }
         try {
             identityProviderFactory.dropProvider(identityProviderConfig);
-            PersistenceManager.delete(getContext(), identityProviderConfig);
-        } catch (SQLException se) {
+            getHibernateTemplate().delete(identityProviderConfig);
+        } catch (DataAccessException se) {
             throw new DeleteException(se.toString(), se);
         }
     }

@@ -6,32 +6,28 @@
 
 package com.l7tech.server.identity.cert;
 
+import EDU.oswego.cs.dl.util.concurrent.ReadWriteLock;
+import EDU.oswego.cs.dl.util.concurrent.ReaderPreferenceReadWriteLock;
+import EDU.oswego.cs.dl.util.concurrent.Sync;
 import com.l7tech.common.security.CertificateExpiry;
 import com.l7tech.common.security.TrustedCert;
 import com.l7tech.common.util.CertUtils;
 import com.l7tech.identity.cert.TrustedCertManager;
 import com.l7tech.objectmodel.*;
+import org.springframework.dao.DataAccessException;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.TransactionStatus;
+import org.springframework.transaction.support.TransactionCallbackWithoutResult;
+import org.springframework.transaction.support.TransactionTemplate;
 
 import java.io.IOException;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
-import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.logging.Level;
-
-import EDU.oswego.cs.dl.util.concurrent.ReadWriteLock;
-import EDU.oswego.cs.dl.util.concurrent.ReaderPreferenceReadWriteLock;
-import EDU.oswego.cs.dl.util.concurrent.Sync;
-import org.springframework.orm.hibernate.HibernateCallback;
-import org.springframework.transaction.support.TransactionTemplate;
-import org.springframework.transaction.support.TransactionCallbackWithoutResult;
-import org.springframework.transaction.TransactionStatus;
-import org.springframework.transaction.PlatformTransactionManager;
-import net.sf.hibernate.Session;
-import net.sf.hibernate.HibernateException;
 
 /**
  * @author alex
@@ -40,13 +36,8 @@ import net.sf.hibernate.HibernateException;
 public class TrustedCertManagerImp extends HibernateEntityManager implements TrustedCertManager {
 
     public TrustedCert findByPrimaryKey(long oid) throws FindException {
-        try {
-            TrustedCert cert = (TrustedCert)PersistenceManager.findByPrimaryKey(getContext(), getImpClass(), oid);
-            return cert;
-        } catch (SQLException e) {
-            logger.log(Level.SEVERE, e.getMessage(), e);
-            throw new FindException("Couldn't retrieve cert", e);
-        }
+        TrustedCert cert = (TrustedCert)findByPrimaryKey(getImpClass(), oid);
+        return cert;
     }
 
     public TrustedCert findBySubjectDn(String dn) throws FindException {
@@ -54,7 +45,7 @@ public class TrustedCertManagerImp extends HibernateEntityManager implements Tru
         hql.append(getTableName()).append(" IN CLASS ").append(getImpClass().getName());
         hql.append(" WHERE ").append(getTableName()).append(".subjectDn = ?");
         try {
-            List found = PersistenceManager.find(getContext(), hql.toString(), dn, String.class);
+            List found = getHibernateTemplate().find(hql.toString(), dn);
             switch (found.size()) {
                 case 0:
                     return null;
@@ -63,7 +54,7 @@ public class TrustedCertManagerImp extends HibernateEntityManager implements Tru
                 default:
                     throw new FindException("Found multiple TrustedCerts with the same DN");
             }
-        } catch (SQLException e) {
+        } catch (DataAccessException e) {
             logger.log(Level.SEVERE, e.getMessage(), e);
             throw new FindException("Couldn't retrieve cert", e);
         }
@@ -72,8 +63,8 @@ public class TrustedCertManagerImp extends HibernateEntityManager implements Tru
     public long save(TrustedCert cert) throws SaveException {
         try {
             checkCachable(cert);
-            return PersistenceManager.save(getContext(), cert);
-        } catch (SQLException e) {
+            return ((Long)getHibernateTemplate().save(cert)).longValue();
+        } catch (DataAccessException e) {
             logger.log(Level.SEVERE, e.getMessage(), e);
             throw new SaveException("Couldn't save cert", e);
         } catch (CacheVeto e) {
@@ -92,8 +83,8 @@ public class TrustedCertManagerImp extends HibernateEntityManager implements Tru
                 throw new StaleUpdateException("TrustedCert #" + cert.getOid() + " was modified by another transaction");
 
             original.copyFrom(cert);
-            PersistenceManager.update(getContext(), original);
-        } catch (SQLException e) {
+            getHibernateTemplate().update(original);
+        } catch (DataAccessException e) {
             logger.log(Level.SEVERE, e.getMessage(), e);
             throw new UpdateException("Couldn't update cert", e);
         } catch (FindException e) {

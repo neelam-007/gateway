@@ -7,7 +7,6 @@
 package com.l7tech.service;
 
 import com.l7tech.common.message.Message;
-import com.l7tech.common.util.Locator;
 import com.l7tech.common.util.SoapFaultUtils;
 import com.l7tech.common.xml.Wsdl;
 import com.l7tech.objectmodel.imp.NamedEntityImp;
@@ -92,7 +91,7 @@ public class PublishedService extends NamedEntityImp {
      * @param wsdlUrl the WSDL URL for this service
      * @throws MalformedURLException if the URL cannot be parsed
      */
-    public synchronized void setWsdlUrl( String wsdlUrl ) throws MalformedURLException {
+    public void setWsdlUrl( String wsdlUrl ) throws MalformedURLException {
         if ( _wsdlUrl != null && !_wsdlUrl.equals(wsdlUrl) ) _wsdlXml = null;
         if (wsdlUrl != null && wsdlUrl.length() > 0) {
             new URL( wsdlUrl );
@@ -107,20 +106,10 @@ public class PublishedService extends NamedEntityImp {
      * @return A String containing the WSDL document.  Never null.
      * @throws IOException if the WSDL document cannot be retrieved
      */
-    public synchronized String getWsdlXml() throws IOException {
+    public String getWsdlXml() throws IOException {
         if ( _wsdlXml == null ) {
             if (_wsdlUrl != null && _wsdlUrl.length() > 0) {
-                // we must get the actual wsdl. delegate to the ServiceAdmin
-                // this avoids resolving the wsdl on the client side
-                ServiceAdmin svcAdmin = (ServiceAdmin)Locator.getDefault().
-                                            lookup(com.l7tech.service.ServiceAdmin.class);
-                if (svcAdmin == null) {
-                    String msg = "could not resolve a ServiceAdmin implementation.";
-                    logger.severe(msg);
-                    throw new IOException(msg);
-                }
-
-                _wsdlXml = svcAdmin.resolveWsdlTarget(_wsdlUrl);
+                throw new IllegalStateException("No wsdl content has been set. The wsdl url is "+_wsdlUrl);
             }
         }
         return _wsdlXml;

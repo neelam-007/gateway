@@ -13,6 +13,7 @@ import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
+import org.springframework.dao.DataAccessException;
 
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -49,18 +50,14 @@ public class JmsConnectionManager extends HibernateEntityManager
     }
 
     public JmsConnection findConnectionByPrimaryKey(long oid) throws FindException {
-        try {
-            return (JmsConnection)PersistenceManager.findByPrimaryKey(getContext(), JmsConnection.class, oid);
-        } catch (SQLException e) {
-            throw new FindException(e.toString(), e);
-        }
+        return (JmsConnection)findByPrimaryKey(JmsConnection.class, oid);
     }
 
     public long save(final JmsConnection conn) throws SaveException {
         _logger.info("Saving JmsConnection " + conn);
         try {
-            return PersistenceManager.save(getContext(), conn);
-        } catch (SQLException e) {
+            return ((Long)getHibernateTemplate().save(conn)).longValue();
+        } catch (DataAccessException e) {
             throw new SaveException(e.toString(), e);
         }
     }
@@ -108,8 +105,8 @@ public class JmsConnectionManager extends HibernateEntityManager
             for (int i = 0; i < endpoints.length; i++)
                 jmsEndpointManager.delete(endpoints[i].getOid());
 
-            PersistenceManager.delete(getContext(), connection);
-        } catch (SQLException e) {
+            getHibernateTemplate().delete(connection);
+        } catch (DataAccessException e) {
             throw new DeleteException(e.toString(), e);
         }
     }

@@ -12,7 +12,6 @@ import com.l7tech.common.security.JceProvider;
 import com.l7tech.common.util.JdkLoggerConfigurator;
 import com.l7tech.logging.ServerLogHandler;
 import com.l7tech.logging.ServerLogManager;
-import com.l7tech.objectmodel.HibernatePersistenceManager;
 import com.l7tech.server.audit.SystemAuditListener;
 import com.l7tech.server.event.EventManager;
 import com.l7tech.server.event.system.*;
@@ -76,7 +75,6 @@ public class BootProcess extends ApplicationObjectSupport implements ServerCompo
         try {
             // Initialize database stuff
             final ApplicationContext springContext = config.getSpringContext();
-            HibernatePersistenceManager.initialize(springContext);
 
             // This needs to happen here, early enough that it will notice early events but after the database init
             systemAuditListener = new SystemAuditListener(springContext);

@@ -8,13 +8,12 @@ package com.l7tech.server.transport.jms;
 
 import com.l7tech.common.transport.jms.JmsEndpoint;
 import com.l7tech.objectmodel.*;
+import org.springframework.dao.DataAccessException;
 
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -24,11 +23,7 @@ import java.util.logging.Logger;
 public class JmsEndpointManager extends HibernateEntityManager {
 
     public JmsEndpoint findByPrimaryKey(long oid) throws FindException {
-        try {
-            return (JmsEndpoint)PersistenceManager.findByPrimaryKey(getContext(), JmsEndpoint.class, oid);
-        } catch (SQLException e) {
-            throw new FindException(e.toString(), e);
-        }
+        return (JmsEndpoint)findByPrimaryKey(JmsEndpoint.class, oid);
     }
 
     public Collection findMessageSourceEndpoints() throws FindException {
@@ -36,9 +31,9 @@ public class JmsEndpointManager extends HibernateEntityManager {
         query.append(JmsEndpoint.class.getName());
         query.append(" where endpoint.messageSource = ?");
         try {
-            Collection endpoints = PersistenceManager.find(getContext(), query.toString(), Boolean.TRUE, Boolean.TYPE);
+            Collection endpoints = getHibernateTemplate().find(query.toString(), Boolean.TRUE);
             return endpoints;
-        } catch (SQLException e) {
+        } catch (DataAccessException e) {
             throw new FindException(e.toString(), e);
         }
     }
@@ -50,7 +45,7 @@ public class JmsEndpointManager extends HibernateEntityManager {
         sql.append(" where endpoint.connectionOid = ?");
         ArrayList result = new ArrayList();
         try {
-            List results = PersistenceManager.find(getContext(), sql.toString(), new Long(connectionOid), Long.TYPE);
+            List results = getHibernateTemplate().find(sql.toString(), new Long(connectionOid));
             for (Iterator i = results.iterator(); i.hasNext();) {
                 Object[] row = (Object[])i.next();
                 if (row[0] instanceof Long) {
@@ -59,7 +54,7 @@ public class JmsEndpointManager extends HibernateEntityManager {
                 }
             }
 
-        } catch (SQLException e) {
+        } catch (DataAccessException e) {
             throw new FindException(e.toString(), e);
         }
         return (JmsEndpoint[])result.toArray(new JmsEndpoint[0]);
@@ -72,7 +67,7 @@ public class JmsEndpointManager extends HibernateEntityManager {
         sql.append(" where endpoint.connectionOid = ?");
         ArrayList result = new ArrayList();
         try {
-            List results = PersistenceManager.find(getContext(), sql.toString(), new Long(connectionOid), Long.TYPE);
+            List results = getHibernateTemplate().find(sql.toString(), new Long(connectionOid));
             for (Iterator i = results.iterator(); i.hasNext();) {
                 Object[] row = (Object[])i.next();
                 if (row[0] instanceof Long) {
@@ -81,7 +76,7 @@ public class JmsEndpointManager extends HibernateEntityManager {
                 }
             }
             return (EntityHeader[])result.toArray(new EntityHeader[0]);
-        } catch (SQLException e) {
+        } catch (DataAccessException e) {
             throw new FindException(e.toString(), e);
         }
     }
@@ -89,8 +84,8 @@ public class JmsEndpointManager extends HibernateEntityManager {
     public long save(final JmsEndpoint endpoint) throws SaveException {
         _logger.info("Saving JmsEndpoint " + endpoint);
         try {
-            return PersistenceManager.save(getContext(), endpoint);
-        } catch (SQLException e) {
+            return ((Long)getHibernateTemplate().save(endpoint)).longValue();
+        } catch (DataAccessException e) {
             throw new SaveException(e.toString(), e);
         }
     }

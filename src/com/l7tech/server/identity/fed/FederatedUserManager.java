@@ -6,20 +6,19 @@
 
 package com.l7tech.server.identity.fed;
 
+import com.l7tech.identity.IdentityProvider;
 import com.l7tech.identity.PersistentUser;
 import com.l7tech.identity.User;
 import com.l7tech.identity.UserBean;
-import com.l7tech.identity.IdentityProvider;
 import com.l7tech.identity.fed.FederatedUser;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.FindException;
-import com.l7tech.objectmodel.PersistenceManager;
 import com.l7tech.server.identity.PersistentUserManager;
 import net.sf.hibernate.Criteria;
 import net.sf.hibernate.expression.Expression;
+import org.springframework.dao.DataAccessException;
 
-import java.sql.SQLException;
 import java.util.List;
 
 /**
@@ -58,9 +57,8 @@ public class FederatedUserManager extends PersistentUserManager {
 
     public FederatedUser findBySubjectDN(String dn) throws FindException {
         try {
-            List results = PersistenceManager.find( getContext(), FIND_BY_DN,
-                                                    new Object[] { new Long(getProviderOid()), dn },
-                                                    new Class[] { Long.class, String.class } );
+            List results = getHibernateTemplate().find(FIND_BY_DN,
+                                                    new Object[] { new Long(getProviderOid()), dn } );
             switch( results.size() ) {
                 case 0:
                     return null;
@@ -69,7 +67,7 @@ public class FederatedUserManager extends PersistentUserManager {
                 default:
                     throw new FindException("Found multiple users with same subject DN");
             }
-        } catch ( SQLException e ) {
+        } catch ( DataAccessException e ) {
             throw new FindException("Couldn't find user", e);
         }
     }
