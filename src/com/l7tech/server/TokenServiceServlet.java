@@ -1,8 +1,12 @@
 package com.l7tech.server;
 
+import com.l7tech.common.util.Locator;
 import com.l7tech.common.util.XmlUtil;
-import com.l7tech.server.secureconversation.SecureConversationSession;
-import com.l7tech.server.secureconversation.SecureConversationTokenService;
+import com.l7tech.identity.IdentityProviderConfigManager;
+import com.l7tech.identity.User;
+import com.l7tech.objectmodel.FindException;
+import com.l7tech.policy.assertion.credential.LoginCredentials;
+import com.l7tech.server.identity.IdentityProviderFactory;
 import org.w3c.dom.Document;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
@@ -17,6 +21,7 @@ import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 import java.io.BufferedReader;
 import java.io.IOException;
+import java.util.Collection;
 import java.util.logging.Logger;
 
 /**
@@ -48,19 +53,33 @@ public class TokenServiceServlet extends HttpServlet {
         } catch (SAXException e) {
             // todo, some error
         }
-        SecureConversationTokenService tokenService = new SecureConversationTokenService();
-        // todo , plug in new version
-        /*SecureConversationSession session = tokenService.getNewContext(payload);
-        Document responseDoc = tokenService.sessionToRequestSecurityTokenResponse(session);
-        outputRequestSecurityTokenResponse(responseDoc, res);*/
+        TokenService tokenService = new TokenService();
+        Document response = tokenService.respondToRequestSecurityToken(payload, authenticator());
+        outputRequestSecurityTokenResponse(response, res);
+    }
+
+    private final TokenService.CredentialsAuthenticator authenticator() {
+        return new TokenService.CredentialsAuthenticator() {
+            public User authenticate(LoginCredentials creds) {
+                IdentityProviderConfigManager idpcm = (IdentityProviderConfigManager)Locator.getDefault().
+                                                        lookup(IdentityProviderConfigManager.class);
+                Collection providers = null;
+                try {
+                    providers = IdentityProviderFactory.findAllIdentityProviders(idpcm);
+                    // todo go through providers and try to authenticate the cert
+                } catch (FindException e) {
+                    // todo, something
+                }
+                // todo, go through providers, find user matching this cert
+                return null;
+            }
+        };
     }
 
     private void outputRequestSecurityTokenResponse(Document requestSecurityTokenResponse,
                                                     HttpServletResponse res) {
         // todo, send back the RequestSecurityTokenResponse to the requestor
     }
-
-
 
     private Document extractXMLPayload(HttpServletRequest req)
             throws IOException, ParserConfigurationException, SAXException {
