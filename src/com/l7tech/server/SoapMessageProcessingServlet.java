@@ -7,6 +7,7 @@
 package com.l7tech.server;
 
 import com.l7tech.logging.LogManager;
+import com.l7tech.logging.RequestAuditRecord;
 import com.l7tech.message.*;
 import com.l7tech.objectmodel.PersistenceContext;
 import com.l7tech.policy.assertion.AssertionStatus;
@@ -62,9 +63,10 @@ public class SoapMessageProcessingServlet extends HttpServlet {
 
         BufferedWriter respWriter = null;
         OutputStream respStream = null;
+        AssertionStatus status = AssertionStatus.UNDEFINED;
         try {
             try {
-                AssertionStatus status = MessageProcessor.getInstance().processMessage( sreq, sresp );
+                status = MessageProcessor.getInstance().processMessage( sreq, sresp );
 
                 sresp.setHeadersIn( hresponse );
 
@@ -101,6 +103,8 @@ public class SoapMessageProcessingServlet extends HttpServlet {
                 logger.log(Level.SEVERE, null, se);
                 throw new ServletException( se );
             }
+
+            // RequestAuditRecord rec = new RequestAuditRecord( "HTTP(s) SOAP Request", status );
 
             if ( respWriter != null ) respWriter.close();
             if ( respStream != null ) respStream.close();
