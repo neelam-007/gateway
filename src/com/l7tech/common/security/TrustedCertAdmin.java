@@ -12,6 +12,7 @@ import java.io.IOException;
 import java.rmi.Remote;
 import java.rmi.RemoteException;
 import java.security.cert.X509Certificate;
+import java.security.cert.CertificateException;
 import java.util.List;
 
 /**
@@ -82,4 +83,9 @@ public interface TrustedCertAdmin extends Remote {
      */
     public X509Certificate[] retrieveCertFromUrl(String url) throws RemoteException, IOException, HostnameMismatchException;
     public X509Certificate[] retrieveCertFromUrl(String url, boolean ignoreHostname) throws RemoteException, IOException, HostnameMismatchException;
+
+    /**
+     * Get the ssg's root cert
+     */
+    public X509Certificate getSSGRootCert() throws IOException, CertificateException, RemoteException;
 }

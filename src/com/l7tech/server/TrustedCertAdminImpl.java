@@ -9,6 +9,7 @@ package com.l7tech.server;
 import com.l7tech.common.security.TrustedCert;
 import com.l7tech.common.security.TrustedCertAdmin;
 import com.l7tech.common.util.Locator;
+import com.l7tech.common.util.KeystoreUtils;
 import com.l7tech.identity.cert.TrustedCertManager;
 import com.l7tech.objectmodel.*;
 import com.l7tech.remote.jini.export.RemoteService;
@@ -23,6 +24,7 @@ import java.rmi.RemoteException;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 import java.security.cert.X509Certificate;
+import java.security.cert.CertificateException;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
@@ -186,6 +188,10 @@ public class TrustedCertAdminImpl extends RemoteService implements TrustedCertAd
 
             return (X509Certificate[])conn.getServerCertificates();
         } else throw new IOException("URL resulted in a non-HTTPS connection");
+    }
+
+    public X509Certificate getSSGRootCert() throws IOException, CertificateException, RemoteException {
+        return KeystoreUtils.getInstance().getRootCert();
     }
 
     private Object doInTransactionAndClose(PersistenceAction r) throws ObjectModelException {

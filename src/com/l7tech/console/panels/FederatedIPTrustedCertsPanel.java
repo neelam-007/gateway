@@ -7,6 +7,8 @@ import com.l7tech.identity.fed.FederatedIdentityProviderConfig;
 import com.l7tech.common.security.TrustedCert;
 import com.l7tech.common.security.TrustedCertAdmin;
 import com.l7tech.common.util.Locator;
+import com.l7tech.common.util.HexUtils;
+import com.l7tech.common.util.CertUtils;
 import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.objectmodel.FindException;
 import com.intellij.uiDesigner.core.GridLayoutManager;
@@ -21,6 +23,9 @@ import java.util.logging.Logger;
 import java.awt.*;
 import java.awt.event.*;
 import java.rmi.RemoteException;
+import java.security.cert.X509Certificate;
+import java.security.cert.CertificateException;
+import java.io.IOException;
 
 /**
  * This class provides the step panel for the Federated Identity Provider dialog.
@@ -40,6 +45,7 @@ public class FederatedIPTrustedCertsPanel extends IdentityProviderStepPanel {
     private boolean limitationsAccepted = true;
 
     private TrustedCertsTable trustedCertTable = null;
+    private X509Certificate ssgcert = null;
 
     public static final String RESOURCE_PATH = "com/l7tech/console/resources";
     private static ResourceBundle resources = ResourceBundle.getBundle("com.l7tech.console.resources.FederatedIdentityProviderDialog", Locale.getDefault());
@@ -311,9 +317,24 @@ public class FederatedIPTrustedCertsPanel extends IdentityProviderStepPanel {
      */
     private final CertListener certListener = new CertListenerAdapter() {
         public void certSelected(CertEvent e) {
-
             if(!trustedCertTable.getTableSorter().contains(e.getCert())) {
-                trustedCertTable.getTableSorter().addRow(e.getCert());
+                TrustedCert tc = e.getCert();
+                try {
+                    if (checkCertRelated(tc)) {
+                        JOptionPane.showMessageDialog(FederatedIPTrustedCertsPanel.this,
+                                                      "This cert cannot be used as a trusted cert in this " +
+                                                      "federated identity\nprovider because it is related to the " +
+                                                      "SecureSpan Gateway's root cert.",
+                                                      "Cannot add this cert",
+                            JOptionPane.ERROR_MESSAGE);
+                    } else {
+                        trustedCertTable.getTableSorter().addRow(tc);
+                    }
+                } catch (IOException e1) {
+                    throw new RuntimeException(e1); //  not expected to happen
+                } catch (CertificateException e1) {
+                    throw new RuntimeException(e1); //  not expected to happen
+                }
             } else {
                 // cert alreay exsits
                 JOptionPane.showMessageDialog(FederatedIPTrustedCertsPanel.this, resources.getString("add.cert.duplicated"),
@@ -323,6 +344,29 @@ public class FederatedIPTrustedCertsPanel extends IdentityProviderStepPanel {
         }
 
     };
+
+    /**
+     * Check whether or not the passed cert is related somehow to the ssg's root cert.
+     * @return true if it is
+     */
+    private boolean checkCertRelated(TrustedCert trustedCert) throws IOException, CertificateException {
+        if (ssgcert == null) {
+            ssgcert = getTrustedCertAdmin().getSSGRootCert();
+        }
+        byte[] certbytes = HexUtils.decodeBase64(trustedCert.getCertBase64());
+        X509Certificate[] chainToVerify = CertUtils.decodeCertChain(certbytes);
+        logger.info("checking for chain length: " + chainToVerify.length);
+
+        try {
+            CertUtils.verifyCertificateChain(chainToVerify, ssgcert, chainToVerify.length);
+        } catch (CertUtils.CertificateUntrustedException e) {
+            // this is what we were hoping for
+            logger.info("the cert is not related.");
+            return false;
+        }
+        logger.warning("The cert appears to be related!");
+        return true;
+    }
 
     private WizardListener wizardListener = new WizardAdapter() {
         /**
