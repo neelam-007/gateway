@@ -14,7 +14,7 @@ public class TabButton extends JButton {
         setPreferredSize(new Dimension(20, 20));
     }
 
-    public boolean isFocusTraversable() {
+    public boolean isFocusable() {
         return false;
     }
 
