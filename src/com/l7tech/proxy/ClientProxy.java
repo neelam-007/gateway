@@ -21,7 +21,7 @@ import java.util.Properties;
 public class ClientProxy {
     private final Category log = Category.getInstance(ClientProxy.class);
     private final String PROXY_CONFIG =
-            System.getProperties().getProperty("user.home") + File.separator + ".ssg";
+            System.getProperties().getProperty("user.home") + File.separator + ".l7tech";
 
     private SsgFinder ssgFinder;
     private HttpServer httpServer;
