@@ -93,8 +93,58 @@ public class SignedSamlTest extends TestCase {
 
     public void testRequestSignedWithSamlToken() throws Exception {
         Document req = getRequestSignedWithSamlToken();
-        log.info("Signed request using saml token: " + XmlUtil.nodeToString(req));
+        log.info("Signed request using saml token: " + XmlUtil.nodeToFormattedString(req));
     }
+
+    public void testRequestWithSenderVouchesToken() throws Exception {
+        Document req = getRequestWithSenderVouchesToken();
+        log.info("Request including sender vouches token: " + XmlUtil.nodeToFormattedString(req));
+    }
+
+    /*public void testSignedRequestWithSenderVouchesToken() throws Exception {
+        Document req = getSignedRequestWithSenderVouchesToken();
+        log.info("Request including sender vouches token: " + XmlUtil.nodeToFormattedString(req));
+    }*/
+
+    public Document getRequestWithSenderVouchesToken() throws Exception {
+        Document request = TestDocuments.getTestDocument(TestDocuments.PLACEORDER_CLEARTEXT);
+
+        SamlAssertionGenerator ag = new SamlAssertionGenerator();
+        SamlAssertionGenerator.Options samlOptions = new SamlAssertionGenerator.Options();
+        samlOptions.setExpiryMinutes(5);
+        ag.attachSenderVouches(request,
+                               new SignerInfo(caPrivateKey, caCertChain),
+                               LoginCredentials.makeCertificateCredentials(clientCertChain[0], getClass()),
+                               //LoginCredentials.makePasswordCredentials("john", "ilovesheep".toCharArray(), getClass()),
+                               samlOptions);
+        return request;
+    }
+
+    /*public Document getSignedRequestWithSenderVouchesToken() throws Exception {
+        Document request = TestDocuments.getTestDocument(TestDocuments.PLACEORDER_CLEARTEXT);
+        assertNotNull(request);
+        Element body = XmlUtil.findOnlyOneChildElementByName(request.getDocumentElement(),
+                                                             request.getDocumentElement().getNamespaceURI(),
+                                                             "Body");
+        assertNotNull(body);
+        // in this case, the request is actually signed by the issuer
+        DecorationRequirements req = new DecorationRequirements();
+        req.setSignTimestamp(true);
+        req.getElementsToSign().add(body);
+        req.setSenderCertificate(caCertChain[0]);
+        req.setSenderPrivateKey(caPrivateKey);
+        new WssDecoratorImpl().decorateMessage(request, req);
+
+        SamlAssertionGenerator ag = new SamlAssertionGenerator();
+        SamlAssertionGenerator.Options samlOptions = new SamlAssertionGenerator.Options();
+        samlOptions.setExpiryMinutes(5);
+        ag.attachSenderVouches(request,
+                               new SignerInfo(caPrivateKey, caCertChain),
+                               LoginCredentials.makeCertificateCredentials(clientCertChain[0], getClass()),
+                               //LoginCredentials.makePasswordCredentials("john", "ilovesheep".toCharArray(), getClass()),
+                               samlOptions);
+        return request;
+    }*/
 
     public Document getRequestSignedWithSamlToken() throws Exception {
         Document request = TestDocuments.getTestDocument(TestDocuments.PLACEORDER_CLEARTEXT);
