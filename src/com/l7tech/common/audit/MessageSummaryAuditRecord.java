@@ -63,10 +63,6 @@ public class MessageSummaryAuditRecord extends AuditRecord {
         return serviceOid;
     }
 
-    public String getServiceName() {
-        return serviceName;
-    }
-
     public long getIdentityProviderOid() {
         return identityProviderOid;
     }
@@ -120,11 +116,6 @@ public class MessageSummaryAuditRecord extends AuditRecord {
     }
 
     /** @deprecated to be called only for serialization and persistence purposes! */
-    public void setServiceName( String serviceName ) {
-        this.serviceName = serviceName;
-    }
-
-    /** @deprecated to be called only for serialization and persistence purposes! */
     public void setIdentityProviderOid( long identityProviderOid ) {
         this.identityProviderOid = identityProviderOid;
     }
@@ -165,9 +156,6 @@ public class MessageSummaryAuditRecord extends AuditRecord {
 
     /** OID of the PublishedService that this request was resolved to, or -1 if it has not yet been successfully resolved. */
     protected long serviceOid = PublishedService.DEFAULT_OID;
-
-    /** Name of the PublishedService that this request was resolved to, or null if it has not yet been successfully resolved. */
-    protected String serviceName;
 
     /** OID of the IdentityProvider that the requesting user, if any, belongs to.  -1 indicates unknown. */
     protected long identityProviderOid = IdentityProviderConfig.DEFAULT_OID;

@@ -148,7 +148,7 @@ public class LogPanel extends JPanel {
                                     MessageSummaryAuditRecord sum = (MessageSummaryAuditRecord)arec;
                                     msg += "Event Type : Message Summary" + "\n";
                                     msg += "Client IP  : " + arec.getIpAddress() + "\n";
-                                    msg += "Service    : " + sum.getServiceName() + "\n";
+                                    msg += "Service    : " + sum.getName() + "\n";
                                     msg += "Rqst Length: " + fixNegative(sum.getRequestContentLength(), "<Not Read>") + "\n";
                                     msg += "Resp Length: " + fixNegative(sum.getResponseContentLength(), "<Not Routed>") + "\n";
                                     msg += "User ID    : " + sum.getUserId() + "\n";
