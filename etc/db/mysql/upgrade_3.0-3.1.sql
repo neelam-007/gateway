@@ -31,3 +31,7 @@ ALTER TABLE audit_system ADD component_id integer;
 UPDATE audit_system SET component_id = 1000000 WHERE component = 'GS';
 ALTER TABLE audit_system DROP component;
 CREATE INDEX idx_component_id ON audit_system (component_id);
+alter table internal_user modify column login varchar(255);
+alter table audit_admin  modify column admin_login varchar(255);
+alter table fed_user  modify column login varchar(255);
+

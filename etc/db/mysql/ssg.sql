@@ -81,7 +81,7 @@ CREATE TABLE internal_user (
   objectid bigint(20) NOT NULL,
   version int(11) NOT NULL,
   name varchar(128) default NULL,
-  login varchar(32) NOT NULL,
+  login varchar(255) NOT NULL,
   password varchar(32) NOT NULL,
   first_name varchar(32) default NULL,
   last_name varchar(32) default NULL,
@@ -283,7 +283,7 @@ CREATE TABLE fed_user (
   provider_oid bigint(20) NOT NULL,
   subject_dn varchar(255),
   email varchar(128) default NULL,
-  login varchar(32),
+  login varchar(255),
   first_name varchar(32) default NULL,
   last_name varchar(32) default NULL,
   PRIMARY KEY (objectid),
@@ -358,7 +358,7 @@ CREATE TABLE audit_main (
 DROP TABLE IF EXISTS audit_admin;
 CREATE TABLE audit_admin (
   objectid bigint(20) NOT NULL,
-  admin_login varchar(32) NOT NULL,
+  admin_login varchar(255) NOT NULL,
   entity_class varchar(255),
   entity_id bigint(20),
   action char(1),
