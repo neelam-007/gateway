@@ -51,7 +51,7 @@ public class ClientPolicyTest extends TestCase {
         junit.textui.TestRunner.run(suite());
     }
 
-    /** Decorate a msgNoTrust with an empty policy. */
+    /** Decorate a message with an empty policy. */
     public void testNullPolicy() throws Exception {
         Ssg ssg = new Ssg(1, "foo");
         PendingRequest req = new PendingRequest(null, ssg, NullRequestInterceptor.INSTANCE);
@@ -63,7 +63,7 @@ public class ClientPolicyTest extends TestCase {
         assertTrue(AssertionStatus.NONE.equals(result));
     }
 
-    /** Test decoration of a msgNoTrust with an HTTP Basic policy. */
+    /** Test decoration of a message with an HTTP Basic policy. */
     public void testHttpBasicPolicy() throws Exception {
         ClientAssertion policy = new ClientHttpBasic( new HttpBasic() );
         Ssg ssg = new Ssg(1, "foo");
@@ -101,7 +101,7 @@ public class ClientPolicyTest extends TestCase {
         assertTrue(req.isBasicAuthRequired());
     }
 
-    /** Test decoration of a msgNoTrust with an SSL policy (specifying no certificates in particular). */
+    /** Test decoration of a message with an SSL policy (specifying no certificates in particular). */
     public void testAnonymousSslPolicy() throws Exception {
         ClientAssertion policy = new ClientSslAssertion( new SslAssertion() );
         Ssg ssg = new Ssg(1, "foo");

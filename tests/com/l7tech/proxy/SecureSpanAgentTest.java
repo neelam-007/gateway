@@ -61,7 +61,7 @@ public class SecureSpanAgentTest {
         String soapaction = PLACEORDER_SOAPACTION;
         String message = PLACEORDER_MESSAGE;
         //HexUtils.Slurpage slurpage = HexUtils.slurpUrl(SecureSpanAgentTest.class.getClassLoader().getResource(SAML4));
-        //String msgNoTrust = new String(slurpage.bytes);
+        //String message = new String(slurpage.bytes);
         SecureSpanAgent.Result result = agent.send(soapaction, message);
         log.info("Got back http status " + result.getHttpStatus());
         log.info("Got back envelope:\n" + XmlUtil.nodeToString(result.getResponse()));

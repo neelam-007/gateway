@@ -19,7 +19,7 @@ import java.net.MalformedURLException;
 import java.rmi.RemoteException;
 
 /**
- * Test msgNoTrust processing.
+ * Test message processing.
  * User: mike
  * Date: Jun 5, 2003
  * Time: 12:05:43 PM
@@ -63,7 +63,7 @@ public class SsgFakerTest extends TestCase {
     }
 
     /**
-     * Bounce a msgNoTrust off of the echo server, bypassing the client proxy, and verify that it worked.
+     * Bounce a message off of the echo server, bypassing the client proxy, and verify that it worked.
      * @param ssgUrl the SSG server to talk to
      */
     private void doTestPing(String ssgUrl) throws SOAPException, MalformedURLException, RemoteException {
