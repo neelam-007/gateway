@@ -127,12 +127,31 @@ public class DefaultPolicyValidator extends PolicyValidator {
         }
 
         private void processCustom(Assertion a) {
-            CustomAssertionHolder csh = (CustomAssertionHolder)a;
+            CustomAssertionHolder csh = (CustomAssertionHolder) a;
             if (Category.ACCESS_CONTROL.equals(csh.getCategory())) {
                 if (!seenCredentials) {
                     result.addError(new PolicyValidatorResult.Error(a, "Access control specified without authentication scheme.", null));
+                } else {
+                    // if the credential source is not HTTP Basic
+                    if (!seenHTTPBasic) {
+                        result.addError(new PolicyValidatorResult.
+                                Error(a, "Only HTTP Basic Authentication can be used as a authentication scheme when a policy involes Custom Assertion.", null));
+                    }
+                }
+
+                if (seenAccessControl && !seenCustomAssertion) {
+                    result.addError(new PolicyValidatorResult.Error(a, "No user or group assertions is allowed when Custom Assertion is used.", null));
+                }
+
+                if (seenCustomAssertion) {
+                    result.addWarning(new PolicyValidatorResult.Warning(a, "You already have a Custom Assertion.", null));
+                }
+
+                if (seenRouting) {
+                    result.addWarning(new PolicyValidatorResult.Warning(a, "The assertion is after route.", null));
                 }
                 seenAccessControl = true;
+                seenCustomAssertion = true;
             }
         }
 
@@ -156,7 +175,9 @@ public class DefaultPolicyValidator extends PolicyValidator {
                 result.addError(new PolicyValidatorResult.Error(a, "Duplicate identity.", null));
             }
 
-
+            if (seenCustomAssertion) {
+                result.addError(new PolicyValidatorResult.Error(a, "No user or group assertions is allowed when Custom Assertion is used.", null));
+            }
             // if we encountered an assertion that requires a client cert or digest, make sure the identity
             // involved is from the internal id provider
             if (seenCredAssertionThatRequiresClientCert || seenDigestAssertion) {
@@ -220,6 +241,7 @@ public class DefaultPolicyValidator extends PolicyValidator {
                 seenDigestAssertion = true;
             }
 
+
             // new fla, those assertions cannot forbid ssl
             if (a instanceof HttpBasic || a instanceof WssBasic) {
                 /* as per request to not enforce this rule (bugzilla 314) 
@@ -230,6 +252,17 @@ public class DefaultPolicyValidator extends PolicyValidator {
                     );
                 }*/
             }
+
+            if (a instanceof HttpBasic) {
+                seenHTTPBasic = true;
+            }
+
+            // Custom Assertion can only be used with HTTP Basic
+            if (seenCustomAssertion && !seenHTTPBasic) {
+                 result.addError(new PolicyValidatorResult.
+                  Error(a, "Only HTTP Basic Authentication can be used as a authentication scheme when a policy involes Custom Assertion.", null));
+            }
+
             seenCredentials = true;
         }
 
@@ -372,7 +405,9 @@ public class DefaultPolicyValidator extends PolicyValidator {
         boolean seenCredAssertionThatRequiresClientCert = false;
         boolean seenDigestAssertion = false;
         boolean seenXmlResponseSecurityAssertion = false;
-        private boolean seenSpecificUserAssertion;
+        private boolean seenSpecificUserAssertion = false;
+        private boolean seenCustomAssertion = false;
+        private boolean seenHTTPBasic = false;
     }
 
 }
