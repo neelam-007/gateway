@@ -14,21 +14,34 @@ import java.security.Principal;
  */
 public class LdapIdentityProviderServer implements com.l7tech.identity.IdentityProvider {
     public void initialize(IdentityProviderConfig config) {
+        cfg = (LdapIdentityProviderConfig)config;
+        groupManager = new LdapGroupManagerServer(cfg);
+        userManager = new LdapUserManagerServer(cfg);
     }
 
     public IdentityProviderConfig getConfig() {
-        return null;
+        return cfg;
     }
 
     public UserManager getUserManager() {
-        return null;
+        return userManager;
     }
 
     public GroupManager getGroupManager() {
-        return null;
+        return groupManager;
     }
 
     public boolean authenticate(Principal user, byte[] credentials) {
         return false;
     }
+
+    public boolean isReadOnly() { return true; }
+
+
+    // ************************************************
+    // PRIVATES
+    // ************************************************
+    private LdapIdentityProviderConfig cfg = null;
+    private LdapGroupManagerServer groupManager = null;
+    private LdapUserManagerServer userManager = null;
 }
