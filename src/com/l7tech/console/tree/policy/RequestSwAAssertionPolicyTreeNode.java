@@ -37,13 +37,11 @@ import org.apache.axis.message.SOAPBodyElement;
  * $Id$
  */
 public class RequestSwAAssertionPolicyTreeNode extends LeafAssertionTreeNode {
-    static final Logger log = Logger.getLogger(RequestSwAAssertionPropertiesAction.class.getName());
-    private SoapMessageGenerator.Message[] soapMessages;
+    static final Logger log = Logger.getLogger(RequestSwAAssertionPolicyTreeNode.class.getName());
     private ServiceNode serviceNode;
     private Wsdl serviceWsdl = null;
     private Map bindings = new HashMap();
     private Map namespaces = new HashMap();
-
     SoapMessageGenerator.Message soapRequest;
 
     public RequestSwAAssertionPolicyTreeNode(Assertion assertion) {
@@ -55,15 +53,20 @@ public class RequestSwAAssertionPolicyTreeNode extends LeafAssertionTreeNode {
         WorkSpacePanel currentWorkSpace = TopComponents.getInstance().getCurrentWorkspace();
         JComponent currentPanel = currentWorkSpace.getComponent();
         if(currentPanel == null || !(currentPanel instanceof PolicyEditorPanel)) {
-            logger.warning("Internal error: current workspace is not a PolicyEditorPanel instance");
+            // if the current panel is null or not the PolicyEditorPanel
+            // we don't have to load the attachments info from the WSDL
         } else {
             serviceNode = ((PolicyEditorPanel)currentPanel).getServiceNode();
             try {
+                RequestSwAAssertion swaAssertion = (RequestSwAAssertion) getUserObject();
+
+                // if the assertion already has the attachment info loaded from WSDL, simply return
+                if(swaAssertion.getBindings().size() > 0) return;
+
                 if (!(serviceNode.getPublishedService().isSoap())) {
                     JOptionPane.showMessageDialog(null, "This assertion is not supported by non-soap services.");
                 } else {
                     if(!(getUserObject() instanceof RequestSwAAssertion)) throw new RuntimeException("assertion must be RequestSwAAssertion");
-                    RequestSwAAssertion swaAssertion = (RequestSwAAssertion) getUserObject();
                     loadMIMEPartsInfoFromWSDL();
                     initializeXPath();
                     swaAssertion.setBindings(bindings);
@@ -207,7 +210,7 @@ public class RequestSwAAssertionPolicyTreeNode extends LeafAssertionTreeNode {
         getServiceWsdl().setShowBindings(Wsdl.SOAP_BINDINGS);
         SoapMessageGenerator sg = new SoapMessageGenerator();
         try {
-            soapMessages = sg.generateRequests(getServiceWsdl());
+            SoapMessageGenerator.Message[] soapMessages = sg.generateRequests(getServiceWsdl());
 
             //initializeBlankMessage(soapMessages[0]);
             for (int i = 0; i < soapMessages.length; i++) {
@@ -269,24 +272,6 @@ public class RequestSwAAssertionPolicyTreeNode extends LeafAssertionTreeNode {
         } catch (SOAPException e) {
             logger.log(Level.WARNING, "Caught SAXException when retrieving xml document from the generated request", e);
         }
-    }
-
-    private SoapMessageGenerator.Message forOperation(BindingOperation bop) {
-        String opName = bop.getOperation().getName();
-        Binding binding = serviceWsdl.getBinding(bop);
-        if (binding == null) {
-            throw new IllegalArgumentException("Bindiong operation without binding " + opName);
-        }
-        String bindingName = binding.getQName().getLocalPart();
-
-        for (int i = 0; i < soapMessages.length; i++) {
-            SoapMessageGenerator.Message soapRequest = soapMessages[i];
-            if (opName.equals(soapRequest.getOperation()) &&
-                    bindingName.equals(soapRequest.getBinding())) {
-                return soapRequest;
-            }
-        }
-        return null;
     }
 
     private Wsdl getServiceWsdl() {
