@@ -65,7 +65,7 @@ class ReceiverXmlSecurityProcessor extends SecurityProcessor {
             X509Certificate[] documentCertificates = null;
             boolean preconditionMatched = false;
             List deferred = new LinkedList(); // defer processing of operations involving encryption
-            for (int i = elements.length - 1; i >= 0 && !envelopeProcessed; i++) {
+            for (int i = elements.length - 1; i >= 0 && !envelopeProcessed; i--) {
                 ElementSecurity elementSecurity = elements[i];
 
                 if (elementSecurity.isEncryption()) {
@@ -124,11 +124,6 @@ class ReceiverXmlSecurityProcessor extends SecurityProcessor {
             // Now do the deferred ones that had encryption
             for (Iterator i = deferred.iterator(); i.hasNext();) {
                 ElementSecurity elementSecurity = (ElementSecurity)i.next();
-
-                if (elementSecurity.isEncryption()) {
-                    deferred.add(elementSecurity);
-                    continue;
-                }
 
                 envelopeProcessed = ElementSecurity.isEnvelope(elementSecurity);
                 if ( envelopeProcessed ) preconditionMatched = true;
