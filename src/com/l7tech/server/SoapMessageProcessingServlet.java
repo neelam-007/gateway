@@ -89,6 +89,23 @@ public class SoapMessageProcessingServlet extends HttpServlet {
         }
     }
 
+    private String makePolicyUrl( HttpServletRequest hreq, long oid ) {
+        StringBuffer policyUrl = new StringBuffer( hreq.getScheme() );
+        policyUrl.append( "://" );
+        policyUrl.append( hreq.getServerName() );
+        policyUrl.append( ":" );
+        policyUrl.append( hreq.getServerPort() );
+        policyUrl.append( hreq.getContextPath() );
+        String policyServletUri = getServletConfig().getInitParameter( PARAM_POLICYSERVLET_URI );
+        if ( policyServletUri == null || policyServletUri.length() == 0 )
+            policyServletUri = DEFAULT_POLICYSERVLET_URI;
+
+        policyUrl.append( policyServletUri );
+        policyUrl.append( oid );
+
+        return policyUrl.toString();
+    }
+
     private void sendFault( SoapRequest sreq, SoapResponse sresp, HttpServletRequest hreq, HttpServletResponse hresp, int httpStatus, String faultCode, String faultString ) throws SOAPException, IOException {
         OutputStream responseStream = null;
 
@@ -103,21 +120,7 @@ public class SoapMessageProcessingServlet extends HttpServlet {
 
             PublishedService pserv = (PublishedService)sreq.getParameter( Request.PARAM_SERVICE );
             if ( pserv != null && sresp.isPolicyViolated() ) {
-                String soid = new Long( pserv.getOid() ).toString();
-                StringBuffer policyUrl = new StringBuffer( hreq.getScheme() );
-                policyUrl.append( "://" );
-                policyUrl.append( hreq.getServerName() );
-                policyUrl.append( ":" );
-                policyUrl.append( hreq.getServerPort() );
-                policyUrl.append( hreq.getContextPath() );
-                String policyServletUri = getServletConfig().getInitParameter( PARAM_POLICYSERVLET_URI );
-                if ( policyServletUri == null || policyServletUri.length() == 0 )
-                    policyServletUri = DEFAULT_POLICYSERVLET_URI;
-
-                policyUrl.append( policyServletUri );
-                policyUrl.append( soid );
-
-                String purl = policyUrl.toString();
+                String purl = makePolicyUrl( hreq, pserv.getOid() );
 
                 hresp.setHeader( POLICYURL_HEADER, purl );
 
