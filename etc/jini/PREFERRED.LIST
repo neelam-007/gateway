@@ -5,6 +5,3 @@ Preferred: false
 Name: com/l7tech/policy/assertion/ext/CustomAssertionsRegistrarImpl.class
 Preferred: true
 
-Name: com/l7tech/netegrity/sm/ProtectedResource.class
-Preferred: true
-
