@@ -371,6 +371,8 @@
         <!-- make sure that the tomcat path is properly referenced in the keystore properties -->
         <propertyfile file="${build.classes}/keystore.properties">
             <entry key="keystoredir" value="${tomcat.home}/kstores"/>
+	    <entry key="rootcakspasswd" value="${ca.keystore.password}"/>
+            <entry key="sslkspasswd" value="${ssl.keystore.password}"/>
         </propertyfile>
 
         <propertyfile file="${build.classes}/ssglog.properties">
