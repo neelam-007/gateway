@@ -54,9 +54,15 @@ public class PolicyServiceTest extends TestCase {
     }
 
     private void testPolicy(final Assertion policyToTest, LoginCredentials loginCredentials) throws Exception {
-        Document request = PolicyServiceClient.createGetPolicyRequest("123",
-                                                                      TestDocuments.getEttkClientCertificate(),
-                                                                      TestDocuments.getEttkClientPrivateKey());
+        Document request = null;
+        if (loginCredentials != null) {
+            request = PolicyServiceClient.createGetPolicyRequest("123");
+        }
+        else {
+            request = PolicyServiceClient.createGetPolicyRequest("123",
+                                                                 TestDocuments.getEttkClientCertificate(),
+                                                                 TestDocuments.getEttkClientPrivateKey());
+        }
         assertNotNull(request);
         log.info("Request (pretty-printed): " + XmlUtil.nodeToFormattedString(request));
 
@@ -107,12 +113,14 @@ public class PolicyServiceTest extends TestCase {
         UserBean francoBean = new UserBean();
         francoBean.setName("franco");
         francoBean.setLogin("franco");
+        francoBean.setUniqueIdentifier("666");
+        francoBean.setProviderId(TestIdentityProvider.PROVIDER_ID);
         TestIdentityProvider.addUser(francoBean, "franco", "password".toCharArray());
         AllAssertion root = new AllAssertion();
         root.getChildren().add(new HttpBasic());
         OneOrMoreAssertion or = new OneOrMoreAssertion();
         root.getChildren().add(or);
-        or.getChildren().add(new SpecificUser(-2, "franco", "666", "franco"));
+        or.getChildren().add(new SpecificUser(TestIdentityProvider.PROVIDER_ID, "franco", "666", "franco"));
 
         LoginCredentials francoCreds = new LoginCredentials("franco", "password".toCharArray(),
                                                             CredentialFormat.CLEARTEXT,
