@@ -270,7 +270,7 @@ public class WssDecoratorImpl implements WssDecorator {
 
     private Element addSecurityContextToken(Element securityHeader, String id) {
         Element sct = XmlUtil.createAndAppendElementNS(securityHeader,
-                                                       "SecurityContextToken",
+                                                       SoapUtil.SECURITY_CONTEXT_TOK_EL_NAME,
                                                        SoapUtil.WSSC_NAMESPACE,
                                                        "wssc");
         Element identifier = XmlUtil.createAndAppendElementNS(sct,

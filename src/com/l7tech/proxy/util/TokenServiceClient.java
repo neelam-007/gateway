@@ -245,7 +245,8 @@ public class TokenServiceClient {
         // See what kind of requested security token we got
 
         // Check for SecurityContextToken
-        Element scTokenEl = XmlUtil.findOnlyOneChildElementByName(rst, SoapUtil.WSSC_NAMESPACE, "SecurityContextToken");
+        Element scTokenEl = XmlUtil.findOnlyOneChildElementByName(rst, SoapUtil.WSSC_NAMESPACE,
+                                                                  SoapUtil.SECURITY_CONTEXT_TOK_EL_NAME);
         if (scTokenEl != null) {
             // It's a SecurityContextToken
             return processSecurityContextToken(scTokenEl, rstr, clientCertificate, clientPrivateKey);
