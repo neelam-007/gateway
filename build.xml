@@ -446,6 +446,7 @@
                 <include name="com/l7tech/policy/assertion/composite/CompositeAssertion.class"/>
                 <include name="com/l7tech/policy/assertion/ext/Category.class"/>
                 <include name="com/l7tech/policy/assertion/ext/CustomAssertion.class"/>
+                 <include name="com/l7tech/policy/assertion/ext/CustomAssertionPrincipal.class"/>
                 <include name="com/l7tech/policy/assertion/ext/SecurityContext.class"/>
                 <include name="com/l7tech/policy/assertion/ext/ServiceRequest.class"/>
                 <include name="com/l7tech/policy/assertion/ext/ServiceResponse.class"/>
