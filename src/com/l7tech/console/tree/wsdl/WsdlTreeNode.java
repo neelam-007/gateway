@@ -4,7 +4,6 @@ import com.l7tech.console.tree.AbstractTreeNode;
 import com.l7tech.service.Wsdl;
 
 import javax.swing.tree.MutableTreeNode;
-import javax.swing.tree.TreeNode;
 import javax.wsdl.*;
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -239,7 +238,7 @@ class MessageTreeNode extends WsdlTreeNode {
      * @param open for nodes that can be opened, can have children
      */
     protected String iconResource(boolean open) {
-        return "com/l7tech/console/resources/sendMail16.gif";
+        return "com/l7tech/console/resources/SendMail16.gif";
     }
 
 
