@@ -9,18 +9,28 @@ import com.l7tech.common.util.Locator;
 import com.l7tech.console.action.ImportCertificateAction;
 import com.l7tech.console.text.FilterDocument;
 import com.l7tech.console.util.Preferences;
-
-import javax.net.ssl.SSLHandshakeException;
-import com.sun.net.ssl.HttpsURLConnection;
 import com.sun.net.ssl.HostnameVerifier;
-import javax.net.ssl.SSLSession;
+import com.sun.net.ssl.HttpsURLConnection;
+
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLHandshakeException;
 import javax.security.auth.login.LoginException;
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.event.FocusAdapter;
+import java.awt.event.FocusEvent;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.net.*;
+import java.net.ConnectException;
+import java.net.HttpURLConnection;
+import java.net.MalformedURLException;
+import java.net.PasswordAuthentication;
+import java.net.URL;
+import java.security.KeyManagementException;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
 import java.security.cert.CertificateException;
@@ -488,7 +498,7 @@ public class LogonDialog extends JDialog {
      * @return true if service available, false otherwise
      */
     private boolean isServiceAvailable(String serviceUrl) {
-        boolean serviceAvailable;
+        boolean serviceAvailable = false;
         boolean b = Boolean.getBoolean(DISABLE_SERVER_CHECK);
         if (b) return true;
 
@@ -498,40 +508,66 @@ public class LogonDialog extends JDialog {
         // be established
         URL url = null;
         HttpURLConnection conn = null;
-        try {
-            url = new URL(serviceUrl);
-            conn = (HttpURLConnection)url.openConnection();
-            addSslHostNameVerifier(conn);
-            conn.connect();
-            int code = conn.getResponseCode();
-            if (code == 403 || code == 401 || code == 200 || code == 302) {
-                serviceAvailable = true;
-            } else {
-                serviceAvailable = false;
-            }
-        } catch (SSLHandshakeException e) {
-            serviceAvailable = false;
-            log.log(Level.INFO, "LogonDialog: Attempting to update Gateway certificate");
-            log.log(Level.INFO, "LogonDialog", e);
+        boolean importedCertificate = false;
+        for (;;) {
             try {
-                importCertificate(url);
-            } catch (CertificateException e1) {
-                log.log(Level.INFO, "LogonDialog", e1);
-            } catch (IOException e1) {
-                log.log(Level.INFO, "LogonDialog", e1);
-            } catch (NoSuchAlgorithmException e1) {
-                log.log(Level.INFO, "LogonDialog", e1);
-            } catch (KeyStoreException e1) {
-                log.log(Level.INFO, "LogonDialog", e1);
+                url = new URL(serviceUrl);
+                conn = (HttpURLConnection)url.openConnection();
+                addSslHostNameVerifier(conn);
+                conn.connect();
+                int code = conn.getResponseCode();
+                if (code == 403 || code == 401 || code == 200 || code == 302) {
+                    serviceAvailable = true;
+                } else {
+                    serviceAvailable = false;
+                }
+
+            } catch (SSLHandshakeException e) {
+                serviceAvailable = false;
+
+                if (importedCertificate) {
+                    log.log(Level.SEVERE, "SSL handshake failed, even after downloading the server certificate", e);
+                    break;
+                }
+
+                try {
+                    log.log(Level.INFO, "LogonDialog: Attempting to update Gateway certificate");
+                    importCertificate(url);
+
+                    // Reinitialize the SSL context
+                    SSLContext ctx = SSLContext.getInstance("SSL");
+                    ctx.init(null, null, null);
+                    HttpsURLConnection.setDefaultSSLSocketFactory(ctx.getSocketFactory());
+
+                    importedCertificate = true;
+
+                    // retry
+                    continue;
+
+                } catch (CertificateException e1) {
+                    log.log(Level.INFO, "LogonDialog", e1);
+                } catch (IOException e1) {
+                    log.log(Level.INFO, "LogonDialog", e1);
+                } catch (NoSuchAlgorithmException e1) {
+                    log.log(Level.INFO, "LogonDialog", e1);
+                } catch (KeyStoreException e1) {
+                    log.log(Level.INFO, "LogonDialog", e1);
+                } catch (KeyManagementException e1) {
+                    log.log(Level.INFO, "LogonDialog", e1);
+                }
+            } catch (IOException e) {
+                serviceAvailable = false;
+                log.log(Level.INFO, "LogonDialog", e);
+            } finally {
+                if (conn != null) {
+                    conn.disconnect();
+                }
             }
-        } catch (IOException e) {
-            serviceAvailable = false;
-            log.log(Level.INFO, "LogonDialog", e);
-        } finally {
-            if (conn != null) {
-                conn.disconnect();
-            }
+
+            // stop trying now
+            break;
         }
+
         return serviceAvailable;
     }
 
@@ -565,8 +601,8 @@ public class LogonDialog extends JDialog {
                 passwordField.getPassword());
         if (cd.downloadCertificate()) {
             ImportCertificateAction.importSsgCertificate(cd.getCertificate(), url.getHost());
-            showUpdatedSsgCertificateMessage();
-            System.exit(0);
+            //showUpdatedSsgCertificateMessage();
+            //System.exit(0);
         } else {
             // auth failure
             showInvalidCredentialsMessage();
@@ -706,7 +742,6 @@ public class LogonDialog extends JDialog {
             frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
             frame.pack();
             frame.setVisible(true);
-            new LogonDialog(frame);
         } catch (Exception e) {
             e.printStackTrace();
         }
