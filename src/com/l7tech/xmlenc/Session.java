@@ -1,8 +1,5 @@
 package com.l7tech.xmlenc;
 
-import com.l7tech.identity.User;
-
-import java.security.Key;
 
 /**
  * User: flascell
