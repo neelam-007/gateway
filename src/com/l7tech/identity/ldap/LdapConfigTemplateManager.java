@@ -28,7 +28,10 @@ import java.io.*;
 public class LdapConfigTemplateManager {
 
     public LdapConfigTemplateManager() {
-        populateTemplatesFromFile();
+        synchronized (templates) {
+            if (templates.size() < 1)
+                populateTemplatesFromFile();
+        }
         // buildHardCodedTemplates();
     }
 
@@ -156,6 +159,6 @@ public class LdapConfigTemplateManager {
 
     }*/
 
-    private final HashMap templates = new HashMap();
+    private static final HashMap templates = new HashMap();
     private final Logger logger = LogManager.getInstance().getSystemLogger();
 }
