@@ -17,7 +17,6 @@ import java.awt.event.KeyEvent;
 import java.util.ArrayList;
 
 import com.l7tech.common.util.XmlUtil;
-import com.l7tech.common.xml.TooManyChildElementsException;
 import com.l7tech.console.action.Actions;
 
 /**
@@ -33,6 +32,7 @@ import com.l7tech.console.action.Actions;
 public class WSILSelectorPanel extends JDialog {
     private Document wsilXml;
     private boolean cancelled = false;
+    private final static String WSIL_NS = "http://schemas.xmlsoap.org/ws/2001/10/inspection/";
     private String selectedURL;
     private JPanel mainPanel;
     private JTable wsilTable;
@@ -62,38 +62,54 @@ public class WSILSelectorPanel extends JDialog {
         okbutton.setEnabled(false);
     }
 
+    private String getServiceNameFromServiceEl(Element serviceEl) {
+        String output = null;
+        Element nameEl = XmlUtil.findFirstChildElementByName(serviceEl, WSIL_NS, "name");
+        if (nameEl != null) {
+            output = XmlUtil.getTextValue(nameEl);
+        }
+        if (output == null || output.length() < 1) {
+            Element abstractEl = XmlUtil.findFirstChildElementByName(serviceEl, WSIL_NS, "abstract");
+            if (abstractEl != null) {
+                output = XmlUtil.getTextValue(abstractEl);
+            }
+        }
+        if (output != null && output.equals("")) output = null;
+        return output;
+    }
+
+    private String getDescriptionLocationFromServiceElement(Element serviceEl) {
+        String output = null;
+        NodeList descriptionEls = serviceEl.getElementsByTagNameNS(WSIL_NS, "description");
+        for (int i = 0; i < descriptionEls.getLength(); i++) {
+            Element descEl = (Element)descriptionEls.item(i);
+            String thisrefNSVAlue = descEl.getAttribute("referencedNamespace");
+            if (thisrefNSVAlue == null || thisrefNSVAlue.length() < 1) {
+                output = descEl.getAttribute("location");
+            } else if (thisrefNSVAlue.equals("http://schemas.xmlsoap.org/wsdl/")) {
+                output = descEl.getAttribute("location");
+                if (output != null && output.length() > 0) break;
+            }
+        }
+        if (output != null && output.equals("")) output = null;
+        return output;
+    }
+
     private void setTableModel() {
         final ArrayList serviceNames = new ArrayList();
         final ArrayList wsdlURLs = new ArrayList();
         // build list from wsil doc's contents
-        NodeList servicenodes = wsilXml.getElementsByTagNameNS("http://schemas.xmlsoap.org/ws/2001/10/inspection/",
-                                                               "service");
+        NodeList servicenodes = wsilXml.getElementsByTagNameNS(WSIL_NS, "service");
         for (int i = 0; i < servicenodes.getLength(); i++) {
             Element servicenode = (Element)servicenodes.item(i);
-            String name = null;
-            String wsdlUrl = null;
-            try {
-                Element abstractEl = XmlUtil.findOnlyOneChildElementByName(servicenode,
-                                                                           "http://schemas.xmlsoap.org/ws/2001/10/inspection/",
-                                                                           "abstract");
-                if (abstractEl != null) {
-                    name = XmlUtil.getTextValue(abstractEl);
-                }
-                Element descEl = XmlUtil.findOnlyOneChildElementByName(servicenode,
-                                                                       "http://schemas.xmlsoap.org/ws/2001/10/inspection/",
-                                                                       "description");
-                if (descEl != null) {
-                    wsdlUrl = descEl.getAttribute("location");
-                }
-            } catch (TooManyChildElementsException e) {
-                throw new RuntimeException("Unsupported WSIL syntax", e);
-            }
+            String name = getServiceNameFromServiceEl(servicenode);
+            String wsdlUrl = getDescriptionLocationFromServiceElement(servicenode);
             if (wsdlUrl != null && wsdlUrl.length() > 1) {
                 wsdlURLs.add(wsdlUrl);
                 if (name != null && name.length() > 1) {
                     serviceNames.add(name);
                 } else {
-                    serviceNames.add("??");
+                    serviceNames.add("");
                 }
             }
         }
