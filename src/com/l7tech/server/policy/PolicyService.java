@@ -1,48 +1,45 @@
 package com.l7tech.server.policy;
 
-import com.l7tech.policy.assertion.composite.AllAssertion;
-import com.l7tech.policy.assertion.composite.OneOrMoreAssertion;
-import com.l7tech.policy.assertion.composite.CompositeAssertion;
+import com.l7tech.common.security.xml.*;
+import com.l7tech.common.util.SoapFaultUtils;
+import com.l7tech.common.util.SoapUtil;
+import com.l7tech.common.util.XmlUtil;
+import com.l7tech.common.xml.InvalidDocumentFormatException;
+import com.l7tech.common.xml.MissingRequiredElementException;
+import com.l7tech.common.xml.SoapFaultDetail;
+import com.l7tech.identity.User;
+import com.l7tech.message.SoapRequest;
+import com.l7tech.message.SoapResponse;
+import com.l7tech.policy.AssertionPath;
+import com.l7tech.policy.PolicyPathBuilder;
+import com.l7tech.policy.PolicyPathResult;
 import com.l7tech.policy.assertion.Assertion;
-import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.AssertionStatus;
-import com.l7tech.policy.assertion.CustomAssertionHolder;
-import com.l7tech.policy.assertion.ext.Category;
+import com.l7tech.policy.assertion.PolicyAssertionException;
+import com.l7tech.policy.assertion.composite.AllAssertion;
+import com.l7tech.policy.assertion.composite.CompositeAssertion;
+import com.l7tech.policy.assertion.composite.OneOrMoreAssertion;
 import com.l7tech.policy.assertion.credential.CredentialSourceAssertion;
 import com.l7tech.policy.assertion.identity.IdentityAssertion;
 import com.l7tech.policy.server.filter.FilterManager;
 import com.l7tech.policy.server.filter.FilteringException;
 import com.l7tech.policy.wsp.WspWriter;
-import com.l7tech.message.SoapRequest;
-import com.l7tech.message.SoapResponse;
-import com.l7tech.common.security.xml.*;
-import com.l7tech.common.xml.InvalidDocumentFormatException;
-import com.l7tech.common.xml.MissingRequiredElementException;
-import com.l7tech.common.xml.SoapFaultDetail;
-import com.l7tech.common.util.SoapUtil;
-import com.l7tech.common.util.XmlUtil;
-import com.l7tech.common.util.SoapFaultUtils;
-import com.l7tech.server.secureconversation.SecureConversationContextManager;
 import com.l7tech.server.policy.assertion.ServerAssertion;
-import com.l7tech.server.identity.IdentityProviderFactory;
-import com.l7tech.identity.User;
-import com.l7tech.identity.IdentityProvider;
-import com.l7tech.identity.IdentityProviderType;
-import com.l7tech.objectmodel.FindException;
+import com.l7tech.server.secureconversation.SecureConversationContextManager;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.xml.sax.SAXException;
 
 import javax.xml.soap.SOAPConstants;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Iterator;
-import java.util.logging.Logger;
-import java.util.logging.Level;
-import java.security.PrivateKey;
-import java.security.GeneralSecurityException;
-import java.security.cert.X509Certificate;
 import java.io.IOException;
+import java.security.GeneralSecurityException;
+import java.security.PrivateKey;
+import java.security.cert.X509Certificate;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * This is the service that lets a client download a policy for consuming a web service.
@@ -50,8 +47,6 @@ import java.io.IOException;
  * of consuming it. This is determined by looking at the identity assertions inside the target policy
  * comparing them with the identity resuling from the authentication of the policy download request.
  *
- * Todo, special case for TAM
- * Todo, special case for policies that have a path without id assertions
  *
  * <p/>
  * <br/><br/>
@@ -179,15 +174,10 @@ public class PolicyService {
 
         // if the policy allows anonymous, skip the meta policy
         boolean canSkipMetaPolicyStep = false;
-        try {
-            if (policyAllowAnonymous(targetPolicy)) {
-                canSkipMetaPolicyStep = true;
-            } else {
-                logger.fine("The policy does not allow anonymous.");
-            }
-        } catch (IOException e) {
-            exceptionToFault(e, response);
-            return;
+        if (atLeastOnePathIsAnonymous(targetPolicy)) {
+            canSkipMetaPolicyStep = true;
+        } else {
+            logger.fine("The policy does not allow anonymous.");
         }
 
         // Run the policy-policy
@@ -372,74 +362,21 @@ public class PolicyService {
         }
     }
 
-    /**
-     * copied from AuthenticatableHttpServlet
-     * Todo, fix this so that a policy allows anonymous is AT LEAST ONE OF IT"S PATH DOES
-     */
-    protected boolean policyAllowAnonymous(Assertion rootassertion) throws IOException {
-        // logic: a policy allows anonymous if and only if it does not contains any CredentialSourceAssertion
-        // com.l7tech.policy.assertion.credential.CredentialSourceAssertion
-        Iterator it = rootassertion.preorderIterator();
-        boolean allIdentitiesAreFederated = true;
-        while (it.hasNext()) {
-            Assertion a = (Assertion)it.next();
-            if (a instanceof CustomAssertionHolder) {
-                CustomAssertionHolder ca = (CustomAssertionHolder)a;
-                if (Category.ACCESS_CONTROL.equals(ca.getCategory())) {
-                    return true;
-                }
-            } else if (a instanceof IdentityAssertion) {
-                IdentityAssertion ia = (IdentityAssertion)a;
-                final String msg = "Policy refers to a nonexistent identity provider";
-                try {
-                    IdentityProvider provider = IdentityProviderFactory.getProvider(ia.getIdentityProviderOid());
-                    if ( provider == null ) {
-                        logger.warning(msg);
-                        return false;
-                    }
-                    if ( provider.getConfig().type() != IdentityProviderType.FEDERATED ) allIdentitiesAreFederated = false;
-                } catch ( FindException e ) {
-                    logger.warning(msg);
-                    return false;
+    private boolean atLeastOnePathIsAnonymous(Assertion rootAssertion) {
+        PolicyPathResult paths = PolicyPathBuilder.getDefault().generate(rootAssertion);
+        for (Iterator iterator = paths.paths().iterator(); iterator.hasNext();) {
+            AssertionPath assertionPath = (AssertionPath)iterator.next();
+            Assertion[] path = assertionPath.getPath();
+            boolean pathContainsIdAssertion = false;
+            for (int i = 0; i < path.length; i++) {
+                Assertion a = path[i];
+                if (a instanceof IdentityAssertion) {
+                    pathContainsIdAssertion = true;
                 }
             }
+            if (!pathContainsIdAssertion) return true;
         }
-
-        if ( allIdentitiesAreFederated ) {
-            // TODO support federated credentials in PolicyServlet
-            logger.info("All IdentityAssertions point to a Federated IDP. Treating as anonymous");
-            return true;
-        }
-
-        if (findCredentialAssertion(rootassertion) != null) {
-            logger.info("Policy does not allow anonymous requests.");
-            return false;
-        }
-        logger.info("Policy does allow anonymous requests.");
-        return true;
-    }
-
-    /**
-     * Look for an assertion extending CredentialSourceAssertion in the assertion passed
-     * and all it's decendents.
-     * Returns null if not there.
-     * (recursive method)
-     * copied from AuthenticatableHttpServlet
-     */
-    private CredentialSourceAssertion findCredentialAssertion(Assertion arg) {
-        if (arg instanceof CredentialSourceAssertion) {
-            return (CredentialSourceAssertion)arg;
-        }
-        if (arg instanceof CompositeAssertion) {
-            CompositeAssertion root = (CompositeAssertion)arg;
-            Iterator i = root.getChildren().iterator();
-            while (i.hasNext()) {
-                Assertion child = (Assertion)i.next();
-                CredentialSourceAssertion res = findCredentialAssertion(child);
-                if (res != null) return res;
-            }
-        }
-        return null;
+        return false;
     }
 
     private final List allCredentialAssertions;
