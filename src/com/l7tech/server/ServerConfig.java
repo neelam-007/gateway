@@ -6,8 +6,6 @@
 
 package com.l7tech.server;
 
-import com.l7tech.message.TransportProtocol;
-
 import javax.naming.InitialContext;
 import javax.naming.NamingException;
 import java.io.File;

@@ -9,6 +9,7 @@ package com.l7tech.server.audit;
 import com.l7tech.common.audit.AuditAdmin;
 import com.l7tech.common.audit.AuditRecord;
 import com.l7tech.common.audit.AuditSearchCriteria;
+import com.l7tech.common.util.Background;
 import com.l7tech.common.util.KeystoreUtils;
 import com.l7tech.common.util.Locator;
 import com.l7tech.common.util.OpaqueId;
@@ -56,9 +57,9 @@ public class AuditAdminImpl extends RemoteService implements AuditAdmin {
             }
         }
     };
-    private static Timer downloadReaperTimer = new Timer(true);
+
     static {
-        downloadReaperTimer.schedule(downloadReaperTask, CONTEXT_TIMEOUT, CONTEXT_TIMEOUT);
+        Background.schedule(downloadReaperTask, CONTEXT_TIMEOUT, CONTEXT_TIMEOUT);
     }
 
     public AuditAdminImpl( String[] options, LifeCycle lifeCycle ) throws ConfigurationException, IOException {

@@ -6,15 +6,19 @@
 
 package com.l7tech.server.policy.assertion.credential.http;
 
-import com.l7tech.message.Request;
-import com.l7tech.message.Response;
+import com.l7tech.common.message.HttpRequestKnob;
+import com.l7tech.common.message.HttpResponseKnob;
+import com.l7tech.common.message.Message;
 import com.l7tech.policy.assertion.AssertionStatus;
+import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.credential.CredentialFinderException;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.assertion.credential.http.HttpCredentialSourceAssertion;
+import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.ServerAssertion;
 import com.l7tech.server.policy.assertion.credential.ServerCredentialSourceAssertion;
 
+import java.io.IOException;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.logging.Level;
@@ -25,21 +29,24 @@ import java.util.logging.Logger;
  * @version $Revision$
  */
 public abstract class ServerHttpCredentialSource extends ServerCredentialSourceAssertion implements ServerAssertion {
+    private static final Logger logger = Logger.getLogger(ServerHttpCredentialSource.class.getName());
+
+    public static final String AUTHORIZATION = "Authorization";
+
     public ServerHttpCredentialSource( HttpCredentialSourceAssertion data ) {
         super( data );
         _data = data;
     }
 
-    public AssertionStatus checkCredentials( Request request, Response response ) throws CredentialFinderException {
-        LoginCredentials pc = request.getPrincipalCredentials();
+    public AssertionStatus checkCredentials( LoginCredentials pc, Map authParams ) throws CredentialFinderException {
         if ( pc == null ) return AssertionStatus.AUTH_REQUIRED;
         String requestRealm = pc.getRealm();
-        String assertRealm = realm( request );
+        String assertRealm = realm();
 
         if ( requestRealm == null || requestRealm.length() == 0 ) requestRealm = assertRealm;
 
         if ( requestRealm.equals( assertRealm ) ) {
-            return doCheckCredentials( request, response );
+            return checkAuthParams(authParams);
         } else {
             throw new CredentialFinderException( "Realm mismatch: Expected '" + assertRealm + "', got '"+ requestRealm, AssertionStatus.AUTH_FAILED );
         }
@@ -54,18 +61,18 @@ public abstract class ServerHttpCredentialSource extends ServerCredentialSourceA
         throw new CredentialFinderException( err );
     }
 
-    protected void challenge( Request request, Response response ) {
+    protected void challenge(PolicyEnforcementContext context, Map authParams) {
         String scheme = scheme();
         StringBuffer challengeHeader = new StringBuffer( scheme );
         challengeHeader.append( " " );
-        String realm = realm( request );
+        String realm = realm();
         if ( realm != null && realm.length() > 0 ) {
             challengeHeader.append( HttpCredentialSourceAssertion.PARAM_REALM );
             challengeHeader.append( "=" );
             challengeHeader.append( quoted( realm ) );
         }
 
-        Map challengeParams = challengeParams( request, response );
+        Map challengeParams = challengeParams(context.getRequest(), authParams);
         String name, value;
         Iterator i = challengeParams.keySet().iterator();
         if ( i.hasNext() ) challengeHeader.append( ", " );
@@ -84,25 +91,17 @@ public abstract class ServerHttpCredentialSource extends ServerCredentialSourceA
         String challenge = challengeHeader.toString();
 
         logger.fine( "Sending WWW-Authenticate: " + challenge );
-        Object[] existingChallenges = response.getParameterValues(Response.PARAM_HTTP_WWWAUTHENTICATE);
-        if ( existingChallenges == null || existingChallenges.length == 0 ) {
-            response.setParameter( Response.PARAM_HTTP_WWWAUTHENTICATE, challenge.toString() );
-        } else {
-            String[] newChallenges = new String[existingChallenges.length+1];
-            if ( "Digest".equals(scheme) ) {
-                // Put Digest first
-                System.arraycopy( existingChallenges, 0, newChallenges, 1, existingChallenges.length );
-                newChallenges[0] = challenge.toString();
-            } else {
-                // Put anything else later
-                System.arraycopy( existingChallenges, 0, newChallenges, 0, existingChallenges.length );
-                newChallenges[newChallenges.length-1] = challenge.toString();
-            }
-            response.setParameter( Response.PARAM_HTTP_WWWAUTHENTICATE, newChallenges );
-        }
+        HttpResponseKnob httpResponse = context.getResponse().getHttpResponseKnob();
+        httpResponse.addHeader("WWW-Authenticate", challenge);
+        // TODO worry about putting Digest first?
     }
 
-    protected abstract String realm( Request request );
+    /**
+     * Returns the authentication realm to use for this assertion.
+     *
+     * @return the authentication realm to use for this assertion.  Never null.
+     */
+    protected abstract String realm();
 
     private String quoted( String value ) {
         if ( value == null )
@@ -111,10 +110,17 @@ public abstract class ServerHttpCredentialSource extends ServerCredentialSourceA
             return '"' + value + '"';
     }
 
-    protected abstract AssertionStatus doCheckCredentials( Request request, Response response );
-    protected abstract Map challengeParams( Request request, Response response );
+    protected abstract AssertionStatus checkAuthParams(Map authParams);
+    protected abstract Map challengeParams(Message request, Map authParams);
     protected abstract String scheme();
 
     protected HttpCredentialSourceAssertion _data;
-    protected final Logger logger = Logger.getLogger(getClass().getName());
+
+    public AssertionStatus checkRequest(PolicyEnforcementContext context) throws IOException, PolicyAssertionException {
+        if (context.getRequest().getKnob(HttpRequestKnob.class) == null) {
+            logger.info("Request not HTTP; unable to extract HTTP credentials");
+            return AssertionStatus.NOT_APPLICABLE;
+        }
+        return super.checkRequest(context);
+    }
 }

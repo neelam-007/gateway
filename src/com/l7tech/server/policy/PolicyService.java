@@ -1,5 +1,7 @@
 package com.l7tech.server.policy;
 
+import com.l7tech.common.message.Message;
+import com.l7tech.common.message.XmlKnob;
 import com.l7tech.common.security.xml.decorator.DecorationRequirements;
 import com.l7tech.common.security.xml.decorator.DecoratorException;
 import com.l7tech.common.security.xml.decorator.WssDecoratorImpl;
@@ -11,8 +13,6 @@ import com.l7tech.common.xml.InvalidDocumentFormatException;
 import com.l7tech.common.xml.MissingRequiredElementException;
 import com.l7tech.common.xml.SoapFaultDetail;
 import com.l7tech.identity.User;
-import com.l7tech.message.SoapRequest;
-import com.l7tech.message.SoapResponse;
 import com.l7tech.policy.AssertionPath;
 import com.l7tech.policy.PolicyPathBuilder;
 import com.l7tech.policy.PolicyPathResult;
@@ -25,6 +25,7 @@ import com.l7tech.policy.assertion.composite.OneOrMoreAssertion;
 import com.l7tech.policy.assertion.credential.CredentialSourceAssertion;
 import com.l7tech.policy.assertion.identity.IdentityAssertion;
 import com.l7tech.policy.wsp.WspWriter;
+import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.ServerAssertion;
 import com.l7tech.server.policy.filter.FilterManager;
 import com.l7tech.server.policy.filter.FilteringException;
@@ -118,35 +119,30 @@ public class PolicyService {
     /**
      * The filtered policy is contained in the soapResponse
      */
-    public void respondToPolicyDownloadRequest(SoapRequest request,
-                                               SoapResponse response,
+    public void respondToPolicyDownloadRequest(PolicyEnforcementContext context,
                                                boolean signResponse,
-                                               PolicyGetter policyGetter) throws IOException, SAXException {
+                                               PolicyGetter policyGetter)
+            throws IOException, SAXException
+    {
+        final XmlKnob reqXml = context.getRequest().getXmlKnob();
+        final Message response = context.getResponse();
+
         // We need a Document
         Document requestDoc = null;
-        requestDoc = request.getDocument();
+        requestDoc = reqXml.getDocument();
 
         // Process request for message level security stuff
         ProcessorResult wssOutput = null;
         try {
             wssOutput = processMessageLevelSecurity(requestDoc);
-        } catch (ProcessorException e) {
-            exceptionToFault(e, response);
-            return;
-        } catch (InvalidDocumentFormatException e) {
-            exceptionToFault(e, response);
-            return;
-        } catch (GeneralSecurityException e) {
-            exceptionToFault(e, response);
-            return;
-        } catch (BadSecurityContextException e) {
-            exceptionToFault(e, response);
+            Document undecorated = wssOutput.getUndecoratedMessage();
+            if (undecorated == null) throw new NullPointerException("No undecorated message"); // can't happen
+            reqXml.setDocument(wssOutput.getUndecoratedMessage());
+            reqXml.setProcessorResult(wssOutput);
+        } catch (Exception e) {
+            response.initialize(exceptionToFault(e));
             return;
         }
-        if (wssOutput.getUndecoratedMessage() != null) {
-            request.setDocument(wssOutput.getUndecoratedMessage());
-        }
-        request.setWssProcessorOutput(wssOutput);
 
         // Which policy is requested?
         String policyId = null;
@@ -155,7 +151,7 @@ public class PolicyService {
             policyId = getRequestedPolicyId(wssOutput.getUndecoratedMessage());
             relatesTo = SoapUtil.getL7aMessageId(wssOutput.getUndecoratedMessage());
         } catch (InvalidDocumentFormatException e) {
-            exceptionToFault(e, response);
+            response.initialize(exceptionToFault(e));
             return;
         }
         logger.finest("Policy requested is " + policyId);
@@ -172,13 +168,11 @@ public class PolicyService {
                                                          null,
                                                          "");
             } catch (IOException e) {
-                exceptionToFault(e, response);
-                return;
+                fault = exceptionToFault(e);
             } catch (SAXException e) {
-                exceptionToFault(e, response);
-                return;
+                fault = exceptionToFault(e);
             }
-            response.setDocument(fault);
+            response.initialize(fault);
             return;
         }
 
@@ -196,12 +190,12 @@ public class PolicyService {
             logger.fine("Running meta-policy.");
             ServerAssertion policyPolicy = constructPolicyPolicy(targetPolicy);
             try {
-                status = policyPolicy.checkRequest(request, response);
+                status = policyPolicy.checkRequest(context);
             } catch (IOException e) {
-                exceptionToFault(e, response);
+                response.initialize(exceptionToFault(e));
                 return;
             } catch (PolicyAssertionException e) {
-                exceptionToFault(e, response);
+                response.initialize(exceptionToFault(e));
                 return;
             }
         }
@@ -209,41 +203,41 @@ public class PolicyService {
         Document policyDoc = null;
         if (canSkipMetaPolicyStep || status == AssertionStatus.NONE) {
             try {
-                policyDoc = respondToPolicyDownloadRequest(policyId, request.getUser(), policyGetter);
+                policyDoc = respondToPolicyDownloadRequest(policyId, context.getAuthenticatedUser(), policyGetter);
             } catch (FilteringException e) {
-                exceptionToFault(e, response);
+                response.initialize(exceptionToFault(e));
                 return;
             } catch (IOException e) {
-                exceptionToFault(e, response);
+                response.initialize(exceptionToFault(e));
                 return;
             } catch (SAXException e) {
-                exceptionToFault(e, response);
+                response.initialize(exceptionToFault(e));
                 return;
             }
         } else {
-            returnUnauthorizedPolicyDownloadFault(response, status.getMessage());
+            response.initialize(makeUnauthorizedPolicyDownloadFault(status.getMessage()));
             return;
         }
 
         if (policyDoc == null) {
-            returnUnauthorizedPolicyDownloadFault(response, "No such policy available to you.");
+            response.initialize(makeUnauthorizedPolicyDownloadFault("No such policy available to you."));
             return;
         }
 
         try {
             String policyVersion = policyId + "|" + si.getVersion();
-            wrapFilteredPolicyInResponse(policyDoc, policyVersion, relatesTo, response, signResponse);
+            response.initialize(wrapFilteredPolicyInResponse(policyDoc, policyVersion, relatesTo, signResponse));
         } catch (GeneralSecurityException e) {
-            exceptionToFault(e, response);
+            response.initialize(exceptionToFault(e));
             return;
         } catch (DecoratorException e) {
-            exceptionToFault(e, response);
+            response.initialize(exceptionToFault(e));
             return;
         }
         return;
     }
 
-    private void returnUnauthorizedPolicyDownloadFault(SoapResponse response, String msg) {
+    private Document makeUnauthorizedPolicyDownloadFault(String msg) {
         Document fault = null;
         try {
             Element detailEl = null;
@@ -254,20 +248,17 @@ public class PolicyService {
                                                      "unauthorized policy download",
                                                      detailEl,
                                                      "");
+            return fault;
         } catch (IOException e) {
-            exceptionToFault(e, response);
-            return;
+            return exceptionToFault(e);
         } catch (SAXException e) {
-            exceptionToFault(e, response);
-            return;
+            return exceptionToFault(e);
         }
-        response.setDocument(fault);
     }
 
-    private void wrapFilteredPolicyInResponse(Document policyDoc,
+    private Document wrapFilteredPolicyInResponse(Document policyDoc,
                                               String policyVersion,
                                               String relatesTo,
-                                              SoapResponse response,
                                               boolean signResponse)
                             throws GeneralSecurityException, DecoratorException {
         Document responseDoc;
@@ -293,7 +284,7 @@ public class PolicyService {
                 signresponse(responseDoc, pver, rte);
             else
                 SoapUtil.addTimestamp(header, SoapUtil.WSU_NAMESPACE, null, 0);
-            response.setDocument(responseDoc);
+            return responseDoc;
         } catch (IOException e) {
             throw new RuntimeException(e); // can't happen
         } catch (SAXException e) {
@@ -341,19 +332,19 @@ public class PolicyService {
         return serviceId;
     }
 
-    private void exceptionToFault(Exception e, SoapResponse response) {
+    private Document exceptionToFault(Exception e) {
         logger.log(Level.INFO, e.getMessage(), e);
         try {
             Document fault;
-            if (e instanceof SoapFaultDetail)
+            if (e instanceof SoapFaultDetail) {
                 fault = SoapFaultUtils.generateSoapFault((SoapFaultDetail)e, SoapFaultUtils.FC_SERVER);
-            else {
+            } else {
                 fault = SoapFaultUtils.generateSoapFault(SoapFaultUtils.FC_SERVER,
                                                          e.getMessage(),
                                                          null,
                                                          e.getClass().getName());
             }
-            response.setDocument(fault);
+            return fault;
         } catch (IOException e1) {
             throw new RuntimeException(e1); // can't happen
         } catch (SAXException e1) {

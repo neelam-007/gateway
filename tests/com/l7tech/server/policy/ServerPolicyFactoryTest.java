@@ -1,11 +1,13 @@
 package com.l7tech.server.policy;
 
+import com.l7tech.common.message.Message;
 import com.l7tech.policy.AllAssertions;
 import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.assertion.credential.http.HttpBasic;
 import com.l7tech.policy.assertion.identity.SpecificUser;
 import com.l7tech.policy.assertion.xmlsec.SamlSecurity;
+import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.ServerAssertion;
 import junit.framework.Test;
 import junit.framework.TestCase;
@@ -91,20 +93,22 @@ public class ServerPolicyFactoryTest extends TestCase {
 
         ServerPolicyFactory pfac = ServerPolicyFactory.getInstance();
 
+        PolicyEnforcementContext pp = new PolicyEnforcementContext(new Message(), new Message(), null, null);
+
         ServerAssertion serverAllTrue = pfac.makeServerPolicy(allTrue);
-        assertTrue(serverAllTrue.checkRequest(null, null) == AssertionStatus.NONE);
+        assertTrue(serverAllTrue.checkRequest(pp) == AssertionStatus.NONE);
 
         ServerAssertion serverAllFalse = pfac.makeServerPolicy(allFalse);
-        assertTrue(serverAllFalse.checkRequest(null, null) != AssertionStatus.NONE);
+        assertTrue(serverAllFalse.checkRequest(pp) != AssertionStatus.NONE);
 
         ServerAssertion serverSomeFalse = pfac.makeServerPolicy(someFalse);
-        assertTrue(serverSomeFalse.checkRequest(null, null) != AssertionStatus.NONE);
+        assertTrue(serverSomeFalse.checkRequest(pp) != AssertionStatus.NONE);
 
         ServerAssertion serverFalseTree = pfac.makeServerPolicy(falseTree);
-        assertTrue(serverFalseTree.checkRequest(null, null) != AssertionStatus.NONE);
+        assertTrue(serverFalseTree.checkRequest(pp) != AssertionStatus.NONE);
 
         ServerAssertion serverTrueTree = pfac.makeServerPolicy(trueTree);
-        assertTrue(serverTrueTree.checkRequest(null, null) == AssertionStatus.NONE);
+        assertTrue(serverTrueTree.checkRequest(pp) == AssertionStatus.NONE);
 
         ServerAssertion serverReal = pfac.makeServerPolicy(real);
     }

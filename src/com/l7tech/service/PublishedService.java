@@ -6,10 +6,10 @@
 
 package com.l7tech.service;
 
+import com.l7tech.common.message.Message;
 import com.l7tech.common.util.Locator;
 import com.l7tech.common.util.SoapFaultUtils;
 import com.l7tech.common.xml.Wsdl;
-import com.l7tech.message.Request;
 import com.l7tech.objectmodel.imp.NamedEntityImp;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.FalseAssertion;
@@ -153,12 +153,12 @@ public class PublishedService extends NamedEntityImp {
     }
 
     /**
-     * Gets the SOAP {@link Port} most appropriate for the given {@link Request} from this service's WSDL.
-     * @param request the {@link Request} to use to select an appropriate {@link Port}. May be null.
-     * @return the {@link Port} most appropriate for the given {@link Request}. May be null.
+     * Gets the SOAP {@link Port} most appropriate for the given {@link Message} from this service's WSDL.
+     * @param request the {@link Message} to use to select an appropriate {@link Port}. May be null.
+     * @return the {@link Port} most appropriate for the given {@link Message}. May be null.
      * @throws WSDLException if the WSDL cannot be parsed
      */
-    public synchronized Port wsdlPort( Request request ) throws WSDLException {
+    public synchronized Port wsdlPort( Message request ) throws WSDLException {
         // TODO: Get the right Port for this request, rather than just the first one!
 
         if ( _wsdlPort == null ) {
@@ -170,13 +170,13 @@ public class PublishedService extends NamedEntityImp {
     }
 
     /**
-     * Gets the URL of the protected service most appropriate for the given {@link Request} from this service's WSDL.
-     * @param request the {@link Request} to use in selecting an appropriate {@link Port}. May be null.
+     * Gets the URL of the protected service most appropriate for the given {@link com.l7tech.common.message.Message} from this service's WSDL.
+     * @param request the {@link com.l7tech.common.message.Message} to use in selecting an appropriate {@link Port}. May be null.
      * @return the protected service URL. May be null.
      * @throws WSDLException if the WSDL could not be parsed
      * @throws MalformedURLException if the protected service URL could not be parsed
      */
-    public synchronized URL serviceUrl( Request request ) throws WSDLException, MalformedURLException {
+    public synchronized URL serviceUrl( Message request ) throws WSDLException, MalformedURLException {
         // todo: What is the Request parameter doing here? It is also unused. em24102003
         if (!isSoap()) return null;
         if ( _serviceUrl == null ) {

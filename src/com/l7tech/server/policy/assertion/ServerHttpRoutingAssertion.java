@@ -7,17 +7,22 @@
 package com.l7tech.server.policy.assertion;
 
 import com.l7tech.common.BuildInfo;
+import com.l7tech.common.message.Message;
+import com.l7tech.common.message.MimeKnob;
+import com.l7tech.common.message.TcpKnob;
+import com.l7tech.common.mime.ByteArrayStashManager;
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.common.mime.MimeUtil;
+import com.l7tech.common.mime.NoSuchPartException;
 import com.l7tech.common.security.xml.SignerInfo;
 import com.l7tech.common.util.KeystoreUtils;
 import com.l7tech.common.util.SoapUtil;
 import com.l7tech.identity.User;
-import com.l7tech.message.*;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.HttpRoutingAssertion;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.RoutingStatus;
+import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.saml.SamlAssertionGenerator;
 import com.l7tech.server.transport.http.SslClientTrustManager;
 import com.l7tech.service.PublishedService;
@@ -79,30 +84,21 @@ public class ServerHttpRoutingAssertion extends ServerRoutingAssertion {
     /**
      * Forwards the request along to a ProtectedService at the configured URL.
      *
-     * @param grequest  The request to be forwarded.
-     * @param gresponse The response that was received from the ProtectedService.
+     * @param context
      * @return an AssertionStatus indicating the success or failure of the request.
      * @throws com.l7tech.policy.assertion.PolicyAssertionException
      *          if some error preventing the execution of the PolicyAssertion has occurred.
      */
-    public AssertionStatus checkRequest(Request grequest, Response gresponse) throws IOException, PolicyAssertionException {
-        grequest.setRoutingStatus(RoutingStatus.ATTEMPTED);
-
-        XmlRequest request;
-        XmlResponse response;
-        if (grequest instanceof XmlRequest && gresponse instanceof XmlResponse) {
-            request = (XmlRequest)grequest;
-            response = (XmlResponse)gresponse;
-        } else
-            throw new PolicyAssertionException("Only XML Requests are supported by ServerRoutingAssertion!");
+    public AssertionStatus checkRequest(PolicyEnforcementContext context) throws IOException, PolicyAssertionException {
+        context.setRoutingStatus(RoutingStatus.ATTEMPTED);
 
         PostMethod postMethod = null;
         InputStream inputStream = null;
 
         try {
             try {
-                PublishedService service = (PublishedService)request.getParameter(Request.PARAM_SERVICE);
-                URL url = getProtectedServiceUrl(service, request);
+                PublishedService service = context.getService();
+                URL url = getProtectedServiceUrl(service, context.getRequest());
 
                 HttpClient client = new HttpClient(connectionManager);
                 HostConfiguration hconf = null;
@@ -137,14 +133,15 @@ public class ServerHttpRoutingAssertion extends ServerRoutingAssertion {
                 // todo: check if we need to support HTTP 1.1.
                 postMethod.setHttp11(false);
 
-                postMethod.addRequestHeader(MimeUtil.CONTENT_TYPE, request.getOuterContentType().getFullValue());
+                final MimeKnob reqMime = context.getRequest().getMimeKnob();
+                postMethod.addRequestHeader(MimeUtil.CONTENT_TYPE, reqMime.getOuterContentType().getFullValue());
 
                 // Fix for Bug #1282 - Must set a content-length on PostMethod or it will try to buffer the whole thing
-                final long contentLength = request.getContentLength();
+                final long contentLength = reqMime.getContentLength();
                 if (contentLength > Integer.MAX_VALUE)
                     throw new IOException("Body content is too long to be processed -- maximum is " + Integer.MAX_VALUE + " bytes");
                 postMethod.setRequestContentLength((int)contentLength);
-                final InputStream bodyInputStream = request.getEntireMessageBody();
+                final InputStream bodyInputStream = reqMime.getEntireMessageBodyAsInputStream();
                 postMethod.setRequestBody(bodyInputStream);
 
                 String userAgent = httpRoutingAssertion.getUserAgent();
@@ -158,14 +155,14 @@ public class ServerHttpRoutingAssertion extends ServerRoutingAssertion {
                     hostValue.append(port);
                 }
                 postMethod.setRequestHeader(HOST, hostValue.toString());
-                postMethod.setRequestHeader(SoapUtil.SOAPACTION, (String)request.getParameter(Request.PARAM_HTTP_SOAPACTION));
+                postMethod.setRequestHeader(SoapUtil.SOAPACTION, context.getRequest().getHttpRequestKnob().getHeaderSingleValue(SoapUtil.SOAPACTION));
 
                 if (httpRoutingAssertion.isTaiCredentialChaining()) {
                     String chainId = null;
-                    if (!request.isAuthenticated()) {
+                    if (!context.isAuthenticated()) {
                         logger.log(Level.FINE, "TAI credential chaining requested, but request was not authenticated.");
                     } else {
-                        User clientUser = request.getUser();
+                        User clientUser = context.getAuthenticatedUser();
                         if (clientUser != null) {
                             String id = clientUser.getLogin();
                             if (id == null || id.length() < 1) id = clientUser.getName();
@@ -177,7 +174,7 @@ public class ServerHttpRoutingAssertion extends ServerRoutingAssertion {
                             } else
                                 logger.log(Level.WARNING, "TAI credential chaining requested, but request User did not have a unique identifier"); // can't happen
                         } else {
-                            final String login = request.getPrincipalCredentials().getLogin();
+                            final String login = context.getCredentials().getLogin();
                             if (login != null && login.length() > 0) {
                                 logger.log(Level.FINE, "TAI credential chaining requested, but there is no User; " +
                                   "will chain pc.login " + login);
@@ -214,24 +211,22 @@ public class ServerHttpRoutingAssertion extends ServerRoutingAssertion {
                 }
 
                 if (httpRoutingAssertion.isAttachSamlSenderVouches()) {
-                    Document document = request.getDocument();
+                    Document document = context.getRequest().getXmlKnob().getDocument();
                     SamlAssertionGenerator ag = new SamlAssertionGenerator();
                     SignerInfo si = KeystoreUtils.getInstance().getSignerInfo();
                     SamlAssertionGenerator.Options samlOptions = new SamlAssertionGenerator.Options();
-                    final TransportMetadata tm = request.getTransportMetadata();
-                    if (tm instanceof HttpTransportMetadata) {
-                        final HttpTransportMetadata htm = (HttpTransportMetadata)tm;
+                    if (context.getRequest().getKnob(TcpKnob.class) != null) {
                         try {
-                            InetAddress clientAddress = InetAddress.getByName(htm.getRequest().getRemoteAddr());
+                            InetAddress clientAddress = InetAddress.getByName(context.getRequest().getTcpKnob().getRemoteAddress());
                             samlOptions.setClientAddress(clientAddress);
                         } catch (UnknownHostException e) {
                             logger.warning("Couldn't resolve client IP address");
                         }
                     }
                     samlOptions.setExpiryMinutes(httpRoutingAssertion.getSamlAssertionExpiry());
-                    ag.attachSenderVouches(document, si, request.getPrincipalCredentials(), samlOptions);
+                    ag.attachSenderVouches(document, si, context.getCredentials(), samlOptions);
                 }
-                attachCookies(client, request.getTransportMetadata(), url);
+                attachCookies(client, context, url);
 
                 if (hconf == null) {
                     client.executeMethod(postMethod);
@@ -245,9 +240,9 @@ public class ServerHttpRoutingAssertion extends ServerRoutingAssertion {
                 else
                     logger.info("Protected service (" + url + ") responded with status " + status);
 
-                response.setParameter(Response.PARAM_HTTP_STATUS, new Integer(status));
+                context.getResponse().getHttpResponseKnob().setStatus(status);
 
-                request.setRoutingStatus(RoutingStatus.ROUTED);
+                context.setRoutingStatus(RoutingStatus.ROUTED);
 
             } catch (WSDLException we) {
                 logger.log(Level.SEVERE, null, we);
@@ -268,22 +263,24 @@ public class ServerHttpRoutingAssertion extends ServerRoutingAssertion {
             } catch (CertificateException e) {
                 logger.log(Level.SEVERE, null, e);
                 return AssertionStatus.FAILED;
+            } catch (NoSuchPartException e) {
+                logger.log(Level.SEVERE, null, e);
+                return AssertionStatus.FAILED;
             }
             // BEYOND THIS POINT, WE DONT RETURN FAILURE
             try {
                 InputStream responseStream = postMethod.getResponseBodyAsStream();
                 String ctype = postMethod.getResponseHeader(MimeUtil.CONTENT_TYPE).getValue();
                 ContentTypeHeader outerContentType = ContentTypeHeader.parseValue(ctype);
-                response.setParameter(Response.PARAM_HTTP_CONTENT_TYPE, ctype);
-                response.initialize(responseStream, outerContentType);
-            } catch (IOException e) {
+                context.getResponse().initialize(new ByteArrayStashManager(), outerContentType, responseStream); // TODO use a different StashManager?
+            } catch (Exception e) {
                 logger.log(Level.FINE, "error reading response", e);
                 // here we dont return error because we already routed
             }
         } finally {
             if (postMethod != null) {
                 MethodCloser mc = new MethodCloser(postMethod);
-                response.runOnClose(mc);
+                context.runOnClose(mc);
             }
 
             if (inputStream != null) {
@@ -295,7 +292,7 @@ public class ServerHttpRoutingAssertion extends ServerRoutingAssertion {
         return AssertionStatus.NONE;
     }
 
-    private URL getProtectedServiceUrl(PublishedService service, XmlRequest request) throws WSDLException, MalformedURLException {
+    private URL getProtectedServiceUrl(PublishedService service, Message request) throws WSDLException, MalformedURLException {
         URL url;
         String psurl = httpRoutingAssertion.getProtectedServiceUrl();
         if (psurl == null) {
@@ -310,17 +307,15 @@ public class ServerHttpRoutingAssertion extends ServerRoutingAssertion {
     /**
      * Attach cookies received by the client to the protected service
      *
-     * @param client            the http client sender
-     * @param transportMetadata the transport metadata
+     * @param client  the http client sender
+     * @param context the context for this request
      * @param url
      */
-    private void attachCookies(HttpClient client, TransportMetadata transportMetadata, URL url) {
-        if (!(transportMetadata instanceof HttpTransportMetadata)) {
+    private void attachCookies(HttpClient client, PolicyEnforcementContext context, URL url) {
+        HttpServletRequest req = context.getHttpServletRequest();
+        if (req == null)
             return;
-        }
-        HttpTransportMetadata httpTransportMetaData = (HttpTransportMetadata)transportMetadata;
-        HttpServletRequest req = httpTransportMetaData.getRequest();
-        Vector updatedCookies = httpTransportMetaData.getUpdatedCookies();
+        Vector updatedCookies = context.getUpdatedCookies();
         HttpState state = client.getState();
         Cookie updatedCookie = null;
 

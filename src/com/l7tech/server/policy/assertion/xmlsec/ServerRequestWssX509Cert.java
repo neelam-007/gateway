@@ -3,15 +3,15 @@ package com.l7tech.server.policy.assertion.xmlsec;
 import com.l7tech.common.security.xml.processor.ProcessorResult;
 import com.l7tech.common.security.xml.processor.SecurityToken;
 import com.l7tech.common.security.xml.processor.X509SecurityToken;
-import com.l7tech.message.Request;
-import com.l7tech.message.Response;
-import com.l7tech.message.SoapRequest;
+import com.l7tech.common.util.CausedIOException;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.credential.CredentialFormat;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.assertion.xmlsec.RequestWssX509Cert;
+import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.ServerAssertion;
+import org.xml.sax.SAXException;
 import sun.security.x509.X500Name;
 
 import java.io.IOException;
@@ -34,13 +34,17 @@ public class ServerRequestWssX509Cert implements ServerAssertion {
     public ServerRequestWssX509Cert(RequestWssX509Cert subject) {
         this.subject = subject;
     }
-    public AssertionStatus checkRequest(Request request, Response response) throws IOException, PolicyAssertionException {
-        if (!(request instanceof SoapRequest) || !((SoapRequest)request).isSoap()) {
-            logger.info("This type of assertion is only supported with SOAP type of messages");
-            return AssertionStatus.BAD_REQUEST;
+    public AssertionStatus checkRequest(PolicyEnforcementContext context) throws IOException, PolicyAssertionException {
+        ProcessorResult wssResults;
+        try {
+            if (!context.getRequest().isSoap()) {
+                logger.info("Request not SOAP; unable to check for WS-Security signature");
+                return AssertionStatus.BAD_REQUEST;
+            }
+            wssResults = context.getRequest().getXmlKnob().getProcessorResult();
+        } catch (SAXException e) {
+            throw new CausedIOException(e);
         }
-        SoapRequest soapreq = (SoapRequest)request;
-        ProcessorResult wssResults = soapreq.getWssProcessorOutput();
         if (wssResults == null) {
             throw new IOException("This request was not processed for WSS level security.");
         }
@@ -48,7 +52,7 @@ public class ServerRequestWssX509Cert implements ServerAssertion {
         SecurityToken[] tokens = wssResults.getSecurityTokens();
         if (tokens == null) {
             logger.info("No tokens were processed from this request. Returning AUTH_REQUIRED.");
-            response.setAuthenticationMissing(true);
+            context.setAuthenticationMissing(true);
             return AssertionStatus.AUTH_REQUIRED;
         }
         X509Certificate gotACertAlready = null;
@@ -73,17 +77,17 @@ public class ServerRequestWssX509Cert implements ServerAssertion {
         if (gotACertAlready != null) {
             X500Name x500name = new X500Name(gotACertAlready.getSubjectX500Principal().getName());
             String certCN = x500name.getCommonName();
-            request.setPrincipalCredentials(new LoginCredentials(certCN,
-                                                                 null,
-                                                                 CredentialFormat.CLIENTCERT,
-                                                                 subject.getClass(),
-                                                                 null,
-                                                                 gotACertAlready));
+            context.setCredentials(new LoginCredentials(certCN,
+                                                        null,
+                                                        CredentialFormat.CLIENTCERT,
+                                                        subject.getClass(),
+                                                        null,
+                                                        gotACertAlready));
             logger.fine("Cert loaded as principal credential for CN:" + certCN);
             return AssertionStatus.NONE;
         }
         logger.info("This assertion did not find a proven x509 cert to use as credentials. Returning AUTH_REQUIRED.");
-        response.setAuthenticationMissing(true);
+        context.setAuthenticationMissing(true);
         return AssertionStatus.AUTH_REQUIRED;
     }
 

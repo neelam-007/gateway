@@ -1,10 +1,10 @@
 package com.l7tech.server.policy.assertion;
 
-import com.l7tech.message.Request;
-import com.l7tech.message.Response;
+import com.l7tech.common.message.TcpKnob;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.RemoteIpRange;
+import com.l7tech.server.message.PolicyEnforcementContext;
 
 import java.io.IOException;
 import java.util.StringTokenizer;
@@ -27,9 +27,15 @@ public class ServerRemoteIpRange implements ServerAssertion {
         calculateIPRange();
     }
 
-    public AssertionStatus checkRequest(Request req, Response res) throws IOException, PolicyAssertionException {
+    public AssertionStatus checkRequest(PolicyEnforcementContext context) throws IOException, PolicyAssertionException {
         // get remote address
-        String remoteAddress = (String)req.getParameter(Request.PARAM_REMOTE_ADDR);
+        TcpKnob tcp = (TcpKnob)context.getRequest().getKnob(TcpKnob.class);
+        if (tcp == null) {
+            logger.info("Request was not received via TCP; cannot validate remote IP address");
+            return AssertionStatus.BAD_REQUEST;
+        }
+
+        String remoteAddress = tcp.getRemoteAddress();
         if (!RemoteIpRange.checkIPAddressFormat(remoteAddress)) {
             logger.warning("The remote address " + remoteAddress + " is null or not in expected format.");
             return AssertionStatus.FALSIFIED;

@@ -6,10 +6,8 @@
 
 package com.l7tech.server.service.resolution;
 
-import com.l7tech.common.util.SoapUtil;
-import com.l7tech.message.Request;
-import com.l7tech.message.XmlRequest;
-import org.w3c.dom.Document;
+import com.l7tech.common.message.Message;
+import com.l7tech.common.xml.MessageNotSoapException;
 import org.xml.sax.SAXException;
 
 import javax.wsdl.BindingInput;
@@ -25,9 +23,6 @@ import java.util.Iterator;
  * @version $Revision$
  */
 public class UrnResolver extends WsdlOperationServiceResolver {
-    protected String getParameterName() {
-        return Request.PARAM_SOAP_URN;
-    }
 
     protected String getTargetValue(Definition def, BindingOperation operation) {
         BindingInput input = operation.getBindingInput();
@@ -46,18 +41,19 @@ public class UrnResolver extends WsdlOperationServiceResolver {
         return def.getTargetNamespace();
     }
 
-    protected Object getRequestValue(Request request) throws ServiceResolutionException {
+    protected Object getRequestValue(Message request) throws ServiceResolutionException {
         try {
-            if (request instanceof XmlRequest) {
-                Document doc = ((XmlRequest)request).getDocument();
-                String uri = SoapUtil.getPayloadNamespaceUri(doc);
-                return uri;
+            if (request.isSoap()) {
+                return request.getSoapKnob().getPayloadNamespaceUri();
+            } else {
+                return null;
             }
-            return null;
         } catch (SAXException se) {
             throw new ServiceResolutionException(se.getMessage(), se);
-        } catch (IOException ioe) {
-            throw new ServiceResolutionException(ioe.getMessage(), ioe);
+        } catch (MessageNotSoapException e) {
+            throw new RuntimeException(e); // can't happen, we already checked
+        } catch (IOException e) {
+            throw new ServiceResolutionException(e.getMessage(), e);
         }
     }
 

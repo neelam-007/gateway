@@ -6,9 +6,8 @@
 
 package com.l7tech.server.policy.assertion.credential.http;
 
+import com.l7tech.common.message.Message;
 import com.l7tech.common.util.HexUtils;
-import com.l7tech.message.Request;
-import com.l7tech.message.Response;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.credential.CredentialFinderException;
 import com.l7tech.policy.assertion.credential.CredentialFormat;
@@ -23,12 +22,15 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.StringTokenizer;
 import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * @author alex
  * @version $Revision$
  */
 public class ServerHttpDigest extends ServerHttpCredentialSource implements ServerAssertion {
+    private static final Logger logger = Logger.getLogger(ServerHttpDigest.class.getName());
+
     public ServerHttpDigest( HttpDigest data ) {
         super( data );
         _data = data;
@@ -37,17 +39,18 @@ public class ServerHttpDigest extends ServerHttpCredentialSource implements Serv
     public static final String ENCODING = "UTF-8";
 
     /**
-     * We have little choice but to return a hardcoded value here.
+     * Returns the authentication realm to use for this assertion.
+     * We have little choice but to return a hardcoded value here because passwords are hashed with
+     * this realm when they are stored in the database and the cleartext password is never transferred
+     * in HTTP digest.
      *
-     * @param request
-     * @return
+     * @return a hardcoded realm. never null
      */
-    protected String realm( Request request ) {
+    protected String realm() {
         return HttpDigest.REALM;
     }
 
-    protected AssertionStatus doCheckCredentials(Request request, Response response) {
-        Map authParams = (Map)request.getParameter( Request.PARAM_HTTP_AUTH_PARAMS );
+    protected AssertionStatus checkAuthParams(Map authParams) {
         if ( authParams == null ) return AssertionStatus.AUTH_REQUIRED;
 
         String nonce = (String)authParams.get( HttpDigest.PARAM_NONCE );
@@ -78,17 +81,17 @@ public class ServerHttpDigest extends ServerHttpCredentialSource implements Serv
         }
     }
 
-    protected LoginCredentials doFindCredentials( Request request, Response response ) throws CredentialFinderException {
-        Map authParams = (Map)request.getParameter( Request.PARAM_HTTP_AUTH_PARAMS );
-
+    protected LoginCredentials doFindCredentials( Message request, Map authParams )
+            throws CredentialFinderException
+    {
         if ( authParams == null ) return null;
 
         String userName = (String)authParams.get( HttpDigest.PARAM_USERNAME );
         String realmName = (String)authParams.get( HttpDigest.PARAM_REALM );
         String digestResponse = (String)authParams.get( HttpDigest.PARAM_RESPONSE );
 
-        authParams.put( HttpDigest.PARAM_URI, request.getParameter( Request.PARAM_HTTP_REQUEST_URI ) );
-        authParams.put( HttpDigest.PARAM_METHOD, request.getParameter( Request.PARAM_HTTP_METHOD ) );
+        authParams.put( HttpDigest.PARAM_URI, request.getHttpRequestKnob().getRequestUri() );
+        authParams.put( HttpDigest.PARAM_METHOD, request.getHttpRequestKnob().getMethod() );
 
         if ( (userName == null) || (realmName == null) || ( digestResponse == null) )
             return null;
@@ -105,8 +108,7 @@ public class ServerHttpDigest extends ServerHttpCredentialSource implements Serv
         return params;
     }
 
-    protected Map challengeParams( Request request, Response response ) {
-        Map requestAuthParams = (Map)request.getParameter( Request.PARAM_HTTP_AUTH_PARAMS );
+    protected Map challengeParams( Message request, Map requestAuthParams ) {
         DigestSessions sessions = DigestSessions.getInstance();
 
         String nonce;
@@ -137,14 +139,15 @@ public class ServerHttpDigest extends ServerHttpCredentialSource implements Serv
         return HttpDigest.SCHEME;
     }
 
-    protected LoginCredentials findCredentials( Request request, Response response ) throws IOException, CredentialFinderException {
-        String authorization = (String)request.getParameter( Request.PARAM_HTTP_AUTHORIZATION );
+    protected LoginCredentials findCredentials( Message request, Map authParams )
+            throws IOException, CredentialFinderException
+    {
+        String authorization = request.getHttpRequestKnob().getHeaderSingleValue(AUTHORIZATION);
 
         if ( authorization == null || authorization.length() == 0 ) {
             return null;
         }
 
-        Map authParams = new HashMap();
         StringTokenizer stok = new StringTokenizer( authorization, ", " );
         String scheme = null;
         String token, name, value;
@@ -198,9 +201,7 @@ public class ServerHttpDigest extends ServerHttpCredentialSource implements Serv
             }
         }
 
-        request.setParameterIfEmpty( Request.PARAM_HTTP_AUTH_PARAMS, authParams );
-
-        return doFindCredentials( request, response );
+        return doFindCredentials( request, authParams );
     }
 
     protected HttpDigest _data;

@@ -6,6 +6,7 @@
 
 package com.l7tech.cluster;
 
+import com.l7tech.common.util.Background;
 import com.l7tech.objectmodel.HibernatePersistenceContext;
 import com.l7tech.server.util.MessageId;
 import com.l7tech.server.util.MessageIdManager;
@@ -134,10 +135,9 @@ public class DistributedMessageIdManager implements MessageIdManager {
     private void start() throws Exception {
         tree.startService(); // kick start tree cache
 
-        gcTimer = new Timer(true);
         // Perturb delay to avoid synchronization with other cluster nodes
         long when = GC_PERIOD * 2 + new Random().nextInt(1 + (int)GC_PERIOD/4);
-        gcTimer.schedule(new GarbageCollectionTask(), when, GC_PERIOD);
+        Background.schedule(new GarbageCollectionTask(), when, GC_PERIOD);
         HibernatePersistenceContext context = null;
         PreparedStatement ps = null;
         ResultSet rs = null;
@@ -312,7 +312,6 @@ public class DistributedMessageIdManager implements MessageIdManager {
     private final Logger logger = Logger.getLogger(getClass().getName());
     private static DistributedMessageIdManager singleton;
 
-    private Timer gcTimer;
     private TreeCache tree;
 
     private static final int GC_PERIOD = 1 * 30 * 1000;

@@ -6,7 +6,10 @@
 
 package com.l7tech.server.policy.assertion;
 
+import com.l7tech.common.message.JmsKnob;
+import com.l7tech.common.mime.ByteArrayStashManager;
 import com.l7tech.common.mime.ContentTypeHeader;
+import com.l7tech.common.mime.NoSuchPartException;
 import com.l7tech.common.transport.jms.JmsConnection;
 import com.l7tech.common.transport.jms.JmsEndpoint;
 import com.l7tech.common.transport.jms.JmsReplyType;
@@ -14,17 +17,13 @@ import com.l7tech.common.util.CausedIOException;
 import com.l7tech.common.util.HexUtils;
 import com.l7tech.common.util.Locator;
 import com.l7tech.common.util.XmlUtil;
-import com.l7tech.message.Request;
-import com.l7tech.message.Response;
-import com.l7tech.message.XmlRequest;
-import com.l7tech.message.XmlResponse;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.JmsRoutingAssertion;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.RoutingStatus;
+import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.transport.jms.*;
-import org.xml.sax.SAXException;
 
 import javax.jms.*;
 import javax.naming.Context;
@@ -47,9 +46,9 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion {
     }
 
     // TODO synchronized?
-    public synchronized AssertionStatus checkRequest( Request request, Response response )
+    public synchronized AssertionStatus checkRequest(PolicyEnforcementContext context)
             throws IOException, PolicyAssertionException {
-        request.setRoutingStatus( RoutingStatus.ATTEMPTED );
+        context.setRoutingStatus( RoutingStatus.ATTEMPTED );
         Destination jmsInboundDest = null;
         MessageProducer jmsProducer = null;
         MessageConsumer jmsConsumer = null;
@@ -63,7 +62,7 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion {
                 try {
                     JmsBag bag = getJmsBag();
                     jmsSession = bag.getSession();
-                    jmsOutboundRequest = makeRequest( request );
+                    jmsOutboundRequest = makeRequest( context );
                     break; // if successful, no need for further retries
                 } catch ( Throwable t ) {
                     if ( ++oopses < MAX_OOPSES ) {
@@ -104,7 +103,7 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion {
                 selector = "JMSCorrelationID = '" + escape( corrId ) + "'";
             }
 
-            boolean inbound = request.isReplyExpected()
+            boolean inbound = context.isReplyExpected()
                               && jmsInboundDest != null;
 
             if ( jmsSession instanceof QueueSession ) {
@@ -134,31 +133,25 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion {
                 } else {
                     logger.finer( "Received routing reply" );
 
-                    if ( !(response instanceof XmlResponse ) )
-                        throw new PolicyAssertionException( "Only XML responses are supported" );
-
-                    XmlResponse xresp = (XmlResponse)response;
+                    // TODO throw PolicyAssertionException unless response isXml
 
                     if ( jmsResponse instanceof TextMessage ) {
-                        xresp.setDocument( XmlUtil.stringToDocument( ((TextMessage)jmsResponse).getText() ));
+                        context.getResponse().initialize(XmlUtil.stringToDocument( ((TextMessage)jmsResponse).getText() ));
                     } else if ( jmsResponse instanceof BytesMessage ) {
                         BytesMessage bmsg = (BytesMessage)jmsResponse;
-                        xresp.setParameter(Response.PARAM_HTTP_CONTENT_TYPE, ContentTypeHeader.XML_DEFAULT.getFullValue());
-                        final BytesMessageInputStream messageBody = new BytesMessageInputStream(bmsg);
-                        xresp.initialize(messageBody, ContentTypeHeader.XML_DEFAULT);
+                        context.getResponse().initialize(new ByteArrayStashManager(), ContentTypeHeader.XML_DEFAULT, new BytesMessageInputStream(bmsg));
                     } else {
                         logger.warning( "Received JMS reply with unsupported message type " +
                                         jmsResponse.getClass().getName() );
                         return AssertionStatus.FAILED;
                     }
 
-                    xresp.setParameter( Request.PARAM_HTTP_CONTENT_TYPE, XmlUtil.TEXT_XML );
                     logger.info( "Received response from protected service" );
-                    request.setRoutingStatus( RoutingStatus.ROUTED );
+                    context.setRoutingStatus( RoutingStatus.ROUTED );
                 }
             } else {
                 logger.info( "No response expected from protected service" );
-                request.setRoutingStatus( RoutingStatus.ROUTED );
+                context.setRoutingStatus( RoutingStatus.ROUTED );
             }
 
             return AssertionStatus.NONE;
@@ -262,48 +255,38 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion {
 
     /**
      * Builds a {@link Message} to be routed to a JMS endpoint.
-     * @param request
-     * @return
-     * @throws PolicyAssertionException
+     * @param context contains the request to be converted into a JMS Message
+     * @return the JMS Message
      * @throws IOException
      * @throws JMSException
      */
-    private Message makeRequest( Request request )
-            throws PolicyAssertionException, IOException, JMSException,
-                   NamingException, JmsConfigException, FindException {
-        if ( !(request instanceof XmlRequest ) ) throw new PolicyAssertionException( "Only XML messages are supported" );
-
+    private javax.jms.Message makeRequest( PolicyEnforcementContext context )
+        throws IOException, JMSException, NamingException, JmsConfigException, FindException
+    {
         JmsEndpoint endpoint = getRoutedRequestEndpoint();
 
-        Message outboundRequestMsg = null;
-        XmlRequest xreq = (XmlRequest)request;
-        if ( xreq instanceof JmsSoapRequest ) {
+        javax.jms.Message outboundRequestMsg = null;
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        try {
+            HexUtils.copyStream(context.getRequest().getMimeKnob().getEntireMessageBodyAsInputStream(), baos);
+        } catch (NoSuchPartException e) {
+            throw new CausedIOException("Couldn't read from JMS request"); // can't happen
+        }
+        byte[] outboundRequestBytes = baos.toByteArray();
+
+        if (context.getRequest().getKnob(JmsKnob.class) != null) {
             // Outgoing request should be the same type (i.e. TextMessage or BytesMessage) as the original request
-            JmsSoapRequest jreq = (JmsSoapRequest)xreq;
-            JmsTransportMetadata jtm = (JmsTransportMetadata)jreq.getTransportMetadata();
-            Message jmsOriginalRequest = jtm.getRequest();
-            if ( jmsOriginalRequest instanceof TextMessage ) {
+            if (!context.getRequest().getJmsKnob().isBytesMessage()) {
                 logger.finer( "Creating request as TextMessage" );
-                try {
-                    outboundRequestMsg = bag.getSession().createTextMessage( XmlUtil.nodeToString(xreq.getDocument()) );
-                } catch (SAXException e) {
-                    throw new CausedIOException(e);
-                }
+                outboundRequestMsg = bag.getSession().createTextMessage(new String(outboundRequestBytes, JmsUtil.DEFAULT_ENCODING));
             }
         }
 
-        if ( outboundRequestMsg == null ) {
+        if (outboundRequestMsg == null) {
             // Default to BytesMessage
             logger.finer( "Creating request as BytesMessage" );
             BytesMessage bmsg = bag.getSession().createBytesMessage();
-            ByteArrayOutputStream baos = new ByteArrayOutputStream(BUFFER_SIZE);
-            try {
-                HexUtils.copyStream(xreq.getEntireMessageBody(), baos);
-            } catch (SAXException e) {
-                throw new CausedIOException(e);
-            }
-            bmsg.writeBytes( baos.toByteArray() );
-            outboundRequestMsg = bmsg;
+            bmsg.writeBytes(outboundRequestBytes);
         }
 
         JmsReplyType replyType = endpoint.getReplyType();
@@ -313,7 +296,7 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion {
             logger.fine( "Setting JMSReplyTo and JMSCorrelationID" );
             // Set replyTo & correlationId
             outboundRequestMsg.setJMSReplyTo( getResponseDestination( endpoint, outboundRequestMsg ) );
-            outboundRequestMsg.setJMSCorrelationID( request.getId().toString() );
+            outboundRequestMsg.setJMSCorrelationID( context.getRequestId().toString() );
         }
 
         return outboundRequestMsg;

@@ -3,18 +3,18 @@ package com.l7tech.server.policy.assertion.xmlsec;
 import com.l7tech.common.security.xml.processor.ProcessorResult;
 import com.l7tech.common.security.xml.processor.SamlSecurityToken;
 import com.l7tech.common.security.xml.processor.SecurityToken;
+import com.l7tech.common.util.CausedIOException;
 import com.l7tech.common.xml.saml.SamlAssertion;
 import com.l7tech.common.xml.saml.SamlHolderOfKeyAssertion;
 import com.l7tech.common.xml.saml.SamlSenderVouchesAssertion;
-import com.l7tech.message.Request;
-import com.l7tech.message.Response;
-import com.l7tech.message.SoapRequest;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.credential.CredentialFormat;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.assertion.xmlsec.SamlSecurity;
+import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.ServerAssertion;
+import org.xml.sax.SAXException;
 import sun.security.x509.X500Name;
 
 import java.io.IOException;
@@ -47,27 +47,30 @@ public class ServerSamlSecurity implements ServerAssertion {
     /**
      * SSG Server-side processing of the given request.
      * 
-     * @param request  (In/Out) The request to check.  May be modified by processing.
-     * @param response (Out) The response to send back.  May be replaced during processing.
+     * @param context
      * @return AssertionStatus.NONE if this Assertion did its business successfully; otherwise, some error code
      * @throws com.l7tech.policy.assertion.PolicyAssertionException
      *          something is wrong in the policy dont throw this if there is an issue with the request or the response
      */
-    public AssertionStatus checkRequest(Request request, Response response)
+    public AssertionStatus checkRequest(PolicyEnforcementContext context)
             throws IOException, PolicyAssertionException {
-        if (!(request instanceof SoapRequest) || !((SoapRequest)request).isSoap()) {
-            logger.info("Request is not a SoapRequest; assertion therefore fails");
-            return AssertionStatus.NOT_APPLICABLE;
+        ProcessorResult wssResults;
+        try {
+            if (!context.getRequest().isSoap()) {
+                logger.info("Request not SOAP; cannot check for SAML assertion");
+                return AssertionStatus.NOT_APPLICABLE;
+            }
+            wssResults = context.getRequest().getXmlKnob().getProcessorResult();
+        } catch (SAXException e) {
+            throw new CausedIOException(e);
         }
-        SoapRequest soapreq = (SoapRequest)request;
-        ProcessorResult wssResults = soapreq.getWssProcessorOutput();
         if (wssResults == null)
             throw new IOException("This request was not processed for WSS level security.");
 
         SecurityToken[] tokens = wssResults.getSecurityTokens();
         if (tokens == null) {
             logger.info("No tokens were processed from this request. Returning AUTH_REQUIRED.");
-            response.setAuthenticationMissing(true);
+            context.setAuthenticationMissing(true);
             return AssertionStatus.AUTH_REQUIRED;
         }
 
@@ -117,18 +120,18 @@ public class ServerSamlSecurity implements ServerAssertion {
             // Save pincipal credential for later authentication
             X500Name x500name = new X500Name(samlAssertion.getSubjectCertificate().getSubjectX500Principal().getName());
             String subjectCN = x500name.getCommonName();
-            request.setPrincipalCredentials(new LoginCredentials(subjectCN,
-                                                                 null,
-                                                                 CredentialFormat.SAML,
-                                                                 assertion.getClass(),
-                                                                 null,
-                                                                 samlAssertion));
+            context.setCredentials(new LoginCredentials(subjectCN,
+                                                        null,
+                                                        CredentialFormat.SAML,
+                                                        assertion.getClass(),
+                                                        null,
+                                                        samlAssertion));
             logger.fine("SAML holder-of-key assertion loaded as principal credential for CN:" + subjectCN);
             return AssertionStatus.NONE;
         }
 
         logger.info("This assertion did not find a proven SAML assertion to use as credentials. Returning AUTH_REQUIRED.");
-        response.setAuthenticationMissing(true);
+        context.setAuthenticationMissing(true);
         return AssertionStatus.AUTH_REQUIRED;
     }
 

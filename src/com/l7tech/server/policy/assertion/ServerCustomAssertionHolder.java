@@ -6,23 +6,22 @@
 
 package com.l7tech.server.policy.assertion;
 
+import com.l7tech.common.message.XmlKnob;
 import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.common.util.XmlUtil;
-import com.l7tech.message.*;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.CustomAssertionHolder;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.RoutingStatus;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.assertion.ext.*;
+import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.service.PublishedService;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
 
 import javax.security.auth.Subject;
 import javax.security.auth.login.FailedLoginException;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.security.*;
 import java.util.HashMap;
@@ -43,26 +42,28 @@ public class ServerCustomAssertionHolder implements ServerAssertion {
     protected final Logger logger = Logger.getLogger(getClass().getName());
 
     final protected CustomAssertion customAssertion;
+    final private boolean isAuthAssertion;
 
     public ServerCustomAssertionHolder(CustomAssertionHolder ca) {
         if (ca == null || ca.getCustomAssertion() == null) {
             throw new IllegalArgumentException();
         }
         customAssertion = ca.getCustomAssertion(); // ignore hoder
+        isAuthAssertion = Category.ACCESS_CONTROL.equals(ca.getCategory());
     }
 
-    public AssertionStatus checkRequest(final Request request, final Response response) throws IOException, PolicyAssertionException {
+    public AssertionStatus checkRequest(final PolicyEnforcementContext context) throws IOException, PolicyAssertionException {
         // Bugzilla #707 - removed the logger.entering()/exiting() as they are just for debugging purpose
         //logger.entering(ServerCustomAssertionHolder.class.getName(), "checkRequest");
         try {
-            PublishedService service = (PublishedService)request.getParameter(Request.PARAM_SERVICE);
+            PublishedService service = context.getService();
             final CustomAssertionDescriptor descriptor = CustomAssertions.getDescriptor(customAssertion.getClass());
 
             if (!checkDescriptor(descriptor)) {
                 throw new PolicyAssertionException("Custom assertion is misconfigured, service '" + service.getName() + "'");
             }
             Subject subject = new Subject();
-            LoginCredentials principalCredentials = request.getPrincipalCredentials();
+            LoginCredentials principalCredentials = context.getCredentials();
             if (principalCredentials != null) {
                 String principalName = principalCredentials.getLogin();
                 logger.fine("Service '" + service.getName() + "\n" +
@@ -83,15 +84,16 @@ public class ServerCustomAssertionHolder implements ServerAssertion {
                     Class sa = descriptor.getServerAssertion();
                     ServiceInvocation si = (ServiceInvocation)sa.newInstance();
                     si.setCustomAssertion(customAssertion);
-                    if (isPostRouting(request)) {
-                        si.onResponse(new CustomServiceResponse((XmlResponse)response, (XmlRequest)request));
+                    if (isPostRouting(context)) {
+                        si.onResponse(new CustomServiceResponse(context));
                     } else {
-                        si.onRequest(new CustomServiceRequest((XmlRequest)request));
+                        si.onRequest(new CustomServiceRequest(context));
                     }
                     return null;
                 }
             });
-            request.setAuthenticated(true); // TODO only do this for authentication assertions
+            if (isAuthAssertion)
+                context.setAuthenticated(true);
             return AssertionStatus.NONE;
         } catch (PrivilegedActionException e) {
             if (ExceptionUtils.causedBy(e.getException(), FailedLoginException.class)) {
@@ -111,8 +113,8 @@ public class ServerCustomAssertionHolder implements ServerAssertion {
         }
     }
 
-    private boolean isPostRouting(Request request) {
-        return RoutingStatus.ROUTED.equals(request.getRoutingStatus()) || RoutingStatus.ATTEMPTED.equals(request.getRoutingStatus());
+    private boolean isPostRouting(PolicyEnforcementContext context) {
+        return RoutingStatus.ROUTED.equals(context.getRoutingStatus()) || RoutingStatus.ATTEMPTED.equals(context.getRoutingStatus());
     }
 
     /**
@@ -128,31 +130,24 @@ public class ServerCustomAssertionHolder implements ServerAssertion {
     }
 
     private class CustomServiceResponse implements ServiceResponse {
-        private final XmlResponse response;
-        private final XmlRequest request;
+        private final PolicyEnforcementContext pec;
         private final Map context = new HashMap();
-        private final TransportMetadata transportMetadata;
         private final Document document;
         private final SecurityContext securityContext;
 
-        public CustomServiceResponse(XmlResponse response, XmlRequest request) throws IOException, SAXException {
-            this.response = response;
-            this.request = request;
-            this.transportMetadata = response.getTransportMetadata();
-            this.document = (Document)response.getDocument().cloneNode(true);
-            if (transportMetadata instanceof HttpTransportMetadata) {
-                HttpServletRequest req = ((HttpTransportMetadata)transportMetadata).getRequest();
-                HttpServletResponse res = ((HttpTransportMetadata)transportMetadata).getResponse();
-                context.put("httpRequest", req);
-                context.put("httpResponse", res);
-            }
+        public CustomServiceResponse(PolicyEnforcementContext pec) throws IOException, SAXException {
+            this.pec = pec;
+            this.document = (Document)pec.getResponse().getXmlKnob().getDocument().cloneNode(true);
+
+            context.put("httpRequest", pec.getHttpServletRequest());
+            context.put("httpResponse", pec.getHttpServletResponse());
             securityContext = new SecurityContext() {
                 public Subject getSubject() {
                     return Subject.getSubject(AccessController.getContext());
                 }
 
                 public boolean isAuthenticated() {
-                    return CustomServiceResponse.this.request.isAuthenticated();
+                    return CustomServiceResponse.this.pec.isAuthenticated();
                 }
 
                 public void setAuthenticated() throws GeneralSecurityException {
@@ -166,14 +161,17 @@ public class ServerCustomAssertionHolder implements ServerAssertion {
         }
 
         public void setDocument(Document document) {
-            response.setDocument(document);
+            XmlKnob respXml = (XmlKnob)pec.getResponse().getKnob(XmlKnob.class);
+            if (respXml == null)
+                pec.getResponse().initialize(document);
+            else
+                respXml.setDocument(document);
             try {
                 final String docstring = XmlUtil.nodeToString(document);
                 logger.fine("Set the response document to" + docstring);
             } catch (IOException e) {
                 logger.log(Level.WARNING, "Error stringyfing document", e);
             }
-
         }
 
         public SecurityContext getSecurityContext() {
@@ -186,39 +184,33 @@ public class ServerCustomAssertionHolder implements ServerAssertion {
     }
 
     private class CustomServiceRequest implements ServiceRequest {
-        private final XmlRequest request;
+        private final PolicyEnforcementContext pec;
         private final Map context = new HashMap();
-        private final TransportMetadata transportMetadata;
         private final Document document;
         private final SecurityContext securityContext;
 
-        public CustomServiceRequest(XmlRequest request)
+        public CustomServiceRequest(PolicyEnforcementContext pec)
           throws IOException, SAXException {
-            this.request = request;
-            this.transportMetadata = request.getTransportMetadata();
-            this.document = (Document)request.getDocument().cloneNode(true);
-            if (transportMetadata instanceof HttpTransportMetadata) {
-                HttpServletRequest req = ((HttpTransportMetadata)transportMetadata).getRequest();
-                HttpServletResponse res = ((HttpTransportMetadata)transportMetadata).getResponse();
-                Vector newCookies = ((HttpTransportMetadata)transportMetadata).getUpdatedCookies();
-                context.put("httpRequest", req);
-                context.put("httpResponse", res);
-                context.put("updatedCookies", newCookies);
-            }
+            this.pec = pec;
+            this.document = (Document)pec.getRequest().getXmlKnob().getDocument().cloneNode(true);
+            Vector newCookies = pec.getUpdatedCookies();
+            context.put("httpRequest", pec.getHttpServletRequest());
+            context.put("httpResponse", pec.getHttpServletResponse());
+            context.put("updatedCookies", newCookies);
             securityContext = new SecurityContext() {
                 public Subject getSubject() {
                     return Subject.getSubject(AccessController.getContext());
                 }
 
                 public boolean isAuthenticated() {
-                    return CustomServiceRequest.this.request.isAuthenticated();
+                    return CustomServiceRequest.this.pec.isAuthenticated();
                 }
 
                 public void setAuthenticated() throws GeneralSecurityException {
-                    if (CustomServiceRequest.this.request.isAuthenticated()) {
+                    if (CustomServiceRequest.this.pec.isAuthenticated()) {
                         throw new GeneralSecurityException("already authenticated");
                     }
-                    CustomServiceRequest.this.request.setAuthenticated(true);
+                    CustomServiceRequest.this.pec.setAuthenticated(true);
                 }
             };
         }
@@ -228,7 +220,11 @@ public class ServerCustomAssertionHolder implements ServerAssertion {
         }
 
         public void setDocument(Document document) {
-            request.setDocument(document);
+            XmlKnob reqXml = (XmlKnob)pec.getRequest().getKnob(XmlKnob.class);
+            if (reqXml == null)
+                pec.getRequest().initialize(document);
+            else
+                reqXml.setDocument(document);
             try {
                 final String docstring = XmlUtil.nodeToString(document);
                 logger.fine("Set the request document to" + docstring);

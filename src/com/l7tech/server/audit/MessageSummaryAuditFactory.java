@@ -8,18 +8,14 @@ package com.l7tech.server.audit;
 
 import com.l7tech.cluster.ClusterInfoManager;
 import com.l7tech.common.audit.MessageSummaryAuditRecord;
+import com.l7tech.common.message.Message;
+import com.l7tech.common.message.MimeKnob;
 import com.l7tech.common.util.HexUtils;
 import com.l7tech.identity.User;
-import com.l7tech.message.Request;
-import com.l7tech.message.Response;
-import com.l7tech.message.XmlMessage;
-import com.l7tech.message.XmlRequest;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
-import com.l7tech.server.MessageProcessor;
+import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.service.PublishedService;
-
-import java.util.logging.Level;
 
 /**
  * A MessageSummaryAuditRecord must be generated upon the conclusion of the processing of a message,
@@ -32,7 +28,7 @@ public class MessageSummaryAuditFactory {
     private MessageSummaryAuditFactory() {}
     private static String nodeId = ClusterInfoManager.getInstance().thisNodeId();
 
-    public static MessageSummaryAuditRecord makeEvent(Level level, AssertionStatus status ) {
+    public static MessageSummaryAuditRecord makeEvent(final PolicyEnforcementContext context, AssertionStatus status ) {
         String requestXml = null;
         int requestContentLength = -1;
         String responseXml = null;
@@ -45,49 +41,20 @@ public class MessageSummaryAuditFactory {
         boolean authenticated = false;
         String userId = null;
 
-        Request currentRequest = MessageProcessor.getCurrentRequest();
-        String requestId = null;
-        if ( currentRequest != null ) {
-           requestId = currentRequest.getId().toString();
-           if ( currentRequest instanceof XmlRequest ) {
-                XmlRequest xreq = (XmlRequest)currentRequest;
-                try {
-                    byte[] req = HexUtils.slurpStream(xreq.getFirstPart().getInputStream(true));
-                    String encoding = xreq.getFirstPart().getContentType().getEncoding();
-                    requestXml = new String(req, encoding);
-                } catch (Throwable t) {
-                    requestXml = null;
-                }
-            }
-
-            try {
-                requestContentLength = new Integer( (String)currentRequest.getParameter( Request.PARAM_HTTP_CONTENT_LENGTH ) ).intValue();
-            } catch ( NumberFormatException nfe ) {
-            }
-            if ( requestContentLength == -1 && requestXml != null ) requestContentLength = requestXml.length();
-
-            User u = currentRequest.getUser();
-            if ( u != null ) {
-                identityProviderOid = u.getProviderId();
-                userName = u.getLogin();
-                if (userName == null) userName = u.getName();
-                if (userName == null) userName = u.getUniqueIdentifier();
-            }
-
-            clientAddr = (String)currentRequest.getParameter(Request.PARAM_REMOTE_ADDR);
-
-            PublishedService service = (PublishedService)currentRequest.getParameter( Request.PARAM_SERVICE );
-            if ( service != null ) {
-                serviceOid = service.getOid();
-                serviceName = service.getName();
-            }
+        // Service info
+        PublishedService service = context.getService();
+        if (service != null) {
+            serviceOid = service.getOid();
+            serviceName = service.getName();
         }
 
-        authenticated = currentRequest.isAuthenticated();
+        // User info
+        // TODO refactor into context.glorkUsernameSomehow()
+        authenticated = context.isAuthenticated();
         if ( authenticated ) {
-            User u = currentRequest.getUser();
+            User u = context.getAuthenticatedUser();
             if (u == null) {
-                LoginCredentials creds = currentRequest.getPrincipalCredentials();
+                LoginCredentials creds = context.getCredentials();
                 if (creds != null) userName = creds.getLogin();
             } else {
                 identityProviderOid = u.getProviderId();
@@ -97,32 +64,41 @@ public class MessageSummaryAuditFactory {
             }
         }
 
-        PublishedService service = (PublishedService)currentRequest.getParameter(Request.PARAM_SERVICE);
-        if (service != null) {
-            serviceOid = service.getOid();
-            serviceName = service.getName();
+        // Request info
+        Message request = context.getRequest();
+        String requestId = null;
+        requestId = context.getRequestId().toString();
+        try {
+            byte[] req = HexUtils.slurpStream(request.getMimeKnob().getFirstPart().getInputStream(true));
+            String encoding = request.getMimeKnob().getFirstPart().getContentType().getEncoding();
+            requestXml = new String(req, encoding);
+            requestContentLength = requestXml.length();
+        } catch (Throwable t) {
+            requestXml = null;
         }
 
-        Response currentResponse = MessageProcessor.getCurrentResponse();
-        if ( currentResponse != null ) {
-            if ( currentResponse instanceof XmlMessage ) {
-                XmlMessage xresp = (XmlMessage)currentResponse;
-                try {
-                    byte[] resp = HexUtils.slurpStream(xresp.getFirstPart().getInputStream(false));
-                    String encoding = xresp.getFirstPart().getContentType().getEncoding();
-                    responseXml = new String(resp, encoding);
-                } catch (Throwable t) {
-                    responseXml = null;
-                }
+        if ( requestContentLength == -1 && requestXml != null ) requestContentLength = requestXml.length();
+
+        clientAddr = (String)request.getTcpKnob().getRemoteAddress();
+
+        // Response info
+        Message response = context.getResponse();
+        if (response.getKnob(MimeKnob.class) != null) {
+            try {
+                byte[] resp = HexUtils.slurpStream(response.getMimeKnob().getFirstPart().getInputStream(false));
+                String encoding = response.getMimeKnob().getFirstPart().getContentType().getEncoding();
+                responseXml = new String(resp, encoding);
+            } catch (Throwable t) {
+                responseXml = null;
             }
-
-            if (responseXml != null) responseContentLength = responseXml.length();
         }
 
-        return new MessageSummaryAuditRecord(level, nodeId, requestId, status, clientAddr,
-                                             currentRequest.isAuditSaveRequest() ? requestXml : null,
+        if (responseXml != null) responseContentLength = responseXml.length();
+
+        return new MessageSummaryAuditRecord(context.getAuditLevel(), nodeId, requestId, status, clientAddr,
+                                             context.isAuditSaveRequest() ? requestXml : null,
                                              requestContentLength,
-                                             currentRequest.isAuditSaveResponse() ? responseXml : null,
+                                             context.isAuditSaveResponse() ? responseXml : null,
                                              responseContentLength,
                                              serviceOid, serviceName,
                                              authenticated, identityProviderOid, userName, userId);

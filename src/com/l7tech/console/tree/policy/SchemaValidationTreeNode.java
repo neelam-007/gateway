@@ -41,7 +41,7 @@ public class SchemaValidationTreeNode extends LeafAssertionTreeNode {
         return "com/l7tech/console/resources/xmlsignature.gif";
     }
 
-    /*protected synchronized PublishedService getService() {
+    /*protected synchronized PublishedService getPolicyService() {
         if (service != null) return service;
         try {
             if (getServiceNodeCookie() != null) {

@@ -6,13 +6,14 @@
 
 package com.l7tech.server.policy.assertion.credential;
 
+import com.l7tech.common.message.Message;
+import com.l7tech.common.util.Background;
 import com.l7tech.common.util.HexUtils;
-import com.l7tech.message.Request;
 
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
-import java.util.SortedSet;
-import java.util.TreeSet;
+import java.util.TimerTask;
 
 /**
  * @author alex
@@ -50,10 +51,10 @@ public class DigestSessions {
      *
      * @param request HTTP Servlet request
      */
-    public String generate( Request request, int timeout, int maxUses ) {
+    public String generate( Message request, int timeout, int maxUses ) {
         long currentTime = System.currentTimeMillis();
 
-        String nonceValue = request.getParameter( Request.PARAM_REMOTE_ADDR ) + ":" +
+        String nonceValue = request.getTcpKnob().getRemoteAddress() + ":" +
             currentTime + ":" + NONCEKEY;
 
         byte[] buffer = HexUtils.getMd5().digest(nonceValue.getBytes());
@@ -105,16 +106,24 @@ public class DigestSessions {
     }
 
     private DigestSessions() {
+        Background.schedule(new ExpireTask(), 5 * 60 * 1000, 5 * 60 * 1000);
     }
 
-    private class ExpireThread extends Thread {
+    private class ExpireTask extends TimerTask {
         public void run() {
-
+            synchronized ( _nonceInfos ) {
+                long now = System.currentTimeMillis();
+                for (Iterator i = _nonceInfos.entrySet().iterator(); i.hasNext();) {
+                    Map.Entry entry = (Map.Entry)i.next();
+                    NonceInfo info = (NonceInfo)entry.getValue();
+                    if (info._expires > now)
+                        i.remove();
+                }
+            }
         }
     }
 
     private static final String NONCEKEY = "Layer7-SSG-DigestNonceKey";
     private static DigestSessions _instance;
     private Map _nonceInfos = new HashMap();
-    private SortedSet _nonceInfoSet = new TreeSet();
 }

@@ -3,16 +3,14 @@ package com.l7tech.server.policy.assertion;
 import com.l7tech.common.mime.NoSuchPartException;
 import com.l7tech.common.mime.PartInfo;
 import com.l7tech.common.mime.PartIterator;
+import com.l7tech.common.util.CausedIOException;
 import com.l7tech.common.wsdl.BindingInfo;
 import com.l7tech.common.wsdl.BindingOperationInfo;
 import com.l7tech.common.wsdl.MimePartInfo;
-import com.l7tech.message.Request;
-import com.l7tech.message.Response;
-import com.l7tech.message.SoapRequest;
-import com.l7tech.message.XmlRequest;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.RequestSwAAssertion;
+import com.l7tech.server.message.PolicyEnforcementContext;
 import org.jaxen.JaxenException;
 import org.jaxen.dom.DOMXPath;
 import org.w3c.dom.Attr;
@@ -63,26 +61,29 @@ public class ServerRequestSwAAssertion implements ServerAssertion {
         return domXpath;
     }
 
-    public AssertionStatus checkRequest(Request request, Response response) throws IOException, PolicyAssertionException {
+    public AssertionStatus checkRequest(PolicyEnforcementContext context) throws IOException, PolicyAssertionException {
 
         List result = null;
-        XmlRequest xreq = (XmlRequest)request;
         boolean assertionStatusOK = true;
         boolean operationElementFound = false;
 
-        if (!isSoap(request)) {
-            logger.finest("The operation specified in the request is invalid.");
-            return AssertionStatus.FAILED;
+        try {
+            if (!context.getRequest().isSoap()) {
+                logger.finest("Request not SOAP; cannot validate attachments");
+                return AssertionStatus.FAILED;
+            }
+        } catch (SAXException e) {
+            throw new CausedIOException("Request is declared as XML but is not well-formed", e);
         }
 
-        if (!xreq.isMultipart()) {
+        if (!context.getRequest().getMimeKnob().isMultipart()) {
             logger.info("The request does not contain attachment or is not a mulitipart message");
             return AssertionStatus.FALSIFIED;
         }
 
 
         try {
-            Document doc = xreq.getDocument();
+            Document doc = context.getRequest().getXmlKnob().getDocument();
 
             Iterator bindingItr = _data.getBindings().keySet().iterator();
 
@@ -207,7 +208,7 @@ public class ServerRequestSwAAssertion implements ServerAssertion {
                                 return AssertionStatus.FALSIFIED;
                             }
 
-                            PartInfo mimepartRequest = request.getPartByContentId(id);
+                            PartInfo mimepartRequest = context.getRequest().getMimeKnob().getPartByContentId(id);
 
                             if (mimepartRequest != null) {
                                 // validate the content type
@@ -243,7 +244,7 @@ public class ServerRequestSwAAssertion implements ServerAssertion {
                     } // for each input parameter
 
                     // also check if there is any unexpected attachments in the request
-                    PartIterator pi = xreq.getParts();
+                    PartIterator pi = context.getRequest().getMimeKnob().getParts();
                     while (pi.hasNext()) {
                         PartInfo attachment =  pi.next();
                         if (attachment.getPosition() == 0)
@@ -281,7 +282,4 @@ public class ServerRequestSwAAssertion implements ServerAssertion {
         return AssertionStatus.FALSIFIED;
     }
 
-    private boolean isSoap(Request request) {
-        return request instanceof SoapRequest && ((SoapRequest)request).isSoap();
-    }
 }

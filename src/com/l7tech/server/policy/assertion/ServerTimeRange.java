@@ -1,11 +1,10 @@
 package com.l7tech.server.policy.assertion;
 
-import com.l7tech.message.Request;
-import com.l7tech.message.Response;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.TimeOfDay;
 import com.l7tech.policy.assertion.TimeRange;
+import com.l7tech.server.message.PolicyEnforcementContext;
 
 import java.io.IOException;
 import java.util.Calendar;
@@ -28,7 +27,7 @@ public class ServerTimeRange implements ServerAssertion {
         subject = assertion;
     }
 
-    public AssertionStatus checkRequest(Request req, Response res) throws IOException, PolicyAssertionException {
+    public AssertionStatus checkRequest(PolicyEnforcementContext context) throws IOException, PolicyAssertionException {
         if (!subject.isControlDay() && !subject.isControlTime()) {
             logger.finest("Nothing to check.");
             return AssertionStatus.NONE;

@@ -3,14 +3,12 @@ package com.l7tech.server;
 import com.l7tech.common.util.Locator;
 import com.l7tech.identity.*;
 import com.l7tech.identity.cert.ClientCertManager;
-import com.l7tech.message.Request;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.PersistenceContext;
 import com.l7tech.objectmodel.TransactionException;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.CustomAssertionHolder;
 import com.l7tech.policy.assertion.composite.CompositeAssertion;
-import com.l7tech.policy.assertion.credential.CredentialFinderException;
 import com.l7tech.policy.assertion.credential.CredentialSourceAssertion;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.assertion.credential.http.HttpBasic;
@@ -50,6 +48,7 @@ import java.util.logging.Logger;
  * $Id$
  */
 public abstract class AuthenticatableHttpServlet extends HttpServlet {
+    public static final String PARAM_HTTP_X509CERT = "javax.servlet.request.X509Certificate";
     protected ServiceManager serviceManagerInstance = null;
     protected final Logger logger = Logger.getLogger(getClass().getName());
 
@@ -97,7 +96,7 @@ public abstract class AuthenticatableHttpServlet extends HttpServlet {
         }
         // there is a valid cert. make sure it was presented
         if (certindb != null) {
-            Object param = req.getAttribute(Request.PARAM_HTTP_X509CERT);
+            Object param = req.getAttribute(PARAM_HTTP_X509CERT);
             ArrayList presentedCerts = new ArrayList();
             if (param == null) {
                 logger.warning("No client cert in that request.");
@@ -265,8 +264,6 @@ public abstract class AuthenticatableHttpServlet extends HttpServlet {
                 logger.warning("No credentials found.");
             }
             return creds;
-        } catch (CredentialFinderException e) {
-            logger.log(Level.SEVERE, "Exception looking for exception.", e);
         } catch (IOException e) {
             logger.log(Level.SEVERE, "Exception looking for exception.", e);
         }

@@ -1,34 +1,21 @@
 package com.l7tech.server.policy;
 
-import com.l7tech.common.RequestId;
-import com.l7tech.common.mime.ContentTypeHeader;
-import com.l7tech.common.mime.PartInfo;
-import com.l7tech.common.mime.PartIterator;
+import com.l7tech.common.message.Message;
 import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.xml.TestDocuments;
 import com.l7tech.common.xml.XpathEvaluator;
 import com.l7tech.common.xml.XpathExpression;
-import com.l7tech.identity.User;
-import com.l7tech.message.TransportMetadata;
-import com.l7tech.message.XmlRequest;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.RequestXpathAssertion;
-import com.l7tech.policy.assertion.RoutingStatus;
-import com.l7tech.policy.assertion.credential.LoginCredentials;
-import com.l7tech.server.policy.assertion.ServerAssertion;
+import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.ServerRequestXpathAssertion;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
 import org.w3c.dom.Document;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.Collection;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.Map;
-import java.util.logging.Level;
 
 /**
  * Tests the ServerRequestXpathAssertion class.
@@ -61,128 +48,15 @@ public class RequestXpathAssertionTest extends TestCase {
         Map namespaces = new HashMap();
         namespaces.putAll(XpathEvaluator.getNamespaces(SoapUtil.asSOAPMessage(testDoc)));
         ServerRequestXpathAssertion serverAssertion = getAssertion(new XpathExpression(expression, namespaces));
-        XmlRequest req = getTestRequest(testDoc); // TODO there must be a better way to do this
-        return serverAssertion.checkRequest(req, null);
+        Message m = new Message();
+        m.initialize(testDoc);
+
+        return serverAssertion.checkRequest(new PolicyEnforcementContext(m, new Message(), null, null));
     }
 
     private ServerRequestXpathAssertion getAssertion(XpathExpression expression) {
         RequestXpathAssertion assertion = new RequestXpathAssertion(expression);
         return new ServerRequestXpathAssertion(assertion);
-    }
-
-    private XmlRequest getTestRequest(final Document doc) {
-        return new XmlRequest() {
-            public Document getDocument() {
-                return doc;
-            }
-            public Level getAuditLevel() {
-                return Level.INFO;
-            }
-
-            public void setAuditLevel( Level auditLevel ) {
-            }
-
-            public boolean isAuditSaveRequest() {
-                return false;
-            }
-
-            public void setAuditSaveRequest(boolean saveRequest) {
-            }
-
-            public boolean isAuditSaveResponse() {
-                return false;
-            }
-
-            public void setAuditSaveResponse(boolean saveResponse) {
-            }
-
-            public LoginCredentials getPrincipalCredentials() {
-                return null;
-            }
-            public User getUser() {
-                return null;
-            }
-            public void setUser(User user) {}
-            public void setPrincipalCredentials(LoginCredentials pc) {}
-            public boolean isAuthenticated() {
-                return false;
-            }
-            public boolean isReplyExpected() {
-                return false;
-            }
-            public void setAuthenticated(boolean authenticated) {}
-            public RoutingStatus getRoutingStatus() {
-                return null;
-            }
-            public void setRoutingStatus(RoutingStatus status) {}
-
-            public RequestId getId() {
-                return null;
-            }
-            public void setDocument(Document doc) {}
-
-            public TransportMetadata getTransportMetadata() {
-                return null;
-            }
-            public Iterator getParameterNames() {
-                return null;
-            }
-            public void setParameter(String name, Object value) {}
-            public void setParameterIfEmpty(String name, Object value) {}
-            public Object getParameter(String name) {
-                return null;
-            }
-            public Object[] getParameterValues(String name) {
-                return new Object[0];
-            }
-            public Collection getDeferredAssertions() {
-                return null;
-            }
-            public void addDeferredAssertion(ServerAssertion owner, ServerAssertion decoration) {}
-            public void removeDeferredAssertion(ServerAssertion owner) {}
-
-            public ContentTypeHeader getOuterContentType() {
-                return null;
-            }
-
-            public void initialize(InputStream messageBody, ContentTypeHeader outerContentType) throws IOException {
-
-            }
-
-            public boolean isInitialized() {
-                return true;
-            }
-
-            public void runOnClose(Runnable runMe) {
-            }
-
-            public boolean isMultipart() {
-                return false;
-            }
-
-            public PartInfo getFirstPart() {
-                return null;
-            }
-
-            public PartIterator getParts() {
-                return null;
-            }
-
-            public PartInfo getPartByContentId(String contentId) {
-                return null;
-            }
-
-            public long getContentLength() {
-                return 0;
-            }
-
-            public InputStream getEntireMessageBody() {
-                return null;
-            }
-
-            public void close() {
-            }
-        };
     }
 
     /**

@@ -6,13 +6,10 @@
 
 package com.l7tech.server.policy.assertion;
 
-import com.l7tech.message.Request;
-import com.l7tech.message.Response;
-import com.l7tech.message.TransportMetadata;
-import com.l7tech.message.TransportProtocol;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.SslAssertion;
+import com.l7tech.server.message.PolicyEnforcementContext;
 
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -26,9 +23,8 @@ public class ServerSslAssertion implements ServerAssertion {
         _data = data;
     }
 
-    public AssertionStatus checkRequest(Request request, Response response) throws PolicyAssertionException {
-        TransportMetadata tm = request.getTransportMetadata();
-        boolean ssl = (tm.getProtocol() == TransportProtocol.HTTPS);
+    public AssertionStatus checkRequest(PolicyEnforcementContext context) throws PolicyAssertionException {
+        boolean ssl = context.getHttpServletRequest().isSecure();
         AssertionStatus status;
 
         String message;
@@ -62,7 +58,8 @@ public class ServerSslAssertion implements ServerAssertion {
 
         logger.log(level, message);
 
-        if (status == AssertionStatus.FALSIFIED) response.setPolicyViolated(true);
+        if (status == AssertionStatus.FALSIFIED)
+            context.setPolicyViolated(true);
 
         return status;
     }

@@ -6,9 +6,12 @@
 
 package com.l7tech.server.service.resolution;
 
-import com.l7tech.message.Request;
+import com.l7tech.common.message.HttpRequestKnob;
+import com.l7tech.common.message.Message;
+import com.l7tech.common.protocol.SecureSpanConstants;
 import com.l7tech.service.PublishedService;
 
+import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.Set;
@@ -23,9 +26,6 @@ import java.util.logging.Logger;
  * @version $Revision$
  */
 public class HttpUriResolver extends NameValueServiceResolver {
-    protected String getParameterName() {
-        return Request.PARAM_HTTP_REQUEST_URI;
-    }
 
     protected Object[] doGetTargetValues( PublishedService service ) {
         String uri = service.getRoutingUri();
@@ -33,10 +33,17 @@ public class HttpUriResolver extends NameValueServiceResolver {
         return new String[] {uri};
     }
 
-    protected Object getRequestValue(Request request) throws ServiceResolutionException {
-        String originalUrl = (String)request.getParameter(Request.PARAM_HTTP_ORIGINAL_URL);
+    protected Object getRequestValue(Message request) throws ServiceResolutionException {
+        HttpRequestKnob httpReqKnob = (HttpRequestKnob)request.getKnob(HttpRequestKnob.class);
+        if (httpReqKnob == null) return null;
+        String originalUrl = null;
+        try {
+            originalUrl = httpReqKnob.getHeaderSingleValue(SecureSpanConstants.HttpHeaders.ORIGINAL_URL);
+        } catch (IOException e) {
+            throw new ServiceResolutionException("Found multiple " + SecureSpanConstants.HttpHeaders.ORIGINAL_URL + " values"); // can't happen
+        }
         if (originalUrl == null) {
-            String uri = (String)request.getParameter(Request.PARAM_HTTP_REQUEST_URI);
+            String uri = httpReqKnob.getRequestUri();
             if (uri == null || !uri.startsWith("/xml")) uri = "";
             logger.finest("returning uri " + uri);
             return uri;

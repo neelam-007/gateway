@@ -6,18 +6,24 @@
 
 package com.l7tech.server;
 
+import com.l7tech.common.message.HttpRequestKnob;
+import com.l7tech.common.message.HttpServletRequestKnob;
+import com.l7tech.common.message.HttpServletResponseKnob;
+import com.l7tech.common.message.Message;
 import com.l7tech.common.mime.ContentTypeHeader;
+import com.l7tech.common.mime.NoSuchPartException;
+import com.l7tech.common.mime.StashManager;
 import com.l7tech.common.protocol.SecureSpanConstants;
 import com.l7tech.common.util.HexUtils;
 import com.l7tech.common.util.SoapFaultUtils;
 import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.xml.SoapFaultDetail;
-import com.l7tech.message.*;
 import com.l7tech.objectmodel.ObjectModelException;
 import com.l7tech.objectmodel.PersistenceContext;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.server.audit.AuditContext;
+import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.PolicyVersionException;
 import com.l7tech.service.PublishedService;
 import org.w3c.dom.Element;
@@ -30,7 +36,6 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.util.logging.Level;
@@ -52,14 +57,14 @@ public class SoapMessageProcessingServlet extends HttpServlet {
         super.init(config);
     }
 
-    public void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-        throwBadMethod( response, "GET" );
+    public void doGet(HttpServletRequest hrequest, HttpServletResponse hresponse) throws ServletException, IOException {
+        throwBadMethod( hresponse, "GET" );
     }
 
-    private void throwBadMethod(HttpServletResponse response, String method) throws IOException {
-        response.setContentType("text/html");
-        response.setStatus(HttpServletResponse.SC_METHOD_NOT_ALLOWED);
-        PrintWriter out = response.getWriter();
+    private void throwBadMethod(HttpServletResponse hresponse, String method) throws IOException {
+        hresponse.setContentType("text/html");
+        hresponse.setStatus(HttpServletResponse.SC_METHOD_NOT_ALLOWED);
+        PrintWriter out = hresponse.getWriter();
         out.println("<html>");
         out.print("<head><title>");
         out.print(method);
@@ -70,91 +75,113 @@ public class SoapMessageProcessingServlet extends HttpServlet {
         out.close();
     }
 
-    protected void doHead(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-        throwBadMethod(response, "HEAD");
+    protected void doHead(HttpServletRequest hrequest, HttpServletResponse hresponse) throws ServletException, IOException {
+        throwBadMethod(hresponse, "HEAD");
     }
 
-    protected void doPut(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-        throwBadMethod(response, "PUT");
+    protected void doPut(HttpServletRequest hrequest, HttpServletResponse hresponse) throws ServletException, IOException {
+        throwBadMethod(hresponse, "PUT");
     }
 
-    protected void doDelete(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-        throwBadMethod(response, "DELETE");
+    protected void doDelete(HttpServletRequest hrequest, HttpServletResponse hresponse) throws ServletException, IOException {
+        throwBadMethod(hresponse, "DELETE");
     }
 
-    protected void doOptions(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-        throwBadMethod(response, "OPTIONS");
+    protected void doOptions(HttpServletRequest hrequest, HttpServletResponse hresponse) throws ServletException, IOException {
+        throwBadMethod(hresponse, "OPTIONS");
     }
 
-    protected void doTrace(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-        throwBadMethod(response, "TRACE");
+    protected void doTrace(HttpServletRequest hrequest, HttpServletResponse hresponse) throws ServletException, IOException {
+        throwBadMethod(hresponse, "TRACE");
     }
 
-    public void doPost(HttpServletRequest hrequest, HttpServletResponse hresponse) throws ServletException, IOException {
-        HttpTransportMetadata htm = new HttpTransportMetadata(hrequest, hresponse);
-        HttpSoapResponse sresp = new HttpSoapResponse(htm);
-        HttpSoapRequest sreq = new HttpSoapRequest(htm);
+    public void doPost(final HttpServletRequest hrequest,
+                       final HttpServletResponse hresponse)
+            throws ServletException, IOException
+    {
+        // Initialize processing context
+        final Message response = new Message();
+        final Message request = new Message();
 
-        // Initialize request
-        String rawct = hrequest.getContentType();
-        ContentTypeHeader ctype;
-        if (rawct != null && rawct.length() > 0)
-            ctype = ContentTypeHeader.parseValue(rawct);
-        else
-            ctype = ContentTypeHeader.XML_DEFAULT;
-        sreq.initialize(hrequest.getInputStream(), ctype);
+        final String rawct = hrequest.getContentType();
+        ContentTypeHeader ctype = rawct != null && rawct.length() > 0
+                ? ContentTypeHeader.parseValue(rawct)
+                : ContentTypeHeader.XML_DEFAULT;
 
-        AssertionStatus status = AssertionStatus.UNDEFINED;
+        final HttpRequestKnob reqKnob = new HttpServletRequestKnob(hrequest);
+        request.attachHttpRequestKnob(reqKnob);
+
+        final HttpServletResponseKnob respKnob = new HttpServletResponseKnob(hresponse);
+        response.attachHttpResponseKnob(respKnob);
+
+        final PolicyEnforcementContext context = new PolicyEnforcementContext(request, response, hrequest, hresponse);
+
+        // TODO refactor the stash manager creation code into a home of its own
+        final StashManager stashManager = StashManagerFactory.createStashManager();
+
         try {
+            // Process message
             try {
-                status = MessageProcessor.getInstance().processMessage(sreq, sresp);
+                request.initialize(stashManager, ctype, hrequest.getInputStream());
+                AssertionStatus status = AssertionStatus.UNDEFINED;
+                status = MessageProcessor.getInstance().processMessage(context);
 
-                sresp.setHeadersIn(hresponse, sresp, status);
+                // Send response headers
+                respKnob.beginResponse();
+
+                int routeStat = respKnob.getStatus();
+                if (routeStat < 1) {
+                    if ( status == AssertionStatus.NONE ) {
+                        routeStat = HttpServletResponse.SC_OK;
+                    } else {
+                        // Request wasn't routed
+                        routeStat = HttpServletResponse.SC_SERVICE_UNAVAILABLE;
+                    }
+                }
 
                 if (status == AssertionStatus.NONE) {
                     logger.fine("servlet transport returning 200");
-                    if (sresp.isInitialized()) {
-                        String rctype = (String)sresp.getParameter(Response.PARAM_HTTP_CONTENT_TYPE);
-                        if (rctype == null || rctype.length() == 0) {
-                            rctype = DEFAULT_CONTENT_TYPE;
-                            hresponse.setContentType(rctype);
-                        }
-
-                        HexUtils.copyStream(sresp.getEntireMessageBody(), hresponse.getOutputStream());
-                        return;
-                    }
-                } else if (sresp.isAuthenticationMissing() || status.isAuthProblem()) {
-                    logger.fine("servlet transport returning challenge");
-                    sendChallenge(sreq, sresp, hrequest, hresponse);
+                    // Transmit the response and return
+                    hresponse.setContentType(response.getMimeKnob().getFirstPart().getContentType().getFullValue());
+                    HexUtils.copyStream(response.getMimeKnob().getEntireMessageBodyAsInputStream(),
+                                        hresponse.getOutputStream());
                     return;
-                } else if (sresp.getFaultDetail() != null) {
+                } else if (context.isAuthenticationMissing() || status.isAuthProblem()) {
+                    logger.fine("servlet transport returning challenge");
+                    sendChallenge(context, hrequest, hresponse);
+                    return;
+                } else if (context.getFaultDetail() != null) {
                     logger.fine("returning special soap fault");
-                    sendFault(sreq, sresp, sresp.getFaultDetail(), hrequest, hresponse);
+                    sendFault(context, context.getFaultDetail(), hrequest, hresponse);
                     return;
                 } else {
                     logger.fine("servlet transport returning 500");
-                    sendFault(sreq, sresp, hrequest, hresponse, HttpServletResponse.SC_INTERNAL_SERVER_ERROR,
+                    sendFault(context, hrequest, hresponse, HttpServletResponse.SC_INTERNAL_SERVER_ERROR,
                               status.getSoapFaultCode(), status.getMessage());
                     return;
                 }
             } catch (PolicyAssertionException pae) {
                 logger.log(Level.SEVERE, pae.getMessage(), pae);
-                sendFault(sreq, sresp, hrequest, hresponse, HttpServletResponse.SC_INTERNAL_SERVER_ERROR,
+                sendFault(context, hrequest, hresponse, HttpServletResponse.SC_INTERNAL_SERVER_ERROR,
                           SoapFaultUtils.FC_SERVER, pae.toString());
                 return;
             } catch (PolicyVersionException pve) {
                 String msg = "Request referred to an outdated version of policy";
                 logger.log(Level.INFO, msg );
-                sendFault(sreq, sresp, hrequest, hresponse, HttpServletResponse.SC_EXPECTATION_FAILED,
+                sendFault(context, hrequest, hresponse, HttpServletResponse.SC_EXPECTATION_FAILED,
                           SoapFaultUtils.FC_CLIENT, msg);
+                return;
+            } catch (NoSuchPartException e) {
+                logger.log(Level.SEVERE, e.getMessage(), e);
+                sendFault(context, hrequest, hresponse, HttpServletResponse.SC_EXPECTATION_FAILED,
+                          SoapFaultUtils.FC_CLIENT, e.toString());
                 return;
             }
         } catch (Throwable e) {
             logger.log(Level.SEVERE, e.getMessage(), e);
             if (e instanceof Error) throw (Error)e;
             try {
-                sendFault(sreq,
-                          sresp,
+                sendFault(context,
                           hrequest,
                           hresponse,
                           HttpServletResponse.SC_INTERNAL_SERVER_ERROR,
@@ -164,8 +191,8 @@ public class SoapMessageProcessingServlet extends HttpServlet {
                 throw new ServletException(e);
             }
         } finally {
-            AuditContext context = AuditContext.peek();
-            if (context != null && !context.isClosed()) context.close();
+            AuditContext auditContext = AuditContext.peek();
+            if (auditContext != null && !auditContext.isClosed()) auditContext.close();
             PersistenceContext pc = PersistenceContext.peek();
             if (pc != null) {
                 try {
@@ -176,39 +203,11 @@ public class SoapMessageProcessingServlet extends HttpServlet {
                 pc.close();
             }
 
-            try {
-                InputStream reqInput = htm.getRequest().getInputStream();
-                if (reqInput != null) reqInput.close();
-            } catch (IOException e) {
-//                logger.log(Level.INFO, "Caught IOException closing request input stream", e);
-            }
-
-            try {
-                OutputStream respOutput = htm.getResponse().getOutputStream();
-                if (respOutput != null) respOutput.close();
-            } catch (IOException e) {
-//                logger.log(Level.INFO, "Caught IOException closing response output stream", e);
-            }
-
-            if (sreq != null) {
-                try {
-                    sreq.close();
-                } catch (Throwable t) {
-                    logger.log(Level.SEVERE, "Unexpected exception from SoapRequest.close()", t);
-                }
-            }
-
-            if (sresp != null) {
-                try {
-                    sresp.close();
-                } catch (Throwable t) {
-                    logger.log(Level.SEVERE, "Unexpected exception from SoapRequest.close()", t);
-                }
-            }
+            if (context != null) context.close();
         }
     }
 
-    private void sendFault(SoapRequest sreq, SoapResponse sresp,
+    private void sendFault(PolicyEnforcementContext context,
                            SoapFaultDetail faultDetail, HttpServletRequest req,
                            HttpServletResponse res) throws IOException, SAXException {
         OutputStream responseStream = null;
@@ -218,8 +217,8 @@ public class SoapMessageProcessingServlet extends HttpServlet {
             res.setContentType(DEFAULT_CONTENT_TYPE);
             res.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
 
-            PublishedService pserv = (PublishedService)sreq.getParameter(Request.PARAM_SERVICE);
-            if (pserv != null && sresp.isPolicyViolated()) {
+            PublishedService pserv = context.getService();
+            if (pserv != null && context.isPolicyViolated()) {
                 String purl = makePolicyUrl(req, pserv.getOid());
                 res.setHeader(SecureSpanConstants.HttpHeaders.POLICYURL_HEADER, purl);
             }
@@ -247,7 +246,7 @@ public class SoapMessageProcessingServlet extends HttpServlet {
         return policyUrl.toString();
     }
 
-    private void sendFault(SoapRequest sreq, SoapResponse sresp,
+    private void sendFault(PolicyEnforcementContext context,
                            HttpServletRequest hreq, HttpServletResponse hresp,
                            int httpStatus, String faultCode, String faultString) throws IOException, SAXException {
         OutputStream responseStream = null;
@@ -258,9 +257,9 @@ public class SoapMessageProcessingServlet extends HttpServlet {
             // todo, fla soap faults should always return 500
             hresp.setStatus(httpStatus);
 
-            PublishedService pserv = (PublishedService)sreq.getParameter(Request.PARAM_SERVICE);
+            PublishedService pserv = context.getService();
             String purl = "";
-            if (pserv != null && sresp.isPolicyViolated()) {
+            if (pserv != null && context.isPolicyViolated()) {
                 purl = makePolicyUrl(hreq, pserv.getOid());
                 hresp.setHeader(SecureSpanConstants.HttpHeaders.POLICYURL_HEADER, purl);
             }
@@ -272,15 +271,16 @@ public class SoapMessageProcessingServlet extends HttpServlet {
         }
     }
 
-    private void sendChallenge(SoapRequest sreq, SoapResponse sresp,
-                               HttpServletRequest hreq, HttpServletResponse hresp) throws IOException {
+    private void sendChallenge(PolicyEnforcementContext context,
+                               HttpServletRequest hreq, HttpServletResponse hresp) throws IOException
+    {
         ServletOutputStream sos = null;
         try {
             // the challenge http header is supposed to already been appended at that point-ah
             hresp.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-            PublishedService pserv = (PublishedService)sreq.getParameter(Request.PARAM_SERVICE);
+            PublishedService pserv = context.getService();
             String purl = "";
-            if (pserv != null && sresp.isPolicyViolated()) {
+            if (pserv != null && context.isPolicyViolated()) {
                 purl = makePolicyUrl(hreq, pserv.getOid());
                 hresp.setHeader(SecureSpanConstants.HttpHeaders.POLICYURL_HEADER, purl);
             }

@@ -1,11 +1,12 @@
 package com.l7tech.logging;
 
 import com.l7tech.common.RequestId;
-import com.l7tech.message.Request;
+import com.l7tech.common.util.Background;
 import com.l7tech.objectmodel.HibernatePersistenceContext;
 import com.l7tech.objectmodel.PersistenceContext;
 import com.l7tech.objectmodel.TransactionException;
 import com.l7tech.server.MessageProcessor;
+import com.l7tech.server.message.PolicyEnforcementContext;
 import net.sf.hibernate.HibernateException;
 import net.sf.hibernate.Session;
 
@@ -13,7 +14,6 @@ import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.Timer;
 import java.util.TimerTask;
 import java.util.logging.*;
 
@@ -52,7 +52,7 @@ public class ServerLogHandler extends Handler implements PropertyChangeListener 
             }
         };
         // as configurable properties
-        flusherDeamon.schedule(flusherTask, FLUSH_FREQUENCY, FLUSH_FREQUENCY);
+        Background.schedule(flusherTask, FLUSH_FREQUENCY, FLUSH_FREQUENCY);
     }
 
     public void publish(LogRecord record) {
@@ -60,11 +60,9 @@ public class ServerLogHandler extends Handler implements PropertyChangeListener 
             return;
         }
 
-        Request req = MessageProcessor.getCurrentRequest();
-        RequestId reqid = null;
-        if (req != null) {
-            reqid = req.getId();
-        }
+
+        final PolicyEnforcementContext currentContext = MessageProcessor.getCurrentContext();
+        RequestId reqid = currentContext == null ? null : currentContext.getRequestId();
         SSGLogRecord newRecord = new SSGLogRecord(record, reqid, serverLogManager.getNodeid());
         try {
             String msg;
@@ -87,7 +85,7 @@ public class ServerLogHandler extends Handler implements PropertyChangeListener 
 
 
     public void close() throws SecurityException {
-        flusherDeamon.cancel();
+        flusherTask.cancel();
     }
 
     /**
@@ -280,27 +278,11 @@ if (fullClean) {
         return val.trim();
     }
 
-    // Package private method to get an integer property.
-    // If the property is not defined or cannot be parsed
-    // we return the given default value.
-    private int getIntProperty(String name, int defaultValue) {
-        String val = manager.getProperty(name);
-        if (val == null) {
-            return defaultValue;
-        }
-        try {
-            return Integer.parseInt(val.trim());
-        } catch (Exception ex) {
-            return defaultValue;
-        }
-    }
-
     /**
      * where log records are stored waiting to be flushed to the database
      */
     private ArrayList cache = new ArrayList();
     private TimerTask flusherTask = null;
-    private final Timer flusherDeamon = new Timer(true);
 
     private static long MAX_CACHE_SIZE = 1000;
     private static final long FLUSH_FREQUENCY = 15000;

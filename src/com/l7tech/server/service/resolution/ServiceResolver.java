@@ -6,9 +6,10 @@
 
 package com.l7tech.server.service.resolution;
 
-import com.l7tech.message.Request;
+import com.l7tech.common.message.Message;
 import com.l7tech.service.PublishedService;
 
+import java.io.IOException;
 import java.util.*;
 
 /**
@@ -25,7 +26,7 @@ public abstract class ServiceResolver implements Comparable {
      */
     public abstract void setServices( Set services );
 
-    public abstract Set resolve( Request request, Set serviceSubset ) throws ServiceResolutionException;
+    public abstract Set resolve( Message request, Set serviceSubset ) throws ServiceResolutionException, IOException;
 
     /**
      * Returns a Map<Long,PublishedService> of any services this ServiceResolver knows about that match the specified PublishedService.

@@ -6,12 +6,11 @@
 
 package com.l7tech.server.policy.assertion;
 
-import com.l7tech.message.Request;
-import com.l7tech.message.Response;
-import com.l7tech.message.XmlRequest;
+import com.l7tech.common.message.XmlKnob;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.RequestXpathAssertion;
+import com.l7tech.server.message.PolicyEnforcementContext;
 import org.jaxen.JaxenException;
 import org.jaxen.dom.DOMXPath;
 import org.w3c.dom.Document;
@@ -61,8 +60,13 @@ public class ServerRequestXpathAssertion implements ServerAssertion {
         return _domXpath;
     }
 
-    public AssertionStatus checkRequest(Request request, Response response) throws IOException, PolicyAssertionException {
-        if ( request instanceof XmlRequest ) {
+    public AssertionStatus checkRequest(PolicyEnforcementContext context) throws IOException, PolicyAssertionException
+    {
+        if (context.getRequest().getKnob(XmlKnob.class) == null) {
+            _logger.warning( "RequestXPathAssertion only works on XML requests; assertion therefore fails." );
+            return AssertionStatus.BAD_REQUEST;
+        }
+
             try {
                 String pattern = _data.pattern();
 
@@ -71,8 +75,8 @@ public class ServerRequestXpathAssertion implements ServerAssertion {
                     return AssertionStatus.FALSIFIED;
                 }
 
-                XmlRequest xreq = (XmlRequest)request;
-                Document doc = xreq.getDocument();
+                XmlKnob reqXml = context.getRequest().getXmlKnob();
+                Document doc = reqXml.getDocument();
 
                 List result = null;
                 DOMXPath xp = getDOMXpath();
@@ -125,9 +129,6 @@ public class ServerRequestXpathAssertion implements ServerAssertion {
                 _logger.log( Level.WARNING, "Caught JaxenException during XPath query", e );
                 return AssertionStatus.SERVER_ERROR;
             }
-        }
-        _logger.warning( "RequestXPathAssertion only works on XML requests; assertion therefore fails." );
-        return AssertionStatus.BAD_REQUEST;
     }
 
     private final RequestXpathAssertion _data;

@@ -1,15 +1,13 @@
 package com.l7tech.server.wstrust;
 
 import com.l7tech.policy.assertion.credential.LoginCredentials;
-import com.l7tech.policy.assertion.credential.CredentialFinderException;
 import com.l7tech.policy.assertion.credential.http.HttpBasic;
 import com.l7tech.server.policy.assertion.credential.http.ServerHttpBasic;
 
 import javax.servlet.http.HttpServletRequest;
-import javax.servlet.ServletRequest;
+import java.io.IOException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.io.IOException;
 
 /**
  * @author emil
@@ -56,8 +54,6 @@ public class CredentialsFinder implements Handler {
                 logger.warning("No credentials found.");
             }
             return creds;
-        } catch (CredentialFinderException e) {
-            logger.log(Level.SEVERE, "Exception looking for exception.", e);
         } catch (IOException e) {
             logger.log(Level.SEVERE, "Exception looking for exception.", e);
         }

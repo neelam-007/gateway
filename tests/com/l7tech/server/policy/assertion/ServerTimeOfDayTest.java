@@ -1,9 +1,11 @@
 package com.l7tech.server.policy.assertion;
 
-import com.l7tech.policy.assertion.TimeRange;
+import com.l7tech.common.message.Message;
 import com.l7tech.policy.assertion.AssertionStatus;
-import com.l7tech.policy.assertion.TimeOfDayRange;
 import com.l7tech.policy.assertion.TimeOfDay;
+import com.l7tech.policy.assertion.TimeOfDayRange;
+import com.l7tech.policy.assertion.TimeRange;
+import com.l7tech.server.message.PolicyEnforcementContext;
 
 import java.util.Calendar;
 import java.util.TimeZone;
@@ -75,7 +77,8 @@ public class ServerTimeOfDayTest {
     }
 
     private void testCondition() throws Exception {
-        boolean result = ((new ServerTimeRange(condition)).checkRequest(null, null) == AssertionStatus.NONE);
+        PolicyEnforcementContext context = new PolicyEnforcementContext(new Message(), new Message(), null, null);
+        boolean result = ((new ServerTimeRange(condition)).checkRequest(context) == AssertionStatus.NONE);
         if (result) System.out.println("passed");
         else System.out.println("failed");
     }

@@ -9,15 +9,15 @@ package com.l7tech.server.policy.assertion.credential.wss;
 import com.l7tech.common.security.xml.processor.ProcessorResult;
 import com.l7tech.common.security.xml.processor.SecurityToken;
 import com.l7tech.common.security.xml.processor.UsernameToken;
-import com.l7tech.message.Request;
-import com.l7tech.message.Response;
-import com.l7tech.message.SoapRequest;
+import com.l7tech.common.util.CausedIOException;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.credential.CredentialFormat;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.assertion.credential.wss.WssBasic;
+import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.ServerAssertion;
+import org.xml.sax.SAXException;
 
 import java.io.IOException;
 import java.util.logging.Logger;
@@ -31,13 +31,17 @@ public class ServerWssBasic implements ServerAssertion {
         // nothing interesting in here
     }
 
-    public AssertionStatus checkRequest(Request request, Response response) throws IOException, PolicyAssertionException {
-        if (!(request instanceof SoapRequest) || !((SoapRequest)request).isSoap()) {
-            logger.info("This type of assertion is only supported with SOAP type of messages");
-            return AssertionStatus.NOT_APPLICABLE;
+    public AssertionStatus checkRequest(PolicyEnforcementContext context) throws IOException, PolicyAssertionException {
+        ProcessorResult wssResults;
+        try {
+            if (!context.getRequest().isSoap()) {
+                logger.info("Request not SOAP: Cannot check for WS-Security UsernameToken");
+                return AssertionStatus.NOT_APPLICABLE;
+            }
+            wssResults = context.getRequest().getXmlKnob().getProcessorResult();
+        } catch (SAXException e) {
+            throw new CausedIOException("Request declared as XML but is not well-formed", e);
         }
-        SoapRequest req = (SoapRequest)request;
-        ProcessorResult wssResults = req.getWssProcessorOutput();
         if (wssResults == null) {
             throw new PolicyAssertionException("This request was not processed for WSS level security.");
         }
@@ -47,7 +51,7 @@ public class ServerWssBasic implements ServerAssertion {
                 LoginCredentials creds = ((UsernameToken)tokens[i]).asLoginCredentials();
                 if (creds.getFormat() == CredentialFormat.CLEARTEXT) {
                     creds.setCredentialSourceAssertion(WssBasic.class);
-                    request.setPrincipalCredentials(creds);
+                    context.setCredentials(creds);
                     return AssertionStatus.NONE;
                 }
             }
@@ -55,7 +59,7 @@ public class ServerWssBasic implements ServerAssertion {
         logger.info("cannot find credentials");
         // we get here because there were no credentials found in the format we want
         // therefore this assertion was violated
-        response.setPolicyViolated(true);
+        context.setPolicyViolated(true);
         return AssertionStatus.AUTH_REQUIRED;
     }
 

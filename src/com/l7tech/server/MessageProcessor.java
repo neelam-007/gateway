@@ -6,6 +6,10 @@
 
 package com.l7tech.server;
 
+import com.l7tech.common.message.Message;
+import com.l7tech.common.message.XmlKnob;
+import com.l7tech.common.protocol.SecureSpanConstants;
+import com.l7tech.common.security.xml.decorator.DecorationRequirements;
 import com.l7tech.common.security.xml.decorator.WssDecorator;
 import com.l7tech.common.security.xml.decorator.WssDecoratorImpl;
 import com.l7tech.common.security.xml.processor.*;
@@ -14,13 +18,13 @@ import com.l7tech.common.util.Locator;
 import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.xml.InvalidDocumentFormatException;
 import com.l7tech.common.xml.MessageNotSoapException;
-import com.l7tech.message.*;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.RoutingStatus;
 import com.l7tech.server.event.EventManager;
 import com.l7tech.server.event.MessageProcessed;
+import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.PolicyVersionException;
 import com.l7tech.server.policy.assertion.ServerAssertion;
 import com.l7tech.server.secureconversation.SecureConversationContextManager;
@@ -49,14 +53,35 @@ import java.util.logging.Logger;
  * @version $Revision$
  */
 public class MessageProcessor {
-    public AssertionStatus processMessage( Request request, Response response )
-            throws IOException, PolicyAssertionException, PolicyVersionException {
 
-        request.setAuditLevel(DEFAULT_MESSAGE_AUDIT_LEVEL);
+    public AssertionStatus processMessage( PolicyEnforcementContext context )
+            throws IOException, PolicyAssertionException, PolicyVersionException
+    {
+        try {
+            currentContext.set(context);
+            return reallyProcessMessage(context);
+        } finally {
+            currentContext.set(null);
+        }
+    }
+
+    private AssertionStatus reallyProcessMessage( PolicyEnforcementContext context )
+            throws IOException, PolicyAssertionException, PolicyVersionException
+    {
+        final Message request = context.getRequest();
+        final Message response = context.getResponse();
+        context.setAuditLevel(DEFAULT_MESSAGE_AUDIT_LEVEL);
         ProcessorResult wssOutput = null;
         // WSS-Processing Step
-        if (request instanceof SoapRequest && ((SoapRequest)request).isSoap()) {
-            SoapRequest req = (SoapRequest)request;
+        boolean isSoap = false;
+        try {
+            isSoap = context.getRequest().isSoap();
+        } catch (SAXException e) {
+            logger.log(Level.SEVERE, "Request XML is not well-formed", e);
+            return AssertionStatus.BAD_REQUEST;
+        }
+
+        if (isSoap) {
             WssProcessor trogdor = new WssProcessorImpl(); // no need for locator
             X509Certificate serverSSLcert = null;
             PrivateKey sslPrivateKey = null;
@@ -71,13 +96,16 @@ public class MessageProcessor {
                 return AssertionStatus.SERVER_ERROR;
             }
             try {
-                wssOutput = trogdor.undecorateMessage(req.getDocument(),
+                final XmlKnob reqXml = request.getXmlKnob();
+                wssOutput = trogdor.undecorateMessage(reqXml.getDocument(),
                                                       serverSSLcert,
                                                       sslPrivateKey,
                                                       SecureConversationContextManager.getInstance());
                 // todo, refactor SoapRequest so that it keeps a hold on the original message
                 final Document message = wssOutput.getUndecoratedMessage();
-                if (message != null) req.setDocument(message);
+                if (message != null)
+                    reqXml.setDocument(message);
+                reqXml.setProcessorResult(wssOutput);
             } catch (MessageNotSoapException e) {
                 logger.log(Level.FINE, "Message is not SOAP; will not have any WSS results.");
                 // this shouldn't be possible now
@@ -96,10 +124,9 @@ public class MessageProcessor {
                 return AssertionStatus.SERVER_ERROR;
             } catch (BadSecurityContextException e) {
                 logger.log(Level.SEVERE, "Error in WSS processing of request", e);
-                response.setFaultDetail(e);
+                context.setFaultDetail(e);
                 return AssertionStatus.FAILED;
             }
-            req.setWssProcessorOutput(wssOutput);
             logger.finest("WSS processing of request complete.");
         }
         
@@ -107,7 +134,7 @@ public class MessageProcessor {
         AssertionStatus status = AssertionStatus.UNDEFINED;
         try {
             ServiceManager manager = (ServiceManager)Locator.getDefault().lookup(ServiceManager.class);
-            PublishedService service = manager.resolve(request);
+            PublishedService service = manager.resolve(context.getRequest());
 
             if ( service == null ) {
                 logger.warning( "Service not found" );
@@ -117,10 +144,10 @@ public class MessageProcessor {
                 status = AssertionStatus.SERVICE_DISABLED;
             } else {
                 logger.finer("Resolved service " + service.getName() + " #" + service.getOid());
-                request.setParameter( Request.PARAM_SERVICE, service );
+                context.setService( service );
 
                 // check if requestor provided a version number for published service
-                String requestorVersion = (String)request.getParameter( Request.PARAM_HTTP_POLICY_VERSION );
+                String requestorVersion = context.getRequest().getHttpRequestKnob().getHeaderSingleValue(SecureSpanConstants.HttpHeaders.POLICY_VERSION);
                 if (requestorVersion != null && requestorVersion.length() > 0) {
                     // format is policyId|policyVersion (seperated with char '|')
                     boolean wrongPolicyVersion = false;
@@ -143,7 +170,7 @@ public class MessageProcessor {
                         }
                     }
                     if (wrongPolicyVersion) {
-                        response.setPolicyViolated(true);
+                        context.setPolicyViolated(true);
                         throw new PolicyVersionException();
                     }
                 } else {
@@ -171,51 +198,48 @@ public class MessageProcessor {
                     logger.log(Level.WARNING, "cannot get a stats object", e);
                 }
                 if (stats != null) stats.attemptedRequest();
-                status = serverPolicy.checkRequest( request, response );
+                status = serverPolicy.checkRequest(context);
 
                 // Execute deferred actions for request, then response
                 if (status == AssertionStatus.NONE)
-                    status = doDeferredAssertions(request, request, response);
-                if (status == AssertionStatus.NONE)
-                    status = doDeferredAssertions(response, request, response);
+                    status = doDeferredAssertions(context);
 
                 // Run response through WssDecorator if indicated
                 if (status == AssertionStatus.NONE &&
-                        response instanceof SoapResponse &&
-                        ((SoapResponse)response).isSoap() &&
-                        ((SoapResponse)response).getDecorationRequirements() != null)
+                        response.isSoap() &&
+                        response.getXmlKnob().getDecorationRequirements() != null)
                 {
-                    SoapResponse soapResponse = (SoapResponse)response;
                     Document doc = null;
                     try {
-                        doc = soapResponse.getDocument();
+                        final XmlKnob respXml = response.getXmlKnob();
+                        final DecorationRequirements responseDecoReq = respXml.getDecorationRequirements();
+                        XmlKnob reqXml = request.getXmlKnob();
+                        doc = respXml.getDocument();
 
-                        if (request instanceof SoapRequest && ((SoapRequest)request).isSoap()) {
-                            SoapRequest soapRequest = (SoapRequest)request;
-                            final String messageId = SoapUtil.getL7aMessageId(soapRequest.getDocument());
+                        if (request.isSoap()) {
+                            final String messageId = SoapUtil.getL7aMessageId(reqXml.getDocument());
                             if (messageId != null) {
                                 SoapUtil.setL7aRelatesTo(doc, messageId);
                             }
                         }
 
-                        if (soapResponse.getDecorationRequirements() != null) {
+                        if (responseDecoReq != null) {
                             if (wssOutput != null && wssOutput.getSecurityNS() != null) {
-                                soapResponse.getDecorationRequirements().setPreferredSecurityNamespace(wssOutput.getSecurityNS());
+                                responseDecoReq.setPreferredSecurityNamespace(wssOutput.getSecurityNS());
                             }
                             if (wssOutput != null && wssOutput.getWSUNS() != null) {
-                                soapResponse.getDecorationRequirements().setPreferredWSUNamespace(wssOutput.getWSUNS());
+                                responseDecoReq.setPreferredWSUNamespace(wssOutput.getWSUNS());
                             }
                         }
 
-                        getWssDecorator().decorateMessage(doc,
-                                                          soapResponse.getDecorationRequirements());
+                        getWssDecorator().decorateMessage(doc, responseDecoReq);
+                        respXml.setDocument(doc);
                     } catch (Exception e) {
                         throw new PolicyAssertionException("Failed to apply WSS decoration to response", e);
                     }
-                    soapResponse.setDocument(doc);
                 }
 
-                RoutingStatus rstat = request.getRoutingStatus();
+                RoutingStatus rstat = context.getRoutingStatus();
 
                 boolean authorized = false;
                 if ( rstat == RoutingStatus.ATTEMPTED ) {
@@ -257,23 +281,25 @@ public class MessageProcessor {
         } catch ( ServiceResolutionException sre ) {
             logger.log(Level.SEVERE, sre.getMessage(), sre);
             return AssertionStatus.SERVER_ERROR;
+        } catch (SAXException e) {
+            logger.log(Level.SEVERE, e.getMessage(), e);
+            return AssertionStatus.SERVER_ERROR;
         } finally {
             try {
-                EventManager.fire(new MessageProcessed(request, response, status));
+                EventManager.fire(new MessageProcessed(context, status));
             } catch (Throwable t) {
                 logger.log(Level.WARNING, "EventManager threw exception logging message processing result", t);
             }
         }
     }
 
-    private AssertionStatus doDeferredAssertions(Message messageWithDeferredAssertions,
-                                                 Request request, Response response)
+    private AssertionStatus doDeferredAssertions(PolicyEnforcementContext context)
             throws PolicyAssertionException, IOException
     {
         AssertionStatus status = AssertionStatus.NONE;
-        for (Iterator di = messageWithDeferredAssertions.getDeferredAssertions().iterator(); di.hasNext();) {
+        for (Iterator di = context.getDeferredAssertions().iterator(); di.hasNext();) {
             ServerAssertion assertion = (ServerAssertion)di.next();
-            status = assertion.checkRequest(request, response);
+            status = assertion.checkRequest(context);
             if (status != AssertionStatus.NONE)
                 return status;
         }
@@ -288,9 +314,6 @@ public class MessageProcessor {
     }
 
     public static MessageProcessor getInstance() {
-        /*if ( _instance == null )
-            _instance = new MessageProcessor();
-        return _instance;*/
         return SingletonHolder.singleton;
     }
 
@@ -308,21 +331,8 @@ public class MessageProcessor {
         _xppf.setValidating( false );
     }
 
-    /** Returns the thread-local current request. Could be null! */
-    public static Request getCurrentRequest() {
-        return (Request)_currentRequest.get();
-    }
-
-    public static void setCurrentRequest( Request request ) {
-        _currentRequest.set( request );
-    }
-
-    public static Response getCurrentResponse() {
-        return (Response)_currentResponse.get();
-    }
-
-    public static void setCurrentResponse( Response response ) {
-        _currentResponse.set( response );
+    public static PolicyEnforcementContext getCurrentContext() {
+        return (PolicyEnforcementContext)currentContext.get();
     }
 
     private static class SingletonHolder {
@@ -334,8 +344,7 @@ public class MessageProcessor {
         return _wssDecorator = new WssDecoratorImpl();
     }
 
-    private static ThreadLocal _currentRequest = new ThreadLocal();
-    private static ThreadLocal _currentResponse = new ThreadLocal();
+    private static ThreadLocal currentContext = new ThreadLocal();
 
     private final Logger logger = Logger.getLogger(getClass().getName());
 

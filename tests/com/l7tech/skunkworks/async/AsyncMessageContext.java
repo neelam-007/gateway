@@ -8,13 +8,8 @@ package com.l7tech.skunkworks.async;
 
 import com.l7tech.server.policy.assertion.ServerAssertion;
 import com.l7tech.server.policy.assertion.composite.ServerCompositeAssertion;
-import com.l7tech.message.Response;
-import com.l7tech.message.Request;
-import com.l7tech.policy.assertion.AssertionStatus;
-import com.l7tech.policy.assertion.PolicyAssertionException;
 
 import java.util.Stack;
-import java.io.IOException;
 
 /**
  * @author alex
@@ -46,8 +41,6 @@ public class AsyncMessageContext {
         }
     }
 
-    private Request request;
-    private Response response;
     private Stack policyStack;
     private ServerAssertion policyPointer;
     private RequestState state = RequestState.IDLE;

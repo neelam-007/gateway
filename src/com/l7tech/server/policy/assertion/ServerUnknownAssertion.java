@@ -6,11 +6,10 @@
 
 package com.l7tech.server.policy.assertion;
 
-import com.l7tech.message.Request;
-import com.l7tech.message.Response;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.UnknownAssertion;
+import com.l7tech.server.message.PolicyEnforcementContext;
 
 import java.io.IOException;
 import java.util.logging.Logger;
@@ -39,7 +38,7 @@ public class ServerUnknownAssertion implements ServerAssertion {
 
     public ServerUnknownAssertion() {}
 
-    public AssertionStatus checkRequest(Request request, Response response) throws IOException, PolicyAssertionException {
+    public AssertionStatus checkRequest(PolicyEnforcementContext context) throws IOException, PolicyAssertionException {
         final boolean hasDetailMessage = unknownAssertion != null && unknownAssertion.getDetailMessage() != null;
         String desc = hasDetailMessage ? unknownAssertion.getDetailMessage() : "No more description available";
 

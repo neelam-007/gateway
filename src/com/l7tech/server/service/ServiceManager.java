@@ -1,12 +1,12 @@
 package com.l7tech.server.service;
 
-import com.l7tech.message.Request;
+import com.l7tech.common.message.Message;
 import com.l7tech.objectmodel.*;
 import com.l7tech.server.policy.assertion.ServerAssertion;
 import com.l7tech.server.service.resolution.ServiceResolutionException;
 import com.l7tech.service.PublishedService;
-import com.l7tech.service.ServiceStatistics;
 import com.l7tech.service.ResolutionParameterTooLongException;
+import com.l7tech.service.ServiceStatistics;
 
 import java.util.Collection;
 
@@ -71,7 +71,7 @@ public interface ServiceManager extends EntityManager {
     /**
      * resolves to which published service the passed request applies to
      */
-    PublishedService resolve(Request req) throws ServiceResolutionException;
+    PublishedService resolve(Message req) throws ServiceResolutionException;
 
     /**
      * returns a ServiceStatistics object for the specified serviceid

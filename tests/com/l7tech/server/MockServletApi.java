@@ -2,9 +2,7 @@ package com.l7tech.server;
 
 import com.l7tech.common.mime.MimeUtil;
 import com.l7tech.common.protocol.SecureSpanConstants;
-import com.l7tech.message.Message;
-import com.l7tech.message.Request;
-import com.l7tech.message.Response;
+import com.l7tech.common.util.SoapUtil;
 import com.l7tech.service.PublishedService;
 import com.mockobjects.dynamic.C;
 import com.mockobjects.dynamic.Mock;
@@ -21,6 +19,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.StringReader;
 import java.net.InetAddress;
+import java.util.Enumeration;
 
 /**
  * Class <code>MockServletApi</code> creates the mock servlet API
@@ -62,15 +61,12 @@ public class MockServletApi {
                 servletConfigMock.matchAndReturn("getInitParameter", C.IS_NOT_NULL, null);
                 servletContextMock.expect("log", C.IS_ANYTHING);
                 servletRequestMock.matchAndReturn("getContentType", "text/xml");
-                servletRequestMock.matchAndReturn("getAttribute", Response.PARAM_HTTP_STATUS, new Integer(200));
+                servletRequestMock.matchAndReturn("getStatus", new Integer(200));
 
-                servletRequestMock.matchAndReturn("getAttribute", Request.PARAM_HTTP_AUTHORIZATION, null);
-                servletRequestMock.matchAndReturn("getAttribute", Response.PARAM_HTTP_WWWAUTHENTICATE, null);
                 // Authorization
                 servletRequestMock.matchAndReturn("getHeader", "Authorization", null);
                 servletRequestMock.matchAndReturn("getHeader", "WWW-Authenticate", null);
 
-                servletRequestMock.matchAndReturn("getAttribute", Message.PARAM_HTTP_CONTENT_TYPE, null);
                 servletRequestMock.matchAndReturn("getHeader", MimeUtil.CONTENT_TYPE, null);
                 servletRequestMock.matchAndReturn("getScheme", "http");
                 servletRequestMock.matchAndReturn("getServerName", InetAddress.getLocalHost().getHostName());
@@ -99,12 +95,7 @@ public class MockServletApi {
      * @param service the published service to set
      */
     public void setPublishedService(PublishedService service) {
-        servletRequestMock.matchAndReturn("getAttribute", Request.PARAM_SERVICE, service);
-        servletRequestMock.matchAndReturn("getAttribute", Request.PARAM_HTTP_POLICY_VERSION, "");
-        servletRequestMock.matchAndReturn("getAttribute", Request.PARAM_HTTP_ORIGINAL_URL, service.getRoutingUri());
-        servletRequestMock.matchAndReturn("getAttribute", Request.PARAM_HTTP_REQUEST_URI, null);
         servletRequestMock.matchAndReturn("getHeader", SecureSpanConstants.HttpHeaders.ORIGINAL_URL, service.getRoutingUri());
-        servletRequestMock.matchAndReturn("getHeader", Request.PARAM_HTTP_POLICY_VERSION, "");
         /*
         String version = "" + service.getOid() + "|" + service.getVersion();
         servletRequestMock.matchAndReturn("getAttribute", Request.PARAM_HTTP_POLICY_VERSION, version);
@@ -124,7 +115,13 @@ public class MockServletApi {
         soapMessage.writeTo(bo);
         StringReader sr = new StringReader(bo.toString());
         servletRequestMock.matchAndReturn("getReader", new BufferedReader(sr));
-        servletRequestMock.expectAndReturn("getAttribute", Request.PARAM_HTTP_SOAPACTION, soapAction);
+        servletRequestMock.expectAndReturn("getHeaders",
+                                           SecureSpanConstants.HttpHeaders.ORIGINAL_URL,
+                                           new HardcodedEnumeration(new String[] { "http://localhost/whatever"} ));
+        servletRequestMock.expectAndReturn("getHeaders",
+                                           SoapUtil.SOAPACTION,
+                                           new HardcodedEnumeration(new String[] { "urn:soapaction.com:whoopee"} ));
+
         final MockServletInputStream mockServletInputStream = new MockServletInputStream();
         mockServletInputStream.setupRead(bo.toByteArray());
         servletRequestMock.matchAndReturn("getInputStream", mockServletInputStream);
@@ -198,5 +195,22 @@ public class MockServletApi {
      */
     public interface Preparer {
         void prepare(MockServletApi servletApi);
+    }
+
+    private static class HardcodedEnumeration implements Enumeration {
+        public HardcodedEnumeration(Object[] values) {
+            this.values = values;
+        }
+
+        private final Object[] values;
+        int returned = 0;
+
+        public boolean hasMoreElements() {
+            return returned < values.length;
+        }
+
+        public Object nextElement() {
+            return values[returned++];
+        }
     }
 }

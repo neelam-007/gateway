@@ -6,17 +6,16 @@
 
 package com.l7tech.server.audit;
 
-import com.l7tech.message.Request;
-import com.l7tech.message.Response;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.server.event.MessageProcessingEventListener;
+import com.l7tech.server.message.PolicyEnforcementContext;
 
 /**
  * @author alex
  * @version $Revision$
  */
 public class MessageProcessingAuditListener implements MessageProcessingEventListener {
-    public void messageProcessed( Request request, Response response, AssertionStatus status ) {
-        AuditContext.getCurrent().add(MessageSummaryAuditFactory.makeEvent(request.getAuditLevel(), status));
+    public void messageProcessed( PolicyEnforcementContext context, AssertionStatus status ) {
+        AuditContext.getCurrent().add(MessageSummaryAuditFactory.makeEvent(context, status));
     }
 }

@@ -2,14 +2,11 @@ package com.l7tech.server.policy.assertion.xml;
 
 import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.util.XmlUtil;
-import com.l7tech.message.Request;
-import com.l7tech.message.Response;
-import com.l7tech.message.SoapRequest;
-import com.l7tech.message.SoapResponse;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.RoutingStatus;
 import com.l7tech.policy.assertion.xml.SchemaValidation;
+import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.ServerAssertion;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -49,17 +46,23 @@ public class ServerSchemaValidation implements ServerAssertion {
 
     /**
      * validates the soap envelope's body's child against the schema
+     * @param context
      */
-    public AssertionStatus checkRequest(Request request, Response response) throws IOException,
+    public AssertionStatus checkRequest(PolicyEnforcementContext context) throws IOException,
                                                                               PolicyAssertionException {
 
         // decide which document to act upon based on routing status
-        RoutingStatus routing = request.getRoutingStatus();
+        RoutingStatus routing = context.getRoutingStatus();
         if (routing == RoutingStatus.ROUTED || routing == RoutingStatus.ATTEMPTED) {
             // try to validate response
             try {
                 logger.finest("validating response document");
-                return checkRequest(((SoapResponse)response).getDocument());
+                if (!context.getResponse().isXml()) {
+                    logger.info("Response not XML; cannot validate schema");
+                    return AssertionStatus.NOT_APPLICABLE;
+                }
+
+                return checkRequest(context.getResponse().getXmlKnob().getDocument());
             } catch (SAXException e) {
                 throw new PolicyAssertionException("could not parse response document", e);
             }
@@ -67,7 +70,12 @@ public class ServerSchemaValidation implements ServerAssertion {
             // try to validate request
             try {
                 logger.finest("validating request document");
-                return checkRequest(((SoapRequest)request).getDocument());
+                if (!context.getRequest().isXml()) {
+                    logger.info("Request not XML; cannot validate schema");
+                    return AssertionStatus.NOT_APPLICABLE;
+                }
+
+                return checkRequest(context.getRequest().getXmlKnob().getDocument());
             } catch (SAXException e) {
                 throw new PolicyAssertionException("could not parse request document", e);
             }

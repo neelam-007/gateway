@@ -6,7 +6,7 @@
 
 package com.l7tech.server.service;
 
-import com.l7tech.message.Request;
+import com.l7tech.common.message.Message;
 import com.l7tech.objectmodel.*;
 import com.l7tech.server.policy.assertion.ServerAssertion;
 import com.l7tech.server.service.resolution.ResolutionManager;
@@ -274,7 +274,7 @@ public class ServiceManagerImp extends HibernateEntityManager implements Service
         }
     }
 
-    public PublishedService resolve(Request req) throws ServiceResolutionException {
+    public PublishedService resolve(Message req) throws ServiceResolutionException {
         return ServiceCache.getInstance().resolve(req);
     }
 

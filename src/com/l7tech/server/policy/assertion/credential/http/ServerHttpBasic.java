@@ -6,8 +6,7 @@
 
 package com.l7tech.server.policy.assertion.credential.http;
 
-import com.l7tech.message.Request;
-import com.l7tech.message.Response;
+import com.l7tech.common.message.Message;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.credential.CredentialFinderException;
 import com.l7tech.policy.assertion.credential.CredentialFormat;
@@ -26,11 +25,13 @@ import java.util.logging.Logger;
  * @version $Revision$
  */
 public class ServerHttpBasic extends ServerHttpCredentialSource implements ServerAssertion {
+    private static final Logger logger = Logger.getLogger(ServerHttpBasic.class.getName());
+
     public static final String ENCODING = "UTF-8";
     public static final String SCHEME = "Basic";
     public static final String REALM = "L7SSGBasicRealm";
 
-    protected Map challengeParams(Request request, Response response) {
+    protected Map challengeParams(Message request, Map authParams) {
         return Collections.EMPTY_MAP;
     }
 
@@ -38,12 +39,12 @@ public class ServerHttpBasic extends ServerHttpCredentialSource implements Serve
         return SCHEME;
     }
 
-    public LoginCredentials findCredentials( Request request, Response response ) throws IOException, CredentialFinderException {
-        String wwwAuthorize = (String)request.getParameter( Request.PARAM_HTTP_AUTHORIZATION );
+    public LoginCredentials findCredentials(Message request, Map authParams) throws IOException, CredentialFinderException {
+        String wwwAuthorize = request.getHttpRequestKnob().getHeaderSingleValue(AUTHORIZATION);
         return findCredentials( wwwAuthorize );
     }
 
-    public LoginCredentials findCredentials( String wwwAuthorize ) throws IOException, CredentialFinderException {
+    public LoginCredentials findCredentials( String wwwAuthorize ) throws IOException {
         if ( wwwAuthorize == null || wwwAuthorize.length() == 0 ) {
             logger.fine("No wwwAuthorize");
             return null;
@@ -88,16 +89,15 @@ public class ServerHttpBasic extends ServerHttpCredentialSource implements Serve
         _data = data;
     }
 
-    protected String realm(Request request) {
+    protected String realm() {
         String realm = _data.getRealm();
         if ( realm == null ) realm = REALM;
         return realm;
     }
 
-    protected AssertionStatus doCheckCredentials(Request request, Response response) {
+    protected AssertionStatus checkAuthParams(Map authParams) {
         return AssertionStatus.NONE;
     }
 
     protected HttpBasic _data;
-    private final Logger logger = Logger.getLogger(getClass().getName());
 }

@@ -1,17 +1,18 @@
 package com.l7tech.server.policy.assertion.xmlsec;
 
+import com.l7tech.cluster.DistributedMessageIdManager;
 import com.l7tech.common.security.xml.processor.*;
+import com.l7tech.common.util.CausedIOException;
 import com.l7tech.common.util.CertUtils;
 import com.l7tech.common.util.HexUtils;
-import com.l7tech.message.Request;
-import com.l7tech.message.Response;
-import com.l7tech.message.SoapRequest;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.xmlsec.RequestWssReplayProtection;
+import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.ServerAssertion;
 import com.l7tech.server.util.MessageId;
 import com.l7tech.server.util.MessageIdManager;
+import org.xml.sax.SAXException;
 
 import java.io.IOException;
 import java.security.MessageDigest;
@@ -41,22 +42,26 @@ public class ServerRequestWssReplayProtection implements ServerAssertion {
         this.subject = subject;
     }
 
-    public AssertionStatus checkRequest(Request request, Response response)
+    public AssertionStatus checkRequest(PolicyEnforcementContext context)
             throws IOException, PolicyAssertionException
     {
-        if (!(request instanceof SoapRequest) || !((SoapRequest)request).isSoap()) {
-            logger.info("This type of assertion is only supported with SOAP type of messages");
-            return AssertionStatus.BAD_REQUEST;
+        ProcessorResult wssResults;
+        try {
+            if (!context.getRequest().isSoap()) {
+                logger.info("Request not SOAP; cannot check for replayed signed WS-Security message");
+                return AssertionStatus.BAD_REQUEST;
+            }
+            wssResults = context.getRequest().getXmlKnob().getProcessorResult();
+            if (wssResults == null)
+                throw new IOException("This request was not processed for WSS level security.");
+        } catch (SAXException e) {
+            throw new CausedIOException(e);
         }
-        SoapRequest soapreq = (SoapRequest)request;
-        ProcessorResult wssResults = soapreq.getWssProcessorOutput();
-        if (wssResults == null)
-            throw new IOException("This request was not processed for WSS level security.");
 
         // Validate timestamp first
         WssTimestamp timestamp = wssResults.getTimestamp();
         if (timestamp == null) {
-            response.setPolicyViolated(true);
+            context.setPolicyViolated(true);
             logger.info("No timestamp present in request; assertion therefore fails.");
             return AssertionStatus.BAD_REQUEST;
         }
@@ -134,7 +139,7 @@ public class ServerRequestWssReplayProtection implements ServerAssertion {
 
         MessageId messageId = new MessageId(messageIdStr, expires + CACHE_ID_EXTRA_TIME_MILLIS);
         try {
-            soapreq.getMessageIdManager().assertMessageIdIsUnique(messageId);
+            DistributedMessageIdManager.getInstance().assertMessageIdIsUnique(messageId);
             logger.finest("Message ID " + messageIdStr + " has not been seen before unique; assertion succeeds");
         } catch (MessageIdManager.DuplicateMessageIdException e) {
             // TODO we need a better exception for this than IOException

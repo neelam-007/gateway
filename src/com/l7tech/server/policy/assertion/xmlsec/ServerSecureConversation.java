@@ -4,17 +4,16 @@ import com.l7tech.common.security.xml.decorator.DecorationRequirements;
 import com.l7tech.common.security.xml.processor.ProcessorResult;
 import com.l7tech.common.security.xml.processor.SecurityContextToken;
 import com.l7tech.common.security.xml.processor.SecurityToken;
+import com.l7tech.common.util.CausedIOException;
 import com.l7tech.identity.User;
-import com.l7tech.message.Request;
-import com.l7tech.message.Response;
-import com.l7tech.message.SoapRequest;
-import com.l7tech.message.SoapResponse;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.xmlsec.SecureConversation;
+import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.ServerAssertion;
 import com.l7tech.server.secureconversation.SecureConversationContextManager;
 import com.l7tech.server.secureconversation.SecureConversationSession;
+import org.xml.sax.SAXException;
 
 import java.io.IOException;
 import java.util.logging.Level;
@@ -34,16 +33,22 @@ public class ServerSecureConversation implements ServerAssertion {
     public ServerSecureConversation(SecureConversation assertion) {
         // nothing to remember from the passed assertion
     }
-    public AssertionStatus checkRequest(Request request, Response response) throws IOException, PolicyAssertionException {
-        if (!(request instanceof SoapRequest) || !((SoapRequest)request).isSoap()) {
-            logger.info("This type of assertion is only supported with SOAP type of messages");
-            return AssertionStatus.BAD_REQUEST;
+    public AssertionStatus checkRequest(PolicyEnforcementContext context) throws IOException, PolicyAssertionException {
+        ProcessorResult wssResults;
+        try {
+            if (!context.getRequest().isSoap()) {
+                logger.info("Request not SOAP; unable to check for WS-SecureConversation token");
+                return AssertionStatus.NOT_APPLICABLE;
+            }
+            wssResults = context.getRequest().getXmlKnob().getProcessorResult();
+        } catch (SAXException e) {
+            throw new CausedIOException(e);
         }
-        SoapRequest soapreq = (SoapRequest)request;
-        ProcessorResult wssResults = soapreq.getWssProcessorOutput();
+
         if (wssResults == null) {
             throw new IOException("This request was not processed for WSS message level security.");
         }
+
         SecurityToken[] tokens = wssResults.getSecurityTokens();
         for (int i = 0; i < tokens.length; i++) {
             SecurityToken token = tokens[i];
@@ -58,32 +63,36 @@ public class ServerSecureConversation implements ServerAssertion {
                 if (session == null) {
                     logger.warning("The request referred to a SecureConversation token that is not recognized " +
                                    "on this server. Perhaps the session has expired. Returning AUTH_FAILED.");
-                    response.setPolicyViolated(true);
+                    context.setPolicyViolated(true);
                     return AssertionStatus.AUTH_FAILED;
                 }
                 User authenticatedUser = session.getUsedBy();
-                request.setAuthenticated(true);
-                request.setUser(authenticatedUser);
-                response.addDeferredAssertion(this, deferredSecureConversationResponseDecoration(session));
+                context.setAuthenticated(true);
+                context.setAuthenticatedUser(authenticatedUser);
+                context.addDeferredAssertion(this, deferredSecureConversationResponseDecoration(session));
                 logger.fine("Secure Conversation session recognized for user " + authenticatedUser.getLogin());
                 return AssertionStatus.NONE;
             }
         }
         logger.info("This request did not seem to refer to a Secure Conversation token.");
-        response.setAuthenticationMissing(true);
-        response.setPolicyViolated(true);
+        context.setAuthenticationMissing(true);
+        context.setPolicyViolated(true);
         return AssertionStatus.AUTH_REQUIRED;
     }
 
     private final ServerAssertion deferredSecureConversationResponseDecoration(final SecureConversationSession session) {
         return new ServerAssertion() {
-            public AssertionStatus checkRequest(Request request, Response response) throws IOException, PolicyAssertionException {
-                if (!(response instanceof SoapResponse) || !((SoapResponse)response).isSoap()) {
-                    logger.warning("Service response was not SOAP, and this type of assertion is only supported with SOAP type of messages");
-                    return AssertionStatus.NOT_APPLICABLE;                    
+            public AssertionStatus checkRequest(PolicyEnforcementContext context) throws IOException {
+                DecorationRequirements wssReq;
+                try {
+                    if (!context.getResponse().isSoap()) {
+                        logger.warning("Response not SOAP; unable to attach WS-SecureConversation token");
+                        return AssertionStatus.NOT_APPLICABLE;
+                    }
+                    wssReq = context.getResponse().getXmlKnob().getOrMakeDecorationRequirements();
+                } catch (SAXException e) {
+                    throw new CausedIOException(e);
                 }
-                SoapResponse soapResponse = (SoapResponse)response;
-                DecorationRequirements wssReq = soapResponse.getOrMakeDecorationRequirements();
                 wssReq.setSignTimestamp(true);
                 wssReq.setSecureConversationSession(new DecorationRequirements.SecureConversationSession() {
                     public String getId() {

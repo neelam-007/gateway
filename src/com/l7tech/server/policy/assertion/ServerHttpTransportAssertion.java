@@ -6,12 +6,11 @@
 
 package com.l7tech.server.policy.assertion;
 
+import com.l7tech.common.message.HttpRequestKnob;
 import com.l7tech.policy.assertion.AssertionStatus;
-import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.HttpTransportAssertion;
-import com.l7tech.message.Request;
-import com.l7tech.message.Response;
-import com.l7tech.message.HttpSoapRequest;
+import com.l7tech.policy.assertion.PolicyAssertionException;
+import com.l7tech.server.message.PolicyEnforcementContext;
 
 import java.io.IOException;
 
@@ -24,8 +23,8 @@ public class ServerHttpTransportAssertion implements ServerAssertion {
         this.data = data;
     }
 
-    public AssertionStatus checkRequest( Request request, Response response ) throws IOException, PolicyAssertionException {
-        if ( request instanceof HttpSoapRequest ) {
+    public AssertionStatus checkRequest(PolicyEnforcementContext context) throws IOException, PolicyAssertionException {
+        if ( context.getRequest().getKnob(HttpRequestKnob.class) != null ) {
             return AssertionStatus.NONE;
         } else {
             return AssertionStatus.FALSIFIED;

@@ -10,12 +10,11 @@ import com.l7tech.common.security.xml.processor.ParsedElement;
 import com.l7tech.common.security.xml.processor.ProcessorException;
 import com.l7tech.common.security.xml.processor.ProcessorResult;
 import com.l7tech.common.security.xml.processor.ProcessorResultUtil;
-import com.l7tech.message.Request;
-import com.l7tech.message.Response;
-import com.l7tech.message.SoapRequest;
+import com.l7tech.common.util.CausedIOException;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.XpathBasedAssertion;
+import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.ServerAssertion;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
@@ -35,13 +34,17 @@ public abstract class ServerRequestWssOperation implements ServerAssertion {
         this.data = data;
     }
 
-    public AssertionStatus checkRequest(Request request, Response response) throws IOException, PolicyAssertionException {
-        if (!(request instanceof SoapRequest) || !((SoapRequest)request).isSoap()) {
-            logger.info("This type of assertion is only supported with SOAP type of messages");
-            return AssertionStatus.BAD_REQUEST;
+    public AssertionStatus checkRequest(PolicyEnforcementContext context) throws IOException, PolicyAssertionException {
+        ProcessorResult wssResults;
+        try {
+            if (!context.getRequest().isSoap()) {
+                logger.info("Request not SOAP; cannot verify WS-Security contents");
+                return AssertionStatus.BAD_REQUEST;
+            }
+            wssResults = context.getRequest().getXmlKnob().getProcessorResult();
+        } catch (SAXException e) {
+            throw new CausedIOException(e);
         }
-        SoapRequest soapreq = (SoapRequest)request;
-        ProcessorResult wssResults = soapreq.getWssProcessorOutput();
         if (wssResults == null) {
             throw new IOException("This request was not processed for WSS level security.");
         }
@@ -49,7 +52,7 @@ public abstract class ServerRequestWssOperation implements ServerAssertion {
         // get the document
         Document soapmsg = null;
         try {
-            soapmsg = soapreq.getDocument();
+            soapmsg = context.getRequest().getXmlKnob().getDocument();
         } catch (SAXException e) {
             logger.log(Level.SEVERE, "Cannot get payload document.", e);
             return AssertionStatus.BAD_REQUEST;
@@ -68,7 +71,7 @@ public abstract class ServerRequestWssOperation implements ServerAssertion {
             throw new PolicyAssertionException(e);
         }
         if (result.isFoundButWasntOperatedOn())
-            response.setPolicyViolated(true);
+            context.setPolicyViolated(true);
         switch (result.getResultCode()) {
             case ProcessorResultUtil.NO_ERROR:
                 return AssertionStatus.NONE;

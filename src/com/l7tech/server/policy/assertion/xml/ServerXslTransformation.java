@@ -1,12 +1,9 @@
 package com.l7tech.server.policy.assertion.xml;
 
-import com.l7tech.message.Request;
-import com.l7tech.message.Response;
-import com.l7tech.message.SoapRequest;
-import com.l7tech.message.SoapResponse;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.xml.XslTransformation;
+import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.ServerAssertion;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
@@ -43,19 +40,30 @@ public class ServerXslTransformation implements ServerAssertion {
 
     /**
      * preformes the transformation
+     * @param context
      */
-    public AssertionStatus checkRequest(Request req, Response res) throws IOException, PolicyAssertionException {
+    public AssertionStatus checkRequest(PolicyEnforcementContext context) throws IOException, PolicyAssertionException {
         // 1. Get document to transform
         Document doctotransform = null;
         try {
             switch (subject.getDirection()) {
                 case XslTransformation.APPLY_TO_REQUEST:
+                    if (!context.getRequest().isXml()) {
+                        logger.info("Request not XML; cannot perform XSL transformation");
+                        return AssertionStatus.NOT_APPLICABLE;
+                    }
+
                     logger.finest("transforming request");
-                    doctotransform = ((SoapRequest)req).getDocument();
+                    doctotransform = context.getRequest().getXmlKnob().getDocument();
                     break;
                 case XslTransformation.APPLY_TO_RESPONSE:
+                    if (!context.getResponse().isXml()) {
+                        logger.info("Response not XML; cannot perform XSL transformation");
+                        return AssertionStatus.NOT_APPLICABLE;
+                    }
+
                     logger.finest("transforming response");
-                    doctotransform = ((SoapResponse)res).getDocument();
+                    doctotransform = context.getResponse().getXmlKnob().getDocument();
                     break;
                 default:
                     // should not get here!
@@ -63,30 +71,30 @@ public class ServerXslTransformation implements ServerAssertion {
                                    "apply to request or to response. returning failure.");
                     return AssertionStatus.SERVER_ERROR;
             }
+
+            // 2. Apply the transformation
+            Document output = null;
+            try {
+                output = transform(doctotransform);
+            } catch (TransformerException e) {
+                String msg = "error transforming document";
+                logger.log(Level.WARNING, msg, e);
+                throw new PolicyAssertionException(msg, e);
+            }
+
+            // 3. Replace original document with output from transformation
+            switch (subject.getDirection()) {
+                case XslTransformation.APPLY_TO_REQUEST:
+                    context.getRequest().getXmlKnob().setDocument(output);
+                    break;
+                case XslTransformation.APPLY_TO_RESPONSE:
+                    context.getResponse().getXmlKnob().setDocument(output);
+                    break;
+            }
         } catch (SAXException e) {
             String msg = "cannot get document to tranform";
             logger.log(Level.WARNING, msg, e);
             throw new PolicyAssertionException(msg, e);
-        }
-
-        // 2. Apply the transformation
-        Document output = null;
-        try {
-            output = transform(doctotransform);
-        } catch (TransformerException e) {
-            String msg = "error transforming document";
-            logger.log(Level.WARNING, msg, e);
-            throw new PolicyAssertionException(msg, e);
-        }
-
-        // 3. Replace original document with output from transformation
-        switch (subject.getDirection()) {
-            case XslTransformation.APPLY_TO_REQUEST:
-                ((SoapRequest)req).setDocument(output);
-                break;
-            case XslTransformation.APPLY_TO_RESPONSE:
-                ((SoapResponse)res).setDocument(output);
-                break;
         }
 
         return AssertionStatus.NONE;

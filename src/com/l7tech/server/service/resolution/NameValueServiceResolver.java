@@ -6,14 +6,14 @@
 
 package com.l7tech.server.service.resolution;
 
-import com.l7tech.message.Request;
+import EDU.oswego.cs.dl.util.concurrent.ReadWriteLock;
+import EDU.oswego.cs.dl.util.concurrent.ReentrantWriterPreferenceReadWriteLock;
+import EDU.oswego.cs.dl.util.concurrent.Sync;
+import com.l7tech.common.message.Message;
 import com.l7tech.service.PublishedService;
 
 import java.util.*;
 import java.util.logging.Logger;
-import EDU.oswego.cs.dl.util.concurrent.ReadWriteLock;
-import EDU.oswego.cs.dl.util.concurrent.ReentrantWriterPreferenceReadWriteLock;
-import EDU.oswego.cs.dl.util.concurrent.Sync;
 
 /**
  * @author alex
@@ -115,8 +115,6 @@ public abstract class NameValueServiceResolver extends ServiceResolver {
         }
     }
 
-    protected abstract String getParameterName();
-
     protected Object[] getTargetValues( PublishedService service ) {
         if ( service.getOid() == PublishedService.DEFAULT_OID ) {
             // Don't ever cache values for a service with a to-be-determined OID
@@ -148,7 +146,7 @@ public abstract class NameValueServiceResolver extends ServiceResolver {
 
     protected abstract Object[] doGetTargetValues( PublishedService service );
 
-    protected abstract Object getRequestValue( Request request ) throws ServiceResolutionException;
+    protected abstract Object getRequestValue( Message request ) throws ServiceResolutionException;
 
     protected boolean matches( PublishedService candidateService, PublishedService matchService ) {
         // Get the match values for this service
@@ -186,7 +184,7 @@ public abstract class NameValueServiceResolver extends ServiceResolver {
         }
     }
 
-    public Set resolve( Request request, Set serviceSubset ) throws ServiceResolutionException {
+    public Set resolve( Message request, Set serviceSubset ) throws ServiceResolutionException {
         Object value = getRequestValue(request);
         Map serviceMap = getServiceMap( value );
 

@@ -6,10 +6,9 @@
 
 package com.l7tech.server.event;
 
-import com.l7tech.message.Request;
-import com.l7tech.message.Response;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.server.MessageProcessor;
+import com.l7tech.server.message.PolicyEnforcementContext;
 
 import java.util.EventListener;
 
@@ -18,21 +17,19 @@ import java.util.EventListener;
  * @version $Revision$
  */
 public class MessageProcessed extends Event {
-    public MessageProcessed(Request request, Response response, AssertionStatus status) {
+    private final AssertionStatus status;
+    private final PolicyEnforcementContext context;
+
+    public MessageProcessed(PolicyEnforcementContext context, AssertionStatus status) {
         super(MessageProcessor.getInstance());
-        this.request = request;
-        this.response = response;
+        this.context = context;
         this.status = status;
     }
 
     public void sendTo(EventListener listener) {
         if (listener instanceof MessageProcessingEventListener)
-            ((MessageProcessingEventListener)listener).messageProcessed(request, response, status);
+            ((MessageProcessingEventListener)listener).messageProcessed(context, status);
         else
             super.sendTo(listener);
     }
-
-    private Request request;
-    private Response response;
-    private AssertionStatus status;
 }

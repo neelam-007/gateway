@@ -2,15 +2,13 @@ package com.l7tech.server.policy.assertion.xmlsec;
 
 import com.l7tech.common.security.xml.SignerInfo;
 import com.l7tech.common.security.xml.decorator.DecorationRequirements;
+import com.l7tech.common.util.CausedIOException;
 import com.l7tech.common.util.KeystoreUtils;
 import com.l7tech.common.xml.XpathEvaluator;
-import com.l7tech.message.Request;
-import com.l7tech.message.Response;
-import com.l7tech.message.SoapRequest;
-import com.l7tech.message.SoapResponse;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.xmlsec.ResponseWssIntegrity;
+import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.ServerAssertion;
 import org.jaxen.JaxenException;
 import org.w3c.dom.Document;
@@ -42,30 +40,38 @@ public class ServerResponseWssIntegrity implements ServerAssertion {
 
     /**
      * despite the name of this method, i'm actually working on the response document here
+     * @param context
      */
-    public AssertionStatus checkRequest(Request request, Response response)
+    public AssertionStatus checkRequest(PolicyEnforcementContext context)
             throws IOException, PolicyAssertionException
     {
-        if (!(request instanceof SoapRequest) || !((SoapRequest)request).isSoap()) {
-            logger.info("This type of assertion is only supported with SOAP type of messages");
-            return AssertionStatus.NOT_APPLICABLE;
+        try {
+            if (!context.getRequest().isSoap()) {
+                logger.info("Request not SOAP; cannot verify WS-Security signature");
+                return AssertionStatus.NOT_APPLICABLE;
+            }
+        } catch (SAXException e) {
+            throw new CausedIOException(e);
         }
 
-        response.addDeferredAssertion(this, new ServerAssertion() {
-            public AssertionStatus checkRequest(Request request, Response response)
+        context.addDeferredAssertion(this, new ServerAssertion() {
+            public AssertionStatus checkRequest(PolicyEnforcementContext context)
                     throws IOException, PolicyAssertionException
             {
-                if (!(response instanceof SoapResponse) || !((SoapResponse)response).isSoap()) {
-                    logger.warning("Service response was not SOAP, and this type of assertion is only supported with SOAP type of messages");
-                    return AssertionStatus.NOT_APPLICABLE;
+                try {
+                    if (!context.getResponse().isSoap()) {
+                        logger.warning("Response not SOAP; cannot apply WS-Security signature");
+                        return AssertionStatus.NOT_APPLICABLE;
+                    }
+                } catch (SAXException e) {
+                    throw new CausedIOException(e);
                 }
 
-                SoapResponse soapResponse = (SoapResponse)response;
 
                 // GET THE DOCUMENT
                 Document soapmsg = null;
                 try {
-                    soapmsg = soapResponse.getDocument();
+                    soapmsg = context.getResponse().getXmlKnob().getDocument();
                 } catch (SAXException e) {
                     String msg = "cannot get an xml document from the response to sign";
                     logger.severe(msg);
@@ -89,7 +95,12 @@ public class ServerResponseWssIntegrity implements ServerAssertion {
                 }
 
                 SignerInfo si = KeystoreUtils.getInstance().getSignerInfo();
-                DecorationRequirements wssReq = soapResponse.getOrMakeDecorationRequirements();
+                DecorationRequirements wssReq = null;
+                try {
+                    wssReq = context.getResponse().getXmlKnob().getOrMakeDecorationRequirements();
+                } catch (SAXException e) {
+                    throw new RuntimeException(e); // can't happen, we did this before successfully
+                }
                 wssReq.setSenderCertificate(si.getCertificateChain()[0]);
                 wssReq.setSenderPrivateKey(si.getPrivate());
                 wssReq.getElementsToSign().addAll(selectedElements);

@@ -1,7 +1,10 @@
 package com.l7tech.server.service;
 
+import EDU.oswego.cs.dl.util.concurrent.ReadWriteLock;
+import EDU.oswego.cs.dl.util.concurrent.Sync;
+import EDU.oswego.cs.dl.util.concurrent.WriterPreferenceReadWriteLock;
+import com.l7tech.common.message.Message;
 import com.l7tech.common.util.Locator;
-import com.l7tech.message.Request;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.PersistenceContext;
 import com.l7tech.objectmodel.TransactionException;
@@ -16,9 +19,6 @@ import java.sql.SQLException;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import EDU.oswego.cs.dl.util.concurrent.ReadWriteLock;
-import EDU.oswego.cs.dl.util.concurrent.Sync;
-import EDU.oswego.cs.dl.util.concurrent.WriterPreferenceReadWriteLock;
 
 /**
  * Contains cached services, with corresponding pre-parsed server-side policies and
@@ -131,7 +131,7 @@ public class ServiceCache {
      * @return the cached version of the service that this request resolve to. null if no match
      * @throws ServiceResolutionException
      */
-    public PublishedService resolve(Request req) throws ServiceResolutionException {
+    public PublishedService resolve(Message req) throws ServiceResolutionException {
         Set serviceSet = null;
         Sync read = rwlock.readLock();
         try {
@@ -481,7 +481,8 @@ public class ServiceCache {
     private final Logger logger = Logger.getLogger(getClass().getName());
 
     //private final PeriodicExecutor checker = new PeriodicExecutor( this );
-    private final Timer checker = new Timer(true);
+    // TODO replace with Jgroups notifications
+    private final Timer checker = new Timer(true); // Don't use Background since this is high priority
     private boolean running = false;
     private ServiceManagerImp serviceManager;
 }

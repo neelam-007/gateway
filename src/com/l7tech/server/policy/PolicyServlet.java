@@ -1,5 +1,9 @@
 package com.l7tech.server.policy;
 
+import com.l7tech.common.message.HttpServletRequestKnob;
+import com.l7tech.common.message.HttpServletResponseKnob;
+import com.l7tech.common.message.Message;
+import com.l7tech.common.mime.ByteArrayStashManager;
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.common.protocol.SecureSpanConstants;
 import com.l7tech.common.util.*;
@@ -9,9 +13,6 @@ import com.l7tech.identity.AuthenticationException;
 import com.l7tech.identity.IdentityProvider;
 import com.l7tech.identity.IdentityProviderConfigManager;
 import com.l7tech.identity.User;
-import com.l7tech.message.HttpSoapRequest;
-import com.l7tech.message.HttpSoapResponse;
-import com.l7tech.message.HttpTransportMetadata;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.PersistenceContext;
 import com.l7tech.policy.assertion.Assertion;
@@ -19,22 +20,19 @@ import com.l7tech.policy.assertion.ext.Category;
 import com.l7tech.policy.assertion.ext.CustomAssertionsRegistrar;
 import com.l7tech.server.AuthenticatableHttpServlet;
 import com.l7tech.server.identity.IdProvConfManagerServer;
+import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.credential.http.ServerHttpBasic;
 import com.l7tech.server.policy.filter.FilteringException;
 import com.l7tech.service.PublishedService;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
-import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.parsers.ParserConfigurationException;
-import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.rmi.RemoteException;
@@ -78,79 +76,74 @@ public class PolicyServlet extends AuthenticatableHttpServlet {
     /**
      * Soapy policy downloads
      */
-    protected void doPost(HttpServletRequest req, HttpServletResponse res) throws ServletException, IOException {
+    protected void doPost(HttpServletRequest servletRequest, HttpServletResponse servletResponse)
+            throws ServletException, IOException
+    {
         try {
             // check content type
-            if (!req.getContentType().startsWith("text/xml")) {
-                logger.warning("Bad content type " + req.getContentType());
-                generateFaultAndSendAsResponse(res, "content type not supported", req.getContentType());
+            if (!servletRequest.getContentType().startsWith("text/xml")) {
+                logger.warning("Bad content type " + servletRequest.getContentType());
+                generateFaultAndSendAsResponse(servletResponse, "content type not supported", servletRequest.getContentType());
                 return;
             }
 
-            // get document
-            Document payload = null;
-            try {
-                payload = extractXMLPayload(req);
-            } catch (ParserConfigurationException e) {
-                String msg = "Could not parse payload as xml.";
-                logger.log(Level.SEVERE, msg, e);
-                generateFaultAndSendAsResponse(res, msg, e.getMessage());
-                return;
-            } catch (SAXException e) {
-                String msg = "Could not parse payload as xml.";
-                logger.log(Level.WARNING, msg, e);
-                generateFaultAndSendAsResponse(res, msg, e.getMessage());
-                return;
-            }
+            // Build a processing context including request and response messages
+            //boolean signResponse = !req.isSecure(); // TODO figure out why this is failing to sign when SSL not used
+            boolean signResponse = true;
+
+            Message request = new Message();
+            request.initialize(new ByteArrayStashManager(),
+                               ContentTypeHeader.parseValue(servletRequest.getContentType()),
+                               servletRequest.getInputStream());
+            request.attachHttpRequestKnob(new HttpServletRequestKnob(servletRequest));
+
+            Message response = new Message();
+            response.attachHttpResponseKnob(new HttpServletResponseKnob(servletResponse));
+
+            PolicyEnforcementContext context = new PolicyEnforcementContext(request, response, servletRequest, servletResponse);
 
             // pass over to the service
             PolicyService service = null;
             try {
-                service = getService();
+                service = getPolicyService();
             } catch (CertificateException e) {
                 logger.log(Level.SEVERE, "configuration exception, cannot get server cert.", e);
-                generateFaultAndSendAsResponse(res, "Internal error", e.getMessage());
+                generateFaultAndSendAsResponse(servletResponse, "Internal error", e.getMessage());
                 return;
             } catch (KeyStoreException e) {
                 logger.log(Level.SEVERE, "configuration exception, cannot get server key.", e);
-                generateFaultAndSendAsResponse(res, "Internal error", e.getMessage());
+                generateFaultAndSendAsResponse(servletResponse, "Internal error", e.getMessage());
                 return;
             }
 
-            HttpTransportMetadata htm = new HttpTransportMetadata(req, res);
-            HttpSoapRequest sreq = new HttpSoapRequest(htm);
-            sreq.setDocument(payload);
-            HttpSoapResponse sres = new HttpSoapResponse(htm);
-            //boolean signResponse = !req.isSecure(); // TODO figure out why this is failing to sign when SSL not used
-            boolean signResponse = true;
-            service.respondToPolicyDownloadRequest(sreq, sres, signResponse, normalPolicyGetter());
+            service.respondToPolicyDownloadRequest(context, signResponse, normalPolicyGetter());
 
-            Document response = null;
+            Document responseDoc = null;
             try {
-                response = sres.getDocument();
+                responseDoc = response.getXmlKnob().getDocument();
             } catch (SAXException e) {
-                generateFaultAndSendAsResponse(res, "No response available", e.getMessage());
+                generateFaultAndSendAsResponse(servletResponse, "No response available", e.getMessage());
             }
             if (response == null) {
-                if (sres.getFaultDetail() != null) {
-                    generateFaultAndSendAsResponse(res, sres.getFaultDetail());
+                if (context.getFaultDetail() != null) {
+                    generateFaultAndSendAsResponse(servletResponse, context.getFaultDetail());
                     return;
                 } else {
-                    generateFaultAndSendAsResponse(res, "No response available", "");
+                    generateFaultAndSendAsResponse(servletResponse, "No response available", "");
                 }
             }
 
             // check if the response is already a soap fault
-            if (isDocFault(response)) {
-                outputSoapFault(res, response);
+            if (isDocFault(responseDoc)) {
+                outputSoapFault(servletResponse, responseDoc);
                 return;
             } else {
-                outputPolicyDoc(res, response);
+                outputPolicyDoc(servletResponse, responseDoc);
                 return;
             }
         } catch (Exception e) { // this is to avoid letting the servlet engine returning ugly html error pages.
-            logger.log(Level.SEVERE, "Unhandled exception:", e);
-            generateFaultAndSendAsResponse(res, "Internal error", e.getMessage());
+            logger.log(Level.SEVERE, "Unexpected exception:", e);
+            generateFaultAndSendAsResponse(servletResponse, "Internal error", e.getMessage());
         } finally {
             try {
                 PersistenceContext.getCurrent().close();
@@ -160,7 +153,7 @@ public class PolicyServlet extends AuthenticatableHttpServlet {
         }
     }
 
-    protected PolicyService getService() throws CertificateException, KeyStoreException, IOException {
+    protected PolicyService getPolicyService() throws CertificateException, KeyStoreException, IOException {
         X509Certificate cert = null;
         PrivateKey key = null;
         cert = KeystoreUtils.getInstance().getSslCert();
@@ -227,7 +220,7 @@ public class PolicyServlet extends AuthenticatableHttpServlet {
             // pass over to the service
             PolicyService service = null;
             try {
-                service = getService();
+                service = getPolicyService();
             } catch (CertificateException e) {
                 logger.log(Level.SEVERE, "configuration exception, cannot get server cert.", e);
                 generateFaultAndSendAsResponse(res, "Internal error", e.getMessage());
@@ -450,19 +443,6 @@ public class PolicyServlet extends AuthenticatableHttpServlet {
         }
 
         return checkInfos;
-    }
-
-    private Document extractXMLPayload(HttpServletRequest req)
-            throws IOException, ParserConfigurationException, SAXException {
-        BufferedReader reader = new BufferedReader(req.getReader());
-        DocumentBuilder parser = getDomParser();
-        return parser.parse( new InputSource(reader));
-    }
-
-    private DocumentBuilder getDomParser() throws ParserConfigurationException {
-        DocumentBuilder builder = dbf.newDocumentBuilder();
-        builder.setEntityResolver(XmlUtil.getSafeEntityResolver());
-        return builder;
     }
 
     private void sendAuthChallenge(HttpServletRequest httpServletRequest, HttpServletResponse httpServletResponse) throws IOException {

@@ -8,10 +8,9 @@ package com.l7tech.server.policy.assertion.composite;
 
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.composite.CompositeAssertion;
+import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.ServerPolicyFactory;
 import com.l7tech.server.policy.assertion.ServerAssertion;
-import com.l7tech.message.Response;
-import com.l7tech.message.Request;
 
 /**
  * @author alex
@@ -46,19 +45,15 @@ public abstract class ServerCompositeAssertion implements ServerAssertion {
         return "<" + this.getClass().getName() + " children=" + children + ">";
     }
 
-    protected void rollbackDeferredAssertions(Request request, Response response) {
-        if (request != null)
-            request.removeDeferredAssertion(this);
-        if (response != null)
-            response.removeDeferredAssertion(this);
+    protected void rollbackDeferredAssertions(PolicyEnforcementContext context) {
+        if (context != null)
+            context.removeDeferredAssertion(this);
         for (int i = 0; i < children.length; i++) {
             ServerAssertion child = children[i];
             if (child instanceof ServerCompositeAssertion)
-                ((ServerCompositeAssertion)child).rollbackDeferredAssertions(request, response);
-            if (request != null)
-                request.removeDeferredAssertion(child);
-            if (response != null)
-                response.removeDeferredAssertion(child);
+                ((ServerCompositeAssertion)child).rollbackDeferredAssertions(context);
+            if (context != null)
+                context.removeDeferredAssertion(child);
         }
     }
 }

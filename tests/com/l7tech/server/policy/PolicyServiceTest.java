@@ -6,16 +6,13 @@
 
 package com.l7tech.server.policy;
 
+import com.l7tech.common.message.Message;
 import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.xml.InvalidDocumentFormatException;
 import com.l7tech.common.xml.TestDocuments;
 import com.l7tech.common.xml.XpathExpression;
 import com.l7tech.identity.TestIdentityProvider;
 import com.l7tech.identity.UserBean;
-import com.l7tech.message.SoapRequest;
-import com.l7tech.message.SoapResponse;
-import com.l7tech.message.TestSoapRequest;
-import com.l7tech.message.TestSoapResponse;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.HttpRoutingAssertion;
 import com.l7tech.policy.assertion.RequestXpathAssertion;
@@ -31,6 +28,7 @@ import com.l7tech.policy.assertion.xmlsec.ResponseWssIntegrity;
 import com.l7tech.proxy.datamodel.Policy;
 import com.l7tech.proxy.datamodel.exceptions.BadCredentialsException;
 import com.l7tech.proxy.util.PolicyServiceClient;
+import com.l7tech.server.message.PolicyEnforcementContext;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
@@ -68,30 +66,29 @@ public class PolicyServiceTest extends TestCase {
         junit.textui.TestRunner.run(suite());
     }
 
-    private SoapRequest getPolicyRequest(LoginCredentials loginCredentials) throws GeneralSecurityException, IOException {
-        Document request = null;
+    private PolicyEnforcementContext getPolicyRequestContext(LoginCredentials loginCredentials) throws GeneralSecurityException, IOException {
+        Document requestDoc = null;
+        Message request = new Message();
+        Message response = new Message();
+        PolicyEnforcementContext context = new PolicyEnforcementContext(request, response);
+        context.setCredentials(loginCredentials);
         if (loginCredentials != null) {
-            request = PolicyServiceClient.createGetPolicyRequest("123");
+            requestDoc = PolicyServiceClient.createGetPolicyRequest("123");
         }
         else {
-            request = PolicyServiceClient.createSignedGetPolicyRequest("123",
+            requestDoc = PolicyServiceClient.createSignedGetPolicyRequest("123",
                                                                  TestDocuments.getEttkClientCertificate(),
                                                                  TestDocuments.getEttkClientPrivateKey(),
                                                                  null);
         }
-        assertNotNull(request);
-        log.info("Request (pretty-printed): " + XmlUtil.nodeToFormattedString(request));
+        assertNotNull(requestDoc);
+        log.info("Request (pretty-printed): " + XmlUtil.nodeToFormattedString(requestDoc));
 
-        SoapRequest soapReq = new TestSoapRequest(request);
-        if (loginCredentials != null) {
-            soapReq.setPrincipalCredentials(loginCredentials);
-        }
-        return soapReq;
+        request.initialize(requestDoc);
+        return context;
     }
 
-    private Document getPolicyResponse(final Assertion policyToTest, SoapRequest soapReq) throws Exception {
-        SoapResponse soapRes = new TestSoapResponse();
-
+    private Document getPolicyResponse(final Assertion policyToTest, PolicyEnforcementContext context) throws Exception {
         PolicyService ps = new PolicyService(TestDocuments.getDotNetServerPrivateKey(),
                                              TestDocuments.getDotNetServerCertificate());
         PolicyService.PolicyGetter policyGetter = new PolicyService.PolicyGetter() {
@@ -109,17 +106,18 @@ public class PolicyServiceTest extends TestCase {
             }
         };
 
-        ps.respondToPolicyDownloadRequest(soapReq, soapRes, true, policyGetter);
-        Document response = soapRes.getDocument();
+        ps.respondToPolicyDownloadRequest(context, true, policyGetter);
+        Document response = context.getResponse().getXmlKnob().getDocument();
         assertNotNull(response);
         log.info("Response (pretty-printed):" + XmlUtil.nodeToFormattedString(response));
         return response;
     }
 
     private void testPolicy(final Assertion policyToTest, LoginCredentials loginCredentials) throws Exception {
-        SoapRequest soapReq = getPolicyRequest(loginCredentials);
-        Document response = getPolicyResponse(policyToTest, soapReq);
-        Policy policy = parsePolicyResponse(soapReq.getDocument(), response);
+        final PolicyEnforcementContext context = getPolicyRequestContext(loginCredentials);
+        Message request = context.getRequest();
+        Document response = getPolicyResponse(policyToTest, context);
+        Policy policy = parsePolicyResponse(request.getXmlKnob().getDocument(), response);
         log.info("Returned policy version: " + policy.getVersion());
         log.info("Returned policy: " + policy.getAssertion());
     }
@@ -267,15 +265,15 @@ public class PolicyServiceTest extends TestCase {
     }
 
     public void testReplayedPolicyResponse() throws Exception {
-        SoapRequest firstRequest = getPolicyRequest(null);
-        Document firstResponse = getPolicyResponse(new TrueAssertion(), firstRequest);
-        Policy firstPolicy = parsePolicyResponse(firstRequest.getDocument(), firstResponse);
+        final PolicyEnforcementContext context = getPolicyRequestContext(null);
+        Document firstResponse = getPolicyResponse(new TrueAssertion(), context);
+        Policy firstPolicy = parsePolicyResponse(context.getRequest().getXmlKnob().getDocument(), firstResponse);
         assertNotNull(firstPolicy);
 
         // So far so good.  Now let's try a replay
-        SoapRequest secondRequest = getPolicyRequest(null);
+        Message secondRequest = getPolicyRequestContext(null).getRequest();
         try {
-            Policy replayedPolicy = parsePolicyResponse(secondRequest.getDocument(), firstResponse);
+            parsePolicyResponse(secondRequest.getXmlKnob().getDocument(), firstResponse);
             fail("The replayed policy response should have been rejected by the client.");
         } catch (InvalidDocumentFormatException e) {
             // Ok

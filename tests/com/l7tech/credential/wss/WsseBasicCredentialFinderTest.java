@@ -1,15 +1,6 @@
 package com.l7tech.credential.wss;
 
-import com.l7tech.message.SoapRequest;
-import com.l7tech.message.HttpSoapRequest;
-import com.l7tech.message.HttpSoapResponse;
-import com.l7tech.message.SoapResponse;
-import com.l7tech.common.util.HexUtils;
-import com.l7tech.policy.assertion.credential.LoginCredentials;
-import com.l7tech.policy.assertion.credential.wss.WssBasic;
-import com.l7tech.server.policy.assertion.credential.wss.ServerWssBasic;
 
-import java.io.FileInputStream;
 
 /**
  * User: flascell

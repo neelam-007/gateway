@@ -1,8 +1,8 @@
 package com.l7tech.service;
 
+import com.l7tech.common.message.Message;
 import com.l7tech.common.xml.Wsdl;
 import com.l7tech.identity.StubDataStore;
-import com.l7tech.message.Request;
 import com.l7tech.objectmodel.*;
 import com.l7tech.server.policy.assertion.ServerAssertion;
 import com.l7tech.server.service.ServiceCache;
@@ -145,7 +145,7 @@ public class ServiceManagerStub implements ServiceManager {
         }
     }
 
-    public PublishedService resolve(Request req) throws ServiceResolutionException {
+    public PublishedService resolve(Message req) throws ServiceResolutionException {
         return ServiceCache.getInstance().resolve(req);
     }
 
@@ -172,7 +172,7 @@ public class ServiceManagerStub implements ServiceManager {
      * @param request 
      * @return 
      */
-    public PublishedService resolveService(Request request) throws ServiceResolutionException {
+    public PublishedService resolveService(Message request) throws ServiceResolutionException {
         return null;
     }
 

@@ -6,11 +6,10 @@
 
 package com.l7tech.server.policy.assertion.credential.wss;
 
+import com.l7tech.policy.assertion.credential.wss.WssCredentialSourceAssertion;
+import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.ServerAssertion;
 import com.l7tech.server.policy.assertion.credential.ServerCredentialSourceAssertion;
-import com.l7tech.policy.assertion.credential.wss.WssCredentialSourceAssertion;
-import com.l7tech.message.Response;
-import com.l7tech.message.Request;
 
 /**
  * @author alex
@@ -22,7 +21,8 @@ public abstract class ServerWssCredentialSource extends ServerCredentialSourceAs
         _data = data;
     }
 
-    protected void challenge( Request request, Response response ) {
+    protected void challenge(PolicyEnforcementContext context) {
+        // Meaningless for WS-Security
     }
 
     protected WssCredentialSourceAssertion _data;

@@ -8,8 +8,6 @@ package com.l7tech.server.policy.assertion.identity;
 
 import com.l7tech.common.protocol.SecureSpanConstants;
 import com.l7tech.identity.*;
-import com.l7tech.message.Request;
-import com.l7tech.message.Response;
 import com.l7tech.objectmodel.Entity;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.assertion.AssertionResult;
@@ -17,6 +15,7 @@ import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.assertion.identity.IdentityAssertion;
 import com.l7tech.server.identity.IdentityProviderFactory;
+import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.ServerAssertion;
 
 import java.io.IOException;
@@ -43,31 +42,30 @@ public abstract class ServerIdentityAssertion implements ServerAssertion {
      * successful calls checkUser() to verify that the authenticated user is
      * authorized to make the request.
      *
-     * @param request
-     * @param response
+     * @param context
      * @return
      */
-    public AssertionStatus checkRequest( Request request, Response response ) {
-        LoginCredentials pc = request.getPrincipalCredentials();
-        if (pc == null && request.getUser() == null) {
+    public AssertionStatus checkRequest(PolicyEnforcementContext context) {
+        LoginCredentials pc = context.getCredentials();
+        if (pc == null && context.getAuthenticatedUser() == null) {
             // No credentials have been found yet
-            if (request.isAuthenticated()) {
+            if (context.isAuthenticated()) {
                 String err = "Request is authenticated but request has no LoginCredentials!";
                 logger.log(Level.SEVERE, err);
                 throw new IllegalStateException( err );
             } else {
                 // Authentication is required for any IdentityAssertion
-                response.addResult(new AssertionResult(_data, AssertionStatus.AUTH_REQUIRED));
+                context.addResult(new AssertionResult(_data, AssertionStatus.AUTH_REQUIRED));
                 // TODO: Some future IdentityAssertion might succeed, but this flag will remain true!
-                response.setAuthenticationMissing(true);
+                context.setAuthenticationMissing(true);
                 logger.fine("No credentials found");
                 return AssertionStatus.AUTH_REQUIRED;
             }
         } else {
             // A CredentialFinder has already run.
 
-           if ( request.isAuthenticated() ) {
-               User user = request.getUser();
+           if ( context.isAuthenticated() ) {
+               User user = context.getAuthenticatedUser();
                 // The user was authenticated by a previous IdentityAssertion.
                 logger.log(Level.FINEST, "Request already authenticated");
                 return checkUser( user );
@@ -82,7 +80,7 @@ public abstract class ServerIdentityAssertion implements ServerAssertion {
                 try {
                     IdentityProvider provider = getIdentityProvider();
                     User user = provider.authenticate( pc );
-                    if (user == null) return authFailed(response, pc, null);
+                    if (user == null) return authFailed(context, pc, null);
 
                     name = user.getLogin();
                     if (name == null) name = user.getName();
@@ -90,21 +88,22 @@ public abstract class ServerIdentityAssertion implements ServerAssertion {
                     if (name == null) name = user.getUniqueIdentifier();
 
                     // Authentication succeeded
-                    request.setAuthenticated(true);
-                    request.setUser( user );
+                    context.setAuthenticated(true);
+                    context.setAuthenticatedUser( user );
                     logger.log(Level.FINEST, "Authenticated " + name );
                     // Make sure this guy matches our criteria
                     return checkUser( user );
                 } catch ( InvalidClientCertificateException icce ) {
                     logger.info("Invalid client cert for " + name );
                     // set some response header so that the CP is made aware of this situation
-                    response.setParameter(Response.PARAM_HTTP_CERT_STATUS, SecureSpanConstants.INVALID);
-                    return authFailed(response, pc, icce);
+                    context.getResponse().getHttpResponseKnob().addHeader(SecureSpanConstants.HttpHeaders.CERT_STATUS,
+                                                                          SecureSpanConstants.INVALID);
+                    return authFailed(context, pc, icce);
                 } catch ( MissingCredentialsException mce ) {
-                    response.setAuthenticationMissing(true);
-                    return authFailed(response, pc, mce);
+                    context.setAuthenticationMissing(true);
+                    return authFailed(context, pc, mce);
                 } catch ( AuthenticationException ae ) {
-                    return authFailed( response, pc, ae);
+                    return authFailed( context, pc, ae);
                 } catch ( FindException fe ) {
                     String err = "Couldn't find identity provider!";
                     logger.log(Level.SEVERE, err, fe);
@@ -120,8 +119,8 @@ public abstract class ServerIdentityAssertion implements ServerAssertion {
         }
     }
 
-    private AssertionStatus authFailed( Response response, LoginCredentials pc, Exception e ) {
-        response.addResult( new AssertionResult( _data, AssertionStatus.AUTH_FAILED, e == null ? "" : e.getMessage(), e ));
+    private AssertionStatus authFailed( PolicyEnforcementContext context, LoginCredentials pc, Exception e ) {
+        context.addResult( new AssertionResult( _data, AssertionStatus.AUTH_FAILED, e == null ? "" : e.getMessage(), e ));
         StringBuffer message = new StringBuffer();
         message.append("Authentication failed for ");
         String name = pc.getLogin();
