@@ -136,7 +136,7 @@ public class AssertionMessages extends Messages {
     public static final M WSS_BASIC_NO_CREDENTIALS                          = m(5202, Level.INFO, "Request did not include WSS Basic credentials.");
     public static final M WSS_BASIC_CANNOT_FIND_CREDENTIALS                 = m(5203, Level.INFO, "cannot find credentials");
 
-    //ServerSslAssertion
+    // ServerSslAssertion
     public static final M SSL_REQUIRED_PRESENT                              = m(5300, Level.FINE, "SSL required and present");
     public static final M SSL_REQUIRED_ABSENT                               = m(5301, Level.INFO, "SSL required but not present");
     public static final M SSL_FORBIDDEN_PRESENT                             = m(5302, Level.INFO, "SSL forbidden but present");
@@ -144,6 +144,13 @@ public class AssertionMessages extends Messages {
     public static final M SSL_OPTIONAL_PRESENT                              = m(5304, Level.FINE, "SSL optional and present");
     public static final M SSL_OPTIONAL_ABSENT                               = m(5305, Level.FINE, "SSL optional and not present");
 
-
+    // ServerResponseWssConfidentiality
+    public static final M RESPONSE_WSS_CONF_REQUEST_NOT_SOAP                = m(5400, Level.INFO, "Request not SOAP; unable to check for WS-Security encrypted elements");
+    public static final M RESPONSE_WSS_CONF_NO_WSS_SECURITY                 = m(5401, Level.INFO, "This request did not contain any WSS level security.");
+    public static final M RESPONSE_WSS_CONF_MORE_THAN_ONE_TOKEN             = m(5402, Level.WARNING, "Request included more than one X509 security token whose key ownership was proven");
+    public static final M RESPONSE_WSS_CONF_NO_CERT_OR_SC_TOKEN             = m(5403, Level.WARNING, "Unable to encrypt response. Request did not include x509 token or secure conversation.");
+    public static final M RESPONSE_WSS_CONF_RESPONSE_NOT_SOAP               = m(5404, Level.WARNING, "Response not SOAP; unable to encrypt response elements");
+    public static final M RESPONSE_WSS_CONF_RESPONSE_NOT_ENCRYPTED          = m(5405, Level.FINE, "No matching elements to encrypt in response.  Returning success.");
+    public static final M RESPONSE_WSS_CONF_RESPONSE_ENCRYPTED              = m(5406, Level.FINEST, "Designated {0} response elements for encryption");
 
 }

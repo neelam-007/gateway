@@ -13,12 +13,14 @@ import com.l7tech.common.util.HexUtils;
 import com.l7tech.common.util.KeystoreUtils;
 import com.l7tech.common.xml.XpathEvaluator;
 import com.l7tech.common.xml.XpathExpression;
+import com.l7tech.common.audit.Auditor;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.xmlsec.ResponseWssConfidentiality;
 import com.l7tech.policy.assertion.xmlsec.XmlSecurityRecipientContext;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.ServerAssertion;
+import com.l7tech.server.AssertionMessages;
 import org.jaxen.JaxenException;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
@@ -60,9 +62,10 @@ public class ServerResponseWssConfidentiality implements ServerAssertion {
     public AssertionStatus checkRequest(PolicyEnforcementContext context)
             throws IOException, PolicyAssertionException
     {
+        Auditor auditor = new Auditor(context.getAuditContext(), logger);
         try {
             if (!context.getRequest().isSoap()) {
-                logger.info("Request not SOAP; unable to check for WS-Security encrypted elements");
+                auditor.logAndAudit(AssertionMessages.RESPONSE_WSS_CONF_REQUEST_NOT_SOAP);
                 return AssertionStatus.BAD_REQUEST;
             }
         } catch (SAXException e) {
@@ -76,7 +79,7 @@ public class ServerResponseWssConfidentiality implements ServerAssertion {
                             responseWssConfidentiality.getRecipientContext().getBase64edX509Certificate(), true));
             } catch (CertificateException e) {
                 String msg = "cannot retrieve the recipient cert";
-                logger.log(Level.WARNING, msg, e);
+                auditor.logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[] {msg}, e);
                 throw new PolicyAssertionException(msg, e);
             }
             context.addDeferredAssertion(this, deferredDecoration(clientCert, null,
@@ -91,7 +94,7 @@ public class ServerResponseWssConfidentiality implements ServerAssertion {
             }
 
             if (wssResult == null) {
-                logger.info("This request did not contain any WSS level security.");
+                auditor.logAndAudit(AssertionMessages.RESPONSE_WSS_CONF_NO_WSS_SECURITY);
                 context.setRequestPolicyViolated();
                 return AssertionStatus.FAILED;
             }
@@ -108,8 +111,7 @@ public class ServerResponseWssConfidentiality implements ServerAssertion {
                     X509SecurityToken x509token = (X509SecurityToken)token;
                     if (x509token.isPossessionProved()) {
                         if (clientCert != null) {
-                            logger.log( Level.WARNING, "Request included more than one X509 security token whose key " +
-                                                       "ownership was proven" );
+                            auditor.logAndAudit(AssertionMessages.RESPONSE_WSS_CONF_MORE_THAN_ONE_TOKEN);
                             return AssertionStatus.BAD_REQUEST; // todo make multiple security tokens work
                         }
                         clientCert = x509token.asX509Certificate();
@@ -118,8 +120,7 @@ public class ServerResponseWssConfidentiality implements ServerAssertion {
                     SamlSecurityToken samlToken = (SamlSecurityToken)token;
                     if (samlToken.isPossessionProved()) {
                         if (clientCert != null) {
-                            logger.log( Level.WARNING, "Request included more than one X509 security token whose key " +
-                                                       "ownership was proven" );
+                            auditor.logAndAudit(AssertionMessages.RESPONSE_WSS_CONF_MORE_THAN_ONE_TOKEN);
                             return AssertionStatus.BAD_REQUEST; // todo make multiple security tokens work
                         }
                         clientCert = samlToken.getSubjectCertificate();
@@ -133,8 +134,7 @@ public class ServerResponseWssConfidentiality implements ServerAssertion {
             }
 
             if (clientCert == null && secConvContext == null) {
-                logger.log( Level.WARNING, "Unable to encrypt response. Request did not included x509 " +
-                                           "token or secure conversation." );
+                auditor.logAndAudit(AssertionMessages.RESPONSE_WSS_CONF_NO_CERT_OR_SC_TOKEN);
                 context.setAuthenticationMissing(); // todo is it really, though?
                 context.setRequestPolicyViolated();
                 return AssertionStatus.FAILED; // todo verify that this return value is appropriate
@@ -157,9 +157,11 @@ public class ServerResponseWssConfidentiality implements ServerAssertion {
             public AssertionStatus checkRequest(PolicyEnforcementContext context)
                     throws IOException, PolicyAssertionException
             {
+                Auditor auditor = new Auditor(context.getAuditContext(), logger);
+
                 try {
                     if (!context.getResponse().isSoap()) {
-                        logger.warning("Response not SOAP; unable to encrypt response elements");
+                        auditor.logAndAudit(AssertionMessages.RESPONSE_WSS_CONF_RESPONSE_NOT_SOAP);
                         return AssertionStatus.NOT_APPLICABLE;
                     }
                 } catch (SAXException e) {
@@ -184,7 +186,7 @@ public class ServerResponseWssConfidentiality implements ServerAssertion {
                     }
 
                     if (selectedElements == null || selectedElements.size() < 1) {
-                        logger.fine("No matching elements to encrypt in response.  Returning success.");
+                        auditor.logAndAudit(AssertionMessages.RESPONSE_WSS_CONF_RESPONSE_NOT_ENCRYPTED);
                         return AssertionStatus.NONE;
                     }
                     DecorationRequirements wssReq;
@@ -202,16 +204,15 @@ public class ServerResponseWssConfidentiality implements ServerAssertion {
                         wssReq.setSignTimestamp();
                     }
 
-                    logger.finest("Designated " + selectedElements.size() + " response elements for encryption");
-
+                    auditor.logAndAudit(AssertionMessages.RESPONSE_WSS_CONF_RESPONSE_ENCRYPTED, new String[] {String.valueOf(selectedElements.size())});
                     return AssertionStatus.NONE;
                 } catch (SAXException e) {
                     String msg = "cannot get an xml document from the response to encrypt";
-                    logger.severe(msg);
+                    auditor.logAndAudit(AssertionMessages.EXCEPTION_SEVERE_WITH_MORE_INFO, new String[] {msg}, e);
                     return AssertionStatus.SERVER_ERROR;
                 } catch (CertificateException e) {
                     String msg = "cannot set the recipient cert.";
-                    logger.severe(msg);
+                    auditor.logAndAudit(AssertionMessages.EXCEPTION_SEVERE_WITH_MORE_INFO, new String[] {msg}, e);
                     return AssertionStatus.SERVER_ERROR;
                 }
             }
