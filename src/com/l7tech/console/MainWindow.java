@@ -1301,9 +1301,9 @@ public class MainWindow extends JFrame {
                 inactivityTimer.stop();
             }
             inactivityTimer.start();
-            log.log(Level.WARNING, "inactivity timeout enabled (timeout = " + inactivityTimeout + ")");
+            log.log(Level.INFO, "inactivity timeout enabled (timeout = " + inactivityTimeout + ")");
         } else {
-            log.log(Level.SEVERE, "incorrect timeout value " + inactivityTimeout);
+            log.log(Level.WARNING, "incorrect timeout value " + inactivityTimeout);
             setInactivitiyTimeout(0);
         }
     }
