@@ -57,6 +57,8 @@ import java.net.URL;
 import java.rmi.RemoteException;
 import java.text.MessageFormat;
 import java.util.*;
+import java.beans.PropertyChangeListener;
+import java.beans.PropertyChangeEvent;
 
 
 /**
@@ -249,6 +251,13 @@ public class XmlSecurityPropertiesDialog extends JDialog {
                 Actions.invokeHelp(XmlSecurityPropertiesDialog.this);
             }
         });
+        securedItemsTable.addPropertyChangeListener(new PropertyChangeListener() {
+            public void propertyChange(PropertyChangeEvent evt) {
+                if ("model".equals(evt.getPropertyName())) {
+                    adjustTableColumnSizes();
+                }
+            }
+        });
         try {
             final Wsdl wsdl = serviceNode.getPublishedService().parsedWsdl();
             final MutableTreeNode root = new DefaultMutableTreeNode();
@@ -277,13 +286,7 @@ public class XmlSecurityPropertiesDialog extends JDialog {
                 ElementSecurity elementSecurity = elements[i];
                 securedMessagePartsTableModel.addPart(toSecureMessagePart(elementSecurity));
             }
-            int width = TableUtil.getColumnWidth(securedItemsTable, 0);
-            TableUtil.adjustColumnWidth(securedItemsTable, 0, width * 2);
-            width = TableUtil.getColumnWidth(securedItemsTable, 2);
-            TableUtil.adjustColumnWidth(securedItemsTable, 2, width);
-
-            //Utilities.getStringBounds(securedItemsTable, securedItemsTable.getColumnModel().getColumn(2).)
-            //securedItemsTable.getColumnModel().getColumn(2).setPreferredWidth();
+            adjustTableColumnSizes();
             getContentPane().setLayout(new BorderLayout());
             getContentPane().add(mainPanel);
         } catch (WSDLException e) {
@@ -299,6 +302,13 @@ public class XmlSecurityPropertiesDialog extends JDialog {
         } catch (DocumentException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    private void adjustTableColumnSizes() {
+        int width = TableUtil.getColumnWidth(securedItemsTable, 0);
+        TableUtil.adjustColumnWidth(securedItemsTable, 0, width * 2);
+        width = TableUtil.getColumnWidth(securedItemsTable, 2);
+        TableUtil.adjustColumnWidth(securedItemsTable, 2, width);
     }
 
     /**
@@ -427,8 +437,9 @@ public class XmlSecurityPropertiesDialog extends JDialog {
                 alreadySelected = true;
             }
         }
+
+        JFrame f = Registry.getDefault().getComponentRegistry().getMainWindow();
         if (alreadySelected) {
-            JFrame f = Registry.getDefault().getComponentRegistry().getMainWindow();
             final String msg = "<html><center>The element <i><b>{0}</b></i><br>" +
               "for operation <i><b>{1}</i></b> has already been included in previous selection.<br>" +
               "Overlapping elements in signatures and encryptions are currently not supported.</center></html>";
@@ -439,6 +450,10 @@ public class XmlSecurityPropertiesDialog extends JDialog {
               JOptionPane.WARNING_MESSAGE);
             return;
         }
+
+        //todo: check if this is a request, and if the selected xpression contains any child
+        // nodes, if not veryfy with user that no child nodes will be selected
+
         securedMessagePartsTableModel.addPart(p);
     }
 
@@ -694,8 +709,8 @@ public class XmlSecurityPropertiesDialog extends JDialog {
         final JTree _12;
         _12 = new JTree();
         operationsTree = _12;
-        _12.setShowsRootHandles(false);
         _12.setRootVisible(false);
+        _12.setShowsRootHandles(false);
         _11.setViewportView(_12);
         final JScrollPane _13;
         _13 = new JScrollPane();
