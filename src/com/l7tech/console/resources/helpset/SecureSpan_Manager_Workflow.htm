@@ -18,8 +18,8 @@
 <meta name=filetype content=kadov>
 <meta name=filetype-version content=1>
 <meta name=page-count content=1>
-<meta name=layout-height content=942>
-<meta name=layout-width content=792>
+<meta name=layout-height content=1319>
+<meta name=layout-width content=702>
 <meta name=x-ignored-words content="Workflow;WSDL;TLS;Uptime;uptime;Unix;SecureSpan;cert;francis;LDAP;firewall;policy.templates;admin;popup;user(s;CTRL;Login;SSL;WS;username;Username;Xml-based;DMZ;non-invasively;Linux;Solaris;internetworking;SOAPAction;Beatty;ext;GUI-based;GUI;scalable;PKI-based;offloads;toolset;WS-Security;Services@https;servername;namespace;Gateway(s;XPath;SAML;NotOnOrAfter;saml;requestor;tempuri.org;Name.wsdl;Namespace;yourcompany.com;MyWebService.wsdl.;schemas.xmlsoap.org;wsdl;URIs;GetQuoteResponse;stockSymbol;StockInfo;getQuote;getQuoteRequest;getQuoteResponse;operation(s;StockServiceSOAPBinding;StockQuote;localhost;ws;TCP;GenericLDAP;MSAD;IIPs;TivoliLDAP;assertion(s;criteria--username;headers--for;SHA;form--for;cleartext;folder(s;SSL-TLS;yuk;HTTP(S;workflow;detail(s;AES;node(s;Avg;IP;min;CDE;Kunststoff;Timeout;login;timeout;SSGAdmin;hostname;Admin;substring;DN;myLDAP;ldap;ldapserver;dc=com;myMSAD;ou=Layer;dc=LOCAL;hostname.domain;mygateway;mycompany.com;mygateway.mycompany.com.;IIS;mail.abc.com;ou=ABC;dc=ABC;mybrowse;mypassword;LdapErr;vece;findAllHeaders;myName;myPassword;myCompany;SLA;ReType;Inc;cred;certs;Xml;HttpClientCert;n.m;xxxx;System.NullReferenceException;C;IPAddress;MyGateway;MyGateway.MyCompany.com.;MyGateway.MyCompany.com;servername.company.com.;SLL;Wsdl;screenshots;ui;searchability;JGoodies;XP;connection(s">
 
 
@@ -39,12 +39,32 @@
 
 <h1>SecureSpan™ Manager Workflow</h1>
 
+<div style="padding: 5px;
+			background-color: #f8fbdd;
+			margin-left: 4px;
+			margin-right: 4px;
+			margin-top: 4px;
+			margin-bottom: 4px;
+			float: none;
+			width: 550px;">
+<p class="tipsnotes"><b style="font-weight: bold;"><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
+			width: 16px;
+			height: 15px;
+			float: none;
+			border-style: none;
+			border-style: none;" width="16" height="15" border="0"> &nbsp;</B></span>NOTE:</b> 
+ The following workflow applies to the Administrator Interface. See <a href="SecureSpan_Manager_Operator_Documentation.htm">SecureSpan™ Manager 
+ Operator Documentation</a> for a list of the features available in the 
+ Operator Interface. For more information about the SecureSpan™ Manager 
+ interfaces, see <a href="SecureSpan_Manager_Interfaces.htm">SecureSpan™ 
+ Manager Interfaces</a>.</p>
+</div>
+
 <p>Several SecureSpan™ Manager components are required before you can leverage 
  the SecureSpan™ Gateway's functionality. Since every organization will 
- use the SecureSpan™ Manager differently, the following list includes the 
- key tasks for configuring and using the Manager. For assistance in the 
- configuration process, contact a Technical Support Representative as outlined 
- in <a href="Technical_Support_and_Contact_Information.htm">Technical Support 
+ use the Manager differently, the following list includes the key tasks 
+ for configuring and using the Manager. For assistance in the configuration 
+ process, contact a Technical Support Representative as outlined in <a href="Technical_Support_and_Contact_Information.htm">Technical Support 
  and Contact Information</a>.</p>
 
 <h3>General Workflow:</h3>
@@ -59,34 +79,56 @@
  or to establish a connection to an additional Gateway, see <a href="Connect_to_the_SecureSpan_Gateway.htm">Connect 
  to the SecureSpan™ Gateway</a>.</p></li>
 	
-	<li class="kadov-p"><p>Optionally configure or re-configure the Manager 
- interface display and connection preferences as outlined in <a href="Configure_SecureSpan_Manager_Preferences.htm">Configure 
+	<li class="kadov-p"><p>Optionally configure the Manager interface display 
+ and connection preferences as outlined in <a href="Configure_SecureSpan_Manager_Preferences.htm">Configure 
  SecureSpan<symbol name=Trademark>&#8482; 
  Manager Preferences</a>.</p></li>
 	
-	<li class="kadov-p"><p>Configure External Identity Providers for Web 
- services as outlined in <a href="Add_Edit_External_Identity_Providers.htm">Add 
- and Edit External Identity Providers</a>.</p></li>
-	
-	<li class="kadov-p"><p>Optionally configure users and groups for the 
- Internal Identity Provider as outlined in <a href="Add_Edit_IIP_Users_and_Groups.htm">Add 
+	<li class="kadov-p"><p>Each Gateway Internal Identity Provider (IIP) 
+ is pre-configured with two default access groups (a &quot;Gateway Administrators&quot; 
+ group and a &quot;Gateway Operators&quot; group) and a single default 
+ administrative user (&quot;admin&quot;). Optionally configure additional 
+ users and groups for the IIP as outlined in <a href="Add_Edit_IIP_Users_and_Groups.htm">Add 
  and Edit Internal Identity Provider Groups and Users</a>.</p></li>
 	
-	<li class="kadov-p"><p>Advanced Option: Optionally create WSDL for a 
- new Web service as outlined in <a href="Create_Web_Service_WSDL.htm">Create 
- Web Service WSDL</a>.</p></li>
+	<li class="kadov-p"><p>Configure External Identity Providers as outlined 
+ in <a href="Add_Edit_External_Identity_Providers.htm">Add and Edit External 
+ Identity Providers</a>.</p></li>
 	
-	<li class="kadov-p"><p>Publish a new Web service as outlined in <a HREF="Publish_Web_Services.htm">Publish 
- Web Services</a>.</p></li>
+	<li class="kadov-p"><p>Publish a new SOAP Web service as outlined in 
+ <a HREF="Manage_SOAP_Web_Services.htm">Manage SOAP Web Services</a> and/or 
+ publish an XML application as outlined in <a href="Manage_XML_Applications.htm">Manage 
+ XML Applications</a>.</p></li>
 	
 	<li class="kadov-p"><p>Construct a valid security policy for a published 
- Web service as outlined in <a href="Web_Service_Security_Policies_Overview.htm">Web 
- Service Security Policies Overview</a>.</p></li>
+ service as outlined in <a href="Security_Policies_Overview.htm">Security 
+ Policies Overview</a>.</p></li>
 	
-	<li class="kadov-p"><p>Optionally view and analyze the performance of 
- the Gateway as outlined in <a HREF="SecureSpan_Gateway_Analysis_Overview.htm">SecureSpan™ 
+	<li class="kadov-p"><p>Optionally view, audit, and analyze the performance 
+ of the Gateway as outlined in <a HREF="SecureSpan_Gateway_Analysis_Overview.htm">SecureSpan™ 
  Gateway Analysis Overview</a>.</p></li>
 </ol>
+
+<h6>&nbsp;</h6>
+
+<div style="padding: 5px;
+			background-color: #f8fbdd;
+			margin-left: 4px;
+			margin-right: 4px;
+			margin-top: 4px;
+			margin-bottom: 4px;
+			float: none;
+			width: 550px;">
+<p class="tipsnotes"><b style="font-weight: bold;"><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
+			width: 16px;
+			height: 15px;
+			float: none;
+			border-style: none;
+			border-style: none;" width="16" height="15" border="0"> &nbsp;</B></span>NOTE:</b> 
+ For information on the steps required to configure identity bridging in 
+ the SecureSpan™ Manager and SecureSpan™ Bridge, see <a href="Identity_Bridging_Overview.htm">Identity 
+ Bridging Overview</a>.</p>
+</div>
 
 <h6>&nbsp;</h6>
 
@@ -94,6 +136,8 @@
 
 <p><a href="Connect_to_the_SecureSpan_Gateway.htm">Connect to the SecureSpan™ 
  Gateway</a></p>
+
+<h6>&nbsp;</h6>
 
 </body>
 

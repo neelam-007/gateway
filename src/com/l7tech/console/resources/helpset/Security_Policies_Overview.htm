@@ -1,0 +1,130 @@
+<!doctype HTML public "-//W3C//DTD HTML 4.0 Frameset//EN">
+
+<html>
+
+
+
+
+
+<head>
+
+<title>Security Policies Overview</title>
+
+
+
+ <meta http-equiv=content-type content="text/html; charset=windows-1252">
+<meta name=generator-major-version content=0.1>
+<meta name=generator-minor-version content=1>
+<meta name=filetype content=kadov>
+<meta name=filetype-version content=1>
+<meta name=page-count content=1>
+<meta name=layout-height content=1171>
+<meta name=layout-width content=702>
+<meta name=x-ignored-words content=WSDL>
+
+
+
+
+ <link rel="StyleSheet" href="JavaHelp.css">
+
+
+
+ <META NAME="generator" CONTENT="RoboHelp by eHelp Corporation www.ehelp.com">
+</head>
+
+
+
+
+<body>
+
+<h1>Security Policies Overview</h1>
+
+<div style="padding: 5px;
+			background-color: #f8fbdd;
+			margin-right: 4px;
+			margin-top: 4px;
+			margin-bottom: 4px;
+			float: none;
+			width: 550px;
+			margin-left: 4px;">
+<p class="tipsnotes"><span style="font-weight: bold;"><B><img src="TIPSfinal.gif" x-maintain-ratio="TRUE" style="border: none;
+	width: 16px;
+	height: 14px;
+	float: none;
+	border-style: none;
+	border-style: none;" width="16" height="14" border="0"> &nbsp;TIP:</B></span> 
+ Become familiar with the policy and assertion information and rules in 
+ <a href="Security_Policy_Organization_and_Rules.htm">Security Policy Organization 
+ and Rules</a> before configuring a security policy. </p>
+</div>
+
+<p>The core function of the SecureSpan™ Manager is its ability to centrally 
+ define, provision, monitor, and audit security and integration policies 
+ for Web services and XML applications, collectively referred to as &quot;services.&quot; 
+ </p>
+
+<h6>&nbsp;</h6>
+
+<p>After a service is published using the Publish Web Service Wizard (see 
+ <a href="Manage_SOAP_Web_Services.htm">Manage SOAP Web Services</a>), 
+ Create WSDL Wizard (see <a href="Manage_SOAP_Web_Services.htm">Manage 
+ SOAP Web Services</a>), or Publish XML Application Wizard (see <a HREF="Manage_XML_Applications.htm">Manage 
+ XML Applications</a>), the service appears in the [Services] tab and an 
+ initial policy is created in the Policy Development window. If a published 
+ Web service WSDL document contained at least one HTTP(S) binding, then 
+ the initial policy will include an HTTP(S) Routing assertion pre-configured 
+ to point to the HTTP(S) binding URL. Before a service is adequately protected, 
+ additional security policy assertions may need to be defined and configured 
+ into a security policy that is saved in the SecureSpan™ Gateway. </p>
+
+<h6>&nbsp;</h6>
+
+<div style="padding: 5px;
+			background-color: #f8fbdd;
+			margin-right: 4px;
+			margin-top: 4px;
+			margin-bottom: 4px;
+			float: none;
+			width: 550px;
+			margin-left: 4px;">
+<p class="tipsnotes"><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
+	width: 16px;
+	height: 15px;
+	float: none;
+	border-style: none;
+	border-style: none;" width="16" height="15" border="0"> &nbsp;NOTE:</B></span> 
+ If an authentication method and authorization to specific users and/or 
+ groups was defined during the Web service or XML application publication 
+ process, then service access will be restricted to those identities in 
+ the initial security policy. The initial security policy will automatically 
+ be populated with an authentication assertion for each Grant Access to 
+ Users/Groups assertion corresponding to each selected identity. See <a href="Configure_Edit_Authentication_Assertions.htm">Configure and Edit 
+ Authentication Assertions</a> for more information.</p>
+</div>
+
+<h6>&nbsp;</h6>
+
+<p>A security policy defines restrictions for the consumption of a published 
+ Gateway-protected service. For more information on security policies and 
+ assertions, see <a href="Security_Policy_Organization_and_Rules.htm">Security 
+ Policy Organization and Rules</a>. For information on the interface areas 
+ related to services and security policies, see <a href="SecureSpan_Manager_Interfaces.htm">SecureSpan<symbol 
+ name=Trademark>&#8482; Manager Interfaces</a>. 
+ For information on using and configuring the security policy assertions 
+ in the [Assertions] tab, see <a href="Security_Policy_Assertions_Overview.htm">Security 
+ Policy Assertions Overview</a>. For information on configuring a security 
+ policy in the Policy Development window, see <a href="Configure_Edit_Security_Policies.htm">Configure 
+ and Edit Security Policies</a>.</p>
+
+<h6>&nbsp;</h6>
+
+<h4>Next Topic: </h4>
+
+<p><a href="Security_Policy_Assertions_Overview.htm">Security Policy Assertions 
+ Overview</a></p>
+
+<h6>&nbsp;</h6>
+
+</body>
+
+</html>

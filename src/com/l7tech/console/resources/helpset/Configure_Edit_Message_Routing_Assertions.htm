@@ -18,8 +18,8 @@
 <meta name=filetype content=kadov>
 <meta name=filetype-version content=1>
 <meta name=page-count content=1>
-<meta name=layout-height content=3001>
-<meta name=layout-width content=799>
+<meta name=layout-height content=2962>
+<meta name=layout-width content=773>
 <meta name=x-ignored-words content="Workflow;WSDL;TLS;Uptime;uptime;Unix;SecureSpan;cert;francis;LDAP;firewall;policy.templates;admin;popup;user(s;CTRL;Login;SSL;WS;username;Username;Xml-based;DMZ;non-invasively;Linux;Solaris;internetworking;SOAPAction;Beatty;ext;GUI-based;GUI;scalable;PKI-based;offloads;toolset;WS-Security;Services@https;servername;namespace;Gateway(s;XPath;SAML;NotOnOrAfter;saml;requestor;tempuri.org;Name.wsdl;Namespace;yourcompany.com;MyWebService.wsdl.;schemas.xmlsoap.org;wsdl;URIs;GetQuoteResponse;stockSymbol;StockInfo;getQuote;getQuoteRequest;getQuoteResponse;operation(s;StockServiceSOAPBinding;StockQuote;localhost;ws;TCP;GenericLDAP;MSAD;IIPs;TivoliLDAP;assertion(s;criteria--username;headers--for;SHA;form--for;cleartext;folder(s;SSL-TLS;yuk;HTTP(S;workflow;detail(s;AES;node(s;Avg;IP;min;CDE;Kunststoff;Timeout;login;timeout;SSGAdmin;hostname;Admin;substring;DN;myLDAP;ldap;ldapserver;dc=com;myMSAD;ou=Layer;dc=LOCAL;hostname.domain;mygateway;mycompany.com;mygateway.mycompany.com.;IIS;mail.abc.com;ou=ABC;dc=ABC;mybrowse;mypassword;LdapErr;vece;findAllHeaders;myName;myPassword;myCompany;SLA;ReType;Inc;cred;certs;Xml;HttpClientCert;n.m;xxxx;System.NullReferenceException;C;IPAddress;MyGateway;MyGateway.MyCompany.com.;MyGateway.MyCompany.com;servername.company.com.;SLL;Wsdl;screenshots;ui;searchability;JGoodies;XP;connection(s;JMS;Expiry;PDF">
 
 
@@ -47,45 +47,73 @@
 			float: none;
 			width: 550px;
 			margin-left: 4px;">
-<p class="tipsnotes"><span style="font-weight: bold;"><B>NOTE:</B></span> The JMS 
- Routing assertion in the Message Routing category of the [Assertions] 
- tab is part of the JMS functionality add-on available for the SecureSpan™ 
- Manager. It is disabled in regular versions. Contact a Technical Support 
- Representative as outlined in <a href="Technical_Support_and_Contact_Information.htm">Technical 
- Support and Contact Information</a> for more information.</p>
+<p class="tipsnotes"><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
+	width: 16px;
+	height: 15px;
+	float: none;
+	border-style: none;
+	border-style: none;" width="16" height="15" border="0"> &nbsp;NOTE:</B></span> 
+ The JMS Routing assertion in the Message Routing category is an optional 
+ assertion that is disabled in standard versions of the SecureSpan™ Solution. 
+ See <a href="Optional_Add-On_Assertion_Overview.htm">Optional Add-On Assertions 
+ Overview</a> for more information. </p>
 </div>
 
 <p style="margin-bottom: 9pt;">In the SecureSpan™ Manager, two assertions 
  are available in the Message Routing category of the [Assertions] tab: 
- A custom JMS Routing assertion that is addressed in the <span style="font-style: italic;"><I>SecureSpan™ 
- Solution Supplementary Guide: Installing, Configuring, and Using JMS</I></span> 
- PDF, and an HTTP(S) Routing assertion discussed below:</p>
+ An optional JMS Routing assertion that is addressed in <a href="Optional_Add-On_Assertion_Overview.htm">Optional 
+ Add-On Assertions Overview</a>, and an HTTP(S) Routing assertion discussed 
+ below:</p>
+
+<h6>&nbsp;</h6>
 
 <p><img src="RoutAssens.gif" x-maintain-ratio="TRUE" style="border: none;
+				width: 254px;
+				height: 288px;
 				margin-left: 0px;
 				margin-right: 0px;
-				margin-top: 4px;
-				margin-bottom: 10px;
-				width: 250px;
-				height: 264px;
+				margin-top: 10px;
+				margin-bottom: 2px;
 				float: none;
 				border-style: none;
-				border-style: none;" width="250" height="264" border="0"></p>
+				border-style: none;" width="254" height="288" border="0"></p>
+
+<h6 style="color: #7c7c7c;
+			margin-top: 2pt;
+			margin-bottom: 10pt;">The Message Routing Category of the [Assertions] 
+ Tab</h6>
 
 <h2>HTTP(S) Routing</h2>
 
-<p>The HTTP(S) Routing assertion defines where a Web service message is 
- sent and what authentication credentials it uses. A message routing assertion 
- is an essential security policy element. When you publish a Web service 
- using the Publish Web Service Wizard or Create WSDL Wizard, the SecureSpan™ 
- Manager automatically adds the Web service URL specified during the publication 
- process as an HTTP(S) Routing assertion in the published Web service's 
- initial security policy. For information on publishing a Web service, 
- see <a href="Publish_Web_Services.htm">Publish Web Services</a>. For information 
- on creating WSDL for a new Web service, see <a href="Create_Web_Service_WSDL.htm">Create 
- Web Service WSDL</a>. </p>
+<div style="padding: 5px;
+			background-color: #f8fbdd;
+			margin-right: 4px;
+			margin-top: 4px;
+			margin-bottom: 4px;
+			float: none;
+			width: 550px;
+			margin-left: 4px;">
+<p class="tipsnotes"><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
+	width: 16px;
+	height: 15px;
+	float: none;
+	border-style: none;
+	border-style: none;" width="16" height="15" border="0"> &nbsp;NOTE:</B></span> 
+ The HTTP(S) Routing assertion supports the HTTP 1.1 standard.</p>
+</div>
 
-<h3><a name=Configure_the_HTTP_S__Routing_Assertion>Configure the HTTP(S) 
+<p>The HTTP(S) Routing assertion defines where a Web service or XML application 
+ message is sent and what authentication credentials it uses. A message 
+ routing assertion is an essential security policy element. When you publish 
+ a service using the Publish Web Service Wizard, Create WSDL Wizard, or 
+ Publish XML Application Wizard, the SecureSpan™ Manager automatically 
+ adds the service URL specified during the publication process as an HTTP(S) 
+ Routing assertion in the published service's initial security policy. 
+ For information on publishing a service, see <a href="Services_Overview.htm">Services 
+ Overview</a>. </p>
+
+<h3 style="color: #000000;"><a name=Configure_the_HTTP_S__Routing_Assertion
+								style="color: #000000;">Configure the HTTP(S) 
  Routing Assertion</a></h3>
 
 <div style="padding: 5px;
@@ -96,11 +124,16 @@
 			float: none;
 			width: 550px;
 			margin-left: 4px;">
-<p class="tipsnotes"><span style="font-weight: bold;"><B>NOTE:</B></span> The HTTP(S) 
- Routing assertion should already be present in the Policy Development 
- window. If not, then add the assertion by one of the following methods: 
- 1. Drag and drop the assertion from the [Assertions] tab into the Policy 
- Development window or, 2. Highlight the assertion in the [Assertions] 
+<p class="tipsnotes"><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
+	width: 16px;
+	height: 15px;
+	float: none;
+	border-style: none;
+	border-style: none;" width="16" height="15" border="0"> &nbsp;NOTE:</B></span> 
+ The HTTP(S) Routing assertion should already be present in the Policy 
+ Development window. If not, then add the assertion by one of the following 
+ methods: 1. Drag and drop the assertion from the [Assertions] tab into 
+ the Policy Development window or, 2. Highlight the assertion in the [Assertions] 
  tab and click the <img src="MoveAssertionOver.gif" x-maintain-ratio="TRUE" style="border: none;
 								width: 22px;
 								height: 18px;
@@ -110,9 +143,11 @@
 								margin-bottom: -2.5px;
 								float: none;
 								border-style: none;
-								border-style: none;" width="22" height="18" border="0"> &nbsp;(Move 
+								border-style: none;" width="22" height="18" border="0"> &nbsp;(Add 
  Assertion) button in the Assertion Tool Bar.</p>
 </div>
+
+<h6>&nbsp;</h6>
 
 <ol style="list-style: decimal;"
 	type=1>
@@ -130,17 +165,22 @@
 			float: none;
 			width: 550px;
 			margin-left: 44px;">
-<p class="tipsnotes"><span style="font-weight: bold;"><B>TIP:</B></span> You can 
- also double-click the assertion in the Policy Development window to open 
- the HTTP Routing Properties form. &nbsp;&nbsp;</p>
+<p class="tipsnotes"><span style="font-weight: bold;"><B><img src="TIPSfinal.gif" x-maintain-ratio="TRUE" style="border: none;
+	width: 16px;
+	height: 14px;
+	float: none;
+	border-style: none;
+	border-style: none;" width="16" height="14" border="0"> &nbsp;TIP:</B></span> 
+ You can also double-click the assertion in the Policy Development window 
+ to open the HTTP(S) Routing Properties form. &nbsp;&nbsp;</p>
 </div>
 
 <ol start=2
 	style="list-style: decimal;"
 	type=1>
 	
-	<li class="kadov-p"><p>The HTTP Routing Properties form appears. If required, 
- edit the URL path to the Web service in the <span style="font-weight: bold;"><B>Service 
+	<li class="kadov-p"><p>The HTTP(S) Routing Properties form appears. If 
+ required, edit the URL path to the service in the <span style="font-weight: bold;"><B>Service 
  URL</B></span> field. </p></li>
 </ol>
 
@@ -152,30 +192,24 @@
 			float: none;
 			width: 550px;
 			margin-left: 44px;">
-<p class="tipsnotes"><span style="font-weight: bold;"><B>TIP:</B></span> Click [Default] 
- to populate the Service URL field with the URL specified during the Web 
- service publication process.</p>
+<p class="tipsnotes"><span style="font-weight: bold;"><B><img src="TIPSfinal.gif" x-maintain-ratio="TRUE" style="border: none;
+	width: 16px;
+	height: 14px;
+	float: none;
+	border-style: none;
+	border-style: none;" width="16" height="14" border="0"> &nbsp;TIP:</B></span> 
+ Click [Default] to populate the Service URL field with the URL specified 
+ during the service publication process.</p>
 </div>
 
 <ol start=3
 	style="list-style: decimal;"
 	type=1>
 	
-	<li class="kadov-p"><p>In the Web Service Authentication section of the 
- form, optionally configure one of the following authentication options 
- for the Web service:</p></li>
+	<li class="kadov-p"><p>In the Service Authentication section of the form, 
+ optionally configure one of the following authentication options for the 
+ service:</p></li>
 </ol>
-
-<p style="margin-left: 40px;"><img src="HTTPRouting.gif" x-maintain-ratio="TRUE" style="border: none;
-											margin-left: 0px;
-											margin-right: 0px;
-											margin-top: 4px;
-											margin-bottom: 10px;
-											width: 460px;
-											height: 302px;
-											float: none;
-											border-style: none;
-											border-style: none;" width="460" height="302" border="0"></p>
 
 <div style="padding: 5px;
 			background-color: #f8fbdd;
@@ -185,12 +219,22 @@
 			float: none;
 			width: 550px;
 			margin-left: 44px;">
-<p class="tipsnotes"><span style="font-weight: bold;"><B>NOTE:</B></span> No credentials 
- are required for an anonymous Web service. </p>
+<p class="tipsnotes"><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
+	width: 16px;
+	height: 15px;
+	float: none;
+	border-style: none;
+	border-style: none;" width="16" height="15" border="0"> &nbsp;NOTE:</B></span> 
+ No credentials are required for an anonymous service. </p>
 </div>
 
 <h4 style="margin-left: 40px;">Identity Authentication</h4>
 
+<p style="margin-left: 40px;">To enable HTTP basic authentication to a 
+ protected resource back-end: </p>
+
+<h6>&nbsp;</h6>
+
 <div style="padding: 5px;
 			background-color: #f8fbdd;
 			margin-right: 4px;
@@ -199,15 +243,20 @@
 			float: none;
 			width: 550px;
 			margin-left: 44px;">
-<p class="tipsnotes"><span style="font-weight: bold;"><B>NOTE:</B></span> For more 
- information on authentication assertions, see <a href="Configure_Edit_Authentication_Assertions.htm">Configure 
- and Edit Authentication Assertions</a>.</p>
+<p class="tipsnotes"><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
+	width: 16px;
+	height: 15px;
+	float: none;
+	border-style: none;
+	border-style: none;" width="16" height="15" border="0"> &nbsp;NOTE:</B></span> 
+ For more information about the HTTP Basic authentication assertion, see 
+ <a href="Configure_Edit_Authentication_Assertions.htm">Configure and Edit 
+ Authentication Assertions</a>.</p>
 </div>
 
-<p style="margin-left: 40px;">To require authentication through identity 
- information: </p>
+<h6>&nbsp;</h6>
 
-<ul style="list-style: decimal;"
+<ol style="list-style: decimal;"
 	type=1>
 	
 	<ol style="list-style: decimal;"
@@ -226,9 +275,43 @@
  style="font-weight: bold;"><B>Realm</B></span> field. The realm can be a secure 
  virtual host or a directory.</p></li>
 		
+		<li style="/*begin!kadov{{*/ color: #000000; /*}}end!kadov*/ " class="kadov-p"><p style="color: #000000;">Check the optional 
+ <span style="font-weight: bold;"><B>TAI Identity Pass</B></span> check box to 
+ provide a Trust Association Interceptor (TAI) third-party authentication 
+ pass. </p></li>
+	</ol>
+</ol>
+
+<div style="padding: 5px;
+			background-color: #f8fbdd;
+			margin-right: 4px;
+			margin-top: 4px;
+			margin-bottom: 4px;
+			float: none;
+			width: 550px;
+			margin-left: 84px;">
+<p class="tipsnotes"><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
+	width: 16px;
+	height: 15px;
+	float: none;
+	border-style: none;
+	border-style: none;" width="16" height="15" border="0"> &nbsp;NOTE:</B></span> 
+ The TAI Identity Pass option configures the SecureSpan™ Gateway to include 
+ an IV_USER=username tag in an authenticated outgoing back-end request 
+ as both an HTTP cookie and as an HTTP header. In the tag, the &quot;username&quot; 
+ is the user name of the authenticated user.</p>
+</div>
+
+<ol style="list-style: decimal;"
+	type=1>
+	
+	<ol start=6
+		style="list-style: decimal;"
+		type=1>
+		
 		<li class="kadov-p"><p>Proceed to Step #4.</p></li>
 	</ol>
-</ul>
+</ol>
 
 <h4 style="margin-left: 40px;">SAML Security</h4>
 
@@ -240,14 +323,51 @@
 			float: none;
 			width: 550px;
 			margin-left: 44px;">
-<p class="tipsnotes"><span style="font-weight: bold;"><B>NOTE:</B></span> For more 
- information on SAML Security, see <a href="Configure_Edit_XML_Security_Assertions.htm">Configure 
- and Edit XML Security Assertions</a>.</p>
+<p class="tipsnotes"><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
+	width: 16px;
+	height: 15px;
+	float: none;
+	border-style: none;
+	border-style: none;" width="16" height="15" border="0"> &nbsp;NOTE:</B></span> 
+ The SAML Security option is only enabled for Web service security policies. 
+ </p>
 </div>
 
-<p style="margin-left: 40px;">To require SAML authentication:</p>
+<p style="margin-left: 40px;">The HTTP(S) Routing assertion can optionally 
+ attach a SAML sender-vouches ticket to each outgoing back-end request 
+ that was authenticated by the SecureSpan™ Gateway. This ticket contains 
+ the user name of the authenticated user along with an expiry time, and 
+ is signed by the Gateway using the Gateway's SSL certificate. To enable 
+ SAML authentication in the HTTP(S) Routing assertion:</p>
 
-<ul style="list-style: decimal;"
+<h6>&nbsp;</h6>
+
+<div style="padding: 5px;
+			background-color: #f8fbdd;
+			margin-right: 4px;
+			margin-top: 4px;
+			margin-bottom: 4px;
+			float: none;
+			width: 550px;
+			margin-left: 44px;">
+<p class="tipsnotes"><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
+	width: 16px;
+	height: 15px;
+	float: none;
+	border-style: none;
+	border-style: none;" width="16" height="15" border="0"> &nbsp;NOTE:</B></span> 
+ The SAML security option in the HTTP(S) Routing assertion differs from 
+ the SAML Security assertion in the Authentication category of the [Assertions] 
+ tab. The SAML Security authentication assertion is used in an identity 
+ bridging configuration to require that the incoming front-end request 
+ be signed and include a SAML holder-of-key ticket. See <a href="Configure_Edit_Authentication_Assertions.htm">Configure 
+ and Edit Authentication Assertions</a> and <a href="Identity_Bridging_Workflow.htm">Identity 
+ Bridging Workflow Using SAML</a> for more information.</p>
+</div>
+
+<h6>&nbsp;</h6>
+
+<ol style="list-style: decimal;"
 	type=1>
 	
 	<ol style="list-style: decimal;"
@@ -260,35 +380,11 @@
  the SAML ticket in the <span style="font-weight: bold;"><B>Ticket Expiry 
  (in minutes)</B></span> field.</p></li>
 		
-		<li class="kadov-p"><p>Optional: Check the <span style="font-weight: bold;"><B>Group 
- Membership Statement</B></span> check box to require a group membership statement 
- in the SAML ticket. </p></li>
-	</ol>
-</ul>
-
-<div style="padding: 5px;
-			background-color: #f8fbdd;
-			margin-right: 4px;
-			margin-top: 4px;
-			margin-bottom: 4px;
-			float: none;
-			width: 550px;
-			margin-left: 84px;">
-<p class="tipsnotes"><span style="font-weight: bold;"><B>NOTE:</B></span> A group 
- membership statement can be used to perform fine grained security decisions 
- based on subject group membership. </p>
-</div>
-
-<ul style="list-style: decimal;"
-	type=1>
-	
-	<ol start=4
-		style="list-style: decimal;"
-		type=1>
-		
 		<li style="/*begin!kadov{{*/ color: #000000; /*}}end!kadov*/ " class="kadov-p"><p style="color: #000000;">Proceed to Step #4.</p></li>
 	</ol>
-</ul>
+</ol>
+
+<h6>&nbsp;</h6>
 
 <ol start=4
 	style="list-style: decimal;"
@@ -300,13 +396,13 @@
 
 <h3>Edit the HTTP(S) Routing Assertion</h3>
 
-<ol style="list-style: decimal;"
-	type=1>
+<ul style="list-style: disc;"
+	type=disc>
 	
 	<li class="kadov-p"><p>In the Policy Development window, right-click 
  the &quot;Route to http&quot; assertion. A drop-down menu appears. Select 
  <span style="font-weight: bold;"><B>Routing Properties</B></span>.</p></li>
-</ol>
+</ul>
 
 <div style="padding: 5px;
 			background-color: #f8fbdd;
@@ -316,29 +412,32 @@
 			float: none;
 			width: 550px;
 			margin-left: 44px;">
-<p class="tipsnotes"><span style="font-weight: bold;"><B>TIP:</B></span> You can 
- also double-click the assertion in the Policy Development window to open 
- the HTTP Routing Properties form. &nbsp;&nbsp;</p>
+<p class="tipsnotes"><span style="font-weight: bold;"><B><img src="TIPSfinal.gif" x-maintain-ratio="TRUE" style="border: none;
+	width: 16px;
+	height: 14px;
+	float: none;
+	border-style: none;
+	border-style: none;" width="16" height="14" border="0"> &nbsp;TIP:</B></span> 
+ You can also double-click the assertion in the Policy Development window 
+ to open the HTTP(S) Routing Properties form. &nbsp;&nbsp;</p>
 </div>
 
-<ol start=2
-	style="list-style: decimal;"
-	type=1>
+<ul style="list-style: disc;"
+	type=disc>
 	
-	<li class="kadov-p"><p>The HTTP Routing Properties form appears. Edit 
- the properties as outlined in <a href="#Configure_the_HTTP_S__Routing_Assertion">Configure 
- the HTTP(S) Routing Assertion</a>. </p></li>
-	
-	<li class="kadov-p"><p>Click [<span style="font-weight: bold;"><B>OK</B></span>]. 
- The modified assertion is added to the Policy Development window.</p></li>
-</ol>
+	<li class="kadov-p"><p>The HTTP(S) Routing Properties form appears. Edit 
+ the properties as outlined in Steps #2-4 in <a href="#Configure_the_HTTP_S__Routing_Assertion">Configure 
+ the HTTP(S) Routing Assertion</a>.</p></li>
+</ul>
 
 <h6>&nbsp;</h6>
 
 <h4>Next Topic: </h4>
 
-<p><a href="Configure_Edit_Web_Service_Availability_Assertions.htm">Configure 
- and Edit Web Service Availability Assertions</a></p>
+<p><a href="Configure_Edit_Service_Availability_Assertions.htm">Configure 
+ and Edit Service Availability Assertions</a></p>
+
+<h6>&nbsp;</h6>
 
 </body>
 

@@ -1,0 +1,370 @@
+<!doctype HTML public "-//W3C//DTD HTML 4.0 Frameset//EN">
+
+<html>
+
+
+
+
+
+<head>
+
+<title>Security Policy Organization and Rules</title>
+
+
+
+ <meta http-equiv=content-type content="text/html; charset=windows-1252">
+<meta name=generator-major-version content=0.1>
+<meta name=generator-minor-version content=1>
+<meta name=filetype content=kadov>
+<meta name=filetype-version content=1>
+<meta name=page-count content=1>
+<meta name=layout-height content=3855>
+<meta name=layout-width content=773>
+<meta name=x-ignored-words content=SandraV>
+
+
+
+
+ <link rel="StyleSheet" href="JavaHelp.css">
+
+
+
+ <META NAME="generator" CONTENT="RoboHelp by eHelp Corporation www.ehelp.com">
+</head>
+
+
+
+
+<body>
+
+<h1>Security Policy Organization and Rules</h1>
+
+<div style="padding: 5px;
+			background-color: #f8fbdd;
+			margin-right: 4px;
+			margin-top: 4px;
+			margin-bottom: 4px;
+			float: none;
+			width: 550px;
+			margin-left: 4px;">
+<p class="tipsnotes"><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
+	width: 16px;
+	height: 15px;
+	float: none;
+	border-style: none;
+	border-style: none;" width="16" height="15" border="0"> &nbsp;NOTE:</B></span> 
+ In the SecureSpan™ Manager, the term &quot;identity&quot; includes both 
+ users and groups, and the term &quot;user&quot; represents an individual 
+ human or machine. Become familiar with the policy and assertion information 
+ and rules before you construct a security policy. See <a href="Security_Policy_Examples.htm">Security 
+ Policy Examples</a> for reference-only examples.</p>
+</div>
+
+<p>In the SecureSpan™ Manager, a security policy includes assertions that 
+ determine the essential authentication method, identity credentials, transport 
+ method, and routing method for the Web service or XML application. The 
+ specific types of assertions, their relative location, and the other assertions 
+ determine the properties and validity of a security policy.</p>
+
+<h6>&nbsp;</h6>
+
+<h4>Quick Links:</h4>
+
+<p class="quicklinks"><a href="#General_Policy_Organization">General Policy 
+ Organization</a></p>
+
+<p class="quicklinks"><a href="#General_Assertion_Organization_and_Dependency_Rules">Assertion 
+ Organization and Dependency Rules</a></p>
+
+<h2 style="color: #000000;"><a name=General_Policy_Organization
+								style="color: #000000;">General Policy 
+ Organization</a></h2>
+
+<p>The assertions in the [Assertions] tab are organized into categories 
+ corresponding to the main requirements of a security policy: </p>
+
+<h6>&nbsp;</h6>
+
+<div style="padding: 5px;
+			background-color: #f8fbdd;
+			margin-right: 4px;
+			margin-top: 4px;
+			margin-bottom: 4px;
+			float: none;
+			width: 550px;
+			margin-left: 4px;">
+<p class="tipsnotes"><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
+	width: 16px;
+	height: 15px;
+	float: none;
+	border-style: none;
+	border-style: none;" width="16" height="15" border="0"> &nbsp;NOTE:</B></span> 
+ For in-depth information about the assertions in the [Assertions] tab, 
+ see <a href="Security_Policy_Assertions_Overview.htm">Security Policy 
+ Assertions Overview</a>.</p>
+</div>
+
+<h6>&nbsp;</h6>
+
+<ul style="list-style: disc;"
+	type=disc>
+	
+	<li class="kadov-p"><p style="margin-top: 4.5pt;">Authentication </p></li>
+	
+	<li class="kadov-p"><p>Transport Layer Security (TLS) </p></li>
+	
+	<li class="kadov-p"><p>XML Security </p></li>
+	
+	<li class="kadov-p"><p>Message Validation/Transformation </p></li>
+	
+	<li class="kadov-p"><p>Message Routing </p></li>
+	
+	<li class="kadov-p"><p>Service Availability </p></li>
+	
+	<li class="kadov-p"><p>Logging and Auditing. </p></li>
+</ul>
+
+<h6>&nbsp;</h6>
+
+<div style="padding: 5px;
+			background-color: #f8fbdd;
+			margin-right: 4px;
+			margin-top: 4px;
+			margin-bottom: 4px;
+			float: none;
+			width: 550px;
+			margin-left: 4px;">
+<p class="tipsnotes"><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
+	width: 16px;
+	height: 15px;
+	float: none;
+	border-style: none;
+	border-style: none;" width="16" height="15" border="0"> &nbsp;NOTE:</B></span> 
+ The Policy Templates section is the repository for exported security policies. 
+ See <a href="#Import_or_Export_a_Security_Policy">Import or Export Security 
+ Policies</a>.</p>
+</div>
+
+<h6>&nbsp;</h6>
+
+<p>A security policy is constructed by moving assertions from the [Assertions] 
+ tab into a meaningful and ordered tree structure in the Policy Development 
+ window. During processing, the SecureSpan™ Gateway scans the policy assertions 
+ one-by-one and from top to bottom. The message processing model for a 
+ typical security policy is:</p>
+
+<h6>&nbsp;</h6>
+
+<ol style="list-style: decimal;"
+	type=1>
+	
+	<li class="kadov-p"><p>Service request arrives.</p></li>
+	
+	<li class="kadov-p"><p>Request is run through the WS-Security processor: 
+ </p></li>
+</ol>
+
+<ul>
+	
+	<ul>
+		
+		<li style="list-style: disc;" type="disc" class="kadov-p"><p>Encrypted sections are decrypted and WS-Security 
+ Signatures are verified. The sign and/or encrypt order is chosen by the 
+ sender </p></li>
+		
+		<li style="list-style: disc;" type="disc" class="kadov-p"><p>Default security header is removed.</p></li>
+	</ul>
+</ul>
+
+<ol start=3
+	style="list-style: decimal;"
+	type=1>
+	
+	<li class="kadov-p"><p>Request is run through the security policy assertions:</p></li>
+</ol>
+
+<ul>
+	
+	<ul>
+		
+		<li style="list-style: disc;" type="disc" class="kadov-p"><p>Routing assertion sends a request to the Web 
+ service server </p></li>
+		
+		<li style="list-style: disc;" type="disc" class="kadov-p"><p>Remainder of policy assertions are applied 
+ to the service response.</p></li>
+	</ul>
+</ul>
+
+<ol start=4
+	style="list-style: decimal;"
+	type=1>
+	
+	<li class="kadov-p"><p>Response is run through the WS-Security decorator: 
+ </p></li>
+</ol>
+
+<ul>
+	
+	<ul>
+		
+		<li style="list-style: disc;" type="disc" class="kadov-p"><p>Default security header is created </p></li>
+		
+		<li style="list-style: disc;" type="disc" class="kadov-p"><p>Signatures specified by the security policy 
+ are applied </p></li>
+		
+		<li style="list-style: disc;" type="disc" class="kadov-p"><p>Encryption specified by the security policy 
+ is performed.</p></li>
+	</ul>
+</ul>
+
+<ol start=5
+	style="list-style: decimal;"
+	type=1>
+	
+	<li class="kadov-p"><p>Response is sent back to the client.</p></li>
+</ol>
+
+<h6 style="margin-top: 0pt; margin-bottom: 0pt;">&nbsp;</h6>
+
+<p>Each processed assertion has an outcome: It either succeeds or fails. 
+ When assertions are grouped into an &quot;At least one assertion must 
+ evaluate to true&quot; folder in the Policy Development window, each successive 
+ child assertion is processed until a single assertion succeeds, yielding 
+ a success outcome for the folder. If all child assertions in an &quot;At 
+ least one assertion must evaluate to true&quot; folder fail, then the 
+ overall folder fails. Similarly, when assertions are grouped into an &quot;All 
+ assertions must evaluate to true&quot; folder, each successive child assertion 
+ is processed until all assertions succeed, yielding a success outcome 
+ for the folder. Processing in the &quot;All assertions must evaluate to 
+ true&quot; folder will stop when the first child assertion fails, yielding 
+ a fail outcome for the folder. Each security policy contains an implicit 
+ &quot;all must be true&quot; assertion that requires that all first-level 
+ (non-child) assertions (including first-level folders) succeed in order 
+ for the overall security policy to succeed. If all first-level assertions 
+ succeed, then the service requestor will receive a response message. If 
+ a first-level assertion fails, then the service requestor will receive 
+ an error message.</p>
+
+<h6>&nbsp;</h6>
+
+<p><img src="LevelSS.gif" x-maintain-ratio="TRUE" style="border: none;
+				margin-left: 0px;
+				margin-right: 0px;
+				width: 501px;
+				height: 330px;
+				margin-bottom: 2px;
+				margin-top: 10px;
+				float: none;
+				border-style: none;
+				border-style: none;" width="501" height="330" border="0"></p>
+
+<h6 style="margin-bottom: 10pt;
+			color: #7c7c7c;
+			margin-top: 2pt;">A Policy Assertion Tree in the Policy Development 
+ Window</h6>
+
+<h2 style="color: #000000;"><a name=General_Assertion_Organization_and_Dependency_Rules
+								style="color: #000000;">Assertion Organization 
+ and Dependency Rules</a></h2>
+
+<div style="padding: 5px;
+			background-color: #f8fbdd;
+			margin-right: 4px;
+			margin-top: 4px;
+			margin-bottom: 4px;
+			float: none;
+			width: 550px;
+			margin-left: 4px;">
+<p class="tipsnotes"><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
+	width: 16px;
+	height: 15px;
+	float: none;
+	border-style: none;
+	border-style: none;" width="16" height="15" border="0"> &nbsp;NOTE:</B></span> 
+ If an organization or dependency conflict occurs in the Policy Development 
+ window, the SecureSpan™ Manager will display a notification message in 
+ the Policy Validation Messages window. To enable the window, select [View] 
+ &gt; Policy Messages from the Main Menu (check box checked). For more 
+ information, see <a href="Configure_Edit_Security_Policies.htm">Configure 
+ and Edit Security Policies</a>.</p>
+</div>
+
+<p>Some security policy assertions work together and require the presence 
+ of each other to succeed. The Grant Access to Users/Groups assertion &quot;User: 
+ SandraV,&quot; for example, requires the presence of an authentication 
+ assertion, such as HTTP Client Certificate, to provide the credentials 
+ for validating SandraV's identity. This arrangement will fail unless the 
+ authentication assertion appears before the identity that it is providing 
+ credentials for. In a security policy, therefore, both the presence and 
+ relative locations of dependent assertions determines their individual 
+ success and the overall validity of the policy.</p>
+
+<h6 style="margin-top: 0pt; margin-bottom: 0pt;">&nbsp;</h6>
+
+<p style="margin-bottom: 9pt;">Since each security policy contains an inherent 
+ &quot;All&quot; assertion for first-level assertions and folders, and 
+ since an authentication assertion (such as HTTP Client Certificate) can 
+ only provide credentials for a single user or group, there should not 
+ be more than one first-level Grant Access to Users/Groups assertion in 
+ a policy or within an assertion folder. To grant access to more than one 
+ user or group, place the individual Grant Access to Users/Groups assertion 
+ in an individual &quot;At least one assertion must evaluate to true&quot; 
+ or &quot;All assertions must evaluate to true&quot; folders with an authentication 
+ assertion (and other assertions, as required). In the following security 
+ policy excerpt, for example, the credentials for user &quot;SandraV&quot; 
+ are authenticated by the HTTP Client Certificate method, and the credentials 
+ for user &quot;MilanV&quot; are authenticated by the WSS Signature method. 
+ In each user-specific assertion folder, the authentication assertion appears 
+ before the user assertion, and the other user-specific assertions are 
+ organized according to their individual organization and dependency rules 
+ (see <a href="Security_Policy_Assertions_Overview.htm">Security Policy 
+ Assertions Overview</a>). </p>
+
+<h6>&nbsp;</h6>
+
+<p><img src="SecPoliExcerpt.gif" x-maintain-ratio="TRUE" style="border: none;
+				margin-left: 0px;
+				margin-right: 0px;
+				width: 555px;
+				height: 154px;
+				margin-top: 10px;
+				margin-bottom: 0px;
+				float: none;
+				border-style: none;
+				border-style: none;" width="555" height="154" border="0"></p>
+
+<h6 class="space" style="margin-bottom: 10pt;
+			color: #7c7c7c;
+			margin-top: 0pt;"><span style="color: #7c7c7c;"><font color=#7c7c7c >A Security 
+ Policy with Multiple Identities</font></span></h6>
+
+<h6>&nbsp;</h6>
+
+<p class="space">All assertions — except for the Sign Response Element, Encrypt 
+ Response Element, XSL Transformation, and Validate XML Schema assertions 
+ — must be placed before the message routing assertion in a security policy. 
+ Since assertions in the policy tree are processed from top to bottom, 
+ the location of the routing assertion at the end of the policy ensures 
+ that the other assertion requirements are met before the request is routed 
+ to the protected Web service or XML application. </p>
+
+<h6>&nbsp;</h6>
+
+<p>Additional organization, configuration, and dependency information is 
+ provided by the Policy Validation Messages window during the security 
+ policy construction process and in the individual assertion instructions. 
+ See <a href="Security_Policy_Assertions_Overview.htm">Security Policy 
+ Assertions Overview</a> and <a href="Configure_Edit_Security_Policies.htm">Configure 
+ and Edit Security Policies</a> for more information.</p>
+
+<h6>&nbsp;</h6>
+
+<h4>Next Topic: </h4>
+
+<p><a href="Security_Policy_Examples.htm">Security Policy Examples</a></p>
+
+<h6>&nbsp;</h6>
+
+</body>
+
+</html>

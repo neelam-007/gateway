@@ -1,0 +1,241 @@
+<!doctype HTML public "-//W3C//DTD HTML 4.0 Frameset//EN">
+
+<html>
+
+
+
+
+
+<head>
+
+<title>Configure/Edit Logging and Auditing Assertions</title>
+
+
+
+ <meta http-equiv=content-type content="text/html; charset=windows-1252">
+<meta name=generator-major-version content=0.1>
+<meta name=generator-minor-version content=1>
+<meta name=filetype content=kadov>
+<meta name=filetype-version content=1>
+<meta name=page-count content=1>
+<meta name=layout-height content=1622>
+<meta name=layout-width content=773>
+
+
+
+
+ <link rel="StyleSheet" href="JavaHelp.css">
+
+
+
+ <META NAME="generator" CONTENT="RoboHelp by eHelp Corporation www.ehelp.com">
+</head>
+
+
+
+
+<body>
+
+<h1>Configure and Edit the Logging and Auditing Assertion</h1>
+
+<p style="margin-bottom: 9pt;">In the SecureSpan™ Manager, the following 
+ assertion is available in the Logging and Auditing category of the [Assertions] 
+ tab:</p>
+
+<h6>&nbsp;</h6>
+
+<p><img src="LoggAudAsserts.gif" x-maintain-ratio="TRUE" style="border: none;
+				width: 254px;
+				height: 288px;
+				margin-left: 0px;
+				margin-right: 0px;
+				margin-top: 10px;
+				margin-bottom: 2px;
+				float: none;
+				border-style: none;
+				border-style: none;" width="254" height="288" border="0"></p>
+
+<h6 style="margin-top: 2pt;
+			margin-bottom: 10pt;
+			color: #7c7c7c;">The Logging and Auditing Category of the [Assertions] 
+ Tab</h6>
+
+<h6>&nbsp;</h6>
+
+<h2>Audit Assertion</h2>
+
+<div style="padding: 5px;
+			background-color: #f8fbdd;
+			margin-right: 4px;
+			margin-top: 4px;
+			margin-bottom: 4px;
+			float: none;
+			width: 550px;
+			margin-left: 4px;">
+<p class="tipsnotes"><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
+	width: 16px;
+	height: 15px;
+	float: none;
+	border-style: none;
+	border-style: none;" width="16" height="15" border="0"> &nbsp;NOTE:</B></span> 
+ The Audit Assertion is used in conjunction with the Gateway Audit Events 
+ form. See <a HREF="View_Gateway_Audit_Events.htm">View Gateway Audit Events</a> 
+ for more information.</p>
+</div>
+
+<p style="color: #000000;">The Audit Assertion allows you to control the 
+ service-specific audit events that are saved in the SecureSpan™ Gateway 
+ database. You can set the severity level of the request audit messages 
+ that are collected for analysis in the Gateway Audit Events window. Auditing 
+ events are typically message processing summaries or administrative events, 
+ such as object changes. See <a href="View_Gateway_Audit_Events.htm">View 
+ Gateway Audit Events</a> for more information.</p>
+
+<h6>&nbsp;</h6>
+
+<div style="padding: 5px;
+			background-color: #f8fbdd;
+			margin-right: 4px;
+			margin-top: 4px;
+			margin-bottom: 4px;
+			float: none;
+			width: 550px;
+			margin-left: 4px;">
+<p class="tipsnotes"><span style="font-weight: bold;"><B><img src="TIPSfinal.gif" x-maintain-ratio="TRUE" style="border: none;
+	width: 16px;
+	height: 14px;
+	float: none;
+	border-style: none;
+	border-style: none;" width="16" height="14" border="0"> &nbsp;TIP:</B></span> 
+ The Audit Assertion currently only audits events that are at a SecureSpan™ 
+ Gateway &quot;warning&quot; level or higher. Contact Layer 7 Technologies 
+ to request a lower cutoff severity level, such as &quot;info&quot; or 
+ &quot;finer.&quot; See <a HREF="Technical_Support_and_Contact_Information.htm">Technical 
+ Support and Contact Information</a> for contact information.</p>
+</div>
+
+<h6>&nbsp;</h6>
+
+<ol style="list-style: decimal;"
+	type=1>
+	
+	<li class="kadov-p"><p>Add the assertion to the Policy Development window 
+ by one of two methods:</p></li>
+	
+	<ul style="list-style: disc;"
+		type=disc>
+		
+		<li class="kadov-p"><p>Drag and drop the assertion from the [<span 
+ style="font-weight: bold;"><B>Assertions</B></span>] tab into the Policy Development 
+ window, or &nbsp;</p></li>
+		
+		<li class="kadov-p"><p>Highlight the assertion in the [<span style="font-weight: bold;"><B>Assertions</B></span>] 
+ tab and click the <img src="MoveAssertionOver.gif" x-maintain-ratio="TRUE" style="border: none;
+								width: 22px;
+								height: 18px;
+								margin-left: 0px;
+								margin-right: 0px;
+								margin-top: 0px;
+								margin-bottom: -2.5px;
+								float: none;
+								border-style: none;
+								border-style: none;" width="22" height="18" border="0"> &nbsp;(Add 
+ Assertion) button in the Assertion Tool Bar. </p></li>
+	</ul>
+</ol>
+
+<ol start=2
+	style="list-style: decimal;"
+	type=1>
+	
+	<li class="kadov-p"><p>The &quot;Audit Assertion&quot; assertion is added 
+ to the Policy Development window. Right-click the assertion. A drop-down 
+ menu appears. Select <span style="font-weight: bold;"><B>Audit Assertion 
+ Properties</B></span>.</p></li>
+</ol>
+
+<div style="padding: 5px;
+			background-color: #f8fbdd;
+			margin-right: 4px;
+			margin-top: 4px;
+			margin-bottom: 4px;
+			float: none;
+			width: 550px;
+			margin-left: 44px;">
+<p class="tipsnotes"><span style="font-weight: bold;"><B><img src="TIPSfinal.gif" x-maintain-ratio="TRUE" style="border: none;
+	width: 16px;
+	height: 14px;
+	float: none;
+	border-style: none;
+	border-style: none;" width="16" height="14" border="0"> &nbsp;TIP:</B></span> 
+ You can also double-click the assertion in the Policy Development window 
+ to open the Audit Assertion Properties form. &nbsp;&nbsp;</p>
+</div>
+
+<ol start=3
+	style="list-style: decimal;"
+	type=1>
+	
+	<li style="/*begin!kadov{{*/ color: #000000; /*}}end!kadov*/ " class="kadov-p"><p style="color: #000000;">The Audit Assertion Properties 
+ form appears with a default severity level of <span style="margin-left: 0px; font-weight: bold;"><B>Warning</B></span><span 
+ style="margin-left: 0px;"> that will include all audit alerts that may 
+ or may not require follow-up.</span><span style="margin-left: 0px; font-weight: bold;"> 
+ <B></B></span></p></li>
+</ol>
+
+<div style="padding: 5px;
+			background-color: #f8fbdd;
+			margin-right: 4px;
+			margin-top: 4px;
+			margin-bottom: 4px;
+			float: none;
+			width: 550px;
+			margin-left: 44px;">
+<p class="tipsnotes"><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
+	width: 16px;
+	height: 15px;
+	float: none;
+	border-style: none;
+	border-style: none;" width="16" height="15" border="0"> &nbsp;NOTE:</B></span> 
+ The other severity levels in the drop-down list are not enabled in version 
+ 3.0 of the SecureSpan™ Manager. Selecting any one of them will not set 
+ request auditing. If you want to enable auditing in the target service, 
+ then leave the &quot;Warning&quot; setting in the drop-down list. </p>
+</div>
+
+<ol start=4
+	style="list-style: disc;"
+	type=disc>
+	
+	<li style="list-style: decimal;" type="1" class="kadov-p"><p style="margin-left: 0px;">Click [<span style="font-weight: bold;"><B>OK</B></span>]. 
+ The modified assertion is added to the Policy Development window. </p></li>
+</ol>
+
+<h6>&nbsp;</h6>
+
+<div style="padding: 5px;
+			background-color: #f8fbdd;
+			margin-right: 4px;
+			margin-top: 4px;
+			margin-bottom: 4px;
+			float: none;
+			width: 550px;
+			margin-left: 4px;">
+<p class="tipsnotes"><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
+	width: 16px;
+	height: 15px;
+	float: none;
+	border-style: none;
+	border-style: none;" width="16" height="15" border="0"> &nbsp;NOTE:</B></span> 
+ The Audit Assertion cannot be edited to another severity level (as all 
+ except &quot;Warning&quot; are disabled) in version 3.0 of the SecureSpan™ 
+ Manager. To remove the auditing of requests, you must delete the Audit 
+ Assertion. To do so, right-click the assertion name in the Policy Development 
+ window. A drop-down menu appears. Select [Delete Assertion].</p>
+</div>
+
+<h6>&nbsp;</h6>
+
+</body>
+
+</html>

@@ -1,0 +1,496 @@
+<!doctype HTML public "-//W3C//DTD HTML 4.0 Frameset//EN">
+
+<html>
+
+
+
+
+
+<head>
+
+<title>SiteMinder Authentication Assertion</title>
+
+
+
+ <meta http-equiv=content-type content="text/html; charset=windows-1252">
+<meta name=generator-major-version content=0.1>
+<meta name=generator-minor-version content=1>
+<meta name=filetype content=kadov>
+<meta name=filetype-version content=1>
+<meta name=page-count content=1>
+<meta name=layout-height content=3855>
+<meta name=layout-width content=773>
+
+
+
+
+ <link rel="StyleSheet" href="JavaHelp.css">
+
+
+
+ <META NAME="generator" CONTENT="RoboHelp by eHelp Corporation www.ehelp.com">
+</head>
+
+
+
+
+<body>
+
+<h1>Using the SiteMinder™ Authentication Assertion</h1>
+
+<div style="padding: 5px;
+			background-color: #f8fbdd;
+			margin-right: 4px;
+			margin-top: 4px;
+			margin-bottom: 4px;
+			float: none;
+			width: 550px;
+			margin-left: 4px;">
+<p class="tipsnotes"><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
+	width: 16px;
+	height: 15px;
+	float: none;
+	border-style: none;
+	border-style: none;" width="16" height="15" border="0"> &nbsp;NOTE:</B></span> 
+ The Administrator is responsible for installing and configuring the SiteMinder™ 
+ Custom Assertion package in the SecureSpan™ Gateway. If you encounter 
+ authentication errors during the execution of a security policy, direct 
+ the Administrator to the <a href="#Troubleshoot_SiteMinder_Assertion_Errors">Troubleshoot 
+ SiteMinder™ Assertion Errors</a> section below.</p>
+</div>
+
+<p>Installing and configuring the SiteMinder™ Custom Assertion package 
+ in the SecureSpan™ Gateway installs and enables the SiteMinder™ assertion 
+ in the SecureSpan™ Manager. The SiteMinder™ assertion — called “SiteMinder 
+ Protected Resource” in the [Assertions] tab and Policy Development window 
+ — instructs the Gateway to delegate the authentication and authorization 
+ tasks required to gain access to a protected service to the Netegrity 
+ SiteMinder™ Policy Server (versions 5.5 and 6.0).</p>
+
+<h6>&nbsp;</h6>
+
+<h4>Quick Links:</h4>
+
+<p class="quicklinks"><a href="#SiteMinder_Assertion_Rules">SiteMinder™ Assertion 
+ Rules</a></p>
+
+<p class="quicklinks"><a href="#Configure_and_Edit_the_SiteMinder_Assertion">Configure 
+ and Edit the SiteMinder™ Assertion</a></p>
+
+<p class="quicklinks"><a href="#Troubleshoot_SiteMinder_Assertion_Errors">Troubleshoot 
+ SiteMinder™ Assertion Errors</a></p>
+
+<h2 style="color: #000000;"><a name=SiteMinder_Assertion_Rules
+								style="color: #000000;">SiteMinder™ Assertion 
+ Rules</a></h2>
+
+<p>Note the following rules when using the SiteMinder™ assertion:</p>
+
+<ul style="list-style: disc;"
+	type=disc>
+	
+	<li class="kadov-p"><p style="margin-top: 4.5pt;">The SiteMinder™ assertion 
+ cannot be used with:</p></li>
+	
+	<ul style="list-style: disc;"
+		type=disc>
+		
+		<li class="kadov-p"><p>Authentication assertions that encrypt passwords, 
+ such as the HTTP Digest and HTTP Client Certificate assertions from the 
+ Authentication category of the [Assertions] tab</p></li>
+		
+		<li class="kadov-p"><p>The Sign Request Element and Encrypt Request 
+ Element assertions located in the XML Security category of the [Assertions] 
+ tab</p></li>
+		
+		<li class="kadov-p"><p>The Grant Access to Users/Groups assertion 
+ located in the Authentication category of the [Assertions] tab.</p></li>
+	</ul>
+	
+	<li class="kadov-p"><p>The SiteMinder™ assertion can be used with:</p></li>
+	
+	<ul style="list-style: disc;"
+		type=disc>
+		
+		<li class="kadov-p"><p>The HTTP Basic assertion from the Authentication 
+ category of the [Assertions] tab</p></li>
+		
+		<li class="kadov-p"><p>The SSL Transport assertion from the Transport 
+ Layer Security (TLS) category of the [Assertions] tab</p></li>
+		
+		<li class="kadov-p"><p>Any other assertion not listed in the above 
+ list.</p></li>
+	</ul>
+	
+	<li class="kadov-p"><p>A security policy can only contain a single SiteMinder™ 
+ assertion per authentication scheme. More than one SiteMinder™ assertion 
+ may appear in a complex security policy that contains more than one authentication 
+ scheme</p></li>
+	
+	<li class="kadov-p"><p>In a security policy, the SiteMinder™ assertion 
+ must appear before the routing assertion and after the SSL Transport and 
+ authentication method assertions.</p></li>
+</ul>
+
+<h6>&nbsp;</h6>
+
+<div style="padding: 5px;
+			background-color: #f8fbdd;
+			margin-right: 4px;
+			margin-top: 4px;
+			margin-bottom: 4px;
+			float: none;
+			width: 550px;
+			margin-left: 4px;">
+<p class="tipsnotes"><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
+	width: 16px;
+	height: 15px;
+	float: none;
+	border-style: none;
+	border-style: none;" width="16" height="15" border="0"> &nbsp;NOTE:</B></span> 
+ For information on the general policy and assertion rules used in the 
+ SecureSpan™ Manager, see <a href="Security_Policy_Organization_and_Rules.htm">Security 
+ Policy Organization and Rules</a>. For information on configuring, editing, 
+ and manipulating a security policy in the Policy Development window, see 
+ <a href="Configure_Edit_Security_Policies.htm">Configure and Edit Security 
+ Policies</a>.</p>
+</div>
+
+<h6>&nbsp;</h6>
+
+<h2><a name=Configure_and_Edit_the_SiteMinder_Assertion
+		style="color: #000000;">Configure and Edit the SiteMinder™ Assertion</a> 
+ </h2>
+
+<div style="padding: 5px;
+			background-color: #f8fbdd;
+			margin-right: 4px;
+			margin-top: 4px;
+			margin-bottom: 4px;
+			float: none;
+			width: 550px;
+			margin-left: 4px;">
+<p class="tipsnotes"><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
+	width: 16px;
+	height: 15px;
+	float: none;
+	border-style: none;
+	border-style: none;" width="16" height="15" border="0"> &nbsp;NOTE:</B></span> 
+ Web services and XML applications are collectively referred to as &quot;services.&quot; 
+ See <a href="Services_Overview.htm">Service Overview</a> for more information.</p>
+</div>
+
+<h3><a name=Add_and_Configure_the_SiteMinder__Assertion
+		style="color: #000000;">Add and Configure the SiteMinder™ Assertion</a> 
+ </h3>
+
+<div style="padding: 5px;
+			background-color: #f8fbdd;
+			margin-right: 4px;
+			margin-top: 4px;
+			margin-bottom: 4px;
+			float: none;
+			width: 550px;
+			margin-left: 4px;">
+<p class="tipsnotes"><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
+	width: 16px;
+	height: 15px;
+	float: none;
+	border-style: none;
+	border-style: none;" width="16" height="15" border="0"> &nbsp;NOTE:</B></span> 
+ The following instructions assume that the SecureSpan™ Manager is open.</p>
+</div>
+
+<h6>&nbsp;</h6>
+
+<ol style="list-style: decimal;"
+	type=1>
+	
+	<li class="kadov-p"><p>Access the Policy Development window for the target 
+ service by one of two methods: </p></li>
+</ol>
+
+<div style="padding: 5px;
+			background-color: #f8fbdd;
+			margin-right: 4px;
+			margin-top: 4px;
+			margin-bottom: 4px;
+			float: none;
+			width: 550px;
+			margin-left: 44px;">
+<p class="tipsnotes"><span style="font-weight: bold;"><B><img src="TIPSfinal.gif" x-maintain-ratio="TRUE" style="border: none;
+	width: 16px;
+	height: 14px;
+	float: none;
+	border-style: none;
+	border-style: none;" width="16" height="14" border="0"> &nbsp;TIP:</B></span> 
+ &nbsp;If not 
+ already disabled, it is strongly recommended that you disable a service 
+ while constructing its security policy to prevent unsecured and unauthorized 
+ access. A disabled service contains a red &quot;X&quot; through its left-side 
+ icon. See <a href="Manage_Published_Services.htm">Manage Published Services</a> 
+ for information.</p>
+</div>
+
+<ol style="list-style: disc;"
+	type=disc>
+	
+	<ul style="list-style: disc;"
+		type=disc>
+		
+		<li class="kadov-p"><p>Right-click the service name in the [<span 
+ style="font-weight: bold;"><B>Services</B></span>] tab. A drop-down menu appears. 
+ Select <span style="font-weight: bold;"><B>Policy Assertions</B></span>. Or, 
+ </p></li>
+		
+		<li class="kadov-p"><p>Double-click the service in the [<span style="font-weight: bold;"><B>Services</B></span>] 
+ tab.</p></li>
+	</ul>
+</ol>
+
+<ol start=2
+	style="list-style: decimal;"
+	type=1>
+	
+	<li class="kadov-p"><p>The Policy Development window appears. Add the 
+ &quot;SiteMinder Protected Resource&quot; assertion to the security policy 
+ by one of two methods: </p></li>
+</ol>
+
+<ol style="list-style: disc;"
+	type=disc>
+	
+	<ul style="list-style: disc;"
+		type=disc>
+		
+		<li class="kadov-p"><p>Drag and drop the assertion from the [<span 
+ style="font-weight: bold;"><B>Assertions</B></span>] tab into the Policy Development 
+ window, or &nbsp;&nbsp;</p></li>
+		
+		<li class="kadov-p"><p>Highlight the assertion in the [<span style="font-weight: bold;"><B>Assertions</B></span>] 
+ tab and click the <img src="MoveAssertionOver.gif" x-maintain-ratio="TRUE" style="border: none;
+								width: 22px;
+								height: 18px;
+								margin-left: 0px;
+								margin-right: 0px;
+								margin-top: 0px;
+								margin-bottom: -2.5px;
+								float: none;
+								border-style: none;
+								border-style: none;" width="22" height="18" border="0"> &nbsp;(Add 
+ Assertion) button in the Assertion Tool Bar. </p></li>
+	</ul>
+</ol>
+
+<ol start=3
+	style="list-style: decimal;"
+	type=1>
+	
+	<li class="kadov-p"><p>The assertion is added to the Policy Development 
+ window. Right-click the assertion. A drop-down menu appears. Select <span 
+ style="font-weight: bold;"><B>Custom Assertion Properties</B></span>. </p></li>
+</ol>
+
+<div style="padding: 5px;
+			background-color: #f8fbdd;
+			margin-right: 4px;
+			margin-top: 4px;
+			margin-bottom: 4px;
+			float: none;
+			width: 550px;
+			margin-left: 44px;">
+<p class="tipsnotes"><span style="font-weight: bold;"><B><img src="TIPSfinal.gif" x-maintain-ratio="TRUE" style="border: none;
+	width: 16px;
+	height: 14px;
+	float: none;
+	border-style: none;
+	border-style: none;" width="16" height="14" border="0"> &nbsp;TIP:</B></span> 
+ You can also double-click the assertion in the Policy Development window 
+ to open the SiteMinder Protected Resource form. &nbsp;&nbsp;</p>
+</div>
+
+<ol start=4
+	style="list-style: decimal;"
+	type=1>
+	
+	<li class="kadov-p"><p>The SiteMinder Protected Resource form appears. 
+ Fill in the form as follows:</p></li>
+</ol>
+
+<div style="padding: 5px;
+			background-color: #f8fbdd;
+			margin-right: 4px;
+			margin-top: 4px;
+			margin-bottom: 4px;
+			float: none;
+			width: 550px;
+			margin-left: 44px;">
+<p class="tipsnotes"><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
+	width: 16px;
+	height: 15px;
+	float: none;
+	border-style: none;
+	border-style: none;" width="16" height="15" border="0"> &nbsp;NOTE:</B></span> 
+ The action and resource values are determined by the settings in the realm 
+ that is used by the SecureSpan™ Gateway custom agent in the Netegrity 
+ SiteMinder™ Policy Server. Consult your Administrator for information 
+ about the action and resource properties.</p>
+</div>
+
+<ol style="list-style: disc;"
+	type=disc>
+	
+	<ul style="list-style: disc;"
+		type=disc>
+		
+		<li class="kadov-p"><p>In the <span style="font-weight: bold;"><B>Value</B></span> 
+ field of the action row, enter the action (such as “POST” or “GET”) for 
+ the protected resource specified in the resource row below</p></li>
+		
+		<li class="kadov-p"><p>In the <span style="font-weight: bold;"><B>Value</B></span> 
+ field of the resource row, enter the resource that is being protected 
+ by the Netegrity SiteMinder™ Policy Server. </p></li>
+	</ul>
+</ol>
+
+<ol start=5
+	style="list-style: decimal;"
+	type=1>
+	
+	<li class="kadov-p"><p>Click [<span style="font-weight: bold;"><B>OK</B></span>]. 
+ The modified assertion is added to the Policy Development window. Proceed 
+ to the &quot;Validate a Security Policy&quot; section in <a href="Configure_Edit_Security_Policies.htm">Configure 
+ and Edit Security Policies</a>.</p></li>
+</ol>
+
+<h3>Edit the SiteMinder™ Assertion</h3>
+
+<ol style="list-style: decimal;"
+	type=1>
+	
+	<li class="kadov-p"><p>In the Policy Development window, right-click 
+ the &quot;SiteMinder Protected Resource&quot; assertion. A drop-down menu 
+ appears. Select <span style="font-weight: bold;"><B>Custom Assertion Properties</B></span>.</p></li>
+</ol>
+
+<div style="padding: 5px;
+			background-color: #f8fbdd;
+			margin-right: 4px;
+			margin-top: 4px;
+			margin-bottom: 4px;
+			float: none;
+			width: 550px;
+			margin-left: 44px;">
+<p class="tipsnotes"><span style="font-weight: bold;"><B><img src="TIPSfinal.gif" x-maintain-ratio="TRUE" style="border: none;
+	width: 16px;
+	height: 14px;
+	float: none;
+	border-style: none;
+	border-style: none;" width="16" height="14" border="0"> &nbsp;TIP:</B></span> 
+ You can also double-click the assertion in the Policy Development window 
+ to open the SiteMinder Protected Resource form. &nbsp;&nbsp;</p>
+</div>
+
+<ol start=2
+	style="list-style: decimal;"
+	type=1>
+	
+	<li class="kadov-p"><p>The SiteMinder Protected Resource form appears. 
+ Modify the assertion properties as outlined in Step #4 in <a href="#Add_and_Configure_the_SiteMinder__Assertion">Add 
+ and Configure the SiteMinder™ Assertion</a>.</p></li>
+	
+	<li class="kadov-p"><p>Click [<span style="font-weight: bold;"><B>OK</B></span>]. 
+ The modified assertion is added to the Policy Development window. Proceed 
+ to the &quot;Validate a Security Policy&quot; section in <a href="Configure_Edit_Security_Policies.htm">Configure 
+ and Edit Security Policies</a>.</p></li>
+</ol>
+
+<h2 style="color: #000000;"><a name=Troubleshoot_SiteMinder_Assertion_Errors
+								style="color: #000000;">Troubleshoot SiteMinder™ 
+ Assertion Errors</a></h2>
+
+<div style="padding: 5px;
+			background-color: #f8fbdd;
+			margin-right: 4px;
+			margin-top: 4px;
+			margin-bottom: 4px;
+			float: none;
+			width: 550px;
+			margin-left: 4px;">
+<p class="tipsnotes"><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
+	width: 16px;
+	height: 15px;
+	float: none;
+	border-style: none;
+	border-style: none;" width="16" height="15" border="0"> &nbsp;NOTE:</B></span> 
+ Contact your Administrator if you encounter authentication errors.</p>
+</div>
+
+<p>If configuration errors exist in the Netegrity SiteMinder™ Policy Server 
+ or the SecureSpan™ Gateway, then one of the following error messages will 
+ appear in the SecureSpan™ Manager Gateway Log window when the SiteMinder™ 
+ assertion is used in a security policy. For information about the Gateway 
+ Log, see <a href="View_Gateway_Log.htm">View Gateway Log</a>.</p>
+
+<ul style="list-style: disc;"
+	type=disc>
+	
+	<li class="kadov-p"><p style="font-weight: bold; margin-top: 4.5pt;">SEVERE: 
+ Unable to connect to the SiteMinder Policy Server</p></li>
+</ul>
+
+<p style="margin-left: 40px;">This error message appears in the Gateway 
+ Log when:</p>
+
+<ol style="list-style: disc;"
+	type=disc>
+	
+	<ul style="list-style: disc;"
+		type=disc>
+		
+		<li class="kadov-p"><p>The SiteMinder™ Policy Server is down</p></li>
+		
+		<li class="kadov-p"><p>The Gateway is not properly configured to 
+ connect to the SiteMinder™ Policy Server</p></li>
+		
+		<li class="kadov-p"><p>The connection credentials cannot be read 
+ properly because the hashed cookie that is presented to the SiteMinder™ 
+ Policy Server cannot be decrypted.</p></li>
+	</ul>
+</ol>
+
+<p style="margin-left: 40px;">An error message indicating a SiteMinder™ 
+ Agent initialization failure is also displayed. Verify the Gateway and 
+ SiteMinder™ Policy Server connection settings. To contact a Layer 7 Technologies 
+ Technical Support Representative, see <a href="Technical_Support_and_Contact_Information.htm">Technical 
+ Support and Contact Information</a> </p>
+
+<ul style="list-style: disc;"
+	type=disc>
+	
+	<li class="kadov-p"><p style="font-weight: bold;">WARNING: Authorization 
+ (access control) failed</p></li>
+</ul>
+
+<p style="margin-left: 40px;">This error message appears in the Gateway 
+ Log when the Gateway connection credentials are not authenticated or authorized 
+ by the SiteMinder™ Policy Server. A Log on to Gateway form prompts you 
+ to re-enter your user name and/or password. Ensure that the user name 
+ and password entered in SecureSpan™ Bridge match those configured in the 
+ user database used by the SiteMinder™ Policy Server to authenticate and 
+ authorize users. To contact a Layer 7 Technologies Technical Support Representative, 
+ see <a href="Technical_Support_and_Contact_Information.htm">Technical 
+ Support and Contact Information</a>. </p>
+
+<h6>&nbsp;</h6>
+
+<h4>Next Topic:</h4>
+
+<p><a href="TAM_Authentication_Assertion.htm">Using the TAM Authentication 
+ Assertion</a></p>
+
+<h6>&nbsp;</h6>
+
+</body>
+
+</html>

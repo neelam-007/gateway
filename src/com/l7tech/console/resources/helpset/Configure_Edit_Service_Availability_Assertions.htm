@@ -8,7 +8,7 @@
 
 <head>
 
-<title>Configure/Edit Web Service Availability Assertions</title>
+<title>Configure/Edit Service Availability Assertions</title>
 
 
 
@@ -18,8 +18,8 @@
 <meta name=filetype content=kadov>
 <meta name=filetype-version content=1>
 <meta name=page-count content=1>
-<meta name=layout-height content=3827>
-<meta name=layout-width content=824>
+<meta name=layout-height content=3742>
+<meta name=layout-width content=780>
 <meta name=x-ignored-words content="IP;requestor">
 
 
@@ -37,39 +37,50 @@
 
 <body>
 
-<h1>Configure and Edit Web Service Availability Assertions</h1>
+<h1>Configure and Edit Service Availability Assertions</h1>
 
 <p style="margin-bottom: 9pt;">In the SecureSpan™ Manager, the following 
- assertions are available in the Web Service Availability category of the 
- [Assertions] tab:</p>
+ assertions are available in the Service Availability category of the [Assertions] 
+ tab:</p>
+
+<h6>&nbsp;</h6>
 
 <p><img src="WSAvailAssens.gif" x-maintain-ratio="TRUE" style="border: none;
 				margin-left: 0px;
 				margin-right: 0px;
-				margin-top: 4px;
-				margin-bottom: 10px;
-				width: 250px;
-				height: 264px;
+				margin-top: 10px;
+				margin-bottom: 2px;
+				width: 255px;
+				height: 288px;
 				float: none;
 				border-style: none;
-				border-style: none;" width="250" height="264" border="0"></p>
+				border-style: none;" width="255" height="288" border="0"></p>
+
+<h6 style="color: #7c7c7c;
+			margin-top: 2pt;
+			margin-bottom: 10pt;">The Service Availability Category of 
+ the [Assertions] Tab</h6>
+
+<h6>&nbsp;</h6>
 
 <h4>Quick Links:</h4>
 
-<p><a href="#Time_Day_Availability">Time/Day Availability</a></p>
+<p class="quicklinks"><a href="#Time_Day_Availability">Time/Day Availability</a></p>
 
-<p><a href="#IP_Address_Range">IP 
+<p class="quicklinks"><a href="#IP_Address_Range">IP 
  Address Range</a></p>
 
-<h2><a name=Time_Day_Availability>Time/Day Availability</a></h2>
+<h2 style="color: #000000;"><a name=Time_Day_Availability
+								style="color: #000000;">Time/Day Availability</a></h2>
 
-<p>The Time/Day Availability assertion allows you to restrict Web service 
- access by a SecureSpan™ Gateway time and/or day interval. When the Gateway 
- receives a request for the Web service, it will check the time and/or 
- day restrictions before allowing the message to proceed. </p>
+<p>The Time/Day Availability assertion allows you to restrict service access 
+ by a SecureSpan™ Gateway time and/or day interval. When the Gateway receives 
+ a request for the service, it will check the time and/or day restrictions 
+ before allowing the message to proceed. </p>
 
-<h3><a name=Add_and_Configure_the_Time_Day_Availability_Assertion>Add and 
- Configure the Time/Day Availability Assertion</a></h3>
+<h3 style="color: #000000;"><a name=Add_and_Configure_the_Time_Day_Availability_Assertion
+								style="color: #000000;">Add and Configure 
+ the Time/Day Availability Assertion</a></h3>
 
 <ol style="list-style: decimal;"
 	type=1>
@@ -78,7 +89,7 @@
  by one of two methods:</p></li>
 </ol>
 
-<ol style="list-style: disc;"
+<ul style="list-style: disc;"
 	type=disc>
 	
 	<ul style="list-style: disc;"
@@ -98,40 +109,17 @@
 								margin-bottom: -2.5px;
 								float: none;
 								border-style: none;
-								border-style: none;" width="22" height="18" border="0"> &nbsp;(Move 
+								border-style: none;" width="22" height="18" border="0"> &nbsp;(Add 
  Assertion) button in the Assertion Tool Bar. </p></li>
 	</ul>
-</ol>
+</ul>
 
 <ol start=2
 	style="list-style: decimal;"
 	type=1>
 	
-	<li class="kadov-p"><p>The assertion is added to the Policy Development 
- window. Right-click the &quot;No Availability Defined&quot; assertion. 
- A drop-down menu appears. Select <span style="font-weight: bold;"><B>Time/Day 
- Availability Properties</B></span>.</p></li>
-</ol>
-
-<div style="padding: 5px;
-			background-color: #f8fbdd;
-			margin-right: 4px;
-			margin-top: 4px;
-			margin-bottom: 4px;
-			float: none;
-			width: 550px;
-			margin-left: 44px;">
-<p class="tipsnotes"><span style="font-weight: bold;"><B>TIP:</B></span> You can 
- also double-click the assertion in the Policy Development window to open 
- the Time/Day Properties form. &nbsp;&nbsp;</p>
-</div>
-
-<ol start=3
-	style="list-style: decimal;"
-	type=1>
-	
 	<li class="kadov-p"><p>The Time/Day Properties form appears. Specify 
- a time and/or date range in which to restrict Web service access as follows:</p></li>
+ a time and/or date range in which to restrict access as follows:</p></li>
 </ol>
 
 <div style="padding: 5px;
@@ -142,10 +130,17 @@
 			float: none;
 			width: 550px;
 			margin-left: 44px;">
-<p class="tipsnotes"><span style="font-weight: bold;"><B>NOTE:</B></span> The time 
- and/or day restrictions are based on the SecureSpan™ Gateway time zone. 
- </p>
+<p class="tipsnotes"><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
+	width: 16px;
+	height: 15px;
+	float: none;
+	border-style: none;
+	border-style: none;" width="16" height="15" border="0"> &nbsp;NOTE:</B></span> 
+ The time and/or day restrictions are based on the SecureSpan™ Gateway 
+ time zone. </p>
 </div>
+
+<h6>&nbsp;</h6>
 
 <p style="margin-left: 40px;"><img src="TimeDayProp.gif" x-maintain-ratio="TRUE" style="border: none;
 											margin-left: 0px;
@@ -160,10 +155,10 @@
 
 <h4 style="margin-left: 40px;">Restrict Access by Time</h4>
 
-<p style="margin-left: 40px;">To restrict Web service access between a 
- specific time range:</p>
+<p style="margin-left: 40px;">To restrict access between a specific time 
+ range:</p>
 
-<ol style="list-style: disc;"
+<ul style="list-style: disc;"
 	type=disc>
 	
 	<ol style="list-style: decimal;"
@@ -177,7 +172,7 @@
  the <span style="font-weight: bold;"><B>hr</B></span>, <span style="font-weight: bold;"><B>min</B></span>, 
  and <span style="font-weight: bold;"><B>sec</B></span> fields.</p></li>
 	</ol>
-</ol>
+</ul>
 
 <div style="padding: 5px;
 			background-color: #f8fbdd;
@@ -187,12 +182,17 @@
 			float: none;
 			width: 550px;
 			margin-left: 84px;">
-<p class="tipsnotes"><span style="font-weight: bold;"><B>NOTE:</B></span> The time 
- range must be configured using 24-hour notation from the earliest time 
- (start) to the latest time (end).</p>
+<p class="tipsnotes"><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
+	width: 16px;
+	height: 15px;
+	float: none;
+	border-style: none;
+	border-style: none;" width="16" height="15" border="0"> &nbsp;NOTE:</B></span> 
+ The time range must be configured using 24-hour notation from the earliest 
+ time (start) to the latest time (end).</p>
 </div>
 
-<ol style="list-style: disc;"
+<ul style="list-style: disc;"
 	type=disc>
 	
 	<ol start=3
@@ -204,7 +204,7 @@
  the <span style="font-weight: bold;"><B>hr</B></span>, <span style="font-weight: bold;"><B>min</B></span>, 
  and <span style="font-weight: bold;"><B>sec</B></span> fields.</p></li>
 	</ol>
-</ol>
+</ul>
 
 <div style="padding: 5px;
 			background-color: #f8fbdd;
@@ -214,30 +214,35 @@
 			float: none;
 			width: 550px;
 			margin-left: 84px;">
-<p class="tipsnotes"><span style="font-weight: bold;"><B>NOTE:</B></span> The entered 
- times are translated into UTC 
- (Universal Time Clock) time in the read-only time set under the fields. 
- </p>
+<p class="tipsnotes"><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
+	width: 16px;
+	height: 15px;
+	float: none;
+	border-style: none;
+	border-style: none;" width="16" height="15" border="0"> &nbsp;NOTE:</B></span> 
+ The entered times are translated into UTC 
+ (Coordinated Universal Time) time in the read-only time set under the 
+ fields. </p>
 </div>
 
-<ol style="list-style: disc;"
+<ul style="list-style: disc;"
 	type=disc>
 	
 	<ol start=4
 		style="list-style: decimal;"
 		type=1>
 		
-		<li class="kadov-p"><p>Proceed to restrict Web service access by 
- day, or proceed to Step #4.</p></li>
+		<li class="kadov-p"><p>Proceed to restrict access by day, or proceed 
+ to Step #4.</p></li>
 	</ol>
-</ol>
+</ul>
 
 <h4 style="margin-left: 40px;">Restrict Access by Day</h4>
 
-<p style="margin-left: 40px;">To restrict Web service access between a 
- specific day range:</p>
+<p style="margin-left: 40px;">To restrict access between a specific day 
+ range:</p>
 
-<ol style="list-style: disc;"
+<ul style="list-style: disc;"
 	type=disc>
 	
 	<ol style="list-style: decimal;"
@@ -252,7 +257,7 @@
 		<li class="kadov-p"><p>In the <span style="font-weight: bold;"><B>and</B></span> 
  drop-down list, select the ending day for the range.</p></li>
 	</ol>
-</ol>
+</ul>
 
 <div style="padding: 5px;
 			background-color: #f8fbdd;
@@ -262,25 +267,34 @@
 			float: none;
 			width: 550px;
 			margin-left: 84px;">
-<p class="tipsnotes"><span style="font-weight: bold;"><B>NOTE:</B></span> If you 
- select the same day for the range, then Web service access will only be 
- restricted on that single day. &nbsp;</p>
+<p class="tipsnotes"><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
+	width: 16px;
+	height: 15px;
+	float: none;
+	border-style: none;
+	border-style: none;" width="16" height="15" border="0"> &nbsp;NOTE:</B></span> 
+ If you select the same day for the range, then access will only be restricted 
+ on that single day. &nbsp;</p>
 </div>
 
-<ul>
+<ol>
 	
 	<ol start=4
 		style="list-style: decimal;"
 		type=1>
 		
-		<li class="kadov-p"><p>Proceed to restrict Web service access by 
- time as outlined above, or proceed to Step #4.</p></li>
+		<li class="kadov-p"><p>Proceed to restrict access by time as outlined 
+ above, or proceed to Step #4.</p></li>
 	</ol>
-</ul>
+</ol>
 
-<ol start=4>
+<h6>&nbsp;</h6>
+
+<ol start=3
+	style="list-style: decimal;"
+	type=1>
 	
-	<li style="list-style: decimal;" type="1" class="kadov-p"><p>Click [<span style="font-weight: bold;"><B>OK</B></span>]. 
+	<li class="kadov-p"><p>Click [<span style="font-weight: bold;"><B>OK</B></span>]. 
  The configured assertion is added to the Policy Development window.</p></li>
 </ol>
 
@@ -302,30 +316,37 @@
 			float: none;
 			width: 550px;
 			margin-left: 44px;">
-<p class="tipsnotes"><span style="font-weight: bold;"><B>TIP:</B></span> You can 
- also double-click the assertion in the Policy Development window to open 
- the Time/Day Properties form. The assertion title that appears in the 
- Policy Development window will depend on the properties configured for 
- the assertion. </p>
+<p class="tipsnotes"><span style="font-weight: bold;"><B><img src="TIPSfinal.gif" x-maintain-ratio="TRUE" style="border: none;
+	width: 16px;
+	height: 14px;
+	float: none;
+	border-style: none;
+	border-style: none;" width="16" height="14" border="0"> &nbsp;TIP:</B></span> 
+ You can also double-click the assertion in the Policy Development window 
+ to open the Time/Day Properties form. The assertion title that appears 
+ in the Policy Development window will depend on the properties configured 
+ for the assertion. </p>
 </div>
 
 <ul style="list-style: disc;"
 	type=disc>
 	
 	<li class="kadov-p"><p>The Time/Day Properties form appears. Edit the 
- time and/or day range as required. See Step #3 in <a href="#Add_and_Configure_the_Time_Day_Availability_Assertion">Add 
+ time and/or day range as required. See Step #2 in <a href="#Add_and_Configure_the_Time_Day_Availability_Assertion">Add 
  and Configure the Time/Day Availability Assertion</a> for configuration 
  instructions.</p></li>
 </ul>
 
-<h2><a name=IP_Address_Range>IP 
+<h2 style="color: #000000;"><a name=IP_Address_Range
+								style="color: #000000;">IP 
  Address Range</a></h2>
 
 <p>The IP Address 
- Range assertion allows you to restrict or allow Web service access based 
- on the IP address of the Web service requestor.</p>
+ Range assertion allows you to restrict or allow service access based on 
+ the IP address of the Web service or XML application requestor.</p>
 
-<h3><a name=Add_and_Configure_the_IP_Address_Range_Assertion>Add and Configure 
+<h3 style="color: #000000;"><a name=Add_and_Configure_the_IP_Address_Range_Assertion
+								style="color: #000000;">Add and Configure 
  the IP Address 
  Range Assertion</a></h3>
 
@@ -336,7 +357,7 @@
  by one of two methods:</p></li>
 </ol>
 
-<ol style="list-style: disc;"
+<ul style="list-style: disc;"
 	type=disc>
 	
 	<ul style="list-style: disc;"
@@ -356,10 +377,10 @@
 								margin-bottom: -2.5px;
 								float: none;
 								border-style: none;
-								border-style: none;" width="22" height="18" border="0"> &nbsp;(Move 
+								border-style: none;" width="22" height="18" border="0"> &nbsp;(Add 
  Assertion) button in the Assertion Tool Bar. </p></li>
 	</ul>
-</ol>
+</ul>
 
 <ol start=2
 	style="list-style: decimal;"
@@ -396,7 +417,13 @@
 			float: none;
 			width: 550px;
 			margin-left: 44px;">
-<p class="tipsnotes"><span style="font-weight: bold;"><B>TIP:</B></span> See http://public.pacbell.net/dedicated/cidr.html 
+<p class="tipsnotes"><span style="font-weight: bold;"><B><img src="TIPSfinal.gif" x-maintain-ratio="TRUE" style="border: none;
+	width: 16px;
+	height: 14px;
+	float: none;
+	border-style: none;
+	border-style: none;" width="16" height="14" border="0"> &nbsp;TIP:</B></span> 
+ See http://public.pacbell.net/dedicated/cidr.html 
  and www.petri.co.il/what's_cidr.htm 
  for more information about the CIDR 
  IP standard. 
@@ -430,18 +457,23 @@
 			float: none;
 			width: 550px;
 			margin-left: 44px;">
-<p class="tipsnotes"><span style="font-weight: bold;"><B>TIP:</B></span> You can 
- also double-click the assertion in the Policy Development window to open 
- the Remote IP Range Properties form. The assertion title that appears 
- in the Policy Development window will depend on the properties configured 
- for the assertion. </p>
+<p class="tipsnotes"><span style="font-weight: bold;"><B><img src="TIPSfinal.gif" x-maintain-ratio="TRUE" style="border: none;
+	width: 16px;
+	height: 14px;
+	float: none;
+	border-style: none;
+	border-style: none;" width="16" height="14" border="0"> &nbsp;TIP:</B></span> 
+ You can also double-click the assertion in the Policy Development window 
+ to open the Remote IP Range Properties form. The assertion title that 
+ appears in the Policy Development window will depend on the properties 
+ configured for the assertion. </p>
 </div>
 
 <ul style="list-style: disc;"
 	type=disc>
 	
 	<li class="kadov-p"><p>The Remote IP Range Properties form appears. Edit 
- the IP range as required. See Step #2 in <a href="#Add_and_Configure_the_IP_Address_Range_Assertion">Add 
+ the IP range as required. See Steps #2-3 in <a href="#Add_and_Configure_the_IP_Address_Range_Assertion">Add 
  and Configure the IP Address Range Assertion</a> for configuration instructions.</p></li>
 </ul>
 
@@ -449,8 +481,10 @@
 
 <h4>Next Topic: </h4>
 
-<p><a href="Security_Policies_Overview_and_Rules.htm">Security Policies 
- Overview and Rules</a></p>
+<p><a href="Configure_Edit_Logging_and_Auditing_Assertions.htm">Configure 
+ and Edit the Logging and Auditing Assertion</a></p>
+
+<h6>&nbsp;</h6>
 
 </body>
 

@@ -1,0 +1,974 @@
+<!doctype HTML public "-//W3C//DTD HTML 4.0 Frameset//EN">
+
+<html>
+
+
+
+
+
+<head>
+
+<title>JMS Message Routing Assertion</title>
+
+
+
+ <meta http-equiv=content-type content="text/html; charset=windows-1252">
+<meta name=generator-major-version content=0.1>
+<meta name=generator-minor-version content=1>
+<meta name=filetype content=kadov>
+<meta name=filetype-version content=1>
+<meta name=page-count content=1>
+<meta name=layout-height content=7148>
+<meta name=layout-width content=773>
+<meta name=x-ignored-words content=WebSphere>
+
+
+
+
+ <link rel="StyleSheet" href="JavaHelp.css">
+
+
+
+ <META NAME="generator" CONTENT="RoboHelp by eHelp Corporation www.ehelp.com">
+</head>
+
+
+
+
+<body>
+
+<h1>Using the JMS Message Routing Assertion</h1>
+
+<div style="padding: 5px;
+			background-color: #f8fbdd;
+			margin-right: 4px;
+			margin-top: 4px;
+			margin-bottom: 4px;
+			float: none;
+			width: 550px;
+			margin-left: 4px;">
+<p class="tipsnotes"><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
+	width: 16px;
+	height: 15px;
+	float: none;
+	border-style: none;
+	border-style: none;" width="16" height="15" border="0"> &nbsp;NOTE:</B></span> 
+ The JMS Routing assertion and queues support the JMS 1.0 standard. The 
+ Administrator is responsible for installing and configuring the items 
+ required for JMS routing. If you encounter errors during the execution 
+ of a JMS security policy, contact your Administrator.</p>
+</div>
+
+<p>The JMS routing assertion — called &quot;JMS Routing&quot; in the [Assertions] 
+ tab and &quot;Route to JMS Queue&quot; in the Policy Development window 
+ — allows you to configure the JMS transportation of inbound and/or outbound 
+ service messages. Before JMS routing can be used in a security policy, 
+ the queues that were configured in the IBM WebSphere® MQ (version 5.3) 
+ Queue Manager and referenced in the JNDI directory must be registered 
+ in the Manager. See <a href="#About_JMS_Queues">About JMS Queues</a> for 
+ more information.</p>
+
+<h6>&nbsp;</h6>
+
+<h4>Quick Links:</h4>
+
+<p class="quicklinks"><a href="#About_JMS_Queues">About JMS Queues</a></p>
+
+<p class="quicklinks"><a href="#Configure_and_Edit_JMS_Queues">Configure 
+ and Edit JMS Queues</a></p>
+
+<p class="quicklinks"><a href="#JMS_Assertion_Rules">JMS Assertion Rules</a></p>
+
+<p class="quicklinks"><a href="#Configure_and_Edit_the_JMS_Assertion">Configure 
+ and Edit the JMS Assertion</a></p>
+
+<h2 style="color: #000000;"><a name=About_JMS_Queues
+								style="color: #000000;">About JMS Queues</a></h2>
+
+<div style="padding: 5px;
+			background-color: #f8fbdd;
+			margin-right: 4px;
+			margin-top: 4px;
+			margin-bottom: 4px;
+			float: none;
+			width: 550px;
+			margin-left: 4px;">
+<p class="tipsnotes"><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
+	width: 16px;
+	height: 15px;
+	float: none;
+	border-style: none;
+	border-style: none;" width="16" height="15" border="0"> &nbsp;NOTE:</B></span> 
+ Web services and XML applications are collectively referred to as &quot;services.&quot;</p>
+</div>
+
+<p>One or more JMS queues must be configured in the SecureSpan™ Manager 
+ before the SecureSpan™ Gateway can use JMS to communicate with service 
+ requestors and published services. The type of queue required depends 
+ on whether the queue will be used for receiving messages from requestors 
+ (inbound) or for sending messages to a Web service or XML application 
+ (outbound). &nbsp;</p>
+
+<h6>&nbsp;</h6>
+
+<p>The Gateway automatically monitors all inbound queues configured in 
+ the Manager. When the Gateway receives a message from an inbound queue, 
+ it determines which service the message is destined for and executes the 
+ applicable security policy. </p>
+
+<h6>&nbsp;</h6>
+
+<p>Security policies normally include either an HTTP(S) Routing or JMS 
+ Routing assertion that specifies message forwarding using either HTTP(S) 
+ or JMS, respectively. In the Gateway, there are three possible HTTP(S) 
+ and JMS routing scenarios:</p>
+
+<h6>&nbsp;</h6>
+
+<ul style="list-style: disc;"
+	type=disc>
+	
+	<li class="kadov-p"><p style="font-weight: bold;">JMS-to-JMS Configuration</p></li>
+</ul>
+
+<p style="margin-left: 40px;">In a JMS-to-JMS configuration scenario, the 
+ Gateway receives messages from a monitored inbound JMS queue (iJMS), and 
+ then uses a JMS Routing assertion to transmit the messages to an outbound 
+ JMS queue (oJMS):</p>
+
+<p style="margin-left: 40px;
+			margin-top: 6pt;
+			margin-bottom: 6pt;">Requestor <img src="red_left.jpg" x-save-file="TRUE" x-save-method="compute-relative" style="border: none;
+														width: 24px;
+														height: 19px;
+														margin-left: 0px;
+														margin-right: 0px;
+														margin-top: 0px;
+														margin-bottom: -3px;
+														float: none;
+														border-style: none;
+														border-style: none;" width="24" height="19" border="0"> iJMS <img src="red_right.jpg" x-maintain-ratio="TRUE" x-save-file="TRUE" x-save-method="compute-relative" style="border: none;
+			width: 24px;
+			height: 19px;
+			margin-left: 0px;
+			margin-right: 0px;
+			margin-top: 0px;
+			margin-bottom: -3px;
+			float: none;
+			border-style: none;
+			border-style: none;" width="24" height="19" border="0"> Gateway <img src="red_left.jpg" x-save-file="TRUE" x-save-method="compute-relative" style="border: none;
+									width: 24px;
+									height: 19px;
+									margin-left: 0px;
+									margin-right: 0px;
+									margin-top: 0px;
+									margin-bottom: -3px;
+									float: none;
+									border-style: none;
+									border-style: none;" width="24" height="19" border="0"> oJMS <img src="red_right.jpg" x-maintain-ratio="TRUE" x-save-file="TRUE" x-save-method="compute-relative" style="border: none;
+														width: 24px;
+														height: 19px;
+														margin-left: 0px;
+														margin-right: 0px;
+														margin-top: 0px;
+														margin-bottom: -3px;
+														float: none;
+														border-style: none;
+														border-style: none;" width="24" height="19" border="0"> Service </p>
+
+<p style="margin-left: 40px;">If a response message is required by the 
+ requestor, then the Gateway creates a temporary queue to receive the reply 
+ from the service. The Gateway then routes the reply message back to the 
+ requestor in accordance with the requestor-designated reply-to queue in 
+ the header of the JMS message. The reply-to queue specified by the requestor 
+ may be temporary. If reply instructions are not included in the header 
+ of the JMS message, however, then the Gateway cannot route the reply back 
+ to the requestor.</p>
+
+<ul style="list-style: disc;"
+	type=disc>
+	
+	<li class="kadov-p"><p style="font-weight: bold;">JMS-to-HTTP Configuration</p></li>
+</ul>
+
+<p style="margin-left: 40px;">In the JMS-to-HTTP configuration scenario, 
+ the Gateway receives messages from a monitored inbound JMS queue (iJMS), 
+ and then transmits the messages to the service using HTTP:</p>
+
+<p style="margin-left: 40px;
+			margin-top: 6pt;
+			margin-bottom: 6pt;">Requestor <img src="red_left.jpg" x-save-file="TRUE" x-save-method="compute-relative" style="border: none;
+														width: 24px;
+														height: 19px;
+														margin-left: 0px;
+														margin-right: 0px;
+														margin-top: 0px;
+														margin-bottom: -3px;
+														float: none;
+														border-style: none;
+														border-style: none;" width="24" height="19" border="0"> iJMS <img src="red_right.jpg" x-maintain-ratio="TRUE" x-save-file="TRUE" x-save-method="compute-relative" style="border: none;
+			width: 24px;
+			height: 19px;
+			margin-left: 0px;
+			margin-right: 0px;
+			margin-top: 0px;
+			margin-bottom: -3px;
+			float: none;
+			border-style: none;
+			border-style: none;" width="24" height="19" border="0"> Gateway <img src="red_left.jpg" x-save-file="TRUE" x-save-method="compute-relative" style="border: none;
+									width: 24px;
+									height: 19px;
+									margin-left: 0px;
+									margin-right: 0px;
+									margin-top: 0px;
+									margin-bottom: -3px;
+									float: none;
+									border-style: none;
+									border-style: none;" width="24" height="19" border="0"> HTTP <img src="red_right.jpg" x-maintain-ratio="TRUE" x-save-file="TRUE" x-save-method="compute-relative" style="border: none;
+														width: 24px;
+														height: 19px;
+														margin-left: 0px;
+														margin-right: 0px;
+														margin-top: 0px;
+														margin-bottom: -3px;
+														float: none;
+														border-style: none;
+														border-style: none;" width="24" height="19" border="0"> Service </p>
+
+<p style="margin-left: 40px;">Once again, the Gateway monitors the inbound 
+ queue configured in the Manager. When the Gateway picks up a message from 
+ the queue, it routes the message to the service URL specified in the HTTP(S) 
+ Routing assertion in the service’s security policy. The Gateway routes 
+ any service response message back to the requestor-designated reply-to 
+ queue specified in the header of the JMS message. If reply instructions 
+ are not included in the header of the JMS message, however, then the Gateway 
+ cannot route the reply back to the requestor.</p>
+
+<h6>&nbsp;</h6>
+
+<div style="padding: 5px;
+			background-color: #f8fbdd;
+			margin-right: 4px;
+			margin-top: 4px;
+			margin-bottom: 4px;
+			float: none;
+			width: 550px;
+			margin-left: 44px;">
+<p class="tipsnotes"><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
+	width: 16px;
+	height: 15px;
+	float: none;
+	border-style: none;
+	border-style: none;" width="16" height="15" border="0"> &nbsp;NOTE:</B></span> 
+ When you publish a service, the SecureSpan™ Manager automatically adds 
+ the service URL specified during the publication process as an HTTP(S) 
+ Routing assertion in the service’s security policy. For more information, 
+ see <a href="Configure_Edit_Message_Routing_Assertions.htm">Configure 
+ and Edit Message Routing Assertions</a>.</p>
+</div>
+
+<h6>&nbsp;</h6>
+
+<ul style="list-style: disc;"
+	type=disc>
+	
+	<li class="kadov-p"><p style="font-weight: bold;">HTTP-to-JMS Configuration</p></li>
+</ul>
+
+<p style="margin-left: 40px;">In the HTTP-to-JMS configuration scenario, 
+ the Gateway receives messages via HTTP, and then transmits the messages 
+ to an outbound JMS queue (oJMS):</p>
+
+<p style="margin-left: 40px;
+			margin-top: 6pt;
+			margin-bottom: 6pt;">Requestor <img src="red_left.jpg" x-save-file="TRUE" x-save-method="compute-relative" style="border: none;
+														width: 24px;
+														height: 19px;
+														margin-left: 0px;
+														margin-right: 0px;
+														margin-top: 0px;
+														margin-bottom: -3px;
+														float: none;
+														border-style: none;
+														border-style: none;" width="24" height="19" border="0"> HTTP <img src="red_right.jpg" x-maintain-ratio="TRUE" x-save-file="TRUE" x-save-method="compute-relative" style="border: none;
+			width: 24px;
+			height: 19px;
+			margin-left: 0px;
+			margin-right: 0px;
+			margin-top: 0px;
+			margin-bottom: -3px;
+			float: none;
+			border-style: none;
+			border-style: none;" width="24" height="19" border="0"> Gateway <img src="red_left.jpg" x-save-file="TRUE" x-save-method="compute-relative" style="border: none;
+									width: 24px;
+									height: 19px;
+									margin-left: 0px;
+									margin-right: 0px;
+									margin-top: 0px;
+									margin-bottom: -3px;
+									float: none;
+									border-style: none;
+									border-style: none;" width="24" height="19" border="0"> oJMS <img src="red_right.jpg" x-maintain-ratio="TRUE" x-save-file="TRUE" x-save-method="compute-relative" style="border: none;
+														width: 24px;
+														height: 19px;
+														margin-left: 0px;
+														margin-right: 0px;
+														margin-top: 0px;
+														margin-bottom: -3px;
+														float: none;
+														border-style: none;
+														border-style: none;" width="24" height="19" border="0"> Service</p>
+
+<p style="margin-left: 40px;">The Gateway receives a message over HTTP 
+ or HTTP(S), allowing the use of the HTTP authentication assertions (HTTP 
+ Basic, HTTP Digest, and HTTP Client Certificate) in the security policy. 
+ If a response message is required by the requestor, then the Gateway creates 
+ a temporary queue to receive the reply from the service. The Gateway then 
+ routes the reply message back to the requesting HTTP or HTTP(S) requestor. 
+ </p>
+
+<h6>&nbsp;</h6>
+
+<div style="padding: 5px;
+			background-color: #f8fbdd;
+			margin-right: 4px;
+			margin-top: 4px;
+			margin-bottom: 4px;
+			float: none;
+			width: 550px;
+			margin-left: 44px;">
+<p class="tipsnotes"><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
+	width: 16px;
+	height: 15px;
+	float: none;
+	border-style: none;
+	border-style: none;" width="16" height="15" border="0"> &nbsp;NOTE:</B></span> 
+ For more information about the HTTP authentication assertions, see <a href="Configure_Edit_Authentication_Assertions.htm">Configure and Edit 
+ Authentication Assertions</a>. </p>
+</div>
+
+<h6>&nbsp;</h6>
+
+<p>All queues must be created in the WebSphere® MQ Queue Manager and referenced 
+ in the JNDI directory before they can be configured in the Manager. </p>
+
+<h2 style="color: #000000;"><a name=Configure_and_Edit_JMS_Queues
+								style="color: #000000;">Configure and Edit 
+ JMS Queues</a></h2>
+
+<div style="padding: 5px;
+			background-color: #f8fbdd;
+			margin-right: 4px;
+			margin-top: 4px;
+			margin-bottom: 4px;
+			float: none;
+			width: 550px;
+			margin-left: 4px;">
+<p class="tipsnotes"><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
+	width: 16px;
+	height: 15px;
+	float: none;
+	border-style: none;
+	border-style: none;" width="16" height="15" border="0"> &nbsp;NOTE:</B></span> 
+ For more information on the usage of inbound and outbound JMS queues in 
+ the SecureSpan™ Gateway, see <a href="#About_JMS_Queues">About JMS Queues</a>. 
+ To view a list of previously configured queues, access the Manage JMS 
+ Queues form by selecting Tasks &gt; Manage JMS Queues from the Main Menu.</p>
+</div>
+
+<p>An inbound queue allows the SecureSpan™ Gateway to receive messages 
+ from a JMS queue, whereas an outbound queue directs the Gateway to route 
+ messages to a service that is listening on a JMS queue. The queues must 
+ first be created in the WebSphere® MQ Queue Manager and referenced in 
+ the JNDI directory before they can be configured in the Manager. A JMS 
+ queue can be edited or deleted at any time. </p>
+
+<h6>&nbsp;</h6>
+
+<h4>Quick Links:</h4>
+
+<p class="quicklinks"><a href="#Configure_a_New_JMS_Queue">Configure a New 
+ JMS Queue</a></p>
+
+<p class="quicklinks"><a href="#Edit_a_JMS_Queue">Edit a JMS Queue</a></p>
+
+<p class="quicklinks"><a href="#Remove_a_JMS_Queue">Remove a JMS Queue</a></p>
+
+<h3 style="color: #000000;"><a name=Configure_a_New_JMS_Queue><span style="color: #000000;"><font color=black >Configure 
+ a New JMS Queue</font></span></a></h3>
+
+<div style="padding: 5px;
+			background-color: #f8fbdd;
+			margin-right: 4px;
+			margin-top: 4px;
+			margin-bottom: 4px;
+			float: none;
+			width: 550px;
+			margin-left: 4px;">
+<p class="tipsnotes"><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
+	width: 16px;
+	height: 15px;
+	float: none;
+	border-style: none;
+	border-style: none;" width="16" height="15" border="0"> &nbsp;NOTE:</B></span> 
+ The following instructions assume that the SecureSpan™ Manager is open. 
+ For brevity, an outbound queue is used as an example in the following 
+ instructions. Repeat the instructions with the alternate selection in 
+ Step #7 to configure a new inbound queue. The configuration of a new queue 
+ requires the JNDI directory settings specified during the JMS configuration 
+ process. Consult your Administrator for the required values. </p>
+</div>
+
+<h6>&nbsp;</h6>
+
+<ol style="list-style: decimal;"
+	type=1>
+	
+	<li class="kadov-p"><p>In the SecureSpan™ Manager, select <span style="font-weight: bold;"><B>Tasks</B></span> 
+ &gt; <span style="font-weight: bold;"><B>Manage JMS Queues</B></span> from the 
+ Main Menu. The Manage JMS Queues form appears.</p></li>
+</ol>
+
+<div style="padding: 5px;
+			background-color: #f8fbdd;
+			margin-right: 4px;
+			margin-top: 4px;
+			margin-bottom: 4px;
+			float: none;
+			width: 550px;
+			margin-left: 44px;">
+<p class="tipsnotes"><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
+	width: 16px;
+	height: 15px;
+	float: none;
+	border-style: none;
+	border-style: none;" width="16" height="15" border="0"> &nbsp;NOTE:</B></span> 
+ You can also add a new queue by clicking [New Queue] in the JMS Routing 
+ Properties form. To access the form, double-click a &quot;Route to JMS 
+ Queue&quot; assertion in the Policy Development window.</p>
+</div>
+
+<ol start=2
+	style="list-style: decimal;"
+	type=1>
+	
+	<li class="kadov-p"><p>Click [<span style="font-weight: bold;"><B>Add</B></span>]. 
+ The Add JMS Queue form appears. In the <span style="font-weight: bold;"><B>Queue 
+ Name</B></span> field, enter the JNDI queue reference name. For example: cn=GatewayQueue. 
+ Replace “GatewayQueue” with the actual queue name. </p></li>
+	
+	<li class="kadov-p"><p>Select “WebSphere MQ over LDAP” from the <span 
+ style="font-weight: bold;"><B>Driver</B></span> drop-down list.</p></li>
+</ol>
+
+<div style="padding: 5px;
+			background-color: #f8fbdd;
+			margin-right: 4px;
+			margin-top: 4px;
+			margin-bottom: 4px;
+			float: none;
+			width: 550px;
+			margin-left: 44px;">
+<p class="tipsnotes"><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
+	width: 16px;
+	height: 15px;
+	float: none;
+	border-style: none;
+	border-style: none;" width="16" height="15" border="0"> &nbsp;NOTE:</B></span> 
+ The SecureSpan™ Gateway will support other JMS providers in a future version.</p>
+</div>
+
+<ol start=4
+	style="list-style: decimal;"
+	type=1>
+	
+	<li class="kadov-p"><p>In the <span style="font-weight: bold;"><B>Naming 
+ Provider URL</B></span> field, enter the URL of the JNDI server. For example: 
+ ldap://servername.company.com/dc=companydomain,dc=com.</p></li>
+	
+	<li class="kadov-p"><p>In the <span style="font-weight: bold;"><B>Queue 
+ Connection Factory URL</B></span> field, enter the JNDI QueueConnectionFactory 
+ reference name. For example: cn=QueueConnectionFactoryJNDIName. Replace 
+ “QueueConnectionFactoryJNDIName” with the actual name. </p></li>
+	
+	<li class="kadov-p"><p>In the <span style="font-weight: bold;"><B>Initial 
+ Context Factory Class</B></span> field, enter the initial context class. For 
+ example: com.sun.jndi.ldap.LdapCtxFactory. </p></li>
+	
+	<li class="kadov-p"><p>In the Direction section of the form, select the 
+ <span style="font-weight: bold;"><B>Outbound</B></span> option. </p></li>
+	
+	<li class="kadov-p"><p>If WebSphere® MQ requires a user name and password, 
+ then check the <span style="font-weight: bold;"><B>Requires User Name and 
+ Password</B></span> check box. Enter the user name and password into the respective 
+ <span style="font-weight: bold;"><B>User Name</B></span> and <span style="font-weight: bold;"><B>Password</B></span> 
+ fields. </p></li>
+	
+	<li class="kadov-p"><p>Click [<span style="font-weight: bold;"><B>Test Settings</B></span>] 
+ to test the connection between the SecureSpan™ Gateway and JMS queue. 
+ A dialog form appears. Note the diagnostic information. If a connection 
+ could not be established, double-check the queue and Gateway settings. 
+ To contact a Layer 7 Technologies Technical Support Representative, see 
+ <a href="Technical_Support_and_Contact_Information.htm">Technical Support 
+ and Contact Information</a>. To close the form, click [<span style="font-weight: bold;"><B>X</B></span>] 
+ in the top right corner of the window. </p></li>
+	
+	<li class="kadov-p"><p>Click [<span style="font-weight: bold;"><B>Save</B></span>]. 
+ The Add JMS Queue form closes. The queue is registered in the Gateway 
+ and added to the Known JMS Queues table in the Manage JMS Queues form. 
+ For information on using the outbound queue in a service with JMS routing, 
+ proceed to <a href="#Configure_and_Edit_the_JMS_Assertion">Configure and 
+ Edit the JMS Assertion</a>.</p></li>
+</ol>
+
+<h6>&nbsp;</h6>
+
+<div style="padding: 5px;
+			background-color: #f8fbdd;
+			margin-right: 4px;
+			margin-top: 4px;
+			margin-bottom: 4px;
+			float: none;
+			width: 550px;
+			margin-left: 4px;">
+<p class="tipsnotes"><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
+	width: 16px;
+	height: 15px;
+	float: none;
+	border-style: none;
+	border-style: none;" width="16" height="15" border="0"> &nbsp;NOTE:</B></span> 
+ The JMS queue settings in the SecureSpan™ Manager must match the corresponding 
+ settings in the JNDI directory in order to connect to the SecureSpan™ 
+ Gateway. </p>
+</div>
+
+<h3 style="color: #000000;"><a name=Edit_a_JMS_Queue><span style="color: #000000;"><font color=black >Edit 
+ a JMS Queue</font></span></a></h3>
+
+<ol style="list-style: decimal;"
+	type=1>
+	
+	<li class="kadov-p"><p>In the SecureSpan™ Manager, select <span style="font-weight: bold;"><B>Tasks</B></span> 
+ &gt; <span style="font-weight: bold;"><B>Manage JMS Queues</B></span> from the 
+ Main Menu. The Manage JMS Queues form appears. </p></li>
+	
+	<li class="kadov-p"><p>Click [<span style="font-weight: bold;"><B>Properties</B></span>]. 
+ The JMS Queue Properties form appears. Edit the queue as required. Reference 
+ the instructions in <a href="#Configure_a_New_JMS_Queue">Configure a New 
+ JMS Queue</a> for field-level information.</p></li>
+	
+	<li class="kadov-p"><p>Click [<span style="font-weight: bold;"><B>Test Settings</B></span>] 
+ to test the connection between the SecureSpan™ Gateway and JMS queue. 
+ A dialog form appears. Note the diagnostic information. If a connection 
+ could not be established, double-check the queue and Gateway settings. 
+ To contact a Layer 7 Technologies Technical Support Representative, see 
+ <a href="Technical_Support_and_Contact_Information.htm">Technical Support 
+ and Contact Information</a>. To close the form, click [<span style="font-weight: bold;"><B>X</B></span>] 
+ in the top right corner of the window. </p></li>
+	
+	<li class="kadov-p"><p>Click [<span style="font-weight: bold;"><B>Save</B></span>]. 
+ The JMS Queue Properties form is closed. The revised queue is updated 
+ in the Gateway and Known JMS Queues table in the Manage JMS Queues form. 
+ </p></li>
+</ol>
+
+<h3 style="color: #000000;"><a name=Remove_a_JMS_Queue
+								style="color: #000000;">Remove a JMS Queue</a></h3>
+
+<div style="padding: 5px;
+			background-color: #f8fbdd;
+			margin-right: 4px;
+			margin-top: 4px;
+			margin-bottom: 4px;
+			float: none;
+			width: 550px;
+			margin-left: 4px;">
+<p class="tipsnotes"><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
+	width: 16px;
+	height: 15px;
+	float: none;
+	border-style: none;
+	border-style: none;" width="16" height="15" border="0"> &nbsp;NOTE:</B></span> 
+ When you remove a queue, you unregister it from the SecureSpan™ Gateway. 
+ The queue will still exist in the WebSphere® MQ server. </p>
+</div>
+
+<h6>&nbsp;</h6>
+
+<ol style="list-style: decimal;"
+	type=1>
+	
+	<li class="kadov-p"><p>In the SecureSpan™ Manager, select <span style="font-weight: bold;"><B>Tasks</B></span> 
+ &gt; <span style="font-weight: bold;"><B>Manage JMS Queues</B></span> from the 
+ Main Menu. The Manage JMS Queues form appears.</p></li>
+	
+	<li class="kadov-p"><p>Select the queue that you want to remove from 
+ the Known JMS Queues table. Click [<span style="font-weight: bold;"><B>Remove</B></span>]. 
+ </p></li>
+	
+	<li class="kadov-p"><p>A confirmation message appears. Click [<span style="font-weight: bold;"><B>Remove</B></span>].</p></li>
+</ol>
+
+<h2 style="color: #000000;"><a name=JMS_Assertion_Rules
+								style="color: #000000;">JMS Assertion Rules</a></h2>
+
+<p>Note the following rules when using the JMS assertion for outbound routing:</p>
+
+<ul style="list-style: disc;"
+	type=disc>
+	
+	<li class="kadov-p"><p style="margin-top: 4.5pt;">If JMS service request 
+ messages are sent to the Gateway, then the following HTTP-related assertions 
+ cannot be used in the security policy:</p></li>
+	
+	<ul style="list-style: disc;"
+		type=disc>
+		
+		<li class="kadov-p"><p>The IP Address Range assertion from the Service 
+ Availability category of the [Assertions] tab </p></li>
+		
+		<li class="kadov-p"><p>The HTTP Basic, HTTP Digest, and HTTP Client 
+ Certificate assertions from the Authentication category of the [Assertions] 
+ tab</p></li>
+		
+		<li class="kadov-p"><p>The SSL Transport assertion from the Transport 
+ Layer Security (TLS) category of the [Assertions] tab.</p></li>
+	</ul>
+	
+	<li class="kadov-p"><p style="margin-bottom: 4.5pt;">If HTTP request 
+ messages are sent to the Gateway, then all assertions can be used in the 
+ security policy.</p></li>
+</ul>
+
+<h6>&nbsp;</h6>
+
+<div style="padding: 5px;
+			background-color: #f8fbdd;
+			margin-right: 4px;
+			margin-top: 4px;
+			margin-bottom: 4px;
+			float: none;
+			width: 550px;
+			margin-left: 4px;">
+<p class="tipsnotes"><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
+	width: 16px;
+	height: 15px;
+	float: none;
+	border-style: none;
+	border-style: none;" width="16" height="15" border="0"> &nbsp;NOTE:</B></span> 
+ For information on the general policy and assertion rules used in the 
+ SecureSpan™ Manager, see <a href="Security_Policy_Organization_and_Rules.htm">Security 
+ Policy Organization and Rules</a>. For information on configuring, editing, 
+ and manipulating a security policy in the Policy Development window, see 
+ <a href="Configure_Edit_Security_Policies.htm">Configure and Edit Security 
+ Policies</a>.</p>
+</div>
+
+<h2 style="color: #000000;"><a name=Configure_and_Edit_the_JMS_Assertion
+								style="color: #000000;">Configure and Edit 
+ the JMS Assertion</a></h2>
+
+<div style="padding: 5px;
+			background-color: #f8fbdd;
+			margin-right: 4px;
+			margin-top: 4px;
+			margin-bottom: 4px;
+			float: none;
+			width: 550px;
+			margin-left: 4px;">
+<p class="tipsnotes"><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
+	width: 16px;
+	height: 15px;
+	float: none;
+	border-style: none;
+	border-style: none;" width="16" height="15" border="0"> &nbsp;NOTE:</B></span> 
+ Inbound JMS queues are used by published JMS services and do not require 
+ an assertion. The JMS service publication process is the same as the publication 
+ process for a regular service (see <a HREF="Services_Overview.htm">Services 
+ Overview</a>). If publishing a service that will accept incoming messages 
+ from a JMS queue, ensure that the appropriate inbound JMS queue is monitored 
+ for the messages. See <a href="#About_JMS_Queues">About JMS Queues</a> 
+ for more information. JMS &nbsp;messages 
+ will be processed according to the assertions defined in the security 
+ policy.</p>
+</div>
+
+<p>The JMS routing assertion — called &quot;Route to JMS Queue&quot; — 
+ appears in the Message Routing category of the [Assertions] tab in the 
+ SecureSpan™ Manager. The JMS assertion instructs the SecureSpan™ Gateway 
+ to route service request messages to a selected outbound queue configured 
+ in <a href="#Configure_and_Edit_JMS_Queues">Configure and Edit JMS Queues</a>. 
+ </p>
+
+<h6>&nbsp;</h6>
+
+<div style="padding: 5px;
+			background-color: #f8fbdd;
+			margin-right: 4px;
+			margin-top: 4px;
+			margin-bottom: 4px;
+			float: none;
+			width: 550px;
+			margin-left: 4px;">
+<p class="tipsnotes"><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
+	width: 16px;
+	height: 15px;
+	float: none;
+	border-style: none;
+	border-style: none;" width="16" height="15" border="0"> &nbsp;NOTE:</B></span> 
+ Consult the rules in <a href="#JMS_Assertion_Rules">JMS Assertion Rules</a> 
+ before using the JMS assertion.</p>
+</div>
+
+<h3>Add and Configure the JMS Assertion</h3>
+
+<div style="padding: 5px;
+			background-color: #f8fbdd;
+			margin-right: 4px;
+			margin-top: 4px;
+			margin-bottom: 4px;
+			float: none;
+			width: 550px;
+			margin-left: 4px;">
+<p class="tipsnotes"><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
+	width: 16px;
+	height: 15px;
+	float: none;
+	border-style: none;
+	border-style: none;" width="16" height="15" border="0"> &nbsp;NOTE:</B></span> 
+ The following instructions assume that the SecureSpan™ Manager is open.</p>
+</div>
+
+<h6>&nbsp;</h6>
+
+<ol style="list-style: decimal;"
+	type=1>
+	
+	<li class="kadov-p"><p style="margin-left: 0px;">Access the Policy Development 
+ window for the target service by one of two methods: </p></li>
+</ol>
+
+<div style="padding: 5px;
+			background-color: #f8fbdd;
+			margin-right: 4px;
+			margin-top: 4px;
+			margin-bottom: 4px;
+			float: none;
+			width: 550px;
+			margin-left: 44px;">
+<p class="tipsnotes"><span style="font-weight: bold;"><B><img src="TIPSfinal.gif" x-maintain-ratio="TRUE" style="border: none;
+	width: 16px;
+	height: 14px;
+	float: none;
+	border-style: none;
+	border-style: none;" width="16" height="14" border="0"> &nbsp;TIP:</B></span> 
+ &nbsp;If not 
+ already disabled, it is strongly recommended that you disable a service 
+ while constructing its security policy to prevent unsecured and unauthorized 
+ access. A disabled service contains a red &quot;X&quot; through its left-side 
+ icon. See <a href="Manage_Published_Services.htm">Manage Published Services</a> 
+ for information.</p>
+</div>
+
+<ol style="list-style: disc;"
+	type=disc>
+	
+	<ul style="list-style: disc;"
+		type=disc>
+		
+		<li class="kadov-p"><p>Right-click the service name in the [<span 
+ style="font-weight: bold;"><B>Services</B></span>] tab. A drop-down menu appears. 
+ Select <span style="font-weight: bold;"><B>Policy Assertions</B></span>. Or, 
+ </p></li>
+		
+		<li class="kadov-p"><p>Double-click the service in the [<span style="font-weight: bold;"><B>Services</B></span>] 
+ tab.</p></li>
+	</ul>
+</ol>
+
+<ol start=2
+	style="list-style: decimal;"
+	type=1>
+	
+	<li class="kadov-p"><p>The Policy Development window appears. Add the 
+ JMS assertion to the security policy by one of two methods: </p></li>
+</ol>
+
+<ol style="list-style: disc;"
+	type=disc>
+	
+	<ul style="list-style: disc;"
+		type=disc>
+		
+		<li class="kadov-p"><p>Drag and drop the assertion from the [<span 
+ style="font-weight: bold;"><B>Assertions</B></span>] tab into the Policy Development 
+ window, or &nbsp;&nbsp;</p></li>
+		
+		<li class="kadov-p"><p>Highlight the assertion in the [<span style="font-weight: bold;"><B>Assertions</B></span>] 
+ tab and click the <img src="MoveAssertionOver.gif" x-maintain-ratio="TRUE" style="border: none;
+								width: 22px;
+								height: 18px;
+								margin-left: 0px;
+								margin-right: 0px;
+								margin-top: 0px;
+								margin-bottom: -2.5px;
+								float: none;
+								border-style: none;
+								border-style: none;" width="22" height="18" border="0"> &nbsp;(Add 
+ Assertion) button in the Assertion Tool Bar.</p></li>
+	</ul>
+</ol>
+
+<ol start=3
+	style="list-style: decimal;"
+	type=1>
+	
+	<li class="kadov-p"><p>The JMS Routing Properties form appears. Select 
+ the target outbound queue from the <span style="font-weight: bold;"><B>JMS 
+ Queue</B></span> drop-down list. </p></li>
+</ol>
+
+<div style="padding: 5px;
+			background-color: #f8fbdd;
+			margin-right: 4px;
+			margin-top: 4px;
+			margin-bottom: 4px;
+			float: none;
+			width: 550px;
+			margin-left: 44px;">
+<p class="tipsnotes"><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
+	width: 16px;
+	height: 15px;
+	float: none;
+	border-style: none;
+	border-style: none;" width="16" height="15" border="0"> &nbsp;NOTE:</B></span> 
+ Click [New Queue] to create a new queue. The Add JMS Queue form appears. 
+ See <a href="#Configure_and_Edit_JMS_Queues">Configure and Edit JMS Queues</a> 
+ for instructions and more information. </p>
+</div>
+
+<ol start=4
+	style="list-style: decimal;"
+	type=1>
+	
+	<li class="kadov-p"><p>Click [<span style="font-weight: bold;"><B>OK</B></span>]. 
+ The assertion is added to the Policy Development window. Proceed to the 
+ &quot;Validate a Security Policy&quot; section in <a href="Configure_Edit_Security_Policies.htm">Configure 
+ and Edit Security Policies</a>.</p></li>
+</ol>
+
+<h6>&nbsp;</h6>
+
+<div style="padding: 5px;
+			background-color: #f8fbdd;
+			margin-right: 4px;
+			margin-top: 4px;
+			margin-bottom: 4px;
+			float: none;
+			width: 550px;
+			margin-left: 4px;">
+<p class="tipsnotes"><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
+	width: 16px;
+	height: 15px;
+	float: none;
+	border-style: none;
+	border-style: none;" width="16" height="15" border="0"> &nbsp;NOTE:</B></span> 
+ Note the organization rules in <a href="#JMS_Assertion_Rules">JMS Assertion 
+ Rules</a> and in <a href="Security_Policy_Organization_and_Rules.htm">Security 
+ Policy Organization and Rules</a> when organizing the JMS assertion in 
+ the Policy Development window.</p>
+</div>
+
+<h3>Edit the JMS Assertion</h3>
+
+<ol style="list-style: decimal;"
+	type=1>
+	
+	<li class="kadov-p"><p>In the Policy Development window, right-click 
+ the &quot;Route to JMS Queue&quot; assertion. A drop-down menu appears. 
+ Select <span style="font-weight: bold;"><B>Routing Properties</B></span>.</p></li>
+</ol>
+
+<div style="padding: 5px;
+			background-color: #f8fbdd;
+			margin-right: 4px;
+			margin-top: 4px;
+			margin-bottom: 4px;
+			float: none;
+			width: 550px;
+			margin-left: 44px;">
+<p class="tipsnotes"><span style="font-weight: bold;"><B><img src="TIPSfinal.gif" x-maintain-ratio="TRUE" style="border: none;
+	width: 16px;
+	height: 14px;
+	float: none;
+	border-style: none;
+	border-style: none;" width="16" height="14" border="0"> &nbsp;TIP:</B></span> 
+ You can also double-click the assertion in the Policy Development window 
+ to open the JMS Routing Properties form. &nbsp;</p>
+</div>
+
+<ol start=2
+	style="list-style: decimal;"
+	type=1>
+	
+	<li class="kadov-p"><p>The JMS Routing Properties form appears. Select 
+ a new queue from the <span style="font-weight: bold;"><B>JMS Queue</B></span> 
+ drop-down list. </p></li>
+</ol>
+
+<div style="padding: 5px;
+			background-color: #f8fbdd;
+			margin-right: 4px;
+			margin-top: 4px;
+			margin-bottom: 4px;
+			float: none;
+			width: 550px;
+			margin-left: 44px;">
+<p class="tipsnotes"><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
+	width: 16px;
+	height: 15px;
+	float: none;
+	border-style: none;
+	border-style: none;" width="16" height="15" border="0"> &nbsp;NOTE:</B></span> 
+ Click [New Queue] to create a new queue. The Add JMS Queue form appears. 
+ See <a href="#Configure_and_Edit_JMS_Queues">Configure and Edit JMS Queues</a> 
+ for instructions and more information. </p>
+</div>
+
+<ol start=3
+	style="list-style: decimal;"
+	type=1>
+	
+	<li class="kadov-p"><p>Click [<span style="font-weight: bold;"><B>OK</B></span>]. 
+ The modified assertion is added to the Policy Development window. Proceed 
+ to the &quot;Validate a Security Policy&quot; section in <a href="Configure_Edit_Security_Policies.htm">Configure 
+ and Edit Security Policies</a>.</p></li>
+</ol>
+
+<h6>&nbsp;</h6>
+
+<div style="padding: 5px;
+			background-color: #f8fbdd;
+			margin-right: 4px;
+			margin-top: 4px;
+			margin-bottom: 4px;
+			float: none;
+			width: 550px;
+			margin-left: 4px;">
+<p class="tipsnotes"><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
+	width: 16px;
+	height: 15px;
+	float: none;
+	border-style: none;
+	border-style: none;" width="16" height="15" border="0"> &nbsp;NOTE:</B></span> 
+ Note the organization rules in <a href="#JMS_Assertion_Rules">JMS Assertion 
+ Rules</a> and in <a href="Security_Policy_Organization_and_Rules.htm">Security 
+ Policy Organization and Rules</a> when organizing the JMS assertion in 
+ the Policy Development window.</p>
+</div>
+
+<h6>&nbsp;</h6>
+
+</body>
+
+</html>

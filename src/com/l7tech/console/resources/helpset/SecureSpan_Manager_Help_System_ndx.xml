@@ -2,23 +2,23 @@
 <!DOCTYPE index PUBLIC "-//Sun Microsystems Inc.//DTD JavaHelp Index Version 1.0//EN" "http://java.sun.com/products/javahelp/index_1_0.dtd">
 <index version="1.0">
  <indexitem text="1U" target="securespan_solution_overview_htm" />
- <indexitem text="Access Control" target="publish_web_services_htm" />
+ <indexitem text="Access Control" target="manage_soap_web_services_htm" />
  <indexitem text="Add Assertion" target="configure_edit_security_policies_htm" />
  <indexitem text="Add Multiple Users" target="add_edit_iip_users_and_groups_htm" />
- <indexitem text="Allow Anonymous Access" target="publish_web_services_htm" />
+ <indexitem text="Allow Anonymous Access" target="manage_soap_web_services_htm" />
  <indexitem text="Assertions" target="security_policy_assertions_overview_htm" />
  <indexitem text="Attribute Mapping" target="add_edit_external_identity_providers_htm" />
  <indexitem text="Authentication:Configure/Edit Authentication Assertions" target="configure_edit_authentication_assertions_htm" />
  <indexitem text="Authentication:Security Policy Assertions Overview" target="security_policy_assertions_overview_htm" />
- <indexitem text="CIDR" target="configure_edit_web_service_availability_assertions_htm" />
- <indexitem text="Classless Inter-Domain Routing" target="configure_edit_web_service_availability_assertions_htm" />
+ <indexitem text="CIDR" target="configure_edit_service_availability_assertions_htm" />
+ <indexitem text="Classless Inter-Domain Routing" target="configure_edit_service_availability_assertions_htm" />
  <indexitem text="Cluster Status window" target="view_gateway_cluster_status_htm" />
  <indexitem text="Configuration Process Feedback" target="configure_edit_security_policies_htm" />
  <indexitem text="Confirmation Messages" target="configure_edit_security_policies_htm" />
  <indexitem text="Contact Layer 7 Technologies" target="technical_support_and_contact_information_htm" />
  <indexitem text="CPU" target="view_gateway_cluster_status_htm" />
  <indexitem text="Create Identity Provider" target="add_edit_external_identity_providers_htm" />
- <indexitem text="Credential Transportation" target="publish_web_services_htm" />
+ <indexitem text="Credential Transportation" target="manage_soap_web_services_htm" />
  <indexitem text="Default Namespace" target="create_web_service_wsdl_htm" />
  <indexitem text="Delete Node" target="view_gateway_cluster_status_htm" />
  <indexitem text="Edit Authentication Assertions" target="configure_edit_authentication_assertions_htm" />
@@ -26,21 +26,21 @@
  <indexitem text="Edit Identity Provider Properties Wizard" target="add_edit_external_identity_providers_htm" />
  <indexitem text="Edit Message Routing Assertions" target="configure_edit_message_routing_assertions_htm" />
  <indexitem text="Edit Security Policies" target="configure_edit_security_policies_htm" />
- <indexitem text="Edit Web Service Availability Assertions" target="configure_edit_web_service_availability_assertions_htm" />
+ <indexitem text="Edit Web Service Availability Assertions" target="configure_edit_service_availability_assertions_htm" />
  <indexitem text="Edit XML Security Assertions" target="configure_edit_xml_security_assertions_htm" />
- <indexitem text="Edit XML Transformation/Validation Assertions" target="configure_edit_xml_transformation_validation_assertions_htm" />
+ <indexitem text="Edit XML Transformation/Validation Assertions" target="configure_edit_message_validation_transformation_assertions_htm" />
  <indexitem text="EIPs:Add/Edit External Identity Providers" target="add_edit_external_identity_providers_htm" />
  <indexitem text="EIPs:Identity Providers Overview" target="identity_providers_overview_htm" />
  <indexitem text="EIPs:Search Identity Providers" target="search_identity_providers_htm" />
  <indexitem text="Encrypt:Configure/Edit XML Security Assertions" target="configure_edit_xml_security_assertions_htm" />
- <indexitem text="Encrypt:Publish Web Services" target="publish_web_services_htm" />
+ <indexitem text="Encrypt:Manage SOAP Web Services" target="manage_soap_web_services_htm" />
  <indexitem text="Encrypt Entire Message" target="configure_edit_xml_security_assertions_htm" />
  <indexitem text="Encrypt Selected Message Elements" target="configure_edit_xml_security_assertions_htm" />
- <indexitem text="Evaluate XPath Expression" target="configure_edit_xml_transformation_validation_assertions_htm" />
+ <indexitem text="Evaluate XPath Expression" target="configure_edit_message_validation_transformation_assertions_htm" />
  <indexitem text="External Identity Providers:Add/Edit External Identity Providers" target="add_edit_external_identity_providers_htm" />
  <indexitem text="External Identity Providers:Identity Providers Overview" target="identity_providers_overview_htm" />
  <indexitem text="External Identity Providers:Search Identity Providers" target="search_identity_providers_htm" />
- <indexitem text="Extract Schema" target="configure_edit_xml_transformation_validation_assertions_htm" />
+ <indexitem text="Extract Schema" target="configure_edit_message_validation_transformation_assertions_htm" />
  <indexitem text="Gateway Cluster Status" target="view_gateway_cluster_status_htm" />
  <indexitem text="Gateway Log:SecureSpan Gateway Analysis Overview" target="securespan_gateway_analysis_overview_htm" />
  <indexitem text="Gateway Log:View Gateway Log" target="view_gateway_log_htm" />
@@ -57,7 +57,7 @@
  <indexitem text="Group Properties:Add/Edit IIP Users and Groups" target="add_edit_iip_users_and_groups_htm" />
  <indexitem text="Group Properties:Search Identity Providers" target="search_identity_providers_htm" />
  <indexitem text="HTTP Basic:Configure/Edit Authentication Assertions" target="configure_edit_authentication_assertions_htm" />
- <indexitem text="HTTP Basic:Security Policies Overview and Rules" target="security_policies_overview_and_rules_htm" />
+ <indexitem text="HTTP Basic:Security Policy Organization and Rules" target="security_policy_organization_and_rules_htm" />
  <indexitem text="HTTP Client Certificate" target="configure_edit_authentication_assertions_htm" />
  <indexitem text="HTTP Digest:Configure/Edit Authentication Assertions" target="configure_edit_authentication_assertions_htm" />
  <indexitem text="HTTP Digest:View Gateway Cluster Status" target="view_gateway_cluster_status_htm" />
@@ -69,29 +69,29 @@
  <indexitem text="Identity Providers:Search Identity Providers" target="search_identity_providers_htm" />
  <indexitem text="Inactivity Timeout" target="configure_securespan_manager_preferences_htm" />
  <indexitem text="Interface Display:Configure SecureSpan Manager Preferences" target="configure_securespan_manager_preferences_htm" />
- <indexitem text="Interface Display:SecureSpan Manager Interface" target="securespan_manager_interface_htm" />
+ <indexitem text="Interface Display:SecureSpan Manager Interfaces" target="securespan_manager_interfaces_htm" />
  <indexitem text="Internal Identity Provider:Add/Edit IIP Users and Groups" target="add_edit_iip_users_and_groups_htm" />
  <indexitem text="Internal Identity Provider:Identity Providers Overview" target="identity_providers_overview_htm" />
  <indexitem text="Internal Identity Provider:Search Identity Providers" target="search_identity_providers_htm" />
- <indexitem text="IP Address:Configure/Edit Web Service Availability Assertions" target="configure_edit_web_service_availability_assertions_htm" />
+ <indexitem text="IP Address:Configure/Edit Service Availability Assertions" target="configure_edit_service_availability_assertions_htm" />
  <indexitem text="IP Address:View Gateway Cluster Status" target="view_gateway_cluster_status_htm" />
- <indexitem text="IP Address Range Assertion" target="configure_edit_web_service_availability_assertions_htm" />
+ <indexitem text="IP Address Range Assertion" target="configure_edit_service_availability_assertions_htm" />
  <indexitem text="JMS Routing" target="configure_edit_message_routing_assertions_htm" />
  <indexitem text="LDAP:Add/Edit External Identity Providers" target="add_edit_external_identity_providers_htm" />
  <indexitem text="LDAP:Identity Providers Overview" target="identity_providers_overview_htm" />
  <indexitem text="LDAP:Search Identity Providers" target="search_identity_providers_htm" />
  <indexitem text="Lightweight Directory Access Protocol" target="identity_providers_overview_htm" />
  <indexitem text="Load Sharing" target="view_gateway_cluster_status_htm" />
- <indexitem text="Load XSL" target="configure_edit_xml_transformation_validation_assertions_htm" />
+ <indexitem text="Load XSL" target="configure_edit_message_validation_transformation_assertions_htm" />
  <indexitem text="Log Browser" target="view_gateway_log_htm" />
  <indexitem text="Logs" target="view_gateway_log_htm" />
  <indexitem text="Message Routing:Configure/Edit Message Routing Assertions" target="configure_edit_message_routing_assertions_htm" />
- <indexitem text="Message Routing:Security Policies Overview and Rules" target="security_policies_overview_and_rules_htm" />
+ <indexitem text="Message Routing:Security Policy Organization and Rules" target="security_policy_organization_and_rules_htm" />
  <indexitem text="Message Routing:Security Policy Assertions Overview" target="security_policy_assertions_overview_htm" />
  <indexitem text="Message Severity" target="view_gateway_log_htm" />
  <indexitem text="Move Assertion:Configure/Edit Security Policies" target="configure_edit_security_policies_htm" />
  <indexitem text="Move Assertion:Security Policy Assertions Overview" target="security_policy_assertions_overview_htm" />
- <indexitem text="MS DOS window:SecureSpan Agent Interface" target="securespan_agent_interface_htm" />
+ <indexitem text="MS DOS window:SecureSpan Bridge Interface" target="securespan_bridge_interface_htm" />
  <indexitem text="MS DOS window:SecureSpan Manager Troubleshooting Mode" target="securespan_manager_troubleshooting_mode_htm" />
  <indexitem text="MSAD:Add/Edit External Identity Providers" target="add_edit_external_identity_providers_htm" />
  <indexitem text="MSAD:Identity Providers Overview" target="identity_providers_overview_htm" />
@@ -104,60 +104,60 @@
  <indexitem text="Parts" target="create_web_service_wsdl_htm" />
  <indexitem text="Password:Add/Edit IIP Users and Groups" target="add_edit_iip_users_and_groups_htm" />
  <indexitem text="Password:Connect to the SecureSpan Gateway" target="connect_to_the_securespan_gateway_htm" />
- <indexitem text="Policy:Save and Use Policy Templates" target="save_and_use_policy_templates_htm" />
- <indexitem text="Policy:Security Policies Overview and Rules" target="security_policies_overview_and_rules_htm" />
+ <indexitem text="Policy:Import/Export Security Policies" target="import_export_security_policies_htm" />
+ <indexitem text="Policy:Security Policy Organization and Rules" target="security_policy_organization_and_rules_htm" />
  <indexitem text="Policy:Security Policy Assertions Overview" target="security_policy_assertions_overview_htm" />
  <indexitem text="Policy:Security Policy Examples" target="security_policy_examples_htm" />
- <indexitem text="Policy:Web Service Security Policies Overview" target="web_service_security_policies_overview_htm" />
- <indexitem text="Policy Assertion Tree" target="security_policies_overview_and_rules_htm" />
- <indexitem text="Policy Development window:SecureSpan Manager Interface" target="securespan_manager_interface_htm" />
- <indexitem text="Policy Development window:Security Policies Overview and Rules" target="security_policies_overview_and_rules_htm" />
+ <indexitem text="Policy:Security Policies Overview" target="security_policies_overview_htm" />
+ <indexitem text="Policy Assertion Tree" target="security_policy_organization_and_rules_htm" />
+ <indexitem text="Policy Development window:SecureSpan Manager Interfaces" target="securespan_manager_interfaces_htm" />
+ <indexitem text="Policy Development window:Security Policy Organization and Rules" target="security_policy_organization_and_rules_htm" />
  <indexitem text="Policy Development window:Security Policy Assertions Overview" target="security_policy_assertions_overview_htm" />
- <indexitem text="Policy Development window:Web Service Security Policies Overview" target="web_service_security_policies_overview_htm" />
+ <indexitem text="Policy Development window:Security Policies Overview" target="security_policies_overview_htm" />
  <indexitem text="Policy Messages:Configure/Edit Security Policies" target="configure_edit_security_policies_htm" />
- <indexitem text="Policy Messages:Save and Use Policy Templates" target="save_and_use_policy_templates_htm" />
- <indexitem text="Policy Messages:SecureSpan Manager Interface" target="securespan_manager_interface_htm" />
- <indexitem text="Policy Messages:Security Policies Overview and Rules" target="security_policies_overview_and_rules_htm" />
- <indexitem text="Policy Templates:Save and Use Policy Templates" target="save_and_use_policy_templates_htm" />
+ <indexitem text="Policy Messages:Import/Export Security Policies" target="import_export_security_policies_htm" />
+ <indexitem text="Policy Messages:SecureSpan Manager Interfaces" target="securespan_manager_interfaces_htm" />
+ <indexitem text="Policy Messages:Security Policy Organization and Rules" target="security_policy_organization_and_rules_htm" />
+ <indexitem text="Policy Templates:Import/Export Security Policies" target="import_export_security_policies_htm" />
  <indexitem text="Policy Templates:Security Policy Assertions Overview" target="security_policy_assertions_overview_htm" />
  <indexitem text="Policy Validation Messages" target="configure_edit_security_policies_htm" />
  <indexitem text="Port" target="create_web_service_wsdl_htm" />
  <indexitem text="Preferences:Configure SecureSpan Manager Preferences" target="configure_securespan_manager_preferences_htm" />
- <indexitem text="Preferences:SecureSpan Manager Interface" target="securespan_manager_interface_htm" />
+ <indexitem text="Preferences:SecureSpan Manager Interfaces" target="securespan_manager_interfaces_htm" />
  <indexitem text="Print Help Topics" target="securespan_manager_documentation_htm" />
  <indexitem text="Realm:Configure/Edit Authentication Assertions" target="configure_edit_authentication_assertions_htm" />
  <indexitem text="Realm:Configure/Edit Message Routing Assertions" target="configure_edit_message_routing_assertions_htm" />
- <indexitem text="Remote IP Range Properties" target="configure_edit_web_service_availability_assertions_htm" />
+ <indexitem text="Remote IP Range Properties" target="configure_edit_service_availability_assertions_htm" />
  <indexitem text="Rename Gateway Node" target="view_gateway_cluster_status_htm" />
- <indexitem text="Rename Policy Template" target="save_and_use_policy_templates_htm" />
+ <indexitem text="Rename Policy Template" target="import_export_security_policies_htm" />
  <indexitem text="Request Routed" target="view_gateway_cluster_status_htm" />
  <indexitem text="Requests Attempted" target="view_gateway_cluster_status_htm" />
  <indexitem text="Require SSL Transport" target="configure_edit_tls_assertions_htm" />
- <indexitem text="Require SSL/TLS Encryption" target="publish_web_services_htm" />
- <indexitem text="Restrict Day" target="configure_edit_web_service_availability_assertions_htm" />
- <indexitem text="Restrict Time" target="configure_edit_web_service_availability_assertions_htm" />
+ <indexitem text="Require SSL/TLS Encryption" target="manage_soap_web_services_htm" />
+ <indexitem text="Restrict Day" target="configure_edit_service_availability_assertions_htm" />
+ <indexitem text="Restrict Time" target="configure_edit_service_availability_assertions_htm" />
  <indexitem text="Revoking" target="add_edit_iip_users_and_groups_htm" />
  <indexitem text="Route" target="configure_edit_message_routing_assertions_htm" />
  <indexitem text="Routing" target="configure_edit_message_routing_assertions_htm" />
- <indexitem text="Rules" target="security_policies_overview_and_rules_htm" />
+ <indexitem text="Rules" target="security_policy_organization_and_rules_htm" />
  <indexitem text="SAML:Configure/Edit Message Routing Assertions" target="configure_edit_message_routing_assertions_htm" />
  <indexitem text="SAML:Configure/Edit XML Security Assertions" target="configure_edit_xml_security_assertions_htm" />
  <indexitem text="SAML Security:Configure/Edit Message Routing Assertions" target="configure_edit_message_routing_assertions_htm" />
  <indexitem text="SAML Security:Configure/Edit XML Security Assertions" target="configure_edit_xml_security_assertions_htm" />
  <indexitem text="Saved Login" target="configure_securespan_manager_preferences_htm" />
- <indexitem text="Schema Validation Properties" target="configure_edit_xml_transformation_validation_assertions_htm" />
+ <indexitem text="Schema Validation Properties" target="configure_edit_message_validation_transformation_assertions_htm" />
  <indexitem text="Search Identity Providers:Add/Edit External Identity Providers" target="add_edit_external_identity_providers_htm" />
  <indexitem text="Search Identity Providers:Add/Edit IIP Users and Groups" target="add_edit_iip_users_and_groups_htm" />
  <indexitem text="Search Identity Providers:Configure/Edit Authentication Assertions" target="configure_edit_authentication_assertions_htm" />
  <indexitem text="Search Identity Providers:Search Identity Providers" target="search_identity_providers_htm" />
- <indexitem text="SecureSpan™ Agent Troubleshooting Mode" target="securespan_agent_interface_htm" />
+ <indexitem text="SecureSpan™ Agent Troubleshooting Mode" target="securespan_bridge_interface_htm" />
  <indexitem text="SecureSpan™ Gateway:Connect to the SecureSpan Gateway" target="connect_to_the_securespan_gateway_htm" />
  <indexitem text="SecureSpan™ Gateway:SecureSpan Gateway Analysis Overview" target="securespan_gateway_analysis_overview_htm" />
  <indexitem text="SecureSpan™ Gateway:SecureSpan Solution Overview" target="securespan_solution_overview_htm" />
  <indexitem text="SecureSpan™ Gateway:View Gateway Cluster Status" target="view_gateway_cluster_status_htm" />
  <indexitem text="SecureSpan™ Gateway:View Gateway Log" target="view_gateway_log_htm" />
  <indexitem text="SecureSpan™ Manager:Configure SecureSpan Manager Preferences" target="configure_securespan_manager_preferences_htm" />
- <indexitem text="SecureSpan™ Manager:SecureSpan Manager Interface" target="securespan_manager_interface_htm" />
+ <indexitem text="SecureSpan™ Manager:SecureSpan Manager Interfaces" target="securespan_manager_interfaces_htm" />
  <indexitem text="SecureSpan™ Manager:SecureSpan Manager Overview" target="securespan_manager_overview_htm" />
  <indexitem text="SecureSpan™ Manager:SecureSpan Manager Troubleshooting Mode" target="securespan_manager_troubleshooting_mode_htm" />
  <indexitem text="SecureSpan™ Manager:SecureSpan Manager Workflow" target="securespan_manager_workflow_htm" />
@@ -168,7 +168,7 @@
  <indexitem text="Security Assertions Markup Language" target="configure_edit_xml_security_assertions_htm" />
  <indexitem text="Security Policy Examples" target="security_policy_examples_htm" />
  <indexitem text="Service Authentication" target="configure_edit_message_routing_assertions_htm" />
- <indexitem text="Service Availability:Configure/Edit Web Service Availability Assertions" target="configure_edit_web_service_availability_assertions_htm" />
+ <indexitem text="Service Availability:Configure/Edit Service Availability Assertions" target="configure_edit_service_availability_assertions_htm" />
  <indexitem text="Service Availability:Security Policy Assertions Overview" target="security_policy_assertions_overview_htm" />
  <indexitem text="Service Level Agreement" target="securespan_gateway_analysis_overview_htm" />
  <indexitem text="Service Statistics window" target="view_gateway_cluster_status_htm" />
@@ -178,39 +178,39 @@
  <indexitem text="Sign/Encrypt Request:Configure/Edit Authentication Assertions" target="configure_edit_authentication_assertions_htm" />
  <indexitem text="Sign/Encrypt Request:Configure/Edit XML Security Assertions" target="configure_edit_xml_security_assertions_htm" />
  <indexitem text="Sign/Encrypt Response:Configure/Edit XML Security Assertions" target="configure_edit_xml_security_assertions_htm" />
- <indexitem text="Sign/Encrypt Response:Security Policies Overview and Rules" target="security_policies_overview_and_rules_htm" />
+ <indexitem text="Sign/Encrypt Response:Security Policy Organization and Rules" target="security_policy_organization_and_rules_htm" />
  <indexitem text="SOAP:Configure/Edit XML Security Assertions" target="configure_edit_xml_security_assertions_htm" />
  <indexitem text="SOAP:Create Web Service WSDL" target="create_web_service_wsdl_htm" />
  <indexitem text="SOAP Action" target="create_web_service_wsdl_htm" />
  <indexitem text="SSL Security Assertion" target="configure_edit_tls_assertions_htm" />
  <indexitem text="SSL Transport" target="configure_edit_authentication_assertions_htm" />
  <indexitem text="Status Bar:SecureSpan Gateway Analysis Overview" target="securespan_gateway_analysis_overview_htm" />
- <indexitem text="Status Bar:SecureSpan Manager Interface" target="securespan_manager_interface_htm" />
+ <indexitem text="Status Bar:SecureSpan Manager Interfaces" target="securespan_manager_interfaces_htm" />
  <indexitem text="Status Bar:View Gateway Cluster Status" target="view_gateway_cluster_status_htm" />
  <indexitem text="Status Bar:View Gateway Log" target="view_gateway_log_htm" />
  <indexitem text="Support" target="technical_support_and_contact_information_htm" />
  <indexitem text="Technical Support:Add/Edit External Identity Providers" target="add_edit_external_identity_providers_htm" />
  <indexitem text="Technical Support:Configure/Edit Message Routing Assertions" target="configure_edit_message_routing_assertions_htm" />
  <indexitem text="Technical Support:Configure/Edit Security Policies" target="configure_edit_security_policies_htm" />
- <indexitem text="Technical Support:Publish Web Services" target="publish_web_services_htm" />
- <indexitem text="Technical Support:Save and Use Policy Templates" target="save_and_use_policy_templates_htm" />
+ <indexitem text="Technical Support:Manage SOAP Web Services" target="manage_soap_web_services_htm" />
+ <indexitem text="Technical Support:Import/Export Security Policies" target="import_export_security_policies_htm" />
  <indexitem text="Technical Support:SecureSpan Manager Workflow" target="securespan_manager_workflow_htm" />
  <indexitem text="Technical Support:Technical Support and Contact Information" target="technical_support_and_contact_information_htm" />
  <indexitem text="Technical Support:Welcome" target="welcome_htm" />
- <indexitem text="Template" target="save_and_use_policy_templates_htm" />
+ <indexitem text="Template" target="import_export_security_policies_htm" />
  <indexitem text="Time limit" target="configure_edit_message_routing_assertions_htm" />
- <indexitem text="Time/Day Availability Assertion" target="configure_edit_web_service_availability_assertions_htm" />
+ <indexitem text="Time/Day Availability Assertion" target="configure_edit_service_availability_assertions_htm" />
  <indexitem text="Timeout setting" target="configure_securespan_manager_preferences_htm" />
  <indexitem text="Tivoli Access Manager:Add/Edit External Identity Providers" target="add_edit_external_identity_providers_htm" />
  <indexitem text="Tivoli Access Manager:Identity Providers Overview" target="identity_providers_overview_htm" />
  <indexitem text="Tivoli Access Manager:Search Identity Providers" target="search_identity_providers_htm" />
  <indexitem text="TivoliLDAP:Add/Edit External Identity Providers" target="add_edit_external_identity_providers_htm" />
  <indexitem text="TivoliLDAP:Identity Providers Overview" target="identity_providers_overview_htm" />
- <indexitem text="Transformation Target" target="configure_edit_xml_transformation_validation_assertions_htm" />
+ <indexitem text="Transformation Target" target="configure_edit_message_validation_transformation_assertions_htm" />
  <indexitem text="Transport Layer Security:Configure/Edit TLS Assertions" target="configure_edit_tls_assertions_htm" />
- <indexitem text="Transport Layer Security:Security Policies Overview and Rules" target="security_policies_overview_and_rules_htm" />
+ <indexitem text="Transport Layer Security:Security Policy Organization and Rules" target="security_policy_organization_and_rules_htm" />
  <indexitem text="Transport Layer Security:Security Policy Assertions Overview" target="security_policy_assertions_overview_htm" />
- <indexitem text="Troubleshooting Mode:SecureSpan Agent Interface" target="securespan_agent_interface_htm" />
+ <indexitem text="Troubleshooting Mode:SecureSpan Bridge Interface" target="securespan_bridge_interface_htm" />
  <indexitem text="Troubleshooting Mode:SecureSpan Manager Troubleshooting Mode" target="securespan_manager_troubleshooting_mode_htm" />
  <indexitem text="Uptime" target="view_gateway_cluster_status_htm" />
  <indexitem text="User Name:Add/Edit External Identity Providers" target="add_edit_external_identity_providers_htm" />
@@ -218,42 +218,42 @@
  <indexitem text="User Name:Configure SecureSpan Manager Preferences" target="configure_securespan_manager_preferences_htm" />
  <indexitem text="User Name:Connect to the SecureSpan Gateway" target="connect_to_the_securespan_gateway_htm" />
  <indexitem text="User Object Classes" target="add_edit_external_identity_providers_htm" />
- <indexitem text="Validate XML Schema Assertion" target="configure_edit_xml_transformation_validation_assertions_htm" />
- <indexitem text="Validation" target="security_policies_overview_and_rules_htm" />
- <indexitem text="Validation Messages window" target="securespan_manager_interface_htm" />
+ <indexitem text="Validate XML Schema Assertion" target="configure_edit_message_validation_transformation_assertions_htm" />
+ <indexitem text="Validation" target="security_policy_organization_and_rules_htm" />
+ <indexitem text="Validation Messages window" target="securespan_manager_interfaces_htm" />
  <indexitem text="Version Information" target="version_and_legalities_htm" />
  <indexitem text="View Gateway Cluster Status" target="view_gateway_cluster_status_htm" />
  <indexitem text="View Gateway Log" target="view_gateway_log_htm" />
- <indexitem text="View XPath" target="configure_edit_xml_transformation_validation_assertions_htm" />
- <indexitem text="Web Service Availability Assertions" target="configure_edit_web_service_availability_assertions_htm" />
+ <indexitem text="View XPath" target="configure_edit_message_validation_transformation_assertions_htm" />
+ <indexitem text="Web Service Availability Assertions" target="configure_edit_service_availability_assertions_htm" />
  <indexitem text="Web Services:Create Web Service WSDL" target="create_web_service_wsdl_htm" />
- <indexitem text="Web Services:Manage Web Services" target="manage_web_services_htm" />
- <indexitem text="Web Services:Publish Web Services" target="publish_web_services_htm" />
+ <indexitem text="Web Services:Manage Published Services" target="manage_published_services_htm" />
+ <indexitem text="Web Services:Manage SOAP Web Services" target="manage_soap_web_services_htm" />
  <indexitem text="Web Services:SecureSpan Solution Overview" target="securespan_solution_overview_htm" />
  <indexitem text="Web Services:View Web Service WSDL" target="view_web_service_wsdl_htm" />
- <indexitem text="Web Services:Web Service Security Policies Overview" target="web_service_security_policies_overview_htm" />
- <indexitem text="Web Services:Web Services Overview" target="web_services_overview_htm" />
- <indexitem text="Web Services Description Language" target="web_services_overview_htm" />
+ <indexitem text="Web Services:Security Policies Overview" target="security_policies_overview_htm" />
+ <indexitem text="Web Services:Services Overview" target="services_overview_htm" />
+ <indexitem text="Web Services Description Language" target="services_overview_htm" />
  <indexitem text="WS Token Basic" target="configure_edit_authentication_assertions_htm" />
  <indexitem text="WSDL:Create Web Service WSDL" target="create_web_service_wsdl_htm" />
  <indexitem text="WSDL:View Web Service WSDL" target="view_web_service_wsdl_htm" />
- <indexitem text="WSDL:Web Services Overview" target="web_services_overview_htm" />
+ <indexitem text="WSDL:Services Overview" target="services_overview_htm" />
  <indexitem text="XML:Configure/Edit XML Security Assertions" target="configure_edit_xml_security_assertions_htm" />
- <indexitem text="XML:Configure/Edit XML Transformation/Validation Assertions" target="configure_edit_xml_transformation_validation_assertions_htm" />
+ <indexitem text="XML:Configure/Edit Message Validation/Transformation Assertions" target="configure_edit_message_validation_transformation_assertions_htm" />
  <indexitem text="XML:Create Web Service WSDL" target="create_web_service_wsdl_htm" />
  <indexitem text="XML Request Security" target="configure_edit_xml_security_assertions_htm" />
  <indexitem text="XML Response Security" target="configure_edit_xml_security_assertions_htm" />
- <indexitem text="XML Schema" target="configure_edit_xml_transformation_validation_assertions_htm" />
+ <indexitem text="XML Schema" target="configure_edit_message_validation_transformation_assertions_htm" />
  <indexitem text="XML Security Assertions" target="configure_edit_xml_security_assertions_htm" />
- <indexitem text="XML Transformation/Validation Assertions" target="configure_edit_xml_transformation_validation_assertions_htm" />
- <indexitem text="XML transformations:Security Policies Overview and Rules" target="security_policies_overview_and_rules_htm" />
+ <indexitem text="XML Transformation/Validation Assertions" target="configure_edit_message_validation_transformation_assertions_htm" />
+ <indexitem text="XML transformations:Security Policy Organization and Rules" target="security_policy_organization_and_rules_htm" />
  <indexitem text="XML transformations:Security Policy Assertions Overview" target="security_policy_assertions_overview_htm" />
- <indexitem text="XPath" target="configure_edit_xml_transformation_validation_assertions_htm" />
- <indexitem text="XSL Transform Request Message" target="configure_edit_xml_transformation_validation_assertions_htm" />
- <indexitem text="XSL Transform Response Message" target="configure_edit_xml_transformation_validation_assertions_htm" />
- <indexitem text="XSL Transformation:Configure/Edit XML Transformation/Validation Assertions" target="configure_edit_xml_transformation_validation_assertions_htm" />
- <indexitem text="XSL Transformation:Security Policies Overview and Rules" target="security_policies_overview_and_rules_htm" />
- <indexitem text="XSL Transformation Assertion" target="configure_edit_xml_transformation_validation_assertions_htm" />
- <indexitem text="XSL Transformation Properties" target="configure_edit_xml_transformation_validation_assertions_htm" />
- <indexitem text="XSLT" target="configure_edit_xml_transformation_validation_assertions_htm" />
+ <indexitem text="XPath" target="configure_edit_message_validation_transformation_assertions_htm" />
+ <indexitem text="XSL Transform Request Message" target="configure_edit_message_validation_transformation_assertions_htm" />
+ <indexitem text="XSL Transform Response Message" target="configure_edit_message_validation_transformation_assertions_htm" />
+ <indexitem text="XSL Transformation:Configure/Edit Message Validation/Transformation Assertions" target="configure_edit_message_validation_transformation_assertions_htm" />
+ <indexitem text="XSL Transformation:Security Policy Organization and Rules" target="security_policy_organization_and_rules_htm" />
+ <indexitem text="XSL Transformation Assertion" target="configure_edit_message_validation_transformation_assertions_htm" />
+ <indexitem text="XSL Transformation Properties" target="configure_edit_message_validation_transformation_assertions_htm" />
+ <indexitem text="XSLT" target="configure_edit_message_validation_transformation_assertions_htm" />
 </index>

@@ -18,8 +18,8 @@
 <meta name=filetype content=kadov>
 <meta name=filetype-version content=1>
 <meta name=page-count content=1>
-<meta name=layout-height content=1489>
-<meta name=layout-width content=824>
+<meta name=layout-height content=2025>
+<meta name=layout-width content=773>
 <meta name=x-ignored-words content="TLS;SSL">
 
 
@@ -37,30 +37,60 @@
 
 <body>
 
-<h1>Configure and Edit Transport Layer Security (TLS) Assertions</h1>
+<h1>Configure and Edit the Transport Layer Security (TLS) Assertion</h1>
 
 <p style="margin-bottom: 9pt;">In the SecureSpan™ Manager, the following 
- single assertion is available in the Transport Layer Security (TLS) category 
+ assertion is available in the Transport Layer Security (TLS) category 
  of the [Assertions] tab:</p>
 
+<h6>&nbsp;</h6>
+
 <p><img src="TLSAssens.gif" x-maintain-ratio="TRUE" style="border: none;
+				width: 254px;
+				height: 288px;
 				margin-left: 0px;
 				margin-right: 0px;
-				margin-top: 4px;
-				margin-bottom: 10px;
-				width: 250px;
-				height: 264px;
+				margin-top: 10px;
+				margin-bottom: 2px;
 				float: none;
 				border-style: none;
-				border-style: none;" width="250" height="264" border="0"></p>
+				border-style: none;" width="254" height="288" border="0"></p>
 
-<h2>SSL Security</h2>
+<h6 style="margin-top: 2pt;
+			margin-bottom: 10pt;
+			color: #7c7c7c;">The Transport Layer Security (TLS) Category 
+ of the [Assertions] Tab</h6>
 
-<p>The SSL Security assertion uses the Transport Layer Security (TLS) protocol 
- to ensure message confidentiality and security. In the Policy Development 
- window, you can enable or disable the assertion as required.</p>
+<h2>SSL Transport</h2>
 
-<h3><a name=Add_and_Configure_the_SSL_Security_Assertion>Add and Configure 
+<p>The SSL Transport assertion uses the Transport Layer Security (TLS) 
+ protocol to ensure message confidentiality and security. SSL is an industry-standardized 
+ method of encryption that relies on PKI (public key infrastructure) to 
+ create a secure communication pipe between the service requestor and the 
+ SecureSpan™ Gateway. The SecureSpan™ Manager allows you to set one of 
+ three SSL security requirements for a security policy:</p>
+
+<h4>Optional</h4>
+
+<p>The optional setting of the SSL Transport assertion will match the behavior 
+ of the incoming request. Requests are not required to arrive over an SSL-secured 
+ connection, but will be processed anyway if they happen to do so.</p>
+
+<h4>Required</h4>
+
+<p>The required setting of the SSL Transport assertion disallows requests 
+ that do not arrive over an SSL-secured connection. This is the default 
+ setting for the SSL Transport assertion.</p>
+
+<h4>Disallowed</h4>
+
+<p>The disallowed setting of the SSL Transport assertion disallows requests 
+ that arrive over an SSL-secured connection. The assertion setting could 
+ be used to discourage users of a free service from consuming server SSL 
+ resources without paying for an upgraded account.</p>
+
+<h3 style="color: #000000;"><a name=Add_and_Configure_the_SSL_Security_Assertion
+								style="color: #000000;">Add and Configure 
  the SSL Security Assertion</a></h3>
 
 <ol style="list-style: decimal;"
@@ -70,7 +100,7 @@
  by one of two methods:</p></li>
 </ol>
 
-<ul style="list-style: disc;"
+<ol style="list-style: disc;"
 	type=disc>
 	
 	<ul style="list-style: disc;"
@@ -90,17 +120,17 @@
 								margin-bottom: -2.5px;
 								float: none;
 								border-style: none;
-								border-style: none;" width="22" height="18" border="0"> &nbsp;(Move 
+								border-style: none;" width="22" height="18" border="0"> &nbsp;(Add 
  Assertion) button in the Assertion Tool Bar. </p></li>
 	</ul>
-</ul>
+</ol>
 
 <ol start=2
 	style="list-style: decimal;"
 	type=1>
 	
 	<li class="kadov-p"><p>The assertion appears in the Policy Development 
- window with a default setting of &quot;required.&quot; Optional: To change 
+ window with a default setting of &quot;required.&quot; To optionally change 
  the assertion setting, right-click the &quot;Require SSL Transport&quot; 
  assertion. A drop-down menu appears. Select <span style="font-weight: bold;"><B>SSL 
  Properties</B></span>. </p></li>
@@ -114,9 +144,14 @@
 			float: none;
 			width: 550px;
 			margin-left: 44px;">
-<p class="tipsnotes"><span style="font-weight: bold;"><B>TIP:</B></span> You can 
- also double-click the assertion in the Policy Development window to open 
- the SSL Transport Properties form. &nbsp;</p>
+<p class="tipsnotes"><span style="font-weight: bold;"><B><img src="TIPSfinal.gif" x-maintain-ratio="TRUE" style="border: none;
+	width: 16px;
+	height: 14px;
+	float: none;
+	border-style: none;
+	border-style: none;" width="16" height="14" border="0"> &nbsp;TIP:</B></span> 
+ You can also double-click the assertion in the Policy Development window 
+ to open the SSL Transport Properties form. &nbsp;</p>
 </div>
 
 <ol start=3
@@ -125,11 +160,6 @@
 	
 	<li class="kadov-p"><p>The SSL Transport Properties form appears. Select 
  a setting option from the drop-down list. Click [<span style="font-weight: bold;"><B>OK</B></span>].</p></li>
-</ol>
-
-<ol start=4
-	style="list-style: decimal;"
-	type=1>
 	
 	<li class="kadov-p"><p>The modified assertion is added to the Policy 
  Development window.</p></li>
@@ -141,8 +171,8 @@
 	type=1>
 	
 	<li class="kadov-p"><p>In the Policy Development window, right-click 
- the &quot;Require SSL Transport&quot; assertion. A drop-down menu appears. 
- Select <span style="font-weight: bold;"><B>SSL Properties</B></span></p></li>
+ the &quot;SSL Transport&quot; assertion. A drop-down menu appears. Select 
+ <span style="font-weight: bold;"><B>SSL Properties</B></span>.</p></li>
 </ol>
 
 <div style="padding: 5px;
@@ -153,9 +183,14 @@
 			float: none;
 			width: 550px;
 			margin-left: 44px;">
-<p class="tipsnotes"><span style="font-weight: bold;"><B>TIP:</B></span> You can 
- also double-click the assertion in the Policy Development window to open 
- the SSL Transport Properties form. &nbsp;&nbsp;</p>
+<p class="tipsnotes"><span style="font-weight: bold;"><B><img src="TIPSfinal.gif" x-maintain-ratio="TRUE" style="border: none;
+	width: 16px;
+	height: 14px;
+	float: none;
+	border-style: none;
+	border-style: none;" width="16" height="14" border="0"> &nbsp;TIP:</B></span> 
+ You can also double-click the assertion in the Policy Development window 
+ to open the SSL Transport Properties form. &nbsp;&nbsp;</p>
 </div>
 
 <ol start=2
@@ -175,6 +210,8 @@
 
 <p><a href="Configure_Edit_XML_Security_Assertions.htm">Configure and Edit 
  XML Security Assertions</a></p>
+
+<h6>&nbsp;</h6>
 
 </body>
 

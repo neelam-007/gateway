@@ -18,8 +18,8 @@
 <meta name=filetype content=kadov>
 <meta name=filetype-version content=1>
 <meta name=page-count content=1>
-<meta name=layout-height content=637>
-<meta name=layout-width content=792>
+<meta name=layout-height content=838>
+<meta name=layout-width content=738>
 <meta name=x-ignored-words content="Workflow;WSDL;TLS;Uptime;uptime;Unix;SecureSpan;cert;francis;LDAP;firewall;policy.templates;admin;popup;user(s;CTRL;Login;SSL;WS;username;Username;Xml-based;DMZ;non-invasively;Linux;Solaris;internetworking;SOAPAction;Beatty;ext;GUI-based;GUI;scalable;PKI-based;offloads;toolset;WS-Security;Services@https;servername;namespace;Gateway(s;XPath;SAML;NotOnOrAfter;saml;requestor;tempuri.org;Name.wsdl;Namespace;yourcompany.com;MyWebService.wsdl.;schemas.xmlsoap.org;wsdl;URIs;GetQuoteResponse;stockSymbol;StockInfo;getQuote;getQuoteRequest;getQuoteResponse;operation(s;StockServiceSOAPBinding;StockQuote;localhost;ws;TCP;GenericLDAP;MSAD;IIPs;TivoliLDAP;assertion(s;criteria--username;headers--for;SHA;form--for;cleartext;folder(s;SSL-TLS;yuk;HTTP(S;workflow;detail(s;AES;node(s;Avg;IP;min;CDE;Kunststoff;Timeout;login;timeout;SSGAdmin;hostname;Admin;substring;DN;myLDAP;ldap;ldapserver;dc=com;myMSAD;ou=Layer;dc=LOCAL;hostname.domain;mygateway;mycompany.com;mygateway.mycompany.com.;IIS;mail.abc.com;ou=ABC;dc=ABC;mybrowse;mypassword;LdapErr;vece;findAllHeaders;myName;myPassword;myCompany;SLA">
 
 
@@ -47,42 +47,79 @@
 			float: none;
 			width: 550px;
 			margin-left: 4px;">
-<p class="tipsnotes"><span style="font-weight: bold;"><B>NOTE:</B></span> The Status 
- Bar under the [Web Services] tab contains a user, SecureSpan™ Gateway, 
+<p class="tipsnotes"><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
+	width: 16px;
+	height: 15px;
+	float: none;
+	border-style: none;
+	border-style: none;" width="16" height="15" border="0"> &nbsp;NOTE:</B></span> 
+ The Status Bar under the [Services] tab contains a user, SecureSpan™ Gateway, 
  and node information message when [View] &gt; Status Bar is selected from 
- the Main Menu (check box checked). See <a href="SecureSpan_Manager_Interface.htm">SecureSpan<symbol 
- name=Trademark>&#8482; Manager Interface</a> 
+ the Main Menu (check box checked). See <a href="SecureSpan_Manager_Interfaces.htm">SecureSpan<symbol 
+ name=Trademark>&#8482; Manager Interfaces</a> 
  for more information.</p>
 </div>
 
-<p>The SecureSpan™ Manager uses two sources to monitor the following performance 
- metrics in one or more SecureSpan™ Gateways:</p>
+<p style="color: #000000;">The SecureSpan™ Manager uses three sources to 
+ monitor the following performance metrics in one or more SecureSpan™ Gateways:</p>
 
 <ul style="list-style: disc;"
 	type=disc>
 	
-	<li class="kadov-p"><p>Gateway cluster node statistics</p></li>
+	<li class="kadov-p"><p style="margin-top: 4.5pt;">Gateway cluster node 
+ statistics</p></li>
 	
-	<li class="kadov-p"><p>Web service message statistics</p></li>
+	<li style="/*begin!kadov{{*/ color: #000000; /*}}end!kadov*/ " class="kadov-p"><p style="color: #000000;">Service message statistics</p></li>
 	
-	<li class="kadov-p"><p>Web service policy changes</p></li>
+	<li style="/*begin!kadov{{*/ color: #000000; /*}}end!kadov*/ " class="kadov-p"><p style="color: #000000;">Service policy changes</p></li>
 	
-	<li class="kadov-p"><p>Gateway connectivity and communication messages</p></li>
+	<li style="/*begin!kadov{{*/ color: #000000; /*}}end!kadov*/ " class="kadov-p"><p style="color: #000000;">Gateway connectivity and 
+ communication messages</p></li>
 	
-	<li class="kadov-p"><p>General transaction traffic.</p></li>
+	<li style="/*begin!kadov{{*/ color: #000000; /*}}end!kadov*/ " class="kadov-p"><p style="color: #000000;">General transaction traffic</p></li>
+	
+	<li style="/*begin!kadov{{*/ color: #000000; /*}}end!kadov*/ " class="kadov-p"><p style="color: #000000;">Service-specific message 
+ processing event messages</p></li>
+	
+	<li class="kadov-p"><p>Administrative event-specific auditing messages.</p></li>
 </ul>
 
-<p>Use the Gateway Cluster Status window and Gateway Log to analyze and 
- validate Service Level Agreement (SLA) compliance, plan network resources, 
- troubleshoot connectivity issues, and monitor the general performance 
- and activity of the SecureSpan<symbol name=Trademark>&#8482; 
- Solution. </p>
+<h6>&nbsp;</h6>
+
+<div style="padding: 5px;
+			background-color: #f8fbdd;
+			margin-right: 4px;
+			margin-top: 4px;
+			margin-bottom: 4px;
+			float: none;
+			width: 550px;
+			margin-left: 4px;">
+<p class="tipsnotes"><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
+	width: 16px;
+	height: 15px;
+	float: none;
+	border-style: none;
+	border-style: none;" width="16" height="15" border="0"> &nbsp;NOTE:</B></span> 
+ Web services and XML applications are collectively referred to as &quot;services.&quot;</p>
+</div>
+
+<h6>&nbsp;</h6>
+
+<p style="color: #000000;">Use the Gateway Cluster Status window and Gateway 
+ Log to analyze and validate Service Level Agreement (SLA) compliance, 
+ plan network resources, troubleshoot connectivity issues, and monitor 
+ the general performance and activity of the SecureSpan<symbol name=Trademark>&#8482; 
+ Solution. Use the Gateway Audit Messages window to view detailed service-specific 
+ audit messages that represent service message processing and administration 
+ events.</p>
 
 <h6>&nbsp;</h6>
 
 <h4>Next Topic: </h4>
 
 <p><a href="View_Gateway_Cluster_Status.htm">View Gateway Cluster Status</a></p>
+
+<h6>&nbsp;</h6>
 
 </body>
 

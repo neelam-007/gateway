@@ -1,0 +1,289 @@
+<!doctype HTML public "-//W3C//DTD HTML 4.0 Frameset//EN">
+
+<html>
+
+
+
+
+
+<head>
+
+<title>Identity Bridging Workflow</title>
+
+
+
+ <meta http-equiv=content-type content="text/html; charset=windows-1252">
+<meta name=generator-major-version content=0.1>
+<meta name=generator-minor-version content=1>
+<meta name=filetype content=kadov>
+<meta name=filetype-version content=1>
+<meta name=page-count content=1>
+<meta name=layout-height content=2120>
+<meta name=layout-width content=773>
+<meta name=x-ignored-words content="SAML;Workflow;workflows;requestor;SSL;FIP">
+
+
+
+
+ <link rel="StyleSheet" href="JavaHelp.css">
+
+
+
+ <META NAME="generator" CONTENT="RoboHelp by eHelp Corporation www.ehelp.com">
+</head>
+
+
+
+
+<body>
+
+<h1>Identity Bridging Workflow Using SAML</h1>
+
+<div style="padding: 5px;
+			background-color: #f8fbdd;
+			margin-left: 4px;
+			margin-right: 4px;
+			margin-top: 4px;
+			margin-bottom: 4px;
+			float: none;
+			width: 550px;">
+<p class="tipsnotes"><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
+	width: 16px;
+	height: 15px;
+	float: none;
+	border-style: none;
+	border-style: none;" width="16" height="15" border="0"> &nbsp;NOTE:</B></span> 
+ The generic &quot;Trusted Gateway A&quot; and &quot;Federated Gateway 
+ B&quot; references are used in the identity bridging examples, workflows, 
+ and instructions. The Trusted Gateway A is the certificate authority (CA) 
+ that issues and manages security credentials and that is responsible for 
+ authentication. The Federated Gateway B is the Web service provider that 
+ is responsible for authorization. In order to configure the SecureSpan™ 
+ Bridge in an identity bridging configuration using the SAML credential 
+ source, the Trusted Gateway A and the Federated Gateway B must be SecureSpan™ 
+ Gateways residing in the respective authentication and authorization domains.</p>
+</div>
+
+<h6>&nbsp;</h6>
+
+<p>Configure identity bridging using the SAML credential source as follows: 
+ </p>
+
+<h6>&nbsp;</h6>
+
+<div style="padding: 5px;
+			background-color: #f8fbdd;
+			margin-left: 4px;
+			margin-right: 4px;
+			margin-top: 4px;
+			margin-bottom: 4px;
+			float: none;
+			width: 550px;">
+<p class="tipsnotes"><span style="font-weight: bold;"><B><img src="TIPSfinal.gif" x-maintain-ratio="TRUE" style="border: none;
+	width: 16px;
+	height: 14px;
+	float: none;
+	border-style: none;
+	border-style: none;" width="16" height="14" border="0"> &nbsp;TIP: 
+ </B></span>The following workflow highlights the required SAML-specific instructions 
+ for configuring identity bridging between the Trusted Gateway A and the 
+ Federated Gateway B domains. The instructions are not complete to the 
+ referenced forms. To fully utilize the guidance that this workflow provides, 
+ follow the printing instructions in <a href="SecureSpan_Manager_Documentation.htm">SecureSpan™ 
+ Manager Documentation</a> to print this topic. Use the hard-copy of the 
+ workflow as a reference with the referenced program-based Help System 
+ topics when configuring each element in the SecureSpan™ Manager and SecureSpan™ 
+ Bridge. </p>
+</div>
+
+<h6>&nbsp;</h6>
+
+<ol style="list-style: decimal;"
+	type=1>
+	
+	<li class="kadov-p"><p>Confirm that the system requirements outlined 
+ in <a href="Identity_Bridging_Requirements.htm">Identity Bridging Requirements</a> 
+ are met for configuring identity bridging with SAML.</p></li>
+	
+	<li class="kadov-p"><p>In the SecureSpan™ Manager (Federated Gateway 
+ B domain), connect to the Trusted Gateway A as outlined in <a href="Connect_to_the_SecureSpan_Gateway.htm">Connect 
+ to the SecureSpan™ Gateway</a>. </p></li>
+	
+	<li class="kadov-p"><p>Add a new Internal Identity Provider user in the 
+ Trusted Gateway A as outlined in <a href="Add_Edit_IIP_Users_and_Groups.htm">Add 
+ and Edit Internal Identity Provider Users and Groups</a>. For example, 
+ &quot;user A.&quot;</p></li>
+	
+	<li class="kadov-p"><p>Disconnect from the Trusted Gateway A, then connect 
+ to the Federated Gateway B.</p></li>
+	
+	<li class="kadov-p"><p>Import the Trusted Gateway A server certificate 
+ (issued by the Trusted Gateway A's CA) into the Federated Gateway B trust 
+ store as outlined in <a HREF="Add_Edit_Certificates.htm">Add and Edit 
+ Certificates</a>. In the Specify Certificate Options screen of the Add 
+ Certificate Wizard, select the <span style="font-weight: bold;"><B>Signing 
+ SAML Tokens</B></span> check box.<span style="font-weight: bold;"> <B></B></span></p></li>
+	
+	<li class="kadov-p"><p>Create a new Federated Identity Provider (FIP) 
+ as outlined in <a HREF="Add_Edit_Federated_Identity_Providers.htm">Add 
+ and Edit Federated Identity Providers</a>. Configure the new FIP for the 
+ SAML credential source as follows:</p></li>
+</ol>
+
+<ol start=6
+	style="list-style: decimal;"
+	type=1>
+	
+	<ul>
+		
+		<li style="list-style: disc;" type="disc" class="kadov-p"><p>In the Enter Provider Information screen, 
+ check the <span style="font-weight: bold;"><B>SAML Token</B></span> check box 
+ for the <span style="font-weight: bold;"><B>Credential Source Type Allowed</B></span> 
+ item</p></li>
+		
+		<li style="list-style: disc;" type="disc" class="kadov-p"><p>In the Configure SAML Credential Source screen:</p></li>
+	</ul>
+</ol>
+
+<ol start=6
+	style="list-style: decimal;"
+	type=1>
+	
+	<ul>
+		
+		<ol>
+			
+			<li style="list-style: decimal;" type="1" class="kadov-p"><p>Check the <span style="font-weight: bold;"><B>X.509 
+ Subject Name</B></span> check box for the <span style="font-weight: bold;"><B>Format</B></span> 
+ item</p></li>
+			
+			<li style="list-style: decimal;" type="1" class="kadov-p"><p>Check the <span style="font-weight: bold;"><B>Holder 
+ of Key</B></span> check box for the <span style="font-weight: bold;"><B>Confirmation 
+ Methods</B></span> item.</p></li>
+		</ol>
+		
+		<li style="list-style: disc;" type="disc" class="kadov-p"><p>In the Select the Trusted Certificates screen, 
+ click [<span style="font-weight: bold;"><B>Add</B></span>] to attach the Trusted 
+ Gateway A server certificate imported in Step #5 above</p></li>
+		
+		<li style="list-style: disc;" type="disc" class="kadov-p"><p>Complete the configuration process as outlined 
+ in <a href="Add_Edit_Federated_Identity_Providers.htm">Add and Edit Federated 
+ Identity Providers</a>.</p></li>
+	</ul>
+</ol>
+
+<ol start=7
+	style="list-style: decimal;"
+	type=1>
+	
+	<li class="kadov-p"><p>Create a new federated user as outlined in <a href="Add_Edit_FIP_Users_and_Groups.htm">Add and Edit Federated Identity 
+ Provider Users and Groups</a>:</p></li>
+	
+	<ul>
+		
+		<li style="list-style: disc;" type="disc" class="kadov-p"><p>One new federated user must have a subject 
+ DN in the format “CN=&lt;login&gt;,” where &lt;login&gt; is the login 
+ ID of the Trusted Gateway A Internal Identity Provider (IIP) user (for 
+ example, &quot;user A&quot;) configured in Step #3 above. <span style="margin-left: 40px;">In 
+ the Create Federated User form:</span></p></li>
+		
+		<ol style="list-style: decimal;"
+			type=1>
+			
+			<li class="kadov-p"><p style="margin-left: 0px;">Enter the subject 
+ DN for the Trusted Gateway A IIP user, such as &quot;CN=user A,&quot; 
+ into the <span style="font-weight: bold;"><B>X509 Subject DN</B></span> field.</p></li>
+		</ol>
+	</ul>
+</ol>
+
+<div style="padding: 5px;
+			background-color: #f8fbdd;
+			margin-right: 4px;
+			margin-top: 4px;
+			margin-bottom: 4px;
+			float: none;
+			width: 550px;
+			margin-left: 124px;">
+<p class="tipsnotes"><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
+	width: 16px;
+	height: 15px;
+	float: none;
+	border-style: none;
+	border-style: none;" width="16" height="15" border="0"> &nbsp;NOTE:</B></span> 
+ In the Create Federated User form, the X509 Subject DN must match the 
+ &quot;Issued to&quot; value in an imported certificate. </p>
+</div>
+
+<ul style="list-style: decimal;"
+	type=1>
+	
+	<ul style="list-style: disc;"
+		type=disc>
+		
+		<ol start=2
+			style="list-style: decimal;"
+			type=1>
+			
+			<li class="kadov-p"><p style="margin-left: 0px;">Complete the 
+ configuration process as outlined in <a href="Add_Edit_Federated_Identity_Providers.htm">Add 
+ and Edit Federated Identity Providers</a>.</p></li>
+		</ol>
+		
+		<li class="kadov-p"><p style="margin-left: 0px;">Add additional required 
+ federated users, federated groups, and/or virtual groups to the FIP as 
+ outlined in <a href="Add_Edit_FIP_Users_and_Groups.htm">Add and Edit Federated 
+ Identity Provider Users and Groups</a>. </p></li>
+	</ul>
+</ul>
+
+<ol start=8
+	style="list-style: decimal;"
+	type=1>
+	
+	<li class="kadov-p"><p>Configure a SAML security policy for the shared 
+ Web service as outlined in <a HREF="Identity_Bridging_Policy_Overview.htm">Configure 
+ SAML Security Policies</a>.</p></li>
+	
+	<li class="kadov-p"><p>Use the Full Identity Bridging method to add two 
+ proxies in the SecureSpan™ Bridge as outlined in <a HREF="Add_SecureSpan_Gateway_Proxies.htm">Add 
+ SecureSpan™ Gateway Proxies</a>. </p></li>
+	
+	<li class="kadov-p"><p>When completed, consume the shared Web service 
+ as outlined in <a HREF="Consume_Shared_Web_Service.htm">Consume Shared 
+ Web Services</a>.</p></li>
+</ol>
+
+<h6>&nbsp;</h6>
+
+<div style="padding: 5px;
+			background-color: #f8fbdd;
+			margin-right: 4px;
+			margin-top: 4px;
+			margin-bottom: 4px;
+			float: none;
+			width: 550px;
+			margin-left: 44px;">
+<p class="tipsnotes"><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
+	width: 16px;
+	height: 15px;
+	float: none;
+	border-style: none;
+	border-style: none;" width="16" height="15" border="0"> &nbsp;NOTE:</B></span> 
+ Before a Web service can be consumed, the Web service must be published 
+ and enabled with a completed SAML security policy. See <a href="Identity_Bridging_Policy_Overview.htm">Configure 
+ SAML Security Policies</a> for more information.</p>
+</div>
+
+<h6>&nbsp;</h6>
+
+<h4>Next Topic: </h4>
+
+<p><a href="Identity_Bridging_Workflow_Using_an_X.509_Certificate.htm">Identity 
+ Bridging Workflow Using an X.509 Certificate</a></p>
+
+<h6>&nbsp;</h6>
+
+</body>
+
+</html>

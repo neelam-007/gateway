@@ -18,8 +18,8 @@
 <meta name=filetype content=kadov>
 <meta name=filetype-version content=1>
 <meta name=page-count content=1>
-<meta name=layout-height content=10018>
-<meta name=layout-width content=801>
+<meta name=layout-height content=10472>
+<meta name=layout-width content=779>
 <meta name=x-ignored-words content="Workflow;WSDL;TLS;Uptime;uptime;Unix;SecureSpan;cert;francis;LDAP;firewall;policy.templates;admin;popup;user(s;CTRL;Login;SSL;WS;username;Username;Xml-based;DMZ;non-invasively;Linux;Solaris;internetworking;SOAPAction;Beatty;ext;GUI-based;GUI;scalable;PKI-based;offloads;toolset;WS-Security;Services@https;servername;namespace;Gateway(s;XPath;SAML;NotOnOrAfter;saml;requestor;tempuri.org;Name.wsdl;Namespace;yourcompany.com;MyWebService.wsdl.;schemas.xmlsoap.org;wsdl;URIs;GetQuoteResponse;stockSymbol;StockInfo;getQuote;getQuoteRequest;getQuoteResponse;operation(s;StockServiceSOAPBinding;StockQuote;localhost;ws;TCP;GenericLDAP;MSAD;IIPs;TivoliLDAP;assertion(s;criteria--username;headers--for;SHA;form--for;cleartext;folder(s;SSL-TLS;yuk;HTTP(S;workflow;detail(s">
 
 
@@ -39,72 +39,116 @@
 
 <h1>Add and Edit External Identity Providers</h1>
 
-<p>The SecureSpan™ Manager allows you to configure four types of External 
- Identity Providers (EIPs):</p>
+<div style="padding: 5px;
+			background-color: #f8fbdd;
+			margin-left: 4px;
+			margin-right: 4px;
+			margin-top: 4px;
+			margin-bottom: 4px;
+			float: none;
+			width: 550px;">
+<p class="tipsnotes"><b style="font-weight: bold;"><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
+			width: 16px;
+			height: 15px;
+			float: none;
+			border-style: none;
+			border-style: none;" width="16" height="15" border="0"> &nbsp;</B></span>NOTE:</b> 
+ The SecureSpan™ Manager supports the LDAP 3.0 standard. </p>
+</div>
+
+<p>The SecureSpan™ Manager allow you to base your LDAP connector configuration 
+ on a pre-defined template. Four templates are available at installation:</p>
 
 <ul style="list-style: disc;"
 	type=disc>
 	
-	<li class="kadov-p"><p>Oracle (Oracle Internet Directory) </p></li>
-	
-	<li class="kadov-p"><p>MSAD 
- (Microsoft Active Directory) </p></li>
+	<li class="kadov-p"><p style="margin-top: 4.5pt;">Oracle (Oracle Internet 
+ Directory) </p></li>
 	
 	<li class="kadov-p"><p>TivoliLDAP (Tivoli Access Manager)</p></li>
 	
-	<li class="kadov-p"><p>GenericLDAP.</p></li>
+	<li class="kadov-p"><p>GenericLDAP</p></li>
+	
+	<li class="kadov-p"><p style="margin-bottom: 4.5pt;">MSAD 
+ (Microsoft Active Directory).</p></li>
 </ul>
 
-<p>Using the Create Identity Provider Wizard, you can define Group Object 
- Classes and User Object Classes and test the EIP configuration. You can 
- edit or delete an EIP from the [Identity Providers] tab at any time.</p>
+<p>Using the Create LDAP Identity Provider Wizard, you can define Group 
+ Object Classes, define User Object Classes, and test the EIP configuration. 
+ You can edit or delete an EIP from the [Identity Providers] tab at any 
+ time.</p>
+
+<h6>&nbsp;</h6>
 
 <h4>Quick Links:</h4>
 
-<p><a href="#Add_a_New_External_Identity_Provider">Add a New External Identity 
- Provider</a></p>
+<p class="quicklinks"><a href="#Add_a_New_External_Identity_Provider">Add 
+ a New External Identity Provider</a></p>
 
-<p><a href="#Edit_an_External_Identity_Provider">Edit an External Identity 
- Provider</a></p>
+<p class="quicklinks"><a href="#Edit_an_External_Identity_Provider">Edit 
+ an External Identity Provider</a></p>
 
-<p><a href="#Delete_an_External_Identity_Provider">Delete an External Identity 
- Provider</a></p>
+<p class="quicklinks"><a href="#Delete_an_External_Identity_Provider">Delete 
+ an External Identity Provider</a></p>
 
-<h2><a name=Add_a_New_External_Identity_Provider>Add a New External Identity 
- Provider</a></h2>
+<h2 style="color: #000000;"><a name=Add_a_New_External_Identity_Provider
+								style="color: #000000;">Add a New External 
+ Identity Provider</a></h2>
+
+<div style="padding: 5px;
+			background-color: #f8fbdd;
+			margin-right: 4px;
+			margin-top: 4px;
+			margin-bottom: 4px;
+			float: none;
+			width: 550px;
+			margin-left: 4px;">
+<p class="tipsnotes"><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
+	width: 16px;
+	height: 15px;
+	float: none;
+	border-style: none;
+	border-style: none;" width="16" height="15" border="0"> &nbsp;NOTE:</B></span> 
+ An External Identity Provider (EIP) is merely a connector to an existing 
+ LDAP directory. For this reason, the SecureSpan™ Manager cannot be used 
+ to create, edit, or delete EIP users or groups. To do so, you must use 
+ the tools provided with your LDAP directory.</p>
+</div>
 
 <p class="procedure">A new External Identity Provider (EIP) is added to the 
- SecureSpan™ Gateway with the SecureSpan™ Manager's Create Identity Provider 
- Wizard. The Wizard contains three screens corresponding to the three main 
- tasks in the configuration process:</p>
+ SecureSpan™ Gateway with the SecureSpan™ Manager's Create LDAP Identity 
+ Provider Wizard. The Wizard contains three screens corresponding to the 
+ three main tasks in the configuration process:</p>
 
 <ol style="list-style: decimal;"
 	type=1>
 	
-	<li class="kadov-p-cprocedure"><p class="procedure">The Provider Configuration 
- screen defines the EIP connection details.</p></li>
+	<li class="kadov-p-cprocedure"><p class="procedure" style="margin-top: 4.5pt;">The Provider 
+ Configuration screen defines the EIP connection details.</p></li>
 	
 	<li class="kadov-p-cprocedure"><p class="procedure">The Group Object Classes 
- screen provides and defines provider type-specific LDAP group classes.</p></li>
+ screen provides and defines provider type-specific LDAP group object classes.</p></li>
 	
-	<li class="kadov-p-cprocedure"><p class="procedure">The User Object Classes 
- screen provides and defines provider type-specific LDAP user classes. 
- </p></li>
+	<li class="kadov-p-cprocedure"><p class="procedure" style="margin-bottom: 4.5pt;">The User 
+ Object Classes screen provides and defines provider type-specific LDAP 
+ user object classes. </p></li>
 </ol>
 
 <p class="procedure">You can view screen-specific information and instructions 
- in the Tips Box located near the bottom of the Create Identity Provider 
+ in the Tips Box located near the bottom of the Create LDAP Identity Provider 
  Wizard. </p>
+
+<h6>&nbsp;</h6>
 
 <ol style="list-style: decimal;"
 	type=1>
 	
-	<li class="kadov-p"><p>Access the Create Identity Provider Wizard by 
- one of three methods:</p></li>
+	<li class="kadov-p"><p>Access the Create LDAP Identity Provider Wizard 
+ by one of three methods:</p></li>
 	
 	<ul>
 		
-		<li style="list-style: disc;" type="disc" class="kadov-p"><p>Click the &quot;Create Identity Provider&quot; 
+		<li style="list-style: disc;" type="disc" class="kadov-p"><p>Click the &quot;Create LDAP Identity Provider&quot; 
  link on the Home Page</p></li>
 	</ul>
 </ol>
@@ -117,9 +161,14 @@
 			float: none;
 			width: 550px;
 			margin-left: 84px;">
-<p class="tipsnotes"><span style="font-weight: bold;"><B>NOTE:</B></span> The Home 
- Page appears upon startup or when the Main Tool Bar's [Home] button is 
- clicked.</p>
+<p class="tipsnotes"><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
+	width: 16px;
+	height: 15px;
+	float: none;
+	border-style: none;
+	border-style: none;" width="16" height="15" border="0"> &nbsp;NOTE:</B></span> 
+ The Home Page appears upon startup or when the Main Tool Bar's [Home] 
+ button is clicked.</p>
 </div>
 
 <ol start=2
@@ -129,18 +178,20 @@
 	<ul>
 		
 		<li style="list-style: disc;" type="disc" class="kadov-p"><p>Click [<span style="font-weight: bold;"><B>Tasks</B></span>] 
- &gt; <span style="font-weight: bold;"><B>Create Identity Provider</B></span> 
+ &gt; <span style="font-weight: bold;"><B>Create Identity Provider </B></span>&gt; 
+ <span style="font-weight: bold;"><B>Create LDAP Identity Provider</B></span> 
  from the Main Menu</p></li>
 		
 		<li style="list-style: disc;" type="disc" class="kadov-p"><p>Right-click the &quot;Identity Providers&quot; 
- title in the [<span style="font-weight: bold;"><B>Identity Providers</B></span>] 
+ title at the top of the [<span style="font-weight: bold;"><B>Identity Providers</B></span>] 
  tab. A drop-down menu appears. Select <span style="font-weight: bold;"><B>Create 
- Identity Provider</B></span>.</p></li>
+ LDAP Identity Provider</B></span>.</p></li>
 	</ul>
 	
 	<li class="kadov-p"><p>The Provider Configuration screen of the Create 
- Identity Provider Wizard appears. Select the target EIP type from the 
- <span style="font-weight: bold;"><B>Provider Type</B></span> drop-down list.</p></li>
+ LDAP Identity Provider Wizard appears. Select a configuration template 
+ from the <span style="font-weight: bold;"><B>Provider Type</B></span> drop-down 
+ list.</p></li>
 </ol>
 
 <ol start=3
@@ -159,25 +210,30 @@
 			float: none;
 			width: 550px;
 			margin-left: 44px;">
-<p class="tipsnotes"><span style="font-weight: bold;"><B>NOTE:</B></span> The form 
- fields in the Provider Configuration screen and the default classes in 
- the Group Object Classes and User Object Classes screens (see Steps #4 
- and #5 below, respectively) depend on the EIP type selected from the Provider 
- Type drop-down list.</p>
+<p class="tipsnotes"><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
+	width: 16px;
+	height: 15px;
+	float: none;
+	border-style: none;
+	border-style: none;" width="16" height="15" border="0"> &nbsp;NOTE:</B></span> 
+ The form fields in the Provider Configuration screen and the default classes 
+ in the Group Object Classes and User Object Classes screens (see Steps 
+ #4 and #5 below, respectively) depend on the EIP type selected from the 
+ Provider Type drop-down list.</p>
 </div>
 
 <p class="notenumbered" style="margin-left: 40px;"><img src="Identity_Providers.gif" x-maintain-ratio="TRUE" style="border: none;
+											width: 712px;
+											height: 518px;
 											margin-left: 0px;
 											margin-right: 0px;
 											margin-top: 4px;
 											margin-bottom: 10px;
-											width: 734px;
-											height: 489px;
 											float: none;
 											border-style: none;
-											border-style: none;" width="734" height="489" border="0"></p>
+											border-style: none;" width="712" height="518" border="0"></p>
 
-<ol>
+<ul>
 	
 	<ul>
 		
@@ -185,7 +241,7 @@
  the <span style="font-weight: bold;"><B>Provider Name</B></span> field, enter 
  a descriptive name for the EIP. For example, enter &quot;My Oracle LDAP&quot;</p></li>
 	</ul>
-</ol>
+</ul>
 
 <div style="padding: 5px;
 			background-color: #f8fbdd;
@@ -195,33 +251,111 @@
 			float: none;
 			width: 550px;
 			margin-left: 84px;">
-<p class="tipsnotes"><span style="font-weight: bold;"><B>NOTE:</B></span> The name 
- entered in the Provider Name field will appear in the [Identity Providers] 
- tab.</p>
+<p class="tipsnotes"><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
+	width: 16px;
+	height: 15px;
+	float: none;
+	border-style: none;
+	border-style: none;" width="16" height="15" border="0"> &nbsp;NOTE:</B></span> 
+ The name entered in the Provider Name field will appear in the [Identity 
+ Providers] tab and Search Identity Providers form. The provider name must 
+ be between three and twenty-four characters long.</p>
 </div>
 
-<ol style="list-style: disc;"
+<ul style="list-style: disc;"
+	type=disc>
+	
+	<ul style="list-style: disc;"
+		type=disc>
+		
+		<li class="kadov-p-cnotenumbered"><p class="notenumbered" style="margin-left: 0px;">Add 
+ one or more LDAP URLs into the <span style="font-weight: bold;"><B>LDAP Host 
+ URL</B></span> field as follows:</p></li>
+	</ul>
+</ul>
+
+<div style="padding: 5px;
+			background-color: #f8fbdd;
+			margin-right: 4px;
+			margin-top: 4px;
+			margin-bottom: 4px;
+			float: none;
+			width: 550px;
+			margin-left: 84px;">
+<p class="tipsnotes"><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
+	width: 16px;
+	height: 15px;
+	float: none;
+	border-style: none;
+	border-style: none;" width="16" height="15" border="0"> &nbsp;NOTE:</B></span> 
+ If your LDAP server is replicated on more than one server, then add multiple 
+ directory server URLs in the order that they should be processed by the 
+ SecureSpan™ Gateway. For example, add the primary URL for connecting to 
+ the LDAP directory first, followed by the successive back-up URLs. </p>
+</div>
+
+<ul style="list-style: disc;"
+	type=disc>
+	
+	<ol style="list-style: disc;"
+		type=disc>
+		
+		<ol style="list-style: decimal;"
+			type=1>
+			
+			<li class="kadov-p-cnotenumbered"><p class="notenumbered" style="margin-left: 0px;">Click 
+ [<span style="font-weight: bold;"><B>Add</B></span>]. The Add LDAP Host URL form 
+ appears.</p></li>
+			
+			<li class="kadov-p-cnotenumbered"><p class="notenumbered" style="margin-left: 0px;">Enter 
+ the JNDI (Java Naming and Directory Interface) URL of the LDAP directory 
+ service that you want to connect to in the following format: ldap//host:port. 
+ For example, enter &quot;ldap://oracle.companyx.com:389&quot;.</p></li>
+			
+			<li class="kadov-p-cnotenumbered"><p class="notenumbered" style="margin-left: 0px;">Click 
+ [<span style="font-weight: bold;"><B>OK</B></span>]. The URL appears in the <span 
+ style="font-weight: bold;"><B>LDAP Host URL</B></span> field. Repeat Steps #1-3 
+ as required to add additional LDAP URLs.</p></li>
+		</ol>
+	</ol>
+</ul>
+
+<div style="padding: 5px;
+			background-color: #f8fbdd;
+			margin-right: 4px;
+			margin-top: 4px;
+			margin-bottom: 4px;
+			float: none;
+			width: 550px;
+			margin-left: 84px;">
+<p class="tipsnotes"><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
+	width: 16px;
+	height: 15px;
+	float: none;
+	border-style: none;
+	border-style: none;" width="16" height="15" border="0"> &nbsp;NOTE:</B></span> 
+ An added URL is automatically placed at the bottom of the LDAP Host URL 
+ list. To change the order of multiple URLs in the LDAP Host URL field, 
+ you must remove all URLs in the field and then re-enter them in the appropriate 
+ order. To remove a URL, highlight the item and click [Remove]. &nbsp;&nbsp;</p>
+</div>
+
+<ul style="list-style: disc;"
 	type=disc>
 	
 	<ul style="list-style: disc;"
 		type=disc>
 		
 		<li class="kadov-p-cnotenumbered"><p class="notenumbered" style="margin-left: 0px;">In 
- the <span style="font-weight: bold;"><B>LDAP Host URL</B></span> field, enter 
- the JNDI (Java Naming and Directory Interface) URL of the LDAP directory 
- service that you want to connect to in the following format: ldap//host:port. 
- For example, enter &quot;ldap://oracle.companyx.com:389&quot;</p></li>
-		
-		<li class="kadov-p-cnotenumbered"><p class="notenumbered" style="margin-left: 0px;">In 
  the <span style="font-weight: bold;"><B>Search Base</B></span> field, enter the 
- search base for groups and users in the LDAP. For example, enter &quot;dc=companyx,dc=com&quot;</p></li>
+ search base for users and groups in the LDAP. For example, enter &quot;dc=companyx,dc=com&quot;</p></li>
 		
 		<li class="kadov-p-cnotenumbered"><p class="notenumbered" style="margin-left: 0px;">Optional: 
  In the <span style="font-weight: bold;"><B>Bind DN</B></span> field, enter a 
  binding DN (Distinguished Name) identity for authenticating access to 
  the LDAP directory. For example, enter &quot;cn=manager&quot;</p></li>
 	</ul>
-</ol>
+</ul>
 
 <div style="padding: 5px;
 			background-color: #f8fbdd;
@@ -231,9 +365,14 @@
 			float: none;
 			width: 550px;
 			margin-left: 84px;">
-<p class="tipsnotes"><span style="font-weight: bold;"><B>TIP:</B></span> If you 
- specify an identity in the Bind DN field, then you should also configure 
- a password for the identity in the Bind Password field. </p>
+<p class="tipsnotes"><span style="font-weight: bold;"><B><img src="TIPSfinal.gif" x-maintain-ratio="TRUE" style="border: none;
+	width: 16px;
+	height: 14px;
+	float: none;
+	border-style: none;
+	border-style: none;" width="16" height="14" border="0"> &nbsp;TIP:</B></span> 
+ If you specify an identity in the Bind DN field, then you should also 
+ configure a password for the identity in the Bind Password field. </p>
 </div>
 
 <ol start=4
@@ -245,11 +384,18 @@
 		
 		<li class="kadov-p-cnotenumbered"><p class="notenumbered" style="margin-left: 0px;">Optional: 
  In the <span style="font-weight: bold;"><B>Bind Password</B></span> field, enter 
- a password for the binding DN identity.</p></li>
+ a password for the bind DN identity.</p></li>
 	</ul>
+</ol>
+
+<h6>&nbsp;</h6>
+
+<ol start=4
+	style="list-style: decimal;"
+	type=1>
 	
 	<li class="kadov-p"><p>Click [<span style="font-weight: bold;"><B>Next</B></span>]. 
- The Group Object Classes screen of the Create Identity Provider Wizard 
+ The Group Object Classes screen of the Create LDAP Identity Provider Wizard 
  appears. The template for the EIP type selected in the Provider Configuration 
  screen automatically populates the default group object classes. View, 
  edit, and/or add group object classes as follows:</p></li>
@@ -260,13 +406,14 @@
 											margin-right: 0px;
 											margin-top: 4px;
 											margin-bottom: 10px;
-											width: 734px;
-											height: 489px;
+											width: 712px;
+											height: 518px;
 											float: none;
 											border-style: none;
-											border-style: none;" width="734" height="489" border="0"></p>
+											border-style: none;" width="712" height="518" border="0"></p>
 
-<h3 style="margin-left: 40px;"><a name=View__Edit__or_Delete_a_Group_Object_Class>View, 
+<h3 style="margin-left: 40px; color: #000000;"><a name=View__Edit__or_Delete_a_Group_Object_Class
+													style="color: #000000;">View, 
  Edit, or Delete a Group Object Class</a></h3>
 
 <p style="margin-left: 40px;">To view the details of a default class, click 
@@ -286,27 +433,32 @@
 			float: none;
 			width: 550px;
 			margin-left: 44px;">
-<p class="tipsnotes"><span style="font-weight: bold;"><B>TIP:</B></span> The Create 
- Identity Provider Wizard is automatically populated with the default group 
- object classes provided by the selected LDAP-type template. Consult your 
- LDAP provider for information about supported group object classes and 
- attribute mapping details before configuring additional group object classes 
- for the External Identity Provider.</p>
+<p class="tipsnotes"><span style="font-weight: bold;"><B><img src="TIPSfinal.gif" x-maintain-ratio="TRUE" style="border: none;
+	width: 16px;
+	height: 14px;
+	float: none;
+	border-style: none;
+	border-style: none;" width="16" height="14" border="0"> &nbsp;TIP:</B></span> 
+ The Create LDAP Identity Provider Wizard is automatically populated with 
+ the default group object classes provided by the selected LDAP-type template. 
+ Consult your LDAP provider for information about supported group object 
+ classes and attribute mapping details before configuring additional group 
+ object classes for the External Identity Provider.</p>
 </div>
 
 <p style="margin-left: 40px; margin-top: 12pt;">Define a new group object 
  class as follows:</p>
 
-<ol style="list-style: decimal;"
+<ul style="list-style: decimal;"
 	type=1>
 	
 	<ol style="list-style: decimal;"
 		type=1>
 		
 		<li class="kadov-p"><p style="margin-left: 0px;">In the Group Object 
- Classes screen of the Create Identity Provider Wizard, click [<span style="font-weight: bold;"><B>Add</B></span>]. 
- This action clears the form fields in the Attribute Mapping section of 
- the screen.</p></li>
+ Classes screen of the Create LDAP Identity Provider Wizard, click [<span 
+ style="font-weight: bold;"><B>Add</B></span>]. This action clears the form fields 
+ in the Attribute Mapping section of the screen.</p></li>
 		
 		<li class="kadov-p"><p style="margin-left: 0px;">Enter the name of 
  the new group object class in the <span style="font-weight: bold;"><B>Object 
@@ -315,7 +467,7 @@
 		<li class="kadov-p"><p style="margin-left: 0px;">Map the attributes 
  required by the group object class as follows:</p></li>
 	</ol>
-</ol>
+</ul>
 
 <div style="padding: 5px;
 			background-color: #f8fbdd;
@@ -325,15 +477,20 @@
 			float: none;
 			width: 550px;
 			margin-left: 84px;">
-<p class="tipsnotes"><span style="font-weight: bold;"><B>NOTE:</B></span> Mapping 
- group object class attributes associates a SecureSpan™ Gateway attribute 
- with the corresponding attribute in the LDAP schema.</p>
+<p class="tipsnotes"><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
+	width: 16px;
+	height: 15px;
+	float: none;
+	border-style: none;
+	border-style: none;" width="16" height="15" border="0"> &nbsp;NOTE:</B></span> 
+ Mapping group object class attributes associates a SecureSpan™ Gateway 
+ attribute with the corresponding attribute in the LDAP schema.</p>
 </div>
 
-<ul style="list-style: disc;"
+<ol style="list-style: disc;"
 	type=disc>
 	
-	<ul style="list-style: disc;"
+	<ol style="list-style: disc;"
 		type=disc>
 		
 		<ul style="list-style: disc;"
@@ -342,21 +499,21 @@
 			<li class="kadov-p"><p style="margin-left: 0px;">In the <span 
  style="font-weight: bold;"><B>Group Name</B></span> field, enter the attribute 
  of the group object class that specifies the group name. For example, 
- a &quot;cn&quot; attribute specifies the name of the group in the LDAP 
- &quot;groupOfUniqueNames&quot; group object class</p></li>
+ a &quot;cn&quot; attribute specifies the name of the group in the &quot;groupOfUniqueNames&quot; 
+ group object class</p></li>
 			
 			<li class="kadov-p"><p style="margin-left: 0px;">In the <span 
  style="font-weight: bold;"><B>Group Member</B></span> field, enter the attribute 
  of the group object class that specifies the members of the group. For 
  example, a &quot;uniqueMember&quot; attribute specifies the members of 
- the group in the LDAP &quot;groupOfUniqueNames&quot; group object class</p></li>
+ the group in the &quot;groupOfUniqueNames&quot; group object class</p></li>
 			
 			<li class="kadov-p"><p style="margin-left: 0px;">Select one of 
  the following options from the <span style="font-weight: bold;"><B>Member 
  Strategy</B></span> drop-down list:</p></li>
 		</ul>
-	</ul>
-</ul>
+	</ol>
+</ol>
 
 
 <table x-use-null-cells style="x-cell-content-align: top;
@@ -616,7 +773,7 @@
  considered part of the group.</td></tr>
 </table>
 
-<ul style="list-style: disc;"
+<ol style="list-style: disc;"
 	type=disc>
 	
 	<ol start=4
@@ -626,7 +783,7 @@
 		<li style="list-style: decimal;" type="1" class="kadov-p"><p style="margin-left: 0px;">Do one of the following:</p></li>
 	</ol>
 	
-	<ul style="list-style: disc;"
+	<ol style="list-style: disc;"
 		type=disc>
 		
 		<ul style="list-style: disc;"
@@ -640,21 +797,23 @@
  href="#View__Edit__or_Delete_a_Group_Object_Class">View, Edit, or Delete 
  a Group Object Class</a></p></li>
 			
-			<li class="kadov-p"><p style="margin-left: 0px;">When completed, 
+			<li class="kadov-p"><p style="margin-left: 0px;">If completed, 
  proceed to Step #5.</p></li>
 		</ul>
-	</ul>
-</ul>
+	</ol>
+</ol>
+
+<h6>&nbsp;</h6>
 
 <ol start=5
 	style="list-style: decimal;"
 	type=1>
 	
 	<li class="kadov-p"><p style="margin-left: 0px;">Click [<span style="font-weight: bold;"><B>Next</B></span>]. 
- The User Object Classes screen of the Create Identity Provider Wizard 
+ The User Object Classes screen of the Create LDAP Identity Provider Wizard 
  appears. The template for the EIP type selected in the Provider Configuration 
- screen automatically populates some user object classes. View, edit, and/or 
- add user object classes as follows:</p></li>
+ screen automatically populates the default user object classes. View, 
+ edit, and/or add user object classes as follows:</p></li>
 </ol>
 
 <p style="margin-left: 40px;"><img src="Identity_Providers3.gif" x-maintain-ratio="TRUE" style="border: none;
@@ -662,13 +821,14 @@
 											margin-right: 0px;
 											margin-top: 4px;
 											margin-bottom: 10px;
-											width: 734px;
-											height: 489px;
+											width: 712px;
+											height: 518px;
 											float: none;
 											border-style: none;
-											border-style: none;" width="734" height="489" border="0"></p>
+											border-style: none;" width="712" height="518" border="0"></p>
 
-<h3 style="margin-left: 40px;"><a name=View__Edit__or_Delete_a_User_Object_Class>View, 
+<h3 style="margin-left: 40px; color: #000000;"><a name=View__Edit__or_Delete_a_User_Object_Class
+													style="color: #000000;">View, 
  Edit, or Delete a User Object Class</a></h3>
 
 <p style="margin-left: 40px;">To view the details of a default class, click 
@@ -688,36 +848,41 @@
 			float: none;
 			width: 550px;
 			margin-left: 44px;">
-<p class="tipsnotes"><span style="font-weight: bold;"><B>TIP:</B></span> The Create 
- Identity Provider Wizard is automatically populated with the default user 
- object classes provided by the selected LDAP-type template. Consult your 
- LDAP provider for information about supported user object classes and 
- attribute mapping details before configuring additional user object classes 
- for the External Identity Provider.</p>
+<p class="tipsnotes"><span style="font-weight: bold;"><B><img src="TIPSfinal.gif" x-maintain-ratio="TRUE" style="border: none;
+	width: 16px;
+	height: 14px;
+	float: none;
+	border-style: none;
+	border-style: none;" width="16" height="14" border="0"> &nbsp;TIP:</B></span> 
+ The Create LDAP Identity Provider Wizard is automatically populated with 
+ the default user object classes provided by the selected LDAP-type template. 
+ Consult your LDAP provider for information about supported user object 
+ classes and attribute mapping details before configuring additional user 
+ object classes for the External Identity Provider.</p>
 </div>
 
 <p style="margin-left: 40px; margin-top: 12pt;">Define a new user object 
  class as follows:</p>
 
-<ul style="list-style: disc;"
+<ol style="list-style: disc;"
 	type=disc>
 	
 	<ol style="list-style: decimal;"
 		type=1>
 		
 		<li class="kadov-p"><p style="margin-left: 0px;">In the User Object 
- Classes screen of the Create Identity Provider Wizard, click [<span style="font-weight: bold;"><B>Add</B></span>]. 
- This action clears the form fields in the Attribute Mapping section of 
- the screen.</p></li>
+ Classes screen of the Create LDAP Identity Provider Wizard, click [<span 
+ style="font-weight: bold;"><B>Add</B></span>]. This action clears the form fields 
+ in the Attribute Mapping section of the screen.</p></li>
 		
 		<li class="kadov-p"><p style="margin-left: 0px;">Enter the name of 
- the user object class in the <span style="font-weight: bold;"><B>User Class 
+ the user object class in the <span style="font-weight: bold;"><B>Object Class 
  Name</B></span> field.</p></li>
 		
 		<li class="kadov-p"><p style="margin-left: 0px;">Map the attributes 
  required by the user object class as follows:</p></li>
 	</ol>
-</ul>
+</ol>
 
 <div style="padding: 5px;
 			background-color: #f8fbdd;
@@ -727,15 +892,20 @@
 			float: none;
 			width: 550px;
 			margin-left: 84px;">
-<p class="tipsnotes"><span style="font-weight: bold;"><B>NOTE:</B></span> Mapping 
- user object class attributes associates a SecureSpan™ Gateway attribute 
- with the corresponding attribute in the LDAP schema.</p>
+<p class="tipsnotes"><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
+	width: 16px;
+	height: 15px;
+	float: none;
+	border-style: none;
+	border-style: none;" width="16" height="15" border="0"> &nbsp;NOTE:</B></span> 
+ Mapping user object class attributes associates a SecureSpan™ Gateway 
+ attribute with the corresponding attribute in the LDAP schema.</p>
 </div>
 
-<ul style="list-style: disc;"
+<ol style="list-style: disc;"
 	type=disc>
 	
-	<ul style="list-style: decimal;"
+	<ol style="list-style: decimal;"
 		type=1>
 		
 		<ul style="list-style: disc;"
@@ -744,40 +914,40 @@
 			<li class="kadov-p"><p style="margin-left: 0px;">In the <span 
  style="font-weight: bold;"><B>User Name</B></span> field, enter the attribute 
  of the user object class that specifies the user name. For example, the 
- “cn” attribute specifies the name of the user in the LDAP “inetOrgPerson” 
- user object class</p></li>
+ “cn” attribute specifies the name of the user in the “inetOrgPerson” user 
+ object class</p></li>
 			
 			<li class="kadov-p"><p style="margin-left: 0px;">In the <span 
  style="font-weight: bold;"><B>Login Name</B></span> field, enter the attribute 
  of the user object class that specifies the user login name. For example, 
- the “uid” attribute specifies the login name in the LDAP &quot;inetOrgPerson” 
+ the “uid” attribute specifies the login name in the &quot;inetOrgPerson” 
  user object class</p></li>
 			
 			<li class="kadov-p"><p style="margin-left: 0px;">In the <span 
  style="font-weight: bold;"><B>Password</B></span> field, enter the attribute 
  of the user object class that specifies the user password. For example, 
- the “userPassword” attribute specifies the user password in the LDAP &quot;inetOrgPerson” 
+ the “userPassword” attribute specifies the user password in the &quot;inetOrgPerson” 
  user object class</p></li>
 			
 			<li class="kadov-p"><p style="margin-left: 0px;">In the <span 
  style="font-weight: bold;"><B>First Name</B></span> field, enter the attribute 
  of the user object class that specifies the first name of the user. For 
  example, the &quot;givenName” attribute specifies the first name of the 
- user in the LDAP &quot;inetOrgPerson” user object class</p></li>
+ user in the &quot;inetOrgPerson” user object class</p></li>
 			
 			<li class="kadov-p"><p style="margin-left: 0px;">In the <span 
  style="font-weight: bold;"><B>Last Name</B></span> field, enter the attribute 
  of the user object class that specifies the last name of the user. For 
  example, the “sn” attribute specifies the last name of the user in the 
- LDAP &quot;inetOrgPerson” user object class</p></li>
+ &quot;inetOrgPerson” user object class</p></li>
 			
 			<li class="kadov-p"><p style="margin-left: 0px;">In the <span 
  style="font-weight: bold;"><B>Email</B></span> field, enter the attribute of 
  the user object class that specifies the user’s email address. For example, 
- the “mail” attribute specifies the user’s email address in the LDAP “inetOrgPerson” 
+ the “mail” attribute specifies the user’s email address in the “inetOrgPerson” 
  user object class.</p></li>
 		</ul>
-	</ul>
+	</ol>
 	
 	<ol start=4
 		style="list-style: decimal;"
@@ -796,11 +966,13 @@
  href="#View__Edit__or_Delete_a_User_Object_Class">View, Edit, or Delete 
  a User Object Class</a></p></li>
 			
-			<li class="kadov-p"><p style="margin-left: 0px;">When completed, 
+			<li class="kadov-p"><p style="margin-left: 0px;">If completed, 
  proceed to Step #6.</p></li>
 		</ul>
 	</ol>
-</ul>
+</ol>
+
+<h6>&nbsp;</h6>
 
 <ol start=6
 	style="list-style: decimal;"
@@ -862,22 +1034,24 @@
  style="font-weight: bold;"><B>Test</B></span>]. Continue to fix and test the 
  EIP until no error messages appear. If necessary, see <a href="Technical_Support_and_Contact_Information.htm">Technical 
  Support and Contact Information</a> to contact a Technical Support Representative. 
- When completed, click [<span style="font-weight: bold;"><B>OK</B></span>] in 
- the Create Identity Provider Wizard. The new EIP is immediately added 
- to the [<span style="font-weight: bold;"><B>Identity Providers</B></span>] tab.</p></li>
+ When completed, click [<span style="font-weight: bold;"><B>Finish</B></span>] 
+ in the Create LDAP Identity Provider Wizard. The new EIP is immediately 
+ added to the [<span style="font-weight: bold;"><B>Identity Providers</B></span>] 
+ tab.</p></li>
 		</ol>
 		
 		<li class="kadov-p"><p style="margin-left: 0px;">A pop-up message 
  validates the configuration of the EIP. Click [<span style="font-weight: bold;"><B>OK</B></span>] 
- to close the dialog box. In the Create Identity Provider Wizard, click 
- [<span style="font-weight: bold;"><B>OK</B></span>]. The new EIP is immediately 
- added to the [<span style="font-weight: bold;"><B>Identity Providers</B></span>] 
+ to close the dialog box. In the Create LDAP Identity Provider Wizard, 
+ click [<span style="font-weight: bold;"><B>Finish</B></span>]. The new EIP is 
+ immediately added to the [<span style="font-weight: bold;"><B>Identity Providers</B></span>] 
  tab.</p></li>
 	</ul>
 </ol>
 
-<h2><a name=Edit_an_External_Identity_Provider>Edit an External Identity 
- Provider</a></h2>
+<h2 style="color: #000000;"><a name=Edit_an_External_Identity_Provider
+								style="color: #000000;">Edit an External 
+ Identity Provider</a></h2>
 
 <div style="padding: 5px;
 			background-color: #f8fbdd;
@@ -887,13 +1061,18 @@
 			margin-bottom: 4px;
 			float: none;
 			width: 550px;">
-<p class="tipsnotes"><span style="font-weight: bold;"><B>TIP:</B></span> Use the 
- Search Identity Provider form to search an External Identity Provider's 
+<p class="tipsnotes"><span style="font-weight: bold;"><B><img src="TIPSfinal.gif" x-maintain-ratio="TRUE" style="border: none;
+	width: 16px;
+	height: 14px;
+	float: none;
+	border-style: none;
+	border-style: none;" width="16" height="14" border="0"> &nbsp;TIP:</B></span> 
+ Use the Search Identity Provider form to search an External Identity Provider's 
  users and groups. See <a href="Search_Identity_Providers.htm">Search Identity 
  Providers</a> for more information. </p>
 </div>
 
-<p>An External Identity Provider (EIP) is edited from the Edit Identity 
+<p>An External Identity Provider (EIP) is edited from the Edit LDAP Identity 
  Provider Properties Wizard accessed from the [Identity Providers] tab. 
  </p>
 
@@ -907,18 +1086,25 @@
 			float: none;
 			width: 550px;
 			margin-left: 4px;">
-<p class="tipsnotes"><span style="font-weight: bold;"><B>NOTE:</B></span> Use the 
- appropriate management tools to modify the individual groups and users 
- that belong to an External Identity Provider. </p>
+<p class="tipsnotes"><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
+	width: 16px;
+	height: 15px;
+	float: none;
+	border-style: none;
+	border-style: none;" width="16" height="15" border="0"> &nbsp;NOTE:</B></span> 
+ Use the appropriate management tools to modify the individual users and 
+ groups that belong to an External Identity Provider. </p>
 </div>
+
+<h6>&nbsp;</h6>
 
 <ol start=1
 	style="list-style: decimal;"
 	type=1>
 	
 	<li class="kadov-p"><p>In the [<span style="font-weight: bold;"><B>Identity 
- Providers</B></span>] tab, access the Edit Identity Provider Properties Wizard 
- for the target EIP by one of two methods:</p></li>
+ Providers</B></span>] tab, access the Edit LDAP Identity Provider Properties 
+ Wizard for the target EIP by one of two methods:</p></li>
 	
 	<ul style="list-style: disc;"
 		type=disc>
@@ -926,13 +1112,13 @@
 		<li class="kadov-p"><p style="font-weight: normal;">Double-click 
  the EIP name</p></li>
 		
-		<li class="kadov-p"><p>Right-click the EIP name that you want to 
- edit. A drop-down menu appears. Select <span style="font-weight: bold;"><B>Properties</B></span>.</p></li>
+		<li class="kadov-p"><p>Right-click the EIP name. A drop-down menu 
+ appears. Select <span style="font-weight: bold;"><B>Properties</B></span>.</p></li>
 	</ul>
 	
-	<li class="kadov-p"><p>The Edit Identity Provider Properties Wizard appears. 
- Navigate through the Provider Configuration, Group Object Classes, and 
- User Object Classes screens to make changes as required. </p></li>
+	<li class="kadov-p"><p>The Edit LDAP Identity Provider Properties Wizard 
+ appears. Navigate through the Provider Configuration, Group Object Classes, 
+ and User Object Classes screens to make changes as required. </p></li>
 </ol>
 
 <div style="padding: 5px;
@@ -943,11 +1129,16 @@
 			float: none;
 			width: 550px;
 			margin-left: 44px;">
-<p class="tipsnotes"><span style="font-weight: bold;"><B>TIP:</B></span> The Edit 
- Identity Provider Properties Wizard is the same as the Create Identity 
- Provider Wizard. Reference the <a href="#Add_a_New_External_Identity_Provider">Add 
+<p class="tipsnotes"><span style="font-weight: bold;"><B><img src="TIPSfinal.gif" x-maintain-ratio="TRUE" style="border: none;
+	width: 16px;
+	height: 14px;
+	float: none;
+	border-style: none;
+	border-style: none;" width="16" height="14" border="0"> &nbsp;TIP:</B></span> 
+ The Edit LDAP Identity Provider Properties Wizard is the same as the Create 
+ LDAP Identity Provider Wizard. Reference the <a href="#Add_a_New_External_Identity_Provider">Add 
  a New External Identity Provider</a> section when editing field-level 
- information in the Wizard.</p>
+ information in the Edit LDAP Identity Provider Properties Wizard.</p>
 </div>
 
 <ol start=3
@@ -959,7 +1150,7 @@
  occur:</p></li>
 </ol>
 
-<ul>
+<ol>
 	
 	<ul style="list-style: disc;"
 		type=disc>
@@ -1014,23 +1205,24 @@
  style="font-weight: bold;"><B>Test</B></span>]. Continue to fix and test the 
  EIP until no error messages appear. If necessary, see <a href="Technical_Support_and_Contact_Information.htm">Technical 
  Support and Contact Information</a> to contact a Technical Support Representative. 
- When completed, click [<span style="font-weight: bold;"><B>OK</B></span>] in 
- the Edit Identity Provider Properties Wizard. EIP changes are implemented 
- immediately in the [<span style="font-weight: bold;"><B>Identity Providers</B></span>] 
- tab.</p></li>
+ When completed, click [<span style="font-weight: bold;"><B>Finish</B></span>] 
+ in the Edit LDAP Identity Provider Properties Wizard. EIP changes are 
+ implemented immediately in the [<span style="font-weight: bold;"><B>Identity 
+ Providers</B></span>] tab.</p></li>
 		</ol>
 		
 		<li class="kadov-p"><p style="margin-left: 0px;">A pop-up message 
  validates the configuration of the EIP. Click [<span style="font-weight: bold;"><B>OK</B></span>] 
- to close the dialog box. In the Edit Identity Provider Properties Wizard, 
- click [<span style="font-weight: bold;"><B>OK</B></span>]. EIP changes are implemented 
- immediately in the [<span style="font-weight: bold;"><B>Identity Providers</B></span>] 
- tab.</p></li>
+ to close the dialog box. In the Edit LDAP Identity Provider Properties 
+ Wizard, click [<span style="font-weight: bold;"><B>Finish</B></span>]. EIP changes 
+ are implemented immediately in the [<span style="font-weight: bold;"><B>Identity 
+ Providers</B></span>] tab.</p></li>
 	</ul>
-</ul>
+</ol>
 
-<h2><a name=Delete_an_External_Identity_Provider>Delete an External Identity 
- Provider</a></h2>
+<h2 style="color: #000000;"><a name=Delete_an_External_Identity_Provider
+								style="color: #000000;">Delete an External 
+ Identity Provider</a></h2>
 
 <div style="padding: 5px;
 			background-color: #f8fbdd;
@@ -1040,35 +1232,44 @@
 			float: none;
 			width: 550px;
 			margin-left: 4px;">
-<p class="tipsnotes"><span style="font-weight: bold;"><B>NOTE:</B></span> An error 
- message will appear if you try to delete an External Identity Provider 
- (EIP) whose groups and/or users are attached to a Web service security 
- policy. To delete the EIP, you must first delete the EIP identities from 
- all security policies. See <a href="Configure_Edit_Security_Policies.htm">Configure 
+<p class="tipsnotes"><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
+	width: 16px;
+	height: 15px;
+	float: none;
+	border-style: none;
+	border-style: none;" width="16" height="15" border="0"> &nbsp;NOTE:</B></span> 
+ An error message will appear if you try to delete an External Identity 
+ Provider (EIP) whose users and groups are attached to an active security 
+ policy. To delete the EIP, you must first delete the EIP users and groups 
+ from all security policies. See <a href="Configure_Edit_Security_Policies.htm">Configure 
  and Edit Security Policies</a> for more information.</p>
 </div>
+
+<h6>&nbsp;</h6>
 
 <ol start=1
 	style="list-style: decimal;"
 	type=1>
 	
 	<li class="kadov-p"><p>In the [<span style="font-weight: bold;"><B>Identity 
- Providers</B></span>] tab, right-click the External Identity Provider name 
- that you want to delete. </p></li>
+ Providers</B></span>] tab, right-click the External Identity Provider (EIP) 
+ name that you want to delete. </p></li>
 	
 	<li class="kadov-p"><p>A drop-down menu appears. Select <span style="font-weight: bold;"><B>Delete</B></span>.</p></li>
 	
 	<li class="kadov-p"><p>A confirmation message appears. Click [<span style="font-weight: bold;"><B>Yes</B></span>]. 
- The External Identity Provider is removed from the [<span style="font-weight: bold;"><B>Identity 
+ The EIP is removed from the [<span style="font-weight: bold;"><B>Identity 
  Providers</B></span>] tab. </p></li>
 </ol>
 
 <h6>&nbsp;</h6>
 
-<p>Next Topic:</p>
+<h4>Next Topic:</h4>
 
 <p><a href="Add_Edit_IIP_Users_and_Groups.htm">Add and Edit Internal Identity 
- Provider Groups and Users</a></p>
+ Provider Users and Groups</a></p>
+
+<h6>&nbsp;</h6>
 
 </body>
 

@@ -1,0 +1,646 @@
+<!doctype HTML public "-//W3C//DTD HTML 4.0 Frameset//EN">
+
+<html>
+
+
+
+
+
+<head>
+
+<title>Version Upgrade Issues</title>
+
+
+
+ <meta http-equiv=content-type content="text/html; charset=windows-1252">
+<meta name=generator-major-version content=0.1>
+<meta name=generator-minor-version content=1>
+<meta name=filetype content=kadov>
+<meta name=filetype-version content=1>
+<meta name=page-count content=1>
+<meta name=layout-height content=5341>
+<meta name=layout-width content=773>
+<meta name=x-ignored-words content=SAML>
+
+
+
+
+ <link rel="StyleSheet" href="JavaHelp.css">
+
+
+
+ <META NAME="generator" CONTENT="RoboHelp by eHelp Corporation www.ehelp.com">
+</head>
+
+
+
+
+<body>
+
+<h1>SecureSpan™ Manager Version Upgrade Issues</h1>
+
+<div style="padding: 5px;
+			background-color: #f8fbdd;
+			margin-right: 4px;
+			margin-top: 4px;
+			margin-bottom: 4px;
+			float: none;
+			width: 550px;
+			margin-left: 4px;">
+<p class="tipsnotes"><span style="font-weight: bold;"><B><img src="TIPSfinal.gif" x-maintain-ratio="TRUE" style="border: none;
+	width: 16px;
+	height: 14px;
+	float: none;
+	border-style: none;
+	border-style: none;" width="16" height="14" border="0"> &nbsp;TIP:</B></span> 
+ See the Read Me file on the SecureSpan™ Manager Installation CD for specific 
+ information about the features and functions upgraded in version 3.0.</p>
+</div>
+
+<p>Upgrading version 2.1 of the SecureSpan™ Gateway and SecureSpan™ Manager 
+ to version 3.0 yields the following issues:</p>
+
+<h2 style="color: #000000;">Security Policy Incompatibility</h2>
+
+<p>Version 2.1 policies will be automatically upgraded to 3.0-compatible 
+ policies the first time that they are accessed and saved in version 3.0 
+ of the SecureSpan™ Manager (see <a href="Configure_Edit_Security_Policies.htm">Configure 
+ and Edit Security Policies</a> for instructions). Since significant security 
+ policy assertion changes took place in version 3.0, however, some version 
+ 2.1 assertions have been modified or are no longer available:</p>
+
+<h6>&nbsp;</h6>
+
+<h4>Quick Links:</h4>
+
+<p class="quicklinks"><a href="#SAML_Security">SAML Security</a></p>
+
+<p class="quicklinks"><a href="#XML_Message_Signature_and_Encryption">XML 
+ Message Signature and Encryption</a></p>
+
+<p class="quicklinks"><a href="#Add_On_Assertion_Installation">Add-On Assertion 
+ Installation</a></p>
+
+<h3 style="color: #000000;"><a name=SAML_Security
+								style="color: #000000;">SAML Security</a></h3>
+
+<div style="padding: 5px;
+			background-color: #f8fbdd;
+			margin-left: 4px;
+			margin-right: 4px;
+			margin-top: 4px;
+			margin-bottom: 4px;
+			float: none;
+			width: 550px;">
+<p class="tipsnotes"><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
+	width: 16px;
+	height: 15px;
+	float: none;
+	border-style: none;
+	border-style: none;" width="16" height="15" border="0"> &nbsp;NOTE:</B></span> 
+ For more information about the SAML Security assertion, see <a href="Configure_Edit_Authentication_Assertions.htm">Configure 
+ and Edit Authentication Assertions</a>.</p>
+</div>
+
+<p>The SAML Security assertion in the Authentication category of the [Assertions] 
+ tab changed in version 3.0. In version 2.1, the assertion was used to 
+ check timestamps on a SAML ticket. In 3.0, that functionality has expanded 
+ to also require a signed ticket. If your version 2.1 policies contain 
+ the SAML Security assertion, then:</p>
+
+<h6>&nbsp;</h6>
+
+<ol style="list-style: decimal;"
+	type=1>
+	
+	<li class="kadov-p"><p>If not already present, load the target 2.1 security 
+ policy into the Policy Development window by one of the following methods:</p></li>
+</ol>
+
+<div style="padding: 5px;
+			background-color: #f8fbdd;
+			margin-right: 4px;
+			margin-top: 4px;
+			margin-bottom: 4px;
+			float: none;
+			width: 550px;
+			margin-left: 44px;">
+<p class="tipsnotes"><span style="font-weight: bold;"><B><img src="TIPSfinal.gif" x-maintain-ratio="TRUE" style="border: none;
+	width: 16px;
+	height: 14px;
+	float: none;
+	border-style: none;
+	border-style: none;" width="16" height="14" border="0"> &nbsp;TIP:</B></span> 
+ If not already disabled, it is strongly recommended that you disable a 
+ service while updating its security policy to prevent unsecured and unauthorized 
+ access. A disabled service contains a red &quot;X&quot; through its left-side 
+ icon. See <a href="Manage_Published_Services.htm">Manage Published Services</a> 
+ for information.</p>
+</div>
+
+<ol style="list-style: disc;"
+	type=disc>
+	
+	<ul style="list-style: disc;"
+		type=disc>
+		
+		<li class="kadov-p"><p>Right-click the service name in the [<span 
+ style="font-weight: bold;"><B>Services</B></span>] tab. A drop-down menu appears. 
+ Select <span style="font-weight: bold;"><B>Policy Assertions</B></span>. Or,</p></li>
+		
+		<li class="kadov-p"><p>Double-click the service in the [<span style="font-weight: bold;"><B>Services</B></span>] 
+ tab.</p></li>
+	</ul>
+</ol>
+
+<div style="padding: 5px;
+			background-color: #f8fbdd;
+			margin-right: 4px;
+			margin-top: 4px;
+			margin-bottom: 4px;
+			float: none;
+			width: 550px;
+			margin-left: 84px;">
+<p class="tipsnotes"><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
+	width: 16px;
+	height: 15px;
+	float: none;
+	border-style: none;
+	border-style: none;" width="16" height="15" border="0"> &nbsp;NOTE:</B></span> 
+ The version 2.1 [Web Services] tab has changed to [Services] in version 
+ 3.0 to include the display and management of XML, or non-SOAP, application 
+ security policies. See <a href="Services_Overview.htm">Services Overview</a> 
+ for more information. </p>
+</div>
+
+<ol start=2
+	style="list-style: decimal;"
+	type=1>
+	
+	<li class="kadov-p"><p>The Policy Development window appears. If not 
+ present, enable the Policy Validation Messages window by selecting [<span 
+ style="font-weight: bold;"><B>View</B></span>] &gt; <span style="font-weight: bold;"><B>Policy 
+ Messages</B></span> from the Main Menu (check box checked). </p></li>
+	
+	<li class="kadov-p"><p>In the Policy Development window, the now incompatible 
+ SAML Security assertion will display as an &quot;Unknown assertion.&quot; 
+ To delete the assertion, right-click the &quot;unknown assertion&quot; 
+ listing in the Policy Development window. A drop-down menu appears. Select 
+ [<span style="font-weight: bold;"><B>Delete Assertion</B></span>].</p></li>
+</ol>
+
+<p style="margin-left: 40px;"><img src="SAMLup.gif" x-maintain-ratio="TRUE" style="border: none;
+											margin-left: 0px;
+											margin-right: 0px;
+											margin-top: 4px;
+											margin-bottom: 10px;
+											width: 207px;
+											height: 142px;
+											float: none;
+											border-style: none;
+											border-style: none;" width="207" height="142" border="0"></p>
+
+<ol start=4
+	style="list-style: decimal;"
+	type=1>
+	
+	<li class="kadov-p"><p>A confirmation message appears. Click [<span style="font-weight: bold;"><B>Yes</B></span>]. 
+ The assertion is removed from the Policy Development window. Re-add the 
+ 3.0 version of the SAML Security assertion, if required, as outlined in 
+ <a href="Configure_Edit_Authentication_Assertions.htm">Configure and Edit 
+ Authentication Assertions</a> and <span style="margin-left: 0px;"><a href="Configure_Edit_Security_Policies.htm">Configure 
+ and Edit Security Policies</a></span>. </p></li>
+	
+	<li class="kadov-p"><p>In the Policy Tool Bar, click [<span style="font-weight: bold;"><B>Save</B></span>]. 
+ The Manager automatically upgrades the remaining 2.1 assertions to 3.0-compatible 
+ assertions. Note any error or warning messages in the Policy Validation 
+ Messages window. If necessary, correct policy errors as outlined in the 
+ <span style="margin-left: 0px;">&quot;Validate a Security Policy&quot; 
+ section in <a href="Configure_Edit_Security_Policies.htm">Configure and 
+ Edit Security Policies</a>. </span></p></li>
+	
+	<li class="kadov-p"><p>Repeat Steps #1-6 as required.</p></li>
+</ol>
+
+<h6>&nbsp;</h6>
+
+<div style="padding: 5px;
+			background-color: #f8fbdd;
+			margin-left: 4px;
+			margin-right: 4px;
+			margin-top: 4px;
+			margin-bottom: 4px;
+			float: none;
+			width: 550px;">
+<p class="tipsnotes"><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
+	width: 16px;
+	height: 15px;
+	float: none;
+	border-style: none;
+	border-style: none;" width="16" height="15" border="0"> &nbsp;NOTE:</B></span> 
+ When upgrading a 2.1 security policy, ensure that you follow the policy 
+ and assertion information and rules in <a href="Security_Policy_Organization_and_Rules.htm">Security 
+ Policy Organization and Rules</a>.</p>
+</div>
+
+<h3 style="color: #000000;"><a name=XML_Message_Signature_and_Encryption
+								style="color: #000000;">XML Message Signature 
+ and Encryption</a></h3>
+
+<div style="padding: 5px;
+			background-color: #f8fbdd;
+			margin-left: 4px;
+			margin-right: 4px;
+			margin-top: 4px;
+			margin-bottom: 4px;
+			float: none;
+			width: 550px;">
+<p class="tipsnotes"><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
+	width: 16px;
+	height: 15px;
+	float: none;
+	border-style: none;
+	border-style: none;" width="16" height="15" border="0"> &nbsp;NOTE:</B></span> 
+ For more information about the XML signature and encryption assertions, 
+ see <a href="Configure_Edit_XML_Security_Assertions.htm">Configure and 
+ Edit XML Security Assertions</a>.</p>
+</div>
+
+<p>The XML signature and encryption assertions have changed dramatically 
+ in version 3.0 of the SecureSpan™ Manager. Called the XML Digital Signature 
+ assertion in the Authentication category and the Sign/Encrypt Request 
+ and Sign/Encrypt Response assertions in the XML Security category of the 
+ [Assertions] tab in version 2.1, these assertions are no longer available 
+ in version 3.0. Instead, full and partial XML message signature and encryption 
+ functionality has been separated and enhanced due to the required presence 
+ of one or more advanced authentication assertions. </p>
+
+<h6>&nbsp;</h6>
+
+<p>During the conversion process, the Manager automatically includes all 
+ of the assertions required to replace and/or meet the new authentication 
+ pair requirements:</p>
+
+<ul style="list-style: disc;"
+	type=disc>
+	
+	<li class="kadov-p"><p style="margin-top: 4.5pt;">The version 2.1 XML 
+ Digital Signature authentication assertion no longer appears in version 
+ 3.0 of the Manager. If present in a 2.1 security policy, then the assertion 
+ will automatically be replaced with the new version 3.0 WSS Signature 
+ authentication assertion. See <a href="Configure_Edit_Authentication_Assertions.htm">Configure 
+ and Edit Authentication Assertions</a> for more information</p></li>
+	
+	<li class="kadov-p"><p>Unlike version 2.1, the request message signing 
+ and response message encryption assertions require the presence of one 
+ or more authentication assertions. The Manager will automatically add 
+ authentication assertions to a converted version 2.1 policy as required 
+ to meet the version 3.0 requirements. See <a href="Configure_Edit_XML_Security_Assertions.htm">Configure 
+ and Edit XML Security Assertions</a> for more information</p></li>
+	
+	<li class="kadov-p"><p style="margin-bottom: 4.5pt;">In version 3.0, 
+ full and partial XML message signing and encryption is now separated into 
+ four different assertions in the XML Security category of the [Assertions] 
+ tab. Each assertion configures the signature or encryption requirement 
+ for a single message element. More than one assertion of a single type 
+ can be included in a security policy that requires the signature or encryption 
+ of more than one message element. During conversion, the Manager will 
+ automatically include all new assertions that are required to meet the 
+ XML signature and encryption requirements in the version 2.1 policy. See 
+ <a href="Configure_Edit_XML_Security_Assertions.htm">Configure and Edit 
+ XML Security Assertions</a> for more information.</p></li>
+</ul>
+
+<h6>&nbsp;</h6>
+
+<div style="padding: 5px;
+			background-color: #f8fbdd;
+			margin-left: 4px;
+			margin-right: 4px;
+			margin-top: 4px;
+			margin-bottom: 4px;
+			float: none;
+			width: 550px;">
+<p class="tipsnotes"><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
+	width: 16px;
+	height: 15px;
+	float: none;
+	border-style: none;
+	border-style: none;" width="16" height="15" border="0"> &nbsp;NOTE:</B></span> 
+ If the conversion yields assertions that you no longer require, then edit 
+ the security policy as outlined in <span style="margin-left: 0px;"><a href="Configure_Edit_Security_Policies.htm">Configure and Edit Security 
+ Policies</a>.</span></p>
+</div>
+
+<h6>&nbsp;</h6>
+
+<p>Convert the XML signature and encryption assertions in a version 2.1 
+ security policy to the version 3.0 assertions as follows:</p>
+
+<h6>&nbsp;</h6>
+
+<ol style="list-style: decimal;"
+	type=1>
+	
+	<li class="kadov-p"><p>If not already present, load the target 2.1 security 
+ policy into the Policy Development window by one of the following methods:</p></li>
+</ol>
+
+<div style="padding: 5px;
+			background-color: #f8fbdd;
+			margin-right: 4px;
+			margin-top: 4px;
+			margin-bottom: 4px;
+			float: none;
+			width: 550px;
+			margin-left: 44px;">
+<p class="tipsnotes"><span style="font-weight: bold;"><B><img src="TIPSfinal.gif" x-maintain-ratio="TRUE" style="border: none;
+	width: 16px;
+	height: 14px;
+	float: none;
+	border-style: none;
+	border-style: none;" width="16" height="14" border="0"> &nbsp;TIP:</B></span> 
+ If not already disabled, it is strongly recommended that you disable a 
+ service while updating its security policy to prevent unsecured and unauthorized 
+ access. A disabled service contains a red &quot;X&quot; through its left-side 
+ icon. See <a href="Manage_Published_Services.htm">Manage Published Services</a> 
+ for information.</p>
+</div>
+
+<ol style="list-style: disc;"
+	type=disc>
+	
+	<ul style="list-style: disc;"
+		type=disc>
+		
+		<li class="kadov-p"><p>Right-click the service name in the [<span 
+ style="font-weight: bold;"><B>Services</B></span>] tab. A drop-down menu appears. 
+ Select <span style="font-weight: bold;"><B>Policy Assertions</B></span>. Or,</p></li>
+		
+		<li class="kadov-p"><p>Double-click the service in the [<span style="font-weight: bold;"><B>Services</B></span>] 
+ tab.</p></li>
+	</ul>
+</ol>
+
+<div style="padding: 5px;
+			background-color: #f8fbdd;
+			margin-right: 4px;
+			margin-top: 4px;
+			margin-bottom: 4px;
+			float: none;
+			width: 550px;
+			margin-left: 84px;">
+<p class="tipsnotes"><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
+	width: 16px;
+	height: 15px;
+	float: none;
+	border-style: none;
+	border-style: none;" width="16" height="15" border="0"> &nbsp;NOTE:</B></span> 
+ The version 2.1 [Web Services] tab has changed to [Services] in version 
+ 3.0 to include the display and management of XML, or non-SOAP, application 
+ security policies. See <a href="Services_Overview.htm">Services Overview</a> 
+ for more information. </p>
+</div>
+
+<ol start=2
+	style="list-style: decimal;"
+	type=1>
+	
+	<li class="kadov-p"><p>The Policy Development window appears. If not 
+ present, enable the Policy Validation Messages window by selecting [<span 
+ style="font-weight: bold;"><B>View</B></span>] &gt; <span style="font-weight: bold;"><B>Policy 
+ Messages</B></span> from the Main Menu (check box checked). </p></li>
+	
+	<li class="kadov-p"><p>In the Policy Tool Bar, click [<span style="font-weight: bold;"><B>Save</B></span>]. 
+ The Manager automatically upgrades the 2.1 assertions to 3.0-compatible 
+ assertions. Note any error or warning messages in the Policy Validation 
+ Messages window. If necessary, correct policy errors as outlined in the 
+ <span style="margin-left: 0px;">&quot;Validate a Security Policy&quot; 
+ section in <a href="Configure_Edit_Security_Policies.htm">Configure and 
+ Edit Security Policies</a>. </span></p></li>
+</ol>
+
+<ol start=4
+	style="list-style: decimal;"
+	type=1>
+	
+	<li class="kadov-p"><p>Repeat Steps #1-3 in additional security policies 
+ as required.</p></li>
+</ol>
+
+<h6>&nbsp;</h6>
+
+<div style="padding: 5px;
+			background-color: #f8fbdd;
+			margin-left: 4px;
+			margin-right: 4px;
+			margin-top: 4px;
+			margin-bottom: 4px;
+			float: none;
+			width: 550px;">
+<p class="tipsnotes"><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
+	width: 16px;
+	height: 15px;
+	float: none;
+	border-style: none;
+	border-style: none;" width="16" height="15" border="0"> &nbsp;NOTE:</B></span> 
+ When upgrading a 2.1 security policy, ensure that you follow the policy 
+ and assertion information and rules in <a href="Security_Policy_Organization_and_Rules.htm">Security 
+ Policy Organization and Rules</a>. </p>
+</div>
+
+<h3 style="color: #000000;"><a name=Add_On_Assertion_Installation
+								style="color: #000000;">Add-On Assertion 
+ Installation</a></h3>
+
+<div style="padding: 5px;
+			background-color: #f8fbdd;
+			margin-left: 4px;
+			margin-right: 4px;
+			margin-top: 4px;
+			margin-bottom: 4px;
+			float: none;
+			width: 550px;">
+<p class="tipsnotes"><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
+	width: 16px;
+	height: 15px;
+	float: none;
+	border-style: none;
+	border-style: none;" width="16" height="15" border="0"> &nbsp;NOTE:</B></span> 
+ For more information about the optional add-on assertions, see <a href="Optional_Add-On_Assertion_Overview.htm">Optional 
+ Add-On Assertions Overview</a>.</p>
+</div>
+
+<p class="quicklinks">Upgrading version 2.1 of the SecureSpan™ Gateway to 
+ version 3.0 will require the re-installation and configuration of any 
+ optional add-on assertions in the version 2.1 security policies:</p>
+
+<ul style="list-style: disc;"
+	type=disc>
+	
+	<li class="kadov-p-cquicklinks"><p class="quicklinks" style="margin-top: 4.5pt;">The SiteMinder™ 
+ authentication assertion from the Authentication category of the [Assertions] 
+ tab, called &quot;SiteMinder Protected Resource&quot; in the Policy Development 
+ window, installed as a separate assertion package</p></li>
+	
+	<li class="kadov-p-cquicklinks"><p class="quicklinks">The Tivoli Access 
+ Manager (TAM) authentication assertion from the Authentication category 
+ of the [Assertions] tab, called &quot;Tivoli Access Manager Assertion&quot; 
+ in the Policy Development window, installed as a separate assertion package</p></li>
+	
+	<li class="kadov-p-cquicklinks"><p class="quicklinks" style="margin-bottom: 4.5pt;">The JMS 
+ routing assertion from the Message Routing category of the [Assertions] 
+ tab, called &quot;Route to JMS Queue&quot; in the Policy Development window, 
+ installed as JMS code.</p></li>
+</ul>
+
+<p class="quicklinks">If installed in the 3.0 version of the Gateway during 
+ the upgrade process, then converting the version 2.1 security policies 
+ in the SecureSpan™ Manager will automatically update any add-on assertions 
+ and, if applicable, configured JMS queues. If the add-on assertions were 
+ not installed in the Gateway during the upgrade process, however, then 
+ any add-on assertions will be identified as &quot;Unknown assertions&quot; 
+ in the version 3.0 Policy Development window. Install the required add-on 
+ assertions in the version 3.0 Gateway, then convert or re-convert the 
+ security policy in the Manager to enable the assertions:</p>
+
+<h6>&nbsp;</h6>
+
+<div style="padding: 5px;
+			background-color: #f8fbdd;
+			margin-left: 4px;
+			margin-right: 4px;
+			margin-top: 4px;
+			margin-bottom: 4px;
+			float: none;
+			width: 550px;">
+<p class="tipsnotes"><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
+	width: 16px;
+	height: 15px;
+	float: none;
+	border-style: none;
+	border-style: none;" width="16" height="15" border="0"> &nbsp;NOTE:</B></span> 
+ For SiteMinder™ and TAM assertion installation and configuration information 
+ and instructions, see the <span style="font-style: italic;"><I>SecureSpan™ 
+ Solution Add-On Assertion Installation Guide</I></span> or contact your Administrator. 
+ For JMS assertion installation and configuration information and instructions, 
+ contact your Administrator.<span style="font-style: italic;"> <I></I></span></p>
+</div>
+
+<h6>&nbsp;</h6>
+
+<ol style="list-style: decimal;"
+	type=1>
+	
+	<li class="kadov-p"><p>If not already present, load the target 2.1 security 
+ policy into the Policy Development window by one of the following methods:</p></li>
+</ol>
+
+<div style="padding: 5px;
+			background-color: #f8fbdd;
+			margin-right: 4px;
+			margin-top: 4px;
+			margin-bottom: 4px;
+			float: none;
+			width: 550px;
+			margin-left: 44px;">
+<p class="tipsnotes"><span style="font-weight: bold;"><B><img src="TIPSfinal.gif" x-maintain-ratio="TRUE" style="border: none;
+	width: 16px;
+	height: 14px;
+	float: none;
+	border-style: none;
+	border-style: none;" width="16" height="14" border="0"> &nbsp;TIP:</B></span> 
+ If not already disabled, it is strongly recommended that you disable a 
+ service while updating its security policy to prevent unsecured and unauthorized 
+ access. A disabled service contains a red &quot;X&quot; through its left-side 
+ icon. See <a href="Manage_Published_Services.htm">Manage Published Services</a> 
+ for information.</p>
+</div>
+
+<ol style="list-style: disc;"
+	type=disc>
+	
+	<ul style="list-style: disc;"
+		type=disc>
+		
+		<li class="kadov-p"><p>Right-click the service name in the [<span 
+ style="font-weight: bold;"><B>Services</B></span>] tab. A drop-down menu appears. 
+ Select <span style="font-weight: bold;"><B>Policy Assertions</B></span>. Or,</p></li>
+		
+		<li class="kadov-p"><p>Double-click the service in the [<span style="font-weight: bold;"><B>Services</B></span>] 
+ tab.</p></li>
+	</ul>
+</ol>
+
+<div style="padding: 5px;
+			background-color: #f8fbdd;
+			margin-right: 4px;
+			margin-top: 4px;
+			margin-bottom: 4px;
+			float: none;
+			width: 550px;
+			margin-left: 84px;">
+<p class="tipsnotes"><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
+	width: 16px;
+	height: 15px;
+	float: none;
+	border-style: none;
+	border-style: none;" width="16" height="15" border="0"> &nbsp;NOTE:</B></span> 
+ The version 2.1 [Web Services] tab has changed to [Services] in version 
+ 3.0 to include the display and management of XML, or non-SOAP, application 
+ security policies. See <a href="Services_Overview.htm">Services Overview</a> 
+ for more information. </p>
+</div>
+
+<ol start=2
+	style="list-style: decimal;"
+	type=1>
+	
+	<li class="kadov-p"><p>The Policy Development window appears. If not 
+ present, enable the Policy Validation Messages window by selecting [<span 
+ style="font-weight: bold;"><B>View</B></span>] &gt; <span style="font-weight: bold;"><B>Policy 
+ Messages</B></span> from the Main Menu (check box checked). </p></li>
+	
+	<li class="kadov-p"><p>In the Policy Tool Bar, click [<span style="font-weight: bold;"><B>Save</B></span>]. 
+ The Manager automatically upgrades the 2.1 assertions to 3.0-compatible 
+ assertions. Note any error or warning messages in the Policy Validation 
+ Messages window. If necessary, correct policy errors as outlined in the 
+ <span style="margin-left: 0px;">&quot;Validate a Security Policy&quot; 
+ section in <a href="Configure_Edit_Security_Policies.htm">Configure and 
+ Edit Security Policies</a>. </span></p></li>
+</ol>
+
+<ol start=4
+	style="list-style: decimal;"
+	type=1>
+	
+	<li class="kadov-p"><p>Repeat Steps #1-3 in additional security policies 
+ as required.</p></li>
+</ol>
+
+<h6>&nbsp;</h6>
+
+<div style="padding: 5px;
+			background-color: #f8fbdd;
+			margin-left: 4px;
+			margin-right: 4px;
+			margin-top: 4px;
+			margin-bottom: 4px;
+			float: none;
+			width: 550px;">
+<p class="tipsnotes"><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
+	width: 16px;
+	height: 15px;
+	float: none;
+	border-style: none;
+	border-style: none;" width="16" height="15" border="0"> &nbsp;NOTE:</B></span> 
+ When upgrading a 2.1 security policy, ensure that you follow the policy 
+ and assertion information and rules in <a href="Security_Policy_Organization_and_Rules.htm">Security 
+ Policy Organization and Rules</a>. </p>
+</div>
+
+<h6>&nbsp;</h6>
+
+</body>
+
+</html>

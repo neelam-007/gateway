@@ -1,0 +1,693 @@
+<!doctype HTML public "-//W3C//DTD HTML 4.0 Frameset//EN">
+
+<html>
+
+
+
+
+
+<head>
+
+<title>Add/Edit Federated Identity Providers</title>
+
+
+
+ <meta http-equiv=content-type content="text/html; charset=windows-1252">
+<meta name=generator-major-version content=0.1>
+<meta name=generator-minor-version content=1>
+<meta name=filetype content=kadov>
+<meta name=filetype-version content=1>
+<meta name=page-count content=1>
+<meta name=layout-height content=5077>
+<meta name=layout-width content=777>
+<meta name=x-ignored-words content="workflows;requestor;FIP;Workflow;SAML">
+
+
+
+
+ <link rel="StyleSheet" href="JavaHelp.css">
+
+
+
+ <META NAME="generator" CONTENT="RoboHelp by eHelp Corporation www.ehelp.com">
+</head>
+
+
+
+
+<body>
+
+<h1>Add and Edit Federated Identity Providers</h1>
+
+<div style="padding: 5px;
+			background-color: #f8fbdd;
+			margin-left: 4px;
+			margin-right: 4px;
+			margin-top: 4px;
+			margin-bottom: 4px;
+			float: none;
+			width: 550px;">
+<p class="tipsnotes"><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
+	width: 16px;
+	height: 15px;
+	float: none;
+	border-style: none;
+	border-style: none;" width="16" height="15" border="0"> &nbsp;NOTE:</B></span> 
+ The generic &quot;Trusted Gateway A&quot; and &quot;Federated Gateway 
+ B&quot; references are used in the identity bridging examples, workflows, 
+ and instructions. The Trusted Gateway A is the certificate authority (CA) 
+ that issues and manages security credentials and that is responsible for 
+ authentication. The Federated Gateway B is the Web service provider that 
+ is responsible for authorization. </p>
+</div>
+
+<p>The Federated Identity Provider (FIP) is an essential element when bridging 
+ disparate security domains. See <a HREF="FIP_Overview.htm">Federated Identity 
+ Provider Overview</a> for more information. The certificates that are 
+ used as the credential source in an FIP are defined and imported into 
+ the trust store using the Add Certificate Wizard (see <a href="Add_Edit_Certificates.htm">Add 
+ and Edit Certificates</a>) according to the source type-specific instructions 
+ provided in <a href="Identity_Bridging_Workflow_Using_an_X.509_Certificate.htm">Identity 
+ Bridging Workflow Using an X.509 Certificate</a> or <a href="Identity_Bridging_Workflow.htm">Identity 
+ Bridging Workflow Using SAML</a>. </p>
+
+<h6>&nbsp;</h6>
+
+<p>The SecureSpan™ Manager's Create Federated Identity Provider Wizard 
+ is used to add an FIP to the Federated Gateway B. In the Wizard, you can 
+ define the type(s) of credential source(s) that the FIP will support, 
+ configure SAML credential source details, when applicable, and add trust 
+ store certificates. You can edit or delete an FIP from the [Identity Providers] 
+ tab at any time. For information on adding federated users, groups, and/or 
+ virtual groups to the FIP, see <a HREF="Add_Edit_FIP_Users_and_Groups.htm">Add/Edit 
+ Federated Identity Provider Users and Groups</a>.</p>
+
+<h6>&nbsp;</h6>
+
+<div style="padding: 5px;
+			background-color: #f8fbdd;
+			margin-right: 4px;
+			margin-top: 4px;
+			margin-bottom: 4px;
+			float: none;
+			width: 550px;
+			margin-left: 4px;">
+<p class="tipsnotes"><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
+	width: 16px;
+	height: 15px;
+	float: none;
+	border-style: none;
+	border-style: none;" width="16" height="15" border="0"> &nbsp;NOTE:</B></span> 
+ Ensure that all required certificates are added to the trust store prior 
+ to creating the Federated Identity Provider. For credential source-type 
+ instructions, see <a href="Identity_Bridging_Workflow_Using_an_X.509_Certificate.htm">Identity 
+ Bridging Workflow Using an X.509 Certificate</a> or <a href="Identity_Bridging_Workflow.htm">Identity 
+ Bridging Workflow Using SAML</a>. For detailed certificate addition instructions, 
+ see <a href="Add_Edit_Certificates.htm">Add and Edit Certificates</a>.</p>
+</div>
+
+<h6>&nbsp;</h6>
+
+<h4>Quick Links:</h4>
+
+<p class="quicklinks"><a href="#Add_a_New_Federated_Identity_Provider">Add 
+ a New Federated Identity Provider</a></p>
+
+<p class="quicklinks"><a href="#Edit_a_Federated_Identity_Provider">Edit 
+ a Federated Identity Provider</a></p>
+
+<p class="quicklinks"><a href="#Delete_a_Federated_Identity_Provider">Delete 
+ a Federated Identity Provider</a></p>
+
+<h2 style="color: #000000;"><a name=Add_a_New_Federated_Identity_Provider
+								style="color: #000000;">Add a New Federated 
+ Identity Provider</a></h2>
+
+<div style="padding: 5px;
+			background-color: #f8fbdd;
+			margin-right: 4px;
+			margin-top: 4px;
+			margin-bottom: 4px;
+			float: none;
+			width: 550px;
+			margin-left: 4px;">
+<p class="tipsnotes"><span style="font-weight: bold;"><B><img src="TIPSfinal.gif" x-maintain-ratio="TRUE" style="border: none;
+	width: 16px;
+	height: 14px;
+	float: none;
+	border-style: none;
+	border-style: none;" width="16" height="14" border="0"> &nbsp;TIP:</B></span> 
+ Follow the credential source-specific workflow instructions outlined in 
+ <a href="Identity_Bridging_Workflow_Using_an_X.509_Certificate.htm">Identity 
+ Bridging Workflow Using an X.509 Certificate</a> or <a href="Identity_Bridging_Workflow.htm">Identity 
+ Bridging Workflow Using SAML</a>, along with the following instructions, 
+ when adding a new Federated Identity Provider. </p>
+</div>
+
+<p class="procedure">A new Federated Identity Provider (FIP) is added to 
+ the Federated Gateway B with the SecureSpan™ Manager's Create Federated 
+ Identity Provider Wizard. The Wizard contains three screens corresponding 
+ to the three main tasks in the configuration process:</p>
+
+<ol style="list-style: decimal;"
+	type=1>
+	
+	<li class="kadov-p-cprocedure"><p class="procedure" style="margin-top: 4.5pt;">The Enter 
+ Provider Information screen defines the FIP name and supported credential 
+ source types.</p></li>
+	
+	<li class="kadov-p-cprocedure"><p class="procedure">The Configure SAML 
+ Credential Source screen configures the usage of the SAML credential source, 
+ if selected in the Enter Provider Information screen, for the FIP.</p></li>
+	
+	<li class="kadov-p-cprocedure"><p class="procedure" style="margin-bottom: 4.5pt;">The Select 
+ the Trusted Certificates screen adds and manages the imported trust store 
+ certificates for the FIP.</p></li>
+</ol>
+
+<p class="procedure">You can view screen-specific information and instructions 
+ in the Tips Box located near the bottom of the Create Federated Identity 
+ Provider Wizard. </p>
+
+<h6>&nbsp;</h6>
+
+<ol style="list-style: decimal;"
+	type=1>
+	
+	<li class="kadov-p"><p>Access the Create Federated Identity Provider 
+ Wizard by one of three methods:</p></li>
+	
+	<ul>
+		
+		<li style="list-style: disc;" type="disc" class="kadov-p"><p>Click the &quot;Create Federated Identity 
+ Provider&quot; link on the Home Page</p></li>
+	</ul>
+</ol>
+
+<div style="padding: 5px;
+			background-color: #f8fbdd;
+			margin-right: 4px;
+			margin-top: 4px;
+			margin-bottom: 4px;
+			float: none;
+			width: 550px;
+			margin-left: 84px;">
+<p class="tipsnotes"><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
+	width: 16px;
+	height: 15px;
+	float: none;
+	border-style: none;
+	border-style: none;" width="16" height="15" border="0"> &nbsp;NOTE:</B></span> 
+ The Home Page appears upon startup or when the Main Tool Bar's [Home] 
+ button is clicked.</p>
+</div>
+
+<ol start=2
+	style="list-style: decimal;"
+	type=1>
+	
+	<ul>
+		
+		<li style="list-style: disc;" type="disc" class="kadov-p"><p>Click [<span style="font-weight: bold;"><B>Tasks</B></span>] 
+ &gt; <span style="font-weight: bold;"><B>Create Identity Provider </B></span>&gt; 
+ <span style="font-weight: bold;"><B>Create Federated Identity Provider</B></span> 
+ from the Main Menu</p></li>
+		
+		<li style="list-style: disc;" type="disc" class="kadov-p"><p>Right-click the &quot;Identity Providers&quot; 
+ title at the top of the [<span style="font-weight: bold;"><B>Identity Providers</B></span>] 
+ tab. A drop-down menu appears. Select <span style="font-weight: bold;"><B>Create 
+ Federated Identity Provider</B></span>.</p></li>
+	</ul>
+	
+	<li class="kadov-p"><p>The Enter Provider Information screen of the Create 
+ Federated Identity Provider Wizard appears. Enter a name for the FIP into 
+ the <span style="font-weight: bold;"><B>Provider Name</B></span> field.</p></li>
+</ol>
+
+<div style="padding: 5px;
+			background-color: #f8fbdd;
+			margin-right: 4px;
+			margin-top: 4px;
+			margin-bottom: 4px;
+			float: none;
+			width: 550px;
+			margin-left: 44px;">
+<p class="tipsnotes"><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
+	width: 16px;
+	height: 15px;
+	float: none;
+	border-style: none;
+	border-style: none;" width="16" height="15" border="0"> &nbsp;NOTE:</B></span> 
+ The name entered in the Provider Name field will appear in the [Identity 
+ Providers] tab. The provider name must be between three and twenty-four 
+ characters long.</p>
+</div>
+
+<ol start=3
+	style="list-style: decimal;"
+	type=1>
+	
+	<li class="kadov-p-cnotenumbered"><p class="notenumbered" style="margin-left: 0px;">In the 
+ <span style="font-weight: bold;"><B>Credential Source Type Allowed</B></span> 
+ section, select an option corresponding to the authorization source used 
+ in the identity bridging configuration:</p></li>
+</ol>
+
+<div style="padding: 5px;
+			background-color: #f8fbdd;
+			margin-right: 4px;
+			margin-top: 4px;
+			margin-bottom: 4px;
+			float: none;
+			width: 550px;
+			margin-left: 44px;">
+<p class="tipsnotes"><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
+	width: 16px;
+	height: 15px;
+	float: none;
+	border-style: none;
+	border-style: none;" width="16" height="15" border="0"> &nbsp;NOTE:</B></span> 
+ If you intend to add one or more virtual groups to the Federated Identity 
+ Provider, then you must check the X.509 Certificate check box even if 
+ you are using the SAML credential source type. See <a href="Identity_Bridging_Workflow.htm">Identity 
+ Bridging Workflow Using SAML</a> for more information. </p>
+</div>
+
+<h3 style="margin-left: 40px;">X.509 Credential Source</h3>
+
+<p class="notenumbered" style="margin-left: 40px;">If using X.509 certificates for credential 
+ authorization:</p>
+
+<ol style="list-style: disc;"
+	type=disc>
+	
+	<ul style="list-style: disc;"
+		type=disc>
+		
+		<li class="kadov-p-cnotenumbered"><p class="notenumbered" style="margin-left: 0px;">Check 
+ the <span style="font-weight: bold;"><B>X.509 Certificate</B></span> check box</p></li>
+		
+		<li class="kadov-p-cnotenumbered"><p class="notenumbered" style="margin-left: 0px;">Click 
+ [<span style="font-weight: bold;"><B>Next</B></span>]. The Select the Trusted 
+ Certificates screen appears. Proceed to Step #5 below.</p></li>
+	</ul>
+</ol>
+
+<div style="padding: 5px;
+			background-color: #f8fbdd;
+			margin-right: 4px;
+			margin-top: 4px;
+			margin-bottom: 4px;
+			float: none;
+			width: 550px;
+			margin-left: 44px;">
+<p class="tipsnotes"><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
+	width: 16px;
+	height: 15px;
+	float: none;
+	border-style: none;
+	border-style: none;" width="16" height="15" border="0"> &nbsp;NOTE:</B></span> 
+ The Configure SAML Credential Source screen only appears when you select 
+ the SAML Token check box.</p>
+</div>
+
+<h3 style="margin-left: 40px;">SAML Credential Source</h3>
+
+<p style="margin-left: 40px;">If using the SAML Security assertion for 
+ credential authorization:</p>
+
+<ul start=4
+	style="list-style: decimal;"
+	type=1>
+	
+	<ol style="list-style: decimal;"
+		type=1>
+		
+		<li class="kadov-p-cnotenumbered"><p class="notenumbered" style="margin-left: 0px;">Check 
+ the <span style="font-weight: bold;"><B>SAML Token</B></span> check box</p></li>
+		
+		<li class="kadov-p-cnotenumbered"><p class="notenumbered" style="margin-left: 0px;">Click 
+ [<span style="font-weight: bold;"><B>Next</B></span>]. The Configure SAML Credential 
+ Source screen appears. </p></li>
+		
+		<li class="kadov-p"><p>In the Name Identifier section of the Configure 
+ SAML Credential Source screen:</p></li>
+	</ol>
+</ul>
+
+<div style="padding: 5px;
+			background-color: #f8fbdd;
+			margin-right: 4px;
+			margin-top: 4px;
+			margin-bottom: 4px;
+			float: none;
+			width: 550px;
+			margin-left: 84px;">
+<p class="tipsnotes"><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
+	width: 16px;
+	height: 15px;
+	float: none;
+	border-style: none;
+	border-style: none;" width="16" height="15" border="0"> &nbsp;NOTE:</B></span> 
+ The SecureSpan™ Manager currently only supports the X.509 subject name 
+ format. The Name Qualifier, Email, and Windows Qualified Domain Name fields 
+ will be enabled in a future version.</p>
+</div>
+
+<ul start=4
+	style="list-style: decimal;"
+	type=1>
+	
+	<ol style="list-style: decimal;"
+		type=1>
+		
+		<ul>
+			
+			<li style="list-style: disc; /*begin!kadov{{*/ color: #000000; /*}}end!kadov*/ " type="disc" class="kadov-p"><p style="color: #000000;">If incoming SAML 
+ assertions must contain a particular NameQualifier value, enter the value 
+ into the <span style="font-weight: bold;"><B>Name Qualifier</B></span> field</p></li>
+			
+			<li style="list-style: disc; /*begin!kadov{{*/ color: #000000; /*}}end!kadov*/ " type="disc" class="kadov-p"><p style="color: #000000;">In the <span style="font-weight: bold;"><B>Format</B></span> 
+ section, select one or more NameIdentifier formats:</p></li>
+			
+			<ul>
+				
+				<li style="list-style: disc; /*begin!kadov{{*/ color: #000000; /*}}end!kadov*/ " type="disc" class="kadov-p"><p><span style="color: #000000;"><font color=black >Check 
+ the </font></span><span style="color: #000000; font-weight: bold;"><font color=black ><B>X.509 Subject 
+ Name</B></font></span><span style="color: #000000;"><font color=black > check box to allow this FIP 
+ to authorize incoming SAML assertions with X.509 distinguished names (DNs) 
+ as NameIdentifiers</font></span></p></li>
+			</ul>
+		</ul>
+	</ol>
+</ul>
+
+<div style="padding: 5px;
+			background-color: #f8fbdd;
+			margin-right: 4px;
+			margin-top: 4px;
+			margin-bottom: 4px;
+			float: none;
+			width: 550px;
+			margin-left: 164px;">
+<p class="tipsnotes"><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
+	width: 16px;
+	height: 15px;
+	float: none;
+	border-style: none;
+	border-style: none;" width="16" height="15" border="0"> &nbsp;NOTE:</B></span> 
+ If configuring one or more virtual groups for the Federated Identity Provider, 
+ then you must check the X.509 Subject Name check box.</p>
+</div>
+
+<ol style="list-style: decimal;"
+	type=1>
+	
+	<ol start=5
+		style="list-style: decimal;"
+		type=1>
+		
+		<ol>
+			
+			<ul>
+				
+				<li style="list-style: disc; /*begin!kadov{{*/ color: #000000; /*}}end!kadov*/ " type="disc" class="kadov-p"><p style="color: #000000;">Check the 
+ <span style="font-weight: bold;"><B>Email</B></span> check box to allow this 
+ FIP to authorize incoming SAML assertions with email addresses as NameIdentifiers</p></li>
+				
+				<li style="list-style: disc; /*begin!kadov{{*/ color: #000000; /*}}end!kadov*/ " type="disc" class="kadov-p"><p style="color: #000000;">Check the 
+ <span style="font-weight: bold;"><B>Windows Qualified Domain Name</B></span> 
+ check box to allow this FIP to authorize incoming SAML assertions with 
+ Windows domain logins as NameIdentifiers. Enter the name of the Windows 
+ domain to which the login IDs belong into the field. </p></li>
+			</ul>
+		</ol>
+	</ol>
+	
+	<ol start=4
+		style="list-style: decimal;"
+		type=1>
+		
+		<li class="kadov-p"><p>In the Confirmation Method section of the 
+ Configure SAML Credential Source screen, select one or more confirmation 
+ method options:</p></li>
+	</ol>
+</ol>
+
+<div style="padding: 5px;
+			background-color: #f8fbdd;
+			margin-right: 4px;
+			margin-top: 4px;
+			margin-bottom: 4px;
+			float: none;
+			width: 550px;
+			margin-left: 84px;">
+<p class="tipsnotes"><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
+	width: 16px;
+	height: 15px;
+	float: none;
+	border-style: none;
+	border-style: none;" width="16" height="15" border="0"> &nbsp;NOTE:</B></span> 
+ The SAML Security assertion in a SecureSpan™ Manager Web service security 
+ policy currently only supports the Holder-of-Key subject confirmation 
+ method. The Sender-Vouches subject confirmation method will be enabled 
+ in a future version. See <a href="Configure_Edit_Authentication_Assertions.htm">Configure 
+ and Edit Authentication Assertions</a> for information about the SAML 
+ Security assertion.</p>
+</div>
+
+<ol style="list-style: decimal;"
+	type=1>
+	
+	<ul start=4
+		style="list-style: decimal;"
+		type=1>
+		
+		<ul>
+			
+			<li style="list-style: disc; /*begin!kadov{{*/ color: #000000; /*}}end!kadov*/ " type="disc" class="kadov-p"><p style="color: #000000;">Check the <span 
+ style="font-weight: bold;"><B>Holder of Key</B></span> check box to allow this 
+ FIP to authorize incoming SAML Security assertions that use the Holder-of-Key 
+ subject confirmation method</p></li>
+			
+			<li style="list-style: disc; /*begin!kadov{{*/ color: #000000; /*}}end!kadov*/ " type="disc" class="kadov-p"><p style="color: #000000;">Check the <span 
+ style="font-weight: bold;"><B>Sender Vouches </B></span>check box to allow this 
+ FIP to authorize incoming SAML Security assertions that use the Sender-Vouches 
+ subject confirmation method.</p></li>
+		</ul>
+	</ul>
+	
+	<ol start=5
+		style="list-style: decimal;"
+		type=1>
+		
+		<li style="list-style: decimal;
+					/*begin!kadov{{*/ color: #000000;
+					color: #000000; /*}}end!kadov*/ " type="1" class="kadov-p"><p style="color: #000000;"><span style="color: #000000;"><font color=black >Click 
+ [</font></span><span style="color: #000000; font-weight: bold;"><font color=black ><B>Next</B></font></span><span 
+ style="color: #000000;"><font color=black >]. The Select the Trusted Certificates screen 
+ of the Create Federated Identity Provider Wizard appears. Proceed to Step 
+ #5 below.</font></span></p></li>
+	</ol>
+</ol>
+
+<h6>&nbsp;</h6>
+
+<ol start=5
+	style="list-style: decimal;"
+	type=1>
+	
+	<li class="kadov-p"><p style="margin-left: 0px;">In the Select the Trusted 
+ Certificates screen, click [<span style="font-weight: bold;"><B>Add</B></span>]. 
+ The Search Trusted Certificates form appears. If necessary, specify any 
+ search criteria using the<span style="font-weight: bold;"><B> Subject DN</B></span> 
+ or <span style="font-weight: bold;"><B>Issuer Name</B></span> drop-down lists 
+ and fields.</p></li>
+</ol>
+
+<div style="padding: 5px;
+			background-color: #f8fbdd;
+			margin-right: 4px;
+			margin-top: 4px;
+			margin-bottom: 4px;
+			float: none;
+			width: 550px;
+			margin-left: 44px;">
+<p class="tipsnotes"><span style="font-weight: bold;"><B><img src="TIPSfinal.gif" x-maintain-ratio="TRUE" style="border: none;
+	width: 16px;
+	height: 14px;
+	float: none;
+	border-style: none;
+	border-style: none;" width="16" height="14" border="0"> &nbsp;TIP:</B></span> 
+ To view all certificates in the trust store, leave the Subject DN and 
+ Issuer Name fields blank.</p>
+</div>
+
+<ol start=6
+	style="list-style: decimal;"
+	type=1>
+	
+	<li class="kadov-p"><p style="margin-left: 0px;">Click [<span style="font-weight: bold;"><B>Search</B></span>]. 
+ Search results appear in the Search Results window. Select one or more 
+ certificates to add to the FIP as follows:</p></li>
+</ol>
+
+<h4 style="margin-left: 40px;">Add a Single Certificate</h4>
+
+<p style="margin-left: 40px;">To add a certificate, select the certificate's 
+ name and click [<span style="font-weight: bold;"><B>Select</B></span>]. The Search 
+ Trusted Certificates form closes and the certificate is added to the Trusted 
+ Certificates window in the Select the Trusted Certificates screen.</p>
+
+<h4 style="margin-left: 40px;">Add Multiple Certificates</h4>
+
+<ol style="list-style: decimal;"
+	type=1>
+	
+	<ul>
+		
+		<li style="list-style: disc;" type="disc" class="kadov-p"><p>Add multiple certificates by one of two methods:</p></li>
+		
+		<ul style="list-style: disc;"
+			type=disc>
+			
+			<li class="kadov-p"><p>To select a consecutive range of certificates, 
+ press [<span style="font-weight: bold;"><B>Shift</B></span>] on your keyboard, 
+ left-click the first certificate in the range, and then left-click the 
+ last certificate in the range</p></li>
+			
+			<li class="kadov-p"><p>To add certificates placed throughout 
+ the list, press [<span style="font-weight: bold;"><B>Ctrl</B></span>] on your 
+ keyboard as you click each certificate name that you want to add.</p></li>
+		</ul>
+		
+		<li style="list-style: disc;" type="disc" class="kadov-p"><p>Click [<span style="font-weight: bold;"><B>Select</B></span>]. 
+ The Search Trusted Certificates form closes and the certificate is added 
+ to the Trusted Certificates window in the Select the Trusted Certificates 
+ screen.</p></li>
+	</ul>
+</ol>
+
+<div style="padding: 5px;
+			background-color: #f8fbdd;
+			margin-right: 4px;
+			margin-top: 4px;
+			margin-bottom: 4px;
+			float: none;
+			width: 550px;
+			margin-left: 44px;">
+<p class="tipsnotes"><span style="font-weight: bold;"><B><img src="TIPSfinal.gif" x-maintain-ratio="TRUE" style="border: none;
+	width: 16px;
+	height: 14px;
+	float: none;
+	border-style: none;
+	border-style: none;" width="16" height="14" border="0"> &nbsp;TIP:</B></span> 
+ To view certificate details, select a certificate in the Trusted Certificates 
+ window and click [Properties]. The Certificate Properties form appears. 
+ For information on editing a certificate, see <a HREF="Add_Edit_Certificates.htm">Add 
+ and Edit Certificates</a>.</p>
+</div>
+
+<h6>&nbsp;</h6>
+
+<ol start=7
+	style="list-style: decimal;"
+	type=1>
+	
+	<li class="kadov-p"><p style="margin-left: 0px;">In the Select the Trusted 
+ Certificates screen of the Create Federated Identity Provider Wizard, 
+ click [<span style="font-weight: bold;"><B>Finish</B></span>]. The new FIP is 
+ immediately added to the [<span style="font-weight: bold;"><B>Identity Providers</B></span>] 
+ tab. </p></li>
+</ol>
+
+<h2 style="color: #000000;"><a name=Edit_a_Federated_Identity_Provider
+								style="color: #000000;">Edit a Federated 
+ Identity Provider</a></h2>
+
+<p>A Federated Identity Provider (FIP) is edited from the Edit Federated 
+ Identity Provider Wizard accessed from the [Identity Providers] tab. </p>
+
+<h6>&nbsp;</h6>
+
+<ul>
+	
+	<li style="list-style: disc;" type="disc" class="kadov-p"><p>In the [<span style="font-weight: bold;"><B>Identity 
+ Providers</B></span>] tab, access the Edit Federated Identity Provider Wizard 
+ for the target FIP by one of two methods:</p></li>
+</ul>
+
+<ul>
+	
+	<ul style="list-style: disc;"
+		type=disc>
+		
+		<li class="kadov-p"><p style="font-weight: normal;">Double-click 
+ the FIP name</p></li>
+		
+		<li class="kadov-p"><p>Right-click the FIP name. A drop-down menu 
+ appears. Select <span style="font-weight: bold;"><B>Properties</B></span>.</p></li>
+	</ul>
+	
+	<li style="list-style: disc;" type="disc" class="kadov-p"><p>The Edit Federated Identity Provider Wizard appears. 
+ Navigate through the Enter Provider Information, Configure SAML Credential 
+ Source (if applicable), and Select the Trusted Certificates screens to 
+ make changes as required. For screen and field-level information, see 
+ <a href="#Add_a_New_Federated_Identity_Provider">Add a New Federated Identity 
+ Provider</a>.</p></li>
+</ul>
+
+<h2 style="color: #000000;"><a name=Delete_a_Federated_Identity_Provider
+								style="color: #000000;">Delete a Federated 
+ Identity Provider</a></h2>
+
+<div style="padding: 5px;
+			background-color: #f8fbdd;
+			margin-right: 4px;
+			margin-top: 4px;
+			margin-bottom: 4px;
+			float: none;
+			width: 550px;
+			margin-left: 4px;">
+<p class="tipsnotes"><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
+	width: 16px;
+	height: 15px;
+	float: none;
+	border-style: none;
+	border-style: none;" width="16" height="15" border="0"> &nbsp;NOTE:</B></span> 
+ An error message will appear in the Policy Validation Messages window 
+ if you deleted a Federated Identity Provider (FIP) whose users and groups 
+ are attached to the security policy. To delete the FIP, you must first 
+ delete the FIP users and groups from all security policies. See <a href="Configure_Edit_Security_Policies.htm">Configure 
+ and Edit Security Policies</a> for more information.</p>
+</div>
+
+<h6>&nbsp;</h6>
+
+<ol start=1
+	style="list-style: decimal;"
+	type=1>
+	
+	<li class="kadov-p"><p>In the [<span style="font-weight: bold;"><B>Identity 
+ Providers</B></span>] tab, right-click the Federated Identity Provider (FIP) 
+ name that you want to delete. </p></li>
+	
+	<li class="kadov-p"><p>A drop-down menu appears. Select <span style="font-weight: bold;"><B>Delete</B></span>.</p></li>
+	
+	<li class="kadov-p"><p>A confirmation message appears. Click [<span style="font-weight: bold;"><B>Yes</B></span>]. 
+ The FIP is removed from the [<span style="font-weight: bold;"><B>Identity 
+ Providers</B></span>] tab. </p></li>
+</ol>
+
+<h6>&nbsp;</h6>
+
+<h4>Next Topic:</h4>
+
+<p><a href="Add_Edit_FIP_Users_and_Groups.htm">Add and Edit Federated Identity 
+ Provider Users and Groups</a></p>
+
+<h6>&nbsp;</h6>
+
+</body>
+
+</html>

@@ -18,9 +18,9 @@
 <meta name=filetype content=kadov>
 <meta name=filetype-version content=1>
 <meta name=page-count content=1>
-<meta name=layout-height content=6261>
-<meta name=layout-width content=824>
-<meta name=x-ignored-words content="WSDL;assertion(s">
+<meta name=layout-height content=7957>
+<meta name=layout-width content=773>
+<meta name=x-ignored-words content="WSDL;assertion(s;HTTP(S">
 
 
 
@@ -47,39 +47,26 @@
 			float: none;
 			width: 550px;
 			margin-left: 4px;">
-<p class="tipsnotes"><span style="font-weight: bold;"><B>NOTE: </B></span>The type 
- and order of assertions are important when constructing a valid Web service 
- security policy. Become familiar with the policy and assertion information 
- and rules in <a href="Security_Policies_Overview_and_Rules.htm">Security 
- Policies Overview and Rules</a>. For in-depth information on the category 
- and individual assertions used in a security policy, see <a href="Security_Policy_Assertions_Overview.htm">Security 
- Policy Assertion Overview</a>.</p>
+<p class="tipsnotes"><span style="font-weight: bold;"><B><img src="TIPSfinal.gif" x-maintain-ratio="TRUE" style="border: none;
+	width: 16px;
+	height: 14px;
+	float: none;
+	border-style: none;
+	border-style: none;" width="16" height="14" border="0"> &nbsp;TIP: 
+ </B></span>The type and order of assertions are important when constructing 
+ a valid security policy. Become familiar with the policy and assertion 
+ information and rules in <a href="Security_Policy_Organization_and_Rules.htm">Security 
+ Policy Organization and Rules</a> before constructing a security policy. 
+ </p>
 </div>
 
-<p>In the SecureSpan™ Manager, a security policy is constructed for a Web 
+<p>In the SecureSpan™ Manager, a security policy is constructed for a published 
  service by moving assertions from the [Assertions] tab into the Policy 
  Development window. The policy assertions in the Policy Development window 
  are organized into a logical tree-structure that conforms to the policy 
- and assertions rules defined in <a href="Security_Policies_Overview_and_Rules.htm">Security 
- Policies Overview and Rules</a>. A security policy is configured in four 
- general steps:</p>
-
-<ol style="list-style: decimal;"
-	type=1>
-	
-	<li class="kadov-p"><p>Select the Web service.</p></li>
-	
-	<li class="kadov-p"><p>Add and configure the assertions.</p></li>
-	
-	<li class="kadov-p"><p>Organize the assertions.</p></li>
-	
-	<li class="kadov-p"><p>Validate the security policy.</p></li>
-</ol>
-
-<p>A logical security policy must be constructed for each published Web 
- service in the Manager. See <a href="Security_Policy_Assertions_Overview.htm">Security 
- Policy Assertion Overview</a> for information about the assertions in 
- the [Assertions] tab. </p>
+ and assertions rules discussed in <a href="Security_Policy_Organization_and_Rules.htm">Security 
+ Policy Organization and Rules</a>. A security policy is configured in 
+ four general steps:</p>
 
 <h6>&nbsp;</h6>
 
@@ -91,21 +78,57 @@
 			float: none;
 			width: 550px;
 			margin-left: 4px;">
-<p class="tipsnotes"><span style="font-weight: bold;"><B>NOTE:</B></span> For information 
- on the interface areas related to Web services and security policies, 
- see <a href="SecureSpan_Manager_Interface.htm">SecureSpan<symbol name=Trademark>&#8482; 
- Manager Interface</a>.</p>
+<p class="tipsnotes"><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
+	width: 16px;
+	height: 15px;
+	float: none;
+	border-style: none;
+	border-style: none;" width="16" height="15" border="0"> &nbsp;NOTE:</B></span> 
+ Web services and XML applications are collectively referred to as &quot;services.&quot; 
+ In the [Services] tab, Web services are identified by an <img src="services16.gif" x-maintain-ratio="TRUE" style="border: none;
+			width: 18px;
+			height: 18px;
+			margin-left: 0px;
+			margin-right: 0px;
+			margin-top: 0px;
+			margin-bottom: -3px;
+			float: none;
+			border-style: none;
+			border-style: none;" width="18" height="18" border="0"> &nbsp;icon 
+ and XML applications are identified by an <img src="xmlObject16.gif" x-maintain-ratio="TRUE" style="border: none;
+														width: 16px;
+														height: 16px;
+														margin-left: 0px;
+														margin-right: 0px;
+														margin-top: 0px;
+														margin-bottom: -3px;
+														float: none;
+														border-style: none;
+														border-style: none;" width="16" height="16" border="0"> &nbsp;icon. 
+ You can only configure a security policy for a published service. For 
+ information on publishing services, see <a href="Services_Overview.htm">Services 
+ Overview</a>. </p>
 </div>
 
-<h4 style="font-weight: bold;">Quick Links:</h4>
+<ol style="list-style: decimal;"
+	type=1>
+	
+	<li class="kadov-p"><p style="margin-top: 4.5pt;">Select the service.</p></li>
+	
+	<li class="kadov-p"><p>Add and configure the assertions.</p></li>
+	
+	<li class="kadov-p"><p>Organize the assertions.</p></li>
+	
+	<li class="kadov-p"><p style="margin-bottom: 4.5pt;">Validate the security 
+ policy.</p></li>
+</ol>
 
-<p><a href="#Configure_a_Security_Policy">Configure a Security Policy</a></p>
+<p>A logical security policy must be constructed for each published service 
+ in the Manager. Policies can also be imported from or exported to a local 
+ file. See <a href="Import_Export_Security_Policies.htm">Import or Export 
+ Security Policies</a> for more information.</p>
 
-<p><a href="#Validate_a_Security_Policy">Validate a Security Policy</a></p>
-
-<p><a href="#Edit_a_Security_Policy">Edit a Security Policy</a></p>
-
-<h2><a name=Configure_a_Security_Policy>Configure a Security Policy</a></h2>
+<h6>&nbsp;</h6>
 
 <div style="padding: 5px;
 			background-color: #f8fbdd;
@@ -115,23 +138,63 @@
 			float: none;
 			width: 550px;
 			margin-left: 4px;">
-<p class="tipsnotes"><span style="font-weight: bold;"><B>TIP:</B></span> Reference 
- the security policy examples in <a href="Security_Policy_Examples.htm">Security 
- Policy Examples</a> when constructing your own policies. Periodically 
- click the [Save] button in the Policy Tool Bar during the configuration 
- process.</p>
+<p class="tipsnotes"><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
+	width: 16px;
+	height: 15px;
+	float: none;
+	border-style: none;
+	border-style: none;" width="16" height="15" border="0"> &nbsp;NOTE:</B></span> 
+ For in-depth information about the category and individual assertions 
+ used in a security policy, see <a href="Security_Policy_Assertions_Overview.htm">Security 
+ Policy Assertions Overview</a>. For information about the interface areas 
+ related to services and security policies, see <a href="SecureSpan_Manager_Interfaces.htm">SecureSpan<symbol 
+ name=Trademark>&#8482; Manager Interfaces</a>.</p>
+</div>
+
+<h6>&nbsp;</h6>
+
+<h4 style="font-weight: bold;">Quick Links:</h4>
+
+<p class="quicklinks"><a href="#Configure_a_Security_Policy">Configure a 
+ New Security Policy</a></p>
+
+<p class="quicklinks"><a href="#Validate_a_Security_Policy">Validate a Security 
+ Policy</a></p>
+
+<p class="quicklinks"><a href="#Edit_a_Security_Policy">Edit a Security Policy</a></p>
+
+<h2 style="color: #000000;"><a name=Configure_a_Security_Policy
+								style="color: #000000;">Configure a New 
+ Security Policy</a></h2>
+
+<div style="padding: 5px;
+			background-color: #f8fbdd;
+			margin-right: 4px;
+			margin-top: 4px;
+			margin-bottom: 4px;
+			float: none;
+			width: 550px;
+			margin-left: 4px;">
+<p class="tipsnotes"><span style="font-weight: bold;"><B><img src="TIPSfinal.gif" x-maintain-ratio="TRUE" style="border: none;
+	width: 16px;
+	height: 14px;
+	float: none;
+	border-style: none;
+	border-style: none;" width="16" height="14" border="0"> &nbsp;TIP:</B></span> 
+ Reference the security policy examples in <a href="Security_Policy_Examples.htm">Security 
+ Policy Examples</a> when constructing your own policies. </p>
 </div>
 
 <p>The SecureSpan™ Manager Policy Development window is the repository 
  for the assertions used to develop a security policy. Most assertions 
  require configuration either before or after being added to the Policy 
  Development window. See <a href="Security_Policy_Assertions_Overview.htm">Security 
- Policy Assertion Overview</a> for individual assertion information and 
+ Policy Assertions Overview</a> for individual assertion information and 
  instructions by assertion category. When all or most of the required assertions 
  have been added and configured in the Policy Development window, then 
  they must be organized into the logical structure defined in the individual 
- assertion instructions and/or in <a href="Security_Policies_Overview_and_Rules.htm">Security 
- Policies Overview and Rules</a>. Once organized, proceed to <a href="#Validate_a_Security_Policy">Validate 
+ assertion instructions and/or in <a href="Security_Policy_Organization_and_Rules.htm">Security 
+ Policy Organization and Rules</a>. Once organized, proceed to <a href="#Validate_a_Security_Policy">Validate 
  a Security Policy</a> to finalize the security policy.</p>
 
 <h6>&nbsp;</h6>
@@ -144,21 +207,28 @@
 			float: none;
 			width: 550px;
 			margin-left: 4px;">
-<p class="tipsnotes"><span style="font-weight: bold;"><B>TIP:</B></span> Before 
- constructing a security policy, ensure that the Policy Validation Messages 
- window is enabled. To enable the window, select [View] &gt; Policy Messages 
- from the Main Menu (check box checked). The Policy Validation Messages 
- window provides you with policy and assertion-level confirmation, warning, 
- or error messages that you can use during the configuration process. See 
- <a href="#Validate_a_Security_Policy">Validate a Security Policy</a> for 
- more information.</p>
+<p class="tipsnotes"><span style="font-weight: bold;"><B><img src="TIPSfinal.gif" x-maintain-ratio="TRUE" style="border: none;
+	width: 16px;
+	height: 14px;
+	float: none;
+	border-style: none;
+	border-style: none;" width="16" height="14" border="0"> &nbsp;TIP:</B></span> 
+ Before constructing a security policy, ensure that the Policy Validation 
+ Messages window is enabled. To enable the window, select [View] &gt; Policy 
+ Messages from the Main Menu (check box checked). The Policy Validation 
+ Messages window provides you with policy and assertion-level confirmation, 
+ warning, or error messages that you can use during the configuration process. 
+ See <a href="#Validate_a_Security_Policy">Validate a Security Policy</a> 
+ for more information.</p>
 </div>
+
+<h6>&nbsp;</h6>
 
 <ol style="list-style: decimal;"
 	type=1>
 	
 	<li class="kadov-p"><p>Access the Policy Development window for the target 
- Web service by one of two methods:</p></li>
+ service by one of two methods:</p></li>
 </ol>
 
 <div style="padding: 5px;
@@ -169,30 +239,33 @@
 			float: none;
 			width: 550px;
 			margin-left: 44px;">
-<p class="tipsnotes"><span style="font-weight: bold;"><B>NOTE:</B></span> You can 
- only access and configure a security policy for a Web service that is 
- published and enabled. A red &quot;X&quot; appears through a disabled 
- Web service icon in the [Web Services] tab. See <a href="Publish_Web_Services.htm">Publish 
- Web Services</a> for more information on publishing a Web service. See 
- <a href="Manage_Web_Services.htm">Manage Published Web Services</a> for 
- information on enabling a disabled Web service. </p>
+<p class="tipsnotes"><span style="font-weight: bold;"><B><img src="TIPSfinal.gif" x-maintain-ratio="TRUE" style="border: none;
+	width: 16px;
+	height: 14px;
+	float: none;
+	border-style: none;
+	border-style: none;" width="16" height="14" border="0"> &nbsp;TIP:</B></span> 
+ If not already disabled, it is strongly recommended that you disable a 
+ service while constructing its security policy to prevent unsecured and 
+ unauthorized access. A disabled service contains a red &quot;X&quot; through 
+ its left-side icon. See <a href="Manage_Published_Services.htm">Manage 
+ Published Services</a> for information.</p>
 </div>
 
-<ol style="list-style: disc;"
+<ul style="list-style: disc;"
 	type=disc>
 	
 	<ul style="list-style: disc;"
 		type=disc>
 		
-		<li class="kadov-p"><p>Right-click the Web service name in the [<span 
- style="font-weight: bold;"><B>Web Services</B></span>] tab. A drop-down menu 
- appears. Select <span style="font-weight: bold;"><B>Policy Assertions</B></span>. 
- Or,</p></li>
+		<li class="kadov-p"><p>Right-click the service name in the [<span 
+ style="font-weight: bold;"><B>Services</B></span>] tab. A drop-down menu appears. 
+ Select <span style="font-weight: bold;"><B>Policy Assertions</B></span>. Or,</p></li>
 		
-		<li class="kadov-p"><p>Double-click the Web service in the [<span 
- style="font-weight: bold;"><B>Web Services</B></span>] tab.</p></li>
+		<li class="kadov-p"><p>Double-click the service in the [<span style="font-weight: bold;"><B>Services</B></span>] 
+ tab.</p></li>
 	</ul>
-</ol>
+</ul>
 
 <ol start=2
 	style="list-style: decimal;"
@@ -210,16 +283,21 @@
 			float: none;
 			width: 550px;
 			margin-left: 44px;">
-<p class="tipsnotes"><span style="font-weight: bold;"><B>NOTE:</B></span> When you 
- publish a Web service using the Publish Web Service Wizard or Create WSDL 
- Wizard, the SecureSpan™ Manager automatically adds the Web service URL 
- specified during the publication process as an HTTP(S) Routing assertion 
- in the Web service's Policy Development window. For information about 
- routing assertions, see <a href="Configure_Edit_Message_Routing_Assertions.htm">Configure 
+<p class="tipsnotes"><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
+	width: 16px;
+	height: 15px;
+	float: none;
+	border-style: none;
+	border-style: none;" width="16" height="15" border="0"> &nbsp;NOTE:</B></span> 
+ When you publish a service using the Publish Web Service Wizard, Create 
+ WSDL Wizard, or Publish XML Application Wizard, the SecureSpan™ Manager 
+ automatically adds the service URL specified during the publication process 
+ as an HTTP(S) Routing assertion in the service's Policy Development window. 
+ For information about the HTTP(S) Routing assertion, see <a href="Configure_Edit_Message_Routing_Assertions.htm">Configure 
  and Edit Message Routing Assertions</a>.</p>
 </div>
 
-<ol start=2
+<ul start=2
 	style="list-style: decimal;"
 	type=1>
 	
@@ -243,7 +321,7 @@
 								border-style: none;" width="22" height="18" border="0"> &nbsp;(Add 
  Assertion) button in the Assertion Tool Bar. </p></li>
 	</ul>
-</ol>
+</ul>
 
 <div style="padding: 5px;
 			background-color: #f8fbdd;
@@ -253,23 +331,27 @@
 			float: none;
 			width: 550px;
 			margin-left: 44px;">
-<p class="tipsnotes"><span style="font-weight: bold;"><B>NOTE:</B></span> A configuration 
- form will appear for some assertions before they are added to the Policy 
- Development window. Other assertions will have to be configured after 
- they are added, and some assertions will not require configuration. Before 
- adding a particular assertion to the Policy Development window, see the 
- <a href="Security_Policy_Assertions_Overview.htm">Security Policy Assertions 
- Overview</a> for the category page that contains information about the 
- assertion.</p>
+<p class="tipsnotes"><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
+	width: 16px;
+	height: 15px;
+	float: none;
+	border-style: none;
+	border-style: none;" width="16" height="15" border="0"> &nbsp;NOTE:</B></span> 
+ A configuration form will appear for some assertions before they are added 
+ to the Policy Development window. Other assertions will have to be configured 
+ after they are added, and some assertions will not require configuration. 
+ Before adding a particular assertion to the Policy Development window, 
+ see the <a href="Security_Policy_Assertions_Overview.htm">Security Policy 
+ Assertions Overview</a> for the category page that contains information 
+ about the assertion.</p>
 </div>
 
 <ol start=3
 	style="list-style: decimal;"
 	type=1>
 	
-	<li class="kadov-p"><p>Repeat to add and configure additional security 
- policy assertions. When completed, organize the assertions using the following 
- tools:</p></li>
+	<li class="kadov-p"><p>Repeat to add and configure additional assertions. 
+ When completed, organize the assertions using the following tools:</p></li>
 </ol>
 
 <div style="padding: 5px;
@@ -280,63 +362,73 @@
 			float: none;
 			width: 550px;
 			margin-left: 44px;">
-<p class="tipsnotes"><span style="font-weight: bold;"><B>NOTE:</B></span> To view 
- a read-only presentation of the assertions by each configured identity 
- (Grant Access to Users and Groups assertion), click the [Identity View] 
- button on the Policy Tool Bar. To switch back to the Policy Development 
- window, click the [Policy View] button.</p>
+<p class="tipsnotes"><span style="font-weight: bold;"><B><img src="TIPSfinal.gif" x-maintain-ratio="TRUE" style="border: none;
+	width: 16px;
+	height: 14px;
+	float: none;
+	border-style: none;
+	border-style: none;" width="16" height="14" border="0"> &nbsp;TIP: 
+ </B></span>Utilize the feedback messages in the Policy Validation Messages 
+ window when constructing a security policy. See <a href="#Validate_a_Security_Policy">Validate 
+ a Security Policy</a> for more information. To view a read-only presentation 
+ of the assertions by each configured identity (Grant Access to Users/Groups 
+ assertion), click the [Identity View] button on the Policy Tool Bar. To 
+ switch back to the Policy Development window, click the [Policy View] 
+ button.</p>
 </div>
 
 <h4 style="margin-left: 40px;">Move an Assertion Up</h4>
 
-<ul style="list-style: decimal;"
+<ol style="list-style: decimal;"
 	type=1>
 	
 	<ul>
 		
-		<li style="list-style: disc;" type="disc" class="kadov-p"><p style="margin-left: 0px;">To move an assertion 
+		<li style="list-style: disc;" type="disc" class="kadov-p-cquicklinks"><p class="quicklinks">To move an assertion 
  up in the policy, either:</p></li>
 		
 		<ul>
 			
-			<li style="list-style: disc;" type="disc" class="kadov-p"><p style="margin-left: 0px;">Click the <img src="MoveAssertionUpButton.gif" x-maintain-ratio="TRUE" style="border: none;
-			margin-bottom: -2px;
-			float: none;
-			border-style: none;
-			width: 19px;
-			height: 19px;
-			border-style: none;" width="19" height="19" border="0"> &nbsp;(Move 
+			<li style="list-style: disc;" type="disc" class="kadov-p"><p style="margin-left: 0px;">Select the assertion. 
+ Click the <img src="MoveAssertionUpButton.gif" x-maintain-ratio="TRUE" style="border: none;
+						margin-bottom: -2px;
+						float: none;
+						width: 19px;
+						height: 19px;
+						border-style: none;
+						border-style: none;" width="19" height="19" border="0"> &nbsp;(Move 
  Up) button in the Assertion Tool Bar, or </p></li>
 			
-			<li style="list-style: disc;" type="disc" class="kadov-p"><p style="margin-left: 0px;">R<span style="margin-left: 0px;">ight-click 
- the target assertion. A drop-down menu appears. Select </span><span style="margin-left: 0px; font-weight: bold;"><B>Move 
- Assertion Up</B></span><span style="margin-left: 0px;">.</span></p></li>
+			<li style="list-style: disc;" type="disc" class="kadov-p"><p style="margin-left: 0px;">Right-click 
+ the target assertion. A drop-down menu appears. Select <span style="font-weight: bold;"><B>Move 
+ Assertion Up</B></span>.</p></li>
 		</ul>
 		
 		<li style="list-style: disc;" type="disc" class="kadov-p"><p style="margin-left: 0px;">The assertion moves 
  up one line in the policy. </p></li>
 	</ul>
-</ul>
+</ol>
 
 <h4 style="margin-left: 40px;">Move an Assertion Down</h4>
 
-<ul style="list-style: decimal;"
+<ol style="list-style: decimal;"
 	type=1>
 	
 	<ul>
 		
-		<li style="list-style: disc;" type="disc" class="kadov-p"><p style="margin-left: 0px;">To move an assertion 
+		<li style="list-style: disc;" type="disc" class="kadov-p-cquicklinks"><p class="quicklinks">To move an assertion 
  down in the policy, either:</p></li>
 		
 		<ul>
 			
-			<li style="list-style: disc;" type="disc" class="kadov-p"><p style="margin-left: 0px;">Click the <img src="MoveAssertionDownButton.gif" x-maintain-ratio="TRUE" style="border: none;
-			margin-bottom: -2px;
-			float: none;
-			border-style: none;
-			width: 19px;
-			height: 19px;
-			border-style: none;" width="19" height="19" border="0"> &nbsp;(Move 
+			<li style="list-style: disc;" type="disc" class="kadov-p"><p style="margin-left: 0px;">Select the assertion. 
+ Click the <img src="MoveAssertionDownButton.gif" x-maintain-ratio="TRUE" style="border: none;
+						margin-bottom: -2px;
+						float: none;
+						width: 19px;
+						height: 19px;
+						border-style: none;
+						border-style: none;" width="19" height="19" border="0"> &nbsp;(Move 
  Down) button in the Assertion Tool Bar, or</p></li>
 			
 			<li style="list-style: disc;" type="disc" class="kadov-p"><p style="margin-left: 0px;">Right-click 
@@ -347,27 +439,28 @@
 		<li style="list-style: disc;" type="disc" class="kadov-p"><p style="margin-left: 0px;">The assertion moves 
  down one line in the policy.</p></li>
 	</ul>
-</ul>
+</ol>
 
 <h4 style="margin-left: 40px;">Delete an Assertion</h4>
 
-<ul style="list-style: decimal;"
+<ol style="list-style: decimal;"
 	type=1>
 	
 	<ul>
 		
-		<li style="list-style: disc;" type="disc" class="kadov-p"><p style="margin-left: 0px;">To delete an assertion 
- from the policy, either:</p></li>
+		<li style="list-style: disc;" type="disc" class="kadov-p-cquicklinks"><p class="quicklinks">To delete an 
+ assertion from the policy, either:</p></li>
 		
 		<ul>
 			
-			<li style="list-style: disc;" type="disc" class="kadov-p"><p style="margin-left: 0px;">Click the <img src="DeleteAssertionButton.gif" x-maintain-ratio="TRUE" style="border: none;
-			margin-bottom: -2px;
-			float: none;
-			border-style: none;
-			width: 21px;
-			height: 19px;
-			border-style: none;" width="21" height="19" border="0"> &nbsp;(Delete) 
+			<li style="list-style: disc;" type="disc" class="kadov-p"><p style="margin-left: 0px;">Select the assertion. 
+ Click the <img src="DeleteAssertionButton.gif" x-maintain-ratio="TRUE" style="border: none;
+						margin-bottom: -2px;
+						float: none;
+						width: 21px;
+						height: 19px;
+						border-style: none;
+						border-style: none;" width="21" height="19" border="0"> &nbsp;(Delete) 
  button in the Assertion Tool Bar, or</p></li>
 			
 			<li style="list-style: disc;" type="disc" class="kadov-p"><p style="margin-left: 0px;">Right-click 
@@ -378,14 +471,14 @@
 		<li style="list-style: disc;" type="disc" class="kadov-p"><p style="margin-left: 0px;">A pop-up confirmation 
  message appears. Click [<span style="font-weight: bold;"><B>Yes</B></span>].</p></li>
 	</ul>
-</ul>
+</ol>
 
 <h4 style="margin-left: 40px;">Add an &quot;All&quot; Folder</h4>
 
-<p style="margin-left: 40px;">To organize one or more assertion(s) into 
- an &quot;All must be true&quot; assertion folder:</p>
+<p class="quicklinks" style="margin-left: 40px;">To organize one or more assertion(s) into 
+ an &quot;All assertions must evaluate to true&quot; assertion folder:</p>
 
-<ol style="list-style: disc;"
+<ul style="list-style: disc;"
 	type=disc>
 	
 	<ul style="list-style: disc;"
@@ -401,7 +494,7 @@
  from the Policy Development window into the folder. Repeat to add additional 
  assertions.</p></li>
 	</ul>
-</ol>
+</ul>
 
 <div style="padding: 5px;
 			background-color: #f8fbdd;
@@ -411,19 +504,25 @@
 			float: none;
 			width: 550px;
 			margin-left: 44px;">
-<p class="tipsnotes"><span style="font-weight: bold;"><B>NOTE:</B></span> For more 
- information about using assertion folders, see <a href="Security_Policies_Overview_and_Rules.htm">Security 
- Policies Overview and Rules</a>. To remove an assertion from the folder, 
+<p class="tipsnotes"><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
+	width: 16px;
+	height: 15px;
+	float: none;
+	border-style: none;
+	border-style: none;" width="16" height="15" border="0"> &nbsp;NOTE:</B></span> 
+ For more information about using assertion folders, see <a href="Security_Policy_Organization_and_Rules.htm">Security 
+ Policy Organization and Rules</a>. To remove an assertion from a folder, 
  drag and drop the assertion from the folder back into the Policy Development 
  window.</p>
 </div>
 
 <h4 style="margin-left: 40px;">Add a &quot;One or More&quot; Folder</h4>
 
-<p style="margin-left: 40px;">To organize one or more assertion(s) into 
- an &quot;One or more must be true&quot; assertion folder:</p>
+<p class="quicklinks" style="margin-left: 40px;">To organize one or more assertion(s) into 
+ an &quot;At least one assertion must evaluate to true&quot; assertion 
+ folder:</p>
 
-<ol style="list-style: disc;"
+<ul style="list-style: disc;"
 	type=disc>
 	
 	<ul style="list-style: disc;"
@@ -439,7 +538,7 @@
  drop the assertion from the Policy Development window into the folder. 
  Repeat to add additional assertions.</p></li>
 	</ul>
-</ol>
+</ul>
 
 <div style="padding: 5px;
 			background-color: #f8fbdd;
@@ -449,9 +548,14 @@
 			float: none;
 			width: 550px;
 			margin-left: 44px;">
-<p class="tipsnotes"><span style="font-weight: bold;"><B>NOTE:</B></span> For more 
- information about using assertion folders, see <a href="Security_Policies_Overview_and_Rules.htm">Security 
- Policies Overview and Rules</a>. To remove an assertion from the folder, 
+<p class="tipsnotes"><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
+	width: 16px;
+	height: 15px;
+	float: none;
+	border-style: none;
+	border-style: none;" width="16" height="15" border="0"> &nbsp;NOTE:</B></span> 
+ For more information about using assertion folders, see <a href="Security_Policy_Organization_and_Rules.htm">Security 
+ Policy Organization and Rules</a>. To remove an assertion from a folder, 
  drag and drop the assertion from the folder back into the Policy Development 
  window.</p>
 </div>
@@ -460,16 +564,56 @@
 	style="list-style: decimal;"
 	type=1>
 	
-	<li class="kadov-p"><p style="margin-left: 0px;">In the Policy Tool Bar, 
- click [<span style="font-weight: bold;"><B>Save</B></span>] to save the security 
- policy. To perform a final validation check on the policy, proceed to 
- <a href="#Validate_a_Security_Policy">Validate a Security Policy</a>. 
- To save the policy organization and assertions as a template in the Policy 
- Templates section of the [Assertions] tab, see <a href="Save_and_Use_Policy_Templates.htm">Save 
- and Use Policy Templates</a>.</p></li>
+	<li class="kadov-p"><p style="margin-left: 0px;">Do the following:</p></li>
 </ol>
 
-<h2><a name=Validate_a_Security_Policy>Validate a Security Policy</a></h2>
+<ul start=4
+	style="list-style: decimal;"
+	type=1>
+	
+	<ul>
+		
+		<li style="list-style: disc;" type="disc" class="kadov-p"><p style="margin-left: 0px;">Proceed to <a href="#Final_Policy_Validation">Final 
+ Policy Validation</a> to perform an optional but recommended final validation 
+ check on the policy. When the security policy passes the validation process, 
+ enable the service, if applicable, as outlined in <a href="Manage_Published_Services.htm">Manage 
+ Published Services</a></p></li>
+	</ul>
+</ul>
+
+<ol start=4
+	style="list-style: decimal;"
+	type=1>
+	
+	<ul>
+		
+		<li style="list-style: disc;" type="disc" class="kadov-p"><p style="margin-left: 0px;">Optional: Export 
+ the policy. See <a href="Import_Export_Security_Policies.htm">Import or 
+ Export Security Policies</a> for information.</p></li>
+	</ul>
+</ol>
+
+<h2 style="color: #000000;"><a name=Validate_a_Security_Policy
+								style="color: #000000;">Validate a Security 
+ Policy</a></h2>
+
+<div style="padding: 5px;
+			background-color: #f8fbdd;
+			margin-right: 4px;
+			margin-top: 4px;
+			margin-bottom: 4px;
+			float: none;
+			width: 550px;
+			margin-left: 4px;">
+<p class="tipsnotes"><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
+	width: 16px;
+	height: 15px;
+	float: none;
+	border-style: none;
+	border-style: none;" width="16" height="15" border="0"> &nbsp;NOTE:</B></span> 
+ Validation is an optional but recommended step in the security policy 
+ configuration or revision process. </p>
+</div>
 
 <p>The SecureSpan™ Manager provides users with two sources of security 
  policy validation:</p>
@@ -477,12 +621,34 @@
 <ul style="list-style: disc;"
 	type=disc>
 	
-	<li class="kadov-p"><p>Automatic feedback messages in the Policy Validation 
- Messages window when [View] &gt; Policy Messages from the Main Menu is 
- enabled (check box checked)</p></li>
+	<li class="kadov-p"><p style="margin-top: 4.5pt;">Automatic feedback 
+ messages in the Policy Validation Messages window when [View] &gt; Policy 
+ Messages from the Main Menu is enabled (check box checked)</p></li>
+</ul>
+
+<div style="padding: 5px;
+			background-color: #f8fbdd;
+			margin-right: 4px;
+			margin-top: 4px;
+			margin-bottom: 4px;
+			float: none;
+			width: 550px;
+			margin-left: 44px;">
+<p class="tipsnotes"><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
+	width: 16px;
+	height: 15px;
+	float: none;
+	border-style: none;
+	border-style: none;" width="16" height="15" border="0"> &nbsp;NOTE:</B></span> 
+ In the SecureSpan™ Manager, the Policy Validation Messages window is enabled 
+ by default.</p>
+</div>
+
+<ul style="list-style: disc;"
+	type=disc>
 	
-	<li class="kadov-p"><p>Final policy validation using the [Validate] button 
- on the Policy Tool Bar.</p></li>
+	<li class="kadov-p"><p style="margin-bottom: 4.5pt;">Final policy validation 
+ using the [Save] or [Validate] button on the Policy Tool Bar.</p></li>
 </ul>
 
 <h3>Configuration Process Feedback</h3>
@@ -493,12 +659,12 @@
 
 <h4>Confirmation Messages</h4>
 
-<p style="margin-left: 0px;">Confirmation messages confirm the addition 
- and proper configuration of an assertion.</p>
+<p class="quicklinks">Confirmation messages confirm the addition and proper 
+ configuration of an assertion.</p>
 
 <h4>Warning Messages</h4>
 
-<p style="margin-left: 0px;">Warning messages warn that an assertion:</p>
+<p class="quicklinks">Warning messages warn that an assertion:</p>
 
 <ul style="list-style: disc;"
 	type=disc>
@@ -514,7 +680,7 @@
 
 <h4>Error Messages</h4>
 
-<p style="margin-left: 0px;">Error messages warn that an assertion:</p>
+<p class="quicklinks">Error messages warn that an assertion:</p>
 
 <ul style="list-style: disc;"
 	type=disc>
@@ -529,47 +695,125 @@
 </ul>
 
 <p>Use the Policy Validation Messages window as a source of guidance during 
- the security policy configuration process. When the policy is completed, 
- perform a final validation check as outlined in <a href="#Final_Policy_Validation">Final 
- Policy Validation</a>. </p>
+ the security policy configuration process. &nbsp;</p>
 
-<h3><a name=Final_Policy_Validation>Final Policy Validation</a></h3>
+<h3 style="color: #000000;"><a name=Final_Policy_Validation
+								style="color: #000000;">Final Policy Validation</a></h3>
 
-<p>The [Validate] button on the Policy Tool Bar performs the final validation 
- check on a completed security policy. When clicked after the configuration 
- process, one of two types of messages will appear in the Policy Validation 
- Messages window:</p>
+<p>Click the [<span style="font-weight: bold;"><B>Save</B></span>] or [<span style="font-weight: bold;"><B>Validate</B></span>] 
+ button on the Policy Tool Bar, or click [<span style="font-weight: bold;"><B>File</B></span>] 
+ &gt; <span style="font-weight: bold;"><B>Validate</B></span> from the Main Menu, 
+ to perform an optional but recommended final validation check on a new 
+ or modified security policy. Validation yields one of two types of messages 
+ in the Policy Validation Messages window:</p>
 
-<ul style="list-style: disc;"
-	type=disc>
+<h6>&nbsp;</h6>
+
+<ol>
 	
-	<li class="kadov-p"><p>A &quot;Policy validated ok&quot; message indicates 
- that the policy is error free</p></li>
+	<li style="list-style: decimal;" type="1" class="kadov-p"><p>A &quot;Policy validated ok&quot; message indicates 
+ that the policy is error-free. Proceed to enable and optionally export 
+ the policy as outlined in <a href="Manage_Published_Services.htm">Manage 
+ Published Services</a> and <a href="Import_Export_Security_Policies.htm">Import 
+ or Export Security Policies</a>, respectively.<span style="margin-left: 0px;"> 
+ </span></p></li>
 	
-	<li class="kadov-p"><p>One or more error messages indicates that the 
+	<li style="list-style: decimal;" type="1" class="kadov-p"><p>One or more error messages indicates that the 
  policy contains errors. Do the following:</p></li>
 	
 	<ul style="list-style: disc;"
 		type=disc>
 		
-		<li class="kadov-p"><p>Re-organize the policy assertions so that 
- they conform to the policy and assertion organization, dependency, and 
- combination rules outlined in <a href="Security_Policies_Overview_and_Rules.htm">Security 
- Policies Overview and Rules</a> </p></li>
-		
-		<li class="kadov-p"><p>Ensure that the individual assertions are 
- configured properly. See the assertion specific instructions outlined 
- in the category pages discussed in <a href="Security_Policy_Assertions_Overview.htm">Security 
+		<li class="kadov-p"><p>For assertion organization errors, re-organize 
+ the policy assertions so that they conform to the policy and assertion 
+ organization, dependency, and combination rules outlined in <a href="Security_Policy_Organization_and_Rules.htm">Security 
+ Policy Organization and Rules</a> and from <a href="Security_Policy_Assertions_Overview.htm">Security 
  Policy Assertions Overview</a></p></li>
 		
-		<li class="kadov-p"><p style="margin-left: 0px;">If validation errors 
- still occur, contact a Technical Support Representative as outlined in 
- <a href="Technical_Support_and_Contact_Information.htm">Technical Support 
- and Contact Information</a>.</p></li>
+		<li class="kadov-p"><p>For assertion configuration errors, ensure 
+ that the individual assertions are configured properly. See the assertion-specific 
+ instructions outlined in the category pages discussed in <a href="Security_Policy_Assertions_Overview.htm">Security 
+ Policy Assertions Overview</a></p></li>
+		
+		<li class="kadov-p"><p style="margin-left: 0px;">If the error message 
+ &quot;The corresponding identity cannot be found. Please remove the assertion 
+ from the policy.&quot; appears, follow the instructions in the <a href="#Invalid_Users_or_Groups">Invalid 
+ Users or Groups</a> below</p></li>
+		
+		<li class="kadov-p"><p style="margin-left: 0px;">If the warning message 
+ &quot;The assertion might not work as configured. There is no protected 
+ service JMS queue defined.&quot; appears, follow the instructions in the 
+ <a href="#Invalid_JMS_Queue">Invalid JMS Queue</a> below.</p></li>
 	</ul>
+</ol>
+
+<h6>&nbsp;</h6>
+
+<p style="margin-left: 0px;">After correcting the errors, click the [<span 
+ style="font-weight: bold;"><B>Validate</B></span>] button on the Policy Tool 
+ Bar or click [<span style="font-weight: bold;"><B>File</B></span>] &gt; <span 
+ style="font-weight: bold;"><B>Validate</B></span> from the Main Menu to re-validate 
+ the security policy. If a &quot;Policy validated ok&quot; message appears, 
+ proceed to enable and optionally export the policy as outlined in <a href="Manage_Published_Services.htm">Manage 
+ Published Services</a> and <a href="Import_Export_Security_Policies.htm">Import 
+ or Export Security Policies</a>, respectively. If validation errors still 
+ occur, contact a Technical Support Representative as outlined in <a href="Technical_Support_and_Contact_Information.htm">Technical 
+ Support and Contact Information</a>.</p>
+
+<h4 style="color: #000000;"><a name=Invalid_Users_or_Groups
+								style="color: #000000;">Invalid Users or 
+ Groups</a></h4>
+
+<p>If validating an existing policy, an error message will appear in the 
+ Policy Validation Messages window if a user or group included in the security 
+ policy has been deleted from the External Identity Provider (EIP), Federated 
+ Identity Provider (FIP), or Internal Identity Provider (IIP). Do one of 
+ the following:</p>
+
+<ul style="list-style: disc;"
+	type=disc>
+	
+	<li class="kadov-p"><p style="margin-top: 4.5pt;">If you no longer want 
+ the identity to remain in the policy, then delete the user or group as 
+ outlined <a href="#Edit_a_Security_Policy">Edit a Security Policy</a></p></li>
+	
+	<li class="kadov-p"><p>If you want the user or group to remain in the 
+ policy, then you must:</p></li>
 </ul>
 
-<h2><a name=Edit_a_Security_Policy>Edit a Security Policy</a></h2>
+<ol style="list-style: decimal;"
+	type=1>
+	
+	<ol style="list-style: decimal;"
+		type=1>
+		
+		<li class="kadov-p"><p>Remove the user or group as outlined in <a 
+ href="#Edit_a_Security_Policy">Edit a Security Policy</a>. </p></li>
+		
+		<li class="kadov-p"><p>Re-add the user or group to the appropriate 
+ IIP or FIP as outlined in <a href="Add_Edit_IIP_Users_and_Groups.htm">Add 
+ and Edit Internal Identity Provider Users and Groups</a> or <a href="Add_Edit_FIP_Users_and_Groups.htm">Add 
+ and Edit Federated Identity Provider Users and Groups</a>, respectively. 
+ Since EIP users and groups are defined outside of the SecureSpan™ Manager, 
+ use the appropriate external management program to re-add the missing 
+ EIP user or group.</p></li>
+		
+		<li class="kadov-p"><p>Use the Grant Access to Users/Groups assertion 
+ from the Authentication category of the [Assertions] tab to re-add the 
+ user or group into the target policy as outlined in <a href="Configure_Edit_Authentication_Assertions.htm">Configure 
+ and Edit Authentication Assertions</a>.</p></li>
+		
+		<li class="kadov-p"><p style="margin-bottom: 4.5pt;">Click the [<span 
+ style="font-weight: bold;"><B>Validate</B></span>] button or [<span style="font-weight: bold;"><B>Save</B></span>] 
+ button on the Policy Tool Bar to perform the final validation check.</p></li>
+	</ol>
+</ol>
+
+<p>When constructing a new policy, you will not be able to add a user or 
+ group that is not in the target EIP, FIP, or IIP. </p>
+
+<h4 style="color: #000000;"><a name=Invalid_JMS_Queue
+								style="color: #000000;">Invalid JMS Queue</a></h4>
 
 <div style="padding: 5px;
 			background-color: #f8fbdd;
@@ -579,21 +823,69 @@
 			float: none;
 			width: 550px;
 			margin-left: 4px;">
-<p class="tipsnotes"><span style="font-weight: bold;"><B>NOTE:</B></span> Ensure 
- that policy changes conform to the policy and assertion rules outlined 
- in <a href="Security_Policies_Overview_and_Rules.htm">Security Policies 
- Overview and Rules</a>. When editing a security policy, use the confirmation, 
+<p class="tipsnotes"><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
+	width: 16px;
+	height: 15px;
+	float: none;
+	border-style: none;
+	border-style: none;" width="16" height="15" border="0"> &nbsp;NOTE:</B></span> 
+ JMS Routing is an optional add-on assertion that is disabled in standard 
+ versions of the SecureSpan™ Solution. See <a href="Optional_Add-On_Assertion_Overview.htm">Optional 
+ Add-On Assertions Overview</a> for more information. </p>
+</div>
+
+<p>When JMS routing is used in a new or existing security policy, the validation 
+ process checks the outbound queue attached to the JMS Routing assertion. 
+ An error message will appear in the Policy Validation Messages window 
+ if the queue is unspecified or invalid. See <a href="JMS_Message_Routing_Assertion.htm">Using 
+ the JMS Message Routing Assertion</a> to:</p>
+
+<ul style="list-style: disc;"
+	type=disc>
+	
+	<li class="kadov-p"><p style="margin-top: 4.5pt;">Enter or re-enter the 
+ outbound JMS queue</p></li>
+	
+	<li class="kadov-p"><p>Test the outbound JMS queue</p></li>
+	
+	<li class="kadov-p"><p style="margin-bottom: 4.5pt;">Edit the JMS Routing 
+ assertion, if necessary, for the new or revised queue.</p></li>
+</ul>
+
+<h2 style="color: #000000;"><a name=Edit_a_Security_Policy
+								style="color: #000000;">Edit a Security 
+ Policy</a></h2>
+
+<div style="padding: 5px;
+			background-color: #f8fbdd;
+			margin-right: 4px;
+			margin-top: 4px;
+			margin-bottom: 4px;
+			float: none;
+			width: 550px;
+			margin-left: 4px;">
+<p class="tipsnotes"><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
+	width: 16px;
+	height: 15px;
+	float: none;
+	border-style: none;
+	border-style: none;" width="16" height="15" border="0"> &nbsp;NOTE:</B></span> 
+ Ensure that policy changes conform to the policy and assertion rules outlined 
+ in <a href="Security_Policy_Organization_and_Rules.htm">Security Policy 
+ Organization and Rules</a>. When editing a security policy, use the confirmation, 
  warning, and/or error messages in the Policy Validation Messages window 
  as a guide. To enable the Policy Validation Messages window, select [View] 
  &gt; Policy Messages from the Main Menu (check box checked). See <a href="#Validate_a_Security_Policy">Validate 
  a Security Policy</a> for more information. </p>
 </div>
 
+<h6>&nbsp;</h6>
+
 <ol style="list-style: decimal;"
 	type=1>
 	
 	<li class="kadov-p"><p>Access the Policy Development window for the target 
- Web service by one of two methods:</p></li>
+ service by one of two methods:</p></li>
 </ol>
 
 <div style="padding: 5px;
@@ -604,30 +896,32 @@
 			float: none;
 			width: 550px;
 			margin-left: 44px;">
-<p class="tipsnotes"><span style="font-weight: bold;"><B>NOTE:</B></span> You can 
- only access and configure a security policy for a Web service that is 
- published and enabled. A red &quot;X&quot; appears through a disabled 
- Web service icon in the [Web Services] tab. See <a href="Publish_Web_Services.htm">Publish 
- Web Services</a> for more information on publishing a Web service. See 
- <a href="Manage_Web_Services.htm">Manage Published Web Services</a> for 
- information on enabling a disabled Web service. </p>
+<p class="tipsnotes"><span style="font-weight: bold;"><B><img src="TIPSfinal.gif" x-maintain-ratio="TRUE" style="border: none;
+	width: 16px;
+	height: 14px;
+	float: none;
+	border-style: none;
+	border-style: none;" width="16" height="14" border="0"> &nbsp;TIP:</B></span> 
+ It is strongly recommended that you disable a service while editing its 
+ security policy to prevent unsecured and unauthorized access. A disabled 
+ service contains a red &quot;X&quot; through its left-side icon. See <a href="Manage_Published_Services.htm">Manage Published Services</a> for 
+ information.</p>
 </div>
 
-<ol style="list-style: disc;"
+<ul style="list-style: disc;"
 	type=disc>
 	
 	<ul style="list-style: disc;"
 		type=disc>
 		
-		<li class="kadov-p"><p>Right-click the Web service name in the [<span 
- style="font-weight: bold;"><B>Web Services</B></span>] tab. A drop-down menu 
- appears. Select <span style="font-weight: bold;"><B>Policy Assertions</B></span>. 
- Or,</p></li>
+		<li class="kadov-p"><p>Right-click the service name in the [<span 
+ style="font-weight: bold;"><B>Services</B></span>] tab. A drop-down menu appears. 
+ Select <span style="font-weight: bold;"><B>Policy Assertions</B></span>. Or,</p></li>
 		
-		<li class="kadov-p"><p>Double-click the Web service in the [<span 
- style="font-weight: bold;"><B>Web Services</B></span>] tab.</p></li>
+		<li class="kadov-p"><p>Double-click the service in the [<span style="font-weight: bold;"><B>Services</B></span>] 
+ tab.</p></li>
 	</ul>
-</ol>
+</ul>
 
 <ol start=2
 	style="list-style: decimal;"
@@ -636,20 +930,7 @@
 	<li class="kadov-p"><p>The Policy Development window appears:</p></li>
 </ol>
 
-<div style="padding: 5px;
-			background-color: #f8fbdd;
-			margin-right: 4px;
-			margin-top: 4px;
-			margin-bottom: 4px;
-			float: none;
-			width: 550px;
-			margin-left: 44px;">
-<p class="tipsnotes"><span style="font-weight: bold;"><B>TIP:</B></span> Periodically 
- click the [Save] button in the Policy Tool Bar during the editing process. 
- </p>
-</div>
-
-<ul style="list-style: disc;"
+<ol style="list-style: disc;"
 	type=disc>
 	
 	<ul style="list-style: disc;"
@@ -664,7 +945,7 @@
  Policy Assertions Overview</a> for individual assertion information and 
  instructions by assertion category.</span></p></li>
 	</ul>
-</ul>
+</ol>
 
 <div style="padding: 5px;
 			background-color: #f8fbdd;
@@ -674,30 +955,58 @@
 			float: none;
 			width: 550px;
 			margin-left: 84px;">
-<p class="tipsnotes"><span style="font-weight: bold;"><B>NOTE:</B></span> The changes 
- that you make to an individual assertion may affect the validity of the 
- security policy. Reference the policy and assertion rules in <a href="Security_Policies_Overview_and_Rules.htm">Security 
- Policies Overview and Rules</a> before you edit the assertion.</p>
+<p class="tipsnotes"><span style="font-weight: bold;"><B><img src="NOTEfinal.gif" x-maintain-ratio="TRUE" style="border: none;
+	width: 16px;
+	height: 15px;
+	float: none;
+	border-style: none;
+	border-style: none;" width="16" height="15" border="0"> &nbsp;NOTE:</B></span> 
+ The changes that you make to an individual assertion may affect the validity 
+ of the security policy. Reference the policy and assertion rules in <a href="Security_Policy_Organization_and_Rules.htm">Security Policy Organization 
+ and Rules</a> and from <span style="margin-left: 0px;"><a href="Security_Policy_Assertions_Overview.htm">Security 
+ Policy Assertions Overview</a> </span>before you edit the assertion.</p>
 </div>
 
 <ol start=3
 	style="list-style: decimal;"
 	type=1>
 	
-	<li class="kadov-p"><p style="margin-left: 0px;">In the Assertion Tool 
- Bar, click [<span style="font-weight: bold;"><B>Save</B></span>] to save the 
- security policy. To perform a final validation check on the policy, proceed 
- to <a href="#Validate_a_Security_Policy">Validate a Security Policy</a>. 
- To save the policy organization and assertions as a template in the Policy 
- Templates section of the [Assertions] tab, see <a href="Save_and_Use_Policy_Templates.htm">Save 
- and Use Policy Templates</a>.</p></li>
+	<li class="kadov-p"><p style="margin-left: 0px;">Do the following:</p></li>
+	
+	<ul start=4
+		style="list-style: decimal;"
+		type=1>
+		
+		<li style="list-style: disc;" type="disc" class="kadov-p"><p style="margin-left: 0px;">Proceed to <a href="#Final_Policy_Validation">Final 
+ Policy Validation</a> to perform an optional but recommended final validation 
+ check on the policy. When the security policy passes the validation process, 
+ enable the service, if applicable, as outlined in <a href="Manage_Published_Services.htm">Manage 
+ Published Services</a></p></li>
+	</ul>
+</ol>
+
+<ol start=3
+	style="list-style: decimal;"
+	type=1>
+	
+	<ol start=4
+		style="list-style: decimal;"
+		type=1>
+		
+		<li style="list-style: disc;" type="disc" class="kadov-p"><p style="margin-left: 0px;">Optional: Export 
+ the policy. See <a href="Import_Export_Security_Policies.htm">Import or 
+ Export Security Policies</a> for information.</p></li>
+	</ol>
 </ol>
 
 <h6>&nbsp;</h6>
 
 <h4>Next Topic: </h4>
 
-<p><a href="Save_and_Use_Policy_Templates.htm">Save and Use Policy Templates</a></p>
+<p><a href="Import_Export_Security_Policies.htm">Import or Export Security 
+ Policies</a></p>
+
+<h6>&nbsp;</h6>
 
 </body>
 

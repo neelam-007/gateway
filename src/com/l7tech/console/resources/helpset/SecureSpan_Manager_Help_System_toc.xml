@@ -5,10 +5,12 @@
  <tocitem text="Getting Started">
   <tocitem text="Solution Overview" target="securespan_solution_overview_htm" />
   <tocitem text="Documentation" target="securespan_manager_documentation_htm" />
+  <tocitem text="Operator Documentation" target="securespan_manager_operator_documentation_htm" />
+  <tocitem text="Version Upgrade Issues" target="version_upgrade_issues_htm" />
   </tocitem>
  <tocitem text="SecureSpan Manager">
   <tocitem text="Overview" target="securespan_manager_overview_htm" />
-  <tocitem text="Interface" target="securespan_manager_interface_htm" />
+  <tocitem text="Interfaces" target="securespan_manager_interfaces_htm" />
   <tocitem text="Workflow" target="securespan_manager_workflow_htm" />
   <tocitem text="Connect to the Gateway" target="connect_to_the_securespan_gateway_htm" />
   <tocitem text="Configure Preferences" target="configure_securespan_manager_preferences_htm" />
@@ -19,42 +21,64 @@
    <tocitem text="Add/Edit IIP Users and Groups" target="add_edit_iip_users_and_groups_htm" />
    <tocitem text="Search Identity Providers" target="search_identity_providers_htm" />
    </tocitem>
-  <tocitem text="Manage Web Services">
-   <tocitem text="Overview" target="web_services_overview_htm" />
-   <tocitem text="Publish Web Services" target="publish_web_services_htm" />
-   <tocitem text="Manage Web Services" target="manage_web_services_htm" />
-   <tocitem text="View Web Service WSDL" target="view_web_service_wsdl_htm" />
-   <tocitem text="Advanced Option">
-    <tocitem text="Create Web Service WSDL" target="create_web_service_wsdl_htm" />
-    </tocitem>
+  <tocitem text="Manage Services">
+   <tocitem text="Overview" target="services_overview_htm" />
+   <tocitem text="Manage SOAP Web Services" target="manage_soap_web_services_htm" />
+   <tocitem text="Manage XML Applications" target="manage_xml_applications_htm" />
+   <tocitem text="Manage Published Services" target="manage_published_services_htm" />
    </tocitem>
   <tocitem text="Manage Security Policies">
-   <tocitem text="Overview" target="web_service_security_policies_overview_htm" />
+   <tocitem text="Overview" target="security_policies_overview_htm" />
    <tocitem text="Configure/Edit Policy Assertions">
     <tocitem text="Overview" target="security_policy_assertions_overview_htm" />
     <tocitem text="Authentication Assertions" target="configure_edit_authentication_assertions_htm" />
-    <tocitem text="TLS Assertions" target="configure_edit_tls_assertions_htm" />
+    <tocitem text="TLS Assertion" target="configure_edit_tls_assertions_htm" />
     <tocitem text="XML Security Assertions" target="configure_edit_xml_security_assertions_htm" />
-    <tocitem text="XML Transformation/Validation Assertions" target="configure_edit_xml_transformation_validation_assertions_htm" />
+    <tocitem text="Message Validation/Transformation Assertions" target="configure_edit_message_validation_transformation_assertions_htm" />
     <tocitem text="Message Routing Assertions" target="configure_edit_message_routing_assertions_htm" />
-    <tocitem text="Web Service Availability Assertions" target="configure_edit_web_service_availability_assertions_htm" />
+    <tocitem text="Service Availability Assertions" target="configure_edit_service_availability_assertions_htm" />
+    <tocitem text="Logging and Auditing Assertion" target="configure_edit_logging_and_auditing_assertions_htm" />
+    <tocitem text="Optional Add-On Assertions">
+     <tocitem text="Overview" target="optional_add-on_assertion_overview_htm" />
+     <tocitem text="SiteMinder Authentication Assertion" target="siteminder_authentication_assertion_htm" />
+     <tocitem text="TAM Authentication Assertion" target="tam_authentication_assertion_htm" />
+     <tocitem text="JMS Message Routing Assertion" target="jms_message_routing_assertion_htm" />
+     </tocitem>
     </tocitem>
    <tocitem text="Configure/Edit Security Policies">
-    <tocitem text="Overview/Rules" target="security_policies_overview_and_rules_htm" />
+    <tocitem text="Organization/Rules" target="security_policy_organization_and_rules_htm" />
     <tocitem text="Security Policy Examples" target="security_policy_examples_htm" />
     <tocitem text="Configure/Edit Security Policies" target="configure_edit_security_policies_htm" />
+    <tocitem text="Import/Export Security Policies" target="import_export_security_policies_htm" />
     </tocitem>
-   <tocitem text="Save/Use Policy Templates" target="save_and_use_policy_templates_htm" />
    </tocitem>
   <tocitem text="Analyze Gateway">
    <tocitem text="Overview" target="securespan_gateway_analysis_overview_htm" />
    <tocitem text="View Gateway Cluster Status" target="view_gateway_cluster_status_htm" />
    <tocitem text="View Gateway Log" target="view_gateway_log_htm" />
+   <tocitem text="View Gateway Audit Events" target="view_gateway_audit_events_htm" />
    </tocitem>
   </tocitem>
- <tocitem text="SecureSpan Agent">
-  <tocitem text="Overview" target="securespan_agent_overview_htm" />
-  <tocitem text="Interface" target="securespan_agent_interface_htm" />
+ <tocitem text="Identity Bridging">
+  <tocitem text="Overview" target="identity_bridging_overview_htm" />
+  <tocitem text="Requirements" target="identity_bridging_requirements_htm" />
+  <tocitem text="SAML Workflow" target="identity_bridging_workflow_htm" />
+  <tocitem text="X.509 Certificate Workflow" target="identity_bridging_workflow_using_an_x_509_certificate_htm" />
+  <tocitem text="Manage Certificates">
+   <tocitem text="Overview" target="certificates_overview_htm" />
+   <tocitem text="Add/Edit Certificates" target="add_edit_certificates_htm" />
+   </tocitem>
+  <tocitem text="Manage Federated Identity Providers">
+   <tocitem text="Overview" target="fip_overview_htm" />
+   <tocitem text="Add/Edit Federated Identity Providers" target="add_edit_federated_identity_providers_htm" />
+   <tocitem text="Add/Edit FIP Users and Groups" target="add_edit_fip_users_and_groups_htm" />
+   </tocitem>
+  <tocitem text="Configure SAML Security Policies" target="identity_bridging_policy_overview_htm" />
+  <tocitem text="Configure SecureSpan Bridge">
+   <tocitem text="Overview" target="securespan_bridge_overview_htm" />
+   <tocitem text="Add Gateway Proxies" target="add_securespan_gateway_proxies_htm" />
+   </tocitem>
+  <tocitem text="Consume Shared Web Services" target="consume_shared_web_service_htm" />
   </tocitem>
  <tocitem text="Support/Contacts">
   <tocitem text="Support/Contacts" target="technical_support_and_contact_information_htm" />
