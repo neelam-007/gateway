@@ -223,7 +223,6 @@ public class PublishedService extends NamedEntityImp {
 
         final PublishedService publishedService = (PublishedService) o;
 
-        if (_policyXml != null ? !_policyXml.equals(publishedService._policyXml) : publishedService._policyXml != null) return false;
         if (_wsdlUrl != null ? !_wsdlUrl.equals(publishedService._wsdlUrl) : publishedService._wsdlUrl != null) return false;
         if (_oid != DEFAULT_OID ? _oid == publishedService._oid : publishedService._oid != DEFAULT_OID ) return false;
 
@@ -232,8 +231,7 @@ public class PublishedService extends NamedEntityImp {
 
     public int hashCode() {
         int result;
-        result = (_policyXml != null ? _policyXml.hashCode() : 0);
-        result = 29 * result + (_wsdlUrl != null ? _wsdlUrl.hashCode() : 0);
+        result = (_wsdlUrl != null ? _wsdlUrl.hashCode() : 0);
         result = 29 * result + (int)_oid;
         return result;
     }
