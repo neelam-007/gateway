@@ -9,11 +9,19 @@ import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.RoutingAssertion;
 import com.l7tech.policy.assertion.SslAssertion;
 import com.l7tech.policy.assertion.xmlsec.XmlResponseSecurity;
+import com.l7tech.policy.assertion.xmlsec.XmlRequestSecurity;
 import com.l7tech.policy.assertion.credential.CredentialSourceAssertion;
 import com.l7tech.policy.assertion.credential.http.HttpClientCert;
 import com.l7tech.policy.assertion.identity.IdentityAssertion;
+import com.l7tech.identity.IdentityProviderConfigManager;
+import com.l7tech.identity.IdentityProviderType;
+import com.l7tech.common.util.Locator;
+import com.l7tech.objectmodel.FindException;
+import com.l7tech.console.Main;
 
 import java.util.Iterator;
+import java.util.logging.Logger;
+import java.util.logging.Level;
 
 /**
  * The policy validator that analyzes the policy assertion tree
@@ -120,6 +128,25 @@ public class DefaultPolicyValidator extends PolicyValidator {
                 );
             }
 
+            // if we encountered an assertion that requires a client cert, make sure the identity involved is
+            // from the internal id provider
+            if (seenCredAssertionThatRequiresClientCert) {
+                // check that this identity is member of internal id provider
+                IdentityAssertion idass = (IdentityAssertion)a;
+                try {
+                    if (getProviderConfigManager().findByPrimaryKey(idass.getIdentityProviderOid()).type() != IdentityProviderType.INTERNAL) {
+                        result.addError(
+                            new PolicyValidatorResult.Error(a, "A credential assertion requires client certs. Only internal identities support client certs.", null)
+                        );
+                    }
+                } catch (FindException e) {
+                    result.addWarning(
+                      new PolicyValidatorResult.Warning(a, "This identity might no longer be valid.", null)
+                    );
+                    log.log(Level.INFO, "could not retrieve IdentityProvider", e);
+                }
+            }
+
             seenAccessControl = true;
         }
 
@@ -140,6 +167,12 @@ public class DefaultPolicyValidator extends PolicyValidator {
                 result.addWarning(
                   new PolicyValidatorResult.Warning(a, "You already have a credential assertion.", null)
                 );
+            }
+
+            // new fla, check whether an assertion will require a client cert to function, this is important because
+            // we only support client certs for internal users
+            if (a instanceof HttpClientCert || a instanceof XmlRequestSecurity) {
+                seenCredAssertionThatRequiresClientCert = true;
             }
             seenCredentials = true;
         }
@@ -212,12 +245,22 @@ public class DefaultPolicyValidator extends PolicyValidator {
             return false;
         }
 
+        private IdentityProviderConfigManager getProviderConfigManager() throws RuntimeException {
+            IdentityProviderConfigManager ipc = (IdentityProviderConfigManager)Locator.
+              getDefault().lookup(IdentityProviderConfigManager.class);
+            if (ipc == null)  throw new RuntimeException("Could not find registered " + IdentityProviderConfigManager.class);
+            return ipc;
+        }
+
         boolean seenPreconditions = false;
         boolean seenCredentials = false;
         boolean seenAccessControl = false;
         boolean seenRouting = false;
         boolean seenSsl = false;
         boolean sslForbidden = false;
+        boolean seenCredAssertionThatRequiresClientCert = false;
+
+        static Logger log = Logger.getLogger(Main.class.getName());
     }
 
 }
