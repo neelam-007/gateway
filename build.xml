@@ -485,7 +485,7 @@
     </target>
 
 
-    <target name="prepare.jms" if="dev.build">
+    <target name="prepare.jms">
         <antcall target="prepare.jms.openjms"/>
         <antcall target="prepare.jms.mqseries"/>
     </target>
