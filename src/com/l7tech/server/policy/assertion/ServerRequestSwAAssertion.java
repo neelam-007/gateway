@@ -175,6 +175,8 @@ public class ServerRequestSwAAssertion implements ServerAssertion {
                                 return AssertionStatus.FALSIFIED;
                             }
 
+                            int totalLen = 0;
+
                             // each attachment must fulfill the requirement of the input parameter specified in the SwA Request Assertion
                             for (int i = 0; i < hrefs.size(); i++) {
                                 href = (Attr) hrefs.elementAt(i);
@@ -203,9 +205,15 @@ public class ServerRequestSwAAssertion implements ServerAssertion {
                                         return AssertionStatus.FALSIFIED;
                                     }
 
+                                    totalLen += mimepartRequest.getContentLength();
+
                                     // check the max. length allowed
-                                    if(mimepartRequest.getContentLength() > part.getMaxLength() * 1000) {
-                                        logger.info("The length of the attachment " + mimePartCID + " exceeds the limit: " + part.getMaxLength() + "K bytes");
+                                    if(totalLen > part.getMaxLength() * 1000) {
+                                        if(hrefs.size() > 1) {
+                                            logger.info("The parameter " + part.getName() + " has " + hrefs.size() + " attachments. The total length exceeds the limit: " + part.getMaxLength() + "K bytes");
+                                        } else {
+                                            logger.info("The length of the attachment " + mimePartCID + " exceeds the limit: " + part.getMaxLength() + "K bytes");
+                                        }
                                         return AssertionStatus.FALSIFIED;
                                     }
 

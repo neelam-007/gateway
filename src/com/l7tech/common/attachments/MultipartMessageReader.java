@@ -361,9 +361,9 @@ abstract public class MultipartMessageReader {
             if(startIndex > 2) {
                 // push back the data from the last <cr><lf> seen
                 pushbackInputStream.unread(attachmentsRawData, startIndex - 2, attachmentsRawData.length - startIndex + 2);
-                count = storeRawPartContentToFileCache(attachmentsRawData, 0, startIndex - 2);
+                count = storeRawPartContentToFileCache(attachmentsRawData, 0, startIndex - 2) - oldWriteIndex;
             } else {
-                count = storeRawPartContentToFileCache(attachmentsRawData);
+                count = storeRawPartContentToFileCache(attachmentsRawData) - oldWriteIndex;
             }
             bufferFlushed = true;
             return count;
