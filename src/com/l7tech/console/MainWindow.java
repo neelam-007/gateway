@@ -105,7 +105,6 @@ public class MainWindow extends JFrame {
     private JSplitPane mainSplitPane = null;
     private JPanel mainLeftPanel = null;
     private JPanel mainSplitPaneRight = null;
-    private JDesktopPane desktopPane = null;
 
     /* progress bar indicator */
     private ProgressBar progressBar = null;
@@ -1582,8 +1581,6 @@ public class MainWindow extends JFrame {
      * Initialize the class.
      */
     private void initialize() {
-        desktopPane = new JDesktopPane();
-
         setDefaultCloseOperation(WindowConstants.DO_NOTHING_ON_CLOSE);
         addWindowListener(new WindowAdapter() {
             public void windowClosing(WindowEvent e) {
@@ -1611,7 +1608,6 @@ public class MainWindow extends JFrame {
         validate();
         /* restore window position */
         initializeWindowPosition();
-        setVisible(true);
     }
 
     /**
