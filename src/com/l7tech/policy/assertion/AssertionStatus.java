@@ -25,6 +25,7 @@ public class AssertionStatus {
     /** Credentials present but erroneous */
     public static final AssertionStatus AUTH_FAILED       = make( CLIENT +  2, "Authentication Failed" );
     public static final AssertionStatus FORBIDDEN         = make( CLIENT +  3, "Forbidden" );
+    public static final AssertionStatus SERVICE_DISABLED  = make( CLIENT +  3, "Service Disabled" );
     /** Couldn't resolve a service for this request */
     public static final AssertionStatus SERVICE_NOT_FOUND = make( CLIENT +  4, "Service Not Found" );
     public static final AssertionStatus UNAUTHORIZED      = make( CLIENT +  2, "Unauthorized" );
