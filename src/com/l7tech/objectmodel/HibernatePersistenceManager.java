@@ -67,8 +67,8 @@ public class HibernatePersistenceManager extends PersistenceManager {
     private Session getSession() throws HibernateException, SQLException {
         if ( _sessionFactory == null ) throw new IllegalStateException("HibernatePersistenceManager must be initialized before calling getSession()!");
         Session session = _sessionFactory.openSession();
-        Connection conn = session.connection();
-        conn.setAutoCommit(false);
+        //Connection conn = session.connection();
+        //conn.setAutoCommit(false);
         return session;
     }
 
@@ -91,38 +91,15 @@ public class HibernatePersistenceManager extends PersistenceManager {
     }
 
     void doBeginTransaction( PersistenceContext context ) throws TransactionException {
-        ContextHolder h = getContextHolder( context );
-        Session s = h._session;
-        try {
-            Transaction txn = s.beginTransaction();
-            h._context.setTransaction( txn );
-        } catch ( HibernateException he ) {
-            throw new TransactionException( he.toString(), he );
-        }
+        context.beginTransaction();
     }
 
     void doCommitTransaction( PersistenceContext context ) throws TransactionException {
-        ContextHolder h = getContextHolder( context );
-        Transaction txn = h._context.getTransaction();
-        if ( txn == null ) throw new IllegalStateException( "No transaction is active!");
-        try {
-            txn.commit();
-        } catch ( HibernateException he ) {
-            throw new TransactionException( he.toString(), he );
-        } catch ( SQLException se ) {
-            throw new TransactionException( se.toString(), se );
-        }
+        context.commitTransaction();
     }
 
     void doRollbackTransaction( PersistenceContext context ) throws TransactionException {
-        ContextHolder h = getContextHolder( context );
-        Transaction txn = h._context.getTransaction();
-        if ( txn == null ) throw new IllegalStateException( "No transaction is active!");
-        try {
-            txn.rollback();
-        } catch ( HibernateException he ) {
-            throw new TransactionException( he.toString(), he );
-        }
+        context.rollbackTransaction();
     }
 
     List doFind( PersistenceContext context, String query ) throws FindException {
