@@ -177,12 +177,13 @@
             </fileset>
 
             <fileset dir="${src.root}/lib">
-                <include name="jta.jar"/>
+<!--                <include name="jta.jar"/>-->
                 <include name="webapp-rmiannotation.jar"/>
-                <include name="commons-logging.jar"/>
-                <include name="oswego-concurrent.jar"/>
+<!--                <include name="commons-logging.jar"/>-->
+<!--                <include name="oswego-concurrent.jar"/>-->
             </fileset>
 
+<!--
             <fileset dir="${src.root}/lib/gateway/cluster">
                 <include name="jgroups.jar"/>
                 <include name="jta.jar"/>
@@ -191,6 +192,7 @@
                 <include name="jboss-system.jar"/>
                 <include name="jboss-jmx.jar"/>
             </fileset>
+-->
         </copy>
 
         <!--
@@ -322,11 +324,11 @@
                 <!-- These go in the system classpath now  -->
                 <!--
                 <include name="bcprov-jdk14-124.jar"/> - because the SSL keystore is BCPKCS12
-                <include name="jgroups-core.jar"/> - ClassCircularityError
-                <include name="commons-logging.jar"/> - needed by JGroups
-                <include name="jta.jar"/>
-                <include name="oswego-concurrent.jar"/> - needed by JGroups
                 -->
+                <include name="jgroups.jar"/>
+                <include name="jboss-*.jar"/>
+                <include name="commons-logging.jar"/>
+
                 <include name="commons-collections.jar"/>
                 <include name="commons-dbcp-1.1.jar"/>
                 <include name="commons-discovery.jar"/>
@@ -347,7 +349,9 @@
                 <include name="jms-1.1.jar"/>
                 <include name="jnlp.jar"/>
                 <include name="jnlp-servlet.jar"/>
+                <include name="jta.jar"/>
                 <include name="odmg.jar"/>
+                <include name="oswego-concurrent.jar"/>
                 <include name="qname.jar"/>
                 <include name="reggie-dl.jar"/>
                 <include name="reggie.jar"/>
@@ -682,6 +686,10 @@
             <!-- the default crypto provider -->
             <fileset dir="${src.root}/lib/crypto/bc">
                 <include name="bcprov*.jar"/>
+            </fileset>
+
+            <fileset dir="${src.root}/lib/gateway/cluster">
+                <include name="*.jar"/>
             </fileset>
         </copy>
 
