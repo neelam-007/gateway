@@ -1,9 +1,12 @@
 package com.l7tech.console.panels;
 
 import com.l7tech.common.gui.util.Utilities;
+import com.l7tech.common.util.Locator;
 import com.l7tech.console.MainWindow;
 import com.l7tech.console.action.SecureAction;
 import com.l7tech.console.logging.ErrorManager;
+import com.l7tech.console.security.RoleFormPreparer;
+import com.l7tech.console.security.SecurityProvider;
 import com.l7tech.console.text.MaxLengthDocument;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
@@ -32,37 +35,7 @@ import java.util.logging.Logger;
  * GroupPanel is the main entry point panel for the <CODE>Group</CODE>.
  */
 public abstract class GroupPanel extends EntityEditorPanel {
-    public static GroupPanel newInstance(IdentityProviderConfig config, EntityHeader header) {
-        Group g = null;
-        try {
-            g = getIdentityAdmin().findGroupByPrimaryKey(config.getOid(), header.getStrId());
-
-            if (g instanceof VirtualGroup) {
-                return newVirtualGroupPanel(config);
-            } else if (g instanceof PersistentGroup) {
-                return newPhysicalGroupPanel(config);
-            } else {
-                throw new RuntimeException("Can't create a GroupPanel implementation for " + g.getClass().getName());
-            }
-        } catch (RemoteException e) {
-            throw new RuntimeException(e);
-        } catch (FindException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    static PhysicalGroupPanel newPhysicalGroupPanel(IdentityProviderConfig config) {
-        return new PhysicalGroupPanel(config);
-    }
-
-    static VirtualGroupPanel newVirtualGroupPanel(IdentityProviderConfig config) {
-        return new VirtualGroupPanel(config);
-    }
-
-    abstract Set getGroupMembers();
-
     static Logger log = Logger.getLogger(GroupPanel.class.getName());
-
     final static String GROUP_ICON_RESOURCE = "com/l7tech/console/resources/group16.png";
 
     private JLabel nameLabel;
@@ -95,15 +68,52 @@ public abstract class GroupPanel extends EntityEditorPanel {
     protected IdentityProviderConfig config;
     private final String GROUP_DOES_NOT_EXIST_MSG = "This group no longer exists";
     private final MainWindow mainWindow = TopComponents.getInstance().getMainWindow();
+    protected RoleFormPreparer securityFormPreparer;
+
     private final ActionListener closeDlgListener = new ActionListener() {
         public void actionPerformed(ActionEvent e) {
             SwingUtilities.windowForComponent(GroupPanel.this).dispose();
         }
     };
 
+
     protected GroupPanel(IdentityProviderConfig config) {
         this.config = config;
+        final SecurityProvider provider = (SecurityProvider)Locator.getDefault().lookup(SecurityProvider.class);
+        if (provider == null) {
+            throw new IllegalStateException("Could not instantiate security provider");
+        }
+        securityFormPreparer = new RoleFormPreparer(provider, new String[]{Group.ADMIN_GROUP_NAME});
     }
+
+    public static GroupPanel newInstance(IdentityProviderConfig config, EntityHeader header) {
+        Group g = null;
+        try {
+            g = getIdentityAdmin().findGroupByPrimaryKey(config.getOid(), header.getStrId());
+
+            if (g instanceof VirtualGroup) {
+                return newVirtualGroupPanel(config);
+            } else if (g instanceof PersistentGroup) {
+                return newPhysicalGroupPanel(config);
+            } else {
+                throw new RuntimeException("Can't create a GroupPanel implementation for " + g.getClass().getName());
+            }
+        } catch (RemoteException e) {
+            throw new RuntimeException(e);
+        } catch (FindException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    static PhysicalGroupPanel newPhysicalGroupPanel(IdentityProviderConfig config) {
+        return new PhysicalGroupPanel(config);
+    }
+
+    static VirtualGroupPanel newVirtualGroupPanel(IdentityProviderConfig config) {
+        return new VirtualGroupPanel(config);
+    }
+
+    abstract Set getGroupMembers();
 
     /**
      * Enables or disables the buttons based
@@ -185,6 +195,7 @@ public abstract class GroupPanel extends EntityEditorPanel {
 
     protected void initialize() {
         layoutComponents();
+        applyFormSecurity();
         this.addHierarchyListener(hierarchyListener);
     }
 
@@ -199,7 +210,7 @@ public abstract class GroupPanel extends EntityEditorPanel {
         return group;
     }
 
-    IdentityProviderConfig getIdProviderConfig() {
+    IdentityProviderConfig getIdentityProviderConfig() {
         return config;
     }
 
@@ -255,7 +266,7 @@ public abstract class GroupPanel extends EntityEditorPanel {
     /**
      * Returns tabbedPane
      */
-    protected JTabbedPane getGroupTabbedPane() {
+    private JTabbedPane getGroupTabbedPane() {
         // If tabbed pane not already created
         if (null == tabbedPane) {
             // Create tabbed pane
@@ -430,6 +441,12 @@ public abstract class GroupPanel extends EntityEditorPanel {
         return group;
     }
 
+    protected void applyFormSecurity() {
+        // list components that are subject to security (they require the full admin role)
+        securityFormPreparer.prepare(new Component[]{
+            descriptionTextField
+        });
+    }
 
     /**
      * Applies the changes on the form to the group bean and update the database;

@@ -1,8 +1,5 @@
 package com.l7tech.console.panels;
 
-import com.intellij.uiDesigner.core.GridLayoutManager;
-import com.intellij.uiDesigner.core.GridConstraints;
-
 import javax.swing.*;
 import java.awt.*;
 
@@ -17,12 +14,24 @@ public class VirtualGroupDetailsPanel extends JPanel {
     private JTextField groupDescTextField;
     private JTextField x509SubjectDNTextField;
     private JTextField emailTextField;
+    private VirtualGroupPanel virtualGroupPanel;
 
     /**
-     *  Constructor
+     * Constructor
      */
-    public VirtualGroupDetailsPanel() {
+    public VirtualGroupDetailsPanel(VirtualGroupPanel p) {
+        virtualGroupPanel = p;
         initComponents();
+        applyFormSecurity();
+    }
+
+    private void applyFormSecurity() {
+        virtualGroupPanel.securityFormPreparer.prepare(new Component[]{
+            groupDescTextField,
+            x509SubjectDNTextField,
+            emailTextField
+        });
+
     }
 
     /**

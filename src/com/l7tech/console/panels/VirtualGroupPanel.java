@@ -2,7 +2,6 @@ package com.l7tech.console.panels;
 
 import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.identity.Group;
-import com.l7tech.identity.GroupBean;
 import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.identity.fed.VirtualGroup;
 import com.l7tech.objectmodel.EntityHeader;
@@ -44,23 +43,23 @@ public class VirtualGroupPanel extends GroupPanel {
         super(ipc);
     }
 
-    protected void loadedGroup( Group g ) {
+    protected void loadedGroup(Group g) {
         // do nothing - no group members will be shown
     }
 
-    protected Group newGroup( EntityHeader groupHeader ) {
+    protected Group newGroup(EntityHeader groupHeader) {
         VirtualGroup v = new VirtualGroup();
         v.setName(groupHeader.getName());
         return v;
     }
 
-    IdentityProviderConfig getIdProviderConfig() {
+    IdentityProviderConfig getIdentityProviderConfig() {
         return config;
     }
 
     protected JPanel getMembershipPanel() {
 
-        if(virtualGroupMembershipPanel != null) return virtualGroupMembershipPanel;
+        if (virtualGroupMembershipPanel != null) return virtualGroupMembershipPanel;
 
         // create the membership panel
         virtualGroupMembershipPanel = new VirtualGroupMembershipPanel();
@@ -90,13 +89,13 @@ public class VirtualGroupPanel extends GroupPanel {
                 new Insets(10, 15, 0, 0), 0, 0));
 
             detailsPanel.add(new JSeparator(JSeparator.HORIZONTAL),
-               new GridBagConstraints(0, 1, 2, 1, 0.0, 0.0,
-                 GridBagConstraints.WEST,
-                 GridBagConstraints.BOTH,
-                 new Insets(10, 10, 0, 10), 0, 0));
+              new GridBagConstraints(0, 1, 2, 1, 0.0, 0.0,
+                GridBagConstraints.WEST,
+                GridBagConstraints.BOTH,
+                new Insets(10, 10, 0, 10), 0, 0));
 
             detailsPanel.add(getVirtualGroupPanel(),
-               new GridBagConstraints(0, 2, 2, 1, 0.0, 0.0,
+              new GridBagConstraints(0, 2, 2, 1, 0.0, 0.0,
                 GridBagConstraints.WEST,
                 GridBagConstraints.BOTH,
                 new Insets(10, 10, 0, 10), 0, 0));
@@ -119,10 +118,10 @@ public class VirtualGroupPanel extends GroupPanel {
 
     private JPanel getVirtualGroupPanel() {
 
-        if(virtualGroupDetailsPanel != null) return virtualGroupDetailsPanel;
+        if (virtualGroupDetailsPanel != null) return virtualGroupDetailsPanel;
 
         // create virtual group panel
-        virtualGroupDetailsPanel = new VirtualGroupDetailsPanel();
+        virtualGroupDetailsPanel = new VirtualGroupDetailsPanel(this);
 
         return virtualGroupDetailsPanel;
     }
@@ -135,8 +134,8 @@ public class VirtualGroupPanel extends GroupPanel {
     protected void setData(Group group) {
         getNameLabel().setText(group.getName());
         virtualGroupDetailsPanel.getGroupDescTextField().setText(group.getDescription());
-        virtualGroupDetailsPanel.getX509SubjectDNTextField().setText(((VirtualGroup) group).getX509SubjectDnPattern());
-        virtualGroupDetailsPanel.getEmailTextField().setText(((VirtualGroup) group).getSamlEmailPattern());
+        virtualGroupDetailsPanel.getX509SubjectDNTextField().setText(((VirtualGroup)group).getX509SubjectDnPattern());
+        virtualGroupDetailsPanel.getEmailTextField().setText(((VirtualGroup)group).getSamlEmailPattern());
         setModified(false);
     }
 
@@ -147,7 +146,7 @@ public class VirtualGroupPanel extends GroupPanel {
      * @return Group   the instance with changes applied
      */
     protected Group collectChanges() {
-        VirtualGroup vGroup = (VirtualGroup) group;
+        VirtualGroup vGroup = (VirtualGroup)group;
         vGroup.getGroupBean().setDescription(virtualGroupDetailsPanel.getGroupDescTextField().getText());
         vGroup.setSamlEmailPattern(virtualGroupDetailsPanel.getEmailTextField().getText());
         vGroup.setX509SubjectDnPattern(virtualGroupDetailsPanel.getX509SubjectDNTextField().getText());

@@ -63,11 +63,19 @@ class GroupUsersPanel extends JPanel {
         try {
             this.groupPanel = groupPanel;
             layoutComponents();
+            applyFormSecurity();
             this.addHierarchyListener(hierarchyListener);
-            this.setDoubleBuffered(true);
         } catch (Exception e) {
             log.log(Level.SEVERE, "GroupUsersPanel()", e);
         }
+    }
+
+    private void applyFormSecurity() {
+        groupPanel.securityFormPreparer.prepare(new Component[]{
+            groupAdd,
+            groupRemove
+        });
+
     }
 
     /**
@@ -89,21 +97,23 @@ class GroupUsersPanel extends JPanel {
      * This is the main initialization code.
      * Compliant with JBuilder
      *
-     * @exception Exception
+     * @throws Exception
      */
     private void layoutComponents() throws Exception {
         this.setLayout(new GridBagLayout());
 
         // add the main panel
         add(getMainPanel(),
-                new GridBagConstraints(0, 0, 1, 1, 1.0, 1.0,
-                        GridBagConstraints.CENTER,
-                        GridBagConstraints.BOTH,
-                        new Insets(8, 8, 8, 8), 0, 0));
+          new GridBagConstraints(0, 0, 1, 1, 1.0, 1.0,
+            GridBagConstraints.CENTER,
+            GridBagConstraints.BOTH,
+            new Insets(8, 8, 8, 8), 0, 0));
     }
 
 
-    /** layout the components */
+    /**
+     * layout the components
+     */
     private JPanel getMainPanel() {
         // main anel
         if (mainPanel != null)
@@ -114,16 +124,16 @@ class GroupUsersPanel extends JPanel {
 
         // add components
         mainPanel.add(hStrut,
-                new GridBagConstraints(0, 1, 1, 1, 1.0, 1.0,
-                        GridBagConstraints.CENTER,
-                        GridBagConstraints.BOTH,
-                        new Insets(0, 0, 0, 0), 0, 0));
+          new GridBagConstraints(0, 1, 1, 1, 1.0, 1.0,
+            GridBagConstraints.CENTER,
+            GridBagConstraints.BOTH,
+            new Insets(0, 0, 0, 0), 0, 0));
 
         mainPanel.add(getGroupMemberPanel(),
-                new GridBagConstraints(0, 1, 1, 1, 1.0, 1.0,
-                        GridBagConstraints.WEST,
-                        GridBagConstraints.BOTH,
-                        new Insets(5, 0, 0, 0), 0, 0));
+          new GridBagConstraints(0, 1, 1, 1, 1.0, 1.0,
+            GridBagConstraints.WEST,
+            GridBagConstraints.BOTH,
+            new Insets(5, 0, 0, 0), 0, 0));
 
 
         return mainPanel;
@@ -139,29 +149,30 @@ class GroupUsersPanel extends JPanel {
         if (listInModel != null) return listInModel;
 
         listInModel =
-                new SortedListModel(new Comparator() {
-                    /**
-                     * Compares group users by login alphabetically.
-                     * @param o1 the first object to be compared.
-                     * @param o2 the second object to be compared.
-                     * @return a negative integer, zero, or a positive integer as the
-                     * 	       first argument is less than, equal to, or greater than the
-                     *	       second.
-                     * @throws ClassCastException if the arguments' types prevent them from
-                     * 	       being compared by this Comparator.
-                     */
-                    public int compare(Object o1, Object o2) {
-                        EntityHeader e1 = (EntityHeader)o1;
-                        EntityHeader e2 = (EntityHeader)o2;
+          new SortedListModel(new Comparator() {
+              /**
+               * Compares group users by login alphabetically.
+               *
+               * @param o1 the first object to be compared.
+               * @param o2 the second object to be compared.
+               * @return a negative integer, zero, or a positive integer as the
+               *         first argument is less than, equal to, or greater than the
+               *         second.
+               * @throws ClassCastException if the arguments' types prevent them from
+               *                            being compared by this Comparator.
+               */
+              public int compare(Object o1, Object o2) {
+                  EntityHeader e1 = (EntityHeader)o1;
+                  EntityHeader e2 = (EntityHeader)o2;
 
-                        return e1.getName().compareTo(e2.getName());
-                    }
-                });
+                  return e1.getName().compareTo(e2.getName());
+              }
+          });
 
         listInModel.addListDataListener(new ListDataListener() {
             /**
-             * @param e  a <code>ListDataEvent</code> encapsulating the
-             *    event information
+             * @param e a <code>ListDataEvent</code> encapsulating the
+             *          event information
              */
             public void intervalAdded(ListDataEvent e) {
                 if (!isLoading) {
@@ -171,8 +182,8 @@ class GroupUsersPanel extends JPanel {
             }
 
             /**
-             * @param e  a <code>ListDataEvent</code> encapsulating the
-             *    event information
+             * @param e a <code>ListDataEvent</code> encapsulating the
+             *          event information
              */
             public void intervalRemoved(ListDataEvent e) {
                 if (!isLoading) {
@@ -182,8 +193,8 @@ class GroupUsersPanel extends JPanel {
             }
 
             /**
-             * @param e  a <code>ListDataEvent</code> encapsulating the
-             *    event information
+             * @param e a <code>ListDataEvent</code> encapsulating the
+             *          event information
              */
             public void contentsChanged(ListDataEvent e) {
                 if (!isLoading) {
@@ -196,7 +207,7 @@ class GroupUsersPanel extends JPanel {
                 Set memberHeaders = groupPanel.getGroupMembers();
                 memberHeaders.clear();
                 for (int i = 0; i < listInModel.getSize(); i++) {
-                    EntityHeader g = (EntityHeader) listInModel.getElementAt(i);
+                    EntityHeader g = (EntityHeader)listInModel.getElementAt(i);
                     memberHeaders.add(g);
                 }
             }
@@ -219,22 +230,22 @@ class GroupUsersPanel extends JPanel {
         groupMemberPanel.setLayout(new GridBagLayout());
 
         groupMemberPanel.add(getGroupMemberLabel(),
-                new GridBagConstraints(0, 0, 1, 1, 1.0, 1.0,
-                        GridBagConstraints.WEST,
-                        GridBagConstraints.BOTH,
-                        new Insets(0, 0, 0, 0), 0, 0));
+          new GridBagConstraints(0, 0, 1, 1, 1.0, 1.0,
+            GridBagConstraints.WEST,
+            GridBagConstraints.BOTH,
+            new Insets(0, 0, 0, 0), 0, 0));
 
         groupMemberPanel.add(getGroupInListJScrollPane(),
-                new GridBagConstraints(0, 1, 1, 1, 1.0, 1.0,
-                        GridBagConstraints.WEST,
-                        GridBagConstraints.BOTH,
-                        new Insets(0, 0, 0, 0), 0, 0));
+          new GridBagConstraints(0, 1, 1, 1, 1.0, 1.0,
+            GridBagConstraints.WEST,
+            GridBagConstraints.BOTH,
+            new Insets(0, 0, 0, 0), 0, 0));
 
         groupMemberPanel.add(getButtonsPanel(),
-                new GridBagConstraints(0, 2, 1, 1, 1.0, 1.0,
-                        GridBagConstraints.EAST,
-                        GridBagConstraints.BOTH,
-                        new Insets(8, 0, 0, 0), 0, 0));
+          new GridBagConstraints(0, 2, 1, 1, 1.0, 1.0,
+            GridBagConstraints.EAST,
+            GridBagConstraints.BOTH,
+            new Insets(8, 0, 0, 0), 0, 0));
         return groupMemberPanel;
     }
 
@@ -275,7 +286,9 @@ class GroupUsersPanel extends JPanel {
             groupMemberList = new JList(getListInModel());
             groupMemberList.setCellRenderer(renderer);
             groupMemberList.addListSelectionListener(new ListSelectionListener() {
-                /** Called whenever the value of the selection changes.*/
+                /**
+                 * Called whenever the value of the selection changes.
+                 */
                 public void valueChanged(ListSelectionEvent e) {
                     setAddRemoveButtons();
                 }
@@ -288,9 +301,14 @@ class GroupUsersPanel extends JPanel {
      * enable/disable add/remove buttons
      */
     private void setAddRemoveButtons() {
-        // if provider is not read only, enable remove button on user selection
-        if (groupPanel.getIdProviderConfig().isWritable())
+        if (areAddRemoveEnabled()) {
             getGroupRemove().setEnabled(listInModel.getSize() > 0);
+        }
+    }
+
+    private boolean areAddRemoveEnabled() {
+        applyFormSecurity();
+        return groupAdd.isEnabled() && groupPanel.getIdentityProviderConfig().isWritable();
     }
 
     /**
@@ -309,22 +327,22 @@ class GroupUsersPanel extends JPanel {
 
         // add components
         buttonsPanel.add(hStrut,
-                new GridBagConstraints(0, 0, 1, 1, 1.0, 1.0,
-                        GridBagConstraints.CENTER,
-                        GridBagConstraints.BOTH,
-                        new Insets(0, 0, 0, 0), 0, 0));
+          new GridBagConstraints(0, 0, 1, 1, 1.0, 1.0,
+            GridBagConstraints.CENTER,
+            GridBagConstraints.BOTH,
+            new Insets(0, 0, 0, 0), 0, 0));
 
         buttonsPanel.add(getGroupAdd(),
-                new GridBagConstraints(1, 0, 1, 1, 0.0, 0.0,
-                        GridBagConstraints.EAST,
-                        GridBagConstraints.NONE,
-                        new Insets(0, 0, 0, 0), 0, 0));
+          new GridBagConstraints(1, 0, 1, 1, 0.0, 0.0,
+            GridBagConstraints.EAST,
+            GridBagConstraints.NONE,
+            new Insets(0, 0, 0, 0), 0, 0));
 
         buttonsPanel.add(getGroupRemove(),
-                new GridBagConstraints(2, 0, 1, 1, 0.0, 0.0,
-                        GridBagConstraints.EAST,
-                        GridBagConstraints.NONE,
-                        new Insets(0, 8, 0, 0), 0, 0));
+          new GridBagConstraints(2, 0, 1, 1, 0.0, 0.0,
+            GridBagConstraints.EAST,
+            GridBagConstraints.NONE,
+            new Insets(0, 8, 0, 0), 0, 0));
 
         JButton buttons1[] = new JButton[]
         {
@@ -359,7 +377,7 @@ class GroupUsersPanel extends JPanel {
                     setAddRemoveButtons();
                 }
             });
-            groupAdd.setEnabled(groupPanel.getIdProviderConfig().isWritable());
+            groupAdd.setEnabled(groupPanel.getIdentityProviderConfig().isWritable());
         }
         return groupAdd;
     }
@@ -380,8 +398,8 @@ class GroupUsersPanel extends JPanel {
                     Object[] removals = groupMemberList.getSelectedValues();
 
                     if (((Group.ADMIN_GROUP_NAME.equals(groupPanel.getGroup().getName())) &&
-                            (listInModel.getSize() - removals.length > 0)) ||
-                            (!Group.ADMIN_GROUP_NAME.equals(groupPanel.getGroup().getName()))){
+                      (listInModel.getSize() - removals.length > 0)) ||
+                      (!Group.ADMIN_GROUP_NAME.equals(groupPanel.getGroup().getName()))) {
 
                         Set members = groupPanel.getGroupMembers();
 
@@ -389,8 +407,7 @@ class GroupUsersPanel extends JPanel {
                             listInModel.removeElement(removals[i]);
                             members.remove(removals[i]);
                         }
-                    }
-                    else {
+                    } else {
                         // there must be at least one member in this group after the deletion
                         StringBuffer msg = new StringBuffer();
                         msg.append("Cannot delete all members in ");
@@ -398,21 +415,23 @@ class GroupUsersPanel extends JPanel {
                         msg.append(". This group must have at least one member.\n");
 
                         JOptionPane.showMessageDialog(null,
-                                msg.toString(),
-                                "Error",
-                                JOptionPane.ERROR_MESSAGE);
+                          msg.toString(),
+                          "Error",
+                          JOptionPane.ERROR_MESSAGE);
                     }
                     setAddRemoveButtons();
                 }
             });
-            groupRemove.setEnabled(groupPanel.getIdProviderConfig().isWritable());
+            groupRemove.setEnabled(groupPanel.getIdentityProviderConfig().isWritable());
         }
         return groupRemove;
     }
 
     // hierarchy listener
     private final HierarchyListener hierarchyListener = new HierarchyListener() {
-        /** Called when the hierarchy has been changed.*/
+        /**
+         * Called when the hierarchy has been changed.
+         */
         public void hierarchyChanged(HierarchyEvent e) {
             long flags = e.getChangeFlags();
             if ((flags & HierarchyEvent.SHOWING_CHANGED) == HierarchyEvent.SHOWING_CHANGED) {
