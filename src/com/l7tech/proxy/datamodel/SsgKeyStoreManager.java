@@ -568,7 +568,7 @@ public class SsgKeyStoreManager {
                 // had an uncheckable password (either unavailable or hashed in an unsupported way).
                 Managers.getCredentialManager().notifySsgCertificateUntrusted(ssg, cd.getCertificate());
             } else
-                throw new BadCredentialsException("The downloaded Gateway server certificate could not be verified with the current username and password.");
+                throw new BadCredentialsException("The downloaded Gateway server certificate could not be verified with the current user name and password.");
         }
 
         saveSsgCertificate(ssg, cd.getCertificate());

@@ -20,7 +20,6 @@ import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.SslAssertion;
 import com.l7tech.proxy.ConfigurationException;
 import com.l7tech.proxy.datamodel.*;
-import com.l7tech.proxy.datamodel.Policy;
 import com.l7tech.proxy.datamodel.exceptions.*;
 import com.l7tech.proxy.policy.assertion.ClientAssertion;
 import com.l7tech.proxy.policy.assertion.ClientDecorator;
@@ -41,7 +40,10 @@ import java.io.PushbackInputStream;
 import java.net.MalformedURLException;
 import java.net.PasswordAuthentication;
 import java.net.URL;
-import java.security.*;
+import java.security.GeneralSecurityException;
+import java.security.KeyStoreException;
+import java.security.NoSuchAlgorithmException;
+import java.security.UnrecoverableKeyException;
 import java.security.cert.CertificateException;
 import java.util.Date;
 import java.util.Iterator;
@@ -778,7 +780,7 @@ public class MessageProcessor {
         String username = req.getUsername();
         char[] password = req.getPassword();
         if (req.isBasicAuthRequired() || req.isDigestAuthRequired()) {
-            log.info("Enabling HTTP Basic or Digest auth with username=" + username);
+            log.info("Enabling HTTP Basic or Digest auth with user name=" + username);
             postMethod.setDoAuthentication(true);
             state.setAuthenticationPreemptive(req.isBasicAuthRequired() && !req.isDigestAuthRequired());
             state.setCredentials(null, null,

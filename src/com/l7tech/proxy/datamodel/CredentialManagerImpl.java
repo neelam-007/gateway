@@ -97,7 +97,7 @@ public class CredentialManagerImpl extends CredentialManager {
     }
 
     public void notifySsgCertificateUntrusted(Ssg ssg, X509Certificate certificate) throws OperationCanceledException {
-        String msg = "The downloaded Gateway server certificate could not be verified with the current username and password.";
+        String msg = "The downloaded Gateway server certificate could not be verified with the current user name and password.";
         log.log(Level.SEVERE, msg);
         throw new OperationCanceledException(msg);
     }

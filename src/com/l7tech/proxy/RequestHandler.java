@@ -17,9 +17,9 @@ import org.w3c.dom.NodeList;
 
 import javax.wsdl.Port;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.io.PrintStream;
 import java.io.PushbackInputStream;
-import java.io.OutputStream;
 import java.net.MalformedURLException;
 import java.net.PasswordAuthentication;
 import java.net.URL;
@@ -255,7 +255,7 @@ public class RequestHandler extends AbstractHttpHandler {
         response.setReason("Unauthorized");
         response.addField(XmlUtil.CONTENT_TYPE, "text/html");
         response.setStatus(401);
-        response.getOutputStream().write("<title>A username and password are required</title>A username and password are required.".getBytes());
+        response.getOutputStream().write("<title>A user name and password are required</title>A user name and password are required.".getBytes());
         response.commit();
     }
 

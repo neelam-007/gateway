@@ -7,10 +7,10 @@
 package com.l7tech.proxy.datamodel;
 
 import java.io.File;
+import java.net.PasswordAuthentication;
 import java.security.KeyStore;
 import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
-import java.net.PasswordAuthentication;
 
 /**
  * @author alex
@@ -86,7 +86,7 @@ public class FederatedSsg extends Ssg {
     // Unsupported methods
     // ***********************************************************************
     public void setUsername( String username ) {
-        throw new UnsupportedOperationException("Federated SSGs don't have their own usernames");
+        throw new UnsupportedOperationException("Federated SSGs don't have their own user names");
     }
 
     public char[] cmPassword() {
