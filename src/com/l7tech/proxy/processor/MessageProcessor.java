@@ -41,7 +41,9 @@ import com.l7tech.proxy.datamodel.exceptions.ServerCertificateUntrustedException
 import com.l7tech.proxy.ssl.HostnameMismatchException;
 import com.l7tech.proxy.ssl.ClientProxySecureProtocolSocketFactory;
 import com.l7tech.proxy.util.CannedSoapFaults;
-import com.l7tech.proxy.util.ClientLogger;
+import java.util.logging.Logger;
+import java.util.logging.Level;
+
 import org.apache.commons.httpclient.*;
 import org.apache.commons.httpclient.protocol.Protocol;
 import org.apache.commons.httpclient.methods.PostMethod;
@@ -71,7 +73,7 @@ import java.util.Iterator;
  * Time: 9:51:36 AM
  */
 public class MessageProcessor {
-    private static final ClientLogger log = ClientLogger.getInstance(MessageProcessor.class);
+    private static final Logger log = Logger.getLogger(MessageProcessor.class.getName());
 
     public static final String PROPERTY_LOGPOSTS    = "com.l7tech.proxy.processor.logPosts";
     public static final String PROPERTY_LOGRESPONSE = "com.l7tech.proxy.processor.logResponses";
@@ -162,7 +164,7 @@ public class MessageProcessor {
             req.reset();
         }
 
-        log.warn("Too many attempts to conform to policy; giving up");
+        log.warning("Too many attempts to conform to policy; giving up");
         if (req.getLastErrorResponse() != null)
             return req.getLastErrorResponse();
         throw new ConfigurationException("Unable to conform to policy, and no useful fault from Gateway.");
@@ -183,10 +185,10 @@ public class MessageProcessor {
                 // password works with our keystore, and with the SSG, so why did it fail just now?
                 String message = "Recieved password failure, but it worked with our keystore and the Gateway liked it when we double-checked it.  " +
                         "Could be an internal error, or an attack, or the Gateway admin toggling your account on and off.";
-                log.error(message);
+                log.severe(message);
                 throw new ConfigurationException(message, e);
             }
-            log.error("The Gateway password that was used to obtain this client cert is no longer valid -- deleting the client cert");
+            log.severe("The Gateway password that was used to obtain this client cert is no longer valid -- deleting the client cert");
             try {
                 SsgKeyStoreManager.deleteClientCert(ssg);
             } catch (KeyStoreCorruptException e1) {
@@ -268,7 +270,7 @@ public class MessageProcessor {
             ssg.passwordWorkedWithSsg(worked);
             return worked;
         } catch (CertificateException e) {
-            log.error("Gateway sent us an invalid certificate during secure password ping", e);
+            log.log(Level.SEVERE, "Gateway sent us an invalid certificate during secure password ping", e);
             throw new IOException("Gateway sent us an invalid certificate during secure password ping");
         }
     }
@@ -291,7 +293,7 @@ public class MessageProcessor {
         Policy policy = policyManager.getPolicy(req);
         if (policy == null || !policy.isValid()) {
             if (policy != null)
-                log.warn("Ignoring this policy -- it's thrown PolicyAssertionException before");
+                log.warning("Ignoring this policy -- it's thrown PolicyAssertionException before");
             if (req.getSsg().isUseSslByDefault()) {
                 // Use a default policy requiring SSL.
                 policy = SSL_POLICY;
@@ -326,7 +328,7 @@ public class MessageProcessor {
                 throw e;
             }
             if (result != AssertionStatus.NONE)
-                log.warn("Policy evaluated with an error: " + result + "; will attempt to continue anyway.");
+                log.warning("Policy evaluated with an error: " + result + "; will attempt to continue anyway.");
         }
     }
 
@@ -350,7 +352,7 @@ public class MessageProcessor {
         if (rootAssertion != null) {
             AssertionStatus result = rootAssertion.unDecorateReply(req, res);
             if (result != AssertionStatus.NONE)
-                log.warn("Response policy processing failed with status " + result + "; continuing anyway");
+                log.warning("Response policy processing failed with status " + result + "; continuing anyway");
         }
     }
 
@@ -368,7 +370,7 @@ public class MessageProcessor {
             url = ssg.getServerUrl();
             if (req.isSslRequired()) {
                 if (req.isSslForbidden())
-                    log.error("Error: SSL is both forbidden and required by policy -- leaving SSL enabled");
+                    log.severe("Error: SSL is both forbidden and required by policy -- leaving SSL enabled");
                 if ("http".equalsIgnoreCase(url.getProtocol())) {
                     log.info("Changing http to https per policy for this request (using SSL port " +
                              ssg.getSslPort() + ")");

@@ -11,7 +11,9 @@ import com.l7tech.proxy.datamodel.Ssg;
 import com.l7tech.proxy.datamodel.SsgKeyStoreManager;
 import com.l7tech.proxy.datamodel.exceptions.KeyStoreCorruptException;
 import com.l7tech.proxy.datamodel.exceptions.ServerCertificateUntrustedException;
-import com.l7tech.proxy.util.ClientLogger;
+import java.util.logging.Logger;
+import java.util.logging.Level;
+
 import com.l7tech.common.util.CertUtils;
 import sun.security.x509.X500Name;
 
@@ -30,7 +32,7 @@ import java.security.cert.X509Certificate;
  * Time: 8:49:58 PM
  */
 public class ClientProxyTrustManager implements X509TrustManager {
-    private static final ClientLogger log = ClientLogger.getInstance(ClientProxyTrustManager.class);
+    private static final Logger log = Logger.getLogger(ClientProxyTrustManager.class.getName());
 
     public X509Certificate[] getAcceptedIssuers() {
         // Find our current ssg
@@ -68,7 +70,7 @@ public class ClientProxyTrustManager implements X509TrustManager {
             X509Certificate cert = x509Certificates[0];
             cn = new X500Name(cert.getSubjectX500Principal().toString()).getCommonName();
         } catch (IOException e) {
-            log.error(e);
+            log.log(Level.SEVERE, e.getMessage(), e);
             // can't happen
         }
         if (!cn.equals(expectedHostname))
@@ -92,10 +94,10 @@ public class ClientProxyTrustManager implements X509TrustManager {
             CertUtils.verifyCertificateChain( x509Certificates, trustedCert, 1 );
             log.info("Peer certificate was signed by a trusted Gateway.");
         } catch (CertUtils.CertificateUntrustedException e) {
-            log.warn(e.getMessage());
+            log.warning(e.getMessage());
             throw new ServerCertificateUntrustedException(e);
         } catch ( CertificateException e ) {
-            log.warn(e.getMessage());
+            log.warning(e.getMessage());
             throw e;
         }
     }

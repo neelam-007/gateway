@@ -10,14 +10,14 @@ import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.SslAssertion;
 import com.l7tech.proxy.datamodel.PendingRequest;
 import com.l7tech.proxy.datamodel.SsgResponse;
-import com.l7tech.proxy.util.ClientLogger;
+import java.util.logging.Logger;
 
 /**
  * @author alex
  * @version $Revision$
  */
 public class ClientSslAssertion extends ClientAssertion {
-    private static final ClientLogger log = ClientLogger.getInstance(ClientSslAssertion.class);
+    private static final Logger log = Logger.getLogger(ClientSslAssertion.class.getName());
 
     public ClientSslAssertion( SslAssertion data ) {
         this.data = data;

@@ -10,7 +10,7 @@ import com.l7tech.common.protocol.SecureSpanConstants;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.wsp.WspReader;
 import com.l7tech.proxy.ConfigurationException;
-import com.l7tech.proxy.util.ClientLogger;
+import java.util.logging.Logger;
 import com.l7tech.proxy.datamodel.exceptions.OperationCanceledException;
 import com.l7tech.proxy.datamodel.exceptions.ServerCertificateUntrustedException;
 import com.l7tech.proxy.datamodel.exceptions.HttpChallengeRequiredException;
@@ -32,7 +32,7 @@ import java.net.URL;
  * Time: 10:22:35 AM
  */
 public class PolicyManagerImpl implements PolicyManager {
-    private static final ClientLogger log = ClientLogger.getInstance(PolicyManagerImpl.class);
+    private static final Logger log = Logger.getLogger(PolicyManagerImpl.class.getName());
     private static final PolicyManagerImpl INSTANCE = new PolicyManagerImpl();
     public static final String PROPERTY_LOGPOLICIES    = "com.l7tech.proxy.datamodel.logPolicies";
 

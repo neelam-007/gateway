@@ -12,14 +12,14 @@ import com.l7tech.proxy.datamodel.PendingRequest;
 import com.l7tech.proxy.datamodel.SsgResponse;
 import com.l7tech.proxy.datamodel.exceptions.OperationCanceledException;
 import com.l7tech.proxy.policy.assertion.ClientAssertion;
-import com.l7tech.proxy.util.ClientLogger;
+import java.util.logging.Logger;
 
 /**
  * @author alex
  * @version $Revision$
  */
 public class ClientHttpBasic extends ClientAssertion {
-    private static final ClientLogger log = ClientLogger.getInstance(ClientHttpBasic.class);
+    private static final Logger log = Logger.getLogger(ClientHttpBasic.class.getName());
 
     public ClientHttpBasic( HttpBasic data ) {
         _data = data;

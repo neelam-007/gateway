@@ -8,7 +8,8 @@ package com.l7tech.proxy.datamodel;
 
 import com.l7tech.proxy.datamodel.exceptions.OperationCanceledException;
 import com.l7tech.proxy.datamodel.exceptions.CredentialsUnavailableException;
-import com.l7tech.proxy.util.ClientLogger;
+import java.util.logging.Logger;
+import java.util.logging.Level;
 
 import java.net.PasswordAuthentication;
 import java.security.cert.X509Certificate;
@@ -22,7 +23,7 @@ import java.security.cert.X509Certificate;
  * Time: 10:39:29 AM
  */
 public class CredentialManagerImpl extends CredentialManager {
-    private static final ClientLogger log = ClientLogger.getInstance(CredentialManagerImpl.class);
+    private static final Logger log = Logger.getLogger(CredentialManagerImpl.class.getName());
     private static CredentialManagerImpl INSTANCE = new CredentialManagerImpl();
 
     private CredentialManagerImpl() {}
@@ -38,12 +39,12 @@ public class CredentialManagerImpl extends CredentialManager {
         if (pw != null)
             return pw;
 
-        log.error("Headless CredentialManager: unable to obtain new credentials");
+        log.log(Level.WARNING, "Headless CredentialManager: unable to obtain new credentials");
         throw new CredentialsUnavailableException("Unable to obtain new credentials");
     }
 
     public PasswordAuthentication getNewCredentials(Ssg ssg) throws OperationCanceledException {
-        log.error("Headless CredentialManager: unable to obtain new credentials");
+        log.log(Level.WARNING, "Headless CredentialManager: unable to obtain new credentials");
         throw new CredentialsUnavailableException("Unable to obtain new credentials");
     }
 
@@ -56,7 +57,7 @@ public class CredentialManagerImpl extends CredentialManager {
     }
 
     public void notifyKeyStoreCorrupt(Ssg ssg) throws OperationCanceledException {
-        log.error("Key store for Gateway " + ssg + " has been damaged -- aborting");
+        log.log(Level.SEVERE, "Key store for Gateway " + ssg + " has been damaged -- aborting");
         throw new OperationCanceledException("Unable to authorize deletion of corrupt keystore");
     }
 
@@ -68,7 +69,7 @@ public class CredentialManagerImpl extends CredentialManager {
      * @param ssg
      */
     public void notifyCertificateAlreadyIssued(Ssg ssg) {
-        log.error("Certificate has already been issued for this account on Gateway " + ssg + "; the server refuses to give us a new one until the Gateway admin revokes our old one");
+        log.log(Level.SEVERE, "Certificate has already been issued for this account on Gateway " + ssg + "; the server refuses to give us a new one until the Gateway admin revokes our old one");
     }
 
     /**
@@ -80,10 +81,12 @@ public class CredentialManagerImpl extends CredentialManager {
      * @param whatWeGotInstead  the hostname in the peer's certificate
      */
     public void notifySsgHostnameMismatch(Ssg ssg, String whatWeWanted, String whatWeGotInstead) {
-        log.error("Gateway hostname " + whatWeWanted + " does not match hostname in peer certificate: \"" + whatWeGotInstead + "\"");
+        log.log(Level.SEVERE, "Gateway hostname " + whatWeWanted + " does not match hostname in peer certificate: \"" + whatWeGotInstead + "\"");
     }
 
     public void notifySsgCertificateUntrusted(Ssg ssg, X509Certificate certificate) throws OperationCanceledException {
-        throw new OperationCanceledException("The downloaded Gateway server certificate could not be verified with the current username and password.");
+        String msg = "The downloaded Gateway server certificate could not be verified with the current username and password.";
+        log.log(Level.SEVERE, msg);
+        throw new OperationCanceledException(msg);
     }
 }

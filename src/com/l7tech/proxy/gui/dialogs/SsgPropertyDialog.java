@@ -14,9 +14,7 @@ import com.l7tech.proxy.gui.Gui;
 import com.l7tech.proxy.gui.policy.PolicyTreeCellRenderer;
 import com.l7tech.proxy.gui.policy.PolicyTreeModel;
 import com.l7tech.proxy.gui.util.IconManager;
-import com.l7tech.proxy.util.ClientLogger;
 
-import javax.security.auth.x500.X500Principal;
 import javax.swing.*;
 import javax.swing.border.BevelBorder;
 import javax.swing.event.*;
@@ -26,10 +24,11 @@ import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.security.NoSuchAlgorithmException;
-import java.security.Principal;
 import java.security.cert.CertificateEncodingException;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Panel for editing properties of an SSG object.
@@ -38,7 +37,7 @@ import java.util.ArrayList;
  * Time: 11:14:36 AM
  */
 public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
-    private static final ClientLogger log = ClientLogger.getInstance(SsgPropertyDialog.class);
+    private static final Logger log = Logger.getLogger(SsgPropertyDialog.class.getName());
     private static final Ssg referenceSsg = new Ssg(); // SSG bean with default values for all
 
     // Model
@@ -127,7 +126,7 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
                 case 1:
                     return ((PolicyAttachmentKey)displayPolicies.get(rowIndex)).getSoapAction();
             }
-            log.error("SsgPropertyDialog: policyTable: invalid columnIndex: " + columnIndex);
+            log.log(Level.WARNING, "SsgPropertyDialog: policyTable: invalid columnIndex: " + columnIndex);
             return null;
         }
     }
@@ -579,7 +578,7 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
                         }
                         new CertDialog(cert, "Server Certificate", "Server Certificate for Gateway " + ssgName()).show();
                     } catch (Exception e1) {
-                        log.error(e1);
+                        log.log(Level.SEVERE, "Unable to access server certificate", e1);
                         e1.printStackTrace();
                         Gui.errorMessage("Unable to access server certificate",
                                          "Unable to access server certificate for Gateway " + ssgName(),
@@ -614,7 +613,7 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
                         }
                         new CertDialog(cert, "Client Certificate", "Client Certificate for Gateway " + ssgName()).show();
                     } catch (Exception e1) {
-                        log.error(e1);
+                        log.log(Level.SEVERE, "Unable to access client certificate", e1);
                         e1.printStackTrace();
                         Gui.errorMessage("Unable to access client certificate",
                                          "Unable to access client certificate for Gateway " + ssgName(),

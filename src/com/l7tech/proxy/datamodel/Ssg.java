@@ -5,7 +5,9 @@ import com.l7tech.common.util.HexUtils;
 import com.l7tech.proxy.ClientProxy;
 import com.l7tech.proxy.ssl.ClientProxyKeyManager;
 import com.l7tech.proxy.ssl.ClientProxyTrustManager;
-import com.l7tech.proxy.util.ClientLogger;
+import java.util.logging.Logger;
+import java.util.logging.Level;
+
 import org.apache.commons.httpclient.Cookie;
 
 import javax.net.ssl.SSLContext;
@@ -37,7 +39,7 @@ import java.util.TreeSet;
  * Time: 11:09:04 AM
  */
 public class Ssg implements Serializable, Cloneable, Comparable {
-    private static final ClientLogger log = ClientLogger.getInstance(Ssg.class);
+    private static final Logger log = Logger.getLogger(Ssg.class.getName());
     private static final String SSG_PROTOCOL = "http";
     private static final int SSG_SSL_PORT = 8443;
     private static final int SSG_PORT = 8080;
@@ -149,7 +151,7 @@ public class Ssg implements Serializable, Cloneable, Comparable {
             return clone;
         } catch (CloneNotSupportedException e) {
             // this can't happen
-            log.error(e);
+            log.log(Level.SEVERE, e.getMessage(), e);
             return null;
         }
     }
@@ -359,11 +361,11 @@ public class Ssg implements Serializable, Cloneable, Comparable {
         try {
             url = new URL(SSG_PROTOCOL, getSsgAddress(), getSsgPort(), getSsgFile());
         } catch (MalformedURLException e) {
-            log.error(e);
+            log.log(Level.SEVERE, e.getMessage(), e);
             try {
                 return new URL("");
             } catch (MalformedURLException e1) {
-                log.error("This can't have happened", e);
+                log.log(Level.SEVERE, "This can't have happened", e);
                 return null; // totally can't happen
             }
         }
@@ -375,11 +377,11 @@ public class Ssg implements Serializable, Cloneable, Comparable {
         try {
             url = new URL("https", getSsgAddress(), getSslPort(), getSsgFile());
         } catch (MalformedURLException e) {
-            log.error(e);
+            log.log(Level.SEVERE, "Unable to build Gateway SSL URL", e);
             try {
                 return new URL("");
             } catch (MalformedURLException e1) {
-                log.error("This can't have happened", e);
+                log.log(Level.SEVERE, "This can't have happened", e);
                 return null; // totally can't happen
             }
         }
@@ -391,7 +393,7 @@ public class Ssg implements Serializable, Cloneable, Comparable {
         try {
             url = new URL("https", getSsgAddress(), getSslPort(), SecureSpanConstants.PASSWD_SERVICE_FILE);
         } catch (MalformedURLException e) {
-            log.error("Unable to build valid URL for Gateway's password changing service", e);
+            log.log(Level.SEVERE, "Unable to build valid URL for Gateway's password changing service", e);
             try {
                 return new URL("");
             } catch (MalformedURLException e1) {
@@ -406,7 +408,7 @@ public class Ssg implements Serializable, Cloneable, Comparable {
         try {
             url = new URL("https", getSsgAddress(), getSslPort(), SecureSpanConstants.CERT_REQUEST_FILE);
         } catch (MalformedURLException e) {
-            log.error("Unable to build valid URL for Gateway's certificate signing service", e);
+            log.log(Level.SEVERE, "Unable to build valid URL for Gateway's certificate signing service", e);
             try {
                 return new URL("");
             } catch (MalformedURLException e1) {
@@ -472,7 +474,7 @@ public class Ssg implements Serializable, Cloneable, Comparable {
         try {
             return new String(HexUtils.decodeBase64(new String(persistPassword))).toCharArray();
         } catch (IOException e) {
-            log.error("Unable to recover persisted password", e);
+            log.log(Level.SEVERE, "Unable to recover persisted password", e);
             return null;
         }
     }
@@ -774,13 +776,13 @@ public class Ssg implements Serializable, Cloneable, Comparable {
             try {
                 sslContext = createSslContext();
             } catch (NoSuchAlgorithmException e) {
-                log.error(e);
+                log.log(Level.SEVERE, "Unable to create SSL context", e);
                 throw new RuntimeException(e);
             } catch (NoSuchProviderException e) {
-                log.error(e);
+                log.log(Level.SEVERE, "Unable to create SSL context", e);
                 throw new RuntimeException(e);
             } catch (KeyManagementException e) {
-                log.error(e);
+                log.log(Level.SEVERE, "Unable to create SSL context", e);
                 throw new RuntimeException(e);
             }
         }

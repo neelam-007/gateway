@@ -16,7 +16,8 @@ import com.l7tech.proxy.datamodel.exceptions.OperationCanceledException;
 import com.l7tech.proxy.gui.dialogs.LogonDialog;
 import com.l7tech.proxy.gui.dialogs.PleaseWaitDialog;
 import com.l7tech.proxy.gui.dialogs.TrustCertificateDialog;
-import com.l7tech.proxy.util.ClientLogger;
+import java.util.logging.Logger;
+import java.util.logging.Level;
 
 import javax.security.auth.x500.X500Principal;
 import javax.swing.*;
@@ -33,7 +34,7 @@ import java.security.cert.X509Certificate;
  * Time: 10:36:01 AM
  */
 public class GuiCredentialManager extends CredentialManager {
-    private static final ClientLogger log = ClientLogger.getInstance(GuiCredentialManager.class);
+    private static final Logger log = Logger.getLogger(GuiCredentialManager.class.getName());
     private PleaseWaitDialog pleaseWaitDialog;
     private SsgManager ssgManager;
 
@@ -57,10 +58,10 @@ public class GuiCredentialManager extends CredentialManager {
             try {
                 SwingUtilities.invokeAndWait(runnable);
             } catch (InterruptedException e) {
-                log.error("GuiCredentialManager: thread interrupted; reasserting interrupt and continuing");
+                log.log(Level.WARNING, "GuiCredentialManager: thread interrupted; reasserting interrupt and continuing");
                 Thread.currentThread().interrupt();
             } catch (InvocationTargetException e) {
-                log.error("GuiCredentialManager: dialog code threw an exception; continuing", e);
+                log.log(Level.WARNING, "GuiCredentialManager: dialog code threw an exception; continuing", e);
             }
         }
     }
@@ -154,7 +155,7 @@ public class GuiCredentialManager extends CredentialManager {
                 try {
                     ssgManager.save();
                 } catch (IOException e) {
-                    log.error("Unable to save Gateway configuration: ", e);
+                    log.log(Level.SEVERE, "Unable to save Gateway configuration: ", e);
                     Gui.errorMessage("Unable to save Gateway configuration",
                                      "An error was encountered while writing your Gateway configuration to disk.",
                                      e);

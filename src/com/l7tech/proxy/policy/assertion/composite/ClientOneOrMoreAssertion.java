@@ -19,7 +19,7 @@ import com.l7tech.proxy.datamodel.exceptions.KeyStoreCorruptException;
 import com.l7tech.proxy.datamodel.exceptions.HttpChallengeRequiredException;
 import com.l7tech.proxy.datamodel.exceptions.PolicyRetryableException;
 import com.l7tech.proxy.policy.assertion.ClientAssertion;
-import com.l7tech.proxy.util.ClientLogger;
+import java.util.logging.Logger;
 import org.xml.sax.SAXException;
 
 import java.security.GeneralSecurityException;
@@ -30,7 +30,7 @@ import java.io.IOException;
  * @version $Revision$
  */
 public class ClientOneOrMoreAssertion extends ClientCompositeAssertion {
-    private static final ClientLogger log = ClientLogger.getInstance(ClientOneOrMoreAssertion.class);
+    private static final Logger log = Logger.getLogger(ClientOneOrMoreAssertion.class.getName());
 
     public ClientOneOrMoreAssertion( OneOrMoreAssertion data ) {
         super( data );

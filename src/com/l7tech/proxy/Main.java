@@ -3,7 +3,9 @@ package com.l7tech.proxy;
 import com.l7tech.proxy.datamodel.Managers;
 import com.l7tech.proxy.datamodel.SsgFinderImpl;
 import com.l7tech.proxy.processor.MessageProcessor;
-import com.l7tech.proxy.util.ClientLogger;
+import java.util.logging.Logger;
+import java.util.logging.Level;
+
 import com.l7tech.common.BuildInfo;
 
 /**
@@ -13,7 +15,7 @@ import com.l7tech.common.BuildInfo;
  * Time: 3:33:14 PM
  */
 public class Main {
-    private static final ClientLogger log = ClientLogger.getInstance(Main.class);
+    private static final Logger log = Logger.getLogger(Main.class.getName());
     private static final int DEFAULT_PORT = 7700;
     private static final int MIN_THREADS = 4;
     private static final int MAX_THREADS = 20;
@@ -51,8 +53,7 @@ public class Main {
         try {
             clientProxy.start();
         } catch (Exception e) {
-            log.error("Unable to start Layer7 Client Proxy: " + e);
-            log.error(e);
+            log.log(Level.SEVERE, "Unable to start Layer7 Client Proxy", e);
             System.exit(2);
         }
 

@@ -26,6 +26,7 @@ import java.security.SignatureException;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
+import java.util.logging.Logger;
 
 /**
  * Utilities for SSL support.
@@ -34,7 +35,7 @@ import java.security.cert.X509Certificate;
  * Time: 10:10:53 AM
  */
 public class SslUtils {
-    private static final ClientLogger log = ClientLogger.getInstance(SslUtils.class);
+    private static final Logger log = Logger.getLogger(SslUtils.class.getName());
 
     /** This is just a dummy body document, used as a placeholder in the password change POST. */
     private static final String PASSWORD_CHANGE_BODY = "<changePasswordAndRevokeClientCertificate/>";

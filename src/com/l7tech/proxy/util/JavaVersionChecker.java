@@ -7,6 +7,8 @@
 package com.l7tech.proxy.util;
 
 import java.util.StringTokenizer;
+import java.util.logging.Logger;
+import java.util.logging.Level;
 
 /**
  * Utilities for checking the Java version in use.
@@ -15,7 +17,7 @@ import java.util.StringTokenizer;
  * Time: 5:26:31 PM
  */
 public class JavaVersionChecker {
-    private static final ClientLogger log = ClientLogger.getInstance(JavaVersionChecker.class);
+    private static final Logger log = Logger.getLogger(JavaVersionChecker.class.getName());
 
     /**
      * Check if the java.version is at least the requested version.
@@ -37,7 +39,7 @@ public class JavaVersionChecker {
             try {
                 got = Integer.parseInt(s);
             } catch (NumberFormatException e) {
-                log.warn("Problem while parsing token #" + (count+1) + " of java.version " + jv  + ": ", e);
+                log.log(Level.WARNING, "Problem while parsing token #" + (count+1) + " of java.version " + jv  + ": ", e);
                 break;
             }
             if (got < targetVersion[count])

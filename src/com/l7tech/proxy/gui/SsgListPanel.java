@@ -2,29 +2,29 @@ package com.l7tech.proxy.gui;
 
 import com.l7tech.common.gui.util.FontUtil;
 import com.l7tech.proxy.ClientProxy;
-import com.l7tech.proxy.processor.MessageProcessor;
 import com.l7tech.proxy.datamodel.*;
+import com.l7tech.proxy.datamodel.exceptions.BadCredentialsException;
 import com.l7tech.proxy.datamodel.exceptions.KeyStoreCorruptException;
 import com.l7tech.proxy.datamodel.exceptions.OperationCanceledException;
-import com.l7tech.proxy.datamodel.exceptions.BadCredentialsException;
-import com.l7tech.proxy.gui.dialogs.SsgPropertyDialog;
 import com.l7tech.proxy.gui.dialogs.PasswordDialog;
+import com.l7tech.proxy.gui.dialogs.SsgPropertyDialog;
 import com.l7tech.proxy.gui.util.IconManager;
-import com.l7tech.proxy.util.ClientLogger;
+import com.l7tech.proxy.processor.MessageProcessor;
 import com.l7tech.proxy.util.SslUtils;
 
+import javax.net.ssl.SSLException;
 import javax.swing.*;
 import javax.swing.table.TableCellRenderer;
-import javax.net.ssl.SSLException;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
-import java.net.PasswordAuthentication;
 import java.io.IOException;
+import java.net.PasswordAuthentication;
 import java.security.KeyStoreException;
-import java.security.GeneralSecurityException;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Panel listing known SSGs and allowing create/edit/delete.
@@ -33,7 +33,7 @@ import java.security.GeneralSecurityException;
  * Time: 3:22:24 PM
  */
 public class SsgListPanel extends JPanel {
-    private final ClientLogger log = ClientLogger.getInstance(SsgListPanel.class);
+    private final Logger log = Logger.getLogger(SsgListPanel.class.getName());
     private SsgTableModel ssgTableModel;
     private JTable ssgTable;
     private Action actionNewSsg;
@@ -371,28 +371,28 @@ public class SsgListPanel extends JPanel {
                                 } catch (OperationCanceledException e1) {
                                     return;
                                 } catch (BadCredentialsException e1) {
-                                    log.warn(e1);
+                                    log.log(Level.WARNING, e1.getMessage(), e1);
                                     Gui.errorMessage("Unable to change your password -- the Gateway reports that your current " +
                                                      "password or client certificate is not valid.");
                                     return;                                    
                                 } catch (Exception e1) {
-                                    log.warn(e1);
+                                    log.log(Level.WARNING, e1.getMessage(), e1);
                                     Gui.errorMessage("Unable to change your password", "Unable to negotiate an SSL connection " +
                                                                                        "with the Gateway.", e1);
                                     return;
                                 }
                             } catch (IOException e1) {
-                                log.warn(e1);
+                                log.log(Level.WARNING, e1.getMessage(), e1);
                                 Gui.errorMessage("Unable to change your password", "The Gateway was unable to change " +
                                                                                    "your password.", e1);
                                 return;
                             } catch (BadCredentialsException e1) {
-                                log.warn(e1);
+                                log.log(Level.WARNING, e1.getMessage(), e1);
                                 Gui.errorMessage("Unable to change your password -- the Gateway reports that your current " +
                                                  "password or client certificate is not valid.");
                                 return;
                             } catch (KeyStoreException e1) {
-                                log.warn(e1);
+                                log.log(Level.WARNING, e1.getMessage(), e1);
                                 Gui.errorMessage("Unable to remove your existing client certificate",
                                                  "There was an error while attempting to remove our local copy of your " +
                                                  "newly-revoked client certificate.", e1);

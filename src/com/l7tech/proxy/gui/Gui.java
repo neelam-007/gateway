@@ -9,7 +9,7 @@ import com.l7tech.proxy.datamodel.SsgManager;
 import com.l7tech.proxy.gui.util.IconManager;
 import com.l7tech.proxy.gui.dialogs.AgentAboutBox;
 import com.l7tech.proxy.util.JavaVersionChecker;
-import com.l7tech.proxy.util.ClientLogger;
+import java.util.logging.Logger;
 import snoozesoft.systray4j.SysTrayMenu;
 import snoozesoft.systray4j.SysTrayMenuIcon;
 import snoozesoft.systray4j.SysTrayMenuItem;
@@ -31,7 +31,7 @@ import java.net.URL;
  * Encapsulates the Client Proxy's user interface. User: mike Date: May 22, 2003 Time: 1:47:04 PM
  */
 public class Gui {
-    private static final ClientLogger log = ClientLogger.getInstance( Gui.class );
+    private static final Logger log = Logger.getLogger( Gui.class.getName() );
     public static final String RESOURCE_PATH = "com/l7tech/proxy/resources";
     public static final String HELP_PATH = "com/l7tech/proxy/resources/helpset/proxy.hs";
     public static final String APP_NAME = "SecureSpan Agent";
@@ -155,7 +155,7 @@ public class Gui {
             // incors.org Kunststoff faq says we need the following line if we want to use Java Web Start:
             UIManager.getLookAndFeelDefaults().put( "ClassLoader", getClass().getClassLoader() );
         } catch ( Exception e ) {
-            log.warn( e );
+            log.log(Level.WARNING, "Unable to update look-and-feel classloader", e);
         }
 
         initSystemTray();

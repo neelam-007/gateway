@@ -16,7 +16,9 @@ import com.l7tech.proxy.datamodel.exceptions.BadCredentialsException;
 import com.l7tech.proxy.datamodel.exceptions.OperationCanceledException;
 import com.l7tech.proxy.datamodel.exceptions.ServerCertificateUntrustedException;
 import com.l7tech.proxy.datamodel.exceptions.KeyStoreCorruptException;
-import com.l7tech.proxy.util.ClientLogger;
+import java.util.logging.Logger;
+import java.util.logging.Level;
+
 import com.l7tech.common.xml.Wsdl;
 import org.apache.commons.httpclient.HttpClient;
 import org.apache.commons.httpclient.UsernamePasswordCredentials;
@@ -42,7 +44,7 @@ import java.security.GeneralSecurityException;
  * Time: 5:12:42 PM
  */
 public class WsdlProxy {
-    private static final ClientLogger log = ClientLogger.getInstance(WsdlProxy.class);
+    private static final Logger log = Logger.getLogger(WsdlProxy.class.getName());
 
     private interface StreamReader {
         Object readStream(InputStream is) throws WSDLException, IOException, SAXException;
@@ -169,7 +171,7 @@ public class WsdlProxy {
                         } catch (GeneralSecurityException e1) {
                             throw new DownloadException("Unable to discover Gateway's server certificate", e1);
                         } catch (BadCredentialsException e1) {
-                            log.warn("Certificate discovery service indicates bad password; setting status to 401 artificially");
+                            log.log(Level.INFO, "Certificate discovery service indicates bad password; setting status to 401 artificially");
                             status = 401; // hack hack hack: fake up a 401 status to trigger password dialog below
                             // FALLTHROUGH -- get new credentials and try again
                         }

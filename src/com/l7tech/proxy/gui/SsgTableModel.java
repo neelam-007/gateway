@@ -5,7 +5,8 @@ import com.l7tech.proxy.datamodel.SsgEvent;
 import com.l7tech.proxy.datamodel.SsgListener;
 import com.l7tech.proxy.datamodel.SsgManager;
 import com.l7tech.proxy.datamodel.exceptions.SsgNotFoundException;
-import com.l7tech.proxy.util.ClientLogger;
+import java.util.logging.Logger;
+import java.util.logging.Level;
 
 import javax.swing.*;
 import javax.swing.table.AbstractTableModel;
@@ -21,7 +22,7 @@ import java.util.TreeSet;
  * Time: 2:48:51 PM
  */
 public class SsgTableModel extends AbstractTableModel implements SsgListener {
-    private static final ClientLogger log = ClientLogger.getInstance(SsgTableModel.class);
+    private static final Logger log = Logger.getLogger(SsgTableModel.class.getName());
     private SsgManager ssgManager;
     private SortedSet model = null;
     private Object[] modelArray = null;
@@ -223,7 +224,7 @@ public class SsgTableModel extends AbstractTableModel implements SsgListener {
         try {
             ssgManager.setDefaultSsg(ssg);
         } catch (SsgNotFoundException e) {
-            log.error(e); // shouldn't ever happen
+            log.log(Level.SEVERE, e.getMessage(), e); // shouldn't ever happen
         }
         ssgManager.onSsgUpdated(ssg);
         if (oldDefault != null)

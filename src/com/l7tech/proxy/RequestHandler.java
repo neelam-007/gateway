@@ -9,7 +9,9 @@ import com.l7tech.proxy.datamodel.*;
 import com.l7tech.proxy.datamodel.exceptions.HttpChallengeRequiredException;
 import com.l7tech.proxy.datamodel.exceptions.SsgNotFoundException;
 import com.l7tech.proxy.processor.MessageProcessor;
-import com.l7tech.proxy.util.ClientLogger;
+import java.util.logging.Logger;
+import java.util.logging.Level;
+
 import org.mortbay.http.HttpException;
 import org.mortbay.http.HttpRequest;
 import org.mortbay.http.HttpResponse;
@@ -37,7 +39,7 @@ import java.util.regex.Pattern;
  * Time: 5:14:26 PM
  */
 public class RequestHandler extends AbstractHttpHandler {
-    private static final ClientLogger log = ClientLogger.getInstance(RequestHandler.class);
+    private static final Logger log = Logger.getLogger(RequestHandler.class.getName());
     private ClientProxy clientProxy;
     private SsgFinder ssgFinder;
     private MessageProcessor messageProcessor;
@@ -102,7 +104,7 @@ public class RequestHandler extends AbstractHttpHandler {
             return new URL("http", request.getHost(), port, request.getURI().toString());
         } catch (MalformedURLException e) {
             // can't happen
-            log.error("Malformed URL from client", e);
+            log.log(Level.WARNING, "Malformed URL from client", e);
             throw new RuntimeException("Malformed URL from client", e);
         }
     }
@@ -318,7 +320,7 @@ public class RequestHandler extends AbstractHttpHandler {
             log.info("Returning challenge");
             throw e;
         } catch (Exception e) {
-            log.error(e);
+            log.log(Level.SEVERE, e.getMessage(), e);
             interceptor.onReplyError(e);
             e.printStackTrace(System.err);
             SsgResponse reply = SsgResponse.makeFaultResponse("Server",
@@ -386,10 +388,10 @@ public class RequestHandler extends AbstractHttpHandler {
             response.commit();
             return;
         } catch (WsdlProxy.ServiceNotFoundException e) {
-            log.error("WSIL proxy request failed: ", e);
+            log.log(Level.WARNING,  "WSIL proxy request failed: ", e);
             throw new HttpException(404, e.getMessage());
         } catch (Exception e) {
-            log.error("WSIL proxy request failed: ", e);
+            log.log(Level.WARNING, "WSIL proxy request failed: ", e);
             throw new HttpException(500, "WSIL proxy request failed: " + e);
         }
     }
@@ -413,10 +415,10 @@ public class RequestHandler extends AbstractHttpHandler {
             response.commit();
             return;
         } catch (WsdlProxy.ServiceNotFoundException e) {
-            log.error("WSDL proxy request failed: ", e);
+            log.log(Level.WARNING, "WSDL proxy request failed", e);
             throw new HttpException(404, e.getMessage());
         } catch (Exception e) {
-            log.error("WSDL proxy request failed: ", e);
+            log.log(Level.WARNING, "WSDL proxy request failed", e);
             throw new HttpException(500, "WSDL proxy request failed: " + e);
         }
     }

@@ -10,13 +10,7 @@ import com.l7tech.common.security.CertificateRequest;
 import com.l7tech.common.security.JceProvider;
 import com.l7tech.common.util.CertificateDownloader;
 import com.l7tech.common.util.FileUtils;
-import com.l7tech.proxy.util.SslUtils;
-import com.l7tech.proxy.datamodel.exceptions.BadCredentialsException;
-import com.l7tech.proxy.datamodel.exceptions.CertificateAlreadyIssuedException;
-import com.l7tech.proxy.datamodel.exceptions.KeyStoreCorruptException;
-import com.l7tech.proxy.datamodel.exceptions.OperationCanceledException;
-import com.l7tech.proxy.datamodel.exceptions.ServerCertificateUntrustedException;
-import com.l7tech.proxy.util.ClientLogger;
+import com.l7tech.proxy.datamodel.exceptions.*;
 import com.l7tech.proxy.util.SslUtils;
 
 import java.io.FileInputStream;
@@ -28,6 +22,8 @@ import java.security.*;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Maintain the SSG-specific KeyStores.
@@ -37,7 +33,7 @@ import java.security.cert.X509Certificate;
  * Time: 7:36:04 PM
  */
 public class SsgKeyStoreManager {
-    private static final ClientLogger log = ClientLogger.getInstance(SsgKeyStoreManager.class);
+    private static final Logger log = Logger.getLogger(SsgKeyStoreManager.class.getName());
     private static final String CLIENT_CERT_ALIAS = "clientCert";
     private static final String SERVER_CERT_ALIAS = "serverCert";
 
@@ -76,7 +72,7 @@ public class SsgKeyStoreManager {
         try {
             return (X509Certificate) getTrustStore(ssg).getCertificate(SERVER_CERT_ALIAS);
         } catch (KeyStoreException e) {
-            log.error("impossible exception", e);  // can't happen; keystore is initialized by getKeyStore()
+            log.log(Level.SEVERE, "impossible exception", e);  // can't happen; keystore is initialized by getKeyStore()
             throw new RuntimeException("impossible exception", e);
         }
     }
@@ -91,7 +87,7 @@ public class SsgKeyStoreManager {
         try {
             return (X509Certificate) getTrustStore(ssg).getCertificate(CLIENT_CERT_ALIAS);
         } catch (KeyStoreException e) {
-            log.error("impossible exception", e);  // can't happen; keystore is initialized by getKeyStore()
+            log.log(Level.SEVERE, "impossible exception", e);  // can't happen; keystore is initialized by getKeyStore()
             throw new RuntimeException("impossible exception", e);
         }
     }
@@ -132,7 +128,7 @@ public class SsgKeyStoreManager {
         try {
             certs = getTrustStore(ssg).getCertificateChain(CLIENT_CERT_ALIAS);
         } catch (KeyStoreException e) {
-            log.error("impossible exception", e);  // can't happen; keystore is initialized by getKeyStore()
+            log.log(Level.SEVERE, "impossible exception", e);  // can't happen; keystore is initialized by getKeyStore()
             throw new RuntimeException("impossible exception", e);
         }
         X509Certificate[] x5certs = new X509Certificate[certs.length];
@@ -140,8 +136,11 @@ public class SsgKeyStoreManager {
             Certificate cert = certs[i];
             if (cert instanceof X509Certificate)
                 x5certs[i] = (X509Certificate) cert;
-            else
-                log.warn("Stored client cert is not X509Certificate: " + cert);
+            else {
+                String msg = "Stored client cert which is not X509Certificate: " + cert;
+                log.log(Level.SEVERE, msg);
+                throw new KeyStoreCorruptException(msg);
+            }
         }
         return x5certs;
     }
@@ -176,10 +175,10 @@ public class SsgKeyStoreManager {
                 ssg.passwordWorkedForPrivateKey(true);
                 return gotKey;
             } catch (KeyStoreException e) {
-                log.error("impossible exception", e);  // can't happen; keystore is initialized by getKeyStore()
+                log.log(Level.SEVERE, "impossible exception", e);  // can't happen; keystore is initialized by getKeyStore()
                 throw new RuntimeException("impossible exception", e);
             } catch (UnrecoverableKeyException e) {
-                log.error("Private key for client cert with Gateway " + ssg + " is unrecoverable with the current password");
+                log.log(Level.SEVERE, "Private key for client cert with Gateway " + ssg + " is unrecoverable with the current password");
                 throw new BadCredentialsException(e);
             }
         }
@@ -220,7 +219,7 @@ public class SsgKeyStoreManager {
                 try {
                     keyStore = KeyStore.getInstance(KEYSTORE_TYPE);
                 } catch (KeyStoreException e) {
-                    log.error("Security provider configuration problem", e);
+                    log.log(Level.SEVERE, "Security provider configuration problem", e);
                     throw new RuntimeException(e); // can't happen unless VM misconfigured
                 }
                 FileInputStream fis = null;
@@ -231,13 +230,13 @@ public class SsgKeyStoreManager {
                     if (e instanceof FileNotFoundException)
                         log.info("Creating new key store " + ssg.getKeyStoreFile() + " for Gateway " + ssg);
                     else {
-                        log.error("Unable to load existing key store " + ssg.getKeyStoreFile() + " for Gateway " + ssg, e);
+                        log.log(Level.SEVERE, "Unable to load existing key store " + ssg.getKeyStoreFile() + " for Gateway " + ssg, e);
                         throw new KeyStoreCorruptException(e);
                     }
                     try {
                         keyStore.load(null, password);
                     } catch (Exception e1) {
-                        log.error("impossible exception", e1);
+                        log.log(Level.SEVERE, "impossible exception", e);  // can't happen; keystore is initialized by getKeyStore()
                         throw new RuntimeException(e1); // can't happen
                     }
                 } finally {
@@ -245,7 +244,7 @@ public class SsgKeyStoreManager {
                         try {
                             fis.close();
                         } catch (IOException e) {
-                            log.error("Impossible IOException while closing an InputStream; will ignore and continue", e);
+                            log.log(Level.SEVERE, "Impossible IOException while closing an InputStream; will ignore and continue", e);
                         }
                 }
                 ssg.keyStore(keyStore);
@@ -270,7 +269,7 @@ public class SsgKeyStoreManager {
                 try {
                     trustStore = KeyStore.getInstance(TRUSTSTORE_TYPE);
                 } catch (KeyStoreException e) {
-                    log.error("Security provider configuration problem", e);
+                    log.log(Level.SEVERE, "Security provider configuration problem", e);
                     throw new RuntimeException(e); // can't happen unless VM misconfigured
                 }
                 FileInputStream fis = null;
@@ -281,13 +280,13 @@ public class SsgKeyStoreManager {
                     if (e instanceof FileNotFoundException)
                         log.info("Creating new trust store " + ssg.getTrustStoreFile() + " for Gateway " + ssg);
                     else {
-                        log.error("Unable to load existing trust store " + ssg.getTrustStoreFile() + " for Gateway " + ssg, e);
+                        log.log(Level.SEVERE, "Unable to load existing trust store " + ssg.getTrustStoreFile() + " for Gateway " + ssg, e);
                         throw new KeyStoreCorruptException(e);
                     }
                     try {
                         trustStore.load(null, TRUSTSTORE_PASSWORD);
                     } catch (Exception e1) {
-                        log.error("impossible exception", e1);
+                        log.log(Level.SEVERE, "impossible exception", e);
                         throw new RuntimeException(e1); // can't happen
                     }
                 } finally {
@@ -295,7 +294,7 @@ public class SsgKeyStoreManager {
                         try {
                             fis.close();
                         } catch (IOException e) {
-                            log.warn("Impossible IOException while closing an InputStream; will ignore and continue", e);
+                            log.log(Level.SEVERE, "Impossible IOException while closing an InputStream; will ignore and continue", e);
                         }
                 }
                 ssg.trustStore(trustStore);

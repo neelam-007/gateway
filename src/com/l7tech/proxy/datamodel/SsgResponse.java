@@ -9,7 +9,9 @@ package com.l7tech.proxy.datamodel;
 import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.security.xml.WssProcessor;
-import com.l7tech.proxy.util.ClientLogger;
+import java.util.logging.Logger;
+import java.util.logging.Level;
+
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
 import org.apache.commons.httpclient.Header;
@@ -25,7 +27,7 @@ import java.io.IOException;
  * Time: 9:48:45 AM
  */
 public class SsgResponse {
-    private static final ClientLogger log = ClientLogger.getInstance(SsgResponse.class);
+    private static final Logger log = Logger.getLogger(SsgResponse.class.getName());
     private Document responseDoc = null;
     private String responseString = null;
     private HttpHeaders headers;
@@ -90,7 +92,7 @@ public class SsgResponse {
         try {
             return getResponseAsString();
         } catch (IOException e) {
-            log.error(e);
+            log.log(Level.SEVERE, e.getMessage(), e);
             return "<SsgResponse toString error: " + e + ">";
         }
     }

@@ -10,7 +10,7 @@ import com.l7tech.proxy.gui.Gui;
 import com.l7tech.proxy.datamodel.SsgManagerStub;
 import com.l7tech.proxy.datamodel.SsgKeyStoreManager;
 import com.l7tech.proxy.datamodel.Ssg;
-import com.l7tech.proxy.util.ClientLogger;
+import java.util.logging.Logger;
 
 import java.security.cert.X509Certificate;
 
@@ -20,7 +20,7 @@ import java.security.cert.X509Certificate;
  * @version 1.0
  */
 public class TrustCertificateDialogTest {
-    private static final ClientLogger log = ClientLogger.getInstance(TrustCertificateDialog.class);
+    private static final Logger log = Logger.getLogger(TrustCertificateDialog.class.getName());
 
     public static void main(String[] args) throws Exception {
         Gui.setInstance(Gui.createGui(null, new SsgManagerStub()));

@@ -11,7 +11,7 @@ import com.l7tech.proxy.datamodel.SsgResponse;
 import com.l7tech.proxy.datamodel.exceptions.*;
 import com.l7tech.proxy.policy.assertion.ClientAssertion;
 import com.l7tech.proxy.policy.assertion.credential.http.ClientHttpClientCert;
-import com.l7tech.proxy.util.ClientLogger;
+import java.util.logging.Logger;
 import org.jaxen.JaxenException;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
@@ -30,7 +30,7 @@ import java.util.List;
  * $Id$
  */
 public class ClientResponseWssIntegrity extends ClientAssertion {
-    private static final ClientLogger log = ClientLogger.getInstance(ClientHttpClientCert.class);
+    private static final Logger log = Logger.getLogger(ClientHttpClientCert.class.getName());
 
     public ClientResponseWssIntegrity(ResponseWssIntegrity data) {
         xmlResponseSecurity = data;

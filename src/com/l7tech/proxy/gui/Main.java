@@ -1,7 +1,7 @@
 package com.l7tech.proxy.gui;
 
 import com.l7tech.proxy.ClientProxy;
-import com.l7tech.proxy.util.ClientLogger;
+import java.util.logging.Logger;
 import com.l7tech.proxy.processor.MessageProcessor;
 import com.l7tech.proxy.datamodel.Managers;
 import com.l7tech.proxy.datamodel.SsgManager;
@@ -19,7 +19,7 @@ import java.net.BindException;
  * Time: 3:33:14 PM
  */
 public class Main {
-    private static final ClientLogger log = ClientLogger.getInstance(Main.class);
+    private static final Logger log = Logger.getLogger(Main.class.getName());
     private static final int DEFAULT_PORT = 7700;
     private static final int MIN_THREADS = 4;
     private static final int MAX_THREADS = 20;

@@ -22,7 +22,8 @@ import java.util.HashMap;
 
 import com.l7tech.common.util.FileUtils;
 import com.l7tech.proxy.datamodel.exceptions.SsgNotFoundException;
-import com.l7tech.proxy.util.ClientLogger;
+import java.util.logging.Logger;
+import java.util.logging.Level;
 
 /**
  * Provides read-only access to the ssgs.xml file.
@@ -32,7 +33,7 @@ import com.l7tech.proxy.util.ClientLogger;
  * Time: 9:32:31 AM
  */
 public class SsgFinderImpl implements SsgFinder {
-    private static final ClientLogger log = ClientLogger.getInstance(SsgFinderImpl.class);
+    private static final Logger log = Logger.getLogger(SsgFinderImpl.class.getName());
 
     protected static final String STORE_DIR = System.getProperty("user.home") + File.separator + ".l7tech";
     protected static final String STORE_FILE = STORE_DIR + File.separator + "ssgs.xml";
@@ -92,9 +93,9 @@ public class SsgFinderImpl implements SsgFinder {
         } catch (FileNotFoundException e) {
             log.info("No Gateway store found -- will create a new one");
         } catch (IOException e) {
-            log.error(e);
+            log.log(Level.SEVERE, "Unable to load Gateway store", e);
         } catch (ClassCastException e) {
-            log.error("Badly formatted Gateway store " + STORE_FILE, e);
+            log.log(Level.SEVERE, "Badly formatted Gateway store " + STORE_FILE, e);
         } finally {
             if (decoder != null)
                 decoder.close();

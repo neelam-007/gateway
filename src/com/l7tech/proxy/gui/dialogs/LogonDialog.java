@@ -8,7 +8,7 @@ package com.l7tech.proxy.gui.dialogs;
 
 import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.common.gui.widgets.ContextMenuTextField;
-import com.l7tech.proxy.util.ClientLogger;
+import java.util.logging.Logger;
 
 import javax.swing.*;
 import javax.swing.text.JTextComponent;
@@ -27,7 +27,7 @@ import java.net.PasswordAuthentication;
  * Copied and modified from Emil's com.l7tech.console.LogonDialog
  */
 public class LogonDialog extends JDialog {
-    static final ClientLogger log = ClientLogger.getInstance(LogonDialog.class);
+    static final Logger log = Logger.getLogger(LogonDialog.class.getName());
     private static final String DFG = "defaultForeground";
 
     /* the PasswordAuthentication instance with user supplied credentials */

@@ -12,7 +12,8 @@ import com.l7tech.proxy.datamodel.SsgKeyStoreManager;
 import com.l7tech.proxy.datamodel.exceptions.BadCredentialsException;
 import com.l7tech.proxy.datamodel.exceptions.OperationCanceledException;
 import com.l7tech.proxy.datamodel.exceptions.KeyStoreCorruptException;
-import com.l7tech.proxy.util.ClientLogger;
+import java.util.logging.Logger;
+import java.util.logging.Level;
 
 import javax.net.ssl.X509KeyManager;
 import java.net.Socket;
@@ -28,7 +29,7 @@ import java.security.cert.X509Certificate;
  * Time: 8:50:49 PM
  */
 public class ClientProxyKeyManager implements X509KeyManager {
-    private static final ClientLogger log = ClientLogger.getInstance(ClientProxyKeyManager.class);
+    private static final Logger log = Logger.getLogger(ClientProxyKeyManager.class.getName());
 
     public PrivateKey getPrivateKey(String s) {
         try {
@@ -41,16 +42,16 @@ public class ClientProxyKeyManager implements X509KeyManager {
             log.info("Returning PrivateKey: " + (pk == null ? "NULL" : "<it's a real key; numbers not shown>"));
             return pk;
         } catch (NoSuchAlgorithmException e) {
-            log.error(e);
+            log.log(Level.SEVERE, "Unable to obtain client certificate private key", e);
             throw new ClientProxySslException(e);
         } catch (BadCredentialsException e) {
-            log.error(e);
+            log.log(Level.SEVERE, "Unable to obtain client certificate private key", e);
             throw new ClientProxySslException(e);
         } catch (OperationCanceledException e) {
-            log.error(e);
+            log.log(Level.SEVERE, "Unable to obtain client certificate private key", e);
             throw new ClientProxySslException(e);
         } catch (KeyStoreCorruptException e) {
-            log.error(e);
+            log.log(Level.SEVERE, "Unable to obtain client certificate private key", e);
             throw new ClientProxySslException(e);
         }
     }
@@ -64,7 +65,7 @@ public class ClientProxyKeyManager implements X509KeyManager {
         try {
             certs = SsgKeyStoreManager.getClientCertificateChain(ssg);
         } catch (KeyStoreCorruptException e) {
-            log.error(e);
+            log.log(Level.SEVERE, "Unable to get certificate chain for Gateway " + ssg, e);
             throw new ClientProxySslException(e);
         }
         log.info("Found " + certs.length + " client certificates with Gateway " + ssg);
@@ -104,7 +105,7 @@ public class ClientProxyKeyManager implements X509KeyManager {
                 return hostname;
             }
         } catch (KeyStoreCorruptException e) {
-            log.error(e);
+            log.log(Level.SEVERE, "Unable to determine client certificate status", e);
             throw new RuntimeException(e);
         } catch (NoSuchAlgorithmException e) {
             throw new RuntimeException(e); // can't happen

@@ -12,7 +12,8 @@ import com.l7tech.proxy.datamodel.Policy;
 import com.l7tech.proxy.datamodel.PolicyAttachmentKey;
 import com.l7tech.proxy.datamodel.Ssg;
 import com.l7tech.proxy.datamodel.SsgResponse;
-import com.l7tech.proxy.util.ClientLogger;
+import java.util.logging.Logger;
+import java.util.logging.Level;
 
 import java.io.IOException;
 
@@ -23,7 +24,7 @@ import java.io.IOException;
  * Time: 10:52:55 AM
  */
 public class MessageLogger implements RequestInterceptor {
-    private final static ClientLogger log = ClientLogger.getInstance(MessageLogger.class);
+    private final static Logger log = Logger.getLogger(MessageLogger.class.getName());
 
     public MessageLogger() {
     }
@@ -36,7 +37,7 @@ public class MessageLogger implements RequestInterceptor {
         try {
             log.info("Received client request: " + XmlUtil.nodeToString(message.getUndecoratedSoapEnvelope()));
         } catch (IOException e) {
-            log.error("Error examining client request", e);
+            log.log(Level.SEVERE, "Error examining client request", e);
         }
     }
 

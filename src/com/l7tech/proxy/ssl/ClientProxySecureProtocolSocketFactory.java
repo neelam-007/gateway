@@ -8,7 +8,7 @@ package com.l7tech.proxy.ssl;
 
 import com.l7tech.proxy.datamodel.CurrentRequest;
 import com.l7tech.proxy.datamodel.Ssg;
-import com.l7tech.proxy.util.ClientLogger;
+import java.util.logging.Logger;
 import org.apache.commons.httpclient.protocol.SecureProtocolSocketFactory;
 
 import javax.net.ssl.SSLSocket;
@@ -24,7 +24,7 @@ import java.net.UnknownHostException;
  * Time: 8:48:21 PM
  */
 public class ClientProxySecureProtocolSocketFactory implements SecureProtocolSocketFactory {
-    private static final ClientLogger log = ClientLogger.getInstance(ClientProxySecureProtocolSocketFactory.class);
+    private static final Logger log = Logger.getLogger(ClientProxySecureProtocolSocketFactory.class.getName());
 
     private static class InstanceHolder {
         private static final ClientProxySecureProtocolSocketFactory INSTANCE = new ClientProxySecureProtocolSocketFactory();

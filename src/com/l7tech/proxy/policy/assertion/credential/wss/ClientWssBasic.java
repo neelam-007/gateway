@@ -13,7 +13,6 @@ import com.l7tech.policy.assertion.credential.wss.WssBasic;
 import com.l7tech.proxy.datamodel.PendingRequest;
 import com.l7tech.proxy.datamodel.SsgResponse;
 import com.l7tech.proxy.datamodel.exceptions.OperationCanceledException;
-import com.l7tech.proxy.util.ClientLogger;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.xml.sax.InputSource;
@@ -22,6 +21,7 @@ import org.xml.sax.SAXException;
 import javax.xml.parsers.DocumentBuilder;
 import java.io.IOException;
 import java.io.StringReader;
+import java.util.logging.Logger;
 
 /**
  * decorates a request with a header that looks like that:
@@ -35,7 +35,7 @@ import java.io.StringReader;
  * @version $Revision$
  */
 public class ClientWssBasic extends ClientWssCredentialSource {
-    public static final ClientLogger log = ClientLogger.getInstance(ClientWssBasic.class);
+    public static final Logger log = Logger.getLogger(ClientWssBasic.class.getName());
 
     public ClientWssBasic( WssBasic data ) {
         this.data = data;
@@ -55,7 +55,7 @@ public class ClientWssBasic extends ClientWssCredentialSource {
         Document soapmsg = request.getDecoratedSoapEnvelope();
         Element headerel = SoapUtil.getOrMakeHeader(soapmsg);
         if ( headerel == null ) {
-            log.warn("Unable to attach WSS UsernameToken to non-SOAP message");
+            log.warning("Unable to attach WSS UsernameToken to non-SOAP message");
             return AssertionStatus.FAILED;
         }
 

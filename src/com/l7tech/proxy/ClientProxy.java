@@ -3,7 +3,9 @@ package com.l7tech.proxy;
 import com.l7tech.common.security.JceProvider;
 import com.l7tech.proxy.datamodel.SsgFinder;
 import com.l7tech.proxy.processor.MessageProcessor;
-import com.l7tech.proxy.util.ClientLogger;
+import java.util.logging.Logger;
+import java.util.logging.Level;
+
 import org.mortbay.http.HttpContext;
 import org.mortbay.http.HttpServer;
 import org.mortbay.http.SocketListener;
@@ -29,7 +31,7 @@ public class ClientProxy {
         JceProvider.init();
     }
 
-    private static final ClientLogger log = ClientLogger.getInstance(ClientProxy.class);
+    private static final Logger log = Logger.getLogger(ClientProxy.class.getName());
     public static final String PROXY_CONFIG =
             System.getProperties().getProperty("user.home") + File.separator + ".l7tech";
 
@@ -146,7 +148,7 @@ public class ClientProxy {
         try {
             getHttpServer().start();
         } catch (IOException e) {
-            log.error("Unable to start HTTP server: ", e);
+            log.log(Level.SEVERE, "Unable to start HTTP server: ", e);
             MultiException me = new MultiException();
             me.add(e);
             throw me;
@@ -156,7 +158,7 @@ public class ClientProxy {
         try {
             url = new URL("http", "127.0.0.1", bindPort, "/");
         } catch (MalformedURLException e) {
-            log.error(e);
+            log.log(Level.SEVERE, e.getMessage(), e);
             throw new MultiException();
         }
 
@@ -178,7 +180,7 @@ public class ClientProxy {
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
             } catch (IOException e) {
-                log.warn("impossible error: ", e); // can't happen
+                log.log(Level.SEVERE, "impossible error: ", e); // can't happen
             }
         }
 

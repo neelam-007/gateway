@@ -15,7 +15,7 @@ import com.l7tech.proxy.datamodel.exceptions.KeyStoreCorruptException;
 import com.l7tech.proxy.datamodel.exceptions.OperationCanceledException;
 import com.l7tech.proxy.datamodel.exceptions.PolicyRetryableException;
 import com.l7tech.proxy.datamodel.exceptions.ServerCertificateUntrustedException;
-import com.l7tech.proxy.util.ClientLogger;
+import java.util.logging.Logger;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.common.security.xml.WssDecorator;
 import org.w3c.dom.Document;
@@ -38,7 +38,7 @@ import java.util.HashMap;
  * Time: 12:04:09 PM
  */
 public class PendingRequest {
-    private static final ClientLogger log = ClientLogger.getInstance(PendingRequest.class);
+    private static final Logger log = Logger.getLogger(PendingRequest.class.getName());
 
     //private ClientProxy clientProxy;
     private final CredentialManager credentialManager = Managers.getCredentialManager();
