@@ -1,6 +1,5 @@
 package com.l7tech.proxy.gui.dialogs;
 
-import com.l7tech.common.gui.IntegerField;
 import com.l7tech.common.gui.NumberField;
 import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.common.gui.widgets.CertificatePanel;
