@@ -26,10 +26,22 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
+ * Uses JBossCache to maintain a distributed cache of message IDs, in order to detect
+ * attempts at replaying the same messages to different cluster nodes.
+ * <p>
+ * This service is used by the {@link com.l7tech.policy.assertion.xmlsec.RequestWssReplayProtection} assertion.
+ *
  * @author alex
+ * @author mike
  * @version $Revision$
  */
 public class DistributedMessageIdManager implements MessageIdManager {
+    /**
+     * Initialize the service using the specified multicast IP address and port
+     * @param address the IP address to use for multicast UDP communications
+     * @param port the UDP port to use for multicast communications
+     * @throws Exception
+     */
     static void initialize(String address, int port) throws Exception {
         if (singleton != null) throw new IllegalStateException("Can only initialize once");
         singleton = new DistributedMessageIdManager(address, port);
@@ -37,6 +49,9 @@ public class DistributedMessageIdManager implements MessageIdManager {
         singleton.start();
     }
 
+    /**
+     * A {@link TimerTask} that periodically purges expired message IDs from the distributed cache and database.
+     */
     private class GarbageCollectionTask extends TimerTask {
         public void run() {
             final long now = System.currentTimeMillis();
@@ -110,6 +125,12 @@ public class DistributedMessageIdManager implements MessageIdManager {
 
     }
 
+    /**
+     * Starts the service, loads any unexpired message IDs from the database into the distributed cache,
+     * and starts the expiration garbage collection timer.
+     *
+     * @throws Exception
+     */
     private void start() throws Exception {
         tree.startService(); // kick start tree cache
 
@@ -151,10 +172,21 @@ public class DistributedMessageIdManager implements MessageIdManager {
         }
     }
 
+    /**
+     * Closes the service (just calls {@link #flush()} at the moment
+     * @throws Exception
+     */
     void close() throws Exception {
         flush();
     }
 
+    /**
+     * Flushes any unexpired message IDs that are in the distributed cache to the database.
+     * <p>
+     * Once each message ID has been flushed, the sign of its expiry time is flipped to negative,
+     * so that the service can avoid writing the same record more than once.
+     * @throws Exception
+     */
     private void flush() throws Exception {
         // if we're the last one out the door, turn out the lights
         HibernatePersistenceContext context = null;
@@ -226,6 +258,10 @@ public class DistributedMessageIdManager implements MessageIdManager {
         return singleton;
     }
 
+    /**
+     * Initializes the service using the given multicast address and UDP port
+     * @see {@link #initialize(String, int)}
+     */
     private DistributedMessageIdManager( String address, int port ) throws Exception {
         Properties prop = new Properties();
         prop.put(Context.INITIAL_CONTEXT_FACTORY, "org.jboss.cache.transaction.DummyContextFactory");
@@ -238,6 +274,11 @@ public class DistributedMessageIdManager implements MessageIdManager {
         tree.setClusterProperties(props);
     }
 
+    /**
+     * Verifies that the specified {@link MessageId} has not been seen by this cluster before
+     * @param prospect the {@link MessageId} to check for uniqueness
+     * @throws DuplicateMessageIdException if the given {@link MessageId} was seen previously
+     */
     public void assertMessageIdIsUnique(MessageId prospect) throws DuplicateMessageIdException {
         UserTransaction tx = null;
         try {
