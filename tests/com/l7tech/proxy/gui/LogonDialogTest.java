@@ -47,7 +47,7 @@ public class LogonDialogTest {
                                                           true,
                                                           false ? "for me to vigorously poop on " : ""); // test longish hint string
             if (pw != null) {
-                log.info("Got username=" + pw.getUserName());
+                log.info("Got user name=" + pw.getUserName());
                 log.info("Got password=" + new String(pw.getPassword()));
             } else {
                 log.info("Dialog was canceled");

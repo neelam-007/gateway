@@ -20,7 +20,7 @@ import java.net.PasswordAuthentication;
 import java.util.logging.Logger;
 
 /**
- * Small dialog box that propts for a username and password.
+ * Small dialog box that propts for a user name and password.
  * This class is the Client Proxy Logon dialog, used by the GuiCredentialManager.
  * Copied and modified from Emil's com.l7tech.console.LogonDialog
  */
@@ -67,7 +67,7 @@ public class LogonDialog extends JDialog {
         // Mustn't lock an empty username
         this.lockUsername = defaultUsername != null && defaultUsername.length() > 0 ? lockUsername : false;
 
-        setTitle("Log on to Gateway");
+        setTitle("Log On to Gateway");
         initComponents();
         getRootPane().setDefaultButton(loginButton);
 
@@ -163,7 +163,7 @@ public class LogonDialog extends JDialog {
         constraints.gridx = 1;
         constraints.gridy = 1;
         constraints.anchor = GridBagConstraints.WEST;
-        constraints.insets = new Insets(7, 5, 5, 5);
+        constraints.insets = new Insets(7, 5, 0, 5);
         constraints.gridwidth = GridBagConstraints.REMAINDER;
         contents.add(reason, constraints);
 
@@ -191,7 +191,7 @@ public class LogonDialog extends JDialog {
         JLabel userNameLabel = new JLabel();
         userNameLabel.setDisplayedMnemonic('U');
         userNameLabel.setLabelFor(userNameTextField);
-        userNameLabel.setText("Username:");
+        userNameLabel.setText("User Name:");
 
         constraints.gridx = 1;
         constraints.gridy = 3;
