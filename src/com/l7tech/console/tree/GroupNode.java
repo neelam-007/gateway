@@ -41,12 +41,12 @@ public class GroupNode extends EntityHeaderNode {
      * @return actions appropriate to the node
      */
     public Action[] getActions() {
-           java.util.List list = new ArrayList();
-         final GroupPropertiesAction groupPropertiesAction = new GroupPropertiesAction(this);
-         groupPropertiesAction.setEnabled(isInternal());
-         list.add(groupPropertiesAction);
+        java.util.List list = new ArrayList();
+        final GroupPropertiesAction groupPropertiesAction = new GroupPropertiesAction(this);
+        //groupPropertiesAction.setEnabled(isInternal());
+        list.add(groupPropertiesAction);
         list.addAll(Arrays.asList(super.getActions()));
-
+        
         return (Action[]) list.toArray(new Action[]{});
     }
 
