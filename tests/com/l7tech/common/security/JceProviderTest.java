@@ -290,12 +290,12 @@ public class JceProviderTest {
         }
 
         // Start jobs
+        long before = System.currentTimeMillis();
         for ( int i = 0; i < jobs.length; i++ ) {
             jobs[i].start();
         }
 
         // Get results
-        long total = 0;
         for ( int i = 0; i < jobs.length; i++ ) {
             Job job = jobs[i];
             job.join();
@@ -303,12 +303,16 @@ public class JceProviderTest {
             log.info("Thread #" + i + ": Timed " + count + " executions of " + name + ": "
                      + time + " ms; " + (((double)time) / count) + " ms per execution; "
                      + (((double)count) / (time + 1)) * 1000 + " per second");
-            total += time;
         }
-        long big = count * concur;
-        log.info("All Threads: Timed " + big + " executions of " + name 
-                 + ": " + total + " ms; " + (((double)total) / big) + " ms per execution; "
-                 + (((double)big) / (total + 1)) * 1000 + " per second\n\n");
+
+        long after = System.currentTimeMillis();
+
+        long num = count * concur;
+        long total = after - before;
+        
+        log.info("All Threads: Timed " + num + " executions of " + name
+                 + ": " + total + " ms; " + (((double)total) / num) + " ms per execution; "
+                 + (((double)num) / (total + 1)) * 1000 + " per second\n\n");
     }
 
     private static final String DFLT_CONCUR = "1";
