@@ -730,7 +730,7 @@ public class MessageProcessor {
             response.getXmlKnob().setProcessorResult(processorResult);
             response.attachHttpResponseKnob(new AbstractHttpResponseKnob() {
                 public void addCookie(Cookie cookie) {
-                    // Agent currently stores cookies in the Ssg, and does not pass them on to the client
+                    // Agent currently stores cookies in the Ssg instance, and does not pass them on to the client
                     throw new UnsupportedOperationException();
                 }
 

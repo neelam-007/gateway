@@ -106,6 +106,7 @@ public class PolicyApplicationContext extends ProcessingContext {
     {
         super(request, response);
         originalDoc = request.getXmlKnob().getDocument(false);
+        getRequest().getXmlKnob().setDocument((Document)originalDoc.cloneNode(true));
         if (ssg == null) throw new NullPointerException("ssg is null");
         if (requestInterceptor == null)
             requestInterceptor = NullRequestInterceptor.INSTANCE;
@@ -134,7 +135,7 @@ public class PolicyApplicationContext extends ProcessingContext {
      */
     public void reset() {
         try {
-            getRequest().getXmlKnob().setDocument(originalDoc);
+            getRequest().getXmlKnob().setDocument((Document)originalDoc.cloneNode(true));
         } catch (SAXException e) {
             throw new CausedIllegalStateException(e); // can't happen, it's always got an XML knob
         }
