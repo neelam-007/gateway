@@ -75,11 +75,14 @@ public class ServerLogHandler extends Handler {
     }
 
     /**
-     * Gets the last records of the table. Ugly shit because this table can grow to unreal proportions.
+     * Gets the last records of the table. Ugly logic because this table can grow to unreal proportions. We first
+     * find a record id for the node involved near the end of the table using timestamp column. Then we play with
+     * a record id range until we find the id range that gives us the number of records wanted.
      * @param nodeId the node id for which we want those records
      * @param maxSize how many records we want
      */
-    private Collection getLastRecords(String nodeId, int maxSize, HibernatePersistenceContext context) throws HibernateException, SQLException {
+    private Collection getLastRecords(String nodeId, int maxSize, HibernatePersistenceContext context)
+                                                                throws HibernateException, SQLException {
         // we need an id near the end of the table, make a query using
         // the logrecords timestamps
         long timewarp = 1;
@@ -106,8 +109,6 @@ public class ServerLogHandler extends Handler {
                 // assume there is nothing at all beyond 5 days old
                 break;
             }
-
-
         }
         if (!recentIdFound) {
             reportException("cannot not get id for recent record for node id " + nodeId, lastException);
@@ -133,42 +134,67 @@ public class ServerLogHandler extends Handler {
                 ++iterations;
                 if (iterations > 10) {
                     reportException("could not round up range (too high " +
-                                    resA + " for " + idA + " and" +
+                                    resA + " for " + idA + " and " +
                                     resB + " for " + idB + ")", null);
                     return Collections.EMPTY_LIST;
                 }
                 range *= 10;
                 idB = idA;
                 idA = idA + range;
+                resB = resA;
                 resA = countRecordsWithIdBiggerThan(idA, nodeId, context);
-                resB = countRecordsWithIdBiggerThan(idB, nodeId, context);
             }
         } else if (resB < maxSize && resA < maxSize) {
-            long range = idA - idB;
+            long step = idA - idB;
+            final long max_step = 500000;
             idA = idB;
-            idB = idB - range;
+            idB = idB - step;
             resA = countRecordsWithIdBiggerThan(idA, nodeId, context);
             resB = countRecordsWithIdBiggerThan(idB, nodeId, context);
             int iterations = 1;
+            boolean lessThanMaxTotal = false;
             while (resB < maxSize && resA < maxSize) {
                 ++iterations;
                 if (iterations > 10) {
-                    reportException("could not round up range (too low " +
-                                    resA + " for " + idA + " and" +
-                                    resB + " for " + idB + ")", null);
-                    return Collections.EMPTY_LIST;
+                    if (resA > 0 || resB > 0) {
+                        lessThanMaxTotal = true;
+                        break;
+                    } else {
+                        reportException("could not round up range (too low " +
+                                        resA + " for " + idA + " and " +
+                                        resB + " for " + idB + ")", null);
+                        return Collections.EMPTY_LIST;
+                    }
                 }
-                range *= 10;
-                idA = idB;
-                idB = idB - range;
-                resA = countRecordsWithIdBiggerThan(idA, nodeId, context);
-                resB = countRecordsWithIdBiggerThan(idB, nodeId, context);
+                step *= 10;
+                // dont let range get out of control
+                if (step > max_step) {
+                    step = max_step;
+                }
+                if (idB == 0) {
+                    // we're done
+                    iterations = 10;
+                } else if ((idB-step) <= 0) {
+                    // one last time
+                    idB = 0;
+                    iterations = 9;
+                } else {
+                    idA = idB;
+                    idB = idB - step;
+                    resA = resB;
+                    resB = countRecordsWithIdBiggerThan(idB, nodeId, context);
+                }
             }
-
-
+            if (lessThanMaxTotal) {
+                String selStatement = "SELECT FROM " + TABLE_NAME + " in class " + SSGLogRecord.class.getName() +
+                                      " WHERE "  + TABLE_NAME + "." + OID_COLNAME + " > " + idB + " AND " +
+                                      TABLE_NAME + "." + NODEID_COLNAME + " = \'" + nodeId + "\'";
+                return context.getSession().find(selStatement);
+            }
         }
 
         // at this point, the data is rounded up
+        // binary search
         long ultimateId = -1;
         if (resB > maxSize && resA < maxSize) {
             int iterations = 1;
@@ -180,19 +206,17 @@ public class ServerLogHandler extends Handler {
                 }
                 long midPoint = (idA + idB)/2;
                 int midPointValue = countRecordsWithIdBiggerThan(midPoint, nodeId, context);
-                if (midPointValue == resB || midPointValue == resA) {
-                    ultimateId = midPoint;
-                    break;
-                }
-                else if (midPointValue > maxSize) {
+                if (midPointValue > maxSize) {
                     idB = midPoint;
                 } else if (midPointValue < maxSize) {
                     idA = midPoint;
+                } else {
+                    ultimateId = midPoint;
+                    break;
                 }
                 resA = countRecordsWithIdBiggerThan(idA, nodeId, context);
                 resB = countRecordsWithIdBiggerThan(idB, nodeId, context);
             }
-
         } else if (resB < maxSize && resA > maxSize) {
             // should not get here
             reportException("should not get here 167", null);
@@ -211,10 +235,12 @@ public class ServerLogHandler extends Handler {
         String selStatement = "SELECT FROM " + TABLE_NAME + " in class " + SSGLogRecord.class.getName() + " WHERE "  +
                               TABLE_NAME + "." + OID_COLNAME + " > " + ultimateId + " AND " + TABLE_NAME + "." +
                               NODEID_COLNAME + " = \'" + nodeId + "\'";
-        return context.getSession().find(selStatement);
+        List output = context.getSession().find(selStatement);
+        return output;
     }
 
-    private int countRecordsWithIdBiggerThan(long startId, String nodeId, HibernatePersistenceContext context) throws HibernateException, SQLException {
+    private int countRecordsWithIdBiggerThan(long startId, String nodeId, HibernatePersistenceContext context)
+                                                                        throws HibernateException, SQLException {
         String countselstatement = "SELECT COUNT(*) FROM " + TABLE_NAME + " in class " + SSGLogRecord.class.getName() +
                                    " WHERE "  + TABLE_NAME + "." + OID_COLNAME + " > " + startId + " AND " +
                                    TABLE_NAME + "." + NODEID_COLNAME + " = \'" + nodeId + "\'";
@@ -223,70 +249,110 @@ public class ServerLogHandler extends Handler {
         if (i != null && i.hasNext()) {
             Integer toto = (Integer)i.next();
             return toto.intValue();
-        }
-
-        else return 0;
+        } else return 0;
     }
 
-    public Collection getRecordsInRange(String nodeId, int maxSize, HibernatePersistenceContext context, long startid, long endid) throws HibernateException, SQLException {
+    private int countRecordsInRange(long startId, long endId, String nodeId, HibernatePersistenceContext context)
+                                                                        throws HibernateException, SQLException {
+        String countselstatement = "SELECT COUNT(*) FROM " + TABLE_NAME + " in class " + SSGLogRecord.class.getName() +
+                                   " WHERE "  + TABLE_NAME + "." + OID_COLNAME + " > " + startId + " AND " +
+                                   TABLE_NAME + "." + OID_COLNAME + " < " + endId + " AND " +
+                                   TABLE_NAME + "." + NODEID_COLNAME + " = \'" + nodeId + "\'";
+
+        Iterator i = context.getSession().iterate(countselstatement);
+        if (i != null && i.hasNext()) {
+            Integer toto = (Integer)i.next();
+            return toto.intValue();
+        } else return 0;
+    }
+
+    private Collection getRecordsInRange(String nodeId, int maxSize, HibernatePersistenceContext context,
+                                        long startid, long endid) throws HibernateException, SQLException {
+        //
+        // NOTE
+        // it's ok to use order by limit here because we have other criteria before the node id
+        //
         String selStatement = "SELECT FROM " + TABLE_NAME + " in class " + SSGLogRecord.class.getName() +
                               " WHERE " + TABLE_NAME + "." + OID_COLNAME + " > " + startid +
                               " AND " + TABLE_NAME + "." + OID_COLNAME + " < " + endid + " AND " + TABLE_NAME +
-                              "." + NODEID_COLNAME + " = \'" + nodeId + "\' LIMIT " + maxSize;
+                              "." + NODEID_COLNAME + " = \'" + nodeId + "\' ORDER BY " +
+                              TABLE_NAME + "." + OID_COLNAME + " DESC LIMIT " + maxSize;
         return context.getSession().find(selStatement);
     }
 
     /**
      * we dont have to worry about this query here
      */
-    public Collection getRecordsBeyondHighId(String nodeId, int maxSize, HibernatePersistenceContext context, long startid) throws HibernateException, SQLException {
+    private Collection getRecordsBeyondHighId(String nodeId, int maxSize, HibernatePersistenceContext context,
+                                             long startid) throws HibernateException, SQLException {
+        //
+        // NOTE
+        // it's ok to use order by limit here because we have a "low" criteria before the node id
+        //
         String selStatement = "SELECT FROM " + TABLE_NAME + " in class " + SSGLogRecord.class.getName() +
                               " WHERE " + TABLE_NAME + "." + OID_COLNAME + " > " + startid +
-                              " AND " + TABLE_NAME + "." + NODEID_COLNAME + " = \'" + nodeId + "\' LIMIT " + maxSize;
+                              " AND " + TABLE_NAME + "." + NODEID_COLNAME + " = \'" + nodeId + "\' ORDER BY " +
+                              TABLE_NAME + "." + OID_COLNAME + " DESC LIMIT " + maxSize;
         return context.getSession().find(selStatement);
     }
 
-    public Collection getRecordsBeforeLowId(String nodeId, int maxSize, HibernatePersistenceContext context, long endid) throws HibernateException, SQLException {
-        // NOTE
-        // pretty sure this case is never called by the ssm
-        // todo, optimize if necessary
+    private Collection getRecordsBeforeLowId(String nodeId, int maxSize, HibernatePersistenceContext context,
+                                            long endid) throws HibernateException, SQLException {
+        // find an appropriate range that will give max records closest to endid of size maxSize
+        // round up the id that will provide this
+        long step = maxSize;
+        long idA = endid - step + 1; // the highest possible value
+        long idB = idA - step;
+        int resA = countRecordsInRange(idA, endid, nodeId, context);
+        int resB = countRecordsInRange(idB, endid, nodeId, context);
+
+        // try to count beyond the desired max
+        int iterations = 1;
+        long magicId = -1;
+        while (resB < maxSize) {
+            ++iterations;
+            if (iterations > 10) {
+                // dont do this for ever
+                if (resA == resB) magicId = idA;
+                else magicId = idB;
+                break;
+            }
+            step *= 10;
+            if (step > 500000) step = 500000;
+            idA = idB;
+            idB = idB - step;
+            resA = resB;
+            resB = countRecordsInRange(idB, endid, nodeId, context);
+        }
+        if (resB == maxSize) { // did we get lucky?
+            magicId = idB;
+        } else if (resB > maxSize) { // did we round up the data?
+            // binary search
+            iterations = 1;
+            while (true) {
+                long midpoint = (idA + idB)/2;
+                if (iterations > 10) {
+                    // dont do this for ever
+                    magicId = midpoint;
+                    break;
+                }
+                // peek at the middle
+                int resmid = countRecordsInRange(midpoint, endid, nodeId, context);
+                if (resmid > maxSize) {
+                    idB = midpoint;
+                } else if (resmid < maxSize) {
+                    idA = midpoint;
+                } else {
+                    magicId = midpoint;
+                    break;
+                }
+            }
+        }
         String selStatement = "SELECT FROM " + TABLE_NAME + " in class " + SSGLogRecord.class.getName() +
                               " WHERE " + TABLE_NAME + "." + OID_COLNAME + " < " + endid +
-                              " AND " + TABLE_NAME + "." + NODEID_COLNAME + " = \'" + nodeId + "\' LIMIT " + maxSize;
+                              " AND " + TABLE_NAME + "." + OID_COLNAME + " > " + magicId +
+                              " AND " + TABLE_NAME + "." + NODEID_COLNAME + " = \'" + nodeId + "\'";
         return context.getSession().find(selStatement);
-    }
-
-    // todo, test this new version
-    public Collection getLogRecordsNew(String nodeId, long highMsgNumber, long lowMsgNumber, int size) {
-        HibernatePersistenceContext context = null;
-        try {
-            context = (HibernatePersistenceContext)PersistenceContext.getCurrent();
-        } catch (SQLException e) {
-            reportException("cannot get persistence context", e);
-            return Collections.EMPTY_LIST;
-        }
-        String reqnode = nodeId;
-        if (reqnode == null) reqnode = nodeid;
-        Collection res = null;
-        try {
-            if (lowMsgNumber < 0 && highMsgNumber >= 0) {
-                res = getRecordsBeforeLowId(reqnode, size, context, highMsgNumber);
-            } else if (lowMsgNumber >= 0 && highMsgNumber < 0) {
-                res = getRecordsBeyondHighId(reqnode, size, context, lowMsgNumber);
-            } else if (lowMsgNumber >= 0 && highMsgNumber >= 0) {
-                res = getRecordsInRange(reqnode, size, context, lowMsgNumber, highMsgNumber);
-            } else {
-                res = getLastRecords(reqnode, size, context);
-            }
-        } catch (HibernateException e) {
-            reportException("Error getting log records", e);
-            return Collections.EMPTY_LIST;
-        } catch (SQLException e) {
-            reportException("Error getting log records", e);
-            return Collections.EMPTY_LIST;
-        }
-        if (res == null) return Collections.EMPTY_LIST;
-        return res;
     }
 
     /**
@@ -306,6 +372,39 @@ public class ServerLogHandler extends Handler {
      * @return LogRecord[] the array of log records retrieved
      */
     public Collection getLogRecords(String nodeId, long highMsgNumber, long lowMsgNumber, int size) {
+        HibernatePersistenceContext context = null;
+        try {
+            context = (HibernatePersistenceContext)PersistenceContext.getCurrent();
+        } catch (SQLException e) {
+            reportException("cannot get persistence context", e);
+            return Collections.EMPTY_LIST;
+        }
+        String reqnode = nodeId;
+        if (reqnode == null) reqnode = nodeid;
+        Collection res = null;
+        try {
+            if (lowMsgNumber < 0 && highMsgNumber >= 0) {
+                res = getRecordsBeyondHighId(reqnode, size, context, highMsgNumber);
+            } else if (lowMsgNumber >= 0 && highMsgNumber < 0) {
+                res = getRecordsBeforeLowId(reqnode, size, context, lowMsgNumber);
+            } else if (lowMsgNumber >= 0 && highMsgNumber >= 0) {
+                res = getRecordsInRange(reqnode, size, context, lowMsgNumber, highMsgNumber);
+            } else {
+                res = getLastRecords(reqnode, size, context);
+            }
+        } catch (HibernateException e) {
+            reportException("Error getting log records", e);
+            return Collections.EMPTY_LIST;
+        } catch (SQLException e) {
+            reportException("Error getting log records", e);
+            return Collections.EMPTY_LIST;
+        }
+        if (res == null) return Collections.EMPTY_LIST;
+        return res;
+    }
+
+    /*
+    public Collection getLogRecordsOld(String nodeId, long highMsgNumber, long lowMsgNumber, int size) {
         HibernatePersistenceContext context = null;
         try {
             context = (HibernatePersistenceContext)PersistenceContext.getCurrent();
@@ -374,7 +473,7 @@ public class ServerLogHandler extends Handler {
         }
         if (res == null) return Collections.EMPTY_LIST;
         return res;
-    }
+    }*/
 
     public void close() throws SecurityException {
         flusherDeamon.cancel();
