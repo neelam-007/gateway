@@ -38,6 +38,7 @@ public class DistributedMessageIdManager implements MessageIdManager {
             UserTransaction tx = null;
             try {
                 tx = new DummyUserTransaction(DummyTransactionManager.getInstance());
+                tx.begin();
                 Set names = tree.getChildrenNames(MESSAGEID_PARENT_NODE);
                 if (names == null) return;
                 for ( Iterator i = names.iterator(); i.hasNext(); ) {
