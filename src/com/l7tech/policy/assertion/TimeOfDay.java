@@ -52,6 +52,15 @@ public class TimeOfDay implements Comparable {
             return false;
     }
 
+    public int hashCode() {
+        int result;
+        result = _hour;
+        result = 29 * result + _minute;
+        result = 29 * result + _second;
+        result = 29 * result + _secondsSinceMidnight;
+        return result;
+    }
+
     protected final int _hour;
     protected final int _minute;
     protected final int _second;
