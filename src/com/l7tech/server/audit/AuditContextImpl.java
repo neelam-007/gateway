@@ -35,7 +35,7 @@ import java.util.logging.Logger;
 public class AuditContextImpl implements AuditContext {
 
     private static final Logger logger = Logger.getLogger(AuditContextImpl.class.getName());
-    private static int ordinal = 0;
+    private volatile int ordinal = 0;
     private final ServerConfig serverConfig;
 
     public AuditContextImpl(ServerConfig serverConfig, AuditRecordManager auditRecordManager) {
