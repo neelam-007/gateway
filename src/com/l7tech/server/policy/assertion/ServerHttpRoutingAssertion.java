@@ -7,6 +7,7 @@
 package com.l7tech.server.policy.assertion;
 
 import com.l7tech.common.BuildInfo;
+import com.l7tech.common.audit.Auditor;
 import com.l7tech.common.message.MimeKnob;
 import com.l7tech.common.message.TcpKnob;
 import com.l7tech.common.mime.ByteArrayStashManager;
@@ -24,6 +25,8 @@ import com.l7tech.policy.assertion.*;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.common.security.saml.SubjectStatement;
 import com.l7tech.server.transport.http.SslClientTrustManager;
+import com.l7tech.server.audit.AuditContext;
+import com.l7tech.server.AssertionMessages;
 import com.l7tech.service.PublishedService;
 import org.apache.commons.httpclient.*;
 import org.apache.commons.httpclient.methods.PostMethod;
@@ -68,6 +71,7 @@ public class ServerHttpRoutingAssertion extends ServerRoutingAssertion {
         connectionManager.setMaxTotalConnections(max * 10);
         //connectionManager.setConnectionStaleCheckingEnabled( false );
 
+        Auditor auditor = new Auditor(AuditContext.getCurrent(ctx), Logger.getLogger(getClass().getName()));
         try {
             sslContext = SSLContext.getInstance("SSL");
             final SslClientTrustManager trustManager = (SslClientTrustManager)applicationContext.getBean("httpRoutingAssertionTrustManager");
@@ -75,7 +79,7 @@ public class ServerHttpRoutingAssertion extends ServerRoutingAssertion {
             final int timeout = Integer.getInteger(PROP_SSL_SESSION_TIMEOUT, DEFAULT_SSL_SESSION_TIMEOUT).intValue();
             sslContext.getClientSessionContext().setSessionTimeout(timeout);
         } catch (Exception e) {
-            logger.log(Level.SEVERE, "Couldn't initialize SSL Context", e);
+            auditor.logAndAudit(AssertionMessages.SSL_CONTEXT_INIT_FAILED, null, e);
             throw new RuntimeException(e);
         }
     }
@@ -97,6 +101,8 @@ public class ServerHttpRoutingAssertion extends ServerRoutingAssertion {
 
         PostMethod postMethod = null;
         InputStream inputStream = null;
+        Auditor auditor = new Auditor(context.getAuditContext(), Logger.getLogger(getClass().getName()));
+        auditor.logAndAudit(AssertionMessages.HTTP_ROUTING_ASSERTION);
 
         try {
             try {

@@ -10,6 +10,7 @@ import com.l7tech.common.audit.AdminAuditRecord;
 import com.l7tech.common.audit.AuditDetail;
 import com.l7tech.common.audit.AuditRecord;
 import com.l7tech.common.audit.MessageSummaryAuditRecord;
+import com.l7tech.common.MessageMap;
 import com.l7tech.objectmodel.SaveException;
 import com.l7tech.server.ServerConfig;
 import org.springframework.context.ApplicationContext;
@@ -43,12 +44,15 @@ public class AuditContext {
     public static final Level DEFAULT_MESSAGE_THRESHOLD = Level.WARNING;
     /** Message audit threshold to be used if {@link ServerConfig#PARAM_AUDIT_ADMIN_THRESHOLD} is unset or invalid */
     public static final Level DEFAULT_ADMIN_THRESHOLD = Level.INFO;
+    /** Associated logs threshold to be used if {@link ServerConfig#PARAM_AUDIT_ASSOCIATED_LOGS_THRESHOLD} is unset or invalid */
+    public static final Level DEFAULT_ASSOCIATED_LOGS_THRESHOLD = Level.INFO;
 
     private static final Logger logger = Logger.getLogger(AuditContext.class.getName());
     private static final ThreadLocal contextLocal = new ThreadLocal();
 
     private static Level systemMessageThreshold = DEFAULT_MESSAGE_THRESHOLD;
     private static Level systemAdminThreshold = DEFAULT_ADMIN_THRESHOLD;
+    private static Level associatedLogsThreshold = DEFAULT_ASSOCIATED_LOGS_THRESHOLD;
 
     /**
      * Sets the current {@link AuditRecord} for this context.
@@ -66,7 +70,12 @@ public class AuditContext {
     public void addDetail(AuditDetail detail) {
         if (detail == null) throw new NullPointerException();
         if (closed) throw new IllegalStateException("Can't set the current AuditRecord of a closed AuditContext");
-        details.add(detail);
+
+        Level severity = MessageMap.getInstance().getSeverityLevelById(detail.getMessageId());
+        if(severity == null) throw new RuntimeException("Cannot find the message (id=" + detail.getMessageId() + ")" + " in the Message Map.");
+        if(severity.intValue() >= currentAssociatedLogsThreshold.intValue()) {
+            details.add(detail);
+        }
     }
 
     public void flush() {
@@ -145,6 +154,7 @@ public class AuditContext {
 
     static {
         systemMessageThreshold = getSystemMessageThreshold();
+        associatedLogsThreshold = getAssociatedLogsThreshold();
         String adminLevel = ServerConfig.getInstance().getProperty(ServerConfig.PARAM_AUDIT_ADMIN_THRESHOLD);
         if (adminLevel != null) {
             try {
@@ -172,9 +182,27 @@ public class AuditContext {
         return output;
     }
 
+    public static Level getAssociatedLogsThreshold() {
+        String msgLevel = ServerConfig.getInstance().getProperty(ServerConfig.PARAM_AUDIT_ASSOCIATED_LOGS_THRESHOLD);
+        Level output = null;
+        if (msgLevel != null) {
+            try {
+                output = Level.parse(msgLevel);
+            } catch(IllegalArgumentException e) {
+                logger.warning("Invalid associated logs threshold value '" + msgLevel + "'. Will use default " +
+                               DEFAULT_ASSOCIATED_LOGS_THRESHOLD.getName() + " instead.");
+            }
+        }
+        if (output == null) {
+            output = DEFAULT_ASSOCIATED_LOGS_THRESHOLD;
+        }
+        return output;
+    }
+
     private AuditContext(ApplicationContext ctx) {
         currentAdminThreshold = systemAdminThreshold;
         currentMessageThreshold = systemMessageThreshold;
+        currentAssociatedLogsThreshold = associatedLogsThreshold;
 
         auditRecordManager = (AuditRecordManager)ctx.getBean("auditRecordManager");
         if (auditRecordManager == null) throw new IllegalStateException("Couldn't locate AuditRecordManager");
@@ -198,6 +226,7 @@ public class AuditContext {
 
     private final Level currentMessageThreshold;
     private final Level currentAdminThreshold;
+    private final Level currentAssociatedLogsThreshold;
     private final AuditRecordManager auditRecordManager;
     private boolean flushed = false;
     private boolean closed = false;

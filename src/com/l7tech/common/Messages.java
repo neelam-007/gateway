@@ -21,7 +21,8 @@ public class Messages {
      *
      * BootMessages:              1000 - 1999
      * AuditMessages:             2000 - 2999
-     * MessageProcessingMessage:  3000 - 3999
+     * MessageProcessingMessages: 3000 - 3999
+     * AssertionMessagess:        4000 - 4999
      *
      *
      */
@@ -49,9 +50,9 @@ public class Messages {
         return null;
     }
 
-    public String getSeverityLevelNameById(int id) {
+    public Level getSeverityLevelById(int id) {
         M message = (M) messagesById.get(new Integer(id));
-        if(message != null) return message.getLevelName();
+        if(message != null) return message.getLevel();
         return null;
     }
 }

@@ -46,6 +46,8 @@ public class ServerConfig extends ApplicationObjectSupport {
     public static final String PARAM_AUDIT_ADMIN_THRESHOLD = "auditAdminThreshold";
     public static final String PARAM_AUDIT_PURGE_MINIMUM_AGE = "auditPurgeMinimumAge";
 
+    public static final String PARAM_AUDIT_ASSOCIATED_LOGS_THRESHOLD = "auditAssociatedLogsThreshold";
+
     public static final int DEFAULT_JMS_THREAD_POOL_SIZE = 200;
 
     public static final String PROPS_PATH_PROPERTY = "com.l7tech.server.serverConfigPropertiesPath";

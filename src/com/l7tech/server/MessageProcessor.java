@@ -104,7 +104,7 @@ public class MessageProcessor extends ApplicationObjectSupport {
             throws IOException, PolicyAssertionException, PolicyVersionException
     {
         auditor = new Auditor(AuditContext.getCurrent(getApplicationContext()), Logger.getLogger(getClass().getName()));
-
+        context.setAuditContext(AuditContext.getCurrent(getApplicationContext()));
         try {
             currentContext.set(context);
             return reallyProcessMessage(context);

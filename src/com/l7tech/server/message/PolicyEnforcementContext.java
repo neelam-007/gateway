@@ -14,6 +14,7 @@ import com.l7tech.identity.User;
 import com.l7tech.policy.assertion.AssertionResult;
 import com.l7tech.policy.assertion.RoutingStatus;
 import com.l7tech.server.RequestIdGenerator;
+import com.l7tech.server.audit.AuditContext;
 import com.l7tech.server.policy.assertion.ServerAssertion;
 import com.l7tech.service.PublishedService;
 
@@ -47,6 +48,7 @@ public class PolicyEnforcementContext extends ProcessingContext {
     private boolean isRequestPolicyViolated = false;
     private PublishedService service;
     private final Vector updatedCookies = new Vector();
+    private AuditContext auditContext = null;
 
     public PolicyEnforcementContext(Message request, Message response) {
         this(request, response, null, null);
@@ -70,6 +72,14 @@ public class PolicyEnforcementContext extends ProcessingContext {
 
     public User getAuthenticatedUser() {
         return authenticatedUser;
+    }
+
+    public AuditContext getAuditContext() {
+        return auditContext;
+    }
+
+    public void setAuditContext(AuditContext auditContext) {
+        this.auditContext = auditContext;
     }
 
     public void setAuthenticatedUser(User authenticatedUser) {

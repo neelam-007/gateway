@@ -2,11 +2,13 @@ package com.l7tech.common;
 
 import com.l7tech.server.BootMessages;
 import com.l7tech.server.MessageProcessingMessages;
+import com.l7tech.server.AssertionMessages;
 import com.l7tech.common.audit.AuditMessages;
 
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
+import java.util.logging.Level;
 
 /**
  * <p> Copyright (C) 2004 Layer 7 Technologies Inc.</p>
@@ -22,6 +24,7 @@ public class MessageMap {
         allMessages.add(new BootMessages());
         allMessages.add(new AuditMessages());
         allMessages.add(new MessageProcessingMessages());
+        allMessages.add(new AssertionMessages());
     }
 
     public static MessageMap getInstance() {
@@ -42,14 +45,24 @@ public class MessageMap {
     }
 
     public String getSeverityLevelNameById(int id) {
-        String levelName = null;
+        Level level;
+
+        if((level = getSeverityLevelById(id)) != null) {
+            return level.getName();
+        } else {
+            return null;
+        }
+    }
+
+    public Level getSeverityLevelById(int id) {
+        Level level = null;
         Iterator itr = allMessages.iterator();
         while (itr.hasNext()) {
             Messages messages = (Messages) itr.next();
-            if((levelName = messages.getSeverityLevelNameById(id)) != null) {
+            if((level = messages.getSeverityLevelById(id)) != null) {
                 break;
             }
         }
-        return levelName;
+        return level;
     }
 }
