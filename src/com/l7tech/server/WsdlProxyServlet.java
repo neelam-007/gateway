@@ -77,7 +77,12 @@ public class WsdlProxyServlet extends AuthenticatableHttpServlet {
         // let's see if we can get credentials...
         List users;
         try {
-            users = authenticateRequestBasic(req, resolveService(Long.parseLong(serviceId)));
+            if (serviceId !=null) {
+                users = authenticateRequestBasic(req, resolveService(Long.parseLong(serviceId)));
+            } else {
+                users = authenticateRequestBasic(req);
+            }
+
         } catch (BadCredentialsException e) {
             logger.log(Level.SEVERE, "returning 401 to requestor because invalid creds were provided", e);
             res.sendError(HttpServletResponse.SC_UNAUTHORIZED, e.getMessage());
