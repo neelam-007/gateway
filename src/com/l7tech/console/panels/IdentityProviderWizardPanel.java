@@ -34,20 +34,20 @@ import java.util.*;
 
 
 /**
- * <code>IdentityProviderPanel</code> that represent a step in the wizard
+ * <code>IdentityProviderWizardPanel</code> that represent a step in the wizard
  * <code>WizardStepPanel</code> that collects the published service identities
  * info.
  *
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  * @version 1.0
  */
-public class IdentityProviderPanel extends WizardStepPanel {
+public class IdentityProviderWizardPanel extends WizardStepPanel {
     private DefaultComboBoxModel providersComboBoxModel;
     private ComboBoxModel credentialsLocationComboBoxModel;
     private JCheckBox anonymousAccessCheckBox;
 
-    /** Creates new form IdentityProviderPanel */
-    public IdentityProviderPanel() {
+    /** Creates new form IdentityProviderWizardPanel */
+    public IdentityProviderWizardPanel() {
         initComponents();
         equalizeButtons();
     }
@@ -478,7 +478,7 @@ public class IdentityProviderPanel extends WizardStepPanel {
               this.setFont(new Font("Dialog", Font.PLAIN, 12));
               EntityHeader h = (EntityHeader)value;
               EntityType type = h.getType();
-              ImageIcon icon = IdentityProviderPanel.this.getIcon(type);
+              ImageIcon icon = IdentityProviderWizardPanel.this.getIcon(type);
               if (icon != null) setIcon(icon);
               setText(h.getName());
               return this;

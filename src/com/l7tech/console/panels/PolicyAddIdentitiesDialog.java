@@ -59,7 +59,7 @@ public class PolicyAddIdentitiesDialog extends JDialog {
     AssertionTreeNode targetNode;
     private static final Logger log = Logger.getLogger(PolicyAddIdentitiesDialog.class.getName());
 
-    /** Creates new form IdentityProviderPanel */
+    /** Creates new form PolicyAddIdentitiesDialog */
     public PolicyAddIdentitiesDialog(Frame owner, AssertionTreeNode node) {
         super(owner, true);
         targetNode = node;
@@ -357,7 +357,7 @@ public class PolicyAddIdentitiesDialog extends JDialog {
                         identityAssertions.add(new MemberOfGroup(ip.getConfig().getOid(), g.getName()));
                     }
                 }
-                System.out.println("identitiy assertions size = " + identityAssertions.size());
+
                 JTree tree =
                   (JTree)WindowManager.
                   getInstance().getComponent(PolicyTree.NAME);
@@ -367,7 +367,7 @@ public class PolicyAddIdentitiesDialog extends JDialog {
                     List kids = new ArrayList();
                     kids.addAll(ca.getChildren());
 
-                    for (Iterator idit = identityAssertions.iterator(); it.hasNext();) {
+                    for (Iterator idit = identityAssertions.iterator(); idit.hasNext();) {
                         Assertion ass = (Assertion)idit.next();
                         kids.add(ass);
                         model.
