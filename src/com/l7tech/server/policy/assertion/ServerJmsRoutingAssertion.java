@@ -45,13 +45,12 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion {
             throws IOException, PolicyAssertionException {
         request.setRoutingStatus( RoutingStatus.ATTEMPTED );
         Destination jmsInboundDest = null;
+        MessageProducer jmsProducer = null;
+        MessageConsumer jmsConsumer = null;
 
         try {
             JmsBag bag = getJmsBag();
             Session jmsSession = bag.getSession();
-
-            MessageProducer jmsProducer = null;
-            MessageConsumer jmsConsumer = null;
 
             // Make outbound request
             Message jmsOutboundRequest = makeRequest( request );
@@ -142,6 +141,7 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion {
         } finally {
             try {
                 if ( jmsInboundDest instanceof TemporaryQueue ) {
+                    if ( jmsConsumer != null ) jmsConsumer.close();
                     logger.finer( "Deleting temporary queue" );
                     ((TemporaryQueue)jmsInboundDest).delete();
                 }
@@ -159,7 +159,7 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion {
 
     private Queue getTemporaryResponseQueue() throws JMSException, NamingException,
                                                      JmsConfigException, FindException {
-        return getJmsBag().getSession().createTemporaryQueue();
+        return getJmsBag().getSession().createTemporaryQueue(); // TODO make this thread-local or something
 //        if ( tempResponseQueue == null ) {
 //            JmsBag bag = getJmsBag();
 //            tempResponseQueue = bag.getSession().createTemporaryQueue();
@@ -282,7 +282,15 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion {
     private JmsConnection getRoutedRequestConnection() throws FindException {
         if ( routedRequestConnection == null ) {
             JmsConnectionManager mgr = (JmsConnectionManager)Locator.getDefault().lookup( JmsConnectionManager.class );
-            routedRequestConnection = mgr.findConnectionByPrimaryKey( getRoutedRequestEndpoint().getConnectionOid() );
+            JmsEndpoint endpoint = getRoutedRequestEndpoint();
+            if ( endpoint == null ) {
+                String msg = "JmsRoutingAssertion contains a reference to nonexistent JmsEndpoint #"
+                             + data.getEndpointOid()
+                             + " (" + data.getEndpointName() + ")";
+                logger.severe( msg );
+            } else {
+                routedRequestConnection = mgr.findConnectionByPrimaryKey( endpoint.getConnectionOid() );
+            }
         }
         return routedRequestConnection;
     }
