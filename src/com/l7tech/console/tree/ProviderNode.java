@@ -54,18 +54,30 @@ public class ProviderNode extends EntityHeaderNode {
             options.setInitialProvider(((EntityHeader)obj).getOid());
         }
         list.add(new FindIdentityAction(options));
-        final NewInternalUserAction newUserAction = new NewInternalUserAction(this);
-        final NewGroupAction newGroupAction = new NewGroupAction(this);
+        final Action newUserAction;
+        final NewGroupAction newGroupAction;
 
         IdentityProvider iProvider = getProvider();
-        if (iProvider.getConfig().type() == IdentityProviderType.INTERNAL ||
-                iProvider.getConfig().type() == IdentityProviderType.FEDERATED) {
+
+        if (iProvider.getConfig().type() == IdentityProviderType.INTERNAL) {
+            newUserAction = new NewInternalUserAction(this);
+            newGroupAction = new NewGroupAction(this);
             newUserAction.setEnabled(true);
             newGroupAction.setEnabled(true);
-        } else {
+        } else if (iProvider.getConfig().type() == IdentityProviderType.FEDERATED) {
+            newUserAction = new NewFederatedUserAction(this);
+            newGroupAction = new NewGroupAction(this);
+            newUserAction.setEnabled(true);
+            newGroupAction.setEnabled(true);
+        } else {           
+            // the actions here is dummy as they are always disabled from the beginning
+            // this is currently for LDAP user
+            newUserAction = new NewInternalUserAction(this);
+            newGroupAction = new NewGroupAction(this);
             newUserAction.setEnabled(false);
             newGroupAction.setEnabled(false);
         }
+
 
         list.add(newUserAction);
         list.add(newGroupAction);
