@@ -24,11 +24,12 @@ public class WsdlServicePanel extends WizardStepPanel {
     private JTextField portNameField;
     private JTextField portAddressField;
     private Definition definition;
-
+    private JLabel panelHeader;
 
     public WsdlServicePanel(WizardStepPanel next) {
         super(next);
         setLayout(new BorderLayout());
+        panelHeader.setFont(new java.awt.Font("Dialog", 1, 16));
         /** Set content pane */
         add(mainPanel, BorderLayout.CENTER);
     }
@@ -37,7 +38,7 @@ public class WsdlServicePanel extends WizardStepPanel {
      * @return the wizard step description
      */
     public String getDescription() {
-        return "<html><b>Service</b><br>" +
+        return "<html>" +
           "The service element defines the address (URI) of an endpoint" +
           " and the port where the Web service can be reached.</html>";
     }
@@ -101,7 +102,7 @@ public class WsdlServicePanel extends WizardStepPanel {
         if (s == null || "".equals(s)) {
             portNameField.setText(definition.getQName().getLocalPart() + "Port");
         }
-        bindingLabel.setText(getBinding(definition).getQName().getLocalPart());
+        bindingLabel.setText(getBinding(definition).getQName().getLocalPart());       
     }
 
     /**
@@ -233,11 +234,11 @@ public class WsdlServicePanel extends WizardStepPanel {
         _2.add(_3, new com.intellij.uiDesigner.core.GridConstraints(3, 2, 1, 1, 8, 1, 6, 0, null, new Dimension(150, -1), null));
         final JLabel _4;
         _4 = new JLabel();
-        _4.setText("Name");
+        _4.setText("Name:");
         _2.add(_4, new com.intellij.uiDesigner.core.GridConstraints(3, 1, 1, 1, 8, 1, 0, 0, null, null, null));
         final JLabel _5;
         _5 = new JLabel();
-        _5.setText("Port");
+        _5.setText("Port:");
         _2.add(_5, new com.intellij.uiDesigner.core.GridConstraints(5, 1, 1, 1, 8, 1, 0, 0, null, null, null));
         final JTextField _6;
         _6 = new JTextField();
@@ -246,11 +247,12 @@ public class WsdlServicePanel extends WizardStepPanel {
         _2.add(_6, new com.intellij.uiDesigner.core.GridConstraints(5, 2, 1, 1, 8, 1, 6, 0, null, new Dimension(150, -1), null));
         final JLabel _7;
         _7 = new JLabel();
+        panelHeader = _7;
         _7.setText("Service");
         _2.add(_7, new com.intellij.uiDesigner.core.GridConstraints(1, 1, 1, 1, 8, 0, 0, 0, new Dimension(100, -1), new Dimension(100, -1), null));
         final JLabel _8;
         _8 = new JLabel();
-        _8.setText("Address");
+        _8.setText("Address:");
         _2.add(_8, new com.intellij.uiDesigner.core.GridConstraints(9, 1, 1, 1, 8, 0, 0, 0, null, null, null));
         final JTextField _9;
         _9 = new JTextField();
@@ -261,7 +263,7 @@ public class WsdlServicePanel extends WizardStepPanel {
         _2.add(_10, new com.intellij.uiDesigner.core.GridConstraints(10, 2, 1, 1, 0, 2, 1, 6, null, null, null));
         final JLabel _11;
         _11 = new JLabel();
-        _11.setText("Binding");
+        _11.setText("Binding:");
         _2.add(_11, new com.intellij.uiDesigner.core.GridConstraints(7, 1, 1, 1, 8, 0, 0, 0, null, null, null));
         final JLabel _12;
         _12 = new JLabel();

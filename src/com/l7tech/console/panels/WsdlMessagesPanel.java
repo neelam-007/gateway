@@ -45,6 +45,7 @@ public class WsdlMessagesPanel extends WizardStepPanel {
     private JComboBox partTypesComboBox;
     private CellEditorListener cellEditorListener;
     private DefaultCellEditor messageNameCellEditor;
+    private JLabel panelHeader;
 
     public WsdlMessagesPanel(WizardStepPanel next) {
         super(next);
@@ -55,6 +56,7 @@ public class WsdlMessagesPanel extends WizardStepPanel {
     }
 
     private void initialize() {
+        panelHeader.setFont(new java.awt.Font("Dialog", 1, 16));
         messagesTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         messagesTable.setShowGrid(false);
         JViewport viewport = messagesTableModelTableScrollPane.getViewport();
@@ -189,7 +191,7 @@ public class WsdlMessagesPanel extends WizardStepPanel {
      * @return the wizard step description
      */
     public String getDescription() {
-        return "<html><b>Messages</b><br>" +
+        return "<html>" +
           "The <i>Message</i> element provides a common abstraction for messages passed " +
           "between the client and the server. " +
           "A message consists of one or more logical parts each of which is associated with " +
@@ -530,80 +532,85 @@ public class WsdlMessagesPanel extends WizardStepPanel {
         final JPanel _2;
         _2 = new JPanel();
         mainPanel = _2;
-        _2.setLayout(new com.intellij.uiDesigner.core.GridLayoutManager(9, 5, new Insets(0, 0, 0, 0), -1, -1));
+        _2.setLayout(new com.intellij.uiDesigner.core.GridLayoutManager(10, 5, new Insets(0, 0, 0, 0), -1, -1));
         _1.add(_2, new com.intellij.uiDesigner.core.GridConstraints(0, 0, 1, 1, 0, 3, 3, 3, null, null, null));
         final JLabel _3;
         _3 = new JLabel();
-        _3.setText("Messages");
-        _2.add(_3, new com.intellij.uiDesigner.core.GridConstraints(1, 1, 1, 1, 8, 0, 0, 0, null, null, null));
-        final JLabel _4;
-        _4 = new JLabel();
-        _4.setText("Parts");
-        _2.add(_4, new com.intellij.uiDesigner.core.GridConstraints(5, 2, 1, 2, 8, 0, 0, 0, null, null, null));
+        _3.setText("Parts:");
+        _2.add(_3, new com.intellij.uiDesigner.core.GridConstraints(6, 2, 1, 2, 8, 0, 0, 0, null, null, null));
+        final com.intellij.uiDesigner.core.Spacer _4;
+        _4 = new com.intellij.uiDesigner.core.Spacer();
+        _2.add(_4, new com.intellij.uiDesigner.core.GridConstraints(2, 2, 1, 2, 0, 2, 1, 0, new Dimension(-1, 10), new Dimension(-1, 10), new Dimension(-1, 10)));
         final com.intellij.uiDesigner.core.Spacer _5;
         _5 = new com.intellij.uiDesigner.core.Spacer();
-        _2.add(_5, new com.intellij.uiDesigner.core.GridConstraints(2, 2, 1, 2, 0, 2, 1, 0, new Dimension(-1, 10), new Dimension(-1, 10), new Dimension(-1, 10)));
-        final com.intellij.uiDesigner.core.Spacer _6;
-        _6 = new com.intellij.uiDesigner.core.Spacer();
-        _2.add(_6, new com.intellij.uiDesigner.core.GridConstraints(4, 2, 1, 2, 0, 2, 1, 0, new Dimension(-1, 10), new Dimension(-1, 10), new Dimension(-1, 10)));
-        final JScrollPane _7;
-        _7 = new JScrollPane();
-        partsTableScrollPane = _7;
-        _2.add(_7, new com.intellij.uiDesigner.core.GridConstraints(6, 2, 1, 2, 0, 3, 7, 7, null, null, null));
-        final JTable _8;
-        _8 = new JTable();
-        partsTable = _8;
-        _7.setViewportView(_8);
-        final JPanel _9;
-        _9 = new JPanel();
-        _9.setLayout(new com.intellij.uiDesigner.core.GridLayoutManager(1, 3, new Insets(0, 0, 0, 0), -1, -1));
-        _2.add(_9, new com.intellij.uiDesigner.core.GridConstraints(8, 2, 1, 2, 0, 3, 3, 3, null, null, null));
+        _2.add(_5, new com.intellij.uiDesigner.core.GridConstraints(5, 2, 1, 2, 0, 2, 1, 0, new Dimension(-1, 10), new Dimension(-1, 10), new Dimension(-1, 10)));
+        final JScrollPane _6;
+        _6 = new JScrollPane();
+        partsTableScrollPane = _6;
+        _2.add(_6, new com.intellij.uiDesigner.core.GridConstraints(7, 2, 1, 2, 0, 3, 7, 7, null, null, null));
+        final JTable _7;
+        _7 = new JTable();
+        partsTable = _7;
+        _6.setViewportView(_7);
+        final JPanel _8;
+        _8 = new JPanel();
+        _8.setLayout(new com.intellij.uiDesigner.core.GridLayoutManager(1, 3, new Insets(0, 0, 0, 0), -1, -1));
+        _2.add(_8, new com.intellij.uiDesigner.core.GridConstraints(9, 2, 1, 2, 0, 3, 3, 3, null, null, null));
+        final JButton _9;
+        _9 = new JButton();
+        removeMessagePartButton = _9;
+        _9.setText("Remove");
+        _9.setLabel("Remove");
+        _8.add(_9, new com.intellij.uiDesigner.core.GridConstraints(0, 2, 1, 1, 4, 0, 0, 0, null, null, null));
         final JButton _10;
         _10 = new JButton();
-        removeMessagePartButton = _10;
-        _10.setLabel("Remove");
-        _10.setText("Remove");
-        _9.add(_10, new com.intellij.uiDesigner.core.GridConstraints(0, 2, 1, 1, 4, 0, 0, 0, null, null, null));
-        final JButton _11;
-        _11 = new JButton();
-        addMessagePartButton = _11;
-        _11.setLabel("Add");
-        _11.setText("Add");
-        _9.add(_11, new com.intellij.uiDesigner.core.GridConstraints(0, 1, 1, 1, 4, 0, 0, 0, null, null, null));
+        addMessagePartButton = _10;
+        _10.setText("Add");
+        _10.setLabel("Add");
+        _8.add(_10, new com.intellij.uiDesigner.core.GridConstraints(0, 1, 1, 1, 4, 0, 0, 0, null, null, null));
+        final com.intellij.uiDesigner.core.Spacer _11;
+        _11 = new com.intellij.uiDesigner.core.Spacer();
+        _8.add(_11, new com.intellij.uiDesigner.core.GridConstraints(0, 0, 1, 1, 0, 1, 6, 1, null, null, null));
         final com.intellij.uiDesigner.core.Spacer _12;
         _12 = new com.intellij.uiDesigner.core.Spacer();
-        _9.add(_12, new com.intellij.uiDesigner.core.GridConstraints(0, 0, 1, 1, 0, 1, 6, 1, null, null, null));
-        final com.intellij.uiDesigner.core.Spacer _13;
-        _13 = new com.intellij.uiDesigner.core.Spacer();
-        _2.add(_13, new com.intellij.uiDesigner.core.GridConstraints(7, 2, 1, 2, 0, 2, 1, 0, new Dimension(-1, 10), new Dimension(-1, 10), new Dimension(-1, 10)));
-        final JPanel _14;
-        _14 = new JPanel();
-        _14.setLayout(new com.intellij.uiDesigner.core.GridLayoutManager(3, 1, new Insets(0, 0, 0, 0), -1, -1));
-        _2.add(_14, new com.intellij.uiDesigner.core.GridConstraints(3, 3, 1, 1, 0, 3, 3, 3, null, null, null));
+        _2.add(_12, new com.intellij.uiDesigner.core.GridConstraints(8, 2, 1, 2, 0, 2, 1, 0, new Dimension(-1, 10), new Dimension(-1, 10), new Dimension(-1, 10)));
+        final JPanel _13;
+        _13 = new JPanel();
+        _13.setLayout(new com.intellij.uiDesigner.core.GridLayoutManager(3, 1, new Insets(0, 0, 0, 0), -1, -1));
+        _2.add(_13, new com.intellij.uiDesigner.core.GridConstraints(4, 3, 1, 1, 0, 3, 3, 3, null, null, null));
+        final JButton _14;
+        _14 = new JButton();
+        removeMessageButton = _14;
+        _14.setText("Remove");
+        _14.setLabel("Remove");
+        _14.setActionCommand("AddMessage");
+        _13.add(_14, new com.intellij.uiDesigner.core.GridConstraints(1, 0, 1, 1, 4, 0, 0, 0, null, null, null));
         final JButton _15;
         _15 = new JButton();
-        removeMessageButton = _15;
-        _15.setLabel("Remove");
-        _15.setText("Remove");
-        _15.setActionCommand("AddMessage");
-        _14.add(_15, new com.intellij.uiDesigner.core.GridConstraints(1, 0, 1, 1, 4, 0, 0, 0, null, null, null));
-        final JButton _16;
-        _16 = new JButton();
-        addMessageButton = _16;
-        _16.setLabel("Add");
-        _16.setText("Add");
-        _14.add(_16, new com.intellij.uiDesigner.core.GridConstraints(0, 0, 1, 1, 4, 0, 0, 0, null, null, null));
-        final com.intellij.uiDesigner.core.Spacer _17;
-        _17 = new com.intellij.uiDesigner.core.Spacer();
-        _14.add(_17, new com.intellij.uiDesigner.core.GridConstraints(2, 0, 1, 1, 0, 2, 1, 6, null, null, null));
-        final JScrollPane _18;
-        _18 = new JScrollPane();
-        messagesTableModelTableScrollPane = _18;
-        _2.add(_18, new com.intellij.uiDesigner.core.GridConstraints(3, 2, 1, 1, 0, 3, 7, 7, null, null, null));
-        final JTable _19;
-        _19 = new JTable();
-        messagesTable = _19;
-        _18.setViewportView(_19);
+        addMessageButton = _15;
+        _15.setText("Add");
+        _15.setLabel("Add");
+        _13.add(_15, new com.intellij.uiDesigner.core.GridConstraints(0, 0, 1, 1, 4, 0, 0, 0, null, null, null));
+        final com.intellij.uiDesigner.core.Spacer _16;
+        _16 = new com.intellij.uiDesigner.core.Spacer();
+        _13.add(_16, new com.intellij.uiDesigner.core.GridConstraints(2, 0, 1, 1, 0, 2, 1, 6, null, null, null));
+        final JScrollPane _17;
+        _17 = new JScrollPane();
+        messagesTableModelTableScrollPane = _17;
+        _2.add(_17, new com.intellij.uiDesigner.core.GridConstraints(4, 2, 1, 1, 0, 3, 7, 7, null, null, null));
+        final JTable _18;
+        _18 = new JTable();
+        messagesTable = _18;
+        _17.setViewportView(_18);
+        final JLabel _19;
+        _19 = new JLabel();
+        _19.setText("Message List:");
+        _2.add(_19, new com.intellij.uiDesigner.core.GridConstraints(3, 2, 1, 1, 8, 0, 0, 0, null, null, null));
+        final JLabel _20;
+        _20 = new JLabel();
+        panelHeader = _20;
+        _20.setText("Messages");
+        _2.add(_20, new com.intellij.uiDesigner.core.GridConstraints(1, 1, 1, 1, 8, 0, 0, 0, null, null, null));
     }
 
 

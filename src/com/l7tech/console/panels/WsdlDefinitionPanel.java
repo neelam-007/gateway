@@ -29,6 +29,7 @@ public class WsdlDefinitionPanel extends WizardStepPanel {
     private JTable namespaceDetails;
     private JScrollPane namespaceDetailsScrollPane;
     private DefaultTableModel nameSpaceDetailsModel;
+    private JLabel panelHeader;
 
     public WsdlDefinitionPanel(WizardStepPanel next) {
         super(next);
@@ -39,6 +40,7 @@ public class WsdlDefinitionPanel extends WizardStepPanel {
     }
 
     private void initialize() {
+        panelHeader.setFont(new java.awt.Font("Dialog", 1, 16));
         defaultNameSpaceField.setText(DEFAULT_NAME_SPACE);
         nameSpaceDetailsModel =
           new DefaultTableModel(new String[]{"Prefix", "Namespace"},
@@ -88,7 +90,7 @@ public class WsdlDefinitionPanel extends WizardStepPanel {
      * @return the wizard step description
      */
     public String getDescription() {
-        return "<html><b>Definition</b><br>" +
+        return "<html>" +
           "The root element in the WSDL document, the <i>definitions</i> element, contains" +
           " child elements that define particular service. " +
           "The target namespace distinguishes the definitions in this WSDL documents from" +
@@ -186,11 +188,11 @@ public class WsdlDefinitionPanel extends WizardStepPanel {
         _2.add(_3, new com.intellij.uiDesigner.core.GridConstraints(3, 2, 1, 1, 8, 1, 6, 0, null, new Dimension(150, -1), null));
         final JLabel _4;
         _4 = new JLabel();
-        _4.setText("Name");
+        _4.setText("Name:");
         _2.add(_4, new com.intellij.uiDesigner.core.GridConstraints(3, 1, 1, 1, 8, 1, 0, 0, null, null, null));
         final JLabel _5;
         _5 = new JLabel();
-        _5.setText("Target Namespace");
+        _5.setText("Target Namespace:");
         _2.add(_5, new com.intellij.uiDesigner.core.GridConstraints(5, 1, 1, 1, 8, 1, 0, 0, null, null, null));
         final JTextField _6;
         _6 = new JTextField();
@@ -199,6 +201,7 @@ public class WsdlDefinitionPanel extends WizardStepPanel {
         _2.add(_6, new com.intellij.uiDesigner.core.GridConstraints(5, 2, 1, 1, 8, 1, 6, 0, null, new Dimension(150, -1), null));
         final JLabel _7;
         _7 = new JLabel();
+        panelHeader = _7;
         _7.setText("Definition");
         _2.add(_7, new com.intellij.uiDesigner.core.GridConstraints(1, 1, 1, 1, 8, 0, 0, 0, null, null, null));
         final JPanel _8;
@@ -206,7 +209,7 @@ public class WsdlDefinitionPanel extends WizardStepPanel {
         _2.add(_8, new com.intellij.uiDesigner.core.GridConstraints(1, 2, 1, 1, 0, 3, 3, 3, null, null, null));
         final JLabel _9;
         _9 = new JLabel();
-        _9.setText("Default Namespace");
+        _9.setText("Default Namespace:");
         _2.add(_9, new com.intellij.uiDesigner.core.GridConstraints(7, 1, 1, 1, 8, 0, 0, 0, null, null, null));
         final JTextField _10;
         _10 = new JTextField();
@@ -231,13 +234,13 @@ public class WsdlDefinitionPanel extends WizardStepPanel {
         final JTable _16;
         _16 = new JTable();
         namespaceDetails = _16;
+        _16.setShowHorizontalLines(true);
         _16.setAutoCreateColumnsFromModel(true);
         _16.setShowVerticalLines(true);
-        _16.setShowHorizontalLines(true);
         _15.setViewportView(_16);
         final JLabel _17;
         _17 = new JLabel();
-        _17.setText("Namespace details");
+        _17.setText("Namespace Details:");
         _2.add(_17, new com.intellij.uiDesigner.core.GridConstraints(9, 1, 1, 1, 8, 0, 0, 0, null, null, null));
     }
 

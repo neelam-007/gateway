@@ -18,7 +18,7 @@
         <properties/>
         <border type="none"/>
         <children>
-          <component id="b00b2" class="javax.swing.JLabel">
+          <component id="b00b2" class="javax.swing.JLabel" binding="panelHeader">
             <constraints>
               <xy x="20" y="23" width="46" height="14"/>
               <grid row="1" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0"/>
@@ -29,7 +29,7 @@
           </component>
           <vspacer id="70964">
             <constraints>
-              <xy x="299" y="270" width="11" height="216"/>
+              <xy x="300" y="270" width="11" height="216"/>
               <grid row="12" column="2" row-span="1" col-span="1" vsize-policy="6" hsize-policy="1" anchor="0" fill="2"/>
             </constraints>
           </vspacer>
@@ -44,34 +44,34 @@
           </component>
           <component id="e33e6" class="javax.swing.JLabel">
             <constraints>
-              <xy x="76" y="48" width="458" height="14"/>
+              <xy x="76" y="48" width="460" height="14"/>
               <grid row="2" column="2" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="1"/>
             </constraints>
             <properties>
-              <text value="This WSDL creation wizard will guide you through the steps required to create the Web service."/>
+              <text value="This Wizard will guide you through the steps required to generate WSDL for a new Web service."/>
             </properties>
           </component>
           <component id="574ef" class="javax.swing.JLabel">
             <constraints>
-              <xy x="76" y="138" width="88" height="14"/>
+              <xy x="76" y="138" width="98" height="14"/>
               <grid row="6" column="2" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0"/>
             </constraints>
             <properties>
-              <text value="- service definition"/>
+              <text value="- A service definition"/>
             </properties>
           </component>
           <component id="71565" class="javax.swing.JLabel">
             <constraints>
-              <xy x="76" y="183" width="303" height="14"/>
+              <xy x="76" y="183" width="420" height="14"/>
               <grid row="8" column="2" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0"/>
             </constraints>
             <properties>
-              <text value="- operations, operations messages and message parts involved"/>
+              <text value="- The operations, operations messages, and message parts involved in the Web service"/>
             </properties>
           </component>
           <vspacer id="5ef08">
             <constraints>
-              <xy x="299" y="165" width="11" height="10"/>
+              <xy x="300" y="165" width="11" height="10"/>
               <grid row="7" column="2" row-span="1" col-span="1" vsize-policy="0" hsize-policy="1" anchor="0" fill="2">
                 <minimum-size width="-1" height="10"/>
                 <preferred-size width="-1" height="10"/>
@@ -90,7 +90,7 @@
           </component>
           <vspacer id="7258f">
             <constraints>
-              <xy x="299" y="210" width="11" height="10"/>
+              <xy x="300" y="210" width="11" height="10"/>
               <grid row="9" column="2" row-span="1" col-span="1" vsize-policy="0" hsize-policy="1" anchor="0" fill="2">
                 <minimum-size width="-1" height="10"/>
                 <preferred-size width="-1" height="10"/>
@@ -100,7 +100,7 @@
           </vspacer>
           <vspacer id="7ffc5">
             <constraints>
-              <xy x="299" y="120" width="11" height="10"/>
+              <xy x="300" y="120" width="11" height="10"/>
               <grid row="5" column="2" row-span="1" col-span="1" vsize-policy="0" hsize-policy="1" anchor="0" fill="2">
                 <minimum-size width="-1" height="10"/>
                 <preferred-size width="-1" height="10"/>
@@ -110,7 +110,7 @@
           </vspacer>
           <vspacer id="a6232">
             <constraints>
-              <xy x="299" y="75" width="11" height="10"/>
+              <xy x="300" y="75" width="11" height="10"/>
               <grid row="3" column="2" row-span="1" col-span="1" vsize-policy="0" hsize-policy="1" anchor="0" fill="2">
                 <minimum-size width="-1" height="10"/>
                 <preferred-size width="-1" height="10"/>
@@ -120,17 +120,17 @@
           </vspacer>
           <hspacer id="9be1f">
             <constraints>
-              <xy x="534" y="24" width="468" height="11"/>
+              <xy x="536" y="24" width="466" height="11"/>
               <grid row="1" column="3" row-span="1" col-span="1" vsize-policy="1" hsize-policy="6" anchor="0" fill="1"/>
             </constraints>
           </hspacer>
           <component id="fd002" class="javax.swing.JLabel">
             <constraints>
-              <xy x="76" y="228" width="307" height="14"/>
+              <xy x="76" y="228" width="340" height="14"/>
               <grid row="10" column="2" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0"/>
             </constraints>
             <properties>
-              <text value="- service endpoint address and SOAPAction operation attributes"/>
+              <text value="- A service endpoint address and the SOAPAction operation attributes."/>
             </properties>
           </component>
         </children>

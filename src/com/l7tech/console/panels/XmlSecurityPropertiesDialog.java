@@ -771,8 +771,8 @@ public class XmlSecurityPropertiesDialog extends JDialog {
         final JTable _26;
         _26 = new JTable();
         securedItemsTable = _26;
-        _26.setAutoResizeMode(2);
         _26.setPreferredScrollableViewportSize(new Dimension(-1, -1));
+        _26.setAutoResizeMode(2);
         _25.setViewportView(_26);
         final JPanel _27;
         _27 = new JPanel();

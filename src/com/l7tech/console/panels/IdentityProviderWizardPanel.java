@@ -533,7 +533,7 @@ public class IdentityProviderWizardPanel extends WizardStepPanel {
      * @return the wizard step label
      */
     public String getStepLabel() {
-        return "Access control";
+        return "Access Control";
     }
 
     private boolean isAnonymous() {

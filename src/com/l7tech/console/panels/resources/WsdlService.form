@@ -20,7 +20,7 @@
         <children>
           <component id="84bf7" class="javax.swing.JTextField" binding="nameField">
             <constraints>
-              <xy x="130" y="60" width="703" height="24"/>
+              <xy x="130" y="65" width="703" height="21"/>
               <grid row="3" column="2" row-span="1" col-span="1" vsize-policy="0" hsize-policy="6" anchor="8" fill="1">
                 <preferred-size width="150" height="-1"/>
               </grid>
@@ -29,25 +29,25 @@
           </component>
           <component id="fbe8d" class="javax.swing.JLabel">
             <constraints>
-              <xy x="20" y="63" width="100" height="17"/>
+              <xy x="20" y="68" width="100" height="14"/>
               <grid row="3" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="1"/>
             </constraints>
             <properties>
-              <text value="Name"/>
+              <text value="Name:"/>
             </properties>
           </component>
           <component id="648b6" class="javax.swing.JLabel">
             <constraints>
-              <xy x="20" y="107" width="100" height="17"/>
+              <xy x="20" y="114" width="100" height="14"/>
               <grid row="5" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="1"/>
             </constraints>
             <properties>
-              <text value="Port"/>
+              <text value="Port:"/>
             </properties>
           </component>
           <component id="68188" class="javax.swing.JTextField" binding="portNameField">
             <constraints>
-              <xy x="130" y="104" width="703" height="24"/>
+              <xy x="130" y="111" width="703" height="21"/>
               <grid row="5" column="2" row-span="1" col-span="1" vsize-policy="0" hsize-policy="6" anchor="8" fill="1">
                 <preferred-size width="150" height="-1"/>
               </grid>
@@ -56,9 +56,9 @@
               <text value=""/>
             </properties>
           </component>
-          <component id="b00b2" class="javax.swing.JLabel">
+          <component id="b00b2" class="javax.swing.JLabel" binding="panelHeader">
             <constraints>
-              <xy x="20" y="21" width="100" height="17"/>
+              <xy x="20" y="23" width="100" height="14"/>
               <grid row="1" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0">
                 <minimum-size width="100" height="-1"/>
                 <preferred-size width="100" height="-1"/>
@@ -70,16 +70,16 @@
           </component>
           <component id="b0961" class="javax.swing.JLabel">
             <constraints>
-              <xy x="20" y="191" width="48" height="17"/>
+              <xy x="20" y="205" width="43" height="14"/>
               <grid row="9" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0"/>
             </constraints>
             <properties>
-              <text value="Address"/>
+              <text value="Address:"/>
             </properties>
           </component>
           <component id="8c687" class="javax.swing.JTextField" binding="portAddressField">
             <constraints>
-              <xy x="130" y="188" width="703" height="24"/>
+              <xy x="130" y="202" width="703" height="21"/>
               <grid row="9" column="2" row-span="1" col-span="1" vsize-policy="0" hsize-policy="6" anchor="8" fill="1">
                 <preferred-size width="150" height="-1"/>
               </grid>
@@ -88,22 +88,22 @@
           </component>
           <vspacer id="70964">
             <constraints>
-              <xy x="476" y="212" width="11" height="274"/>
+              <xy x="476" y="223" width="11" height="263"/>
               <grid row="10" column="2" row-span="1" col-span="1" vsize-policy="6" hsize-policy="1" anchor="0" fill="2"/>
             </constraints>
           </vspacer>
           <component id="433a4" class="javax.swing.JLabel">
             <constraints>
-              <xy x="20" y="149" width="44" height="17"/>
+              <xy x="20" y="160" width="34" height="14"/>
               <grid row="7" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0"/>
             </constraints>
             <properties>
-              <text value="Binding"/>
+              <text value="Binding:"/>
             </properties>
           </component>
           <component id="8641c" class="javax.swing.JLabel" binding="bindingLabel">
             <constraints>
-              <xy x="130" y="158" width="0" height="0"/>
+              <xy x="130" y="167" width="0" height="0"/>
               <grid row="7" column="2" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0"/>
             </constraints>
             <properties>
@@ -112,7 +112,7 @@
           </component>
           <vspacer id="1bafd">
             <constraints>
-              <xy x="476" y="173" width="11" height="10"/>
+              <xy x="476" y="187" width="11" height="10"/>
               <grid row="8" column="2" row-span="1" col-span="1" vsize-policy="0" hsize-policy="1" anchor="0" fill="2">
                 <minimum-size width="-1" height="10"/>
                 <preferred-size width="-1" height="10"/>
@@ -122,7 +122,7 @@
           </vspacer>
           <vspacer id="7b24b">
             <constraints>
-              <xy x="476" y="133" width="11" height="10"/>
+              <xy x="476" y="142" width="11" height="10"/>
               <grid row="6" column="2" row-span="1" col-span="1" vsize-policy="0" hsize-policy="1" anchor="0" fill="2">
                 <minimum-size width="-1" height="10"/>
                 <preferred-size width="-1" height="10"/>
@@ -132,7 +132,7 @@
           </vspacer>
           <vspacer id="d4282">
             <constraints>
-              <xy x="476" y="89" width="11" height="10"/>
+              <xy x="476" y="96" width="11" height="10"/>
               <grid row="4" column="2" row-span="1" col-span="1" vsize-policy="0" hsize-policy="1" anchor="0" fill="2">
                 <minimum-size width="-1" height="10"/>
                 <preferred-size width="-1" height="10"/>
@@ -142,7 +142,7 @@
           </vspacer>
           <vspacer id="f1a60">
             <constraints>
-              <xy x="476" y="40" width="11" height="20"/>
+              <xy x="476" y="45" width="11" height="20"/>
               <grid row="2" column="2" row-span="1" col-span="1" vsize-policy="0" hsize-policy="1" anchor="0" fill="2">
                 <minimum-size width="-1" height="10"/>
                 <preferred-size width="-1" height="10"/>

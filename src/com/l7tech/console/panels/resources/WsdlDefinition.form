@@ -20,7 +20,7 @@
         <children>
           <component id="84bf7" class="javax.swing.JTextField" binding="nameField">
             <constraints>
-              <xy x="147" y="60" width="690" height="24"/>
+              <xy x="127" y="65" width="710" height="21"/>
               <grid row="3" column="2" row-span="1" col-span="1" vsize-policy="0" hsize-policy="6" anchor="8" fill="1">
                 <preferred-size width="150" height="-1"/>
               </grid>
@@ -29,25 +29,25 @@
           </component>
           <component id="fbe8d" class="javax.swing.JLabel">
             <constraints>
-              <xy x="20" y="63" width="117" height="17"/>
+              <xy x="20" y="68" width="97" height="14"/>
               <grid row="3" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="1"/>
             </constraints>
             <properties>
-              <text value="Name"/>
+              <text value="Name:"/>
             </properties>
           </component>
           <component id="648b6" class="javax.swing.JLabel">
             <constraints>
-              <xy x="20" y="107" width="117" height="17"/>
+              <xy x="20" y="114" width="97" height="14"/>
               <grid row="5" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="1"/>
             </constraints>
             <properties>
-              <text value="Target Namespace"/>
+              <text value="Target Namespace:"/>
             </properties>
           </component>
           <component id="68188" class="javax.swing.JTextField" binding="targetNameSpaceField">
             <constraints>
-              <xy x="147" y="104" width="690" height="24"/>
+              <xy x="127" y="111" width="710" height="21"/>
               <grid row="5" column="2" row-span="1" col-span="1" vsize-policy="0" hsize-policy="6" anchor="8" fill="1">
                 <preferred-size width="150" height="-1"/>
               </grid>
@@ -56,9 +56,9 @@
               <text value=""/>
             </properties>
           </component>
-          <component id="b00b2" class="javax.swing.JLabel">
+          <component id="b00b2" class="javax.swing.JLabel" binding="panelHeader">
             <constraints>
-              <xy x="20" y="21" width="56" height="17"/>
+              <xy x="20" y="23" width="45" height="14"/>
               <grid row="1" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0"/>
             </constraints>
             <properties>
@@ -68,7 +68,7 @@
           <xy id="236f1" hgap="-1" vgap="-1">
             <margin top="0" left="0" bottom="0" right="0"/>
             <constraints>
-              <xy x="147" y="20" width="690" height="20"/>
+              <xy x="127" y="20" width="710" height="20"/>
               <grid row="1" column="2" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3"/>
             </constraints>
             <properties/>
@@ -77,16 +77,16 @@
           </xy>
           <component id="b0961" class="javax.swing.JLabel">
             <constraints>
-              <xy x="20" y="151" width="117" height="17"/>
+              <xy x="20" y="160" width="97" height="14"/>
               <grid row="7" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0"/>
             </constraints>
             <properties>
-              <text value="Default Namespace"/>
+              <text value="Default Namespace:"/>
             </properties>
           </component>
           <component id="8c687" class="javax.swing.JTextField" binding="defaultNameSpaceField">
             <constraints>
-              <xy x="147" y="148" width="690" height="24"/>
+              <xy x="127" y="157" width="710" height="21"/>
               <grid row="7" column="2" row-span="1" col-span="1" vsize-policy="0" hsize-policy="6" anchor="8" fill="1">
                 <preferred-size width="150" height="-1"/>
               </grid>
@@ -95,7 +95,7 @@
           </component>
           <vspacer id="2912f">
             <constraints>
-              <xy x="486" y="45" width="11" height="10"/>
+              <xy x="476" y="50" width="11" height="10"/>
               <grid row="2" column="2" row-span="1" col-span="1" vsize-policy="0" hsize-policy="1" anchor="0" fill="2">
                 <minimum-size width="-1" height="10"/>
                 <preferred-size width="-1" height="10"/>
@@ -105,7 +105,7 @@
           </vspacer>
           <vspacer id="c5f04">
             <constraints>
-              <xy x="486" y="89" width="11" height="10"/>
+              <xy x="476" y="96" width="11" height="10"/>
               <grid row="4" column="2" row-span="1" col-span="1" vsize-policy="0" hsize-policy="1" anchor="0" fill="2">
                 <minimum-size width="-1" height="10"/>
                 <preferred-size width="-1" height="10"/>
@@ -115,7 +115,7 @@
           </vspacer>
           <vspacer id="afe10">
             <constraints>
-              <xy x="486" y="133" width="11" height="10"/>
+              <xy x="476" y="142" width="11" height="10"/>
               <grid row="6" column="2" row-span="1" col-span="1" vsize-policy="0" hsize-policy="1" anchor="0" fill="2">
                 <minimum-size width="-1" height="10"/>
                 <preferred-size width="-1" height="10"/>
@@ -125,7 +125,7 @@
           </vspacer>
           <vspacer id="9e63a">
             <constraints>
-              <xy x="486" y="177" width="11" height="10"/>
+              <xy x="476" y="188" width="11" height="10"/>
               <grid row="8" column="2" row-span="1" col-span="1" vsize-policy="0" hsize-policy="1" anchor="0" fill="2">
                 <minimum-size width="-1" height="10"/>
                 <preferred-size width="-1" height="10"/>
@@ -135,7 +135,7 @@
           </vspacer>
           <scrollpane id="87443" binding="namespaceDetailsScrollPane">
             <constraints>
-              <xy x="20" y="217" width="817" height="269"/>
+              <xy x="20" y="228" width="817" height="258"/>
               <grid row="10" column="1" row-span="1" col-span="2" vsize-policy="7" hsize-policy="7" anchor="0" fill="3"/>
             </constraints>
             <properties/>
@@ -153,11 +153,11 @@
           </scrollpane>
           <component id="90a3c" class="javax.swing.JLabel">
             <constraints>
-              <xy x="20" y="193" width="111" height="17"/>
+              <xy x="20" y="206" width="94" height="14"/>
               <grid row="9" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0"/>
             </constraints>
             <properties>
-              <text value="Namespace details"/>
+              <text value="Namespace Details:"/>
             </properties>
           </component>
         </children>

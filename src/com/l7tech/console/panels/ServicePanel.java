@@ -245,7 +245,7 @@ public class ServicePanel extends WizardStepPanel {
 
     /** @return the wizard step label    */
     public String getStepLabel() {
-        return "Protected service";
+        return "Web Service URL";
     }
 
     /** todo: we'll need a tree renderer like this when we start doing operation-specific policies. */

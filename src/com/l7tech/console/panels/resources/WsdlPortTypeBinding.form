@@ -20,16 +20,16 @@
         <children>
           <component id="3bed5" class="javax.swing.JLabel">
             <constraints>
-              <xy x="25" y="73" width="35" height="17"/>
+              <xy x="25" y="78" width="31" height="14"/>
               <grid row="3" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0"/>
             </constraints>
             <properties>
-              <text value="Name"/>
+              <text value="Name:"/>
             </properties>
           </component>
           <component id="adff9" class="javax.swing.JTextField" binding="portTypeBindingNameField">
             <constraints>
-              <xy x="144" y="70" width="386" height="24"/>
+              <xy x="119" y="75" width="411" height="21"/>
               <grid row="3" column="2" row-span="1" col-span="1" vsize-policy="0" hsize-policy="6" anchor="8" fill="1">
                 <preferred-size width="150" height="-1"/>
               </grid>
@@ -38,9 +38,9 @@
               <margin top="0" left="0" bottom="0" right="0"/>
             </properties>
           </component>
-          <component id="d04dc" class="javax.swing.JLabel">
+          <component id="d04dc" class="javax.swing.JLabel" binding="panelHeader">
             <constraints>
-              <xy x="25" y="31" width="109" height="17"/>
+              <xy x="25" y="33" width="84" height="14"/>
               <grid row="1" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0"/>
             </constraints>
             <properties>
@@ -49,34 +49,25 @@
           </component>
           <component id="a527f" class="javax.swing.JLabel">
             <constraints>
-              <xy x="144" y="205" width="66" height="17"/>
+              <xy x="119" y="218" width="53" height="14"/>
               <grid row="9" column="2" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0"/>
             </constraints>
             <properties>
-              <text value="Operations"/>
+              <text value="Operations:"/>
             </properties>
           </component>
           <component id="d9170" class="javax.swing.JLabel">
             <constraints>
-              <xy x="25" y="118" width="30" height="17"/>
+              <xy x="25" y="125" width="28" height="14"/>
               <grid row="5" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0"/>
             </constraints>
             <properties>
-              <text value="Style"/>
-            </properties>
-          </component>
-          <component id="9fda7" class="javax.swing.JLabel" binding="portTypeName">
-            <constraints>
-              <xy x="144" y="31" width="120" height="17"/>
-              <grid row="1" column="2" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0"/>
-            </constraints>
-            <properties>
-              <text value="&lt;Port Type Name&gt;"/>
+              <text value="Style:"/>
             </properties>
           </component>
           <component id="db477" class="javax.swing.JComboBox" binding="portTypeBindingStyle">
             <constraints>
-              <xy x="144" y="114" width="100" height="26"/>
+              <xy x="119" y="121" width="100" height="23"/>
               <grid row="5" column="2" row-span="1" col-span="1" vsize-policy="0" hsize-policy="2" anchor="8" fill="0">
                 <minimum-size width="100" height="-1"/>
                 <preferred-size width="100" height="-1"/>
@@ -86,16 +77,16 @@
           </component>
           <component id="7f1a8" class="javax.swing.JLabel">
             <constraints>
-              <xy x="25" y="163" width="60" height="17"/>
+              <xy x="25" y="172" width="51" height="14"/>
               <grid row="7" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0"/>
             </constraints>
             <properties>
-              <text value="Transport"/>
+              <text value="Transport:"/>
             </properties>
           </component>
           <component id="fa0ac" class="javax.swing.JTextField" binding="portTypeBindingTransportField">
             <constraints>
-              <xy x="144" y="160" width="386" height="24"/>
+              <xy x="119" y="169" width="411" height="21"/>
               <grid row="7" column="2" row-span="1" col-span="1" vsize-policy="0" hsize-policy="6" anchor="8" fill="1">
                 <preferred-size width="150" height="-1"/>
               </grid>
@@ -107,7 +98,7 @@
           </component>
           <vspacer id="4567f">
             <constraints>
-              <xy x="331" y="99" width="11" height="10"/>
+              <xy x="319" y="106" width="11" height="10"/>
               <grid row="4" column="2" row-span="1" col-span="1" vsize-policy="0" hsize-policy="1" anchor="0" fill="2">
                 <minimum-size width="-1" height="10"/>
                 <preferred-size width="-1" height="10"/>
@@ -117,7 +108,7 @@
           </vspacer>
           <vspacer id="59c73">
             <constraints>
-              <xy x="331" y="145" width="11" height="10"/>
+              <xy x="319" y="154" width="11" height="10"/>
               <grid row="6" column="2" row-span="1" col-span="1" vsize-policy="0" hsize-policy="1" anchor="0" fill="2">
                 <minimum-size width="-1" height="10"/>
                 <preferred-size width="-1" height="10"/>
@@ -127,7 +118,7 @@
           </vspacer>
           <vspacer id="e60b6">
             <constraints>
-              <xy x="331" y="189" width="11" height="10"/>
+              <xy x="319" y="200" width="11" height="10"/>
               <grid row="8" column="2" row-span="1" col-span="1" vsize-policy="0" hsize-policy="1" anchor="0" fill="2">
                 <minimum-size width="-1" height="10"/>
                 <preferred-size width="-1" height="10"/>
@@ -137,7 +128,7 @@
           </vspacer>
           <vspacer id="a3eb">
             <constraints>
-              <xy x="331" y="55" width="11" height="10"/>
+              <xy x="319" y="60" width="11" height="10"/>
               <grid row="2" column="2" row-span="1" col-span="1" vsize-policy="0" hsize-policy="1" anchor="0" fill="2">
                 <minimum-size width="-1" height="10"/>
                 <preferred-size width="-1" height="10"/>
@@ -147,7 +138,7 @@
           </vspacer>
           <scrollpane id="56eea" binding="bindingOperationsTableScrollPane">
             <constraints>
-              <xy x="144" y="229" width="386" height="60"/>
+              <xy x="119" y="240" width="411" height="49"/>
               <grid row="10" column="2" row-span="1" col-span="1" vsize-policy="7" hsize-policy="7" anchor="0" fill="3"/>
             </constraints>
             <properties/>

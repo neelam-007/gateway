@@ -33,6 +33,7 @@ public class WsdlPortTypeBindingPanel extends WizardStepPanel {
     private JTextField portTypeBindingTransportField; // http://schemas.xmlsoap.org/soap/http
     private JComboBox portTypeBindingStyle;
     private Definition definition;
+    private JLabel panelHeader;
 
     public WsdlPortTypeBindingPanel(WizardStepPanel next) {
         super(next);
@@ -40,6 +41,7 @@ public class WsdlPortTypeBindingPanel extends WizardStepPanel {
     }
 
     private void initialize() {
+        panelHeader.setFont(new java.awt.Font("Dialog", 1, 16));
         setLayout(new BorderLayout());
         JViewport viewport = bindingOperationsTableScrollPane.getViewport();
         viewport.setBackground(bindingOperationsTable.getBackground());
@@ -48,7 +50,7 @@ public class WsdlPortTypeBindingPanel extends WizardStepPanel {
 
         add(mainPanel, BorderLayout.CENTER);
         ComboBoxModel model =
-          new DefaultComboBoxModel(new String[]{"rpc", "document"});
+          new DefaultComboBoxModel(new String[]{"RPC", "Document"});
         portTypeBindingStyle.setModel(model);
         portTypeBindingStyle.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
@@ -65,7 +67,7 @@ public class WsdlPortTypeBindingPanel extends WizardStepPanel {
      * @return the wizard step description
      */
     public String getDescription() {
-        return "<html><b>Port Type Binding</b><br>" +
+        return "<html>" +
           "The <i>binding</i> element contains binding definitions that specify message formatting and" +
           "protocol details. " +
           "The <i>soapAction</i> attribute specifies the value of the SOAPAction header for this operation." +
@@ -118,11 +120,11 @@ public class WsdlPortTypeBindingPanel extends WizardStepPanel {
             throw new IllegalArgumentException("Unexpected type " + settings.getClass());
         }
         PortType portType = getPortType();
-        portTypeName.setText(portType.getQName().getLocalPart());
+//        portTypeName.setText(portType.getQName().getLocalPart());
 
         String s = portTypeBindingNameField.getText();
         if (s == null || "".equals(s)) {
-            portTypeBindingNameField.setText(portTypeName.getText() + "Binding");
+            portTypeBindingNameField.setText(portType.getQName().getLocalPart() + "Binding");
         }
 
         Binding binding = null;
@@ -308,7 +310,7 @@ public class WsdlPortTypeBindingPanel extends WizardStepPanel {
         _1.add(_2, new com.intellij.uiDesigner.core.GridConstraints(0, 0, 1, 1, 0, 3, 3, 3, null, null, null));
         final JLabel _3;
         _3 = new JLabel();
-        _3.setText("Name");
+        _3.setText("Name:");
         _2.add(_3, new com.intellij.uiDesigner.core.GridConstraints(3, 1, 1, 1, 8, 0, 0, 0, null, null, null));
         final JTextField _4;
         _4 = new JTextField();
@@ -317,55 +319,51 @@ public class WsdlPortTypeBindingPanel extends WizardStepPanel {
         _2.add(_4, new com.intellij.uiDesigner.core.GridConstraints(3, 2, 1, 1, 8, 1, 6, 0, null, new Dimension(150, -1), null));
         final JLabel _5;
         _5 = new JLabel();
+        panelHeader = _5;
         _5.setText("Port Type Binding");
         _2.add(_5, new com.intellij.uiDesigner.core.GridConstraints(1, 1, 1, 1, 8, 0, 0, 0, null, null, null));
         final JLabel _6;
         _6 = new JLabel();
-        _6.setText("Operations");
+        _6.setText("Operations:");
         _2.add(_6, new com.intellij.uiDesigner.core.GridConstraints(9, 2, 1, 1, 8, 0, 0, 0, null, null, null));
         final JLabel _7;
         _7 = new JLabel();
-        _7.setText("Style");
+        _7.setText("Style:");
         _2.add(_7, new com.intellij.uiDesigner.core.GridConstraints(5, 1, 1, 1, 8, 0, 0, 0, null, null, null));
-        final JLabel _8;
-        _8 = new JLabel();
-        portTypeName = _8;
-        _8.setText("<Port Type Name>");
-        _2.add(_8, new com.intellij.uiDesigner.core.GridConstraints(1, 2, 1, 1, 8, 0, 0, 0, null, null, null));
-        final JComboBox _9;
-        _9 = new JComboBox();
-        portTypeBindingStyle = _9;
-        _2.add(_9, new com.intellij.uiDesigner.core.GridConstraints(5, 2, 1, 1, 8, 0, 2, 0, new Dimension(100, -1), new Dimension(100, -1), null));
-        final JLabel _10;
-        _10 = new JLabel();
-        _10.setText("Transport");
-        _2.add(_10, new com.intellij.uiDesigner.core.GridConstraints(7, 1, 1, 1, 8, 0, 0, 0, null, null, null));
-        final JTextField _11;
-        _11 = new JTextField();
-        portTypeBindingTransportField = _11;
-        _11.setEditable(false);
-        _11.setText("http://schemas.xmlsoap.org/soap/http");
-        _2.add(_11, new com.intellij.uiDesigner.core.GridConstraints(7, 2, 1, 1, 8, 1, 6, 0, null, new Dimension(150, -1), null));
+        final JComboBox _8;
+        _8 = new JComboBox();
+        portTypeBindingStyle = _8;
+        _2.add(_8, new com.intellij.uiDesigner.core.GridConstraints(5, 2, 1, 1, 8, 0, 2, 0, new Dimension(100, -1), new Dimension(100, -1), null));
+        final JLabel _9;
+        _9 = new JLabel();
+        _9.setText("Transport:");
+        _2.add(_9, new com.intellij.uiDesigner.core.GridConstraints(7, 1, 1, 1, 8, 0, 0, 0, null, null, null));
+        final JTextField _10;
+        _10 = new JTextField();
+        portTypeBindingTransportField = _10;
+        _10.setText("http://schemas.xmlsoap.org/soap/http");
+        _10.setEditable(false);
+        _2.add(_10, new com.intellij.uiDesigner.core.GridConstraints(7, 2, 1, 1, 8, 1, 6, 0, null, new Dimension(150, -1), null));
+        final com.intellij.uiDesigner.core.Spacer _11;
+        _11 = new com.intellij.uiDesigner.core.Spacer();
+        _2.add(_11, new com.intellij.uiDesigner.core.GridConstraints(4, 2, 1, 1, 0, 2, 1, 0, new Dimension(-1, 10), new Dimension(-1, 10), new Dimension(-1, 10)));
         final com.intellij.uiDesigner.core.Spacer _12;
         _12 = new com.intellij.uiDesigner.core.Spacer();
-        _2.add(_12, new com.intellij.uiDesigner.core.GridConstraints(4, 2, 1, 1, 0, 2, 1, 0, new Dimension(-1, 10), new Dimension(-1, 10), new Dimension(-1, 10)));
+        _2.add(_12, new com.intellij.uiDesigner.core.GridConstraints(6, 2, 1, 1, 0, 2, 1, 0, new Dimension(-1, 10), new Dimension(-1, 10), new Dimension(-1, 10)));
         final com.intellij.uiDesigner.core.Spacer _13;
         _13 = new com.intellij.uiDesigner.core.Spacer();
-        _2.add(_13, new com.intellij.uiDesigner.core.GridConstraints(6, 2, 1, 1, 0, 2, 1, 0, new Dimension(-1, 10), new Dimension(-1, 10), new Dimension(-1, 10)));
+        _2.add(_13, new com.intellij.uiDesigner.core.GridConstraints(8, 2, 1, 1, 0, 2, 1, 0, new Dimension(-1, 10), new Dimension(-1, 10), new Dimension(-1, 10)));
         final com.intellij.uiDesigner.core.Spacer _14;
         _14 = new com.intellij.uiDesigner.core.Spacer();
-        _2.add(_14, new com.intellij.uiDesigner.core.GridConstraints(8, 2, 1, 1, 0, 2, 1, 0, new Dimension(-1, 10), new Dimension(-1, 10), new Dimension(-1, 10)));
-        final com.intellij.uiDesigner.core.Spacer _15;
-        _15 = new com.intellij.uiDesigner.core.Spacer();
-        _2.add(_15, new com.intellij.uiDesigner.core.GridConstraints(2, 2, 1, 1, 0, 2, 1, 0, new Dimension(-1, 10), new Dimension(-1, 10), new Dimension(-1, 10)));
-        final JScrollPane _16;
-        _16 = new JScrollPane();
-        bindingOperationsTableScrollPane = _16;
-        _2.add(_16, new com.intellij.uiDesigner.core.GridConstraints(10, 2, 1, 1, 0, 3, 7, 7, null, null, null));
-        final JTable _17;
-        _17 = new JTable();
-        bindingOperationsTable = _17;
-        _16.setViewportView(_17);
+        _2.add(_14, new com.intellij.uiDesigner.core.GridConstraints(2, 2, 1, 1, 0, 2, 1, 0, new Dimension(-1, 10), new Dimension(-1, 10), new Dimension(-1, 10)));
+        final JScrollPane _15;
+        _15 = new JScrollPane();
+        bindingOperationsTableScrollPane = _15;
+        _2.add(_15, new com.intellij.uiDesigner.core.GridConstraints(10, 2, 1, 1, 0, 3, 7, 7, null, null, null));
+        final JTable _16;
+        _16 = new JTable();
+        bindingOperationsTable = _16;
+        _15.setViewportView(_16);
     }
 
 

@@ -29,6 +29,7 @@ public class WsdlPortTypePanel extends WizardStepPanel {
     private JButton removeOperatonButton;
     private Definition definition;
     private JComboBox messagesComboBox = new JComboBox();
+    private JLabel panelHeader;
 
     public WsdlPortTypePanel(WizardStepPanel next) {
         super(next);
@@ -39,6 +40,7 @@ public class WsdlPortTypePanel extends WizardStepPanel {
     }
 
     private void initialize() {
+        panelHeader.setFont(new java.awt.Font("Dialog", 1, 16));
         operationsTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         operationsTable.putClientProperty("terminateEditOnFocusLost", Boolean.TRUE);
 
@@ -63,7 +65,7 @@ public class WsdlPortTypePanel extends WizardStepPanel {
      * @return the wizard step description
      */
     public String getDescription() {
-        return "<html><b>Port Type</b><br>" +
+        return "<html>" +
           "The <i>port type</i> element contains a set of abstract operations and the abstract " +
           "messages involved. " +
           "For RPC-style Web services a <i>portType</i> can be thought as an interface definition " +
@@ -417,7 +419,7 @@ public class WsdlPortTypePanel extends WizardStepPanel {
         _1.add(_2, new com.intellij.uiDesigner.core.GridConstraints(0, 0, 1, 1, 0, 3, 3, 3, null, null, null));
         final JLabel _3;
         _3 = new JLabel();
-        _3.setText("Name");
+        _3.setText("Name:");
         _2.add(_3, new com.intellij.uiDesigner.core.GridConstraints(3, 1, 1, 1, 8, 0, 0, 0, null, null, null));
         final JTextField _4;
         _4 = new JTextField();
@@ -426,7 +428,8 @@ public class WsdlPortTypePanel extends WizardStepPanel {
         _2.add(_4, new com.intellij.uiDesigner.core.GridConstraints(3, 2, 1, 2, 8, 1, 6, 0, null, null, null));
         final JLabel _5;
         _5 = new JLabel();
-        _5.setText("Port Type");
+        panelHeader = _5;
+        _5.setText("Port Type:");
         _2.add(_5, new com.intellij.uiDesigner.core.GridConstraints(1, 1, 1, 1, 8, 0, 0, 0, null, null, null));
         final JScrollPane _6;
         _6 = new JScrollPane();
@@ -462,7 +465,7 @@ public class WsdlPortTypePanel extends WizardStepPanel {
         _2.add(_13, new com.intellij.uiDesigner.core.GridConstraints(4, 2, 1, 1, 0, 2, 1, 0, new Dimension(-1, 10), new Dimension(-1, 10), new Dimension(-1, 10)));
         final JLabel _14;
         _14 = new JLabel();
-        _14.setText("Operations");
+        _14.setText("Operations:");
         _2.add(_14, new com.intellij.uiDesigner.core.GridConstraints(5, 1, 1, 1, 8, 0, 0, 0, null, null, null));
     }
 

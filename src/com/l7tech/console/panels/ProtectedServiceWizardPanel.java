@@ -213,7 +213,7 @@ public class ProtectedServiceWizardPanel extends WizardStepPanel {
 
     /** @return the wizard step label    */
     public String getStepLabel() {
-        return "Service credentials";
+        return "Credential Transportation";
     }
 
 
@@ -389,7 +389,7 @@ public class ProtectedServiceWizardPanel extends WizardStepPanel {
 
     private JButton getButtonChangeUrl() {
         if (buttonChangeUrl == null) {
-            buttonChangeUrl = new JButton("Change");           
+            buttonChangeUrl = new JButton("Change");
             buttonChangeUrl.addActionListener(new ActionListener() {
                 public void actionPerformed(ActionEvent e) {
                     buttonChangeUrl.setPreferredSize(buttonChangeUrl.getSize());

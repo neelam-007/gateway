@@ -13,6 +13,7 @@ import java.awt.*;
  */
 public class WsdlCreateOverviewPanel extends WizardStepPanel {
     private JPanel mainPanel;
+    private JLabel panelHeader;
 
 
     public WsdlCreateOverviewPanel(WizardStepPanel next) {
@@ -20,6 +21,7 @@ public class WsdlCreateOverviewPanel extends WizardStepPanel {
         setLayout(new BorderLayout());
         /** Set content pane */
         add(mainPanel, BorderLayout.CENTER);
+        panelHeader.setFont(new java.awt.Font("Dialog", 1, 16));
     }
 
     /**
@@ -80,6 +82,7 @@ public class WsdlCreateOverviewPanel extends WizardStepPanel {
         _1.add(_2, new com.intellij.uiDesigner.core.GridConstraints(0, 0, 1, 1, 0, 3, 3, 3, null, null, null));
         final JLabel _3;
         _3 = new JLabel();
+        panelHeader = _3;
         _3.setText("Overview");
         _2.add(_3, new com.intellij.uiDesigner.core.GridConstraints(1, 1, 1, 1, 8, 0, 0, 0, null, null, null));
         final com.intellij.uiDesigner.core.Spacer _4;
@@ -91,15 +94,15 @@ public class WsdlCreateOverviewPanel extends WizardStepPanel {
         _2.add(_5, new com.intellij.uiDesigner.core.GridConstraints(4, 2, 1, 1, 8, 0, 0, 0, null, null, null));
         final JLabel _6;
         _6 = new JLabel();
-        _6.setText("This WSDL creation wizard will guide you through the steps required to create the Web service.");
+        _6.setText("This Wizard will guide you through the steps required to generate WSDL for a new Web service.");
         _2.add(_6, new com.intellij.uiDesigner.core.GridConstraints(2, 2, 1, 1, 8, 1, 0, 0, null, null, null));
         final JLabel _7;
         _7 = new JLabel();
-        _7.setText("- service definition");
+        _7.setText("- A service definition");
         _2.add(_7, new com.intellij.uiDesigner.core.GridConstraints(6, 2, 1, 1, 8, 0, 0, 0, null, null, null));
         final JLabel _8;
         _8 = new JLabel();
-        _8.setText("- operations, operations messages and message parts involved");
+        _8.setText("- The operations, operations messages, and message parts involved in the Web service");
         _2.add(_8, new com.intellij.uiDesigner.core.GridConstraints(8, 2, 1, 1, 8, 0, 0, 0, null, null, null));
         final com.intellij.uiDesigner.core.Spacer _9;
         _9 = new com.intellij.uiDesigner.core.Spacer();
@@ -122,7 +125,7 @@ public class WsdlCreateOverviewPanel extends WizardStepPanel {
         _2.add(_14, new com.intellij.uiDesigner.core.GridConstraints(1, 3, 1, 1, 0, 1, 6, 1, null, null, null));
         final JLabel _15;
         _15 = new JLabel();
-        _15.setText("- service endpoint address and SOAPAction operation attributes");
+        _15.setText("- A service endpoint address and the SOAPAction operation attributes.");
         _2.add(_15, new com.intellij.uiDesigner.core.GridConstraints(10, 2, 1, 1, 8, 0, 0, 0, null, null, null));
     }
 
