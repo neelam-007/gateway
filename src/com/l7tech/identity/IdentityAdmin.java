@@ -6,6 +6,7 @@ import com.l7tech.objectmodel.*;
 import java.rmi.Remote;
 import java.rmi.RemoteException;
 import java.security.cert.CertificateEncodingException;
+import java.security.cert.Certificate;
 import java.util.Set;
 
 /**
@@ -73,6 +74,7 @@ public interface IdentityAdmin extends Remote {
      * will also revoke user's password if internal user
      */
     void revokeCert(User user) throws RemoteException, UpdateException, ObjectNotFoundException;
+    void recordNewUserCert(User user, Certificate cert) throws RemoteException, UpdateException;
 
     void testIdProviderConfig(IdentityProviderConfig cfg)
       throws RemoteException, InvalidIdProviderCfgException;

@@ -430,6 +430,21 @@ public class IdentityAdminImpl extends RemoteService implements IdentityAdmin {
 
     }
 
+    public void recordNewUserCert(User user, Certificate cert) throws RemoteException, UpdateException {
+        beginTransaction();
+        try {
+            // revoke the cert in internal CA
+            ClientCertManager manager = (ClientCertManager) Locator.getDefault().lookup(ClientCertManager.class);
+            manager.recordNewUserCert(user, cert);
+        } finally {
+            try {
+                endTransaction();
+            } catch (TransactionException e) {
+                throw new UpdateException(e.toString());
+            }
+        }
+    }
+
     private static SecureRandom secureRandom = null;
     private synchronized SecureRandom getSecureRandom() {
         if (secureRandom != null) return secureRandom;

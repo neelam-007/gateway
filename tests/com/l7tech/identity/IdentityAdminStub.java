@@ -14,6 +14,7 @@ import com.l7tech.server.identity.ldap.LdapConfigTemplateManager;
 
 import java.rmi.RemoteException;
 import java.security.cert.CertificateEncodingException;
+import java.security.cert.Certificate;
 import java.util.*;
 
 /**
@@ -177,6 +178,9 @@ public class IdentityAdminStub implements IdentityAdmin {
     }
 
     public void revokeCert( User user ) throws RemoteException, UpdateException, ObjectNotFoundException {
+    }
+
+    public void recordNewUserCert(User user, Certificate cert) throws RemoteException, UpdateException {
     }
 
     public void testIdProviderConfig( IdentityProviderConfig cfg ) throws RemoteException, InvalidIdProviderCfgException {

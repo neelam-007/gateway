@@ -64,8 +64,12 @@ public class ClientCertManagerRemote implements ClientCertManager {
         throw new RuntimeException("not implemented in stub - this should not be invoked on client side");
     }
 
-    public void recordNewUserCert(User user, Certificate cert) throws UpdateException {
-        throw new RuntimeException("not implemented in stub - this should not be invoked on client side");
+    public void recordNewUserCert(User user, Certificate cert) throws UpdateException  {
+        try {
+            getStub().recordNewUserCert(user, cert);
+        } catch (RemoteException e) {
+            throw new UpdateException("could not resolve remote interface", e);
+        }
     }
 
     protected IdentityAdmin getStub() throws RemoteException {
