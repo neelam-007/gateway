@@ -36,7 +36,7 @@ public class LdapIdentityProviderServer implements com.l7tech.identity.IdentityP
     public boolean authenticate( PrincipalCredentials pc ) {
         if ( pc.getFormat() == CredentialFormat.CLEARTEXT ) {
             // basic authentication
-            return userManager.authenticateBasic( pc.getUser().getName(), new String( pc.getCredentials() ));
+            return userManager.authenticateBasic( pc.getUser().getLogin(), new String( pc.getCredentials() ));
         } else {
             LogManager.getInstance().getSystemLogger().log(Level.SEVERE, "Attempt to authenticate using unsupported method" + pc.getFormat());
             throw new IllegalArgumentException( "Only cleartext credentials are currently supported!" );
