@@ -1,7 +1,6 @@
 package com.l7tech.common.security.xml;
 
 import org.w3c.dom.Element;
-import org.w3c.dom.Text;
 
 import java.security.Key;
 import java.security.NoSuchAlgorithmException;
@@ -82,19 +81,19 @@ public class SecureConversationKeyDeriver {
 
         // get generation
         Element genNode = (Element)((XmlUtil.findChildElementsByName(derivedKeyToken, namespaceURI,  "Generation")).get(0));
-        if(genNode != null) {
-            generation = ((Text)genNode.getFirstChild()).getNodeValue();;
+        if (genNode != null) {
+            generation = XmlUtil.getTextValue(genNode);
         }
         // get length
         Element lenNode = (Element)((XmlUtil.findChildElementsByName(derivedKeyToken, namespaceURI,  "Length")).get(0));
-        if(lenNode != null) {
-            length = ((Text)lenNode.getFirstChild()).getNodeValue();
+        if (lenNode != null) {
+            length = XmlUtil.getTextValue(lenNode);
         }
 
         // get label
         Element labelNode = (Element)((XmlUtil.findChildElementsByName(derivedKeyToken, namespaceURI,  "Label")).get(0));
-        if(labelNode != null) {
-            label = ((Text)labelNode.getFirstChild()).getNodeValue();
+        if (labelNode != null) {
+            label = XmlUtil.getTextValue(labelNode);
         }
 
         // get nonce
@@ -103,7 +102,7 @@ public class SecureConversationKeyDeriver {
                                                                   "Nonce");
         if (nonceNode == null)
             throw new InvalidDocumentFormatException("DerivedKeyToken has no Nonce");
-        nonce = ((Text)nonceNode.getFirstChild()).getNodeValue();
+        nonce = XmlUtil.getTextValue(nonceNode);
 
         byte[] nonceA = new byte[1];
         try {
