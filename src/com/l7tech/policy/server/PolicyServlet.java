@@ -38,6 +38,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.logging.Level;
+import java.util.logging.Logger;
 
 
 /**
@@ -62,6 +63,7 @@ public class PolicyServlet extends HttpServlet {
     public static final String PARAM_CERT_PATH = "CertPath";
 
     public void init( ServletConfig config ) throws ServletException {
+        logger = LogManager.getInstance().getSystemLogger();
         super.init( config );
     }
 
@@ -97,7 +99,7 @@ public class PolicyServlet extends HttpServlet {
             newUrl += httpServletRequest.getRequestURI() + "?" + httpServletRequest.getQueryString();
             httpServletResponse.setHeader(SoapMessageProcessingServlet.POLICYURL_HEADER, newUrl);
             httpServletResponse.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Request must come through SSL. " + newUrl);
-            LogManager.getInstance().getSystemLogger().log(Level.INFO, "Non-anonymous policy requested on in-secure channel (http). Sending 401 back with secure URL to requestor: " + newUrl);
+            logger.log(Level.INFO, "Non-anonymous policy requested on in-secure channel (http). Sending 401 back with secure URL to requestor: " + newUrl);
             return;
         }
         // get credentials and check that they are valid for this policy
@@ -117,9 +119,12 @@ public class PolicyServlet extends HttpServlet {
 
         // THE POLICY SHOULD BE STRIPPED OUT OF ANYTHING THAT THE REQUESTOR SHOULD NOT BE ALLOWED TO SEE
         try {
+            logger.log(Level.INFO, "Policy before filtering: " + targetService.getPolicyXml());
             targetService = FilterManager.getInstance().applyAllFilters(user, targetService);
+            logger.log(Level.INFO, "Policy after filtering: " + ((targetService == null) ? "null" : targetService.getPolicyXml()));
+            if (targetService == null) logger.log(Level.WARNING, "requestor tried to download policy that he should not be allowed to see - will return error");
         } catch (FilteringException e) {
-            LogManager.getInstance().getSystemLogger().log(Level.SEVERE, "Could not filter policy", e);
+            logger.log(Level.SEVERE, "Could not filter policy", e);
             httpServletResponse.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Could not process policy. Consult server logs.");
             return;
         }
@@ -172,7 +177,7 @@ public class PolicyServlet extends HttpServlet {
         response.setContentLength(cert.length);
         response.getOutputStream().write(cert);
         response.flushBuffer();
-        LogManager.getInstance().getSystemLogger().log(Level.INFO, "Sent ssl cert: " + gotpath);
+        logger.log(Level.INFO, "Sent ssl cert: " + gotpath);
     }
 
     private PublishedService resolveService(long oid) {
@@ -185,16 +190,16 @@ public class PolicyServlet extends HttpServlet {
             try {
                 endTransaction();
             } catch ( SQLException se ) {
-                LogManager.getInstance().getSystemLogger().log(Level.WARNING, null, se);
+                logger.log(Level.WARNING, null, se);
             } catch ( TransactionException te ) {
-                LogManager.getInstance().getSystemLogger().log(Level.WARNING, null, te);
+                logger.log(Level.WARNING, null, te);
             }
         }
     }
 
     private void outputPublishedServicePolicy(PublishedService service, HttpServletResponse response) throws IOException {
         if (service == null) {
-            response.sendError(HttpServletResponse.SC_NOT_FOUND, "ERROR cannot resolve target service");
+            response.sendError(HttpServletResponse.SC_NOT_FOUND, "ERROR cannot resolve target service or you are not authorized to consult it");
             return;
         } else {
             response.setContentType("text/xml; charset=utf-8");
@@ -230,16 +235,16 @@ public class PolicyServlet extends HttpServlet {
                         checkInfos.add(new CheckInfo(provider.getConfig().getOid(), user.getPassword()));
                 } catch (FindException e) {
                     // Log it and continue
-                    LogManager.getInstance().getSystemLogger().log(Level.WARNING, null, e);
+                    logger.log(Level.WARNING, null, e);
                 }
             }
         } finally {
             try {
                 endTransaction();
             } catch (SQLException se) {
-                LogManager.getInstance().getSystemLogger().log(Level.WARNING, null, se);
+                logger.log(Level.WARNING, null, se);
             } catch (TransactionException te) {
-                LogManager.getInstance().getSystemLogger().log(Level.WARNING, null, te);
+                logger.log(Level.WARNING, null, te);
             }
         }
 
@@ -275,10 +280,10 @@ public class PolicyServlet extends HttpServlet {
         // com.l7tech.policy.assertion.credential.CredentialSourceAssertion
         Assertion rootassertion = WspReader.parse(policy.getPolicyXml());
         if (findCredentialAssertion(rootassertion) != null) {
-            LogManager.getInstance().getSystemLogger().log(Level.INFO, "Policy does not allow anonymous requests.");
+            logger.log(Level.INFO, "Policy does not allow anonymous requests.");
             return false;
         }
-        LogManager.getInstance().getSystemLogger().log(Level.INFO, "Policy does allow anonymous requests.");
+        logger.log(Level.INFO, "Policy does allow anonymous requests.");
         return true;
     }
 
@@ -311,7 +316,7 @@ public class PolicyServlet extends HttpServlet {
         // get the credentials
         String authorizationHeader = req.getHeader("Authorization");
         if (authorizationHeader == null || authorizationHeader.length() < 1) {
-            LogManager.getInstance().getSystemLogger().log(Level.WARNING, "No authorization header found.");
+            logger.log(Level.WARNING, "No authorization header found.");
             return null;
         }
         HttpBasicCredentialFinder credsFinder = new HttpBasicCredentialFinder();
@@ -319,11 +324,11 @@ public class PolicyServlet extends HttpServlet {
         try {
             creds = credsFinder.findCredentials(authorizationHeader);
         } catch (CredentialFinderException e) {
-            LogManager.getInstance().getSystemLogger().log(Level.SEVERE, "Exception looking for exception.", e);
+            logger.log(Level.SEVERE, "Exception looking for exception.", e);
             return null;
         }
         if (creds == null) {
-            LogManager.getInstance().getSystemLogger().log(Level.WARNING, "No credentials found.");
+            logger.log(Level.WARNING, "No credentials found.");
             return null;
         }
         // we have credentials, attempt to authenticate them
@@ -334,27 +339,28 @@ public class PolicyServlet extends HttpServlet {
             for (Iterator i = providers.iterator(); i.hasNext();) {
                 IdentityProvider provider = (IdentityProvider) i.next();
                 if (provider.authenticate(creds)) {
-                    LogManager.getInstance().getSystemLogger().log(Level.INFO, "Authentication successful for user " + creds.getUser().getLogin() + " on identity provider: " + provider.getConfig().getName());
+                    logger.log(Level.INFO, "Authentication successful for user " + creds.getUser().getLogin() + " on identity provider: " + provider.getConfig().getName());
                     return creds.getUser();
                 }
             }
         } catch (FindException e) {
-            LogManager.getInstance().getSystemLogger().log(Level.SEVERE, "Exception getting id providers.", e);
+            logger.log(Level.SEVERE, "Exception getting id providers.", e);
             return null;
         } finally {
             try {
                 endTransaction();
             } catch ( SQLException se ) {
-                LogManager.getInstance().getSystemLogger().log(Level.WARNING, null, se);
+                logger.log(Level.WARNING, null, se);
             } catch ( TransactionException te ) {
-                LogManager.getInstance().getSystemLogger().log(Level.WARNING, null, te);
+                logger.log(Level.WARNING, null, te);
             }
         }
 
-        LogManager.getInstance().getSystemLogger().log(Level.WARNING, "Creds do not authenticate against any registered id provider.");
+        logger.log(Level.WARNING, "Creds do not authenticate against any registered id provider.");
         return null;
     }
 
     private ServiceManager serviceManagerInstance = null;
+    private Logger logger = null;
 }
 
