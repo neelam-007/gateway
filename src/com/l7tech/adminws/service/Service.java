@@ -1,6 +1,7 @@
 package com.l7tech.adminws.service;
 
 import com.l7tech.service.PublishedService;
+import com.l7tech.service.ServiceManager;
 import com.l7tech.objectmodel.*;
 import com.l7tech.util.Locator;
 
@@ -79,16 +80,20 @@ public class Service {
         try {
             // does that object have a history?
             if (service.getOid() > 0) {
-                getServiceManagerAndBeginTransaction().update(service);
+                // update patch to fix hibernate problem
+                ServiceManager manager = getServiceManagerAndBeginTransaction();
+                PublishedService originalService = manager.findByPrimaryKey(service.getOid());
+                originalService.copyFrom(service);
+                manager.update(originalService);
+                // end of patch
+                // getServiceManagerAndBeginTransaction().update(service);
                 return service.getOid();
             }
             // ... or is it a new object
             else {
                 return getServiceManagerAndBeginTransaction().save(service);
             }
-        } catch (UpdateException e) {
-            throw new java.rmi.RemoteException(e.getMessage(), e);
-        } catch (SaveException e) {
+        } catch (Exception e) {
             throw new java.rmi.RemoteException(e.getMessage(), e);
         } finally {
             endTransaction();
@@ -113,7 +118,7 @@ public class Service {
     // PRIVATES
     // ************************************************
 
-    private com.l7tech.service.ServiceManager getServiceManagerAndBeginTransaction() throws java.rmi.RemoteException {
+    private ServiceManager getServiceManagerAndBeginTransaction() throws java.rmi.RemoteException {
 
         try {
             PersistenceContext.getCurrent().beginTransaction();
