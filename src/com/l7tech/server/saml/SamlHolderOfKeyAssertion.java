@@ -147,7 +147,7 @@ public class SamlHolderOfKeyAssertion extends SamlAssertion {
                 public Element resolveID(Document doc, String s) {
                     if (!s.equals(getAssertionId()))
                         throw new ResolveIdException("SAML signature contains signedinfo reference to unexpected element ID \"" + s + "\"");
-                    return SoapUtil.getElementByWsuId(doc, s);
+                    return assertionElement;
                 }
             });
             Validity validity = sigContext.verify(signature, signingKey);
