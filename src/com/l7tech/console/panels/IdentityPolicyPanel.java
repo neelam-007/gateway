@@ -1,8 +1,5 @@
 package com.l7tech.console.panels;
 
-import com.intellij.uiDesigner.core.GridConstraints;
-import com.intellij.uiDesigner.core.GridLayoutManager;
-import com.intellij.uiDesigner.core.Spacer;
 import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.common.transport.jms.JmsEndpoint;
 import com.l7tech.console.action.Actions;
@@ -13,7 +10,6 @@ import com.l7tech.console.util.TopComponents;
 import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.assertion.credential.CredentialSourceAssertion;
-import com.l7tech.policy.assertion.xmlsec.RequestWssX509Cert;
 import com.l7tech.service.PublishedService;
 
 import javax.swing.*;
@@ -25,8 +21,6 @@ import javax.wsdl.WSDLException;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.awt.event.ItemEvent;
-import java.awt.event.ItemListener;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.security.Principal;
@@ -51,7 +45,6 @@ public class IdentityPolicyPanel extends JPanel {
     private JButton helpButton;
     private JButton defaultUrlButton;
     private JComboBox authMethodComboBox;
-    //private JComboBox xmlSecOptions;
     private JCheckBox sslCheckBox;
     private JTextField routeToUrlField;
     private JTextField userRouteField;
@@ -78,7 +71,6 @@ public class IdentityPolicyPanel extends JPanel {
 
     private PolicyTreeModel policyTreeModel;
     private AssertionTreeNode rootAssertionTreeNode;
-    private static final String[] XML_SEC_OPTIONS = new String[]{"sign only", "sign and encrypt"};
     private Map credentialsLocationMap = CredentialsLocation.newCredentialsLocationMap(true);
 
     /**
@@ -145,17 +137,6 @@ public class IdentityPolicyPanel extends JPanel {
         okButton.addActionListener(updateIdentityPolicy);
         Utilities.equalizeButtonSizes(new JButton[]{cancelButton, okButton, helpButton});
         authMethodComboBox.setModel(CredentialsLocation.getCredentialsLocationComboBoxModelNonAnonymous(true));
-        /*authMethodComboBox.addItemListener(new ItemListener() {
-            public void itemStateChanged(ItemEvent e) {
-                Object key = e.getItem();
-                CredentialSourceAssertion ca =
-                  (CredentialSourceAssertion) credentialsLocationMap.get(key);
-                //xmlSecOptions.setEnabled(ca instanceof RequestWssX509Cert);
-            }
-        });*/
-        
-        // Bugzilla #821 - the default is disabled since the default setting of Authentication Method is HTTP Basic
-        //xmlSecOptions.setEnabled(false);
 
         defaultUrlButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
@@ -171,8 +152,6 @@ public class IdentityPolicyPanel extends JPanel {
                 }
             }
         });
-        //ComboBoxModel cm = new DefaultComboBoxModel(XML_SEC_OPTIONS);
-        //xmlSecOptions.setModel(cm);
         principalAssertionPaths = IdentityPath.forIdentity(principal, rootAssertion);
         otherPaths = IdentityPath.getPaths(rootAssertion);
         Collection remove = new ArrayList();
@@ -242,20 +221,11 @@ public class IdentityPolicyPanel extends JPanel {
             CredentialSourceAssertion credAssertion = (CredentialSourceAssertion)it.next();
 
             existingCredAssertion = credAssertion;
-            RequestWssX509Cert xmlSec = null;
-            if (credAssertion instanceof RequestWssX509Cert)
-                xmlSec = (RequestWssX509Cert)credAssertion;
 
             selectAuthMethodComboItem(existingCredAssertion);
             if (othersCredAssertions.contains(existingCredAssertion))
                 canmod = false;
 
-            /*if (xmlSec != null) {
-                xmlSecOptions.setEnabled(canmod);
-                boolean isXmlEncrypted = false; // TODO this no longer makes sense
-                xmlSecOptions.setSelectedIndex(isXmlEncrypted ? 1 : 0);
-            } else
-                xmlSecOptions.setEnabled(false);*/
         }
 
         authMethodComboBox.setEnabled(canmod);
