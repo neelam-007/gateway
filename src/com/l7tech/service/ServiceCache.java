@@ -131,7 +131,9 @@ public class ServiceCache {
         if (services == null || services.isEmpty()) {
             logger.fine("resolvers find no match for request");
         } else {
-            logger.severe("cache integrity error or resolver bug. this request resolves to more than one service.");
+            logger.warning("cache integrity error or resolver bug. this request resolves to" +
+                    "more than one service. this should be corrected at next cache integrity" +
+                    "check");
         }
 
         return null;
