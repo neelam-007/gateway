@@ -22,17 +22,19 @@ import java.util.*;
  */
 public class StubDataStore {
     /** default data store patch */
-    public static final String PATH = "tests/com/l7tech/identity";
-
+    public static final String DEFAULT_STORE_PATH="tests/com/l7tech/identity/data.xml";
     StubDataStore() {
     }
 
     /**
      * Instantiate path
-     * @param path
+     * @param storePath
      */
-    public StubDataStore(String path) throws FileNotFoundException {
-        this.reconstituteFrom(path);
+    public StubDataStore(String storePath) throws FileNotFoundException {
+        if (!new File(storePath).exists()) {
+            StubDataStore.main(new String[]{storePath});
+        }
+        this.reconstituteFrom(storePath);
 
     }
 
@@ -143,7 +145,7 @@ public class StubDataStore {
         try {
             decoder = new XMLDecoder(
                     new BufferedInputStream(
-                            new FileInputStream(path + File.separator + "data.xml")));
+                            new FileInputStream(path)));
             while (true) {
                 populate(decoder.readObject());
                 this.nextObjectId();
@@ -171,15 +173,15 @@ public class StubDataStore {
         }
     }
 
-    private void initializeSeedData(String path)
+    private void initializeSeedData(String storePath)
             throws FileNotFoundException {
         XMLEncoder encoder = null;
         try {
-            File target = new File(path + "/data.xml");
+            File target = new File(storePath);
             if (target.exists()) target.delete();
             encoder =
                     new XMLEncoder(
-                            new BufferedOutputStream(new FileOutputStream(path + File.separator + "data.xml")));
+                            new BufferedOutputStream(new FileOutputStream(storePath)));
             long providerId = initialInternalProvider(encoder);
             initialUsers(encoder, providerId);
             initialGroups(encoder, providerId);
@@ -206,8 +208,12 @@ public class StubDataStore {
      */
     public static void main(String[] args) {
         try {
-            System.out.println("Generating stub data stor in '"+PATH+File.separator+"data.xml'");
-            new StubDataStore().initializeSeedData(PATH);
+            String path = DEFAULT_STORE_PATH;
+            if (args.length > 0) {
+                path = args[0];
+            }
+            System.out.println("Generating stub data stor in '"+path+"'");
+            new StubDataStore().initializeSeedData(path);
         } catch (FileNotFoundException e) {
             e.printStackTrace();
         }
