@@ -413,7 +413,6 @@
                 <include name="xbean-saml.jar"/>
                 <include name="xercesImpl.jar"/>
                 <include name="xml-apis.jar"/>
-                <include name="xpp3-1.1.3.3.jar"/>
                 <include name="xss4j.jar"/>
 
                 <!-- Include OpenJMS on dev builds -->

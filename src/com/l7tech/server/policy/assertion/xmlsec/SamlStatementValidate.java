@@ -5,16 +5,15 @@
  */
 package com.l7tech.server.policy.assertion.xmlsec;
 
-import com.l7tech.common.security.token.SecurityToken;
-import com.l7tech.common.security.token.SecurityTokenType;
 import com.l7tech.common.security.xml.processor.ProcessorResult;
-import com.l7tech.common.xml.saml.SamlAssertion;
 import com.l7tech.policy.assertion.xmlsec.RequestWssSaml;
 import org.springframework.context.ApplicationContext;
 import org.w3c.dom.Document;
-import x0Assertion.oasisNamesTcSAML1.*;
+import x0Assertion.oasisNamesTcSAML1.SubjectStatementAbstractType;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.TimeZone;
 import java.util.logging.Logger;
 
 /**

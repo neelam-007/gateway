@@ -115,11 +115,13 @@ public class ServerRequestWssSaml implements ServerAssertion {
                 for (Iterator iterator = validateResults.iterator(); iterator.hasNext();) {
                     if (!firstPass) sb.append("\n");
                     SamlAssertionValidate.Error error = (SamlAssertionValidate.Error)iterator.next();
-                    sb.append(error.getReason());
+                    sb.append(error.toString());
                     firstPass = false;
                 }
                 SoapFaultDetail sfd = new SoapFaultDetailImpl(SoapFaultUtils.FC_CLIENT, sb.toString(), null);
                 context.setFaultDetail(sfd);
+                auditor.logAndAudit(AssertionMessages.SAML_STMT_VALIDATE_FAILED);
+                return AssertionStatus.FALSIFIED;
             }
             context.setCredentials(new LoginCredentials(samlAssertion.getNameIdentifierValue(),
                 null,

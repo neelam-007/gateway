@@ -7,6 +7,7 @@ package com.l7tech.server.policy.assertion.xmlsec;
 
 import com.l7tech.common.security.token.*;
 import com.l7tech.common.security.xml.processor.ProcessorResult;
+import com.l7tech.common.security.saml.SamlConstants;
 import com.l7tech.common.xml.saml.SamlAssertion;
 import com.l7tech.common.xml.InvalidDocumentFormatException;
 import com.l7tech.common.util.SoapUtil;
@@ -19,6 +20,9 @@ import x0Assertion.oasisNamesTcSAML1.*;
 import java.util.*;
 import java.util.logging.Logger;
 import java.security.cert.X509Certificate;
+import java.io.StringWriter;
+import java.io.IOException;
+import java.text.MessageFormat;
 
 /**
  * Validates the SAML Assertion within the Document. The Document must represent a well formed
@@ -70,56 +74,64 @@ public class SamlAssertionValidate {
             validationResults.add(new Error("No Security Header found", soapMessageDoc, null, null));
             return;
         }
+        try {
 
-        SamlAssertion assertion = null;
-        SecurityToken[] tokens = wssResults.getSecurityTokens();
-        for (int i = 0; i < tokens.length; i++) {
-            SecurityToken token = tokens[i];
-            if (token.getType() == SecurityTokenType.SAML_ASSERTION) {
-                assertion = (SamlAssertion)token;
-                AssertionType assertionType = assertion.getXmlBeansAssertionType();
-                StatementAbstractType[] statementArray = assertionType.getStatementArray();
+            SamlAssertion assertion = null;
+            SecurityToken[] tokens = wssResults.getSecurityTokens();
+            for (int i = 0; i < tokens.length; i++) {
+                SecurityToken token = tokens[i];
+                if (token.getType() == SecurityTokenType.SAML_ASSERTION) {
+                    assertion = (SamlAssertion)token;
+                    AssertionType assertionType = assertion.getXmlBeansAssertionType();
+                    Collection statementList = new ArrayList();
+                    statementList.addAll(Arrays.asList(assertionType.getAuthenticationStatementArray()));
+                    statementList.addAll(Arrays.asList(assertionType.getAuthorizationDecisionStatementArray()));
+                    statementList.addAll(Arrays.asList(assertionType.getAttributeStatementArray()));
 
-                for (int j = 0; j < statementArray.length; j++) {
-                    StatementAbstractType statementAbstractType = statementArray[j];
-                    SamlStatementValidate statementValidate = (SamlStatementValidate)validators.get(statementAbstractType.getClass());
+                    StatementAbstractType[] statementArray = (StatementAbstractType[])statementList.toArray(new StatementAbstractType[]{});
 
-                    if (statementValidate != null) { // bingo
-                        validateSubjectConfirmation((SubjectStatementAbstractType)statementAbstractType, validationResults);
-                        validateConditions(assertionType, validationResults);
-                        statementValidate.validate(soapMessageDoc, (SubjectStatementAbstractType)statementAbstractType, wssResults, validationResults);
+                    for (int j = 0; j < statementArray.length; j++) {
+                        StatementAbstractType statementAbstractType = statementArray[j];
+                        Set keys = validators.keySet();
+                        for (Iterator iterator = keys.iterator(); iterator.hasNext();) {
+                            Class clazz = (Class)iterator.next();
+                            if (clazz.isAssignableFrom(statementAbstractType.getClass())) {
+                                SamlStatementValidate statementValidate = (SamlStatementValidate)validators.get(clazz);
+                                validateSubjectConfirmation((SubjectStatementAbstractType)statementAbstractType, validationResults);
+                                validateConditions(assertionType, validationResults);
+                                statementValidate.validate(soapMessageDoc, (SubjectStatementAbstractType)statementAbstractType, wssResults, validationResults);
+                            }
+                        }
                     }
                 }
             }
-        }
 
-        if (assertion == null) {
-            validationResults.add(new Error("No SAML assertion found in security Header", soapMessageDoc, null, null));
-            return;
-        }
-        final SigningSecurityToken[] signingTokens = wssResults.getSigningTokens(assertion.asElement());
-        if (signingTokens.length == 0) {
-            validationResults.add(new Error("Unsigned SAML assertion found in security Header", soapMessageDoc, null, null));
-            return;
-        } else if (signingTokens.length > 1) {
-            validationResults.add(new Error("SAML assertion was signed by more than one security token", soapMessageDoc, null, null));
-            return;
-        }
+            if (assertion == null) {
+                validationResults.add(new Error("No SAML assertion found in security Header", soapMessageDoc, null, null));
+                return;
+            }
+            final SigningSecurityToken[] signingTokens = wssResults.getSigningTokens(assertion.asElement());
+            if (signingTokens.length == 0) {
+                validationResults.add(new Error("Unsigned SAML assertion found in security Header", soapMessageDoc, null, null));
+                return;
+            } else if (signingTokens.length > 1) {
+                validationResults.add(new Error("SAML assertion was signed by more than one security token", soapMessageDoc, null, null));
+                return;
+            }
 
-        if (assertion.isSenderVouches()) {
-            if (assertion.getIssuerCertificate() == null) {
-                if (signingTokens[0] instanceof X509SigningSecurityToken) {
-                    X509SigningSecurityToken signingSecurityToken = (X509SigningSecurityToken)signingTokens[0];
-                    assertion.setIssuerCertificate(signingSecurityToken.getMessageSigningCertificate());
-                } else {
-                    validationResults.add(new Error("Assertion was signed by non-X509 SecurityToken " + signingTokens[0].getClass(), soapMessageDoc, null, null));
-                    return;
+            if (assertion.isSenderVouches()) {
+                if (assertion.getIssuerCertificate() == null) {
+                    if (signingTokens[0] instanceof X509SigningSecurityToken) {
+                        X509SigningSecurityToken signingSecurityToken = (X509SigningSecurityToken)signingTokens[0];
+                        assertion.setIssuerCertificate(signingSecurityToken.getMessageSigningCertificate());
+                    } else {
+                        validationResults.add(new Error("Assertion was signed by non-X509 SecurityToken " + signingTokens[0].getClass(), soapMessageDoc, null, null));
+                        return;
+                    }
                 }
             }
-        }
 
-        SigningSecurityToken senderVouchesSigningToken = signingTokens[0];
-        try {
+            SigningSecurityToken senderVouchesSigningToken = signingTokens[0];
             if (requestWssSaml.isRequireProofOfPosession()) {
                 if (assertion.isHolderOfKey()) {
                     X509Certificate subjectCertificate = assertion.getSubjectCertificate();
@@ -169,7 +181,9 @@ public class SamlAssertionValidate {
                 }
             }
         } catch (InvalidDocumentFormatException e) {
-            validationResults.add(new Error("Can't process non SOAP messages", soapMessageDoc, null, null));
+            validationResults.add(new Error("Can't process non SOAP messages", soapMessageDoc, null, e));
+        } catch (IOException e) {
+            validationResults.add(new Error("Can't process non SOAP messages", soapMessageDoc, null, e));
         }
     }
 
@@ -190,12 +204,19 @@ public class SamlAssertionValidate {
      * @param assertionType
      * @param validationResults
      */
-    private void validateConditions(AssertionType assertionType, Collection validationResults) {
-        ConditionsType conditionsType = assertionType.getConditions();
+    private void validateConditions(AssertionType assertionType, Collection validationResults) throws IOException {
         if (!requestWssSaml.isCheckAssertionValidity()) {
             logger.finer("No Assertion Validity requested");
+            return;
         }
-
+        ConditionsType conditionsType = assertionType.getConditions();
+        if (conditionsType == null) {
+            logger.finer("Can't validate conditions, no Conditions have been found");
+            StringWriter sw = new StringWriter();
+            assertionType.save(sw);
+            validationResults.add(new Error("Can't validate conditiions, no Conditions have been found", sw.toString(), null, null));
+            return;
+        }
         Calendar notBefore = conditionsType.getNotBefore();
         Calendar notOnOrAfter = conditionsType.getNotOnOrAfter();
         Calendar now = Calendar.getInstance(UTC_TIME_ZONE);
@@ -241,7 +262,7 @@ public class SamlAssertionValidate {
         }
         final String nameQualifier = requestWssSaml.getNameQualifier();
         NameIdentifierType nameIdentifierType = subject.getNameIdentifier();
-        if (nameQualifier != null) {
+        if (nameQualifier != null && !"".equals(nameQualifier)) {
             if (nameIdentifierType != null) {
                 String presentedNameQualifier = nameIdentifierType.getNameQualifier();
                 if (!nameQualifier.equals(presentedNameQualifier)) {
@@ -260,6 +281,10 @@ public class SamlAssertionValidate {
         for (int i = 0; i < nameFormats.length; i++) {
             String nameFormat = nameFormats[i];
             if (nameFormat.equals(presentedNameFormat)) {
+                nameFormatMatch = true;
+                logger.fine("Matched Name Format " + nameFormat);
+                break;
+            } else if (nameFormat.equals(SamlConstants.NAMEIDENTIFIER_UNSPECIFIED)) {
                 nameFormatMatch = true;
                 logger.fine("Matched Name Format " + nameFormat);
                 break;
@@ -304,6 +329,7 @@ public class SamlAssertionValidate {
         private final Object context;
         private final Object[] values;
         private final Exception exception;
+        private final String formattedReason;
 
         protected Error(String reason, Object context, Object[] values, Exception exception) {
             this.reason = reason;
@@ -311,7 +337,8 @@ public class SamlAssertionValidate {
                 throw new IllegalArgumentException("Reason is required");
             }
             this.context = context;
-            this.values = values;
+            this.values = (values != null ? values : new Object[] {});
+            this.formattedReason = MessageFormat.format(reason, values);
             this.exception = exception;
         }
 
@@ -332,8 +359,8 @@ public class SamlAssertionValidate {
         }
 
         public String toString() {
-            final String msg = exception == null ? "<null>" : exception.getMessage();
-            return "SAML validation error: " + reason + ": " + msg;
+            final String msg = exception == null ? "" : exception.getMessage();
+            return "SAML validation error: " + formattedReason + " Exception: " + msg;
         }
     }
 

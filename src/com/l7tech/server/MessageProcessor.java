@@ -3,7 +3,6 @@
  *
  * $Id$
  */
-
 package com.l7tech.server;
 
 import com.l7tech.common.audit.AuditContext;
@@ -36,9 +35,6 @@ import org.springframework.beans.factory.InitializingBean;
 import org.springframework.context.support.ApplicationObjectSupport;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
-import org.xmlpull.v1.XmlPullParser;
-import org.xmlpull.v1.XmlPullParserException;
-import org.xmlpull.v1.XmlPullParserFactory;
 
 import java.io.IOException;
 import java.security.GeneralSecurityException;
@@ -59,17 +55,18 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
     private final X509Certificate serverCertificate;
 
     /**
-     * Create the new <code>MessageProcessor</code> instance with the service
-     * manager, Wss Decorator instance and the server private key.
-     * All arguments are required
-     * @param sm the service manager
-     * @param wssd the Wss Decorator
-     * @param pkey the server private key
-     * @param pkey the server certificate
-     * @throws IllegalArgumentException if any of the arguments is null
-     */
+         * Create the new <code>MessageProcessor</code> instance with the service
+         * manager, Wss Decorator instance and the server private key.
+         * All arguments are required
+         *
+         * @param sm   the service manager
+         * @param wssd the Wss Decorator
+         * @param pkey the server private key
+         * @param pkey the server certificate
+         * @throws IllegalArgumentException if any of the arguments is null
+         */
     public MessageProcessor(ServiceManager sm, WssDecorator wssd, PrivateKey pkey, X509Certificate cert)
-        throws IllegalArgumentException {
+      throws IllegalArgumentException {
         if (sm == null) {
             throw new IllegalArgumentException("Service Manager is required");
         }
@@ -86,31 +83,18 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
         this.wssDecorator = wssd;
         this.serverPrivateKey = pkey;
         this.serverCertificate = cert;
-
-        try {
-            _xppf = XmlPullParserFactory.newInstance();
-        } catch (XmlPullParserException e) {
-            throw new RuntimeException( e );
-        }
-        _xppf.setNamespaceAware( true );
-        _xppf.setValidating( false );
     }
 
-    public AssertionStatus processMessage( PolicyEnforcementContext context )
-            throws IOException, PolicyAssertionException, PolicyVersionException
+    public AssertionStatus processMessage(PolicyEnforcementContext context)
+      throws IOException, PolicyAssertionException, PolicyVersionException
     {
         AuditContext auditContext = (AuditContext)getApplicationContext().getBean("auditContext");
         context.setAuditContext(auditContext);
-        try {
-            currentContext.set(context);
-            return reallyProcessMessage(context);
-        } finally {
-            currentContext.set(null);
-        }
+        return reallyProcessMessage(context);
     }
 
-    private AssertionStatus reallyProcessMessage( PolicyEnforcementContext context )
-            throws IOException, PolicyAssertionException, PolicyVersionException
+    private AssertionStatus reallyProcessMessage(PolicyEnforcementContext context)
+      throws IOException, PolicyAssertionException, PolicyVersionException
     {
         final Message request = context.getRequest();
         final Message response = context.getResponse();
@@ -163,24 +147,24 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
             }
             auditor.logAndAudit(MessageProcessingMessages.WSS_PROCESSING_COMPLETE);
         }
-        
+
         // Policy Verification Step
         AssertionStatus status = AssertionStatus.UNDEFINED;
         try {
             PublishedService service = serviceManager.resolve(context.getRequest());
 
-            if ( service == null ) {
+            if (service == null) {
                 auditor.logAndAudit(MessageProcessingMessages.SERVICE_NOT_FOUND);
                 status = AssertionStatus.SERVICE_NOT_FOUND;
-            } else if ( service.isDisabled() ) {
+            } else if (service.isDisabled()) {
                 auditor.logAndAudit(MessageProcessingMessages.SERVICE_DISABLED);
                 status = AssertionStatus.SERVICE_DISABLED;
             } else {
-                auditor.logAndAudit(MessageProcessingMessages.RESOLVED_SERVICE, new String[] {service.getName(), String.valueOf(service.getOid())});
-                context.setService( service );
+                auditor.logAndAudit(MessageProcessingMessages.RESOLVED_SERVICE, new String[]{service.getName(), String.valueOf(service.getOid())});
+                context.setService(service);
 
                 // skip the http request header version checking if it is not a Http request
-                if(context.getRequest().isHttpRequest()) {
+                if (context.getRequest().isHttpRequest()) {
                     // check if requestor provided a version number for published service
                     String requestorVersion = context.getRequest().getHttpRequestKnob().getHeaderSingleValue(SecureSpanConstants.HttpHeaders.POLICY_VERSION);
                     if (requestorVersion != null && requestorVersion.length() > 0) {
@@ -193,9 +177,9 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
                         } else {
                             try {
                                 long reqPolicyId = Long.parseLong(requestorVersion.substring(0, indexofbar));
-                                long reqPolicyVer = Long.parseLong(requestorVersion.substring(indexofbar+1));
+                                long reqPolicyVer = Long.parseLong(requestorVersion.substring(indexofbar + 1));
                                 if (reqPolicyVer != service.getVersion() || reqPolicyId != service.getOid()) {
-                                    auditor.logAndAudit(MessageProcessingMessages.POLICY_VERSION_INVALID, new String[] {requestorVersion, String.valueOf(service.getOid()), String.valueOf(service.getVersion())});
+                                    auditor.logAndAudit(MessageProcessingMessages.POLICY_VERSION_INVALID, new String[]{requestorVersion, String.valueOf(service.getOid()), String.valueOf(service.getVersion())});
                                     wrongPolicyVersion = true;
                                 }
                             } catch (NumberFormatException e) {
@@ -241,9 +225,8 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
 
                 // Run response through WssDecorator if indicated
                 if (status == AssertionStatus.NONE &&
-                        response.isSoap() &&
-                        response.getXmlKnob().getDecorationRequirements().length > 0)
-                {
+                      response.isSoap() &&
+                      response.getXmlKnob().getDecorationRequirements().length > 0) {
                     Document doc = null;
                     try {
                         final XmlKnob respXml = response.getXmlKnob();
@@ -260,8 +243,8 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
                         // if the request was processed on the noactor sec header instead of the l7 sec actor, then
                         // the response's decoration requirements should map this (if applicable)
                         if (reqXml.getProcessorResult() != null &&
-                            reqXml.getProcessorResult().getProcessedActor() != null &&
-                            reqXml.getProcessorResult().getProcessedActor() == SecurityActor.NOACTOR) {
+                              reqXml.getProcessorResult().getProcessedActor() != null &&
+                              reqXml.getProcessorResult().getProcessedActor() == SecurityActor.NOACTOR) {
                             // go find the l7 decoreq and adjust the actor
                             for (int i = 0; i < allrequirements.length; i++) {
                                 if (SecurityActor.L7ACTOR.equals(allrequirements[i].getSecurityHeaderActor())) {
@@ -291,20 +274,20 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
                 RoutingStatus rstat = context.getRoutingStatus();
 
                 boolean authorized = false;
-                if ( rstat == RoutingStatus.ATTEMPTED ) {
+                if (rstat == RoutingStatus.ATTEMPTED) {
                     /* If policy execution got as far as the routing assertion,
                        we consider the request to have been authorized, whether
                        or not the routing itself was successful. */
                     authorized = true;
                 }
 
-                if ( status == AssertionStatus.NONE ) {
+                if (status == AssertionStatus.NONE) {
                     // Policy execution concluded successfully
                     authorized = true;
-                    if ( rstat == RoutingStatus.ROUTED || rstat == RoutingStatus.NONE ) {
+                    if (rstat == RoutingStatus.ROUTED || rstat == RoutingStatus.NONE) {
                         /* We include NONE because it's valid (albeit silly)
                         for a policy to contain no RoutingAssertion */
-                        auditor.logAndAudit(MessageProcessingMessages.COMPLETION_STATUS, new String[] {String.valueOf(status.getNumeric()), status.getMessage()});
+                        auditor.logAndAudit(MessageProcessingMessages.COMPLETION_STATUS, new String[]{String.valueOf(status.getNumeric()), status.getMessage()});
                         if (stats != null) stats.completedRequest();
                     } else {
                         // This can only happen when a post-routing assertion fails
@@ -315,23 +298,23 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
                     // Policy execution concluded unsuccessfully
                     if (rstat == RoutingStatus.ATTEMPTED) {
                         // Most likely the failure was in the routing assertion
-                        auditor.logAndAudit(MessageProcessingMessages.ROUTING_FAILED, new String[] {String.valueOf(status.getNumeric()), status.getMessage()});
+                        auditor.logAndAudit(MessageProcessingMessages.ROUTING_FAILED, new String[]{String.valueOf(status.getNumeric()), status.getMessage()});
                         status = AssertionStatus.FAILED;
                     } else {
                         // Most likely the failure was in some other assertion
-                        auditor.logAndAudit(MessageProcessingMessages.POLICY_EVALUATION_RESULT, new String[] {String.valueOf(status.getNumeric()), status.getMessage()});
+                        auditor.logAndAudit(MessageProcessingMessages.POLICY_EVALUATION_RESULT, new String[]{String.valueOf(status.getNumeric()), status.getMessage()});
                     }
                 }
 
-                if ( authorized && stats != null ) stats.authorizedRequest();
+                if (authorized && stats != null) stats.authorizedRequest();
             }
 
             return status;
-        } catch ( ServiceResolutionException sre ) {
-            auditor.logAndAudit(MessageProcessingMessages.EXCEPTION_SEVERE, new String[] {sre.getMessage()}, sre);
+        } catch (ServiceResolutionException sre) {
+            auditor.logAndAudit(MessageProcessingMessages.EXCEPTION_SEVERE, new String[]{sre.getMessage()}, sre);
             return AssertionStatus.SERVER_ERROR;
         } catch (SAXException e) {
-            auditor.logAndAudit(MessageProcessingMessages.EXCEPTION_SEVERE, new String[] {e.getMessage()}, e);
+            auditor.logAndAudit(MessageProcessingMessages.EXCEPTION_SEVERE, new String[]{e.getMessage()}, e);
             return AssertionStatus.SERVER_ERROR;
         } finally {
             try {
@@ -343,7 +326,7 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
     }
 
     private AssertionStatus doDeferredAssertions(PolicyEnforcementContext context)
-            throws PolicyAssertionException, IOException
+      throws PolicyAssertionException, IOException
     {
         AssertionStatus status = AssertionStatus.NONE;
         for (Iterator di = context.getDeferredAssertions().iterator(); di.hasNext();) {
@@ -354,18 +337,6 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
         }
         return status;
     }
-
-    public XmlPullParser getPullParser() throws XmlPullParserException {
-        return _xppf.newPullParser();
-    }
-
-    public static PolicyEnforcementContext getCurrentContext() {
-        return (PolicyEnforcementContext)currentContext.get();
-    }
-
-    private static ThreadLocal currentContext = new ThreadLocal();
-
-    private XmlPullParserFactory _xppf;
     private static final Level DEFAULT_MESSAGE_AUDIT_LEVEL = Level.INFO;
     private Auditor auditor;
     final Logger logger = Logger.getLogger(getClass().getName());
