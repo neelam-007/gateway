@@ -3,9 +3,9 @@ package com.l7tech.identity;
 import com.l7tech.objectmodel.imp.NamedEntityImp;
 import com.l7tech.policy.assertion.credential.http.HttpDigest;
 
-import java.util.Set;
-import java.util.Collections;
 import java.security.Principal;
+import java.util.HashSet;
+import java.util.Set;
 
 /**
  * Layer 7 Technologies, inc.
@@ -236,7 +236,7 @@ public class User extends NamedEntityImp implements Principal {
     private int _certResetCounter;
     private String _cert;
 
-    private Set _groups = Collections.EMPTY_SET;
-    private Set _groupHeaders = Collections.EMPTY_SET;
+    private Set _groups = new HashSet();
+    private Set _groupHeaders = new HashSet();
     private long providerId = DEFAULT_OID;
 }
