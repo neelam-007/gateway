@@ -18,12 +18,17 @@ import com.l7tech.policy.assertion.HttpRoutingAssertion;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.RoutingStatus;
 import com.l7tech.server.saml.SamlAssertionGenerator;
+import com.l7tech.server.transport.http.SslClientTrustManager;
 import com.l7tech.service.PublishedService;
 import org.apache.commons.httpclient.*;
 import org.apache.commons.httpclient.methods.PostMethod;
+import org.apache.commons.httpclient.protocol.Protocol;
+import org.apache.commons.httpclient.protocol.SecureProtocolSocketFactory;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
 
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.TrustManager;
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.wsdl.WSDLException;
@@ -31,8 +36,7 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.net.MalformedURLException;
-import java.net.URL;
+import java.net.*;
 import java.security.SignatureException;
 import java.util.Vector;
 import java.util.logging.Level;
@@ -45,13 +49,23 @@ public class ServerHttpRoutingAssertion extends ServerRoutingAssertion {
     public static final String USER_AGENT = "User-Agent";
     public static final String HOST = "Host";
 
-    public ServerHttpRoutingAssertion(HttpRoutingAssertion data) {
-        _data = data;
-        _connectionManager = new MultiThreadedHttpConnectionManager();
-        int max = data.getMaxConnections();
-        _connectionManager.setMaxConnectionsPerHost(max);
-        _connectionManager.setMaxTotalConnections(max * 10);
-        //_connectionManager.setConnectionStaleCheckingEnabled( false );
+    public ServerHttpRoutingAssertion(HttpRoutingAssertion assertion) {
+        this.httpRoutingAssertion = assertion;
+
+        int max = httpRoutingAssertion.getMaxConnections();
+
+        connectionManager = new MultiThreadedHttpConnectionManager();
+        connectionManager.setMaxConnectionsPerHost(max);
+        connectionManager.setMaxTotalConnections(max * 10);
+        //connectionManager.setConnectionStaleCheckingEnabled( false );
+
+        try {
+            sslContext = SSLContext.getInstance("SSL");
+            sslContext.init(null, new TrustManager[] { SslClientTrustManager.getInstance() }, null);
+        } catch (Exception e) {
+            logger.log(Level.SEVERE, "Couldn't initialize SSL Context", e);
+            throw new RuntimeException(e);
+        }
     }
 
     public static final String PRODUCT = "Layer7-SecureSpan-Gateway";
@@ -83,23 +97,37 @@ public class ServerHttpRoutingAssertion extends ServerRoutingAssertion {
         try {
             try {
                 PublishedService service = (PublishedService)request.getParameter(Request.PARAM_SERVICE);
-                URL url;
-                URL wsdlUrl = service.serviceUrl(request);
-                String psurl = _data.getProtectedServiceUrl();
-                if (psurl == null) {
-                    url = wsdlUrl;
-                } else {
-                    url = new URL(psurl);
+                URL url = getProtectedServiceUrl(service, request);
+
+                HttpClient client = new HttpClient(connectionManager);
+                HostConfiguration hconf = new HostConfiguration();
+
+                synchronized( this ) {
+                    if ( protocol == null ) {
+                        protocol = new Protocol(url.getProtocol(), new SecureProtocolSocketFactory() {
+                            public Socket createSocket(Socket socket, String host, int port, boolean autoClose) throws IOException, UnknownHostException {
+                                return sslContext.getSocketFactory().createSocket(socket,host,port,autoClose);
+                            }
+
+                            public Socket createSocket(String host, int port, InetAddress clientAddress, int clientPort) throws IOException, UnknownHostException {
+                                return sslContext.getSocketFactory().createSocket(host,port,clientAddress,clientPort);
+                            }
+
+                            public Socket createSocket(String host, int port) throws IOException, UnknownHostException {
+                                return sslContext.getSocketFactory().createSocket(host,port);
+                            }
+                        }, url.getPort());
+                    }
                 }
 
-                HttpClient client = new HttpClient(_connectionManager);
-
+                // TODO clear SSL Context when any TrustedCert changes
+                hconf.setHost(url.getHost(), url.getPort(), protocol);
                 postMethod = new PostMethod(url.toString());
 
                 // TODO: Attachments
                 postMethod.setRequestHeader(CONTENT_TYPE, TEXT_XML + "; charset=" + ENCODING.toLowerCase());
 
-                String userAgent = _data.getUserAgent();
+                String userAgent = httpRoutingAssertion.getUserAgent();
                 if (userAgent == null || userAgent.length() == 0) userAgent = DEFAULT_USER_AGENT;
                 postMethod.setRequestHeader(USER_AGENT, userAgent);
 
@@ -112,8 +140,8 @@ public class ServerHttpRoutingAssertion extends ServerRoutingAssertion {
                 postMethod.setRequestHeader(HOST, hostValue.toString());
                 postMethod.setRequestHeader(SoapUtil.SOAPACTION, (String)request.getParameter(Request.PARAM_HTTP_SOAPACTION));
 
-                String login = _data.getLogin();
-                String password = _data.getPassword();
+                String login = httpRoutingAssertion.getLogin();
+                String password = httpRoutingAssertion.getPassword();
 
                 if (login != null && password != null) {
                     logger.fine("Using login '" + login + "'");
@@ -124,7 +152,7 @@ public class ServerHttpRoutingAssertion extends ServerRoutingAssertion {
                 }
 
                 String requestXml = request.getRequestXml();
-                if (_data.isAttachSamlSenderVouches()) {
+                if (httpRoutingAssertion.isAttachSamlSenderVouches()) {
                     Document document = XmlUtil.stringToDocument(requestXml);
                     SamlAssertionGenerator ag = new SamlAssertionGenerator();
     //                SignerInfo si = new com.l7tech.common.security.Keys().asSignerInfo("CN="+ServerConfig.getInstance().getHostname());
@@ -136,7 +164,7 @@ public class ServerHttpRoutingAssertion extends ServerRoutingAssertion {
                 }
                 attachCookies(client, request.getTransportMetadata());
                 postMethod.setRequestBody(requestXml);
-                client.executeMethod(postMethod);
+                client.executeMethod(hconf,postMethod);
 
                 int status = postMethod.getStatusCode();
                 if (status == 200)
@@ -195,6 +223,18 @@ public class ServerHttpRoutingAssertion extends ServerRoutingAssertion {
         }
 
         return AssertionStatus.NONE;
+    }
+
+    private URL getProtectedServiceUrl(PublishedService service, XmlRequest request) throws WSDLException, MalformedURLException {
+        URL url;
+        URL wsdlUrl = service.serviceUrl(request);
+        String psurl = httpRoutingAssertion.getProtectedServiceUrl();
+        if (psurl == null) {
+            url = wsdlUrl;
+        } else {
+            url = new URL(psurl);
+        }
+        return url;
     }
 
     /**
@@ -290,21 +330,21 @@ public class ServerHttpRoutingAssertion extends ServerRoutingAssertion {
 
     private static class MethodCloser implements Runnable {
         MethodCloser(HttpMethod method) {
-            _method = method;
+            this.method = method;
         }
 
         public void run() {
-            _method.releaseConnection();
+            method.releaseConnection();
         }
 
-        private HttpMethod _method;
+        private HttpMethod method;
     }
 
 
-    protected HttpRoutingAssertion _data;
+    private final HttpRoutingAssertion httpRoutingAssertion;
+    private final MultiThreadedHttpConnectionManager connectionManager;
+    private final SSLContext sslContext;
 
-    protected transient MultiThreadedHttpConnectionManager _connectionManager;
-    protected transient HttpState _httpState;
-    protected transient UsernamePasswordCredentials _httpCredentials;
     final Logger logger = Logger.getLogger(getClass().getName());
+    private Protocol protocol;
 }
