@@ -511,39 +511,39 @@ public class MainWindow extends JFrame {
 
 
     private Action getNewProviderAction() {
-          if (newProviderAction != null) return newProviderAction;
-          newProviderAction = new NewProviderAction(null) {
-              /** specify the resource name for this action */
-              protected String iconResource() {
-                  return "com/l7tech/console/resources/providers16.gif";
-              }
+        if (newProviderAction != null) return newProviderAction;
+        newProviderAction = new NewProviderAction(null) {
+            /** specify the resource name for this action */
+            protected String iconResource() {
+                return "com/l7tech/console/resources/providers16.gif";
+            }
 
-              ConnectionListener listener = new ConnectionListener() {
-                  public void onConnect(ConnectionEvent e) {
-                      setEnabled(true);
-                      final DefaultMutableTreeNode root =
-                        (DefaultMutableTreeNode)getAssertionPaletteTree().getModel().getRoot();
-                      AbstractTreeNode parent =
-                        (AbstractTreeNode)TreeNodeActions.nodeByName(
-                          ProvidersFolderNode.NAME,
-                          root
-                        );
-                      node = parent;
+            ConnectionListener listener = new ConnectionListener() {
+                public void onConnect(ConnectionEvent e) {
+                    setEnabled(true);
+                    final DefaultMutableTreeNode root =
+                      (DefaultMutableTreeNode)getAssertionPaletteTree().getModel().getRoot();
+                    AbstractTreeNode parent =
+                      (AbstractTreeNode)TreeNodeActions.nodeByName(
+                        ProvidersFolderNode.NAME,
+                        root
+                      );
+                    node = parent;
 
-                  }
+                }
 
-                  public void onDisconnect(ConnectionEvent e) {
-                      setEnabled(false);
-                  }
-              };
+                public void onDisconnect(ConnectionEvent e) {
+                    setEnabled(false);
+                }
+            };
 
-              {
-                  MainWindow.this.addConnectionListener(listener);
-              }
-          };
-          newProviderAction.setEnabled(false);
-          return newProviderAction;
-      }
+            {
+                MainWindow.this.addConnectionListener(listener);
+            }
+        };
+        newProviderAction.setEnabled(false);
+        return newProviderAction;
+    }
 
 
 
@@ -952,12 +952,13 @@ public class MainWindow extends JFrame {
         return mainJSplitPane;
     }
 
-    private LogPanel getLogPane(){
-        if(logPane == null) {
+    private LogPanel getLogPane() {
+        if (logPane == null) {
             logPane = new LogPanel();
         }
         return logPane;
     }
+
     /**
      * Return the StatusBarPane property value.
      *
@@ -1051,6 +1052,14 @@ public class MainWindow extends JFrame {
         b.setText((String)getRefreshAction().getValue(Action.NAME));
         b.setMargin(new Insets(0, 0, 0, 0));
         b.setHorizontalTextPosition(SwingConstants.RIGHT);
+
+        final HomeAction homeAction = new HomeAction();
+        b = toolBarPane.add(homeAction);
+        b.setFont(new Font("Dialog", 1, 10));
+        b.setText((String)homeAction.getValue(Action.NAME));
+        b.setMargin(new Insets(0, 0, 0, 0));
+        b.setHorizontalTextPosition(SwingConstants.RIGHT);
+
 
         b = toolBarPane.add(getFindAction());
         b.setFont(new Font("Dialog", 1, 10));

@@ -35,7 +35,7 @@ public class HomeAction extends BaseAction {
      * @return the action name
      */
     public String getName() {
-        return "Home page";
+        return "Home";
     }
 
     /**
