@@ -331,29 +331,31 @@ public class LdapGroupManager implements GroupManager {
     private Set getSubGroups(DirContext context, String dn) {
         Set output = new HashSet();
         String filter = subGroupSearchString(dn);
-        SearchControls sc = new SearchControls();
-        sc.setSearchScope(SearchControls.SUBTREE_SCOPE);
-        NamingEnumeration answer = null;
-        try {
-            answer = context.search(cfg.getSearchBase(), filter, sc);
-            while (answer.hasMore()) {
-                // get this item
-                SearchResult sr = (SearchResult)answer.next();
-                // set the dn (unique id)
-                String subgroupdn = sr.getName() + "," + cfg.getSearchBase();
-                EntityHeader header = parent.searchResultToHeader(sr, subgroupdn);
-                if (header != null && header.getType().equals(EntityType.GROUP)) {
-                    output.add(header);
-                    output.addAll(getSubGroups(context, subgroupdn));
-                }
-            }
-        } catch (NamingException e) {
-            logger.log(Level.WARNING, "naming exception", e);
-        } finally {
+        if (filter != null) {
+            SearchControls sc = new SearchControls();
+            sc.setSearchScope(SearchControls.SUBTREE_SCOPE);
+            NamingEnumeration answer = null;
             try {
-                if (answer != null) answer.close();
+                answer = context.search(cfg.getSearchBase(), filter, sc);
+                while (answer.hasMore()) {
+                    // get this item
+                    SearchResult sr = (SearchResult)answer.next();
+                    // set the dn (unique id)
+                    String subgroupdn = sr.getName() + "," + cfg.getSearchBase();
+                    EntityHeader header = parent.searchResultToHeader(sr, subgroupdn);
+                    if (header != null && header.getType().equals(EntityType.GROUP)) {
+                        output.add(header);
+                        output.addAll(getSubGroups(context, subgroupdn));
+                    }
+                }
             } catch (NamingException e) {
-                logger.log(Level.WARNING, "naming exception closing answer", e);
+                logger.log(Level.WARNING, "naming exception with filter " + filter, e);
+            } finally {
+                try {
+                    if (answer != null) answer.close();
+                } catch (NamingException e) {
+                    logger.log(Level.WARNING, "naming exception closing answer", e);
+                }
             }
         }
         return output;
@@ -361,17 +363,25 @@ public class LdapGroupManager implements GroupManager {
 
     /**
      * filter string for subgroup search
+     * @return returns a search string or null if the group object classes dont allow for groups within groups
      */
     private String subGroupSearchString(String dnOfChildGroup) {
         StringBuffer output = new StringBuffer("(|");
         GroupMappingConfig[] groupTypes = cfg.getGroupMappings();
+        boolean searchStringValid = false;
         for (int i = 0; i < groupTypes.length; i++) {
-            output.append("(&" +
-                            "(objectClass=" + groupTypes[i].getObjClass() + ")" +
-                            "(" + groupTypes[i].getMemberAttrName() + "=" + dnOfChildGroup + ")" +
-                          ")");
+            if (groupTypes[i].getMemberStrategy().equals(MemberStrategy.MEMBERS_ARE_DN) ||
+                groupTypes[i].getMemberStrategy().equals(MemberStrategy.MEMBERS_ARE_NVPAIR)) {
+                searchStringValid = true;
+                output.append("(&" +
+                                "(objectClass=" + groupTypes[i].getObjClass() + ")" +
+                                "(" + groupTypes[i].getMemberAttrName() + "=" + dnOfChildGroup + ")" +
+                              ")");
+            }
         }
         output.append(")");
+        if (!searchStringValid) return null;
+
         return output.toString();
     }
 
