@@ -191,17 +191,6 @@ CREATE TABLE service_resolution (
 -- Dumping data for table 'service_resolution'
 --
 
-DROP TABLE IF EXISTS urlcache;
-CREATE TABLE urlcache (
-  oid bigint NOT NULL default '0',
-  timestamp bigint NOT NULL default '0',
-  url mediumtext NOT NULL default '',
-  size integer NOT NULL default '0',
-  content text,
-  PRIMARY KEY(oid)
-) TYPE=InnoDB;
-
-
 --
 -- Table structure for table 'cluster_info'
 --

@@ -163,15 +163,6 @@ CREATE TABLE service_resolution (
 -- Table structure for table 'urlcache'
 --
 
-DROP TABLE urlcache;
-CREATE TABLE urlcache (
-  objectid bigint NOT NULL default '0',
-  timestamp bigint NOT NULL default '0',
-  url text NOT NULL default '',
-  size integer NOT NULL default '0',
-  content text,
-  PRIMARY KEY(oid)
-);
 
 --
 -- Dumping data for table 'urlcache'
