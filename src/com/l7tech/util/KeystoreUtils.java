@@ -42,6 +42,18 @@ public class KeystoreUtils {
         return cert;
     }
 
+    public byte[] readRootCert() throws IOException {
+        String sslCertPath = getProps().getProperty(KSTORE_PATH_PROP_NAME) + "/" + getProps().getProperty(ROOT_CERTNAME);
+        InputStream certStream = new FileInputStream(sslCertPath);
+        byte[] cert;
+        try {
+            cert = HexUtils.slurpStream(certStream, 16384);
+        } finally {
+            certStream.close();
+        }
+        return cert;
+    }
+
     public String getRootKeystorePath() {
         return getProps().getProperty(KSTORE_PATH_PROP_NAME) + "/" + getProps().getProperty(ROOT_STORENAME);
     }
