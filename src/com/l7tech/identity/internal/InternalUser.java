@@ -59,4 +59,22 @@ public class InternalUser extends PersistentUser {
         }
         bean.setPassword(password);
     }
+
+    /**
+     * Account expiration.
+     * @return -1 if not set (never expires) or the time in millis after which this account should be considered expired.
+     */
+    public long getExpiration() {
+        return expiration;
+    }
+
+    /**
+     * Set the account expiration.
+     * @param expiration -1 if never expires or the time in millis after which this account should be considered expired.
+     */
+    public void setExpiration(long expiration) {
+        this.expiration = expiration;
+    }
+
+    private long expiration = -1;
 }
