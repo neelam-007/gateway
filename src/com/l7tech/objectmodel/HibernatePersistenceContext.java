@@ -155,12 +155,13 @@ public class HibernatePersistenceContext extends PersistenceContext {
 
             // if jdbc connection failure, close the session and null it
             try {
+                logger.fine("session is broken, trying to reconnect jdbc connection.");
                 _session.close();
             } catch ( SQLException se ) {
-                logger.log( Level.WARNING, "Try #" + (i+1) + " caught SQLException", se );
+                logger.log( Level.WARNING, "exception closing session", se );
                 lastException = se;
             } catch ( HibernateException he ) {
-                logger.log( Level.WARNING, "Try #" + (i+1) + " caught HibernateException", he );
+                logger.log( Level.WARNING, "exception closing session", he );
                 lastException = he;
             }
             _session = null;
