@@ -402,11 +402,12 @@ public class PolicyEditorPanel extends JPanel {
            */
           public void propertyChange(PropertyChangeEvent evt) {
               log.info(evt.getPropertyName() + "changed");
-              if ("service.name".equals(evt.getPropertyName())) {
+              if ("service.name".equals(evt.getPropertyName()) ||
+                  "policy".equals(evt.getPropertyName())) {
                   try {
                       renderService(serviceNode);
                   } catch (FindException e) {
-                      e.printStackTrace();  //To change body of catch statement use Options | File Templates.
+                      e.printStackTrace();
                   }
               }
           }
@@ -444,8 +445,5 @@ public class PolicyEditorPanel extends JPanel {
                   ex.printStackTrace();
               }
           }
-
       };
-
-
 }
