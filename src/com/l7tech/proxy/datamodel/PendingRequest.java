@@ -400,21 +400,26 @@ public class PendingRequest {
     }
 
     private void checkExpiredSecureConversationSession() {
+        Calendar now = Calendar.getInstance(UTC_TIME_ZONE);
+        now.add(Calendar.SECOND, WSSC_PREEXPIRE_SEC);
         if (secureConversationExpiryDate != null) {
-            Calendar now = Calendar.getInstance(UTC_TIME_ZONE);
-            now.add(Calendar.SECOND, WSSC_PREEXPIRE_SEC);
             if (!secureConversationExpiryDate.after(now)) {
-                log.log(Level.INFO, "Our WS-SecureConversation session has expired or will do so within the next " +
-                                    WSSC_PREEXPIRE_SEC + "seconds.  Will throw it away and get a new one.");
+                // See if we need to throw out the one cached in the Ssg object as well
                 synchronized (ssg) {
-                    secureConversationId = null;
-                    ssg.secureConversationId(null);
-                    secureConversationSharedSecret = null;
-                    ssg.secureConversationSharedSecret(null);
-                    secureConversationExpiryDate = null;
-                    ssg.secureConversationExpiryDate(null);
+                    Calendar ssgDate = ssg.secureConversationExpiryDate();
+                    if (ssgDate == secureConversationExpiryDate || (ssgDate != null && !ssgDate.after(now))) {
+                        log.log(Level.INFO, "Our WS-SecureConversation session has expired or will do so within the next " +
+                                            WSSC_PREEXPIRE_SEC + "seconds.  Will throw it away and get a new one.");
+                        ssg.secureConversationId(null);
+                        ssg.secureConversationSharedSecret(null);
+                        ssg.secureConversationExpiryDate(null);
+                    }
                 }
             }
+
+            secureConversationId = null;
+            secureConversationSharedSecret = null;
+            secureConversationExpiryDate = null;
         }
     }
 
@@ -423,10 +428,13 @@ public class PendingRequest {
      * @return The secure conversation session ID for this session, or null if there isn't one.
      */
     public String getSecureConversationId() {
-        checkExpiredSecureConversationSession();
-        if (secureConversationId != null)
+        if (secureConversationId != null) {
+            checkExpiredSecureConversationSession();
             return secureConversationId;
-        return secureConversationId = ssg.secureConversationId();
+        }
+        secureConversationId = ssg.secureConversationId();
+        checkExpiredSecureConversationSession();
+        return secureConversationId;
     }
 
     /**
@@ -440,9 +448,14 @@ public class PendingRequest {
     {
         checkExpiredSecureConversationSession();
         if (secureConversationId != null)
+          return secureConversationId;
+
+        secureConversationId = ssg.secureConversationId();
+        checkExpiredSecureConversationSession();
+        if (secureConversationId != null)
             return secureConversationId;
-        String ssgscid = ssg.secureConversationId();
-        return secureConversationId = ssgscid != null ? ssgscid : establishSecureConversationSession();
+
+        return secureConversationId = establishSecureConversationSession();
     }
 
     /**
@@ -463,10 +476,17 @@ public class PendingRequest {
             Calendar nowUtc = Calendar.getInstance(UTC_TIME_ZONE);
             nowUtc.add(Calendar.SECOND, SAML_PREEXPIRE_SEC);
             if (!expires.after(nowUtc)) {
-                log.log(Level.INFO, "Our SAML Holder-of-key assertion has expired or will do so within the next " +
-                                    SAML_PREEXPIRE_SEC + " seconds.  Will throw it away and get a new one.");
+                // See if we need to throw out the one cached in the Ssg as well
+                synchronized (ssg) {
+                    SamlHolderOfKeyAssertion ssgHok = ssg.samlHolderOfKeyAssertion();
+                    if (ssgHok == samlHolderOfKeyAssertion || (ssgHok != null && !ssgHok.getExpires().after(nowUtc))) {
+                        log.log(Level.INFO, "Our SAML Holder-of-key assertion has expired or will do so within the next " +
+                                            SAML_PREEXPIRE_SEC + " seconds.  Will throw it away and get a new one.");
+                        ssg.samlHolderOfKeyAssertion(null);
+                    }
+                }
+
                 samlHolderOfKeyAssertion = null;
-                ssg.samlHolderOfKeyAssertion(null);
             }
         }
     }
@@ -489,11 +509,15 @@ public class PendingRequest {
                    ClientCertificateException, BadCredentialsException, PolicyRetryableException
     {
         checkExpiredHolderOfKeyAssertion();
-        if (samlHolderOfKeyAssertion != null) {
+        if (samlHolderOfKeyAssertion != null)
             return samlHolderOfKeyAssertion;
-        }
-        SamlHolderOfKeyAssertion ssghok = ssg.samlHolderOfKeyAssertion();
-        return samlHolderOfKeyAssertion = ssghok != null ? ssghok : acquireSamlHolderOfKeyAssertion();
+
+        samlHolderOfKeyAssertion = ssg.samlHolderOfKeyAssertion();
+        checkExpiredHolderOfKeyAssertion();
+        if (samlHolderOfKeyAssertion != null)
+            return samlHolderOfKeyAssertion;
+
+        return samlHolderOfKeyAssertion = acquireSamlHolderOfKeyAssertion();
     }
 
     /**
@@ -501,11 +525,13 @@ public class PendingRequest {
      * @return our currently valid SAML holder-of-key assertion or null if we don't have one.
      */
     public SamlHolderOfKeyAssertion getSamlHolderOfKeyAssertion() {
-        checkExpiredHolderOfKeyAssertion();
         if (samlHolderOfKeyAssertion != null) {
+            checkExpiredHolderOfKeyAssertion();
             return samlHolderOfKeyAssertion;
         }
-        return samlHolderOfKeyAssertion = ssg.samlHolderOfKeyAssertion();
+        samlHolderOfKeyAssertion = ssg.samlHolderOfKeyAssertion();
+        checkExpiredHolderOfKeyAssertion();
+        return samlHolderOfKeyAssertion;
     }
 
     private SamlHolderOfKeyAssertion acquireSamlHolderOfKeyAssertion()
