@@ -138,7 +138,10 @@ public class RequestSwAAssertionDialog extends JDialog {
 
     }
 
-    private void initializeXPath(Map bindings) {
+    private void initializeXPath() {
+
+        if(bindings == null) throw new IllegalStateException("bindings is NULL");
+
         getServiceWsdl().setShowBindings(Wsdl.SOAP_BINDINGS);
         SoapMessageGenerator sg = new SoapMessageGenerator();
         try {
@@ -164,15 +167,41 @@ public class RequestSwAAssertionDialog extends JDialog {
                 String operationPrefix = operation.getPrefix();
 
                 Iterator bindingsItr = bindings.keySet().iterator();
-                
 
-                System.out.println("Xpath for the operation " + "\"" + soapRequest.getOperation() + "\" is " +
-                        "/" + soapEnvNamePrefix +
+                BindingInfo binding = null;
+                while(bindingsItr.hasNext()) {
+                    String bindingName = (String) bindingsItr.next();
+                    if(bindingName.equals(soapRequest.getBinding())) {
+                        binding = (BindingInfo) bindings.get(bindingName);
+                        break;
+                    }
+                }
+
+                BindingOperationInfo bo = null;
+                if(binding != null) {
+                    Iterator boItr = binding.getBindingOperations().keySet().iterator();
+                    while(boItr.hasNext()) {
+                        String boName = (String) boItr.next();
+                        if(boName.equals(soapRequest.getOperation())) {
+                            bo = (BindingOperationInfo) binding.getBindingOperations().get(boName);
+                            break;
+                        }
+                    }
+                }
+
+                String xpathExpression = "/" + soapEnvNamePrefix +
                         ":" + soapEnvLocalName +
                         "/" + soapBodyNamePrefix +
                         ":" + soapBodyLocalName +
                         "/" + operationPrefix +
-                        ":" + operationName);
+                        ":" + operationName;
+
+                if(bo != null) {
+                    bo.setXpath(xpathExpression);
+                }
+                
+                System.out.println("Xpath for the operation " + "\"" + soapRequest.getOperation() + "\" is " +
+                        xpathExpression);
 
                 namespaces.putAll(XpathEvaluator.getNamespaces(soapRequest.getSOAPMessage()));
             }
@@ -197,7 +226,7 @@ public class RequestSwAAssertionDialog extends JDialog {
         if (assertion.getBindings().size() == 0) {
             // this is the first time, load data from WSDL
             loadMIMEPartsInfoFromWSDL();
-            initializeXPath(bindings);
+            initializeXPath();
             populateData(bindings);
             assertion.setBindings(bindings);
         } else {
