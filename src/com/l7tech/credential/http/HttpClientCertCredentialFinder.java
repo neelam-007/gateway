@@ -20,6 +20,9 @@ import java.security.cert.CertificateNotYetValidException;
 import java.security.cert.CertificateEncodingException;
 import java.util.logging.Logger;
 import java.util.logging.Level;
+import java.io.IOException;
+
+import sun.security.x509.X500Name;
 
 /**
  * @author alex
@@ -59,10 +62,20 @@ public class HttpClientCertCredentialFinder extends HttpCredentialFinder {
         }
 
         // Get DN from cert, ie "CN=testuser, OU=ssg.example.com"
-        String certDn = clientCert.getSubjectDN().getName();
+        // String certCN = clientCert.getSubjectDN().getName();
+        // fla changed this to:
+        String certCN = null;
+        try {
+            X500Name x500name = new X500Name(clientCert.getSubjectX500Principal().getName());
+            certCN = x500name.getCommonName();
+        } catch (IOException e) {
+            _log.log(Level.SEVERE, e.getMessage(), e);
+            throw new CredentialFinderException("cannot extract name from cert", e, AssertionStatus.AUTH_FAILED);
+        }
+
         try {
             User u = new User();
-            u.setLogin( certDn );
+            u.setLogin(certCN);
             PrincipalCredentials pc = new PrincipalCredentials( u, clientCert.getEncoded(), CredentialFormat.CLIENTCERT );
             return pc;
         } catch (CertificateEncodingException cee) {
