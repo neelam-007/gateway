@@ -78,11 +78,11 @@ public class ClusterStatusTableSorter extends FilteredDefaultTableModel {
             case 3:
                 return new Integer(((GatewayStatus) sortedData[row]).getRequestFailure());
             case 4:
-                return new Double(((GatewayStatus) sortedData[row]).getLoadAvg());
+                return new Double(((GatewayStatus) sortedData[row]).getAvgLoad());
             case 5:
                 return new Long(((GatewayStatus) sortedData[row]).getUptime());
             case 6:
-                return ((GatewayStatus) sortedData[row]).getIpAddress();
+                return ((GatewayStatus) sortedData[row]).getAddress();
             default:
                 throw new IllegalArgumentException("Bad Column");
         }
@@ -120,16 +120,16 @@ public class ClusterStatusTableSorter extends FilteredDefaultTableModel {
                     elementB = new Long(((GatewayStatus) b).getRequestFailure());
                     break;
                 case 4:
-                    elementA = new Double(((GatewayStatus) a).getLoadAvg());
-                    elementB = new Double(((GatewayStatus) b).getLoadAvg());
+                    elementA = new Double(((GatewayStatus) a).getAvgLoad());
+                    elementB = new Double(((GatewayStatus) b).getAvgLoad());
                     break;
                 case 5:
                     elementA = new Long(((GatewayStatus) a).getUptime());
                     elementB = new Long(((GatewayStatus) b).getUptime());
                     break;
                  case 6:
-                    elementA = ((GatewayStatus) a).getIpAddress();
-                    elementB = ((GatewayStatus) b).getIpAddress();
+                    elementA = ((GatewayStatus) a).getAddress();
+                    elementB = ((GatewayStatus) b).getAddress();
                     break;
                 default:
                     logger.warning("Bad Cluster Status Table Column: " + column);

@@ -9,6 +9,7 @@ import com.l7tech.console.table.ClusterStatusTableSorter;
 import com.l7tech.console.table.LogTableModel;
 import com.l7tech.console.table.StatisticsTableSorter;
 import com.l7tech.cluster.GatewayStatus;
+import com.l7tech.cluster.ClusterInfo;
 import com.l7tech.console.icons.ArrowIcon;
 import com.l7tech.common.gui.util.ImageCache;
 
@@ -446,14 +447,37 @@ public class ClusterStatusWindow extends JFrame {
 
      Vector dummyData = new Vector();
 
-        GatewayStatus node1 = new GatewayStatus(1, "SSG1", 20, 5, 1.5,  1072746384, "192.128.1.100");
-        GatewayStatus node2 = new GatewayStatus(1, "SSG2", 23, 10, 1.8, 1072656394, "192.128.1.101");
-        GatewayStatus node3 = new GatewayStatus(0, "SSG3", 0, 0, 0,     1072746404, "192.128.1.102");
-        GatewayStatus node4 = new GatewayStatus(1, "SSG4", 17, 3, 1.1,  1072776414, "192.128.2.10");
-        GatewayStatus node5 = new GatewayStatus(1, "SSG5", 18, 8, 2.1,  1072746484, "192.128.2.11");
-        GatewayStatus node6 = new GatewayStatus(1, "SSG6", 22, 5, 0.8,  1072736464, "192.128.3.1");
-        GatewayStatus node7 = new GatewayStatus(0, "SSG7", 0, 0, 0,     1072808010, "192.128.3.2");
-        GatewayStatus node8 = new GatewayStatus(0, "SSG8", 0, 0, 0,     1072808325, "192.128.3.3");
+        ClusterInfo  c1 = new ClusterInfo();
+        c1.setName("SSG1"); c1.setAddress("192.128.1.100"); c1.setAvgLoad(1.5); c1.setUptime(1072746384);
+        GatewayStatus node1 = new GatewayStatus(c1, 1,  20, 5);
+
+        ClusterInfo  c2 = new ClusterInfo();
+        c2.setName("SSG2"); c2.setAddress("192.128.1.101"); c2.setAvgLoad(1.8); c2.setUptime(1072656394);
+        GatewayStatus node2 = new GatewayStatus(c2, 1,  23, 10);
+
+        ClusterInfo  c3 = new ClusterInfo();
+        c3.setName("SSG3"); c3.setAddress("192.128.1.102"); c3.setAvgLoad(0); c3.setUptime(1072746404);
+        GatewayStatus node3 = new GatewayStatus(c3, 1,  0, 0);
+
+        ClusterInfo  c4 = new ClusterInfo();
+        c4.setName("SSG4"); c4.setAddress("192.128.2.10"); c4.setAvgLoad(1.1); c4.setUptime(1072776414);
+        GatewayStatus node4 = new GatewayStatus(c4, 1,  17, 3);
+
+        ClusterInfo  c5 = new ClusterInfo();
+        c5.setName("SSG5"); c5.setAddress("192.128.2.11"); c5.setAvgLoad(2.1); c5.setUptime(1072746484);
+        GatewayStatus node5 = new GatewayStatus(c5, 1,  18, 8);
+
+        ClusterInfo  c6 = new ClusterInfo();
+        c6.setName("SSG6"); c6.setAddress("192.128.3.1"); c6.setAvgLoad(0.8); c6.setUptime(1072736464);
+        GatewayStatus node6 = new GatewayStatus(c6, 1,  22, 5);
+
+        ClusterInfo  c7 = new ClusterInfo();
+        c7.setName("SSG7"); c7.setAddress("192.128.3.2"); c7.setAvgLoad(0); c7.setUptime(1072808010);
+        GatewayStatus node7 = new GatewayStatus(c7, 1,  0, 0);
+
+        ClusterInfo  c8 = new ClusterInfo();
+        c8.setName("SSG8"); c8.setAddress("192.128.3.3"); c8.setAvgLoad(0); c8.setUptime(1072808325);
+        GatewayStatus node8 = new GatewayStatus(c8, 1,  0, 0);
 
         dummyData.add(node1);
         dummyData.add(node2);
