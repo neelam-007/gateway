@@ -1,6 +1,6 @@
 package com.l7tech.policy.assertion;
 
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 /**
@@ -9,8 +9,8 @@ import java.util.Map;
  * $Id$
  */
 public class RequestSwAAssertion extends SwAAssertion {
-    private Map bindings = new HashMap();
-    private Map namespaceMap = new HashMap();
+    private Map bindings = new LinkedHashMap();
+    private Map namespaceMap = new LinkedHashMap();
 
     public RequestSwAAssertion() {
     }
@@ -32,7 +32,7 @@ public class RequestSwAAssertion extends SwAAssertion {
     public void setBindings(Map bindings) {
         if (bindings == null)
             throw new IllegalArgumentException("bindings map may not be null");
-        this.bindings = bindings;
+        this.bindings.putAll(bindings);
     }
 
     public Map getNamespaceMap() {
@@ -40,7 +40,9 @@ public class RequestSwAAssertion extends SwAAssertion {
     }
 
     public void setNamespaceMap(Map namespaceMap) {
-        this.namespaceMap = namespaceMap;
+        if (namespaceMap == null)
+            throw new IllegalArgumentException("Namespace map may not be null");
+        this.namespaceMap.putAll(namespaceMap);
     }
 
 }
