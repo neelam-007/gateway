@@ -40,6 +40,7 @@
                     <AttachSamlSenderVouches booleanValue="false"/>
                     <EndpointName stringValueNull="null"/>
                     <EndpointOid boxedLongValueNull="null"/>
+                    <ResponseTimeout intValue="10000"/>
                     <SamlAssertionExpiry intValue="5"/>
                 </JmsRoutingAssertion>
                 <TrueAssertion/>
