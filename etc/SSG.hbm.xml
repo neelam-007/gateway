@@ -76,7 +76,7 @@
             <generator class="hilo.long"/>
         </id>
 
-        <property name="providerOid" column="provider_oid" type="long"/>
+        <property name="providerOid" column="provider" type="long"/>
         <property name="description" type="string"/>
         <property name="name" type="string"/>
     </class>
@@ -96,7 +96,7 @@
         <id name="oid" column="oid" type="long">
             <generator class="hilo.long"/>
         </id>
-        <property name="providerOid" column="provider_oid" type="long"/>
+        <property name="providerOid" column="provider" type="long"/>
         <property name="login" type="string"/>
         <property name="password" type="string"/>
         <property name="firstName" column="first_name"  type="string"/>
