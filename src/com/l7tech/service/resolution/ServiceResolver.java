@@ -29,16 +29,16 @@ public abstract class ServiceResolver implements Comparable, ServiceListener {
         doSetServices(services);
     }
 
-    public void serviceDeleted( PublishedService service ) {
+    public synchronized void serviceDeleted( PublishedService service ) {
         _services.remove( service );
         doSetServices( _services );
     }
 
-    public void serviceUpdated( PublishedService service ) {
+    public synchronized void serviceUpdated( PublishedService service ) {
         doSetServices( _services );
     }
 
-    public void serviceCreated( PublishedService service ) {
+    public synchronized void serviceCreated( PublishedService service ) {
         _services.add( service );
         doSetServices( _services );
     }
