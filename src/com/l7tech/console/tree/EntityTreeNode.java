@@ -17,10 +17,6 @@ import com.l7tech.objectmodel.EntityHeader;
 /**
  * the Tree Node encapsulating a <code>BasicTreeNode</code>.
  *
- * Note that this class will be deprecated in the future.
- * It will be replaced with the BasicTreeNode that implements
- * fully the TreeNode interface.
- *
  * @author <a href="mailto:emarceta@layer7-tech.com>Emil Marceta</a>
  * @see com.l7tech.console.tree.BasicTreeNode
  */
@@ -218,7 +214,7 @@ public class EntityTreeNode extends DefaultMutableTreeNode {
      * that is, the folder is <I>always</I> lower value then
      * any other object.
      *
-     * @see String.compareTo()
+     * @see String#compareTo()
      */
     public static final Comparator
             DEFAULT_COMPARATOR = new Comparator() {
