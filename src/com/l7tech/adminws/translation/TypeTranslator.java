@@ -9,6 +9,8 @@ import com.l7tech.objectmodel.imp.EntityHeaderImp;
  * User: flascelles
  * Date: May 12, 2003
  *
+ * Util class used by the console-side implementations of Manager to translate
+ * between types used in the admin service and generic types used by the model.
  */
 public class TypeTranslator {
     public static com.l7tech.identity.IdentityProviderConfig transferStubIdentityProviderConfigToGenericOne(com.l7tech.adminws.clientstub.IdentityProviderConfig stub) {

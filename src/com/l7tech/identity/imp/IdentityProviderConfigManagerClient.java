@@ -5,6 +5,7 @@ import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.adminws.clientstub.Identity;
 import com.l7tech.adminws.clientstub.IdentityService;
 import com.l7tech.adminws.clientstub.IdentityServiceLocator;
+import com.l7tech.adminws.translation.TypeTranslator;
 import com.l7tech.objectmodel.imp.EntityHeaderImp;
 import com.l7tech.objectmodel.EntityHeader;
 
@@ -30,14 +31,14 @@ public class IdentityProviderConfigManagerClient implements IdentityProviderConf
             System.err.println(e.getMessage());
         }
         if (ipcStubFormat != null) {
-            return transferStubIdentityProviderConfigToGenericOne(ipcStubFormat);
+            return TypeTranslator.transferStubIdentityProviderConfigToGenericOne(ipcStubFormat);
         }
         return null;
     }
 
     public long save(IdentityProviderConfig identityProviderConfig) {
         try {
-            return getStub().saveIdentityProviderConfig(transferGenericIdentityProviderConfigToStubOne(identityProviderConfig));
+            return getStub().saveIdentityProviderConfig(TypeTranslator.transferGenericIdentityProviderConfigToStubOne(identityProviderConfig));
         }
         catch (Exception e) {
             // todo, show nice user message?
@@ -68,7 +69,7 @@ public class IdentityProviderConfigManagerClient implements IdentityProviderConf
             Collection ret = new java.util.ArrayList(array.length);
             for (int i = 0; i < array.length; i++) {
                 // add the header
-                ret.add(transferStubHeaderToGenHeader(array[i]));
+                ret.add(TypeTranslator.transferStubHeaderToGenHeader(array[i]));
             }
             return ret;
         }
@@ -109,44 +110,6 @@ public class IdentityProviderConfigManagerClient implements IdentityProviderConf
         // todo, read this url from a properties file
         // maybe com.l7tech.console.util.Preferences
         return "http://localhost:8080/UneasyRooster/services/identities";
-    }
-    static com.l7tech.identity.IdentityProviderConfig transferStubIdentityProviderConfigToGenericOne(com.l7tech.adminws.clientstub.IdentityProviderConfig stub) {
-        IdentityProviderConfigImp ret = new IdentityProviderConfigImp();
-        ret.setDescription(stub.getDescription());
-        ret.setName(stub.getName());
-        ret.setOid(stub.getOid());
-        IdentityProviderTypeImp retType = new IdentityProviderTypeImp();
-        retType.setClassName(stub.getTypeClassName());
-        retType.setDescription(stub.getTypeDescription());
-        retType.setName(stub.getTypeName());
-        retType.setOid(stub.getTypeOid());
-        ret.setType(retType);
-        return ret;
-    }
-
-    static com.l7tech.adminws.clientstub.IdentityProviderConfig transferGenericIdentityProviderConfigToStubOne(com.l7tech.identity.IdentityProviderConfig gen) {
-        com.l7tech.adminws.clientstub.IdentityProviderConfig ret = new com.l7tech.adminws.clientstub.IdentityProviderConfig();
-        ret.setDescription(gen.getDescription());
-        ret.setName(gen.getName());
-        ret.setOid(gen.getOid());
-        ret.setTypeClassName(gen.getType().getClassName());
-        ret.setTypeClassName(gen.getType().getClassName());
-        ret.setTypeDescription(gen.getType().getDescription());
-        ret.setTypeName(gen.getType().getName());
-        ret.setTypeOid(gen.getType().getOid());
-        return ret;
-    }
-
-    static com.l7tech.objectmodel.EntityHeader transferStubHeaderToGenHeader(com.l7tech.adminws.clientstub.Header stubHeader) {
-        EntityHeaderImp ret = new EntityHeaderImp();
-        ret.setName(stubHeader.getName());
-        ret.setOid(stubHeader.getOid());
-        try {
-            ret.setType(Class.forName(stubHeader.getType()));
-        } catch (ClassNotFoundException e) {
-            System.err.println(e.getMessage());
-        }
-        return ret;
     }
 
     private Identity localStub = null;
