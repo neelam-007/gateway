@@ -2,6 +2,7 @@ package com.l7tech.cluster;
 
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.UpdateException;
+import com.l7tech.objectmodel.DeleteException;
 
 import java.rmi.Remote;
 import java.rmi.RemoteException;
@@ -43,5 +44,5 @@ public interface ClusterStatusAdmin extends Remote {
      *
      * @param nodeid the mac of the stale node to remove
      */
-    void removeStaleNode(String nodeid) throws RemoteException, UpdateException;
+    void removeStaleNode(String nodeid) throws RemoteException, DeleteException;
 }

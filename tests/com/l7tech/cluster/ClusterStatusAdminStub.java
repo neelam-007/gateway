@@ -1,6 +1,7 @@
 package com.l7tech.cluster;
 
 import com.l7tech.objectmodel.UpdateException;
+import com.l7tech.objectmodel.DeleteException;
 
 import java.rmi.RemoteException;
 
@@ -87,7 +88,7 @@ public class ClusterStatusAdminStub implements ClusterStatusAdmin{
         throw new UnsupportedOperationException();
     }
 
-    public void removeStaleNode(String nodeid) throws RemoteException, UpdateException {
+    public void removeStaleNode(String nodeid) throws RemoteException, DeleteException {
         throw new UnsupportedOperationException();
     }
 }

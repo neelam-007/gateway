@@ -3,10 +3,7 @@ package com.l7tech.cluster;
 import com.l7tech.common.util.HexUtils;
 import com.l7tech.common.util.KeystoreUtils;
 import com.l7tech.logging.LogManager;
-import com.l7tech.objectmodel.FindException;
-import com.l7tech.objectmodel.HibernatePersistenceContext;
-import com.l7tech.objectmodel.PersistenceContext;
-import com.l7tech.objectmodel.UpdateException;
+import com.l7tech.objectmodel.*;
 import net.sf.hibernate.HibernateException;
 import net.sf.hibernate.Session;
 
@@ -87,6 +84,26 @@ public class ClusterInfoManager {
             }
         } else {
             logger.warning("cannot retrieve db entry for this node.");
+        }
+    }
+
+    public void deleteNode(String nodeid) throws DeleteException {
+        ClusterNodeInfo node = getNodeStatusFromDB(nodeid);
+        if (node == null) {
+            String msg = "that node cannot be retrieved";
+            logger.log(Level.WARNING, msg);
+            throw new DeleteException(msg);
+        }
+        HibernatePersistenceContext context = null;
+        try {
+            context = (HibernatePersistenceContext)PersistenceContext.getCurrent();
+            context.getSession().delete(node);
+        } catch (SQLException e) {
+            String msg = "error deleting cluster status";
+            logger.log(Level.WARNING, msg, e);
+        }  catch (HibernateException e) {
+            String msg = "error deleting cluster status";
+            logger.log(Level.WARNING, msg, e);
         }
     }
 

@@ -1,8 +1,6 @@
 package com.l7tech.cluster;
 
-import com.l7tech.objectmodel.FindException;
-import com.l7tech.objectmodel.UpdateException;
-import com.l7tech.objectmodel.PersistenceContext;
+import com.l7tech.objectmodel.*;
 import com.l7tech.remote.jini.export.RemoteService;
 import com.l7tech.logging.LogManager;
 import com.sun.jini.start.LifeCycle;
@@ -74,8 +72,24 @@ public class ClusterStatusAdminImp extends RemoteService implements ClusterStatu
      * @param newName the new name of the node (must not be null)
      */
     public void changeNodeName(String nodeid, String newName) throws RemoteException, UpdateException {
-        // todo, ciman.renameNode(nodeid, newName); and all transaction trimmings
-        throw new UnsupportedOperationException();
+        PersistenceContext context = null;
+        try {
+            context = PersistenceContext.getCurrent();
+        } catch (SQLException e) {
+            logger.log(Level.SEVERE, "could not get context", e);
+            throw new UpdateException("internal error", e);
+        }
+        try {
+            try {
+                context.beginTransaction();
+                ciman.renameNode(nodeid, newName);
+                context.commitTransaction();
+            } catch (TransactionException e) {
+                logger.log(Level.WARNING, "transaction exception", e);
+            }
+        } finally {
+            closeContext();
+        }
     }
 
     /**
@@ -85,9 +99,25 @@ public class ClusterStatusAdminImp extends RemoteService implements ClusterStatu
      *
      * @param nodeid the mac of the stale node to remove
      */
-    public void removeStaleNode(String nodeid) throws RemoteException, UpdateException {
-        // todo
-        throw new UnsupportedOperationException();
+    public void removeStaleNode(String nodeid) throws RemoteException, DeleteException {
+        PersistenceContext context = null;
+        try {
+            context = PersistenceContext.getCurrent();
+        } catch (SQLException e) {
+            logger.log(Level.SEVERE, "could not get context", e);
+            throw new DeleteException("internal error", e);
+        }
+        try {
+            try {
+                context.beginTransaction();
+                ciman.deleteNode(nodeid);
+                context.commitTransaction();
+            } catch (TransactionException e) {
+                logger.log(Level.WARNING, "transaction exception", e);
+            }
+        } finally {
+            closeContext();
+        }
     }
 
     private void closeContext() {
