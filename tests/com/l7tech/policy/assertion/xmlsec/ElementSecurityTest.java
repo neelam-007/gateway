@@ -86,7 +86,7 @@ public class ElementSecurityTest extends TestCase {
 
             ElementSecurity elementSecurity = data[i];
             // XPath match?
-            XpathExpression xpath = elementSecurity.getXpathExpression();
+            XpathExpression xpath = elementSecurity.getxPath();
 
             List nodes = XpathEvaluator.newEvaluator(soapmsg, xpath.getNamespaces()).select(xpath.getExpression());
             if (nodes.isEmpty()) {
@@ -107,7 +107,7 @@ public class ElementSecurityTest extends TestCase {
             Document document = documents[i];
             ElementSecurity elementSecurity = data[i];
             // XPath match?
-            XpathExpression xpath = elementSecurity.getXpathExpression();
+            XpathExpression xpath = elementSecurity.getxPath();
 
             List nodes = XpathEvaluator.newEvaluator(document, xpath.getNamespaces()).select(xpath.getExpression());
             if (nodes.isEmpty()) {

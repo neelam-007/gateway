@@ -3,14 +3,17 @@ package com.l7tech.policy.assertion.xmlsec;
 import com.l7tech.common.xml.XpathExpression;
 
 /**
- * Class <code>ElementSecurity</code> contains the security propertiesfor an XML document
+ * Class <code>ElementSecurity</code> contains the security properties for an XML document
  * portion (document element).
  * <p/>
  * It contains properties such as:
  * <ul>
- * <li>XPath expression (may be <code>null</code>). It is evaluating context responsibility
- * to determine the exact behaviour and if it is required or not. For example <code>null</code>
- * value may be interpreted as the whole document signing.
+ * <li>XPath expression (may be <code>null</code>) that selects the document element to process.
+ * It is evaluating context responsibility to determine the exact behaviour and if it is required
+ * or not. For example <code>null</code> value may be interpreted as the whole document signing.
+ * <li>precondition XPath expression (may be <code>null</code>). If present it is evaluated prior
+ * to evaluating the xpath expression. It helps with cinditional 'if-then' scenarios, such as
+ * signing an element for a SOAP given operation.
  * <li> the encryption toggle, whether the document is signed only or signed and encrypted
  * <li>the encryption cypher name
  * <li>the encryption key length
@@ -30,7 +33,8 @@ public class ElementSecurity {
      */
     public static final int DEFAULT_KEYBITS = 128;
 
-    private XpathExpression xpathExpression;
+    private XpathExpression xPath;
+    private XpathExpression preconditionXPath;
     private String operation;
     private boolean encryption;
     private String cipher = DEFAULT_CIPHER;
@@ -58,7 +62,7 @@ public class ElementSecurity {
         this.operation = operation;
         this.cipher = cipher;
         this.keyLength = keyLength;
-        this.xpathExpression = xpathExpression;
+        this.xPath = xpathExpression;
     }
 
     /**
@@ -67,17 +71,36 @@ public class ElementSecurity {
      *
      * @return the xpath expression, may be null
      */
-    public XpathExpression getXpathExpression() {
-        return xpathExpression;
+    public XpathExpression getxPath() {
+        return xPath;
     }
 
     /**
      * Set the new xpath expression
      *
-     * @param xpathExpression the xpath expression value (or null)
+     * @param xPath the xpath expression value (or null)
      */
-    public void setXpathExpression(XpathExpression xpathExpression) {
-        this.xpathExpression = xpathExpression;
+    public void setxPath(XpathExpression xPath) {
+        this.xPath = xPath;
+    }
+
+    /**
+     * The xpath expression that is a conditional for selecting the
+     * element to apply the security (sign/encryption)
+     *
+     * @return the xpath conditional expression, may be null
+     */
+    public XpathExpression getPreconditionXPath() {
+        return preconditionXPath;
+    }
+
+    /**
+     * Set the new precondition xpath expression
+     *
+     * @param preconditionXPath the xpath expression value (or null)
+     */
+    public void setPreconditionXPath(XpathExpression preconditionXPath) {
+        this.preconditionXPath = preconditionXPath;
     }
 
     /**

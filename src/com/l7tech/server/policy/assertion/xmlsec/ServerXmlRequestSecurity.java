@@ -95,7 +95,7 @@ public class ServerXmlRequestSecurity implements ServerAssertion {
             // XPath match?
             List nodes = null;
             try {
-                XpathExpression xpath = elementSecurity.getXpathExpression();
+                XpathExpression xpath = elementSecurity.getxPath();
                 nodes = XpathEvaluator.newEvaluator(soapmsg, xpath.getNamespaces()).select(xpath.getExpression());
                 if (nodes.isEmpty()) {
                     logger.log(Level.FINE, "XPath expression '" + xpath.getExpression() + "' returns no elements.");

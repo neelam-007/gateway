@@ -93,7 +93,7 @@ public class ServerXmlResponseSecurity implements ServerAssertion {
             // XPath match?
             List nodes = null;
             try {
-                XpathExpression xpath = elementSecurity.getXpathExpression();
+                XpathExpression xpath = elementSecurity.getxPath();
                 nodes = XpathEvaluator.newEvaluator(soapmsg, xpath.getNamespaces()).select(xpath.getExpression());
             } catch (JaxenException e) {
                 logger.log(Level.SEVERE, e.getMessage(), e);

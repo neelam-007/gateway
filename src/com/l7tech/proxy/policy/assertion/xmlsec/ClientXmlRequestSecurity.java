@@ -103,7 +103,7 @@ public class ClientXmlRequestSecurity extends ClientAssertion {
             for (int i = 0; i < data.length; i++) {
                 ElementSecurity elementSecurity = data[i];
                 // XPath match?
-                XpathExpression xpath = elementSecurity.getXpathExpression();
+                XpathExpression xpath = elementSecurity.getxPath();
 // XmlUtil.documentToOutputStream(soapmsg, System.out);
                 List nodes = XpathEvaluator.newEvaluator(soapmsg, xpath.getNamespaces()).select(xpath.getExpression());
                 if (nodes.isEmpty()) continue; // nothing selected

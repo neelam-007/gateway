@@ -327,7 +327,7 @@ public class XmlSecurityPropertiesDialog extends JDialog {
         es.setCipher(sp.getAlgorithm());
         es.setKeyLength(sp.getKeyLength());
         XpathExpression xe = new XpathExpression(sp.getXpathExpression(), namespaces);
-        es.setXpathExpression(xe);
+        es.setxPath(xe);
         es.setOperation(sp.getOperation());
         return es;
     }
@@ -335,7 +335,7 @@ public class XmlSecurityPropertiesDialog extends JDialog {
     private SecuredMessagePart toSecureMessagePart(ElementSecurity es) {
         SecuredMessagePart sp = new SecuredMessagePart();
         sp.setAlgorithm(es.getCipher());
-        sp.setXpathExpression(es.getXpathExpression().getExpression());
+        sp.setXpathExpression(es.getxPath().getExpression());
         sp.setEncrypt(es.isEncryption());
         sp.setKeyLength(es.getKeyLength());
         sp.setOperation(es.getOperation());
@@ -343,7 +343,7 @@ public class XmlSecurityPropertiesDialog extends JDialog {
     }
 
     private boolean isEnvelopeAllOperations(ElementSecurity[] es) {
-        return (es.length == 1 && SOAP_ENVELOPE.equals(es[0].getXpathExpression().getExpression()));
+        return (es.length == 1 && SOAP_ENVELOPE.equals(es[0].getxPath().getExpression()));
     }
 
     private void addSecuredPart(SecuredMessagePart p) {
@@ -573,8 +573,8 @@ public class XmlSecurityPropertiesDialog extends JDialog {
         final JTree _23;
         _23 = new JTree();
         wsdlMessagesTree = _23;
-        _23.setShowsRootHandles(false);
         _23.setRootVisible(false);
+        _23.setShowsRootHandles(false);
         _22.setViewportView(_23);
         final JScrollPane _24;
         _24 = new JScrollPane();
