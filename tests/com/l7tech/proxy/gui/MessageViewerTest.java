@@ -39,12 +39,12 @@ public class MessageViewerTest {
         ri.onReceiveMessage(new PendingRequest(XmlUtil.stringToDocument("<foo><bar/><baz/></foo>"), null, ri));
         ri.onReplyError(new Exception("BlahException: Blah blah blah!"));
         ri.onReceiveMessage(new PendingRequest(XmlUtil.stringToDocument("<foo><bar/><baz/></foo>"), null, ri));
-        ri.onReceiveReply(new SsgResponse("<reply>blah blah blah, if this were an actual response, this would be a real SOAPEnvelope document.</reply>", 200, null));
+        ri.onReceiveReply(new SsgResponse(XmlUtil.stringToDocument("<reply>blah blah blah, if this were an actual response, this would be a real SOAPEnvelope document.</reply>"), null, 200, null));
         ri.onMessageError(new Exception("DumbException: you r teh dumb"));
         ri.onReceiveMessage(new PendingRequest(XmlUtil.stringToDocument("<foo><bar/><baz/></foo>"), null, ri));
-        ri.onReceiveReply(new SsgResponse("<reply>blah blah blah, if this were an actual response, this would be a real SOAPEnvelope document.</reply>", 200, null));
+        ri.onReceiveReply(new SsgResponse(XmlUtil.stringToDocument("<reply>blah blah blah, if this were an actual response, this would be a real SOAPEnvelope document.</reply>"), null, 200, null));
         ri.onReceiveMessage(new PendingRequest(XmlUtil.stringToDocument("<foo><bar/><baz/></foo>"), null, ri));
-        ri.onReceiveReply(new SsgResponse("<reply>blah blah blah, if this were an actual response, this would be a real SOAPEnvelope document.</reply>", 200, null));
+        ri.onReceiveReply(new SsgResponse(XmlUtil.stringToDocument("<reply>blah blah blah, if this were an actual response, this would be a real SOAPEnvelope document.</reply>"), null, 200, null));
         ri.onPolicyUpdated(new Ssg(22, "whatever"),
                            new PolicyAttachmentKey("http://example.com/schemas/wompfoo",
                                                    "http://example.com/schemas/wompfoo#WompSomeFoos"),

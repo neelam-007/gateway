@@ -376,7 +376,7 @@ public class MessageProcessor {
      */
     private SsgResponse obtainResponse(PendingRequest req)
             throws ConfigurationException, IOException, PolicyRetryableException, ServerCertificateUntrustedException,
-            OperationCanceledException, ClientCertificateException, BadCredentialsException, KeyStoreCorruptException, HttpChallengeRequiredException
+            OperationCanceledException, ClientCertificateException, BadCredentialsException, KeyStoreCorruptException, HttpChallengeRequiredException, SAXException
     {
         URL url = getUrl(req);
         Ssg ssg = req.getSsg();
@@ -491,9 +491,11 @@ public class MessageProcessor {
             Header contentType = postMethod.getResponseHeader("Content-Type");
             log.info("Response Content-Type: " + contentType);
             if (contentType == null || contentType.getValue() == null || contentType.getValue().indexOf("text/xml") < 0)
-                return new SsgResponse(CannedSoapFaults.RESPONSE_NOT_XML, 500, null);
+                return new SsgResponse(XmlUtil.stringToDocument(CannedSoapFaults.RESPONSE_NOT_XML), null, 500, null);
 
-            SsgResponse response = new SsgResponse(responseString, status, headers);
+            // TODO trogdor integration goes here
+
+            SsgResponse response = new SsgResponse(XmlUtil.stringToDocument(responseString), null, status, headers);
             if (status == 401 || status == 402) {
                 req.setLastErrorResponse(response);
                 Header authHeader = postMethod.getResponseHeader("WWW-Authenticate");

@@ -104,8 +104,8 @@ public class ClientXmlResponseSecurity extends ClientAssertion {
             keyName = session.getId();
         }
         ElementSecurity[] elements = xmlResponseSecurity.getElements();
-        SecurityProcessor verifier = SecurityProcessor.getVerifier(session, decryptionKey,
-                                                                   keyName, elements);
+        SecurityProcessor verifier = SecurityProcessor.createRecipientSecurityProcessor(response.getProcessorResult(),
+                                                                                        elements);
         try {
             X509Certificate caCert = SsgKeyStoreManager.getServerCert(request.getSsg());
             SecurityProcessor.Result result = verifier.processInPlace(doc);
@@ -145,8 +145,8 @@ public class ClientXmlResponseSecurity extends ClientAssertion {
             throw new SAXException(e); // can't happen (multiple SOAP headers can't make it this far)
         }
          SoapUtil.cleanEmptyHeaderElement(doc);
+         response.setResponse(doc);
          */
-        response.setResponse(doc);
         return AssertionStatus.NONE;
     }
 

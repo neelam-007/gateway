@@ -62,12 +62,12 @@ public abstract class SoapRequest extends XmlMessageAdapter implements SoapMessa
     }
 
     public WssProcessor.ProcessorResult getWssProcessorOutput() {
-            return wssRes;
-        }
+        return wssRes;
+    }
 
-        public void setWssProcessorOutput(WssProcessor.ProcessorResult res) {
-            wssRes = res;
-        }
+    public void setWssProcessorOutput(WssProcessor.ProcessorResult res) {
+        wssRes = res;
+    }
 
     /**
      * the new valid xml payload for this request

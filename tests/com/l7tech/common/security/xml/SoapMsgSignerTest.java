@@ -76,6 +76,8 @@ public class SoapMsgSignerTest extends TestCase {
     public void testValidateSignatureDocument() throws Exception {
     }
 
+    // TODO remove or replace after TROGDOR implementation
+/*
     public void testValidateSignatureElement() throws Exception {
         Document testDoc = getCleartextDocument();
         signAccountId( testDoc );
@@ -93,6 +95,7 @@ public class SoapMsgSignerTest extends TestCase {
         XmlUtil.nodeToOutputStream( testDoc, System.out );
         System.out.println( bar.getCertificateChain() );
     }
+*/
 
     public void testValidateElements_Sign() throws Exception {
         Document testDoc = getCleartextDocument();

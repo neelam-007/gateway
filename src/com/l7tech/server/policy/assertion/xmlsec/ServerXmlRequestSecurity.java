@@ -104,38 +104,16 @@ public class ServerXmlRequestSecurity implements ServerAssertion {
         // get the document
         Document soapmsg = extractDocumentFromRequest(request);
 
-        // get the session
-        Session xmlsecSession = null;
-        try {
-            xmlsecSession = getXmlSecSession(soapmsg);
-        } catch (SessionInvalidException e) {
-            // when the session is no longer valid we must inform the client proxy so that he generates another session
-            response.setParameter(Response.PARAM_HTTP_SESSION_STATUS, SecureSpanConstants.INVALID);
-            return AssertionStatus.FALSIFIED;
-        }
+        if (!(request instanceof SoapRequest))
+            return AssertionStatus.NOT_APPLICABLE;      // TODO verify this return value
+        SoapRequest soapRequest = (SoapRequest)request;
+        if (!soapRequest.isSoap())
+            return AssertionStatus.NOT_APPLICABLE;      // TODO verify this return value
 
-        if (xmlsecSession == null) {
-            response.setPolicyViolated(true);
-            response.setAuthenticationMissing(true);
-            return AssertionStatus.FALSIFIED;
-        }
-
-        // check validity of the session
-        long gotSeq;
-        try {
-            gotSeq = checkSeqNrValidity(soapmsg, xmlsecSession);
-        } catch (InvalidSequenceNumberException e) {
-            // when the session is no longer valid we must inform the client proxy so that he generates another session
-            response.setParameter(Response.PARAM_HTTP_SESSION_STATUS, SecureSpanConstants.INVALID);
-            // todo, control what the soap fault look like
-            // in this case the policy is not violated
-            // response.setPolicyViolated(true);
-            return AssertionStatus.FALSIFIED;
-        }
-        Key key = xmlsecSession.getKeyReq() != null ? new AesKey(xmlsecSession.getKeyReq(), 128) : null;
         ElementSecurity[] elements = xmlRequestSecurity.getElements();
-        SecurityProcessor verifier = SecurityProcessor.getVerifier(xmlsecSession, key,
-                                                                   xmlsecSession.getId(), elements);
+        SecurityProcessor verifier =
+                SecurityProcessor.createRecipientSecurityProcessor(soapRequest.getWssProcessorOutput(),
+                                                                   elements);
 
         try {
             // TODO clean up sender xml security processor to behave like receiver (throwless return)
@@ -160,7 +138,8 @@ public class ServerXmlRequestSecurity implements ServerAssertion {
                     logger.log( Level.WARNING, result.getType().desc );
                 return AssertionStatus.FAILED;
             }
-            
+
+            // TODO this needs to use the binarysecuritytoken instead
             final X509Certificate[] xmlCertChain = result.getCertificateChain();
             if (xmlCertChain != null) {
                 X500Name x500name = new X500Name(xmlCertChain[0].getSubjectX500Principal().getName());
@@ -245,7 +224,7 @@ public class ServerXmlRequestSecurity implements ServerAssertion {
             logger.log(Level.SEVERE, e.getMessage(), e);
             return AssertionStatus.AUTH_FAILED;
         } catch (CertUtils.CertificateUntrustedException e) {
-            // bad signature !            
+            // bad signature !
             logger.log(Level.WARNING, e.getMessage(), e);
             return AssertionStatus.AUTH_FAILED;
         } catch (GeneralSecurityException e) { // todo unlikely to happen now, maybe even impossible
@@ -258,12 +237,12 @@ public class ServerXmlRequestSecurity implements ServerAssertion {
         }
 
         // so mark this sequence number as used up
-        xmlsecSession.hitSequenceNumber(gotSeq);
+        // todo xmlsecSession.hitSequenceNumber(gotSeq);
         // clean the session id from the security header
         SecureConversationTokenHandler.consumeSessionInfoFromDocument(soapmsg);
 
         // clean empty security element and header if necessary
-        
+
         /** todo replace with TROGDOR!  (WssProcessor)
          SoapUtil.cleanEmptyRefList(soapmsg);
         try {

@@ -42,6 +42,7 @@ public interface WssProcessor {
 
     public interface X509SecurityToken extends SecurityToken {
         X509Certificate asX509Certificate();
+        boolean isPossessionProved();
     }
 
     public interface TimestampDate extends ParsedElement {

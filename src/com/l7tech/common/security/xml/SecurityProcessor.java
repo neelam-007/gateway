@@ -10,8 +10,6 @@ import org.w3c.dom.Document;
 
 import java.io.IOException;
 import java.security.GeneralSecurityException;
-import java.security.Key;
-import java.security.NoSuchAlgorithmException;
 import java.security.cert.X509Certificate;
 
 /**
@@ -22,18 +20,7 @@ import java.security.cert.X509Certificate;
  * @version 1.0
  */
 public abstract class SecurityProcessor {
-    /**
-     * the reference prefix for signature
-     */
-    protected static final String SIGN_REFERENCE = "signref";
-    /**
-     * the reference prefix for encryption
-     */
-    protected static final String ENC_REFERENCE = "encref";
-
     ElementSecurity[] elements = new ElementSecurity[]{};
-    Document inputDocument;
-    Document outputDocument;
 
     /**
      * Protected constructor accepting the security elements.
@@ -49,28 +36,28 @@ public abstract class SecurityProcessor {
     /**
      * Factory method that creates the <code>SenderXmlSecurityProcessor</code> security processor.
      *
-     * @param session  contains sequence generator, key for encrypting elements
-     * @param si       the signer info (private key, certificate)
-     * @param key      the encryption key
-     * @param elements the array of security elements describing the processing
-     *                 rules.
-     * @return the signer security processor
+     * @param si       the signer info (private key, certificate) to user for decorating messages
+     * @param elementsToDecorate the array of security elements describing the processing
+     *                           rules that will be performed upon outgoing requests.
+     * @return the Sender's XML security processor
      */
-    public static SecurityProcessor getSigner(Session session, SignerInfo si, Key key, ElementSecurity[] elements) {
-        return new SenderXmlSecurityProcessor(si, session, key, elements);
+    public static SecurityProcessor createSenderSecurityProcessor(SignerInfo si, ElementSecurity[] elementsToDecorate) {
+        return new SenderXmlSecurityProcessor(si, elementsToDecorate);
     }
 
     /**
      * Factory method that creates the <code>ReceiverXmlSecurityProcessor</code> security processor.
      *
-     * @param session  contains sequence generator, key for encrypting elements
-     * @param key      the decryption key (optional value)
-     * @param elements the array of security elements describing the processing
-     *                 rules.
-     * @return the signer security processor
+     * @param processorResult    the record of elements which were verified to be properly signed/encrypted
+     *                           when the request arrived.  This processing must already have been done
+     *                           by the caller.
+     * @param elementsToCheck    the array of security elements describing the processing
+     *                           rules that will be enforced by inspection of the processorResult.
+     * @return the Receiver's XML security processor
      */
-    public static SecurityProcessor getVerifier(Session session, Key key, long keyName, ElementSecurity[] elements) {
-        return new ReceiverXmlSecurityProcessor(session, key, keyName, elements);
+    public static SecurityProcessor createRecipientSecurityProcessor(WssProcessor.ProcessorResult processorResult,
+                                                                     ElementSecurity[] elementsToCheck) {
+        return new ReceiverXmlSecurityProcessor(processorResult, elementsToCheck);
     }
 
 
@@ -121,9 +108,9 @@ public abstract class SecurityProcessor {
     public static class Result {
         public static class Type {
             public static Type OK = new Type(0, "Ok");
-            public static Type NOT_APPLICABLE = new Type(1,"Assertion is not applicable to this request");
-            public static Type POLICY_VIOLATION = new Type(2,"This request violates the policy. Update policy and retry");
-            public static Type ERROR = new Type(3,"This request is erroneous and should not be retried");
+            public static Type NOT_APPLICABLE = new Type(1, "Assertion is not applicable to this request");
+            public static Type POLICY_VIOLATION = new Type(2, "This request violates the policy. Update policy and retry");
+            public static Type ERROR = new Type(3, "This request is erroneous and should not be retried");
 
             public final int code;
             public final String desc;
@@ -197,19 +184,5 @@ public abstract class SecurityProcessor {
         public X509Certificate[] getCertificateChain() {
             return certificateChain;
         }
-    }
-    /**
-     * Check whether the element security properties are supported
-     *
-     * @param elementSecurity the security element to verify
-     * @throws NoSuchAlgorithmException on unsupported algorithm
-     * @throws GeneralSecurityException on security properties invalid
-     */
-    protected void check(ElementSecurity elementSecurity)
-      throws NoSuchAlgorithmException, GeneralSecurityException {
-        if (!"AES".equals(elementSecurity.getCipher()))
-            throw new NoSuchAlgorithmException("Unable to encrypt request: unsupported cipher: " + elementSecurity.getCipher());
-        if (128 != elementSecurity.getKeyLength())
-            throw new SecurityException("Unable to encrypt request: unsupported key length: " + elementSecurity.getKeyLength());
     }
 }

@@ -8,6 +8,7 @@ package com.l7tech.proxy.datamodel;
 
 import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.util.SoapUtil;
+import com.l7tech.common.security.xml.WssProcessor;
 import com.l7tech.proxy.util.ClientLogger;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
@@ -25,21 +26,20 @@ import java.io.IOException;
  */
 public class SsgResponse {
     private static final ClientLogger log = ClientLogger.getInstance(SsgResponse.class);
-    private String responseString = null;
     private Document responseDoc = null;
+    private String responseString = null;
     private HttpHeaders headers;
     private int httpStatus = 0;
+    private WssProcessor.ProcessorResult processorResult = null;
 
-    public SsgResponse(String response, int httpStatus, HttpHeaders headers) {
-        this.responseString = response;
+    public SsgResponse(Document wssProcessedResponse, WssProcessor.ProcessorResult wssProcessorResult,
+                       int httpStatus, HttpHeaders headers)
+    {
+        if (responseDoc == null) throw new IllegalArgumentException("response document must be non-null");
+        this.responseDoc = wssProcessedResponse;
         this.httpStatus = httpStatus;
         this.headers = headers;
-    }
-
-    public SsgResponse(Document response, int httpStatus, HttpHeaders headers) {
-        this.responseDoc = response;
-        this.httpStatus = httpStatus;
-        this.headers = headers;
+        this.processorResult = wssProcessorResult;
     }
 
     public static SsgResponse makeFaultResponse(String faultCode, String faultString, String faultActor) {
@@ -47,10 +47,12 @@ public class SsgResponse {
         try {
             String responseString = new String(SoapUtil.soapMessageToByteArray(faultMessage));
             HttpHeaders headers = new HttpHeaders(new Header[0]);
-            return new SsgResponse(responseString, 500, headers);
+            return new SsgResponse(XmlUtil.stringToDocument(responseString), null, 500, headers);
         } catch (IOException e) {
             throw new RuntimeException(e); // can't happen
         } catch (SOAPException e) {
+            throw new RuntimeException(e); // can't happen
+        } catch (SAXException e) {
             throw new RuntimeException(e); // can't happen
         }
     }
@@ -60,28 +62,12 @@ public class SsgResponse {
     }
 
     public String getResponseAsString() throws IOException {
-        if (responseDoc != null)
-            return XmlUtil.nodeToString(responseDoc);
-        return responseString;
+        if (responseString != null) return responseString;
+        return responseString = XmlUtil.nodeToString(responseDoc);
     }
 
     public Document getResponseAsDocument() throws IOException, SAXException {
-        if (responseDoc != null)
-            return responseDoc;
-        if (responseString == null)
-            return null;
-
-        responseDoc = XmlUtil.stringToDocument(responseString);
         return responseDoc;
-    }
-
-    /**
-     * Replace the response with a new document.
-     * @param newResponse
-     */
-    public void setResponse(Document newResponse) {
-        this.responseDoc = newResponse;
-        this.responseString = null;
     }
 
     /**
@@ -107,5 +93,13 @@ public class SsgResponse {
             log.error(e);
             return "<SsgResponse toString error: " + e + ">";
         }
+    }
+
+    /**
+     * Get the result of running this response through WssProcessor.  Might be null.
+     * @return The ProcessorResult, or null if the WssProcessor was not given or could not process the response.
+     */
+    public WssProcessor.ProcessorResult getProcessorResult() {
+        return processorResult;
     }
 }

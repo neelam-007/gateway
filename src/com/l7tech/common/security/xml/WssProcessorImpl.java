@@ -616,23 +616,7 @@ public class WssProcessorImpl implements WssProcessor {
 
         // remember this cert
         final X509Certificate finalcert = referencedCert;
-        WssProcessor.SecurityToken rememberedSecToken = new WssProcessor.SecurityToken() {
-            public Object asObject() {
-                return finalcert;
-            }
-
-            public Element asElement() {
-                return binarySecurityTokenElement;
-            }
-
-            public String asXmlString() {
-                try {
-                    return XmlUtil.nodeToString(binarySecurityTokenElement);
-                } catch (IOException e) {
-                    return e.getMessage();
-                }
-            }
-        };
+        WssProcessor.SecurityToken rememberedSecToken = new X509SecurityTokenImpl(finalcert, binarySecurityTokenElement);
         cntx.securityTokens.add(rememberedSecToken);
     }
 
@@ -807,5 +791,44 @@ public class WssProcessorImpl implements WssProcessor {
         Element releventSecurityHeader = null;
         String wsaMessageId = null;
         String wsaRelatesTo = null;
+    }
+
+    private static class X509SecurityTokenImpl implements WssProcessor.X509SecurityToken {
+        boolean possessionProved = false;
+        private final X509Certificate finalcert;
+        private final Element binarySecurityTokenElement;
+
+        public X509SecurityTokenImpl(X509Certificate finalcert, Element binarySecurityTokenElement) {
+            this.finalcert = finalcert;
+            this.binarySecurityTokenElement = binarySecurityTokenElement;
+        }
+
+        public Object asObject() {
+            return finalcert;
+        }
+
+        public Element asElement() {
+            return binarySecurityTokenElement;
+        }
+
+        public String asXmlString() {
+            try {
+                return XmlUtil.nodeToString(binarySecurityTokenElement);
+            } catch (IOException e) {
+                return e.getMessage();
+            }
+        }
+
+        public X509Certificate asX509Certificate() {
+            return finalcert;
+        }
+
+        public boolean isPossessionProved() {
+            return possessionProved;
+        }
+
+        public void onPossessionProved() {
+            possessionProved = true;
+        }
     }
 }

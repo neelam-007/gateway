@@ -4,7 +4,6 @@ import com.l7tech.common.protocol.SecureSpanConstants;
 import com.l7tech.common.security.AesKey;
 import com.l7tech.common.security.xml.*;
 import com.l7tech.common.util.KeystoreUtils;
-import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.xml.MessageNotSoapException;
 import com.l7tech.message.Request;
 import com.l7tech.message.Response;
@@ -107,7 +106,9 @@ public class ServerXmlResponseSecurity implements ServerAssertion {
         }
         SignerInfo si = KeystoreUtils.getInstance().getSignerInfo();
         ElementSecurity[] elements = xmlResponseSecurity.getElements();
-        SecurityProcessor signer = SecurityProcessor.getSigner(xmlsession, si, encryptionKey, elements);
+
+        // TODO verify TROGDOR integration
+        SecurityProcessor signer = SecurityProcessor.createSenderSecurityProcessor(si, elements);
         try {
             signer.processInPlace(soapmsg);
         } catch (SecurityProcessorException e) {
