@@ -101,9 +101,9 @@ public class ServerRoutingAssertion implements ServerAssertion {
 
                     if (_httpState == null) {
                         _httpState = new HttpState();
-                        _httpState.setCredentials(url.getHost(),
-                          _data.getRealm(),
-                          _httpCredentials);
+                        String realm = _data.getRealm();
+                        if ( realm != null && realm.length() == 0 ) realm = null;
+                        _httpState.setCredentials( url.getHost(), realm, _httpCredentials );
                     }
                     client.setState(_httpState);
                 }
