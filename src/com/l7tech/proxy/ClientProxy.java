@@ -9,6 +9,8 @@ import org.mortbay.util.MultiException;
 
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.io.File;
+import java.util.Properties;
 
 /**
  * Encapsulates an HTTP proxy that processes SOAP messages.
@@ -18,6 +20,8 @@ import java.net.URL;
  */
 public class ClientProxy {
     private final Category log = Category.getInstance(ClientProxy.class);
+    private final String PROXY_CONFIG =
+            System.getProperties().getProperty("user.home") + File.separator + ".ssg";
 
     private SsgFinder ssgFinder;
     private HttpServer httpServer;
@@ -30,6 +34,7 @@ public class ClientProxy {
 
     private boolean isRunning = false;
     private boolean isDestroyed = false;
+    private boolean isInitialized = false;
 
     /**
      * Create a ClientProxy with the specified settings.
@@ -53,6 +58,19 @@ public class ClientProxy {
         mustNotBeDestroyed();
         if (isRunning)
             throw new IllegalStateException("ClientProxy is currently running");
+    }
+
+    public synchronized void init() {
+        if (isInitialized)
+            return;
+
+        Properties props = System.getProperties();
+        props.put("java.protocol.handler.pkgs", "com.sun.net.ssl.internal.www.protocol");
+        props.put("javax.net.ssl.trustStore",
+                new File(PROXY_CONFIG + File.separator + "trustStore").getAbsolutePath());
+        props.put("javax.net.ssl.trustStorePassword", "password");
+
+        isInitialized = true;
     }
 
     /**
@@ -93,6 +111,8 @@ public class ClientProxy {
      */
     public synchronized URL start() throws MultiException {
         mustNotBeRunning();
+        if (!isInitialized)
+            init();
         getHttpServer().start();
         isRunning = true;
         URL url;
