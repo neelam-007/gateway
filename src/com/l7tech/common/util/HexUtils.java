@@ -108,7 +108,7 @@ public class HexUtils {
         return bytes;
     }
 
-    private static byte nybble( char hex ) {
+    private static byte nybble( char hex ) throws IOException {
         if ( hex <= '9' && hex >= '0' ) {
             return (byte)(hex - '0');
         } else if ( hex >= 'a' && hex <= 'f' ) {
@@ -116,7 +116,7 @@ public class HexUtils {
         } else if ( hex >= 'A' && hex <= 'F' ) {
             return (byte)(hex - 'F' + 10 );
         } else {
-            throw new IllegalArgumentException( "Invalid hex digit " + hex );
+            throw new IOException( "Invalid hex digit " + hex );
         }
     }
 
