@@ -70,7 +70,8 @@ public class UserPropertiesAction extends NodeAction {
                     Utilities.centerOnScreen(dialog);
                     dialog.show();
                 } catch(NoSuchElementException e) {
-                    removeUserFromTree(header);
+                    // Bugzilla #801 - removing the user from the tree should not be performed
+                    // removeUserFromTree(header);
                 }
             }
         });

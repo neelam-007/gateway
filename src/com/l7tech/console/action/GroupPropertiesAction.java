@@ -70,7 +70,8 @@ public class GroupPropertiesAction extends NodeAction {
                     Utilities.centerOnScreen(dialog);
                     dialog.show();
                 } catch (NoSuchElementException e) {
-                    removeGroupTreeNode(header);
+                    // Bugzilla #801 - removing the group from the tree should not be performed 
+                    // removeGroupTreeNode(header);
                 }
             }
         });
