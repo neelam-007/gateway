@@ -53,31 +53,13 @@ public class XmlSecurityPropertiesAction extends NodeAction {
      * without explicitly asking for the AWT event thread!
      */
     public void performAction() {
-        if (Boolean.getBoolean("preview")) {
-            performActionNew();
-        } else {
-            performActionOld();
-        }
-
-    }
-
-    /**
-     * Actually perform the action.
-     * This is the method which should be called programmatically.
-     * note on threading usage: do not access GUI components
-     * without explicitly asking for the AWT event thread!
-     */
-    public void performActionNew() {
         XmlSecurityTreeNode n = (XmlSecurityTreeNode)node;
-        XmlSecurityAssertion ass = (XmlSecurityAssertion)node.asAssertion();
         final MainWindow mw = Registry.getDefault().getComponentRegistry().getMainWindow();
         XmlSecurityPropertiesDialog dialog = new XmlSecurityPropertiesDialog(mw, true, n);
         dialog.pack();
         Utilities.centerOnScreen(dialog);
         dialog.show();
-
     }
-
 
     /**
      * Actually perform the action.
