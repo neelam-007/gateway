@@ -178,13 +178,10 @@ public class XpathBasedAssertionPropertiesDialog extends JDialog {
                     xmlSecAssertion.setXpathExpression(new XpathExpression(xpath, namespaces));
                 }
                 XpathBasedAssertionPropertiesDialog.this.dispose();
-
+                if (okActionListener != null) okActionListener.actionPerformed(e);
             }
         });
 
-        if (okActionListener != null) {
-            okButton.addActionListener(okActionListener);
-        }
         helpButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 Actions.invokeHelp(XpathBasedAssertionPropertiesDialog.this);
