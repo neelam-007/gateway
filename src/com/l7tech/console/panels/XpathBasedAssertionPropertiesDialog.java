@@ -157,10 +157,11 @@ public class XpathBasedAssertionPropertiesDialog extends JDialog {
                 String xpath = xpathTextField.getText();
                 XpathFeedBack res = getFeedBackMessage(xpathTextField);
                 if (res != XpathFeedBack.OK) {
-                    if (xpath == null || xpath.equals("")) {
-                        xpath = "[empty]";
+                    String xpathmsg = xpath;
+                    if (xpathmsg == null || xpathmsg.equals("")) {
+                        xpathmsg = "[empty]";
                     }
-                    int rs2 = JOptionPane.showConfirmDialog(okButton, "The path " + xpath + " is not valid (" +
+                    int rs2 = JOptionPane.showConfirmDialog(okButton, "The path " + xpathmsg + " is not valid (" +
                                                                       res.getShortMessage() + ").\nAre you sure " +
                                                                       "you want to save?");
                     if (rs2 != JOptionPane.YES_OPTION) {
