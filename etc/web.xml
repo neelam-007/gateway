@@ -37,13 +37,19 @@
     </servlet>
 
     <servlet>
-           <servlet-name>RegistrarServlet</servlet-name>
-           <servlet-class>com.l7tech.remote.jini.lookup.RegistrarLookupServlet</servlet-class>
+        <servlet-name>RegistrarServlet</servlet-name>
+        <servlet-class>com.l7tech.remote.jini.lookup.RegistrarLookupServlet</servlet-class>
     </servlet>
 
     <servlet>
-           <servlet-name>WsdlProxy</servlet-name>
-           <servlet-class>com.l7tech.server.WsdlProxyServlet</servlet-class>
+        <servlet-name>ClassServerServlet</servlet-name>
+        <servlet-class>com.l7tech.remote.jini.export.ClassServerServlet</servlet-class>
+    </servlet>
+
+
+    <servlet>
+        <servlet-name>WsdlProxy</servlet-name>
+        <servlet-class>com.l7tech.server.WsdlProxyServlet</servlet-class>
     </servlet>
 
     <!-- Axis servlet properties -->
@@ -107,28 +113,33 @@
     </servlet-mapping>
 
     <servlet-mapping>
-       <servlet-name>XMLEncSessionRequestHandler</servlet-name>
-       <url-pattern>/ssg/xmlencsession</url-pattern>
+        <servlet-name>XMLEncSessionRequestHandler</servlet-name>
+        <url-pattern>/ssg/xmlencsession</url-pattern>
     </servlet-mapping>
 
     <servlet-mapping>
-       <servlet-name>XMLEncSessionRequestHandler</servlet-name>
-       <url-pattern>/ssg/xmlencsession</url-pattern>
+        <servlet-name>XMLEncSessionRequestHandler</servlet-name>
+        <url-pattern>/ssg/xmlencsession</url-pattern>
     </servlet-mapping>
 
     <servlet-mapping>
-           <servlet-name>RegistrarServlet</servlet-name>
-           <url-pattern>/ssg/registrar</url-pattern>
+        <servlet-name>RegistrarServlet</servlet-name>
+        <url-pattern>/ssg/registrar</url-pattern>
     </servlet-mapping>
 
     <servlet-mapping>
-       <servlet-name>WsdlProxy</servlet-name>
-       <url-pattern>/ssg/wsdl</url-pattern>
+        <servlet-name>ClassServerServlet</servlet-name>
+        <url-pattern>/classserver/*</url-pattern>
     </servlet-mapping>
 
     <servlet-mapping>
-       <servlet-name>WsdlProxy</servlet-name>
-       <url-pattern>/ssg/wsil</url-pattern>
+        <servlet-name>WsdlProxy</servlet-name>
+        <url-pattern>/ssg/wsdl</url-pattern>
+    </servlet-mapping>
+
+    <servlet-mapping>
+        <servlet-name>WsdlProxy</servlet-name>
+        <url-pattern>/ssg/wsil</url-pattern>
     </servlet-mapping>
 
     <servlet-mapping>
@@ -146,10 +157,10 @@
         ** todo: probably should be disabled - em08012004
     -->
     <!-- -->
-     <servlet-mapping>
-       <servlet-name>AdminServlet</servlet-name>
-       <url-pattern>/ssg/servlet/AdminServlet</url-pattern>
-     </servlet-mapping>
+    <servlet-mapping>
+        <servlet-name>AdminServlet</servlet-name>
+        <url-pattern>/ssg/servlet/AdminServlet</url-pattern>
+    </servlet-mapping>
 
     <!--
     <servlet-mapping>

@@ -22,8 +22,10 @@ import java.io.IOException;
 import java.security.AccessController;
 import java.security.Policy;
 import java.security.PrivilegedAction;
+import java.security.Permission;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.rmi.RMISecurityManager;
 
 /**
  * This class is the SSG console Main entry point.
@@ -40,14 +42,15 @@ public class Main {
 
     /**
      * run the application
+     *
      * @param args
      */
     public void run(String[] args) {
         try {
             // AWT event dispatching thread error handler
-            System.setProperty("sun.awt.exception.handler",
-              "com.l7tech.console.logging.AwtErrorHandler");
-            //System.setProperty("java.security.policy", "etc/jini/policy.all");
+            System.setProperty("sun.awt.exception.handler", "com.l7tech.console.logging.AwtErrorHandler");
+            System.setProperty("java.security.policy", "etc/jini/policy.all");
+            ensureSecurityManager();
             installEventQueue();
 
             Policy.setPolicy(new DynamicPolicyProvider());
@@ -70,28 +73,27 @@ public class Main {
 
             main = Registry.getDefault().getComponentRegistry().getMainWindow();
             // Window listener
-            main.addWindowListener(
-              new WindowAdapter() {
-                  /**
-                   * Invoked when a window has been opened.
-                   */
-                  public void windowOpened(WindowEvent e) {
-                      if (mainSplashScreen != null) {
-                          mainSplashScreen.dispose();
-                          mainSplashScreen = null;
-                      }
-                      SwingUtilities.invokeLater(new Runnable() {
-                          public void run() {
-                              main.activateLogonDialog();
-                          }
-                      });
-                  }
+            main.addWindowListener(new WindowAdapter() {
+                /**
+                 * Invoked when a window has been opened.
+                 */
+                public void windowOpened(WindowEvent e) {
+                    if (mainSplashScreen != null) {
+                        mainSplashScreen.dispose();
+                        mainSplashScreen = null;
+                    }
+                    SwingUtilities.invokeLater(new Runnable() {
+                        public void run() {
+                            main.activateLogonDialog();
+                        }
+                    });
+                }
 
-                  public void windowClosed(WindowEvent e) {
-                      saveWindowPosition(main);
-                      System.exit(0);
-                  }
-              });
+                public void windowClosed(WindowEvent e) {
+                    saveWindowPosition(main);
+                    System.exit(0);
+                }
+            });
             main.setVisible(true);
             main.toFront();
         } catch (HeadlessException e) {
@@ -114,7 +116,7 @@ public class Main {
 
     /**
      * install custom event queue as the default one does not pass the
-     *  security info (Subject, AccessController.getContext()...)
+     * security info (Subject, AccessController.getContext()...)
      */
     void installEventQueue() {
         EventQueue eq = Toolkit.getDefaultToolkit().getSystemEventQueue();
@@ -147,6 +149,7 @@ public class Main {
                 /**
                  * This method will be called by <code>AccessController.doPrivileged</code>
                  * after enabling privileges.
+                 *
                  * @see PrivilegedAction for more detials
                  */
                 public Object run() {
@@ -222,6 +225,19 @@ public class Main {
         installLookAndFeel();
     }
 
+    /**
+     * Utility routine that sets a security manager if one isn't already
+     * present.
+     */
+    private void ensureSecurityManager() {
+        if (System.getSecurityManager() == null) {
+            System.setSecurityManager(new RMISecurityManager() {
+                public void checkPermission(Permission perm) {}
+                public void checkPermission(Permission perm, Object context) {}
+
+            });
+        }
+    }
 
     /**
      * Starts the application. The applicaiton is started
