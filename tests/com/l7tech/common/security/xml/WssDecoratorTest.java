@@ -43,7 +43,7 @@ public class WssDecoratorTest extends TestCase {
 
         Document soapMsg = TestDocuments.getTestDocument(TestDocuments.PLACEORDER_CLEARTEXT);
 
-        log.info("Before decoration:" + XmlUtil.documentToString(soapMsg));
+        log.info("Before decoration:" + XmlUtil.documentToFormattedString(soapMsg));
 
         X509Certificate serverCert = TestDocuments.getEttkServerCertificate();
         //PrivateKey serverKey = TestDocuments.getEttkServerPrivateKey();
@@ -75,7 +75,7 @@ public class WssDecoratorTest extends TestCase {
                                                              tocrypt,
                                                              tosign);
 
-        log.info("Decorated message:" + XmlUtil.documentToString(decoratedMsg));
+        log.info("Decorated message:" + XmlUtil.documentToFormattedString(decoratedMsg));
 
 
     }

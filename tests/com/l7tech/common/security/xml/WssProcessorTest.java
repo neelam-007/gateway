@@ -94,7 +94,7 @@ public class WssProcessorTest extends TestCase {
 
             Document undecorated = result.getUndecoratedMessage();
             assertTrue(undecorated != null);
-            log.info("Undecorated document:\n" + XmlUtil.documentToString(undecorated));
+            log.info("Undecorated document:\n" + XmlUtil.documentToFormattedString(undecorated));
         }
     }
 
