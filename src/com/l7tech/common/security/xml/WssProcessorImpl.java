@@ -586,6 +586,7 @@ public class WssProcessorImpl implements WssProcessor {
             // There was unencrypted stuff mixed in with the EncryptedData, so we can only record elements as
             // encrypted that were actually wholly inside the EncryptedData.
             // TODO: In this situation, no note is taken of any encrypted non-Element nodes (such as text nodes)
+            // This sucks, but at lesat this will err on the side of safety.
             logger.info("Only some of element '" + parentElement.getLocalName() + "' non-attribute contents were encrypted");
             for (int i = 0; i < dataList.getLength(); i++) {
                 Node node = dataList.item(i);

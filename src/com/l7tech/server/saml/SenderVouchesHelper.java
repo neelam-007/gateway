@@ -39,12 +39,13 @@ class SenderVouchesHelper extends SamlAssertionHelper {
      * create saml sender vouches assertion
      * 
      * @return the saml assertion as a dom.w3c.org document
-     * @throws IOException  
+     * @param assertionId what to use as value of AssertionID in created element.  If null, one will be made up.
+     * @throws IOException
      * @throws SAXException 
      */
-    Document createAssertion() throws IOException, SAXException, CertificateException {
+    Document createAssertion(String assertionId) throws IOException, SAXException, CertificateException {
         Calendar now = Calendar.getInstance(utcTimeZone);
-        AssertionType assertion = getGenericAssertion( now );
+        AssertionType assertion = getGenericAssertion( now, assertionId );
         AuthenticationStatementType at = attachAuthenticationStatement(assertion, now);
 
         SubjectConfirmationType st = at.getSubject().addNewSubjectConfirmation();

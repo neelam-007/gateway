@@ -53,13 +53,14 @@ public class HolderOfKeyHelper extends SamlAssertionHelper {
      * create saml holder-of-key assertion
      *
      * @return the saml assertion as a dom.w3c.org document
+     * @param assertionId what to use as value of AssertionID in created element.  If null, one will be made up.
      * @throws IOException
      * @throws SAXException
      */
-    public Document createAssertion() throws IOException, SAXException, CertificateException {
+    public Document createAssertion(String assertionId) throws IOException, SAXException, CertificateException {
         Calendar now = Calendar.getInstance(utcTimeZone);
 
-        AssertionType assertion = getGenericAssertion( now );
+        AssertionType assertion = getGenericAssertion( now, assertionId );
         AuthenticationStatementType at = attachAuthenticationStatement(assertion, now);
 
         SubjectConfirmationType sc = at.getSubject().getSubjectConfirmation();

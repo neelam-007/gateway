@@ -167,6 +167,11 @@ public class WssProcessorTest extends TestCase {
         doTest(makeDotNetTestDocument("agent failing signed request", TestDocuments.AGENT_FAILING_SIGNED_REQUEST));
     }
 
+    public void testSampleSignedSamlHolderOfKeyRequest() throws Exception {
+        doTest(makeEttkTestDocument("sample signed SAML holder-of-key request",
+                                    TestDocuments.SAMPLE_SIGNED_SAML_HOLDER_OF_KEY_REQUEST));
+    }
+
     private TestDocument makeEttkTestDocument(String testname, String docname) {
         try {
             Document d = TestDocuments.getTestDocument(docname);

@@ -66,7 +66,7 @@ public abstract class SamlAssertionHelper {
      */
     void attachAssertion(boolean sign)
       throws IOException, SAXException, SignatureException, CertificateException {
-        Document doc = createAssertion();
+        Document doc = createAssertion(null);
 
         try {
             doc.getDocumentElement().setAttribute("Id", "SamlTicket"); // TODO use AssertionID and better values, if at all
@@ -88,7 +88,7 @@ public abstract class SamlAssertionHelper {
     }
 
     public Document createSignedAssertion() throws IOException, SAXException, SignatureException, CertificateException {
-        Document doc = createAssertion();
+        Document doc = createAssertion(null);
         signAssertion(doc, signerInfo.getPrivate(), signerInfo.getCertificateChain());
         return doc;
     }
@@ -199,7 +199,15 @@ public abstract class SamlAssertionHelper {
         return signaturemethod;
     }
 
-    abstract Document createAssertion() throws IOException, SAXException, CertificateException;
+    /**
+     * Create a SAML assertion.
+     * @return the new assertion, not yet signed
+     * @param assertionId what to use as value of AssertionID in created element.  If null, one will be made up.
+     * @throws IOException
+     * @throws SAXException
+     * @throws CertificateException
+     */
+    abstract Document createAssertion(String assertionId) throws IOException, SAXException, CertificateException;
 
     /**
      * sign te while document (envelope).
@@ -215,7 +223,7 @@ public abstract class SamlAssertionHelper {
         }
     }
 
-    protected AssertionType getGenericAssertion( Calendar now ) {
+    protected AssertionType getGenericAssertion( Calendar now, String assertionId ) {
         final String caDn = signerInfo.getCertificateChain()[0].getSubjectDN().getName();
         Map caMap = CertUtils.dnToAttributeMap(caDn);
         String caCn = (String)((List)caMap.get("CN")).get(0);
@@ -224,7 +232,10 @@ public abstract class SamlAssertionHelper {
 
         assertion.setMinorVersion(BigInteger.ONE);
         assertion.setMajorVersion(BigInteger.ONE);
-        assertion.setAssertionID(Long.toHexString(System.currentTimeMillis())); // TODO figure out a better AssertionID
+        if (assertionId == null)
+            assertion.setAssertionID(Long.toHexString(System.currentTimeMillis())); // TODO figure out a better AssertionID
+        else
+            assertion.setAssertionID(assertionId);
         assertion.setIssuer(caCn);
         assertion.setIssueInstant(now);
 
