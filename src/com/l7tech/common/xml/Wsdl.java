@@ -341,12 +341,21 @@ public class Wsdl {
         Map namespaceMap = definition.getNamespaces();
         String tnsUri = definition.getTargetNamespace();
 
-        SortedMap result = new TreeMap();
-        boolean soapenv = false;
-        int ns = 1;
+        // Get it into URL order
+        SortedMap uris = new TreeMap();
         for (Iterator i = namespaceMap.keySet().iterator(); i.hasNext();) {
             String prefix = (String) i.next();
             String uri = (String)namespaceMap.get(prefix);
+            uris.put( uri, prefix );
+        }
+
+        // Now assign prefixes
+        LinkedHashMap result = new LinkedHashMap();
+        boolean soapenv = false;
+        int ns = 1;
+        for (Iterator i = uris.keySet().iterator(); i.hasNext();) {
+            String uri = (String) i.next();
+            String prefix = (String)namespaceMap.get( uri );
 
             if ( soapUris.contains( uri ) ) {
                 result.put( prefix, uri );
