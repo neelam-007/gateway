@@ -2,6 +2,7 @@ package com.l7tech.server.service.resolution;
 
 import com.l7tech.objectmodel.imp.EntityImp;
 import com.l7tech.service.ResolutionParameterTooLongException;
+import com.l7tech.common.util.HashCode;
 
 import java.io.Serializable;
 
@@ -91,7 +92,7 @@ public class ResolutionParameters extends EntityImp implements Serializable {
      * this must be overriden (hibernate requirement for composite id classes)
      */
     public int hashCode() {
-	    return com.l7tech.common.util.HashCode.compute(new String[]{urn, soapaction, uri});
+	    return HashCode.compute(new String[]{urn, soapaction, uri});
     }
 
     private String soapaction;
