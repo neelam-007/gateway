@@ -7,9 +7,11 @@ import com.jgoodies.plaf.plastic.PlasticXPLookAndFeel;
 import com.jgoodies.plaf.plastic.theme.SkyBluerTahoma;
 import com.jgoodies.plaf.windows.ExtWindowsLookAndFeel;
 import com.l7tech.common.BuildInfo;
+import com.l7tech.common.util.FileUtils;
 import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.console.util.Preferences;
 import com.l7tech.console.util.TopComponents;
+import com.l7tech.console.util.JdkLoggerConfigurator;
 import net.jini.security.policy.DynamicPolicyProvider;
 import net.jini.security.policy.PolicyInitializationException;
 
@@ -19,6 +21,9 @@ import java.awt.*;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.File;
+import java.io.FileOutputStream;
 import java.rmi.RMISecurityManager;
 import java.security.AccessController;
 import java.security.Permission;
@@ -26,6 +31,7 @@ import java.security.Policy;
 import java.security.PrivilegedAction;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.net.URL;
 
 /**
  * This class is the SSG console Main entry point.
@@ -48,6 +54,9 @@ public class Main {
     public void run(String[] args) {
         try {
             setInitialEnvironment();
+            JdkLoggerConfigurator.configure();
+            Logger log = Logger.getLogger(getClass().getName());
+
             ensureSecurityManager();
             installEventQueue();
 
@@ -62,6 +71,11 @@ public class Main {
             prefs.updateFromProperties(System.getProperties(), false);
             /* so it is visible in help/about */
             prefs.updateSystemProperties();
+            try {
+                copyResources(new String[] {"com/l7tech/console/resources/logger.dtd"}, prefs.getHomePath());
+            } catch (IOException e) {
+                log.log(Level.WARNING, "error on copying resources", e);
+            }
 
             main = TopComponents.getInstance().getMainWindow();
             // Window listener
@@ -224,9 +238,11 @@ public class Main {
     private void ensureSecurityManager() {
         if (System.getSecurityManager() == null) {
             System.setSecurityManager(new RMISecurityManager() {
-                public void checkPermission(Permission perm) {}
+                public void checkPermission(Permission perm) {
+                }
 
-                public void checkPermission(Permission perm, Object context) {}
+                public void checkPermission(Permission perm, Object context) {
+                }
 
             });
         }
@@ -243,7 +259,56 @@ public class Main {
         // Build information
         System.setProperty("com.l7tech.buildstring", BuildInfo.getBuildString());
         System.setProperty("com.l7tech.builddate", BuildInfo.getBuildDate() + BuildInfo.getBuildTime());
+
+        // apache logging layer to use the jdk logger
+        System.setProperty("org.apache.commons.logging.Log", "org.apache.commons.logging.impl.Jdk14Logger");
+
     }
+
+    /**
+     * copy resources from jar to the directory.
+     * storage
+     */
+    private void copyResources(String res[], String directory) throws IOException {
+        InputStream in = null;
+        try {
+            ClassLoader cl = getClass().getClassLoader();
+            for (int i = 0; i < res.length; i++) {
+                in = cl.getResourceAsStream(res[i]);
+                if (in == null) {
+                    System.err.println("Couldn't load " + res[i]);
+                    continue;
+                }
+                URL url = cl.getResource(res[i]);
+                String file = directory + File.separator + new File(url.getFile()).getName();
+                final InputStream input = in;
+                FileUtils.saveFileSafely(file, new FileUtils.Saver() {
+                    public void doSave(FileOutputStream fos) throws IOException {
+                        byte[] bytearray = new byte[512];
+                        int len = 0;
+                        try {
+                            while ((len = input.read(bytearray)) != -1) {
+                                fos.write(bytearray, 0, len);
+                            }
+                        } finally {
+                            if (fos != null) fos.close();
+                        }
+                    }
+                });
+                in.close();
+                in = null;
+            }
+            } finally {
+            if (in != null) {
+                try {
+                    in.close();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+    }
+
 
     /**
      * Starts the application. The applicaiton is started

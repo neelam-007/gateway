@@ -200,7 +200,7 @@ public class DefaultPolicyValidator extends PolicyValidator {
 
         private void processCredentialSource(Assertion a) {
             if (seenRouting) {
-                result.addWarning(new PolicyValidatorResult.Warning(a, assertionPath, "The assertion might get ignored.", null));
+                result.addWarning(new PolicyValidatorResult.Warning(a, assertionPath, "The assertion must occur before routing.", null));
             }
             // process XmlRequestSecurity first as it may not be credential assertion
             if (a instanceof XmlRequestSecurity) {
@@ -291,7 +291,7 @@ public class DefaultPolicyValidator extends PolicyValidator {
                     }
                 };
                 deferredValidators.add(dv);
-                processCredentialSource(a);
+                // processCredentialSource(a);
             } else if (a instanceof XslTransformation) {
                 // check that the assertion is on the right side of the routing
                 XslTransformation ass = (XslTransformation)a;

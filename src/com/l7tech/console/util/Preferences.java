@@ -6,8 +6,6 @@ import java.beans.PropertyChangeSupport;
 import java.io.*;
 import java.util.*;
 import java.util.List;
-import java.util.logging.LogManager;
-import java.util.logging.Logger;
 
 /**
  * The Preferencs class is a console property manager, that is
@@ -142,7 +140,7 @@ public class Preferences extends PropertyChangeSupport {
         //copyResources();
         configureProperties();
         sslIinitialize();
-        logIinitialize();
+        //logIinitialize();
     }
 
     private void prepare() {
@@ -154,37 +152,6 @@ public class Preferences extends PropertyChangeSupport {
         }
     }
 
-    /**
-     * copy resources from jar to the local client
-     * storage
-     */
-    private void copyResources() throws IOException {
-        InputStream in = null;
-        try {
-            ClassLoader cl = getClass().getClassLoader();
-            for (int i = 0; i < res.length; i++) {
-                in = cl.getResourceAsStream(res[i]);
-                if (in == null) {
-                    log("warning couldn't load " + res[i]);
-                } else {
-                    File file = new File(SSM_USER_HOME + File.separator + res[i]);
-                    // if (!file.exists()) {
-                    dumpStreamToFile(in, file);
-                    // }
-                    in.close();
-                    in = null;
-                }
-            }
-        } finally {
-            if (in != null) {
-                try {
-                    in.close();
-                } catch (IOException e) {
-                    log("copyResources", e);
-                }
-            }
-        }
-    }
 
     /**
      * configure well known application properties.
@@ -210,60 +177,6 @@ public class Preferences extends PropertyChangeSupport {
         }
     }
 
-    /**
-     * initialize logging, try differnet strategies. First look for the system
-     * property <code>java.util.logging.config.file</code>, then look for
-     * <code>logging.properties</code>. If that fails fall back to the
-     * <code>com/l7tech/console/resources/logging.properties</code>.
-     */
-    private void logIinitialize() {
-        InputStream in = null;
-        try {
-            System.setProperty("org.apache.commons.logging.Log", "org.apache.commons.logging.impl.Jdk14Logger");
-            String cf = System.getProperty("java.util.logging.config.file");
-            List configCandidates = new ArrayList(3);
-            if (cf != null) {
-                configCandidates.add(cf);
-            }
-            configCandidates.add("logging.properties");
-            configCandidates.add("com/l7tech/console/resources/logging.properties");
-
-            boolean configFound = false;
-            String configCandidate = null;
-            for (Iterator iterator = configCandidates.iterator(); iterator.hasNext();) {
-                configCandidate = (String)iterator.next();
-                final File file = new File(configCandidate);
-
-                if (file.exists()) {
-                    in = file.toURL().openStream();
-                    if (in != null) {
-                        LogManager.getLogManager().readConfiguration(in);
-                        configFound = true;
-                        break;
-                    }
-                }
-                ClassLoader cl = getClass().getClassLoader();
-                in = cl.getResourceAsStream(configCandidate);
-                if (in != null) {
-                    LogManager.getLogManager().readConfiguration(in);
-                    configFound = true;
-                    break;
-                }
-            }
-            if (configFound) {
-                Logger.getLogger("com.l7tech.console").info("Policy editor logging initialized from '" + configCandidate + "'");
-            }
-        } catch (IOException e) {
-            e.printStackTrace(System.err);
-        } catch (SecurityException e) {
-            e.printStackTrace(System.err);
-        } finally {
-            try {
-                if (in != null) in.close();
-            } catch (IOException e) { /*swallow*/
-            }
-        }
-    }
 
     /**
      * initialize ssl
@@ -289,37 +202,6 @@ public class Preferences extends PropertyChangeSupport {
         }).start();
     }
 
-    /**
-     * Dump the contests of the InputStream into the specified
-     * <CODE>File</CODE>..
-     * <p/>
-     * Note that method is private, and does not check for
-     * <B>null</B> parameters.
-     * 
-     * @param input    the InputStream the source
-     * @param destfile th destination file
-     * @throws IOException 
-     */
-    private void dumpStreamToFile(InputStream input, File destfile)
-      throws IOException {
-
-        byte[] bytearray = new byte[512];
-        int len = 0;
-        // delete if exists
-        if (destfile.exists()) {
-            destfile.delete();
-        }
-        FileOutputStream output = null;
-
-        try {
-            output = new FileOutputStream(destfile);
-            while ((len = input.read(bytearray)) != -1) {
-                output.write(bytearray, 0, len);
-            }
-        } finally {
-            if (output != null) output.close();
-        }
-    }
 
     /**
      * Returns the value associated with the specified key
