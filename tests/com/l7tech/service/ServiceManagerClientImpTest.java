@@ -39,8 +39,6 @@ public class ServiceManagerClientImpTest {
         String differentStringEverytime = Long.toString(System.currentTimeMillis());
         originalService.setName("test" + differentStringEverytime);
         originalService.setPolicyXml("<test" + differentStringEverytime + "/>");
-        originalService.setSoapAction("test:" + differentStringEverytime);
-        originalService.setUrn(":test:" + differentStringEverytime);
         originalService.setWsdlUrl("http://test" + differentStringEverytime + "?wsdl");
         originalService.setWsdlXml("<test" + differentStringEverytime + "/>");
         System.out.println("saving service");

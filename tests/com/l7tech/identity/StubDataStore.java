@@ -176,7 +176,6 @@ public class StubDataStore {
         Wsdl wsdl = Wsdl.newInstance(null, new FileReader(file));
         PublishedService service = new PublishedService();
         service.setName(wsdl.getDefinition().getTargetNamespace());
-        service.setUrn(wsdl.getDefinition().getTargetNamespace());
         StringWriter sw = new StringWriter();
         wsdl.toWriter(sw);
         service.setWsdlXml(sw.toString());
