@@ -41,7 +41,8 @@ public class InternalUserManagerServer extends HibernateEntityManager implements
             case 0:
                 return null;
             case 1:
-                return (User)users.get(0);
+                User u = (User)users.get(0);
+                u.setProviderId( IdProvConfManagerServer.INTERNALPROVIDER_SPECIAL_OID );
             default:
                 String err = "Found more than one user with the login " + login;
                 _log.warn( err );
