@@ -268,4 +268,7 @@ public class AssertionMessages extends Messages {
     public static final M XPATHCREDENTIAL_PASS_FOUND_MULTI        = m(6613, Level.WARNING, "Login XPath evaluation found multiple results");
     public static final M XPATHCREDENTIAL_PASS_XPATH_WRONG_RESULT = m(6614, Level.WARNING, "Password XPath evaluation found content of an unsupported type");
     public static final M XPATHCREDENTIAL_PASS_PARENT_NOT_ELEMENT = m(6615, Level.WARNING, "Can't remove password element; parent is not an Element");
+
+    // Email and SNMP alerts
+    public static final M EMAILALERT_MESSAGE_SENT = m(6700, Level.INFO, "Email message sent");
 }
