@@ -3,7 +3,6 @@ package com.l7tech.policy.assertion.ext;
 
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.proxy.policy.assertion.ClientAssertion;
-import com.l7tech.server.policy.assertion.ServerAssertion;
 
 /**
  * The class <code>CustomAssertionDescriptor</code> contains the
@@ -44,7 +43,7 @@ public class CustomAssertionDescriptor {
         }
         this.serverAssertion = sa;
 
-        if (!ServerAssertion.class.isAssignableFrom(sa)) {
+        if (!ServiceInvocation.class.isAssignableFrom(sa)) {
             throw new IllegalArgumentException("server assertion " + sa);
         }
     }
