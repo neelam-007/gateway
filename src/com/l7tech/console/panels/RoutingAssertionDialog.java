@@ -152,6 +152,7 @@ public class RoutingAssertionDialog extends JDialog {
         JButton buttonDefaultUrl = new JButton();
         buttonDefaultUrl.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
+                 serviceUrlTextField.setText(assertion.getProtectedServiceUrl());
             }
         });
         buttonDefaultUrl.setText("Reset");
