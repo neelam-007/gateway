@@ -45,6 +45,11 @@ import java.sql.SQLException;
  *
  */
 public class LdapIdentityProvider implements IdentityProvider {
+    /** LDAP connection attempts will fail after 5 seconds' wait */
+    public static final String LDAP_CONNECT_TIMEOUT = new Integer(5 * 1000).toString();
+    /** An unused LDAP connection will be closed after 30 seconds of inactivity */
+    public static final String LDAP_POOL_IDLE_TIMEOUT = new Integer(30 * 1000).toString();
+
     public LdapIdentityProvider() {
     }
 
@@ -353,7 +358,8 @@ public class LdapIdentityProvider implements IdentityProvider {
         Object temp = config.getLdapUrl();
         if ( temp != null ) env.put(Context.PROVIDER_URL, temp );
         env.put("com.sun.jndi.ldap.connect.pool", "true");
-        env.put("com.sun.jndi.ldap.connect.timeout", "30000" );
+        env.put("com.sun.jndi.ldap.connect.timeout", LDAP_CONNECT_TIMEOUT );
+        env.put("com.sun.jndi.ldap.connect.pool.timeout", LDAP_POOL_IDLE_TIMEOUT );
         String dn = config.getBindDN();
         if ( dn != null && dn.length() > 0 ) {
             String pass = config.getBindPasswd();
