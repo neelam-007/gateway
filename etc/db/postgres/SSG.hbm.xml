@@ -1,0 +1,85 @@
+<?xml version="1.0"?>
+<!DOCTYPE hibernate-mapping PUBLIC
+        "-//Hibernate/Hibernate Mapping DTD//EN"
+        "http://hibernate.sourceforge.net/hibernate-mapping-1.1.dtd">
+
+<!-- $Id$ -->
+
+<hibernate-mapping>
+    <class name="com.l7tech.identity.IdentityProviderConfig" table="identity_provider">
+        <id name="oid" column="objectid" type="long" unsaved-value="-1">
+            <generator class="hilo.long"/>
+        </id>
+        <version name="version" column="version" type="integer"/>
+
+        <property name="description" type="string"/>
+        <property name="name" type="string"/>
+
+        <property name="typeVal" type="int" column="type" />
+
+        <property name="serializedProps" type="string" column="properties" />
+    </class>
+
+    <class name="com.l7tech.objectmodel.imp.ObjectIdentityImp" table="object_identity">
+        <id name="oid" column="objectid" type="long">
+          <generator class="hilo.long"/>
+        </id>
+
+        <property name="tableName" column="table_name" type="string"/>
+        <property name="keySeed" column="key_seed" type="long"/>
+        <property name="keyBatchSize" column="key_batch_size" type="int"/>
+        <property name="classSeed" column="class_seed" type="int"/>
+        <property name="serverSeed" column="server_seed" type="int"/>
+    </class>
+
+    <class name="com.l7tech.identity.Group" table="internal_group">
+        <id name="oid" column="objectid" type="long" unsaved-value="-1">
+            <generator class="hilo.long"/>
+        </id>
+
+        <version name="version" column="version" type="integer"/>
+
+        <property name="description" type="string"/>
+        <property name="name" type="string"/>
+
+        <set role="members" lazy="false" table="internal_user_group">
+            <key column="internal_group"/>
+            <many-to-many class="com.l7tech.identity.User" column="internal_user"/>
+        </set>
+    </class>
+
+    <class name="com.l7tech.identity.User" table="internal_user">
+        <id name="oid" column="objectid" type="long" unsaved-value="-1">
+            <generator class="hilo.long"/>
+        </id>
+
+        <version name="version" column="version" type="integer"/>
+
+        <property name="name" type="string" column="name" />
+        <property name="login" type="string" column="login" />
+        <property name="password" type="string"/>
+        <property name="firstName" column="first_name"  type="string"/>
+        <property name="lastName" column="last_name" type="string"/>
+        <property name="email" type="string"/>
+        <property name="title" type="string"/>
+
+        <set role="groups" lazy="false" table="internal_user_group">
+            <key column="internal_user"/>
+            <many-to-many class="com.l7tech.identity.Group" column="internal_group"/>
+        </set>
+    </class>
+
+    <class name="com.l7tech.service.PublishedService" table="published_service">
+        <id name="oid" column="objectid" type="long" unsaved-value="-1">
+            <generator class="hilo.long"/>
+        </id>
+
+        <version name="version" column="version" type="integer"/>
+
+        <property name="name" column="name" type="string"/>
+        <property name="policyXml" column="policy_xml" type="string"/>
+        <property name="wsdlUrl" column="wsdl_url" type="string"/>
+        <property name="wsdlXml" column="wsdl_xml" type="string"/>
+    </class>
+
+</hibernate-mapping>
