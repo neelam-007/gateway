@@ -841,7 +841,7 @@ ssgadmin.md5 = '${install.pass.ssgadmin.md5}'
         </replaceregexp>
 
         <!-- Copy cluster_hostname -->
-        <copy file="${src.root}/etc/cluser_hostname" tofile="${install.src.cluster_hostname}"/>
+        <copy file="${src.root}/etc/cluster_hostname" tofile="${install.src.cluster_hostname}"/>
     </target>
 
     <target name="INTERNAL-ssg-install-properties-upgrade" unless="install.full">
@@ -863,7 +863,7 @@ ssgadmin.md5 = '${install.pass.ssgadmin.md5}'
         <copy file="${src.root}/etc/db/${database.type}/hibernate.properties" tofile="${install.src.hibernate.properties.dist}"/>
 
         <!-- Copy cluster_hostname -->
-        <copy file="${src.root}/etc/cluser_hostname" tofile="${install.src.cluster_hostname}-dist"/>
+        <copy file="${src.root}/etc/cluster_hostname" tofile="${install.src.cluster_hostname}-dist"/>
     </target>
 
     <target name="INTERNAL-ssg-install-keystores" if="install.full" depends="INTERNAL-ssg-install-genpass">
