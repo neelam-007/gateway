@@ -276,7 +276,7 @@ public class XpathBasedAssertionPropertiesDialog extends JDialog {
             log.log(Level.WARNING, msg, e);
             throw new RuntimeException(msg, e);
         }
-        TextComponentPauseListenerManager.registerPauseListener(messageViewerToolBar.getxpathField(), xpathFieldPauseListener, 1200);
+        TextComponentPauseListenerManager.registerPauseListener(messageViewerToolBar.getxpathField(), xpathFieldPauseListener, 700);
 
         String description = null;
         String title = null;
@@ -576,19 +576,29 @@ public class XpathBasedAssertionPropertiesDialog extends JDialog {
             }
         }*/
 
-        private void processHardwareFeedBack(XpathFeedBack hardwareFeedBack) {
+        private void processHardwareFeedBack(XpathFeedBack hardwareFeedBack, JTextField xpathField) {
             if (hardwareFeedBack == null) {
                 hardwareAccelStatusLabel.setText(" ");
                 hardwareAccelStatusLabel.setToolTipText(null);
             } else {
                 hardwareAccelStatusLabel.setText("(No hardware accel: " + hardwareFeedBack.getShortMessage() + ")");
                 hardwareAccelStatusLabel.setToolTipText(hardwareFeedBack.getDetailedMessage());
+
+                if (xpathField instanceof SquigglyTextField) {
+                    SquigglyTextField squigglyTextField = (SquigglyTextField)xpathField;
+                    int pos = hardwareFeedBack.errorPosition;
+                    if (pos >= 0)
+                        squigglyTextField.setRange(pos - 1, pos + 1);
+                    else
+                        squigglyTextField.setAll();
+                    squigglyTextField.setStraight();
+                    squigglyTextField.setColor(Color.BLUE);
+                }
             }
         }
 
         private void processFeedBack(XpathFeedBack feedBack, JTextField xpathField) {
             if (feedBack == null) feedBack = new XpathFeedBack(-1, null, null, null); // NPE guard
-            processHardwareFeedBack(feedBack.hardwareAccelFeedback);
 
             if (feedBack.valid() || feedBack.isEmpty()) {
                 if (xpathField instanceof SquigglyTextField) {
@@ -596,9 +606,11 @@ public class XpathBasedAssertionPropertiesDialog extends JDialog {
                     squigglyTextField.setNone();
                 }
                 xpathField.setToolTipText(null);
+                processHardwareFeedBack(feedBack.hardwareAccelFeedback, xpathField);
                 return;
             }
 
+            processHardwareFeedBack(feedBack.hardwareAccelFeedback, xpathField);
             StringBuffer tooltip = new StringBuffer();
             boolean htmlOpenAdded = false;
             if (feedBack.getErrorPosition() != -1) {
@@ -620,6 +632,7 @@ public class XpathBasedAssertionPropertiesDialog extends JDialog {
                 final String expr = feedBack.getXpathExpression();
                 squigglyTextField.setAll();
                 squigglyTextField.setSquiggly();
+                squigglyTextField.setColor(Color.RED);
             }
         }
 
