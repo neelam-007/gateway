@@ -202,11 +202,6 @@ public class Service {
         if (userManager == null) throw new java.rmi.RemoteException("Cannot retrieve the UserManager");
         try {
             com.l7tech.identity.User user = userManager.findByPrimaryKey(userId);
-            if (isLastAdmin(user)) {
-                String msg = "An attempt was made to nuke the last standing adminstrator";
-                logger.severe(msg);
-                throw new RemoteException(msg);
-            }
             userManager.delete(user);
             logger.log(Level.INFO, "Deleted User: " + user.getName());
         } catch (DeleteException e) {
@@ -240,27 +235,7 @@ public class Service {
             user.setGroups(groups);
 
             if (user.getOid() > 0) {
-                User originalUser = userManager.findByPrimaryKey(Long.toString(user.getOid()));
-                // here, we should make sure that IF the user is an administrator, he should not
-                // delete his membership to the admin group unless there is another exsiting member
-                if (isLastAdmin(originalUser)) {
-                    // was he stupid enough to nuke his admin membership?
-                    boolean stillAdmin = false;
-                    Iterator newgrpsiterator = groups.iterator();
-                    while (newgrpsiterator.hasNext()) {
-                        Group grp = (Group)newgrpsiterator.next();
-                        if (Group.ADMIN_GROUP_NAME.equals(grp.getName())) {
-                            stillAdmin = true;
-                            break;
-                        }
-                    }
-                    if (!stillAdmin) {
-                        logger.severe("An attempt was made to update the last standing administrator with no membership to the admin group!");
-                        throw new RemoteException("This update would revoke admin membership on the last standing administrator");
-                    }
-                }
-                originalUser.copyFrom(user);
-                userManager.update(originalUser);
+                userManager.update(user);
                 logger.log(Level.INFO, "Updated User: " + user.getName() + "[" + user.getOid() + "]");
                 return user.getOid();
             }
@@ -504,25 +479,7 @@ public class Service {
         return output;
     }
 
-    /**
-     * check whether this user is the last standing administrator
-     * this is used at update time to prevent the last administrator to nuke his admin accout membership
-     * @param currentUser
-     * @return true is this user is an administrator and no other users are
-     */
-    private boolean isLastAdmin(User currentUser) {
-        Iterator i = currentUser.getGroups().iterator();
-        while (i.hasNext()) {
-            Group grp = (Group)i.next();
-            // is he an administrator?
-            if (Group.ADMIN_GROUP_NAME.equals(grp.getName())) {
-                // is he the last one ?
-                if (grp.getMembers().size() <= 1) return true;
-                return false;
-            }
-        }
-        return false;
-    }
+
 
     IdentityProviderConfigManager identityProviderConfigManager = null;
     private Logger logger = null;
