@@ -9,7 +9,6 @@ package com.l7tech.common.util;
 import org.apache.commons.httpclient.HttpClient;
 import org.apache.commons.httpclient.UsernamePasswordCredentials;
 import org.apache.commons.httpclient.methods.PostMethod;
-import org.apache.log4j.Category;
 import org.bouncycastle.asn1.ASN1Set;
 import org.bouncycastle.asn1.x509.X509Name;
 import org.bouncycastle.jce.PKCS10CertificationRequest;
@@ -37,7 +36,6 @@ import java.security.cert.X509Certificate;
  * Time: 10:10:53 AM
  */
 public class SslUtils {
-    private static final Category log = Category.getInstance(SslUtils.class);
     public static final String REQUEST_SIG_ALG = "SHA1withRSA";
 
     static {
@@ -58,7 +56,6 @@ public class SslUtils {
                                                PrivateKey privateKey)
             throws SignatureException, InvalidKeyException, RuntimeException
     {
-        log.info("Generating CSR for user=" + username);
         X509Name subject = new X509Name("cn=" + username);
         ASN1Set attrs = null;
 
@@ -137,7 +134,6 @@ public class SslUtils {
     {
         X500Principal csrName = new X500Principal(csr.getCertificationRequestInfo().getSubject().toString());
         String csrNameString = csrName.getName(X500Principal.CANONICAL);
-        log.info("Sending certificate request to " + url + " for DN:" + csrNameString);
         HttpClient hc = new HttpClient();
         hc.getState().setAuthenticationPreemptive(true);
         hc.getState().setCredentials(null, null,
@@ -152,7 +148,6 @@ public class SslUtils {
             post.setRequestHeader("Content-Length", String.valueOf(csrBytes.length));
 
             int result = hc.executeMethod(post);
-            log.info("Post of CSR completed with status " + result);
             if ( result == 401 ) throw new BadCredentialsException("HTTP POST to certificate signer returned status " + result );
             if ( result == 403 ) throw new CertificateAlreadyIssuedException("HTTP POST to certificate signer returned status " + result);
             if ( result != 200 ) throw new CertificateException( "HTTP POST to certificate signer generated status " + result );
@@ -162,15 +157,12 @@ public class SslUtils {
             X500Principal certName = new X500Principal(cert.getSubjectDN().toString());
             String certNameString = certName.getName(X500Principal.CANONICAL);
 
-            log.info("Got back a certificate with DN:" + certNameString);
-
             if (!certNameString.equals(csrNameString))
                 throw new CertificateException("We got a certificate, but it's distinguished name didn't match what we asked for.");
             if (!cert.getPublicKey().equals(csr.getPublicKey()))
                 throw new CertificateException("We got a certificate, but it certified the wrong public key.");
             cert.verify(caCert.getPublicKey());
 
-            log.info("Certificate appears to be OK");
             return cert;
         } finally {
             if (post != null)
