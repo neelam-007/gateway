@@ -96,6 +96,7 @@ public class TokenServiceServlet extends HttpServlet {
         // dont let this ioexception fall through, this is a debugging nightmare!
         try {
             outputRequestSecurityTokenResponse(response, res);
+            logger.finest("Sent back SecurityToken:" + XmlUtil.nodeToFormattedString(response));
         } catch (IOException e) {
             String msg = "Error printing result. " + e.getMessage();
             logger.log(Level.SEVERE, msg, e);
