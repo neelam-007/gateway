@@ -109,7 +109,7 @@ public class NewInternalUserDialog extends JDialog {
      */
     private void initResources() {
         Locale locale = Locale.getDefault();
-        resources = ResourceBundle.getBundle("com.l7tech.console.resources.NewInternalUserDialog", locale);
+        resources = ResourceBundle.getBundle("com.l7tech.console.resources.NewUserDialog", locale);
     }
 
     /**
