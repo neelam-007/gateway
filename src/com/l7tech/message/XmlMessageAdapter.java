@@ -36,7 +36,7 @@ public abstract class XmlMessageAdapter extends MessageAdapter implements XmlMes
     }
 
     protected String serializeDoc(Document doc) throws IOException {
-        final StringWriter sw = new StringWriter();
+        final StringWriter sw = new StringWriter(512);
         XMLSerializer xmlSerializer = new XMLSerializer();
         xmlSerializer.setOutputCharStream(sw);
         OutputFormat of = new OutputFormat();
