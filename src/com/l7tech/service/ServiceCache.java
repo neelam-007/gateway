@@ -15,6 +15,7 @@ import com.l7tech.service.resolution.*;
 import com.l7tech.objectmodel.DuplicateObjectException;
 import com.l7tech.server.policy.assertion.ServerAssertion;
 import com.l7tech.server.policy.ServerPolicyFactory;
+import com.l7tech.common.util.Locator;
 
 import javax.wsdl.WSDLException;
 
@@ -41,6 +42,15 @@ public class ServiceCache {
      */
     public static ServiceCache getInstance() {
         return SingletonHolder.singleton;
+    }
+
+    /**
+     * initializes the cache
+     */ 
+    public static void initialize() {
+        // this will indirectly initialize the cache because the constructor of
+        // ServiceManagerImp will load all services and cache them
+        Locator.getDefault().lookup(ServiceManager.class);
     }
 
     /**
@@ -93,7 +103,7 @@ public class ServiceCache {
         Sync read = rwlock.readLock();
         try {
             read.acquire();
-            serverPolicies.get(new Long(serviceOid));
+            return (ServerAssertion)serverPolicies.get(new Long(serviceOid));
         } catch (InterruptedException e) {
             logger.log(Level.WARNING, "interruption in service cache", e);
             Thread.currentThread().interrupt();
@@ -101,7 +111,6 @@ public class ServiceCache {
         } finally {
             if (read != null) read.release();
         }
-        return null;
     }
 
     /**
