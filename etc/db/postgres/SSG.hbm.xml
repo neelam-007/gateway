@@ -167,7 +167,7 @@
     </class>
 
     <class name="com.l7tech.common.transport.jms.JmsConnection" table="jms_connection">
-        <id name="oid" column="oid" type="long" unsaved-value="-1">
+        <id name="oid" column="objectid" type="long" unsaved-value="-1">
             <generator class="hilo"/>
         </id>
         <version name="version" column="version" type="integer"/>
@@ -181,23 +181,26 @@
         <property name="username" column="username" type="string"/>
         <property name="password" column="password" type="string"/>
 
-        <set name="endpoints" table="jms_endpoint">
+        <set name="endpoints" cascade="all" inverse="true">
             <key column="connection_oid"/>
             <one-to-many class="com.l7tech.common.transport.jms.JmsEndpoint"/>
         </set>
     </class>
 
     <class name="com.l7tech.common.transport.jms.JmsEndpoint" table="jms_endpoint">
-        <id name="oid" column="oid" type="long" unsaved-value="-1">
+        <id name="oid" column="objectid" type="long" unsaved-value="-1">
             <generator class="hilo"/>
         </id>
         <version name="version" column="version" type="integer"/>
 
+        <!--
         <property name="connection" column="connection_oid" type="com.l7tech.common.transport.jms.JmsConnection"/>
+        -->
+        <many-to-one name="connection" class="com.l7tech.common.transport.jms.JmsConnection" column="connection_oid"/>
 
         <property name="name" column="name" type="string"/>
         <property name="destinationName" column="destination_name" type="string"/>
-        <property name="replyType" column="reply_type" type="int"/>
+        <property name="replyType" column="reply_type" type="com.l7tech.common.transport.jms.JmsReplyType"/>
         <property name="username" column="username" type="string"/>
         <property name="password" column="password" type="string"/>
     </class>
