@@ -6,12 +6,7 @@
 
 package com.l7tech.common.gui.util;
 
-import com.l7tech.common.gui.util.PauseListener;
-import com.l7tech.common.gui.util.TextComponentPauseListenerManager;
-
-import javax.swing.JFrame;
-import javax.swing.JLabel;
-import javax.swing.JTextField;
+import javax.swing.*;
 import javax.swing.text.JTextComponent;
 import java.awt.*;
 
