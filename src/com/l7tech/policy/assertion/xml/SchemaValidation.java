@@ -63,7 +63,22 @@ public class SchemaValidation extends Assertion {
                 typesel = (Element)potentiallists.item(0);
                 break;
             default:
-                return null;
+                break;
+        }
+        if (typesel == null) {
+            potentiallists = wsdl.getDocumentElement().getElementsByTagNameNS("http://schemas.xmlsoap.org/wsdl/", WSDL_TYPES_ELNAME);
+            typesel = null;
+            switch (potentiallists.getLength()) {
+                case 1:
+                    typesel = (Element)potentiallists.item(0);
+                    break;
+                default:
+                    break;
+            }
+        }
+
+        if (typesel == null) {
+            return null;
         }
         potentiallists = typesel.getElementsByTagNameNS(W3C_XML_SCHEMA, TOP_SCHEMA_ELNAME);
         Element schemael = null;
