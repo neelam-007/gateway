@@ -79,6 +79,7 @@ public class ServerRequestWssIntegrity implements ServerAssertion {
                     // we got the bugger!
                     logger.fine("The element " + data.getXpathExpression().getExpression() + " was found in this " +
                             "request. and is part of the elements that were signed as per the wss processor.");
+                    // TODO we currently short-circuit success as soon as ANY element is found.  We must check them all!
                     return AssertionStatus.NONE;
                 }
             }

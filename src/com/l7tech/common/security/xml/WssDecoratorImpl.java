@@ -21,10 +21,7 @@ import com.l7tech.common.util.*;
 import com.l7tech.common.xml.InvalidDocumentFormatException;
 import com.l7tech.policy.assertion.credential.CredentialFormat;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
-import org.w3c.dom.Document;
-import org.w3c.dom.Element;
-import org.w3c.dom.NodeList;
-import org.w3c.dom.Text;
+import org.w3c.dom.*;
 
 import javax.crypto.SecretKey;
 import java.io.IOException;
@@ -192,9 +189,7 @@ public class WssDecoratorImpl implements WssDecorator {
 
     }
 
-    private Element addSamlSecurityToken(Element securityHeader, Element senderSamlToken)
-            throws DecoratorException
-    {
+    private Element addSamlSecurityToken(Element securityHeader, Element senderSamlToken) {
         Document factory = securityHeader.getOwnerDocument();
         Element saml;
         if (senderSamlToken.getOwnerDocument() == factory)
@@ -479,14 +474,30 @@ public class WssDecoratorImpl implements WssDecorator {
         }
         String xenc = referenceList.getPrefix();
 
+        int numElementsEncrypted = 0;
         for (int i = 0; i < elementsToEncrypt.length; i++) {
             Element element = elementsToEncrypt[i];
+
+            if (XmlUtil.elementIsEmpty(element)) {
+                logger.info("Element \"" + element.getNodeName() + "\" is empty; will not encrypt it");
+                continue;
+            }
+
             Element encryptedElement = encryptElement(element, keyBytes);
 
             Element dataReference = XmlUtil.createAndAppendElementNS(referenceList, "DataReference", xencNs, xenc);
             dataReference.setAttribute("URI", "#" + getOrCreateWsuId(c, encryptedElement, element.getLocalName()));
 
             addKeyInfo(c, securityHeader, encryptedElement, keyInfoReferenceTarget, keyInfoValueTypeURI);
+            numElementsEncrypted++;
+        }
+
+        if (numElementsEncrypted < 1) {
+            // None of the elements needed to be encrypted.  Abort the addition of the ReferenceList.
+            Node parent = referenceList.getParentNode();
+            if (parent != null)
+                parent.removeChild(referenceList);
+            return null;
         }
 
         return referenceList;
@@ -541,12 +552,26 @@ public class WssDecoratorImpl implements WssDecorator {
         cipherValue.appendChild(soapMsg.createTextNode(base64));
         Element referenceList = XmlUtil.createAndAppendElementNS(encryptedKey, SoapUtil.REFLIST_EL_NAME, xencNs, xenc);
 
+        int numElementsEncrypted = 0;
         for (int i = 0; i < elementsToEncrypt.length; i++) {
             Element element = elementsToEncrypt[i];
+            if (XmlUtil.elementIsEmpty(element)) {
+                logger.info("Element \"" + element.getNodeName() + "\" is empty; will not encrypt it");
+                continue;
+            }
             Element encryptedElement = encryptElement(element, keyBytes);
 
             Element dataReference = XmlUtil.createAndAppendElementNS(referenceList, "DataReference", xencNs, xenc);
             dataReference.setAttribute("URI", "#" + getOrCreateWsuId(c, encryptedElement, element.getLocalName()));
+            numElementsEncrypted++;
+        }
+
+        if (numElementsEncrypted < 1) {
+            // None of the elements needed to be encrypted.  Abort the addition of the EncryptedKey.
+            Node parent = encryptedKey.getParentNode();
+            if (parent != null)
+                parent.removeChild(encryptedKey);
+            return null;
         }
 
         return encryptedKey;

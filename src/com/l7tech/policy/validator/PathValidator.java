@@ -15,7 +15,6 @@ import com.l7tech.policy.assertion.identity.SpecificUser;
 import com.l7tech.policy.assertion.identity.MemberOfGroup;
 import com.l7tech.policy.assertion.xml.XslTransformation;
 import com.l7tech.policy.assertion.xmlsec.*;
-import com.l7tech.identity.IdentityAdmin;
 import com.l7tech.console.util.Registry;
 import com.l7tech.objectmodel.FindException;
 
@@ -137,6 +136,11 @@ class PathValidator {
     }
 
     private boolean referredIdentityExists(IdentityAssertion a) {
+        return true;
+/*  TODO It is a really, REALLY bad idea to do network calls here.  This code is called once per ID assertion
+         per policy path per validation! With my not-to-complex policy we were up to a several second pause
+         after every policy UI gesture. */
+/*
         long providerId = a.getIdentityProviderOid();
         IdentityAdmin idAdmin = Registry.getDefault().getIdentityAdmin();
         if (idAdmin == null) {
@@ -163,7 +167,9 @@ class PathValidator {
         } catch (RemoteException e) {
             logger.log(Level.WARNING, "problem getting identity", e);
         }
+
         return false;
+*/
     }
 
     private void processCredentialSource(Assertion a) {
@@ -223,6 +229,9 @@ class PathValidator {
             seenSecureConversation = true;
         }
 
+        if (a instanceof SamlSecurity)
+            seenSamlSecurity = true;
+
         // Custom Assertion can only be used with HTTP Basic
         if (seenCustomAssertion && !seenHTTPBasic) {
             result.addError(new PolicyValidatorResult.
@@ -273,9 +282,9 @@ class PathValidator {
             // REASON FOR THIS RULE:
             // it makes no sense to validate that an element is signed if we dont validate
             // that the authorized user is the one who signed it.
-            if (!seenWssSignature && !seenSecureConversation) {
+            if (!seenWssSignature && !seenSecureConversation && !seenSamlSecurity) {
                 result.addWarning(new PolicyValidatorResult.Warning(a, assertionPath,
-                  "This assertion should be preceeded by an WSS Signature assertion or a Secure Conversation.", null));
+                  "This assertion should be preceeded by an WSS Signature assertion, a Secure Conversation assertion, or a SAML Security assertion.", null));
             }
             // REASON FOR THIS RULE:
             // it makes no sense to check something about the request after it's routed
@@ -295,9 +304,9 @@ class PathValidator {
             // the server needs to encrypt a symmetric key for the recipient
             // the server needs the client cert for this purpose. this ensures that
             // the client certis available from the request.
-            if (!seenWssSignature && !seenSecureConversation) {
+            if (!seenWssSignature && !seenSecureConversation && !seenSamlSecurity) {
                 result.addWarning(new PolicyValidatorResult.Warning(a, assertionPath,
-                  "This assertion should be preceeded by a WSS Signature or Secure Conversation assertion.", null));
+                  "This assertion should be preceeded by an WSS Signature assertion, a Secure Conversation assertion, or a SAML Security assertion.", null));
             }
         }
         seenPreconditions = true;
@@ -393,6 +402,7 @@ class PathValidator {
     boolean seenRouting = false;
     boolean seenWssSignature = false;
     boolean seenSecureConversation = false;
+    boolean seenSamlSecurity = false;
     boolean seenSsl = false;
     boolean sslForbidden = false;
     boolean seenCredAssertionThatRequiresClientCert = false;

@@ -140,6 +140,16 @@ public class WssRoundTripTest extends TestCase {
                                                wssDecoratorTest.getSignedSamlHolderOfKeyRequestTestDocument()));        
     }
 
+    public void testSignedEmptyElement() throws Exception {
+        runRoundTripTest(new NamedTestDocument("SignedEmptyElement",
+                                               wssDecoratorTest.getSignedEmptyElementTestDocument()));
+    }
+
+    public void testEncryptedEmptyElement() throws Exception {
+        runRoundTripTest(new NamedTestDocument("EncryptedEmptyElement",
+                                               wssDecoratorTest.getEncryptedEmptyElementTestDocument()));
+    }
+
     private void runRoundTripTest(NamedTestDocument ntd) throws Exception {
         log.info("Running round-trip test on test document: " + ntd.name);
         final WssDecoratorTest.TestDocument td = ntd.td;
@@ -273,8 +283,9 @@ public class WssRoundTripTest extends TestCase {
                     break;
                 }
             }
-            assertTrue("Element " + elementToEncrypt.getLocalName() + " must be encrypted", wasEncrypted);
-            log.info("Element " + elementToEncrypt.getLocalName() + " verified as encrypted successfully.");
+            assertTrue("Element " + elementToEncrypt.getLocalName() + " must be encrypted or empty",
+                       XmlUtil.elementIsEmpty(elementToEncrypt) || wasEncrypted);
+            log.info("Element " + elementToEncrypt.getLocalName() + " succesfully verified as either empty or encrypted.");
         }
     }
 

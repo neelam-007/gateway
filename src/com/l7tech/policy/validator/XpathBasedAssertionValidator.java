@@ -9,6 +9,7 @@ package com.l7tech.policy.validator;
 import com.l7tech.policy.PolicyValidatorResult;
 import com.l7tech.policy.AssertionPath;
 import com.l7tech.policy.assertion.RequestXpathAssertion;
+import com.l7tech.policy.assertion.XpathBasedAssertion;
 import org.jaxen.dom.DOMXPath;
 
 import java.util.logging.Logger;
@@ -17,16 +18,16 @@ import java.util.logging.Logger;
  * @author mike
  * @version 1.0
  */
-public class RequestXpathAssertionValidator implements AssertionValidator {
-    private static final Logger logger = Logger.getLogger(RequestXpathAssertionValidator.class.getName());
-    private final RequestXpathAssertion assertion;
+public class XpathBasedAssertionValidator implements AssertionValidator {
+    private static final Logger logger = Logger.getLogger(XpathBasedAssertionValidator.class.getName());
+    private final XpathBasedAssertion assertion;
 
-    public RequestXpathAssertionValidator(RequestXpathAssertion ra) {
+    public XpathBasedAssertionValidator(XpathBasedAssertion ra) {
         assertion = ra;
     }
 
     public void validate(AssertionPath path, PolicyValidatorResult result) {
-        String pattern = assertion.pattern();
+        String pattern = assertion.getXpathExpression().getExpression();
         if (pattern == null) {
             result.addError(new PolicyValidatorResult.Error(assertion, path, "XPath pattern is missing", null));
             logger.info("XPath pattern is missing");

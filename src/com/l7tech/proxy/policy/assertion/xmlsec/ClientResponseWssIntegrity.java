@@ -114,6 +114,7 @@ public class ClientResponseWssIntegrity extends ClientAssertion {
                 // we got the bugger!
                 log.fine("The element " + responseWssIntegrity.getXpathExpression().getExpression() + " was found in this " +
                          "response. and is part of the elements that were signed as per the wss processor.");
+                // TODO we currently short-circuit success as soon as ANY element is found.  We must check them all!
                 return AssertionStatus.NONE;
             }
         }

@@ -8,6 +8,8 @@ import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.xmlsec.RequestWssConfidentiality;
 import com.l7tech.proxy.datamodel.PendingRequest;
 import com.l7tech.proxy.datamodel.SsgResponse;
+import com.l7tech.proxy.datamodel.Ssg;
+import com.l7tech.proxy.datamodel.SsgKeyStoreManager;
 import com.l7tech.proxy.datamodel.exceptions.*;
 import com.l7tech.proxy.policy.assertion.ClientAssertion;
 import com.l7tech.proxy.policy.assertion.ClientDecorator;
@@ -15,6 +17,7 @@ import org.jaxen.JaxenException;
 
 import java.io.IOException;
 import java.security.GeneralSecurityException;
+import java.security.cert.X509Certificate;
 import java.util.List;
 import java.util.logging.Logger;
 
@@ -53,6 +56,8 @@ public class ClientRequestWssConfidentiality extends ClientAssertion {
                    GeneralSecurityException, IOException, KeyStoreCorruptException, HttpChallengeRequiredException,
                    PolicyRetryableException, ClientCertificateException
     {
+        final Ssg ssg = request.getSsg();
+        final X509Certificate serverCert = SsgKeyStoreManager.getServerCert(ssg);
 
         // add a pending decoration that will be applied only if the rest of this policy branch succeeds
         request.getPendingDecorations().put(this, new ClientDecorator() {
@@ -72,6 +77,8 @@ public class ClientRequestWssConfidentiality extends ClientAssertion {
                     // get the client cert and private key
                     // We must have credentials to get the private key
                     WssDecorator.DecorationRequirements wssReqs = request.getWssRequirements();
+                    if (serverCert != null)
+                        wssReqs.setRecipientCertificate(serverCert);
                     wssReqs.getElementsToEncrypt().addAll(elements);
                     return AssertionStatus.NONE;
                 } catch (JaxenException e) {

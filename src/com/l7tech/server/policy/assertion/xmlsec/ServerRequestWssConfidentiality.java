@@ -2,6 +2,7 @@ package com.l7tech.server.policy.assertion.xmlsec;
 
 import com.l7tech.common.security.xml.WssProcessor;
 import com.l7tech.common.xml.XpathEvaluator;
+import com.l7tech.common.util.XmlUtil;
 import com.l7tech.message.Request;
 import com.l7tech.message.Response;
 import com.l7tech.message.SoapRequest;
@@ -12,6 +13,7 @@ import com.l7tech.server.policy.assertion.ServerAssertion;
 import org.jaxen.JaxenException;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
+import org.w3c.dom.Node;
 import org.xml.sax.SAXException;
 
 import java.io.IOException;
@@ -55,8 +57,9 @@ public class ServerRequestWssConfidentiality implements ServerAssertion {
 
         XpathEvaluator evaluator = XpathEvaluator.newEvaluator(soapmsg, data.getXpathExpression().getNamespaces());
         List selectedNodes = null;
+        final String xpath = data.getXpathExpression().getExpression();
         try {
-            selectedNodes = evaluator.select(data.getXpathExpression().getExpression());
+            selectedNodes = evaluator.select(xpath);
         } catch (JaxenException e) {
             // this is thrown when there is an error in the expression
             // this is therefore a bad policy
@@ -65,7 +68,7 @@ public class ServerRequestWssConfidentiality implements ServerAssertion {
 
         // the element is not there so there is nothing to check
         if (selectedNodes.isEmpty()) {
-            logger.fine("The element " + data.getXpathExpression().getExpression() + " is not present in this request. " +
+            logger.fine("The element " + xpath + " is not present in this request. " +
                         "the assertion therefore succeeds.");
             return AssertionStatus.NONE;
         }
@@ -73,13 +76,26 @@ public class ServerRequestWssConfidentiality implements ServerAssertion {
         // to assert this, i must make sure that at least one of these nodes is part of the nodes
         // that were signed as per attesting the wss processor
         for (Iterator i = selectedNodes.iterator(); i.hasNext();) {
-            Object node = i.next();
+            Object obj = i.next();
+            if (!(obj instanceof Node)) {
+                logger.warning("The xpath result included a non-Node object of type " + obj.getClass().getName());
+                continue;
+            }
+
+            Node node = (Node)obj;
+            if (XmlUtil.elementIsEmpty(node)) {
+                logger.finer("The element " + xpath + " was found in this request but was empty and so needn't be encrypted.");
+                // TODO we currently short-circuit success as soon as ANY element is found.  We must check them all!
+                return AssertionStatus.NONE;
+            }
+
             Element[] toto = wssResults.getElementsThatWereEncrypted();
             for (int j = 0; j < toto.length; j++) {
                 if (toto[j] == node) {
                     // we got the bugger!
-                    logger.fine("The element " + data.getXpathExpression().getExpression() + " was found in this " +
+                    logger.fine("The element " + xpath + " was found in this " +
                             "request. and is part of the elements that were encrypted as per the wss processor.");
+                    // TODO we currently short-circuit success as soon as ANY element is found.  We must check them all!
                     return AssertionStatus.NONE;
                 }
             }

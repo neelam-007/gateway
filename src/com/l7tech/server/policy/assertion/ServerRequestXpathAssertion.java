@@ -67,7 +67,7 @@ public class ServerRequestXpathAssertion implements ServerAssertion {
                 String pattern = _data.pattern();
 
                 if ( pattern == null || pattern.length() == 0 ) {
-                    _logger.warning( "XPath pattern cannot be null or empty!" );
+                    _logger.warning( "XPath pattern is null or empty; assertion therefore fails." );
                     return AssertionStatus.FALSIFIED;
                 }
 
@@ -84,7 +84,7 @@ public class ServerRequestXpathAssertion implements ServerAssertion {
                 }
 
                 if ( result == null || result.size() == 0 ) {
-                    _logger.info( "XPath pattern " + pattern  + " didn't match request!" );
+                    _logger.info( "XPath pattern " + pattern  + " didn't match request; assertion therefore fails." );
                     return AssertionStatus.FALSIFIED;
                 } else {
                     Object o = result.get(0);
@@ -111,7 +111,7 @@ public class ServerRequestXpathAssertion implements ServerAssertion {
                                 return AssertionStatus.NONE;
                         }
                     } else {
-                        _logger.fine( "XPath pattern " + pattern + " matched request" );
+                        _logger.fine( "XPath pattern " + pattern + " matched request; assertion therefore succeeds." );
                         return AssertionStatus.NONE;
                     }
                 }
@@ -126,8 +126,8 @@ public class ServerRequestXpathAssertion implements ServerAssertion {
                 return AssertionStatus.SERVER_ERROR;
             }
         }
-        _logger.warning( "RequestXPathAssertion only works on XML requests!" );
-        return AssertionStatus.FALSIFIED;
+        _logger.warning( "RequestXPathAssertion only works on XML requests; assertion therefore fails." );
+        return AssertionStatus.BAD_REQUEST;
     }
 
     private final RequestXpathAssertion _data;

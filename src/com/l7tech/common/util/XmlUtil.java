@@ -374,7 +374,7 @@ public class XmlUtil {
         return null;
     }
 
-    public static boolean elementIsEmpty( Element element ) {
+    public static boolean elementIsEmpty( Node element ) {
         if ( !element.hasChildNodes() ) return true;
         Node kid = element.getFirstChild();
         while ( kid != null ) {
@@ -528,6 +528,7 @@ public class XmlUtil {
      * @return
      */
     public static Element createAndPrependElementNS(Element parent, String localName, String namespace, String desiredPrefix) {
+        if (desiredPrefix == null) desiredPrefix = "ns";
         Element element = parent.getOwnerDocument().createElementNS(namespace, localName);
         Node firstSib = parent.getFirstChild();
         if (firstSib != null)

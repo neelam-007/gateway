@@ -385,4 +385,40 @@ public class WssDecoratorTest extends TestCase {
         Document ass = hh.createSignedAssertion();
         return ass.getDocumentElement();
     }
+
+    public void testSignedEmptyElement() throws Exception {
+        runTest(getSignedEmptyElementTestDocument());
+    }
+
+    public TestDocument getSignedEmptyElementTestDocument() throws Exception {
+        final Context c = new Context();
+        Element empty = XmlUtil.createAndAppendElementNS(c.payload, "empty", c.payload.getNamespaceURI(), null);
+        return new TestDocument(c,
+                                TestDocuments.getEttkClientCertificate(),
+                                TestDocuments.getEttkClientPrivateKey(),
+                                TestDocuments.getDotNetServerCertificate(),
+                                TestDocuments.getDotNetServerPrivateKey(),
+                                true,
+                                new Element[0],
+                                new Element[] { empty });
+
+    }
+
+    public void testEncryptedEmptyElement() throws Exception {
+        runTest(getEncryptedEmptyElementTestDocument());
+    }
+
+    public TestDocument getEncryptedEmptyElementTestDocument() throws Exception {
+        final Context c = new Context();
+        Element empty = XmlUtil.createAndAppendElementNS(c.payload, "empty", c.payload.getNamespaceURI(), null);
+        return new TestDocument(c,
+                                TestDocuments.getEttkClientCertificate(),
+                                TestDocuments.getEttkClientPrivateKey(),
+                                TestDocuments.getDotNetServerCertificate(),
+                                TestDocuments.getDotNetServerPrivateKey(),
+                                true,
+                                new Element[] { empty },
+                                new Element[0]);
+
+    }
 }
