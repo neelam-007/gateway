@@ -17,6 +17,7 @@ import com.l7tech.console.event.ConnectionEvent;
 
 import javax.net.ssl.*;
 import javax.security.auth.login.LoginException;
+import javax.security.auth.login.FailedLoginException;
 import javax.swing.*;
 import javax.swing.event.DocumentListener;
 import javax.swing.event.DocumentEvent;
@@ -630,7 +631,8 @@ public class LogonDialog extends JDialog {
                 JOptionPane.showMessageDialog(LogonDialog.this, msg, "Error", JOptionPane.ERROR_MESSAGE);
                 return false;
             }
-        };
+        }
+        ;
         final SsgHostnameVerifier hostnameVerifier = new SsgHostnameVerifier();
         if (conn instanceof HttpsURLConnection) {
             ((HttpsURLConnection)conn).setHostnameVerifier(hostnameVerifier);
@@ -739,11 +741,13 @@ public class LogonDialog extends JDialog {
           cause instanceof UnknownHostException ||
           cause instanceof FileNotFoundException) {
             log.log(Level.WARNING, "logon()", e);
-            String msg =
-              MessageFormat.format(dialog.resources.getString("logon.connect.error"), new Object[]{getHostPart(serviceUrl)});
+            String msg =  MessageFormat.format(dialog.resources.getString("logon.connect.error"), new Object[]{getHostPart(serviceUrl)});
             JOptionPane.showMessageDialog(dialog, msg, "Error", JOptionPane.ERROR_MESSAGE);
-        } else if (cause instanceof RemoteException) {
-            log.log(Level.WARNING, "Could not connect to server", e);
+        } else if (cause instanceof LoginException || cause instanceof FailedLoginException) {
+            log.log(Level.WARNING, "logon()", e);
+            dialog.showInvalidCredentialsMessage();
+        } else if (cause instanceof RemoteException || cause instanceof IOException) {
+            log.log(Level.WARNING, "Could not connect to admin service server", e);
             String hostname = serviceUrl;
             try {
                 URL url = new URL(serviceUrl);
@@ -753,12 +757,6 @@ public class LogonDialog extends JDialog {
             }
             String msg = MessageFormat.format(dialog.resources.getString("service.unavailable.error"), new Object[]{hostname});
             JOptionPane.showMessageDialog(dialog, msg, "Error", JOptionPane.ERROR_MESSAGE);
-        } else if (cause instanceof LoginException) {
-            log.log(Level.WARNING, "logon()", e);
-            dialog.showInvalidCredentialsMessage();
-        } else if (cause instanceof IOException) {
-            log.log(Level.WARNING, "logon()", e);
-            dialog.showInvalidCredentialsMessage();
         } else {
             log.log(Level.WARNING, "logon()", e);
             String msg =

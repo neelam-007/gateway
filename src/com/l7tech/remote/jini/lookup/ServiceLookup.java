@@ -10,6 +10,7 @@ import net.jini.security.ProxyPreparer;
 import net.jini.security.policy.DynamicPolicyProvider;
 
 import java.io.IOException;
+import java.security.GeneralSecurityException;
 import java.security.Policy;
 import java.util.Collection;
 import java.util.logging.Level;
@@ -85,13 +86,15 @@ public class ServiceLookup {
             logger.log(Level.SEVERE, "Unable to obtain the service proxy", e);
         } catch (ClassNotFoundException e) {
             logger.log(Level.SEVERE, "Unable to obtain the service proxy", e);
+        } catch (GeneralSecurityException e) {
+            logger.log(Level.SEVERE, "Unable to obtain the service proxy", e);
         }
         return null;
     }
 
 
     protected ServiceRegistrar getRegistrar()
-      throws ConfigurationException, IOException, ClassNotFoundException {
+      throws ConfigurationException, IOException, ClassNotFoundException, GeneralSecurityException {
         if (registrar == null) {
             registrar = getLookupLocator().getRegistrar(timeout);
         }

@@ -6,17 +6,21 @@ import net.jini.core.lookup.ServiceMatches;
 import net.jini.core.lookup.ServiceRegistrar;
 import net.jini.core.lookup.ServiceTemplate;
 import net.jini.security.ProxyPreparer;
+import org.apache.commons.httpclient.HttpClient;
+import org.apache.commons.httpclient.HttpState;
+import org.apache.commons.httpclient.UsernamePasswordCredentials;
+import org.apache.commons.httpclient.methods.GetMethod;
 
 import javax.security.auth.Subject;
+import javax.security.auth.login.FailedLoginException;
 import java.io.IOException;
 import java.io.ObjectInputStream;
-import java.net.URL;
-import java.net.URLConnection;
+import java.rmi.ServerException;
 import java.security.AccessController;
+import java.security.GeneralSecurityException;
 import java.security.Principal;
 import java.util.Collection;
 import java.util.Iterator;
-import java.util.logging.Level;
 
 
 /**
@@ -28,7 +32,7 @@ import java.util.logging.Level;
  * This approach effectively disables the "spontaneous" aspect (multicast
  * discovery) on the client side.
  *
- * @author  <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
+ * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  * @version 1.0
  */
 public class HttpServiceLookup extends ServiceLookup {
@@ -36,7 +40,7 @@ public class HttpServiceLookup extends ServiceLookup {
      * Instantiate http serrvice lookup.
      *
      * @throws ConfigurationException if problem encountered with
-     * configuration
+     *                                configuration
      * @throws ConfigurationException on configuration error
      */
     public HttpServiceLookup()
@@ -47,11 +51,11 @@ public class HttpServiceLookup extends ServiceLookup {
     /**
      * create the service proxy instance of the class cl with
      * optional context <code>Collection</code>.
-     * <p>
+     * <p/>
      * Returns <b>null</b> if cannot locate the service or there
      * was an error in instantiating the service proxy.
      *
-     * @param cl the class that
+     * @param cl      the class that
      * @param context optional context collection
      * @return the object instance of the class type
      */
@@ -59,15 +63,14 @@ public class HttpServiceLookup extends ServiceLookup {
         /* Look up the remote server */
         try {
             ServiceMatches matches =
-              getRegistrar().lookup(
-                new ServiceTemplate(null, new Class[]{cl}, null), timeout);
+              getRegistrar().lookup(new ServiceTemplate(null, new Class[]{cl}, null), timeout);
 
             if (matches == null || matches.totalMatches == 0) {
                 return null;
             }
             Object server = matches.items[0].service;
             if (server == null) {
-                logger.severe("Lookup returned null service for '"+cl.getClass()+"' service id '" +matches.items[0].serviceID+"'");
+                logger.severe("Lookup returned null service for '" + cl.getClass() + "' service id '" + matches.items[0].serviceID + "'");
                 return null;
             }
             /* Prepare the server proxy */
@@ -78,6 +81,8 @@ public class HttpServiceLookup extends ServiceLookup {
         } catch (ConfigurationException e) {
             throw new RuntimeException(e);
         } catch (ClassNotFoundException e) {
+            throw new RuntimeException(e);
+        } catch (GeneralSecurityException e) {
             throw new RuntimeException(e);
         }
     }
@@ -90,62 +95,66 @@ public class HttpServiceLookup extends ServiceLookup {
      * @throws ConfigurationException
      */
     protected synchronized ServiceRegistrar getRegistrar()
-      throws IOException, ConfigurationException, ClassNotFoundException {
-        if (registrar !=null) {
-            logger.fine("Returning cached service registrar " +registrar);
+      throws IOException, ConfigurationException, ClassNotFoundException, GeneralSecurityException {
+        if (registrar != null) {
+            logger.fine("Returning cached service registrar " + registrar);
             return registrar;
         }
+        HttpClient client = new HttpClient();
+        HttpState state = client.getState();
 
-        URLConnection conn = null;
         String serviceUrl = Preferences.getPreferences().getServiceUrl();
         if (serviceUrl == null) {
             throw new ConfigurationException("The service url cannot be null");
         }
+        String registrarUrl = serviceUrl + "/registrar";
         logger.fine("Attempting connection to " + serviceUrl);
-        URL url = new URL(serviceUrl + "/registrar");
-        conn = url.openConnection();
-        setAuthorizationHeader(conn);
+        GetMethod getMethod = new GetMethod(registrarUrl);
+        getMethod.setDoAuthentication(true);
+        state.setAuthenticationPreemptive(true);
+        setAuthorizationHeader(state);
 
-        // for both input and output
-        conn.setUseCaches(false);
-        conn.setDefaultUseCaches(false);
-        conn.setDoInput(true);
-        conn.setDoOutput(true);
-        conn.setAllowUserInteraction(false);
+        client.executeMethod(getMethod);
 
-        ObjectInputStream oi = new ObjectInputStream(conn.getInputStream());
-
-        try {
-            registrar = (ServiceRegistrar)oi.readObject();
-            logger.fine("Obtained registrar " + registrar);
-
-            return registrar;
-
-        } finally {
-            if (oi != null) oi.close();
+        int status = getMethod.getStatusCode();
+        switch (status) {
+            case 200:
+                ObjectInputStream oi = new ObjectInputStream(getMethod.getResponseBodyAsStream());
+                try {
+                    registrar = (ServiceRegistrar)oi.readObject();
+                    logger.fine("Obtained registrar " + registrar);
+                    return registrar;
+                } finally {
+                    if (oi != null) oi.close();
+                }
+            case 401:
+                throw new FailedLoginException("Invoke '"+registrarUrl+"' returned remote error ("+status+")");
+            case 500:
+                throw new ServerException("Invoke '"+registrarUrl+"' returned remote error ("+status+")");
+            default:
+                throw new IOException("Invoke '"+registrarUrl+"' returned remote error ("+status+")");
         }
     }
 
     /**
      * set the authorizaition properties for the connection
-     * 
-     * @param conn the connection
+     *
+     * @param state the http client state
      */
-    private void setAuthorizationHeader(URLConnection conn) {
+    private void setAuthorizationHeader(HttpState state) {
         Subject subject = Subject.getSubject(AccessController.getContext());
         if (subject == null) {
             logger.warning("No subject associated. The authentication will not be attempted");
             return;
         }
 
-        sun.misc.BASE64Encoder encoder = new sun.misc.BASE64Encoder();
         Iterator i = subject.getPrincipals().iterator();
 
-        String cred = i.hasNext() ? ((Principal)i.next()).getName() : "";
+        String login = i.hasNext() ? ((Principal)i.next()).getName() : "";
         i = subject.getPrivateCredentials().iterator();
-        cred += (i.hasNext() ? (":" + new String((char[])i.next())) : "");
+        String password = (i.hasNext() ? (new String((char[])i.next())) : "");
 
-        String encoded = encoder.encode(cred.getBytes());
-        conn.setRequestProperty("Authorization", "Basic " + encoded);
+        state.setCredentials(null, null, new UsernamePasswordCredentials(login, password));
+
     }
 }

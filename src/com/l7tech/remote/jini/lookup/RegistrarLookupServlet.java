@@ -39,11 +39,11 @@ import java.security.AccessControlException;
 /**
  * The servlet that serializes the registrar obtained by the lookup
  * to the SSG manager console.
- * <p>
+ * <p/>
  * The object received serves as a bootstrap <code>LookupLocator</code>
  * for the admin console.
  *
- * @author  <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
+ * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  * @version 1.0
  */
 public class RegistrarLookupServlet extends HttpServlet {
@@ -60,10 +60,8 @@ public class RegistrarLookupServlet extends HttpServlet {
             URL url = getClass().getClassLoader().getResource(LOOKUP_CONFIG);
             if (url == null) {
                 throw new
-                  UnavailableException(
-                    "Cannot locate configuration " + LOOKUP_CONFIG +
-                  " in the current classpath"
-                  );
+                  UnavailableException("Cannot locate configuration " + LOOKUP_CONFIG +
+                  " in the current classpath");
             }
             String cf = url.toString();
             logger.info("Initializing servlet registrar lookup from " + cf);
@@ -114,6 +112,9 @@ public class RegistrarLookupServlet extends HttpServlet {
         } catch (BadCredentialsException e) {
             logger.log(Level.WARNING, "Bad credentials received", e);
             response.sendError(HttpServletResponse.SC_UNAUTHORIZED);
+        } catch (FindException e) {
+            logger.log(Level.WARNING, "Authentication exception", e);
+            response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
         } catch (AuthenticationException e) {
             logger.log(Level.WARNING, "Authentication exception", e);
             response.sendError(HttpServletResponse.SC_UNAUTHORIZED);
@@ -138,13 +139,13 @@ public class RegistrarLookupServlet extends HttpServlet {
         IdentityProvider provider = getConfigManager().getInternalIdentityProvider();
         GroupManager gman = provider.getGroupManager();
         try {
-            for (Iterator i = gman.getGroupHeaders( user ).iterator(); i.hasNext();) {
+            for (Iterator i = gman.getGroupHeaders(user).iterator(); i.hasNext();) {
                 EntityHeader grp = (EntityHeader)i.next();
-                if (Group.ADMIN_GROUP_NAME.equals(grp.getName() )) return true;
+                if (Group.ADMIN_GROUP_NAME.equals(grp.getName())) return true;
             }
             return false;
-        } catch ( FindException fe ) {
-            logger.log( Level.SEVERE, fe.getMessage(), fe );
+        } catch (FindException fe) {
+            logger.log(Level.SEVERE, fe.getMessage(), fe);
             return false;
         }
     }
@@ -155,14 +156,14 @@ public class RegistrarLookupServlet extends HttpServlet {
      * @return
      * @throws IOException
      * @throws net.jini.config.ConfigurationException
+     *
      */
     private LookupLocator getLookupLocator()
       throws IOException, ConfigurationException {
         String entry = getClass().getName();
         try {
             LookupLocator locator =
-              (LookupLocator)lookupConfig.getEntry(
-                entry,
+              (LookupLocator)lookupConfig.getEntry(entry,
                 "lookupLocator", LookupLocator.class);
             return locator;
         } catch (NoSuchEntryException e) {
@@ -173,6 +174,7 @@ public class RegistrarLookupServlet extends HttpServlet {
 
     /**
      * Extract the basic credentials from the string
+     *
      * @param tokenBasic
      * @return
      * @throws BadCredentialsException
@@ -202,7 +204,7 @@ public class RegistrarLookupServlet extends HttpServlet {
             clearTextPasswd = decodedCredentials.substring(i + 1);
         }
 
-        LoginCredentials creds = new LoginCredentials( login, clearTextPasswd.getBytes());
+        LoginCredentials creds = new LoginCredentials(login, clearTextPasswd.getBytes());
         return creds;
     }
 
