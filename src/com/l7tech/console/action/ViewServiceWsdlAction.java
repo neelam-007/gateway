@@ -115,7 +115,7 @@ public class ViewServiceWsdlAction extends NodeAction {
             panel.add(messageViewer, BorderLayout.CENTER);
 
             getContentPane().add(panel, BorderLayout.CENTER);
-
+            Actions.setEscKeyStrokeDisposes(this);
             addWindowListener(new WindowAdapter() {
                 public void windowClosing(WindowEvent e) {
                     dispose();
