@@ -15,7 +15,12 @@
                     <Realm stringValueNull="null"/>
                     <MaxNonceCount intValue="30"/>
                 </HttpDigest>
-                <WssBasic/>
+                <WssBasic>
+                    <RecipientContext xmlSecurityRecipientContext="included">
+                        <Base64edX509Certificate stringValueNull="null"/>
+                        <Actor stringValue=""/>
+                    </RecipientContext>
+                </WssBasic>
                 <WssDigest/>
                 <All/>
                 <ExactlyOne/>
