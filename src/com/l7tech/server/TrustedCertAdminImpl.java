@@ -98,11 +98,11 @@ public class TrustedCertAdminImpl extends RemoteService implements TrustedCertAd
         }
     }
 
-    public X509Certificate[] retrieveCertFromUrl( String purl ) throws IOException, CertificateException, RemoteException {
+    public X509Certificate[] retrieveCertFromUrl( String purl ) throws IOException, RemoteException {
         return retrieveCertFromUrl(purl, false);
     }
 
-    public X509Certificate[] retrieveCertFromUrl( String purl, boolean ignoreHostname ) throws IOException, CertificateException, RemoteException {
+    public X509Certificate[] retrieveCertFromUrl( String purl, boolean ignoreHostname ) throws IOException, RemoteException {
         if ( !purl.startsWith("https://") ) throw new IllegalArgumentException("Can't load certificate from non-https URLs");
         URL url = new URL(purl);
 
