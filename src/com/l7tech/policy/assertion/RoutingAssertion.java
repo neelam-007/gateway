@@ -26,6 +26,12 @@ import javax.wsdl.*;
  * @author alex
  */
 public class RoutingAssertion extends Assertion implements Cloneable, Serializable {
+    public static final String CONTENT_TYPE = "Content-Type";
+    public static final String HOST = "Host";
+    public static final String SOAPACTION = "SOAPAction";
+    public static final String TEXT_XML = "text/xml";
+    public static final String ENCODING = "UTF-8";
+
     public RoutingAssertion() {
         super();
         _connectionManager = new MultiThreadedHttpConnectionManager();
@@ -53,7 +59,7 @@ public class RoutingAssertion extends Assertion implements Cloneable, Serializab
     public void setPrincipalCredentials( PrincipalCredentials pc ) {
         _principalCredentials = pc;
         try {
-            _httpCredentials = new UsernamePasswordCredentials( pc.getPrincipal().toString(),
+            _httpCredentials = new UsernamePasswordCredentials( pc.getUser().getLogin(),
                                                                 new String( pc.getCredentials(), "UTF-8" ) );
         } catch ( UnsupportedEncodingException uee ) {
             _log.error( uee );
@@ -94,15 +100,15 @@ public class RoutingAssertion extends Assertion implements Cloneable, Serializab
             postMethod = new PostMethod( url.toString() );
 
             // TODO: Attachments
-            postMethod.setRequestHeader( "Content-Type", "text/xml; charset=utf-8" );
+            postMethod.setRequestHeader( CONTENT_TYPE, TEXT_XML + "; charset=" + ENCODING.toLowerCase() );
             int port = serviceUrl.getPort();
             StringBuffer hostValue = new StringBuffer( serviceUrl.getHost() );
             if ( port != -1 ) {
                 hostValue.append( ":" );
                 hostValue.append( port );
             }
-            postMethod.setRequestHeader( "Host", hostValue.toString() );
-            postMethod.setRequestHeader( "SOAPAction", (String)request.getParameter( Request.PARAM_HTTP_SOAPACTION ) );
+            postMethod.setRequestHeader( HOST, hostValue.toString() );
+            postMethod.setRequestHeader( SOAPACTION, (String)request.getParameter( Request.PARAM_HTTP_SOAPACTION ) );
 
             if ( _principalCredentials != null ) {
                 synchronized ( this ) {
@@ -119,7 +125,20 @@ public class RoutingAssertion extends Assertion implements Cloneable, Serializab
             String requestXml = request.getRequestXml();
             postMethod.setRequestBody( requestXml );
             client.executeMethod( postMethod );
+
+            // TODO: Attachments
             InputStream responseStream = postMethod.getResponseBodyAsStream();
+            String ctype = postMethod.getRequestHeader( CONTENT_TYPE ).getValue();
+            if ( ctype.indexOf( TEXT_XML ) > 0 ) {
+                // Note that this will consume the first part of the stream...
+                BufferedReader br = new BufferedReader( new InputStreamReader( responseStream ) );
+                String line;
+                StringBuffer responseXml = new StringBuffer();
+                while ( ( line = br.readLine() ) != null ) {
+                    responseXml.append( line );
+                }
+                response.setResponseXml( responseXml.toString() );
+            }
             response.setProtectedResponseStream( responseStream );
 
             request.setRouted( true );
@@ -138,7 +157,7 @@ public class RoutingAssertion extends Assertion implements Cloneable, Serializab
         } finally {
             if ( postMethod != null ) {
                 MethodCloser mc = new MethodCloser( postMethod );
-                response.runOnClose(mc);
+                response.runOnClose( mc );
             }
         }
     }
