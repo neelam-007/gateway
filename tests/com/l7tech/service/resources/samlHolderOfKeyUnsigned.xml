@@ -1,14 +1,15 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<saml:Assertion AssertionID="mySamlAssertion" xmlns:saml="urn:oasis:names:tc:SAML:1.0:assertion">
-    <saml:Conditions NotBefore="2004-08-04T17:31:44.567-07:00" NotOnOrAfter="2004-08-04T17:33:44.567-07:00"/>
+<saml:Assertion AssertionID="mySamlAssertion"
+    xmlns:ds="http://www.w3.org/2000/09/xmldsig#" xmlns:saml="urn:oasis:names:tc:SAML:1.0:assertion">
+    <saml:Conditions NotBefore="2004-08-05T10:12:12.085-07:00" NotOnOrAfter="2004-08-05T10:14:12.085-07:00"/>
     <saml:AuthenticationStatement
-        AuthenticationInstant="2004-08-04T17:31:44.567-07:00" AuthenticationMethod="urn:oasis:names:tc:SAML:1.0:am:X509-PKI">
+        AuthenticationInstant="2004-08-05T10:12:12.085-07:00" AuthenticationMethod="urn:ietf:rfc:3075">
         <saml:Subject>
             <saml:NameIdentifier
                 Format="urn:oasis:names:tc:SAML:1.1:nameid-format:X509SubjectName" NameQualifier="root.locutus.l7tech.com">CN=joe</saml:NameIdentifier>
             <saml:SubjectConfirmation>
                 <saml:ConfirmationMethod>urn:oasis:names:tc:SAML:1.0:cm:holder-of-key</saml:ConfirmationMethod>
-                <ds:KeyInfo xmlns:ds="http://www.w3.org/2000/09/xmldsig#">
+                <ds:KeyInfo>
                     <ds:X509Data>
                         <ds:X509SubjectName>CN=joe</ds:X509SubjectName>
                         <ds:X509Certificate>MIICDTCCAXagAwIBAgIIIXW9r5+nC4kwDQYJKoZIhvcNAQEFBQAwIjEgMB4GA1UEAxMXcm9vdC5sb2N1dHVzLmw3dGVjaC5jb20wHhcNMDQwNzMwMjMyNDAzWhcNMDYwNzMwMjMyNDAzWjAOMQwwCgYDVQQDEwNqb2UwgZ8wDQYJKoZIhvcNAQEBBQADgY0AMIGJAoGBALQpfTYesuITkdVKBfXLmnvnreDz85JmK4zosugBH82ZG02aJkB8yrHFoZEkijN3jWaDxISMw424u09RwjLzkEWGF6t/QEKwY2oBXDuoc5OIr7Hb1Yu5iubr4jWk+NPUJlRUNNGlh8oGru3U1JtG7aFGfB1FJcgtRniCwJ6h09J/AgMBAAGjYDBeMAwGA1UdEwEB/wQCMAAwDgYDVR0PAQH/BAQDAgWgMB0GA1UdDgQWBBTVLF5dyonEqa+cWFuKhiRzOFHUajAfBgNVHSMEGDAWgBTVhkrHue7zyZsNSTwz9oZuotKO4jANBgkqhkiG9w0BAQUFAAOBgQAJ3QUciAZuTjXE+90l8iwVdy2y2lXOpO8bAUY7DyenCqWFsAUBs39wiuobIxUV7fkHag2kORVCxAwjpPW9EqDbfT1iqmmUwTwzTZqXF73yKW/cykKjzJrdUm1mr2hSR+PpIEAoHoeyFiGqDUUSkQozyvu8aciLIvKoO9D8dALOXw==</ds:X509Certificate>
