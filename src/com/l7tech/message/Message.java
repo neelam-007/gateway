@@ -14,7 +14,7 @@ import java.util.Iterator;
 public interface Message {
     static final String PREFIX             = "com.l7tech.message";
     static final String PREFIX_HTTP        = PREFIX + ".http";
-    static final String PREFIX_HTTP_HEADER = PREFIX_HTTP + ".header";
+    static final String PREFIX_HTTP_HEADER = "header";
 
     public static final String PARAM_HTTP_CONTENT_TYPE      = PREFIX_HTTP_HEADER + ".Content-Type";
     public static final String PARAM_HTTP_CONTENT_LENGTH    = PREFIX_HTTP_HEADER + ".Content-Length";
