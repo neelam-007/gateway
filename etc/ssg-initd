@@ -2,18 +2,24 @@
 #
 # Startup script for the Secure Span Gateway Server
 #
-# chkconfig: - 95 05
+# chkconfig: - 99 01
 # description: Layer7's Secure Span Gateway Daemon \
 #	       secures and provides access for SOAP services
 # processname: tomcat
 # pidfile: /var/run/ssg.pid
-# config: /opt/jakarta/
+# config: /ssg/tomcat
 
 # Source function library.
 . /etc/rc.d/init.d/functions
 
+if [ -z "$TOMCAT_HOME"] then 
+	TOMCAT_HOME="/ssg/tomcat/"
+	echo "Setting TOMCAT_HOME to /ssg/tomcat"
+fi
+
 ssg="$TOMCAT_HOME/bin/catalina.sh"
-ssguser="ssg"
+
+ssguser="gateway"
 
 # The semantics of these two functions differ from the way apachectl does
 # things -- attempting to start while running is a failure, and shutdown
@@ -21,7 +27,7 @@ ssguser="ssg"
 # are expected to behave here.
 start() {
         echo -n $"Starting $prog: "
-        su - $ssguser -c "$ssg start"
+        su - $ssguser -c "$ssg start -security"
         RETVAL=$?
         echo
         [ $RETVAL = 0 ] && touch /var/lock/subsys/ssg
