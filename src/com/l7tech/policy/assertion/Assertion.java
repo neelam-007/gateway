@@ -6,6 +6,7 @@
 
 package com.l7tech.policy.assertion;
 
+import com.l7tech.policy.PolicyValidatorResult;
 import com.l7tech.policy.assertion.composite.CompositeAssertion;
 
 import java.io.Serializable;
@@ -34,6 +35,14 @@ public abstract class Assertion implements Cloneable, Serializable {
 
     public void setParent(CompositeAssertion parent) {
         this.parent = parent;
+    }
+
+    /**
+     * override to validate assertion
+     *
+     * @param result the result collect parameter
+     */
+    public void validate(PolicyValidatorResult result) {
     }
 
     /** Properly clone this Assertion.  The clone will have its parent set to null. */

@@ -111,6 +111,7 @@ public class DefaultPolicyValidator extends PolicyValidator {
         }
 
         public void validate(Assertion a) {
+            a.validate(result); // collect assertion validate
             if (isPreconditionAssertion(a)) {
                 processPrecondition(a);
             } else if (isCrendentialSource(a)) {
