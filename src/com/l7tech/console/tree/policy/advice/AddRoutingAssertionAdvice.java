@@ -1,16 +1,15 @@
 package com.l7tech.console.tree.policy.advice;
 
+import com.l7tech.common.gui.util.Utilities;
+import com.l7tech.console.MainWindow;
+import com.l7tech.console.panels.JmsRoutingAssertionDialog;
 import com.l7tech.console.tree.policy.PolicyChange;
 import com.l7tech.console.tree.policy.PolicyException;
-import com.l7tech.console.panels.JmsRoutingAssertionDialog;
-import com.l7tech.console.MainWindow;
 import com.l7tech.console.util.Registry;
 import com.l7tech.policy.assertion.Assertion;
-import com.l7tech.policy.assertion.RoutingAssertion;
 import com.l7tech.policy.assertion.HttpRoutingAssertion;
 import com.l7tech.policy.assertion.JmsRoutingAssertion;
-import com.l7tech.common.gui.util.Utilities;
-import com.l7tech.objectmodel.Entity;
+import com.l7tech.policy.assertion.RoutingAssertion;
 
 import javax.wsdl.WSDLException;
 import java.util.logging.Level;
