@@ -17,13 +17,15 @@ public abstract class MessageAdapter implements Message {
         _transportMetadata = tm;
     }
 
-    public void setParameter( Object name, Object value ) {
+    public void setParameter( String name, Object value ) {
         _params = new HashMap();
         _params.put( name, value );
     }
 
-    public Object getParameter( Object name ) {
-        return _params.get( name );
+    public Object getParameter( String name ) {
+        Object value = _transportMetadata.getParameter(name);
+        if ( value == null ) value = _params.get( name );
+        return value;
     }
 
     public Iterator getParameterNames() {
