@@ -45,6 +45,20 @@ public class HexUtils {
         return md5;
     }
 
+    public static MessageDigest getSha1() {
+        MessageDigest sha1 = (MessageDigest)sha1s.get();
+        if (sha1 == null) {
+            try {
+                sha1 = MessageDigest.getInstance("SHA-1");
+                sha1s.set(sha1);
+            } catch ( NoSuchAlgorithmException e ) {
+                throw new RuntimeException(e);
+            }
+        }
+        sha1.reset();
+        return sha1;
+    }
+
     private static final Logger log = Logger.getLogger(HexUtils.class.getName());
 
     private HexUtils() {}
@@ -303,4 +317,5 @@ public class HexUtils {
     }
 
     private static ThreadLocal md5s = new ThreadLocal();
+    private static ThreadLocal sha1s = new ThreadLocal();
 }
