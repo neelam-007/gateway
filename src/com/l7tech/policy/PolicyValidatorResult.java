@@ -137,7 +137,6 @@ public class PolicyValidatorResult {
 
             if (assertion != null ? !assertion.equals(message1.assertion) : message1.assertion != null) return false;
             if (!message.equals(message1.message)) return false;
-            if (throwable != null ? !throwable.equals(message1.throwable) : message1.throwable != null) return false;
 
             return true;
         }
@@ -146,7 +145,6 @@ public class PolicyValidatorResult {
             int result;
             result = (assertion != null ? assertion.hashCode() : 0);
             result = 29 * result + message.hashCode();
-            result = 29 * result + (throwable != null ? throwable.hashCode() : 0);
             return result;
         }
 
