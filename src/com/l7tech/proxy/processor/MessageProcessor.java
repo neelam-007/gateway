@@ -647,7 +647,7 @@ public class MessageProcessor {
                     MultipartUtil.Part part = multipartReader.getSoapPart();
                     if (!part.getHeader(XmlUtil.CONTENT_TYPE).getValue().equals(innerType)) throw new IOException("Content-Type of first part doesn't match type of Multipart header");
 
-                    responseString = part.getContentString();
+                    responseString = part.getContent();
                 } else throw new IOException("Expected first part of multipart message to be XML (was '" + innerType + "')");
 
             } else {

@@ -217,7 +217,7 @@ public class RequestHandler extends AbstractHttpHandler {
                 MultipartUtil.Part soapPart = multipartReader.getSoapPart();
                 if (!soapPart.getHeader(XmlUtil.CONTENT_TYPE).getValue().equals(innerType)) throw new IOException("Content-Type of first part doesn't match type of Multipart header");
 
-                envelope = XmlUtil.stringToDocument(soapPart.getContentString());
+                envelope = XmlUtil.stringToDocument(soapPart.getContent());
 
                 } else throw new IOException("Expected first part of multipart message to be XML");
             } else {

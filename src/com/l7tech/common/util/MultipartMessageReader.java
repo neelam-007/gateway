@@ -257,14 +257,14 @@ public class MultipartMessageReader {
             }
         }
 
-        part.content = xml.toString().getBytes();
+        part.content = xml.toString();
 
         // MIME part must has at least one header
         if(part.getHeaders().size() > 0) {
             part.setPostion(multipartParts.size());
             multipartParts.put(part.getHeader(XmlUtil.CONTENT_ID).getValue(), part);
         } else {
-            if(part.getContent().length > 0) {
+            if(part.getContent().length() > 0) {
                 logger.info("An incomplete MIME part is received. Headers not found");
             }
             part = null;

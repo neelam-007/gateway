@@ -146,7 +146,7 @@ public class MultipartUtil {
             this.position = position;
         }
 
-        public byte[] getContent() {
+        public String getContent() {
             return content;
         }
 
@@ -155,6 +155,9 @@ public class MultipartUtil {
         }
 
         public int getContentLength() {
+            if(position == 0) {
+                return content.length();
+            }
             return contentLength;
         }
 
@@ -170,19 +173,7 @@ public class MultipartUtil {
             this.validated = validated;
         }
 
-        public String getContentString() throws IOException {
-            ByteArrayInputStream bais = new ByteArrayInputStream(content);
-            BufferedReader br = new BufferedReader(new InputStreamReader(bais, ENCODING));
-
-            String line = null;
-            StringBuffer sb = new StringBuffer();
-            while((line = br.readLine()) != null){
-                sb.append(line);
-            }
-            return sb.toString();
-        }
-
-        protected byte[] content;
+        protected String content;
         protected Map headers = new HashMap();
         protected int position;
         protected boolean validated = false;
