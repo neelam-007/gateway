@@ -10,6 +10,7 @@ import com.l7tech.identity.CannotDeleteAdminAccountException;
 import com.l7tech.identity.IdentityAdmin;
 import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.objectmodel.EntityHeader;
+import com.l7tech.objectmodel.DeleteException;
 
 import javax.swing.*;
 import java.awt.*;
@@ -111,14 +112,20 @@ public class Actions {
         } catch (Exception e) {
             log.log(Level.SEVERE, "Error deleting group", e);
             // Error deleting realm - display error msg
-            JOptionPane.showMessageDialog(getMainWindow(),
-              "Error encountered while deleting " +
-              node.getName() +
-              ". Please try again later.",
-              "Delete Group",
-              JOptionPane.ERROR_MESSAGE);
+            String msg;
+            DeleteException de = getDeleteException(e);
+            if (de != null) {
+                msg = de.getMessage();
+            } else msg = "Error encountered while deleting " + node.getName() + ". Please try again later.";
+            JOptionPane.showMessageDialog(getMainWindow(), msg, "Delete Group", JOptionPane.ERROR_MESSAGE);
         }
         return false;
+    }
+
+    private static DeleteException getDeleteException(Throwable e) {
+        if (e == null) return null;
+        if (e instanceof DeleteException) return (DeleteException)e;
+        return getDeleteException(e.getCause());
     }
 
 
