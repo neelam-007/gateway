@@ -40,23 +40,19 @@ public class IconManager {
 
     public static ImageIcon getTrustedSsgDiagram() {
         if (trustedSsgDiagram == null)
-            trustedSsgDiagram = loadImageIcon(Gui.RESOURCE_PATH + "/dia_trusted_ssg.png");
+            trustedSsgDiagram = loadImageIcon(Gui.RESOURCE_PATH + "/dia_trusted_ssg.gif");
         return trustedSsgDiagram;
     }
 
     public static ImageIcon getFederatedSsgDiagram() {
         if (federatedSsgDiagram == null)
-            federatedSsgDiagram = loadImageIcon(Gui.RESOURCE_PATH + "/dia_federated_ssg.png");
+            federatedSsgDiagram = loadImageIcon(Gui.RESOURCE_PATH + "/dia_federated_ssg.gif");
         return federatedSsgDiagram;
     }
 
     public static ImageIcon getFederatedSsgWithTokenServiceDiagram() {
-        if (federatedSsgWithTokenServiceDiagram == null) {
-            String path = "/dia_federated_ssg_with_tokenservice.png";
-            if (Boolean.getBoolean("noibm") || Boolean.getBoolean("interoperability") || Boolean.getBoolean("interop"))
-                path = "/dia_federated_ssg_with_tokenservice_noibm.png";
-            federatedSsgWithTokenServiceDiagram = loadImageIcon(Gui.RESOURCE_PATH + path);
-        }
+        if (federatedSsgWithTokenServiceDiagram == null)
+            federatedSsgWithTokenServiceDiagram = loadImageIcon(Gui.RESOURCE_PATH + "/dia_federated_ssg_with_tokenservice.gif");
         return federatedSsgWithTokenServiceDiagram;
     }
 
