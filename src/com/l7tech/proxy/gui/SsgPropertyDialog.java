@@ -403,6 +403,7 @@ public class SsgPropertyDialog extends PropertyDialog {
                         new CertDialog(cert, "Server Certificate", "Server Certificate for SSG " + ssg).show();
                     } catch (Exception e1) {
                         log.error(e1);
+                        e1.printStackTrace();
                         JOptionPane.showMessageDialog(Gui.getInstance().getFrame(),
                                                       "Unable to access server certificate for SSG " + ssg + ": " + e1,
                                                       "Unable to access server certificate",
@@ -433,6 +434,7 @@ public class SsgPropertyDialog extends PropertyDialog {
                         new CertDialog(cert, "Client Certificate", "Client Certificate for SSG " + ssg).show();
                     } catch (Exception e1) {
                         log.error(e1);
+                        e1.printStackTrace();
                         JOptionPane.showMessageDialog(Gui.getInstance().getFrame(),
                                                       "Unable to access client certificate for SSG " + ssg + ": " + e1,
                                                       "Unable to access client certificate",
@@ -447,7 +449,6 @@ public class SsgPropertyDialog extends PropertyDialog {
     private class CertDialog extends JDialog {
         CertDialog(X509Certificate cert, String title, String mess) throws CertificateEncodingException, NoSuchAlgorithmException {
             super(SsgPropertyDialog.this, title, true);
-            Utilities.centerOnScreen(this);
             Container c = this.getContentPane();
             c.setLayout(new GridBagLayout());
             c.setSize(new Dimension(300, 200));
@@ -456,7 +457,8 @@ public class SsgPropertyDialog extends PropertyDialog {
                                          GridBagConstraints.CENTER,
                                          GridBagConstraints.BOTH,
                                          new Insets(5, 5, 5, 5), 0, 0));
-            c.add(new CertificatePanel(cert),
+            CertificatePanel cpan = new CertificatePanel(cert);
+            c.add(cpan,
                   new GridBagConstraints(0, 1, 3, 1, 1000.0, 1000.0,
                                          GridBagConstraints.CENTER,
                                          GridBagConstraints.BOTH,
@@ -467,6 +469,7 @@ public class SsgPropertyDialog extends PropertyDialog {
                                          GridBagConstraints.NONE,
                                          new Insets(5, 5, 5, 5), 0, 0));
             pack();
+            Utilities.centerOnScreen(this);
         }
 
         JButton getCloseButton() {
