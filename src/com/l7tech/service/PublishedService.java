@@ -28,7 +28,12 @@ import org.apache.log4j.Category;
  */
 public class PublishedService extends NamedEntityImp {
     public synchronized Assertion rootAssertion() {
-        if ( _rootAssertion == null ) _rootAssertion = WspReader.parse( getPolicyXml() );
+        if ( _rootAssertion == null )
+            try {
+                _rootAssertion = WspReader.parse( getPolicyXml() );
+            } catch (IOException e) {
+                throw new IllegalStateException("Expected policy XML; found (wrong kind of) gibberish");
+            }
         return _rootAssertion;
     }
 
