@@ -44,5 +44,7 @@ public class ConnectionListenerBean extends ApplicationObjectSupport
                 logger.error("Error while resetting service ", e);
             }
         }
+        HttpServiceLookup serviceLookup = (HttpServiceLookup)getApplicationContext().getBean("serviceLookup");
+        serviceLookup.resetRegistrar();
     }
 }
