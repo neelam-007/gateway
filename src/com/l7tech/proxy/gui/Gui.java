@@ -36,7 +36,7 @@ public class Gui {
     private JFrame frame;
     private MessageViewer messageViewer;
 
-    private static final String WINDOW_TITLE = "Layer7 Client Proxy";
+    private static final String WINDOW_TITLE = "SecureSpan Agent";
     private static final String MESSAGE_WINDOW_TITLE = "Message Window";
     private static final String MENU_FILE = "File";
     private static final String MENU_FILE_QUIT = "Quit";
