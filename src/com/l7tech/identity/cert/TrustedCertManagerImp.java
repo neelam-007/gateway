@@ -59,11 +59,20 @@ public class TrustedCertManagerImp extends HibernateEntityManager implements Tru
 
     public void update(TrustedCert cert) throws UpdateException {
         try {
-            // todo version check
-            PersistenceManager.update( getContext(), cert );
+            TrustedCert original = findByPrimaryKey(cert.getOid());
+            if ( original == null ) throw new UpdateException("Can't update cert that doesn't exist");
+
+            if ( original.getVersion() != cert.getVersion() )
+                throw new StaleUpdateException("TrustedCert with oid=" + cert.getOid() + " was modified by another transaction");
+
+            original.copyFrom(cert);
+            PersistenceManager.update( getContext(), original );
         } catch ( SQLException e ) {
             logger.log( Level.SEVERE, e.getMessage(), e );
             throw new UpdateException("Couldn't update cert", e );
+        } catch (FindException e) {
+            logger.log(Level.WARNING, e.toString(), e);
+            throw new UpdateException("Couldn't find cert to be udpated");
         }
     }
 
