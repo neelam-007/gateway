@@ -19,7 +19,6 @@ import com.l7tech.server.policy.assertion.credential.ServerCredentialSourceAsser
 import sun.security.x509.X500Name;
 
 import java.io.IOException;
-import java.security.cert.Certificate;
 import java.security.cert.CertificateExpiredException;
 import java.security.cert.CertificateNotYetValidException;
 import java.security.cert.X509Certificate;
@@ -52,26 +51,17 @@ public class ServerHttpClientCert extends ServerCredentialSourceAssertion implem
             return null;
         }
 
-        Certificate[] param = httpReq.getClientCertificate();
+        X509Certificate[] certChain = httpReq.getClientCertificate();
 
-        if ( param == null || param.length < 1 ) {
+        if ( certChain == null || certChain.length < 1 ) {
             String err = "No Client Certificate was present in the request.";
             logger.log( Level.WARNING, err );
             throw new CredentialFinderException( err, AssertionStatus.AUTH_REQUIRED );
         }
 
-        Object cert = null;
-        X509Certificate clientCert = null;
-
-        Object[] maybeCerts;
-        maybeCerts = (Object[])param;
-        for (int i = 0; i < maybeCerts.length; i++) {
-            cert = maybeCerts[i];
-            if ( cert instanceof X509Certificate ) clientCert = (X509Certificate)cert;
-        }
-
+        X509Certificate clientCert = certChain[0];
         if (clientCert == null) {
-            logger.log( Level.INFO, "Request client certificate is present but isn't X.509 - ignoring it" );
+            logger.log( Level.WARNING, "Cert chain contained null certificate -- ignoring" );
             return null;
         }
 
