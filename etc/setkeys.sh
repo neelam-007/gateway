@@ -29,6 +29,10 @@ case "`uname`" in
   CYGWIN*) cygwin=true ;;
 esac
 
+if $cygwin; then
+    TOMCAT_HOME=`cygpath --path --unix $TOMCAT_HOME`
+fi
+
 KEYTOOL="$JAVA_HOME/bin/keytool"
 WAR_FILE="$TOMCAT_HOME/webapps/ROOT.war"
 SERVER_XML_FILE="$TOMCAT_HOME/conf/server.xml"
@@ -211,13 +215,21 @@ fi
 # -----------------------------------------------------------------------------
 # set a classpath for the execution of "com.l7tech.identity.cert.RSASigner"
 # 1. the location of our own code
+if $cygwin; then
+    WEBAPPS_ROOT=`cygpath --path --unix $WEBAPPS_ROOT`
+fi
+
 CP=$WEBAPPS_ROOT/WEB-INF/classes
 # 2. all jars in project
-for filename in $WEBAPPS_ROOT/WEB-INF/lib/*.jar
+for filename in "$WEBAPPS_ROOT/WEB-INF/lib"/*.jar
 do
   CP=$CP:$filename
 done
 
+if $cygwin; then
+    CP=`cygpath --path --windows $CP`
+fi
+echo $CP
 # do it
 java -cp $CP com.l7tech.identity.cert.RSASigner $ROOT_KEYSTORE_FILE $KEYSTORE_PASSWORD $ROOT_KEY_ALIAS $KEYSTORE_PASSWORD $SSL_CSR_FILE $SSL_CERT_FILE
 
