@@ -9,6 +9,10 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import com.l7tech.logging.LogManager;
+import com.l7tech.message.Request;
+import com.l7tech.service.resolution.UrnResolver;
+import com.l7tech.service.resolution.SoapActionResolver;
+import com.l7tech.service.resolution.ServiceResolutionException;
 
 /**
  * LAYER 7 TECHNOLOGIES, INC
@@ -18,7 +22,7 @@ import com.l7tech.logging.LogManager;
  * Time: 1:30:29 PM
  * $Id$
  *
- * Contains cached services
+ * Contains cached services and maintains the corresponding service resolution parameters.
  */
 public class ServiceCache {
 
@@ -70,15 +74,51 @@ public class ServiceCache {
         return output;
     }
 
+    public PublishedService resolve(Request req) throws ServiceResolutionException {
+        Set services = null;
+        try {
+            services = getAll();
+        } catch (InterruptedException e) {
+            throw new ServiceResolutionException(e.getMessage(), e);
+        }
+        if ( services == null || services.isEmpty() ) return null;
+        Set resolvedServices = null;
+        // resolve with soapaction first
+        resolvedServices = soapResolver.resolve(req, services);
+        if (resolvedServices == null || resolvedServices.isEmpty()) return null;
+        if (resolvedServices.size() == 1) {
+            return (PublishedService)resolvedServices.iterator().next();
+        }
+        // if necessary, try to resolve with urn
+        resolvedServices = urnResolver.resolve(req, services);
+        if (resolvedServices == null || resolvedServices.isEmpty()) return null;
+        if (resolvedServices.size() == 1) {
+            return (PublishedService)resolvedServices.iterator().next();
+        } else {
+            logger.severe("cache integrity error or resolver bug. this request resolves to more than one service.");
+        }
+        return null;
+    }
+
     /**
-     * add a service to the cache. this should be called when the cache is initially populated and
+     * adds or update a service to the cache. this should be called when the cache is initially populated and
      * when a service is saved or updated locally
      */
     public void cache(PublishedService service) throws InterruptedException {
         Sync write = rwlock.writeLock();
         try {
             write.acquire();
-            services.put(new Long(service.getOid()), service);
+            Long key = new Long(service.getOid());
+            boolean update = false;
+            if (services.get(key) != null) update = true;
+            services.put(key, service);
+            if (update) {
+                soapResolver.serviceUpdated(service);
+                urnResolver.serviceUpdated(service);
+            } else {
+                soapResolver.serviceCreated(service);
+                urnResolver.serviceCreated(service);
+            }
         } catch (InterruptedException e) {
             logger.log(Level.WARNING, "interruption in service cache", e);
             Thread.currentThread().interrupt();
@@ -97,6 +137,8 @@ public class ServiceCache {
         try {
             write.acquire();
             services.remove(new Long(service.getOid()));
+            soapResolver.serviceDeleted(service);
+            urnResolver.serviceDeleted(service);
         } catch (InterruptedException e) {
             logger.log(Level.WARNING, "interruption in service cache", e);
             Thread.currentThread().interrupt();
@@ -155,6 +197,10 @@ public class ServiceCache {
         try {
             write.acquire();
             services = newCache;
+            HashSet set = new HashSet();
+            set.addAll(services.values());
+            soapResolver.setServices(set);
+            urnResolver.setServices(set);
         } catch (InterruptedException e) {
             logger.log(Level.WARNING, "interruption in service cache", e);
             Thread.currentThread().interrupt();
@@ -166,7 +212,9 @@ public class ServiceCache {
 
     private Map services = new HashMap();
     private ReadWriteLock rwlock = new WriterPreferenceReadWriteLock();
-    private static final Logger logger = LogManager.getInstance().getSystemLogger();
+    private final Logger logger = LogManager.getInstance().getSystemLogger();
+    private final SoapActionResolver soapResolver = new SoapActionResolver();
+    private final UrnResolver urnResolver = new UrnResolver();
 
     private static class SingletonHolder {
         private static ServiceCache singleton = new ServiceCache();
