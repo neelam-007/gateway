@@ -11,6 +11,7 @@ import java.util.Map;
  */
 public class BindingOperationInfo implements Serializable {
     protected String name;
+    protected String xpath;
     protected Map multipart = new HashMap();    // list of MimePartInfo
 
     public BindingOperationInfo() {
@@ -29,6 +30,14 @@ public class BindingOperationInfo implements Serializable {
         this.name = name;
     }
 
+    public String getXpath() {
+        return xpath;
+    }
+
+    public void setXpath(String xpath) {
+        this.xpath = xpath;
+    }
+
     public Map getMultipart() {
         return multipart;
     }
@@ -45,6 +54,7 @@ public class BindingOperationInfo implements Serializable {
 
         if (multipart != null ? !multipart.equals(bindingOperationInfo.multipart) : bindingOperationInfo.multipart != null) return false;
         if (name != null ? !name.equals(bindingOperationInfo.name) : bindingOperationInfo.name != null) return false;
+        if (xpath != null ? !xpath.equals(bindingOperationInfo.xpath) : bindingOperationInfo.xpath != null) return false;
 
         return true;
     }
@@ -52,6 +62,7 @@ public class BindingOperationInfo implements Serializable {
     public int hashCode() {
         int result;
         result = (name != null ? name.hashCode() : 0);
+        result = 29 * result + (xpath != null ? xpath.hashCode() : 0);
         result = 29 * result + (multipart != null ? multipart.hashCode() : 0);
         return result;
     }

@@ -5,6 +5,8 @@ import com.l7tech.common.wsdl.BindingInfo;
 import com.l7tech.common.wsdl.BindingOperationInfo;
 import com.l7tech.common.wsdl.MimePartInfo;
 import com.l7tech.common.xml.Wsdl;
+import com.l7tech.common.xml.SoapMessageGenerator;
+import com.l7tech.common.xml.XpathEvaluator;
 import com.l7tech.console.event.PolicyEvent;
 import com.l7tech.console.event.PolicyListener;
 import com.l7tech.console.tree.ServiceNode;
@@ -31,12 +33,15 @@ import javax.wsdl.extensions.mime.MIMEContent;
 import javax.wsdl.extensions.mime.MIMEMultipartRelated;
 import javax.wsdl.extensions.mime.MIMEPart;
 import javax.wsdl.extensions.soap.SOAPBody;
+import javax.xml.soap.SOAPException;
 import java.awt.*;
 import java.awt.event.*;
 import java.rmi.RemoteException;
 import java.util.*;
 import java.util.List;
 import java.util.logging.Logger;
+
+import org.apache.axis.message.SOAPBodyElement;
 
 
 /**
@@ -59,6 +64,10 @@ public class RequestSwAAssertionDialog extends JDialog {
     private SortedSingleColumnTableModel bindingOperationsTableModel = null;
     private JTable bindingOperationsTable = null;
     private MimePartsTable mimePartsTable = null;
+    private Wsdl serviceWsdl = null;
+    private SoapMessageGenerator.Message[] soapMessages;
+    private Map namespaces = new HashMap();
+    SoapMessageGenerator.Message soapRequest;
 
     private static ResourceBundle resources = ResourceBundle.getBundle("com.l7tech.console.resources.RequestSwAPropertiesDialog", Locale.getDefault());
     private static Logger logger = Logger.getLogger(RequestSwAAssertionDialog.class.getName());
@@ -68,8 +77,9 @@ public class RequestSwAAssertionDialog extends JDialog {
         this.assertion = assertion;
         this.serviceNode = sn;
 
-
         initialize();
+        loadMIMEPartsInfoFromWSDL();
+        initializeXPath();
         populateData();
         pack();
         Utilities.centerOnScreen(this);
@@ -130,16 +140,67 @@ public class RequestSwAAssertionDialog extends JDialog {
 
     }
 
+    private void initializeXPath() {
+        getServiceWsdl().setShowBindings(Wsdl.SOAP_BINDINGS);
+        SoapMessageGenerator sg = new SoapMessageGenerator();
+        try {
+            soapMessages = sg.generateRequests(getServiceWsdl());
+
+            //initializeBlankMessage(soapMessages[0]);
+            for (int i = 0; i < soapMessages.length; i++) {
+                soapRequest = soapMessages[i];
+
+                String soapEnvLocalName = soapRequest.getSOAPMessage().getSOAPPart().getEnvelope().getElementName().getLocalName();
+                String soapEnvNamePrefix = soapRequest.getSOAPMessage().getSOAPPart().getEnvelope().getElementName().getPrefix();
+                String soapBodyLocalName = soapRequest.getSOAPMessage().getSOAPPart().getEnvelope().getBody().getElementName().getLocalName();
+                String soapBodyNamePrefix = soapRequest.getSOAPMessage().getSOAPPart().getEnvelope().getBody().getElementName().getPrefix();
+
+                if(soapBodyNamePrefix.length() == 0) {
+                    soapBodyNamePrefix = soapEnvNamePrefix;
+                }
+                Iterator soapBodyElements = soapRequest.getSOAPMessage().getSOAPPart().getEnvelope().getBody().getChildElements();
+
+                // get the first element
+                SOAPBodyElement operation = (SOAPBodyElement) soapBodyElements.next();
+                String operationName = operation.getName();
+                String operationPrefix = operation.getPrefix();
+
+                System.out.println("Xpath for the operation " + "\"" + soapRequest.getOperation() + "\" is " +
+                        "/" + soapEnvNamePrefix +
+                        ":" + soapEnvLocalName +
+                        "/" + soapBodyNamePrefix +
+                        ":" + soapBodyLocalName +
+                        "/" + operationPrefix +
+                        ":" + operationName);
+
+                namespaces.putAll(XpathEvaluator.getNamespaces(soapRequest.getSOAPMessage()));
+            }
+        } catch (SOAPException e) {
+            e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+        }
+    }
+
+    private Wsdl getServiceWsdl() {
+        if(serviceWsdl == null) {
+            try {
+                serviceWsdl = serviceNode.getPublishedService().parsedWsdl();
+            } catch (Exception e) {
+                throw new RuntimeException("Unable to parse the service WSDL " + serviceNode.getName(), e);
+            }
+        }
+        return serviceWsdl;
+    }
+
     private void populateData() {
-        // get the MIMEParts Info from WSDL
-        loadMIMEPartsInfoFromWSDL();
 
         if (assertion.getBindings().size() == 0) {
             // this is the first time
             populateData(bindings);
             assertion.setBindings(bindings);
         } else {
-            // check if the WSDL changed
+            // todo: check if the WSDL changed
+
+            // populate the data from the assertion
             populateData(assertion.getBindings());
         }
     }
@@ -284,6 +345,7 @@ public class RequestSwAAssertionDialog extends JDialog {
                         }
                         // create BindingOperationInfo
                         BindingOperationInfo operation = new BindingOperationInfo(bo.getOperation().getName(), partList);
+                      //todo:  operation.setXpath();
                         operations.put(bo.getOperation().getName(), operation);
                     }
                 }
@@ -368,6 +430,24 @@ public class RequestSwAAssertionDialog extends JDialog {
                 });
 
         return bindingOperationsTable;
+    }
+
+    private SoapMessageGenerator.Message forOperation(BindingOperation bop) {
+        String opName = bop.getOperation().getName();
+        Binding binding = serviceWsdl.getBinding(bop);
+        if (binding == null) {
+            throw new IllegalArgumentException("Bindiong operation without binding " + opName);
+        }
+        String bindingName = binding.getQName().getLocalPart();
+
+        for (int i = 0; i < soapMessages.length; i++) {
+            SoapMessageGenerator.Message soapRequest = soapMessages[i];
+            if (opName.equals(soapRequest.getOperation()) &&
+                    bindingName.equals(soapRequest.getBinding())) {
+                return soapRequest;
+            }
+        }
+        return null;
     }
 
     /**
