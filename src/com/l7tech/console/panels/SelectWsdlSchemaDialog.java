@@ -5,12 +5,12 @@ import com.intellij.uiDesigner.core.GridLayoutManager;
 import com.intellij.uiDesigner.core.Spacer;
 import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.xml.WsdlSchemaAnalizer;
-import org.syntax.jedit.JEditTextArea;
-import org.syntax.jedit.SyntaxDocument;
-import org.syntax.jedit.tokenmarker.XMLTokenMarker;
+import com.l7tech.console.xmlviewer.Viewer;
+import org.dom4j.DocumentException;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
+import org.xml.sax.SAXParseException;
 
 import javax.swing.*;
 import java.awt.*;
@@ -28,35 +28,24 @@ import java.io.IOException;
  * $Id$<br/>
  */
 public class SelectWsdlSchemaDialog extends JDialog {
-    /*public static void main(String[] args) throws Exception {
-        Document wsdl = WsdlSchemaAnalizer.getWsdlSample();
-        SelectWsdlSchemaDialog me = new SelectWsdlSchemaDialog(null, wsdl);
-        me.pack();
-        Utilities.centerOnScreen(me);
-        me.show();
-        me.dispose();
-        String result = me.getOkedSchema();
-        System.out.println("Result:\n" + result);
-    }*/
-
-    public SelectWsdlSchemaDialog(JDialog parent, Document wsdl) {
+    private Viewer messageViewer;
+ 
+    public SelectWsdlSchemaDialog(JDialog parent, Document wsdl)
+      throws DocumentException, IOException, SAXParseException {
         super(parent, true);
         anal = new WsdlSchemaAnalizer(wsdl);
         anal.splitInputOutputs();
         initialize();
     }
 
-    private void initialize() {
+    private void initialize() throws DocumentException, IOException, SAXParseException {
         Container p = getContentPane();
         p.setLayout(new BorderLayout());
         p.add(mainPanel, BorderLayout.CENTER);
         setTitle("Extract Schema from WSDL");
         // create the xml control for the recipient panel
-        xmlTextArea = new JEditTextArea();
-        xmlTextArea.setDocument(new SyntaxDocument());
-        xmlTextArea.setEditable(false);
-        xmlTextArea.setTokenMarker(new XMLTokenMarker());
-        xmlpanel.add(xmlTextArea);
+        messageViewer = Viewer.createMessageViewer(null);
+        xmlpanel.add(messageViewer);
         ButtonGroup bg = new ButtonGroup();
         bg.add(allradio);
         bg.add(requestradio);
@@ -109,15 +98,18 @@ public class SelectWsdlSchemaDialog extends JDialog {
 
     private void setSchema() {
         Node node = getCurrentSchemaNode();
-        if (node != null) {
-            try {
-                xmlTextArea.setText(XmlUtil.nodeToFormattedString(node));
-            } catch (IOException e) {
-                // todo
+        try {
+            if (node != null) {
+                messageViewer.setContent(XmlUtil.nodeToFormattedString(node));
+            } else {
+                messageViewer.setContent(XmlUtil.XML_VERSION);
             }
-            xmlTextArea.setCaretPosition(0);
-        } else {
-            xmlTextArea.setText("");
+        } catch (DocumentException e) {
+            throw new RuntimeException(e);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        } catch (SAXParseException e) {
+            throw new RuntimeException(e);
         }
     }
 
@@ -132,22 +124,22 @@ public class SelectWsdlSchemaDialog extends JDialog {
                 cancel();
             }
         });
-        allradio.addActionListener(new ActionListener(){
+        allradio.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 setSchema();
             }
         });
-        requestradio.addActionListener(new ActionListener(){
+        requestradio.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 setSchema();
             }
         });
-        responseradio.addActionListener(new ActionListener(){
+        responseradio.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 setSchema();
             }
         });
-        schemaselector.addActionListener(new ActionListener(){
+        schemaselector.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 setSchema();
             }
@@ -182,7 +174,6 @@ public class SelectWsdlSchemaDialog extends JDialog {
     private JRadioButton responseradio;
     private JComboBox schemaselector;
     private JPanel xmlpanel;
-    private JEditTextArea xmlTextArea;
     private WsdlSchemaAnalizer anal;
     private String okedSchema = null;
 

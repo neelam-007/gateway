@@ -11,6 +11,10 @@ import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.xml.SchemaValidation;
 
 import java.util.logging.Logger;
+import java.io.IOException;
+
+import org.dom4j.DocumentException;
+import org.xml.sax.SAXParseException;
 
 /**
  * Invoked when a schema validation assertion is dropped in the policy tree.
@@ -29,19 +33,28 @@ public class AddSchemaValidationAssertionAdvice implements Advice {
         if (assertions == null || assertions.length != 1 || !(assertions[0] instanceof SchemaValidation)) {
             throw new IllegalArgumentException();
         }
-        SchemaValidation assertion = (SchemaValidation)assertions[0];
-        final MainWindow mw = TopComponents.getInstance().getMainWindow();
-        //SchemaValidationTreeNode fakenode = new SchemaValidationTreeNode(assertion);
-        SchemaValidationPropertiesDialog dlg = new SchemaValidationPropertiesDialog(mw, assertion, pc.getService());
-        // show the dialog
-        dlg.pack();
-        Utilities.centerOnScreen(dlg);
-        dlg.show();
-        // make sure a schema was entered
-        if (assertion.getSchema() != null && assertion.getSchema().length() > 0) {
-            pc.proceed();
-        } else {
-            log.info("schema validation must have been canceled " + assertion.getSchema());
+        try {
+            SchemaValidation assertion = (SchemaValidation)assertions[0];
+            final MainWindow mw = TopComponents.getInstance().getMainWindow();
+            //SchemaValidationTreeNode fakenode = new SchemaValidationTreeNode(assertion);
+            SchemaValidationPropertiesDialog dlg = new SchemaValidationPropertiesDialog(mw, assertion, pc.getService());
+            // show the dialog
+            dlg.pack();
+            dlg.setSize(600, 800);
+            Utilities.centerOnScreen(dlg);
+            dlg.show();
+            // make sure a schema was entered
+            if (assertion.getSchema() != null && assertion.getSchema().length() > 0) {
+                pc.proceed();
+            } else {
+                log.info("schema validation must have been canceled " + assertion.getSchema());
+            }
+        } catch (DocumentException e) {
+            throw new RuntimeException(e);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        } catch (SAXParseException e) {
+            throw new RuntimeException(e);
         }
     }
 

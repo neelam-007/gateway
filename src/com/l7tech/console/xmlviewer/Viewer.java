@@ -21,11 +21,24 @@
 package com.l7tech.console.xmlviewer;
 
 import com.l7tech.console.xmlviewer.properties.ViewerProperties;
+import com.l7tech.console.xmlviewer.properties.ConfigurationProperties;
+import com.l7tech.console.xmlviewer.util.DocumentUtilities;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import javax.swing.event.TreeSelectionListener;
 import java.awt.*;
+import java.io.IOException;
+import java.io.File;
+import java.io.StringReader;
+import java.io.StringWriter;
+import java.net.URL;
+
+import org.dom4j.DocumentException;
+import org.dom4j.Document;
+import org.dom4j.io.XMLWriter;
+import org.xml.sax.SAXParseException;
+import org.apache.xml.serialize.OutputFormat;
 
 /**
  * The viewer for a eXchaNGeR document. This gives a tree view of an
@@ -35,13 +48,45 @@ import java.awt.*;
  * @version	$Revision$, $Date$
  */
 public class Viewer extends JPanel implements XDocumentListener {
-    private static final boolean DEBUG = false;
     XmlTree tree = null;
     private JScrollPane scrollPane = null;
 
 
     private ExchangerDocument document = null;
     private ViewerProperties properties = null;
+
+    /**
+     * Routes to the {@link Viewer#createMessageViewer(String, boolean)}
+     * with the scroll pane set to true.
+     *
+     * @see Viewer#createMessageViewer(String, boolean)
+     */
+    public static Viewer createMessageViewer(String content)
+      throws DocumentException, IOException, SAXParseException {
+        return createMessageViewer(content, true);
+    }
+
+    /**
+     * Create the essage viewer for the cml content string.
+     *
+     * @param content    the xml content string. If null or emtpy the emtpy
+     *                   viewer is created.
+     * @param scrollPane boolean whether to use the scrollpane
+     * @return the viewer widget
+     * @throws DocumentException thrown on dom4j processing error
+     * @throws IOException       on io error
+     * @throws SAXParseException on xml parsing error
+     */
+    public static Viewer createMessageViewer(String content, boolean scrollPane)
+      throws DocumentException, IOException, SAXParseException {
+        ConfigurationProperties cp = new ConfigurationProperties();
+        ExchangerDocument exchangerDocument = null;
+        if (!(content == null || "".equals(content))) {
+            exchangerDocument = asExchangerDocument(content);
+        }
+        Viewer messageViewer = new Viewer(cp.getViewer(), exchangerDocument, scrollPane);
+        return messageViewer;
+    }
 
     /**
      * Constructs an viewer view with the ViewerProperties supplied.
@@ -68,12 +113,15 @@ public class Viewer extends JPanel implements XDocumentListener {
         setLayout(new BorderLayout());
 
         try {
-            tree = new XmlTree(this, (ExchangerElement)document.getRoot());
+            if (document !=null) {
+                tree = new XmlTree(this, (ExchangerElement)document.getRoot());
+                document.addListener(this);
+            } else {
+                tree = new XmlTree(this, null);
+            }
         } catch (Exception e) {
-            e.printStackTrace();
-            // should not happen
+            throw new RuntimeException(e);
         }
-        document.addListener(this);
         JComponent c = tree;
 
         if (scrollpane) {
@@ -81,13 +129,47 @@ public class Viewer extends JPanel implements XDocumentListener {
               JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED,
               JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
             c = scrollPane;
+            JScrollBar scrollBar = scrollPane.getVerticalScrollBar();
+            scrollBar.setUnitIncrement(scrollBar.getUnitIncrement() * 5);
         }
 
         setBorder(new EmptyBorder(0, 0, 0, 0));
         add(c, BorderLayout.CENTER);
     }
 
+    /**
+     * Set the content for this message viewer
+     *
+     * @param content the new xml content
+     * @throws DocumentException on dom4j exception
+     * @throws IOException       on i/o error
+     * @throws SAXParseException on prse error
+     */
+    public void setContent(String content) throws DocumentException, IOException, SAXParseException {
+        ExchangerDocument exchangerDocument = asExchangerDocument(content);
+        if (document != null) {
+            document.removeAllListeners();
+        }
+        document = exchangerDocument;
+        document.addListener(this);
+        document.load();
+        documentUpdated(null);
+    }
 
+    public String getContent() {
+        if (document == null) {
+            return null;
+        }
+        try {
+            XElement rootElement = document.getRoot();
+            StringWriter sw = new StringWriter();
+            XMLWriter writer = new XMLWriter();
+            writer.write(rootElement);
+            return sw.toString();
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
     /**
      * Check to find out if namespaces should be visible.
      *
@@ -144,7 +226,7 @@ public class Viewer extends JPanel implements XDocumentListener {
             try {
                 tree.setRoot(this, (ExchangerElement)document.getRoot());
             } catch (Exception e) {
-                // should not happen
+                throw new RuntimeException(e);
             }
             tree.expand(3);
         }
@@ -201,5 +283,48 @@ public class Viewer extends JPanel implements XDocumentListener {
      */
     public void removeDocumentTreeSelectionListener(TreeSelectionListener listener) {
         tree.removeTreeSelectionListener(listener);
+    }
+
+    /**
+     * Get the scrollpane component. Note that it can be null in case the
+     * scrollpane was not requested in constructor.
+     *
+     * @return the scrollpane hosting the xml tree or null
+     */
+    public JScrollPane getScrollPane() {
+        return scrollPane;
+    }
+
+    /**
+     * Create the exchanger document instance for the content string.
+     *
+     * @param content the content string
+     * @return the exchanger document for the content string
+     * @throws IOException
+     * @throws DocumentException
+     * @throws SAXParseException
+     */
+    protected static ExchangerDocument asExchangerDocument(String content)
+      throws IOException, DocumentException, SAXParseException {
+
+        ExchangerDocument exchangerDocument = new ExchangerDocument(asTempFileURL(content), false);
+        exchangerDocument.load();
+        return exchangerDocument;
+    }
+
+    protected static URL asTempFileURL(String content)
+      throws IOException, DocumentException {
+        final File file = File.createTempFile("Temp", ".xml");
+        Document doc = DocumentUtilities.createReader(false).read(new StringReader(content));
+        DocumentUtilities.writeDocument(doc, file.toURL());
+        file.deleteOnExit();
+        return file.toURL();
+    }
+
+    protected static URL emptyTempFileURL()
+      throws IOException {
+        final File file = File.createTempFile("Temp", ".xml");
+        file.deleteOnExit();
+        return file.toURL();
     }
 }

@@ -23,6 +23,8 @@ import javax.xml.parsers.ParserConfigurationException;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.MouseWheelEvent;
+import java.awt.event.MouseWheelListener;
 import java.io.*;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -33,16 +35,14 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 
-
 /**
  * A dialog to view / configure the properties of a xslt assertion.
- *
+ * <p/>
  * <br/><br/>
  * LAYER 7 TECHNOLOGIES, INC<br/>
  * User: flascell<br/>
  * Date: Feb 6, 2004<br/>
  * $Id$<br/>
- *
  */
 public class XslTransformationPropertiesDialog extends JDialog {
 
@@ -65,7 +65,7 @@ public class XslTransformationPropertiesDialog extends JDialog {
 
         // do layout stuff
         Container contents = getContentPane();
-        contents.setLayout(new BorderLayout(0,0));
+        contents.setLayout(new BorderLayout(0, 0));
         contents.add(constructCentralPanel(), BorderLayout.CENTER);
         contents.add(constructBottomButtonsPanel(), BorderLayout.SOUTH);
         Actions.setEscKeyStrokeDisposes(this);
@@ -81,18 +81,18 @@ public class XslTransformationPropertiesDialog extends JDialog {
                 cancel();
             }
         });
-        helpButton.addActionListener( new ActionListener() {
+        helpButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 Actions.invokeHelp(XslTransformationPropertiesDialog.this);
             }
         });
-        resolveButton.addActionListener( new ActionListener() {
+        resolveButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 readFromUrl();
             }
         });
 
-        loadFromFile.addActionListener( new ActionListener() {
+        loadFromFile.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 readFromFile();
             }
@@ -133,18 +133,17 @@ public class XslTransformationPropertiesDialog extends JDialog {
      * @param a the assertion
      */
     private void fireEventAssertionChanged(final Assertion a) {
-        SwingUtilities.invokeLater(
-          new Runnable() {
-              public void run() {
-                  int[] indices = new int[a.getParent().getChildren().indexOf(a)];
-                  PolicyEvent event = new
-                          PolicyEvent(this, new AssertionPath(a.getPath()), indices, new Assertion[]{a});
-                  EventListener[] listeners = listenerList.getListeners(PolicyListener.class);
-                  for (int i = 0; i < listeners.length; i++) {
-                      ((PolicyListener)listeners[i]).assertionsChanged(event);
-                  }
-              }
-          });
+        SwingUtilities.invokeLater(new Runnable() {
+            public void run() {
+                int[] indices = new int[a.getParent().getChildren().indexOf(a)];
+                PolicyEvent event = new
+                  PolicyEvent(this, new AssertionPath(a.getPath()), indices, new Assertion[]{a});
+                EventListener[] listeners = listenerList.getListeners(PolicyListener.class);
+                for (int i = 0; i < listeners.length; i++) {
+                    ((PolicyListener)listeners[i]).assertionsChanged(event);
+                }
+            }
+        });
     }
 
     private void readFromFile() {
@@ -243,7 +242,7 @@ public class XslTransformationPropertiesDialog extends JDialog {
             return true;
         }
         log.log(Level.WARNING, "document is not xslt (top element " + rootEl.getLocalName() +
-                                   " is not " + XSL_TOPEL_NAME + " or " + XSL_TOPEL_NAME2 + ")");
+          " is not " + XSL_TOPEL_NAME + " or " + XSL_TOPEL_NAME2 + ")");
         return false;
     }
 
@@ -527,19 +526,89 @@ public class XslTransformationPropertiesDialog extends JDialog {
         okButton.setText(resources.getString("okButton.name"));
         cancelButton = new JButton();
         cancelButton.setText(resources.getString("cancelButton.name"));
-        directions = new String[] {resources.getString("directionCombo.request"),
-                                   resources.getString("directionCombo.response")};
+        directions = new String[]{resources.getString("directionCombo.request"),
+                                  resources.getString("directionCombo.response")};
         directionCombo = new JComboBox(directions);
         urlTxtFld = new JTextField();
         nameTxtFld = new JTextField();
         resolveButton = new JButton();
         resolveButton.setText(resources.getString("resolveButton.name"));
         xmlTextArea = new JEditTextArea();
+        attachMouseWhellSupport(xmlTextArea);
         xmlTextArea.setDocument(new SyntaxDocument());
         xmlTextArea.setEditable(true);
         xmlTextArea.setTokenMarker(new XMLTokenMarker());
         loadFromFile = new JButton();
         loadFromFile.setText(resources.getString("loadFromFile.name"));
+    }
+
+    /**
+     * todo: Find some place for this. gui.Utilities is shared with ssb
+     * @param xmlTextArea
+     */
+    private void attachMouseWhellSupport(JEditTextArea xmlTextArea) {
+        xmlTextArea.addMouseWheelListener(new MouseWheelListener() {
+            public void mouseWheelMoved(MouseWheelEvent e) {
+                JEditTextArea textArea = (JEditTextArea)e.getSource();
+                if (e.isAltDown()) {
+                    moveCaret(textArea, e.getWheelRotation(),
+                      e.isShiftDown() || e.isControlDown());
+                } else if (e.isShiftDown())
+                    scrollPage(textArea, e.getWheelRotation());
+                else if (e.isControlDown())
+                    scrollLine(textArea, e.getWheelRotation());
+                else if (e.getScrollType() == MouseWheelEvent.WHEEL_UNIT_SCROLL)
+                    scrollLine(textArea, e.getUnitsToScroll());
+                else
+                    scrollLine(textArea, 3 * e.getWheelRotation());
+            }
+
+            private void scrollLine(JEditTextArea textArea, int amt) {
+                final int line = textArea.getFirstLine() + amt;
+                if (line < 0 || line > textArea.getLineCount() - textArea.getVisibleLines()) return;
+                textArea.setFirstLine(line);
+            }
+
+            private void scrollPage(JEditTextArea textArea, int amt) {
+                if (amt > 0)
+                    scrollDownPage(textArea);
+                else
+                    scrollUpPage(textArea);
+            }
+
+            private void scrollUpPage(JEditTextArea textArea) {
+                final int line = textArea.getFirstLine() - textArea.getVisibleLines();
+                if (line < textArea.getFirstLine()) return;
+                textArea.setFirstLine(line);
+
+            }
+
+            private void scrollDownPage(JEditTextArea textArea) {
+                final int line = textArea.getFirstLine() + textArea.getVisibleLines();
+                if (line > textArea.getLineCount()) return;
+                textArea.setFirstLine(line);
+            }
+
+            private void moveCaret(JEditTextArea textArea, int amt, boolean select) {
+                if (amt < 0)
+                    goToPrevLine(textArea, select);
+                else
+                    goToNextLine(textArea, select);
+            }
+
+            private void goToNextLine(JEditTextArea textArea, boolean select) {
+                final int line = textArea.getFirstLine() + 1;
+                if (line > textArea.getLineCount()) return;
+                textArea.setFirstLine(line);
+
+            }
+
+            private void goToPrevLine(JEditTextArea textArea, boolean select) {
+                final int line = textArea.getFirstLine() - 1;
+                if (line < textArea.getFirstLine()) return;
+                textArea.setFirstLine(line);
+            }
+        });
     }
 
     private void initResources() {

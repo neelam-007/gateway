@@ -4,12 +4,12 @@ import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.common.gui.widgets.ContextMenuTextField;
 import com.l7tech.console.tree.ServiceNode;
 import com.l7tech.console.util.TopComponents;
+import com.l7tech.console.xmlviewer.Viewer;
 import com.l7tech.identity.Group;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.service.PublishedService;
-import org.syntax.jedit.JEditTextArea;
-import org.syntax.jedit.SyntaxDocument;
-import org.syntax.jedit.tokenmarker.XMLTokenMarker;
+import org.dom4j.DocumentException;
+import org.xml.sax.SAXParseException;
 
 import javax.swing.*;
 import javax.swing.border.CompoundBorder;
@@ -78,23 +78,20 @@ public class ViewServiceWsdlAction extends NodeAction {
                     log.log(Level.WARNING, "error retrieving service wsdl", e);
                 } catch (IOException e) {
                     log.log(Level.WARNING, "error retrieving service wsdl", e);
+                } catch (DocumentException e) {
+                    log.log(Level.WARNING, "error retrieving service wsdl", e);
+                } catch (SAXParseException e) {
+                    log.log(Level.WARNING, "error retrieving service wsdl", e);
                 }
             }
         });
     }
 
     private class WsdlViewDialog extends JFrame {
-        private JEditTextArea wsdlTextArea;
 
-        private WsdlViewDialog(PublishedService ps) throws IOException {
-            super("View " + ps.getName() + " WSDL");
+        private WsdlViewDialog(PublishedService ps) throws IOException, DocumentException, SAXParseException {
+            setTitle(ps.getName());
             setIconImage(TopComponents.getInstance().getMainWindow().getIconImage());
-            wsdlTextArea = new JEditTextArea();
-            wsdlTextArea.setDocument(new SyntaxDocument());
-            wsdlTextArea.setEditable(false);
-            wsdlTextArea.setTokenMarker(new XMLTokenMarker());
-            wsdlTextArea.setText(ps.getWsdlXml());
-            wsdlTextArea.setCaretPosition(0);
             JPanel panel = new JPanel(new BorderLayout());
             JPanel wsdlPanel = new JPanel();
             wsdlPanel.setLayout(new BoxLayout(wsdlPanel, BoxLayout.X_AXIS));
@@ -114,7 +111,8 @@ public class ViewServiceWsdlAction extends NodeAction {
               BorderFactory.createCompoundBorder(
                 BorderFactory.createEtchedBorder(), BorderFactory.createEmptyBorder(5,5,5,5));
             wsdlPanel.setBorder(border);
-            panel.add(wsdlTextArea, BorderLayout.CENTER);
+            Viewer messageViewer = Viewer.createMessageViewer(ps.getWsdlXml());
+            panel.add(messageViewer, BorderLayout.CENTER);
 
             getContentPane().add(panel, BorderLayout.CENTER);
 
@@ -125,7 +123,7 @@ public class ViewServiceWsdlAction extends NodeAction {
             });
             pack();
             final int labelWidth = (int)(l.getSize().getWidth() + 20);
-            setSize(Math.max(600, labelWidth), 600);
+            setSize(Math.max(600, labelWidth), 800);
             Utilities.centerOnScreen(this);
         }
     }
