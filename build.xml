@@ -1141,13 +1141,16 @@ ssgadmin.md5 = '${install.pass.ssgadmin.md5}'
                 <include name="md5passwd.pl"/>
                 <include name="rpass.pl"/>
                 <include name="ssgruntimedefs.sh"/>
+                <include name="clean_db.pl"/>
+                <include name="dbfaildetect.sh"/>
+
             </fileset>
         </copy>
 
         <!-- Hack ssgruntimedefs.sh -->
         <echo>Patching ${install.src.bin}/ssgruntimedefs.sh...</echo>
         <replaceregexp file="${install.src.bin}/ssgruntimedefs.sh">
-            <regexp pattern="TOMCAT_HOME\s*=\s*[a-zA-Z0-9 _\/\-\.\\]*"/>
+            <regexp pattern="TOMCAT_HOME\s*=\s*[a-zA-Z0-9 _\/\-\.\\\]*"/>
             <substitution expression="TOMCAT_HOME=${install.target.tomcat}"/>
         </replaceregexp>
         <replaceregexp file="${install.src.bin}/ssgruntimedefs.sh">
