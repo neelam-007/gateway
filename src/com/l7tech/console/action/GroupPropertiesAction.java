@@ -60,9 +60,9 @@ public class GroupPropertiesAction extends NodeAction {
                 if (config == null) {
                     config = getIdentityProviderConfig((EntityHeaderNode)node);
                 }
-                GroupPanel panel = new GroupPanel(config);
-                JFrame f = TopComponents.getInstance().getMainWindow();
                 final EntityHeader header = ((EntityHeaderNode)node).getEntityHeader();
+                GroupPanel panel = GroupPanel.newInstance(config, header);
+                JFrame f = TopComponents.getInstance().getMainWindow();
                 EditorDialog dialog = new EditorDialog(f, panel);
                 try {
                     panel.edit(header, config);

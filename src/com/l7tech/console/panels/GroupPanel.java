@@ -6,11 +6,12 @@ import com.l7tech.console.logging.ErrorManager;
 import com.l7tech.console.text.MaxLengthDocument;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
-import com.l7tech.identity.*;
-import com.l7tech.objectmodel.EntityHeader;
-import com.l7tech.objectmodel.EntityType;
-import com.l7tech.objectmodel.FindException;
-import com.l7tech.objectmodel.ObjectNotFoundException;
+import com.l7tech.identity.Group;
+import com.l7tech.identity.IdentityAdmin;
+import com.l7tech.identity.IdentityProviderConfig;
+import com.l7tech.identity.PersistentGroup;
+import com.l7tech.identity.fed.VirtualGroup;
+import com.l7tech.objectmodel.*;
 
 import javax.swing.*;
 import javax.swing.event.DocumentEvent;
@@ -21,7 +22,6 @@ import java.awt.event.ActionListener;
 import java.awt.event.HierarchyEvent;
 import java.awt.event.HierarchyListener;
 import java.rmi.RemoteException;
-import java.util.HashSet;
 import java.util.NoSuchElementException;
 import java.util.Set;
 import java.util.logging.Level;
@@ -30,7 +30,36 @@ import java.util.logging.Logger;
 /**
  * GroupPanel is the main entry point panel for the <CODE>Group</CODE>.
  */
-public class GroupPanel extends EntityEditorPanel {
+public abstract class GroupPanel extends EntityEditorPanel {
+    public static GroupPanel newInstance( IdentityProviderConfig config, EntityHeader header ) {
+        Group g = null;
+        try {
+            g = getIdentityAdmin().findGroupByPrimaryKey(config.getOid(), header.getStrId());
+
+            if (g instanceof VirtualGroup) {
+                return newVirtualGroupPanel( config );
+            } else if (g instanceof PersistentGroup) {
+                return newPhysicalGroupPanel( config );
+            } else {
+                throw new RuntimeException("Can't create a GroupPanel implementation for " + g.getClass().getName());
+            }
+        } catch ( RemoteException e ) {
+            throw new RuntimeException(e);
+        } catch ( FindException e ) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    static PhysicalGroupPanel newPhysicalGroupPanel( IdentityProviderConfig config ) {
+        return new PhysicalGroupPanel(config);
+    }
+
+    static VirtualGroupPanel newVirtualGroupPanel( IdentityProviderConfig config ) {
+        return new VirtualGroupPanel(config);
+    }
+
+    abstract Set getGroupMembers();
+
     static Logger log = Logger.getLogger(GroupPanel.class.getName());
 
     final static String GROUP_ICON_RESOURCE = "com/l7tech/console/resources/group16.png";
@@ -41,33 +70,28 @@ public class GroupPanel extends EntityEditorPanel {
 
     // Panels always present
     private JPanel mainPanel;
-    private JPanel detailsPanel;
     private JPanel buttonPanel;
 
-    private JTabbedPane tabbedPane;
-    private GroupUsersPanel usersPanel; // membership
+    protected JTabbedPane tabbedPane;
 
     // Apply/Revert buttons
     private JButton okButton;
     private JButton cancelButton;
-    private IdentityProviderConfig ipc;
-
 
     // group
     private EntityHeader groupHeader;
-    private GroupBean group;
-    private Set groupMembers;
+    protected Group group;
 
     // Titles/Labels
-    private static final String DETAILS_LABEL = "General";
-    private static final String MEMBERSHIP_LABEL = "Membership";
+    protected static final String DETAILS_LABEL = "General";
+    protected static final String MEMBERSHIP_LABEL = "Membership";
     private static final String GROUP_DESCRIPTION_TITLE = "Description:";
 
     private static final String OK_BUTTON = "OK";
     private static final String CANCEL_BUTTON = "Cancel";
     private boolean formModified;
 
-    private IdentityProviderConfig config;
+    protected IdentityProviderConfig config;
     private final String GROUP_DOES_NOT_EXIST_MSG = "This group no longer exists";
     private final MainWindow mainWindow = TopComponents.getInstance().getMainWindow();
     private final ActionListener closeDlgListener = new ActionListener() {
@@ -76,23 +100,8 @@ public class GroupPanel extends EntityEditorPanel {
                                                       }
                                                     };
 
-    /**
-     * constructor
-     */
-    public GroupPanel(IdentityProviderConfig ipc) {
-        this.ipc = ipc;
-    }
-
-    public void initialize() {
-        try {
-            usersPanel = new GroupUsersPanel(this, ipc);
-            // Initialize form components
-            layoutComponents();
-            this.addHierarchyListener(hierarchyListener);
-        } catch (Exception e) {
-            log.log(Level.SEVERE, "GroupPanel()", e);
-            e.printStackTrace();
-        }
+    protected GroupPanel(IdentityProviderConfig config) {
+        this.config = config;
     }
 
     /**
@@ -102,7 +111,6 @@ public class GroupPanel extends EntityEditorPanel {
     void setModified(boolean b) {
         // If entity not already changed
         formModified = true;
-
     }
 
     /**
@@ -145,19 +153,16 @@ public class GroupPanel extends EntityEditorPanel {
 
             boolean isNew = groupHeader.getOid() == 0;
             if (isNew) {
-                group = new GroupBean();
-                group.setName(groupHeader.getName());
-                groupMembers = null;
+                group = newGroup(groupHeader);
             } else {
-                final IdentityAdmin admin = Registry.getDefault().getIdentityAdmin();
+                final IdentityAdmin admin = getIdentityAdmin();
                 Group g = admin.findGroupByPrimaryKey(config.getOid(), groupHeader.getStrId());
                 if (g == null) {
                     JOptionPane.showMessageDialog(mainWindow, GROUP_DOES_NOT_EXIST_MSG, "Warning", JOptionPane.WARNING_MESSAGE);
                     throw new NoSuchElementException("User missing " + groupHeader.getOid());
                 }
-                group = g.getGroupBean();
-                groupMembers = admin.getUserHeaders(config.getOid(), group.getUniqueIdentifier());
-
+                group = g;
+                loadedGroup(g);
             }
             initialize();
             // Populate the form for insert/update
@@ -169,6 +174,18 @@ public class GroupPanel extends EntityEditorPanel {
         }
     }
 
+    protected static IdentityAdmin getIdentityAdmin() {
+        return Registry.getDefault().getIdentityAdmin();
+    }
+
+    protected abstract void loadedGroup( Group g ) throws RemoteException, FindException;
+    protected abstract Group newGroup( EntityHeader groupHeader );
+
+    protected void initialize() {
+        layoutComponents();
+        this.addHierarchyListener(hierarchyListener);
+    }
+
     /**
      * Retrieve the <code>Group</code> this panel is editing.
      * It is a convenience, and package private method, for
@@ -176,7 +193,7 @@ public class GroupPanel extends EntityEditorPanel {
      * 
      * @return the group that this panel is currently editing
      */
-    GroupBean getGroup() {
+    Group getGroup() {
         return group;
     }
 
@@ -185,15 +202,10 @@ public class GroupPanel extends EntityEditorPanel {
     }
 
 
-    Set getGroupMembers() {
-        if (groupMembers == null) groupMembers = new HashSet();
-        return groupMembers;
-    }
-
     /**
      * Initialize all form panel components
      */
-    private void layoutComponents() {
+    protected void layoutComponents() {
         // Set layout
         this.setName("Group");
         this.setLayout(new GridBagLayout());
@@ -237,10 +249,11 @@ public class GroupPanel extends EntityEditorPanel {
         return mainPanel;
     }
 
+
     /**
      * Returns tabbedPane
      */
-    private JTabbedPane getGroupTabbedPane() {
+    protected JTabbedPane getGroupTabbedPane() {
         // If tabbed pane not already created
         if (null == tabbedPane) {
             // Create tabbed pane
@@ -248,81 +261,20 @@ public class GroupPanel extends EntityEditorPanel {
 
             // Add all tabs
             tabbedPane.add(getDetailsPanel(), DETAILS_LABEL);
-            tabbedPane.add(usersPanel, MEMBERSHIP_LABEL);
+            tabbedPane.add(getMembershipPanel(), MEMBERSHIP_LABEL);
         }
 
         // Return tabbed pane
         return tabbedPane;
     }
 
-    /**
-     * Returns detailsPanel
-     */
-    private JPanel getDetailsPanel() {
-        // If panel not already created
-        if (detailsPanel == null) {
-            detailsPanel = new JPanel();
-            detailsPanel.setLayout(new GridBagLayout());
-
-            detailsPanel.add(new JLabel(new ImageIcon(Utilities.loadImage(GROUP_ICON_RESOURCE))),
-              new GridBagConstraints(0, 0, 1, 1, 0.0, 0.0,
-                GridBagConstraints.WEST,
-                GridBagConstraints.NONE,
-                new Insets(5, 10, 0, 0), 0, 0));
-
-            detailsPanel.add(getNameLabel(),
-              new GridBagConstraints(1, 0, 1, 1, 0.0, 0.0,
-                GridBagConstraints.WEST,
-                GridBagConstraints.NONE,
-                new Insets(10, 15, 0, 0), 0, 0));
-
-            detailsPanel.add(new JSeparator(JSeparator.HORIZONTAL),
-              new GridBagConstraints(0, 1, 2, 1, 0.0, 0.0,
-                GridBagConstraints.WEST,
-                GridBagConstraints.BOTH,
-                new Insets(10, 10, 0, 10), 0, 0));
-
-
-            detailsPanel.add(getDescriptionLabel(),
-              new GridBagConstraints(0, 3, 1, 1, 0.0, 0.0,
-                GridBagConstraints.WEST,
-                GridBagConstraints.NONE,
-                new Insets(10, 10, 0, 0), 0, 0));
-
-            detailsPanel.add(getDescriptionTextField(),
-              new GridBagConstraints(1, 3, 1, 1, 1.0, 0.0,
-                GridBagConstraints.WEST,
-                GridBagConstraints.HORIZONTAL,
-                new Insets(10, 15, 0, 10), 0, 0));
-
-
-            detailsPanel.add(new JSeparator(JSeparator.HORIZONTAL),
-              new GridBagConstraints(0, 11, 2, 1, 0.0, 0.0,
-                GridBagConstraints.WEST,
-                GridBagConstraints.BOTH,
-                new Insets(15, 10, 0, 10), 0, 0));
-
-            Component strut = Box.createVerticalStrut(8);
-
-            detailsPanel.add(strut,
-              new GridBagConstraints(0, 12, 2, 1, 1.0, 1.0,
-                GridBagConstraints.CENTER,
-                GridBagConstraints.BOTH,
-                new Insets(10, 0, 0, 0), 0, 0));
-
-            Utilities.equalizeLabelSizes(new JLabel[]{
-                getDescriptionLabel(),
-            });
-        }
-        // Return panel
-        return detailsPanel;
-    }
-
+    protected abstract JPanel getDetailsPanel();
+    protected abstract JPanel getMembershipPanel();
 
     /**
      * Returns descriptionLabel
      */
-    private JLabel getNameLabel() {
+    protected JLabel getNameLabel() {
         // If label not already created
         if (nameLabel != null) return nameLabel;
         // Create label
@@ -337,7 +289,7 @@ public class GroupPanel extends EntityEditorPanel {
     /**
      * Returns descriptionLabel
      */
-    private JLabel getDescriptionLabel() {
+    protected JLabel getDescriptionLabel() {
         // If label not already created
         if (descriptionLabel == null) {
             // Create label
@@ -355,7 +307,7 @@ public class GroupPanel extends EntityEditorPanel {
     /**
      * Returns descriptionTextField
      */
-    private JTextField getDescriptionTextField() {
+    protected JTextField getDescriptionTextField() {
         // If text field not already created
         if (descriptionTextField == null) {
             // Create text field
@@ -471,7 +423,7 @@ public class GroupPanel extends EntityEditorPanel {
      * 
      * @param group 
      */
-    private void setData(GroupBean group) {
+    protected void setData(Group group) {
         // Set tabbed panels (add/remove extranet tab)
         nameLabel.setText(group.getName());
         getDescriptionTextField().setText(group.getDescription());
@@ -484,8 +436,8 @@ public class GroupPanel extends EntityEditorPanel {
      * 
      * @return Group   the instance with changes applied
      */
-    private GroupBean collectChanges() {
-        group.setDescription(this.getDescriptionTextField().getText());
+    protected Group collectChanges() {
+        group.getGroupBean().setDescription(this.getDescriptionTextField().getText());
         // group.setMemberHeaders(usersPanel.getCurrentUsers());
         return group;
     }
@@ -511,13 +463,8 @@ public class GroupPanel extends EntityEditorPanel {
 
         // Try adding/updating the Group
         try {
-            IdentityAdmin admin = Registry.getDefault().getIdentityAdmin();
-            String id;
-            if (groupHeader.getStrId() != null) {
-                admin.saveGroup(config.getOid(), group, groupMembers);
-                id = group.getUniqueIdentifier();
-            } else {
-                id = admin.saveGroup(config.getOid(), group, groupMembers);
+            String id = save();
+            if (groupHeader.getStrId() == null) {
                 groupHeader.setStrId(id);
             }
         } catch (ObjectNotFoundException e) {
@@ -533,6 +480,8 @@ public class GroupPanel extends EntityEditorPanel {
         }
         return result;
     }
+
+    protected abstract String save() throws RemoteException, SaveException, UpdateException, ObjectNotFoundException;
 
 
     /**
@@ -574,7 +523,7 @@ public class GroupPanel extends EntityEditorPanel {
     };
 
     // hierarchy listener
-    private final
+    protected final
     HierarchyListener hierarchyListener =
       new HierarchyListener() {
           /**
