@@ -17,6 +17,8 @@ import java.security.cert.CertificateFactory;
 import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.util.HexUtils;
 
+import javax.crypto.SecretKey;
+
 /**
  * The class is a container for test documents, SOAP tmessages etc
  *
@@ -172,5 +174,18 @@ public final class TestDocuments {
         // construct the x509 based on the bytes
         return dotNetServerCertificate = (X509Certificate)(CertificateFactory.getInstance("X.509").
                                                     generateCertificate(new ByteArrayInputStream(certbytes)));
+    }
+
+    public SecretKey getDotNetSecureConversationSharedSecret() {
+        return new SecretKey() {
+            public String getAlgorithm() { return "ANY"; }
+            public String getFormat() { return "RAW"; }
+            public byte[] getEncoded() {
+                return new byte[] {5,2,4,5,
+                                   8,7,9,6,
+                                   32,4,1,55,
+                                   8,7,77,7};
+            }
+        };
     }
 }
