@@ -149,8 +149,7 @@ public class JmsAdminImpl extends RemoteService implements JmsAdmin {
         return (EntityHeader[])list.toArray( new EntityHeader[0] );
     }
 
-    public long saveConnection( JmsConnection connection ) throws RemoteException, UpdateException,
-                                                                  SaveException, VersionException {
+    public long saveConnection( JmsConnection connection ) throws RemoteException, SaveException, VersionException {
         HibernatePersistenceContext context = null;
         try {
             enforceAdminRole();
@@ -167,9 +166,11 @@ public class JmsAdminImpl extends RemoteService implements JmsAdmin {
             context.commitTransaction();
             return oid;
         } catch ( SQLException e ) {
-            throw new SaveException( e.toString(), e );
+            throw new SaveException("Couldn't save JmsConnection", e );
         } catch ( TransactionException e ) {
-            throw new SaveException( e.toString(), e );
+            throw new SaveException("Couldn't save JmsConnection", e );
+        } catch (UpdateException e) {
+            throw new SaveException("Couldn't save JmsConnection", e);
         } finally {
             closeContext();
         }
@@ -286,8 +287,7 @@ public class JmsAdminImpl extends RemoteService implements JmsAdmin {
         }
     }
 
-    public long saveEndpoint( JmsEndpoint endpoint ) throws RemoteException, UpdateException,
-                                                            SaveException, VersionException {
+    public long saveEndpoint( JmsEndpoint endpoint ) throws RemoteException, SaveException, VersionException {
         HibernatePersistenceContext context = null;
         try {
             enforceAdminRole();
@@ -305,9 +305,11 @@ public class JmsAdminImpl extends RemoteService implements JmsAdmin {
             context.commitTransaction();
             return oid;
         } catch ( SQLException e ) {
-            throw new SaveException( e.toString(), e );
+            throw new SaveException("Couldn't save endpoint", e);
         } catch ( TransactionException e ) {
-            throw new SaveException( e.toString(), e );
+            throw new SaveException("Couldn't save endpoint", e);
+        } catch (UpdateException e) {
+            throw new SaveException("Couldn't save endpoint", e);
         } finally {
             closeContext();
         }

@@ -57,7 +57,7 @@ public class JmsAdminStub implements JmsAdmin {
         return (JmsConnection) connections.get(new Long(oid));
     }
 
-    public synchronized long saveConnection(JmsConnection connection) throws RemoteException, UpdateException, SaveException, VersionException {
+    public synchronized long saveConnection(JmsConnection connection) throws RemoteException, SaveException, VersionException {
         long oid = connection.getOid();
         if (oid == 0 || oid == Entity.DEFAULT_OID) {
             oid = StubDataStore.defaultStore().nextObjectId();
@@ -98,7 +98,7 @@ public class JmsAdminStub implements JmsAdmin {
         endpoint.setMessageSource(isMessageSource);        
     }
 
-    public synchronized long saveEndpoint(JmsEndpoint endpoint) throws RemoteException, UpdateException, SaveException, VersionException {
+    public synchronized long saveEndpoint(JmsEndpoint endpoint) throws RemoteException, SaveException, VersionException {
         long oid = endpoint.getOid();
         if (oid == 0 || oid == JmsEndpoint.DEFAULT_OID) {
             oid = StubDataStore.defaultStore().nextObjectId();
