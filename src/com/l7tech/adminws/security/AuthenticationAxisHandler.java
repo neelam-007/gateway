@@ -5,6 +5,8 @@ import org.apache.axis.AxisFault;
 import org.apache.axis.utils.Messages;
 import org.apache.axis.encoding.Base64;
 import org.apache.axis.transport.http.HTTPConstants;
+import com.l7tech.identity.User;
+import com.l7tech.identity.Group;
 
 /**
  * Layer 7 Technologies, inc.
@@ -16,6 +18,7 @@ import org.apache.axis.transport.http.HTTPConstants;
  * 2. unbase64 it
  * 3. MD5s it
  * 4. compare it to the hash value for this user in the database
+ * 5. if authentication succeeds, it checks that user is member of SSGAdmin local group
  *
  * The password has in the database is expected to have the following format:
  * MD5(username::password) hex encoded
@@ -38,50 +41,81 @@ public class AuthenticationAxisHandler extends InternalIDSecurityAxisHandler {
      * will throw an exception (org.apache.axis.AxisFault).
      */
     public void invoke(MessageContext messageContext) throws AxisFault {
+        // CHECK FOR SESSION
+        // todo
 
-        // Process the Basic Auth stuff in the headers
+        // Process the Auth stuff in the headers
         String tmp = (String)messageContext.getProperty(HTTPConstants.HEADER_AUTHORIZATION);
         if (tmp != null ) tmp = tmp.trim();
+
+        User authenticatedUser = null;
+
+        // TRY BASIC AUTHENTICATION
         if (tmp != null && tmp.startsWith("Basic ")) {
-            // GET THE AUTH VALUE
-            String login = null;
             String decodedAuthValue = new String(Base64.decode(tmp.substring(6)));
             if (decodedAuthValue == null) {
                 throw new AxisFault("cannot decode basic header");
             }
-            int i = decodedAuthValue.indexOf( ':' );
-            if (i == -1) login = decodedAuthValue;
-            else login = decodedAuthValue.substring( 0, i);
-            messageContext.setUsername(login);
-
-            // MD5 IT
-            java.security.MessageDigest md5Helper = null;
-            try {
-                md5Helper = java.security.MessageDigest.getInstance("MD5");
-            } catch (java.security.NoSuchAlgorithmException e) {
-                throw new AxisFault(e.getMessage());
-            }
-            byte[] digest = md5Helper.digest(decodedAuthValue.getBytes());
-            String md5edDecodedAuthValue = encodeDigest(digest);
-
-            // COMPARE TO THE VALUE IN INTERNAL DB
-            com.l7tech.identity.User internalUser = findUserByLoginAndRealm(login, null);
-            if (internalUser == null) {
-                throw new AxisFault("User " + login + " not registered in internal id provider");
-            }
-            if (internalUser.getPassword() == null) {
-                throw new AxisFault("User " + login + "does not have a password");
-            }
-            if (internalUser.getPassword().equals(md5edDecodedAuthValue)) {
-                // AUTHENTICATION SUCCESS
-                // you're cool, get in
-                // add the user to the context
-                messageContext.setProperty(AUTHENTICATED_USER, new Long(internalUser.getOid()));
-                return;
-            }
+            authenticatedUser = authenticateBasicToken(decodedAuthValue);
+            // AUTHENTICATION SUCCESS
+            if (authenticatedUser != null) messageContext.setUsername(authenticatedUser.getLogin());
         }
-        // this forces the axis servlet to return a 401
-        throw new AxisFault("Server.Unauthorized", "com.l7tech.adminws.security.AuthenticationAxisHandler failed", null, null );
+
+        // WAS AUTHENTICATION COMPLETE?
+        if (authenticatedUser == null) throw new AxisFault("Server.Unauthorized", "com.l7tech.adminws.security.AuthenticationAxisHandler failed", null, null );
+
+        // NOW, PROCEED TO AUTHORIZATION
+        if (authorizeAdminMembership(authenticatedUser)) {
+            // CREATE SESSION
+            // todo
+        }
+        else {
+            System.err.println("authorization failure for user " + authenticatedUser.getLogin());
+            throw new AxisFault("Server.Unauthorized", "com.l7tech.adminws.security.AuthorizationAxisHandler failed", null, null );
+        }
+    }
+
+    // ************************************************
+    // PRIVATES
+    // ************************************************
+
+    private boolean authorizeAdminMembership(User adminUser) {
+        return userIsMemberOfGroup(adminUser.getOid(), Group.ADMIN_GROUP_NAME);
+    }
+
+    private User authenticateBasicToken(String value) throws AxisFault {
+        String login = null;
+        int i = value.indexOf( ':' );
+        if (i == -1) login = value;
+        else login = value.substring( 0, i);
+        // messageContext.setUsername(login);
+
+        // MD5 IT
+        java.security.MessageDigest md5Helper = null;
+        try {
+            md5Helper = java.security.MessageDigest.getInstance("MD5");
+        } catch (java.security.NoSuchAlgorithmException e) {
+            throw new AxisFault(e.getMessage());
+        }
+        byte[] digest = md5Helper.digest(value.getBytes());
+        String md5edDecodedAuthValue = encodeDigest(digest);
+
+        // COMPARE TO THE VALUE IN INTERNAL DB
+        com.l7tech.identity.User internalUser = findUserByLoginAndRealm(login, null);
+        if (internalUser == null) {
+            throw new AxisFault("User " + login + " not registered in internal id provider");
+        }
+        if (internalUser.getPassword() == null) {
+            throw new AxisFault("User " + login + "does not have a password");
+        }
+        if (internalUser.getPassword().equals(md5edDecodedAuthValue)) {
+
+            // AUTHENTICATION SUCCESS, move on to authorization
+            return internalUser;
+        } else {
+            System.err.println("authentication failure for user " + login + " with credentials " + md5edDecodedAuthValue);
+        }
+        return null;
     }
 
     /**
