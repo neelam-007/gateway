@@ -54,8 +54,8 @@ public abstract class IdentityAssertion extends Assertion {
 
             AssertionStatus status;
             if ( request.isAuthenticated() ) {
-                // Is this possible?
-                LogManager.getInstance().getSystemLogger().log(Level.INFO, "Weird! The request was already authenticated by someone else!");
+                // The user was authenticated by a previous IdentityAssertion.
+                LogManager.getInstance().getSystemLogger().log(Level.FINEST, "Request already authenticated");
                 status = doCheckUser( user );
             } else {
                 if ( _identityProviderOid == Entity.DEFAULT_OID ) {
