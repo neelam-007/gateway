@@ -374,6 +374,24 @@ public class SoapUtil {
         return securityEl;
     }
 
+    public static Element makeSecurityElement(Document soapMsg, String preferredWsseNamespace, String actor) {
+        Element header = getOrMakeHeader(soapMsg);
+        Element securityEl = soapMsg.createElementNS(preferredWsseNamespace, SECURITY_EL_NAME);
+        securityEl.setPrefix(SECURITY_NAMESPACE_PREFIX);
+        securityEl.setAttribute("xmlns:" + SECURITY_NAMESPACE_PREFIX, preferredWsseNamespace);
+        setSoapAttr(soapMsg, securityEl, MUSTUNDERSTAND_ATTR_NAME, "1");
+        if (actor != null) {
+            // todo, should we create this actor with a ns
+            securityEl.setAttribute(SoapUtil.ACTOR_ATTR_NAME, actor);
+        }
+        Element existing = XmlUtil.findFirstChildElement(header);
+        if (existing == null)
+            header.appendChild(securityEl);
+        else
+            header.insertBefore(securityEl, existing);
+        return securityEl;
+    }
+
     /**
      * Remove any soap-specific attribute from the specified element.
      * Removes any attribute with a matching unqualified name, or a name fully
@@ -521,6 +539,37 @@ public class SoapUtil {
                 return element;
         }
         return null; // no security header for us
+    }
+
+    public static String getActorValue(Element element) {
+        String localactor = element.getAttribute(SoapUtil.ACTOR_ATTR_NAME);
+        if (localactor == null || localactor.length() < 1) {
+            for (Iterator i = ENVELOPE_URIS.iterator(); i.hasNext();) {
+                String ns = (String)i.next();
+                localactor = element.getAttributeNS(ns, SoapUtil.ACTOR_ATTR_NAME);
+                if (localactor != null && localactor.length() > 0) {
+                    return localactor;
+                }
+            }
+        }
+        if (localactor == null || localactor.length() < 1) return null;
+        return localactor;
+    }
+
+    public static Element getSecurityElement(Document soapMsg, String actor) throws InvalidDocumentFormatException {
+        if (actor == null) return getSecurityElement(soapMsg);
+        List allofthem = getSecurityElements(soapMsg);
+        if (allofthem == null || allofthem.size() < 1) return null;
+
+        for (Iterator i = allofthem.iterator(); i.hasNext();) {
+            Element element = (Element)i.next();
+            String localactor = SoapUtil.getActorValue(element);
+            if (localactor != null && actor.equals(actor)) {
+                return element;
+            }
+
+        }
+        return null;
     }
 
     /**
