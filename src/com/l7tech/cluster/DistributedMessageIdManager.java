@@ -6,6 +6,7 @@
 
 package com.l7tech.cluster;
 
+import com.l7tech.objectmodel.HibernatePersistenceContext;
 import com.l7tech.server.util.MessageId;
 import com.l7tech.server.util.MessageIdManager;
 import org.jboss.cache.PropertyConfigurator;
@@ -16,6 +17,10 @@ import org.jboss.cache.transaction.DummyUserTransaction;
 import javax.naming.Context;
 import javax.transaction.SystemException;
 import javax.transaction.UserTransaction;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -40,22 +45,60 @@ public class DistributedMessageIdManager implements MessageIdManager {
                 tx = new DummyUserTransaction(DummyTransactionManager.getInstance());
                 tx.begin();
                 Set names = tree.getChildrenNames(MESSAGEID_PARENT_NODE);
-                if (names == null) return;
-                for ( Iterator i = names.iterator(); i.hasNext(); ) {
-                    String name = (String)i.next();
-                    Long expires = (Long)tree.get(name, EXPIRES_ATTR);
-                    if (expires == null) continue; // Maybe someone else removed it
-                    if (expires.longValue() < now ) {
-                        // Expired
-                        logger.info("Removing stale message ID " + name + " that expired " +
-                                    (now - expires.longValue()) + "ms ago");
-                        tree.remove(name);
+                if (names != null) {
+                    List toBeRemoved = new ArrayList(names.size()/2);
+                    for ( Iterator i = names.iterator(); i.hasNext(); ) {
+                        String id = (String)i.next();
+                        Long expires = (Long)tree.get(MESSAGEID_PARENT_NODE + "/" + id, EXPIRES_ATTR);
+                        if (expires == null) continue; // Maybe someone else removed it
+                        final long exp = Math.abs(expires.longValue());
+                        if (exp < now) {
+                            // Expired
+                            toBeRemoved.add(id);
+                        }
+                    }
+
+                    for (Iterator i = toBeRemoved.iterator(); i.hasNext();) {
+                        String id = (String)i.next();
+                        tree.remove(MESSAGEID_PARENT_NODE + "/" + id);
+                        logger.fine("Removing expired message ID " + id + " from replay cache");
+                    }
+
+                    tx.commit();
+                } else {
+                    tx.rollback();
+                }
+                tx = null;
+
+                flush();
+
+                HibernatePersistenceContext context = null;
+                Connection conn = null;
+                PreparedStatement ps = null;
+                ResultSet rs = null;
+                try {
+                    // load old message ids from database
+                    context = (HibernatePersistenceContext)HibernatePersistenceContext.getCurrent();
+                    conn = context.getSession().connection();
+                    ps = conn.prepareStatement("DELETE FROM message_id WHERE expires < ?");
+                    ps.setLong(1, now);
+                    int num = ps.executeUpdate();
+                    if (num > 0) logger.fine("Deleted " + num + " stale message ID entries from database");
+                    conn.commit();
+                    conn = null;
+                } finally {
+                    if (conn != null) try {
+                        conn.rollback();
+                    } finally {
+                        if (rs != null) try {
+                            rs.close();
+                        } finally {
+                            if (ps != null) ps.close();
+                        }
                     }
                 }
-                tx.commit();
-                tx = null;
             } catch ( Exception e ) {
-                logger.log( Level.WARNING, "Caught exception while trying to begin garbage collection transaction", e );
+                logger.log( Level.WARNING, "Caught exception in Message ID Garbage Collection task", e );
             } finally {
                 try {
                     if (tx != null) tx.rollback();
@@ -64,6 +107,7 @@ public class DistributedMessageIdManager implements MessageIdManager {
                 }
             }
         }
+
     }
 
     private void start() throws Exception {
@@ -73,52 +117,107 @@ public class DistributedMessageIdManager implements MessageIdManager {
         // Perturb delay to avoid synchronization with other cluster nodes
         long when = GC_PERIOD * 2 + new Random().nextInt(1 + (int)GC_PERIOD/4);
         gcTimer.schedule(new GarbageCollectionTask(), when, GC_PERIOD);
-        UserTransaction tx = null;
+        HibernatePersistenceContext context = null;
+        PreparedStatement ps = null;
+        ResultSet rs = null;
+        Connection conn = null;
         try {
-            tx = new DummyUserTransaction(DummyTransactionManager.getInstance());
-            tx.begin();
-            Integer state = (Integer)tree.get(STATE_NODE, STATE_ATTR);
-            tx.commit();
-            tx = null;
-            if ( state == null ) {
-                // TODO load old message ids from database
-            } else if ( STATE_SHUTTINGDOWN.equals(state) ) {
-                throw new IllegalStateException("Initialize was called when the cluster thinks it's shutting down");
-            } else if ( !STATE_OPERATIONAL.equals(state) ) {
-                throw new IllegalStateException("Cluster state unknown: " + state);
+            // load old message ids from database
+            context = (HibernatePersistenceContext)HibernatePersistenceContext.getCurrent();
+            conn = context.getSession().connection();
+            ps = conn.prepareStatement("SELECT messageid, expires FROM message_id");
+            rs = ps.executeQuery();
+            final long now = System.currentTimeMillis();
+            while (rs.next()) {
+                String id = rs.getString(1);
+                long expires = rs.getLong(2);
+                if (expires >= now) {
+                    logger.fine("Reloading saved message ID '" + id + "' from database");
+                    tree.put(MESSAGEID_PARENT_NODE + "/" + id, EXPIRES_ATTR, new Long(expires > 0 ? -expires : expires));
+                }
             }
+            conn.commit();
+            conn = null;
         } finally {
-            if (tx != null) tx.rollback();
+            if (conn != null) try {
+                conn.rollback();
+            } finally {
+                if (rs != null) try {
+                    rs.close();
+                } finally {
+                    if (ps != null) ps.close();
+                }
+            }
         }
     }
 
     void close() throws Exception {
+        flush();
+    }
+
+    private void flush() throws Exception {
         // if we're the last one out the door, turn out the lights
+        HibernatePersistenceContext context = null;
+        Connection conn = null;
+        PreparedStatement ps = null;
+        ResultSet rs = null;
         UserTransaction tx = null;
         try {
+            // save message ids to database
+            context = (HibernatePersistenceContext)HibernatePersistenceContext.getCurrent();
+            conn = context.getSession().connection();
+            ps = conn.prepareStatement("INSERT INTO message_id (messageid, expires) VALUES (?,?)");
+            final Set ids = tree.getChildrenNames(MESSAGEID_PARENT_NODE);
+            if (ids == null) return;
+            Map saved = new HashMap();
+            for (Iterator i = ids.iterator(); i.hasNext();) {
+                String id = (String)i.next();
+                if (id == null) continue;
+
+                Long expires = (Long)tree.get(MESSAGEID_PARENT_NODE + "/" + id, EXPIRES_ATTR);
+                if (expires != null && expires.longValue() > 0) {
+                    ps.clearParameters();
+                    ps.setString(1, id);
+                    ps.setLong(2, expires.longValue());
+                    try {
+                        ps.executeUpdate();
+                        saved.put(id, expires);
+                    } catch (SQLException e) {
+                        // Don't care
+                        logger.log(Level.FINE, "Caught SQLException inserting record", e);
+                    }
+                }
+            }
+            conn.commit();
+            conn = null;
+
+            // Flip expiry sign to avoid saving the same record again
             tx = new DummyUserTransaction(DummyTransactionManager.getInstance());
             tx.begin();
-            Integer state = (Integer)tree.get(STATE_NODE, STATE_ATTR);
-            if ( state == null ) {
-                logger.info("Close was called when the cluster thinks it hasn't started yet");
-            } else if ( STATE_SHUTTINGDOWN.equals(state) ) {
-                logger.info("Another node is cleaning up");
-            } else if ( STATE_OPERATIONAL.equals(state) ) {
-                if (tree.getMembers().size() == 1) {
-                    logger.info("Last cluster node shutting down, will save replay records");
-                    tree.put(STATE_NODE, STATE_ATTR, STATE_SHUTTINGDOWN);
-                    tx.commit();
-                    // TODO save message ids to database
-                    // TODO set state to DOWN
-                    tx = null;
-                } else {
-                    logger.info("Cluster node shutting down. Another node should save replay records");
-                }
-            } else {
-                throw new IllegalStateException("Cluster state unknown: " + state);
+
+            for (Iterator i = saved.entrySet().iterator(); i.hasNext();) {
+                Map.Entry entry = (Map.Entry)i.next();
+                String id = (String)entry.getKey();
+                Long expires = (Long)entry.getValue();
+                tree.put(MESSAGEID_PARENT_NODE + "/" + id, EXPIRES_ATTR, new Long(-expires.longValue()));
             }
+
+            tx.commit();
+            tx = null;
         } finally {
-            if (tx != null) tx.rollback();
+            if (tx != null) try {
+                tx.rollback();
+            } finally {
+                if (conn != null) try {
+                    conn.rollback();
+                } finally {
+                    if (rs != null) try {
+                        rs.close();
+                    } finally {
+                        if (ps != null) ps.close();
+                    }
+                }
+            }
         }
     }
 
@@ -144,10 +243,10 @@ public class DistributedMessageIdManager implements MessageIdManager {
         try {
             tx = new DummyUserTransaction(DummyTransactionManager.getInstance());
             tx.begin();
-            final String messageIdNodeName = MESSAGEID_PARENT_NODE + "/" + prospect.getOpaqueIdentifier();
-            Long expires = (Long)tree.get(messageIdNodeName, EXPIRES_ATTR);
+            Long expires = (Long)tree.get(MESSAGEID_PARENT_NODE + "/" + prospect.getOpaqueIdentifier(), EXPIRES_ATTR);
             if (expires == null) {
-                tree.put(messageIdNodeName, EXPIRES_ATTR, new Long(prospect.getNotValidOnOrAfterDate()) );
+                tree.put(MESSAGEID_PARENT_NODE + "/" + prospect.getOpaqueIdentifier(),
+                         EXPIRES_ATTR, new Long(prospect.getNotValidOnOrAfterDate()));
                 tx.commit();
                 tx = null;
                 return;
@@ -173,16 +272,9 @@ public class DistributedMessageIdManager implements MessageIdManager {
     private static DistributedMessageIdManager singleton;
 
     private Timer gcTimer;
-    private static final int GC_PERIOD = 4000;
-
     private TreeCache tree;
-    private static final String STATE_NODE = DistributedMessageIdManager.class.getName() + "/state";
+
+    private static final int GC_PERIOD = 1 * 30 * 1000;
     private static final String MESSAGEID_PARENT_NODE = DistributedMessageIdManager.class.getName() + "/messageId";
-
     private static final String EXPIRES_ATTR = "expires";
-    private static final String STATE_ATTR = "state";
-
-    private static final Integer STATE_OPERATIONAL = new Integer(1);
-    private static final Integer STATE_SHUTTINGDOWN = new Integer(2);
-
 }
