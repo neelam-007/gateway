@@ -19,6 +19,8 @@ import java.security.interfaces.DSAParams;
 import java.security.interfaces.DSAPublicKey;
 import java.security.interfaces.RSAPublicKey;
 import java.util.*;
+import java.util.logging.Logger;
+import java.util.logging.Level;
 
 /**
  *
@@ -26,6 +28,7 @@ import java.util.*;
  * @version 1.0
  */
 public class CertUtils {
+    private static final Logger logger = Logger.getLogger(CertUtils.class.getName());
     private static CertificateFactory certFactory;
 
     public static X509Certificate decodeCert(byte[] bytes) throws CertificateException {
@@ -370,45 +373,48 @@ public class CertUtils {
     }
 
     /**
-     * Extract the username from the specified client certificate.  The certificate is expected to contain
-     * a distinguished name in the format "CN=username".  Other formats are not supported.
+     * Extract the subject common name from the specified client certificate.
+     *
      * @param cert the certificate to examine
      * @return the username from the certificate.  Might be empty string, but won't be null.
-     * @throws IllegalArgumentException if the certificate does not contain DN of "CN=username"
-     * TODO: The certificate format restrictions will need to be relaxed to allow arbitrary client certificates
+     * @throws IllegalArgumentException if the certificate does not contain a subject DN.
      */
     public static String extractUsernameFromClientCertificate(X509Certificate cert) throws IllegalArgumentException {
         Principal principal = cert.getSubjectDN();
         if (principal == null)
             throw new IllegalArgumentException("Cert contains no user subject DN");
-        return extractCommonName(principal);
+        String ret = extractCommonName(principal);
+        return ret == null ? "" : ret;
     }
 
     /**
-     * Extract the username from the specified client certificate.  The certificate is expected to contain
-     * a distinguished name in the format "CN=username".  Other formats are not supported.
+     * Extract the issuer common name from the specified client certificate.
+     *
      * @param cert the certificate to examine
-     * @return the username from the certificate.  Might be empty string, but won't be null.
-     * @throws IllegalArgumentException if the certificate does not contain DN of "CN=username"
-     * TODO: The certificate format restrictions will need to be relaxed to allow arbitrary client certificates
+     * @return the issuer common name from the certificate.  Might be empty string, but won't be null.
+     * @throws IllegalArgumentException if the certificate does not contain an issuer DN.
      */
     public static String extractIssuerNameFromClientCertificate (X509Certificate cert) throws IllegalArgumentException {
         Principal principal = cert.getIssuerDN();
         if (principal == null)
-            throw new IllegalArgumentException("Cert contains no issuer subject DN");
-        return extractCommonName(principal);
+            throw new IllegalArgumentException("Cert contains no issuer DN");
+        String ret = extractCommonName(principal);
+        return ret == null ? "" : ret;
     }
 
     /**
      * Extract the value of the CN attribute from the DN in the Principal.
      * @param principal
-     * @return String  The value of CN attribute in the DN
+     * @return String  The value of CN attribute in the DN.  Might be null.
+     * // TODO use a proper DN parser for this rather than doing an incomplete version by hand
      */
     private static String extractCommonName(Principal principal) {
         X500Principal certName = new X500Principal(principal.toString());
         String certNameString = certName.getName(X500Principal.RFC2253);
-        if (certNameString == null)
-            throw new IllegalArgumentException("Cert subject DN is NULL");
+        if (certNameString == null) {
+            logger.log(Level.FINE, "Certificate name string is null.");
+            return null;
+        }
 
         String cn = "";
         int index1 = certNameString.indexOf("cn=");
@@ -421,7 +427,8 @@ public class CertUtils {
         } else if (index2 >= 0) {
             startIndex = index2 + 3;
         } else {
-            throw new IllegalArgumentException("Cert subject DN is not in the format CN=username");
+            logger.log(Level.FINE, "Certificate subject DN is not in the format CN=username; unable to extract a username.");
+            return null;
         }
 
         if (startIndex >= 0) {
