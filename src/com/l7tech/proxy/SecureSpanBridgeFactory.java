@@ -118,7 +118,6 @@ public class SecureSpanBridgeFactory {
                 }
             });
         }
-        CurrentRequest.setCurrentSsg(ssg);
         final PolicyManager policyManager = PolicyManagerImpl.getInstance();
         final MessageProcessor mp = new MessageProcessor(policyManager);
         final RequestInterceptor nri = NullRequestInterceptor.INSTANCE;
@@ -161,12 +160,13 @@ public class SecureSpanBridgeFactory {
             Message response = new Message();
             PolicyApplicationContext context = null;
             try {
+                CurrentRequest.setCurrentSsg(ssg);
                 context = new PolicyApplicationContext(ssg, request, response, nri, pak, origUrl);
                 mp.processMessage(context);
                 // Copy results out before context gets closed
                 final HttpResponseKnob responseHttp = (HttpResponseKnob)context.getResponse().getKnob(HttpResponseKnob.class);
                 final int httpStatus = responseHttp != null ? responseHttp.getStatus() : 500;
-                final Document doc = context.getOriginalDocument(); // we no longer care about sync with underlying MIME part
+                final Document doc = context.getResponse().getXmlKnob().getDocument(false); // we no longer care about sync with underlying MIME part
                 return new Result() {
                     public int getHttpStatus() {
                         return httpStatus;
@@ -207,6 +207,7 @@ public class SecureSpanBridgeFactory {
             } finally {
                 if (context != null)
                     context.close();
+                CurrentRequest.clearCurrentRequest();
             }
         }
 
