@@ -302,7 +302,7 @@ public class SoapMsgSignerTest extends TestCase {
         Element knownCipherValue = (Element)parent.getElementsByTagNameNS( SoapUtil.XMLENC_NS, "CipherValue" ).item(0);
         String knownCipherBase64 = XmlUtil.findFirstChildTextNode( knownCipherValue );
         byte[] knownCipher = HexUtils.decodeBase64( knownCipherBase64 );
-        Cipher aes = Cipher.getInstance( "AES/CBC/PKCS5Padding", JceProvider.getProvider() );
+        Cipher aes = Cipher.getInstance( "AES/CBC/PKCS5Padding", JceProvider.getSymmetricJceProvider() );
         aes.init( Cipher.DECRYPT_MODE, getKeyReq(), new IvParameterSpec(knownCipher, 0, 16) );
         byte[] knownPlain = aes.doFinal( knownCipher, 16, knownCipher.length - 16 );
         return new String(knownPlain, "UTF-8");

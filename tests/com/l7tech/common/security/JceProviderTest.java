@@ -6,20 +6,23 @@
 
 package com.l7tech.common.security;
 
+import com.l7tech.common.security.prov.bc.BouncyCastleCertificateRequest;
 import com.l7tech.common.security.xml.SoapMsgSigner;
 import com.l7tech.common.security.xml.XmlMangler;
 import com.l7tech.common.security.xml.XmlManglerTest;
 import com.l7tech.common.util.CertUtils;
+import com.l7tech.common.util.HexUtils;
 import com.l7tech.common.util.XmlUtil;
+import org.bouncycastle.jce.PKCS10CertificationRequest;
 import org.w3c.dom.Document;
 
-import java.security.Key;
-import java.security.KeyPair;
-import java.security.PrivateKey;
-import java.security.PublicKey;
+import java.io.FileInputStream;
+import java.net.URL;
+import java.security.*;
 import java.security.cert.X509Certificate;
 import java.security.interfaces.RSAPrivateKey;
 import java.security.interfaces.RSAPublicKey;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -35,11 +38,12 @@ public class JceProviderTest {
     private static final String DFLT_DIR = "/ssg/etc/keys/";
     private static final String DFLT_PROVIDER = "bc";
     public static final String KS = "ca.ks";
-    private static String KEY_STORE = DFLT_DIR + KS;
     private static String DFLT_PK_PASS = "tralala";
     private static String ALIAS = "ssgroot";
     private static String DFLT_STORE_PASS = "tralala";
-    public static final String USAGE = "Usage: JceProviderTest [phaos|bc|rsa|ncipher|entrust] scale dir keypass storepass";
+    private static String DFLT_STORE_TYPE = "JKS";
+
+    public static final String USAGE = "Usage: JceProviderTest (phaos|bc|rsa|ncipher|entrust) scale dir keypass storepass [storetype] [concurrency]";
 
     public static interface Testable {
         void run() throws Throwable;
@@ -53,19 +57,30 @@ public class JceProviderTest {
         String dir = null;
         String pkpass = null;
         String kspass = null;
+	    String kstype = null;
+        String sconcur = null;
+
         if ( args.length >= 1 ) prov = args[0].trim();
         if ( args.length >= 2 ) sscale = args[1].trim();
         if ( args.length >= 3 ) dir = args[2].trim();
         if ( args.length >= 4 ) pkpass = args[3].trim();
         if ( args.length >= 5 ) kspass = args[4].trim();
+	    if ( args.length >= 6 ) kstype = args[5].trim();
+        if ( args.length >= 7 ) sconcur = args[6].trim();
 
         if ( prov == null || prov.length() == 0 ) prov = DFLT_PROVIDER;
         if ( sscale == null || sscale.length() == 0 ) sscale = "1";
         if ( dir == null || dir.length() == 0 ) dir = DFLT_DIR;
-        if ( pkpass == null || pkpass.length() == 0 ) dir = DFLT_PK_PASS;
-        if ( kspass == null || kspass.length() == 0 ) kspass = DFLT_STORE_PASS;
+//        if ( pkpass == null || pkpass.length() == 0 ) pkpass = DFLT_PK_PASS;
+//        if ( kspass == null || kspass.length() == 0 ) kspass = DFLT_STORE_PASS;
+        if ( kstype == null || kstype.length() == 0 ) kstype = DFLT_STORE_TYPE;
+        if ( sconcur == null || sconcur.length() == 0 ) sconcur = DFLT_CONCUR;
 
         int scale = Integer.parseInt(sscale);
+        int concur = Integer.parseInt(sconcur);
+        String ps = System.getProperty("file.separator");
+        if (!dir.endsWith(ps)) dir += ps;
+
         String driver;
         if ("phaos".equalsIgnoreCase(prov)) {
             driver = "com.l7tech.common.security.prov.phaos.PhaosJceProviderEngine";
@@ -99,22 +114,43 @@ public class JceProviderTest {
         String signedXml;
 
         {
+            String asymProvName = JceProvider.getAsymmetricJceProvider().getName();
+
             System.setProperty("com.l7tech.common.security.jceProviderEngine", driver);
             JceProvider.init();
-            log.info("Using crypto provider: " + JceProvider.getProvider().getName());
+            log.info("Using asymmetric cryptography provider: " + JceProvider.getAsymmetricJceProvider().getName());
+            log.info("Using symmetric cryptography provider: " + JceProvider.getSymmetricJceProvider().getName());
 
-            log.info("pretest: generating key pair...");
-            kp = JceProvider.generateRsaKeyPair();
+            FileInputStream sslks = null;
+            KeyStore ks = null;
+            try {
+                if ( prov.equals("ncipher") ) {
+                    ks = KeyStore.getInstance(kstype,asymProvName);
+                } else {
+                    ks = KeyStore.getInstance(kstype);
+                }
+                sslks = new FileInputStream(dir + "ssl.ks");
+                ks.load(sslks,kspass.toCharArray());
+            } catch ( Exception e ) {
+                log.log(Level.WARNING,e.getMessage(),e);
+            } finally {
+                if ( sslks != null ) sslks.close();
+            }
+
+            log.info("pretest: loading key pair...");
+            PrivateKey priv = (PrivateKey)ks.getKey("tomcat",pkpass.toCharArray());
+            X509Certificate cert = (X509Certificate)ks.getCertificate("tomcat");
+            kp = new KeyPair(cert.getPublicKey(),priv);
+
             log.info("Public key: " + publicKeyInfo(kp.getPublic()));
             log.info("Private key: " + privateKeyInfo(kp.getPrivate()));
 
-            log.info("pretest: generating a certificate signing request...");
-            csr = JceProvider.makeCsr("mike", kp);
+            log.info("pretest: loading a certificate signing request...");
+            byte[] bytes = HexUtils.slurpUrl( new URL("file://" + dir + "ssl.csr") ).bytes;
+            csr = new BouncyCastleCertificateRequest(new PKCS10CertificationRequest(bytes), asymProvName);
             log.info("CSR username = " + csr.getSubjectAsString());
-            log.info("CSR public key: " + publicKeyInfo(csr.getPublicKey()));
 
-            byte[] csrEnc = csr.getEncoded();
-            signedClientCert = (X509Certificate)signer.createCertificate(csrEnc);
+            signedClientCert = cert;
             log.info("Signed: " + CertUtils.toString(signedClientCert));
 
             log.info("pretest: signing XML message");
@@ -126,25 +162,25 @@ public class JceProviderTest {
             SoapMsgSigner.validateSignature(XmlUtil.stringToDocument(signedXml));
         }
 
-        reportTime("Empty loop (baseline)", 10000 * scale, new Testable() {
+        reportTime("Empty loop (baseline)", 10000 * scale, concur, new Testable() {
             public void run() {
             }
         });
 
-        reportTime("Generate key pair", 4 * scale, new Testable() {
+        reportTime("Generate key pair", 4 * scale, concur, new Testable() {
             public void run() {
                 JceProvider.generateRsaKeyPair();
             }
         });
 
-        final byte[] csrEnc = csr.getEncoded();
-        reportTime("Sign CSR", 50 * scale, new Testable() {
-            public void run() throws Exception {
-                signer.createCertificate(csrEnc);
-            }
-        });
+//        final byte[] csrEnc = csr.getEncoded();
+//        reportTime("Sign CSR", 50 * scale, concur, new Testable() {
+//            public void run() throws Exception {
+//                signer.createCertificate(csrEnc);
+//            }
+//        });
 
-        reportTime("Parse document (baseline)", 1000 * scale, new Testable() {
+        reportTime("Parse document (baseline)", 1000 * scale, concur, new Testable() {
             public void run() throws Throwable {
                 XmlUtil.stringToDocument(testXml);
             }
@@ -156,14 +192,14 @@ public class JceProviderTest {
         final String encryptedXml = XmlUtil.documentToString(encryptedDoc);
         log.info("Encrypted XML message: " + encryptedXml);
 
-        reportTime("Encrypt document", 1000 * scale, new Testable() {
+        reportTime("Encrypt document", 1000 * scale, concur, new Testable() {
             public void run() throws Throwable {
                 Document blah = XmlUtil.stringToDocument(testXml);
                 XmlMangler.encryptXml(blah, keyBytes, "MyKeyName");
             }
         });
 
-        reportTime("Decrypt document", 200 * scale, new Testable() {
+        reportTime("Decrypt document", 200 * scale, concur, new Testable() {
             public void run() throws Throwable {
                 Document blah = XmlUtil.stringToDocument(encryptedXml);
                 XmlMangler.decryptDocument(blah, key);
@@ -173,13 +209,13 @@ public class JceProviderTest {
         final String fsigned = signedXml;
         final X509Certificate fsignedClientCert = signedClientCert;
         final PrivateKey privateKey = kp.getPrivate();
-        reportTime("Sign XML message", 20 * scale, new Testable() {
+        reportTime("Sign XML message", 20 * scale, concur, new Testable() {
             public void run() throws Throwable {
                 SoapMsgSigner.signEnvelope(XmlUtil.stringToDocument(fsigned), privateKey, new X509Certificate[] { fsignedClientCert });
             }
         });
 
-        reportTime("Validate signedClientCert XML message", 80 * scale, new Testable() {
+        reportTime("Validate signedClientCert XML message", 80 * scale, concur, new Testable() {
             public void run() throws Throwable {
                 SoapMsgSigner.validateSignature(XmlUtil.stringToDocument(fsigned));
             }
@@ -220,23 +256,60 @@ public class JceProviderTest {
             return "Unknown public key";
     }
 
-    /**
-     * Time how long the specified operation takes to complete.
-     */
-    private static long time(Testable r) throws Throwable {
-        long before = System.currentTimeMillis();
-        r.run();
-        long after = System.currentTimeMillis();
-        return after - before;
+    private static class Job extends Thread {
+        Job( String name, Testable t ) {
+            super(name);
+            testable = t;
+        }
+
+        public void run() {
+            try {
+                long before = System.currentTimeMillis();
+                testable.run();
+                long after = System.currentTimeMillis();
+                time = after - before;
+            } catch ( Throwable throwable ) {
+                throw new RuntimeException(throwable);
+            }
+        }
+
+        Testable testable;
+        long time;
     }
 
-    private static void reportTime(String name, final int count, final Testable r) throws Throwable {
-        long t = time(new Testable() {
-            public void run() throws Throwable {
-                for (int i = 0; i < count; ++i)
-                    r.run();
-            }
-        });
-        log.info("Timed " + count + " executions of " + name + ": " + t + " ms; " + (((double)t) / count) + " ms per execution; " + (((double)count) / (t + 1)) * 1000 + " per second");
+    private static void reportTime(String name, final int count, final int concur, final Testable r) throws Throwable {
+        Job[] jobs = new Job[concur];
+        // Create jobs
+        for ( int i = 0; i < concur; i++ ) {
+            jobs[i] = new Job(name + "#" + i, new Testable() {
+                public void run() throws Throwable {
+                    for (int i = 0; i < count; ++i)
+                        r.run();
+                }
+            });
+        }
+
+        // Start jobs
+        for ( int i = 0; i < jobs.length; i++ ) {
+            jobs[i].start();
+        }
+
+        // Get results
+        long total = 0;
+        for ( int i = 0; i < jobs.length; i++ ) {
+            Job job = jobs[i];
+            job.join();
+            long time = job.time;
+            log.info("Thread #" + i + ": Timed " + count + " executions of " + name + ": "
+                     + time + " ms; " + (((double)time) / count) + " ms per execution; "
+                     + (((double)count) / (time + 1)) * 1000 + " per second");
+            total += time;
+        }
+        long big = count * concur;
+        log.info("All Threads: Timed " + big + " executions of " + name 
+                 + ": " + total + " ms; " + (((double)total) / big) + " ms per execution; "
+                 + (((double)big) / (total + 1)) * 1000 + " per second\n\n");
     }
+
+    private static final String DFLT_CONCUR = "1";
 }

@@ -23,7 +23,13 @@ public interface JceProviderEngine {
      * Get the Provider.
      * @return the JCE Provider
      */
-    Provider getProvider();
+    Provider getAsymmetricProvider();
+
+    /**
+     * Get the Provider.
+     * @return the JCE Provider
+     */
+    Provider getSymmetricProvider();
 
     /**
      * Create an RsaSignerEngine that uses the current crypto API.

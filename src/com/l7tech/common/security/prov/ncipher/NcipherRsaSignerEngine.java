@@ -1,7 +1,7 @@
 /*
  * Copyright (C) 2003 Layer 7 Technologies Inc.
  *
- * $Id: PhaosRsaSignerEngine.java,v 1.1 2003/12/08 20:02:40 mike Exp $
+ * $Id: NcipherRsaSignerEngine.java,v 1.1 2004/03/12 20:09:10 alex Exp $
  */
 
 package com.l7tech.common.security.prov.ncipher;
@@ -20,7 +20,7 @@ public class NcipherRsaSignerEngine implements RsaSignerEngine {
     private BouncyCastleRsaSignerEngine bcengine;
 
     public NcipherRsaSignerEngine(String keyStorePath, String storePass, String privateKeyAlias, String privateKeyPass) {
-        bcengine = new BouncyCastleRsaSignerEngine( keyStorePath, storePass, privateKeyAlias, privateKeyPass );
+        bcengine = new BouncyCastleRsaSignerEngine(keyStorePath, storePass, privateKeyAlias, privateKeyPass, "nCipher.SWorld", NcipherJceProviderEngine.PROVIDER.getName(), SIG_ALG);
     }
 
     /**
@@ -31,6 +31,8 @@ public class NcipherRsaSignerEngine implements RsaSignerEngine {
      * @throws Exception if something bad happens
      */
     public Certificate createCertificate(byte[] pkcs10req) throws Exception {
-        return bcengine.createCertificate( pkcs10req );
+        return bcengine.createCertificate(pkcs10req);
     }
+
+    private static final String SIG_ALG = "SHA1WithRSA";
 }

@@ -109,6 +109,10 @@ public class XmlManglerTest extends TestCase {
     }
 
     public static Document makeTestMessage() throws Exception {
+        return makeTestMessage(1);
+    }
+
+    public static Document makeTestMessage(int repeats) throws Exception {
         MessageFactory mf = MessageFactory.newInstance();
         SOAPMessage soapMsg = mf.createMessage();
         SOAPEnvelope env = soapMsg.getSOAPPart().getEnvelope();
@@ -116,7 +120,8 @@ public class XmlManglerTest extends TestCase {
         env.getBody().detachNode();
         SOAPBody body = env.addBody();
         SOAPBodyElement belm = body.addBodyElement(env.createName("getQuote", p, SOAP_METHOD_NS));
-        belm.addChildElement("symbol").addTextNode("IBM");
+        for ( int i = 0; i < repeats; i++ )
+            belm.addChildElement("symbol").addTextNode("IBM");
 
         StringWriter sw = new StringWriter();
         soapMsg.writeTo(new WriterOutputStream(sw));

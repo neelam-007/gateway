@@ -9,10 +9,10 @@ package com.l7tech.common.security.prov.bc;
 import com.l7tech.common.security.CertificateRequest;
 import org.bouncycastle.jce.PKCS10CertificationRequest;
 
-import java.security.PublicKey;
 import java.security.InvalidKeyException;
-import java.security.NoSuchProviderException;
 import java.security.NoSuchAlgorithmException;
+import java.security.NoSuchProviderException;
+import java.security.PublicKey;
 
 /**
  * Encapsulate a BC-specific CSR.
@@ -22,9 +22,11 @@ import java.security.NoSuchAlgorithmException;
  */
 public class BouncyCastleCertificateRequest extends CertificateRequest {
     private PKCS10CertificationRequest certReq;
+    private String providerName;
 
-    public BouncyCastleCertificateRequest(PKCS10CertificationRequest certReq) {
+    public BouncyCastleCertificateRequest(PKCS10CertificationRequest certReq, String providerName) {
         this.certReq = certReq;
+        this.providerName = providerName;
     }
 
     public PKCS10CertificationRequest getCertReq() {
@@ -49,6 +51,6 @@ public class BouncyCastleCertificateRequest extends CertificateRequest {
      * @return the public key in this certificate request
      */
     public PublicKey getPublicKey() throws InvalidKeyException, NoSuchProviderException, NoSuchAlgorithmException {
-        return certReq.getPublicKey();
+        return certReq.getPublicKey(providerName);
     }
 }

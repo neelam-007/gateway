@@ -51,8 +51,12 @@ public abstract class JceProvider {
         Holder.getEngine();
     }
 
-    public static Provider getProvider() {
-        return Holder.engine.getProvider();
+    public static Provider getSymmetricJceProvider() {
+        return Holder.engine.getSymmetricProvider();
+    }
+
+    public static Provider getAsymmetricJceProvider() {
+        return Holder.engine.getAsymmetricProvider();
     }
 
     public static RsaSignerEngine createRsaSignerEngine(String keyStorePath, String storePass, String privateKeyAlias, String privateKeyPass) {

@@ -1,9 +1,9 @@
 package com.l7tech.proxy;
 
+import com.l7tech.common.security.JceProvider;
 import com.l7tech.proxy.datamodel.SsgFinder;
 import com.l7tech.proxy.processor.MessageProcessor;
 import com.l7tech.proxy.util.ClientLogger;
-import com.l7tech.common.security.JceProvider;
 import org.mortbay.http.HttpContext;
 import org.mortbay.http.HttpServer;
 import org.mortbay.http.SocketListener;
@@ -161,7 +161,8 @@ public class ClientProxy {
         }
 
         log.info("ClientProxy started; listening on " + url);
-        log.info("Using cryptography provider: " + JceProvider.getProvider().getName());
+        log.info("Using asymmetric cryptography provider: " + JceProvider.getAsymmetricJceProvider().getName());
+        log.info("Using symmetric cryptography provider: " + JceProvider.getSymmetricJceProvider().getName());
 
         return url;
     }

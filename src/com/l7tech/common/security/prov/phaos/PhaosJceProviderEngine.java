@@ -9,25 +9,18 @@ package com.l7tech.common.security.prov.phaos;
 import com.l7tech.common.security.CertificateRequest;
 import com.l7tech.common.security.JceProviderEngine;
 import com.l7tech.common.security.RsaSignerEngine;
-import com.phaos.cert.X500Name;
 import com.phaos.cert.PKIX;
-import com.phaos.crypto.RSAKeyPairGenerator;
+import com.phaos.cert.X500Name;
 import com.phaos.crypto.AlgID;
 import com.phaos.crypto.KeyPairGenerator;
+import com.phaos.crypto.RSAKeyPairGenerator;
 import com.phaos.crypto.RandomBitsSource;
 import com.phaos.jce.provider.Phaos;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.math.BigInteger;
-import java.security.InvalidKeyException;
-import java.security.KeyPair;
-import java.security.NoSuchAlgorithmException;
-import java.security.NoSuchProviderException;
-import java.security.Provider;
-import java.security.PublicKey;
-import java.security.SignatureException;
-import java.security.Security;
+import java.security.*;
 import java.security.interfaces.RSAPrivateKey;
 import java.security.interfaces.RSAPublicKey;
 
@@ -141,10 +134,18 @@ public class PhaosJceProviderEngine implements JceProviderEngine {
     }
 
     /**
-     * Get the Provider.
+     * Get the asymmetric crypto {@link Provider}.
      * @return the JCE Provider
      */
-    public Provider getProvider() {
+    public Provider getAsymmetricProvider() {
+        return PROVIDER;
+    }
+
+    /**
+     * Get the symmetric crypto {@link Provider}.
+     * @return the JCE Provider
+     */
+    public Provider getSymmetricProvider() {
         return PROVIDER;
     }
 

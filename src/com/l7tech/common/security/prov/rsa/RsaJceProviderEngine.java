@@ -18,16 +18,7 @@ import com.rsa.jsafe.JSAFE_PublicKey;
 import com.rsa.jsafe.JSAFE_UnimplementedException;
 
 import java.math.BigInteger;
-import java.security.InvalidKeyException;
-import java.security.KeyPair;
-import java.security.KeyPairGenerator;
-import java.security.NoSuchAlgorithmException;
-import java.security.NoSuchProviderException;
-import java.security.Provider;
-import java.security.PublicKey;
-import java.security.SecureRandom;
-import java.security.Security;
-import java.security.SignatureException;
+import java.security.*;
 import java.security.interfaces.RSAPublicKey;
 
 /**
@@ -139,10 +130,18 @@ public class RsaJceProviderEngine implements JceProviderEngine {
     }
 
     /**
-     * Get the Provider.
+     * Get the asymmetric crypto {@link Provider}.
      * @return the JCE Provider
      */
-    public Provider getProvider() {
+    public Provider getAsymmetricProvider() {
+        return PROVIDER;
+    }
+
+    /**
+     * Get the symmetric crypto {@link Provider}.
+     * @return the JCE Provider
+     */
+    public Provider getSymmetricProvider() {
         return PROVIDER;
     }
 

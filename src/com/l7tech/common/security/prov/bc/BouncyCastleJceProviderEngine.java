@@ -6,25 +6,16 @@
 
 package com.l7tech.common.security.prov.bc;
 
+import com.l7tech.common.security.CertificateRequest;
 import com.l7tech.common.security.JceProviderEngine;
 import com.l7tech.common.security.RsaSignerEngine;
-import com.l7tech.common.security.CertificateRequest;
-
-import java.security.Security;
-import java.security.Provider;
-import java.security.KeyPair;
-import java.security.PublicKey;
-import java.security.PrivateKey;
-import java.security.NoSuchAlgorithmException;
-import java.security.NoSuchProviderException;
-import java.security.InvalidKeyException;
-import java.security.SignatureException;
-
+import org.bouncycastle.asn1.ASN1Set;
+import org.bouncycastle.asn1.x509.X509Name;
+import org.bouncycastle.jce.PKCS10CertificationRequest;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.jce.provider.JDKKeyPairGenerator;
-import org.bouncycastle.jce.PKCS10CertificationRequest;
-import org.bouncycastle.asn1.x509.X509Name;
-import org.bouncycastle.asn1.ASN1Set;
+
+import java.security.*;
 
 /**
  * BouncyCastle-specific JCE provider engine.
@@ -39,10 +30,18 @@ public class BouncyCastleJceProviderEngine implements JceProviderEngine {
     }
 
     /**
-     * Get the Provider.
+     * Get the asymmetric crypto {@link Provider}.
      * @return the JCE Provider
      */
-    public Provider getProvider() {
+    public Provider getAsymmetricProvider() {
+        return PROVIDER;
+    }
+
+    /**
+     * Get the symmetric crypto {@link Provider}.
+     * @return the JCE Provider
+     */
+    public Provider getSymmetricProvider() {
         return PROVIDER;
     }
 
@@ -56,7 +55,7 @@ public class BouncyCastleJceProviderEngine implements JceProviderEngine {
      * @return
      */
     public RsaSignerEngine createRsaSignerEngine(String keyStorePath, String storePass, String privateKeyAlias, String privateKeyPass) {
-        return new BouncyCastleRsaSignerEngine(keyStorePath, storePass, privateKeyAlias, privateKeyPass);
+        return new BouncyCastleRsaSignerEngine(keyStorePath, storePass, privateKeyAlias, privateKeyPass, KEYSTORE_TYPE, PROVIDER.getName(), REQUEST_SIG_ALG );
     }
 
     /**
@@ -79,7 +78,7 @@ public class BouncyCastleJceProviderEngine implements JceProviderEngine {
      * @return
      */
     public CertificateRequest makeCsr( String username, KeyPair keyPair ) throws SignatureException, InvalidKeyException {
-        return staticMakeCsr( username, keyPair );
+        return staticMakeCsr( username, keyPair, PROVIDER.getName() );
     }
 
     /**
@@ -89,7 +88,7 @@ public class BouncyCastleJceProviderEngine implements JceProviderEngine {
      * @param keyPair the public and private keys
      * @return
      */
-    public static CertificateRequest staticMakeCsr(String username, KeyPair keyPair) throws InvalidKeyException, SignatureException {
+    public static CertificateRequest staticMakeCsr(String username, KeyPair keyPair, String providerName ) throws InvalidKeyException, SignatureException {
         X509Name subject = new X509Name("cn=" + username);
         ASN1Set attrs = null;
         PublicKey publicKey = keyPair.getPublic();
@@ -104,6 +103,8 @@ public class BouncyCastleJceProviderEngine implements JceProviderEngine {
         } catch (NoSuchProviderException e) {
             throw new RuntimeException(e); // can't happen
         }
-        return new BouncyCastleCertificateRequest(certReq);
+        return new BouncyCastleCertificateRequest(certReq, providerName);
     }
+
+    private static final String KEYSTORE_TYPE = "JKS";
 }

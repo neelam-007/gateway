@@ -9,7 +9,6 @@ package com.l7tech.common.security.xml;
 import com.ibm.xml.dsig.XSignatureException;
 import com.ibm.xml.enc.*;
 import com.ibm.xml.enc.type.*;
-import com.ibm.xml.enc.util.AdHocIdResolver;
 import com.l7tech.common.security.AesKey;
 import com.l7tech.common.security.JceProvider;
 import com.l7tech.common.util.SoapUtil;
@@ -124,7 +123,7 @@ public class XmlMangler {
         // Create encryption context and encrypt the header subtree
         EncryptionContext ec = new EncryptionContext();
         AlgorithmFactoryExtn af = new AlgorithmFactoryExtn();
-        af.setProvider(JceProvider.getProvider().getName());
+        af.setProvider(JceProvider.getSymmetricJceProvider().getName());
         ec.setAlgorithmFactory(af);
         ec.setEncryptedType(encDataElement, EncryptedData.CONTENT, null, null);
 
@@ -253,7 +252,7 @@ public class XmlMangler {
                     // soapMsg document
                     DecryptionContext dc = new DecryptionContext();
                     AlgorithmFactoryExtn af = new AlgorithmFactoryExtn();
-                    af.setProvider(JceProvider.getProvider().getName());
+                    af.setProvider(JceProvider.getSymmetricJceProvider().getName());
                     dc.setAlgorithmFactory(af);
                     dc.setEncryptedType(encryptedDataElement, EncryptedData.CONTENT, null, null);
                     dc.setKey(key);

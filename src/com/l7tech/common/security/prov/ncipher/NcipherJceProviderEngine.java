@@ -9,13 +9,15 @@ package com.l7tech.common.security.prov.ncipher;
 import com.l7tech.common.security.CertificateRequest;
 import com.l7tech.common.security.JceProviderEngine;
 import com.l7tech.common.security.RsaSignerEngine;
-import com.l7tech.common.security.prov.bc.BouncyCastleJceProviderEngine;
+import com.l7tech.common.security.prov.bc.BouncyCastleCertificateRequest;
 import com.ncipher.provider.km.KMRSAKeyPairGenerator;
 import com.ncipher.provider.km.nCipherKM;
+import org.bouncycastle.asn1.ASN1Set;
+import org.bouncycastle.asn1.x509.X509Name;
+import org.bouncycastle.jce.PKCS10CertificationRequest;
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
 
 import java.security.*;
-
-import org.bouncycastle.jce.provider.BouncyCastleProvider;
 
 /**
  *
@@ -23,19 +25,23 @@ import org.bouncycastle.jce.provider.BouncyCastleProvider;
  * @version 1.0
  */
 public class NcipherJceProviderEngine implements JceProviderEngine {
-    private static final Provider PROVIDER = new nCipherKM();
+    static final Provider PROVIDER = new nCipherKM();
+    public static final String REQUEST_SIG_ALG = "SHA1withRSA";
 
     public NcipherJceProviderEngine() {
         Security.insertProviderAt(PROVIDER, 0);
-        Security.addProvider( new BouncyCastleProvider() );
     }
 
     /**
      * Get the Provider.
      * @return the JCE Provider
      */
-    public Provider getProvider() {
+    public Provider getAsymmetricProvider() {
         return PROVIDER;
+    }
+
+    public Provider getSymmetricProvider() {
+        return bouncyCastleProvider;
     }
 
     /**
@@ -69,6 +75,22 @@ public class NcipherJceProviderEngine implements JceProviderEngine {
      * @return
      */
     public CertificateRequest makeCsr(String username, KeyPair keyPair) throws InvalidKeyException, SignatureException {
-        return BouncyCastleJceProviderEngine.staticMakeCsr( username, keyPair );
+        X509Name subject = new X509Name("cn=" + username);
+        ASN1Set attrs = null;
+        PublicKey publicKey = keyPair.getPublic();
+        PrivateKey privateKey = keyPair.getPrivate();
+
+        // Generate request
+        PKCS10CertificationRequest certReq = null;
+        try {
+            certReq = new PKCS10CertificationRequest(REQUEST_SIG_ALG, subject, publicKey, attrs, privateKey, PROVIDER.getName());
+        } catch (NoSuchAlgorithmException e) {
+            throw new RuntimeException(e); // can't happen
+        } catch (NoSuchProviderException e) {
+            throw new RuntimeException(e); // can't happen
+        }
+        return new BouncyCastleCertificateRequest(certReq, PROVIDER.getName());
     }
+
+    private BouncyCastleProvider bouncyCastleProvider = new BouncyCastleProvider();
 }

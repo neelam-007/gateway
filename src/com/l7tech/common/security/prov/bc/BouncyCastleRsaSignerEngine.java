@@ -9,7 +9,9 @@ package com.l7tech.common.security.prov.bc;
 import com.l7tech.common.security.JceProvider;
 import com.l7tech.common.security.RsaSignerEngine;
 import org.bouncycastle.asn1.ASN1Sequence;
+import org.bouncycastle.asn1.DERBitString;
 import org.bouncycastle.asn1.DERInputStream;
+import org.bouncycastle.asn1.DEROutputStream;
 import org.bouncycastle.asn1.pkcs.CertificationRequestInfo;
 import org.bouncycastle.asn1.x509.*;
 import org.bouncycastle.jce.PKCS10CertificationRequest;
@@ -17,18 +19,16 @@ import org.bouncycastle.jce.X509KeyUsage;
 import org.bouncycastle.jce.X509V3CertificateGenerator;
 
 import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.FileInputStream;
 import java.io.InputStream;
 import java.math.BigInteger;
-import java.security.KeyStore;
-import java.security.PrivateKey;
-import java.security.PublicKey;
-import java.security.SecureRandom;
+import java.security.*;
 import java.security.cert.Certificate;
 import java.security.cert.X509Certificate;
-import java.util.Arrays;
-import java.util.Date;
-import java.util.Properties;
+import java.security.spec.InvalidKeySpecException;
+import java.security.spec.X509EncodedKeySpec;
+import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -122,12 +122,21 @@ public class BouncyCastleRsaSignerEngine implements RsaSignerEngine {
      *  Constructor for the RsaCertificateSigner object sets all fields to their most common usage using
      * the passed keystore parameters to retreive the private key,
      */
-    public BouncyCastleRsaSignerEngine(String keyStorePath, String storePass, String privateKeyAlias, String privateKeyPass) {
+    public BouncyCastleRsaSignerEngine(String keyStorePath,
+                                       String storePass,
+                                       String privateKeyAlias,
+                                       String privateKeyPass,
+                                       String keyStoreType,
+                                       String providerName,
+                                       String sigAlg) {
         initDefaults();
         this.keyStorePath = keyStorePath;
+        this.keyStoreType = keyStoreType;
         this.storePass = storePass;
         this.privateKeyAlias = privateKeyAlias;
         this.privateKeyPassString = privateKeyPass;
+        this.providerName = providerName;
+        this.sigAlg = sigAlg;
         try {
             initClass();
         } catch (Exception e) {
@@ -135,7 +144,6 @@ public class BouncyCastleRsaSignerEngine implements RsaSignerEngine {
             throw new IllegalArgumentException(e.getMessage());
         }
     }
-
 
     /**
      * Create a certificate from the given PKCS10 Certificate Request.
@@ -149,10 +157,12 @@ public class BouncyCastleRsaSignerEngine implements RsaSignerEngine {
         CertificationRequestInfo certReqInfo = pkcs10.getCertificationRequestInfo();
         String dn= certReqInfo.getSubject().toString();
         logger.fine("Signing cert for subject DN = " + dn);
-        if (pkcs10.verify() == false) {
+
+        if (verify(pkcs10) == false) {
             logger.severe("POPO verification failed for " + dn);
             throw new Exception("Verification of signature (popo) on PKCS10 request failed.");
         }
+
         Certificate ret = null;
         // TODO: extract more information or attributes
         // Standard key usages for end users are: digitalSignature | keyEncipherment or nonRepudiation
@@ -170,12 +180,71 @@ public class BouncyCastleRsaSignerEngine implements RsaSignerEngine {
             // If this is a CA, only allow CA-type keyUsage
             keyusage1 = X509KeyUsage.keyCertSign + X509KeyUsage.cRLSign;
         }
-        X509Certificate cert = makeBCCertificate(dn, caSubjectName, validity.longValue(), pkcs10.getPublicKey(), keyusage1);
+        X509Certificate cert = makeBCCertificate(dn, caSubjectName, validity.longValue(), getPublicKey(pkcs10), keyusage1);
         // Verify before returning
         cert.verify(caCert.getPublicKey());
         ret = cert;
         return ret;
     }
+
+    private static Map oidToAlgorithmNameMap = new HashMap();
+    static {
+        oidToAlgorithmNameMap.put("1.2.840.113549.1.1.5","SHA1withRSA");
+        oidToAlgorithmNameMap.put("1.2.840.113549.1.1.4","MD5withRSA");
+        oidToAlgorithmNameMap.put("1.2.840.113549.1.1.1","RSA");
+    }
+
+    private String getAlgorithm(PKCS10CertificationRequest pkcs10) {
+        String oid = pkcs10.getSignatureAlgorithm().getObjectId().getId();
+        String name = (String)oidToAlgorithmNameMap.get(oid);
+        if ( name == null ) name = oid;
+        return name;
+    }
+
+    public boolean verify(PKCS10CertificationRequest pkcs10) throws NoSuchAlgorithmException,
+                                                                    NoSuchProviderException,
+                                                                    InvalidKeyException,
+                                                                    SignatureException
+    {
+        Signature sig = Signature.getInstance(getAlgorithm(pkcs10));
+
+        sig.initVerify(getPublicKey(pkcs10));
+
+        try {
+            ByteArrayOutputStream   bOut = new ByteArrayOutputStream();
+            DEROutputStream         dOut = new DEROutputStream(bOut);
+
+            dOut.writeObject(pkcs10.getCertificationRequestInfo());
+
+            sig.update(bOut.toByteArray());
+        } catch (Exception e) {
+            throw new SecurityException("exception encoding TBS cert request - " + e);
+        }
+
+        return sig.verify(pkcs10.getSignature().getBytes());
+    }
+
+
+    public PublicKey getPublicKey(PKCS10CertificationRequest pkcs10) throws NoSuchAlgorithmException,
+                                                                            NoSuchProviderException,
+                                                                            InvalidKeyException
+    {
+        SubjectPublicKeyInfo subjectPKInfo = pkcs10.getCertificationRequestInfo().getSubjectPublicKeyInfo();
+
+        try {
+            X509EncodedKeySpec      xspec = new X509EncodedKeySpec(new DERBitString(subjectPKInfo).getBytes());
+            AlgorithmIdentifier     keyAlg = subjectPKInfo.getAlgorithmId();
+
+            String algid = keyAlg.getObjectId().getId();
+            String alg = (String)oidToAlgorithmNameMap.get(algid);
+            if ( alg == null ) alg = algid;
+
+            return KeyFactory.getInstance(alg, providerName).generatePublic(xspec);
+        } catch (InvalidKeySpecException e) {
+            throw new InvalidKeyException("error encoding public key");
+        }
+    }
+
 
 
     /**
@@ -230,7 +299,6 @@ public class BouncyCastleRsaSignerEngine implements RsaSignerEngine {
      *@exception  Exception  Description of the Exception
      */
     private X509Certificate makeBCCertificate(String dn, X509Name caname, long validity, PublicKey publicKey, int keyusage) throws Exception {
-        final String sigAlg = "SHA1WithRSA";
         Date firstDate = new Date();
         // Set back startdate ten minutes to avoid some problems with wrongly set clocks.
         firstDate.setTime(firstDate.getTime() - 10 * 60 * 1000);
@@ -309,13 +377,13 @@ public class BouncyCastleRsaSignerEngine implements RsaSignerEngine {
             ext.addObject(distp);
             certgen.addExtension(X509Extensions.CRLDistributionPoints.getId(), crldistcritical, ext);
         }*/
-        X509Certificate cert = certgen.generateX509Certificate(privateKey);
+        X509Certificate cert = certgen.generateX509Certificate(privateKey, providerName);
         return cert;
     }
     // makeBCCertificate
 
     private void initClass() throws Exception {
-        KeyStore keyStore = KeyStore.getInstance("JKS");
+        KeyStore keyStore = KeyStore.getInstance(keyStoreType);
         InputStream is = new FileInputStream(keyStorePath);
 
         if (storePass == null)
@@ -468,4 +536,7 @@ public class BouncyCastleRsaSignerEngine implements RsaSignerEngine {
     }
 
     private final Logger logger = Logger.getLogger(getClass().getName());
+    private final String keyStoreType;
+    private final String providerName;
+    private final String sigAlg;
 }

@@ -9,6 +9,7 @@ package com.l7tech.server;
 import com.l7tech.cluster.ClusterInfoManager;
 import com.l7tech.cluster.StatusUpdater;
 import com.l7tech.common.BuildInfo;
+import com.l7tech.common.security.JceProvider;
 import com.l7tech.common.util.Locator;
 import com.l7tech.logging.ServerLogManager;
 import com.l7tech.objectmodel.HibernatePersistenceManager;
@@ -40,7 +41,15 @@ public class BootProcess implements ServerComponentLifecycle {
     public void init(ComponentConfig config) throws LifecycleException {
         try {
             logger.info( "Initializing server" );
+
             setSystemProperties(config);
+
+            logger.info("Initializing cryptography subsystem");
+            JceProvider.init();
+            logger.info("Using asymmetric cryptography provider: " + JceProvider.getAsymmetricJceProvider().getName());
+            logger.info("Using symmetric cryptography provider: " + JceProvider.getSymmetricJceProvider().getName());
+
+            // Initialize database stuff
             HibernatePersistenceManager.initialize();
 
             String classnameString = config.getProperty(ServerConfig.PARAM_SERVERCOMPONENTS);
