@@ -13,6 +13,7 @@ import com.l7tech.common.util.XmlUtil;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.SslAssertion;
 import com.l7tech.proxy.ConfigurationException;
+import com.l7tech.proxy.policy.assertion.ClientAssertion;
 import com.l7tech.proxy.datamodel.HttpHeaders;
 import com.l7tech.proxy.datamodel.Managers;
 import com.l7tech.proxy.datamodel.PendingRequest;
@@ -267,9 +268,12 @@ public class MessageProcessor {
         }
 
         AssertionStatus result;
-        result = policy.getClientAssertion().decorateRequest(req);
-        if (result != AssertionStatus.NONE)
-            log.warn("Policy evaluated with an error: " + result + "; will attempt to continue anyway.");
+        ClientAssertion rootAssertion = policy.getClientAssertion();
+        if (rootAssertion != null) {
+            result = rootAssertion.decorateRequest(req);
+            if (result != AssertionStatus.NONE)
+                log.warn("Policy evaluated with an error: " + result + "; will attempt to continue anyway.");
+        }
         return policy;
     }
 
@@ -289,9 +293,12 @@ public class MessageProcessor {
         log.info(appliedPolicy == null ? "skipping undecorate step" : "undecorating response");
         if (appliedPolicy == null)
             return;
-        AssertionStatus result = appliedPolicy.getClientAssertion().unDecorateReply(req, res);
-        if (result != AssertionStatus.NONE)
-            log.warn("Response policy processing failed with status " + result + "; continuing anyway");
+        ClientAssertion rootAssertion = appliedPolicy.getClientAssertion();
+        if (rootAssertion != null) {
+            AssertionStatus result = rootAssertion.unDecorateReply(req, res);
+            if (result != AssertionStatus.NONE)
+                log.warn("Response policy processing failed with status " + result + "; continuing anyway");
+        }
     }
 
     /**
