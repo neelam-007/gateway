@@ -192,7 +192,7 @@ public class MessageProcessor {
 
             // clean up for SOAP request with attachment
             if(req.isMultipart()) {
-                if(req.getMultipartReader() != null) {
+                if(req.getMultipartReader() != null && req.getMultipartReader().getFileCache() != null) {
                     req.getMultipartReader().deleteCacheFile();
                 }
             }
