@@ -7,22 +7,16 @@
 package com.l7tech.common.xml;
 
 import com.l7tech.common.util.SoapUtil;
-import com.l7tech.common.util.XmlUtil;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
 import org.jaxen.NamespaceContext;
 import org.w3c.dom.Document;
-import org.xml.sax.SAXException;
 
 import javax.xml.soap.SOAPMessage;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.InputStream;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
-import java.util.Iterator;
 
 /**
  * Test <code>XpathEvaluatorTest</code> test the various select/evaluate
@@ -115,6 +109,33 @@ public class XpathEvaluatorTest extends TestCase {
         } catch (NoSuchElementException e) {
             // ok
         }
+    }
+    // ancestor-or-self::book[@catdate="2000-12-31"]
+    /**
+     * Test the namespace resolution, the namespace does not exist in the document
+     *
+     * @throws Exception
+     */
+    public void testMethodElementEnvelopeAcestor() throws Exception {
+        Document doc = testDocuments.getTestDocument(TestDocuments.TEST_SOAP_XML);
+        SOAPMessage sm = SoapUtil.asSOAPMessage(doc);
+        final Map namespaces = XpathEvaluator.getNamespaces(sm);
+
+        XpathEvaluator xe = XpathEvaluator.newEvaluator(doc, new NamespaceContext() {
+            public String translateNamespacePrefixToUri(String prefix) {
+                String ns = (String)namespaces.get(prefix);
+                /*if (ns == null) {
+                    fail("The prefix does no exist '" + prefix+"'");
+                } */
+
+                return ns;
+            }
+        });
+        List list = xe.select("/SOAP-ENV:Envelope/SOAP-ENV:Body/m:GetLastTradePrice/ancestor::SOAP-ENV:Envelope");
+        assertTrue("Size should have been == 1, returned "+list.size(), list.size() == 1);
+
+        list = xe.select("/SOAP-ENV:Envelope/SOAP-ENV:Body/m:GetLastBid/ancestor::SOAP-ENV:Envelope");
+        assertTrue("Size should have been == 0, returned "+list.size(), list.size() == 0);
     }
 
     public static void main(String[] args) {
