@@ -6,6 +6,7 @@ import com.l7tech.console.util.Registry;
 import com.l7tech.identity.User;
 import com.l7tech.identity.internal.imp.UserImp;
 import com.l7tech.objectmodel.EntityHeader;
+import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.imp.EntityHeaderImp;
 import org.apache.log4j.Category;
 
@@ -211,7 +212,7 @@ public class UserPanel extends EntityEditorPanel {
             detailsPanel = new JPanel();
             detailsPanel.setLayout(new GridBagLayout());
 
-            detailsPanel.add(new JLabel(IconManager.getInstance().getIcon(User.class)),
+            detailsPanel.add(new JLabel(IconManager.getInstance().getIcon(EntityType.USER)),
                     new GridBagConstraints(0, 0, 1, 1, 0.0, 0.0,
                             GridBagConstraints.WEST,
                             GridBagConstraints.NONE,
@@ -581,9 +582,9 @@ public class UserPanel extends EntityEditorPanel {
     public static void main(String[] args) {
 
         UserPanel panel = new UserPanel();
-        EntityHeader eh = new EntityHeaderImp();
+        EntityHeader eh = new EntityHeader();
         eh.setName("Test user");
-        eh.setType(User.class);
+        eh.setType(EntityType.USER);
         panel.edit(eh);
 
         panel.setPreferredSize(new Dimension(600, 300));

@@ -6,6 +6,7 @@ import com.l7tech.identity.User;
 import com.l7tech.identity.Group;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.EntityHeader;
+import com.l7tech.objectmodel.EntityType;
 
 import javax.swing.*;
 import javax.swing.event.ListSelectionEvent;
@@ -307,7 +308,7 @@ public class NewGroupForUserDialog extends JDialog {
             this.setFont(new Font("Dialog", Font.PLAIN, 12));
 
             // Based on value type, determine cell contents
-            setIcon(IconManager.getInstance().getIcon(Group.class));
+            setIcon(IconManager.getInstance().getIcon(EntityType.GROUP));
             EntityHeader eh = (EntityHeader)value;
             setText(eh.getName());
 

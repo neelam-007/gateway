@@ -7,6 +7,7 @@ import com.l7tech.console.tree.*;
 import com.l7tech.console.util.IconManager;
 import com.l7tech.console.util.Preferences;
 import com.l7tech.objectmodel.EntityHeader;
+import com.l7tech.objectmodel.EntityType;
 import org.apache.log4j.Category;
 
 import javax.swing.*;
@@ -384,8 +385,8 @@ public class TreeFolderListPanel extends EntityEditorPanel {
         if (!(bn instanceof EntityHeaderNode)) return;
         EntityHeader header = ((EntityHeaderNode)bn).getEntityHeader();
 
-        Class cls = header.getType();
-        EntityEditorPanel panel = PanelFactory.getPanel(cls, panelListener);
+        EntityType type = header.getType();
+        EntityEditorPanel panel = PanelFactory.getPanel(type, panelListener);
         if (panel == null) return;
         panel.edit(header);
         JFrame f = (JFrame) SwingUtilities.windowForComponent(TreeFolderListPanel.this);
@@ -436,9 +437,9 @@ public class TreeFolderListPanel extends EntityEditorPanel {
                         }
                     } else if (value instanceof EntityHeader) {
                         EntityHeader h = (EntityHeader) value;
-                        Class cls = h.getType();
+                        EntityType type = h.getType();
                         if (column == 0) {
-                            ImageIcon icon = IconManager.getInstance().getIcon(cls);
+                            ImageIcon icon = IconManager.getInstance().getIcon(type);
                             if (icon != null) setIcon(icon);
                             setText(h.getName());
                         }

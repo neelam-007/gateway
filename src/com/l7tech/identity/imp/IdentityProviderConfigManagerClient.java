@@ -2,11 +2,7 @@ package com.l7tech.identity.imp;
 
 import com.l7tech.identity.*;
 import com.l7tech.identity.internal.imp.InternalIdentityProviderClient;
-import com.l7tech.adminws.identity.Identity;
-import com.l7tech.adminws.identity.IdentityService;
-import com.l7tech.adminws.identity.IdentityServiceLocator;
-import com.l7tech.adminws.translation.TypeTranslator;
-import com.l7tech.objectmodel.imp.EntityHeaderImp;
+import com.l7tech.adminws.identity.Client;
 import com.l7tech.objectmodel.*;
 
 import java.util.Collection;
@@ -25,14 +21,11 @@ import java.io.IOException;
  */
 public class IdentityProviderConfigManagerClient implements IdentityProviderConfigManager {
     public IdentityProviderConfig findByPrimaryKey(long oid) throws FindException {
-        com.l7tech.adminws.identity.IdentityProviderConfig ipcStubFormat = null;
         try {
-            ipcStubFormat = getStub().findIdentityProviderConfigByPrimaryKey(oid);
+            return getStub().findIdentityProviderConfigByPrimaryKey(oid);
         } catch (RemoteException e) {
             throw new FindException(e.getMessage(), e);
         }
-        if (ipcStubFormat == null) return null;
-        return TypeTranslator.serviceIdentityProviderConfigToGenericOne(ipcStubFormat);
     }
 
     public Collection findAllIdentityProviders() throws FindException {
@@ -52,7 +45,7 @@ public class IdentityProviderConfigManagerClient implements IdentityProviderConf
 
     public long save(IdentityProviderConfig identityProviderConfig) throws SaveException {
         try {
-            return getStub().saveIdentityProviderConfig(TypeTranslator.genericToServiceIdProviderConfig(identityProviderConfig));
+            return getStub().saveIdentityProviderConfig(identityProviderConfig);
         } catch (RemoteException e) {
             throw new SaveException(e.getMessage(), e);
         }
@@ -76,31 +69,27 @@ public class IdentityProviderConfigManagerClient implements IdentityProviderConf
     }
 
     public Collection findAllHeaders() throws FindException {
-        com.l7tech.adminws.identity.Header[] array = null;
+        com.l7tech.objectmodel.EntityHeader[] array = null;
         try {
-            array = getStub().findAlllIdentityProviderConfig();
+            array = getStub().findAllIdentityProviderConfig();
         } catch (RemoteException e) {
             throw new FindException(e.getMessage(), e);
         }
-        try {
-            return TypeTranslator.headerArrayToCollection(array);
-        } catch (ClassNotFoundException e) {
-            throw new FindException("ClassNotFoundException in TypeTranslator.headerArrayToCollection", e);
-        }
+        Collection output = new java.util.ArrayList();
+        for (int i = 0; i < array.length; i++) output.add(array[i]);
+        return output;
     }
 
     public Collection findAllHeaders(int offset, int windowSize) throws FindException {
-        com.l7tech.adminws.identity.Header[] array = null;
+        com.l7tech.objectmodel.EntityHeader[] array = null;
         try {
             array = getStub().findAllIdentityProviderConfigByOffset(offset, windowSize);
         } catch (RemoteException e) {
             throw new FindException(e.getMessage(), e);
         }
-        try {
-            return TypeTranslator.headerArrayToCollection(array);
-        } catch (ClassNotFoundException e) {
-            throw new FindException("ClassNotFoundException in TypeTranslator.headerArrayToCollection", e);
-        }
+        Collection output = new java.util.ArrayList();
+        for (int i = 0; i < array.length; i++) output.add(array[i]);
+        return output;
     }
 
     public Collection findAll() throws FindException {
@@ -130,11 +119,10 @@ public class IdentityProviderConfigManagerClient implements IdentityProviderConf
     // ************************************************
     // PRIVATES
     // ************************************************
-    private Identity getStub() throws java.rmi.RemoteException {
+    private Client getStub() throws java.rmi.RemoteException {
         if (localStub == null) {
-            IdentityService service = new IdentityServiceLocator();
             try {
-                localStub = service.getidentities(new java.net.URL(getServiceURL()));
+                localStub = new Client(getServiceURL());
             }
             catch (Exception e) {
                 throw new java.rmi.RemoteException("Exception getting admin ws stub", e);
@@ -149,10 +137,10 @@ public class IdentityProviderConfigManagerClient implements IdentityProviderConf
             System.err.println("com.l7tech.console.util.Preferences.getPreferences does not resolve a server address");
             prefUrl = "http://localhost:8080/ssg";
         }
-        prefUrl += "/services/identities";
+        prefUrl += "/services/identityAdmin";
         return prefUrl;
         //return "http://localhost:8080/UneasyRooster/services/identities";
     }
 
-    private Identity localStub = null;
+    private Client localStub = null;
 }

@@ -4,6 +4,7 @@ import com.l7tech.console.util.IconManager;
 import com.l7tech.console.util.SortedListModel;
 import com.l7tech.identity.User;
 import com.l7tech.objectmodel.EntityHeader;
+import com.l7tech.objectmodel.EntityType;
 import org.apache.log4j.Category;
 
 import javax.swing.*;
@@ -417,7 +418,7 @@ class UserGroupsPanel extends JPanel {
             this.setFont(new Font("Dialog", Font.PLAIN, 12));
 
             // Based on value type, determine cell contents
-            setIcon(IconManager.getInstance().getIcon(User.class));
+            setIcon(IconManager.getInstance().getIcon(EntityType.USER));
             EntityHeader eh = (EntityHeader)value;
             setText(eh.getName());
 

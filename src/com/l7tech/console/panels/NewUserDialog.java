@@ -6,6 +6,7 @@ import com.l7tech.identity.User;
 import com.l7tech.identity.internal.imp.UserImp;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.SaveException;
+import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.imp.EntityHeaderImp;
 
 import javax.swing.*;
@@ -444,8 +445,8 @@ public class NewUserDialog extends JDialog {
                 new Runnable() {
                     public void run() {
                         try {
-                            EntityHeader header = new EntityHeaderImp();
-                            header.setType(User.class);
+                            EntityHeader header = new EntityHeader();
+                            header.setType(EntityType.USER);
                             header.setName(user.getName());
                             Registry.getDefault().getInternalUserManager().save(user);
                             panelListener.onInsert(header);
@@ -478,10 +479,10 @@ public class NewUserDialog extends JDialog {
                 SwingUtilities.invokeLater(
                         new Runnable() {
                             public void run() {
-                                EntityEditorPanel panel = PanelFactory.getPanel(User.class, panelListener);
+                                EntityEditorPanel panel = PanelFactory.getPanel(EntityType.USER, panelListener);
                                 if (panel == null) return;
-                                EntityHeader header = new EntityHeaderImp();
-                                header.setType(User.class);
+                                EntityHeader header = new EntityHeader();
+                                header.setType(EntityType.USER);
                                 header.setName(user.getName());
                                 header.setOid(user.getOid());
                                 panel.edit(header);

@@ -1,10 +1,7 @@
 package com.l7tech.identity.internal.imp;
 
 import com.l7tech.identity.Group;
-import com.l7tech.adminws.identity.Identity;
-import com.l7tech.adminws.identity.IdentityService;
-import com.l7tech.adminws.identity.IdentityServiceLocator;
-import com.l7tech.adminws.translation.TypeTranslator;
+import com.l7tech.adminws.identity.Client;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.SaveException;
 import com.l7tech.objectmodel.DeleteException;
@@ -27,11 +24,9 @@ public class InternalGroupManagerClient implements com.l7tech.identity.GroupMana
 
     public Group findByPrimaryKey(long oid) throws FindException {
         try {
-            return TypeTranslator.serviceGroupToGenGroup(getStub().findGroupByPrimaryKey(identityProviderConfigId, oid));
+            return getStub().findGroupByPrimaryKey(identityProviderConfigId, oid);
         } catch (java.rmi.RemoteException e) {
             throw new FindException("RemoteException in findByPrimaryKey", e);
-        } catch (ClassNotFoundException e) {
-            throw new FindException("ClassNotFoundException in TypeTranslator.serviceGroupToGenGroup", e);
         }
     }
 
@@ -45,7 +40,7 @@ public class InternalGroupManagerClient implements com.l7tech.identity.GroupMana
 
     public long save(Group group) throws SaveException {
         try {
-            return getStub().saveGroup(identityProviderConfigId, TypeTranslator.genGroupToServiceGroup(group));
+            return getStub().saveGroup(identityProviderConfigId, group);
         } catch (java.rmi.RemoteException e) {
             throw new SaveException("RemoteException in save", e);
         }
@@ -65,23 +60,27 @@ public class InternalGroupManagerClient implements com.l7tech.identity.GroupMana
     }
 
     public Collection findAllHeaders() throws FindException {
+        com.l7tech.objectmodel.EntityHeader[] array = null;
         try {
-            return TypeTranslator.headerArrayToCollection(getStub().findAllGroups(identityProviderConfigId));
+            array = getStub().findAllGroups(identityProviderConfigId);
         } catch (java.rmi.RemoteException e) {
             throw new FindException("RemoteException in findAllHeaders", e);
-        } catch (ClassNotFoundException e) {
-            throw new FindException("ClassNotFoundException in TypeTranslator.headerArrayToCollection", e);
         }
+        Collection output = new java.util.ArrayList();
+        for (int i = 0; i < array.length; i++) output.add(array[i]);
+        return output;
     }
 
     public Collection findAllHeaders(int offset, int windowSize) throws FindException {
+        com.l7tech.objectmodel.EntityHeader[] array = null;
         try {
-            return TypeTranslator.headerArrayToCollection(getStub().findAllGroupsByOffset(identityProviderConfigId, offset, windowSize));
+            array = getStub().findAllGroupsByOffset(identityProviderConfigId, offset, windowSize);
         } catch (java.rmi.RemoteException e) {
             throw new FindException("RemoteException in findAllHeaders", e);
-        } catch (ClassNotFoundException e) {
-            throw new FindException("ClassNotFoundException in TypeTranslator.headerArrayToCollection", e);
         }
+        Collection output = new java.util.ArrayList();
+        for (int i = 0; i < array.length; i++) output.add(array[i]);
+        return output;
     }
 
     public Collection findAll() throws FindException {
@@ -95,11 +94,10 @@ public class InternalGroupManagerClient implements com.l7tech.identity.GroupMana
     // ************************************************
     // PRIVATES
     // ************************************************
-    private Identity getStub() throws java.rmi.RemoteException {
+    private Client getStub() throws java.rmi.RemoteException {
         if (localStub == null) {
-            IdentityService service = new IdentityServiceLocator();
             try {
-                localStub = service.getidentities(new java.net.URL(getServiceURL()));
+                localStub = new Client(getServiceURL());
             }
             catch (Exception e) {
                 throw new java.rmi.RemoteException("cannot instantiate the admin service stub", e);
@@ -109,15 +107,15 @@ public class InternalGroupManagerClient implements com.l7tech.identity.GroupMana
     }
     private String getServiceURL() throws IOException {
         String prefUrl = com.l7tech.console.util.Preferences.getPreferences().getServiceUrl();
-        if (prefUrl == null || prefUrl.length() < 1) {
+        if (prefUrl == null || prefUrl.length() < 1 || prefUrl.equals("null/ssg")) {
             System.err.println("com.l7tech.console.util.Preferences.getPreferences does not resolve a server address");
             prefUrl = "http://localhost:8080/ssg";
         }
-        prefUrl += "/services/identities";
+        prefUrl += "/services/identityAdmin";
         return prefUrl;
         //return "http://localhost:8080/UneasyRooster/services/identities";
     }
 
     private long identityProviderConfigId;
-    private Identity localStub = null;
+    private Client localStub = null;
 }

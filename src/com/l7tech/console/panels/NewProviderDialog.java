@@ -3,6 +3,7 @@ package com.l7tech.console.panels;
 import com.l7tech.console.text.FilterDocument;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.SaveException;
+import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.imp.EntityHeaderImp;
 import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.identity.IdentityProviderConfigManager;
@@ -295,13 +296,13 @@ public class NewProviderDialog extends JDialog {
         ip.setClassName("bla");
         iProvider.setType(ip);
 
-        final EntityHeader header = new EntityHeaderImp();
+        final EntityHeader header = new EntityHeader();
 
         SwingUtilities.invokeLater(
                 new Runnable() {
                     public void run() {
                         header.setName(iProvider.getName());
-                        header.setType(IdentityProviderConfig.class);
+                        header.setType(EntityType.ID_PROVIDER_CONFIG);
                         try {
                             getProviderConfigManager().save(iProvider);
                             listener.onInsert(header);

@@ -3,6 +3,7 @@ package com.l7tech.console.util;
 import com.l7tech.console.tree.*;
 import com.l7tech.console.MainWindow;
 import com.l7tech.objectmodel.EntityHeader;
+import com.l7tech.objectmodel.EntityType;
 import com.l7tech.identity.Group;
 import com.l7tech.identity.User;
 import com.l7tech.util.WeakSet;
@@ -83,14 +84,14 @@ public class IconManager {
        * @param clazz   the class
        * @return ImageIcon for the given node
        */
-      public ImageIcon getIcon(Class clazz) {
-          if (clazz == null) {
-              throw new NullPointerException("clazz");
+      public ImageIcon getIcon(EntityType type) {
+          if (type == null) {
+              throw new NullPointerException("type");
           }
-          ClassLoader cl = clazz.getClassLoader();
-          if (Group.class.equals(clazz)) {
+          ClassLoader cl = type.getClass().getClassLoader();
+          if (type.equals(EntityType.GROUP)) {
               return new ImageIcon(cl.getResource(MainWindow.RESOURCE_PATH + "/group16.png"));
-          } else if (User.class.equals(clazz)) {
+          } else if (type.equals(EntityType.USER)) {
               return new ImageIcon(cl.getResource(MainWindow.RESOURCE_PATH + "/user16.png"));
           }
           return null;

@@ -8,6 +8,7 @@ import com.l7tech.console.tree.EntityTreeNode;
 import com.l7tech.console.tree.EntityHeaderNode;
 import com.l7tech.identity.Group;
 import com.l7tech.identity.User;
+import com.l7tech.objectmodel.EntityType;
 
 import javax.swing.*;
 
@@ -58,12 +59,12 @@ public class PanelFactory {
      * @return the <CODE>EntityEditorPanel</CODE> for given directory object, null
      *         if no panel assigned
      */
-    public static EntityEditorPanel getPanel(Class cls, PanelListener l) {
+    public static EntityEditorPanel getPanel(EntityType type, PanelListener l) {
         EntityEditorPanel panel = null;
-        if (Group.class.isAssignableFrom(cls)) {
+        if (type.equals(EntityType.GROUP)) {
             panel = new GroupPanel();
             panel.setPanelListener(l);
-        } else if(User.class.isAssignableFrom(cls)) {
+        } else if(type.equals(EntityType.USER)) {
             panel = new UserPanel();
             panel.setPanelListener(l);
         }
