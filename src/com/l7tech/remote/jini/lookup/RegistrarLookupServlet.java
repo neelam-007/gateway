@@ -31,9 +31,10 @@ import java.io.ObjectOutputStream;
 import java.net.URL;
 import java.security.AccessControlException;
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Arrays;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -53,8 +54,10 @@ public class RegistrarLookupServlet extends HttpServlet {
     private Configuration lookupConfig;
     private static final String LOOKUP_CONFIG = "com/l7tech/remote/jini/lookup/lookupservlet.config";
     private IdentityProviderConfigManager identityProviderConfigManager;
-    /** administrator groups */
-    private final List adminGroups = Arrays.asList(new String[] {Group.ADMIN_GROUP_NAME, Group.OPERATOR_GROUP_NAME});
+    /**
+     * administrator groups
+     */
+    private final List adminGroups = Arrays.asList(new String[]{Group.ADMIN_GROUP_NAME, Group.OPERATOR_GROUP_NAME});
 
     public void init(ServletConfig config) throws ServletException {
         super.init(config);
@@ -89,8 +92,12 @@ public class RegistrarLookupServlet extends HttpServlet {
             LoginCredentials creds = extractCredentials(authorizationHeader);
 
             User user = getConfigManager().getInternalIdentityProvider().authenticate(creds);
-            if (user == null || !hasPermission(user)) {
-                throw new AccessControlException(user.getName() + " does not have 'admin' privileges");
+            if (user == null) {
+                throw new AccessControlException("'" + creds.getLogin() + "'" + " could not be found");
+            }
+            String[] roles = getUserRoles(user);
+            if (!hasPermission(user, roles)) {
+                throw new AccessControlException(user.getName() + " does not have privilege to access administrative services");
             }
 
             LookupLocator ll = getLookupLocator();
@@ -110,7 +117,8 @@ public class RegistrarLookupServlet extends HttpServlet {
             response.setContentLength(size);
             bos.writeTo(response.getOutputStream());
             response.getOutputStream().close();
-            logger.info("Administrator login from " + request.getRemoteAddr());
+
+            logger.log(Level.INFO, "{0} {1} logged in from IP {2}", new Object[]{getHighestRole(roles), user.getLogin(), request.getRemoteAddr()});
         } catch (BadCredentialsException e) {
             logger.log(Level.WARNING, "Bad credentials received", e);
             response.sendError(HttpServletResponse.SC_UNAUTHORIZED);
@@ -136,22 +144,41 @@ public class RegistrarLookupServlet extends HttpServlet {
         }
     }
 
-    private boolean hasPermission(User user) {
+    private String getHighestRole(String[] roles) {
+        List aRoles = Arrays.asList(roles);
+        if (aRoles.contains(Group.ADMIN_GROUP_NAME)) {
+            return "Gateway Administrator";
+        }
+        if (aRoles.contains(Group.OPERATOR_GROUP_NAME)) {
+            return "Gateway Operator";
+        }
+
+        return "Unknown administrative role";
+    }
+
+    private boolean hasPermission(User user, String[] groups) {
         IdentityProvider provider = getConfigManager().getInternalIdentityProvider();
         GroupManager gman = provider.getGroupManager();
-        try {
-            for (Iterator i = gman.getGroupHeaders(user).iterator(); i.hasNext();) {
-                EntityHeader grp = (EntityHeader)i.next();
-                if (adminGroups.contains(grp.getName())) {
-                    return true;
-                }
+        for (int i = 0; i < groups.length; i++) {
+            String group = groups[i];
+            if (adminGroups.contains(group)) {
+                return true;
             }
-            return false;
-        } catch (FindException fe) {
-            logger.log(Level.SEVERE, fe.getMessage(), fe);
-            return false;
         }
+        return false;
     }
+
+    private String[] getUserRoles(User user) throws FindException {
+        IdentityProvider provider = getConfigManager().getInternalIdentityProvider();
+        GroupManager gman = provider.getGroupManager();
+        List roles = new ArrayList();
+        for (Iterator i = gman.getGroupHeaders(user).iterator(); i.hasNext();) {
+            EntityHeader grp = (EntityHeader)i.next();
+            roles.add(grp.getName());
+        }
+        return (String[])roles.toArray(new String[]{});
+    }
+
 
     /**
      * Get the service discovery manager.

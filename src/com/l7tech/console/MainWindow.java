@@ -13,6 +13,7 @@ import com.l7tech.console.panels.WorkSpacePanel;
 import com.l7tech.console.poleditor.PolicyEditorPanel;
 import com.l7tech.console.security.LogonEvent;
 import com.l7tech.console.security.LogonListener;
+import com.l7tech.console.security.SecurityProvider;
 import com.l7tech.console.tree.*;
 import com.l7tech.console.tree.identity.IdentitiesRootNode;
 import com.l7tech.console.tree.identity.IdentityProvidersTree;
@@ -150,6 +151,7 @@ public class MainWindow extends JFrame {
     private boolean disconnected = false;
     private String ssgURL;
     private SsmApplication ssmApplication;
+    private SecurityProvider securityProvider;
     private IdentitiesRootNode identitiesRootNode;
     private ServicesFolderNode servicesRootNode;
 
@@ -159,6 +161,7 @@ public class MainWindow extends JFrame {
     public MainWindow(SsmApplication app) {
         super(TITLE);
         ssmApplication = app;
+        securityProvider = (SecurityProvider)app.getBean("securityProvider");
         initialize();
     }
 
@@ -203,6 +206,7 @@ public class MainWindow extends JFrame {
         for (int i = 0; i < listeners.length; i++) {
             ((LogonListener)listeners[i]).onLogoff(event);
         }
+        securityProvider.logoff();
         disconnected = true;
     }
 
@@ -636,7 +640,7 @@ public class MainWindow extends JFrame {
 
     private NewGroupAction getNewInternalGroupAction() {
         if (newInernalGroupAction != null) return newInernalGroupAction;
-        newInernalGroupAction = new NewGroupAction(null){
+        newInernalGroupAction = new NewGroupAction(null) {
             public String getName() {
                 return "Create Internal Group";
             }

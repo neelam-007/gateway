@@ -55,6 +55,13 @@ public class SecurityProviderImpl extends SecurityProvider
         }
     }
 
+    /**
+     * Logoff the session, default implementation, does nothin
+     */
+    public void logoff() {
+        LogonEvent le = new LogonEvent(this, LogonEvent.LOGOFF);
+        applicationContext.publishEvent(le);
+    }
 
     /**
      * Set the ApplicationContext that this object runs in.
@@ -93,8 +100,6 @@ public class SecurityProviderImpl extends SecurityProvider
     private void onLogoff(LogonEvent e) {
         logger.finer("Disconnect message received, invalidating service lookup reference");
         resetCredentials();
-        LogonEvent le = new LogonEvent(this, LogonEvent.LOGOFF);
-        applicationContext.publishEvent(le);
     }
 
 

@@ -28,4 +28,9 @@ public interface AuthenticationProvider {
     void login(PasswordAuthentication creds)
       throws LoginException, VersionException, RemoteException;
 
+    /**
+     * Logoff the session
+     */
+    void logoff();
+
 }
