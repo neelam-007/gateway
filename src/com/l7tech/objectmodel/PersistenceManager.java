@@ -27,51 +27,44 @@ public abstract class PersistenceManager {
             throw new IllegalStateException( "PersistenceManager can only be initialized once!");
     }
 
-    public static List find( String query, Object param, Class paramClass ) throws FindException {
+    public static List find( PersistenceContext context, String query, Object param, Class paramClass ) throws FindException {
         checkInstance();
-        return _instance.doFind( query, param, paramClass );
+        return _instance.doFind( context, query, param, paramClass );
     }
 
-    public static List find( String query, Object[] params, Class[] paramClasses ) throws FindException {
+    public static List find( PersistenceContext context, String query, Object[] params, Class[] paramClasses ) throws FindException {
         checkInstance();
-        return _instance.doFind( query, params, paramClasses );
+        return _instance.doFind( context, query, params, paramClasses );
     }
 
-/*
-    public static Entity load( Class clazz, long oid ) {
+    public static long save( PersistenceContext context, Entity obj ) throws SaveException {
         checkInstance();
-        return _instance.doLoad( clazz, oid );
+        return _instance.doSave( context, obj );
     }
 
-    public static Entity loadForUpdate( Class clazz, long oid ) {
+    public static void delete( PersistenceContext context, Entity obj ) throws DeleteException {
         checkInstance();
-        return _instance.doLoadForUpdate( clazz, oid );
-    }
-*/
-
-    public static long save( Entity obj ) throws SaveException {
-        checkInstance();
-        return _instance.doSave( obj );
+        _instance.doDelete( context, obj );
     }
 
-    public static void delete( Entity obj ) throws DeleteException {
+    public static void beginTransaction( PersistenceContext context ) throws TransactionException {
         checkInstance();
-        _instance.doDelete( obj );
+        _instance.doBeginTransaction( context );
     }
 
-    public static void beginTransaction() throws TransactionException {
+    public static void commitTransaction( PersistenceContext context ) throws TransactionException {
         checkInstance();
-        _instance.doBeginTransaction();
+        _instance.doCommitTransaction( context );
     }
 
-    public static void commitTransaction() throws TransactionException {
+    public static void rollbackTransaction( PersistenceContext context ) throws TransactionException {
         checkInstance();
-        _instance.doCommitTransaction();
+        _instance.doRollbackTransaction( context );
     }
 
-    public static void rollbackTransaction() throws TransactionException {
+    public static PersistenceContext getContext() throws SQLException {
         checkInstance();
-        _instance.doRollbackTransaction();
+        return _instance.doGetContext();
     }
 
     public static EntityManager getEntityManager(Class clazz) {
@@ -84,15 +77,16 @@ public abstract class PersistenceManager {
         if ( _instance == null ) throw new IllegalStateException( "A concrete PersistenceManager has not yet been initialized!");
     }
 
-    abstract void doBeginTransaction() throws TransactionException;
-    abstract void doCommitTransaction() throws TransactionException;
-    abstract void doRollbackTransaction() throws TransactionException;
-    abstract List doFind( String query, Object param, Class paramClass ) throws FindException;
-    abstract List doFind( String query, Object[] params, Class[] paramClasses ) throws FindException;
-    //abstract Entity doLoad( Class clazz, long oid ) throws;
-    //abstract Entity doLoadForUpdate( Class clazz, long oid );
-    abstract long doSave( Entity obj ) throws SaveException;
-    abstract void doDelete( Entity obj ) throws DeleteException;
+    abstract void doBeginTransaction( PersistenceContext context ) throws TransactionException;
+    abstract void doCommitTransaction( PersistenceContext context ) throws TransactionException;
+    abstract void doRollbackTransaction( PersistenceContext context ) throws TransactionException;
+    abstract List doFind( PersistenceContext context, String query, Object param, Class paramClass ) throws FindException;
+    abstract List doFind( PersistenceContext context, String query, Object[] params, Class[] paramClasses ) throws FindException;
+    abstract Entity doFindByPrimaryKey( PersistenceContext context, Class clazz, long oid ) throws FindException;
+    abstract Entity doFindByPrimaryKey( PersistenceContext context, Class clazz, long oid, boolean forUpdate ) throws FindException;
+    abstract long doSave( PersistenceContext context, Entity obj ) throws SaveException;
+    abstract void doDelete( PersistenceContext context, Entity obj ) throws DeleteException;
+    abstract PersistenceContext doGetContext() throws SQLException;
 
     static PersistenceManager _instance;
 }
