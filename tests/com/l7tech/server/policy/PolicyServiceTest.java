@@ -60,7 +60,7 @@ public class PolicyServiceTest extends TestCase {
             request = PolicyServiceClient.createGetPolicyRequest("123");
         }
         else {
-            request = PolicyServiceClient.createGetPolicyRequest("123",
+            request = PolicyServiceClient.createSignedGetPolicyRequest("123",
                                                                  TestDocuments.getEttkClientCertificate(),
                                                                  TestDocuments.getEttkClientPrivateKey());
         }
@@ -70,7 +70,7 @@ public class PolicyServiceTest extends TestCase {
         SoapRequest soapReq = new TestSoapRequest(request);
         // todo
         // Mike, you can't do this because those credentials will simply be overwritten by
-        // the assertion that processes the signature you are creating in PolicyServiceClient.createGetPolicyRequest
+        // the assertion that processes the signature you are creating in PolicyServiceClient.createSignedGetPolicyRequest
         //
         if (loginCredentials != null) {
             soapReq.setPrincipalCredentials(loginCredentials);

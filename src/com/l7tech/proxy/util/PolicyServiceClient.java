@@ -35,7 +35,7 @@ import java.util.Arrays;
 public class PolicyServiceClient {
 
 
-    public static Document createGetPolicyRequest(String serviceId,
+    public static Document createSignedGetPolicyRequest(String serviceId,
                                                   X509Certificate clientCert,
                                                   PrivateKey clientKey)
             throws GeneralSecurityException
