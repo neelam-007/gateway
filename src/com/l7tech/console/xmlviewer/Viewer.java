@@ -153,7 +153,7 @@ public class Viewer extends JPanel implements XDocumentListener {
     public void documentDeleted(XDocumentEvent event) {
     }
 
-    public void selectXpath(String xpathString) {
+    public boolean selectXpath(String xpathString) {
         XElement[] elements = null;
         try {
             elements = (XElement[])document.getElements(xpathString);
@@ -166,13 +166,14 @@ public class Viewer extends JPanel implements XDocumentListener {
                 tree.setSelectedNode(element, true);
             }
             properties.addXPath(xpathString);
-
+            return true;
         } catch (Throwable t) {
             JOptionPane.showMessageDialog(this,
               t.getMessage(),
               "XPath Error",
               JOptionPane.ERROR_MESSAGE);
         }
+        return false;
     }
 
     /**
