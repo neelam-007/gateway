@@ -67,7 +67,8 @@ public class WsdlMessagesTableModel extends AbstractTableModel {
     }
 
     /**
-     * add the message by name to the message table 
+     * create and add an empty message by name 
+     * to the message table 
      * @param name the message name local part
      * @return the newly created message
      */
@@ -76,19 +77,31 @@ public class WsdlMessagesTableModel extends AbstractTableModel {
     }
 
     /**
-     * add the message by name to the message table
+     * create then add the message by <code>QName</code> 
+     * to the message table
      * @param name the message <code>QName</code>
      * @return the newly created message
      */
     public Message addMessage(QName name) {
         Message m = definition.createMessage();
         m.setQName(name);
-        definition.addMessage(m);
-        this.fireTableStructureChanged();
+        addMessage(m);
         return m;
     }
 
-     /**
+    /**
+     * add the message <code>Message</code>  to 
+     * the message table
+     * @param message the message to add
+     */
+    public void addMessage(Message message) {
+        message.setUndefined(false);
+        definition.addMessage(message);
+        this.fireTableStructureChanged();
+    }
+
+
+    /**
      * remove the message by name
      * @param name the message name local part
      */
@@ -97,29 +110,41 @@ public class WsdlMessagesTableModel extends AbstractTableModel {
     }
 
     /**
-    * remove the message by <code>QName</code>
-    * @param name the message name local part
-    */
+     * remove the message by <code>QName</code>
+     * @param name the message name local part
+     */
     public void removeMessage(QName name) {
         definition.removeMessage(name);
         this.fireTableStructureChanged();
     }
 
     /**
-      * remove the message by <code>index</code>
-      * @param index the message index
-      */
-      public Message removeMessage(int index) {
+     * remove the message by <code>index</code>
+     * @param index the message index
+     */
+    public Message removeMessage(int index) {
         Iterator it = definition.getMessages().keySet().iterator();
         int row = 0;
         while (it.hasNext()) {
             Object key = it.next();
             if (row++ == index) {
                 Message m = (Message)definition.getMessages().remove(key);
+                this.fireTableStructureChanged();
                 return m;
             }
         }
         throw new IndexOutOfBoundsException("" + index + " > " + definition.getMessages().size());
+    }
+
+    /**
+     *  Returns false.  This is the default implementation for all cells.
+     *
+     *  @param  rowIndex  the row being queried
+     *  @param  columnIndex the column being queried
+     *  @return false
+     */
+    public boolean isCellEditable(int rowIndex, int columnIndex) {
+        return true;
     }
 
 }

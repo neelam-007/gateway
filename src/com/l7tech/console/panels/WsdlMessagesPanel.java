@@ -2,6 +2,7 @@ package com.l7tech.console.panels;
 
 
 import com.l7tech.common.xml.XmlSchemaConstants;
+import com.l7tech.console.table.WsdlMessagePartsTableModel;
 import com.l7tech.console.table.WsdlMessagesTableModel;
 
 import javax.swing.*;
@@ -9,14 +10,14 @@ import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
-import javax.swing.table.TableModel;
 import javax.wsdl.Definition;
 import javax.wsdl.Message;
+import javax.wsdl.Part;
 import javax.xml.namespace.QName;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.util.Map;
+import java.util.logging.Logger;
 
 /**
  *
@@ -24,18 +25,21 @@ import java.util.Map;
  * @version 
  */
 public class WsdlMessagesPanel extends WizardStepPanel {
+    static Logger log = Logger.getLogger(WsdlMessagesPanel.class.getName());
+
     private JPanel mainPanel;
     private JTable messagesTable;
     private WsdlMessagesTableModel messagesTableModel;
 
     private JScrollPane partsTableScrollPane;
     private JTable partsTable;
-    private DefaultTableModel partsTableModel;
+    private WsdlMessagePartsTableModel partsTableModel;
     private JButton addMessageButton;
     private JButton removeMessageButton;
     private JButton addMessagePartButton;
     private JButton removeMessagePartButton;
     private Definition definition;
+    private JComboBox partTypesComboBox;
 
     public WsdlMessagesPanel(WizardStepPanel next) {
         super(next);
@@ -71,26 +75,10 @@ public class WsdlMessagesPanel extends WizardStepPanel {
                   removeMessagePartButton.setEnabled(true);
               }
           });
+
         messagesTable.setDefaultRenderer(Object.class, messagesTableCellRenderer);
-
-        partsTableModel = new DefaultTableModel(
-          new String[]{
-              "Name",
-              "Type"
-          },
-          0
-        );
-        partsTable.setModel(partsTableModel);
-        partsTable.setDefaultRenderer(Object.class, partsTableCellRenderer);
-
-        JComboBox typesComboBox = new JComboBox(XmlSchemaConstants.QNAMES.toArray());
-        DefaultCellEditor cellEditor = new DefaultCellEditor(new JTextField());
-        cellEditor.setClickCountToStart(1);
-        partsTable.getColumnModel().getColumn(0).setCellEditor(cellEditor);
-
-        cellEditor = new DefaultCellEditor(typesComboBox);
-        cellEditor.setClickCountToStart(1);
-        partsTable.getColumnModel().getColumn(1).setCellEditor(cellEditor);
+        messagesTable.
+          getSelectionModel().addListSelectionListener(messagesTableSelectionListener);
 
         partsTable.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
             public void valueChanged(ListSelectionEvent e) {
@@ -98,14 +86,9 @@ public class WsdlMessagesPanel extends WizardStepPanel {
             }
         });
 
-        partsTableScrollPane.getViewport().setBackground(partsTable.getBackground());
-        addMessagePartButton.addActionListener(addPartActionListener);
-        removeMessagePartButton.addActionListener(removePartActionListener);
-        addMessagePartButton.setEnabled(false);
-        removeMessagePartButton.setEnabled(false);
-
-        typesComboBox.setBackground(partsTable.getBackground());
-        typesComboBox.setRenderer(new DefaultListCellRenderer() {
+        partTypesComboBox = new JComboBox(XmlSchemaConstants.QNAMES.toArray());
+        partTypesComboBox.setBackground(partsTable.getBackground());
+        partTypesComboBox.setRenderer(new DefaultListCellRenderer() {
             public Component
               getListCellRendererComponent(JList list,
                                            Object value,
@@ -124,6 +107,13 @@ public class WsdlMessagesPanel extends WizardStepPanel {
                 return this;
             }
         });
+
+        partsTableScrollPane.getViewport().setBackground(partsTable.getBackground());
+        addMessagePartButton.addActionListener(addPartActionListener);
+        removeMessagePartButton.addActionListener(removePartActionListener);
+        addMessagePartButton.setEnabled(false);
+        removeMessagePartButton.setEnabled(false);
+
     }
 
     /**
@@ -165,16 +155,55 @@ public class WsdlMessagesPanel extends WizardStepPanel {
             throw new IllegalArgumentException("Unexpected type " + settings.getClass());
         }
         definition = (Definition)settings;
+        updateMessageTable();
+    }
+
+    /**
+     * update the message table model, renderer, and cell editor
+     */
+    private void updateMessageTable() {
         messagesTableModel = new WsdlMessagesTableModel(definition);
         messagesTable.setModel(messagesTableModel);
-        DefaultCellEditor cellEditor = new DefaultCellEditor(new JTextField());
 
-        messagesTable.getColumnModel().getColumn(0).setCellEditor(cellEditor);
-        DefaultTableCellRenderer renderer = new DefaultTableCellRenderer();
-        renderer.setEnabled(false);
-        renderer.setVisible(false);
-        messagesTable.getColumnModel().getColumn(0).setHeaderRenderer(renderer);
+        DefaultCellEditor cellEditor =
+          new DefaultCellEditor(new JTextField()) {
+              Message message;
 
+              /** Implements the <code>TableCellEditor</code> interface. */
+              public Component
+                getTableCellEditorComponent(JTable table, Object value,
+                                            boolean isSelected,
+                                            int row, int column) {
+                  message = (Message)value;
+                  delegate.setValue(message.getQName().getLocalPart());
+                  return editorComponent;
+              }
+
+              /**
+               * Forwards the message from the <code>CellEditor</code> to
+               * the <code>delegate</code>.
+               * @see EditorDelegate#getCellEditorValue
+               */
+              public Object getCellEditorValue() {
+                  QName on = message.getQName();
+                  QName nn =
+                    new QName(on.getNamespaceURI(), (String)delegate.getCellEditorValue());
+                  messagesTableModel.removeMessage(on);
+                  message.setQName(nn);
+                  messagesTableModel.addMessage(message);
+                  return message;
+              }
+          };
+        cellEditor.setClickCountToStart(1);
+        messagesTable.setDefaultEditor(Object.class, cellEditor);
+        if (messagesTableModel.getRowCount() == 0) {
+            addMessageActionListener.actionPerformed(null);
+        }
+        SwingUtilities.invokeLater(new Runnable() {
+            public void run() {
+                messagesTable.getSelectionModel().setSelectionInterval(0, 0);
+            }
+        });
     }
 
     /**
@@ -196,52 +225,48 @@ public class WsdlMessagesPanel extends WizardStepPanel {
         } else {
             throw new IllegalArgumentException("Unexpected type " + settings.getClass());
         }
-
-        final Map messages = definition.getMessages();
-        messages.clear();
-        // messages.put()
     }
 
     private
-        DefaultTableCellRenderer messagesTableCellRenderer
-        = new DefaultTableCellRenderer() {
-        /**
-         *
-         * Returns the default table cell renderer.
-         *
-         * @param table  the <code>JTable</code>
-         * @param value  the value to assign to the cell at
-         *			<code>[row, column]</code>
-         * @param isSelected true if cell is selected
-         * @param hasFocus true if cell has focus
-         * @param row  the row of the cell to render
-         * @param column the column of the cell to render
-         * @return the default table cell renderer
-         */
-        public Component
-          getTableCellRendererComponent(JTable table,
-                                        Object value,
-                                        boolean isSelected,
-                                        boolean hasFocus,
-                                        int row, int column) {
-            if (value instanceof Message) {
-                Message message = (Message)value;
-                if (isSelected) {
-                    setBackground(table.getSelectionBackground());
-                    setForeground(table.getSelectionForeground());
-                } else {
-                    setBackground(table.getBackground());
-                    setForeground(table.getForeground());
-                }
-                setText(message.getQName().getLocalPart());
-            } else {
-                super.getTableCellRendererComponent(
-                  table, value,
-                  isSelected, hasFocus, row, column);
-            }
-            return this;
-        }
-    };
+    DefaultTableCellRenderer messagesTableCellRenderer
+      = new DefaultTableCellRenderer() {
+          /**
+           *
+           * Returns the default table cell renderer.
+           *
+           * @param table  the <code>JTable</code>
+           * @param value  the value to assign to the cell at
+           *			<code>[row, column]</code>
+           * @param isSelected true if cell is selected
+           * @param hasFocus true if cell has focus
+           * @param row  the row of the cell to render
+           * @param column the column of the cell to render
+           * @return the default table cell renderer
+           */
+          public Component
+            getTableCellRendererComponent(JTable table,
+                                          Object value,
+                                          boolean isSelected,
+                                          boolean hasFocus,
+                                          int row, int column) {
+              if (value instanceof Message) {
+                  Message message = (Message)value;
+                  if (isSelected) {
+                      setBackground(table.getSelectionBackground());
+                      setForeground(table.getSelectionForeground());
+                  } else {
+                      setBackground(table.getBackground());
+                      setForeground(table.getForeground());
+                  }
+                  setText(message.getQName().getLocalPart());
+              } else {
+                  super.getTableCellRendererComponent(
+                    table, value,
+                    isSelected, hasFocus, row, column);
+              }
+              return this;
+          }
+      };
 
     private
     DefaultTableCellRenderer partsTableCellRenderer = new DefaultTableCellRenderer() {
@@ -282,6 +307,39 @@ public class WsdlMessagesPanel extends WizardStepPanel {
             return this;
         }
     };
+
+    private ListSelectionListener
+      messagesTableSelectionListener = new ListSelectionListener() {
+          /** 
+           * Called whenever the value of the selection changes.
+           * @param e the event that characterizes the change.
+           */
+          public void valueChanged(ListSelectionEvent e) {
+              int selectedRow = messagesTable.getSelectedRow();
+              if (selectedRow == -1) {
+                  partsTable.setModel(
+                    new DefaultTableModel(
+                      new String[] {"Name", "Type"}, 0));
+                  return;
+              }
+              Message m =
+                (Message)messagesTable.getValueAt(
+                  selectedRow,
+                  messagesTable.getSelectedColumn()
+                );
+
+              partsTableModel = new WsdlMessagePartsTableModel(m, definition);
+              partsTable.setModel(partsTableModel);
+              partsTable.setDefaultRenderer(Object.class, partsTableCellRenderer);
+
+              DefaultCellEditor cellEditor = new DefaultCellEditor(new JTextField());
+              partsTable.setDefaultEditor(String.class, cellEditor);
+
+              cellEditor = new DefaultCellEditor(partTypesComboBox);
+              cellEditor.setClickCountToStart(1);
+              partsTable.setDefaultEditor(QName.class, cellEditor);
+          }
+      };
 
     private ActionListener
       addMessageActionListener = new ActionListener() {
@@ -326,15 +384,9 @@ public class WsdlMessagesPanel extends WizardStepPanel {
       addPartActionListener = new ActionListener() {
           /** Invoked when an action occurs.  */
           public void actionPerformed(ActionEvent e) {
-              final int selectedRow = messagesTable.getSelectedRow();
-              if (selectedRow == -1) {
-                  throw new IllegalStateException("no selected message");
-              }
-              messagesTable.getValueAt(selectedRow, 0);
-              partsTableModel.addRow(new
-                Object[]{getNewMessagePartArgumentName(),
-                         XmlSchemaConstants.QNAME_TYPE_STRING,
-                         messagesTable.getValueAt(selectedRow, 0)});
+              Part p = partsTableModel.addPart(getNewMessagePartArgumentName());
+              p.setTypeName(XmlSchemaConstants.QNAME_TYPE_STRING);
+              partsTableModel.fireTableDataChanged();
           }
 
           private String getNewMessagePartArgumentName() {
@@ -367,7 +419,7 @@ public class WsdlMessagesPanel extends WizardStepPanel {
           public void actionPerformed(ActionEvent e) {
               int index = partsTable.getSelectedRow();
               if (index != -1) {
-                  partsTableModel.removeRow(index);
+                  partsTableModel.removePart(index);
               }
           }
       };
