@@ -6,16 +6,18 @@
 
 package com.l7tech.common;
 
+import java.io.Serializable;
+
 /**
  * Immutable.
  *
  * @author alex
  * @version $Revision$
  */
-public class RequestId implements Comparable {
-    public RequestId( int serverId, long bootTime, long sequence ) {
+public class RequestId implements Comparable, Serializable {
+    public RequestId( int serverId, long generation, long sequence ) {
         _serverId = serverId;
-        _bootTime = bootTime;
+        _generation = generation;
         _sequence = sequence;
     }
 
@@ -23,8 +25,8 @@ public class RequestId implements Comparable {
         return _serverId;
     }
 
-    public long getBootTime() {
-        return _bootTime;
+    public long getGeneration() {
+        return _generation;
     }
 
     public long getSequence() {
@@ -35,8 +37,8 @@ public class RequestId implements Comparable {
         RequestId other = (RequestId)o;
         if ( _serverId > other._serverId ) return 1;
         if ( _serverId < other._serverId ) return -1;
-        if ( _bootTime > other._bootTime ) return 1;
-        if ( _bootTime < other._bootTime ) return -1;
+        if ( _generation > other._generation ) return 1;
+        if ( _generation < other._generation ) return -1;
         if ( _sequence > other._sequence ) return 1;
         if ( _sequence < other._sequence ) return -1;
         return 0;
@@ -45,19 +47,19 @@ public class RequestId implements Comparable {
     public boolean equals( Object o ) {
         RequestId other = (RequestId)o;
         return ( _serverId == other._serverId &&
-                _bootTime == other._bootTime &&
+                _generation == other._generation &&
                 _sequence == other._sequence );
     }
 
     public int hashCode() {
-        return (int)(_serverId * 103 + _bootTime * 53 + _sequence);
+        return (int)(_serverId * 103 + _generation * 53 + _sequence);
     }
 
     public String toString() {
         StringBuffer result = new StringBuffer();
         result.append( paddedHex( _serverId ) );
         result.append( "-" );
-        result.append( paddedHex( _bootTime ) );
+        result.append( paddedHex( _generation ) );
         result.append( "-" );
         result.append( paddedHex( _sequence ) );
         return result.toString();
@@ -81,6 +83,6 @@ public class RequestId implements Comparable {
     }
 
     private int _serverId;
-    private long _bootTime;
+    private long _generation;
     private long _sequence;
 }
