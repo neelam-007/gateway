@@ -19,6 +19,8 @@ import com.l7tech.proxy.datamodel.exceptions.KeyStoreCorruptException;
 import com.l7tech.proxy.datamodel.exceptions.HttpChallengeRequiredException;
 import com.l7tech.proxy.datamodel.exceptions.PolicyRetryableException;
 import com.l7tech.proxy.policy.assertion.ClientAssertion;
+import com.l7tech.common.xml.InvalidDocumentFormatException;
+
 import java.util.logging.Logger;
 import org.xml.sax.SAXException;
 
@@ -43,7 +45,7 @@ public class ClientAllAssertion extends ClientCompositeAssertion {
      * @param req
      * @return the AssertionStatus.NONE if no child returned an error; the rightmost-child error otherwise.
      */
-    public AssertionStatus decorateRequest(PendingRequest req) throws OperationCanceledException, BadCredentialsException, GeneralSecurityException, IOException, ClientCertificateException, SAXException, KeyStoreCorruptException, HttpChallengeRequiredException, PolicyRetryableException, PolicyAssertionException {
+    public AssertionStatus decorateRequest(PendingRequest req) throws OperationCanceledException, BadCredentialsException, GeneralSecurityException, IOException, ClientCertificateException, SAXException, KeyStoreCorruptException, HttpChallengeRequiredException, PolicyRetryableException, PolicyAssertionException, InvalidDocumentFormatException {
         data.mustHaveChildren();
         AssertionStatus result = AssertionStatus.NONE;
         for ( int i = 0; i < children.length; i++ ) {
@@ -59,7 +61,7 @@ public class ClientAllAssertion extends ClientCompositeAssertion {
 
     public AssertionStatus unDecorateReply(PendingRequest request, SsgResponse response)
             throws OperationCanceledException, BadCredentialsException, GeneralSecurityException,
-                   IOException, ResponseValidationException, SAXException, KeyStoreCorruptException, PolicyAssertionException
+            IOException, ResponseValidationException, SAXException, KeyStoreCorruptException, PolicyAssertionException, InvalidDocumentFormatException
     {
         data.mustHaveChildren();
         AssertionStatus result = AssertionStatus.NONE;

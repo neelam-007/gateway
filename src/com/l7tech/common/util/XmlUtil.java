@@ -468,10 +468,30 @@ public class XmlUtil {
      * @param namespace
      * @param desiredPrefix
      * @return
-     */ 
+     */
     public static Element createAndAppendElementNS(Element parent, String localName, String namespace, String desiredPrefix) {
         Element element = parent.getOwnerDocument().createElementNS(namespace, localName);
         parent.appendChild(element);
+        element.setPrefix(getOrCreatePrefixForNamespace(element, namespace, desiredPrefix));
+        return element;
+    }
+
+    /**
+     * Creates an element and inserts it as the first child of Parent.  The element will be in the requested namespace.
+     * If the namespace is already declared in parent or a direct ancestor then that prefix will be reused;
+     * otherwise a new prefix will be declared in the new element that is as close as possible to desiredPrefix.
+     * @param parent
+     * @param namespace
+     * @param desiredPrefix
+     * @return
+     */
+    public static Element createAndPrependElementNS(Element parent, String localName, String namespace, String desiredPrefix) {
+        Element element = parent.getOwnerDocument().createElementNS(namespace, localName);
+        Node firstSib = parent.getFirstChild();
+        if (firstSib != null)
+            parent.insertBefore(element, firstSib);
+        else
+            parent.appendChild(element);
         element.setPrefix(getOrCreatePrefixForNamespace(element, namespace, desiredPrefix));
         return element;
     }
@@ -487,7 +507,7 @@ public class XmlUtil {
      * @param desiredPrefix
      * @return
      */
-    public static Element createAndInsertBeforeElementNS(Element desiredNextSibling, String localName,
+    public static Element createAndInsertBeforeElementNS(Node desiredNextSibling, String localName,
                                                          String namespace, String desiredPrefix)
     {
         Element parent = (Element)desiredNextSibling.getParentNode();

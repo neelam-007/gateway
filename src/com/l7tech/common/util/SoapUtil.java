@@ -6,6 +6,7 @@
 
 package com.l7tech.common.util;
 
+import com.l7tech.common.xml.ElementAlreadyExistsException;
 import com.l7tech.common.xml.InvalidDocumentFormatException;
 import com.l7tech.common.xml.MessageNotSoapException;
 import org.w3c.dom.*;
@@ -46,8 +47,9 @@ public class SoapUtil {
     public static final String DIGSIG_URI = "http://www.w3.org/2000/09/xmldsig#";
     public static final String WSU_NAMESPACE = "http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-utility-1.0.xsd";
     public static final String WSU_NAMESPACE2 = "http://schemas.xmlsoap.org/ws/2002/07/utility";
-    public static final String WSA_NAMESPACE = "http://schemas.xmlsoap.org/ws/2004/03/addressing";
-    public static final String WSA_NAMESPACE2 = "http://schemas.xmlsoap.org/ws/2003/03/addressing";
+
+    public static final String L7_MESSAGEID_NAMESPACE = "http://www.layer7tech.com/ws/addr";
+    public static final String L7_MESSAGEID_PREFIX = "L7a";
 
     public static final List SECURITY_URIS = new ArrayList();
     static {
@@ -58,6 +60,7 @@ public class SoapUtil {
     }
     public static final String[] SECURITY_URIS_ARRAY = (String[])SECURITY_URIS.toArray(new String[0]);
 
+    public static final String WSU_PREFIX = "wsu";
     public static final List WSU_URIS = new ArrayList();
     static {
         WSU_URIS.add(WSU_NAMESPACE);
@@ -91,6 +94,8 @@ public class SoapUtil {
     public static final String USERNAME_TOK_EL_NAME = "UsernameToken";
     public static final String UNTOK_USERNAME_EL_NAME = "Username";
     public static final String UNTOK_PASSWORD_EL_NAME = "Password";
+    public static final String MESSAGEID_EL_NAME = "MessageID";
+    public static final String RELATESTO_EL_NAME = "RelatesTo";
 
     // Misc
     public static final String FC_CLIENT = "Client";
@@ -440,6 +445,92 @@ public class SoapUtil {
         if (secElements.size() < 1) return null;
         // we got it
         return (Element)secElements.get(0);
+    }
+
+    /**
+     * Get the L7a:MesageID element from the specified message, or null if there isn't one.
+     * @param soapMsg the soap envelope to examine
+     * @return the /Envelope/Header/L7a:MessageID element, or null if there isn't one.
+     * @throws InvalidDocumentFormatException if the message isn't soap, or there is more than one Header or MessageID
+     */
+    public static Element getL7aMessageIdElement(Document soapMsg) throws InvalidDocumentFormatException {
+        Element header = getHeaderElement(soapMsg);
+        if (header == null) return null;
+        return XmlUtil.findOnlyOneChildElementByName(header, L7_MESSAGEID_NAMESPACE, MESSAGEID_EL_NAME);
+    }
+
+    /**
+     * Get the L7a:MessageID URI from the specified message, or null if there isn't one.
+     *
+     * @param soapMsg the soap envelope to examine
+     * @return the body text of the /Envelope/Header/L7a:MessageID field, which may be empty or an invalid URI; or,
+     *         null if there was no /Envelope/Header/L7a:MessageID field.
+     * @throws InvalidDocumentFormatException if the message isn't soap, or there is more than one Header or MessageID
+     */
+    public static String getL7aMessageId(Document soapMsg) throws InvalidDocumentFormatException {
+        Element messageId = getL7aMessageIdElement(soapMsg);
+        if (messageId == null) return null;
+        return XmlUtil.getTextValue(messageId);
+    }
+
+    /**
+     * Set the L7a:MessageID URI for the specified message, which must not already have a L7a:MessageID element.
+     * @param soapMsg the soap message to modify
+     * @param messageId the new L7a:MessageID value
+     * @throws InvalidDocumentFormatException if the message isn't soap, has more than one header, or already has
+     *                                        a MessageID
+     */
+    public static void setL7aMessageId(Document soapMsg, String messageId) throws InvalidDocumentFormatException {
+        Element idEl = getL7aMessageIdElement(soapMsg);
+        if (idEl != null)
+            throw new ElementAlreadyExistsException("This message already has a L7a:MessageID");
+
+        Element header = getOrMakeHeader(soapMsg);
+        idEl = XmlUtil.createAndPrependElementNS(header, MESSAGEID_EL_NAME, L7_MESSAGEID_NAMESPACE, L7_MESSAGEID_PREFIX);
+        idEl.appendChild(idEl.getOwnerDocument().createTextNode(messageId));
+    }
+
+    /**
+     * Set the L7a:RelatesTo URI for the specified message, which must not already have a L7a:RelatesTo element.
+     * @param soapMsg the soap message to modify
+     * @param relatesTo the new L7a:RelatesTo value
+     * @throws InvalidDocumentFormatException if the message isn't soap, has more than one header, or already has
+     *                                        a RelatesTo
+     */
+    public static void setL7aRelatesTo(Document soapMsg, String relatesTo) throws InvalidDocumentFormatException {
+        Element idEl = getL7aRelatesToElement(soapMsg);
+        if (idEl != null)
+            throw new ElementAlreadyExistsException("This message already has a L7a:RelatesTo");
+
+        Element header = getOrMakeHeader(soapMsg);
+        idEl = XmlUtil.createAndPrependElementNS(header, RELATESTO_EL_NAME, L7_MESSAGEID_NAMESPACE, L7_MESSAGEID_PREFIX);
+        idEl.appendChild(idEl.getOwnerDocument().createTextNode(relatesTo));
+    }
+
+    /**
+     * Get the L7a:RelatesTo element from the specified message, or null if there isn't one.
+     * @param soapMsg the soap envelope to examine
+     * @return the /Envelope/Header/L7a:RelatesTo element, or null if there wasn't one
+     * @throws InvalidDocumentFormatException if the message isn't soap, or there is more than one Header or RelatesTo
+     */
+    public static Element getL7aRelatesToElement(Document soapMsg) throws InvalidDocumentFormatException {
+        Element header = getHeaderElement(soapMsg);
+        if (header == null) return null;
+        return XmlUtil.findOnlyOneChildElementByName(header, L7_MESSAGEID_NAMESPACE, RELATESTO_EL_NAME);
+    }
+
+    /**
+     * Get the L7a:RelatesTo URI from the specified message, or null if there isn't one.
+     *
+     * @param soapMsg the soap envelope to examine
+     * @return the body text of the /Envelope/Header/L7a:RelatesTo field, which may be empty or an invalid URI; or,
+     *         null if there was no /Envelope/Header/L7a:RelatesTo field.
+     * @throws InvalidDocumentFormatException if the message isn't soap, or there is more than one Header or RelatesTo
+     */
+    public static String getL7aRelatesTo(Document soapMsg) throws InvalidDocumentFormatException {
+        Element relatesTo = getL7aRelatesToElement(soapMsg);
+        if (relatesTo == null) return null;
+        return XmlUtil.getTextValue(relatesTo);
     }
 
     /**

@@ -10,6 +10,7 @@ import com.l7tech.common.protocol.SecureSpanConstants;
 import com.l7tech.common.util.CertificateDownloader;
 import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.common.util.XmlUtil;
+import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.security.xml.WssProcessor;
 import com.l7tech.common.security.xml.WssProcessorImpl;
 import com.l7tech.common.security.xml.WssDecoratorImpl;
@@ -120,8 +121,8 @@ public class MessageProcessor {
      * @throws SAXException                 if the client request needed to be parsed and wasn't well-formed XML
      * @throws ResponseValidationException  if the response was signed, but the signature did not validate
      * @throws HttpChallengeRequiredException if an HTTP 401 should be sent back to the client
-     * @throws InvalidDocumentFormatException if the response from the SSG had a problem with its format that was
-     *                                        too serious to ignore
+     * @throws InvalidDocumentFormatException if the request or the response from the SSG had a problem with its
+     *                                        format that was too serious to ignore
      * @throws WssProcessor.ProcessorException if there was a problem processing the wsse:Security header in the
      *                                         response from the SSG 
      */
@@ -323,6 +324,11 @@ public class MessageProcessor {
                 }
 
                 if (result == AssertionStatus.NONE) {
+                    // Ensure L7a:MessageID exists if we are supposed to have one
+                    if (req.getL7aMessageId() != null)
+                        if (SoapUtil.getL7aMessageId(req.getDecoratedSoapEnvelope()) == null)
+                            SoapUtil.setL7aMessageId(req.getDecoratedSoapEnvelope(), req.getL7aMessageId());
+
                     // Do all WSS processing all at once
                     log.info("Running pending request through WS-Security decorator");
                     wssDecorator.decorateMessage(req.getDecoratedSoapEnvelope(), req.getWssRequirements());
@@ -351,7 +357,7 @@ public class MessageProcessor {
             throws OperationCanceledException,
             GeneralSecurityException, BadCredentialsException, IOException,
             ResponseValidationException, SAXException, KeyStoreCorruptException, PolicyAssertionException,
-            ConfigurationException
+            ConfigurationException, InvalidDocumentFormatException
     {
         Policy appliedPolicy = req.getActivePolicy();
         log.info(appliedPolicy == null ? "skipping undecorate step" : "undecorating response");
@@ -454,9 +460,6 @@ public class MessageProcessor {
             setAuthenticationState(req, state, postMethod);
             postMethod.addRequestHeader("SOAPAction", req.getSoapAction());
             postMethod.addRequestHeader(SecureSpanConstants.HttpHeaders.ORIGINAL_URL, req.getOriginalUrl().toString());
-            if (req.isNonceRequired())
-                postMethod.addRequestHeader(SecureSpanConstants.HttpHeaders.XML_NONCE_HEADER_NAME,
-                                            Long.toString(req.getNonce()));
 
             // Let the Gateway know what policy version we used for the request.
             Policy policy = req.getActivePolicy();

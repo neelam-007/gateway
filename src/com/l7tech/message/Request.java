@@ -69,7 +69,6 @@ public interface Request extends Message {
     /** The name of the parameter containing the HTTP URI (i.e. /ssg/soap) */
     public static final String PARAM_HTTP_REQUEST_URI       = PREFIX_HTTP + ".request-uri";
 
-    public static final String PARAM_HTTP_XML_NONCE         = PREFIX_HTTP_HEADER + "." + SecureSpanConstants.HttpHeaders.XML_NONCE_HEADER_NAME;
     public static final String PARAM_HTTP_POLICY_VERSION    = PREFIX_HTTP_HEADER + "." + SecureSpanConstants.HttpHeaders.POLICY_VERSION;
 
     /**

@@ -92,13 +92,6 @@ public class WssProcessorTest extends TestCase {
             } else
                 log.info("No timestamp was found.");
 
-            if (result.getWsaMessageId() != null) {
-                log.info("MessageID = " + result.getWsaMessageId());
-            }
-            if (result.getWsaRelatesTo() != null) {
-                log.info("Relates to = " + result.getWsaRelatesTo());
-            }
-
             Document undecorated = result.getUndecoratedMessage();
             assertTrue(undecorated != null);
             log.info("Undecorated document:\n" + XmlUtil.nodeToFormattedString(undecorated));

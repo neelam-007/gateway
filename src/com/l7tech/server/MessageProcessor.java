@@ -13,6 +13,7 @@ import com.l7tech.common.security.xml.WssProcessorImpl;
 import com.l7tech.common.util.KeystoreUtils;
 import com.l7tech.common.util.Locator;
 import com.l7tech.common.util.XmlUtil;
+import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.xml.InvalidDocumentFormatException;
 import com.l7tech.message.*;
 import com.l7tech.objectmodel.FindException;
@@ -179,6 +180,15 @@ public class MessageProcessor {
                     Document doc = null;
                     try {
                         doc = soapResponse.getDocument();
+
+                        if (request instanceof SoapRequest) {
+                            SoapRequest soapRequest = (SoapRequest)request;
+                            final String messageId = SoapUtil.getL7aMessageId(soapRequest.getDocument());
+                            if (messageId != null) {
+                                SoapUtil.setL7aRelatesTo(doc, messageId);
+                            }
+                        }
+
                         getWssDecorator().decorateMessage(doc,
                                                           soapResponse.getDecorationRequirements());
                     } catch (Exception e) {

@@ -7,6 +7,9 @@
 package com.l7tech.proxy.datamodel;
 
 import com.l7tech.common.security.xml.WssDecorator;
+import com.l7tech.common.util.HexUtils;
+import com.l7tech.common.util.SoapUtil;
+import com.l7tech.common.xml.InvalidDocumentFormatException;
 import com.l7tech.proxy.RequestInterceptor;
 import com.l7tech.proxy.datamodel.exceptions.*;
 import org.w3c.dom.Document;
@@ -28,6 +31,7 @@ import java.util.logging.Logger;
  */
 public class PendingRequest {
     private static final Logger log = Logger.getLogger(PendingRequest.class.getName());
+    private static final SecureRandom rand = new SecureRandom();
 
     //private ClientProxy clientProxy;
     private final CredentialManager credentialManager = Managers.getCredentialManager();
@@ -53,8 +57,8 @@ public class PendingRequest {
         private boolean sslForbidden = false;  // ssl is forbidden for this request
         private boolean isBasicAuthRequired = false;
         private boolean isDigestAuthRequired = false;
-        private boolean isNonceRequired = false;
         private WssDecorator.DecorationRequirements wssRequirements = new WssDecorator.DecorationRequirements();
+        private String messageId = null;
         private Map pendingDecorations = new LinkedHashMap();
     }
     private PolicySettings policySettings = new PolicySettings();
@@ -225,14 +229,6 @@ public class PendingRequest {
         policySettings.isSslRequired = sslRequired;
     }
 
-    public boolean isNonceRequired() {
-        return policySettings.isNonceRequired;
-    }
-
-    public void setNonceRequired(boolean isNonceRequired) {
-        policySettings.isNonceRequired = isNonceRequired;
-    }
-
     public boolean isBasicAuthRequired() {
         return policySettings.isBasicAuthRequired;
     }
@@ -306,5 +302,29 @@ public class PendingRequest {
     /** @return the Map of (assertion instance => ClientDecorator), containing deferred decorations to apply. */
     public Map getPendingDecorations() {
         return policySettings.pendingDecorations;
+    }
+
+    public String getL7aMessageId() {
+        return policySettings.messageId;
+    }
+
+    public void setL7aMessageId(String newId) {
+        policySettings.messageId = newId;
+    }
+
+    /** Ensure that there is a Wsa message ID in this request. */
+    public void prepareWsaMessageId() throws InvalidDocumentFormatException {
+        if (getL7aMessageId() == null) {
+            String id = SoapUtil.getL7aMessageId(getUndecoratedSoapEnvelope());
+
+            if (id == null) {
+                byte[] randbytes = new byte[16];
+                rand.nextBytes(randbytes);
+                id = "http://www.layer7tech.com/uuid/" + HexUtils.hexDump(randbytes);
+            } else if (id.trim().length() < 1)
+                throw new InvalidDocumentFormatException("Request has existing L7a:MessageID field that is empty or contains only whitespace");
+
+            setL7aMessageId(id);
+        }
     }
 }

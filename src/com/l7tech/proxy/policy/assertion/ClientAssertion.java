@@ -14,6 +14,7 @@ import com.l7tech.proxy.datamodel.exceptions.BadCredentialsException;
 import com.l7tech.proxy.datamodel.exceptions.KeyStoreCorruptException;
 import com.l7tech.proxy.datamodel.exceptions.OperationCanceledException;
 import com.l7tech.proxy.datamodel.exceptions.ResponseValidationException;
+import com.l7tech.common.xml.InvalidDocumentFormatException;
 import org.xml.sax.SAXException;
 
 import java.io.IOException;
@@ -34,7 +35,7 @@ public abstract class ClientAssertion implements ClientDecorator {
      */
     public abstract AssertionStatus unDecorateReply(PendingRequest request, SsgResponse response)
             throws BadCredentialsException, OperationCanceledException, GeneralSecurityException, IOException,
-                   SAXException, ResponseValidationException, KeyStoreCorruptException, PolicyAssertionException;
+            SAXException, ResponseValidationException, KeyStoreCorruptException, PolicyAssertionException, InvalidDocumentFormatException;
 
     /**
      * @return the human-readable node name that is displayed.

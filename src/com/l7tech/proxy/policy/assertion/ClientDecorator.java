@@ -10,6 +10,7 @@ import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.proxy.datamodel.PendingRequest;
 import com.l7tech.proxy.datamodel.exceptions.*;
+import com.l7tech.common.xml.InvalidDocumentFormatException;
 
 import java.security.GeneralSecurityException;
 import java.io.IOException;
@@ -29,5 +30,5 @@ public interface ClientDecorator {
     AssertionStatus decorateRequest(PendingRequest request)
             throws BadCredentialsException, OperationCanceledException, GeneralSecurityException,
             ClientCertificateException, IOException, SAXException, KeyStoreCorruptException,
-            HttpChallengeRequiredException, PolicyRetryableException, PolicyAssertionException;
+            HttpChallengeRequiredException, PolicyRetryableException, PolicyAssertionException, InvalidDocumentFormatException;
 }

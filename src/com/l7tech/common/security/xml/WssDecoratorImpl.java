@@ -85,11 +85,19 @@ public class WssDecoratorImpl implements WssDecorator {
         Element securityHeader = createSecurityHeader(message);
         Set signList = decorationRequirements.getElementsToSign();
 
+        // If we aren't signing the entire message, find extra elements to sign
         if (decorationRequirements.isSignTimestamp() || !signList.isEmpty()) {
             Element timestamp = addTimestamp(securityHeader);
-            if (!signList.contains(message.getDocumentElement()))
-                signList.add(timestamp);
+            signList.add(timestamp);
         }
+
+        // If there are any WSA headers in the message, and we are signing anything else, then sign them too
+        Element messageId = SoapUtil.getL7aMessageIdElement(message);
+        if (messageId != null && !signList.isEmpty())
+            signList.add(messageId);
+        Element relatesTo = SoapUtil.getL7aRelatesToElement(message);
+        if (relatesTo != null && !signList.isEmpty())
+            signList.add(relatesTo);
 
         if (decorationRequirements.getUsernameTokenCredentials() != null &&
             decorationRequirements.getUsernameTokenCredentials().getFormat() == CredentialFormat.CLEARTEXT) {

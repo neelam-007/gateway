@@ -19,6 +19,8 @@ import com.l7tech.proxy.datamodel.exceptions.KeyStoreCorruptException;
 import com.l7tech.proxy.datamodel.exceptions.HttpChallengeRequiredException;
 import com.l7tech.proxy.datamodel.exceptions.PolicyRetryableException;
 import com.l7tech.proxy.policy.assertion.ClientAssertion;
+import com.l7tech.common.xml.InvalidDocumentFormatException;
+
 import java.util.logging.Logger;
 import org.xml.sax.SAXException;
 
@@ -43,7 +45,7 @@ public class ClientExactlyOneAssertion extends ClientCompositeAssertion {
      * @param req
      * @return AssertionStatus.NONE, or the rightmost-child's error if all children failed.
      */
-    public AssertionStatus decorateRequest(PendingRequest req) throws OperationCanceledException, BadCredentialsException, GeneralSecurityException, IOException, ClientCertificateException, SAXException, KeyStoreCorruptException, HttpChallengeRequiredException, PolicyRetryableException, PolicyAssertionException {
+    public AssertionStatus decorateRequest(PendingRequest req) throws OperationCanceledException, BadCredentialsException, GeneralSecurityException, IOException, ClientCertificateException, SAXException, KeyStoreCorruptException, HttpChallengeRequiredException, PolicyRetryableException, PolicyAssertionException, InvalidDocumentFormatException {
         data.mustHaveChildren();
         AssertionStatus result = AssertionStatus.FALSIFIED;
         for ( int i = 0; i < children.length; i++ ) {
@@ -60,7 +62,7 @@ public class ClientExactlyOneAssertion extends ClientCompositeAssertion {
 
     public AssertionStatus unDecorateReply(PendingRequest request, SsgResponse response)
             throws OperationCanceledException, BadCredentialsException, GeneralSecurityException,
-                   IOException, ResponseValidationException, SAXException, KeyStoreCorruptException, PolicyAssertionException
+            IOException, ResponseValidationException, SAXException, KeyStoreCorruptException, PolicyAssertionException, InvalidDocumentFormatException
     {
         data.mustHaveChildren();
         AssertionStatus result = AssertionStatus.FALSIFIED;

@@ -68,12 +68,6 @@ public class ClientRequestWssIntegrity extends ClientAssertion {
         final PrivateKey userPrivateKey = SsgKeyStoreManager.getClientCertPrivateKey(ssg);
         final X509Certificate ssgCert = SsgKeyStoreManager.getServerCert(ssg);
 
-        // TODO replace this nonce stuff with wsa:MessageID when we do replay assertion
-        if (!request.isSslRequired() || request.isSslForbidden()) {
-            log.info("Using client cert to sign request without using SSL.  Will send nonce.");
-            request.setNonceRequired(true);
-        }
-
         // add a pending decoration that will be applied only if the rest of this policy branch succeeds
         request.getPendingDecorations().put(this, new ClientDecorator() {
             public AssertionStatus decorateRequest(PendingRequest request) throws PolicyAssertionException {
