@@ -75,14 +75,14 @@ public class WssDecoratorTest extends TestCase {
         X509Certificate recipientCert;
         PrivateKey recipientKey;
         boolean signTimestamp;
-        Element[] elementsToSign;
         Element[] elementsToEncrypt;
+        Element[] elementsToSign;
 
         public TestDocument(Context c, X509Certificate senderCert, PrivateKey senderKey,
                             X509Certificate recipientCert, PrivateKey recipientKey,
                             boolean signTimestamp,
-                            Element[] elementsToSign,
-                            Element[] elementsToEncrypt)
+                            Element[] elementsToEncrypt,
+                            Element[] elementsToSign)
         {
             this.c = c;
             this.senderCert = senderCert;
@@ -90,8 +90,8 @@ public class WssDecoratorTest extends TestCase {
             this.recipientCert = recipientCert;
             this.recipientKey = recipientKey;
             this.signTimestamp = signTimestamp;
-            this.elementsToSign = elementsToSign;
             this.elementsToEncrypt = elementsToEncrypt;
+            this.elementsToSign = elementsToSign;
         }
     }
 
@@ -103,8 +103,8 @@ public class WssDecoratorTest extends TestCase {
                                   d.senderCert,
                                   d.senderKey,
                                   d.signTimestamp,
-                                  d.elementsToSign,
-                                  d.elementsToEncrypt);
+                                  d.elementsToEncrypt,
+                                  d.elementsToSign);
         log.info("Decorated message:" + XmlUtil.documentToFormattedString(d.c.message));
     }
 
