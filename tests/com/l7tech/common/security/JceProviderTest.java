@@ -7,9 +7,15 @@
 package com.l7tech.common.security;
 
 import com.l7tech.common.security.prov.bc.BouncyCastleCertificateRequest;
+import com.l7tech.common.security.xml.processor.WssProcessorImpl;
+import com.l7tech.common.security.xml.processor.ProcessorResult;
+import com.l7tech.common.security.xml.decorator.WssDecoratorImpl;
+import com.l7tech.common.security.xml.decorator.DecorationRequirements;
+import com.l7tech.common.security.xml.WssDecoratorTest;
 import com.l7tech.common.util.CertUtils;
 import com.l7tech.common.util.HexUtils;
 import com.l7tech.common.util.XmlUtil;
+import com.l7tech.common.xml.TestDocuments;
 import org.bouncycastle.jce.PKCS10CertificationRequest;
 import org.w3c.dom.Document;
 
@@ -21,11 +27,12 @@ import java.security.interfaces.RSAPrivateKey;
 import java.security.interfaces.RSAPublicKey;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.Enumeration;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Test the performance of a JceProviderEngine.
- *
- * @deprecated needs to be rewritten now that soapmsgsigner and xmlmangler are gone
  *
  * @author mike
  * @version 1.0
@@ -39,10 +46,20 @@ public class JceProviderTest {
     public static final String KS = "ca.ks";
     private static String DFLT_STORE_TYPE = "JKS";
 
-    public static final String USAGE = "Usage: JceProviderTest (phaos|bc|rsa|ncipher|entrust) scale dir keypass storepass [storetype] [concurrency]";
+    public static final String USAGE = "Usage: JceProviderTest (phaos|bc|rsa|ncipher|entrust|ibm) scale dir keypass storepass [storetype] [concurrency]";
+    private static final boolean LOAD_CSR_FROM_DISK = false;
 
     public static interface Testable {
         void run() throws Throwable;
+    }
+
+    private static String[] enumToArray(Enumeration e) {
+        List list = new ArrayList();
+        while (e.hasMoreElements()) {
+            String s = (String) e.nextElement();
+            list.add(s);
+        }
+        return (String[]) list.toArray(new String[0]);
     }
 
     public static void main(String[] args) throws Throwable {
@@ -88,8 +105,10 @@ public class JceProviderTest {
             driver = "com.l7tech.common.security.prov.ncipher.NcipherJceProviderEngine";
         } else if ("entrust".equalsIgnoreCase(prov)) {
             driver = JceProvider.ENTRUST_ENGINE;
-        } else
-            throw new IllegalArgumentException(USAGE);
+        } else if ("ibm".equalsIgnoreCase(prov)) {
+            driver = JceProvider.IBM_ENGINE;
+        }else
+            throw new IllegalArgumentException("Unknown provider " + USAGE);
         System.setProperty(JceProvider.ENGINE_PROPERTY, driver);
 
         final byte[] keyBytes = new byte[]{
@@ -99,23 +118,14 @@ public class JceProviderTest {
             (byte)0x75, (byte)0xcf, (byte)0x38, (byte)0x0c, (byte)0xc1, (byte)0xf8, (byte)0x61, (byte)0xcd,
         };
 
-        final Key key = new AesKey(keyBytes, 128);
+        final Key key = new AesKey(keyBytes, 128); // test key for testing symmetric bulk operations
         CertificateRequest csr;
         KeyPair kp; // client cert private (and public) key
         X509Certificate signedClientCert; // signedClientCert client cert
 
-        // TODO rewrite
-        //Document testDoc = XmlManglerTest.makeTestMessage();
-        Document testDoc = null;
-        final String testXml = XmlUtil.nodeToString(testDoc);
-        Document signedDocument;
-        String signedXml;
-
         {
-            String asymProvName = JceProvider.getAsymmetricJceProvider().getName();
-
-            System.setProperty("com.l7tech.common.security.jceProviderEngine", driver);
             JceProvider.init();
+            String asymProvName = JceProvider.getAsymmetricJceProvider().getName();
             log.info("Using asymmetric cryptography provider: " + JceProvider.getAsymmetricJceProvider().getName());
             log.info("Using symmetric cryptography provider: " + JceProvider.getSymmetricJceProvider().getName());
 
@@ -137,33 +147,53 @@ public class JceProviderTest {
 
             log.info("pretest: loading key pair...");
             PrivateKey priv = (PrivateKey)ks.getKey("tomcat",pkpass.toCharArray());
-            X509Certificate cert = (X509Certificate)ks.getCertificate("tomcat");
+    //        X509Certificate cert = (X509Certificate)ks.getCertificate("tomcat\000");   // when BouncyCastle crypto is used
+            X509Certificate cert = (X509Certificate)ks.getCertificate("tomcat");    // when IBM crypto is used
+
             kp = new KeyPair(cert.getPublicKey(),priv);
 
             log.info("Public key: " + publicKeyInfo(kp.getPublic()));
             log.info("Private key: " + privateKeyInfo(kp.getPrivate()));
 
-            log.info("pretest: loading a certificate signing request...");
-            byte[] bytes = HexUtils.slurpUrl( new URL("file://" + dir + "ssl.csr") ).bytes;
-            csr = new BouncyCastleCertificateRequest(new PKCS10CertificationRequest(bytes), asymProvName);
+            if (LOAD_CSR_FROM_DISK) {
+                // Load CSR from disk
+                log.info("pretest: loading a certificate signing request...");
+                byte[] bytes = HexUtils.slurpUrl( new URL("file:///" + dir + "ssl.cer") ).bytes;
+                csr = new BouncyCastleCertificateRequest(new PKCS10CertificationRequest(bytes), asymProvName);
+            } else {
+                // Make our own CSR
+                log.info("pretest: generating certificate signing requset...");
+                KeyPair csrKeypair = JceProvider.generateRsaKeyPair();
+                csr = JceProvider.makeCsr("mike", csrKeypair);
+            }
             log.info("CSR username = " + csr.getSubjectAsString());
 
             signedClientCert = cert;
             log.info("Signed: " + CertUtils.toString(signedClientCert));
 
             log.info("pretest: signing XML message");
-            signedDocument = XmlUtil.stringToDocument(testXml);
-            // TODO rewrite
-            //SoapMsgSigner.signEnvelope(signedDocument, kp.getPrivate(), new X509Certificate[] { signedClientCert });
-            signedXml = XmlUtil.nodeToString(signedDocument);
+            final WssDecoratorTest wssDecoratorTest = new WssDecoratorTest("WssDecoratorTest");
+            WssDecoratorTest.TestDocument td = wssDecoratorTest.getEncryptedBodySignedEnvelopeTestDocument();
+            new WssDecoratorImpl().decorateMessage(td.c.message, wssDecoratorTest.makeDecorationRequirements(td));
 
             log.info("pretest: checking XML message signature");
-            // TODO rewrite
-            //SoapMsgSigner.validateSignature(XmlUtil.stringToDocument(signedXml));
+            ProcessorResult processorResult = new WssProcessorImpl().undecorateMessage(td.c.message,
+                    TestDocuments.getDotNetServerCertificate(),
+                    TestDocuments.getDotNetServerPrivateKey(),
+                    null);
+            log.info("signature verified on " + processorResult.getElementsThatWereSigned().length + " elements");
         }
 
         reportTime("Empty loop (baseline)", 10000 * scale, concur, new Testable() {
-            public void run() {
+            public void run() throws Throwable {
+            }
+        });
+
+        final WssDecoratorTest wssDecoratorTest = new WssDecoratorTest("WssDecoratorTest");
+        reportTime("Prepare test document (baseline)", 10000 * scale, concur, new Testable() {
+            public void run() throws Throwable {
+                WssDecoratorTest.TestDocument td = wssDecoratorTest.getEncryptedBodySignedEnvelopeTestDocument();
+                wssDecoratorTest.makeDecorationRequirements(td);
             }
         });
 
@@ -173,6 +203,7 @@ public class JceProviderTest {
             }
         });
 
+        // TODO restore when not testing nCipher (which can't create CSRs)
 //        final byte[] csrEnc = csr.getEncoded();
 //        reportTime("Sign CSR", 50 * scale, concur, new Testable() {
 //            public void run() throws Exception {
@@ -180,49 +211,40 @@ public class JceProviderTest {
 //            }
 //        });
 
+        final Document testDoc = wssDecoratorTest.getEncryptedBodySignedEnvelopeTestDocument().c.message;
+        final String testXml = XmlUtil.nodeToString(testDoc);
+
         reportTime("Parse document (baseline)", 1000 * scale, concur, new Testable() {
             public void run() throws Throwable {
                 XmlUtil.stringToDocument(testXml);
             }
         });
 
-        final Document encryptedDoc = XmlUtil.stringToDocument(testXml);
         log.info("Before encryption: " + testXml);
-        // TODO rewrite
-        //XmlMangler.encryptXml(encryptedDoc, keyBytes, "MyKeyName");
-        final String encryptedXml = XmlUtil.nodeToString(encryptedDoc);
+        final String encryptedXml;
+        {
+            WssDecoratorTest.TestDocument td = wssDecoratorTest.getEncryptedBodySignedEnvelopeTestDocument();
+            DecorationRequirements decorationRequirements = wssDecoratorTest.makeDecorationRequirements(td);
+            new WssDecoratorImpl().decorateMessage(td.c.message, decorationRequirements);
+            encryptedXml = XmlUtil.nodeToString(td.c.message);
+        }
         log.info("Encrypted XML message: " + encryptedXml);
 
-        reportTime("Encrypt document", 1000 * scale, concur, new Testable() {
+        reportTime("Encrypt and sign document", 1000 * scale, concur, new Testable() {
             public void run() throws Throwable {
-                Document blah = XmlUtil.stringToDocument(testXml);
-                // TODO rewrite
-                //XmlMangler.encryptXml(blah, keyBytes, "MyKeyName");
+                WssDecoratorTest.TestDocument td = wssDecoratorTest.getEncryptedBodySignedEnvelopeTestDocument();
+                DecorationRequirements decorationRequirements = wssDecoratorTest.makeDecorationRequirements(td);
+                new WssDecoratorImpl().decorateMessage(td.c.message, decorationRequirements);
             }
         });
 
-        reportTime("Decrypt document", 200 * scale, concur, new Testable() {
+        reportTime("Decrypt document and check signature", 200 * scale, concur, new Testable() {
             public void run() throws Throwable {
                 Document blah = XmlUtil.stringToDocument(encryptedXml);
-                // TODO rewrite
-                //XmlMangler.decryptDocument(blah, key);
-            }
-        });
-
-        final String fsigned = signedXml;
-        final X509Certificate fsignedClientCert = signedClientCert;
-        final PrivateKey privateKey = kp.getPrivate();
-        reportTime("Sign XML message", 20 * scale, concur, new Testable() {
-            public void run() throws Throwable {
-                // TODO rewrite
-                //SoapMsgSigner.signEnvelope(XmlUtil.stringToDocument(fsigned), privateKey, new X509Certificate[] { fsignedClientCert });
-            }
-        });
-
-        reportTime("Validate signedClientCert XML message", 80 * scale, concur, new Testable() {
-            public void run() throws Throwable {
-                // TODO rewrite
-                //SoapMsgSigner.validateSignature(XmlUtil.stringToDocument(fsigned));
+                new WssProcessorImpl().undecorateMessage(blah,
+                        TestDocuments.getDotNetServerCertificate(),
+                        TestDocuments.getDotNetServerPrivateKey(),
+                        null);
             }
         });
     }
