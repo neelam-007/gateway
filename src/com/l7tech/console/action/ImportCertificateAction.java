@@ -120,8 +120,9 @@ public class ImportCertificateAction extends SecureAction {
             throws KeyStoreException, IOException, CertificateException, NoSuchAlgorithmException
     {
         KeyStore ks = KeyStore.getInstance("JKS");
-        char[] trustStorPassword = Preferences.getPreferences().getTrustStorePassword().toCharArray();
-        String trustStoreFile = Preferences.getPreferences().getTrustStoreFile();
+        Preferences preferences = Preferences.getPreferences();
+        char[] trustStorPassword = preferences.getTrustStorePassword().toCharArray();
+        String trustStoreFile = preferences.getTrustStoreFile();
         try {
             FileInputStream ksfis = new FileInputStream(trustStoreFile);
             try {

@@ -111,7 +111,7 @@ public class SslRMIClientSocketFactory
                 sslSocket.setEnabledCipherSuites(enabledCipherSuitesList);
             } catch (IllegalArgumentException e) {
                 throw (IOException)
-                  new IOException(e.getMessage()).initCause(e);
+                new IOException(e.getMessage()).initCause(e);
             }
         }
         // Set the SSLSocket Enabled Protocols
@@ -129,7 +129,7 @@ public class SslRMIClientSocketFactory
                 sslSocket.setEnabledProtocols(enabledProtocolsList);
             } catch (IllegalArgumentException e) {
                 throw (IOException)
-                  new IOException(e.getMessage()).initCause(e);
+                new IOException(e.getMessage()).initCause(e);
             }
         }
         // Return the preconfigured SSLSocket
@@ -266,6 +266,9 @@ public class SslRMIClientSocketFactory
                 delegate.checkServerTrusted(chain, authType);
             } else {
                 try {
+                    if (delegate.getAcceptedIssuers().length == 0) {
+                        throw new CertificateException("No trusted ");
+                    }
                     delegate.checkServerTrusted(chain, authType);
                 } catch (CertificateException e) {
                     if (!trustFailureHandler.handle(e, chain, authType)) {

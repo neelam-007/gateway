@@ -5,6 +5,7 @@ import com.l7tech.admin.AdminLogin;
 import com.l7tech.common.VersionException;
 import com.l7tech.common.protocol.SecureSpanConstants;
 import com.l7tech.spring.remoting.rmi.ResettableRmiProxyFactoryBean;
+import com.l7tech.identity.UserBean;
 import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
@@ -15,6 +16,9 @@ import javax.security.auth.login.LoginException;
 import java.net.PasswordAuthentication;
 import java.rmi.RemoteException;
 import java.security.cert.X509Certificate;
+import java.security.cert.CertificateEncodingException;
+import java.security.NoSuchAlgorithmException;
+import java.util.Arrays;
 
 /**
  * Default SSM <code>SecurityProvider</code> implementaiton that is a central security
@@ -37,10 +41,7 @@ public class SecurityProviderImpl extends SecurityProvider
         setCredentials(creds);
 
         try {
-            ResettableRmiProxyFactoryBean bean = (ResettableRmiProxyFactoryBean)applicationContext.getBean("&adminLogin");
-            bean.setServiceUrl(namingURL);
-            bean.resetStub();
-            AdminLogin adminLogin = (AdminLogin)applicationContext.getBean("adminLogin");
+            AdminLogin adminLogin = getAdminLoginRemoteReference(namingURL);
             AdminContext context = adminLogin.login(creds.getUserName(), new String(creds.getPassword()));
             // version check
             String remoteVersion = context.getVersion();
@@ -55,6 +56,14 @@ public class SecurityProviderImpl extends SecurityProvider
                 resetCredentials();
             }
         }
+    }
+
+    private AdminLogin getAdminLoginRemoteReference(String namingURL) {
+        ResettableRmiProxyFactoryBean bean = (ResettableRmiProxyFactoryBean)applicationContext.getBean("&adminLogin");
+        bean.setServiceUrl(namingURL);
+        bean.resetStub();
+        AdminLogin adminLogin = (AdminLogin)applicationContext.getBean("adminLogin");
+        return adminLogin;
     }
 
     /**
@@ -72,8 +81,28 @@ public class SecurityProviderImpl extends SecurityProvider
      * @param serverCertificate
      * @param namingURL the naming url
      */
-    public void validateServerCertificate(PasswordAuthentication credentials, X509Certificate serverCertificate, String namingURL)
+    public void validateServer(PasswordAuthentication credentials, X509Certificate serverCertificate, String namingURL)
       throws RemoteException, SecurityException {
+        AdminLogin adminLogin = getAdminLoginRemoteReference(namingURL);
+        byte[] certificate = adminLogin.getServerCertificate(credentials.getUserName());
+        try {
+            String password = new String(credentials.getPassword());
+            String encodedPassword = UserBean.encodePasswd(credentials.getUserName(), password);
+            java.security.MessageDigest d = java.security.MessageDigest.getInstance("SHA-1");
+            final byte[] bytes = encodedPassword.getBytes();
+            d.update(bytes);
+            d.update(serverCertificate.getEncoded());
+            d.update(bytes);
+            byte[] digested = d.digest();
+            if (!Arrays.equals(certificate, digested)) {
+                throw new SecurityException("Unable to verify the server certificate at "+namingURL);
+            }
+        } catch (NoSuchAlgorithmException e) {
+            throw new SecurityException(e);
+        } catch (CertificateEncodingException e) {
+            throw new SecurityException(e);
+        }
+
     }
 
     /**

@@ -31,12 +31,12 @@ public interface AuthenticationProvider {
       throws LoginException, VersionException, RemoteException;
 
     /**
-     * Retrieve the targewt server certificate
+     * Validate the server, using the server certificate
      *
      * @param serverCertificate
      * @see com.l7tech.console.security.SecurityProviderImpl
      */
-    void validateServerCertificate(PasswordAuthentication credentials, X509Certificate serverCertificate, String namingURL)
+    void validateServer(PasswordAuthentication credentials, X509Certificate serverCertificate, String namingURL)
       throws RemoteException, SecurityException;
 
     /**

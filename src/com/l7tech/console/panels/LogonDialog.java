@@ -609,12 +609,23 @@ public class LogonDialog extends JDialog {
                 }
                 final AuthenticationProvider authenticationProvider = getCredentialManager().getAuthenticationProvider();
                 try {
-                    authenticationProvider.validateServerCertificate(authenticationCredentials,
-                                                                     serverCertificateChain[0],
+                    // temp failure handler to obtain the server cert
+                    SslRMIClientSocketFactory.setTrustFailureHandler(new SSLTrustFailureHandler() {
+                        public boolean handle(CertificateException e, X509Certificate[] chain, String authType) {
+                            return true;
+                        }
+                    });
+                    authenticationProvider.validateServer(authenticationCredentials,
+                                                                     chain[0],
                                                                      adminServiceNamingURL.toString());
                 } catch (RemoteException rex) {
                     log.log(Level.SEVERE, "Remote error validating the server certificate", e);
                     return false;
+                } catch(SecurityException sex) {
+                    log.log(Level.SEVERE, "Error validating the server certificate "+chain[0], e);
+                    return false;
+                } finally {
+                    SslRMIClientSocketFactory.setTrustFailureHandler(this);
                 }
                 serverCertificateChain = chain;
                 return true;

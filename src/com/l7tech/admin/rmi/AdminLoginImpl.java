@@ -95,6 +95,11 @@ public class AdminLoginImpl extends ApplicationObjectSupport
         }
         try {
             User user = getInternalIdentityProvider().getUserManager().findByLogin(username);
+            String[] roles = getUserRoles(user);
+            if (!containsAdminAccessRole(roles)) {
+                throw new AccessControlException(user.getName() + " does not have privilege to access administrative services");
+            }
+
             return getDigest(user.getPassword(), serverCertificate);
         } catch (FindException e) {
             logger.warn("Authentication provider error", e);
@@ -114,7 +119,7 @@ public class AdminLoginImpl extends ApplicationObjectSupport
     private IdentityProvider getInternalIdentityProvider() throws FindException, InvalidIdProviderCfgException {
         IdentityProviderConfig cfg = identityProviderConfigManager.findByPrimaryKey(IdentityProviderConfigManager.INTERNALPROVIDER_SPECIAL_OID);
         if (cfg == null) {
-            throw new IllegalStateException("Could not find the internal identoty manager!");
+            throw new IllegalStateException("Could not find the internal identity manager!");
         }
 
         return identityProviderFactory.makeProvider(cfg);
@@ -179,8 +184,10 @@ public class AdminLoginImpl extends ApplicationObjectSupport
     private byte[] getDigest(String password, X509Certificate serverCertificate)
       throws NoSuchAlgorithmException, CertificateEncodingException {
         java.security.MessageDigest d = java.security.MessageDigest.getInstance("SHA-1");
-        d.update(password.getBytes());
+        byte[] bytes = password.getBytes();
+        d.update(bytes);
         d.update(serverCertificate.getEncoded());
+        d.update(bytes);
         return d.digest();
     }
 }

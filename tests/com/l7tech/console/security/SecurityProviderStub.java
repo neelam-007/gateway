@@ -28,7 +28,7 @@ public class SecurityProviderStub extends SecurityProvider {
      * @param serverCertificate
      * @see SecurityProviderImpl
      */
-    public void validateServerCertificate(PasswordAuthentication credentials, X509Certificate serverCertificate, String namingURL)
+    public void validateServer(PasswordAuthentication credentials, X509Certificate serverCertificate, String namingURL)
       throws RemoteException, SecurityException {
         //To change body of implemented methods use File | Settings | File Templates.
     }
