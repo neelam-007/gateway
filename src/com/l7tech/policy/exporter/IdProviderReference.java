@@ -5,10 +5,13 @@ import com.l7tech.common.xml.InvalidDocumentFormatException;
 import com.l7tech.console.util.Registry;
 import com.l7tech.identity.IdentityAdmin;
 import com.l7tech.identity.IdentityProviderConfig;
+import com.l7tech.identity.User;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.identity.IdentityAssertion;
+import com.l7tech.policy.assertion.identity.SpecificUser;
+import com.l7tech.policy.assertion.identity.MemberOfGroup;
 import org.w3c.dom.Element;
 import org.w3c.dom.Text;
 
@@ -202,6 +205,7 @@ public class IdProviderReference extends ExternalReference {
                         idass.setIdentityProviderOid(locallyMatchingProviderId);
                         logger.info("The provider id of the imported id assertion has been changed " +
                                     "from " + providerId + " to " + locallyMatchingProviderId);
+                        localizeLoginOrId(idass);
                     } else if (localizeType == LocaliseAction.DELETE) {
                         logger.info("Deleted this assertin from the tree.");
                         return false;
@@ -210,6 +214,46 @@ public class IdProviderReference extends ExternalReference {
             }
         }
         return true;
+    }
+
+    /**
+     * Does the following:
+     * 1. if the id referred by the assertion does not exist given the id, try to find it by login
+     * 2. if found by login but not by id, switch the id
+     * 3. if found by id, make sure the login fits the assertion's login
+     */
+    private void localizeLoginOrId(IdentityAssertion a) {
+        long providerId = a.getIdentityProviderOid();
+        IdentityAdmin idAdmin = Registry.getDefault().getIdentityAdmin();
+        try {
+            if (a instanceof SpecificUser) {
+                SpecificUser su = (SpecificUser)a;
+                User userFromId = idAdmin.findUserByPrimaryKey(providerId, su.getUserUid());
+                if (userFromId != null) {
+                    if (userFromId.getLogin() != null && !userFromId.getLogin().equals(su.getUserLogin())) {
+                        String oldLogin = su.getUserLogin();
+                        su.setUserLogin(userFromId.getLogin());
+                        logger.info("The login was changed from " + oldLogin + " to " + userFromId.getLogin());
+                    }
+                } else {
+                    User userFromLogin = idAdmin.findUserByLogin(providerId, su.getUserLogin());
+                    if (userFromLogin != null) {
+                        logger.info("Changing " + su.getUserLogin() + "'s id from " +
+                                    su.getUserUid() + " to " + userFromLogin.getUniqueIdentifier());
+                        su.setUserUid(userFromLogin.getUniqueIdentifier());
+                    }
+                }
+            } else if (a instanceof MemberOfGroup) {
+                MemberOfGroup mog = (MemberOfGroup)a;
+                if (idAdmin.findGroupByPrimaryKey(providerId, mog.getGroupId()) != null) {
+                    // nothing?
+                }
+            }
+        } catch (FindException e) {
+            logger.log(Level.WARNING, "problem getting identity", e);
+        } catch (RemoteException e) {
+            logger.log(Level.WARNING, "problem getting identity", e);
+        }
     }
 
     public boolean equals(Object o) {
