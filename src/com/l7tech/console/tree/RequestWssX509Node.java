@@ -3,6 +3,8 @@ package com.l7tech.console.tree;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.xmlsec.RequestWssX509Cert;
 
+import javax.swing.*;
+
 /**
  * Node for the RequestWssX509Cert assertion.
  * <p/>
@@ -29,5 +31,31 @@ public class RequestWssX509Node extends AbstractTreeNode {
 
     public Assertion asAssertion() {
         return new RequestWssX509Cert();
+    }
+
+    /**
+     * Returns true if the receiver allows children.
+     */
+    public boolean getAllowsChildren() {
+        return false;
+    }
+
+    /**
+     * Get the set of actions associated with this node.
+     * This may be used e.g. in constructing a context menu.
+     *
+     * @return actions appropriate to the node
+     */
+    public Action[] getActions() {
+        return super.getActions();
+    }
+
+    /**
+     * Returns true if the receiver is a leaf.
+     *
+     * @return true if leaf, false otherwise
+     */
+    public boolean isLeaf() {
+        return true;
     }
 }
