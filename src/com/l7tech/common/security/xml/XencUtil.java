@@ -209,8 +209,7 @@ public class XencUtil {
         } catch (IOException e) {
             throw new InvalidDocumentFormatException("Unable to parse base64 EncryptedKey CipherValue", e);
         }
-        Cipher rsa = null;
-        rsa = Cipher.getInstance("RSA", JceProvider.getAsymmetricJceProvider().getName());
+        Cipher rsa = JceProvider.getRsaNoPaddingCipher();
         rsa.init(Cipher.DECRYPT_MODE, recipientKey);
 
         byte[] decryptedPadded = rsa.doFinal(encryptedKeyBytes);
