@@ -226,7 +226,7 @@ public class ClientCertManagerImp implements ClientCertManager {
             q.setLong(0, user.getProviderId());
             q.setString(1, user.getUniqueIdentifier());
             hibResults = q.list();
-            if (hibResults.size() == 0) {
+            if (hibResults.size() == 0 && user.getLogin() != null && user.getLogin().length() > 0) {
                 // Try searching by login if userId fails
                 q = context.getSession().createQuery(FIND_BY_LOGIN);
                 q.setLong(0, user.getProviderId());
