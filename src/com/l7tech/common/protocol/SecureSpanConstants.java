@@ -46,6 +46,20 @@ public class SecureSpanConstants {
      */
     public static final String CERT_REQUEST_FILE = "/ssg/csr";
 
+    /**
+     * The filename portion of the URL of the Gateway's WSDL proxy service.
+     * This is the service that clients (Agent or third-party) can connect to in order to get
+     * a WSIL document listing public services; or (if authenticated) a WSIL document listing
+     * services available to that authenticated user; or, if a serviceoid parameter is provided,
+     * to download the WSDL for that service.
+     *
+     * URLs in download WSIL and WSDL documents will have been altered to point at the Gateway,
+     * and will have any back-end URL information blinded.
+     *
+     * Example:  http://gateway.example.com:8080/ssg/wsdl?serviceoid=4653058
+     */
+    public static final String WSDL_PROXY_FILE = "/ssg/wsdl";
+
     public static class HttpHeaders {
         /**
          * Contains the version number of the policy used and/or expected by the entity providing the header.
