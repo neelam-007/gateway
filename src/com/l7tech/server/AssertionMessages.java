@@ -34,7 +34,7 @@ public class AssertionMessages extends Messages {
 
 
     // ServerCredentialSourceAssertion messages
-    public static final M AUTH_REQUIRED             = m(4050, Level.INFO, "Authentication Required");
+    public static final M AUTH_REQUIRED                        = m(4050, Level.INFO, "Authentication Required");
 
     // ServerIdentityAssertion
     public static final M AUTHENTICATED_BUT_CREDENTIALS_NOT_FOUND = m(4100, Level.WARNING, "Request is authenticated but request has no LoginCredentials!");
@@ -46,6 +46,33 @@ public class AssertionMessages extends Messages {
     public static final M AUTHENTICATED                           = m(4106, Level.FINEST, "Authenticated {0}");
     public static final M INVALID_CERT                            = m(4107, Level.INFO, "Invalid client cert for {0}");
     public static final M AUTHENTICATION_FAILED                   = m(4108, Level.SEVERE, "Authentication failed for {0}");
+
+    // ServerRequestWssOperation messages
+    public static final M NOTHING_TO_VALIDATE                     = m(4150, Level.FINE, "This is intended for another recipient, there is nothing to validate here.");
+    public static final M CANNOT_VERIFY_WS_SECURITY               = m(4151, Level.INFO, "Request not SOAP; cannot verify WS-Security contents");
+    public static final M NO_WSS_LEVEL_SECURITY                   = m(4152, Level.INFO, "This request did not contain any WSS level security.");
+
+    // ServerRequestSwAAssertion messages
+    public static final M REQUEST_NOT_SOAP                        = m(4200, Level.INFO, "Request not SOAP; cannot validate attachments");
+    public static final M NOT_MULTIPART_MESSAGE                   = m(4201, Level.INFO, "The request does not contain attachment or is not a mulitipart message");
+    public static final M OPERATION_NOT_FOUND                     = m(4202, Level.FINEST, "Operation not found in the request. Xpath expression is: {0}");
+    public static final M SAME_OPERATION_APPEARS_MORE_THAN_ONCE   = m(4203, Level.INFO, "Same operation appears more than once in the request. Xpath expression is: {0}");
+    public static final M OPERATION_IS_NON_ELEMENT_NODE           = m(4204, Level.INFO, "XPath pattern {0} found non-element node '{1}'");
+    public static final M PARAMETER_IS_NON_ELEMENT_NODE           = m(4205, Level.INFO, "XPath pattern {0}/{1} found non-element node '{2}'");
+    public static final M OPERATION_FOUND                         = m(4206, Level.FINEST, "The operation {0} is found in the request");
+    public static final M MIME_PART_NOT_FOUND                     = m(4207, Level.FINE, "MIME Part not found in the request. Xpath expression is: {0}/{1})");
+    public static final M SAME_MIME_PART_APPEARS_MORE_THAN_ONCE   = m(4208, Level.FINE, "Same MIME Part appears more than once in the request. Xpath expression is: {0}/{1}");
+    public static final M PARAMETER_FOUND                         = m(4209, Level.FINEST, "Parameter {0} is found in the request");
+    public static final M REFERENCE_NOT_FOUND                     = m(4210, Level.INFO, "The reference (href) of the {0} is found in the request");
+    public static final M REFERENCE_FOUND                         = m(4211, Level.FINEST, "The href of the parameter {0} is found in the request, value={1}");
+    public static final M INVALID_CONTENT_ID_URL                  = m(4212, Level.INFO, "Invalid Content-ID URL {0}");
+    public static final M MUST_BE_ONE_OF_CONTENT_TYPES            = m(4213, Level.INFO, "The content type of the attachment {0} must be one of the types: {1}");
+    public static final M INCORRECT_CONTENT_TYPE                  = m(4214, Level.INFO, "The content type of the attachment {0} must be: {1}");
+    public static final M TOTAL_LENGTH_LIMIT_EXCEEDED             = m(4215, Level.INFO, "The parameter [{0}] has {1} attachments. The total length exceeds the limit: {2} K bytes");
+    public static final M INDIVIDUAL_LENGTH_LIMIT_EXCEEDED        = m(4216, Level.INFO, "The length of the attachment {0} exceeds the limit: {1} K bytes");
+    public static final M ATTACHMENT_NOT_FOUND                    = m(4217, Level.INFO, "The required attachment {0} is not found in the request");
+    public static final M UNEXPECTED_ATTACHMENT_FOUND             = m(4218, Level.INFO, "Unexpected attachment {0} found in the request.");
+    public static final M INVALID_OPERATION                       = m(4219, Level.INFO, "The operation specified in the request is invalid.");
 
 
 }

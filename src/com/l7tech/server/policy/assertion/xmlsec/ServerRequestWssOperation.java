@@ -11,12 +11,14 @@ import com.l7tech.common.security.xml.processor.ProcessorException;
 import com.l7tech.common.security.xml.processor.ProcessorResult;
 import com.l7tech.common.security.xml.processor.ProcessorResultUtil;
 import com.l7tech.common.util.CausedIOException;
+import com.l7tech.common.audit.Auditor;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.XpathBasedAssertion;
 import com.l7tech.policy.assertion.xmlsec.SecurityHeaderAddressable;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.ServerAssertion;
+import com.l7tech.server.AssertionMessages;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
 
@@ -36,10 +38,12 @@ public abstract class ServerRequestWssOperation implements ServerAssertion {
     }
 
     public AssertionStatus checkRequest(PolicyEnforcementContext context) throws IOException, PolicyAssertionException {
+
+        Auditor auditor = new Auditor(context.getAuditContext(), logger);
         if (data instanceof SecurityHeaderAddressable) {
             SecurityHeaderAddressable sha = (SecurityHeaderAddressable)data;
             if (!sha.getRecipientContext().localRecipient()) {
-                logger.fine("This is intended for another recipient, there is nothing to validate here.");
+                auditor.logAndAudit(AssertionMessages.NOTHING_TO_VALIDATE);
                 return AssertionStatus.NONE;
             }
         }
@@ -47,7 +51,8 @@ public abstract class ServerRequestWssOperation implements ServerAssertion {
         ProcessorResult wssResults;
         try {
             if (!context.getRequest().isSoap()) {
-                logger.info("Request not SOAP; cannot verify WS-Security contents");
+                auditor.logAndAudit(AssertionMessages.CANNOT_VERIFY_WS_SECURITY);
+
                 return AssertionStatus.BAD_REQUEST;
             }
             wssResults = context.getRequest().getXmlKnob().getProcessorResult();
@@ -55,7 +60,7 @@ public abstract class ServerRequestWssOperation implements ServerAssertion {
             throw new CausedIOException(e);
         }
         if (wssResults == null) {
-            logger.info("This request did not contain any WSS level security.");
+            auditor.logAndAudit(AssertionMessages.NO_WSS_LEVEL_SECURITY);
             context.setRequestPolicyViolated();
             return AssertionStatus.FALSIFIED;
         }
@@ -65,7 +70,7 @@ public abstract class ServerRequestWssOperation implements ServerAssertion {
         try {
             soapmsg = context.getRequest().getXmlKnob().getDocumentReadOnly();
         } catch (SAXException e) {
-            logger.log(Level.SEVERE, "Cannot get payload document.", e);
+            auditor.logAndAudit(AssertionMessages.EXCEPTION_SEVERE_WITH_MORE_INFO, new String[] {"Cannot get payload document."}, e);
             return AssertionStatus.BAD_REQUEST;
         }
 

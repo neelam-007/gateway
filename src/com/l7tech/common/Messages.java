@@ -23,7 +23,7 @@ public class Messages {
      * BootMessages:              1000 - 1999
      * AuditMessages:             2000 - 2999
      * MessageProcessingMessages: 3000 - 3999
-     * AssertionMessagess:        4000 - 4999
+     * AssertionMessagess:        4000 - 5999
      *
      *
      */
@@ -31,8 +31,12 @@ public class Messages {
     private static Map messagesById = new HashMap();
 
     // must appear after the instantiation of messageById HaspMap.
-    public static final M EXCEPTION_SEVERE                  = m(1, Level.SEVERE, "Exception caught: ");
-    public static final M EXCEPTION_WARNING                 = m(2, Level.WARNING, "Exception caught: ");
+    public static final M EXCEPTION_SEVERE                  = m(1, Level.SEVERE, "Exception caught! ");
+    public static final M EXCEPTION_SEVERE_WITH_MORE_INFO   = m(2, Level.SEVERE, "{0}. Exception caught! ");
+    public static final M EXCEPTION_WARNING                 = m(3, Level.WARNING, "Exception caught! ");
+    public static final M EXCEPTION_WARNING_WITH_MORE_INFO  = m(4, Level.WARNING, "{0}. Exception caught! ");
+    public static final M EXCEPTION_INFO                    = m(5, Level.INFO, "Exception caught! ");
+    public static final M EXCEPTION_INFO_WITH_MORE_INFO     = m(6, Level.INFO, "{0}. Exception caught! ");
 
     protected Messages() { }
 

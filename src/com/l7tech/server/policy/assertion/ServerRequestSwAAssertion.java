@@ -7,10 +7,12 @@ import com.l7tech.common.util.CausedIOException;
 import com.l7tech.common.wsdl.BindingInfo;
 import com.l7tech.common.wsdl.BindingOperationInfo;
 import com.l7tech.common.wsdl.MimePartInfo;
+import com.l7tech.common.audit.Auditor;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.RequestSwAAssertion;
 import com.l7tech.server.message.PolicyEnforcementContext;
+import com.l7tech.server.AssertionMessages;
 import org.jaxen.JaxenException;
 import org.jaxen.dom.DOMXPath;
 import org.w3c.dom.Attr;
@@ -24,7 +26,6 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -67,9 +68,10 @@ public class ServerRequestSwAAssertion implements ServerAssertion {
         boolean assertionStatusOK = true;
         boolean operationElementFound = false;
 
+        Auditor auditor = new Auditor(context.getAuditContext(), logger);
         try {
             if (!context.getRequest().isSoap()) {
-                logger.finest("Request not SOAP; cannot validate attachments");
+                auditor.logAndAudit(AssertionMessages.REQUEST_NOT_SOAP);
                 return AssertionStatus.FAILED;
             }
         } catch (SAXException e) {
@@ -77,7 +79,7 @@ public class ServerRequestSwAAssertion implements ServerAssertion {
         }
 
         if (!context.getRequest().getMimeKnob().isMultipart()) {
-            logger.info("The request does not contain attachment or is not a mulitipart message");
+            auditor.logAndAudit(AssertionMessages.NOT_MULTIPART_MESSAGE);
             return AssertionStatus.FALSIFIED;
         }
 
@@ -103,13 +105,13 @@ public class ServerRequestSwAAssertion implements ServerAssertion {
                     result = operationXPath.selectNodes(doc);
 
                     if (result == null || result.size() == 0) {
-                        logger.finest("Element not found in the request. Xpath expression is: " + bo.getXpath());
+                        auditor.logAndAudit(AssertionMessages.OPERATION_NOT_FOUND, new String[] {bo.getXpath()});
                         continue;
                     }
 
                     operationElementFound = true;
                     if (result.size() > 1) {
-                        logger.info("Element appears more than once in the request. Xpath expression is: " + bo.getXpath());
+                        auditor.logAndAudit(AssertionMessages.SAME_OPERATION_APPEARS_MORE_THAN_ONCE, new String[] {bo.getXpath()});
                         return AssertionStatus.FALSIFIED;
                     }
 
@@ -121,11 +123,11 @@ public class ServerRequestSwAAssertion implements ServerAssertion {
                     int type = operationNodeRequest.getNodeType();
 
                     if (type != Node.ELEMENT_NODE) {
-                        logger.info("XPath pattern " + bo.getXpath() + " found some other node '" + operationNodeRequest.toString() + "'");
+                        auditor.logAndAudit(AssertionMessages.OPERATION_IS_NON_ELEMENT_NODE, new String[] {bo.getXpath(), operationNodeRequest.toString()});
                         return AssertionStatus.FAILED;
                     }
 
-                    logger.fine("The operation " + bo.getName() + " is found in the request");
+                    auditor.logAndAudit(AssertionMessages.OPERATION_FOUND, new String[] {bo.getName()});
 
                     Iterator parameterItr = bo.getMultipart().keySet().iterator();
 
@@ -138,12 +140,12 @@ public class ServerRequestSwAAssertion implements ServerAssertion {
                         result = parameterXPath.selectNodes(doc);
 
                         if (result == null || result.size() == 0) {
-                            logger.info("Element not found in the request. Xpath expression is: " + bo.getXpath() + "/" + part.getName());
+                            auditor.logAndAudit(AssertionMessages.MIME_PART_NOT_FOUND, new String[] {bo.getXpath(), part.getName()});
                             return AssertionStatus.FALSIFIED;
                         }
 
                         if (result.size() > 1) {
-                            logger.info("Element appears more than once in the request. Xpath expression is: " + bo.getXpath() + "/" + part.getName());
+                            auditor.logAndAudit(AssertionMessages.SAME_MIME_PART_APPEARS_MORE_THAN_ONCE, new String[] {bo.getXpath(), part.getName()});
                             return AssertionStatus.FALSIFIED;
                         }
 
@@ -155,11 +157,11 @@ public class ServerRequestSwAAssertion implements ServerAssertion {
                         type = parameterNodeRequest.getNodeType();
 
                         if (type != Node.ELEMENT_NODE) {
-                            logger.info("XPath pattern " + bo.getXpath() + "/" + part.getName() + " found some other node '" + parameterNodeRequest.toString() + "'");
+                            auditor.logAndAudit(AssertionMessages.PARAMETER_IS_NON_ELEMENT_NODE, new String[] {bo.getXpath(), part.getName(), parameterNodeRequest.toString()});
                             return AssertionStatus.FAILED;
                         }
 
-                        logger.fine("The parameter " + part.getName() + " is found in the request");
+                        auditor.logAndAudit(AssertionMessages.PARAMETER_FOUND, new String[] {part.getName()});
                         Element parameterElementRequest = (Element)parameterNodeRequest;
                         Attr href = parameterElementRequest.getAttributeNode("href");
 
@@ -183,7 +185,7 @@ public class ServerRequestSwAAssertion implements ServerAssertion {
 
                         // for each attachment (href)
                         if (hrefs.size() == 0) {
-                            logger.info("The reference (href) of the " + part.getName() + " is found in the request");
+                            auditor.logAndAudit(AssertionMessages.REFERENCE_NOT_FOUND, new String[] {part.getName()});
                             return AssertionStatus.FALSIFIED;
                         }
 
@@ -194,17 +196,17 @@ public class ServerRequestSwAAssertion implements ServerAssertion {
                             href = (Attr)hrefs.get(i);
 
                             String mimePartCIDUrl = href.getValue();
-                            logger.fine("The href of the parameter " + part.getName() + " is found in the request, value=" + mimePartCIDUrl);
+                            auditor.logAndAudit(AssertionMessages.REFERENCE_FOUND, new String[] {part.getName(), mimePartCIDUrl});
                             int cpos = mimePartCIDUrl.indexOf(":");
                             if (cpos < 0) {
-                                logger.info("Invalid Content-ID URL '" + mimePartCIDUrl);
+                                auditor.logAndAudit(AssertionMessages.INVALID_CONTENT_ID_URL, new String[] {mimePartCIDUrl});
                                 return AssertionStatus.FALSIFIED;
                             }
 
                             String scheme = mimePartCIDUrl.substring(0,cpos);
                             String id = mimePartCIDUrl.substring(cpos+1);
                             if (!"cid".equals(scheme)) {
-                                logger.info("Invalid Content-ID URL '" + mimePartCIDUrl);
+                                auditor.logAndAudit(AssertionMessages.INVALID_CONTENT_ID_URL, new String[] {mimePartCIDUrl});
                                 return AssertionStatus.FALSIFIED;
                             }
 
@@ -214,9 +216,9 @@ public class ServerRequestSwAAssertion implements ServerAssertion {
                                 // validate the content type
                                 if (!part.validateContentType(mimepartRequest.getContentType())) {
                                     if (part.getContentTypes().length > 1) {
-                                        logger.info("The content type of the attachment " + mimePartCIDUrl + " must be one of the types: " + part.retrieveAllContentTypes());
+                                        auditor.logAndAudit(AssertionMessages.MUST_BE_ONE_OF_CONTENT_TYPES, new String[] {mimePartCIDUrl, part.retrieveAllContentTypes()});
                                     } else {
-                                        logger.info("The content type of the attachment " + mimePartCIDUrl + " must be: " + part.retrieveAllContentTypes());
+                                        auditor.logAndAudit(AssertionMessages.INCORRECT_CONTENT_TYPE, new String[] {mimePartCIDUrl, part.retrieveAllContentTypes()});
                                     }
                                     return AssertionStatus.FALSIFIED;
                                 }
@@ -226,9 +228,9 @@ public class ServerRequestSwAAssertion implements ServerAssertion {
                                 // check the max. length allowed
                                 if (totalLen > part.getMaxLength() * 1000) {
                                     if (hrefs.size() > 1) {
-                                        logger.info("The parameter [" + part.getName() + "] has " + hrefs.size() + " attachments. The total length exceeds the limit: " + part.getMaxLength() + "K bytes");
+                                        auditor.logAndAudit(AssertionMessages.TOTAL_LENGTH_LIMIT_EXCEEDED, new String[] {part.getName(), String.valueOf(hrefs.size()), String.valueOf(part.getMaxLength())});
                                     } else {
-                                        logger.info("The length of the attachment " + mimePartCIDUrl + " exceeds the limit: " + part.getMaxLength() + "K bytes");
+                                        auditor.logAndAudit(AssertionMessages.INDIVIDUAL_LENGTH_LIMIT_EXCEEDED, new String[] {mimePartCIDUrl, String.valueOf(part.getMaxLength())});
                                     }
                                     return AssertionStatus.FALSIFIED;
                                 }
@@ -237,7 +239,7 @@ public class ServerRequestSwAAssertion implements ServerAssertion {
                                 // set the validated flag of the attachment to true
                                 mimepartRequest.setValidated(true);
                             } else {
-                                logger.info("The required attachment " + mimePartCIDUrl + " is not found in the request");
+                                auditor.logAndAudit(AssertionMessages.ATTACHMENT_NOT_FOUND, new String[] {mimePartCIDUrl});
                                 return AssertionStatus.FALSIFIED;
                             }
                         } // for each attachment
@@ -253,7 +255,7 @@ public class ServerRequestSwAAssertion implements ServerAssertion {
                         if (attachmentName == null || attachmentName.length() < 1)
                             attachmentName = "in position #" + attachment.getPosition();
                         if (!attachment.isValidated()) {
-                            logger.info("Unexpected attachment " + attachmentName + " found in the request.");
+                            auditor.logAndAudit(AssertionMessages.UNEXPECTED_ATTACHMENT_FOUND, new String[] {attachmentName});
                             return AssertionStatus.FALSIFIED;
                         }
                     }
@@ -263,21 +265,21 @@ public class ServerRequestSwAAssertion implements ServerAssertion {
                 }  // while next operation of the binding found in assertion
             }   // while next binding found in assertion
         } catch (SAXException e) {
-            logger.log(Level.WARNING, "Caught SAXException when retrieving xml document from request", e);
+            auditor.logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[] {"Error retrieving xml document from request"}, e);
             return AssertionStatus.SERVER_ERROR;
         } catch (IOException e) {
-            logger.log(Level.WARNING, "Caught IOException when retrieving xml document from request", e);
+            auditor.logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[] {"Error retrieving xml document from request"}, e);
             return AssertionStatus.SERVER_ERROR;
         } catch (JaxenException e) {
-            logger.log(Level.WARNING, "Caught JaxenException when retrieving xml document from request", e);
+            auditor.logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[] {"Error retrieving xml document from request"}, e);
             return AssertionStatus.SERVER_ERROR;
         } catch (NoSuchPartException e) {
-            logger.log(Level.INFO, "The required attachment " + e.getWhatWasMissing() + "was not found in the request", e);
+            auditor.logAndAudit(AssertionMessages.EXCEPTION_INFO_WITH_MORE_INFO, new String[] {"The required attachment " + e.getWhatWasMissing() + "was not found in the request"}, e);
             return AssertionStatus.FALSIFIED;
         }
 
         if (!operationElementFound) {
-            logger.info("The operation specified in the request is invalid.");
+            auditor.logAndAudit(AssertionMessages.INVALID_OPERATION);
         }
         return AssertionStatus.FALSIFIED;
     }
