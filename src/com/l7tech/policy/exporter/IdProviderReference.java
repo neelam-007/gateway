@@ -10,6 +10,8 @@ import com.l7tech.objectmodel.FindException;
 
 import java.util.logging.Logger;
 import java.util.logging.Level;
+import java.util.Collection;
+import java.util.Iterator;
 import java.io.IOException;
 
 /**
@@ -94,10 +96,61 @@ public class IdProviderReference extends ExternalReference {
     /**
      * Checks whether or not an external reference can be mapped on this local
      * system without administrator interaction.
+     *
+     * LOGIC:
+     * 1. Look for same oid and name. If that exists, => record perfect match.
+     * 2. Look for same properties. If that exists, => record corresponding match.
+     * 3. Otherwise => this reference if 'not verified'.
      */
     public boolean verifyReference() {
-        // todo
-        return true;
+        // 1. Look for same oid and name. If that exists, => record perfect match.
+        IdentityProviderConfigManager manager = (IdentityProviderConfigManager)
+                                                  Locator.getDefault().lookup(IdentityProviderConfigManager.class);
+        // We can't do anything without the id provider config manager.
+        if (manager == null) {
+            logger.severe("Cannot get an IdentityProviderConfigManager");
+            return false;
+        }
+        IdentityProviderConfig configOnThisSystem = null;
+        try {
+            configOnThisSystem = manager.findByPrimaryKey(getProviderId());
+        } catch (FindException e) {
+            logger.log(Level.WARNING, "error getting id provider config", e);
+        }
+        if (configOnThisSystem != null && configOnThisSystem.getName().equals(getProviderName())) {
+            // PERFECT MATCH!
+            logger.fine("The id provider reference found the same provider locally.");
+            locallyMatchingProviderId = getProviderId();
+            return true;
+        }
+        // 2. Look for same properties. If that exists, => record corresponding match.
+        Collection allConfigs = null;
+        try {
+            allConfigs = manager.findAll();
+        } catch (FindException e) {
+            logger.log(Level.WARNING, "error getting all id provider config", e);
+            return false;
+        }
+        if (allConfigs != null) {
+            for (Iterator i = allConfigs.iterator(); i.hasNext();) {
+                configOnThisSystem = (IdentityProviderConfig)i.next();
+                String localProps = null;
+                try {
+                    localProps = configOnThisSystem.getSerializedProps();
+                } catch (IOException e) {
+                    logger.log(Level.WARNING, "Cannot get serialized properties");
+                    return false;
+                }
+                if (localProps != null && localProps.equals(this.getIdProviderConfProps())) {
+                    // WE GOT A MATCH!
+                    locallyMatchingProviderId = configOnThisSystem.getOid();
+                    logger.fine("the provider was matched using the config's properties.");
+                    return true;
+                }
+            }
+        }
+        // 3. Otherwise => this reference if 'not verified' and will require manual resolution.
+        return false;
     }
 
     public boolean equals(Object o) {
@@ -137,6 +190,7 @@ public class IdProviderReference extends ExternalReference {
     }
 
     private long providerId;
+    private long locallyMatchingProviderId;
     private String providerName;
     private String idProviderConfProps;
     private final Logger logger = Logger.getLogger(IdProviderReference.class.getName());
