@@ -549,6 +549,9 @@
             <fileset dir="${src.root}/etc/db/${database.type}">
                 <!-- <include name="hibernate.cfg.xml"/> -->
                 <include name="hibernate.properties" if="dev.build"/>
+            </fileset>
+
+            <fileset dir="${src.root}/etc/db">
                 <include name="SSG.hbm.xml"/>
             </fileset>
 
