@@ -49,6 +49,13 @@ public class IdentityProviderWizardPanel extends WizardStepPanel {
         populateIdentityTables();
     }
 
+    public IdentityProviderWizardPanel(WizardStepPanel next) {
+        super(next);
+        initComponents();
+        equalizeButtons();
+        populateIdentityTables();
+    }
+
     /**
      * This method is called from within the constructor to
      * initialize the form.

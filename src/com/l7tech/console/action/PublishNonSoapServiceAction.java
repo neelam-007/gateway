@@ -1,7 +1,12 @@
 package com.l7tech.console.action;
 
+import com.l7tech.console.panels.PublishNonSoapServiceWizard;
+import com.l7tech.console.MainWindow;
+import com.l7tech.console.util.TopComponents;
+import com.l7tech.common.gui.util.Utilities;
+
 /**
- * [class_desc]
+ * SSM action to publish a non-soap xml service.
  * <p/>
  * <br/><br/>
  * LAYER 7 TECHNOLOGIES, INC<br/>
@@ -23,6 +28,12 @@ public class PublishNonSoapServiceAction extends SecureAction {
     }
 
     protected void performAction() {
-        // todo
+        final MainWindow mw = TopComponents.getInstance().getMainWindow();
+        PublishNonSoapServiceWizard wiz = PublishNonSoapServiceWizard.getInstance(mw);
+        wiz.pack();
+        //wiz.setSize(1000, 500);
+        Utilities.centerOnScreen(wiz);
+        wiz.setModal(true);
+        wiz.setVisible(true);
     }
 }
