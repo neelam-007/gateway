@@ -14,6 +14,8 @@ import javax.security.auth.x500.X500Principal;
 import java.io.ByteArrayInputStream;
 import java.security.Principal;
 import java.security.PublicKey;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.security.cert.*;
 import java.security.interfaces.DSAParams;
 import java.security.interfaces.DSAPublicKey;
@@ -227,8 +229,12 @@ public class CertUtils {
         l.add(new String[]{"Serial number", nullNa(cert.getSerialNumber())});
         l.add(new String[]{"Issuer", nullNa(cert.getIssuerDN())});
 
-        l.add(new String[]{"SHA-1 fingerprint", getCertificateFingerprint(cert, "SHA1")});
-        l.add(new String[]{"MD5 fingerprint", getCertificateFingerprint(cert, "MD5")});
+        try {
+            l.add(new String[]{"SHA-1 fingerprint", getCertificateFingerprint(cert, "SHA1")});
+            l.add(new String[]{"MD5 fingerprint", getCertificateFingerprint(cert, "MD5")});
+        } catch (NoSuchAlgorithmException e) {
+            throw new RuntimeException(e); // misconfigured VM
+        }
 
         l.add(new String[]{"Key usage", keyUsageToString(cert.getKeyUsage())});
 
@@ -286,14 +292,15 @@ public class CertUtils {
      *                      encode a certificate.
      */
     public static String getCertificateFingerprint(X509Certificate cert, String algorithm)
-      throws CertificateEncodingException {
+            throws CertificateEncodingException, NoSuchAlgorithmException {
         if (cert == null) {
             throw new NullPointerException("cert");
         }
         StringBuffer buff = new StringBuffer();
         byte[] fingers = cert.getEncoded();
 
-        byte[] digest = HexUtils.getMd5().digest(fingers);
+        MessageDigest md = MessageDigest.getInstance(algorithm);
+        byte[] digest = md.digest(fingers);
         // the algorithm
         buff.append(algorithm + ":");
 
