@@ -50,7 +50,8 @@ public class ServiceCache {
     }
 
     public ServiceCache() {
-        // uncomment this to turn on the periodic cache integrity check
+        // uncomment next two lines to turn on the periodic cache integrity check
+        checker.setDaemon(true); // this thread should not prevent the VM from exiting
         checker.start();
     }
 

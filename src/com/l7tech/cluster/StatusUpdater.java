@@ -36,6 +36,8 @@ public class StatusUpdater extends Thread {
         }
         else {
             logger.info("starting status updater");
+            // this thread should not prevent the VM from exiting
+            updater.setDaemon(true);
             updater.start();
         }
     }
