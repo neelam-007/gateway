@@ -257,6 +257,9 @@ public class PendingRequest {
 
     public void setPolicyUpdated(boolean policyUpdated) {
         isPolicyUpdated = policyUpdated;
+        if (isPolicyUpdated)
+            // Forget any cached session cookies, for all services shared by this SSG
+            ssg.clearSessionCookies();
     }
 
     /**
