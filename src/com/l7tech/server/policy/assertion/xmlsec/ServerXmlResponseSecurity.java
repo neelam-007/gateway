@@ -2,7 +2,6 @@ package com.l7tech.server.policy.assertion.xmlsec;
 
 import com.l7tech.common.security.xml.*;
 import com.l7tech.common.util.KeystoreUtils;
-import com.l7tech.common.xml.MessageNotSoapException;
 import com.l7tech.message.*;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
@@ -61,7 +60,7 @@ public class ServerXmlResponseSecurity implements ServerAssertion {
         }
 
         // TODO replace response nonce with more standard mechanism when doing replay protection in Milestone 2
-        String nonceValue = (String)soapRequest.getParameter(Request.PARAM_HTTP_XML_NONCE);
+        /*String nonceValue = (String)soapRequest.getParameter(Request.PARAM_HTTP_XML_NONCE);
 
         // (this is optional)
         if (nonceValue != null && nonceValue.length() > 0) {
@@ -73,7 +72,7 @@ public class ServerXmlResponseSecurity implements ServerAssertion {
             }
         } else {
             logger.finest("request did not include a nonce value to use for response's signature");
-        }
+        }*/
 
         SignerInfo si = KeystoreUtils.getInstance().getSignerInfo();
         ElementSecurity[] elements = xmlResponseSecurity.getElements();

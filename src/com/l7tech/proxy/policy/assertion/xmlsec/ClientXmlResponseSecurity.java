@@ -105,11 +105,12 @@ public class ClientXmlResponseSecurity extends ClientAssertion {
             if (result.getType() != SecurityProcessor.Result.Type.OK)
                 throw new ResponseValidationException("Response from Gateway was not properly signed and/or encrypted according to policy");
 
+            /* TODO plug in the new relpay protection here if applicable (probably should go in another assertion anyway)
             Long responsenonce = SecureConversationTokenHandler.takeNonceFromDocument(doc);
             if (responsenonce == null)
                 throw new ResponseValidationException("Response from Gateway did not contain a nonce");
             if (responsenonce.longValue() != request.getNonce())
-                throw new ResponseValidationException("Response from Gateway contained the wrong nonce value");
+                throw new ResponseValidationException("Response from Gateway contained the wrong nonce value");*/
 
             X509Certificate[] certificate = result.getCertificateChain();
             if (certificate == null || certificate[0] == null) {
