@@ -215,7 +215,7 @@ fi
 # -----------------------------------------------------------------------------
 # SIGN A SSL CERT WITH THE ROOT CERT
 # -----------------------------------------------------------------------------
-# set a classpath for the execution of "com.l7tech.identity.cert.RSASigner"
+# set a classpath for the execution of "com.l7tech.identity.cert.RsaCertificateSigner"
 # 1. the location of our own code
 if $cygwin; then
     WEBAPPS_ROOT=`cygpath --path --unix $WEBAPPS_ROOT`
@@ -233,7 +233,7 @@ if $cygwin; then
 fi
 echo $CP
 # do it
-java -cp $CP com.l7tech.identity.cert.RSASigner $ROOT_KEYSTORE_FILE $KEYSTORE_PASSWORD $ROOT_KEY_ALIAS $KEYSTORE_PASSWORD $SSL_CSR_FILE $SSL_CERT_FILE
+java -cp $CP com.l7tech.identity.cert.RsaCertificateSigner $ROOT_KEYSTORE_FILE $KEYSTORE_PASSWORD $ROOT_KEY_ALIAS $KEYSTORE_PASSWORD $SSL_CSR_FILE $SSL_CERT_FILE
 
 # CHECK IF THE CERT WAS CREATED
 if [ -e "$SSL_CERT_FILE" ]; then
