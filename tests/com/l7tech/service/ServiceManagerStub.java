@@ -271,6 +271,10 @@ public class ServiceManagerStub implements ServiceManager {
         return versions;
     }
 
+    public Entity getCachedEntity( long o, int maxAge ) throws FindException, CacheVeto {
+        return findByPrimaryKey(o);
+    }
+
     private EntityHeader fromService(PublishedService s) {
         return
           new EntityHeader(s.getOid(), EntityType.SERVICE, s.getName(), null);

@@ -616,6 +616,10 @@ public class LdapGroupManager implements GroupManager {
         return Collections.EMPTY_MAP;
     }
 
+    public Entity getCachedEntity( long o, int maxAge ) throws FindException, CacheVeto {
+        throw new UnsupportedOperationException();
+    }
+
     protected LdapUserManager getUserManager() {
         return (LdapUserManager)parent.getUserManager();
     }

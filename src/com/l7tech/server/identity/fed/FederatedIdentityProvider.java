@@ -22,6 +22,8 @@ import com.l7tech.policy.assertion.credential.http.HttpDigest;
 import com.l7tech.server.identity.PersistentIdentityProvider;
 
 import java.io.IOException;
+import java.security.GeneralSecurityException;
+import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.HashSet;
 import java.util.Set;
@@ -49,8 +51,22 @@ public class FederatedIdentityProvider extends PersistentIdentityProvider {
 
         long[] certOids = providerConfig.getTrustedCertOids();
         for ( int i = 0; i < certOids.length; i++ ) {
-            Long oid = new Long(certOids[i]);
-            certOidSet.add(oid);
+            String msg = "Federated Identity Provider '" + providerConfig.getName() + "' refers to Trusted Cert #" + certOids[i];
+            try {
+                TrustedCert trust = trustedCertManager.getCachedCertByOid(certOids[i], MAX_CACHE_AGE);
+                if (trust == null) {
+                    logger.log(Level.WARNING, msg + ", which no longer exists");
+                    continue;
+                }
+                Long oid = new Long(certOids[i]);
+                certOidSet.add(oid);
+            } catch ( FindException e ) {
+                logger.log( Level.SEVERE, msg + ", which could not be found", e );
+            } catch ( IOException e ) {
+                logger.log( Level.WARNING, msg + ", which could not be parsed", e );
+            } catch ( CertificateException e ) {
+                logger.log( Level.WARNING, msg + ", which is not valid", e );
+            }
         }
 
         this.x509Handler = new X509AuthorizationHandler(this, trustedCertManager, clientCertManager, certOidSet);
@@ -97,25 +113,47 @@ public class FederatedIdentityProvider extends PersistentIdentityProvider {
         if (userDn != clientCertDn)
             throw new ClientCertManager.VetoSave("User's X.509 Subject DN '" + userDn +
                                                  "'doesn't match cert's Subject DN '" + clientCertDn + "'");
-        try {
-            if (certOidSet.isEmpty()) {
-                X509Certificate caCert = KeystoreUtils.getInstance().getRootCert();
+        if (certOidSet.isEmpty()) {
+            X509Certificate caCert = null;
+            try {
+                caCert = KeystoreUtils.getInstance().getRootCert();
                 if (clientCertChain.length > 1) {
                     if (CertUtils.certsAreEqual(caCert, clientCertChain[1]) || caCert.getSubjectDN().equals(clientCertChain[1].getIssuerDN())) {
                         throw new ClientCertManager.VetoSave("User's cert was issued by the internal certificate authority");
                     }
                 }
-            } else {
-                String caDn = clientCertChain[0].getIssuerDN().getName();
-                TrustedCert caTrustedCert = trustedCertManager.getCachedCertBySubjectDn(caDn, MAX_CACHE_AGE);
-                if (caTrustedCert == null) throw new ClientCertManager.VetoSave("User's cert was not signed by any of this identity provider's trusted certs");
-                X509Certificate trustedCaCert = caTrustedCert.getCertificate();
-                // TODO 
+            } catch ( IOException e ) {
+                throw new ClientCertManager.VetoSave("Couldn't parse CA cert");
+            } catch ( CertificateException e ) {
+                throw new ClientCertManager.VetoSave("CA cert is not valid");
             }
-        } catch ( Exception e ) {
-            final String msg = "Couldn't deserialize trusted cert";
-            logger.log(Level.SEVERE, msg, e);
-            throw new ClientCertManager.VetoSave(msg);
+        } else {
+            String caDn = clientCertChain[0].getIssuerDN().getName();
+            TrustedCert caTrust = null;
+            X509Certificate trustedCaCert = null;
+            try {
+                caTrust = trustedCertManager.getCachedCertBySubjectDn(caDn, MAX_CACHE_AGE);
+                if (caTrust == null) throw new ClientCertManager.VetoSave("User's cert was not signed by any of this identity provider's trusted certs");
+                trustedCaCert = caTrust.getCertificate();
+            } catch ( FindException e ) {
+                final String msg = "Couldn't find issuer cert";
+                logger.log(Level.SEVERE, msg, e);
+                throw new ClientCertManager.VetoSave(msg);
+            } catch ( IOException e ) {
+                final String msg = "Couldn't parse CA cert";
+                logger.log( Level.WARNING, msg, e );
+                throw new ClientCertManager.VetoSave(msg);
+            } catch ( CertificateException e ) {
+                logger.log( Level.INFO, e.getMessage(), e );
+            }
+
+            try {
+                clientCertChain[0].verify(trustedCaCert.getPublicKey());
+            } catch (GeneralSecurityException e ) {
+                final String msg = "Couldn't verify that client cert was signed by trusted CA";
+                logger.log( Level.WARNING, msg, e );
+                throw new ClientCertManager.VetoSave(msg);
+            }
         }
     }
 

@@ -59,6 +59,10 @@ public class TestIdentityProvider implements IdentityProvider {
         public Map findVersionMap() throws FindException {
             throw new UnsupportedOperationException("not supported for TestIdentityProvider");
         }
+
+        public Entity getCachedEntity( long o, int maxAge ) throws FindException, CacheVeto {
+            throw new UnsupportedOperationException("not supported for TestIdentityProvider");
+        }
     }
 
     private static class MyUser {

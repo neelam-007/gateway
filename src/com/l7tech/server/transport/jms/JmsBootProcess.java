@@ -140,7 +140,7 @@ public class JmsBootProcess implements ServerComponentLifecycle {
         }
 
         // Start periodic check timer
-        _versionTimer = new Timer();
+        _versionTimer = new Timer(true);
         _versionTimer.schedule( connectionChecker, connectionChecker.getFrequency() * 2,
                                 connectionChecker.getFrequency() );
 

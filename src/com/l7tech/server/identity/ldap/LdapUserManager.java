@@ -246,6 +246,10 @@ public class LdapUserManager implements UserManager {
         return Collections.EMPTY_MAP;
     }
 
+    public Entity getCachedEntity( long o, int maxAge ) throws FindException, CacheVeto {
+        throw new UnsupportedOperationException();
+    }
+
     public boolean authenticateBasic(String dn, String passwd) {
         UnsynchronizedNamingProperties env = new UnsynchronizedNamingProperties();
         env.put(Context.INITIAL_CONTEXT_FACTORY, "com.sun.jndi.ldap.LdapCtxFactory");

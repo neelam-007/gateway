@@ -91,19 +91,6 @@ public interface TrustedCertManager extends EntityManager {
     TrustedCert getCachedCertByOid(long oid, int maxAge) throws FindException, IOException, CertificateException;
 
     /**
-     * Checks whether the specified cert is valid, and logs a warning if it will expire within {@link CertificateExpiry#FINE_DAYS}
-     * @param cert the {@link TrustedCert} to check
-     * @throws CertificateException if the cert is not valid
-     * @throws IOException if the cert cannot be parsed
-     */
-    void check( TrustedCert cert ) throws CertificateException, IOException;
-
-    /**
-     * Logs a good warning message for an invalid cert
-     */
-    void logInvalidCert( TrustedCert cert, Exception e );
-
-    /**
      * Logs a good warning message for a cert that will expire soon
      */
     void logWillExpire( TrustedCert cert, CertificateExpiry e );

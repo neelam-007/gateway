@@ -34,15 +34,13 @@ public class TrustedCertManagerImp extends HibernateEntityManager implements Tru
         try {
             for ( Iterator i = findAll().iterator(); i.hasNext(); ) {
                 TrustedCert cert = (TrustedCert)i.next();
-                checkAndCache(cert);
+                checkCachable(cert);
                 logger.info("Caching cert #" + cert.getOid() + " (" + cert.getSubjectDn() + ")");
             }
         } catch ( FindException e ) {
-            logger.log( Level.SEVERE, "Couldn't cache cert", e );
-        } catch ( IOException e ) {
-            logger.log( Level.SEVERE, "Couldn't cache cert", e );
-        } catch ( CertificateException e ) {
-            logger.log( Level.SEVERE, "Couldn't cache cert", e );
+            logger.log( Level.SEVERE, "Couldn't find cert", e );
+        } catch ( CacheVeto e ) {
+            logger.log( Level.SEVERE, "Couldn't cache cert: " + e.getMessage(), e.getCause() );
         }
     }
 
@@ -78,25 +76,20 @@ public class TrustedCertManagerImp extends HibernateEntityManager implements Tru
 
     public long save(TrustedCert cert) throws SaveException {
         try {
-            check(cert);
+            checkCachable(cert);
             return PersistenceManager.save( getContext(), cert );
         } catch ( SQLException e ) {
             logger.log( Level.SEVERE, e.getMessage(), e );
             throw new SaveException("Couldn't save cert", e );
-        } catch ( IOException e ) {
-            final String msg = "Couldn't parse certificate";
-            logger.log( Level.WARNING, msg, e );
-            throw new SaveException(msg, e );
-        } catch ( CertificateException e ) {
-            final String msg = "Certificate not valid";
-            logger.log( Level.WARNING, msg, e );
-            throw new SaveException(msg, e );
+        } catch ( CacheVeto e ) {
+            logger.log( Level.WARNING, e.getMessage(), e.getCause());
+            throw new SaveException(e.getMessage(), e.getCause());
         }
     }
 
     public void update(TrustedCert cert) throws UpdateException {
         try {
-            check(cert);
+            checkCachable(cert);
             TrustedCert original = findByPrimaryKey(cert.getOid());
             if ( original == null ) throw new UpdateException("Can't find TrustedCert #" + cert.getOid() + ": it was probably deleted by another transaction");
 
@@ -111,14 +104,10 @@ public class TrustedCertManagerImp extends HibernateEntityManager implements Tru
         } catch (FindException e) {
             logger.log(Level.WARNING, e.toString(), e);
             throw new UpdateException("Couldn't find cert to be udpated");
-        } catch ( IOException e ) {
-            final String msg = "Couldn't parse certificate";
-            logger.log( Level.WARNING, msg, e );
-            throw new UpdateException(msg, e );
-        } catch ( CertificateException e ) {
-            final String msg = "Certificate not valid";
-            logger.log( Level.WARNING, msg, e );
-            throw new UpdateException(msg, e );
+        } catch ( CacheVeto e ) {
+            final String msg = e.getMessage();
+            logger.log( Level.WARNING, msg, e.getCause() );
+            throw new UpdateException(msg, e.getCause() );
         }
     }
 
@@ -220,7 +209,7 @@ public class TrustedCertManagerImp extends HibernateEntityManager implements Tru
                 TrustedCert cert = findBySubjectDn(dn);
                 if (cert == null) return null;
                 write.acquire();
-                checkAndCache(cert);
+                checkAndCache(cert); 
                 write.release(); write = null;
                 return cert;
             } else {
@@ -230,6 +219,9 @@ public class TrustedCertManagerImp extends HibernateEntityManager implements Tru
             logger.log( Level.SEVERE, "Interrupted while acquiring cache lock", e );
             Thread.currentThread().interrupt();
             return null;
+        } catch ( CacheVeto e ) {
+            logger.log( Level.WARNING, e.getMessage(), e.getCause() );
+            throw new CertificateException(e.getMessage());
         } finally {
             if (write != null) write.release();
             if (read != null) read.release();
@@ -237,110 +229,35 @@ public class TrustedCertManagerImp extends HibernateEntityManager implements Tru
     }
 
     public TrustedCert getCachedCertByOid( long o, int maxAge ) throws FindException, IOException, CertificateException {
-        Long oid = new Long(o);
-        TrustedCert cert;
-
-        Sync read = cacheLock.readLock();
-        Sync write = cacheLock.writeLock();
-        CacheInfo cacheInfo = null;
         try {
-            read.acquire();
-            cacheInfo = (CacheInfo)cache.get(oid);
-            read.release(); read = null;
-            if (cacheInfo == null) {
-                // Might be new, or might be first run
-                cert = findByPrimaryKey(o);
-                if (cert == null) return null; // Doesn't exist
-
-                // New
-                write.acquire();
-                checkAndCache(cert);
-                write.release(); write = null;
-                return cert;
-            }
-        } catch ( InterruptedException e ) {
-            logger.log( Level.SEVERE, "Interrupted while acquiring cache lock", e );
-            Thread.currentThread().interrupt();
+            return (TrustedCert)getCachedEntity(o, maxAge);
+        } catch ( CacheVeto e ) {
+            logger.log( Level.SEVERE, e.getMessage(), e.getCause() );
             return null;
-        } finally {
-            if (read != null) read.release();
-            if (write != null) write.release();
-        }
-
-        try {
-            if ( cacheInfo.timestamp + maxAge < System.currentTimeMillis() ) {
-                // Time for a version check (getVersion() always goes to the database)
-                Integer currentVersion = getVersion(o);
-                if (currentVersion == null) {
-                    // BALEETED
-                    write.acquire();
-                    cacheRemove(cacheInfo.trustedCert);
-                    cacheInfo = null;
-                    write.release(); write = null;
-                    return null;
-                } else if (currentVersion.intValue() != cacheInfo.version) {
-                    // Updated
-                    cert = findByPrimaryKey(o);
-                    write.acquire();
-                    cacheInfo = checkAndCache(cert);
-                    write.release(); write = null;
-                }
-            }
-
-            return cacheInfo.trustedCert;
-        } catch (InterruptedException e) {
-            logger.log( Level.SEVERE, "Interrupted while acquiring cache lock", e );
-            Thread.currentThread().interrupt();
-            return null;
-        } finally {
-            if (read != null) read.release();
-            if (write != null) write.release();
         }
     }
 
-    private static class CacheInfo {
-        private TrustedCert trustedCert;
-        private long timestamp;
-        private int version;
+    protected void addedToCache( Entity ent ) {
+        TrustedCert cert = (TrustedCert)ent;
+        dnToOid.put(cert.getSubjectDn(), new Long(ent.getOid()));
     }
 
-    private void cacheRemove(TrustedCert cert) {
-        final Long oid = new Long(cert.getOid());
-        cache.remove(oid);
+    protected void removedFromCache( Entity ent ) {
+        TrustedCert cert = (TrustedCert)ent;
         dnToOid.remove(cert.getSubjectDn());
     }
 
-    private CacheInfo checkAndCache( TrustedCert cert ) throws IOException, CertificateException {
-        final Long oid = new Long(cert.getOid());
-        check(cert);
-
-        CacheInfo info = (CacheInfo)cache.get(oid);
-        if (info == null) {
-            info = new CacheInfo();
-            cache.put(oid, info);
+    public void checkCachable( Entity ent ) throws CacheVeto {
+        TrustedCert cert = (TrustedCert)ent;
+        CertificateExpiry exp = null;
+        try {
+            exp = CertUtils.checkValidity(cert.getCertificate());
+        } catch ( CertificateException e ) {
+            throw new CacheVeto("Certificate not valid", e);
+        } catch ( IOException e ) {
+            throw new CacheVeto("Certificate could not be decoded", e);
         }
-
-        info.trustedCert = cert;
-        info.version = cert.getVersion();
-        info.timestamp = System.currentTimeMillis();
-
-        dnToOid.put(cert.getSubjectDn(), oid);
-
-        return info;
-    }
-
-    public void check( TrustedCert cert ) throws CertificateException, IOException {
-        CertificateExpiry exp = CertUtils.checkValidity(cert.getCertificate());
         if (exp.getDays() <= CertificateExpiry.FINE_DAYS) logWillExpire( cert, exp );
-    }
-
-    public void logInvalidCert( TrustedCert cert, Exception e ) {
-        final String msg = "Trusted cert for " + cert.getSubjectDn() + " is invalid or corrupted.";
-        if ( e == null ) {
-            logger.log( Level.SEVERE, msg);
-        } else {
-            logger.log( Level.SEVERE, msg, e );
-        }
     }
 
     public void logWillExpire( TrustedCert cert, CertificateExpiry e ) {
@@ -351,5 +268,4 @@ public class TrustedCertManagerImp extends HibernateEntityManager implements Tru
 
     private Map dnToOid = new HashMap();
     private ReadWriteLock cacheLock = new ReaderPreferenceReadWriteLock();
-    private Map cache = new HashMap();
 }

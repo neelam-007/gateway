@@ -14,6 +14,9 @@ import java.sql.SQLException;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import EDU.oswego.cs.dl.util.concurrent.ReadWriteLock;
+import EDU.oswego.cs.dl.util.concurrent.ReaderPreferenceReadWriteLock;
+import EDU.oswego.cs.dl.util.concurrent.Sync;
 
 /**
  * @author alex
@@ -217,10 +220,120 @@ public abstract class HibernateEntityManager implements EntityManager {
         }
     }
 
+    /**
+     *
+     * @param o
+     * @param maxAge
+     * @return
+     * @throws FindException
+     * @throws CacheVeto
+     */
+    public Entity getCachedEntity( long o, int maxAge ) throws FindException, CacheVeto {
+        Long oid = new Long(o);
+        Entity entity;
+
+        Sync read = cacheLock.readLock();
+        Sync write = cacheLock.writeLock();
+        CacheInfo cacheInfo = null;
+        try {
+            read.acquire();
+            cacheInfo = (CacheInfo)cache.get(oid);
+            read.release(); read = null;
+            if (cacheInfo == null) {
+                // Might be new, or might be first run
+                entity = findEntity(o);
+                if (entity == null) return null; // Doesn't exist
+
+                // New
+                write.acquire();
+                checkAndCache(entity);
+                write.release(); write = null;
+                return entity;
+            }
+        } catch ( InterruptedException e ) {
+            logger.log( Level.SEVERE, "Interrupted while acquiring cache lock", e );
+            Thread.currentThread().interrupt();
+            return null;
+        } finally {
+            if (read != null) read.release();
+            if (write != null) write.release();
+        }
+
+        try {
+            if ( cacheInfo.timestamp + maxAge < System.currentTimeMillis() ) {
+                // Time for a version check (getVersion() always goes to the database)
+                Integer currentVersion = getVersion(o);
+                if (currentVersion == null) {
+                    // BALEETED
+                    write.acquire();
+                    cacheRemove(cacheInfo.entity);
+                    cacheInfo = null;
+                    write.release(); write = null;
+                    return null;
+                } else if (currentVersion.intValue() != cacheInfo.version) {
+                    // Updated
+                    entity = findEntity(o);
+                    write.acquire();
+                    cacheInfo = checkAndCache(entity);
+                    write.release(); write = null;
+                }
+            }
+
+            return cacheInfo.entity;
+        } catch (InterruptedException e) {
+            logger.log( Level.SEVERE, "Interrupted while acquiring cache lock", e );
+            Thread.currentThread().interrupt();
+            return null;
+        } finally {
+            if (read != null) read.release();
+            if (write != null) write.release();
+        }
+    }
+
+    protected void cacheRemove(Entity thing) {
+        final Long oid = new Long(thing.getOid());
+        cache.remove(oid);
+        removedFromCache(thing);
+    }
+
+    /** Override this method to be notified when an Entity has been removed from the cache. */
+    protected void removedFromCache(Entity ent) { }
+
+    /**
+     * Override this method to check an Entity before it's added to the cache.
+     * @throws CacheVeto to prevent the Entity from being added.
+     */
+    protected void checkCachable(Entity ent) throws CacheVeto { }
+
+    /** Override this method to be notified when an Entity has been added to the cache. */
+    protected void addedToCache(Entity ent) { }
+
+    protected CacheInfo checkAndCache( Entity thing ) throws CacheVeto {
+        final Long oid = new Long(thing.getOid());
+        checkCachable(thing);
+
+        CacheInfo info = (CacheInfo)cache.get(oid);
+        if (info == null) {
+            info = new CacheInfo();
+            cache.put(oid, info);
+        }
+
+        info.entity = thing;
+        info.version = thing.getVersion();
+        info.timestamp = System.currentTimeMillis();
+
+        addedToCache(thing);
+
+        return info;
+    }
+
     protected HibernatePersistenceContext getContext() throws SQLException {
         return (HibernatePersistenceContext)PersistenceContext.getCurrent();
     }
 
     protected PersistenceManager _manager;
     protected final Logger logger = Logger.getLogger(getClass().getName());
+
+    private ReadWriteLock cacheLock = new ReaderPreferenceReadWriteLock();
+    private Map cache = new HashMap();
 }

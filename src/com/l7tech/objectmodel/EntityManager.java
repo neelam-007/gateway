@@ -34,4 +34,35 @@ public interface EntityManager {
     Integer getVersion( long oid ) throws FindException;
 
     Map findVersionMap() throws FindException;
+
+    /**
+     * Returns the {@link Entity} with the specified OID. If the entity's version was last checked more than
+     * <code>maxAge</code> milliseconds ago, check for an updated version in the database.  If the entity has been
+     * updated, refresh it in the cache if the implementation doesn't complain.
+     *
+     * @param o the OID of the Entity to return.
+     * @param maxAge the maximum age of a cached Entity to return, in milliseconds.
+     * @return the Entity with the specified OID, or <code>null</code> if it does not exist.
+     * @throws FindException in the event of a database problem
+     * @throws CacheVeto thrown by an implementor
+     */
+    public Entity getCachedEntity( long o, int maxAge ) throws FindException, CacheVeto;
+
+    /** Holds information about a cached Entity. */
+    static class CacheInfo {
+        Entity entity;
+        long timestamp;
+        int version;
+    }
+
+    /**
+     * Thrown by EntityManagers who override <code>checkCachable</code>
+     * to prevent an Entity from being cached.
+     */
+    public static class CacheVeto extends Exception {
+        public CacheVeto(String msg, Throwable cause) {
+            super(msg, cause);
+        }
+    }
+
 }

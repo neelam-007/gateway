@@ -10,9 +10,9 @@ import javax.servlet.*;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
-import java.util.Set;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.Set;
 import java.util.logging.Logger;
 
 /**
@@ -86,6 +86,7 @@ public class HttpNamespaceFilter implements Filter {
 
     private boolean matches( String prefix, String candidate ) {
         return candidate.equals(prefix) ||
+               candidate.equals("/" + prefix) ||
                candidate.startsWith(prefix + "/") ||
                candidate.startsWith(prefix + "?") ||
                candidate.startsWith(prefix + ";");

@@ -25,7 +25,7 @@ public class AdminServicesBootProcess implements ServerComponentLifecycle {
 
     public void start() throws LifecycleException {
         logger.info("Starting admin services");
-        Timer timer = new Timer();
+        Timer timer = new Timer(true);
         timer.schedule(new TimerTask() {
             public void run() {
                 try {

@@ -3,16 +3,13 @@ package com.l7tech.common.locator;
 import com.l7tech.common.util.Locator;
 import com.l7tech.identity.*;
 import com.l7tech.identity.ldap.LdapIdentityProviderConfig;
-import com.l7tech.objectmodel.FindException;
-import com.l7tech.objectmodel.SaveException;
-import com.l7tech.objectmodel.UpdateException;
-import com.l7tech.objectmodel.DeleteException;
+import com.l7tech.objectmodel.*;
 
-import java.util.logging.Logger;
-import java.util.Collection;
-import java.util.Map;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
+import java.util.Map;
+import java.util.logging.Logger;
 
 /**
  * A locator to be used by test classes.
@@ -86,6 +83,10 @@ public class TestLocator extends Locator {
                                   new Integer(TestIdentityProvider.PROVIDER_VERSION));
                 }
                 return versionMap;
+            }
+
+            public Entity getCachedEntity( long o, int maxAge ) throws FindException, CacheVeto {
+                throw new UnsupportedOperationException("not implemented");
             }
 
             private Map versionMap = new HashMap();
