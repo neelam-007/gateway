@@ -27,6 +27,7 @@ public class EditFederatedIPWizard extends IdentityProviderWizard {
         setResizable(true);
         setTitle("Edit Federated Identity Provider Wizard");
         setShowDescription(false);
+        getButtonTest().setVisible(false);
         Actions.setEscKeyStrokeDisposes(this);
 
         wizardInput = iProvider;
