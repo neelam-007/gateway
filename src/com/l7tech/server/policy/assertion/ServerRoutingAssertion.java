@@ -115,6 +115,9 @@ public class ServerRoutingAssertion implements ServerAssertion {
             postMethod.setRequestBody(requestXml);
             client.executeMethod(postMethod);
 
+            int status = postMethod.getStatusCode();
+            response.setParameter( Response.PARAM_HTTP_STATUS, new Integer( status ) );
+
             // TODO: Attachments
             InputStream responseStream = postMethod.getResponseBodyAsStream();
             String ctype = postMethod.getRequestHeader(CONTENT_TYPE).getValue();
