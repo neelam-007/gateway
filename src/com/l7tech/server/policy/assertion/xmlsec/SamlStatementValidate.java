@@ -225,11 +225,57 @@ public abstract class SamlStatementValidate {
             validationResults.add(new Error("Subject Statement Required", subjectStatementAbstractType.toString(), null, null));
         }
         final String nameQualifier = statementAssertionConstraints.getNameQualifier();
+        NameIdentifierType nameIdentifierType = subject.getNameIdentifier();
         if (nameQualifier != null) {
-            NameIdentifierType nameIdentifierType = subject.getNameIdentifier();
-            nameIdentifierType.getNameQualifier();
+            if (nameIdentifierType !=null) {
+                String presentedNameQualifier = nameIdentifierType.getNameQualifier();
+                if (!nameQualifier.equals(presentedNameQualifier)) {
+                    validationResults.add(new Error("Name Qualifiers does not match presented/required",
+                                                     subjectStatementAbstractType.toString(),
+                                                     new Object[] {presentedNameQualifier, nameQualifier}, null));
+                    return;
+                } else {
+                    logger.fine("Matched Name Qualifier "+nameQualifier);
+                }
+            }
         }
-    }
+        String[] nameFormats = statementAssertionConstraints.getNameFormats();
+        String presentedNameFormat = nameIdentifierType.getFormat();
+        boolean nameFormatMatch = false;
+        for (int i = 0; i < nameFormats.length; i++) {
+            String nameFormat = nameFormats[i];
+            if (nameFormat.equals(presentedNameFormat)) {
+                nameFormatMatch = true;
+                logger.fine("Matched Name Format "+nameFormat);
+                break;
+            }
+        }
+        if (!nameFormatMatch) {
+            validationResults.add(new Error("Name Format does not match presented/required",
+                                              subjectStatementAbstractType.toString(),
+                                              new Object[] {presentedNameFormat, Arrays.asList(nameFormats)}, null));
+            return;
+        }
+        String[] confirmations = statementAssertionConstraints.getSubjectConfirmations();
+        List presentedConfirmations = Arrays.asList(subject.getSubjectConfirmation().getConfirmationMethodArray());
+
+        boolean confirmationMatch = false;
+        for (int i = 0; i < confirmations.length; i++) {
+            String confirmation = confirmations[i];
+            if (presentedConfirmations.contains(confirmation)) {
+                confirmationMatch = true;
+                logger.fine("Matched Subject Confirmation "+confirmation);
+                break;
+            }
+        }
+
+        if (!confirmationMatch) {
+             validationResults.add(new Error("Subject Confirmations mismatch presented/required",
+                                               subjectStatementAbstractType.toString(),
+                                               new Object[] {presentedConfirmations, Arrays.asList(confirmations)}, null));
+            return;
+         }
+     }
 
     /**
      * Validate the specific <code>SubjectStatementAbstractType</code> and collect eventual validation
