@@ -13,7 +13,6 @@ import com.l7tech.logging.LogManager;
 import com.l7tech.server.ComponentConfig;
 import com.l7tech.server.LifecycleException;
 import com.l7tech.server.ServerComponentLifecycle;
-import com.l7tech.server.PeriodicVersionCheck;
 
 import javax.jms.*;
 import javax.naming.Context;
