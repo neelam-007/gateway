@@ -28,7 +28,11 @@ public class Ssg implements Cloneable, Comparable {
     }
 
     public boolean equals(final Object o) {
+        if (this == o)
+            return true;
         if (!o.getClass().equals(this.getClass()))
+            return false;
+        if (getId() == 0 || ((Ssg)o).getId() == 0)
             return false;
         return getId() == ((Ssg)o).getId();
     }
@@ -38,11 +42,11 @@ public class Ssg implements Cloneable, Comparable {
     }
 
     /** Create a new Ssg instance with default fields. */
-    Ssg() {
+    public Ssg() {
     }
 
     /** Create a new Ssg instance with the given ID. */
-    Ssg(long id) {
+    public Ssg(long id) {
         this.id = id;
     }
 
@@ -52,7 +56,7 @@ public class Ssg implements Cloneable, Comparable {
      * @param localEndpoint
      * @param serverUrl
      */
-    Ssg(long id, final String name, final String localEndpoint, final String serverUrl) {
+    public Ssg(long id, final String name, final String localEndpoint, final String serverUrl) {
         this(id);
         this.name = name;
         this.localEndpoint = localEndpoint;
