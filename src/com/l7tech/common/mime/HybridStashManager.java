@@ -71,7 +71,7 @@ public class HybridStashManager implements StashManager {
         }
 
         // didn't hit limit yet.  Move it to the ram stash
-        ramstash.stash(ordinal, new ByteArrayInputStream(baos.toByteArray()));
+        ramstash.stash(ordinal, baos.toByteArray());
     }
 
     public long getSize(int ordinal) {
