@@ -11,6 +11,7 @@ import com.l7tech.message.Response;
 
 import java.util.Iterator;
 import java.util.List;
+import java.io.Serializable;
 
 /**
  * Asserts that at least one of the child Assertions returned a positive result, and immediately returns the first positive result.
@@ -20,7 +21,11 @@ import java.util.List;
  * @author alex
  * @version $Revision$
  */
-public class ExactlyOneAssertion extends CompositeAssertion {
+public class ExactlyOneAssertion extends CompositeAssertion implements Serializable {
+    public ExactlyOneAssertion() {
+        super();
+    }
+
     public ExactlyOneAssertion( List children ) {
         super( children );
     }

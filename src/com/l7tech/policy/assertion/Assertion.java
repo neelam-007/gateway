@@ -19,4 +19,8 @@ import java.io.Serializable;
  */
 public abstract class Assertion implements Serializable {
     public abstract AssertionError checkRequest( Request request, Response response ) throws PolicyAssertionException;
+
+    public String toString() {
+        return "<" + this.getClass().getName() + ">";
+    }
 }
