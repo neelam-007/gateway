@@ -31,7 +31,7 @@ public class AboutBox extends JDialog implements ActionListener {
 
     JPanel infoPanel = new JPanel(new GridBagLayout());
     String product = "Layer7 - Management Console";
-    String version = BuildInfo.getProductVersion() + " build " + BuildInfo.getBuildNumber();
+    String version = BuildInfo.getProductVersion() + " build " + BuildInfo.getBuildNumber() + " (" + BuildInfo.getBuildTag() + ")";
     ResourceThread rThread = new ResourceThread();
     JProgressBar resourceMeter = new JProgressBar();
     JTable systemProperties = new
