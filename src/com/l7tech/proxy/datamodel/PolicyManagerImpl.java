@@ -117,6 +117,7 @@ public class PolicyManagerImpl implements PolicyManager {
             return;
         } catch (BadCredentialsException e) {
             // FALLTHROUGH and try again using credentials
+            log.info("Policy service declined our anonymous download; will try again using credentials");
         } catch (InvalidDocumentFormatException e) {
             throw new CausedIOException("Unable to download new policy", e);
         }
