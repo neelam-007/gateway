@@ -1,21 +1,21 @@
 package com.l7tech.console.action;
 
 import com.l7tech.common.gui.util.Utilities;
-import com.l7tech.console.panels.FindIdentitiesDialog;
-import com.l7tech.console.panels.EntityEditorPanel;
 import com.l7tech.console.panels.EditorDialog;
-import com.l7tech.console.util.Registry;
+import com.l7tech.console.panels.EntityEditorPanel;
+import com.l7tech.console.panels.FindIdentitiesDialog;
 import com.l7tech.console.tree.AbstractTreeNode;
 import com.l7tech.console.tree.TreeNodeFactory;
-import com.l7tech.objectmodel.EntityHeader;
-import com.l7tech.identity.User;
+import com.l7tech.console.util.Registry;
 import com.l7tech.identity.Group;
 import com.l7tech.identity.IdentityProvider;
+import com.l7tech.identity.User;
+import com.l7tech.objectmodel.EntityHeader;
 
 import javax.swing.*;
 import java.awt.*;
-import java.util.logging.Logger;
 import java.security.Principal;
+import java.util.logging.Logger;
 
 
 /**
@@ -27,13 +27,26 @@ import java.security.Principal;
  */
 public class FindIdentityAction extends BaseAction {
     static final Logger log = Logger.getLogger(FindIdentityAction.class.getName());
-
+    FindIdentitiesDialog.Options options = new FindIdentitiesDialog.Options();
 
     /**
-     * create the action
+     * create the action with the default find dialog options
      */
     public FindIdentityAction() {
+        this(new FindIdentitiesDialog.Options());
     }
+
+    /**
+     * create the find idnetity action action with the dialog options
+     * specified
+     */
+    public FindIdentityAction(FindIdentitiesDialog.Options opts) {
+        if (opts == null) {
+            throw new IllegalArgumentException();
+        }
+        options = opts;
+    }
+
 
     /**
      * @return the action name
@@ -64,7 +77,7 @@ public class FindIdentityAction extends BaseAction {
      */
     public void performAction() {
         Frame f = Registry.getDefault().getComponentRegistry().getMainWindow();
-        FindIdentitiesDialog fd = new FindIdentitiesDialog(f, true);
+        FindIdentitiesDialog fd = new FindIdentitiesDialog(f, true, options);
         fd.pack();
         fd.getSearchResultTable().getSelectionModel().setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         Utilities.centerOnScreen(fd);

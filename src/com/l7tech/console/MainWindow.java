@@ -22,7 +22,6 @@ import javax.help.HelpBroker;
 import javax.help.HelpSet;
 import javax.help.HelpSetException;
 import javax.swing.*;
-import javax.swing.Timer;
 import javax.swing.border.Border;
 import javax.swing.event.EventListenerList;
 import javax.swing.event.TreeSelectionEvent;
@@ -36,7 +35,10 @@ import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.io.IOException;
 import java.net.URL;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.EventListener;
+import java.util.MissingResourceException;
+import java.util.ResourceBundle;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -733,7 +735,11 @@ public class MainWindow extends JFrame {
      */
     private Action getFindAction() {
         if (findAction != null) return findAction;
-        findAction = new FindIdentityAction();
+        FindIdentitiesDialog.Options options = new FindIdentitiesDialog.Options();
+        options.enableDeleteAction();
+        options.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+
+        findAction = new FindIdentityAction(options);
         return findAction;
     }
 
@@ -1095,11 +1101,15 @@ public class MainWindow extends JFrame {
         return toggleGatewayLogWindowAction;
     }
 
-    /** Configure the specified item to be enabled only while we are connected to a gateway. */
+    /**
+     * Configure the specified item to be enabled only while we are connected to a gateway.
+     */
     private ArrayList weakListenerListWorkAround = new ArrayList();
+
     private void enableActionWhileConnected(final Action item) {
         ConnectionListener myListener = new ConnectionListener() {
             public void onConnect(ConnectionEvent e) { item.setEnabled(true); }
+
             public void onDisconnect(ConnectionEvent e) { item.setEnabled(false); }
         };
         weakListenerListWorkAround.add(myListener); // bind lifecycle to lifespan of MainWindow instance

@@ -1,6 +1,7 @@
 package com.l7tech.console.tree;
 
 import com.l7tech.console.action.*;
+import com.l7tech.console.panels.FindIdentitiesDialog;
 import com.l7tech.identity.IdentityProviderConfigManager;
 import com.l7tech.objectmodel.EntityHeader;
 
@@ -44,7 +45,10 @@ public class ProviderNode extends EntityHeaderNode {
     public Action[] getActions() {
         java.util.List list = new ArrayList();
         list.add(new IdentityProviderPropertiesAction(this));
-        list.add(new FindIdentityAction());
+        FindIdentitiesDialog.Options options = new FindIdentitiesDialog.Options();
+        options.enableDeleteAction();
+        options.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+        list.add(new FindIdentityAction(options));
         final NewUserAction newUserAction = new NewUserAction(this);
         final NewGroupAction newGroupAction = new NewGroupAction(this);
 

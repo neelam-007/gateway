@@ -15,6 +15,7 @@ import com.l7tech.console.tree.TreeNodeFactory;
 import com.l7tech.console.util.Registry;
 import com.l7tech.identity.GroupBean;
 import com.l7tech.identity.IdentityProvider;
+import com.l7tech.identity.IdentityProviderConfigManager;
 import com.l7tech.identity.UserBean;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
@@ -71,8 +72,7 @@ public class FindIdentitiesDialog extends JDialog {
     /**
      * name search options
      */
-    private static final
-    String[] NAME_SEARCH_OPTIONS = {"equals", "starts with"};
+    private static final String[] NAME_SEARCH_OPTIONS = {"equals", "starts with"};
 
 
     private JPanel mainPanel = null;
@@ -110,6 +110,51 @@ public class FindIdentitiesDialog extends JDialog {
     private DefaultComboBoxModel providersComboBoxModel;
     Principal[] selections = new Principal[]{};
 
+    private Options options = new Options();
+
+    /**
+     * The <code>FindIdentitiesDialog</code> Options
+     * Default options are
+     * <ul>
+     * <li>delete disabled
+     * <li>allow multiple elements selection
+     * <li>initial provider id
+     * </ul>
+     */
+    public static class Options {
+        /**
+         * Enable the delete action
+         */
+        public void enableDeleteAction() {
+            enableDeleteAction = true;
+        }
+
+        /**
+         * Set the selection mode. Use one of the values from
+         * <code>ListSelectionModel</code>
+         *
+         * @param selectionMode
+         * @see ListSelectionModel
+         */
+        public void setSelectionMode(int selectionMode) {
+            this.selectionMode = selectionMode;
+        }
+
+        /**
+         * Set the intial provider id whed the dialog is displayed
+         *
+         * @param id the provider id
+         */
+        public void setInitialProvider(long id) {
+            this.initialProviderOid = id;
+        }
+
+        boolean enableDeleteAction = false;
+        int selectionMode = ListSelectionModel.MULTIPLE_INTERVAL_SELECTION;
+        long initialProviderOid = IdentityProviderConfigManager.INTERNALPROVIDER_SPECIAL_OID;
+    }
+
+
     /**
      * Creates new FindDialog for a given context
      * 
@@ -120,10 +165,28 @@ public class FindIdentitiesDialog extends JDialog {
      * @see javax.swing.JDialog
      */
     public FindIdentitiesDialog(Frame parent, boolean modal) {
+        this(parent, modal, new Options());
+    }
+
+    /**
+     * Creates new FindDialog for a given context
+     *
+     * @param parent the Frame from which the dialog is displayed
+     * @param modal  true for a modal dialog, false for one that
+     *               allows others windows to be active at the
+     *               same time
+     * @see javax.swing.JDialog
+     */
+    public FindIdentitiesDialog(Frame parent, boolean modal, Options options) {
         super(parent, modal);
+        if (options == null) {
+            throw new IllegalArgumentException();
+        }
+        this.options = options;
         initResources();
         initComponents();
     }
+
 
     /**
      * bring up the find form and return the selected
@@ -159,7 +222,7 @@ public class FindIdentitiesDialog extends JDialog {
      * Called from the constructor to initialize this window
      */
     private void initComponents() {
-
+        searchResultTable.setSelectionMode(options.selectionMode);
         // Set properties on the dialog, itself
         setTitle(resources.getString("dialog.label"));
         addWindowListener(new WindowAdapter() {
@@ -280,6 +343,15 @@ public class FindIdentitiesDialog extends JDialog {
                 return c;
             }
         });
+        final ComboBoxModel cbModel = providersComboBox.getModel();
+        int size = cbModel.getSize();
+        for (int i = 0; i < size; i++) {
+            IdentityProvider ip = (IdentityProvider)cbModel.getElementAt(i);
+            if (options.initialProviderOid == ip.getConfig().getOid()) {
+                cbModel.setSelectedItem(ip);
+                break;
+            }
+        }
 
         providersComboBox.setToolTipText(resources.getString("selectProviderText.tooltip"));
         constraints = new GridBagConstraints();
@@ -337,17 +409,6 @@ public class FindIdentitiesDialog extends JDialog {
         contents.add(findLabel, constraints);
 
         searchNameOptions = new JComboBox(NAME_SEARCH_OPTIONS);
-        searchNameOptions.
-          addActionListener(new ActionListener() {
-              /**
-               * Invoked when an action occurs.
-               */
-              public void actionPerformed(ActionEvent e) {
-                  JComboBox c = (JComboBox)e.getSource();
-                  String option = (String)c.getSelectedItem();
-              }
-          });
-
         constraints = new GridBagConstraints();
         constraints.gridx = 1;
         constraints.gridy = 3;
@@ -566,7 +627,9 @@ public class FindIdentitiesDialog extends JDialog {
             }
         });
 
-        buttonPanel.add(deleteButton);
+        if (options.enableDeleteAction) {
+            buttonPanel.add(deleteButton);
+        }
         deleteButton.setEnabled(false);
 
 
@@ -584,6 +647,8 @@ public class FindIdentitiesDialog extends JDialog {
                       deleteButton.setEnabled(false);
                   } else {
                       selectButton.setEnabled(true);
+                      IdentityProvider ip = (IdentityProvider)providersComboBox.getSelectedItem();
+                      deleteButton.setEnabled(!ip.isReadOnly());
                   }
               }
           });
@@ -614,8 +679,10 @@ public class FindIdentitiesDialog extends JDialog {
                   int keyCode = e.getKeyCode();
                   if (keyCode == KeyEvent.VK_ENTER) {
                       showEntityDialog(eh);
-                  } else if (keyCode == KeyEvent.VK_DELETE) {
+                  } else if (keyCode == KeyEvent.VK_DELETE && options.enableDeleteAction) {
                       deleteEntity(eh, row);
+                  } else if (keyCode == KeyEvent.VK_ESCAPE) {
+                      dispose();
                   }
               }
           });
