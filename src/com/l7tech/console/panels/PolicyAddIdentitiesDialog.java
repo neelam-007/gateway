@@ -481,9 +481,9 @@ public class PolicyAddIdentitiesDialog extends JDialog {
           public GroupManager getGroupManager() {
               return null;
           }
-          public boolean authenticate( PrincipalCredentials pc ) {
-              return false;
-          }
+          public void authenticate( PrincipalCredentials pc ) throws AuthenticationException {
+                throw new AuthenticationException("not supported in this impl");
+            }
 
           public boolean isReadOnly() {
               return true;

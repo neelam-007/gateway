@@ -2,10 +2,7 @@ package com.l7tech.policy.server;
 
 import com.l7tech.common.protocol.SecureSpanConstants;
 import com.l7tech.common.util.HexUtils;
-import com.l7tech.identity.IdProvConfManagerServer;
-import com.l7tech.identity.IdentityProvider;
-import com.l7tech.identity.IdentityProviderConfigManager;
-import com.l7tech.identity.User;
+import com.l7tech.identity.*;
 import com.l7tech.logging.LogManager;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.PersistenceContext;
@@ -355,7 +352,9 @@ public class PolicyServlet extends HttpServlet {
             providers = configManager.findAllIdentityProviders();
             for (Iterator i = providers.iterator(); i.hasNext();) {
                 IdentityProvider provider = (IdentityProvider) i.next();
-                if (provider.authenticate(creds)) {
+                try {
+                    provider.authenticate(creds);
+                } catch (AuthenticationException e) {
                     logger.info("Authentication successful for user " + creds.getUser().getLogin() + " on identity provider: " + provider.getConfig().getName());
                     return creds.getUser();
                 }

@@ -5,6 +5,7 @@ import com.l7tech.policy.assertion.credential.http.HttpDigest;
 import com.l7tech.identity.GroupManager;
 import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.identity.UserManager;
+import com.l7tech.identity.AuthenticationException;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.EntityHeader;
@@ -38,8 +39,8 @@ public class IdentityProviderClient implements com.l7tech.identity.IdentityProvi
         return groupManager;
     }
 
-    public boolean authenticate( PrincipalCredentials pc ) {
-        throw new RuntimeException("not supported in this impl");
+    public void authenticate( PrincipalCredentials pc ) throws AuthenticationException {
+        throw new AuthenticationException("not supported in this impl");
     }
 
     public boolean isReadOnly() { return true; }

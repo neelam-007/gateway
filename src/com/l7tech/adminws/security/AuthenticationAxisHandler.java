@@ -9,6 +9,7 @@ import org.apache.axis.transport.http.HTTPConstants;
 import com.l7tech.identity.User;
 import com.l7tech.identity.Group;
 import com.l7tech.identity.IdentityProviderConfigManager;
+import com.l7tech.identity.AuthenticationException;
 import com.l7tech.identity.internal.InternalIdentityProviderServer;
 import com.l7tech.logging.LogManager;
 import com.l7tech.objectmodel.FindException;
@@ -151,13 +152,13 @@ public class AuthenticationAxisHandler extends org.apache.axis.handlers.BasicHan
         }
         
         try {
-            if (identityProviderConfigManager.getInternalIdentityProvider().authenticate(creds)) {
-                return creds.getUser();
-            }
-            else {
-                logger.severe("authentication failed for " + login);
+            try {
+                identityProviderConfigManager.getInternalIdentityProvider().authenticate(creds);
+            } catch (AuthenticationException e) {
+                logger.log(Level.SEVERE, "authentication failed for " + login, e);
                 return null;
             }
+
         } finally {
             try {
                 PersistenceContext.getCurrent().close();

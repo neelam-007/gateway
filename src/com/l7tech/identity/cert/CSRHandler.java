@@ -3,6 +3,7 @@ package com.l7tech.identity.cert;
 import com.l7tech.common.util.HexUtils;
 import com.l7tech.identity.User;
 import com.l7tech.identity.IdentityProviderConfigManager;
+import com.l7tech.identity.AuthenticationException;
 import com.l7tech.identity.internal.InternalUserManagerServer;
 import com.l7tech.logging.LogManager;
 import com.l7tech.util.Locator;
@@ -194,11 +195,11 @@ public class CSRHandler extends HttpServlet {
         PrincipalCredentials creds = new PrincipalCredentials(tmpUser, clearTextPasswd.getBytes());
 
         try {
-            if (getConfigManager().getInternalIdentityProvider().authenticate(creds)) {
+            try {
+                getConfigManager().getInternalIdentityProvider().authenticate(creds);
                 return creds.getUser();
-            }
-            else {
-                logger.severe("authentication failed for " + login);
+            } catch (AuthenticationException e) {
+                logger.log(Level.SEVERE, "authentication failed for " + login, e);
                 return null;
             }
         } finally {
