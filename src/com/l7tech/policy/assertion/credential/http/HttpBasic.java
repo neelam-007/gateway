@@ -18,7 +18,7 @@ import com.l7tech.policy.assertion.AssertionError;
  */
 public class HttpBasic extends HttpCredentialSourceAssertion {
     public AssertionError doCheckRequest(Request request, Response response) throws CredentialFinderException {
-
+        // TODO
         return AssertionError.NOT_YET_IMPLEMENTED;
     }
 
