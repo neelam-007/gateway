@@ -79,17 +79,27 @@
         <property name="providerOid" column="provider" type="long"/>
         <property name="description" type="string"/>
         <property name="name" type="string"/>
+
+        <set role="members" lazy="true" table="internal_user_group">
+            <key column="internal_group"/>
+            <many-to-many class="com.l7tech.identity.internal.imp.UserImp" column="internal_user"/>
+        </set>
     </class>
 
     <class name="com.l7tech.identity.internal.imp.OrganizationImp" table="internal_organization">
         <id name="oid" column="oid" type="long">
             <generator class="hilo.long"/>
         </id>
-<!--        <property name="users" type="set"/> -->
+
         <property name="name" type="string"/>
         <property name="address" type="com.l7tech.identity.internal.imp.AddressImp"/>
         <property name="mailingAddress" column="mailing_address" type="com.l7tech.identity.internal.imp.AddressImp"/>
         <property name="billingAddress" column="billing_address" type="com.l7tech.identity.internal.imp.AddressImp"/>
+
+        <set role="users" lazy="true" table="internal_user">
+            <key column="organization"/>
+            <one-to-many class="com.l7tech.identity.internal.imp.UserImp"/>
+        </set>
     </class>
 
     <class name="com.l7tech.identity.internal.imp.UserImp" table="internal_user">
@@ -108,7 +118,6 @@
         <property name="address" type="com.l7tech.identity.internal.imp.AddressImp"/>
         <property name="billingAddress" column="billing_address" type="com.l7tech.identity.internal.imp.AddressImp"/>
         <property name="mailingAddress" column="mailing_address" type="com.l7tech.identity.internal.imp.AddressImp"/>
-<!--        <property name="groups" type="set"/> -->
     </class>
 
 </hibernate-mapping>
