@@ -247,14 +247,6 @@ public class WssProcessorImpl implements WssProcessor {
             public Element asElement() {
                 return usernameTokenElement;
             }
-
-            public String asXmlString() {
-                try {
-                    return XmlUtil.nodeToString(usernameTokenElement);
-                } catch (IOException e) {
-                    return e.getMessage();
-                }
-            }
         };
         cntx.securityTokens.add(rememberedSecToken);
     }
@@ -528,14 +520,6 @@ public class WssProcessorImpl implements WssProcessor {
         public Element asElement() {
             return element;
         }
-
-        public String asXmlString() {
-            try {
-                return XmlUtil.nodeToString(element);
-            } catch (IOException e) {
-                throw new RuntimeException(e); // can't happen
-            }
-        }
     }
 
     private void processTimestamp(ProcessingStatusHolder ctx, final Element timestampElement)
@@ -570,14 +554,6 @@ public class WssProcessorImpl implements WssProcessor {
             public Element asElement() {
                 return timestampElement;
             }
-
-            public String asXmlString() {
-                try {
-                    return XmlUtil.nodeToString(timestampElement);
-                } catch (IOException e) {
-                    throw new RuntimeException(e); // can't happen
-                }
-            }
         };
     }
 
@@ -590,7 +566,7 @@ public class WssProcessorImpl implements WssProcessor {
         // assume that this is a b64ed binary x509 cert, get the value
         String valueType = binarySecurityTokenElement.getAttribute("ValueType");
         String encodingType = binarySecurityTokenElement.getAttribute("EncodingType");
-        
+
         // todo use proper qname comparator rather than this hacky suffix check
         if (!valueType.endsWith("X509v3"))
             throw new ProcessorException("BinarySecurityToken has unsupported ValueType " + valueType);
@@ -615,12 +591,15 @@ public class WssProcessorImpl implements WssProcessor {
                                             generateCertificate(new ByteArrayInputStream(decodedValue));
 
         // remember this cert
+        final String wsuId = SoapUtil.getElementWsuId(binarySecurityTokenElement);
         final X509Certificate finalcert = referencedCert;
-        WssProcessor.SecurityToken rememberedSecToken = new X509SecurityTokenImpl(finalcert, binarySecurityTokenElement);
+        WssProcessor.SecurityToken rememberedSecToken = new X509SecurityTokenImpl(finalcert,
+                                                                                  binarySecurityTokenElement);
         cntx.securityTokens.add(rememberedSecToken);
+        cntx.x509TokensById.put(wsuId, rememberedSecToken);
     }
 
-    private X509Certificate resolveCertByRef(final Element parentElement, ProcessingStatusHolder cntx) {
+    private X509SecurityTokenImpl resolveCertByRef(final Element parentElement, ProcessingStatusHolder cntx) {
 
         // Looking for reference to a wsse:BinarySecurityToken
         // 1. look for a wsse:SecurityTokenReference element
@@ -646,17 +625,11 @@ public class WssProcessorImpl implements WssProcessor {
                 if (uriAttr.charAt(0) == '#') {
                     uriAttr = uriAttr.substring(1);
                 }
-                // look for previous sec tokens with that same id
-                for (Iterator i = cntx.securityTokens.iterator(); i.hasNext();) {
-                    WssProcessor.SecurityToken token = (WssProcessor.SecurityToken)i.next();
-                    if (uriAttr.equals(SoapUtil.getElementWsuId(token.asElement()))) {
-                        if (token.asObject() instanceof X509Certificate) {
-                            return (X509Certificate)token.asObject();
-                        } else {
-                            logger.warning("the corresponding token was found but is not a cert");
-                        }
-                    }
-                }
+
+                final X509SecurityTokenImpl token = (X509SecurityTokenImpl) cntx.x509TokensById.get(uriAttr);
+                if (token == null)
+                    logger.warning("Found SecurityTokenReference to as-yet-undeclared BinarySecurityToken id=" + uriAttr);
+                return token;
             } else {
                 logger.warning("SecurityTokenReference does not contain any References");
             }
@@ -698,7 +671,11 @@ public class WssProcessorImpl implements WssProcessor {
         }
 
         // Try to resolve cert by reference
-        X509Certificate signingCert = resolveCertByRef(keyInfoElement, cntx);
+        final X509SecurityTokenImpl signingCertToken = resolveCertByRef(keyInfoElement, cntx);
+        if (signingCertToken == null)
+            throw new ProcessorException("Signature KeyInfo does not reference a declared BinarySecurityToken");
+
+        X509Certificate signingCert = signingCertToken.asX509Certificate();
         // Try to resolve embedded cert
         if (signingCert == null) {
             signingCert = resolveEmbeddedCert(keyInfoElement);
@@ -725,6 +702,11 @@ public class WssProcessorImpl implements WssProcessor {
             throw new ProcessorException(msg.toString());
         }
 
+        // This certificate successfully validated a signature.  Consider proof-of-possession of private key
+        // to have been successful.
+        // TODO: perhaps save more info about just which elements were signed by this cert, anyway
+        signingCertToken.onPossessionProved();
+
         // Remember which elements were covered
         for (int i = 0; i < validity.getNumberOfReferences(); i++) {
             // Resolve each elements one by one. Use original document as the elements signed might no longer exist
@@ -743,7 +725,17 @@ public class WssProcessorImpl implements WssProcessor {
                 throw new ProcessorException(msg);
             }
             // make reference to this element
-            cntx.elementsThatWereSigned.add(elementCovered);
+            final Element finalElementCovered = elementCovered;
+            cntx.elementsThatWereSigned.add(new SignedElement() {
+                public WssProcessor.X509SecurityToken getSigningSecurityToken() {
+                    return signingCertToken;
+                }
+
+                public Element asElement() {
+                    return finalElementCovered;
+                }
+            });
+            signingCertToken.elementsSignedWithCert.add(elementCovered);
         }
     }
 
@@ -753,16 +745,16 @@ public class WssProcessorImpl implements WssProcessor {
                 return cntx.processedDocument;
             }
 
-            public Element[] getElementsThatWereSigned() {
-                return (Element[])cntx.elementsThatWereSigned.toArray(new Element[0]);
+            public SignedElement[] getElementsThatWereSigned() {
+                return (WssProcessor.SignedElement[]) cntx.elementsThatWereSigned.toArray(PROTOTYPE_SIGNEDELEMENT_ARRAY);
             }
 
             public Element[] getElementsThatWereEncrypted() {
-                return (Element[])cntx.elementsThatWereEncrypted.toArray(new Element[0]);
+                return (Element[])cntx.elementsThatWereEncrypted.toArray(PROTOTYPE_ELEMENT_ARRAY);
             }
 
             public WssProcessor.SecurityToken[] getSecurityTokens() {
-                return (WssProcessor.SecurityToken[])cntx.securityTokens.toArray(new WssProcessor.SecurityToken[0]);
+                return (WssProcessor.SecurityToken[])cntx.securityTokens.toArray(PROTOTYPE_SECURITYTOKEN_ARRAY);
             }
 
             public WssProcessor.Timestamp getTimestamp() {
@@ -791,12 +783,14 @@ public class WssProcessorImpl implements WssProcessor {
         Element releventSecurityHeader = null;
         String wsaMessageId = null;
         String wsaRelatesTo = null;
+        Map x509TokensById = new HashMap();
     }
 
     private static class X509SecurityTokenImpl implements WssProcessor.X509SecurityToken {
         boolean possessionProved = false;
         private final X509Certificate finalcert;
         private final Element binarySecurityTokenElement;
+        private final List elementsSignedWithCert = new ArrayList();
 
         public X509SecurityTokenImpl(X509Certificate finalcert, Element binarySecurityTokenElement) {
             this.finalcert = finalcert;
@@ -811,14 +805,6 @@ public class WssProcessorImpl implements WssProcessor {
             return binarySecurityTokenElement;
         }
 
-        public String asXmlString() {
-            try {
-                return XmlUtil.nodeToString(binarySecurityTokenElement);
-            } catch (IOException e) {
-                return e.getMessage();
-            }
-        }
-
         public X509Certificate asX509Certificate() {
             return finalcert;
         }
@@ -827,8 +813,16 @@ public class WssProcessorImpl implements WssProcessor {
             return possessionProved;
         }
 
-        public void onPossessionProved() {
+        public Element[] getElementsSignedWithThisCert() {
+            return (Element[]) elementsSignedWithCert.toArray(PROTOTYPE_ELEMENT_ARRAY);
+        }
+
+        private void onPossessionProved() {
             possessionProved = true;
         }
     }
+
+    private static final Element[] PROTOTYPE_ELEMENT_ARRAY = new Element[0];
+    private static final SignedElement[] PROTOTYPE_SIGNEDELEMENT_ARRAY = new SignedElement[0];
+    private static final WssProcessor.SecurityToken[] PROTOTYPE_SECURITYTOKEN_ARRAY = new WssProcessor.SecurityToken[0];
 }

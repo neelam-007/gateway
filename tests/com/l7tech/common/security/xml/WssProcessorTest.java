@@ -62,12 +62,12 @@ public class WssProcessorTest extends TestCase {
             } else
                 log.info("No elements were encrypted.");
 
-            Element[] signed = result.getElementsThatWereSigned();
+            WssProcessor.SignedElement[] signed = result.getElementsThatWereSigned();
             assertTrue(signed != null);
             if (signed.length > 0) {
                 log.info("The following elements were signed:");
                 for (int j = 0; j < signed.length; j++) {
-                    Element element = signed[j];
+                    Element element = signed[j].asElement();
                     log.info("  " + element.getNodeName() + " (" + element.getNamespaceURI() + ")");
                 }
             } else

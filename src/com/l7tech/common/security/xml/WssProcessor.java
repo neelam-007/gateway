@@ -25,7 +25,6 @@ import com.l7tech.common.xml.InvalidDocumentFormatException;
 public interface WssProcessor {
     public interface ParsedElement {
         Element asElement();
-        String asXmlString();
     }
 
     public interface SecurityToken extends ParsedElement {
@@ -43,6 +42,7 @@ public interface WssProcessor {
     public interface X509SecurityToken extends SecurityToken {
         X509Certificate asX509Certificate();
         boolean isPossessionProved();
+        Element[] getElementsSignedWithThisCert(); // TODO remove this expensive method if it remains unneeded
     }
 
     public interface TimestampDate extends ParsedElement {
@@ -54,9 +54,13 @@ public interface WssProcessor {
         TimestampDate getExpires();
     }
 
+    public interface SignedElement extends ParsedElement {
+        X509SecurityToken getSigningSecurityToken();
+    }
+
     public interface ProcessorResult {
         Document getUndecoratedMessage();
-        Element[] getElementsThatWereSigned();
+        SignedElement[] getElementsThatWereSigned();
         Element[] getElementsThatWereEncrypted();
         SecurityToken[] getSecurityTokens();
         Timestamp getTimestamp();
