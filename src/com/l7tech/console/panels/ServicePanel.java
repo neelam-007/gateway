@@ -8,7 +8,6 @@ import com.l7tech.common.gui.widgets.WrappingLabel;
 import com.l7tech.console.panels.PublishServiceWizard.ServiceAndAssertion;
 import com.l7tech.console.tree.wsdl.WsdlTreeNode;
 import com.l7tech.console.util.Registry;
-import com.l7tech.policy.assertion.RoutingAssertion;
 import com.l7tech.policy.assertion.HttpRoutingAssertion;
 import com.l7tech.service.PublishedService;
 import com.l7tech.common.xml.Wsdl;
@@ -26,7 +25,6 @@ import java.io.StringReader;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.rmi.RemoteException;
-import java.lang.reflect.InvocationTargetException;
 
 /**
  *
