@@ -115,7 +115,7 @@ GATEWAY=$Conf{"net_def_rt"}
 
 EOF
 		close OUT;
-		print "INFO: Front end network configured $front_conf - IPADDR of $Conf{net_front_ip}; NETMASK of $Conf{net_front_mask}; GATEWAY of $Conf{net_back_rt}";	
+		print "INFO: Front end network configured $front_conf - IPADDR of $Conf{net_front_ip}; NETMASK of $Conf{net_front_mask}; GATEWAY of $Conf{net_def_rt}";	
 	} else {
 		print "WARNING: No front end network defined, front end network remains $front_conf\n";
 	}
@@ -140,7 +140,7 @@ GATEWAY=$Conf{"net_back_rt"}
 
 EOF
 		close OUT;
-                print "INFO: Back end network configured $back_conf - IPADDR of $Conf{net_back_ip}; NETMASK of $Conf{net_back_mask}\n";
+                print "INFO: Back end network configured $back_conf - IPADDR of $Conf{net_back_ip}; NETMASK of $Conf{net_back_mask}; GATEWAY of $Conf{net_back_rt}\n";
 	} else {
                 open (OUT, ">$back_conf");
                 print OUT <<EOF;
@@ -174,7 +174,8 @@ EOF
 		print OUT "$Conf{gc_clusternm}\n";
 		close OUT;
 
-	        print "INFO: Changing owner user/group to $user_name/$group_name for $cluster_hostname_file\n";
+		print "INFO: Cluster Gateway - $cluster_hostname_file updated with content of $Conf{gc_clusternm}\n";
+	        print "INFO: Cluster Gateway - Changing owner user/group to $user_name/$group_name for $cluster_hostname_file\n";
        		system ("chown $user_name.$group_name $cluster_hostname_file");
 
                 if ( -e $hosts_file ) {
@@ -192,7 +193,7 @@ $Conf{net_back_ip}	$Conf{gc_clusternm} $Conf{hostname}
 EOF
 		close HOST;
 		chmod 0644, "$hosts_file";
-		print "INFO: $cluster_hostname_file and $hosts_file files replaced\n";
+		print "INFO: Cluster Gateway - $cluster_hostname_file and $hosts_file files replaced\n";
 	} else {
 		print "WARNING: $cluster_hostname_file not set (OK if SSG is not part of a cluster)\n";
 	}
@@ -217,7 +218,7 @@ $Conf{host_ip}      $Conf{hostname} $host
 EOF
                 close HOST;
                 chmod 0644, "/etc/hosts";
-                print "INFO: $cluster_hostname_file removed (backup as $cluster_hostname_file.bckup_$pid) and $hosts_file files replaced\n";
+                print "INFO: Non Cluster Gateway - $cluster_hostname_file removed (backup as $cluster_hostname_file.bckup_$pid) and $hosts_file files replaced\n";
 	}
 
 	# 4. local config of db connection
@@ -260,7 +261,8 @@ EOF
 		}
 		close IN;
 		close OUT;
-	        print "INFO: Changing owner user/group to $user_name/$group_name for $dbconfig\n";
+		print "INFO: Database Hibernate Connection - $dbconfig updated with url/user/password of $db_url/$Conf{dbuser}/$Conf{dbpass}\n";
+	        print "INFO: Database Hibernate Connection - Changing user/group to $user_name/$group_name for $dbconfig\n";
        		system ("chown $user_name.$group_name $dbconfig");
 
 	} else {
@@ -338,7 +340,7 @@ EOF
 		close CNF_OUT;
 		# server id is set. Need to run the sync; then set the master/slave relationship
 		# perhaps this is best left to the user.
-		print "INFO: DB cluster $cnf updated cluster server id, log-bin, log-slave-update - please check $cnf for accuracy\n";
+		print "INFO: Cluster DB - $cnf updated cluster server id, log-bin, log-slave-update - please check $cnf for accuracy\n";
                 print "MANUAL TASK: Server id is set - need to manually run the sync, then set the master/slave relationship\n";
                 print "MANUAL TASK: $cnf is configured - need to manually restart MYSQL\n";
 	
@@ -352,7 +354,7 @@ EOF
                 }
                 close FDF_IN;
                 close FDF_OUT;
-		print "INFO: DB cluster $dbfaildetect_file updated with DBHOST $Conf{dc_dbip}, EMAIL $Conf{dc_email}\n";
+		print "INFO: Cluster DB - $dbfaildetect_file updated with DBHOST of $Conf{dc_dbip}, EMAIL of $Conf{dc_email}\n";
                 print "MANUAL TASK: $dbfaildetect_file is configured - need to manually start service when ready\n";
 	}
 
@@ -369,7 +371,7 @@ EOF
                 }
                 close CNF_IN;
                 close CNF_OUT;
-		print "INFO: DB cluster $cnf updated by commenting out server-id, log-bin, log-slave-update\n";
+		print "INFO: DB cluster - $cnf updated by commenting out server-id, log-bin, log-slave-update\n";
                 print "MANUAL TASK: $cnf is configured - need to manually restart MYSQL\n";
 
                 print "INFO: Now updating $dbfaildetect_file\n";
@@ -382,7 +384,7 @@ EOF
                 }
                 close FDF_IN;
                 close FDF_OUT;
-                print "INFO: DB cluster $dbfaildetect_file DBHOST, EMAIL values removed\n";
+                print "INFO: Non Cluster DB - $dbfaildetect_file DBHOST, EMAIL values removed\n";
 
 	}
 
@@ -399,13 +401,13 @@ EOF
 		print "Copy keys & keys configuration files from the first node...\n";
 		print "Supply gateway user password of first node - $Conf{gc_masternip}\n";
                 print "Now to copy /ssg/etc/keys/*:\n"; 
-		system("scp gateway\@$Conf{gc_masternip}:/ssg/etc/keys/* /ssg/etc/keys");
+		system("scp root\@$Conf{gc_masternip}:/ssg/etc/keys/* /ssg/etc/keys");
 		print "Now to copy /ssg/tomcat/conf/server.xml:\n";
-		system("scp gateway\@$Conf{gc_masternip}:/ssg/tomcat/conf/server.xml /ssg/tomcat/conf/server.xml");
+		system("scp root\@$Conf{gc_masternip}:/ssg/tomcat/conf/server.xml /ssg/tomcat/conf/server.xml");
 		print "Now to copy /ssg/etc/conf/keystore.properties:\n";
-		system("scp gateway\@$Conf{gc_masternip}:/ssg/etc/conf/keystore.properties /ssg/etc/conf/keystore.properties");
-	        print "INFO: Changing owner user/group to $user_name/$group_name for /ssg/etc, /ssg/tomcat/conf/server.xml, /ssg/etc/conf/keystore.properties\n";
-		system ("chown -R $user_name.$group_name /ssg/etc");
+		system("scp root\@$Conf{gc_masternip}:/ssg/etc/conf/keystore.properties /ssg/etc/conf/keystore.properties");
+	        print "INFO: Changing owner user/group to $user_name/$group_name for /ssg/etc/keys/, /ssg/tomcat/conf/server.xml, /ssg/etc/conf/keystore.properties\n";
+		system ("chown -R $user_name.$group_name /ssg/etc/keys");
 		system ("chown $user_name.$group_name /ssg/tomcat/conf/server.xml");
 		system ("chown $user_name.$group_name /ssg/etc/conf/keystore.properties");
 	}
@@ -484,7 +486,10 @@ SYNOPSIS
 DESCRIPTION
     Configure Secure Span Gateway (SSG) property files after installing with RPM distribution
 
-    After this script has been run, the input parameters are saved at $save_file.  If you re-run the script, the $save_file will be readin as default values.  However, if you want to remove the default values, you may like to remove the $save_file before re-running the script.
+    After this script has been run, the input parameters are saved at $save_file.  
+    If you re-run the script, the $save_file will be readin as default values.  
+    However, if you want to remove the default values, you may like to remove the $save_file before re-running the script. 
+    $save_file is also used by "/etc/init.d/back_route" file; therefore, $save_file must contain the proper values in order for "/etc/init.d/back_route" working properly.
 
     List of property files may subject to be configured base on input paramters:
     * $front_conf
