@@ -8,6 +8,7 @@ import java.util.Iterator;
 
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.identity.*;
+import com.l7tech.credential.PrincipalCredentials;
 
 /**
  * Layer 7 Technologies, inc.
@@ -101,7 +102,7 @@ public class LdapIdentityProviderServerTest extends junit.framework.TestCase {
         User francois = me.findByLogin("flascelles");
         System.out.println(francois);
         System.out.println("authenticating");
-        if (provider.authenticate(francois, "rockclimbing".getBytes())) System.out.println("OK");
+        if (provider.authenticate( new PrincipalCredentials( francois, "rockclimbing".getBytes() ) )) System.out.println("OK");
         else System.out.println("not authenticated");
     }
 
