@@ -32,8 +32,8 @@ public class TarariFactories implements SoapInfoFactory, TarariMessageContextFac
     private static final Logger logger = Logger.getLogger(TarariFactories.class.getName());
 
     public SoapInfo getSoapInfo(TarariMessageContext messageContext) throws SAXException {
-        ServerTarariContext serverContext = (ServerTarariContext)TarariLoader.getServerContext();
-        return getSoapInfoTarari(serverContext, messageContext);
+        GlobalTarariContext globalContext = (GlobalTarariContext)TarariLoader.getGlobalContext();
+        return getSoapInfoTarari(globalContext, messageContext);
     }
 
     public TarariMessageContext makeMessageContext(InputStream messageBody) throws IOException, SAXException, SoftwareFallbackException {
@@ -48,14 +48,14 @@ public class TarariFactories implements SoapInfoFactory, TarariMessageContextFac
     }
 
     /** Hardware version of getSoapInfo.  Might require software fallback if hardware processing can't be done. */
-    public static SoapInfo getSoapInfoTarari(ServerTarariContext serverContext, TarariMessageContext messageContext1)
+    public static SoapInfo getSoapInfoTarari(GlobalTarariContext globalContext, TarariMessageContext messageContext1)
             throws SAXException
     {
         TarariMessageContextImpl messageContext = (TarariMessageContextImpl) messageContext1;
         String payloadNs = null;
         boolean hasSecurityHeaders = false;
         RAXContext raxContext = messageContext.getRaxContext();
-        if (raxContext.isSoap(serverContext.getSoapNamespaceUriIndices())) {
+        if (raxContext.isSoap(globalContext.getSoapNamespaceUriIndices())) {
             int numUris = messageContext.getRaxContext().getCount(0, TarariUtil.XPATH_INDEX_PAYLOAD);
             if (numUris <= 0) {
                 logger.info("Couldn't find a namespace URI for SOAP payload");

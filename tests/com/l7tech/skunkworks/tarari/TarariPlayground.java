@@ -5,9 +5,8 @@ package com.l7tech.skunkworks.tarari;
 
 import com.l7tech.common.util.HexUtils;
 import com.l7tech.common.xml.TestDocuments;
-import com.l7tech.common.xml.tarari.ServerTarariContext;
-import com.l7tech.common.xml.tarari.ServerTarariContext;
-import com.l7tech.server.tarari.ServerTarariContextImpl;
+import com.l7tech.common.xml.tarari.GlobalTarariContext;
+import com.l7tech.server.tarari.GlobalTarariContextImpl;
 import com.tarari.xml.XMLDocument;
 import com.tarari.xml.XMLDocumentException;
 import com.tarari.xml.xpath.RAXContext;
@@ -18,10 +17,10 @@ import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 
 public class TarariPlayground {
-    private static ServerTarariContext tarariContext;
+    private static GlobalTarariContext tarariContext;
 
     public static void main(String[] args) throws Exception {
-        tarariContext = new ServerTarariContextImpl();
+        tarariContext = new GlobalTarariContextImpl();
         tarariContext.compile();
 
         if (args.length > 0) {

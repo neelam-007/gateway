@@ -7,7 +7,7 @@ package com.l7tech.server.tarari;
 
 import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.xml.InvalidXpathException;
-import com.l7tech.common.xml.tarari.ServerTarariContext;
+import com.l7tech.common.xml.tarari.GlobalTarariContext;
 import com.l7tech.common.xml.tarari.TarariUtil;
 import com.tarari.xml.xpath.XPathCompiler;
 import com.tarari.xml.xpath.XPathCompilerException;
@@ -18,7 +18,7 @@ import java.util.Arrays;
 /**
  * Holds the server-side Tarari state
  */
-public class ServerTarariContextImpl implements ServerTarariContext {
+public class GlobalTarariContextImpl implements GlobalTarariContext {
     private Xpaths currentXpaths = buildDefaultXpaths();
 
     public void compile() {

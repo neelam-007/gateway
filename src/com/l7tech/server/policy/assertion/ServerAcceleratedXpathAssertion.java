@@ -13,7 +13,7 @@ import com.l7tech.common.message.TarariKnob;
 import com.l7tech.common.mime.NoSuchPartException;
 import com.l7tech.common.xml.InvalidXpathException;
 import com.l7tech.common.xml.TarariLoader;
-import com.l7tech.common.xml.tarari.ServerTarariContext;
+import com.l7tech.common.xml.tarari.GlobalTarariContext;
 import com.l7tech.common.xml.tarari.TarariMessageContext;
 import com.l7tech.common.xml.tarari.TarariMessageContextImpl;
 import com.l7tech.policy.assertion.*;
@@ -55,7 +55,7 @@ public abstract class ServerAcceleratedXpathAssertion implements ServerAssertion
         isReq = assertion instanceof RequestXpathAssertion;
         try {
             // Register this Xpath with the tarari hardware
-            ServerTarariContext tarariContext = TarariLoader.getServerContext();
+            GlobalTarariContext tarariContext = TarariLoader.getGlobalContext();
             if (tarariContext != null)
                 tarariContext.add(expr);
         } catch (InvalidXpathException e) {
@@ -72,7 +72,7 @@ public abstract class ServerAcceleratedXpathAssertion implements ServerAssertion
             return AssertionStatus.SERVER_ERROR;
         }
 
-        ServerTarariContext tarariContext = TarariLoader.getServerContext();
+        GlobalTarariContext tarariContext = TarariLoader.getGlobalContext();
         if (tarariContext == null) {
             auditor.logAndAudit(AssertionMessages.ACCEL_XPATH_NO_HARDWARE);
             return softwareDelegate.checkRequest(context);
@@ -123,7 +123,7 @@ public abstract class ServerAcceleratedXpathAssertion implements ServerAssertion
     protected void finalize() throws Throwable {
         if (expr != null) {
             // Decrement the reference count for this Xpath with the Tarari hardware
-            ServerTarariContext tarariContext = TarariLoader.getServerContext();
+            GlobalTarariContext tarariContext = TarariLoader.getGlobalContext();
             if (tarariContext != null)
                 tarariContext.remove(expr);
         }

@@ -12,7 +12,7 @@ import com.l7tech.common.audit.BootMessages;
 import com.l7tech.common.security.JceProvider;
 import com.l7tech.common.util.JdkLoggerConfigurator;
 import com.l7tech.common.xml.TarariLoader;
-import com.l7tech.common.xml.tarari.ServerTarariContext;
+import com.l7tech.common.xml.tarari.GlobalTarariContext;
 import com.l7tech.server.audit.AuditContext;
 import com.l7tech.server.audit.SystemAuditListener;
 import com.l7tech.server.event.EventManager;
@@ -159,7 +159,7 @@ public class BootProcess extends ApplicationObjectSupport
     public void afterPropertiesSet() throws Exception {
         auditor = new Auditor((AuditContext)serverConfig.getSpringContext().getBean("auditContext"), Logger.getLogger(getClass().getName()));
 
-        ServerTarariContext context = TarariLoader.getServerContext();
+        GlobalTarariContext context = TarariLoader.getGlobalContext();
         if (context != null) {
             auditor.logAndAudit(BootMessages.XMLHARDWARE_INIT);
             context.compile();

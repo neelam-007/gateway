@@ -6,6 +6,7 @@
 
 package com.l7tech.proxy.policy;
 
+import com.l7tech.common.xml.TarariLoader;
 import com.l7tech.policy.PolicyFactory;
 import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.assertion.composite.AllAssertion;
@@ -48,6 +49,17 @@ public class ClientPolicyFactory extends PolicyFactory {
 
     protected String getProductClassnamePrefix() {
         return "Client";
+    }
+
+    protected Object makeSpecificPolicy(Assertion genericAssertion) {
+        if (TarariLoader.getGlobalContext() == null) {
+            if (genericAssertion instanceof RequestAcceleratedXpathAssertion)
+                return new ClientRequestXpathAssertion((RequestXpathAssertion)genericAssertion);
+
+            if (genericAssertion instanceof ResponseAcceleratedXpathAssertion)
+                return new ClientResponseXpathAssertion((ResponseXpathAssertion)genericAssertion);
+        }
+        return super.makeSpecificPolicy(genericAssertion);
     }
 
     protected Object makeUnknownAssertion(Assertion genericAssertion) {

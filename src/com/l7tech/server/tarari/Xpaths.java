@@ -6,7 +6,7 @@
 package com.l7tech.server.tarari;
 
 import com.l7tech.common.xml.InvalidXpathException;
-import com.l7tech.common.xml.tarari.ServerTarariContext;
+import com.l7tech.common.xml.tarari.GlobalTarariContext;
 import com.l7tech.common.xml.tarari.XpathHandle;
 
 import java.util.ArrayList;
@@ -117,7 +117,7 @@ class Xpaths {
     synchronized int getIndex(String expression) {
         XpathHandle handle = (XpathHandle)expressionsToHandles.get(expression);
         if (handle == null || !handle.isInstalled()) {
-            return ServerTarariContext.NO_SUCH_EXPRESSION;
+            return GlobalTarariContext.NO_SUCH_EXPRESSION;
         } else {
             return handle.getIndex();
         }

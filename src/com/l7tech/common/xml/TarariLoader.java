@@ -8,7 +8,7 @@ package com.l7tech.common.xml;
 
 import com.l7tech.common.message.SoapInfoFactory;
 import com.l7tech.common.message.TarariMessageContextFactory;
-import com.l7tech.common.xml.tarari.ServerTarariContext;
+import com.l7tech.common.xml.tarari.GlobalTarariContext;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
@@ -26,11 +26,11 @@ public class TarariLoader {
 
     private static final String XPATH_COMPILER_CLASSNAME = "com.tarari.xml.xpath.XPathCompiler";
     private static final String FACTORIES_CLASSNAME = "com.l7tech.common.xml.tarari.TarariFactories";
-    private static final String SERVERTARARICONTEXT_CLASSNAME = "com.l7tech.server.tarari.ServerTarariContextImpl";
+    private static final String SERVERTARARICONTEXT_CLASSNAME = "com.l7tech.server.tarari.GlobalTarariContextImpl";
 
     private static Boolean tarariPresent = null;
     private static SoapInfoFactory soapInfoFactory = null;
-    private static ServerTarariContext tarariContext = null;
+    private static GlobalTarariContext tarariContext = null;
     private static TarariMessageContextFactory messageContextFactory = null;
 
     private static final Logger logger = Logger.getLogger(TarariLoader.class.getName());
@@ -38,7 +38,7 @@ public class TarariLoader {
     /**
      * @return the XML acceleration context if present, or null if not
      */
-    public static ServerTarariContext getServerContext() {
+    public static GlobalTarariContext getGlobalContext() {
         if (tarariPresent == null) initialize();
         return tarariContext;
     }
@@ -78,7 +78,7 @@ public class TarariLoader {
 
                             Class tarariContextClass = Class.forName(SERVERTARARICONTEXT_CLASSNAME);
                             c = tarariContextClass.getConstructor(new Class[0]);
-                            tarariContext = (ServerTarariContext)c.newInstance(new Object[0]);
+                            tarariContext = (GlobalTarariContext)c.newInstance(new Object[0]);
 
                             logger.info("Tarari hardware XML acceleration probe succeeded: XPath compiler is ready");
                             tarariPresent = Boolean.TRUE;
@@ -100,10 +100,10 @@ public class TarariLoader {
     }
 
     /**
-     * If there's a ServerTarariContext, calls compile() on it.
+     * If there's a GlobalTarariContext, calls compile() on it.
      */
     public static void compile() {
-        ServerTarariContext context = getServerContext();
+        GlobalTarariContext context = getGlobalContext();
         if (context != null)
             context.compile();
     }

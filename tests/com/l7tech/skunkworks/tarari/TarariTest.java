@@ -5,8 +5,8 @@ package com.l7tech.skunkworks.tarari;
 
 import com.l7tech.common.util.HexUtils;
 import com.l7tech.common.xml.TestDocuments;
-import com.l7tech.server.tarari.ServerTarariContextImpl;
-import com.l7tech.common.xml.tarari.ServerTarariContext;
+import com.l7tech.common.xml.tarari.GlobalTarariContext;
+import com.l7tech.server.tarari.GlobalTarariContextImpl;
 import com.tarari.xml.XMLDocument;
 import com.tarari.xml.XMLDocumentException;
 import com.tarari.xml.xpath.RAXContext;
@@ -15,14 +15,14 @@ import com.tarari.xml.xpath.XPathProcessorException;
 
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
-import java.util.ArrayList;
 
 public class TarariTest {
     public static void main(String[] args) throws Exception {
-        ServerTarariContext tarariContext = new ServerTarariContextImpl();
+        GlobalTarariContext tarariContext = new GlobalTarariContextImpl();
         String docName = args[0];
 
         List xpathList = new ArrayList(Arrays.asList(args));

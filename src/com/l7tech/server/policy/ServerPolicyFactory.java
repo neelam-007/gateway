@@ -44,7 +44,7 @@ public class ServerPolicyFactory extends PolicyFactory implements ApplicationCon
         try {
             // Prevent Tarari assertions from being loaded on non-Tarari SSGs
             // TODO find an abstraction for this assertion censorship
-            if (TarariLoader.getServerContext() == null) {
+            if (TarariLoader.getGlobalContext() == null) {
                 if (genericAssertion instanceof RequestAcceleratedXpathAssertion)
                     return new ServerRequestXpathAssertion((RequestXpathAssertion)genericAssertion);
 

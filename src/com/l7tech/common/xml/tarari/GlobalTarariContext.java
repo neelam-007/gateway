@@ -10,7 +10,7 @@ import com.l7tech.common.xml.InvalidXpathException;
 /**
  * Implementations manage the server-wide state of the RAX API
  */
-public interface ServerTarariContext {
+public interface GlobalTarariContext {
     int NO_SUCH_EXPRESSION = -1;
 
     /**
