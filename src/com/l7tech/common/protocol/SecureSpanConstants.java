@@ -25,7 +25,7 @@ public class SecureSpanConstants {
     /**
      * The filename portion of the URL of the message processing service on the Gateway.
      */
-    public static final String SSG_FILE = "/ssg/servlet/soap";
+    public static final String SSG_FILE = "/ssg/soap";
 
     /**
      * The  filename portion of the URL of the certificate discovery server on the Gateway.
