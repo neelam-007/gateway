@@ -692,7 +692,7 @@ public class JmsQueuePropertiesDialog extends JDialog {
 
     private JRadioButton getInboundButton() {
         if (inboundButton == null) {
-            inboundButton = new JRadioButton("Inbound - Gateway will drain messages from Queue");
+            inboundButton = new JRadioButton("Inbound - SecureSpan Gateway will drain messages from Queue");
             inboundButton.setEnabled(!isOutboundOnly());
             getDirectionButtonGroup().add(inboundButton);
         }
@@ -701,7 +701,7 @@ public class JmsQueuePropertiesDialog extends JDialog {
 
     private JRadioButton getOutboundButton() {
         if (outboundButton == null) {
-            outboundButton = new JRadioButton("Outbound - Gateway can route messages to Queue");
+            outboundButton = new JRadioButton("Outbound - SecureSpan Gateway can route message to Queue");
             outboundButton.setEnabled(!isOutboundOnly());
             getDirectionButtonGroup().add(outboundButton);
         }
