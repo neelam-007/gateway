@@ -585,9 +585,14 @@ public class FindIdentitiesDialog extends JDialog {
         newSearchButton.setText(resources.getString("newSearchButton.label"));
         newSearchButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent event) {
-                searchResultPanel.setVisible(false);
-                FindIdentitiesDialog.this.setSize(origDimension);
                 // reset search info
+                if (tableModel !=null) {
+                    try {
+                        tableModel.clear();
+                    } catch (InterruptedException e) {
+                        //swallow
+                    }
+                }
                 searchInfo = new SearchInfo();
                 resultCounter.setText("");
             }
@@ -682,7 +687,11 @@ public class FindIdentitiesDialog extends JDialog {
      */
     private void stopLoadingTableModel() {
         if (tableModel != null) {
-            tableModel.stop();
+            try {
+                tableModel.stop();
+            } catch (InterruptedException e) {
+                // swallow
+            }
             findButton.setEnabled(true);
             stopSearchButton.setEnabled(false);
         }

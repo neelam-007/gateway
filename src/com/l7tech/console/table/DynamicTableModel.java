@@ -9,7 +9,7 @@ import java.util.*;
  * The <code>DynamicTableModel</code> class supports loading
  * the lists on the spearate thread, helping UI to be repsonsive.
  * It operates in two modes :
- * <p>
+ * <p/>
  * <ul>
  * <li>rows are fully loaded from the source. This is a simple<br>
  * blocking mode, where the data is copied into the internal</br>
@@ -17,10 +17,9 @@ import java.util.*;
  * <li>the initial set of rows is loaded, and the rest of the<br>
  * records is loaded on different thread.<br>
  * </ul>
- * <p>
+ * <p/>
  * The loading may be explicitely stopped using {@link#stop()} method.
- *
- *
+ * 
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  * @version 1.0
  */
@@ -32,7 +31,7 @@ public class DynamicTableModel extends AbstractTableModel {
     private int numberOfCols;
     private String[] colNames;
     private volatile boolean isLoading = false;
-    private final List tableRows = Collections.synchronizedList(new LinkedList());
+    private List tableRows = Collections.synchronizedList(new LinkedList());
 
     /**
      * default constructor
@@ -74,7 +73,7 @@ public class DynamicTableModel extends AbstractTableModel {
 
     /**
      * Returns an attribute value for the cell at row and column.
-     *
+     * 
      * @param row    the row whose value is to be queried
      * @param column the column whose value is to be queried
      * @return the value Object at the specified cell
@@ -103,10 +102,10 @@ public class DynamicTableModel extends AbstractTableModel {
 
     /**
      * Returns a row that corresponds to the given object.
-     *
+     * 
      * @param o - the object whose row is to be found
      * @return int - the row that corresponds to the given object
-     *               or -1 if object not found
+     *         or -1 if object not found
      */
     public int getRow(Object o) {
         return tableRows.indexOf(o);
@@ -118,7 +117,7 @@ public class DynamicTableModel extends AbstractTableModel {
     }
 
     public synchronized void start()
-            throws InterruptedException {
+      throws InterruptedException {
         if (isLoading) {
             throw new IllegalStateException("already started");
         }
@@ -132,19 +131,31 @@ public class DynamicTableModel extends AbstractTableModel {
         load();
     }
 
-    public synchronized void stop() {
+    public synchronized void stop() throws InterruptedException {
         isLoading = false;
+        if (th != null) {
+            if (th.isAlive()) {
+                th.join();
+                th = null;
+            }
+        }
+    }
+
+    public synchronized void clear() throws InterruptedException {
+        stop();
+        tableRows = Collections.synchronizedList(new LinkedList());
+        fireTableDataChanged();
     }
 
     private void load() {
         List list = new ArrayList(DEFAULT_BATCH_SIZE);
         int count = 0;
         while (enum.hasMoreElements()
-                && ++count < DEFAULT_BATCH_SIZE) {
+          && ++count < DEFAULT_BATCH_SIZE && isLoading) {
             list.add(enum.nextElement());
         }
         addBatch(list);
-        if (enum.hasMoreElements()) {
+        if (enum.hasMoreElements() && isLoading) {
             th = new Thread(contextLoader);
             th.start();
         }
@@ -154,49 +165,49 @@ public class DynamicTableModel extends AbstractTableModel {
      * The <CODE>Runnable</CODE> that loads the context list.
      * When batch size records are loaded it adds them to the
      * main TableModel rows list.
-     *
+     * <p/>
      * The data loading can be explicitely stopped by invoking
      * the ContextListTableModel#stop() method.
      */
     private final Runnable
-            contextLoader = new Runnable() {
-                List list = new ArrayList(DEFAULT_BATCH_SIZE);
+      contextLoader = new Runnable() {
+          List list = new ArrayList(DEFAULT_BATCH_SIZE);
 
-                public void run() {
-                    while (enum.hasMoreElements() && isLoading) {
-                        list.add(enum.nextElement());
-                        if (list.size() == DEFAULT_BATCH_SIZE) {
-                            addBatch(list);
-                            list = new ArrayList(DEFAULT_BATCH_SIZE);
-                        }
-                    }
-                    addBatch(list);
-                }
-            };
+          public void run() {
+              while (enum.hasMoreElements() && isLoading) {
+                  list.add(enum.nextElement());
+                  if (list.size() == DEFAULT_BATCH_SIZE) {
+                      addBatch(list);
+                      list = new ArrayList(DEFAULT_BATCH_SIZE);
+                  }
+              }
+              addBatch(list);
+          }
+      };
 
     /**
      * add a <CODE>List</CODE> of rows to the TableModel on
      * the Swing event thread.
      * Notify the TableModel listeners about the data change.
-     *
-     * @param mList  the <CODE>List</CODE> of elements to add to the
-     *               <CODE>TableModel</CODE>
+     * 
+     * @param mList the <CODE>List</CODE> of elements to add to the
+     *              <CODE>TableModel</CODE>
      */
     private void addBatch(List mList) {
         final List list = new ArrayList(mList);
         SwingUtilities.
-                invokeLater(new Runnable() {
-                    public void run() {
-                        int firstRow = tableRows.size();
-                        tableRows.addAll(list);
-                        int lastRow = tableRows.size();
-                        fireTableRowsInserted(firstRow, lastRow);
-                    }
-                });
+          invokeLater(new Runnable() {
+              public void run() {
+                  int firstRow = tableRows.size();
+                  tableRows.addAll(list);
+                  int lastRow = tableRows.size();
+                  fireTableRowsInserted(firstRow, lastRow);
+              }
+          });
     }
 
     /**
-     *
+     * The arbitrary object to row translator
      */
     public static interface ObjectRowAdapter {
         Object getValue(Object rowObject, int col);
