@@ -145,6 +145,13 @@ public class LdapUserManager implements UserManager {
     /**
      * throws UnsupportedOperationException
      */
+    public void deleteAll(long ipoid) throws DeleteException, ObjectNotFoundException {
+        throw new UnsupportedOperationException();
+    }
+
+    /**
+     * throws UnsupportedOperationException
+     */
     public void delete(String identifier) throws DeleteException, ObjectNotFoundException {
         throw new UnsupportedOperationException();
     }

@@ -155,6 +155,31 @@ public abstract class PersistentUserManager extends HibernateEntityManager imple
         }
     }
 
+    /**
+     * Delete all users of the identity provider given the identity provider Id
+     *
+     * Must be called in a transaction!
+     * 
+     * @param ipoid  The identity provider id
+     * @throws DeleteException
+     * @throws ObjectNotFoundException
+     */
+    public void deleteAll(long ipoid) throws DeleteException, ObjectNotFoundException {
+        StringBuffer hql = new StringBuffer("FROM ");
+        hql.append(getTableName()).append(" IN CLASS ").append(getImpClass());
+        hql.append(" WHERE provider_oid = ?");
+
+        try {
+            getContext().getSession().delete(hql.toString(), new Long(ipoid), Hibernate.LONG);
+        } catch ( SQLException e ) {
+            logger.log( Level.SEVERE, e.getMessage(), e );
+            throw new DeleteException(e.getMessage(), e);
+        } catch ( HibernateException e ) {
+            logger.log( Level.SEVERE, e.getMessage(), e );
+            throw new DeleteException(e.getMessage(), e);
+        }
+    }
+
     public void delete(String identifier) throws DeleteException, ObjectNotFoundException {
         StringBuffer hql = new StringBuffer("FROM ");
         hql.append(getTableName()).append(" IN CLASS ").append(getImpClass());

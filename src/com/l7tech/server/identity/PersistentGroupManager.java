@@ -9,10 +9,8 @@ package com.l7tech.server.identity;
 import com.l7tech.identity.*;
 import com.l7tech.identity.internal.GroupMembership;
 import com.l7tech.objectmodel.*;
-import net.sf.hibernate.Criteria;
-import net.sf.hibernate.HibernateException;
-import net.sf.hibernate.Query;
-import net.sf.hibernate.Session;
+import com.l7tech.objectmodel.ObjectNotFoundException;
+import net.sf.hibernate.*;
 import net.sf.hibernate.expression.Expression;
 
 import java.sql.SQLException;
@@ -176,6 +174,30 @@ public abstract class PersistentGroupManager extends HibernateEntityManager impl
         } catch ( FindException e ) {
             logger.log( Level.WARNING, e.getMessage(), e );
             throw new ObjectNotFoundException(msg, e);
+        }
+    }
+
+    /**
+     * Delete all groups of the identity provider given the identity provider Id
+     *
+     * Must be called in a transaction!
+     * @param ipoid  The identity provider id
+     * @throws DeleteException
+     * @throws ObjectNotFoundException
+     */
+    public void deleteAll(long ipoid) throws DeleteException, ObjectNotFoundException {
+        StringBuffer hql = new StringBuffer("FROM ");
+        hql.append(getTableName()).append(" IN CLASS ").append(getImpClass());
+        hql.append(" WHERE provider_oid = ?");
+
+        try {
+            getContext().getSession().delete(hql.toString(), new Long(ipoid), Hibernate.LONG);
+        } catch ( SQLException e ) {
+            logger.log( Level.SEVERE, e.getMessage(), e );
+            throw new DeleteException(e.getMessage(), e);
+        } catch ( HibernateException e ) {
+            logger.log( Level.SEVERE, e.getMessage(), e );
+            throw new DeleteException(e.getMessage(), e);
         }
     }
 

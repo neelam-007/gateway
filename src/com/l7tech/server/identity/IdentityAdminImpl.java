@@ -123,12 +123,71 @@ public class IdentityAdminImpl extends RemoteService implements IdentityAdmin {
         }
     }
 
+    /**
+     * Delete all users of the identity provider given the identity provider Id
+     *
+     * Must be called in a transaction!
+     * @param ipoid  The identity provider id
+     * @throws RemoteException
+     * @throws DeleteException
+     */
+    private void deleteAllUsers(long ipoid) throws RemoteException, DeleteException {
+        try {
+            UserManager userManager = retrieveUserManager(ipoid);
+            if (userManager == null) throw new RemoteException("Cannot retrieve the UserManager");
+            userManager.deleteAll(ipoid);
+        } catch (ObjectNotFoundException e) {
+            throw new DeleteException("This object cannot be found (it no longer exist?).", e);
+        }
+
+    }
+
+    /**
+     * Delete all groups of the identity provider given the identity provider Id
+     *
+     * Must be called in a transaction!
+     * @param ipoid  The identity provider id
+     * @throws RemoteException
+     * @throws DeleteException
+     */
+    private void deleteAllGroups(long ipoid) throws RemoteException, DeleteException {
+        try {
+            GroupManager groupManager = retrieveGroupManager(ipoid);
+            if (groupManager == null) throw new RemoteException("Cannot retrieve the GroupManager");
+            groupManager.deleteAll(ipoid);
+        } catch (ObjectNotFoundException e) {
+            throw new DeleteException("This object cannot be found (it no longer exist?).", e);
+        }
+    }
+
+    /**
+     * Delete all virtual groups of the identity provider given the identity provider Id
+     *
+     * Must be called in a transaction!
+     * @param cfgid  The identity provider id
+     * @throws RemoteException
+     * @throws DeleteException
+     */
+    private void deleteAllVirtualGroups(long cfgid) throws RemoteException, DeleteException {
+        //todo:
+    }
+
+
     public void deleteIdentityProviderConfig(long oid) throws RemoteException, DeleteException {
         beginTransaction();
         try {
             IdentityProviderConfigManager manager = getIdProvCfgMan();
-            manager.delete(manager.findByPrimaryKey(oid));
-            logger.info("Deleted IDProviderConfig: " + oid);
+
+            final IdentityProviderConfig ipc = manager.findByPrimaryKey(oid);
+
+            if(ipc.type() == IdentityProviderType.FEDERATED) {
+                deleteAllUsers(oid);
+                deleteAllGroups(oid);
+                //deleteAllVirtualGroups(oid);
+            }
+
+            manager.delete(ipc);
+            logger.info("Deleted IDProviderConfig: " + ipc);
         } catch (FindException e) {
             logger.log(Level.SEVERE, null, e);
             throw new DeleteException("This object cannot be found (it no longer exist?).", e);
