@@ -108,7 +108,7 @@ public class HibernatePersistenceManager extends PersistenceManager {
         return null;
     }
 
-    long doSave(Entity obj) throws SQLException {
+    long doSave(Entity obj) throws SaveException {
         try {
             Object key = getSession().save( obj );
             if ( key.getClass().isAssignableFrom(Long.TYPE) ) {
@@ -117,7 +117,9 @@ public class HibernatePersistenceManager extends PersistenceManager {
                 throw new RuntimeException( "Primary key is not a long!");
             }
         } catch ( HibernateException he ) {
-            throw new SQLException( he.toString() );
+            throw new SaveException( he.toString(), he );
+        } catch ( SQLException se ) {
+            throw new SaveException( se.toString(), se );
         }
     }
 
