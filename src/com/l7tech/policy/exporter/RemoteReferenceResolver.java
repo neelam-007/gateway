@@ -4,10 +4,14 @@ import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.composite.CompositeAssertion;
 import com.l7tech.policy.wsp.InvalidPolicyStreamException;
 import com.l7tech.policy.wsp.WspReader;
+import com.l7tech.console.panels.ResolveExternalPolicyReferencesWizard;
+import com.l7tech.common.gui.util.Utilities;
 import org.w3c.dom.Element;
 
 import java.util.Iterator;
 import java.util.List;
+import java.util.Collection;
+import java.util.ArrayList;
 
 /**
  * This class takes a set of remote references that were exported with a policy
@@ -31,11 +35,24 @@ public class RemoteReferenceResolver {
      * @return false if the process cannot continue because the administrator canceled an operation for example.
      */
     public boolean resolveReferences(ExternalReference[] references) {
+        Collection unresolved = new ArrayList();
         for (int i = 0; i < references.length; i++) {
             ExternalReference reference = references[i];
             if (!reference.verifyReference()) {
-                // todo, get the administrator involved somehow
+                // for all references not resolved automatically add a page in a wizard
+                unresolved.add(reference);
             }
+        }
+        if (!unresolved.isEmpty()) {
+            ExternalReference[] unresolvedRefsArray = (ExternalReference[])unresolved.toArray(new ExternalReference[0]);
+            ResolveExternalPolicyReferencesWizard wiz =
+                    ResolveExternalPolicyReferencesWizard.fromReferences(null, unresolvedRefsArray);
+            wiz.pack();
+            wiz.setSize(1000, 500);
+            Utilities.centerOnScreen(wiz);
+            wiz.setModal(true);
+            wiz.setVisible(true);
+            // todo, check that wizard was not canceled.
         }
         resolvedReferences = references;
         return true;
@@ -48,18 +65,31 @@ public class RemoteReferenceResolver {
         return root;
     }
 
-    private void traverseAssertionTreeForLocalization(Assertion rootAssertion) {
+    private boolean traverseAssertionTreeForLocalization(Assertion rootAssertion) {
         if (rootAssertion instanceof CompositeAssertion) {
             CompositeAssertion ca = (CompositeAssertion)rootAssertion;
             List children = ca.getChildren();
+            Collection childrenToRemoveFromCA = new ArrayList();
             for (Iterator i = children.iterator(); i.hasNext();) {
                 Assertion child = (Assertion)i.next();
-                traverseAssertionTreeForLocalization(child);
+                if (!traverseAssertionTreeForLocalization(child)) {
+                    childrenToRemoveFromCA.add(child);
+                }
             }
+            // remove the children that are no longer wanted
+            for (Iterator it = childrenToRemoveFromCA.iterator(); it.hasNext();) {
+                children.remove(it.next());
+            }
+            return true;
         } else {
+            boolean ret = true;
             for (int i = 0; i < resolvedReferences.length; i++) {
-                resolvedReferences[i].localizeAssertion(rootAssertion);
+                if (!resolvedReferences[i].localizeAssertion(rootAssertion)) {
+                    ret = false;
+                    break;
+                }
             }
+            return ret;
         }
     }
 
