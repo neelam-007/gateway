@@ -53,10 +53,7 @@ public class XmlMangler {
     private static final String id = "bodyId";
 
     // Namespace constants
-    private static final String soapNS = "http://schemas.xmlsoap.org/soap/envelope/";
-    private static final String wsseNS = "http://schemas.xmlsoap.org/ws/2002/xx/secext";
     private static final String xencNS = "http://www.w3.org/2001/04/xmlenc#";
-    private static final String dsNS = "http://www.w3.org/2000/09/xmldsig#";
 
     private static class XmlManglerException extends GeneralSecurityException {
         public XmlManglerException() {
@@ -94,9 +91,9 @@ public class XmlMangler {
         if (keyBytes.length != 32)
             throw new IllegalArgumentException("keyBytes must be 32 bytes long for AES256");
 
-        Element body = (Element) soapMsg.getElementsByTagNameNS(soapNS, "Body").item(0);
+        Element body = SoapUtil.getBody(soapMsg);
         if (body == null)
-            throw new IllegalArgumentException("Unable to find tag Body in document with namespace " + soapNS);
+            throw new IllegalArgumentException("Unable to find tag Body in document");
 
 
         CipherData cipherData = new CipherData();
@@ -143,36 +140,13 @@ public class XmlMangler {
     }
 
     /**
-     * Create a SOAP header in the specified SOAP message if it doesn't already have one.  In any case, returns
-     * a reference to the SOAP header.
-     *
-     * @param soapMsg  the SOAP message to work with
-     * @return  the found or newly-added SOAP header element
-     */
-    private static Element findOrCreateSoapHeader(Document soapMsg) {
-        Element hdrEl = (Element) soapMsg.getElementsByTagNameNS(soapNS, "Header").item(0);
-        if (hdrEl == null) {
-            // No header.. need to add one
-            Element body = (Element) soapMsg.getElementsByTagNameNS(soapNS, "Body").item(0);
-            if (body == null)
-                throw new IllegalArgumentException("No body in this document"); // can't actually happen here
-            String prefix = body.getPrefix();
-            hdrEl = soapMsg.createElementNS(soapNS, prefix == null ? "Header" : prefix + ":Header");
-            soapMsg.getDocumentElement().insertBefore(hdrEl, body);
-        }
-        return hdrEl;
-    }
-
-    /**
      * Insert a WSS style header into the specified document referring to the EncryptedData element.
      * @param soapMsg
      */
     private static void addWssHeader(Document soapMsg) {
         // Add new namespaces to Envelope element, as per spec.
         Element rootEl = soapMsg.getDocumentElement();
-        rootEl.setAttributeNS("http://www.w3.org/2000/xmlns/", "xmlns:wsse", wsseNS);
         rootEl.setAttributeNS("http://www.w3.org/2000/xmlns/", "xmlns:xenc", xencNS);
-        rootEl.setAttributeNS("http://www.w3.org/2000/xmlns/", "xmlns:ds", dsNS);
 
         // Add Security element to header, referencing the encrypted body
         Element dataRefEl = soapMsg.createElementNS(xencNS, "xenc:DataReference");
@@ -181,11 +155,8 @@ public class XmlMangler {
         Element refEl = soapMsg.createElementNS(xencNS, "xenc:ReferenceList");
         refEl.appendChild(dataRefEl);
 
-        Element securityEl = soapMsg.createElementNS(wsseNS, "wsse:Security");
+        Element securityEl = SoapUtil.getOrMakeSecurityElement(soapMsg);
         securityEl.appendChild(refEl);
-
-        Element hdrEl = findOrCreateSoapHeader(soapMsg);
-        hdrEl.appendChild(securityEl);
     }
 
     /**
