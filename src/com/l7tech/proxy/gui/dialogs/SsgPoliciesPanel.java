@@ -213,6 +213,7 @@ class SsgPoliciesPanel extends JPanel {
                         FileInputStream policyIs = null;
                         try {
                             policyIs = new FileInputStream(got);
+                            // TODO use a less-strict WspVisitor that ignores unrecognized policy assertions
                             Assertion rootAssertion = WspReader.parse(policyIs);
                             policyIs.close();
                             policyIs = null;
