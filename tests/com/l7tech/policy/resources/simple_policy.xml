@@ -53,6 +53,7 @@
                     <UserLogin stringValueNull="null"/>
                     <IdentityProviderOid longValue="-1"/>
                 </SpecificUser>
+                <RequestWssX509Cert/>
                 <RequestWssIntegrity>
                     <XpathExpression xpathExpressionValueNull="null"/>
                 </RequestWssIntegrity>
