@@ -62,7 +62,9 @@ public class TokenService {
      * specify the server key and cert at construction time instead of letting the object try to retreive them
      */
     public TokenService(PrivateKey privateServerKey, X509Certificate serverCert) {
-        if (privateServerKey == null || serverCert == null) throw new IllegalArgumentException("Server key and server cert must be provided to create a TokenService");
+        if (privateServerKey == null || serverCert == null) {
+            throw new IllegalArgumentException("Server key and server cert must be provided to create a TokenService");
+        }
         this.privateServerKey = privateServerKey;
         this.serverCert = serverCert;
     }
@@ -75,7 +77,7 @@ public class TokenService {
      */
     public Document respondToRequestSecurityToken(Document request, CredentialsAuthenticator authenticator, String clientAddress)
                                                     throws InvalidDocumentFormatException, TokenServiceException,
-            ProcessorException, GeneralSecurityException,
+                                                           ProcessorException, GeneralSecurityException,
                                                            AuthenticationException, WssProcessor.BadContextException {
         // Pass request to the trogdorminator!
         WssProcessor trogdor = new WssProcessorImpl();
