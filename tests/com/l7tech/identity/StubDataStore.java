@@ -212,10 +212,30 @@ public class StubDataStore {
             service.setPolicyXml(bo.toString());
             encoder.writeObject(service);
             populate(service);
-
         }
-
     }
+
+    private void initialJmsProviders(XMLEncoder encoder) {
+        JmsProvider p = new JmsProvider();
+        p.setOid(nextObjectId());
+        p.setJndiUrl("JNDI:foo:bar:baz");
+        p.setName("JMS on NowhereInteresting");
+        p.setDestinations(new TreeSet());
+
+        encoder.writeObject(p);
+        populate(p);
+
+
+        p = new JmsProvider();
+        p.setOid(nextObjectId());
+        p.setJndiUrl("JNDI:blee:bloo:boof");
+        p.setName("JMS on SomewhereElse");
+        p.setDestinations(new TreeSet());
+
+        encoder.writeObject(p);
+        populate(p);
+    }
+
 
     private Assertion sampleAssertion(IdentityProviderConfig pc) {
         Group g =
@@ -293,6 +313,7 @@ public class StubDataStore {
             initialGroups(encoder);
             initialGroupMemberships(encoder);
             initialServices(encoder, providerConfig);
+            initialJmsProviders(encoder);
         } finally {
             if (encoder != null) {
                 encoder.close();
