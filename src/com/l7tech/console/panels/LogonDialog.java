@@ -483,13 +483,13 @@ public class LogonDialog extends JDialog {
 
             final SwingWorker sw =
               new SwingWorker() {
-                  private Exception memoException = null;
+                  private Throwable memoException = null;
                   private LogonInProgressDialog progressDialog = showLogonInProgressDialog(this, LogonDialog.this, sNamingUrl);
 
                   public Object construct() {
                       try {
                           securityProvider.getAuthenticationProvider().login(authenticationCredentials, adminServiceNamingURL.toString());
-                      } catch (Exception e) {
+                      } catch (Throwable e) {
                           if (!Thread.currentThread().isInterrupted()) {
                               memoException = e;
                           }
