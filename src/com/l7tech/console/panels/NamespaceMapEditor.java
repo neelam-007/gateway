@@ -2,6 +2,7 @@ package com.l7tech.console.panels;
 
 import com.l7tech.console.action.Actions;
 import com.l7tech.common.gui.util.Utilities;
+import com.l7tech.common.gui.util.TableUtil;
 
 import javax.swing.*;
 import javax.swing.event.ListSelectionListener;
@@ -85,6 +86,7 @@ public class NamespaceMapEditor extends JDialog {
         setContentPane(mainPanel);
         setTitle("Edit namespaces and prefixes");
         setTableModel();
+        TableUtil.adjustColumnWidth(table1, 1);
         setListeners();
         enableRemoveBasedOnSelection();
     }
