@@ -34,7 +34,8 @@ public class HttpUriResolver extends NameValueServiceResolver {
         try {
             Wsdl wsdl = service.parsedWsdl();
             Port soapPort = wsdl.getSoapPort();
-            URL url = wsdl.getUrlFromPort( soapPort );
+            URL url = null;
+            if ( soapPort != null ) url = wsdl.getUrlFromPort( soapPort );
             if ( url == null )
                 return new String[0];
             else
