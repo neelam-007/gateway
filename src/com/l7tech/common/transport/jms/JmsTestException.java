@@ -7,6 +7,7 @@
 package com.l7tech.common.transport.jms;
 
 /**
+ * Used for indicating JMS test failures.  Created to avoid sending real JMSExceptions to the Manager.
  * @author alex
  * @version $Revision$
  */
