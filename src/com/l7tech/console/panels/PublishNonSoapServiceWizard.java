@@ -6,6 +6,7 @@ import com.l7tech.policy.wsp.WspWriter;
 import com.l7tech.console.event.EntityListener;
 import com.l7tech.console.event.EntityEvent;
 import com.l7tech.console.util.Registry;
+import com.l7tech.console.action.Actions;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.DuplicateObjectException;
@@ -15,6 +16,7 @@ import com.l7tech.common.util.ExceptionUtils;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.util.ArrayList;
 import java.util.EventListener;
 import java.io.ByteArrayOutputStream;
@@ -41,6 +43,13 @@ public class PublishNonSoapServiceWizard extends Wizard {
     public PublishNonSoapServiceWizard(Frame parent, WizardStepPanel panel) {
         super(parent, panel);
         setTitle("Publish XML Application");
+
+        getButtonHelp().addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                Actions.invokeHelp(PublishNonSoapServiceWizard.this);
+            }
+        });
+
     }
 
     protected void finish(ActionEvent evt) {
