@@ -194,7 +194,7 @@ public class XencUtil {
             throw new InvalidDocumentFormatException("Unable to parse base64 EncryptedKey CipherValue", e);
         }
         Cipher rsa = null;
-        rsa = Cipher.getInstance("RSA", JceProvider.getAsymmetricJceProvider());
+        rsa = Cipher.getInstance("RSA", JceProvider.getAsymmetricJceProvider().getName());
         rsa.init(Cipher.DECRYPT_MODE, recipientKey);
 
         byte[] decryptedPadded = rsa.doFinal(encryptedKeyBytes);
@@ -258,7 +258,7 @@ public class XencUtil {
      * @throws GeneralSecurityException
      */
     public static String encryptKeyWithRsaAndPad(byte[] keyBytes, PublicKey publicKey, SecureRandom rand) throws GeneralSecurityException {
-        Cipher rsa = Cipher.getInstance("RSA", JceProvider.getAsymmetricJceProvider());
+        Cipher rsa = Cipher.getInstance("RSA", JceProvider.getAsymmetricJceProvider().getName());
         rsa.init(Cipher.ENCRYPT_MODE, publicKey);
         if (!(publicKey instanceof RSAPublicKey))
             throw new KeyException("Unable to encrypt -- unsupported recipient public key type " +
