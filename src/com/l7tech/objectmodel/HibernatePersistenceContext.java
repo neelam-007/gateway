@@ -47,8 +47,6 @@ public class HibernatePersistenceContext extends PersistenceContext {
         try {
             if ( _session == null )
                 throw new IllegalStateException( "Can't commit when there's no session!" );
-            else
-                _session.flush();
 
             if ( _htxn == null ) {
                 logger.warning( "Commit called with no transaction active!" );
@@ -60,6 +58,7 @@ public class HibernatePersistenceContext extends PersistenceContext {
                 toto.postCommit();
             }
             txListenerList.clear();
+            _session.flush();
         } catch ( HibernateException he ) {
             logger.throwing( getClass().getName(), "commitTransaction", he );
             if(he.getCause() != null && he.getCause().getMessage() != null) {
