@@ -205,6 +205,8 @@ public class XmlMangler {
      * @param messagePartElement The Element to decrypt.
      * @param key     The key to use to decrypt it. If the document was encrypted with
      *                a call to encryptXml(), the Key will be a 16 byte AES128 symmetric key.
+     * @param keyKefList the ReferenceList element associated with the key. this is optional and only make sense 
+     *                   if the message contains an encryptedkey
      * @throws GeneralSecurityException     if there was a problem with a key or crypto provider
      * @throws ParserConfigurationException if there was a problem with the XML parser
      * @throws IOException                  if there was an IO error while reading the document or a key
