@@ -56,7 +56,7 @@
         <property name="code" type="string"/>
         <property name="name" type="string"/>
 
-        <set role="states" lazy="true" table="state">
+        <set role="states" lazy="false" table="state">
             <key column="country"/>
             <one-to-many class="com.l7tech.identity.internal.imp.StateImp"/>
         </set>
@@ -80,7 +80,7 @@
         <property name="description" type="string"/>
         <property name="name" type="string"/>
 
-        <set role="members" lazy="true" table="internal_user_group">
+        <set role="members" lazy="false" table="internal_user_group">
             <key column="internal_group"/>
             <many-to-many class="com.l7tech.identity.internal.imp.UserImp" column="internal_user"/>
         </set>
@@ -96,7 +96,7 @@
         <property name="mailingAddress" column="mailing_address" type="com.l7tech.identity.internal.imp.AddressImp"/>
         <property name="billingAddress" column="billing_address" type="com.l7tech.identity.internal.imp.AddressImp"/>
 
-        <set role="users" lazy="true" table="internal_user">
+        <set role="users" lazy="false" table="internal_user">
             <key column="organization"/>
             <one-to-many class="com.l7tech.identity.internal.imp.UserImp"/>
         </set>
