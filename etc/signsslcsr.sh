@@ -28,11 +28,14 @@ fi
 # =================================================================================
 KEYSTORE_DIR="$TOMCAT_HOME/kstores"
 CSR_FILE="$TOMCAT_HOME/kstores/ssl.csr"
+CACERT="$TOMCAT_HOME/kstores/ca.cer"
 CERTIFICATE_FILE="$TOMCAT_HOME/kstores/ssl.cer"
 WAR_FILE="$TOMCAT_HOME/webapps/ROOT.war"
 ROOT_KEY_STORE="$TOMCAT_HOME/kstores/ca.ks"
+SSL_KEY_STORE="$TOMCAT_HOME/kstores/ssl.ks"
 ROOT_KEY_ALIAS=ssgroot
 WEBAPPS_ROOT="$TOMCAT_HOME/webapps/ROOT"
+KEYTOOL="$JAVA_HOME/bin/keytool"
 # =================================================================================
 
 # VERIFY THAT THE ROOT KEYSTORE IS PRESENT
@@ -68,7 +71,12 @@ java -cp $CP com.l7tech.identity.cert.RSASigner $ROOT_KEY_STORE $ROOT_KSTORE_PAS
 
 # CHECK IF THE CERT WAS CREATED
 if [ -e "$CERTIFICATE_FILE" ]; then
-        echo
+        echo "importing ssl cert back into ssl keystore"
+        # ax for the SSL password
+        echo "Please type in the SSL keystore password"
+        read -s SSL_KSTORE_PASSWORD
+        $KEYTOOL -import -file $CACERT -alias ssgroot -keystore $SSL_KEY_STORE -storepass $SSL_KSTORE_PASSWORD
+        $KEYTOOL -import -file $CERTIFICATE_FILE -alias tomcat -keystore $SSL_KEY_STORE -storepass $SSL_KSTORE_PASSWORD
 else
         # FAILURE
         echo "ERROR WILE SIGNING SSL CERT WITH ROOT CA"
