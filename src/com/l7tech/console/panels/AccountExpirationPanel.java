@@ -247,6 +247,9 @@ public class AccountExpirationPanel extends JDialog {
             cal.set(Calendar.YEAR, currentlychosenyear);
             cal.set(Calendar.MONTH, currentlychosenmonth);
             cal.set(Calendar.DAY_OF_MONTH, currentlychosenday);
+            cal.set(Calendar.HOUR_OF_DAY, 0);
+            cal.set(Calendar.MINUTE, 0);
+            cal.set(Calendar.SECOND, 1);
             expirationValue = cal.getTimeInMillis();
         }
         // exit
