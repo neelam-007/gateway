@@ -52,6 +52,7 @@ public class AllAssertions {
         new ResponseWssConfidentiality(),
         new RequestXpathAssertion(),
         new ResponseXpathAssertion(),
+        new RequestWssReplayProtection(),
         // TODO new TimeOfDayAssertion(),
         // TODO new DateRangeAssertion(),
         // TODO new DayOfWeekAssertion(),
@@ -94,6 +95,7 @@ public class AllAssertions {
         new ResponseWssConfidentiality(),
         new RequestXpathAssertion(),
         new ResponseXpathAssertion(),
+        new RequestWssReplayProtection(),
         CUSTOM_ASSERTION_HOLDER,
         new UnknownAssertion()
         // TODO new TimeOfDayAssertion(),
@@ -129,6 +131,7 @@ public class AllAssertions {
         new ResponseWssConfidentiality(),
         new RequestXpathAssertion(),
         new ResponseXpathAssertion(),
+        new RequestWssReplayProtection(),
         new CustomAssertionHolder(),
         new UnknownAssertion()
         // TODO new TimeOfDayAssertion(),

@@ -8,6 +8,8 @@ import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.assertion.RoutingStatus;
 import com.l7tech.server.MessageProcessor;
 import com.l7tech.server.RequestIdGenerator;
+import com.l7tech.server.util.MessageIdManager;
+import com.l7tech.server.util.SingleNodeMessageIdManager;
 import com.l7tech.identity.User;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -60,6 +62,11 @@ public abstract class SoapRequest extends XmlMessageAdapter implements SoapMessa
         }
 
         return soap.booleanValue();
+    }
+
+
+    public MessageIdManager getMessageIdManager() {
+        return _messageIdManager;
     }
 
     public WssProcessor.ProcessorResult getWssProcessorOutput() {
@@ -182,6 +189,8 @@ public abstract class SoapRequest extends XmlMessageAdapter implements SoapMessa
             _requestReader = doGetRequestReader();
         return _requestReader;
     }
+
+    private static final MessageIdManager _messageIdManager = new SingleNodeMessageIdManager();
 
     protected abstract Reader doGetRequestReader() throws IOException;
 

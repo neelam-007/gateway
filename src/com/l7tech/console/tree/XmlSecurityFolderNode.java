@@ -46,6 +46,7 @@ public class XmlSecurityFolderNode extends AbstractTreeNode {
         insert(new ResponseWssIntegrityNode(), index++);
         insert(new ResponseWssConfidentialityNode(), index++);
         insert(new SamlSecurityNode(), index++);
+        insert(new RequestWssReplayProtectionNode(), index++);
     }
 
     /**

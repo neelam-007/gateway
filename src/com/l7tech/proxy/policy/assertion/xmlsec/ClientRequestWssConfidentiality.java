@@ -1,12 +1,10 @@
 package com.l7tech.proxy.policy.assertion.xmlsec;
 
-import com.l7tech.common.security.xml.SignerInfo;
 import com.l7tech.common.security.xml.WssDecorator;
-import com.l7tech.common.xml.XpathExpression;
 import com.l7tech.common.xml.XpathEvaluator;
+import com.l7tech.common.xml.XpathExpression;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
-import com.l7tech.policy.assertion.xmlsec.RequestWssIntegrity;
 import com.l7tech.policy.assertion.xmlsec.RequestWssConfidentiality;
 import com.l7tech.proxy.datamodel.PendingRequest;
 import com.l7tech.proxy.datamodel.Ssg;
@@ -15,17 +13,14 @@ import com.l7tech.proxy.datamodel.SsgResponse;
 import com.l7tech.proxy.datamodel.exceptions.*;
 import com.l7tech.proxy.policy.assertion.ClientAssertion;
 import com.l7tech.proxy.policy.assertion.ClientDecorator;
-import com.l7tech.proxy.policy.assertion.credential.http.ClientHttpClientCert;
-import java.util.logging.Logger;
-import org.w3c.dom.Document;
 import org.jaxen.JaxenException;
 
 import java.io.IOException;
 import java.security.GeneralSecurityException;
-import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
 import java.util.List;
+import java.util.logging.Logger;
 
 /**
  * XML Digital signature on the soap request sent from the proxy to the ssg server. Also does XML
@@ -42,7 +37,7 @@ import java.util.List;
  * $Id$
  */
 public class ClientRequestWssConfidentiality extends ClientAssertion {
-    private static final Logger log = Logger.getLogger(ClientHttpClientCert.class.getName());
+    private static final Logger log = Logger.getLogger(ClientRequestWssConfidentiality.class.getName());
 
     public ClientRequestWssConfidentiality(RequestWssConfidentiality data) {
         this.requestWssConfidentiality = data;
@@ -71,12 +66,6 @@ public class ClientRequestWssConfidentiality extends ClientAssertion {
         final X509Certificate userCert = SsgKeyStoreManager.getClientCert(ssg);
         final PrivateKey userPrivateKey = SsgKeyStoreManager.getClientCertPrivateKey(ssg);
         final X509Certificate ssgCert = SsgKeyStoreManager.getServerCert(ssg);
-
-        // TODO replace this nonce stuff with wsa:MessageID when we do replay assertion
-        if (!request.isSslRequired() || request.isSslForbidden()) {
-            log.info("Using client cert to sign request without using SSL.  Will send nonce.");
-            request.setNonceRequired(true);
-        }
 
         // add a pending decoration that will be applied only if the rest of this policy branch succeeds
         request.getPendingDecorations().put(this, new ClientDecorator() {

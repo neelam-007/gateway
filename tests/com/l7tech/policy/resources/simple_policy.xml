@@ -120,6 +120,7 @@
                         </Namespaces>
                     </XpathExpression>
                 </ResponseXpathAssertion>
+                <RequestWssReplayProtection/>
                 <CustomAssertion>
                     <base64SerializedValue>rO0ABXNyADFjb20ubDd0ZWNoLnBvbGljeS5hc3NlcnRpb24uQ3VzdG9tQXNzZXJ0aW9uSG9sZGVyZtcreFwddTICAAJMAAhjYXRlZ29yeXQAKkxjb20vbDd0ZWNoL3BvbGljeS9hc3NlcnRpb24vZXh0L0NhdGVnb3J5O0wAD2N1c3RvbUFzc2VydGlvbnQAMUxjb20vbDd0ZWNoL3BvbGljeS9hc3NlcnRpb24vZXh0L0N1c3RvbUFzc2VydGlvbjt4cgAlY29tLmw3dGVjaC5wb2xpY3kuYXNzZXJ0aW9uLkFzc2VydGlvbttfY5k8vaKxAgABTAAGcGFyZW50dAA6TGNvbS9sN3RlY2gvcG9saWN5L2Fzc2VydGlvbi9jb21wb3NpdGUvQ29tcG9zaXRlQXNzZXJ0aW9uO3hwcHBw</base64SerializedValue>
                 </CustomAssertion>
