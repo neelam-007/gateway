@@ -76,7 +76,7 @@ public class CreateServiceWsdlAction extends SecureAction {
      */
     protected String iconResource() {
         // todo: find better icon
-        return "com/l7tech/console/resources/policy16.gif";
+        return "com/l7tech/console/resources/CreateWSDL16x16.gif";
     }
 
     /**

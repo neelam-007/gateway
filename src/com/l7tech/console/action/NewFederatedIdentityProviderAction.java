@@ -52,7 +52,7 @@ public class NewFederatedIdentityProviderAction extends NewProviderAction {
      * specify the resource name for this action
      */
     protected String iconResource() {
-        return "com/l7tech/console/resources/providers16.gif";
+        return "com/l7tech/console/resources/CreateIdentityProvider16x16.gif";
     }
 
     /**

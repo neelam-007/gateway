@@ -45,14 +45,14 @@ public class NewLdapProviderAction extends NewProviderAction {
      * @return the aciton description
      */
     public String getDescription() {
-        return "Create a new External Identity Provider";
+        return "Create a new LDAP Identity Provider";
     }
 
     /**
      * specify the resource name for this action
      */
     protected String iconResource() {
-        return "com/l7tech/console/resources/providers16.gif";
+        return "com/l7tech/console/resources/CreateIdentityProvider16x16.gif";
     }
 
     /**
@@ -68,10 +68,7 @@ public class NewLdapProviderAction extends NewProviderAction {
             public void run() {
 
                 LdapIdentityProviderConfigPanel configPanel = (
-                            new LdapIdentityProviderConfigPanel (
-                                new LdapGroupMappingPanel (
-                                    new LdapUserMappingPanel(null)
-                ), true));
+                  new LdapIdentityProviderConfigPanel(new LdapGroupMappingPanel(new LdapUserMappingPanel(null)), true));
 
 
                 JFrame f = TopComponents.getInstance().getMainWindow();
@@ -100,26 +97,25 @@ public class NewLdapProviderAction extends NewProviderAction {
         public void wizardFinished(WizardEvent we) {
 
             // update the provider
-            Wizard w = (Wizard) we.getSource();
-            final IdentityProviderConfig iProvider = (IdentityProviderConfig) w.getCollectedInformation();
+            Wizard w = (Wizard)we.getSource();
+            final IdentityProviderConfig iProvider = (IdentityProviderConfig)w.getCollectedInformation();
 
             if (iProvider != null) {
 
-                SwingUtilities.invokeLater(
-                        new Runnable() {
-                            public void run() {
-                                EntityHeader header = new EntityHeader();
-                                header.setName(iProvider.getName());
-                                header.setType(EntityType.ID_PROVIDER_CONFIG);
-                                try {
-                                    header.setOid(getIdentityAdmin().saveIdentityProviderConfig(iProvider));
-                                } catch (Exception e) {
-                                    ErrorManager.getDefault().notify(Level.WARNING, e, "Error saving the new identity provider: " + header.getName());
-                                    header = null;
-                                }
-                                if (header != null) fireEventProviderAdded(header);
-                            }
-                        });
+                SwingUtilities.invokeLater(new Runnable() {
+                    public void run() {
+                        EntityHeader header = new EntityHeader();
+                        header.setName(iProvider.getName());
+                        header.setType(EntityType.ID_PROVIDER_CONFIG);
+                        try {
+                            header.setOid(getIdentityAdmin().saveIdentityProviderConfig(iProvider));
+                        } catch (Exception e) {
+                            ErrorManager.getDefault().notify(Level.WARNING, e, "Error saving the new identity provider: " + header.getName());
+                            header = null;
+                        }
+                        if (header != null) fireEventProviderAdded(header);
+                    }
+                });
             }
         }
 
