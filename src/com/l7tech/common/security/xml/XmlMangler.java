@@ -380,15 +380,18 @@ public class XmlMangler {
                     logger.log(Level.WARNING, "init error", e);
                 }
 
-                byte[] decrypted = new byte[0];
+                byte[] decryptedPadded = new byte[0];
                 try {
-                    decrypted = rsa.doFinal(encryptedKeyBytes);
+                    decryptedPadded = rsa.doFinal(encryptedKeyBytes);
                 } catch (Exception e) {
                     logger.log(Level.WARNING, "decryption error", e);
                 }
+                // todo, how do i know the length of the key?
+                int keyLength = 128;
+                byte[] unencryptedKey = new byte[keyLength];
+                System.arraycopy(decryptedPadded, decryptedPadded.length-(keyLength/8), unencryptedKey, 0, (keyLength/8));
                 ProcessedEncryptedKey item = new ProcessedEncryptedKey();
-                item.decryptedKey = new AesKey(decrypted, 128);
-                //todo, figure out padding issue
+                item.decryptedKey = new AesKey(unencryptedKey, keyLength);
                 try {
                     item.referenceList = XmlUtil.findOnlyOneChildElementByName(encryptedKey, SoapUtil.XMLENC_NS, "ReferenceList");
                 } catch (XmlUtil.MultipleChildElementsException e) {
