@@ -35,7 +35,10 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.security.GeneralSecurityException;
 import java.security.KeyPair;
+import java.security.NoSuchAlgorithmException;
+import java.security.KeyStoreException;
 import java.security.cert.X509Certificate;
+import java.security.cert.CertificateException;
 
 /**
  * The core of the Client Proxy.
@@ -228,10 +231,12 @@ public class MessageProcessor {
      *                                             was not recognized and needs to be (re)imported
      * @throws OperationCanceledException if credentials were needed to continue processing, but the user canceled
      *                                    the logon dialog (or we are running headless).
+     * @throws ClientCertificateException if our client cert is no longer valid, but we couldn't delete it from
+     *                                    the keystore.
      */
     private SsgResponse obtainResponse(PendingRequest req)
             throws ConfigurationException, IOException, PolicyRetryableException, ServerCertificateUntrustedException,
-                   OperationCanceledException
+                   OperationCanceledException, ClientCertificateException
     {
         URL url = getUrl(req);
         Ssg ssg = req.getSsg();
@@ -281,6 +286,24 @@ public class MessageProcessor {
             SsgResponse response = new SsgResponse(postMethod.getResponseBodyAsString());
             log.info("Got response from SSG: " + response);
             if (status == 401) {
+                Header authHeader = postMethod.getResponseHeader("WWW-Authenticate");
+                if (authHeader == null && SsgKeyStoreManager.isClientCertAvailabile(ssg) && "https".equals(url.getProtocol())) {
+                    // 401 without an auth challenge, if the connection was made successfully over SSL,
+                    // means we should delete our client certificate and retry.
+                    log.info("SSG indicates that our client certificate is no longer valid; deleting it");
+                    try {
+                        SsgKeyStoreManager.deleteClientCert(ssg);
+                        throw new PolicyRetryableException();
+                    } catch (NoSuchAlgorithmException e) {
+                        // can't happen
+                        throw new ClientCertificateException(e);
+                    } catch (KeyStoreException e) {
+                        throw new ClientCertificateException(e);
+                    } catch (CertificateException e) {
+                        throw new ClientCertificateException(e);
+                    }
+                }
+
                 req.setLastErrorResponse(response);
                 Managers.getCredentialManager().notifyInvalidCredentials(ssg);
                 if (!Managers.getCredentialManager().getCredentials(req.getSsg()))
