@@ -1,6 +1,7 @@
 package com.l7tech.console.tree;
 
 import com.l7tech.console.action.DeletePolicyTemplateAction;
+import com.l7tech.console.action.EditPolicyTemplateNameAction;
 
 import javax.swing.*;
 import java.io.File;
@@ -47,7 +48,9 @@ public class PolicyTemplateNode extends AbstractTreeNode {
             return new Action[]{
             //    new ServicePolicyPropertiesAction(this),
                 // new EditServiceNameAction(this),
-                new DeletePolicyTemplateAction(this)};
+                new DeletePolicyTemplateAction(this),
+                new EditPolicyTemplateNameAction(this)};
+
     }
 
     /**
