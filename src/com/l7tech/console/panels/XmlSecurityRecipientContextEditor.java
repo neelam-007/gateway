@@ -11,12 +11,15 @@ import com.l7tech.policy.assertion.xmlsec.RequestWssIntegrity;
 import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.console.action.Actions;
+import com.l7tech.console.event.WizardListener;
+import com.l7tech.console.event.WizardEvent;
 
 import javax.swing.*;
 import javax.swing.border.TitledBorder;
 import java.awt.*;
 import java.awt.event.ActionListener;
 import java.awt.event.ActionEvent;
+import java.security.cert.X509Certificate;
 
 /**
  * Corresponding GUI for the {@link com.l7tech.console.action.EditXmlSecurityRecipientContextAction} action.
@@ -89,21 +92,30 @@ public class XmlSecurityRecipientContextEditor extends JDialog {
         assignCertButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
 
-                RecipientSecurityHeaderWizardStep panel3 = new RecipientSecurityHeaderWizardStep(null);
-                CertDetailsPanel panel2 = new CertDetailsPanel(panel3);
-                CertImportMethodsPanel panel1 = new CertImportMethodsPanel(panel2, true);
-
-
+                final RecipientSecurityHeaderWizardStep panel3 = new RecipientSecurityHeaderWizardStep(null);
+                final CertDetailsPanel panel2 = new CertDetailsPanel(panel3);
+                final CertImportMethodsPanel panel1 = new CertImportMethodsPanel(panel2, true);
 
                 JFrame f = TopComponents.getInstance().getMainWindow();
                 Wizard w = new AddCertificateWizard(f, panel1);
                 w.setTitle("Define new XML security recipient");
+
+                w.addWizardListener(new WizardListener() {
+                    public void wizardSelectionChanged(WizardEvent e) {}
+                    public void wizardFinished(WizardEvent e) {
+                        // todo, make sure this data does not already exist
+                        X509Certificate cert = panel2.getCert();
+                        certSubject.setText(cert.getSubjectDN().getName());
+                        ((DefaultComboBoxModel)actorComboBox.getModel()).addElement(panel3.getCapturedValue());
+                        ((DefaultComboBoxModel)actorComboBox.getModel()).setSelectedItem(panel3.getCapturedValue());
+                    }
+                    public void wizardCanceled(WizardEvent e) {}
+                });
+
                 w.pack();
                 w.setSize(800, 560);
                 Utilities.centerOnScreen(w);
                 w.setVisible(true);
-
-                // todo, read captured info and update combo box and txt field
             }
         });
 
@@ -117,6 +129,7 @@ public class XmlSecurityRecipientContextEditor extends JDialog {
             specificRecipientRradio.setSelected(true);
             defaultRadio.setSelected(false);
         }
+        // todo, search assertion tree for existing combos
     }
 
     private void enableSpecificControls() {

@@ -10,7 +10,8 @@ import javax.swing.*;
 import java.awt.*;
 
 /**
- * A wizard step panel to use with the {@link AddCertificateWizard}. This is used be
+ * A wizard step panel to use with the {@link AddCertificateWizard}. It lets the administrator associate an
+ * security header actor attribute value to a recipient cert. This is used be
  * the {@link XmlSecurityRecipientContextEditor}.
  *
  * @author flascelles@layer7-tech.com
@@ -40,5 +41,17 @@ public class RecipientSecurityHeaderWizardStep extends WizardStepPanel {
 
     public String getStepLabel() {
         return "Associate Actor Attribute";
+    }
+
+    public String getCapturedValue() {
+        return actorAttributeValueField.getText();
+    }
+
+    public boolean onNextButton() {
+        String currentval = getCapturedValue();
+        if (currentval != null && currentval.length() > 0) {
+            return true;
+        }
+        return false;
     }
 }
