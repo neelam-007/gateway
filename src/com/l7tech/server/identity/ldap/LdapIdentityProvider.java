@@ -303,14 +303,7 @@ public class LdapIdentityProvider implements IdentityProvider {
                     logger.finest("Authenticated user " + realUser.getDn() + " using a client certificate" );
                     // remember that this cert was used at least once successfully
                     try {
-                        PersistenceContext.getCurrent().beginTransaction();
                         man.forbidCertReset(realUser);
-                        PersistenceContext.getCurrent().commitTransaction();
-                        // dont close context here. the message processor will do it
-                    } catch (SQLException e) {
-                        logger.log(Level.WARNING, "transaction error around forbidCertReset", e);
-                    } catch (TransactionException e) {
-                        logger.log(Level.WARNING, "transaction error around forbidCertReset", e);
                     } catch (ObjectModelException e) {
                         logger.log(Level.WARNING, "transaction error around forbidCertReset", e);
                     }
