@@ -1,0 +1,27 @@
+MIME-Version: 1.0
+Content-Type: Multipart/Related; boundary=MIME_boundary; type=text/xml;
+        start="<soapRequest>"
+Content-Description: This is the optional message description.
+
+--MIME_boundary
+Content-Type: text/xml; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+Content-ID: <soapRequest>
+
+<?xml version='1.0' ?>
+<SOAP-ENV:Envelope
+xmlns:SOAP-ENV="http://schemas.xmlsoap.org/soap/envelope/">
+<SOAP-ENV:Body>
+..
+<theSignedForm href="cid:claim061400a.tiff@claiming-it.com"/>
+..
+</SOAP-ENV:Body>
+</SOAP-ENV:Envelope>
+
+--MIME_boundary
+Content-Type: image/tiff
+Content-Transfer-Encoding: binary
+Content-ID: <attachment-1>
+
+...binary TIFF image...
+--MIME_boundary--
