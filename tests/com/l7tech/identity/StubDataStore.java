@@ -198,7 +198,9 @@ public class StubDataStore {
 
         long providerId = makeProvider(pc).getConfig().getOid();
 
-        identities.add(new MemberOfGroup(providerId, g.getName()));
+        MemberOfGroup memberOfGroup = new MemberOfGroup(providerId, g.getName());
+        memberOfGroup.setGroupName(g.getName());
+        identities.add(memberOfGroup);
         for (Iterator i = users.values().iterator(); i.hasNext();) {
             identities.add(new SpecificUser(providerId, ((User)i.next()).getLogin()));
         }
