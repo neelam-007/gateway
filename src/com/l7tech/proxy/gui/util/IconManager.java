@@ -20,6 +20,7 @@ public class IconManager {
     private static ImageIcon iconEdit;
     private static ImageIcon iconRemove;
     private static ImageIcon iconDefault;
+    private static ImageIcon iconCert;
     private static ImageIcon splashImage;
     private static ImageIcon smallSplashImage;
     private static Image iconAppIcon;
@@ -58,6 +59,12 @@ public class IconManager {
             iconDefault = loadImageIcon(Gui.RESOURCE_PATH + "/Default16.gif");
         }
         return iconDefault;
+    }
+
+    public static ImageIcon getCert() {
+        if (iconCert == null)
+            iconCert = loadImageIcon(Gui.RESOURCE_PATH + "/cert16.gif");
+        return iconCert;
     }
 
     public static Image getAppImage() {

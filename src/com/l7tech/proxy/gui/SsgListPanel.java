@@ -293,7 +293,7 @@ public class SsgListPanel extends JPanel {
      */
     public Action getActionChangePasswordAndRevokeClientCertificate() {
         if (actionChangePasswordAndRevokeClientCertificate == null) {
-            actionChangePasswordAndRevokeClientCertificate = new AbstractAction("Change Password/Revoke Certificate", IconManager.getRemove()) {
+            actionChangePasswordAndRevokeClientCertificate = new AbstractAction("Change Password/Revoke Certificate", IconManager.getCert()) {
                 public void actionPerformed(final ActionEvent e) {
                     final Ssg ssg = getSelectedSsg();
                     if (ssg != null) {

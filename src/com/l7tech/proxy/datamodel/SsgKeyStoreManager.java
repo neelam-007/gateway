@@ -135,6 +135,7 @@ public class SsgKeyStoreManager {
                 trustStore.deleteEntry(CLIENT_CERT_ALIAS);
             saveTrustStore(ssg);
             FileUtils.deleteFileSafely(ssg.getKeyStoreFile().getAbsolutePath());
+            ssg.clientCert(null);
             ssg.haveClientCert(Boolean.FALSE);
             ssg.passwordWorkedForPrivateKey(false);
             ssg.keyStore(null);
@@ -400,6 +401,8 @@ public class SsgKeyStoreManager {
             ssg.privateKey(null);
             ssg.passwordWorkedForPrivateKey(false);
             ssg.haveClientCert(null);
+            ssg.clientCert(null);
+            ssg.serverCert(null);
         }
 
     }

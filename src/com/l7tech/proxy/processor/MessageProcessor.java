@@ -132,43 +132,54 @@ public class MessageProcessor {
             ResponseValidationException, HttpChallengeRequiredException, PolicyAssertionException,
             InvalidDocumentFormatException, WssProcessor.ProcessorException
     {
-        Ssg ssg = req.getSsg();
+        boolean succeeded = false;
+        try {
+            Ssg ssg = req.getSsg();
 
-        for (int attempts = 0; attempts < MAX_TRIES; ++attempts) {
-            try {
+            for (int attempts = 0; attempts < MAX_TRIES; ++attempts) {
                 try {
                     try {
-                        enforcePolicy(req);
-                        SsgResponse res = obtainResponse(req);
-                        undecorateResponse(req, res);
-                        return res;
-                    } catch (SSLException e) {
-                        handleSslException(req.getSsg(), req.getCredentials(), e);
-                        // FALLTHROUGH -- retry with new server certificate
-                    } catch (ServerCertificateUntrustedException e) {
-                        SsgKeyStoreManager.installSsgServerCertificate(ssg, req.getCredentials()); // might throw BadCredentialsException
+                        try {
+                            enforcePolicy(req);
+                            SsgResponse res = obtainResponse(req);
+                            undecorateResponse(req, res);
+                            succeeded = true;
+                            return res;
+                        } catch (SSLException e) {
+                            handleSslException(req.getSsg(), req.getCredentials(), e);
+                            // FALLTHROUGH -- retry with new server certificate
+                        } catch (ServerCertificateUntrustedException e) {
+                            SsgKeyStoreManager.installSsgServerCertificate(ssg, req.getCredentials()); // might throw BadCredentialsException
+                            // FALLTHROUGH allow policy to reset and retry
+                        }
+                    } catch (PolicyRetryableException e) {
+                        // FALLTHROUGH allow policy to reset and retry
+                    } catch (BadCredentialsException e) {
+                        handleBadCredentialsException(ssg, req, e);
                         // FALLTHROUGH allow policy to reset and retry
                     }
-                } catch (PolicyRetryableException e) {
-                    // FALLTHROUGH allow policy to reset and retry
-                } catch (BadCredentialsException e) {
-                    handleBadCredentialsException(ssg, req, e);
-                    // FALLTHROUGH allow policy to reset and retry
+                } catch (KeyStoreCorruptException e) {
+                    Managers.getCredentialManager().notifyKeyStoreCorrupt(ssg);
+                    SsgKeyStoreManager.deleteStores(ssg);
+                    // FALLTHROUGH -- retry, creating new keystore
+                } catch (WssDecorator.DecoratorException e) {
+                    throw new ConfigurationException(e);
                 }
-            } catch (KeyStoreCorruptException e) {
-                Managers.getCredentialManager().notifyKeyStoreCorrupt(ssg);
-                SsgKeyStoreManager.deleteStores(ssg);
-                // FALLTHROUGH -- retry, creating new keystore
-            } catch (WssDecorator.DecoratorException e) {
-                throw new ConfigurationException(e);
+                req.reset();
             }
-            req.reset();
-        }
 
-        log.warning("Too many attempts to conform to policy; giving up");
-        if (req.getLastErrorResponse() != null)
-            return req.getLastErrorResponse();
-        throw new ConfigurationException("Unable to conform to policy, and no useful fault from Gateway.");
+            log.warning("Too many attempts to conform to policy; giving up");
+            if (req.getLastErrorResponse() != null)
+                return req.getLastErrorResponse();
+            throw new ConfigurationException("Unable to conform to policy, and no useful fault from Gateway.");
+        } finally {
+            if (!succeeded) {
+                if (req.getActivePolicy() != null) {
+                    log.log(Level.FINE, "Request failed to get a response from the SSG -- marking cached policy as invalid");
+                    req.getActivePolicy().invalidate();
+                }
+            }
+        }
     }
 
     private void handleBadCredentialsException(Ssg ssg, PendingRequest req, BadCredentialsException e)
