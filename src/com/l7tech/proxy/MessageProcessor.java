@@ -22,7 +22,6 @@ import org.apache.commons.httpclient.HttpState;
 import org.apache.commons.httpclient.UsernamePasswordCredentials;
 import org.apache.commons.httpclient.methods.PostMethod;
 import org.apache.log4j.Category;
-import org.xml.sax.SAXException;
 
 import javax.net.ssl.SSLHandshakeException;
 import java.io.BufferedReader;
@@ -31,8 +30,8 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.security.NoSuchAlgorithmException;
 import java.security.KeyStoreException;
+import java.security.NoSuchAlgorithmException;
 import java.security.cert.CertificateException;
 
 /**
@@ -60,14 +59,12 @@ public class MessageProcessor {
      * @throws PolicyAssertionException if the policy could not be fulfilled for this request to this SSG
      * @throws ConfigurationException if the SSG configuration is not valid
      * @throws IOException if there was a problem obtaining the response from the server
-     * @throws SAXException if the response from the server was not a valid SOAP envelope
      * @throws CertificateException if the SSG provides a certificate that makes no sense
-     * @throws NoSuchAlgorithmException I believe that this Can't Happen
      * @throws KeyStoreException if the SSG key could not be stored in our trustStore
      */
     public String processMessage(PendingRequest pendingRequest)
-            throws PolicyAssertionException, ConfigurationException, SAXException, IOException,
-            CertificateException, NoSuchAlgorithmException, KeyStoreException
+            throws PolicyAssertionException, ConfigurationException, IOException,
+            CertificateException, KeyStoreException
     {
         Assertion policy = policyManager.getPolicy(pendingRequest);
         AssertionStatus result = policy.decorateRequest(pendingRequest);
@@ -91,16 +88,14 @@ public class MessageProcessor {
      * @return String containing the response message from the server.
      * @throws ConfigurationException if the SSG configuration is not valid
      * @throws IOException if there was a problem obtaining the response from the server
-     * @throws SAXException if the response from the server was not a valid SOAP envelope
      * @throws PolicyAssertionException if our internal recursive call to processMessage() threw it
      * @throws CertificateException if the SSG provides a certificate that makes no sense
-     * @throws NoSuchAlgorithmException I believe that this Can't Happen
      * @throws KeyStoreException if the SSG key could not be stored in our trustStore
      */
     // You might want to close your eyes for this part
     private String callSsg(PendingRequest pendingRequest)
-            throws ConfigurationException, IOException, SAXException, PolicyAssertionException,
-                   CertificateException, NoSuchAlgorithmException, KeyStoreException
+            throws ConfigurationException, IOException, PolicyAssertionException,
+                   CertificateException, KeyStoreException
     {
         Ssg ssg = pendingRequest.getSsg();
 
@@ -150,7 +145,11 @@ public class MessageProcessor {
             try {
                 status = client.executeMethod(postMethod);
             } catch (SSLHandshakeException e) {
-                return installCertificate(pendingRequest);
+                try {
+                    return installCertificate(pendingRequest);
+                } catch (NoSuchAlgorithmException e1) {
+                    throw new RuntimeException(e1); // can't happen
+                }
             }
             log.info("POST to SSG completed with HTTP status code " + status);
             Header policyUrlHeader = postMethod.getResponseHeader("PolicyUrl");
