@@ -1,6 +1,7 @@
 package com.l7tech.cluster;
 
 import com.l7tech.common.util.HexUtils;
+import com.l7tech.common.util.KeystoreUtils;
 import com.l7tech.logging.LogManager;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.HibernatePersistenceContext;
@@ -12,6 +13,7 @@ import net.sf.hibernate.Session;
 import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.File;
 import java.sql.SQLException;
 import java.util.*;
 import java.util.logging.Level;
@@ -66,6 +68,8 @@ public class ClusterInfoManager {
         if (selfCI != null) {
             selfCI.setAvgLoad(avgLoad);
             selfCI.setLastUpdateTimeStamp(now);
+            boolean isMaster = isMasterMode();
+            selfCI.setIsMaster(isMaster);
             try {
                 HibernatePersistenceContext pc = (HibernatePersistenceContext)PersistenceContext.getCurrent();
                 Session session = pc.getSession();
@@ -177,7 +181,8 @@ public class ClusterInfoManager {
             logger.warning("cannot get localhost address: " + e.getMessage());
         }
         newClusterInfo.setAddress(add);
-        newClusterInfo.setIsMaster(true);
+        boolean isMaster = isMasterMode();
+        newClusterInfo.setIsMaster(isMaster);
         newClusterInfo.setMac(macid);
         // choose first available name
         String newnodename = null;
@@ -220,6 +225,15 @@ public class ClusterInfoManager {
         logger.finest("added cluster status row for this server. mac= " + newClusterInfo.getMac() +
                       " name= " + newClusterInfo.getName());
         return newClusterInfo;
+    }
+
+    // returns true if this server has access to a root ca key
+    private boolean isMasterMode() {
+        String rootKeystorePath = KeystoreUtils.getInstance().getRootKeystorePath();
+        if (rootKeystorePath != null) {
+            if ((new File(rootKeystorePath)).exists()) return true;
+        }
+        return false;
     }
 
     private void recordNodeInDB(ClusterNodeInfo node) throws SQLException, HibernateException {
