@@ -165,9 +165,14 @@
             <fileset dir="${build.dir}" includes="*.war"/>
         </copy>
         <mkdir dir="${tomcat.home}/common/classpath"/>
+
         <copy todir="${tomcat.home}/common/classpath">
             <fileset dir="${src.root}/lib">
                 <include name="jsk-*.jar"/>
+            </fileset>
+
+            <fileset dir="${build.dir}">
+                <include name="webapp-rmiannotation.jar"/>
             </fileset>
 
             <!-- Needed for PKCS#12 keystore -->
@@ -384,6 +389,7 @@
             <classes dir="${build.classes}">
                 <exclude name="com/l7tech/console/**/*"/>
                 <exclude name="com/l7tech/test/**/*"/>
+                <exclude name="com/l7tech/remote/jini/export/WebAppAnnotationClassProvider.class"/>
                 <exclude name="com/l7tech/server/jms/**/*" unless="include.jms"/>
             </classes>
 
@@ -397,6 +403,11 @@
             <zipfileset dir="${src.root}/etc/jini" includes="PREFERRED.LIST" prefix="WEB-INF/classes/META-INF"/>
 
         </war>
+        <jar jarfile="${build.dir}/webapp-rmiannotation.jar">
+            <fileset dir="${build.dir}/classes">
+            <include name="com/l7tech/remote/jini/export/WebAppAnnotationClassProvider*.class"/>
+            </fileset>
+        </jar>
     </target>
 
     <target name="package.agent" unless="ssg.only">
