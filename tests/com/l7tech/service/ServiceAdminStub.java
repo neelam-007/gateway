@@ -5,6 +5,8 @@ import com.l7tech.identity.StubDataStore;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.Entity;
+import com.l7tech.policy.PolicyValidatorResult;
+import com.l7tech.policy.assertion.Assertion;
 
 import javax.wsdl.WSDLException;
 import java.io.InputStreamReader;
@@ -58,6 +60,11 @@ public class ServiceAdminStub implements ServiceAdmin {
         } catch (java.io.IOException e) {
             throw new RemoteException("resolveWsdlTarget()", e);
         }
+    }
+
+    public PolicyValidatorResult validatePolicy(Assertion assertion) throws RemoteException {
+        // todo
+        return null;
     }
 
     /**
