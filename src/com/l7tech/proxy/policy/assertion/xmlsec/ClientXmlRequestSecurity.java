@@ -96,6 +96,12 @@ public class ClientXmlRequestSecurity extends ClientAssertion {
         }
 //        XmlUtil.documentToOutputStream(soapmsg, System.out);
         request.setSoapEnvelope(soapmsg);
+
+        if (!request.isSslRequired() || request.isSslForbidden()) {
+            log.info("Using client cert to sign request without using SSL.  Will send nonce.");
+            request.setNonceRequired(true);
+        }
+
         return AssertionStatus.NONE;
     }
 
@@ -110,20 +116,6 @@ public class ClientXmlRequestSecurity extends ClientAssertion {
 
     public String iconResource(boolean open) {
         return "com/l7tech/proxy/resources/tree/xmlencryption.gif";
-    }
-
-
-    /**
-     * Check whether the encryption properties are supported
-     *
-     * @param elementSecurity the security element specifying the security properties
-     */
-    private static void checkEncryptionProperties(ElementSecurity elementSecurity)
-      throws NoSuchAlgorithmException, SecurityException {
-        if (!"AES".equals(elementSecurity.getCipher()))
-            throw new NoSuchAlgorithmException("Unable to encrypt request: unsupported cipher: " + elementSecurity.getCipher());
-        if (128 != elementSecurity.getKeyLength())
-            throw new SecurityException("Unable to encrypt request: unsupported key length: " + elementSecurity.getKeyLength());
     }
 
     protected XmlRequestSecurity xmlRequestSecurity;
