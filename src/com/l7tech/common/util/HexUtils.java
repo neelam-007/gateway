@@ -11,6 +11,7 @@ import sun.misc.BASE64Decoder;
 import sun.misc.BASE64Encoder;
 
 import java.io.*;
+import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLConnection;
 import java.security.MessageDigest;
@@ -250,6 +251,17 @@ public class HexUtils {
             return 1;
         else
             return s1.compareTo(s2);
+    }
+
+    public static boolean isValidUrl(String url) {
+        try {
+            if (url == null || url.length() < 1)
+                return false;
+            new URL(url);
+            return true;
+        } catch (MalformedURLException e) {
+            return false;
+        }
     }
 
     /** Holds the result of a slurpUrl() call. */

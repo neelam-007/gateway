@@ -10,19 +10,24 @@ import com.l7tech.common.mime.MimeUtil;
 import com.l7tech.common.protocol.SecureSpanConstants;
 import com.l7tech.common.security.CertificateRequest;
 import com.l7tech.common.util.CertUtils;
+import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.common.util.HexUtils;
 import com.l7tech.common.util.XmlUtil;
+import com.l7tech.proxy.datamodel.Managers;
 import com.l7tech.proxy.datamodel.Ssg;
 import com.l7tech.proxy.datamodel.exceptions.BadCredentialsException;
 import com.l7tech.proxy.datamodel.exceptions.BadPasswordFormatException;
 import com.l7tech.proxy.datamodel.exceptions.CertificateAlreadyIssuedException;
+import com.l7tech.proxy.datamodel.exceptions.ServerCertificateUntrustedException;
 import com.l7tech.proxy.ssl.ClientProxySecureProtocolSocketFactory;
 import com.l7tech.proxy.ssl.CurrentSslPeer;
+import com.l7tech.proxy.ssl.HostnameMismatchException;
 import org.apache.commons.httpclient.HttpClient;
 import org.apache.commons.httpclient.UsernamePasswordCredentials;
 import org.apache.commons.httpclient.methods.PostMethod;
 
 import javax.net.ssl.HttpsURLConnection;
+import javax.net.ssl.SSLException;
 import javax.security.auth.x500.X500Principal;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -60,6 +65,41 @@ public class SslUtils {
             usingSsl = true;
         }
         return usingSsl;
+    }
+
+    /**
+     * If the given SSLException is a hostname mismatch or server cert untrusted, takes remedial action and returns.
+     * Otherwise, rethrows the SSLException.
+     * <p>
+     * If this returns, the caller should attempt to discover and/or import the server cert.
+     *
+     * @param server the name of the SSL server we were trying to talk to, ie "the Gatway foo.bar.com"
+     * @param e the SSLException that was caught
+     * @throws javax.net.ssl.SSLException if the exception could not be handled.
+     */
+    public static void handleServerCertProblem(String server, SSLException e) throws SSLException {
+        // Was this server cert untrusted?
+        Throwable scuet = ExceptionUtils.getCauseIfCausedBy(e, ServerCertificateUntrustedException.class);
+        ServerCertificateUntrustedException scue = (ServerCertificateUntrustedException)scuet;
+        if (scue == null) {
+            // No, that wasn't the problem.  Was it a cert hostname mismatch?
+            HostnameMismatchException hme = (HostnameMismatchException)
+              ExceptionUtils.getCauseIfCausedBy(e, HostnameMismatchException.class);
+            if (hme != null) {
+                // Notify user of the hostname mismatch and then abort this request
+                String wanted = hme.getWhatWasWanted();
+                String got = hme.getWhatWeGotInstead();
+                Managers.getCredentialManager().notifySslHostnameMismatch(server,
+                  wanted,
+                  got);
+                throw (SSLException)new SSLException("SSL hostname mismatch: " + e.getMessage()).initCause(e);
+            }
+
+            // not sure what happened; throw it up and abort the request
+            throw (SSLException)new SSLException("SSL connection failure: " + e.getMessage()).initCause(e);
+        }
+
+        // Problem Solved.  Caller just needs to import/ask the user about/download the server cert.
     }
 
     public static final class PasswordNotWritableException extends Exception {

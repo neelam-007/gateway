@@ -100,7 +100,7 @@ public class ClientProxyTrustManager implements X509TrustManager {
         X509Certificate trustedCert = null;
         trustedCert = peer.getServerCertificate();
         if (trustedCert == null) {
-            final String msg = "We have not yet discovered this Gateway's server certificate";
+            final String msg = "Not configured to trust this server's SSL server certificate";
             log.log(Level.FINE, msg);
             throw new ServerCertificateUntrustedException(msg);
         }

@@ -34,7 +34,7 @@ public class TrustedSsgSamlTokenStrategy extends AbstractSamlTokenStrategy {
      */
     public TrustedSsgSamlTokenStrategy(Ssg tokenServerSsg)
     {
-        super(SecurityTokenType.SAML_AUTHENTICATION, tokenServerSsg);
+        super(SecurityTokenType.SAML_ASSERTION, tokenServerSsg);
         this.tokenServerSsg = tokenServerSsg;
     }
 

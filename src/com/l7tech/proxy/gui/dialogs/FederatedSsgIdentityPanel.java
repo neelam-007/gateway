@@ -6,9 +6,12 @@
 
 package com.l7tech.proxy.gui.dialogs;
 
+import com.l7tech.common.util.HexUtils;
 import com.l7tech.proxy.datamodel.Ssg;
 
 import javax.swing.*;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
 import java.awt.*;
 
 /**
@@ -24,7 +27,7 @@ public class FederatedSsgIdentityPanel extends SsgIdentityPanel {
     private JPanel wsTrustPanel;
     private JPanel trustedGatewayPanel;
     private JLabel trustedSsgLabel;
-    private JButton testButton;
+    private JButton wsTrustTestButton;
     private JTextField wsTrustUrlTextField;
     private JButton wsTrustCertButton;
     private JTextField wspAppliesToField;
@@ -46,10 +49,22 @@ public class FederatedSsgIdentityPanel extends SsgIdentityPanel {
             wsTrustPanel.setVisible(true);
             clientCertButton.setVisible(false);
 
+            wsTrustUrlTextField.getDocument().addDocumentListener(new DocumentListener() {
+                public void changedUpdate(DocumentEvent e) { updateButtons(); }
+                public void insertUpdate(DocumentEvent e) { updateButtons(); }
+                public void removeUpdate(DocumentEvent e) { updateButtons(); }
+            });
+
             // TODO enable this setting as soon as it is configurable
             wstSavePasswordCheckBox.setSelected(true);
             wstSavePasswordCheckBox.setVisible(false);
         }
+
+        updateButtons();
+    }
+
+    private void updateButtons() {
+        wsTrustTestButton.setEnabled(HexUtils.isValidUrl(wsTrustUrlTextField.getText()));
     }
 
     public JPasswordField getWstPasswordField() {
@@ -72,8 +87,8 @@ public class FederatedSsgIdentityPanel extends SsgIdentityPanel {
         return clientCertButton;
     }
 
-    public JButton getTestButton() {
-        return testButton;
+    public JButton getWsTrustTestButton() {
+        return wsTrustTestButton;
     }
 
     public JTextField getWsTrustUrlTextField() {

@@ -75,6 +75,10 @@ public class UsernameTokenImpl implements UsernameToken {
         return creds;
     }
 
+    public SecurityTokenType getType() {
+        return SecurityTokenType.USERNAME;
+    }
+
     public String getElementId() {
         if (elementId != null)
             return elementId;

@@ -19,13 +19,16 @@ import com.l7tech.proxy.datamodel.exceptions.OperationCanceledException;
 import com.l7tech.proxy.ssl.ClientProxyKeyManager;
 import com.l7tech.proxy.ssl.ClientProxyTrustManager;
 import com.l7tech.proxy.ssl.SslPeer;
+import com.l7tech.proxy.util.SslUtils;
 import com.l7tech.proxy.util.TokenServiceClient;
 import org.w3c.dom.Element;
 
 import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLException;
 import javax.net.ssl.X509KeyManager;
 import javax.net.ssl.X509TrustManager;
 import java.io.IOException;
+import java.net.MalformedURLException;
 import java.net.URL;
 import java.security.*;
 import java.security.cert.CertificateEncodingException;
@@ -37,7 +40,7 @@ import java.util.logging.Logger;
 /**
  * This is the strategy for obtaining a SAML token from a third-party WS-Trust server.
  */
-public class WsTrustSamlTokenStrategy extends AbstractSamlTokenStrategy {
+public class WsTrustSamlTokenStrategy extends AbstractSamlTokenStrategy implements Cloneable {
     private static final Logger log = Logger.getLogger(WsTrustSamlTokenStrategy.class.getName());
 
     private String wsTrustUrl;
@@ -66,7 +69,15 @@ public class WsTrustSamlTokenStrategy extends AbstractSamlTokenStrategy {
     }
 
     public WsTrustSamlTokenStrategy() {
-        super(SecurityTokenType.SAML_AUTHENTICATION, null);
+        super(SecurityTokenType.SAML_ASSERTION, null);
+    }
+
+    public Object clone() {
+        try {
+            return super.clone();
+        } catch (CloneNotSupportedException e) {
+            throw new RuntimeException(e); // can't happen
+        }
     }
 
     protected SamlAssertion acquireSamlAssertion()
@@ -78,37 +89,7 @@ public class WsTrustSamlTokenStrategy extends AbstractSamlTokenStrategy {
 
         final X509Certificate tokenServerCert = getTokenServerCert();
         final URL url = new URL(wsTrustUrl);
-        SslPeer sslPeer = new SslPeer() {
-            private X509Certificate handshakeCert = null;
-
-            public X509Certificate getServerCertificate() {
-                return tokenServerCert;
-            }
-
-            public X509Certificate getClientCertificate() {
-                return null;
-            }
-
-            public PrivateKey getClientCertificatePrivateKey() {
-                return null;
-            }
-
-            public String getHostname() {
-                return url.getHost();
-            }
-
-            public void storeLastSeenPeerCertificate(X509Certificate actualPeerCert) {
-                handshakeCert = actualPeerCert;
-            }
-
-            public X509Certificate getLastSeenPeerCertificate() {
-                return handshakeCert;
-            }
-
-            public SSLContext getSslContext() {
-                return SSL_CONTEXT;
-            }
-        };
+        SslPeer sslPeer = new WsTrustSslPeer(tokenServerCert, url);
 
         UsernameToken usernameToken = new UsernameTokenImpl(getUsername(), getPassword());
         Element utElm = usernameToken.asElement();
@@ -182,5 +163,90 @@ public class WsTrustSamlTokenStrategy extends AbstractSamlTokenStrategy {
 
     public void setTokenServerCertB64(String tokenServerCertB64) {
         this.tokenServerCertB64 = tokenServerCertB64;
+    }
+
+    /**
+     * If an SSL exception occurred while connecting to the token server, this will check if the problem
+     * is an untrusted server certificate and, if so, ask the user if they wish to trust it.  If they do,
+     * it will be saved within this strategy.
+     * <p>
+     * If this returns, the server cert will have been imported into this strategy, and the caller should
+     * retry the original operation.
+     *
+     * @param sslPeer  the SslPeer that was active when the SSLException was caught.  This must not be null.
+     *                 Will be expected to identify this WS-Trust server.
+     * @param e the SSLException we are to attempt to handle
+     * @throws SSLException if we couldn't handle the exception
+     * @throws OperationCanceledException if the user cancels the certificate dialog, or declines to trust the certificate
+     * @throws CertificateEncodingException if there is a problem with the certificate
+     */
+    public void handleSslException(SslPeer sslPeer, SSLException e)
+            throws SSLException, OperationCanceledException, CertificateEncodingException
+    {
+        if (!(sslPeer instanceof WsTrustSslPeer))
+            throw (SSLException)new SSLException("SSL connection failure, but third-party WS-Trust was not the SSL peer: " + e.getMessage()).initCause(e);
+
+        String wstHostname = getWsTrustUrl();
+        try {
+            wstHostname = new URL(wstHostname).getHost();
+        } catch (MalformedURLException e1) {
+            // fallthrough
+        }
+        if (wstHostname == null) wstHostname = "";
+        if (!wstHostname.equals(sslPeer.getHostname()))
+            throw (SSLException)new SSLException("SSL connection failure, but third-party WS-Trust was not the SSL peer: " + e.getMessage()).initCause(e);
+
+        final String serverName = "the WS-Trust server " + wstHostname;
+        SslUtils.handleServerCertProblem(serverName, e);
+
+        // Import the peer certificate
+        final X509Certificate peerCert = sslPeer.getLastSeenPeerCertificate();
+        if (peerCert == null)  // can't happen
+            throw (SSLException)new SSLException("SSL connection failure, but no peer certificate presented: " + e.getMessage()).initCause(e);
+
+        // Check if the user wants to trust this peer certificate
+        Managers.getCredentialManager().notifySslCertificateUntrusted(serverName, peerCert);
+
+        // They do; import it
+        storeTokenServerCert(peerCert);
+    }
+
+    private static class WsTrustSslPeer implements SslPeer {
+        private X509Certificate handshakeCert = null;
+        private final X509Certificate tokenServerCert;
+        private final URL url;
+
+        public WsTrustSslPeer(X509Certificate tokenServerCert, URL url) {
+            this.tokenServerCert = tokenServerCert;
+            this.url = url;
+        }
+
+        public X509Certificate getServerCertificate() {
+            return tokenServerCert;
+        }
+
+        public X509Certificate getClientCertificate() {
+            return null;
+        }
+
+        public PrivateKey getClientCertificatePrivateKey() {
+            return null;
+        }
+
+        public String getHostname() {
+            return url.getHost();
+        }
+
+        public void storeLastSeenPeerCertificate(X509Certificate actualPeerCert) {
+            handshakeCert = actualPeerCert;
+        }
+
+        public X509Certificate getLastSeenPeerCertificate() {
+            return handshakeCert;
+        }
+
+        public SSLContext getSslContext() {
+            return SSL_CONTEXT;
+        }
     }
 }

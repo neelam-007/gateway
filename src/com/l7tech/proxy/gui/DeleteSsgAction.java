@@ -96,6 +96,7 @@ class DeleteSsgAction extends AbstractAction {
 
             ssgListPanel.removeSsg(ssg);
             ssg.setTrustedGateway(null); // break federation prior to removing key stores
+            ssg.setWsTrustSamlTokenStrategy(null); // break federation prior to removing key stores TODO fix hack
             SsgKeyStoreManager.deleteStores(ssg);
         }
     }

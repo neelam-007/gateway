@@ -41,15 +41,14 @@ public interface TokenStrategy {
      * If a SecurityToken cannot be obtained, an exception is thrown.
      *
      * <p>
-     * @return a SecurityToken if it is immediately available, or null if it is not.
+     * @return a SecurityToken or throws an exception. Never null.
      */
     SecurityToken getOrCreate() throws OperationCanceledException, GeneralSecurityException, IOException, ClientCertificateException, KeyStoreCorruptException, PolicyRetryableException, BadCredentialsException;
 
     /**
      * Return a SecurityToken if it is immediately available, or null if it is not.
      * <p>
-     * If a SecurityToken is not immediately available
-     * @return a SecurityToken or throws an exception. Never null.
+     * @return a SecurityToken if it is immediately available, or null if it is not.
      */
     SecurityToken getIfPresent();
 

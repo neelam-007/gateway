@@ -10,5 +10,6 @@ package com.l7tech.common.security.token;
  * @author mike
  */
 public interface SecurityToken extends ParsedElement {
+    SecurityTokenType getType();
     String getElementId();
 }

@@ -107,10 +107,10 @@
               </hspacer>
             </children>
           </grid>
-          <grid id="8bf18" row-count="2" column-count="2" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
+          <grid id="8bf18" row-count="1" column-count="2" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
             <margin top="0" left="0" bottom="0" right="0"/>
             <constraints>
-              <xy x="6" y="167" width="545" height="50"/>
+              <xy x="6" y="167" width="545" height="22"/>
               <grid row="5" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3"/>
             </constraints>
             <properties/>
@@ -124,15 +124,34 @@
                   </grid>
                 </constraints>
               </hspacer>
-              <component id="46f78" class="javax.swing.JRadioButton" binding="radioTokenTrustedGateway">
+              <component id="3e76b" class="javax.swing.JRadioButton" binding="radioTokenOther">
                 <constraints>
-                  <xy x="32" y="0" width="356" height="22"/>
+                  <xy x="32" y="0" width="282" height="22"/>
                   <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0"/>
                 </constraints>
                 <properties>
-                  <text value="Obtain Security Tokens from a Previously-Created Trusted Gateway:"/>
+                  <text value="Obtain Security Tokens from a WS-Trust Security Token Service"/>
                 </properties>
               </component>
+            </children>
+          </grid>
+          <grid id="5d741" row-count="2" column-count="2" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
+            <margin top="0" left="0" bottom="0" right="0"/>
+            <constraints>
+              <xy x="6" y="194" width="545" height="50"/>
+              <grid row="6" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3"/>
+            </constraints>
+            <properties/>
+            <border type="none"/>
+            <children>
+              <hspacer id="e9f55">
+                <constraints>
+                  <xy x="0" y="5" width="32" height="11"/>
+                  <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="1" hsize-policy="0" anchor="0" fill="1">
+                    <minimum-size width="32" height="-1"/>
+                  </grid>
+                </constraints>
+              </hspacer>
               <grid id="ec4" row-count="1" column-count="2" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
                 <margin top="0" left="0" bottom="0" right="0"/>
                 <constraints>
@@ -159,32 +178,13 @@
                   </component>
                 </children>
               </grid>
-            </children>
-          </grid>
-          <grid id="5d741" row-count="1" column-count="2" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
-            <margin top="0" left="0" bottom="0" right="0"/>
-            <constraints>
-              <xy x="6" y="222" width="545" height="22"/>
-              <grid row="6" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3"/>
-            </constraints>
-            <properties/>
-            <border type="none"/>
-            <children>
-              <hspacer id="e9f55">
+              <component id="46f78" class="javax.swing.JRadioButton" binding="radioTokenTrustedGateway">
                 <constraints>
-                  <xy x="0" y="5" width="32" height="11"/>
-                  <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="1" hsize-policy="0" anchor="0" fill="1">
-                    <minimum-size width="32" height="-1"/>
-                  </grid>
-                </constraints>
-              </hspacer>
-              <component id="3e76b" class="javax.swing.JRadioButton" binding="radioTokenOther">
-                <constraints>
-                  <xy x="32" y="0" width="282" height="22"/>
+                  <xy x="32" y="0" width="355" height="22"/>
                   <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0"/>
                 </constraints>
                 <properties>
-                  <text value="Obtain Security Tokens from a Security Token Service"/>
+                  <text value="Obtain Security Tokens from a Previously-Created Trusted Gateway:"/>
                 </properties>
               </component>
             </children>

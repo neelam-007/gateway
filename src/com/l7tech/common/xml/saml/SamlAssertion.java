@@ -11,6 +11,7 @@ import com.ibm.xml.dsig.SignatureContext;
 import com.ibm.xml.dsig.Validity;
 import com.l7tech.common.security.saml.SamlException;
 import com.l7tech.common.security.token.SamlSecurityToken;
+import com.l7tech.common.security.token.SecurityTokenType;
 import com.l7tech.common.util.CertUtils;
 import com.l7tech.common.util.HexUtils;
 import com.l7tech.common.util.SoapUtil;
@@ -231,6 +232,10 @@ public class SamlAssertion implements SamlSecurityToken {
 
     public Element asElement() {
         return assertionElement;
+    }
+
+    public SecurityTokenType getType() {
+        return SecurityTokenType.SAML_ASSERTION;
     }
 
     public String getElementId() {

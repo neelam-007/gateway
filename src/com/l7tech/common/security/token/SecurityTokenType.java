@@ -46,14 +46,18 @@ public class SecurityTokenType implements Serializable {
     private static int n = 0;
 
     // TODO look up proper token type URIs for RequestSecurityToken messages
-    public static final SecurityTokenType SAML_AUTHENTICATION = new SecurityTokenType(n++, "SAML Authentication Assertion", "saml:Assertion", SAML_NS, SAML_ELEMENT, SamlSecurityToken.class);
-    public static final SecurityTokenType SAML_AUTHORIZATION = new SecurityTokenType(n++, "SAML Authorization Assertion", "saml:Assertion", SAML_NS, SAML_ELEMENT, SamlSecurityToken.class);
-    public static final SecurityTokenType SAML_ATTRIBUTE = new SecurityTokenType(n++, "SAML Attribute Assertion", "saml:Assertion", SAML_NS, SAML_ELEMENT, SamlSecurityToken.class); // TODO check encoding of token element qname; maybe break into (NS, localName) tuple
-    public static final SecurityTokenType WSSC = new SecurityTokenType(n++, "WS-SC SecurityContextToken", SECURECONVESATIONTOKEN_URI, null, null, SecurityContextToken.class);
-    public static final SecurityTokenType USERNAME = new SecurityTokenType(n++, "WS-S UsernameToken", null, SoapUtil.SECURITY_NAMESPACE, "UsernameToken", UsernameToken.class); // TODO look up proper token type URI
-    public static final SecurityTokenType X509 = new SecurityTokenType(n++, "WS-S X.509 BinarySecurityToken", "http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-x509-token-profile-1.0#X509v3", SoapUtil.SECURITY_NAMESPACE, "BinarySecurityToken", X509SecurityToken.class);// TODO look up proper token type URI
+    public static final SecurityTokenType SAML_ASSERTION =
+            new SecurityTokenType(n++, "SAML Assertion", "saml:Assertion", SAML_NS, SAML_ELEMENT, SamlSecurityToken.class);
+    public static final SecurityTokenType WSSC_CONTEXT =
+            new SecurityTokenType(n++, "WS-SC SecurityContextToken", SECURECONVESATIONTOKEN_URI, SoapUtil.WSSC_NAMESPACE, SoapUtil.SECURITY_CONTEXT_TOK_EL_NAME, SecurityContextToken.class);
+    public static final SecurityTokenType WSSC_DERIVED_KEY =
+            new SecurityTokenType(n++, "WS-SC DerivedKeyToken", null, SoapUtil.WSSC_NAMESPACE, SoapUtil.WSSC_DK_EL_NAME, DerivedKeyToken.class);
+    public static final SecurityTokenType USERNAME =
+            new SecurityTokenType(n++, "WS-S UsernameToken", null, SoapUtil.SECURITY_NAMESPACE, "UsernameToken", UsernameToken.class); // TODO look up proper token type URI
+    public static final SecurityTokenType X509 =
+            new SecurityTokenType(n++, "WS-S X.509 BinarySecurityToken", "http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-x509-token-profile-1.0#X509v3", SoapUtil.SECURITY_NAMESPACE, "BinarySecurityToken", X509SecurityToken.class);// TODO look up proper token type URI
 
-    private static final SecurityTokenType[] VALUES = { SAML_AUTHENTICATION, SAML_AUTHORIZATION, SAML_ATTRIBUTE, WSSC, USERNAME, X509 };
+    private static final SecurityTokenType[] VALUES = { SAML_ASSERTION, WSSC_CONTEXT, USERNAME, X509 };
 
     private SecurityTokenType(int num, String name, String tokenTypeUri, String prototypeElementNs, String prototypeElementName, Class interfaceClass) {
         this.num = num;
@@ -68,6 +72,10 @@ public class SecurityTokenType implements Serializable {
 
     protected Object readResolve() throws ObjectStreamException {
         return VALUES[num];
+    }
+
+    public String toString() {
+        return getName();
     }
 
     private final int num;

@@ -965,6 +965,10 @@ public class WssProcessorImpl implements WssProcessor {
             this.binarySecurityTokenElement = binarySecurityTokenElement;
         }
 
+        public SecurityTokenType getType() {
+            return SecurityTokenType.X509;
+        }
+
         public String getElementId() {
             return SoapUtil.getElementWsuId(binarySecurityTokenElement);
         }
@@ -1030,7 +1034,7 @@ public class WssProcessorImpl implements WssProcessor {
     private static final SignedElement[] PROTOTYPE_SIGNEDELEMENT_ARRAY = new SignedElement[0];
     private static final SecurityToken[] PROTOTYPE_SECURITYTOKEN_ARRAY = new SecurityToken[0];
 
-    private static class DerivedKeyTokenImpl extends ParsedElementImpl implements SecurityToken {
+    private static class DerivedKeyTokenImpl extends ParsedElementImpl implements DerivedKeyToken {
         private final Key finalKey;
         private final SecurityContextTokenImpl sct;
         private final String elementWsuId;
@@ -1040,6 +1044,10 @@ public class WssProcessorImpl implements WssProcessor {
             this.finalKey = finalKey;
             this.sct = sct;
             elementWsuId = SoapUtil.getElementWsuId(dktel);
+        }
+
+        public SecurityTokenType getType() {
+            return SecurityTokenType.WSSC_DERIVED_KEY;
         }
 
         public String getElementId() {
@@ -1075,6 +1083,10 @@ public class WssProcessorImpl implements WssProcessor {
 
         public SecurityContext getSecurityContext() {
             return secContext;
+        }
+
+        public SecurityTokenType getType() {
+            return SecurityTokenType.WSSC_CONTEXT;
         }
 
         public String getElementId() {

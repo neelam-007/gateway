@@ -329,7 +329,7 @@ public class SsgRuntime {
                     if (tokenServerSsg == null) tokenServerSsg = ssg;
                     samlStrat = new TrustedSsgSamlTokenStrategy(tokenServerSsg);
                 }
-                tokenStrategiesByType.put(SecurityTokenType.SAML_AUTHENTICATION, samlStrat);
+                tokenStrategiesByType.put(SecurityTokenType.SAML_ASSERTION, samlStrat);
             }
             return tokenStrategiesByType;
         }

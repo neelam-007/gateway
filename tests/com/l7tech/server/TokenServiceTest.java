@@ -71,7 +71,7 @@ public class TokenServiceTest extends TestCase {
     public void testTokenServiceClient() throws Exception {
         Document requestMsg = TokenServiceClient.createRequestSecurityTokenMessage(TestDocuments.getDotNetServerCertificate(),
                                                                     TestDocuments.getDotNetServerPrivateKey(),
-                                                                    SecurityTokenType.WSSC,
+                                                                    SecurityTokenType.WSSC_CONTEXT,
                                                                     TokenServiceClient.RequestType.ISSUE,
                                                                     null, null, null);
         log.info("Decorated token request (reformatted): " + XmlUtil.nodeToFormattedString(requestMsg));
@@ -120,7 +120,7 @@ public class TokenServiceTest extends TestCase {
         Document requestMsg = TokenServiceClient.createRequestSecurityTokenMessage(
                 subjectCertificate,
                 subjectPrivateKey,
-                SecurityTokenType.SAML_AUTHENTICATION,
+                SecurityTokenType.SAML_ASSERTION,
                 TokenServiceClient.RequestType.ISSUE,
                 null, null, null);
         requestMsg.getDocumentElement().setAttribute("xmlns:saml", SamlConstants.NS_SAML);

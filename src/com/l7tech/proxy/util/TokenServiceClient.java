@@ -198,7 +198,7 @@ public class TokenServiceClient {
         URL url = new URL("http", ssg.getSsgAddress(), ssg.getSsgPort(), SecureSpanConstants.TOKEN_SERVICE_FILE);
         Date timestampCreatedDate = ssg.getRuntime().getDateTranslatorToSsg().translate(new Date());
         Document requestDoc = createRequestSecurityTokenMessage(clientCertificate, clientPrivateKey,
-                                                                SecurityTokenType.WSSC, RequestType.ISSUE, null, null, timestampCreatedDate);
+                                                                SecurityTokenType.WSSC_CONTEXT, RequestType.ISSUE, null, null, timestampCreatedDate);
         Object result = obtainResponse(clientCertificate, url, ssg, requestDoc, clientPrivateKey, serverCertificate);
 
         if (!(result instanceof SecureConversationSession))
@@ -213,7 +213,7 @@ public class TokenServiceClient {
             throws IOException, GeneralSecurityException, OperationCanceledException {
         URL url = new URL("https", ssg.getSsgAddress(), ssg.getSslPort(), SecureSpanConstants.TOKEN_SERVICE_FILE);
 
-        Document requestDoc = createRequestSecurityTokenMessage(SecurityTokenType.WSSC, RequestType.ISSUE, null, null);
+        Document requestDoc = createRequestSecurityTokenMessage(SecurityTokenType.WSSC_CONTEXT, RequestType.ISSUE, null, null);
         Object result = obtainResponse(url, ssg, requestDoc, serverCertificate);
 
         if (!(result instanceof SecureConversationSession))

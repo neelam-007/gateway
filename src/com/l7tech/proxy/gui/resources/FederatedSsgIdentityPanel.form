@@ -157,7 +157,7 @@
                                   <grid row="0" column="2" row-span="1" col-span="1" vsize-policy="1" hsize-policy="6" anchor="0" fill="1"/>
                                 </constraints>
                               </hspacer>
-                              <component id="20640" class="javax.swing.JButton" binding="testButton">
+                              <component id="20640" class="javax.swing.JButton" binding="wsTrustTestButton">
                                 <constraints>
                                   <xy x="0" y="0" width="125" height="24"/>
                                   <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1"/>
