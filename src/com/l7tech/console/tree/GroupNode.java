@@ -4,6 +4,8 @@ import com.l7tech.console.action.GroupPropertiesAction;
 import com.l7tech.objectmodel.EntityHeader;
 
 import javax.swing.*;
+import java.util.ArrayList;
+import java.util.Arrays;
 
 
 /**
@@ -35,7 +37,11 @@ public class GroupNode extends EntityHeaderNode {
      * @return actions appropriate to the node
      */
     public Action[] getActions() {
-        return new Action[]{new GroupPropertiesAction(this)};
+           java.util.List list = new ArrayList();
+        list.add(new GroupPropertiesAction(this));
+        list.addAll(Arrays.asList(super.getActions()));
+
+        return (Action[]) list.toArray(new Action[]{});
     }
 
     /**

@@ -5,6 +5,8 @@ import com.l7tech.console.action.NewUserAction;
 import com.l7tech.console.action.UserPropertiesAction;
 
 import javax.swing.*;
+import java.util.ArrayList;
+import java.util.Arrays;
 
 
 /**
@@ -28,14 +30,18 @@ public class UserNode extends EntityHeaderNode {
         super(e);
     }
 
-     /**
+    /**
      * Get the set of actions associated with this node.
      * This may be used e.g. in constructing a context menu.
      *
      * @return actions appropriate to the node
      */
     public Action[] getActions() {
-        return new Action[]{new UserPropertiesAction(this)};
+        java.util.List list = new ArrayList();
+        list.add(new UserPropertiesAction(this));
+        list.addAll(Arrays.asList(super.getActions()));
+
+        return (Action[]) list.toArray(new Action[]{});
     }
 
     /**

@@ -1,7 +1,9 @@
 package com.l7tech.console.tree;
 
 import com.l7tech.objectmodel.EntityHeader;
+import com.l7tech.console.action.DeleteEntityAction;
 
+import javax.swing.*;
 import java.util.Collections;
 import java.util.Enumeration;
 
@@ -37,6 +39,17 @@ public abstract class EntityHeaderNode extends AbstractTreeNode {
      */
     public boolean getAllowsChildren() {
         return false;
+    }
+
+    /**
+     * Get the set of actions associated with this node.
+     * This returns actions that are used buy entity nodes
+     * such .
+     *
+     * @return actions appropriate to the node
+     */
+    public Action[] getActions() {
+        return new Action[]{new DeleteEntityAction(this)};
     }
 
     /**

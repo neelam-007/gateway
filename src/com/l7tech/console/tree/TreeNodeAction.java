@@ -78,15 +78,6 @@ public class TreeNodeAction {
         return rb;
     }
 
-    /**
-     * @param node   DirectoryNode  the node to determine if it
-     *               can refresh
-     * @return true if the node can be refreshed, false otherwise
-     */
-    public static boolean canRefresh(EntityTreeNode node) {
-        return false;
-    }
-
     // Deletes the given Realm
     private static boolean delete(ProviderNode node) {
         // Make sure

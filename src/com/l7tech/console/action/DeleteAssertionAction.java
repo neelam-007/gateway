@@ -9,12 +9,12 @@ package com.l7tech.console.action;
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  * @version 1.0
  */
-public abstract class DeleteAssertionAction extends BaseAction {
+public class DeleteAssertionAction extends BaseAction {
     /**
      * @return the action name
      */
     public String getName() {
-        return "Delete asserion";
+        return "Delete assertion";
     }
 
     /**
