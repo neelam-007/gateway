@@ -9,11 +9,14 @@ import com.l7tech.common.xml.TarariUtil;
 import com.tarari.xml.Node;
 import com.tarari.xml.NodeSet;
 import com.tarari.xml.XMLDocument;
+import com.tarari.xml.XMLDocumentException;
 import com.tarari.xml.xpath.RAXContext;
 import com.tarari.xml.xpath.XPathCompiler;
 import com.tarari.xml.xpath.XPathProcessor;
+import com.tarari.xml.xpath.XPathProcessorException;
 
 import java.io.InputStream;
+import java.io.FileNotFoundException;
 import java.util.ArrayList;
 import java.util.Arrays;
 
@@ -61,31 +64,48 @@ public class TarariPlayground {
 
         XPathCompiler.compile(xpaths0, 0);
 
+        long now = System.currentTimeMillis();
+        int i;
+        for (i = 0; i < 1000000; i++) {
+            RAXContext context = getProcessedContext();
+
+//            System.out.print("Message is ");
+            if (!context.isSoap(uriIndices)) {
+                System.out.print("Retry ");
+                context = getProcessedContext();
+                if (context.isSoap(uriIndices)) {
+                    System.out.println("OK");
+                } else {
+                    System.out.println("BAD");
+                }
+            }
+//            System.out.println("SOAP!!!!11!!!!~~~one");
+
+            int matched = context.getMatchedXPathCount();
+            if (matched <= 0)
+                throw new Exception("No matches");
+            else
+//                System.out.println(matched + " expressions matched");
+            ;
+
+            int found = context.getCount(1);
+//            System.out.println("Found " + found + " nodes");
+
+            NodeSet ns = context.getNodeSet(1);
+            Node node = ns.getFirstNode();
+            for (int j = 0; node != null; j++) {
+//                System.out.println("Node " + j + " = " + node.getPrefix() + ":" + node.getLocalName() + " (" + context.getNamespaceByPrefix(node, node.getPrefix()) + ")" );
+                node = ns.getNextNode();
+            }
+        }
+        System.out.println("Ran " + i + " isSoap in " + (System.currentTimeMillis() - now) + "ms");
+    }
+
+    private static RAXContext getProcessedContext() throws FileNotFoundException, XMLDocumentException, XPathProcessorException {
         InputStream docis = TestDocuments.getInputStream(TestDocuments.DOTNET_USERNAME_TOKEN);
-//        docis = new ByteArrayInputStream("<foo/>".getBytes("UTF-8"));
         XMLDocument doc = new XMLDocument(docis);
         XPathProcessor proc = new XPathProcessor(doc);
         RAXContext context = proc.processXPaths();
-
-        System.out.print("Message is ");
-        if (!context.isSoap(uriIndices))
-            System.out.print("NOT ");
-        System.out.println("SOAP!!!!11!!!!~~~one");
-
-        int matched = context.getMatchedXPathCount();
-        if (matched <= 0)
-            throw new Exception("No matches");
-        else
-            System.out.println(matched + " expressions matched");
-
-        int found = context.getCount(1);
-        System.out.println("Found " + found + " nodes");
-
-        NodeSet ns = context.getNodeSet(1);
-        Node node = ns.getFirstNode();
-        for (int i = 0; node != null; i++) {
-            System.out.println("Node " + i + " = " + node.getPrefix() + ":" + node.getLocalName() + " (" + context.getNamespaceByPrefix(node, node.getPrefix()) + ")" );
-            node = ns.getNextNode();
-        }
+        return context;
     }
 }
