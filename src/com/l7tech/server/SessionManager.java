@@ -1,6 +1,9 @@
-package com.l7tech.xmlenc;
+package com.l7tech.server;
 
 import com.l7tech.logging.LogManager;
+import com.l7tech.xmlenc.Session;
+import com.l7tech.xmlenc.SessionNotFoundException;
+import com.l7tech.xmlenc.SessionInvalidException;
 
 import java.util.HashMap;
 import java.util.logging.Logger;
@@ -26,7 +29,7 @@ public class SessionManager {
      * looks up the session store for a session with the id mentioned
      * @param id session id
      * @return the session object (never null)
-     * @throws SessionNotFoundException if session is invalid or does not exist
+     * @throws com.l7tech.xmlenc.SessionNotFoundException if session is invalid or does not exist
      */
     public synchronized Session getSession(long id) throws SessionNotFoundException {
         Session res =  (Session)sessions.get(new Long(id));

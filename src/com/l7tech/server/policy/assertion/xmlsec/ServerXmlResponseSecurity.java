@@ -12,7 +12,7 @@ import com.l7tech.server.policy.assertion.ServerAssertion;
 import com.l7tech.server.util.ServerSoapUtil;
 import com.l7tech.util.KeystoreUtils;
 import com.l7tech.xmlenc.Session;
-import com.l7tech.xmlenc.SessionManager;
+import com.l7tech.server.SessionManager;
 import com.l7tech.xmlenc.SessionNotFoundException;
 import com.l7tech.xmlenc.XmlMangler;
 import com.l7tech.xmlsig.SecureConversationTokenHandler;

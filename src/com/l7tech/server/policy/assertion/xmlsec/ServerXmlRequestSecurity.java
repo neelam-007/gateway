@@ -11,6 +11,7 @@ import com.l7tech.policy.assertion.credential.CredentialFormat;
 import com.l7tech.policy.assertion.credential.PrincipalCredentials;
 import com.l7tech.policy.assertion.xmlsec.XmlRequestSecurity;
 import com.l7tech.server.policy.assertion.ServerAssertion;
+import com.l7tech.server.SessionManager;
 import com.l7tech.xmlenc.*;
 import com.l7tech.xmlsig.*;
 import org.w3c.dom.Document;
