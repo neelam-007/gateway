@@ -7,6 +7,7 @@ package com.l7tech.policy.assertion;
 public class AssertionError {
     public static final int CLIENT = 400;
     public static final int SERVER = 500;
+    public static final int POLICY = 600;
     public static final int MISC   = 1000;
 
     public static final AssertionError NONE          = make(          0, "No Error" );
@@ -18,7 +19,10 @@ public class AssertionError {
 
     public static final AssertionError NOT_YET_IMPLEMENTED = make( MISC | 0, "Not yet implemented!" );
 
-    public static final AssertionError SERVER_ERROR  = make( SERVER | 0, "Internal Server Error" );
+    public static final AssertionError SERVER_ERROR = make( SERVER | 0, "Internal Server Error" );
+
+    public static final AssertionError FALSIFIED = make( POLICY | 0, "Assertion Falsified" );
+    public static final AssertionError FAILED    = make( POLICY | 1, "Error in Assertion Processing" );
 
     public int getNumeric() {
         return _numeric;
