@@ -64,9 +64,12 @@ public class SwaTestcaseFactory {
         baos.write(CRLF);
         baos.write(CRLF);
         byte[] preamble = new byte[random.nextInt(1024)];
+        baos.write("This preamble should be ignored by a SwA parser:\r\n".getBytes());
         random.nextBytes(preamble);
         baos.write(preamble);
+        baos.write("\r\nThat about wraps it up for preamble.\r\n".getBytes());
         for (int i = 0; i < numParts; i++) {
+            int trailingBlanks = random.nextInt(5);
             baos.write(CRLF);
             baos.write("--".getBytes());
             baos.write(boundary);
@@ -76,9 +79,14 @@ public class SwaTestcaseFactory {
             baos.write(CRLF);
             baos.write(("Content-Type: application/octet-stream").getBytes());
             baos.write(CRLF);
+            baos.write(("X-L7-Trailing-blank-lines: " + trailingBlanks).getBytes());
+            baos.write(CRLF);
             baos.write(CRLF);
 
             baos.write(randomBinary(maxSize));
+            for (int j = 0; j < trailingBlanks; j++) {
+                baos.write(CRLF);
+            }
         }
 
         baos.write(CRLF);
