@@ -94,11 +94,11 @@ public class HibernatePersistenceContext extends PersistenceContext {
                 _htxn.rollback();
                 _htxn = null;
             }
-            if ( _session != null ) _session.close();
+            if (_session != null && _session.isOpen()) _session.close();
             _session = null;
             super.releaseContext();
-        } catch ( HibernateException he ) {
-            logger.log(Level.SEVERE, null, he);
+        } catch (HibernateException e) {
+            logger.log(Level.FINE, "error closing context", e);
         }
     }
 
@@ -156,7 +156,7 @@ public class HibernatePersistenceContext extends PersistenceContext {
                     theConnection.close();
                 }
 
-                _session.close();
+                if (_session.isOpen()) _session.close();
             } catch ( HibernateException he ) {
                 logger.log( Level.WARNING, "exception closing session", he );
                 lastException = he;
