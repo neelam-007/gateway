@@ -6,15 +6,15 @@
 
 package com.l7tech.proxy.gui;
 
-import com.l7tech.proxy.ClientProxy;
-import com.l7tech.proxy.gui.util.IconManager;
+import com.l7tech.common.BuildInfo;
 import com.l7tech.common.gui.util.Utilities;
+import com.l7tech.proxy.gui.util.IconManager;
 
 import javax.swing.*;
 import javax.swing.border.BevelBorder;
 import java.awt.*;
-import java.awt.event.ActionListener;
 import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 
 /**
  *
@@ -36,7 +36,7 @@ public class AgentAboutBox extends JDialog {
                                         GridBagConstraints.BOTH,
                                         new Insets(8, 20, 0, 20), 0, 0));
 
-        JLabel version = new JLabel(ClientProxy.CVS_REVISION);
+        JLabel version = new JLabel(BuildInfo.getProductVersion() + " build " + BuildInfo.getBuildNumber());
         pane.add(version,
                  new GridBagConstraints(0, 1, 1, 1, 1.0, 1.0,
                                         GridBagConstraints.WEST,
@@ -58,8 +58,11 @@ public class AgentAboutBox extends JDialog {
         Utilities.centerOnScreen(this);
     }
 
+    /*
     public static void main(String[] args) {
+        Gui.setInstance(Gui.createGui(null, new SsgManagerStub()));
         new AgentAboutBox().show();
         System.exit(1);
     }
+    */
 }
