@@ -187,6 +187,7 @@ public abstract class AbstractLocator extends Locator {
                 ws.add(instance);
                 return instance;
             } catch (Exception e) {
+                e.printStackTrace(System.err);
                 throw new RuntimeException("error instantiating " + cls, e);
             }
 
