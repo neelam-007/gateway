@@ -222,6 +222,7 @@
             <test name="com.l7tech.common.security.xml.XmlManglerTest" haltonfailure="no" fork="yes" />
             <test name="com.l7tech.server.MockServletApiTest" haltonfailure="no"/>
             <test name="com.l7tech.common.xml.XpathEvaluatorTest" haltonfailure="no"/>
+            <test name="com.l7tech.policy.assertion.xmlsec.ElementSecurityTest" haltonfailure="no"/>
             <!--
             ** TODO: make sure -security flag is added to the 'nightly' build/test
             ** Tomcat config. When done enable the tests below.
