@@ -22,7 +22,7 @@
             <!-- comment out  clientAuth="true" when using tomcat 4.1.24 instead of our own custom build -->
             <Factory className="org.apache.catalina.net.SSLServerSocketFactory"
                 clientAuth="true" clientAuthOptional="true"
-                protocol="TLS" keystoreFile="kstores/ssl.ks" keystorePass="tralala"/>
+                protocol="TLS" keystoreFile="kstores/ssl.ks" keystorePass="tralala" keystoreType="BCPKCS12"/>
 
         </Connector>
 
