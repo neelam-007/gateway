@@ -190,41 +190,35 @@ public class RequestHandler extends AbstractHttpHandler {
         PendingRequest pendingRequest;
         try {
             // TODO: PERF: this XML parsing is causing a performance bottleneck
-            boolean multipart = false;
-
-            final String contentType = request.getContentType();
-            if(contentType != null && contentType.startsWith(XmlUtil.MULTIPART_CONTENT_TYPE)) {
-                multipart = true;
-            }
+            final String ctype = request.getContentType();
+            final boolean multipart = (ctype != null && ctype.startsWith(XmlUtil.MULTIPART_CONTENT_TYPE));
 
             Document envelope = null;
             ClientMultipartMessageReader  multipartReader = null;
 
-            String ctype = request.getField(XmlUtil.CONTENT_TYPE);
-            MultipartUtil.HeaderValue contentTypeHeader = MultipartUtil.parseHeader(XmlUtil.CONTENT_TYPE + ": " + ctype);
-
-            if(ctype.startsWith(XmlUtil.MULTIPART_CONTENT_TYPE)) {
-                multipart = true;
-
+            if (multipart) {
+                MultipartUtil.HeaderValue contentTypeHeader = MultipartUtil.parseHeader(XmlUtil.CONTENT_TYPE + ": " + ctype);
                 String multipartBoundary = MultipartUtil.unquote((String)contentTypeHeader.getParam(XmlUtil.MULTIPART_BOUNDARY));
                 if (multipartBoundary == null) throw new IOException("Multipart header did not contain a boundary");
 
-                String innerType = MultipartUtil.unquote(((String)contentTypeHeader.getParam(XmlUtil.MULTIPART_TYPE)));
+                final String innerType = MultipartUtil.unquote(((String)contentTypeHeader.getParam(XmlUtil.MULTIPART_TYPE)));
+                if (innerType == null) throw new IOException("Missing inner Content-Type");
                 if (innerType.startsWith(XmlUtil.TEXT_XML)) {
-                multipartReader = new ClientMultipartMessageReader(request.getInputStream(), multipartBoundary);
+                    multipartReader = new ClientMultipartMessageReader(request.getInputStream(), multipartBoundary);
 
-                // we use the current time stamp as the unique file name
-                multipartReader.setFileCacheId(new Long(System.currentTimeMillis()).toString());
+                    // we use the current time stamp as the unique file name
+                    multipartReader.setFileCacheId(String.valueOf(System.currentTimeMillis()));
 
-                // get SOAP part
-                MultipartUtil.Part soapPart = multipartReader.getSoapPart();
+                    // get SOAP part
+                    MultipartUtil.Part soapPart = multipartReader.getSoapPart();
 
-                // store all attachments to cache
-                multipartReader.storeAllAttachmentsToCache();
+                    // store all attachments to cache
+                    multipartReader.storeAllAttachmentsToCache();
 
-                if (!soapPart.getHeader(XmlUtil.CONTENT_TYPE).getValue().equals(innerType)) throw new IOException("Content-Type of first part doesn't match type of Multipart header");
+                    if (!soapPart.getHeader(XmlUtil.CONTENT_TYPE).getValue().equals(innerType))
+                        throw new IOException("Content-Type of first part doesn't match type of Multipart header");
 
-                envelope = XmlUtil.stringToDocument(soapPart.getContent());
+                    envelope = XmlUtil.stringToDocument(soapPart.getContent());
 
                 } else throw new IOException("Expected first part of multipart message to be XML");
             } else {
@@ -232,7 +226,7 @@ public class RequestHandler extends AbstractHttpHandler {
             }
 
             pendingRequest = gatherRequest(request, envelope, endpoint, ssg);
-            if(multipart) {
+            if(multipart && multipartReader != null) {
                 pendingRequest.setMultipart(true);
                 pendingRequest.setMultipartReader(multipartReader);
             }
