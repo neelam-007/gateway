@@ -33,6 +33,16 @@
         <pathelement location="src"/>
         <fileset dir="lib">
             <include name="*.jar"/>
+             <!--
+                * Issue with multiple parsers.
+                * JDK 1.4 ships it's own parses and contributes to the
+                * overall parser mess. java.beans.XmlEncoder and other
+                * classes  do not like xerces so excluded it from project
+                * classpath.
+                * It is not throughly tested to see if this breaks other things.
+              -->
+            <exclude name="*xerces*"/>
+            <exclude name="*xml-api*"/>
         </fileset>
         <fileset dir="lib">
             <include name="*.zip"/>
