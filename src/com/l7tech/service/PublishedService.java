@@ -6,7 +6,6 @@
 
 package com.l7tech.service;
 
-import com.l7tech.common.message.Message;
 import com.l7tech.common.util.SoapFaultUtils;
 import com.l7tech.common.xml.Wsdl;
 import com.l7tech.objectmodel.imp.NamedEntityImp;
@@ -142,9 +141,9 @@ public class PublishedService extends NamedEntityImp {
     }
 
     /**
-     * Gets the SOAP {@link Port} most appropriate for the given {@link Message} from this service's WSDL.
+     * Gets the SOAP {@link Port} from this service's WSDL.
      *
-     * @return the {@link Port} most appropriate for the given {@link Message}. May be null.
+     * @return the {@link Port} for this service. May be null.
      * @throws WSDLException if the WSDL cannot be parsed
      */
     public synchronized Port wsdlPort() throws WSDLException {
@@ -157,7 +156,7 @@ public class PublishedService extends NamedEntityImp {
     }
 
     /**
-     * Gets the URL of the protected service most appropriate for the given {@link com.l7tech.common.message.Message} from this service's WSDL.
+     * Gets the URL of the protected service from this service's WSDL.
      *
      * @return the protected service URL. May be null.
      * @throws WSDLException         if the WSDL could not be parsed
