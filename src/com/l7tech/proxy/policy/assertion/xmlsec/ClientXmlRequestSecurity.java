@@ -6,7 +6,7 @@ import com.l7tech.common.security.xml.SecureConversationTokenHandler;
 import com.l7tech.common.security.xml.Session;
 import com.l7tech.common.security.xml.SoapMsgSigner;
 import com.l7tech.common.security.xml.XmlMangler;
-import com.l7tech.common.util.SoapUtil;
+import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.xml.XpathEvaluator;
 import com.l7tech.common.xml.XpathExpression;
 import com.l7tech.policy.assertion.AssertionStatus;
@@ -24,15 +24,12 @@ import org.jaxen.JaxenException;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
-import javax.xml.soap.SOAPException;
-import javax.xml.soap.SOAPMessage;
 import java.io.IOException;
 import java.security.GeneralSecurityException;
 import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
 import java.util.List;
-import java.util.Map;
 
 /**
  * XML Digital signature on the soap request sent from the proxy to the ssg server. Also does XML
@@ -97,8 +94,6 @@ public class ClientXmlRequestSecurity extends ClientAssertion {
         SecureConversationTokenHandler.appendSessIdAndSeqNrToDocument(soapmsg, sessId, seqNr);
 
         try {
-            SOAPMessage soapMessage = null;
-            Map namespaces = null;
             String encReferenceId = "encref";
             String signReferenceId = "signref";
             int encReferenceIdSuffix = 1;
@@ -109,14 +104,8 @@ public class ClientXmlRequestSecurity extends ClientAssertion {
                 ElementSecurity elementSecurity = data[i];
                 // XPath match?
                 XpathExpression xpath = elementSecurity.getXpathExpression();
-                if (soapMessage == null) {
-                    soapMessage = SoapUtil.asSOAPMessage(soapmsg);
-                }
-                if (namespaces == null) {
-                    namespaces = XpathEvaluator.getNamespaces(soapMessage);
-                }
-
-                List nodes = XpathEvaluator.newEvaluator(soapmsg, namespaces).select(xpath.getExpression());
+                XmlUtil.documentToOutputStream(soapmsg, System.out);
+                List nodes = XpathEvaluator.newEvaluator(soapmsg, xpath.getNamespaces()).select(xpath.getExpression());
                 if (nodes.isEmpty()) continue; // nothing selected
                 Element element = (Element)nodes.get(0);
                 if (isEncryption()) {
@@ -134,8 +123,6 @@ public class ClientXmlRequestSecurity extends ClientAssertion {
             throw new RuntimeException("error signing document", e);
         } catch (XSignatureException e) {
             throw new RuntimeException("error signing document", e);
-        } catch (SOAPException e) {
-            throw new RuntimeException("error accessing SOAP message", e);
         } catch (JaxenException e) {
             throw new RuntimeException("XPath error", e);
         }
