@@ -70,7 +70,7 @@ public class ClientCertManagerImp implements ClientCertManager {
                                          " tried to csr for subject other than self (" +
                                          x500name.getCommonName() + ")");
                 throw new UpdateException("Attempt to create cert for identity " + x500name.getCommonName() +
-                                          " with login" + user.getLogin());
+                                          " with login " + user.getLogin());
             } else {
                 logger.finest("Cert's subject matches authenticated user's login (" + user.getLogin() + ")");
             }
