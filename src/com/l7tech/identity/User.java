@@ -162,6 +162,22 @@ public class User extends NamedEntityImp implements Principal {
         return new String(buffer);
     }
 
+    /**
+     * allows to set all properties from another object
+     */
+    public void copyFrom(User objToCopy) {
+        setName(objToCopy.getName());
+        setProviderId(objToCopy.getProviderId());
+        setLogin(objToCopy.getLogin());
+        setDepartment(objToCopy.getDepartment());
+        setEmail(objToCopy.getEmail());
+        setFirstName(objToCopy.getFirstName());
+        setGroups(objToCopy.getGroups());
+        setLastName(objToCopy.getLastName());
+        setTitle(objToCopy.getTitle());
+        _password = objToCopy.getPassword();
+    }
+
     // ************************************************
     // PRIVATES
     // ************************************************

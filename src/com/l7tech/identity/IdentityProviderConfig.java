@@ -98,6 +98,16 @@ public class IdentityProviderConfig extends NamedEntityImp {
         type = IdentityProviderType.fromVal(val);
     }
 
+    /**
+     * allows to set all properties from another object
+     */
+    public void copyFrom(IdentityProviderConfig objToCopy) {
+        setDescription(objToCopy.getDescription());
+        setName(objToCopy.getName());
+        type = objToCopy.type();
+        props = objToCopy.props;
+    }
+
     // ************************************************
     // PRIVATES
     // ************************************************

@@ -68,6 +68,16 @@ public class Group extends NamedEntityImp implements Principal {
         return (int)getOid();
     }
 
+    /**
+     * allows to set all properties from another object
+     */
+    public void copyFrom(Group objToCopy) {
+        setDescription(objToCopy.getDescription());
+        setMembers(objToCopy.getMembers());
+        setName(objToCopy.getName());
+        setProviderId(objToCopy.getProviderId());
+    }
+
     private String _description;
     private Set _members;
     private Set _memberHeaders;
