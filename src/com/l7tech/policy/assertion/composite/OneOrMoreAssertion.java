@@ -16,6 +16,7 @@ import com.l7tech.proxy.datamodel.PendingRequest;
 
 import java.util.Iterator;
 import java.util.List;
+import java.io.IOException;
 
 /**
  * Evaluate children until none left or one succeeds; returns last result evaluated.
@@ -37,7 +38,7 @@ public class OneOrMoreAssertion extends CompositeAssertion {
         super(parent, children);
     }
 
-    public AssertionStatus checkRequest(Request request, Response response) throws PolicyAssertionException {
+    public AssertionStatus checkRequest(Request request, Response response) throws IOException, PolicyAssertionException {
         mustHaveChildren();
         Iterator kids = children();
         Assertion child;

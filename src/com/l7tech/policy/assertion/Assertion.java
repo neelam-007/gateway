@@ -12,6 +12,7 @@ import com.l7tech.policy.assertion.composite.CompositeAssertion;
 import com.l7tech.proxy.datamodel.PendingRequest;
 
 import java.io.Serializable;
+import java.io.IOException;
 
 /**
  * Immutable except for de-persistence.
@@ -29,7 +30,7 @@ public abstract class Assertion implements Cloneable, Serializable {
      * @return AssertionStatus.NONE if this Assertion did its business successfully; otherwise, some error code
      * @throws PolicyAssertionException if processing should not continue due to a serious error
      */
-    public abstract AssertionStatus checkRequest( Request request, Response response ) throws PolicyAssertionException;
+    public abstract AssertionStatus checkRequest( Request request, Response response ) throws IOException, PolicyAssertionException;
 
     /**
      * ClientProxy client-side processing of the given request.
