@@ -20,9 +20,6 @@ import java.util.logging.Level;
  *
  * Note that the API does not permit the modification of audit records in any way,
  * and only permits their deletion using a process that generates a permanent audit record.
- *
- * @author alex
- * @version $Revision$
  */
 public interface AuditAdmin extends GenericLogAdmin {
     /**

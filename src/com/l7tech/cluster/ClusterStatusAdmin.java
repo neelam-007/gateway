@@ -9,26 +9,20 @@ import java.rmi.RemoteException;
 
 /**
  * Remote interface for getting the status of nodes in a gateway cluster.
- * This is used by the cluster status panel of the SSM.
- *
- * <br/><br/>
- * LAYER 7 TECHNOLOGIES, INC<br/>
- * User: flascell<br/>
- * Date: Dec 22, 2003<br/>
- * $Id$<br/>
- *
  */
 public interface ClusterStatusAdmin extends Remote {
     /**
      * Get status for all nodes recorded as part of the cluster.
      * @return An array of ClusterNodeInfo (one for each node)
      * @throws FindException if there was a server-side problem accessing the requested information
+     * @throws RemoteException on remote communication error
      */
     ClusterNodeInfo[] getClusterStatus() throws RemoteException, FindException;
 
     /**
      * Get some usage statistics on a 'per-published-service' basis.
      * @return an array of ServiceUsage (one per published service). never null
+     * @throws RemoteException on remote communication error
      * @throws FindException if there was a server-side problem accessing the requested information
      */
     ServiceUsage[] getServiceUsage() throws RemoteException, FindException;
@@ -39,6 +33,7 @@ public interface ClusterStatusAdmin extends Remote {
      *
      * @param nodeid the mac of the node for which we want to change the name
      * @param newName the new name of the node (must not be null)
+     * @throws RemoteException on remote communication error
      * @throws UpdateException if there was a server-side problem updating the requested node
      */
     void changeNodeName(String nodeid, String newName) throws RemoteException, UpdateException;
@@ -52,6 +47,7 @@ public interface ClusterStatusAdmin extends Remote {
      * call are cluster_info, service_usage and ssg_logs
      *
      * @param nodeid the mac of the stale node to remove as defined in the ClusterNodeInfo object
+     * @throws RemoteException on remote communication error
      * @throws DeleteException if there was a server-side problem deleting the requested node
      */
     void removeStaleNode(String nodeid) throws RemoteException, DeleteException;
@@ -60,6 +56,7 @@ public interface ClusterStatusAdmin extends Remote {
      * Return the current system time on the gateway.
      *
      * @return java.util.Date  The current system time
+     * @throws RemoteException on remote communication error
      */
     java.util.Date getCurrentClusterSystemTime() throws RemoteException;
 
@@ -67,6 +64,7 @@ public interface ClusterStatusAdmin extends Remote {
      * Gets the name of node that handles the admin request.
      *
      * @return String  The node name
+     * @throws RemoteException on remote communication error
      */
      String getSelfNodeName() throws RemoteException;
 }
