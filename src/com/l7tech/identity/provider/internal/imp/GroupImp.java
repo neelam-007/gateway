@@ -17,8 +17,7 @@ public class GroupImp extends NamedEntityImp implements Group {
     }
 
     public Collection getMembers() {
-        // TODO: Implement!
-        return null;
+        return _members;
     }
 
     public void setDescription(String description) {
@@ -26,4 +25,5 @@ public class GroupImp extends NamedEntityImp implements Group {
     }
 
     private String _description;
+    private Collection _members;
 }
