@@ -17,6 +17,7 @@ import com.l7tech.policy.assertion.credential.CredentialFinderException;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.ServerAssertion;
+import org.springframework.context.ApplicationContext;
 
 import java.io.IOException;
 import java.util.HashMap;
@@ -28,9 +29,9 @@ import java.util.logging.Logger;
  * @version $Revision$
  */
 public abstract class ServerCredentialSourceAssertion implements ServerAssertion {
-    protected Auditor auditor;
+    private final Auditor auditor;
 
-    protected ServerCredentialSourceAssertion(Assertion data) {
+    protected ServerCredentialSourceAssertion(Assertion data, ApplicationContext springContext) {
         if (data == null) {
             throw new IllegalArgumentException();
         }
@@ -38,6 +39,7 @@ public abstract class ServerCredentialSourceAssertion implements ServerAssertion
             throw new IllegalArgumentException("Not a credential source " + data);
         }
         _data = data;
+        this.auditor = new Auditor(this, springContext, logger);
     }
 
     /**

@@ -32,6 +32,11 @@ public class ServerHttpBasic extends ServerHttpCredentialSource implements Serve
     public static final String SCHEME = "Basic";
     public static final String REALM = "L7SSGBasicRealm";
 
+    public ServerHttpBasic(HttpBasic data, ApplicationContext springContext) {
+        super(data, springContext);
+        _data = data;
+    }
+
     protected Map challengeParams(Message request, Map authParams) {
         return Collections.EMPTY_MAP;
     }
@@ -83,11 +88,6 @@ public class ServerHttpBasic extends ServerHttpCredentialSource implements Serve
             logger.warning(err);
             return null;
         }
-    }
-
-    public ServerHttpBasic( HttpBasic data, ApplicationContext springContext ) {
-        super(data);
-        _data = data;
     }
 
     protected String realm() {

@@ -7,6 +7,7 @@
 package com.l7tech.server.policy.assertion.credential.http;
 
 import com.l7tech.common.audit.AssertionMessages;
+import com.l7tech.common.audit.Auditor;
 import com.l7tech.common.message.HttpRequestKnob;
 import com.l7tech.common.message.HttpResponseKnob;
 import com.l7tech.common.message.Message;
@@ -18,6 +19,7 @@ import com.l7tech.policy.assertion.credential.http.HttpCredentialSourceAssertion
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.ServerAssertion;
 import com.l7tech.server.policy.assertion.credential.ServerCredentialSourceAssertion;
+import org.springframework.context.ApplicationContext;
 
 import java.io.IOException;
 import java.util.Iterator;
@@ -34,10 +36,13 @@ public abstract class ServerHttpCredentialSource extends ServerCredentialSourceA
 
     public static final String AUTHORIZATION = "Authorization";
 
-    protected ServerHttpCredentialSource(HttpCredentialSourceAssertion data) {
-        super(data);
+    private final Auditor auditor;
+
+    protected ServerHttpCredentialSource(HttpCredentialSourceAssertion data, ApplicationContext springContext) {
+        super(data, springContext);
 
         _data = data;
+        this.auditor = new Auditor(this, springContext, logger);
     }
 
     public AssertionStatus checkCredentials( LoginCredentials pc, Map authParams ) throws CredentialFinderException {
