@@ -168,7 +168,7 @@ public class JMSEndpointReference extends ExternalReference {
         return false;
     }
 
-    void localizeAssertion(Assertion assertionToLocalize) {
+    boolean localizeAssertion(Assertion assertionToLocalize) {
         if (assertionToLocalize instanceof JmsRoutingAssertion) {
             JmsRoutingAssertion jmsRoutingAssertion = (JmsRoutingAssertion) assertionToLocalize;
             if (jmsRoutingAssertion.getEndpointOid() != null &&
@@ -177,6 +177,7 @@ public class JMSEndpointReference extends ExternalReference {
                 logger.fine("Endpoint id was replaced from " + oid + " to " + localEndpointId);
             }
         }
+        return true;
     }
 
     private final Logger logger = Logger.getLogger(JMSEndpointReference.class.getName());

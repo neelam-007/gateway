@@ -101,8 +101,9 @@ public class CustomAssertionReference extends ExternalReference {
         return false;
     }
 
-    void localizeAssertion(Assertion assertionToLocalize) {
+    boolean localizeAssertion(Assertion assertionToLocalize) {
         // nothing to do. if the verify passed, then this is good to go
+        return true;
     }
 
     private final Logger logger = Logger.getLogger(CustomAssertionReference.class.getName());

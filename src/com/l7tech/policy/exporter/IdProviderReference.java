@@ -190,21 +190,26 @@ public class IdProviderReference extends ExternalReference {
         return false;
     }
 
-    void localizeAssertion(Assertion assertionToLocalize) {
+    /**
+     * return false if the localized assertion should be deleted from the tree
+     */
+    boolean localizeAssertion(Assertion assertionToLocalize) {
         if (localizeType != LocaliseAction.IGNORE) {
             if (assertionToLocalize instanceof IdentityAssertion) {
                 IdentityAssertion idass = (IdentityAssertion)assertionToLocalize;
                 if (idass.getIdentityProviderOid() == providerId) {
-                    if (localizeType != LocaliseAction.REPLACE) {
+                    if (localizeType == LocaliseAction.REPLACE) {
                         idass.setIdentityProviderOid(locallyMatchingProviderId);
-                        logger.fine("The provider id of the imported id assertion has been changed " +
+                        logger.info("The provider id of the imported id assertion has been changed " +
                                     "from " + providerId + " to " + locallyMatchingProviderId);
-                    } else if (localizeType != LocaliseAction.DELETE) {
-                        assertionToLocalize.getParent().getChildren().remove(assertionToLocalize);
+                    } else if (localizeType == LocaliseAction.DELETE) {
+                        logger.info("Deleted this assertin from the tree.");
+                        return false;
                     }
                 }
             }
         }
+        return true;
     }
 
     public boolean equals(Object o) {

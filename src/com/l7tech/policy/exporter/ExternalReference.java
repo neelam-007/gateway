@@ -39,9 +39,10 @@ public abstract class ExternalReference {
      * verified, this method will apply the necessary changes to the assertion. If
      * the assertion type passed does not relate to the reference, it will be left
      * untouched.
+     * Returns false if the assertion should be deleted from the tree.
      * @param assertionToLocalize will be fixed once this method returns.
      */
-    abstract void localizeAssertion(Assertion assertionToLocalize);
+    abstract boolean localizeAssertion(Assertion assertionToLocalize);
 
     /**
      * Parse references from an exported policy's exp:References element.
