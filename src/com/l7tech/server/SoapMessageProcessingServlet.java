@@ -100,9 +100,11 @@ public class SoapMessageProcessingServlet extends HttpServlet {
                             pbis.unread(sb.toString().getBytes());
 
                             BufferedReader reader = new BufferedReader(new InputStreamReader(pbis, ENCODING));
+
                             char[] buf = new char[1024];
-                            int read = reader.read(buf);
-                            while (read > 0) {
+                            int read;
+
+                            while ((read = reader.read(buf, 0, buf.length)) > 0) {
                                 respWriter.write(buf, 0, read);
                             }
 
