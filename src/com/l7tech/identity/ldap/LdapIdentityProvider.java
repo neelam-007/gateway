@@ -400,12 +400,12 @@ public class LdapIdentityProvider implements IdentityProvider {
             try {
                 if (answer != null) answer.close();
             } catch (NamingException e2) {
-                logger.finest("count not close answer " + e2.getMessage());
+                logger.finest("Could not close answer " + e2.getMessage());
             }
             try {
                 context.close();
             } catch (NamingException e2) {
-                logger.finest("count not close context " + e2.getMessage());
+                logger.finest("Could not close context " + e2.getMessage());
             }
 
             throw new InvalidIdProviderCfgException(msg);
