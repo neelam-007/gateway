@@ -433,6 +433,7 @@
                 <include name="com/l7tech/common/**/*"/>
                 <exclude name="com/l7tech/common/security/prov/**/*"/>
                 <exclude name="com/l7tech/common/security/saml/**/*"/>
+                <exclude name="com/l7tech/common/xml/saml/**/*"/>
                 <include name="com/l7tech/common/security/TrustedCert*.class" />
                 <exclude name="com/l7tech/common/security/AesKey.class"/>
                 <exclude name="com/l7tech/common/security/Cert*.class"/>
