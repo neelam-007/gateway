@@ -5,6 +5,8 @@ import com.l7tech.logging.LogManager;
 import java.rmi.RemoteException;
 import java.util.logging.LogRecord;
 import java.util.Date;
+import java.util.Calendar;
+import java.text.SimpleDateFormat;
 
 /**
  * Layer 7 technologies, inc.
@@ -27,8 +29,11 @@ public class Service implements Log {
     // ************************************************
     private String[] logRecordsToStrings(LogRecord[] logs) {
         String[] output = new String[logs.length];
+        SimpleDateFormat sdf = new SimpleDateFormat( "yyyyMMdd HH:mm:ss.SSS" );
+        Calendar cal = Calendar.getInstance();
         for (int i = 0; i < logs.length; i++) {
-            output[i] =  new Date(logs[i].getMillis()).toString() + " - " +
+            cal.setTimeInMillis( logs[i].getMillis() );
+            output[i] = sdf.format( cal.getTime() ) + " - " +
                         logs[i].getLevel().toString() +  " - " +
                         logs[i].getSourceClassName() +  " - " +
                         logs[i].getSourceMethodName() +  " - " +
