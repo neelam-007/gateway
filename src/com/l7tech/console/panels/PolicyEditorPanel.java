@@ -49,7 +49,7 @@ import java.beans.PropertyChangeEvent;
 import java.rmi.RemoteException;
 
 /**
- * The class represnts the policy editor
+ * The class represents the policy editor
  *
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  */
@@ -58,7 +58,7 @@ public class PolicyEditorPanel extends JPanel {
     private PublishedService service;
     private JTextPane messagesTextPane;
     private AssertionTreeNode rootAssertion;
-    private JTree policyTree;
+    private PolicyTree policyTree;
     private PolicyEditToolBar policyEditorToolbar;
     private JSplitPane splitPane;
     private final ComponentRegistry componentRegistry = Registry.getDefault().getWindowManager();
@@ -92,9 +92,8 @@ public class PolicyEditorPanel extends JPanel {
         add(getSplitPane(), BorderLayout.CENTER);
     }
 
-    public JSplitPane getSplitPane() {
+    private JSplitPane getSplitPane() {
         if (splitPane != null) return splitPane;
-
         splitPane = new JSplitPane(JSplitPane.VERTICAL_SPLIT);
         splitPane.add(getPolicyTreePane(), "top");
         splitPane.add(getMessagePane(), "bottom");
@@ -106,9 +105,9 @@ public class PolicyEditorPanel extends JPanel {
     private JComponent getPolicyTreePane() {
         if (policyTreePane != null) return policyTreePane;
 
-        policyTree = componentRegistry.getPolicyTree();
+        policyTree = (PolicyTree) componentRegistry.getPolicyTree();
+        policyTree.setPolicyEditor(this);
         policyTreePane = new JScrollPane(policyTree);
-
         return policyTreePane;
     }
 
@@ -218,14 +217,14 @@ public class PolicyEditorPanel extends JPanel {
             });
 
             this.add(buttonSave);
-            buttonSave.setEnabled(false);
+            buttonSave.getAction().setEnabled(false);
             buttonSave.addActionListener(new ActionListener() {
                 /**
                  * Invoked when an action occurs.
                  */
                 public void actionPerformed(ActionEvent e) {
                     appendToMessageArea("<i>Policy saved.</i>");
-                    buttonSave.setEnabled(false);
+                    buttonSave.getAction().setEnabled(false);
                 }
             });
             buttonSaveTemplate = new JButton(new SavePolicyTemplateAction() {
@@ -237,22 +236,17 @@ public class PolicyEditorPanel extends JPanel {
             });
             this.add(buttonSaveTemplate);
 
-            buttonValidate = new JButton(new ValidatePolicyAction());
-            this.add(buttonValidate);
-            buttonValidate.addActionListener(
-                    new ActionListener() {
-                        /** Invoked when an action occurs.*/
-                        public void actionPerformed(ActionEvent e) {
-                            PolicyValidatorResult result
-                                    = PolicyValidator.getDefault().
-                                    validate(rootAssertion.asAssertion());
-                            displayPolicyValidateResult(result);
+            buttonValidate = new JButton(new ValidatePolicyAction() {
+                public void performAction() {
+                    PolicyValidatorResult result
+                            = PolicyValidator.getDefault().
+                            validate(rootAssertion.asAssertion());
+                    displayPolicyValidateResult(result);
 
-                            if (result.getErrors().isEmpty() && result.getWarnings().isEmpty()) {
-                                appendToMessageArea("<i>Policy validated ok.</i>");
-                            }
-                        }
-                    });
+                }
+
+            });
+            this.add(buttonValidate);
 
             identityViewButton = new JToggleButton(new PolicyIdentityViewAction());
             identityViewButton.addActionListener(new ActionListener() {
@@ -283,23 +277,12 @@ public class PolicyEditorPanel extends JPanel {
         }
     }
 
-    private void appendToMessageArea(String s) {
-        try {
-            int pos = messagesTextPane.getDocument().getLength();
-            //if (pos > 0) s = "\n" + s;
-            StringReader sr = new StringReader(s);
-            EditorKit editorKit = messagesTextPane.getEditorKit();
-            editorKit.read(sr, messagesTextPane.getDocument(), pos);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
-
-    private void overWriteMessageArea(String s) {
-        messagesTextPane.setText(s);
-    }
-
-    private void displayPolicyValidateResult(PolicyValidatorResult r) {
+    /**
+     * package pruivate method that displays the policy validation
+     * result
+     * @param r the policy validation result
+     */
+    void displayPolicyValidateResult(PolicyValidatorResult r) {
         overWriteMessageArea("");
         for (Iterator iterator = r.getErrors().iterator();
              iterator.hasNext();) {
@@ -319,6 +302,40 @@ public class PolicyEditorPanel extends JPanel {
                     " Warning :" + pe.getMessage() + ""
             );
         }
+        if (r.getErrors().isEmpty() && r.getWarnings().isEmpty()) {
+            appendToMessageArea("<i>Policy validated ok.</i>");
+        }
+    }
+
+    /**
+     * package private method that processes actions
+     * @param actions
+     */
+    public void updateActions(Action[] actions) {
+        for (int i = 0; i < actions.length; i++) {
+            Action action = actions[i];
+            if (action instanceof SavePolicyAction) {
+                actions[i] = policyEditorToolbar.buttonSave.getAction();
+            } else if (action instanceof ValidatePolicyAction) {
+                actions[i] = policyEditorToolbar.buttonValidate.getAction();
+            }
+        }
+    }
+
+    private void appendToMessageArea(String s) {
+        try {
+            int pos = messagesTextPane.getDocument().getLength();
+            //if (pos > 0) s = "\n" + s;
+            StringReader sr = new StringReader(s);
+            EditorKit editorKit = messagesTextPane.getEditorKit();
+            editorKit.read(sr, messagesTextPane.getDocument(), pos);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void overWriteMessageArea(String s) {
+        messagesTextPane.setText(s);
     }
 
     /**
@@ -331,9 +348,9 @@ public class PolicyEditorPanel extends JPanel {
         String msg = null;
         if (pe.getAssertion() != null) {
             msg = "Assertion : " +
-                  "<a href=\"file://assertion#" +
-                  pe.getAssertion().hashCode() + "\">"+
-                 Descriptions.getDescription(pe.getAssertion()).getShortDescription() + "</a>";
+                    "<a href=\"file://assertion#" +
+                    pe.getAssertion().hashCode() + "\">" +
+                    Descriptions.getDescription(pe.getAssertion()).getShortDescription() + "</a>";
         } else {
             msg = ""; // supplied message (non single assertion related)
         }
@@ -389,7 +406,7 @@ public class PolicyEditorPanel extends JPanel {
         }
 
         public void treeNodesInserted(final TreeModelEvent e) {
-            policyEditorToolbar.buttonSave.setEnabled(true);
+            policyEditorToolbar.buttonSave.getAction().setEnabled(true);
             //todo: refactor this out
             SwingUtilities.invokeLater(
                     new Runnable() {
@@ -424,12 +441,12 @@ public class PolicyEditorPanel extends JPanel {
         }
 
         public void treeNodesRemoved(TreeModelEvent e) {
-            policyEditorToolbar.buttonSave.setEnabled(true);
+            policyEditorToolbar.buttonSave.getAction().setEnabled(true);
 
         }
 
         public void treeStructureChanged(TreeModelEvent e) {
-            policyEditorToolbar.buttonSave.setEnabled(true);
+            policyEditorToolbar.buttonSave.getAction().setEnabled(true);
         }
     };
 
@@ -446,7 +463,7 @@ public class PolicyEditorPanel extends JPanel {
                             "policy".equals(evt.getPropertyName())) {
                         try {
                             renderService(serviceNode);
-                            policyEditorToolbar.buttonSave.setEnabled(true);
+                            policyEditorToolbar.buttonSave.getAction().setEnabled(true);
                         } catch (Exception e) {
                             e.printStackTrace();
                         }
@@ -485,4 +502,5 @@ public class PolicyEditorPanel extends JPanel {
                     }
                 }
             };
+
 }

@@ -5,6 +5,7 @@ import com.l7tech.console.tree.AbstractTreeNode;
 import com.l7tech.console.tree.EntityTreeCellRenderer;
 import com.l7tech.console.tree.AssertionsTree;
 import com.l7tech.console.util.PopUpMouseListener;
+import com.l7tech.console.panels.PolicyEditorPanel;
 
 import javax.swing.*;
 import javax.swing.tree.TreePath;
@@ -27,6 +28,7 @@ public class PolicyTree extends JTree {
     static final Logger log = Logger.getLogger(PolicyTree.class.getName());
     /** component name */
     public final static String NAME = "policy.tree";
+    private PolicyEditorPanel policyEditorPanel;
 
     /**
      * Create the new policy tree with the policy model.
@@ -52,6 +54,10 @@ public class PolicyTree extends JTree {
         setCellRenderer(new EntityTreeCellRenderer());
         setDragEnabled(true);
         setTransferHandler(new PolicyTransferHandler());
+    }
+
+    public void setPolicyEditor(PolicyEditorPanel pe) {
+        policyEditorPanel = pe;
     }
 
     /**
@@ -106,14 +112,33 @@ public class PolicyTree extends JTree {
                         tree.setSelectionRow(closestRow);
                     }
                     AbstractTreeNode node = (AbstractTreeNode)tree.getLastSelectedPathComponent();
-
-                    JPopupMenu menu = node.getPopupMenu();
+                    Action[] actions = node.getActions();
+                    if (policyEditorPanel !=null) {
+                        policyEditorPanel.updateActions(actions);
+                    }
+                    JPopupMenu menu = getPopupMenu(actions);
                     if (menu != null) {
                         menu.show(mouseEvent.getComponent(), mouseEvent.getX(), mouseEvent.getY());
                     }
                 }
             }
         }
+    }
+
+    /**
+     * Make a popup menu from actions.
+     * The menu is constructed from the set of actions returned
+     *
+     * @return the popup menu
+     */
+    private JPopupMenu getPopupMenu(Action[] actions) {
+        if (actions == null || actions.length == 0)
+            return null;
+        JPopupMenu pm = new JPopupMenu();
+        for (int i = 0; i < actions.length; i++) {
+            pm.add(actions[i]);
+        }
+        return pm;
     }
 
     /**

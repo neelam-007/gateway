@@ -11,14 +11,15 @@ import com.l7tech.console.tree.policy.AssertionTreeNode;
  * @version 1.0
  */
 public class ValidatePolicyAction extends BaseAction {
-    protected AssertionTreeNode node;
+    protected AssertionTreeNode rootNode;
 
     public ValidatePolicyAction() {
     }
 
     public ValidatePolicyAction(AssertionTreeNode node) {
-        this.node = node;
+        this.rootNode = node;
     }
+
     /**
      * @return the action name
      */
