@@ -12,14 +12,14 @@ public class AssertionStatus {
     static final int POLICY = 600;
     static final int MISC   = 1000;
 
-    public static final AssertionStatus NONE          = make(           0, "No Error" );
-    public static final AssertionStatus BAD_REQUEST   = make( CLIENT |  0, "Bad Request" );
-    public static final AssertionStatus AUTH_REQUIRED = make( CLIENT |  1, "Authentication Required" );
-    public static final AssertionStatus AUTH_FAILED   = make( CLIENT |  2, "Authentication Failed" );
-    public static final AssertionStatus FORBIDDEN     = make( CLIENT |  3, "Forbidden" );
-    public static final AssertionStatus SERVICE_NOT_FOUND     = make( CLIENT |  4, "Service Not Found" );
-    public static final AssertionStatus UNAUTHORIZED  = make( CLIENT |  2, "Unauthorized" );
-    public static final AssertionStatus BALEETED      = make( CLIENT | 99, "BALEETED!" );
+    public static final AssertionStatus NONE              = make(           0, "No Error" );
+    public static final AssertionStatus BAD_REQUEST       = make( CLIENT |  0, "Bad Request" );
+    public static final AssertionStatus AUTH_REQUIRED     = make( CLIENT |  1, "Authentication Required" );
+    public static final AssertionStatus AUTH_FAILED       = make( CLIENT |  2, "Authentication Failed" );
+    public static final AssertionStatus FORBIDDEN         = make( CLIENT |  3, "Forbidden" );
+    public static final AssertionStatus SERVICE_NOT_FOUND = make( CLIENT |  4, "Service Not Found" );
+    public static final AssertionStatus UNAUTHORIZED      = make( CLIENT |  2, "Unauthorized" );
+    public static final AssertionStatus BALEETED          = make( CLIENT | 99, "BALEETED!" );
 
     public static final AssertionStatus NOT_YET_IMPLEMENTED = make( MISC | 0, "Not yet implemented!" );
     public static final AssertionStatus NOT_APPLICABLE      = make( MISC | 1, "Not applicable in this context" );
