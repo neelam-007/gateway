@@ -67,4 +67,14 @@ public interface CredentialManager {
      * @param ssg
      */
     void notifyCertificateAlreadyIssued(Ssg ssg);
+
+    /**
+     * Notify the user that an SSL connection to the SSG could not be established because the hostname did not match
+     * the one in the certificate.
+     *
+     * @param ssg
+     * @param whatWeWanted  the expected hostname, equal to ssg.getSsgAddress()
+     * @param whatWeGotInstead  the hostname in the peer's certificate
+     */
+    void notifySsgHostnameMismatch(Ssg ssg, String whatWeWanted, String whatWeGotInstead);
 }
