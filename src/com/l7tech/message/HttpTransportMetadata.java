@@ -52,6 +52,8 @@ public class HttpTransportMetadata extends TransportMetadata {
                 value = _request.getHeader( subname );
             } else if ( Request.PARAM_HTTP_REQUEST_URI.equals( name ) ) {
                 return _request.getRequestURI();
+            } else if ( Request.PARAM_HTTP_METHOD.equals( name ) ) {
+                return _request.getMethod();
             }
         }
 
