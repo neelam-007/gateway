@@ -163,4 +163,34 @@
         <property name="strRequestId" column="strrequestid" type="string"/>
     </class>
 
+    <class name="com.l7tech.jms.JmsProvider" table="jms_providers">
+        <id name="oid" column="oid" type="long" unsaved-value="-1">
+            <generator class="hilo"/>
+        </id>
+        <version name="version" column="version" type="integer"/>
+
+        <property name="name" column="name" type="string"/>
+        <property name="jndiUrl" column="jndi_url" type="string"/>
+        <property name="destinationFactoryUrl" column="destination_factory_url" type="string"/>
+        <property name="queueFactoryUrl" column="queue_factory_url" type="string"/>
+        <property name="topicFactoryUrl" column="topic_factory_url" type="string"/>
+
+        <set name="destinations" table="jms_destinations">
+            <one-to-many class="com.l7tech.jms.JmsDestination"/>
+        </set>
+    </class>
+
+    <class name="com.l7tech.jms.JmsDestination" table="jms_destinations">
+        <id name="oid" column="oid" type="long" unsaved-value="-1">
+            <generator class="hilo"/>
+        </id>
+        <version name="version" column="version" type="integer"/>
+
+        <property name="provider" column="provider_oid" type="com.l7tech.jms.JmsProvider"/>
+
+        <property name="name" column="name" type="string"/>
+        <property name="destinationName" column="destination_name" type="string"/>
+        <property name="replyType" column="reply_type" type="int"/>
+    </class>
+
 </hibernate-mapping>
