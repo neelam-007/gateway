@@ -49,8 +49,6 @@ public class CertificatePanel extends JPanel {
      * initialize the dialog.
      */
     private void initComponents() {
-        setLayout(new GridBagLayout());
-
         certificateTable = new JTable();
 
         tableScrollPane = new JScrollPane(certificateTable);
@@ -96,9 +94,10 @@ public class CertificatePanel extends JPanel {
             }
         };
 
-        certificateTable.setPreferredScrollableViewportSize(
-                new Dimension(500,
-                              certificateTableModel.getRowCount() * certificateTable.getRowHeight()));
+        Dimension size = new Dimension(500,
+                              (certificateTableModel.getRowCount() + 1) * certificateTable.getRowHeight() + 1);
+        tableScrollPane.setPreferredSize(size);
+        tableScrollPane.setMinimumSize(size);
 
         return certificateTableModel;
     }
