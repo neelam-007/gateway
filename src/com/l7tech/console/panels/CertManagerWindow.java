@@ -33,6 +33,8 @@ import java.rmi.RemoteException;
 
 
 /**
+ * This class is the main window of the trusted certificate manager
+ *
  * <p> Copyright (C) 2004 Layer 7 Technologies Inc.</p>
  * <p/>
  * $Id$
@@ -55,34 +57,37 @@ public class CertManagerWindow extends JDialog {
     private static ResourceBundle resources = ResourceBundle.getBundle("com.l7tech.console.resources.CertificateDialog", Locale.getDefault());
     private static Logger logger = Logger.getLogger(CertManagerWindow.class.getName());
 
+    /**
+     * Constructor
+     *
+     * @param owner  The parent component
+     */
     private CertManagerWindow(Frame owner) {
         super(owner, resources.getString("dialog.title"), true);
+        initialize();
+        loadTrustedCerts();
     }
 
-    private CertManagerWindow(Dialog owner) {
-        super(owner, resources.getString("dialog.title"), true);
-    }
-
+    /**
+     *  Create a instance of CertManagerWindow if it does not exist
+     * @param owner The parent component
+     * @return The object reference of the instance
+     */
     public static CertManagerWindow getInstance(Window owner) {
 
         if (instance == null) {
-            if (owner instanceof Dialog)
-                instance = new CertManagerWindow((Dialog) owner);
-            else if (owner instanceof Frame)
-                instance = new CertManagerWindow((Frame) owner);
-            else
-                throw new IllegalArgumentException("Owner must be derived from either Frame or Window");
-
-            instance.initialize();
-            instance.loadTrustedCerts();
+          instance = new CertManagerWindow((Frame) owner);
         }
 
         return instance;
     }
 
+    /**
+     * Initialization of the cert manager window
+     */
     private void initialize() {
 
-        Container p = instance.getContentPane();
+        Container p = getContentPane();
         p.setLayout(new BorderLayout());
         p.add(mainPanel, BorderLayout.CENTER);
         certTableScrollPane.setViewportView(getTrustedCertTable());
@@ -140,28 +145,48 @@ public class CertManagerWindow extends JDialog {
                 String certName = (String) getTrustedCertTable().getValueAt(sr, CERT_TABLE_CERT_NAME_COLUMN_INDEX);
                 TrustedCert tc = (TrustedCert) getTrustedCertTableModel().getData(sr);
 
-                try {
-                    getTrustedCertAdmin().deleteCert(tc.getOid());
-                    
-                    // reload all certs from server
-                    loadTrustedCerts();
+                Object[] options = { "Remove", "Cancel" };
+                int result = JOptionPane.showOptionDialog(null,
+                                                          "<html>Are you sure you want to remove the certificate:  " +
+                                                          certName + "?<br>" +
+                                                          "<center>This action cannot be undone." +
+                                                          "</center></html>",
+                                                          "Remove the certificate?",
+                                                          0, JOptionPane.WARNING_MESSAGE,
+                                                          null, options, options[1]);
+                if (result == 0) {
+                    try {
+                        getTrustedCertAdmin().deleteCert(tc.getOid());
 
-                } catch (FindException e) {
-                    logger.warning("Unable to find the trusted certificates in server");
-                } catch (DeleteException e) {
-                    logger.warning("Unable to delete the certificate:" + certName);
-                } catch (RemoteException e) {
-                    logger.severe("Unable to execute remote call due to remote exception");
+                        // reload all certs from server
+                        loadTrustedCerts();
+
+                    } catch (FindException e) {
+                        JOptionPane.showMessageDialog(instance, resources.getString("cert.find.error"),
+                                        resources.getString("save.error.title"),
+                                        JOptionPane.ERROR_MESSAGE);
+                    } catch (DeleteException e) {
+                        JOptionPane.showMessageDialog(instance, resources.getString("cert.delete.error"),
+                                        resources.getString("save.error.title"),
+                                        JOptionPane.ERROR_MESSAGE);
+                    } catch (RemoteException e) {
+                         JOptionPane.showMessageDialog(instance, resources.getString("cert.remote.exception"),
+                                        resources.getString("save.error.title"),
+                                        JOptionPane.ERROR_MESSAGE);
+                    }
                 }
             }
         });
 
-        instance.pack();
+        pack();
         enableOrDisableButtons();
-        Actions.setEscKeyStrokeDisposes(instance);
+        Actions.setEscKeyStrokeDisposes(this);
 
     }
 
+    /**
+     * Load the certs from the database
+     */
     private void loadTrustedCerts() {
 
         java.util.List certList = null;
@@ -178,12 +203,19 @@ public class CertManagerWindow extends JDialog {
             getTrustedCertTableModel().fireTableDataChanged();
 
         } catch (RemoteException re) {
-            logger.severe("Unable to execute remote call due to remote exception");
+            JOptionPane.showMessageDialog(instance, resources.getString("cert.remote.exception"),
+                                        resources.getString("load.error.title"),
+                                        JOptionPane.ERROR_MESSAGE);
         } catch (FindException e) {
-            logger.warning("Unable to find the trusted certificates in server");
+            JOptionPane.showMessageDialog(instance, resources.getString("cert.find.error"),
+                                        resources.getString("load.error.title"),
+                                        JOptionPane.ERROR_MESSAGE);
         }
     }
 
+    /**
+     * Enable or disable the fields based on the current selections.
+     */
     private void enableOrDisableButtons() {
         boolean propsEnabled = false;
         boolean removeEnabled = false;
@@ -221,6 +253,9 @@ public class CertManagerWindow extends JDialog {
         th.addMouseListener(listMouseListener);
     }
 
+    /**
+     *  The callback for saving the new cert to the database
+     */
     private WizardListener wizardListener = new WizardAdapter() {
         /**
          * Invoked when the wizard has finished.
@@ -250,13 +285,21 @@ public class CertManagerWindow extends JDialog {
                                 loadTrustedCerts();
 
                             } catch (SaveException e) {
-                                logger.warning("Unable to save the trusted certificate in server");
+                                JOptionPane.showMessageDialog(instance, resources.getString("cert.save.error"),
+                                        resources.getString("save.error.title"),
+                                        JOptionPane.ERROR_MESSAGE);
                             } catch (RemoteException e) {
-                                logger.severe("Unable to execute remote call due to remote exception");
+                                JOptionPane.showMessageDialog(instance, resources.getString("cert.remote.exception"),
+                                        resources.getString("save.error.title"),
+                                        JOptionPane.ERROR_MESSAGE);
                             } catch (VersionException e) {
-                                logger.warning("Unable to save the trusted certificate: " + tc.getName() + "; version exception.");
+                                JOptionPane.showMessageDialog(instance, resources.getString("cert.version.error"),
+                                        resources.getString("save.error.title"),
+                                        JOptionPane.ERROR_MESSAGE);
                             } catch (UpdateException e) {
-                                logger.warning("Unable to update the trusted certificate in server");
+                                 JOptionPane.showMessageDialog(instance, resources.getString("cert.update.error"),
+                                        resources.getString("save.error.title"),
+                                        JOptionPane.ERROR_MESSAGE);
                             }
                         }
                     });
@@ -322,6 +365,12 @@ public class CertManagerWindow extends JDialog {
 
     }
 
+    /**
+     * Retrieve the object reference of the Trusted Cert Admin service
+     *
+     * @return TrustedCertAdmin  - The object reference.
+     * @throws RuntimeException  if the object reference of the Trusted Cert Admin service is not found.
+     */
     private TrustedCertAdmin getTrustedCertAdmin() throws RuntimeException {
         TrustedCertAdmin tca =
                 (TrustedCertAdmin) Locator.
