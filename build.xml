@@ -759,6 +759,10 @@
         -->
     </target>
 
+    <target name="make-install-image">
+        <echo>Please use ssg-install-full or ssg-install-upgrade instead!</echo>
+    </target>
+
     <target name="ssg-install-full">
         <antcall target="INTERNAL-ssg-install">
             <param name="install.full" value="true"/>
