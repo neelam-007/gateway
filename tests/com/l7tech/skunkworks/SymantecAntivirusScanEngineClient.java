@@ -1,12 +1,21 @@
 package com.l7tech.skunkworks;
 
+import com.l7tech.common.message.Message;
+import com.l7tech.common.mime.PartIterator;
+import com.l7tech.common.mime.PartInfo;
+import com.l7tech.common.mime.NoSuchPartException;
+import com.l7tech.common.util.HexUtils;
+
 import java.net.Socket;
 import java.net.UnknownHostException;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.ArrayList;
 import java.util.logging.Logger;
 import java.util.logging.Level;
+import java.text.MessageFormat;
 
 /**
  * Sends ICAP requests to Symantec Antivirus Scan Engine to scan content.
@@ -20,11 +29,11 @@ import java.util.logging.Level;
  */
 public class SymantecAntivirusScanEngineClient {
     private static final Logger logger =  Logger.getLogger(SymantecAntivirusScanEngineClient.class.getName());
-    private static final byte[] SCAN_REQ = "RESPMOD icap://127.0.0.1:7777/AVSCAN?action=SCAN ICAP/1.0\r\n".getBytes();
+    private static final String SCAN_REQ = "RESPMOD icap://{0}:{1}/AVSCAN?action=SCAN ICAP/1.0\r\n";
     public static final String DEF_HEADER = "Content-Type: application/octet-stream\r\n\r\n";
 
     /**
-     * get a raw response from the sav scan engine
+     * Send content to scan using ICAP and read response from sav scan engine.
      */
     private String getSavseResponse(String scanEngineHostname, int scanEnginePort, byte[] headers, byte[] payload, String filename) throws IOException, UnknownHostException {
         String get = "GET http://scapi.symantec.com/" + filename + " HTTP/1.0\r\n\r\n";
@@ -53,7 +62,8 @@ public class SymantecAntivirusScanEngineClient {
                              get + hdr + Long.toHexString(bodylength) + "\r\n";
 
         Socket socket = new Socket(scanEngineHostname, scanEnginePort);
-        socket.getOutputStream().write(SCAN_REQ);
+        socket.getOutputStream().write(new MessageFormat(SCAN_REQ).format(new Object[]{scanEngineHostname,
+                                                                                       ""+scanEnginePort}).getBytes());
         socket.getOutputStream().write(icapRequest.getBytes());
         socket.getOutputStream().write(payload);
         socket.getOutputStream().write("\r\n0\r\n\r\n".getBytes());
@@ -84,12 +94,13 @@ public class SymantecAntivirusScanEngineClient {
             }
         }
         socket.close();
-        // todo, deleteme
-        System.out.println(output.toString());
+        logger.fine("Response from sav scan engine:\n" + output.toString());
         return output.toString();
     }
 
     /**
+     * Interpret a response from the sav scan engine (figure out whether the scan detected anything nasty).
+     *
      * The following headers typically indicate infection.
      *
      * X-Infection-Found: Type=0; Resolution=0; Threat=EICAR Test String;
@@ -131,6 +142,11 @@ public class SymantecAntivirusScanEngineClient {
         Map headers;
     }
 
+    /**
+     * parse a text response from the sav scan engine into its status, header parts and body
+     * @param response
+     * @return
+     */
     private SAVScanEngineResponse parseResponse(String response) {
         SAVScanEngineResponse output = new SAVScanEngineResponse();
         // read status
@@ -178,6 +194,13 @@ public class SymantecAntivirusScanEngineClient {
         return output;
     }
 
+    /**
+     * Parse header section from a http response
+     * @param input raw input
+     * @param start position of beggining of headers
+     * @param end position of end of headers
+     * @return a map with key for header name and value for header value
+     */
     private HashMap parseHeaders(String input, int start, int end) {
         HashMap output = new HashMap();
 
@@ -272,50 +295,14 @@ public class SymantecAntivirusScanEngineClient {
         return parseResponse(res);
     }
 
-    public static void main(String[] args) throws Exception {
-        SymantecAntivirusScanEngineClient me = new SymantecAntivirusScanEngineClient();
-        //String res = me.getSavScanEngineOptions("phlox.l7tech.com", 7777);
-        //SAVScanEngineResponse res = me.scan("Content-Type: application/octet-stream\r\nContent-ID: <attachment-1>\r\n\r\n".getBytes(), VIRUS);
-        SAVScanEngineResponse res = me.scan(null, VIRUS);
-        //SAVScanEngineResponse res = me.scan(MULTIPART_MIME_MSG_HEADERS.getBytes(), MULTIPART_MIME_MSG_PAYLOAD.getBytes());
-        //SAVScanEngineResponse res = me.scan("Content-Type: text/plain\r\nContent-ID: <attachment-1>\r\n\r\n".getBytes(), "blahblah".getBytes());
-        if (me.savseResponseIndicateInfection(res)) {
-            logger.severe("CONTENT IS INFECTED!");
-        } else {
-            logger.info("Content is clean");
+    public SAVScanEngineResponse[] scan(Message msg)  throws IOException, UnknownHostException, NoSuchPartException {
+        ArrayList res = new ArrayList();
+        for (PartIterator i = msg.getMimeKnob().getParts(); i.hasNext();) {
+            PartInfo pi = i.next();
+            InputStream is = pi.getInputStream(false);
+            String headers = "Content-Type: " + pi.getContentType().getFullValue() + "\r\n\r\n";
+            res.add(scan(headers.getBytes(), HexUtils.slurpStream(is)));
         }
+        return (SAVScanEngineResponse[])res.toArray(new SAVScanEngineResponse[res.size()]);
     }
-
-    private static final byte[] VIRUS = {0x58, 0x35, 0x4f, 0x21, 0x50, 0x25,
-                                         0x40, 0x41, 0x50, 0x5b, 0x34, 0x5c, 0x50, 0x5a,
-                                         0x58, 0x35, 0x34, 0x28, 0x50, 0x5e, 0x29, 0x37,
-                                         0x43, 0x43, 0x29, 0x37, 0x7d, 0x24, 0x45, 0x49,
-                                         0x43, 0x41, 0x52, 0x2d, 0x53, 0x54, 0x41, 0x4e,
-                                         0x44, 0x41, 0x52, 0x44, 0x2d, 0x41, 0x4e, 0x54,
-                                         0x49, 0x56, 0x49, 0x52, 0x55, 0x53, 0x2d, 0x54,
-                                         0x45, 0x53, 0x54, 0x2d, 0x46, 0x49, 0x4c, 0x45,
-                                         0x21, 0x24, 0x48, 0x2b, 0x48, 0x2a};
-
-    public static final String MULTIPART_MIME_MSG_HEADERS =
-            "MIME-Version: 1.0\r\n" +
-            "Content-Type: multipart/mixed; boundary=MIME_boundary; start=\"<soapRequest>\"\r\n" +
-            "Content-Description: This is the optional message description.\r\n\r\n";
-
-    public static final String MULTIPART_MIME_MSG_PAYLOAD =
-            "--MIME_boundary\r\n" +
-            "Content-Type: text/xml; charset=UTF-8\r\n" +
-            "Content-Transfer-Encoding: 8bit\r\n" +
-            "Content-ID: <soapRequest>\r\n\r\n" +
-            "<?xml version='1.0' ?>\r\n" +
-            "<SOAP-ENV:Envelope\r\n" +
-            "xmlns:SOAP-ENV=\"http://schemas.xmlsoap.org/soap/envelope/\">\r\n" +
-            "<SOAP-ENV:Body>\r\n" +
-            "<blah/>\r\n" +
-            "</SOAP-ENV:Body>\r\n" +
-            "</SOAP-ENV:Envelope>\r\n\r\n" +
-            "--MIME_boundary\r\n" +
-            "Content-Type: application/octet-stream\r\n" +
-            "Content-Transfer-Encoding: binary\r\n" +
-            "Content-ID: <attachment-1>\r\n\r\n" +
-            new String(VIRUS);
 }
