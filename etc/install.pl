@@ -6,10 +6,13 @@ use strict;
 my @list=(
 	cluster   => "Node is in a cluster       ",
 	firstnode => "This is first Node         ",
+	master_n  => "First node of cluster      ",
 	hostname  => "Hostname for this Node     ",
-	# firstip   => "IP of first node           ",
-	# rootpass  => "Root Pass of first node    ",
 	dbserver  => "Node is a DB Server        ",
+	db_otherip=> "IP of Other DB Server      ",
+	db_user   => "Database Username          ",
+	db_pass   => "Database Password          ",
+	dbclip    => "Database cluster IP        ",
 	clusternm => "Cluster Host Name          ",
 	def_rt    => "IP of Load Balancer Backend",
 	front_ip  => "Node Public IP             ",
@@ -25,7 +28,10 @@ my $SAVE_FILE="/home/jay/SSG_INSTALL";
 # then change the local files as appropriate
 if ( -e $SAVE_FILE ) {
 	if ( $ARGV[0] eq "-reinstall" ) {
-		readconfig()
+		readconfig();
+	} elsif ($ARGV[0] eq '-apply' ) {
+		readconfig();
+		change_os_config();
 	} else {
 		die "Already Installed";
 	}
@@ -47,26 +53,9 @@ if ($ans eq 'y') {
 }
 
 sub change_os_config {
-	# Holy frig we're gonna actually do this all.
-=pod
-	cluster   => "Node is in a cluster       ",
-	firstnode => "This is first Node         ",
-	hostname  => "Hostname for this Node     ",
-	# firstip   => "IP of first node           ",
-	# rootpass  => "Root Pass of first node    ",
-	dbserver  => "Node is a DB Server        ",
-	clusternm => "Cluster Host Name          ",
-	def_rt    => "IP of Load Balancer Backend",
-	front_ip  => "Node Public IP             ",
-	front_mask=> "Public Network Mask        ",
-	back_ip   => "Node Private IP            ",
-	back_net  => "Node private Network       ",
-	back_mask => "Private Network Mask       ",
-	back_rt   => "Back End Router            ",
-=cut
 	# lets start small
-	# the front network config
-
+	# 1. the front network config
+	print "Starting Network config: ";
 	my $front_conf = "/etc/sysconfig/network-scripts/ifcfg-eth1"	
 	
 	if ($Conf{"front_ip"} ) {
@@ -83,12 +72,12 @@ NETMASK=$Conf{"front_mask"}
 GATEWAY=$CONF{"def_rt"}
 EOF
 		close OUT;
-		
+		print "Front: Eth1 ";	
 	} else {
-		print "WARNING: No front end network defined\n";
+		print "WARNING: No front end network defined";
 	}
 	
-	# the back network config
+	# 2. the back network config
 
 	my $back_conf = "/etc/sysconfig/network-scripts/ifcfg-eth0"	
 	
@@ -105,24 +94,90 @@ IPADDR=$Conf{"back_ip"}
 NETMASK=$Conf{"back_mask"}
 EOF
 		close OUT;
-		
+		print "Back: Eth0 ";	
 	} else {
-		print "WARNING: No back end network defined\n";
+		print "WARNING: No back end network defined ";
 	}
+	print " ... Done\n"
 
 	# cluster stuff
-	# 1. hostname
-	if ($Conf{clusternm && lc($Conf{cluster}) eq "y") {
+	# 3 . hostname
+	print "Cluster Hostname: ";
+	if ($Conf{clusternm} && lc($Conf{cluster}) eq "y") {
 		open (OUT, "/ssg/etc/conf/cluster_hostname");
 		print OUT "$Conf{clusternm}\n";
 		close OUT;
+		print "$Conf{clusternm}\n";
 	else {
 		print "WARNING: Cluster hostname not set\n";
 	}
 	
-	# 2. cluster config for db:
-	print "Not Implemented: fuck around with my.cnf. gotta think on that\n"
-	# 3. gen keys?
+	print "Not Implemented: mess around with my.cnf. gotta think on that\n";
+	# 4. local config of db connection
+	# Only works with a distro hib properties, it has placeholders
+	#
+	print "DB Connection Parameters: ";
+	if ($Conf{db_user) ) {
+		my $dbconfig="/ssg/etc/conf/hibernate.properties";
+		rename ($dbconfig,"$dbconfig.orig");
+		open (IN, "<$dbconfig.orig");
+		open (OUT,">$dbconfig");
+		while (<IN>) {
+			s/DB_USER/$Conf{db_user}/;
+			s/DB_PASSWORD/$Conf{db_pass}/;
+			print OUT;
+		}
+		close IN;
+		close OUT;
+		my $sql = "grant all on ssg.* to $Conf{db_user}@'%' identified by '$Conf{db_pass}';\n";
+		$sql .="grant all on ssg.* to $Conf{db_user}@'localhost' identified by '$Conf{db_pass}';\n";
+		open (TMP, ">/tmp/sql.grants");
+		print TMP $sql;
+		close TMP;
+		my $success=`mysql -u root </tmp/sql.grants`;
+		unlink "/tmp/sql.grants";
+		print "Set \n";
+	} else {
+		print "WARNING: Db connection not set\n";
+	}
+	# 4. do the config for db cluster id?
+	print "DB Cluster Parameters: ";
+	if ( $Conf{dbserver} eq "y" ) {
+		my $s_id=2;
+		if ($Conf{firstnode} eq "y" ) {
+			$s_id=1;
+		}
+	
+		my $cnf="/etc/my.cnf";
+				
+		rename ($cnf,"$cnf.orig");
+		open (IN,"$CNF.orig");
+		open(CNF, ">$cnf");
+		while(<IN>) {
+			s/^#server-id=1$/server-id=$s_id/;
+			print CNF;
+		}		
+		close CNF;
+		# server id is set. Need to run the sync; then set the master/slave relationship
+		# perhaps this is best left to the user.
+		print "cluster id: $s_id\n";
+	} else {
+		print "WARNING: Db cluster id not set\n";
+	}
+		
+	
+	# 5. gen keys?
+	if ($Conf{cluster} ) {
+		if ( $Conf{firstnode} ) {
+			# gen the keys, otherwise copy them
+			`su - gateway -c /ssg/bin/setkeys.sh`;
+		else {
+			print "supply gateway user password of first node\n";
+			`scp gateway@$Conf{master_n}/ssg/etc/keys/* /ssg/etc/keys`;
+			`chmod -R gateway.gateway /ssg/etc`;
+		}
+	}
+	# 
 	# 
 		
 };
