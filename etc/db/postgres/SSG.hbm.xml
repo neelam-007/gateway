@@ -166,7 +166,7 @@
         <property name="strRequestId" column="strrequestid" type="string"/>
     </class>
 
-    <class name="com.l7tech.jms.JmsProvider" table="jms_providers">
+    <!-- <class name="com.l7tech.jms.JmsProvider" table="jms_providers">
         <id name="oid" column="oid" type="long" unsaved-value="-1">
             <generator class="hilo"/>
         </id>
@@ -194,6 +194,6 @@
         <property name="name" column="name" type="string"/>
         <property name="destinationName" column="destination_name" type="string"/>
         <property name="replyType" column="reply_type" type="int"/>
-    </class>
+    </class> -->
 
 </hibernate-mapping>
