@@ -42,4 +42,9 @@ public class CreateFederatedIPWizard extends IdentityProviderWizard {
         });
 
     }
+
+    protected void finish(ActionEvent evt) {
+        TopComponents.getInstance().unregisterComponent(CreateFederatedIPWizard.NAME);
+        super.finish(evt);
+    }
 }
