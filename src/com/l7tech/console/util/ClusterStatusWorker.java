@@ -134,28 +134,29 @@ public class ClusterStatusWorker extends SwingWorker {
         Object node = null;
         for (int i = 0; i < cluster.length; i++) {
 
-             GatewayStatus nodeStatus = new GatewayStatus(cluster[i]);
+            GatewayStatus nodeStatus = new GatewayStatus(cluster[i]);
+            String nodeId = nodeStatus.getNodeId();
+            if (nodeId != null) {
+                if ((node = currentNodeList.get(nodeId)) != null) {
+                    if (node instanceof GatewayStatus) {
+                        // set the caches that already exist
+                        nodeStatus.setRequestCounterCache(((GatewayStatus) node).getRequestCounterCache());
+                        nodeStatus.setCompletedCounterCache(((GatewayStatus) node).getCompletedCounterCache());
 
-            if((node = currentNodeList.get(nodeStatus.getNodeId())) != null){
-                if(node instanceof GatewayStatus){
-                    // set the caches that already exist
-                    nodeStatus.setRequestCounterCache(((GatewayStatus) node).getRequestCounterCache());
-                    nodeStatus.setCompletedCounterCache(((GatewayStatus) node).getCompletedCounterCache());
+                        // reset the flag
+                        nodeStatus.resetCacheUpdateFlag();
 
-                    // reset the flag
-                    nodeStatus.resetCacheUpdateFlag();
+                        // copy the TimeStampUpdateFailureCount
+                        nodeStatus.setTimeStampUpdateFailureCount(((GatewayStatus) node).getTimeStampUpdateFailureCount());
 
-                    // copy the TimeStampUpdateFailureCount
-                    nodeStatus.setTimeStampUpdateFailureCount(((GatewayStatus) node).getTimeStampUpdateFailureCount());
-
-                    // store the last update time
-                    nodeStatus.setSecondLastUpdateTimeStamp(((GatewayStatus) node).getLastUpdateTimeStamp());
+                        // store the last update time
+                        nodeStatus.setSecondLastUpdateTimeStamp(((GatewayStatus) node).getLastUpdateTimeStamp());
+                    }
                 }
+
+                // add the node to the new list
+                newNodeList.put(nodeStatus.getNodeId(), nodeStatus);
             }
-
-            // add the node to the new list
-            newNodeList.put(nodeStatus.getNodeId(), nodeStatus);
-
         }
 
         // retrieve service usage

@@ -127,14 +127,16 @@ public class ClusterLogWorker extends SwingWorker {
         for (int i = 0; i < cluster.length; i++) {
 
             GatewayStatus nodeStatus = new GatewayStatus(cluster[i]);
+            String nodeId = nodeStatus.getNodeId();
+            if (nodeId != null) {
+                if (currentNodeList.get(nodeId) == null) {
+                    // add the new node to the request array with the startMsgNumber and endMsgNumber set to -1
+                    requests.add(new LogRequest(nodeStatus.getNodeId(), -1, -1));
+                }
 
-            if (currentNodeList.get(nodeStatus.getNodeId()) == null) {
-                // add the new node to the request array with the startMsgNumber and endMsgNumber set to -1
-                requests.add(new LogRequest(nodeStatus.getNodeId(), -1, -1));
+                // add the node to the new list
+                newNodeList.put(nodeStatus.getNodeId(), nodeStatus);
             }
-
-            // add the node to the new list
-            newNodeList.put(nodeStatus.getNodeId(), nodeStatus);
         }
 
         SSGLogRecord[] rawLogs = new SSGLogRecord[]{};
