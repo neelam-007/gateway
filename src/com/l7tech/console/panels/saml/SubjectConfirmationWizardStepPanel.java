@@ -119,7 +119,7 @@ public class SubjectConfirmationWizardStepPanel extends WizardStepPanel {
 
         titleLabel.setFont(titleLabel.getFont().deriveFont(Font.BOLD));
         checkBoxHolderOfKey.setToolTipText("<html>Key Info for the Subject, that the Assertion describes<br>" +
-                                             " MUST be present within the Subject Confirmation.</html>");
+          " MUST be present within the Subject Confirmation.</html>");
 
         checkBoxHolderOfKey.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
@@ -129,7 +129,7 @@ public class SubjectConfirmationWizardStepPanel extends WizardStepPanel {
             }
         });
         checkBoxSenderVouches.setToolTipText("<html>The attesting entity, different form the subject,<br>" +
-                                               " vouches for the verification of the subject.</html>");
+          " vouches for the verification of the subject.</html>");
         checkBoxBearer.setToolTipText("<html>Browser/POST Profile of SAML</html>");
 
         checkBoxNoSubjectConfirmation.setToolTipText("<html>No Subject Confirmation MUST be present</html>");
@@ -157,6 +157,11 @@ public class SubjectConfirmationWizardStepPanel extends WizardStepPanel {
                 }
             });
         }
+        checkBoxNoSubjectConfirmation.addChangeListener(new ChangeListener() {
+            public void stateChanged(ChangeEvent e) {
+                notifyListeners();
+            }
+        });
     }
 
     /**
@@ -188,6 +193,9 @@ public class SubjectConfirmationWizardStepPanel extends WizardStepPanel {
             if (jc.isSelected()) {
                 return true;
             }
+        }
+        if (checkBoxNoSubjectConfirmation.isSelected()) {
+            return true;
         }
         return false;
     }
