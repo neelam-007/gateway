@@ -30,7 +30,7 @@ public class RegistryImpl extends Registry {
           (IdentityProviderConfigManager)Locator.
           getDefault().lookup(IdentityProviderConfigManager.class);
         if (ipc == null) {
-            throw new RuntimeException("Could not find registered " + IdentityProviderConfigManager.class);
+            throw new RuntimeException("Could not get " + IdentityProviderConfigManager.class);
         }
         return ipc;
     }
@@ -41,7 +41,7 @@ public class RegistryImpl extends Registry {
     public IdentityProvider getInternalProvider() {
         IdentityProviderConfigManager ipc = getProviderConfigManager();
         if (ipc == null) {
-            throw new RuntimeException("Could not find registered " + IdentityProviderConfigManager.class);
+            throw new RuntimeException("Could not get " + IdentityProviderConfigManager.class);
         }
         return ipc.getInternalIdentityProvider();
     }
@@ -54,7 +54,7 @@ public class RegistryImpl extends Registry {
          try {
              return ipc.getIdentityProvider(idProviderOid);
          } catch (FindException e) {
-             throw new RuntimeException("could not find related identity provider", e);
+             throw new RuntimeException("could not find identity provider for oid "+idProviderOid, e);
          }
      }
 
@@ -78,7 +78,7 @@ public class RegistryImpl extends Registry {
     public ServiceAdmin getServiceManager() {
         ServiceAdmin sm = (ServiceAdmin)Locator.getDefault().lookup(ServiceAdmin.class);
         if (sm == null) {
-            throw new RuntimeException("Could not find registered " + ServiceAdmin.class);
+            throw new RuntimeException("Could not get " + ServiceAdmin.class);
         }
         return sm;
     }
@@ -89,7 +89,7 @@ public class RegistryImpl extends Registry {
     public JmsAdmin getJmsManager() {
         JmsAdmin ja = (JmsAdmin)Locator.getDefault().lookup(JmsAdmin.class);
         if (ja == null) {
-            throw new RuntimeException("Could not find registered " + JmsAdmin.class);
+            throw new RuntimeException("Could not get " + JmsAdmin.class);
         }
         return ja;
     }
@@ -101,7 +101,7 @@ public class RegistryImpl extends Registry {
         CustomAssertionsRegistrar cr =
           (CustomAssertionsRegistrar)Locator.getDefault().lookup(CustomAssertionsRegistrar.class);
         if (cr == null) {
-            throw new RuntimeException("Could not find registered " + CustomAssertionsRegistrar.class);
+            throw new RuntimeException("Could not get " + CustomAssertionsRegistrar.class);
         }
         return cr;
     }
