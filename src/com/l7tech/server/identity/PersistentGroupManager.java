@@ -54,7 +54,16 @@ public abstract class PersistentGroupManager extends HibernateEntityManager impl
                     return null;
                 case 1:
                     PersistentGroup g = (PersistentGroup)groups.get(0);
-                    g.setProviderId(IdProvConfManagerServer.INTERNALPROVIDER_SPECIAL_OID);
+                    if (g.getProviderId() != provider.getConfig().getOid()) {
+                        // fla note: i did not introduce this setProviderId statement but i wrapped it in this if
+                        // because it was buggy and because it used to hardcode the providerid value to -2 bugzilla 1056
+                        // this is probably here due to some code being copied from the internal group manager when this
+                        // was refactored. this whole thing is probably no longer needed but it wont hurt i and dont
+                        // want to risk breaking something else.
+                        logger.warning("Current group oid is : " + g.getProviderId() + " and provider id is " +
+                                       provider.getConfig().getOid());
+                        g.setProviderId(provider.getConfig().getOid());
+                    }
                     return g;
                 default:
                     String err = "Found more than one group with the name " + name;
@@ -257,7 +266,8 @@ public abstract class PersistentGroupManager extends HibernateEntityManager impl
                 existingGrp = null;
             }
             if (existingGrp != null) {
-                throw new SaveException("This group cannot be saved because an existing group already uses the name '" + group.getName() + "'");
+                throw new SaveException("This group cannot be saved because an existing group " +
+                                        "already uses the name '" + group.getName() + "'");
             }
 
             PersistentGroup imp = cast(group);
