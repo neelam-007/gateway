@@ -41,7 +41,7 @@ public class ViewClusterStatusAction extends SecureAction {
      * subclasses override this method specifying the resource name
      */
     protected String iconResource() {
-        return "com/l7tech/console/resources/ClusterServers.gif";
+        return "com/l7tech/console/resources/ViewClusterStatus16x16.gif";
     }
 
     /** Actually perform the action.
