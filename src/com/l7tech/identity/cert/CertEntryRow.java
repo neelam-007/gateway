@@ -12,20 +12,20 @@ package com.l7tech.identity.cert;
  * (because hibernate needs to map a class type to a table)
  */
 public class CertEntryRow {
-    public long getProviderId() {
-        return providerId;
+    public long getProvider() {
+        return provider;
     }
 
-    public void setProviderId(long providerId) {
-        this.providerId = providerId;
+    public void setProvider(long providerId) {
+        this.provider = providerId;
     }
 
-    public String getUserLogin() {
-        return userLogin;
+    public String getLogin() {
+        return login;
     }
 
-    public void setUserLogin(String userLogin) {
-        this.userLogin = userLogin;
+    public void setLogin(String userLogin) {
+        this.login = userLogin;
     }
 
     public String getCert() {
@@ -52,8 +52,8 @@ public class CertEntryRow {
         this.oid = oid;
     }
 
-    private long providerId;
-    private String userLogin;
+    private long provider;
+    private String login;
     private String cert;
     private int resetCounter;
     private long oid = -1;
