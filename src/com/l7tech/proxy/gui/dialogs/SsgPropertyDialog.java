@@ -11,6 +11,7 @@ import com.l7tech.proxy.datamodel.*;
 import com.l7tech.proxy.datamodel.exceptions.KeyStoreCorruptException;
 import com.l7tech.proxy.datamodel.exceptions.OperationCanceledException;
 import com.l7tech.proxy.gui.Gui;
+import com.l7tech.proxy.gui.SsgPropertyPanel;
 import com.l7tech.proxy.gui.policy.PolicyTreeCellRenderer;
 import com.l7tech.proxy.gui.policy.PolicyTreeModel;
 import com.l7tech.proxy.gui.util.IconManager;
@@ -52,13 +53,7 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
     private JTextField fieldServerAddress;
 
     //   View for Identity pane
-    private JComponent identityPane;
-    private JTextField fieldUsername;
-    private JPasswordField fieldPassword;
-    private JButton clientCertButton;
-    private JButton serverCertButton;
-    private JCheckBox cbSavePassword;
-    private JCheckBox cbChainFromClient;
+    private SsgPropertyPanel identityPane;
 
     //   View for Network pane
     private JComponent networkPane;
@@ -244,9 +239,66 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
         policyTree.setModel((policy == null || policy.getClientAssertion() == null) ? null : new PolicyTreeModel(policy.getClientAssertion()));
     }
 
-    private JComponent getIdentityPane() {
-        if (identityPane == null) {
-            gridY = 0;
+    private SsgPropertyPanel getIdentityPane() {
+        if (identityPane != null) return identityPane;
+
+        identityPane = new SsgPropertyPanel();
+
+        identityPane.getClientCertButton().addActionListener(new ActionListener() {
+                public void actionPerformed(ActionEvent e) {
+                    try {
+                        X509Certificate cert = SsgKeyStoreManager.getClientCert(ssg);
+                        if (cert == null) {
+                            JOptionPane.showMessageDialog(Gui.getInstance().getFrame(),
+                                                          "We don't currently have a client certificate\n" +
+                                                          "for the Gateway " + ssgName(),
+                                                          "No client certificate",
+                                                          JOptionPane.INFORMATION_MESSAGE);
+                            return;
+                        }
+                        new CertDialog(cert, "Client Certificate", "Client Certificate for Gateway " + ssgName()).show();
+                    } catch (Exception e1) {
+                        log.log(Level.SEVERE, "Unable to access client certificate", e1);
+                        e1.printStackTrace();
+                        Gui.errorMessage("Unable to access client certificate",
+                                         "Unable to access client certificate for Gateway " + ssgName(),
+                                         e1);
+                    }
+                }
+            });
+
+        identityPane.getGatewayCertButton().addActionListener(new ActionListener() {
+                public void actionPerformed(ActionEvent e) {
+                    try {
+                        X509Certificate cert = SsgKeyStoreManager.getServerCert(ssg);
+                        if (cert == null) {
+                            JOptionPane.showMessageDialog(Gui.getInstance().getFrame(),
+                                                          "We haven't yet discovered the server certificate\n" +
+                                                          "for the Gateway " + ssgName(),
+                                                          "No server certificate",
+                                                          JOptionPane.INFORMATION_MESSAGE);
+                            return;
+                        }
+                        new CertDialog(cert, "Server Certificate", "Server Certificate for Gateway " + ssgName()).show();
+                    } catch (Exception e1) {
+                        log.log(Level.SEVERE, "Unable to access server certificate", e1);
+                        e1.printStackTrace();
+                        Gui.errorMessage("Unable to access server certificate",
+                                         "Unable to access server certificate for Gateway " + ssgName(),
+                                         e1);
+                    }
+                }
+            });
+
+        identityPane.getUseClientCredentialCheckBox().addActionListener(new ActionListener() {
+                public void actionPerformed(ActionEvent e) {
+                    updateIdentityEnableState();
+                }
+            });
+
+        return identityPane;
+
+/*            gridY = 0;
             JPanel pane = new JPanel(new GridBagLayout());
             identityPane = new JScrollPane(pane);
             identityPane.setBorder(BorderFactory.createEmptyBorder());
@@ -347,18 +399,18 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
 
         }
 
-        return identityPane;
+        return identityPane;*/
     }
 
     private void updateIdentityEnableState() {
-        if (cbChainFromClient.isSelected()) {
-            cbSavePassword.setEnabled(false);
-            fieldUsername.setEditable(false);
-            fieldPassword.setEditable(false);
+        if (getIdentityPane().getUseClientCredentialCheckBox().isSelected()) {
+            getIdentityPane().getUserPasswordField().setEnabled(false);
+            getIdentityPane().getUsernameTextField().setEditable(false);
+            getIdentityPane().getUserPasswordField().setEditable(false);
         } else {
-            cbSavePassword.setEnabled(true);
-            fieldPassword.setEditable(true);
-            fieldUsername.setEditable(lookupClientCertUsername(ssg) == null);
+            getIdentityPane().getSavePasswordCheckBox().setEnabled(true);
+            getIdentityPane().getUserPasswordField().setEditable(true);
+            getIdentityPane().getUsernameTextField().setEditable(lookupClientCertUsername(ssg) == null);
         }
     }
 
@@ -561,68 +613,10 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
         return generalPane;
     }
 
-    private JButton getServerCertificateButton() {
-        if (serverCertButton == null) {
-            serverCertButton = new JButton("View Gateway's certificate");
-            serverCertButton.addActionListener(new ActionListener() {
-                public void actionPerformed(ActionEvent e) {
-                    try {
-                        X509Certificate cert = SsgKeyStoreManager.getServerCert(ssg);
-                        if (cert == null) {
-                            JOptionPane.showMessageDialog(Gui.getInstance().getFrame(),
-                                                          "We haven't yet discovered the server certificate\n" +
-                                                          "for the Gateway " + ssgName(),
-                                                          "No server certificate",
-                                                          JOptionPane.INFORMATION_MESSAGE);
-                            return;
-                        }
-                        new CertDialog(cert, "Server Certificate", "Server Certificate for Gateway " + ssgName()).show();
-                    } catch (Exception e1) {
-                        log.log(Level.SEVERE, "Unable to access server certificate", e1);
-                        e1.printStackTrace();
-                        Gui.errorMessage("Unable to access server certificate",
-                                         "Unable to access server certificate for Gateway " + ssgName(),
-                                         e1);
-                    }
-                }
-            });
-        }
-        return serverCertButton;
-    }
-
     private void updateCustomPortsEnableState() {
         boolean en = radioNonstandardPorts.isSelected();
         fieldSsgPort.setEnabled(en);
         fieldSslPort.setEnabled(en);
-    }
-
-    private JButton getClientCertificateButton() {
-        if (clientCertButton == null) {
-            clientCertButton = new JButton("View your client certificate");
-            clientCertButton.addActionListener(new ActionListener() {
-                public void actionPerformed(ActionEvent e) {
-                    try {
-                        X509Certificate cert = SsgKeyStoreManager.getClientCert(ssg);
-                        if (cert == null) {
-                            JOptionPane.showMessageDialog(Gui.getInstance().getFrame(),
-                                                          "We don't currently have a client certificate\n" +
-                                                          "for the Gateway " + ssgName(),
-                                                          "No client certificate",
-                                                          JOptionPane.INFORMATION_MESSAGE);
-                            return;
-                        }
-                        new CertDialog(cert, "Client Certificate", "Client Certificate for Gateway " + ssgName()).show();
-                    } catch (Exception e1) {
-                        log.log(Level.SEVERE, "Unable to access client certificate", e1);
-                        e1.printStackTrace();
-                        Gui.errorMessage("Unable to access client certificate",
-                                         "Unable to access client certificate for Gateway " + ssgName(),
-                                         e1);
-                    }
-                }
-            });
-        }
-        return clientCertButton;
     }
 
     private class CertDialog extends JDialog {
@@ -735,26 +729,26 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
             fieldWsdlEndpoint.setText("http://localhost:" + clientProxy.getBindPort() + "/" +
                                       ssg.getLocalEndpoint() + ClientProxy.WSIL_SUFFIX);
             fieldServerAddress.setText(ssg.getSsgAddress());
-            fieldUsername.setText(ssg.getUsername());
+            getIdentityPane().getUsernameTextField().setText(ssg.getUsername());
             char[] pass = ssg.cmPassword();
             boolean hasPassword = pass != null;
-            fieldPassword.setText(new String(hasPassword ? pass : "".toCharArray()));
+            getIdentityPane().getUserPasswordField().setText(new String(hasPassword ? pass : "".toCharArray()));
             policyFlushRequested = false;
             fieldSsgPort.setText(Integer.toString(ssg.getSsgPort()));
             fieldSslPort.setText(Integer.toString(ssg.getSslPort()));
             boolean customPorts = isPortsCustom(ssg);
             radioStandardPorts.setSelected(!customPorts);
             radioNonstandardPorts.setSelected(customPorts);
-            cbSavePassword.setSelected(ssg.isSavePasswordToDisk());
-            cbChainFromClient.setSelected(ssg.isChainCredentialsFromClient());
+            getIdentityPane().getSavePasswordCheckBox().setSelected(ssg.isSavePasswordToDisk());
+            getIdentityPane().getUseClientCredentialCheckBox().setSelected(ssg.isChainCredentialsFromClient());
             cbUseSslByDefault.setSelected(ssg.isUseSslByDefault());
             updateCustomPortsEnableState();
             updateIdentityEnableState();
 
             String clientCertUsername = lookupClientCertUsername(ssg);
             if (clientCertUsername != null) {
-                    fieldUsername.setText(clientCertUsername);
-                    fieldUsername.setEditable(false);
+                    getIdentityPane().getUsernameTextField().setText(clientCertUsername);
+                    getIdentityPane().getUsernameTextField().setEditable(false);
             }
 
             updatePolicyPanel();
@@ -770,19 +764,19 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
     protected void commitChanges() {
         synchronized (ssg) {
             ssg.setSsgAddress(fieldServerAddress.getText().trim().toLowerCase());
-            ssg.setUsername(fieldUsername.getText().trim());
-            ssg.setSavePasswordToDisk(cbSavePassword.isSelected());
+            ssg.setUsername(getIdentityPane().getUsernameTextField().getText().trim());
+            ssg.setSavePasswordToDisk(getIdentityPane().getSavePasswordCheckBox().isSelected());
             ssg.setUseSslByDefault(cbUseSslByDefault.isSelected());
-            ssg.setChainCredentialsFromClient(cbChainFromClient.isSelected());
+            ssg.setChainCredentialsFromClient(getIdentityPane().getUseClientCredentialCheckBox().isSelected());
 
             // We'll treat a blank password as though it's unconfigured.  If the user really needs to use
             // a blank password to access a service, he can leave the password field blank in the logon
             // dialog when it eventually appears.
-            char[] pass = fieldPassword.getPassword();
+            char[] pass = getIdentityPane().getUserPasswordField().getPassword();
 
             // Make sure prompting is enabled
             ssg.promptForUsernameAndPassword(true);
-            ssg.cmPassword(pass.length > 0 ? fieldPassword.getPassword() : null);
+            ssg.cmPassword(pass.length > 0 ? getIdentityPane().getUserPasswordField().getPassword() : null);
 
             if (radioNonstandardPorts.isSelected()) {
                 ssg.setSsgPort(Integer.parseInt(fieldSsgPort.getText()));
