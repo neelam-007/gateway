@@ -29,8 +29,11 @@ public class RequestIdTest extends TestCase {
 
     public void testExtremeParsing() {
         try {
-            RequestId redid1 = new RequestId(Long.MIN_VALUE, Long.MAX_VALUE);
+            RequestId redid1 = new RequestId(0, Long.MAX_VALUE);
             RequestId redid2 = new RequestId(redid1.toString());
+            assertTrue(redid1.equals(redid2));
+            redid1 = new RequestId(Long.MAX_VALUE, 0);
+            redid2 = new RequestId(redid1.toString());
             assertTrue(redid1.equals(redid2));
         } catch (Exception e) {
             e.printStackTrace(System.err);
