@@ -1060,10 +1060,12 @@ public class MainWindow extends JFrame {
               ConnectionListener listener = new ConnectionListener() {
                   public void onConnect(ConnectionEvent e) {
                       setEnabled(true);
+                      getGatewayLogWindow().onConnect();
                   }
 
                   public void onDisconnect(ConnectionEvent e) {
                       setEnabled(false);
+                      getGatewayLogWindow().onDisconnect();
                   }
               };
 

@@ -135,12 +135,13 @@ public class LogPanel extends JPanel {
 
     public void onConnect(){
         getFilteredLogTableSorter().onConnect();
+        clearMsgTable();
+        getLogsRefreshTimer().start();
     }
 
     public void onDisconnect(){
-        getFilteredLogTableSorter().onDisconnect();
         getLogsRefreshTimer().stop();
-        clearMsgTable();
+        getFilteredLogTableSorter().onDisconnect();
     }
 
     /**

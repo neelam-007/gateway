@@ -28,6 +28,7 @@ public class FilteredLogTableSorter extends FilteredLogTableModel {
     private Object[] sortedData = null;
     private ClusterStatusAdmin clusterStatusAdmin = null;
     private LogAdmin logService = null;
+    private boolean canceled;
 
     public FilteredLogTableSorter() {
     }
@@ -141,7 +142,7 @@ public class FilteredLogTableSorter extends FilteredLogTableModel {
         sortedData = sorted;
 
         // update the row count
-        realModel.setRowCount((sortedData.length));
+        realModel.setRowCount(sortedData.length);
     }
 
     public Object getValueAt(int row, int col) {
@@ -219,7 +220,8 @@ public class FilteredLogTableSorter extends FilteredLogTableModel {
                 case LogPanel.LOG_REQUEST_ID_COLUMN_INDEX:
                     elementA = logMsgA.getReqId();
                     elementB = logMsgB.getReqId();
-                    break;default:
+                    break;
+                default:
                     logger.warning("Bad Statistics Table Column: " + column);
                     break;
             }
@@ -258,12 +260,29 @@ public class FilteredLogTableSorter extends FilteredLogTableModel {
         if (clusterStatusAdmin == null) throw new RuntimeException("Cannot obtain ClusterStatusAdmin remote reference");
 
         currentNodeList = new Hashtable();
+
+        clearLogCache();
+        canceled = false;
     }
 
     public void onDisconnect() {
         clusterStatusAdmin = null;
         logService = null;
+        canceled = true;
 
+    }
+
+    public boolean isCanceled() {
+        return canceled;
+    }
+
+    private void clearLogCache() {
+        rawLogCache = new Hashtable();
+        filteredLogCache = new Vector();
+        currentNodeList = new Hashtable();
+        sortedData = new Object[0];
+        realModel.setRowCount(sortedData.length);
+        realModel.fireTableDataChanged();
     }
 
     public void refreshLogs(final int msgFilterLevel, final LogPanel logPane, final String msgNumSelected, final boolean restartTimer, Vector requests, final boolean newRefresh) {
@@ -295,43 +314,49 @@ public class FilteredLogTableSorter extends FilteredLogTableModel {
         final ClusterLogWorker infoWorker = new ClusterLogWorker(clusterStatusAdmin, logService, currentNodeList, requests) {
             public void finished() {
 
-                // Note: the get() operation is a blocking operation.
-                if (this.get() != null) {
-
-                    if (newRefresh) {
-                        currentNodeList = getNewNodeList();
-                        addData(getNewLogs(), msgFilterLevel);
-                    } else {
-                        appendData(getNewLogs(), msgFilterLevel);
-                    }
-
-                    logPane.updateTimeStamp();
-
-
-
-                    logPane.updateMsgTotal();
-                    logPane.setSelectedRow(msgNumSelected);
-
-                    final Vector unfilledRequest = getUnfilledRequest();
-
-                    // if there unfilled requests
-                    if (unfilledRequest.size() > 0) {
-                        SwingUtilities.invokeLater(
-                                new Runnable() {
-                                    public void run() {
-                                        refreshLogs(msgFilterLevel, logPane, msgNumSelected, restartTimer, unfilledRequest, false);
-                                    }
-                                });
-
-                    } else {
-                        if (restartTimer) {
-                            logPane.getLogsRefreshTimer().start();
-                        }
-                    }
+                if (isCanceled()) {
+                    logger.info("Log retrieval is canceled.");
+                    logPane.getLogsRefreshTimer().stop();
                 } else {
-                    if (isRemoteExceptionCaught()) {
-                        // the connection to the cluster is down
-                        onDisconnect();
+                    // Note: the get() operation is a blocking operation.
+                    if (this.get() != null) {
+
+                        if (newRefresh) {
+                            currentNodeList = getNewNodeList();
+                            addData(getNewLogs(), msgFilterLevel);
+                        } else {
+                            appendData(getNewLogs(), msgFilterLevel);
+                        }
+
+                        logPane.updateTimeStamp();
+
+
+                        logPane.updateMsgTotal();
+                        logPane.setSelectedRow(msgNumSelected);
+
+                        final Vector unfilledRequest = getUnfilledRequest();
+
+
+                        // if there unfilled requests
+                        if (unfilledRequest.size() > 0) {
+                            SwingUtilities.invokeLater(
+                                    new Runnable() {
+                                        public void run() {
+                                            refreshLogs(msgFilterLevel, logPane, msgNumSelected, restartTimer, unfilledRequest, false);
+                                        }
+                                    });
+
+                        } else {
+                            if (restartTimer) {
+                                logPane.getLogsRefreshTimer().start();
+                            }
+                        }
+
+                    } else {
+                        if (isRemoteExceptionCaught()) {
+                            // the connection to the cluster is down
+                            onDisconnect();
+                        }
                     }
                 }
             }
