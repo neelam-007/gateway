@@ -13,20 +13,14 @@ import java.net.URL;
 import java.net.MalformedURLException;
 import java.io.StringReader;
 
+import com.l7tech.objectmodel.imp.NamedEntityImp;
+
 /**
  * A reference to an existing web service.
- * 
+ *
  * @author alex
  */
-public class ProtectedService {
-    public long getOid() {
-        return oid;
-    }
-
-    public void setOid(long oid) {
-        this.oid = oid;
-    }
-
+public class ProtectedService extends NamedEntityImp {
     public Wsdl parsedWsdl() throws WSDLException {
         if ( parsedWsdl == null ) {
             try {
@@ -56,19 +50,9 @@ public class ProtectedService {
         this.wsdlUrl = wsdlUrl;
     }
 
-    public String getName() {
-        return name;
-    }
-
-    public void setName(String name) {
-        this.name = name;
-    }
-
     // ************************************************
     // PRIVATES
     // ************************************************
-    private String name;
-    private long oid;
     private String wsdlUrl;
     private String wsdl;
 
