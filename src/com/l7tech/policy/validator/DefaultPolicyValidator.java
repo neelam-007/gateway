@@ -63,7 +63,15 @@ public class DefaultPolicyValidator extends PolicyValidator {
         for (int i = 0; i < ass.length; i++) {
             pv.validate(ass[i]);
         }
+        if (!pv.seenRouting) { // no routing report that
+            r.addWarning(
+              new PolicyValidatorResult.
+              Warning(ap.lastAssertion(), "No route assertion.", null)
+            );
+        }
+
     }
+
 
     /**
      * validate single path. This may grow to some kind of
@@ -161,4 +169,5 @@ public class DefaultPolicyValidator extends PolicyValidator {
         boolean seenAccessControl = false;
         boolean seenRouting = false;
     }
+
 }
