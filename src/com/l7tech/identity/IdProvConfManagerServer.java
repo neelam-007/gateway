@@ -113,11 +113,6 @@ public class IdProvConfManagerServer extends HibernateEntityManager implements I
         return out;
     }
 
-    public Collection search(String searchString) throws FindException {
-        return null;
-    }
-
-
     public Class getImpClass() {
         return IdentityProviderConfig.class;
     }

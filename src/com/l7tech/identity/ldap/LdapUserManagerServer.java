@@ -257,10 +257,6 @@ public class LdapUserManagerServer extends LdapManager implements UserManager {
         return output;
     }
 
-    public Collection search(String searchString) throws FindException {
-        throw new FindException("not implemented");
-    }
-
     public boolean authenticateBasic(String dn, String passwd) {
         if (!valid) {
             return false;

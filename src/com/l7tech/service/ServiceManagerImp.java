@@ -144,10 +144,6 @@ public class ServiceManagerImp extends HibernateEntityManager implements Service
         }
     }
 
-    public Collection search(String searchString) throws FindException {
-        throw new FindException("not implemented");
-    }
-
     public long save(PublishedService service) throws SaveException {
         try {
             long oid = _manager.save( getContext(), service );

@@ -132,11 +132,6 @@ public class GroupManagerStub implements GroupManager {
         return list;
     }
 
-    public Collection search(String searchString) throws FindException {
-        throw new FindException("not implemented");
-    }
-
-
     private EntityHeader fromGroup(Group g) {
         return
                 new EntityHeader(g.getOid(), EntityType.GROUP, g.getName(), null);

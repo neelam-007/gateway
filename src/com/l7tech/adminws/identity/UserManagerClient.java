@@ -122,11 +122,6 @@ public class UserManagerClient extends IdentityManagerClient implements UserMana
         return output;
     }
 
-    public Collection search(String searchString) throws FindException {
-        // moved to id provider
-        throw new FindException("not implemented");
-    }
-
     // ************************************************
     // PRIVATES
     // ************************************************

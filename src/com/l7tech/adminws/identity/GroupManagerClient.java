@@ -30,11 +30,6 @@ public class GroupManagerClient extends IdentityManagerClient implements GroupMa
         }
     }
 
-    public Collection search(String searchString) throws FindException {
-        // moved to id provider
-        throw new FindException("not implemented");
-    }
-
     public Group findByName(String name) throws FindException {
         throw new FindException("not implemented in this version of the manager");
     }

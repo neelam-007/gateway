@@ -201,11 +201,6 @@ public class ServiceManagerStub implements ServiceManager {
         return list;
     }
 
-    public Collection search(String searchString) throws FindException {
-        throw new FindException("not implemented");
-    }
-
-
     private EntityHeader fromService(PublishedService s) {
         return
                 new EntityHeader(s.getOid(), EntityType.SERVICE, s.getName(), null);
