@@ -54,7 +54,7 @@ public class AcmeSoapClient extends TestCase {
         PostMethod pm = new PostMethod(TEST_URL);
         Document req = XmlUtil.stringToDocument(SIMPLE_REQ);
         pm.setRequestBody(XmlUtil.nodeToString(req));
-        log.info("Sending request: " + pm.getRequestBodyAsString());
+        log.info("Sending request: " + pm.getRequestEntity().toString());
         pm.addRequestHeader("SOAPAction", "\"http://warehouse.acme.com/ws/getProductDetails\"");
         pm.addRequestHeader("Content-Type", "text/xml");
         int result = client.executeMethod(pm);
