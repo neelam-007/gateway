@@ -10,9 +10,8 @@ import com.l7tech.common.util.CertificateDownloader;
 import com.l7tech.common.util.SslUtils;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
-import com.l7tech.proxy.ConfigurationException;
 import com.l7tech.proxy.ClientProxy;
-import com.l7tech.proxy.ssl.ClientProxySslException;
+import com.l7tech.proxy.ConfigurationException;
 import com.l7tech.proxy.datamodel.Managers;
 import com.l7tech.proxy.datamodel.PendingRequest;
 import com.l7tech.proxy.datamodel.PolicyManager;
@@ -20,6 +19,7 @@ import com.l7tech.proxy.datamodel.Ssg;
 import com.l7tech.proxy.datamodel.SsgKeyStoreManager;
 import com.l7tech.proxy.datamodel.SsgResponse;
 import com.l7tech.proxy.policy.assertion.ClientAssertion;
+import com.l7tech.proxy.ssl.ClientProxySslException;
 import com.l7tech.proxy.util.CannedSoapFaults;
 import com.l7tech.proxy.util.ThreadLocalHttpClient;
 import org.apache.commons.httpclient.Header;
@@ -28,26 +28,21 @@ import org.apache.commons.httpclient.HttpState;
 import org.apache.commons.httpclient.UsernamePasswordCredentials;
 import org.apache.commons.httpclient.methods.PostMethod;
 import org.apache.log4j.Category;
-import org.apache.xml.serialize.XMLSerializer;
 import org.apache.xml.serialize.OutputFormat;
+import org.apache.xml.serialize.XMLSerializer;
 import org.bouncycastle.jce.PKCS10CertificationRequest;
 import org.bouncycastle.jce.provider.JDKKeyPairGenerator;
 
-import javax.net.ssl.SSLHandshakeException;
 import javax.net.ssl.SSLException;
+import javax.net.ssl.SSLHandshakeException;
 import java.io.IOException;
 import java.io.StringWriter;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.security.GeneralSecurityException;
 import java.security.KeyPair;
-import java.security.NoSuchAlgorithmException;
-import java.security.KeyStoreException;
-import java.security.NoSuchProviderException;
-import java.security.KeyManagementException;
 import java.security.UnrecoverableKeyException;
 import java.security.cert.X509Certificate;
-import java.security.cert.CertificateException;
 
 /**
  * The core of the Client Proxy.
@@ -305,9 +300,10 @@ public class MessageProcessor {
         try {
             postMethod = new PostMethod(url.toString());
             setAuthenticationState(req, state, postMethod);
+            postMethod.addRequestHeader("SOAPAction", req.getSoapAction());
+            postMethod.addRequestHeader("L7-Original-URL", req.getOriginalUrl().toString());
 
             // TODO: MUST BE FIXED -- using new XML serializer for each request
-            postMethod.addRequestHeader("SOAPAction", req.getSoapAction());
             final StringWriter sw = new StringWriter();
             XMLSerializer xmlSerializer = new XMLSerializer();
             xmlSerializer.setOutputCharStream(sw);
