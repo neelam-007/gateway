@@ -1,28 +1,25 @@
 package com.l7tech.console.action;
 
-import com.l7tech.console.event.*;
-import com.l7tech.console.panels.*;
-import com.l7tech.console.tree.AbstractTreeNode;
-import com.l7tech.console.tree.EntityHeaderNode;
-import com.l7tech.console.tree.ProviderNode;
-import com.l7tech.console.util.Registry;
-import com.l7tech.console.util.TopComponents;
-import com.l7tech.console.logging.ErrorManager;
 import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.common.util.Locator;
-import com.l7tech.objectmodel.EntityHeader;
-import com.l7tech.objectmodel.EntityType;
-import com.l7tech.objectmodel.UpdateException;
+import com.l7tech.console.event.*;
+import com.l7tech.console.logging.ErrorManager;
+import com.l7tech.console.panels.*;
+import com.l7tech.console.tree.EntityHeaderNode;
+import com.l7tech.console.tree.ProviderNode;
+import com.l7tech.console.util.TopComponents;
 import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.identity.IdentityProviderConfigManager;
 import com.l7tech.identity.IdentityProviderType;
+import com.l7tech.objectmodel.EntityHeader;
+import com.l7tech.objectmodel.EntityType;
+import com.l7tech.objectmodel.UpdateException;
 
 import javax.swing.*;
 import javax.swing.event.EventListenerList;
 import javax.swing.tree.DefaultTreeModel;
-import java.util.*;
+import java.util.EventListener;
 import java.util.logging.Level;
-import java.awt.*;
 
 /**
  * The <code>IdentityProviderPropertiesAction</code> edits the
@@ -59,25 +56,25 @@ public class IdentityProviderPropertiesAction extends NodeAction {
         return "com/l7tech/console/resources/Properties16.gif";
     }
 
-    /** Actually perform the action.
+    /**
+     * Actually perform the action.
      * This is the method which should be called programmatically.
-
+     * <p/>
      * note on threading usage: do not access GUI components
      * without explicitly asking for the AWT event thread!
      */
     public void performAction() {
-        SwingUtilities.invokeLater(
-          new Runnable() {
+        SwingUtilities.invokeLater(new Runnable() {
             public void run() {
 
                 JFrame f = TopComponents.getInstance().getMainWindow();
-                EntityHeader header = ((EntityHeaderNode) node).getEntityHeader();
+                EntityHeader header = ((EntityHeaderNode)node).getEntityHeader();
                 IdentityProviderConfig iProvider = null;
                 if (header.getOid() != -1) {
 
                     try {
                         iProvider =
-                                getProviderConfigManager().findByPrimaryKey(header.getOid());
+                          getProviderConfigManager().findByPrimaryKey(header.getOid());
 
                         WizardStepPanel configPanel = null;
 
@@ -86,10 +83,7 @@ public class IdentityProviderPropertiesAction extends NodeAction {
 
                         } else if (iProvider.type() == IdentityProviderType.LDAP) {
 
-                            configPanel = new LdapIdentityProviderConfigPanel(
-                                              new LdapGroupMappingPanel(
-                                                  new LdapUserMappingPanel(null)
-                                            ), false);
+                            configPanel = new LdapIdentityProviderConfigPanel(new LdapGroupMappingPanel(new LdapUserMappingPanel(null)), false);
                         }
 
                         Wizard w = new EditIdentityProviderWizard(f, configPanel, iProvider);
@@ -105,7 +99,7 @@ public class IdentityProviderPropertiesAction extends NodeAction {
 
                     } catch (Exception e1) {
                         ErrorManager.getDefault().
-                                notify(Level.WARNING, e1, "Error retrieving provider.");
+                          notify(Level.WARNING, e1, "Error retrieving provider.");
                     }
                 }
             }
@@ -114,6 +108,7 @@ public class IdentityProviderPropertiesAction extends NodeAction {
 
     /**
      * notfy the listeners that the entity has been updated
+     *
      * @param header
      */
     private void fireEventProviderUpdated(EntityHeader header) {
@@ -125,22 +120,22 @@ public class IdentityProviderPropertiesAction extends NodeAction {
     }
 
     /**
-      * add the EntityListener
-      *
-      * @param listener the EntityListener
-      */
-     public void addEntityListener(EntityListener listener) {
-         listenerList.add(EntityListener.class, listener);
-     }
+     * add the EntityListener
+     *
+     * @param listener the EntityListener
+     */
+    public void addEntityListener(EntityListener listener) {
+        listenerList.add(EntityListener.class, listener);
+    }
 
-     /**
-      * remove the the EntityListener
-      *
-      * @param listener the EntityListener
-      */
-     public void removeEntityListener(EntityListener listener) {
-         listenerList.remove(EntityListener.class, listener);
-     }
+    /**
+     * remove the the EntityListener
+     *
+     * @param listener the EntityListener
+     */
+    public void removeEntityListener(EntityListener listener) {
+        listenerList.remove(EntityListener.class, listener);
+    }
 
     private IdentityProviderConfigManager getProviderConfigManager()
       throws RuntimeException {
@@ -163,26 +158,24 @@ public class IdentityProviderPropertiesAction extends NodeAction {
         public void wizardFinished(WizardEvent we) {
 
             // update the provider
-            Wizard w = (Wizard) we.getSource();
-            final IdentityProviderConfig iProvider = (IdentityProviderConfig) w.getCollectedInformation();
+            Wizard w = (Wizard)we.getSource();
+            final IdentityProviderConfig iProvider = (IdentityProviderConfig)w.getCollectedInformation();
 
-            if (iProvider != null && iProvider.type() != IdentityProviderType.INTERNAL) {
+            if (iProvider != null  && iProvider.type() != IdentityProviderType.INTERNAL) {
+                SwingUtilities.invokeLater(new Runnable() {
+                    public void run() {
+                        EntityHeader header = ((EntityHeaderNode)node).getEntityHeader();
+                        header.setName(iProvider.getName());
+                        header.setType(EntityType.ID_PROVIDER_CONFIG);
+                        try {
+                            getProviderConfigManager().update(iProvider);
+                            fireEventProviderUpdated(header);
 
-                SwingUtilities.invokeLater(
-                        new Runnable() {
-                            public void run() {
-                                EntityHeader header = ((EntityHeaderNode) node).getEntityHeader();
-                                header.setName(iProvider.getName());
-                                header.setType(EntityType.ID_PROVIDER_CONFIG);
-                                try {
-                                    getProviderConfigManager().update(iProvider);
-                                    fireEventProviderUpdated(header);
-
-                                } catch (UpdateException e) {
-                                    ErrorManager.getDefault().notify(Level.WARNING, e, "Error updating the identity provider.");
-                                }
-                            }
-                        });
+                        } catch (UpdateException e) {
+                            ErrorManager.getDefault().notify(Level.WARNING, e, "Error updating the identity provider.");
+                        }
+                    }
+                });
             }
         }
 
@@ -194,20 +187,8 @@ public class IdentityProviderPropertiesAction extends NodeAction {
                 log.warning("Internal: tree has not been set.");
                 return;
             }
-
-            try {
-                tree.setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
-                DefaultTreeModel model = (DefaultTreeModel)tree.getModel();
-                Enumeration enumeration = node.children();
-
-                while (enumeration.hasMoreElements()) {
-                    AbstractTreeNode n = (AbstractTreeNode)enumeration.nextElement();
-                    n.setHasLoadedChildren(false);
-                    model.nodeStructureChanged(n);
-                }
-            } finally {
-                tree.setCursor(Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR));
-            }
+            DefaultTreeModel model = (DefaultTreeModel)tree.getModel();
+            model.nodeChanged(node);
         }
     };
 }
