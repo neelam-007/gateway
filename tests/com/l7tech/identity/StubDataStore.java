@@ -13,6 +13,7 @@ import com.l7tech.policy.assertion.identity.SpecificUser;
 import com.l7tech.policy.wsp.WspWriter;
 import com.l7tech.service.PublishedService;
 import com.l7tech.service.WsdlTest;
+import com.l7tech.jms.JmsProvider;
 
 import javax.wsdl.WSDLException;
 import java.beans.XMLDecoder;
@@ -86,6 +87,10 @@ public class StubDataStore {
 
     public Map getPublishedServices() {
         return pubServices;
+    }
+
+    public Map getJmsProviders() {
+        return jmsProviders;
     }
 
     /**
@@ -268,6 +273,8 @@ public class StubDataStore {
             providerConfigs.put(new Long(((IdentityProviderConfig)o).getOid()), o);
         } else if (o instanceof PublishedService) {
             pubServices.put(new Long(((PublishedService)o).getOid()), o);
+        } else if (o instanceof JmsProvider) {
+            jmsProviders.put(new Long(((JmsProvider)o).getOid()), o);
         } else {
             System.err.println("Don't know how to handle " + o.getClass());
         }
@@ -299,6 +306,7 @@ public class StubDataStore {
     private Set memberships = new HashSet();
 
     private Map pubServices = new HashMap();
+    private Map jmsProviders = new HashMap();
     private long objectIdSequence = 100;
 
     /**
@@ -318,5 +326,4 @@ public class StubDataStore {
             e.printStackTrace();
         }
     }
-
 }
