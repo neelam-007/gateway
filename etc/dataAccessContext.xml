@@ -157,7 +157,6 @@
              <idref bean="serviceUsageManager"/>
              <idref bean="jmsEndpointManager"/>
              <idref bean="jmsConnectionManager"/>
-             <idref bean="serverLogManager"/>
              <idref bean="auditExporter"/>
          </list>
      </property>

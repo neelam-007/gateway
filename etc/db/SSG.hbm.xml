@@ -147,20 +147,6 @@
         <property name="completed" column="completedreqnr" type="long"/>
     </class>
 
-    <class name="com.l7tech.logging.SSGLogRecord" table="ssg_logs">
-        <id name="oid" column="objectid" type="long">
-            <generator class="hilo"/>
-        </id>
-        <property name="nodeId" column="nodeid" type="string"/>
-        <property name="message" column="message" type="text"/>
-        <property name="strLvl" column="strlvl" type="string"/>
-        <property name="loggerName" column="loggername" type="string"/>
-        <property name="millis" column="millis" type="long"/>
-        <property name="sourceClassName" column="sourceclassname" type="string"/>
-        <property name="sourceMethodName" column="sourcemethodname" type="string"/>
-        <property name="strRequestId" column="strrequestid" type="string"/>
-    </class>
-
     <class name="com.l7tech.common.transport.jms.JmsConnection" table="jms_connection">
         <id name="oid" column="objectid" type="long" unsaved-value="-1">
             <generator class="hilo"/>

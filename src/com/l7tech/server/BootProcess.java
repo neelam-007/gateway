@@ -12,8 +12,6 @@ import com.l7tech.common.security.JceProvider;
 import com.l7tech.common.util.JdkLoggerConfigurator;
 import com.l7tech.common.xml.TarariProber;
 import com.l7tech.common.xml.tarari.TarariUtil;
-import com.l7tech.logging.ServerLogHandler;
-import com.l7tech.logging.ServerLogManager;
 import com.l7tech.server.audit.AuditContext;
 import com.l7tech.server.audit.SystemAuditListener;
 import com.l7tech.server.event.EventManager;
@@ -187,11 +185,6 @@ public class BootProcess extends ApplicationObjectSupport
             // This needs to happen here, early enough that it will notice early events but after the database init
             systemAuditListener = new SystemAuditListener(springContext);
             eventManager.addListener(SystemEvent.class, systemAuditListener);
-
-            // add the server handler programatically after the hibernate is initialized.
-            // the handlers specified in the configuraiton get loaded by the system classloader and hibernate
-            // stuff lives in the web app classloader
-            JdkLoggerConfigurator.addHandler(new ServerLogHandler((ServerLogManager)springContext.getBean("serverLogManager")));
 
             eventManager.fireInNewTransaction(new Initializing(this, Component.GW_SERVER, ipAddress));
             logger.info("Initializing server");

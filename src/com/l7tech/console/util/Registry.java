@@ -7,7 +7,6 @@ import com.l7tech.common.transport.jms.JmsAdmin;
 import com.l7tech.console.security.SecurityProvider;
 import com.l7tech.identity.IdentityAdmin;
 import com.l7tech.identity.IdentityProviderConfig;
-import com.l7tech.logging.LogAdmin;
 import com.l7tech.policy.assertion.ext.CustomAssertionsRegistrar;
 import com.l7tech.service.ServiceAdmin;
 
@@ -87,11 +86,6 @@ public abstract class Registry {
     abstract public AuditAdmin getAuditAdmin();
 
     /**
-     * @return the log admin interface implementation.
-     */
-    abstract public LogAdmin getLogAdmin();
-
-    /**
      * @return the cluster status admin interface implementation.
      */
     abstract public ClusterStatusAdmin getClusterStatusAdmin();
@@ -139,10 +133,6 @@ public abstract class Registry {
         }
 
         public AuditAdmin getAuditAdmin() {
-            return null;
-        }
-
-        public LogAdmin getLogAdmin() {
             return null;
         }
 

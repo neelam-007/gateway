@@ -12,7 +12,6 @@ import javax.swing.*;
 import javax.swing.event.HyperlinkEvent;
 import javax.swing.event.HyperlinkListener;
 import javax.swing.text.html.HTMLDocument;
-import javax.swing.text.html.HTMLEditorKit;
 import javax.swing.text.EditorKit;
 import javax.swing.text.StyledEditorKit;
 import javax.swing.tree.DefaultMutableTreeNode;
@@ -133,8 +132,6 @@ public class HomeAction extends SecureAction {
                           (DefaultMutableTreeNode)getIdentitiesTree().getModel().getRoot();
                         AbstractTreeNode node = (AbstractTreeNode)root;
                         new NewFederatedIdentityProviderAction(node).invoke();
-                    } else if (ANALYZE_GATEWAY_LOG.equals(url)) {
-                        new ViewGatewayLogsAction().invoke();
                     } else if (VIEW_CLUSTER_STATUS.equals(url)) {
                         new ViewClusterStatusAction().invoke();
                     }
@@ -208,6 +205,5 @@ public class HomeAction extends SecureAction {
     private static final String ADD_FEDERATED_ID_PROVIDER = "file://add.federated.identity.provider";
     private static final String SEARCH_ID_PROVIDER = "file://search.identity.provider";
 
-    private static final String ANALYZE_GATEWAY_LOG = "file://analyze.gateway.log";
     private static final String VIEW_CLUSTER_STATUS = "file://view.cluster.status";
 }

@@ -10,7 +10,6 @@ import com.l7tech.common.security.TrustedCertAdmin;
 import com.l7tech.common.transport.jms.JmsAdmin;
 import com.l7tech.identity.IdentityAdmin;
 import com.l7tech.identity.IdentityProviderConfig;
-import com.l7tech.logging.LogAdmin;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.assertion.ext.CustomAssertionsRegistrar;
 import com.l7tech.service.ServiceAdmin;
@@ -77,13 +76,6 @@ public interface AdminContext {
      * @throws RemoteException   on remote communication error
      */
     AuditAdmin getAuditAdmin() throws RemoteException, SecurityException;;
-
-    /**
-     * @return the log admin interface implementation.
-     * @throws SecurityException on security error accessing the interface
-     * @throws RemoteException   on remote communication error
-     */
-    LogAdmin getLogAdmin() throws RemoteException, SecurityException;
 
     /**
      * @return the cluster status admin interface implementation.

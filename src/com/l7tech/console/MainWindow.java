@@ -82,7 +82,6 @@ public class MainWindow extends JFrame {
     private JMenuItem disconnectMenuItem = null;
     private JMenuItem exitMenuItem = null;
     private JMenuItem menuItemPref = null;
-    private JMenuItem logMenuItem = null;
     private JMenuItem auditMenuItem = null;
     private JMenuItem statMenuItem = null;
     private JMenuItem manageJmsEndpointsMenuItem = null;
@@ -101,7 +100,6 @@ public class MainWindow extends JFrame {
     private PublishServiceAction publishServiceAction = null;
     private PublishNonSoapServiceAction publishNonSoapServiceAction = null;
     private CreateServiceWsdlAction createServiceAction = null;
-    private ViewGatewayLogsAction viewGatewayLogWindowAction = null;
     private ViewClusterStatusAction viewClusterStatusAction = null;
     private ValidatePolicyAction validatePolicyAction;
     private ExportPolicyToFileAction exportPolicyAction;
@@ -456,7 +454,6 @@ public class MainWindow extends JFrame {
 
             editMenu.addSeparator();
             editMenu.add(getStatMenuItem());
-            editMenu.add(getLogMenuItem());
             editMenu.add(getAuditMenuItem());
         }
         return editMenu;
@@ -1186,14 +1183,6 @@ public class MainWindow extends JFrame {
         return manageCertificatesAction;
     }
 
-    private Action getGatewayLogWindowAction() {
-        if (viewGatewayLogWindowAction != null) return viewGatewayLogWindowAction;
-        viewGatewayLogWindowAction = new ViewGatewayLogsAction();
-        viewGatewayLogWindowAction.setEnabled(false);
-        this.addLogonListener(viewGatewayLogWindowAction);
-        return viewGatewayLogWindowAction;
-    }
-
     private Action getGatewayAuditWindowAction() {
         if (viewGatewayAuditsWindowAction != null) return viewGatewayAuditsWindowAction;
         viewGatewayAuditsWindowAction = new ViewGatewayAuditsAction();
@@ -1835,14 +1824,6 @@ public class MainWindow extends JFrame {
     private boolean isConnected() {
         // the menu item is enabled if connected
         return getDisconnectMenuItem().isEnabled();
-    }
-
-
-    public JMenuItem getLogMenuItem() {
-        if (logMenuItem != null) return logMenuItem;
-        logMenuItem = new JMenuItem(getGatewayLogWindowAction());
-
-        return logMenuItem;
     }
 
     public JMenuItem getAuditMenuItem() {

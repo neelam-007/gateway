@@ -125,15 +125,6 @@
     <!-- LDAP GroupManager -->
     <bean id="ldapGroupManager" factory-bean="identityProviderFactory" factory-method="createManagerInstance"
           class="com.l7tech.server.identity.ldap.LdapGroupManager" singleton="false"></bean>
-    <!-- server side log manager -->
-    <bean id="serverLogManager" class="com.l7tech.logging.ServerLogManager">
-        <property name="sessionFactory">
-            <ref bean="sessionFactory"/>
-        </property>
-        <property name="clusterInfoManager">
-            <ref bean="clusterInfoManager"/>
-        </property>
-    </bean>
     <!-- server side Cluster Info manager -->
     <bean id="clusterInfoManager" class="com.l7tech.cluster.ClusterInfoManager">
         <property name="sessionFactory">

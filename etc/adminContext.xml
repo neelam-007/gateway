@@ -156,9 +156,6 @@
             <ref bean="identityAdminRemote"/>
         </constructor-arg>
         <constructor-arg>
-            <ref bean="logAdminRemote"/>
-        </constructor-arg>
-        <constructor-arg>
             <ref bean="auditAdminRemote"/>
         </constructor-arg>
         <constructor-arg>
@@ -208,23 +205,6 @@
         </property>
         <property name="sessionFactory">
             <ref bean="sessionFactory"/>
-        </property>
-    </bean>
-
-    <!--    log admin exporter -->
-    <bean id="logAdminRemote" class="com.l7tech.spring.remoting.rmi.RmiServiceExporterStubFactoryBean"
-          parent="sharedExportProperties">
-        <property name="service">
-            <ref bean="logAdmin"/>
-        </property>
-        <property name="serviceInterface">
-            <value>com.l7tech.logging.LogAdmin</value>
-        </property>
-    </bean>
-    <!--    log admin servant -->
-    <bean id="logAdmin" class="com.l7tech.logging.LogAdminImpl">
-        <property name="serverLogManager">
-            <ref bean="serverLogManager"/>
         </property>
     </bean>
 

@@ -14,7 +14,6 @@ import com.l7tech.common.transport.jms.JmsAdmin;
 import com.l7tech.identity.IdentityAdmin;
 import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.identity.IdentityProviderConfigManager;
-import com.l7tech.logging.LogAdmin;
 import com.l7tech.policy.assertion.ext.CustomAssertionsRegistrar;
 import com.l7tech.service.ServiceAdmin;
 import com.l7tech.objectmodel.FindException;
@@ -31,7 +30,6 @@ import java.rmi.RemoteException;
 public class AdminContextImpl
   extends ApplicationObjectSupport implements AdminContext, InitializingBean {
     private IdentityAdmin identityAdmin;
-    private LogAdmin logAdmin;
     private AuditAdmin auditAdmin;
     private ServiceAdmin serviceAdmin;
     private JmsAdmin jmsAdmin;
@@ -39,11 +37,10 @@ public class AdminContextImpl
     private CustomAssertionsRegistrar customAssertionsRegistrar;
     private ClusterStatusAdmin clusterStatusAdmin;
     
-    public AdminContextImpl(IdentityAdmin identityAdmin, LogAdmin logAdmin, AuditAdmin auditAdmin, ServiceAdmin serviceAdmin,
+    public AdminContextImpl(IdentityAdmin identityAdmin, AuditAdmin auditAdmin, ServiceAdmin serviceAdmin,
                             JmsAdmin jmsAdmin, TrustedCertAdmin trustedCertAdmin, CustomAssertionsRegistrar customAssertionsRegistrar,
                             ClusterStatusAdmin clusterStatusAdmin) {
         this.identityAdmin = identityAdmin;
-        this.logAdmin = logAdmin;
         this.auditAdmin = auditAdmin;
         this.serviceAdmin = serviceAdmin;
         this.jmsAdmin = jmsAdmin;
@@ -88,10 +85,6 @@ public class AdminContextImpl
         return auditAdmin;
     }
 
-    public LogAdmin getLogAdmin() throws RemoteException, SecurityException {
-        return logAdmin;
-    }
-
     public ClusterStatusAdmin getClusterStatusAdmin() throws RemoteException, SecurityException {
         return clusterStatusAdmin;
     }
@@ -111,10 +104,6 @@ public class AdminContextImpl
         if (identityAdmin == null) {
             throw new IllegalArgumentException("Identity Admin is required");
         }
-        if (logAdmin == null) {
-            throw new IllegalArgumentException("Log Admin is required");
-        }
-
         if (auditAdmin == null) {
             throw new IllegalArgumentException("Audit Admin is required");
         }

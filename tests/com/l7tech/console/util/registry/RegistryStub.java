@@ -7,8 +7,6 @@ import com.l7tech.common.transport.jms.JmsAdmin;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.security.SecurityProvider;
 import com.l7tech.identity.*;
-import com.l7tech.logging.LogAdmin;
-import com.l7tech.logging.LogAdminStub;
 import com.l7tech.policy.assertion.ext.CustomAssertionsRegistrar;
 import com.l7tech.policy.assertion.ext.CustomAssertionsRegistrarStub;
 import com.l7tech.service.JmsAdminStub;
@@ -72,10 +70,6 @@ public class RegistryStub extends Registry {
         return auditAdmin;
     }
 
-    public LogAdmin getLogAdmin() {
-        return logAdmin;
-    }
-
     public ClusterStatusAdmin getClusterStatusAdmin() {
         return clusterStatusAdmin;
     }
@@ -91,7 +85,6 @@ public class RegistryStub extends Registry {
     private JmsAdmin jmsAdmin = new JmsAdminStub();
     private CustomAssertionsRegistrar customAssertionsRegistrar = new CustomAssertionsRegistrarStub();
     private AuditAdmin auditAdmin = new AuditAdminStub();
-    private LogAdmin logAdmin = new LogAdminStub();
     private ClusterStatusAdmin clusterStatusAdmin = new ClusterStatusAdminStub();
     private TrustedCertAdmin trustedCertAdmin;
 }

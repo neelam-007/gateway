@@ -11,9 +11,6 @@
     <bean id="registry" class="com.l7tech.console.util.registry.RegistryStub">
     </bean>
 
-    <bean id="logAdmin" class="com.l7tech.logging.LogAdminStub">
-    </bean>
-
     <bean id="identityAdmin" class="com.l7tech.identity.IdentityAdminStub">
     </bean>
 

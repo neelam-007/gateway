@@ -81,7 +81,7 @@ public class Auditor {
                 return sourceMethodName;
             }
         };
-        rec.setLoggerName(logger.getName()); // Work around NPE in LoggerNameFilter
+        rec.setLoggerName(logger.getName());
         if (e != null) rec.setThrown(e);
         if (params != null) rec.setParameters(params);
         logger.log(rec);

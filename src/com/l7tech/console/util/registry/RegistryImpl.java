@@ -10,7 +10,6 @@ import com.l7tech.console.security.SecurityProvider;
 import com.l7tech.identity.IdentityAdmin;
 import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.identity.IdentityProviderConfigManager;
-import com.l7tech.logging.LogAdmin;
 import com.l7tech.policy.assertion.ext.CustomAssertionsRegistrar;
 import com.l7tech.service.ServiceAdmin;
 import com.l7tech.cluster.ClusterStatusAdmin;
@@ -44,7 +43,6 @@ public final class RegistryImpl extends Registry
     private TrustedCertAdmin trustedCertAdmin;
     private CustomAssertionsRegistrar customAssertionsRegistrar;
     private AuditAdmin auditAdmin;
-    private LogAdmin logAdmin;
     private ClusterStatusAdmin clusterStatusAdmin;
 
     /**
@@ -156,22 +154,6 @@ public final class RegistryImpl extends Registry
         }
     }
 
-    /**
-     * @return the {@link LogAdmin} implementation
-     */
-    public synchronized LogAdmin getLogAdmin() {
-        checkAdminContext();
-        if (logAdmin !=null) {
-            return logAdmin;
-        }
-        try {
-            logAdmin = adminContext.getLogAdmin();
-            return logAdmin;
-        } catch (RemoteException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
     public ClusterStatusAdmin getClusterStatusAdmin() {
         checkAdminContext();
         if (clusterStatusAdmin !=null) {
@@ -242,7 +224,6 @@ public final class RegistryImpl extends Registry
         trustedCertAdmin = null;
         customAssertionsRegistrar = null;
         auditAdmin = null;
-        logAdmin = null;
     }
 
 
