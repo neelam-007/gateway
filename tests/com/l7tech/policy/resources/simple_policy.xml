@@ -192,7 +192,7 @@
                                     <entry>
                                     <key stringValue="portfolioData"/>
                                     <value wsdlMimePartInfo="included">
-                                    <ContentTypes arrayValue="included">
+                                    <ContentTypes stringArrayValue="included">
                                     <item stringValue="application/x-zip-compressed"/>
                                     </ContentTypes>
                                     <MaxLength intValue="0"/>

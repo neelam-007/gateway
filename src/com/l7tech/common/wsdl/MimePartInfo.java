@@ -4,21 +4,27 @@ import com.l7tech.common.mime.ContentTypeHeader;
 
 import java.io.Serializable;
 import java.io.IOException;
-import java.util.Vector;
+import java.util.Set;
+import java.util.LinkedHashSet;
+import java.util.Arrays;
 
 /**
+ * Holds policy settings to enforce on a MIME attachment including a display name, maximum attachment size,
+ * and list of valid content types.
+ *
  * <p> Copyright (C) 2004 Layer 7 Technologies Inc.</p>
  * <p> @author fpang </p>
  * $Id$
  */
 public class MimePartInfo implements Serializable {
     protected String name;
-    protected Object[] contentTypes = null;
+    protected String[] contentTypes;
     private int maxLength;
 
     private transient ContentTypeHeader[] contentTypeHeaders = null;
 
     public MimePartInfo() {
+        contentTypes = new String[0];
     }
 
     public MimePartInfo(String name, String contentType) {
@@ -36,12 +42,14 @@ public class MimePartInfo implements Serializable {
         this.name = name;
     }
 
-    public Object[] getContentTypes() {
+    public String[] getContentTypes() {
         return contentTypes;
     }
 
-    public void setContentTypes(Object[] contentTypes) {
-        this.contentTypes = contentTypes;
+    public void setContentTypes(String[] contentTypes) {
+        if (contentTypes == null)
+            contentTypes = new String[0];
+        this.contentTypes = (String[]) new LinkedHashSet(Arrays.asList(contentTypes)).toArray(new String[0]);
         try {
             contentTypeHeaders(); // detect invalid patterns early
         } catch (IOException e) {
@@ -50,13 +58,10 @@ public class MimePartInfo implements Serializable {
     }
 
     public void addContentType(String contentType) {
-        Vector newContentTypes = new Vector();
-        for (int i = 0; i < contentTypes.length; i++) {
-            newContentTypes.add(contentTypes[i]);
-        }
-        // add the new content type to the list
+        if (contentType == null) throw new NullPointerException();
+        Set newContentTypes = new LinkedHashSet(Arrays.asList(contentTypes));
         newContentTypes.add(contentType);
-        contentTypes = newContentTypes.toArray();
+        contentTypes = (String[]) newContentTypes.toArray(new String[0]);
         contentTypeHeaders = null;  // invalidate list of parsed patterns
     }
 
