@@ -5,6 +5,7 @@ import org.xml.sax.InputSource;
 
 import javax.wsdl.*;
 import javax.wsdl.extensions.soap.SOAPAddress;
+import javax.wsdl.extensions.ExtensibilityElement;
 import javax.wsdl.factory.WSDLFactory;
 import javax.wsdl.xml.WSDLReader;
 import javax.wsdl.xml.WSDLWriter;
@@ -15,6 +16,11 @@ import java.util.Collection;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.List;
+import java.util.logging.Logger;
+import java.net.URL;
+import java.net.MalformedURLException;
+
+import com.l7tech.logging.LogManager;
 
 /**
  * <code>Wsdl</code> is the internal object structure for
@@ -267,6 +273,73 @@ public class Wsdl {
         return definition.toString();
     }
 
+    /**
+     * Finds a single Port that contains a SOAPAddress from whatever Services are in the WSDL.
+     * @return a Port that contains a SOAPAddress
+     */
+    public Port getSoapPort() {
+        Iterator services = getServices().iterator();
+        Service wsdlService = null;
+        Port pork = null;
+        Port soapPort = null;
+
+        int numServices = 0;
+        while ( services.hasNext() ) {
+            int numPorts = 0;
+            numServices++;
+            if ( wsdlService != null ) continue;
+
+            wsdlService = (Service)services.next();
+            Map ports = wsdlService.getPorts();
+            if ( ports == null ) continue;
+
+            Iterator portKeys = ports.keySet().iterator();
+            String portKey;
+            while ( portKeys.hasNext() ) {
+                if ( soapPort == null ) {
+                    portKey = (String)portKeys.next();
+                    pork = (Port)ports.get(portKey);
+
+                    List elements = pork.getExtensibilityElements();
+                    ExtensibilityElement eel;
+                    // Find the first Port that contains a SOAPAddress eel
+                    for ( int i = 0; i < elements.size(); i++ ) {
+                        eel = (ExtensibilityElement)elements.get(i);
+                        if ( eel instanceof SOAPAddress ) {
+                            soapPort = pork;
+                            numPorts++;
+                        }
+                    }
+
+                }
+            }
+            if ( numPorts > 1 ) _log.warning( "WSDL " + getDefinition().getTargetNamespace() + " has more than one port, used the first." );
+        }
+        if ( numServices > 1 ) _log.warning( "WSDL " + getDefinition().getTargetNamespace() + " has more than one service, used the first." );
+        return soapPort;
+    }
+
+    public URL getUrlFromPort(Port wsdlPort) throws MalformedURLException {
+        List elements = wsdlPort.getExtensibilityElements();
+        URL url = null;
+        ExtensibilityElement eel;
+        int num = 0;
+        for ( int i = 0; i < elements.size(); i++ ) {
+            eel = (ExtensibilityElement)elements.get(i);
+            if ( eel instanceof SOAPAddress ) {
+                SOAPAddress sadd = (SOAPAddress)eel;
+                num++;
+                url = new URL( sadd.getLocationURI() );
+            }
+        }
+
+        if ( num > 1 ) _log.warning( "WSDL " + getDefinition().getTargetNamespace() + " contained multiple <soap:address> elements" );
+
+        return url;
+    }
+
 
     private Definition definition;
+
+    private transient Logger _log = LogManager.getInstance().getSystemLogger();
 }
