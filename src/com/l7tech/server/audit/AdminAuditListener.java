@@ -14,6 +14,7 @@ import com.l7tech.objectmodel.SaveException;
 import com.l7tech.objectmodel.event.*;
 import com.l7tech.server.service.ServiceEvent;
 import com.l7tech.service.PublishedService;
+import com.l7tech.identity.User;
 import net.jini.export.ServerContext;
 import net.jini.io.context.ClientSubject;
 
@@ -98,7 +99,11 @@ public class AdminAuditListener implements CreateListener, UpdateListener, Delet
         if (clientSubject != null) {
             Set principals = clientSubject.getClientSubject().getPrincipals();
             if (principals != null && !principals.isEmpty()) {
-                return ((Principal)principals.iterator().next()).getName();
+                Principal p = (Principal)principals.iterator().next();
+                String login = null;
+                if (p instanceof User) login = ((User)p).getLogin();
+                if (login == null) login = p.getName();
+                return login;
             }
         }
         return null;
