@@ -2,6 +2,7 @@ package com.l7tech.proxy.gui;
 
 import com.l7tech.console.tree.EntityTreeCellRenderer;
 import com.l7tech.console.tree.policy.PolicyTreeModel;
+import com.l7tech.console.panels.Utilities;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.FalseAssertion;
 import com.l7tech.policy.assertion.TrueAssertion;
@@ -43,6 +44,7 @@ public class SsgPropertyDialog extends PropertyDialog {
     private JTextField fieldServerUrl;
     private JTextField fieldKeyStorePath;
     private JTextField fieldUsername;
+    private JButton buttonClearPassword;
     private JButton buttonSetPassword;
     private JCheckBox cbPromptForPassword;
     private JLabel fieldPassword;
@@ -243,13 +245,31 @@ public class SsgPropertyDialog extends PropertyDialog {
             pane.add(new JLabel("Username:"), gbcLabel());
             pane.add(fieldUsername, gbc());
 
-            fieldPassword = new JLabel();
-            fieldPassword.setPreferredSize(new Dimension(200, 20));
-            pane.add(new JLabel("Password:"), gbcLabel());
-            pane.add(fieldPassword, gbc());
+            JPanel passwordStuff = new JPanel();
+            passwordStuff.setLayout(new GridBagLayout());
 
-            buttonSetPassword = new JButton("Set Password");
-            buttonSetPassword.setPreferredSize(new Dimension(90, 20));
+            fieldPassword = new JLabel();
+            pane.add(new JLabel("Password:"), gbcLabel());
+            passwordStuff.add(fieldPassword,
+                              new GridBagConstraints(0, 0, 1, 1, 1.0, 1.0,
+                                                     GridBagConstraints.WEST,
+                                                     GridBagConstraints.BOTH,
+                                                     new Insets(0, 0, 0, 0), 0, 0));
+
+            buttonClearPassword = new JButton("Clear");
+            buttonClearPassword.addActionListener(new ActionListener() {
+                public void actionPerformed(ActionEvent e) {
+                    editPassword = null;
+                    fieldPassword.setText(passwordToString(editPassword));
+                }
+            });
+            passwordStuff.add(buttonClearPassword,
+                              new GridBagConstraints(1, 0, 1, 1, 0.0, 0.0,
+                                                     GridBagConstraints.EAST,
+                                                     GridBagConstraints.NONE,
+                                                     new Insets(0, 0, 0, 0), 0, 0));
+
+            buttonSetPassword = new JButton("Change");
             buttonSetPassword.addActionListener(new ActionListener() {
                 public void actionPerformed(ActionEvent e) {
                     char[] word = PasswordDialog.getPassword(Gui.getInstance().getFrame(), "Set Password");
@@ -259,7 +279,14 @@ public class SsgPropertyDialog extends PropertyDialog {
                     }
                 }
             });
-            pane.add(buttonSetPassword, gbc());
+            passwordStuff.add(buttonSetPassword,
+                                new GridBagConstraints(2, 0, 1, 1, 0.0, 0.0,
+                                                       GridBagConstraints.EAST,
+                                                       GridBagConstraints.NONE,
+                                                       new Insets(0, 0, 0, 0), 0, 0));
+
+            Utilities.equalizeButtonSizes(new AbstractButton[] { buttonClearPassword, buttonSetPassword });
+            pane.add(passwordStuff, gbc());
 
             cbPromptForPassword = new JCheckBox("Prompt for username and password when needed");
             cbPromptForPassword.setPreferredSize(new Dimension(200, 20));
