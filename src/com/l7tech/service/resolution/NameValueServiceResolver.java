@@ -16,18 +16,21 @@ import java.util.*;
  * @version $Revision$
  */
 public abstract class NameValueServiceResolver extends ServiceResolver {
-    public void setServices( Collection services ) {
+    public synchronized void doSetServices( Collection services ) {
         super.setServices(services);
         Iterator i = services.iterator();
         _valueToServiceSetMap = new HashMap();
         PublishedService service;
-        Object value;
+        Object[] values;
         Set serviceSet;
         while ( i.hasNext() ) {
             service = (PublishedService)i.next();
-            value = service.getSoapAction();
-            serviceSet = getServiceSet(value);
-            serviceSet.add( service );
+            values = getTargetValues( service );
+            for (int j = 0; j < values.length; j++) {
+                Object value = values[j];
+                serviceSet = getServiceSet(value);
+                serviceSet.add( service );
+            }
         }
     }
 
@@ -35,7 +38,7 @@ public abstract class NameValueServiceResolver extends ServiceResolver {
     protected abstract Object[] getTargetValues( PublishedService service );
     protected abstract Object getRequestValue( Request request ) throws ServiceResolutionException;
 
-    protected Set getServiceSet( Object value ) {
+    protected synchronized Set getServiceSet( Object value ) {
         Set serviceSet = (Set)_valueToServiceSetMap.get(value);
         if ( serviceSet == null ) {
             serviceSet = new HashSet();
@@ -44,7 +47,7 @@ public abstract class NameValueServiceResolver extends ServiceResolver {
         return serviceSet;
     }
 
-    protected Set doResolve( Request request, Set set ) throws ServiceResolutionException {
+    protected synchronized Set doResolve( Request request, Set set ) throws ServiceResolutionException {
         Object value = getRequestValue(request);
         Set serviceSet = getServiceSet( value );
         if ( serviceSet.isEmpty() ) return serviceSet;
