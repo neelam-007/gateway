@@ -329,7 +329,7 @@ public class XmlMangler {
             try {
                 Element cipherData = XmlUtil.findOnlyOneChildElementByName(encryptedKey, SoapUtil.XMLENC_NS, "CipherData");
                 if (cipherData != null) {
-                    cipherValue = XmlUtil.findOnlyOneChildElementByName(encryptedKey, SoapUtil.XMLENC_NS, "CipherValue");
+                    cipherValue = XmlUtil.findOnlyOneChildElementByName(cipherData, SoapUtil.XMLENC_NS, "CipherValue");
                 }
             } catch (XmlUtil.MultipleChildElementsException e) {
                 logger.warning("EncryptedKey has more than one CipherData or CipherValue");
