@@ -101,5 +101,5 @@ public abstract class ServerHttpCredentialSource extends ServerCredentialSourceA
     protected abstract String scheme();
 
     protected HttpCredentialSourceAssertion _data;
-    private Logger logger = LogManager.getInstance().getSystemLogger();
+    protected Logger logger = LogManager.getInstance().getSystemLogger();
 }
