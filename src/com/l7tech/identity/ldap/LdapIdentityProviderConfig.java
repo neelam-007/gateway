@@ -40,14 +40,20 @@ public class LdapIdentityProviderConfig extends IdentityProviderConfig implement
     /**
      * the ldap url for connecting to the directory.
      */
-    public String getLdapUrl() {
-        return (String)props.get(URL);
+    public String[] getLdapUrl() {
+        Object prop = props.get(URL);
+        // Backward compatibility
+        if (prop instanceof String) {
+            return new String[]{(String)prop};
+        } else {
+            return (String[])prop;
+        }
     }
 
     /**
      * the ldap url for connecting to the directory.
      */
-    public void setLdapUrl(String ldapUrl) {
+    public void setLdapUrl(String[] ldapUrl) {
         props.put(URL, ldapUrl);
     }
 

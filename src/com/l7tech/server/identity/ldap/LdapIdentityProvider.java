@@ -53,6 +53,10 @@ public class LdapIdentityProvider implements IdentityProvider {
 
     public LdapIdentityProvider(IdentityProviderConfig config) {
         this.config = (LdapIdentityProviderConfig)config;
+        if (this.config.getLdapUrl() == null || this.config.getLdapUrl().length < 1) {
+            throw new IllegalArgumentException("This config does not contain an ldap url"); // should not happen
+        }
+        lastSuccessfulLdapUrl = this.config.getLdapUrl()[0];
         userManager = new LdapUserManager(this.config, this);
         groupManager = new LdapGroupManager(this.config, this);
     }
@@ -67,6 +71,23 @@ public class LdapIdentityProvider implements IdentityProvider {
 
     public GroupManager getGroupManager() {
         return groupManager;
+    }
+
+    /**
+     * @return The ldap url that was last used to successfully connect to the ldap directory.
+     */
+    String getLastWorkingLdapUrl() {
+        return lastSuccessfulLdapUrl;
+    }
+
+    /**
+     *
+     * @param urlThatFailed the url that failed to connect
+     * @return the next url in the list or null if all urls were marked as failure within the last x minutes
+     */
+    synchronized String markCurrentUrlFailureAndGetNextOneInLine(String urlThatFailed) {
+        // todo
+        return null;
     }
 
     public User authenticate(LoginCredentials pc) throws AuthenticationException, FindException, IOException {
@@ -270,7 +291,7 @@ public class LdapIdentityProvider implements IdentityProvider {
             }
             SearchControls sc = new SearchControls();
             sc.setSearchScope(SearchControls.SUBTREE_SCOPE);
-            context = getBrowseContext(config);
+            context = getBrowseContext();
             answer = context.search(config.getSearchBase(), filter, sc);
             while (answer.hasMore()) {
                 // get this item
@@ -342,32 +363,35 @@ public class LdapIdentityProvider implements IdentityProvider {
         return output.toString();
     }
 
-    public static DirContext getBrowseContext(LdapIdentityProviderConfig config) throws NamingException {
-        UnsynchronizedNamingProperties env = new UnsynchronizedNamingProperties();
-        env.put( "java.naming.ldap.version", "3" );
-        env.put(Context.INITIAL_CONTEXT_FACTORY, "com.sun.jndi.ldap.LdapCtxFactory");
-        Object temp = config.getLdapUrl();
-        if ( temp != null ) env.put(Context.PROVIDER_URL, temp );
-        env.put("com.sun.jndi.ldap.connect.pool", "true");
-        env.put("com.sun.jndi.ldap.connect.timeout", LDAP_CONNECT_TIMEOUT );
-        env.put("com.sun.jndi.ldap.connect.pool.timeout", LDAP_POOL_IDLE_TIMEOUT );
-        String dn = config.getBindDN();
-        if ( dn != null && dn.length() > 0 ) {
-            String pass = config.getBindPasswd();
-            env.put( Context.SECURITY_AUTHENTICATION, "simple" );
-            env.put( Context.SECURITY_PRINCIPAL, dn );
-            env.put( Context.SECURITY_CREDENTIALS, pass );
-        }
-        env.lock();
-        // Create the initial directory context.
-        return new InitialDirContext(env);
+    public DirContext getBrowseContext() throws NamingException {
+            UnsynchronizedNamingProperties env = new UnsynchronizedNamingProperties();
+            // fla note: this is weird. new BrowseContext objects are created at every operation so they
+            // should not cross threads.
+            env.put( "java.naming.ldap.version", "3" );
+            env.put(Context.INITIAL_CONTEXT_FACTORY, "com.sun.jndi.ldap.LdapCtxFactory");
+            // todo, refactor to rotate across all possible urls
+            // when getting javax.naming.CommunicationException at
+            env.put(Context.PROVIDER_URL, getLastWorkingLdapUrl());
+            env.put("com.sun.jndi.ldap.connect.pool", "true");
+            env.put("com.sun.jndi.ldap.connect.timeout", LDAP_CONNECT_TIMEOUT );
+            env.put("com.sun.jndi.ldap.connect.pool.timeout", LDAP_POOL_IDLE_TIMEOUT );
+            String dn = config.getBindDN();
+            if ( dn != null && dn.length() > 0 ) {
+                String pass = config.getBindPasswd();
+                env.put( Context.SECURITY_AUTHENTICATION, "simple" );
+                env.put( Context.SECURITY_PRINCIPAL, dn );
+                env.put( Context.SECURITY_CREDENTIALS, pass );
+            }
+            env.lock();
+            // Create the initial directory context.
+            return new InitialDirContext(env);
     }
 
     public void test() throws InvalidIdProviderCfgException {
         // make sure we can connect
         DirContext context = null;
         try {
-            context = getBrowseContext(config);
+            context = getBrowseContext();
         } catch (NamingException e) {
             // note. i am not embedding the NamingException because it sometimes
             // contains com.sun.jndi.ldap.LdapCtx which does not implement serializable
@@ -669,6 +693,6 @@ public class LdapIdentityProvider implements IdentityProvider {
     private final LdapIdentityProviderConfig config;
     private final LdapUserManager userManager;
     private final LdapGroupManager groupManager;
-
+    private String lastSuccessfulLdapUrl;
     private final Logger logger = Logger.getLogger(getClass().getName());
 }

@@ -4,6 +4,7 @@ import com.l7tech.identity.GroupManager;
 import com.l7tech.identity.User;
 import com.l7tech.policy.assertion.credential.CredentialFormat;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
+import com.l7tech.policy.assertion.credential.wss.WssBasic;
 import com.l7tech.policy.assertion.credential.http.HttpBasic;
 import com.l7tech.server.identity.ldap.LdapConfigTemplateManager;
 import com.l7tech.server.identity.ldap.LdapIdentityProvider;
@@ -29,8 +30,8 @@ public class LdapIdentityProviderTest extends TestCase {
     private LdapIdentityProviderConfig getConfigForSpock() throws IOException {
         LdapConfigTemplateManager templateManager = new LdapConfigTemplateManager();
         LdapIdentityProviderConfig spockTemplate = templateManager.getTemplate("GenericLDAP");
-        //spockTemplate.setLdapUrl("ldap://localhost:3899");
-        spockTemplate.setLdapUrl("ldap://spock:389");
+        spockTemplate.setLdapUrl(new String[] {"ldap://localhost:3899"});
+        //spockTemplate.setLdapUrl(new String[] {"ldap://spock:389"});
         spockTemplate.setSearchBase("dc=layer7-tech,dc=com");
         return spockTemplate;
     }
@@ -38,7 +39,7 @@ public class LdapIdentityProviderTest extends TestCase {
     private LdapIdentityProviderConfig getConfigForSpockWithBadSearchBase() throws IOException {
         LdapConfigTemplateManager templateManager = new LdapConfigTemplateManager();
         LdapIdentityProviderConfig spockTemplate = templateManager.getTemplate("GenericLDAP");
-        spockTemplate.setLdapUrl("ldap://spock:389");
+        spockTemplate.setLdapUrl(new String[] {"ldap://spock:3899"});
         spockTemplate.setSearchBase("dc=layer8-tech,dc=com");
         return spockTemplate;
     }
@@ -47,7 +48,7 @@ public class LdapIdentityProviderTest extends TestCase {
         LdapConfigTemplateManager templateManager = new LdapConfigTemplateManager();
         LdapIdentityProviderConfig msadTemplate = templateManager.getTemplate("MicrosoftActiveDirectory");
         //msadTemplate.setLdapUrl("ldap://localhost:3899");
-        msadTemplate.setLdapUrl("ldap://mail.l7tech.com:3268");
+        msadTemplate.setLdapUrl(new String[] {"ldap://mail.l7tech.com:3268"});
         msadTemplate.setSearchBase("ou=Layer 7 Users,dc=L7TECH,dc=LOCAL");
         msadTemplate.setBindDN("browse");
         msadTemplate.setBindPasswd("password");
@@ -57,7 +58,7 @@ public class LdapIdentityProviderTest extends TestCase {
     private LdapIdentityProviderConfig getConfigForTimTam() throws IOException {
         LdapConfigTemplateManager templateManager = new LdapConfigTemplateManager();
         LdapIdentityProviderConfig msadTemplate = templateManager.getTemplate("TivoliLdap");
-        msadTemplate.setLdapUrl("ldap://192.168.1.120:389");
+        msadTemplate.setLdapUrl(new String[] {"ldap://192.168.1.120:389"});
         msadTemplate.setSearchBase("DC=IBM,DC=COM");
         msadTemplate.setBindDN("cn=root");
         msadTemplate.setBindPasswd("passw0rd");
@@ -68,7 +69,7 @@ public class LdapIdentityProviderTest extends TestCase {
         LdapConfigTemplateManager templateManager = new LdapConfigTemplateManager();
         LdapIdentityProviderConfig orclTemplate = templateManager.getTemplate("Oracle");
         //orclTemplate.setLdapUrl("ldap://localhost:3899");
-        orclTemplate.setLdapUrl("ldap://hugh.l7tech.com:389");
+        orclTemplate.setLdapUrl(new String[] {"ldap://hugh.l7tech.com:389"});
         orclTemplate.setSearchBase("dc=l7tech,dc=com");
         orclTemplate.setBindDN("cn=orcladmin");
         orclTemplate.setBindPasswd("7layer");
@@ -188,9 +189,11 @@ public class LdapIdentityProviderTest extends TestCase {
         //me.localProvider = me.getModifiedOracleProvider();
         //me.localProvider = me.getTimTamProvider();
         //me.testAuthenticate("test_user", "passw0rd");
-        me.localProvider.test();
+        //me.localProvider.test();
         //me.testGetUsers();
         //me.testGetGroupsAndMembers();
+        LoginCredentials creds = new LoginCredentials("flascelles", "rockclimbing".toCharArray(), WssBasic.class);
+        me.localProvider.authenticate(creds);
     }
 
     private LdapIdentityProvider localProvider;

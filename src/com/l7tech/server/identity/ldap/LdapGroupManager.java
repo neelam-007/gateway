@@ -38,7 +38,7 @@ public class LdapGroupManager implements GroupManager {
         DirContext context = null;
         try {
             try {
-                context = LdapIdentityProvider.getBrowseContext(cfg);
+                context = parent.getBrowseContext();
                 Attributes attributes = context.getAttributes(dn);
 
                 GroupMappingConfig[] groupTypes = cfg.getGroupMappings();
@@ -245,7 +245,7 @@ public class LdapGroupManager implements GroupManager {
             sc.setSearchScope(SearchControls.SUBTREE_SCOPE);
             DirContext context = null;
             try {
-                context = LdapIdentityProvider.getBrowseContext(cfg);
+                context = parent.getBrowseContext();
             } catch (NamingException e) {
                 String msg = "cannot get context";
                 logger.log(Level.WARNING, msg, e);
@@ -443,7 +443,7 @@ public class LdapGroupManager implements GroupManager {
 
             LdapGroup groupImp = (LdapGroup)group;
             String dn = groupImp.getDn();
-            context = LdapIdentityProvider.getBrowseContext(cfg);
+            context = parent.getBrowseContext();
             Attributes attributes = context.getAttributes(dn);
 
             GroupMappingConfig[] groupTypes = cfg.getGroupMappings();

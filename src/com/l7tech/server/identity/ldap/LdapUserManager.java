@@ -37,7 +37,7 @@ public class LdapUserManager implements UserManager {
     public User findByPrimaryKey(String dn) throws FindException {
         DirContext context = null;
         try {
-            context = LdapIdentityProvider.getBrowseContext(cfg);
+            context = parent.getBrowseContext();
             Attributes attributes = context.getAttributes(dn);
 
             UserMappingConfig[] userTypes = cfg.getUserMappings();
@@ -91,7 +91,7 @@ public class LdapUserManager implements UserManager {
     public User findByLogin(String login) throws FindException {
         DirContext context = null;
         try {
-            context = LdapIdentityProvider.getBrowseContext(cfg);
+            context = parent.getBrowseContext();
 
             StringBuffer filter = new StringBuffer("(|");
             UserMappingConfig[] userTypes = cfg.getUserMappings();
@@ -253,7 +253,8 @@ public class LdapUserManager implements UserManager {
     public boolean authenticateBasic(String dn, String passwd) {
         UnsynchronizedNamingProperties env = new UnsynchronizedNamingProperties();
         env.put(Context.INITIAL_CONTEXT_FACTORY, "com.sun.jndi.ldap.LdapCtxFactory");
-        env.put(Context.PROVIDER_URL, cfg.getLdapUrl());
+        // todo refactor to use all possible urls
+        env.put(Context.PROVIDER_URL, parent.getLastWorkingLdapUrl());
         env.put(Context.SECURITY_AUTHENTICATION, "simple");
         env.put(Context.SECURITY_PRINCIPAL, dn);
         env.put(Context.SECURITY_CREDENTIALS, passwd);
@@ -269,9 +270,11 @@ public class LdapUserManager implements UserManager {
             // Close the context when we're done
             userCtx.close();
         } catch (AuthenticationException e) {
+            // when you get bad credentials
             logger.info( "User failed to authenticate: " + dn  + " in provider " + cfg.getName());
             return false;
         } catch (NamingException e) {
+            // when you get a connection problem
             logger.log( Level.WARNING, "General naming failure for user: " + dn + " in provider " + cfg.getName(), e);
             return false;
         }
