@@ -55,7 +55,7 @@ public class NonSoapServicePanel extends WizardStepPanel {
             ssgUrl = "http://" + ssgUrl;
         }
         int pos = ssgUrl.lastIndexOf(':');
-        if (pos > 0) {
+        if (pos > 4) {
             ssgUrl = ssgUrl.substring(0, pos);
             ssgUrl = ssgUrl + ":8080";
         }

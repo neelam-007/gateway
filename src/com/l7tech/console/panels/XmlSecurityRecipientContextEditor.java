@@ -74,7 +74,7 @@ public class XmlSecurityRecipientContextEditor extends JDialog {
         final MainWindow mw = TopComponents.getInstance().getMainWindow();
         String ssghostname = mw.ssgURL();
         int pos = ssghostname.lastIndexOf(':');
-        if (pos > 0) {
+        if (pos > 4) {
             ssghostname = ssghostname.substring(0, pos);
         }
         defaultRadio.setText("Default (" + ssghostname + ")");

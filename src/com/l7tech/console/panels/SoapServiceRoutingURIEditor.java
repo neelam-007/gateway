@@ -71,7 +71,7 @@ public class SoapServiceRoutingURIEditor extends JDialog {
             ssgURL = "http://" + ssgURL;
         }
         int pos = ssgURL.lastIndexOf(':');
-        if (pos > 0) {
+        if (pos > 4) {
             ssgURL = ssgURL.substring(0, pos);
             ssgURL = ssgURL + ":8080";
         }
