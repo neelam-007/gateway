@@ -8,6 +8,8 @@ package com.l7tech.console.panels;
 
 import com.l7tech.console.util.Registry;
 import com.l7tech.objectmodel.EntityHeader;
+import com.l7tech.common.gui.util.Utilities;
+import com.l7tech.common.transport.jms.JmsConnection;
 
 import javax.swing.*;
 import java.awt.*;
@@ -19,13 +21,51 @@ import java.awt.event.ActionEvent;
  *
  */
 public class JmsConnectionListPanel extends JPanel {
-    private JComponent connectionList;
+    private JList connectionList;
     private JButton addButton;
     private ListModel connectionListModel;
+    private Window owner;
 
-    public JmsConnectionListPanel() {
+    private static class ConnectionListItem {
+        private EntityHeader entityHeader;
+
+        ConnectionListItem(EntityHeader entityHeader) {
+            this.entityHeader = entityHeader;
+        }
+
+        EntityHeader getEntityHeader() {
+            return entityHeader;
+        }
+
+        public String toString() {
+            return entityHeader.getName();
+        }
+    }
+
+    public JmsConnectionListPanel(Frame owner) {
+        this.owner = owner;
+        init();
+    }
+
+    public JmsConnectionListPanel(Window owner) {
+        this.owner = owner;
+        init();
+    }
+
+    /** @return the currently-selected JmsConnection, or null if there isn't one. */
+    public EntityHeader getSelectedJmsConnection() {
+        ConnectionListItem cli = (ConnectionListItem) getConnectionList().getSelectedValue();
+        return cli == null ? null : cli.getEntityHeader();
+    }
+
+    private void init() {
         setLayout(new GridBagLayout());
-        add(getConnectionList(),
+
+        JScrollPane sp = new JScrollPane(getConnectionList(),
+                                         JScrollPane.VERTICAL_SCROLLBAR_ALWAYS,
+                                         JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
+        sp.setMinimumSize(new Dimension(220, 40));
+        add(sp,
             new GridBagConstraints(0, 0, 1, 1, 1.0, 1.0,
                                    GridBagConstraints.CENTER,
                                    GridBagConstraints.BOTH,
@@ -37,27 +77,25 @@ public class JmsConnectionListPanel extends JPanel {
                                    new Insets(0, 12, 11, 11), 0, 0));
     }
 
-    private JComponent getConnectionList() {
+    private JList getConnectionList() {
         if (connectionList != null)
             return connectionList;
 
-        JList list = new JList(getConnectionListModel());
-        connectionList = new JScrollPane(list, JScrollPane.VERTICAL_SCROLLBAR_ALWAYS, JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
-        connectionList.setMinimumSize(new Dimension(220, 40));
+        connectionList = new JList(getConnectionListModel());
         return connectionList;
     }
 
-    private ListModel getConnectionListModel() {
-        if (connectionListModel != null)
-            return connectionListModel;
-
+    /** Create a new connection list model.  Will fetch the up-to-date list from the Gateway each time it is called. */
+    private ListModel createNewConnectionListModel() {
         connectionListModel = new AbstractListModel() {
             private EntityHeader[] connections = null;
+            private ConnectionListItem[] items = null;
 
             private EntityHeader[] getConnections() {
                 if (connections == null)
                     try {
-                        return connections = Registry.getDefault().getJmsManager().findAllConnections();
+                        connections = Registry.getDefault().getJmsManager().findAllConnections();
+                        items = new ConnectionListItem[connections.length];
                     } catch (Exception e) {
                         throw new RuntimeException("Unable to obtain list of JMS Connections", e);
                     }
@@ -69,13 +107,20 @@ public class JmsConnectionListPanel extends JPanel {
             }
 
             public Object getElementAt(final int index) throws IndexOutOfBoundsException {
-                return new Object() {
-                    public String toString() {
-                        return getConnections()[index].getName();
-                    }
-                };
+                ConnectionListItem item = items[index];
+                if (item == null)
+                    item = items[index] = new ConnectionListItem(connections[index]);
+                return item;
             }
         };
+
+        return connectionListModel;
+    }
+
+    private ListModel getConnectionListModel() {
+        if (connectionListModel == null) {
+            createNewConnectionListModel();
+        }
         return connectionListModel;
     }
 
@@ -83,11 +128,29 @@ public class JmsConnectionListPanel extends JPanel {
         if (addButton != null)
             return addButton;
 
-        addButton = new JButton("New JMS Connection...");
+        addButton = new JButton("New connection...");
         addButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
-                JDialog d = new NewJmsConnectionDialog();
+                NewJmsConnectionDialog d = owner instanceof Frame
+                                                ? new NewJmsConnectionDialog((Frame)owner)
+                                                : new NewJmsConnectionDialog((Dialog)owner);
+                Utilities.centerOnScreen(d);
+                d.setModal(true);
                 d.show();
+                JmsConnection c = d.getNewJmsConnection();
+                d.dispose();
+
+                if (c != null) {
+                    ListModel clm = createNewConnectionListModel();
+                    getConnectionList().setModel(clm);
+                    for (int i = 0; i < clm.getSize(); ++i) {
+                        EntityHeader entityHeader = ((ConnectionListItem) clm.getElementAt(i)).getEntityHeader();
+                        if (entityHeader.getOid() == c.getOid()) {
+                            getConnectionList().setSelectedIndex(i);
+                            break;
+                        }
+                    }
+                }
             }
         });
         return addButton;

@@ -11,8 +11,6 @@ import java.io.Serializable;
 /**
  * A reference to a preconfigured JMS provider.
  *
- * Persistent.
- *
  * @author alex
  * @version $Revision$
  */
@@ -30,6 +28,26 @@ public class JmsProvider implements Serializable {
         _name = name;
         _initialContextFactoryClassname = initialContextFactoryClassname;
         _defaultQueueFactoryUrl = defaultQueueFactoryUrl;
+    }
+
+    /**
+     * Create a new JmsConnection, using this JmsProvider as a template to supply default values
+     * for factory classes and URLs.  This only creates a new JmsConnection bean; the caller
+     * is responsible for saving it to the database and/or doing something useful with it, if desired.
+     *
+     * @param name      The name to use for the new JmsConnection
+     * @param jndiUrl   The JNDI URL used by the new JmsConnection
+     * @return The newly created JmsConnection object (not yet saved to the database)
+     */
+    public JmsConnection createConnection(String name, String jndiUrl) {
+        JmsConnection c = new JmsConnection();
+        c.setName(name);
+        c.setJndiUrl(jndiUrl);
+        c.setInitialContextFactoryClassname(getInitialContextFactoryClassname());
+        c.setQueueFactoryUrl(getDefaultQueueFactoryUrl());
+        c.setTopicFactoryUrl(getDefaultTopicFactoryUrl());
+        c.setDestinationFactoryUrl(getDefaultDestinationFactoryUrl());
+        return c;
     }
 
     /** Get the human-readable name of this JmsProvider, as displayed in the GUI. */
