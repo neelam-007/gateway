@@ -258,7 +258,7 @@ public class XencUtil {
      * @throws GeneralSecurityException
      */
     public static String encryptKeyWithRsaAndPad(byte[] keyBytes, PublicKey publicKey, SecureRandom rand) throws GeneralSecurityException {
-        Cipher rsa = JceProvider.getRsaNoPaddingCipher();//Cipher.getInstance("RSA", JceProvider.getAsymmetricJceProvider().getName());
+        Cipher rsa = JceProvider.getRsaNoPaddingCipher();
         rsa.init(Cipher.ENCRYPT_MODE, publicKey);
         if (!(publicKey instanceof RSAPublicKey))
             throw new KeyException("Unable to encrypt -- unsupported recipient public key type " +
