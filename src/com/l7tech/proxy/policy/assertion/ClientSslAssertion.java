@@ -29,7 +29,10 @@ public class ClientSslAssertion extends ClientAssertion {
      * @return AssertionStatus.NONE if this Assertion was applied to the request successfully; otherwise, some error code
      */
     public AssertionStatus decorateRequest(PendingRequest request)  {
-        request.setSslRequired( data.getOption() == SslAssertion.REQUIRED );
+        if (data.getOption() == SslAssertion.FORBIDDEN)
+            request.setSslForbidden(true);
+        if (data.getOption() == SslAssertion.REQUIRED)
+            request.setSslRequired(true);
         return AssertionStatus.NONE;
     }
 
