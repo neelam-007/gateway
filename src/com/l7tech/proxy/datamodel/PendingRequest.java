@@ -8,8 +8,6 @@ package com.l7tech.proxy.datamodel;
 
 import org.apache.axis.message.SOAPEnvelope;
 
-import java.security.Principal;
-
 /**
  * Holds request state while the client proxy is processing it.
  * User: mike
@@ -21,18 +19,32 @@ public class PendingRequest {
     private Ssg ssg;
     private String soapAction = "";
     private String uri = "";
-    private boolean isSslRequired = false;
-    private boolean isBasicAuthRequired = false;
-    private String httpBasicUsername = "";
-    private String httpBasicPassword = "";
-    private boolean isDigestAuthRequired = false;
-    private String httpDigestUsername = "";
-    private String httpDigestPassword = "";
+    private boolean isPolicyUpdated = false;
+
+    // Policy settings, filled in by traversing poliy tree
+    private static class PolicySettings {
+        private boolean isSslRequired = false;
+        private boolean isBasicAuthRequired = false;
+        private String httpBasicUsername = "";
+        private String httpBasicPassword = "";
+        private boolean isDigestAuthRequired = false;
+        private String httpDigestUsername = "";
+        private String httpDigestPassword = "";
+    }
+    private PolicySettings policySettings = new PolicySettings();
 
     /** Construct a PendingRequest around the given SOAPEnvelope going to the given SSG. */
     public PendingRequest(SOAPEnvelope soapEnvelope, Ssg ssg) {
         this.soapEnvelope = soapEnvelope;
         this.ssg = ssg;
+    }
+
+    /**
+     * Reset all policy settings in preperation for starting processing over again with a different policy.
+     * TODO: Policies currently don't modify the soapEnvelope; but when they do, this must restore that too
+     */
+    public void reset() {
+        policySettings = new PolicySettings();
     }
 
     // Getters and setters
@@ -62,58 +74,66 @@ public class PendingRequest {
     }
 
     public boolean isSslRequired() {
-        return isSslRequired;
+        return policySettings.isSslRequired;
     }
 
     public void setSslRequired(boolean sslRequired) {
-        isSslRequired = sslRequired;
+        policySettings.isSslRequired = sslRequired;
     }
 
     public boolean isBasicAuthRequired() {
-        return isBasicAuthRequired;
+        return policySettings.isBasicAuthRequired;
     }
 
     public void setBasicAuthRequired(boolean basicAuthRequired) {
-        isBasicAuthRequired = basicAuthRequired;
+        policySettings.isBasicAuthRequired = basicAuthRequired;
     }
 
     public String getHttpBasicUsername() {
-        return httpBasicUsername;
+        return policySettings.httpBasicUsername;
     }
 
     public void setHttpBasicUsername(String httpBasicUsername) {
-        this.httpBasicUsername = httpBasicUsername;
+        this.policySettings.httpBasicUsername = httpBasicUsername;
     }
 
     public String getHttpBasicPassword() {
-        return httpBasicPassword;
+        return policySettings.httpBasicPassword;
     }
 
     public void setHttpBasicPassword(String httpBasicPassword) {
-        this.httpBasicPassword = httpBasicPassword;
+        this.policySettings.httpBasicPassword = httpBasicPassword;
     }
 
     public boolean isDigestAuthRequired() {
-        return isDigestAuthRequired;
+        return policySettings.isDigestAuthRequired;
     }
 
     public void setDigestAuthRequired(boolean digestAuthRequired) {
-        isDigestAuthRequired = digestAuthRequired;
+        policySettings.isDigestAuthRequired = digestAuthRequired;
     }
 
     public String getHttpDigestUsername() {
-        return httpDigestUsername;
+        return policySettings.httpDigestUsername;
     }
 
     public void setHttpDigestUsername(String httpDigestUsername) {
-        this.httpDigestUsername = httpDigestUsername;
+        this.policySettings.httpDigestUsername = httpDigestUsername;
     }
 
     public String getHttpDigestPassword() {
-        return httpDigestPassword;
+        return policySettings.httpDigestPassword;
     }
 
     public void setHttpDigestPassword(String httpDigestPassword) {
-        this.httpDigestPassword = httpDigestPassword;
+        this.policySettings.httpDigestPassword = httpDigestPassword;
+    }
+
+    public boolean isPolicyUpdated() {
+        return isPolicyUpdated;
+    }
+
+    public void setPolicyUpdated(boolean policyUpdated) {
+        isPolicyUpdated = policyUpdated;
     }
 }
