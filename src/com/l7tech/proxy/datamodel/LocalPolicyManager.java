@@ -6,22 +6,8 @@
 
 package com.l7tech.proxy.datamodel;
 
-import com.l7tech.common.util.CausedIOException;
-import com.l7tech.common.xml.InvalidDocumentFormatException;
-import com.l7tech.common.xml.saml.SamlHolderOfKeyAssertion;
-import com.l7tech.proxy.ConfigurationException;
-import com.l7tech.proxy.datamodel.exceptions.*;
-import com.l7tech.proxy.message.PolicyApplicationContext;
-import com.l7tech.proxy.util.PolicyServiceClient;
-
-import javax.net.ssl.SSLHandshakeException;
 import java.io.IOException;
 import java.io.Serializable;
-import java.net.PasswordAuthentication;
-import java.security.GeneralSecurityException;
-import java.security.PrivateKey;
-import java.security.cert.X509Certificate;
-import java.util.logging.Logger;
 import java.util.HashMap;
 import java.util.Set;
 import java.util.TreeSet;
@@ -30,8 +16,6 @@ import java.util.TreeSet;
  * A {@link PolicyManager} that stores policies in memory.  This implementation is synchronized.
  */
 public class LocalPolicyManager implements PolicyManager, Serializable {
-    private static final Logger log = Logger.getLogger(LocalPolicyManager.class.getName());
-    public static final String PROPERTY_LOGPOLICIES    = "com.l7tech.proxy.datamodel.logPolicies";
 
     private PolicyManager delegate = null;
     private transient HashMap policyMap = new HashMap(); /* Policy cache */
@@ -66,13 +50,6 @@ public class LocalPolicyManager implements PolicyManager, Serializable {
         Policy policy = (Policy) policyMap.get(policyAttachmentKey);
         if (policy == null && delegate != null)
             policy = delegate.getPolicy(policyAttachmentKey);
-        if (policy != null) {
-            if (LogFlags.logPolicies)
-                log.info("Found a policy for this request: " + policy.getAssertion());
-            else
-                log.info("Found a policy for this request");
-        } else
-            log.info("No policy found for this request");
         return policy;
     }
 
@@ -87,9 +64,5 @@ public class LocalPolicyManager implements PolicyManager, Serializable {
      */
     public synchronized void clearPolicies() {
         policyMap.clear();
-    }
-
-    private static class LogFlags {
-        private static final boolean logPolicies = Boolean.getBoolean(PROPERTY_LOGPOLICIES);
     }
 }

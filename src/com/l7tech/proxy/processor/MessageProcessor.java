@@ -76,6 +76,7 @@ public class MessageProcessor {
     public static final String PROPERTY_LOGATTACHMENTS = "com.l7tech.proxy.processor.logAttachments";
     public static final String PROPERTY_REFORMATLOGGEDXML = "com.l7tech.proxy.processor.reformatLoggedXml";
     public static final String PROPERTY_TIMESTAMP_EXPIRY = "com.l7tech.proxy.processor.timestampExpiryMillis";
+    public static final String PROPERTY_LOGPOLICIES    = "com.l7tech.proxy.datamodel.logPolicies";
     private static final Policy SSL_POLICY = new Policy(new SslAssertion(), null);
     private static Pattern findServiceid = Pattern.compile("^.*\\&?serviceoid=(.+?)(\\&.*|)", Pattern.DOTALL);
 
@@ -333,7 +334,7 @@ public class MessageProcessor {
       IOException, SAXException, ClientCertificateException, KeyStoreCorruptException,
       HttpChallengeRequiredException, PolicyRetryableException, PolicyAssertionException,
       InvalidDocumentFormatException, DecoratorException, ConfigurationException {
-        Policy policy = context.getSsg().rootPolicyManager().getPolicy(context.getPolicyAttachmentKey());
+        Policy policy = lookupPolicy(context);
         if (policy == null || !policy.isValid()) {
             if (policy != null)
                 log.warning("Ignoring this policy -- it has previously failed to complete successfully.");
@@ -396,6 +397,18 @@ public class MessageProcessor {
                 throw new ConfigurationException("Unable to decorate request; policy evaluated with error: " + result);
             }
         }
+    }
+
+    private Policy lookupPolicy(PolicyApplicationContext context) throws IOException {
+        Policy policy = context.getSsg().rootPolicyManager().getPolicy(context.getPolicyAttachmentKey());
+        if (policy != null) {
+            if (LogFlags.logPolicies)
+                log.info("Found a policy for this request: " + policy.getAssertion());
+            else
+                log.info("Found a policy for this request");
+        } else
+            log.info("No policy found for this request");
+        return policy;
     }
 
     /**
@@ -758,6 +771,7 @@ public class MessageProcessor {
         private static final boolean logResponse = Boolean.getBoolean(PROPERTY_LOGRESPONSE);
         private static final boolean logAttachments = Boolean.getBoolean(PROPERTY_LOGATTACHMENTS);
         private static final boolean reformatLoggedXml = Boolean.getBoolean(PROPERTY_REFORMATLOGGEDXML);
+        private static final boolean logPolicies = Boolean.getBoolean(PROPERTY_LOGPOLICIES);
     }
 
     /**
