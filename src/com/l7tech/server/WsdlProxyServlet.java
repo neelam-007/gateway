@@ -216,6 +216,7 @@ public class WsdlProxyServlet extends AuthenticatableHttpServlet {
         if (port == 8443)
             port = 8080;
         else if (port == 443) port = 80;
+        // todo, support the case of soap service whose routing uri is not default for bugzilla #1460
         URL ssgurl = new URL("http" + "://" + req.getServerName() + ":" + port + SOAP_PROCESSING_SERVLET_URI + "?" + SecureSpanConstants.HttpQueryParameters.PARAM_SERVICEOID + "=" + Long.toString(svc.getOid()));
         substituteSoapAddressURL(wsdlDoc, ssgurl);
 
