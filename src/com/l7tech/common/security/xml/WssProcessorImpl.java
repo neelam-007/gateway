@@ -19,18 +19,14 @@ import org.xml.sax.SAXException;
 
 import javax.crypto.Cipher;
 import javax.xml.parsers.ParserConfigurationException;
-import java.io.IOException;
 import java.io.ByteArrayInputStream;
+import java.io.IOException;
 import java.security.GeneralSecurityException;
 import java.security.Key;
 import java.security.PrivateKey;
-
 import java.security.PublicKey;
-
-import java.security.cert.X509Certificate;
 import java.security.cert.CertificateFactory;
-
-import java.security.cert.CertificateException;
+import java.security.cert.X509Certificate;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -112,11 +108,7 @@ public class WssProcessorImpl implements WssProcessor {
         String currentSoapNamespace = soapMsg.getDocumentElement().getNamespaceURI();
 
         // Resolve the relevent Security header
-        try {
-            cntx.releventSecurityHeader = SoapUtil.getSecurityElement(cntx.processedDocument);
-        } catch (XmlUtil.MultipleChildElementsException e) {
-            throw new ProcessorException(e);
-        }
+        cntx.releventSecurityHeader = SoapUtil.getSecurityElement(cntx.processedDocument);
 
         // maybe there are no security headers at all in which case, there is nothing to process
         if (cntx.releventSecurityHeader == null) {
@@ -464,7 +456,9 @@ public class WssProcessorImpl implements WssProcessor {
     }
 
     private void processBinarySecurityToken(final Element binarySecurityTokenElement,
-                                            ProcessingStatusHolder cntx) throws ProcessorException, IOException
+                                            ProcessingStatusHolder cntx) throws ProcessorException,
+                                                                                IOException,
+                                                                                GeneralSecurityException
     {
         logger.finest("Processing BinarySecurityToken");
 
@@ -487,14 +481,8 @@ public class WssProcessorImpl implements WssProcessor {
 
         byte[] decodedValue = HexUtils.decodeBase64(value, true); // must strip whitespace or base64 decoder misbehaves
         // create the x509 binary cert based on it
-        X509Certificate referencedCert = null;
-        try {
-            referencedCert =
-                    (X509Certificate)CertificateFactory.getInstance("X.509").
-                        generateCertificate(new ByteArrayInputStream(decodedValue));
-        } catch (CertificateException e) {
-            throw new ProcessorException(e);
-        }
+        X509Certificate referencedCert = (X509Certificate)CertificateFactory.getInstance("X.509").
+                                            generateCertificate(new ByteArrayInputStream(decodedValue));
 
         // remember this cert
         final X509Certificate finalcert = referencedCert;
