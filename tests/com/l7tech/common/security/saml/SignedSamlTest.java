@@ -12,6 +12,7 @@ import com.l7tech.policy.assertion.xmlsec.RequestWssX509Cert;
 import com.l7tech.server.saml.HolderOfKeyHelper;
 import com.l7tech.server.saml.SamlAssertionGenerator;
 import com.l7tech.server.saml.SamlAssertionHelper;
+import com.l7tech.server.saml.SenderVouchesHelper;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
@@ -103,7 +104,7 @@ public class SignedSamlTest extends TestCase {
 
     public void testSignedRequestWithSenderVouchesToken() throws Exception {
         Document req = getSignedRequestWithSenderVouchesToken();
-        log.info("Request including sender vouches token: " + XmlUtil.nodeToFormattedString(req));
+        log.info("Request signed with a sender vouches token: " + XmlUtil.nodeToFormattedString(req));
     }
 
     public Document getRequestWithSenderVouchesToken() throws Exception {
@@ -145,18 +146,17 @@ public class SignedSamlTest extends TestCase {
         assertNotNull(bstId);
         assertTrue(bstId.length() > 0);
 
-        SamlAssertionGenerator ag = new SamlAssertionGenerator();
         SamlAssertionGenerator.Options samlOptions = new SamlAssertionGenerator.Options();
         samlOptions.setExpiryMinutes(5);
         samlOptions.setSignEnvelope(false);
         samlOptions.setId(bstId);
-        ag.attachSenderVouches(request,
-                               new SignerInfo(caPrivateKey, caCertChain),
-                               LoginCredentials.makeCertificateCredentials(clientCertChain[0], getClass()),
-                               //LoginCredentials.makePasswordCredentials("john", "ilovesheep".toCharArray(), getClass()),
-                               samlOptions);
 
-        security.removeChild(bst);
+        SenderVouchesHelper svh = new SenderVouchesHelper(request, samlOptions, LoginCredentials.makeCertificateCredentials(clientCertChain[0], getClass()), new SignerInfo(caPrivateKey, caCertChain));
+        Document samlsvAssertion = svh.createSignedAssertion();
+        samlsvAssertion.getDocumentElement().setAttribute("Id", bstId);
+
+        Node importedNode = request.importNode(samlsvAssertion.getDocumentElement(), true);
+        security.replaceChild(importedNode, bst);
         return request;
     }
 
