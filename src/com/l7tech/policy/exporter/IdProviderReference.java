@@ -3,11 +3,13 @@ package com.l7tech.policy.exporter;
 import org.w3c.dom.Element;
 import org.w3c.dom.Text;
 import com.l7tech.common.util.Locator;
+import com.l7tech.common.util.HexUtils;
 import com.l7tech.common.xml.InvalidDocumentFormatException;
 import com.l7tech.identity.IdentityProviderConfigManager;
 import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.assertion.Assertion;
+import com.l7tech.policy.assertion.identity.IdentityAssertion;
 
 import java.util.logging.Logger;
 import java.util.logging.Level;
@@ -66,7 +68,14 @@ public class IdProviderReference extends ExternalReference {
             output.providerId = Long.parseLong(val);
         }
         output.providerName = getParamFromEl(el, NAME_EL_NAME);
-        output.idProviderConfProps = getParamFromEl(el, PROPS_EL_NAME);
+        String b64edProps = getParamFromEl(el, PROPS_EL_NAME);
+        if (b64edProps != null) {
+            try {
+                output.idProviderConfProps = new String(HexUtils.decodeBase64(b64edProps, true));
+            } catch (IOException e) {
+                throw new InvalidDocumentFormatException("could not un-b64 the provider props");
+            }
+        } else output.idProviderConfProps = null;
         return output;
     }
 
@@ -88,7 +97,9 @@ public class IdProviderReference extends ExternalReference {
         refEl.appendChild(nameEl);
         Element propsEl = referencesParentElement.getOwnerDocument().createElement(PROPS_EL_NAME);
         if (idProviderConfProps != null) {
-            txt = referencesParentElement.getOwnerDocument().createTextNode(idProviderConfProps);
+            // base 64 the props
+            String encoded = HexUtils.encodeBase64(idProviderConfProps.getBytes());
+            txt = referencesParentElement.getOwnerDocument().createTextNode(encoded);
             propsEl.appendChild(txt);
         }
         refEl.appendChild(propsEl);
@@ -156,7 +167,14 @@ public class IdProviderReference extends ExternalReference {
     }
 
     void localizeAssertion(Assertion assertionToLocalize) {
-        // todo
+        if (assertionToLocalize instanceof IdentityAssertion) {
+            IdentityAssertion idass = (IdentityAssertion)assertionToLocalize;
+            if (idass.getIdentityProviderOid() == providerId) {
+                idass.setIdentityProviderOid(locallyMatchingProviderId);
+                logger.fine("The provider id of the imported id assertion has been changed " +
+                            "from " + providerId + " to " + locallyMatchingProviderId);
+            }
+        }
     }
 
     public boolean equals(Object o) {
