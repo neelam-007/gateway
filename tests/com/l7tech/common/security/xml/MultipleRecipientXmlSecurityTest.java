@@ -47,6 +47,75 @@ public class MultipleRecipientXmlSecurityTest extends TestCase {
         junit.textui.TestRunner.run(suite());
     }
 
+    public void testSignedForOneRecipientEncryptedForOther() throws Exception {
+        Document doc = TestDocuments.getTestDocument(TestDocuments.PLACEORDER_CLEARTEXT);
+        Element body = SoapUtil.getBodyElement(doc);
+        logger.info("Original document:\n" + XmlUtil.nodeToFormattedString(doc) + "\n\n");
+        final String alternaterecipient = "signatureonlyrecipient";
+
+        DecorationRequirements req = otherDecorationRequirements(doc, alternaterecipient);
+        WssDecorator decorator = new WssDecoratorImpl();
+        decorator.decorateMessage(doc, req);
+
+        req = defaultDecorationRequirements(doc);
+        req.getElementsToEncrypt().add(body);
+        decorator.decorateMessage(doc, req);
+
+        logger.info("Document signed for two recipients and encrypted for second:\n" + XmlUtil.nodeToFormattedString(doc) + "\n\n");
+        WssProcessor processor = new WssProcessorImpl();
+        ProcessorResult res = processor.undecorateMessage(doc,
+                                                          TestDocuments.getDotNetServerCertificate(),
+                                                          TestDocuments.getDotNetServerPrivateKey(),
+                                                          null);
+
+        SignedElement[] signed = res.getElementsThatWereSigned();
+        boolean recognizedbody = false;
+        for (int i = 0; i < signed.length; i++) {
+            SignedElement signedElement = signed[i];
+            if (signedElement.asElement().getLocalName().equals(body.getLocalName())) {
+                recognizedbody = true;
+                break;
+            }
+        }
+        assertTrue("The body was signed", recognizedbody);
+
+        ParsedElement[] encrypted = res.getElementsThatWereEncrypted();
+        recognizedbody = false;
+        for (int i = 0; i < encrypted.length; i++) {
+            ParsedElement encedel = encrypted[i];
+            if (encedel.asElement().getLocalName().equals(body.getLocalName())) {
+                recognizedbody = true;
+                break;
+            }
+        }
+        assertTrue("The body was encrypted", recognizedbody);
+
+        logger.info("Document once processed by default recipient:\n" + XmlUtil.nodeToFormattedString(doc) + "\n\n");
+
+        // try to validate signature once processed once
+        Element alternateSecHeader = SoapUtil.getSecurityElement(doc, alternaterecipient);
+        assertTrue("The security header for downstream actor is still present", alternateSecHeader != null);
+        alternateSecHeader.removeAttribute(SoapUtil.ACTOR_ATTR_NAME);
+
+        res = processor.undecorateMessage(doc,
+                                          TestDocuments.getDotNetServerCertificate(),
+                                          TestDocuments.getDotNetServerPrivateKey(),
+                                          null);
+
+        logger.info("Document once processed by both recipients:\n" + XmlUtil.nodeToFormattedString(doc) + "\n\n");
+
+        signed = res.getElementsThatWereSigned();
+        recognizedbody = false;
+        for (int i = 0; i < signed.length; i++) {
+            SignedElement signedElement = signed[i];
+            if (signedElement.asElement().getLocalName().equals(body.getLocalName())) {
+                recognizedbody = true;
+                break;
+            }
+        }
+        assertTrue("The body was signed", recognizedbody);
+    }
+
     public void testBodySignedForTwoRecipients() throws Exception {
         Document doc = TestDocuments.getTestDocument(TestDocuments.PLACEORDER_CLEARTEXT);
         Element body = SoapUtil.getBodyElement(doc);
