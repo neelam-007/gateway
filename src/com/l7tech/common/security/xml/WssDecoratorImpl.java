@@ -170,7 +170,9 @@ public class WssDecoratorImpl implements WssDecorator {
         // todo, fix hard coded strings
         String bstId = getOrCreateWsuId(c, binarySecurityToken);
         String wssePrefix = securityHeader.getPrefix();
-        Element keyInfoEl = securityHeader.getOwnerDocument().createElement("KeyInfo");
+        Element keyInfoEl = securityHeader.getOwnerDocument().createElementNS(securityHeader.getNamespaceURI(),
+                                                                              "KeyInfo");
+        keyInfoEl.setPrefix("ds");
         Element secTokRefEl = securityHeader.getOwnerDocument().createElementNS(securityHeader.getNamespaceURI(),
                                                                                 "SecurityTokenReference");
         secTokRefEl.setPrefix(wssePrefix);
