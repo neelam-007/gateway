@@ -598,8 +598,8 @@ public class IdentityProviderWizardPanel extends WizardStepPanel {
               return null;
           }
 
-          public boolean authenticate(PrincipalCredentials pc) {
-              return false;
+          public void authenticate(PrincipalCredentials pc) {
+              return;
           }
 
           public boolean isReadOnly() {
