@@ -109,8 +109,8 @@ public class ClientResponseWssIntegrity extends ClientAssertion {
         String str = "";
         XpathExpression xpe = responseWssIntegrity.getXpathExpression();
         if (xpe != null)
-            str = " matching xpath \"" + xpe.getExpression() + "\"";
-        return "Response WS-Security: sign elements" + str;
+            str = " matching XPath expression \"" + xpe.getExpression() + "\"";
+        return "Response WSS Integrity: sign elements" + str;
     }
 
     public String iconResource(boolean open) {

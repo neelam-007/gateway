@@ -99,8 +99,8 @@ public class ClientResponseWssConfidentiality extends ClientAssertion {
         String str = "";
         XpathExpression xpe = responseWssConfidentiality.getXpathExpression();
         if (xpe != null)
-            str = " matching xpath \"" + xpe.getExpression() + "\"";
-        return "Response WS-Security: encrypt elements" + str;
+            str = " matching XPath expression \"" + xpe.getExpression() + "\"";
+        return "Response WSS Confidentiality: encrypt elements" + str;
     }
 
     public String iconResource(boolean open) {
