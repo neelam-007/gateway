@@ -61,10 +61,9 @@ public class MemberOfGroup extends IdentityAssertion {
      * @return
      */
     public AssertionStatus doCheckUser(User user) {
-        Set userGroups = user.getGroups();
         try {
             Group targetGroup = getGroup();
-            if (targetGroup != null && userGroups.contains(targetGroup))
+            if ( targetGroup.getMembers().contains( user ) )
                 return AssertionStatus.NONE;
             else {
                 return AssertionStatus.AUTH_FAILED;
