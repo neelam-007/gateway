@@ -52,6 +52,11 @@ public class WssProcessorImpl implements WssProcessor {
             initCause(cause);
         }
 
+        public ProcessorException(String message, Throwable cause) {
+            super();
+            initCause(cause);
+        }
+
         public ProcessorException(String message) {
             super();
             initCause(new IllegalArgumentException(message));
@@ -118,7 +123,9 @@ public class WssProcessorImpl implements WssProcessor {
                     Node muNode = nl.item(0);
                     String mu = muNode.getNodeValue();
                     if (Integer.parseInt(mu) == 1)
-                        throw new ProcessorException("Unrecognized element in security header: " + securityChildToProcess.getNodeName() + " with mustUnderstand=\"1\"");
+                        throw new ProcessorException("Unrecognized element in security header: " +
+                                                     securityChildToProcess.getNodeName() +
+                                                     " with mustUnderstand=\"1\"");
                 }
                 logger.finer("Unknown element in security header: " + securityChildToProcess.getNodeName());
             }
@@ -130,7 +137,7 @@ public class WssProcessorImpl implements WssProcessor {
         return produceResult();
     }
 
-    private void processEncryptedKey(Element encryptedKeyElement, PrivateKey recipientKey, byte[] ski) {
+    private void processEncryptedKey(Element encryptedKeyElement, PrivateKey recipientKey, byte[] ski) throws ProcessorException {
         logger.finest("Processing EncryptedKey");
 
         // Check that this is for us by checking the ds:KeyInfo/wsse:SecurityTokenReference/wsse:KeyIdentifier
@@ -176,7 +183,7 @@ public class WssProcessorImpl implements WssProcessor {
                 }
             } catch (XmlUtil.MultipleChildElementsException e) {
                 logger.log(Level.WARNING, "unexpected construction", e);
-                // todo, throw some exception
+                throw new ProcessorException(e);
             }
         }
         // verify that the algo is supported
@@ -241,8 +248,7 @@ public class WssProcessorImpl implements WssProcessor {
             unencryptedKey = unPadRSADecryptedSymettricKey(decryptedPadded);
         } catch (IllegalArgumentException e) {
             logger.log(Level.WARNING, "The key could not be unpadded", e);
-            // todo, throw some exception
-            return;
+            throw new ProcessorException(e);
         }
 
         // We got the key. Get the list of elements to decrypt.
@@ -251,21 +257,25 @@ public class WssProcessorImpl implements WssProcessor {
             refList = XmlUtil.findOnlyOneChildElementByName(encryptedKeyElement, SoapUtil.XMLENC_NS, "ReferenceList");
         } catch (XmlUtil.MultipleChildElementsException e) {
             logger.warning("unexpected multiple reference list elements in encrypted key " + e.getMessage());
-            // todo, throw some exception
-            return;
+            throw new ProcessorException(e);
         }
         try {
             decryptReferencedElements(new AesKey(unencryptedKey, unencryptedKey.length*8), refList);
         } catch (GeneralSecurityException e) {
-            // todo, throw some exception
+            logger.log(Level.WARNING, "Error decrypting", e);
+            throw new ProcessorException(e);
         } catch (ParserConfigurationException e) {
-            // todo, throw some exception
+            logger.log(Level.WARNING, "Error decrypting", e);
+            throw new ProcessorException(e);
         } catch (IOException e) {
-            // todo, throw some exception
+            logger.log(Level.WARNING, "Error decrypting", e);
+            throw new ProcessorException(e);
         } catch (SAXException e) {
-            // todo, throw some exception
+            logger.log(Level.WARNING, "Error decrypting", e);
+            throw new ProcessorException(e);
         } catch (XMLSecurityElementNotFoundException e) {
-            // todo, throw some exception
+            logger.log(Level.WARNING, "Error decrypting", e);
+            throw new ProcessorException(e);
         }
     }
 
@@ -324,7 +334,7 @@ public class WssProcessorImpl implements WssProcessor {
      */
     public void decryptReferencedElements(Key key, Element refList)
             throws GeneralSecurityException, ParserConfigurationException, IOException, SAXException,
-            XMLSecurityElementNotFoundException
+            XMLSecurityElementNotFoundException, ProcessorException
     {
         List dataRefEls = XmlUtil.findChildElementsByName(refList, SoapUtil.XMLENC_NS, "DataReference");
         if ( dataRefEls == null || dataRefEls.isEmpty() ) {
@@ -344,9 +354,9 @@ public class WssProcessorImpl implements WssProcessor {
             dc.setAlgorithmFactory(af);
             Element encryptedDataElement = SoapUtil.getElementById(refList.getOwnerDocument(), dataRefUri);
             if (encryptedDataElement == null) {
-                logger.warning("cannot resolve encrypted data element " + dataRefUri);
-                // todo throw some exception
-                return;
+                String msg = "cannot resolve encrypted data element " + dataRefUri;
+                logger.warning(msg);
+                throw new ProcessorException(msg);
             }
             dc.setEncryptedType(encryptedDataElement, EncryptedData.CONTENT,
                                                         null, null);
@@ -355,11 +365,14 @@ public class WssProcessorImpl implements WssProcessor {
                 dc.decrypt();
                 dc.replace();
             } catch (XSignatureException e) {
-                // todo, throw something here
+                logger.log(Level.WARNING, "Error decrypting", e);
+                throw new ProcessorException(e);
             } catch (StructureException e) {
-                // todo, throw something here
+                logger.log(Level.WARNING, "Error decrypting", e);
+                throw new ProcessorException(e);
             } catch (KeyInfoResolvingException e) {
-                // todo, throw something here
+                logger.log(Level.WARNING, "Error decrypting", e);
+                throw new ProcessorException(e);
             }
 
             // remember encrypted element
