@@ -5,18 +5,16 @@
  */
 package com.l7tech.console.panels.saml;
 
+import com.l7tech.common.security.saml.SamlConstants;
 import com.l7tech.console.panels.WizardStepPanel;
 import com.l7tech.policy.assertion.xmlsec.RequestWssSaml;
-import com.l7tech.common.security.saml.SamlConstants;
 
 import javax.swing.*;
-import javax.swing.event.ChangeListener;
 import javax.swing.event.ChangeEvent;
+import javax.swing.event.ChangeListener;
 import java.awt.*;
-import java.awt.event.ActionListener;
-import java.awt.event.ActionEvent;
-import java.awt.event.ItemListener;
 import java.awt.event.ItemEvent;
+import java.awt.event.ItemListener;
 import java.util.*;
 
 /**
@@ -34,7 +32,6 @@ public class SubjectConfirmationWizardStepPanel extends WizardStepPanel {
     private JCheckBox checkBoxSVMessageSignature;
     private Map confirmationsMap;
     private JCheckBox checkBoxNoSubjectConfirmation;
-    private boolean proofOfPossesionManuallyDisabled = false;
     private boolean showTitleLabel;
     private JCheckBox checkBoxHoKMessageSignature;
 
@@ -161,14 +158,6 @@ public class SubjectConfirmationWizardStepPanel extends WizardStepPanel {
         confirmationsMap.put(SamlConstants.CONFIRMATION_BEARER, checkBoxBearer);
 
         checkBoxSVMessageSignature.setToolTipText("<html>Require the message signature that provides the proof material</html>");
-
-        checkBoxSVMessageSignature.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                if (!checkBoxSVMessageSignature.isSelected()) {
-                    proofOfPossesionManuallyDisabled = true;
-                }
-            }
-        });
 
         for (Iterator iterator = confirmationsMap.entrySet().iterator(); iterator.hasNext();) {
             Map.Entry entry = (Map.Entry)iterator.next();

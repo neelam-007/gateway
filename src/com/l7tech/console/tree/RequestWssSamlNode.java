@@ -30,12 +30,13 @@ public class RequestWssSamlNode extends AbstractTreeNode {
 
     /**
      * Return assertion representation of the node
-     * or <b>null</b> if the node cannot be an assertion
+     * The default is the <code>RequestWssSaml</code>
+     * configured as holder of key.
      *
-     * @return the assertion this node represnts
+     * @return the assertion this node represents
      */
     public Assertion asAssertion() {
-        return new RequestWssSaml();
+        return RequestWssSaml.newHolderOfKey();
     }
 
     /**
