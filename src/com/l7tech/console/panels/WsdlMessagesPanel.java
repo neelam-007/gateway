@@ -314,8 +314,7 @@ public class WsdlMessagesPanel extends WizardStepPanel {
                   }
                   setText(message.getQName().getLocalPart());
               } else {
-                  super.getTableCellRendererComponent(
-                    table, value,
+                  super.getTableCellRendererComponent(table, value,
                     isSelected, hasFocus, row, column);
               }
               return this;
@@ -375,11 +374,12 @@ public class WsdlMessagesPanel extends WizardStepPanel {
                   messagesTable.getCellEditor().stopCellEditing();
                   return;
               }
+              if (partsTable.isEditing()) {
+                  partsTable.getCellEditor().stopCellEditing();
+              }
               int selectedRow = messagesTable.getSelectedRow();
               if (selectedRow == -1) {
-                  partsTable.setModel(
-                    new DefaultTableModel(
-                      new String[]{"Name", "Type"}, 0));
+                  partsTable.setModel(new DefaultTableModel(new String[]{"Name", "Type"}, 0));
                   return;
               }
               WsdlMessagesTableModel.MutableMessage m =
@@ -580,8 +580,8 @@ public class WsdlMessagesPanel extends WizardStepPanel {
         _15 = new JButton();
         removeMessageButton = _15;
         _15.setLabel("Remove");
-        _15.setActionCommand("AddMessage");
         _15.setText("Remove");
+        _15.setActionCommand("AddMessage");
         _14.add(_15, new com.intellij.uiDesigner.core.GridConstraints(1, 0, 1, 1, 4, 0, 0, 0, null, null, null));
         final JButton _16;
         _16 = new JButton();
