@@ -139,7 +139,7 @@ public class SoapMessageProcessingServlet extends HttpServlet {
             responseStream = res.getOutputStream();
             String actor = req.getRequestURL().toString();
             res.setContentType(DEFAULT_CONTENT_TYPE);
-            res.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+            res.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
 
             PublishedService pserv = (PublishedService)sreq.getParameter(Request.PARAM_SERVICE);
             if (pserv != null && sresp.isPolicyViolated()) {

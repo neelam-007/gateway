@@ -374,7 +374,8 @@ public class PolicyServlet extends AuthenticatableHttpServlet {
     private void outputSoapFault(HttpServletResponse res, Document fault) throws IOException {
         logger.fine("Returning soap fault\n" + XmlUtil.nodeToFormattedString(fault));
         res.setContentType(XmlUtil.TEXT_XML);
-        res.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+        // fla changed this so that soap faults are always 500 to comply to WSI 1305
+        res.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
         OutputStream os = res.getOutputStream();
         os.write(XmlUtil.nodeToString(fault).getBytes());
         os.close();
