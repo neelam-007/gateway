@@ -11,6 +11,7 @@ import com.l7tech.objectmodel.PersistenceContext;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.ObjectModelException;
 import com.l7tech.objectmodel.UpdateException;
+import com.l7tech.policy.assertion.credential.PrincipalCredentials;
 
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
@@ -21,12 +22,11 @@ import java.io.IOException;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateEncodingException;
 import java.security.cert.X509Certificate;
-import java.security.NoSuchAlgorithmException;
 import java.util.logging.Level;
+import java.util.logging.Logger;
 import java.sql.SQLException;
 import org.apache.axis.transport.http.HTTPConstants;
 import org.apache.axis.encoding.Base64;
-import org.apache.axis.AxisFault;
 import sun.security.x509.X500Name;
 
 
@@ -43,12 +43,13 @@ public class CSRHandler extends HttpServlet {
 
     public void init( ServletConfig config ) throws ServletException {
         super.init(config);
+        logger = LogManager.getInstance().getSystemLogger();
         String tmp = getServletConfig().getInitParameter("RootKeyStore");
         if (tmp == null || tmp.length() < 1) tmp = "../../kstores/ssgroot";
         rootkstore = KeystoreUtils.getInstance().getRootKeystorePath();
         rootkstorepasswd = KeystoreUtils.getInstance().getRootKeystorePasswd();
         if (rootkstorepasswd == null || rootkstorepasswd.length() < 1) {
-            LogManager.getInstance().getSystemLogger().log(Level.SEVERE, "Key store password not found (root CA).");
+            logger.log(Level.SEVERE, "Key store password not found (root CA).");
         }
     }
 
@@ -73,33 +74,33 @@ public class CSRHandler extends HttpServlet {
         if (tmp != null && tmp.startsWith("Basic ")) {
             String decodedAuthValue = new String(Base64.decode(tmp.substring(6)));
             if (decodedAuthValue == null) {
-                throw new AxisFault("cannot decode basic header");
+                throw new ServletException("cannot decode basic header");
             }
             try {
                 authenticatedUser = authenticateBasicToken(decodedAuthValue);
             } catch (FindException e) {
-                LogManager.getInstance().getSystemLogger().log(Level.SEVERE, e.getMessage(), e);
+                logger.log(Level.SEVERE, e.getMessage(), e);
                 throw new IOException(e.getMessage());
             }
         }
         if (authenticatedUser == null) {
             response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "must provide valid credentials");
-            LogManager.getInstance().getSystemLogger().log(Level.SEVERE, "failed authorization " + tmp);
+            logger.log(Level.SEVERE, "failed authorization " + tmp);
             return;
         }
-        LogManager.getInstance().getSystemLogger().log(Level.INFO, "User " + authenticatedUser.getLogin() + " has authenticated for CSR");
+        logger.log(Level.INFO, "User " + authenticatedUser.getLogin() + " has authenticated for CSR");
 
         // check if user is allowed to generate a new cert
         InternalUserManagerServer userMan = (InternalUserManagerServer)getConfigManager().getInternalIdentityProvider().getUserManager();
         try {
             if (!userMan.userCanResetCert(Long.toString(authenticatedUser.getOid()))) {
-                LogManager.getInstance().getSystemLogger().log(Level.SEVERE, "user is refused csr: " + authenticatedUser.getLogin());
+                logger.log(Level.SEVERE, "user is refused csr: " + authenticatedUser.getLogin());
                 response.sendError(HttpServletResponse.SC_FORBIDDEN, "CSR Forbidden. Contact your administrator for more info.");
                 return;
             }
         } catch (FindException e) {
             response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, e.getMessage());
-            LogManager.getInstance().getSystemLogger().log(Level.SEVERE, e.getMessage(), e);
+            logger.log(Level.SEVERE, e.getMessage(), e);
             return;
         }
 
@@ -111,7 +112,7 @@ public class CSRHandler extends HttpServlet {
             cert = sign(csr);
         } catch (Exception e) {
             response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, e.getMessage());
-            LogManager.getInstance().getSystemLogger().log(Level.SEVERE, e.getMessage(), e);
+            logger.log(Level.SEVERE, e.getMessage(), e);
             return;
         }
 
@@ -120,7 +121,7 @@ public class CSRHandler extends HttpServlet {
             userMan.recordNewCert(Long.toString(authenticatedUser.getOid()), cert);
         } catch (UpdateException e) {
             response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Could not record cert. " + e.getMessage());
-            LogManager.getInstance().getSystemLogger().log(Level.SEVERE, "Could not record cert. " + e.getMessage(), e);
+            logger.log(Level.SEVERE, "Could not record cert. " + e.getMessage(), e);
             return;
         }
 
@@ -128,7 +129,7 @@ public class CSRHandler extends HttpServlet {
         X500Name x500name = new X500Name(((X509Certificate)(cert)).getSubjectX500Principal().getName());
         if (!x500name.getCommonName().equals(authenticatedUser.getLogin())) {
             response.sendError(HttpServletResponse.SC_FORBIDDEN, "You cannot scr for a subject different than " + authenticatedUser.getLogin());
-            LogManager.getInstance().getSystemLogger().log(Level.SEVERE, "User " + authenticatedUser.getLogin() + " tried to csr for subject other than self (" + x500name.getCommonName() + ")");
+            logger.log(Level.SEVERE, "User " + authenticatedUser.getLogin() + " tried to csr for subject other than self (" + x500name.getCommonName() + ")");
             return;
         }
 
@@ -140,10 +141,10 @@ public class CSRHandler extends HttpServlet {
             response.setContentLength(certbytes.length);
             response.getOutputStream().write(certbytes);
             response.flushBuffer();
-            LogManager.getInstance().getSystemLogger().log(Level.INFO, "sent new cert to user " + authenticatedUser.getLogin() + ". Subject DN=" + ((X509Certificate)(cert)).getSubjectDN().toString());
+            logger.log(Level.INFO, "sent new cert to user " + authenticatedUser.getLogin() + ". Subject DN=" + ((X509Certificate)(cert)).getSubjectDN().toString());
         } catch (CertificateEncodingException e) {
             response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, e.getMessage());
-            LogManager.getInstance().getSystemLogger().log(Level.SEVERE, e.getMessage(), e);
+            logger.log(Level.SEVERE, e.getMessage(), e);
             return;
         }
     }
@@ -161,7 +162,7 @@ public class CSRHandler extends HttpServlet {
         String endKey = "-----END NEW CERTIFICATE REQUEST-----";
         int end = tmpStr.indexOf(endKey);
         if (end == -1) {
-            LogManager.getInstance().getSystemLogger().log(Level.SEVERE, "Cannot read csr request (bad format?)");
+            logger.log(Level.SEVERE, "Cannot read csr request (bad format?)");
             return new byte[0];
         }
         String b64str = tmpStr.substring(beggining, end);
@@ -178,33 +179,41 @@ public class CSRHandler extends HttpServlet {
 
     private User authenticateBasicToken(String value) throws FindException {
         String login = null;
+        String clearTextPasswd = null;
+
         int i = value.indexOf( ':' );
-        if (i == -1) login = value;
-        else login = value.substring( 0, i);
+        if (i == -1) {
+            throw new FindException("invalid basic credentials " + value);
+        }
+        else {
+            login = value.substring(0, i);
+            clearTextPasswd = value.substring(i+1);
+        }
 
-        // MD5 IT
-        java.security.MessageDigest md5Helper = null;
+        User tmpUser = new User();
+        tmpUser.setLogin(login);
+        PrincipalCredentials creds = new PrincipalCredentials(tmpUser, clearTextPasswd.getBytes());
+
+        if (identityProviderConfigManager == null) {
+            identityProviderConfigManager = (IdentityProviderConfigManager)Locator.getDefault().lookup(com.l7tech.identity.IdentityProviderConfigManager.class);
+        }
+
         try {
-            md5Helper = java.security.MessageDigest.getInstance("MD5");
-        } catch (NoSuchAlgorithmException e) {
-            LogManager.getInstance().getSystemLogger().log(Level.SEVERE, "Exception in java.security.MessageDigest.getInstance", e);
-            throw new FindException(e.getMessage(), e);
+            if (identityProviderConfigManager.getInternalIdentityProvider().authenticate(creds)) {
+                return creds.getUser();
+            }
+            else {
+                logger.severe("authentication failed for " + login);
+                return null;
+            }
+        } finally {
+            try {
+                PersistenceContext.getCurrent().close();
+            } catch (SQLException e) {
+                logger.log(Level.SEVERE, "error closing context", e);
+                throw new FindException("cannot close context", e);
+            }
         }
-        byte[] digest = md5Helper.digest(value.getBytes());
-        String md5edDecodedAuthValue = HexUtils.encodeMd5Digest(digest);
-
-        // COMPARE TO THE VALUE IN INTERNAL DB
-        com.l7tech.identity.User internalUser = findUserByLogin(login);
-        if (internalUser == null) throw new FindException("User " + login + " not found in id provider");
-        if (internalUser.getPassword() == null) throw new FindException("User " + login + "does not have a password");
-        if (internalUser.getPassword().equals(md5edDecodedAuthValue)) {
-            // AUTHENTICATION SUCCESS, move on to authorization
-            LogManager.getInstance().getSystemLogger().log(Level.INFO, "User " + login + " authenticated successfully");
-            return internalUser;
-        } else {
-            LogManager.getInstance().getSystemLogger().log(Level.SEVERE, "authentication failure for user " + login + " with credentials " + md5edDecodedAuthValue);
-        }
-        return null;
     }
 
     /**
@@ -216,10 +225,10 @@ public class CSRHandler extends HttpServlet {
             PersistenceContext.getCurrent().close();
             return output;
         } catch (SQLException e) {
-            LogManager.getInstance().getSystemLogger().log(Level.SEVERE, "exception closing context", e);
+            logger.log(Level.SEVERE, "exception closing context", e);
             throw new FindException(e.getMessage(), e);
         } catch (ObjectModelException e) {
-            LogManager.getInstance().getSystemLogger().log(Level.SEVERE, "exception closing context", e);
+            logger.log(Level.SEVERE, "exception closing context", e);
             throw new FindException(e.getMessage(), e);
         }
     }
@@ -254,4 +263,5 @@ public class CSRHandler extends HttpServlet {
     //private RSASigner rsasigner = null;
     private String rootkstore = null;
     private String rootkstorepasswd = null;
+    private Logger logger = null;
 }
