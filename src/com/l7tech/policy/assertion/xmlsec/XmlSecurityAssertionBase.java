@@ -12,7 +12,7 @@ import com.l7tech.policy.assertion.XpathBasedAssertion;
  * User: flascell<br/>
  * Date: Jan 17, 2005<br/>
  */
-public abstract class XmlSecurityAssertionBase extends XpathBasedAssertion {
+public abstract class XmlSecurityAssertionBase extends XpathBasedAssertion implements SecurityHeaderAddressable {
 
     public XmlSecurityRecipientContext getRecipientContext() {
         return recipientContext;

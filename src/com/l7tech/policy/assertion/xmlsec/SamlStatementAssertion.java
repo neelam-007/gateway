@@ -6,10 +6,11 @@ import com.l7tech.policy.assertion.credential.CredentialSourceAssertion;
  * The <code>SamlStatementAssertion</code> assertion describes
  * the common SAML constraints shared by Authentication Statement constraints.
  */
-abstract class SamlStatementAssertion extends CredentialSourceAssertion {
+abstract class SamlStatementAssertion extends CredentialSourceAssertion implements SecurityHeaderAddressable {
     private String[] subjectConfirmations = new String[] {};
     private String targetRestriction;
     private String audienceRestriction;
+    private XmlSecurityRecipientContext recipientContext = XmlSecurityRecipientContext.getLocalRecipient();
 
     private boolean checkAssertionValidity  = true;
 
@@ -80,5 +81,13 @@ abstract class SamlStatementAssertion extends CredentialSourceAssertion {
 
     public void setTargetRestriction(String targetRestriction) {
         this.targetRestriction = targetRestriction;
+    }
+
+    public XmlSecurityRecipientContext getRecipientContext() {
+        return recipientContext;
+    }
+
+    public void setRecipientContext(XmlSecurityRecipientContext recipientContext) {
+        this.recipientContext = recipientContext;
     }
 }

@@ -6,7 +6,7 @@ import com.l7tech.policy.assertion.credential.CredentialSourceAssertion;
  * The <code>SamlSecurity</code> assertion is used to specify that a request must include a SAML holder-of-key
  * assertion signed by a recognized token server.
  */
-public class SamlSecurity extends CredentialSourceAssertion {
+public class SamlSecurity extends CredentialSourceAssertion implements SecurityHeaderAddressable {
     public static final int CONFIRMATION_METHOD_HOLDER_OF_KEY = 0;
     public static final int CONFIRMATION_METHOD_SENDER_VOUCHES = 1;
     public static final int CONFIRMATION_METHOD_WHATEVER = 2;
@@ -40,5 +40,14 @@ public class SamlSecurity extends CredentialSourceAssertion {
         this.confirmationMethodType = confirmationMethodType;
     }
 
+    public XmlSecurityRecipientContext getRecipientContext() {
+        return recipientContext;
+    }
+
+    public void setRecipientContext(XmlSecurityRecipientContext recipientContext) {
+        this.recipientContext = recipientContext;
+    }
+
+    private XmlSecurityRecipientContext recipientContext = XmlSecurityRecipientContext.getLocalRecipient();
     private int confirmationMethodType;
 }

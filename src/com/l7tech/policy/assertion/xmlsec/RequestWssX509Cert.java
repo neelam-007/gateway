@@ -15,5 +15,14 @@ import com.l7tech.policy.assertion.credential.CredentialSourceAssertion;
  * Date: Jul 14, 2004<br/>
  * $Id$<br/>
  */
-public class RequestWssX509Cert extends CredentialSourceAssertion {
+public class RequestWssX509Cert extends CredentialSourceAssertion implements SecurityHeaderAddressable {
+    public XmlSecurityRecipientContext getRecipientContext() {
+        return recipientContext;
+    }
+
+    public void setRecipientContext(XmlSecurityRecipientContext recipientContext) {
+        this.recipientContext = recipientContext;
+    }
+
+    private XmlSecurityRecipientContext recipientContext = XmlSecurityRecipientContext.getLocalRecipient();
 }

@@ -59,7 +59,12 @@
                     <UserUid stringValueNull="null"/>
                     <UserName stringValueNull="null"/>
                 </SpecificUser>
-                <RequestWssX509Cert/>
+                <RequestWssX509Cert>
+                    <RecipientContext xmlSecurityRecipientContext="included">
+                        <Base64edX509Certificate stringValueNull="null"/>
+                        <Actor stringValue=""/>
+                    </RecipientContext>
+                </RequestWssX509Cert>
                 <SecureConversation/>
                 <RequestWssIntegrity>
                     <XpathExpression xpathExpressionValue="included">
@@ -149,24 +154,40 @@
                     <Bindings mapValue="included"/>
                 </RequestSwAAssertion>
                 <SamlSecurity>
+                    <RecipientContext xmlSecurityRecipientContext="included">
+                        <Base64edX509Certificate stringValueNull="null"/>
+                        <Actor stringValue=""/>
+                    </RecipientContext>
                     <ConfirmationMethodType intValue="0"/>
                 </SamlSecurity>
                 <SamlAuthenticationStatement>
                     <AudienceRestriction stringValueNull="null"/>
                     <SubjectConfirmations stringArrayValue="included"/>
                     <AuthenticationMethods stringArrayValue="included"/>
+                    <RecipientContext xmlSecurityRecipientContext="included">
+                        <Base64edX509Certificate stringValueNull="null"/>
+                        <Actor stringValue=""/>
+                    </RecipientContext>
                     <CheckAssertionValidity booleanValue="true"/>
                     <TargetRestriction stringValueNull="null"/>
                 </SamlAuthenticationStatement>
                 <SamlAuthorizationStatement>
                     <AudienceRestriction stringValueNull="null"/>
                     <SubjectConfirmations stringArrayValue="included"/>
+                    <RecipientContext xmlSecurityRecipientContext="included">
+                        <Base64edX509Certificate stringValueNull="null"/>
+                        <Actor stringValue=""/>
+                    </RecipientContext>
                     <CheckAssertionValidity booleanValue="true"/>
                     <TargetRestriction stringValueNull="null"/>
                 </SamlAuthorizationStatement>
                 <SalmAttributeStatement>
                     <AudienceRestriction stringValueNull="null"/>
                     <SubjectConfirmations stringArrayValue="included"/>
+                    <RecipientContext xmlSecurityRecipientContext="included">
+                        <Base64edX509Certificate stringValueNull="null"/>
+                        <Actor stringValue=""/>
+                    </RecipientContext>
                     <CheckAssertionValidity booleanValue="true"/>
                     <TargetRestriction stringValueNull="null"/>
                 </SalmAttributeStatement>
