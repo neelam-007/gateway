@@ -423,9 +423,9 @@ public class IdentityAdminImpl implements IdentityAdmin {
             context.flush();
             context.close();
         } catch (java.sql.SQLException e) {
-            logger.log(Level.SEVERE, null, e);
+            logger.log(Level.SEVERE, "could not end transaction", e);
         } catch ( ObjectModelException e) {
-            logger.log(Level.SEVERE, null, e);
+            logger.log(Level.SEVERE, "could not end transaction", e);
         }
     }
 
