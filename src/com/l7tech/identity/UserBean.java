@@ -7,6 +7,7 @@
 package com.l7tech.identity;
 
 import com.l7tech.policy.assertion.credential.http.HttpDigest;
+import com.l7tech.objectmodel.Entity;
 
 import java.io.Serializable;
 
@@ -176,7 +177,7 @@ public class UserBean implements User, Serializable {
         return result;
     }
 
-    protected long _providerId;
+    protected long _providerId = Entity.DEFAULT_OID;
     protected String _uniqueId;
     protected String _name;
     protected String _login;

@@ -33,12 +33,15 @@ public abstract class IdentityAssertionTreeNode extends LeafAssertionTreeNode {
             IdentityProviderConfig cfg = null;
             try {
                 cfg = getProviderConfigManager().findByPrimaryKey(providerid);
-                provName = cfg.getName();
+                if (cfg == null)
+                    provName = NA;
+                else
+                    provName = cfg.getName();
             } catch (FindException e) {
-                provName = "provider not available";
+                provName = NA;
                 log.log(Level.SEVERE, "could not find provider associated with this assertion", e);
             } catch (RuntimeException e) {
-                provName = "provider not available";
+                provName = NA;
                 log.log(Level.SEVERE, "could not loookup the IdentityProviderConfigManager", e);
             }
         }
@@ -59,4 +62,5 @@ public abstract class IdentityAssertionTreeNode extends LeafAssertionTreeNode {
     private static final Logger log = Logger.getLogger(LeafAssertionTreeNode .class.getName());
     private IdentityAssertion assertion;
     private String provName = null;
+    public static final String NA = "provider not available";
 }
