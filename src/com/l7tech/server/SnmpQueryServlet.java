@@ -112,49 +112,50 @@ public class SnmpQueryServlet extends HttpServlet {
                                                   boolean advance)
             throws IOException, FindException
     {
-        final int maxColumn = 5;
-        int row = -1;
-        int column = -1;
+        final int maxField = 5;
+        int service = -1;
+        int field = -1;
 
         Matcher matcher = match2.matcher(id);
         if (id == null || id.length() < 1) {
             if (advance) {
-                row = 1;
-                column = 1;
+                service = 1;
+                field = 1;
                 advance = false;
             } else {
                 send(response, BASE_PUBLISHED_SERVICES, "string", "Service Usage");
                 return;
             }
         } else if (matcher.matches()) {
-            row = Integer.parseInt(matcher.group(1));
-            column = Integer.parseInt(matcher.group(2));
+            field = Integer.parseInt(matcher.group(1));
+            service = Integer.parseInt(matcher.group(2));
         }
 
-        if (row < 1 || column < 1 || column > maxColumn) {
+        if (service < 1 || field < 1 || field > maxField) {
             badRequest(response);
             return;
         }
 
-        if (advance) {
-            column++;
-            if (column > maxColumn) {
-                column = 1;
-                row++;
-            }
-        }
 
         ServiceUsage[] table = getCurrentServiceUsage();
 
-        if (row > table.length) {
+        if (advance) {
+            service++;
+            if (service > table.length) {
+                service = 1;
+                field++;
+            }
+        }
+
+        if (service > table.length) {
             badRequest(response);
             return;
         }
 
-        String addr = BASE_PUBLISHED_SERVICES + "." + row + "." + column;
+        String addr = BASE_PUBLISHED_SERVICES + "." + field + "." + service;
 
-        ServiceUsage su = table[row - 1]; // (row is still 1-based, not 0-based)
-        switch (column) {
+        ServiceUsage su = table[service - 1]; // (column is still 1-based, not 0-based)
+        switch (field) {
             case 1:
                 send(response, addr, "integer", su.getServiceid());
                 return;
