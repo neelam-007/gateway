@@ -225,7 +225,7 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
             });
 
             this.add(buttonSave);
-            final BaseAction ba = (BaseAction)buttonSave.getAction();
+            final BaseAction ba = (BaseAction) buttonSave.getAction();
             ba.setEnabled(false);
             ba.addActionListener(new ActionListener() {
                 /**
@@ -237,6 +237,19 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
                     buttonSave.setEnabled(false);
                 }
             });
+
+            ba.addActionListener(new ActionListener() {
+                /**
+                 * Invoked when an action occurs.
+                 */
+                public void actionPerformed(ActionEvent e) {
+                    PolicyValidatorResult result
+                            = PolicyValidator.getDefault().
+                            validate(rootAssertion.asAssertion());
+                    displayPolicyValidateResult(result);
+                }
+            });
+
             buttonSaveTemplate = new JButton(new SavePolicyTemplateAction() {
                 /** Actually perform the action. */
                 public void performAction() {
@@ -348,22 +361,27 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
     // listener for policy tree changes
     TreeModelListener policyTreeModellistener = new TreeModelListener() {
         public void treeNodesChanged(TreeModelEvent e) {
-            policyEditorToolbar.buttonSave.setEnabled(true);
+            enableButtonSave();
         }
 
         public void treeNodesInserted(final TreeModelEvent e) {
-            policyEditorToolbar.buttonSave.getAction().setEnabled(true);
+            enableButtonSave();
         }
 
         public void treeNodesRemoved(TreeModelEvent e) {
-            policyEditorToolbar.buttonSave.getAction().setEnabled(true);
-
+            enableButtonSave();
         }
 
         public void treeStructureChanged(TreeModelEvent e) {
+             enableButtonSave();
+        }
+
+        private void enableButtonSave(){
+            overWriteMessageArea("");
             policyEditorToolbar.buttonSave.getAction().setEnabled(true);
         }
     };
+
 
 // listener for policy tree changes
     TreeModelListener servicesTreeModelListener = new TreeModelListener() {
