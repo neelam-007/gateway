@@ -56,7 +56,6 @@ public class Components {
         Object[] newValues = new Object[values.length - 1];
         System.arraycopy(values, 1, newValues, 0, values.length - 1);
         ComboBoxModel cbm = new DefaultComboBoxModel(newValues);
-        cbm.setSelectedItem("HTTP digest");
         return cbm;
     }
 
