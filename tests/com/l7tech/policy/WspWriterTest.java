@@ -3,8 +3,8 @@ package com.l7tech.policy;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.FalseAssertion;
 import com.l7tech.policy.assertion.TrueAssertion;
-import com.l7tech.policy.assertion.composite.ExactlyOneAssertion;
 import com.l7tech.policy.assertion.composite.AllAssertion;
+import com.l7tech.policy.assertion.composite.ExactlyOneAssertion;
 import com.l7tech.policy.assertion.composite.OneOrMoreAssertion;
 import com.l7tech.policy.wsp.WspWriter;
 import junit.framework.Test;
@@ -14,7 +14,6 @@ import junit.framework.TestSuite;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.FileOutputStream;
 import java.util.Arrays;
 import java.util.logging.Logger;
 
@@ -60,8 +59,12 @@ public class WspWriterTest extends TestCase {
 
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         WspWriter.writePolicy(policy, out);
+        String gotXml = out.toString();
+        gotXml.replaceAll("\n\r", "\n");
+        gotXml.replaceAll("\r\n", "\n");
+        gotXml.replaceAll("\r", "\n");
 
-        log.info("Encoded to XML: " + out.toString());
+        log.info("Encoded to XML: " + gotXml);
 
         //uncomment to save the XML to a file
         //FileOutputStream fos = new FileOutputStream("WspWriterTest_encoded.xml");
@@ -73,10 +76,13 @@ public class WspWriterTest extends TestCase {
         byte[] known = new byte[65536];
         int len = knownStream.read(known);
         String knownStr = new String(known, 0, len);
+        knownStr.replaceAll("\n\r", "\n");
+        knownStr.replaceAll("\r\n", "\n");
+        knownStr.replaceAll("\r", "\n");
 
         log.info("Expected XML: " + knownStr);
 
-        assertTrue(out.toString().equals(knownStr));
+        assertTrue(knownStr.equals(gotXml));
 
     }
 
