@@ -8,6 +8,7 @@ import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.assertion.credential.CredentialFormat;
 import com.l7tech.policy.assertion.credential.PrincipalCredentials;
+import com.l7tech.policy.assertion.credential.http.HttpDigest;
 
 import javax.naming.Context;
 import javax.naming.NamingEnumeration;
@@ -147,6 +148,10 @@ public class LdapIdentityProviderServer implements IdentityProvider {
             throw new FindException(e.getMessage(), e);
         }
         return output;
+    }
+
+    public String getAuthRealm() {
+        return HttpDigest.REALM;
     }
 
 

@@ -14,6 +14,7 @@ import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.composite.CompositeAssertion;
 import com.l7tech.policy.assertion.credential.PrincipalCredentials;
+import com.l7tech.policy.assertion.credential.http.HttpDigest;
 import com.l7tech.policy.assertion.identity.MemberOfGroup;
 import com.l7tech.policy.assertion.identity.SpecificUser;
 
@@ -490,6 +491,10 @@ public class PolicyAddIdentitiesDialog extends JDialog {
 
           public Collection search(EntityType[] types, String searchString) throws FindException {
               throw new FindException("not implemented");
+          }
+
+          public String getAuthRealm() {
+              return HttpDigest.REALM;
           }
 
           IdentityProviderConfig config = new IdentityProviderConfig();

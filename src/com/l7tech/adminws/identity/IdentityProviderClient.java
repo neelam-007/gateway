@@ -1,6 +1,7 @@
 package com.l7tech.adminws.identity;
 
 import com.l7tech.policy.assertion.credential.PrincipalCredentials;
+import com.l7tech.policy.assertion.credential.http.HttpDigest;
 import com.l7tech.identity.GroupManager;
 import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.identity.UserManager;
@@ -53,6 +54,10 @@ public class IdentityProviderClient implements com.l7tech.identity.IdentityProvi
         Collection output = new java.util.ArrayList();
         for (int i = 0; i < array.length; i++) output.add(array[i]);
         return output;
+    }
+
+    public String getAuthRealm() {
+        return HttpDigest.REALM;
     }
 
     // ************************************************

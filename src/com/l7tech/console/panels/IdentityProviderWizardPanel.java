@@ -4,6 +4,7 @@ import com.l7tech.console.util.IconManager;
 import com.l7tech.console.util.IconManager2;
 import com.l7tech.console.util.Registry;
 import com.l7tech.policy.assertion.credential.PrincipalCredentials;
+import com.l7tech.policy.assertion.credential.http.HttpDigest;
 import com.l7tech.identity.*;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
@@ -607,6 +608,10 @@ public class IdentityProviderWizardPanel extends WizardStepPanel {
 
           public Collection search(EntityType[] types, String searchString) throws FindException {
               throw new FindException("not implemented");
+          }
+
+          public String getAuthRealm() {
+              return HttpDigest.REALM;
           }
 
           IdentityProviderConfig config = new IdentityProviderConfig();
