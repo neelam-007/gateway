@@ -2,12 +2,14 @@ package com.l7tech.identity.internal;
 
 import com.l7tech.identity.*;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.EntityType;
 import com.l7tech.logging.LogManager;
 import com.l7tech.credential.PrincipalCredentials;
 import com.l7tech.credential.CredentialFormat;
 
 import java.io.UnsupportedEncodingException;
 import java.util.logging.Level;
+import java.util.Collection;
 
 /**
  * Layer 7 Technologies, inc.
@@ -76,6 +78,10 @@ public class InternalIdentityProviderServer implements IdentityProvider {
     }
 
     public boolean isReadOnly() { return false; }
+
+    public Collection search(EntityType[] types, String searchString) throws FindException {
+        throw new FindException("not implemented");
+    }
 
     private IdentityProviderConfig cfg;
     private InternalUserManagerServer userManager;

@@ -499,6 +499,10 @@ public class PolicyAddIdentitiesDialog extends JDialog {
               return true;
           }
 
+          public Collection search(EntityType[] types, String searchString) throws FindException {
+              throw new FindException("not implemented");
+          }
+
           IdentityProviderConfig config = new IdentityProviderConfig();
 
           {

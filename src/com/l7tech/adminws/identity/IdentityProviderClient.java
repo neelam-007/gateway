@@ -4,6 +4,10 @@ import com.l7tech.credential.PrincipalCredentials;
 import com.l7tech.identity.GroupManager;
 import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.identity.UserManager;
+import com.l7tech.objectmodel.EntityType;
+import com.l7tech.objectmodel.FindException;
+
+import java.util.Collection;
 
 /**
  * Layer 7 Technologies, inc.
@@ -36,6 +40,10 @@ public class IdentityProviderClient implements com.l7tech.identity.IdentityProvi
     }
 
     public boolean isReadOnly() { return true; }
+
+    public Collection search(EntityType[] types, String searchString) throws FindException {
+        throw new FindException("not implemented");
+    }
 
     // ************************************************
     // PRIVATES

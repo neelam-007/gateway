@@ -514,6 +514,10 @@ public class IdentityProviderWizardPanel extends WizardStepPanel {
 
           public boolean isReadOnly() { return true; }
 
+          public Collection search(EntityType[] types, String searchString) throws FindException {
+              throw new FindException("not implemented");
+          }
+
           IdentityProviderConfig config = new IdentityProviderConfig();
 
           {

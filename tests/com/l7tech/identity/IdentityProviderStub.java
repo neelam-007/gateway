@@ -2,6 +2,10 @@ package com.l7tech.identity;
 
 import com.l7tech.console.util.Registry;
 import com.l7tech.credential.PrincipalCredentials;
+import com.l7tech.objectmodel.EntityType;
+import com.l7tech.objectmodel.FindException;
+
+import java.util.Collection;
 
 /**
  * Test stub for identity manager.
@@ -44,6 +48,10 @@ public class IdentityProviderStub implements IdentityProvider {
     }
 
     public boolean isReadOnly() { return false; }
+
+    public Collection search(EntityType[] types, String searchString) throws FindException {
+        throw new FindException("not implemented");
+    }
 
     private IdentityProviderConfig icf = null;
     private UserManager um = null;
