@@ -70,7 +70,7 @@ public class ServicePanel extends WizardStepPanel {
         serviceUrlPanel = new JPanel();
         serviceUrlLabel = new JLabel();
         wsdlUrlTextField = new ContextMenuTextField();
-        wsdlUrlBrowseButton = new JButton("Browse");
+        wsdlUrlBrowseButton = new JButton("Search");
 
         setLayout(new GridBagLayout());
 
