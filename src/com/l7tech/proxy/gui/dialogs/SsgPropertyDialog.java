@@ -230,29 +230,35 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
                                 for (;;) {
                                     try {
                                         manualCSR();
+                                        cert = ssg.getClientCertificate();
                                         break;
                                     } catch (KeyStoreCorruptException e1) {
                                         ssg.getRuntime().handleKeyStoreCorrupt();
                                         /* FALLTHROUGH and retry */
                                     }
                                 }
+                                /* FALLTHROUGH and display newly-acquired client certificate */
                             } catch (CertificateAlreadyIssuedException csrex) {
                                 final String msg = "Unable to obtain certificate from the SecureSpan Gateway " +
                                         ssgName() + " because this account already has a valid " +
                                         "certificate. Contact the gateway administrator for more information";
                                 log.log(Level.WARNING, msg, csrex);
                                 Gui.errorMessage(msg);
+                                return;
                             } catch (BadCredentialsException csrex) {
                                 final String msg = "Unable to obtain certificate from the SecureSpan Gateway " +
                                         ssgName() + " because of credentials provided. Contact the " +
                                         "gateway administrator for more information.";
                                 log.log(Level.WARNING, msg, csrex);
                                 Gui.errorMessage(msg);
+                                return;
                             }
-                        }
-                        return;
+                        } else
+                            return;
+                        /* FALLTHROUGH and display newly-acquired client certificate */
                     }
-                    new CertDialog(cert, "Client Certificate", "Client Certificate for Gateway " + ssgName()).show();
+                    if (cert != null)
+                        new CertDialog(cert, "Client Certificate", "Client Certificate for Gateway " + ssgName()).show();
                 } catch (OperationCanceledException e1) {
                     return;
                 } catch (Exception e1) {
@@ -263,6 +269,7 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
                                          "Unable to access client certificate for the SecureSpan Gateway " + ssgName() + ".",
                                          mess,
                                          e1);
+                    return;
                 }
             }
         });
@@ -316,8 +323,11 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
                                           JOptionPane.ERROR_MESSAGE);
             throw new OperationCanceledException();
         }
-        fieldServerAddress.setText(newHost);
+
+        // Save the hostname we're about to use in the bean and in the GUI
         ssg.setSsgAddress(newHost);
+        fieldServerAddress.setText(newHost);
+        checkOk();
 
         if (ssg.getServerCertificate() == null) {
             ssg.getRuntime().getSsgKeyStoreManager().installSsgServerCertificate(ssg, creds);
@@ -325,6 +335,16 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
 
         // PasswordAuthentication credentials
         ssg.getRuntime().getSsgKeyStoreManager().obtainClientCertificate(creds);
+
+        // Save the creds we used in the bean and in the GUI
+        ssg.setUsername(creds.getUserName());
+        ssg.getRuntime().setCachedPassword(creds.getPassword());
+        SsgIdentityPanel idp = getIdentityPane(ssg);
+        if (idp instanceof TrustedSsgIdentityPanel) {
+            TrustedSsgIdentityPanel trusted = (TrustedSsgIdentityPanel)idp;
+            trusted.getUsernameTextField().setText(creds.getUserName());
+            trusted.getUserPasswordField().setText(new String(creds.getPassword()));
+        }
     }
 
     private void importClientCertificate() {
