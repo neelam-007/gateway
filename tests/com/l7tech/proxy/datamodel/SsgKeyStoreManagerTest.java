@@ -16,6 +16,7 @@ import junit.framework.TestCase;
 import junit.framework.TestSuite;
 
 import java.security.KeyPair;
+import java.security.KeyStore;
 import java.security.cert.X509Certificate;
 import java.util.logging.Logger;
 
@@ -42,7 +43,7 @@ public class SsgKeyStoreManagerTest extends TestCase {
 
         KeyPair kp = JceProvider.generateRsaKeyPair();
         CertificateRequest csr = JceProvider.makeCsr("mike", kp);
-        RsaSignerEngine rsaSigner = JceProvider.createRsaSignerEngine("/tomcat4.1/kstores/ca.ks", "tralala", "ssgroot", "tralala");
+        RsaSignerEngine rsaSigner = JceProvider.createRsaSignerEngine("/tomcat4.1/kstores/ca.ks", "tralala", "ssgroot", "tralala", KeyStore.getDefaultType());
         X509Certificate cert = (X509Certificate)rsaSigner.createCertificate(csr.getEncoded());
 
         System.out.println("Using client cert:" + CertUtils.toString(cert));

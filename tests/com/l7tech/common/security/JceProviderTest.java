@@ -38,9 +38,6 @@ public class JceProviderTest {
     private static final String DFLT_DIR = "/ssg/etc/keys/";
     private static final String DFLT_PROVIDER = "bc";
     public static final String KS = "ca.ks";
-    private static String DFLT_PK_PASS = "tralala";
-    private static String ALIAS = "ssgroot";
-    private static String DFLT_STORE_PASS = "tralala";
     private static String DFLT_STORE_TYPE = "JKS";
 
     public static final String USAGE = "Usage: JceProviderTest (phaos|bc|rsa|ncipher|entrust) scale dir keypass storepass [storetype] [concurrency]";
@@ -104,7 +101,6 @@ public class JceProviderTest {
         };
 
         final Key key = new AesKey(keyBytes, 128);
-        final RsaSignerEngine signer = JceProvider.createRsaSignerEngine(dir + KS, kspass, ALIAS, pkpass);
         CertificateRequest csr;
         KeyPair kp; // client cert private (and public) key
         X509Certificate signedClientCert; // signedClientCert client cert
