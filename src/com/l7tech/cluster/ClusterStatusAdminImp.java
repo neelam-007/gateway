@@ -2,8 +2,6 @@ package com.l7tech.cluster;
 
 import com.l7tech.objectmodel.*;
 import com.l7tech.remote.jini.export.RemoteService;
-import com.l7tech.identity.Group;
-import com.l7tech.common.util.UnauthorizedAdminOperation;
 import com.sun.jini.start.LifeCycle;
 import net.jini.config.ConfigurationException;
 
@@ -82,10 +80,7 @@ public class ClusterStatusAdminImp extends RemoteService implements ClusterStatu
             throw new UpdateException("internal error", e);
         }
         try {
-            if (!isUserInRole(new String[]{Group.ADMIN_GROUP_NAME})) {
-                throw new UnauthorizedAdminOperation("Must be member of " + Group.ADMIN_GROUP_NAME +
-                                                    " to perform this operation.");
-            }
+            enforceAdminRole();
             try {
                 context.beginTransaction();
                 ciman.renameNode(nodeid, newName);
@@ -116,10 +111,7 @@ public class ClusterStatusAdminImp extends RemoteService implements ClusterStatu
             throw new DeleteException("internal error", e);
         }
         try {
-            if (!isUserInRole(new String[]{Group.ADMIN_GROUP_NAME})) {
-                throw new UnauthorizedAdminOperation("Must be member of " + Group.ADMIN_GROUP_NAME +
-                                                    " to perform this operation.");
-            }
+            enforceAdminRole();
             try {
                 logger.info("removing stale node: " + nodeid);
                 context.beginTransaction();

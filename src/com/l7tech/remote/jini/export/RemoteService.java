@@ -1,6 +1,8 @@
 package com.l7tech.remote.jini.export;
 
 import com.sun.jini.start.LifeCycle;
+import com.l7tech.identity.Group;
+import com.l7tech.common.util.UnauthorizedAdminOperation;
 import net.jini.config.Configuration;
 import net.jini.config.ConfigurationException;
 import net.jini.config.ConfigurationProvider;
@@ -191,6 +193,17 @@ public abstract class RemoteService implements Remote, ProxyAccessor {
             return true;
         } catch (ServerNotActiveException e) {
             throw new RuntimeException(e);
+        }
+    }
+
+    /**
+     * Makes sure that current subject has full write admin role.
+     * @throws UnauthorizedAdminOperation if not the case
+     */
+    protected void enforceAdminRole() throws UnauthorizedAdminOperation{
+        if (!isUserInRole(new String[]{Group.ADMIN_GROUP_NAME})) {
+            throw new UnauthorizedAdminOperation("Must be member of " + Group.ADMIN_GROUP_NAME +
+                                                 " to perform this operation.");
         }
     }
 }
