@@ -20,6 +20,7 @@ import com.l7tech.objectmodel.Entity;
 import com.l7tech.objectmodel.FindException;
 
 import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Subclasses of ServerIdentityAssertion are responsible for verifying that the entity
@@ -51,7 +52,7 @@ public abstract class ServerIdentityAssertion implements ServerAssertion {
             // No credentials have been found yet
             if ( request.isAuthenticated() ) {
                 String err = "Request is authenticated but request has no PrincipalCredentials!";
-                LogManager.getInstance().getSystemLogger().log(Level.SEVERE, err);
+                _log.log(Level.SEVERE, err);
                 throw new IllegalStateException( err );
             } else {
                 // Authentication is required for any IdentityAssertion
@@ -67,12 +68,12 @@ public abstract class ServerIdentityAssertion implements ServerAssertion {
             AssertionStatus status;
             if ( request.isAuthenticated() ) {
                 // The user was authenticated by a previous IdentityAssertion.
-                LogManager.getInstance().getSystemLogger().log(Level.FINEST, "Request already authenticated");
+                _log.log(Level.FINEST, "Request already authenticated");
                 status = checkUser( user );
             } else {
                 if ( _data.getIdentityProviderOid() == Entity.DEFAULT_OID ) {
                     String err = "Can't call checkRequest() when no valid identityProviderOid has been set!";
-                    LogManager.getInstance().getSystemLogger().log(Level.SEVERE, err);
+                    _log.log(Level.SEVERE, err);
                     throw new IllegalStateException( err );
                 }
 
@@ -80,17 +81,18 @@ public abstract class ServerIdentityAssertion implements ServerAssertion {
                     if ( getIdentityProvider().authenticate( pc ) ) {
                         // Authentication succeeded
                         request.setAuthenticated(true);
-                        LogManager.getInstance().getSystemLogger().log(Level.FINEST, "Authenticated " + user.getLogin() );
+                        _log.log(Level.FINEST, "Authenticated " + user.getLogin() );
                         // Make sure this guy matches our criteria
                         status = checkUser( user );
                     } else {
                         // Authentication failure
                         status = AssertionStatus.AUTH_FAILED;
-                        LogManager.getInstance().getSystemLogger().log(Level.FINER, "Authentication failed for " + user.getLogin() );
+                        response.setAuthenticationMissing(true);
+                        _log.log(Level.FINER, "Authentication failed for " + user.getLogin() );
                     }
                 } catch ( FindException fe ) {
                     String err = "Couldn't find identity provider!";
-                    LogManager.getInstance().getSystemLogger().log( Level.SEVERE, err, fe );
+                    _log.log( Level.SEVERE, err, fe );
                     throw new IdentityAssertionException( err, fe );
                 }
 
@@ -119,5 +121,7 @@ public abstract class ServerIdentityAssertion implements ServerAssertion {
 
     protected transient IdentityProviderConfigManager _configManager = null;
     protected transient IdentityProvider _identityProvider;
+    protected transient Logger _log = LogManager.getInstance().getSystemLogger();
+
     protected IdentityAssertion _data;
 }
