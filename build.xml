@@ -173,6 +173,8 @@
             <!-- Needed for PKCS#12 keystore -->
             <fileset dir="${src.root}/lib/crypto/bc">
                 <include name="bcprov-*.jar"/>
+            </fileset>
+            <fileset dir="${src.root}/lib">
                 <include name="jgroups-all.jar"/>
                 <include name="commons-logging.jar"/>
             </fileset>
