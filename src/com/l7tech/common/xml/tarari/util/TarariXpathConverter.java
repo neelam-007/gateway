@@ -13,32 +13,6 @@ import java.util.Set;
 public class TarariXpathConverter {
 
     /**
-     *
-     * @param args
-     * @deprecated use {@link #convertToTarariXpath(java.util.Map, String)} instead.
-     * TODO remove this
-     */
-    public static void main(String args[])
-    {
-        if ( args.length != 2 ) {
-            System.err.println("Usage: java TarariXpathConverter inputFile outputFile.") ;
-            System.err.println("Make sure that antlr.jar is included in your CLASSPATH") ;
-        }
-        try {
-            XprLexer lex = new XprLexer( new FileInputStream( args[0] ) ) ;
-            PrintWriter outf = new PrintWriter( new FileWriter( args[1] ) ) ;
-            XprParser parser = new XprParser( lex ) ;
-            parser.setOutFile( outf ) ;
-            parser.mainModule() ;
-            outf.flush() ;
-            System.out.println("Wrote output to file " + args[1] ) ;
-        } catch ( Exception e ) {
-            System.err.println( e.getMessage() ) ;
-            e.printStackTrace( System.err ) ;
-        }
-    }
-
-    /**
      * Convert the specified prefix-adorned XPath expression into a Tarari-friendly
      * expression that uses predicates instead of namespace prefixes.
      * <p>
