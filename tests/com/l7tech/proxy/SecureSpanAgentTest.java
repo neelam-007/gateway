@@ -7,6 +7,7 @@
 package com.l7tech.proxy;
 
 import com.l7tech.common.util.XmlUtil;
+import com.l7tech.common.util.HexUtils;
 import org.apache.log4j.Category;
 
 import java.security.cert.X509Certificate;
@@ -32,19 +33,20 @@ public class SecureSpanAgentTest {
             "        </placeOrder>\n"+
             "    </soap:Body>\n"+
             "</soap:Envelope>\n";
+    private static final String SAML4 = "com/l7tech/common/security/saml/saml4.xml";
 
     public static void main(String[] args) throws Exception {
-        if (args.length < 4) {
-            System.out.println("Usage: testagent gatewayhost gatewayport username password");
+        if (args.length < 3) {
+            System.out.println("Usage: testagent gatewayhost username password");
             System.exit(1);
         }
         int i = 0;
         String host = args[i++];
-        int port = Integer.parseInt(args[i++]);
         String username = args[i++];
         char[] password = args[i++].toCharArray();
 
-        SecureSpanAgent agent = SecureSpanAgentFactory.createSecureSpanAgent(host, port, username, password);
+        SecureSpanAgentOptions options = new SecureSpanAgentOptions(host, username, password);
+        SecureSpanAgent agent = SecureSpanAgentFactory.createSecureSpanAgent(options);
         agent.ensureCertificatesAreAvailable();
 
         X509Certificate cert = agent.getClientCert();
@@ -56,7 +58,11 @@ public class SecureSpanAgentTest {
         X509Certificate ssgCert = agent.getServerCert();
         log.info("The Gateway's CA certificate: " + ssgCert);
 
-        SecureSpanAgent.Result result = agent.send(PLACEORDER_SOAPACTION, PLACEORDER_MESSAGE);
+        String soapaction = PLACEORDER_SOAPACTION;
+        //String message = PLACEORDER_MESSAGE;
+        HexUtils.Slurpage slurpage = HexUtils.slurpUrl(SecureSpanAgentTest.class.getClassLoader().getResource(SAML4));
+        String message = new String(slurpage.bytes);
+        SecureSpanAgent.Result result = agent.send(soapaction, message);
         log.info("Got back http status " + result.getHttpStatus());
         log.info("Got back envelope:\n" + XmlUtil.documentToString(result.getResponse()));
     }
