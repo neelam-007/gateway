@@ -325,15 +325,15 @@ public class IdentityPolicyPanel extends JPanel {
             List removeAssertions = new ArrayList();
             List addAssertions = new ArrayList();
 
-            if (sslCheckBox.isEnabled()) { // edit allowed
-                if (sslCheckBox.isSelected()) { // selected
-                    if (sslAssertion == null) {
-                        addAssertions.add(new SslAssertion());
-                    }
+            // Bugzilla #725 - the handler updates the policy with the assertions in reverse order.
+            // Here we must add the assertions to the list in the following order
+            // a. routing assertion, b. credential assertion, c. SSL Transport assertion
+            RoutingAssertion newRoutingAssertion = collectRoutingAssertion();
+            if (newRoutingAssertion != null) {
+                if (existingRoutingAssertion != null) {
+                    replaceAssertions.add(new Assertion[]{existingRoutingAssertion, newRoutingAssertion});
                 } else {
-                    if (sslAssertion != null) {
-                        removeAssertions.add(sslAssertion);
-                    }
+                    addAssertions.add(newRoutingAssertion);
                 }
             }
 
@@ -346,14 +346,18 @@ public class IdentityPolicyPanel extends JPanel {
                 }
             }
 
-            RoutingAssertion newRoutingAssertion = collectRoutingAssertion();
-            if (newRoutingAssertion != null) {
-                if (existingRoutingAssertion != null) {
-                    replaceAssertions.add(new Assertion[]{existingRoutingAssertion, newRoutingAssertion});
+            if (sslCheckBox.isEnabled()) { // edit allowed
+                if (sslCheckBox.isSelected()) { // selected
+                    if (sslAssertion == null) {
+                        addAssertions.add(new SslAssertion());
+                    }
                 } else {
-                    addAssertions.add(newRoutingAssertion);
+                    if (sslAssertion != null) {
+                        removeAssertions.add(sslAssertion);
+                    }
                 }
             }
+
             for (Iterator iterator = replaceAssertions.iterator(); iterator.hasNext();) {
                 Assertion[] assertions = (Assertion[])iterator.next();
                 replaceAssertion(assertions[0], assertions[1]);
@@ -520,10 +524,10 @@ public class IdentityPolicyPanel extends JPanel {
         final JCheckBox _9;
         _9 = new JCheckBox();
         sslCheckBox = _9;
+        _9.setHorizontalTextPosition(10);
+        _9.setText("Require SSL/TLS encryption");
         _9.setMargin(new Insets(2, 2, 2, 0));
         _9.setContentAreaFilled(true);
-        _9.setText("Require SSL/TLS encryption");
-        _9.setHorizontalTextPosition(10);
         _6.add(_9, new com.intellij.uiDesigner.core.GridConstraints(0, 0, 1, 2, 4, 0, 3, 0, null, null, null));
         final JLabel _10;
         _10 = new JLabel();
