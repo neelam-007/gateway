@@ -52,12 +52,12 @@ public class TreeNodeAction {
   }
 
   /**
-   * Deletes the given DirectoryTreeNode
+   * Deletes the given EntityTreeNode
    *
    * @param node - the node to be deleted
    * @return true if deleted, false otherwise
    */
-  public static boolean deleteNode(DirectoryTreeNode node) {
+  public static boolean deleteNode(EntityTreeNode node) {
     boolean rb = false;
     // Dispatch deletion based on the actual node type
     Object object = node.getUserObject();
@@ -68,7 +68,7 @@ public class TreeNodeAction {
   }
 
   /**
-   * Deletes the given DirectoryTreeNode
+   * Deletes the given EntityTreeNode
    *
    * @param bn - the node to be deleted
    * @return true if deleted, false otherwise
@@ -89,16 +89,16 @@ public class TreeNodeAction {
    *               can refresh
    * @return true if the node can be refreshed, false otherwise
    */
-  public static boolean canRefresh(DirectoryTreeNode node) {
+  public static boolean canRefresh(EntityTreeNode node) {
     return false;
   }
 
   /**
-   * @param node   DirectoryTreeNode  the node to determine if it
+   * @param node   EntityTreeNode  the node to determine if it
    *               has properties
    * @return true if the node has properties, false otherwise
    */
-  public static boolean hasProperties(DirectoryTreeNode node) {
+  public static boolean hasProperties(EntityTreeNode node) {
     Object o = node.getUserObject();
     if (o instanceof BasicTreeNode) {
       return hasProperties((BasicTreeNode)o);
@@ -120,11 +120,11 @@ public class TreeNodeAction {
 
   /**
    *
-   * @param node   DirectoryTreeNode  the node to determine if it
+   * @param node   EntityTreeNode  the node to determine if it
    *               has properties
    * @return true if the node can be expanded, false otherwise
    */
-  public static boolean isBrowseable(DirectoryTreeNode node) {
+  public static boolean isBrowseable(EntityTreeNode node) {
     Object o = node.getUserObject();
     if (o instanceof BasicTreeNode) {
       return isBrowseable((BasicTreeNode)o);
@@ -148,7 +148,7 @@ public class TreeNodeAction {
    *               can be deleted
    * @return true if the node can be deleted, false otherwise
    */
-  public static boolean canDelete(DirectoryTreeNode node) {
+  public static boolean canDelete(EntityTreeNode node) {
     Object object = node.getUserObject();
 
     if (object instanceof BasicTreeNode) {

@@ -3,7 +3,7 @@ package com.l7tech.console;
 import com.l7tech.console.panels.EditorPanel;
 import com.l7tech.console.panels.PanelListener;
 import com.l7tech.console.tree.BasicTreeNode;
-import com.l7tech.console.tree.DirectoryTreeNode;
+import com.l7tech.console.tree.EntityTreeNode;
 
 /**
  * The Panel Factory class provides panels for entity
@@ -25,7 +25,7 @@ public class PanelFactory {
      * @param pListener - the PanelListener for the given panel
      * @return the panel
      */
-    public static EditorPanel getPanel(DirectoryTreeNode node, PanelListener pListener) {
+    public static EditorPanel getPanel(EntityTreeNode node, PanelListener pListener) {
         return getPanel(node, true, pListener);
     }
 
@@ -41,10 +41,10 @@ public class PanelFactory {
      * @param pListener - the PanelListener for the given panel
      * @return the panel
      */
-    public static EditorPanel getPanel(DirectoryTreeNode node, boolean rw, PanelListener pListener) {
+    public static EditorPanel getPanel(EntityTreeNode node, boolean rw, PanelListener pListener) {
         Object object = node.getUserObject();
         if (object instanceof BasicTreeNode) {
-            return getPanel((BasicTreeNode) object, rw, pListener);
+            return getPanel(object, rw, pListener);
         }
         return null;
     }

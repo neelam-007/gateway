@@ -1,6 +1,6 @@
 package com.l7tech.console.table;
 
-import com.l7tech.console.tree.DirectoryTreeNode;
+import com.l7tech.console.tree.EntityTreeNode;
 import com.l7tech.console.tree.ProviderNode;
 import com.l7tech.console.tree.ProvidersFolderNode;
 import org.apache.log4j.Category;
@@ -41,7 +41,7 @@ public class TableRowMenu extends JPopupMenu {
    * @return JpopUpMenu for the node, or <CODE>null</code> if the menu
    *         cannot be created for the node.
    */
-  public static JPopupMenu forNode(DirectoryTreeNode node, ActionListener listener) {
+  public static JPopupMenu forNode(EntityTreeNode node, ActionListener listener) {
 
     Object object = node.getUserObject();
     

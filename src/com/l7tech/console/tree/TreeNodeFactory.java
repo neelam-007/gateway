@@ -1,7 +1,9 @@
 package com.l7tech.console.tree;
 
 import com.l7tech.identity.IdentityProviderConfig;
+import com.l7tech.identity.Group;
 import com.l7tech.objectmodel.EntityHeader;
+import com.l7tech.adminws.identity.User;
 
 import java.util.Enumeration;
 
@@ -35,7 +37,13 @@ public class TreeNodeFactory {
         }
         if (IdentityProviderConfig.class.equals(entity.getType())) {
             return new ProviderNode(entity);
+        } else if (Group.class.equals(entity.getType())) {
+               return new GroupNode(entity);
+        } else if (User.class.equals(entity.getType())) {
+             return new UserNode(entity);
         }
+
+
         throw new IllegalArgumentException("Unknown entity type "+entity.getType());
     }
 

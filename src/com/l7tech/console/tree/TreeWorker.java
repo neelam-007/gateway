@@ -19,7 +19,7 @@ public class TreeWorker extends SwingWorker {
   // current worker
   private static TreeWorker worker;
   private TreePath path;
-  private DirectoryTreeNode dnode;
+  private EntityTreeNode dnode;
   private JTree jTree;
   private DefaultTreeModel model;
 
@@ -68,7 +68,7 @@ public class TreeWorker extends SwingWorker {
    */
   private TreeWorker(TreePath path, JTree tree) {
     this.path  = path;
-    dnode = (DirectoryTreeNode)path.getLastPathComponent();
+    dnode = (EntityTreeNode)path.getLastPathComponent();
     this.jTree = tree;
     this.model = (DefaultTreeModel)jTree.getModel(); 
   }

@@ -24,8 +24,8 @@ import java.util.List;
  * @author <a href="mailto:emarceta@layer7-tech.com>Emil Marceta</a>
  * @see com.l7tech.console.tree.BasicTreeNode
  */
-public class DirectoryTreeNode extends DefaultMutableTreeNode {
-  private static final Category log = Category.getInstance(DirectoryTreeNode.class.getName());
+public class EntityTreeNode extends DefaultMutableTreeNode {
+  private static final Category log = Category.getInstance(EntityTreeNode.class.getName());
 
   /**
    * creates a <CODE>TreeNode</CODE> with the given BasicTreeNode
@@ -33,7 +33,7 @@ public class DirectoryTreeNode extends DefaultMutableTreeNode {
    * 
    * @param treeNode the tree node this node points to
    */
-  public DirectoryTreeNode(BasicTreeNode treeNode) {
+  public EntityTreeNode(BasicTreeNode treeNode) {
     super(treeNode);
     if (treeNode == null) {
       throw new NullPointerException("tree node");
@@ -51,7 +51,7 @@ public class DirectoryTreeNode extends DefaultMutableTreeNode {
     return (BasicTreeNode)getUserObject();
   }
   /**
-   * a DirectoryTreeNode is a leaf if it cannot contain nodes
+   * a EntityTreeNode is a leaf if it cannot contain nodes
    */
   public boolean isLeaf() {
     return getBasicTreeNode().isLeaf();
@@ -125,7 +125,7 @@ public class DirectoryTreeNode extends DefaultMutableTreeNode {
       Iterator iterator = nodes.iterator();
       int index = 0;
       while (iterator.hasNext()) {
-        insert(new DirectoryTreeNode((BasicTreeNode)iterator.next()), index++);
+        insert(new EntityTreeNode((BasicTreeNode)iterator.next()), index++);
       }
       hasLoaded = true;
     } catch (Exception e) {
@@ -233,8 +233,8 @@ public class DirectoryTreeNode extends DefaultMutableTreeNode {
       // Need to work with Entrys
       BasicTreeNode n1 = null;
       BasicTreeNode n2 = null;
-      n1 = ((DirectoryTreeNode)o1).getBasicTreeNode();
-      n2 = ((DirectoryTreeNode)o2).getBasicTreeNode();
+      n1 = ((EntityTreeNode)o1).getBasicTreeNode();
+      n2 = ((EntityTreeNode)o2).getBasicTreeNode();
       // need to add logic for folders
       return n1.getLabel().compareToIgnoreCase(n2.getLabel());
     }

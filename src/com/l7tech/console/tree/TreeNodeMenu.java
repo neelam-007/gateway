@@ -38,7 +38,7 @@ public class TreeNodeMenu extends JPopupMenu {
    * @return JpopUpMenu for the node, or <CODE>null</code> if the menu
    *         cannot be created for the node.
    */
-  public static JPopupMenu forNode(DirectoryTreeNode node, ActionListener listener) {
+  public static JPopupMenu forNode(EntityTreeNode node, ActionListener listener) {
 
     Object object = node.getUserObject();
     

@@ -578,7 +578,7 @@ public class ContainerListPanel extends EditorPanel {
             }
         };
 
-        return TableRowMenu.forNode(new DirectoryTreeNode((BasicTreeNode)object), listener);
+        return TableRowMenu.forNode(new EntityTreeNode((BasicTreeNode)object), listener);
     }
 
     private class

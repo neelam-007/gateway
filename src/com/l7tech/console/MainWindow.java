@@ -516,8 +516,8 @@ public class MainWindow extends JFrame {
                      */
                     public void actionPerformed(ActionEvent event) {
                         JTree tree = getJTreeView();
-                        DirectoryTreeNode node =
-                                (DirectoryTreeNode) tree.getLastSelectedPathComponent();
+                        EntityTreeNode node =
+                                (EntityTreeNode) tree.getLastSelectedPathComponent();
 
                         if (node != null) {
                             refreshNode(node);
@@ -639,8 +639,8 @@ public class MainWindow extends JFrame {
                      */
                     public void actionPerformed(ActionEvent event) {
 
-                        DirectoryTreeNode context =
-                                (DirectoryTreeNode) getJTreeView().getModel().getRoot();
+                        EntityTreeNode context =
+                                (EntityTreeNode) getJTreeView().getModel().getRoot();
                         JDialog d = new FindDialog(MainWindow.this, true, context, listenerBroker);
                         d.setLocation(MainWindow.this.getLocationOnScreen());
                         d.show();
@@ -690,8 +690,8 @@ public class MainWindow extends JFrame {
                     /** Invoked when an action occurs.*/
                     public void actionPerformed(ActionEvent event) {
                         JTree tree = getJTreeView();
-                        DirectoryTreeNode node =
-                                (DirectoryTreeNode) tree.getLastSelectedPathComponent();
+                        EntityTreeNode node =
+                                (EntityTreeNode) tree.getLastSelectedPathComponent();
 
                         if (node != null) {
                             removeNode(node);
@@ -781,8 +781,8 @@ public class MainWindow extends JFrame {
         } catch (IOException e) {
             e.printStackTrace();
         }
-        final DirectoryTreeNode node =
-                new DirectoryTreeNode(new RootNode(rootTitle));
+        final EntityTreeNode node =
+                new EntityTreeNode(new RootNode(rootTitle));
         TreeModel treeModel = new FilteredTreeModel(node);
         getJTreeView().setRootVisible(true);
         getJTreeView().setModel(treeModel);
@@ -977,6 +977,7 @@ public class MainWindow extends JFrame {
             JSplitPane sections = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, outlookBar, js);
             //sections.setDividerLocation(150);
             sections.setOneTouchExpandable(true);
+            sections.setDividerSize(0);
             mainLeftJPanel = new JPanel(new BorderLayout());
             mainLeftJPanel.add(sections, "Center");
         }
@@ -989,14 +990,14 @@ public class MainWindow extends JFrame {
      * @return JPopupMenu
      */
     private JPopupMenu getTreeNodeJPopupMenu(final TreeNode node) {
-        if (node == null || !(node instanceof DirectoryTreeNode)) {
+        if (node == null || !(node instanceof EntityTreeNode)) {
             return null;
         }
         ActionListener listener = new ActionListener() {
             /** Invoked when an action occurs. */
             public void actionPerformed(ActionEvent e) {
                 JPanel panel = null;
-                DirectoryTreeNode dNode = (DirectoryTreeNode) node;
+                EntityTreeNode dNode = (EntityTreeNode) node;
                 Object object = dNode.getUserObject();
                 DefaultMutableTreeNode parent =
                         (DefaultMutableTreeNode) node.getParent();
@@ -1046,7 +1047,7 @@ public class MainWindow extends JFrame {
                 }
             }
         };
-        return TreeNodeMenu.forNode((DirectoryTreeNode) node, listener);
+        return TreeNodeMenu.forNode((EntityTreeNode) node, listener);
     }
 
 
@@ -1116,12 +1117,12 @@ public class MainWindow extends JFrame {
                     // do not add if never expanded
                     if (!tree.hasBeenExpanded(path)) return;
 
-                    DirectoryTreeNode pNode =
-                            (DirectoryTreeNode) tree.getLastSelectedPathComponent();
+                    EntityTreeNode pNode =
+                            (EntityTreeNode) tree.getLastSelectedPathComponent();
 
-                    DirectoryTreeNode node = new DirectoryTreeNode(newNode);
+                    EntityTreeNode node = new EntityTreeNode(newNode);
                     pNode.add(node);
-                    pNode.sortChildren(DirectoryTreeNode.DEFAULT_COMPARATOR);
+                    pNode.sortChildren(EntityTreeNode.DEFAULT_COMPARATOR);
                     DefaultTreeModel model = (DefaultTreeModel) tree.getModel();
                     model.nodeStructureChanged(pNode);
                 }
@@ -1193,7 +1194,7 @@ public class MainWindow extends JFrame {
     /**
      * Updates the right panel to edit the given node.
      */
-    private void activateBrowserPanel(DirectoryTreeNode node) {
+    private void activateBrowserPanel(EntityTreeNode node) {
 
         JPanel panel;
         // check if node/context supports listing
@@ -1227,11 +1228,11 @@ public class MainWindow extends JFrame {
      * return the context list panel for the node, or null if node
      * is not a 'listable' container.
      *
-     * @param node   DirectoryTreeNode representing the context
+     * @param node   EntityTreeNode representing the context
      * @return The <CODE>JPanel</CODE> that lists the context, null if
      *         the context does not support listing.
      */
-    private JPanel getContextListPanel(DirectoryTreeNode node) {
+    private JPanel getContextListPanel(EntityTreeNode node) {
 
         if (!node.isLeaf()) {
             cListPanel.setParentNode(getJTreeView(), node);
@@ -1249,11 +1250,11 @@ public class MainWindow extends JFrame {
     private void treeSelectionEventHandler(TreeSelectionEvent event) {
         // get the node and call panel factory
         Object object = getJTreeView().getLastSelectedPathComponent();
-        // if not DirectoryTreeNode silently return
-        if (!(object instanceof DirectoryTreeNode)) {
+        // if not EntityTreeNode silently return
+        if (!(object instanceof EntityTreeNode)) {
             return;
         }
-        DirectoryTreeNode node = (DirectoryTreeNode) object;
+        EntityTreeNode node = (EntityTreeNode) object;
         // update actions for the node
         updateActions(node);
         activateBrowserPanel(node);
@@ -1264,7 +1265,7 @@ public class MainWindow extends JFrame {
      *
      * @param node   the node to refresh
      */
-    private void refreshNode(DirectoryTreeNode node) {
+    private void refreshNode(EntityTreeNode node) {
         JTree tree = getJTreeView();
         DefaultTreeModel model = (DefaultTreeModel) tree.getModel();
 
@@ -1279,9 +1280,9 @@ public class MainWindow extends JFrame {
      *
      * @param node   the node to remove
      */
-    private void removeNode(DirectoryTreeNode node) {
+    private void removeNode(EntityTreeNode node) {
         // store the parent node to use as a panel for later
-        DirectoryTreeNode parentNode = (DirectoryTreeNode) node.getParent();
+        EntityTreeNode parentNode = (EntityTreeNode) node.getParent();
         if (!TreeNodeAction.deleteNode(node)) return;
         treeObjectListener.onDelete(node.getUserObject());
 
@@ -1295,7 +1296,7 @@ public class MainWindow extends JFrame {
      *
      * @param node   currently selected node
      */
-    private void updateActions(DirectoryTreeNode node) {
+    private void updateActions(EntityTreeNode node) {
         JMenu nMenu = getNewMenu();
         nMenu.removeAll();
         nMenu.setEnabled(false);
@@ -1527,8 +1528,8 @@ public class MainWindow extends JFrame {
                 TreePath path = tree.getSelectionPath();
                 if (path == null) return;
 
-                DirectoryTreeNode node =
-                        (DirectoryTreeNode) path.getLastPathComponent();
+                EntityTreeNode node =
+                        (EntityTreeNode) path.getLastPathComponent();
                 if (node == null) return;
                 int keyCode = e.getKeyCode();
                 if (keyCode == KeyEvent.VK_DELETE) {

@@ -198,7 +198,7 @@ public class GroupPanel extends EditorPanel {
     private JLabel getNameLabel() {
         // If label not already created
         if (nameLabel != null) return nameLabel;
-         // Create label
+        // Create label
         nameLabel = new JLabel();
 
         // Return label
@@ -368,7 +368,7 @@ public class GroupPanel extends EditorPanel {
      * Enables or disables the apply and revert button based
      * on whether or not data on the form has been changed
      */
-    public void doDirty() {
+    public void setDirty() {
         // If entity not already changed
         if (!formDirty) {
             // Enable buttons
@@ -445,7 +445,7 @@ public class GroupPanel extends EditorPanel {
      *
      * @return boolean - the indication if the changes were applied successfully
      */
-    private boolean collectAndSaveChanges() throws RemoteException {
+    private boolean collectAndSaveChanges() {
         boolean result = true;
 
         // Perform final validations
@@ -552,7 +552,7 @@ public class GroupPanel extends EditorPanel {
                 }
             };
 
-    ;
+
 }
 
 

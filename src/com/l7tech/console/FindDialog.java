@@ -5,7 +5,7 @@ import com.l7tech.console.panels.PanelListenerAdapter;
 import com.l7tech.console.panels.PanelListenerBroker;
 import com.l7tech.console.panels.Utilities;
 import com.l7tech.console.table.ContextListTableModel;
-import com.l7tech.console.tree.DirectoryTreeNode;
+import com.l7tech.console.tree.EntityTreeNode;
 import com.l7tech.console.tree.EntityHeaderNode;
 import org.apache.log4j.Category;
 
@@ -102,7 +102,7 @@ public class FindDialog extends JDialog {
    * @see javax.swing.JDialog
    */
   public FindDialog(Frame parent, boolean modal,
-                    DirectoryTreeNode n, PanelListenerBroker broker) {
+                    EntityTreeNode n, PanelListenerBroker broker) {
     super(parent, modal);
     if (n == null) {
       throw new NullPointerException("node");

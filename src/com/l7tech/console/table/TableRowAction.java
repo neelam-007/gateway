@@ -3,7 +3,7 @@ package com.l7tech.console.table;
 
 import com.l7tech.console.tree.AdminFolderNode;
 import com.l7tech.console.tree.BasicTreeNode;
-import com.l7tech.console.tree.DirectoryTreeNode;
+import com.l7tech.console.tree.EntityTreeNode;
 import com.l7tech.console.tree.EntityHeaderNode;
 import com.l7tech.console.tree.ProviderNode;
 import com.l7tech.console.tree.ProvidersFolderNode;
@@ -60,12 +60,12 @@ public class TableRowAction {
     }
 
     /**
-     * Deletes the given DirectoryTreeNode
+     * Deletes the given EntityTreeNode
      *
      * @param node - the node to be deleted
      * @return true if deleted, false otherwise
      */
-    public static boolean deleteNode(DirectoryTreeNode node, boolean askQuestion) {
+    public static boolean deleteNode(EntityTreeNode node, boolean askQuestion) {
         boolean rb = false;
         // Dispatch deletion based on the actual node type
         Object object = node.getUserObject();
@@ -76,7 +76,7 @@ public class TableRowAction {
     }
 
     /**
-     * Deletes the given DirectoryTreeNode
+     * Deletes the given EntityTreeNode
      *
      * @param dobj - the node to be deleted
      * @param askQuestion - the flag indicating if the "Are you sure..."
@@ -101,16 +101,16 @@ public class TableRowAction {
      *               can refresh
      * @return true if the node can be refreshed, false otherwise
      */
-    public static boolean canRefresh(DirectoryTreeNode node) {
+    public static boolean canRefresh(EntityTreeNode node) {
         return false;
     }
 
     /**
-     * @param node   DirectoryTreeNode  the node to determine if it
+     * @param node   EntityTreeNode  the node to determine if it
      *               has properties
      * @return true if the node has properties, false otherwise
      */
-    public static boolean hasProperties(DirectoryTreeNode node) {
+    public static boolean hasProperties(EntityTreeNode node) {
         Object o = node.getUserObject();
         if (o instanceof BasicTreeNode) {
             return hasProperties((BasicTreeNode) o);
@@ -129,11 +129,11 @@ public class TableRowAction {
 
     /**
      *
-     * @param node   DirectoryTreeNode  the node to determine if it
+     * @param node   EntityTreeNode  the node to determine if it
      *               has properties
      * @return true if the node can be expanded, false otherwise
      */
-    public static boolean isBrowseable(DirectoryTreeNode node) {
+    public static boolean isBrowseable(EntityTreeNode node) {
         Object o = node.getUserObject();
         if (o instanceof BasicTreeNode) {
             return isBrowseable((BasicTreeNode) o);
@@ -171,7 +171,7 @@ public class TableRowAction {
      *               can be deleted
      * @return true if the node can be deleted, false otherwise
      */
-    public static boolean canDelete(DirectoryTreeNode node) {
+    public static boolean canDelete(EntityTreeNode node) {
         Object object = node.getUserObject();
 
         if (object instanceof BasicTreeNode) {

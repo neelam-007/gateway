@@ -3,12 +3,19 @@ package com.l7tech.console.panels;
 import com.l7tech.console.EditorDialog;
 import com.l7tech.console.text.FilterDocument;
 import com.l7tech.objectmodel.EntityHeader;
+import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.SaveException;
+import com.l7tech.objectmodel.imp.EntityHeaderImp;
+import com.l7tech.identity.*;
+import com.l7tech.identity.internal.imp.GroupImp;
+import com.l7tech.util.Locator;
 
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
 import java.util.Locale;
 import java.util.ResourceBundle;
+import java.util.Collection;
 
 /**
  * New Group dialog.
@@ -37,6 +44,7 @@ public class NewGroupDialog extends JDialog {
     /* the panel listener */
     private PanelListener panelListener;
 
+    Group group = new GroupImp();
     /**
      * Create a new NewUserDialog fdialog for a given Company
      *
@@ -207,23 +215,24 @@ public class NewGroupDialog extends JDialog {
      * @return the CheckBox component
      */
     private JCheckBox getAdditionalProperties() {
-        if (additionalPropertiesCheckBox == null) {
-            additionalPropertiesCheckBox = new JCheckBox(resources.getString("additionalProperties.label"));
-            additionalPropertiesCheckBox.setHorizontalTextPosition(SwingConstants.LEADING);
+        if (additionalPropertiesCheckBox != null)
+            return additionalPropertiesCheckBox;
 
-            additionalPropertiesCheckBox.addItemListener(new ItemListener() {
-                /**
-                 * Invoked when an item has been selected or deselected.
-                 * The code written for this method performs the operations
-                 * that need to occur when an item is selected (or deselected).
-                 */
-                public void itemStateChanged(ItemEvent e) {
-                    if (e.getStateChange() == e.SELECTED) {
-                        createThenEdit = true;
-                    }
+        additionalPropertiesCheckBox = new JCheckBox(resources.getString("additionalProperties.label"));
+        additionalPropertiesCheckBox.setHorizontalTextPosition(SwingConstants.LEADING);
+
+        additionalPropertiesCheckBox.addItemListener(new ItemListener() {
+            /**
+             * Invoked when an item has been selected or deselected.
+             * The code written for this method performs the operations
+             * that need to occur when an item is selected (or deselected).
+             */
+            public void itemStateChanged(ItemEvent e) {
+                if (e.getStateChange() == ItemEvent.SELECTED) {
+                    createThenEdit = true;
                 }
-            });
-        }
+            }
+        });
 
         return additionalPropertiesCheckBox;
     }
@@ -287,7 +296,7 @@ public class NewGroupDialog extends JDialog {
 
         if (actionCommand != null) {
             if (actionCommand instanceof ActionEvent) {
-                cmd = ((ActionEvent) actionCommand).getActionCommand();
+                cmd = ((ActionEvent)actionCommand).getActionCommand();
             } else {
                 cmd = actionCommand.toString();
             }
@@ -309,6 +318,25 @@ public class NewGroupDialog extends JDialog {
 
     /** insert the Group */
     private void insertGroup() {
+        group.setName(groupIdTextField.getText());
+        SwingUtilities.invokeLater(
+                new Runnable() {
+                    public void run() {
+                        try {
+                            EntityHeader header = new EntityHeaderImp();
+                            header.setType(Group.class);
+                            header.setName(group.getName());
+                            //getInternalGroupManager().save(group);
+                            panelListener.onInsert(header);
+                            insertSuccess = true;
+                        /*} catch (SaveException e) {
+                            e.printStackTrace();*/
+                        } catch (RuntimeException e) {
+                            e.printStackTrace();
+                        }
+                        NewGroupDialog.this.dispose();
+                    }
+                });
 
     }
 
@@ -328,9 +356,7 @@ public class NewGroupDialog extends JDialog {
                 SwingUtilities.invokeLater(
                         new Runnable() {
                             public void run() {
-
                                 JPanel panel = null;
-
                                 if (panel == null) return;
                                 EditorDialog dialog = new EditorDialog(parent, panel);
                                 dialog.pack();
@@ -350,6 +376,32 @@ public class NewGroupDialog extends JDialog {
      */
     private boolean validateInput() {
         return true;
+    }
+
+    /**
+     *
+     * @return the internal user manager
+     * @throws RuntimeException if internal user manager could not be obtained
+     */
+    private GroupManager getInternalGroupManager()
+            throws RuntimeException {
+        try {
+            IdentityProviderConfigManager ipc =
+                    (IdentityProviderConfigManager)Locator.
+                    getDefault().lookup(IdentityProviderConfigManager.class);
+            if (ipc == null) {
+                throw new RuntimeException("Could not find registered " + IdentityProviderConfigManager.class);
+            }
+            Collection ips = ipc.findAllIdentityProviders();
+
+            if (ips.isEmpty()) {
+                throw new RuntimeException("Could not retrieve identity providers.");
+            }
+            IdentityProvider iprovider = (IdentityProvider)ips.iterator().next();
+            return iprovider.getGroupManager();
+        } catch (FindException e) {
+            throw new RuntimeException(e);
+        }
     }
 
 }
