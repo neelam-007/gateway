@@ -19,6 +19,7 @@ import com.l7tech.policy.assertion.credential.http.HttpDigest;
 import com.l7tech.policy.assertion.credential.wss.WssBasic;
 import com.l7tech.policy.assertion.identity.PermissiveIdentityAssertion;
 import com.l7tech.policy.assertion.xmlsec.RequestWssX509Cert;
+import com.l7tech.policy.assertion.xmlsec.SamlSecurity;
 import com.l7tech.policy.assertion.xmlsec.SecureConversation;
 
 import java.util.Arrays;
@@ -47,6 +48,7 @@ public class DefaultGatewayPolicies {
             new SecureConversation(),
             new RequestWssX509Cert(),
             new HttpClientCert(),
+            new SamlSecurity(),
             new HttpDigest(),
             new AllAssertion(Arrays.asList(new Assertion[] {
                 // SSL required for cleartext credential sources
@@ -61,6 +63,7 @@ public class DefaultGatewayPolicies {
         certBasedCredentialSources = new OneOrMoreAssertion(Arrays.asList(new Assertion[] {
             // Certificate-based credential sources only
             new RequestWssX509Cert(),
+            new SamlSecurity(),
             new HttpClientCert()
         }));
 
