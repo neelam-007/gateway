@@ -1,6 +1,5 @@
 package com.l7tech.identity;
 
-import com.l7tech.identity.imp.IdentityProviderConfigImp;
 import com.l7tech.identity.internal.imp.GroupImp;
 import com.l7tech.identity.internal.imp.UserImp;
 import com.l7tech.objectmodel.EntityHeader;
@@ -87,17 +86,9 @@ public class StubDataStore {
 
 
     private IdentityProviderConfig initialInternalProvider(XMLEncoder encoder) {
-        IdentityProviderConfig config = new IdentityProviderConfigImp();
+        IdentityProviderConfig config = new IdentityProviderConfig(IdentityProviderType.INTERNAL);
         config.setOid(nextObjectId());
         config.setDescription("Internal identity provider (stub)");
-
-        /*
-        // emil, i leave this commented so you can see what i did
-        IdentityProviderType type = new IdentityProviderTypeImp();
-        type.setDescription("Internal identity provider test stub");
-        type.setClassName(IdentityProviderStub.class.getName());
-        config.setType(type);
-        */
         encoder.writeObject(config);
         populate(config);
         return config;
