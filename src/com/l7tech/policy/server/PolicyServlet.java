@@ -180,27 +180,32 @@ public class PolicyServlet extends AuthenticatableHttpServlet {
         byte[] cert = KeystoreUtils.getInstance().readRootCert();
         logger.fine("Sending root cert");
 
-        MessageDigest md5 = MessageDigest.getInstance("MD5");
-
         // Insert Cert-Check-NNN: headers if we can.
         if (username != null) {
+            MessageDigest md5 = MessageDigest.getInstance("MD5");
+
             ArrayList checks = findCheckInfos(username);
             for (Iterator i = checks.iterator(); i.hasNext();) {
                 CheckInfo info = (CheckInfo) i.next();
 
-                if (info == null || info.ha1 == null) {
-                    logger.warning("Server does not have access to requestor's password and cannot send a cert check.");
-                    continue;
-                }
+                if ( info != null ) {
+                    String hash = null;
+                    if (info.ha1 == null) {
+                        logger.warning("Server does not have access to requestor's password and cannot send a cert check.");
+                        hash = SecureSpanConstants.NOPASS;
+                    } else {
+                        md5.reset();
+                        md5.update(info.ha1.getBytes());
+                        md5.update(nonce.getBytes());
+                        md5.update(String.valueOf(info.idProvider).getBytes());
+                        md5.update(cert);
+                        md5.update(info.ha1.getBytes());
+                        hash = HexUtils.encodeMd5Digest( md5.digest() );
+                    }
 
-                md5.reset();
-                md5.update(info.ha1.getBytes());
-                md5.update(nonce.getBytes());
-                md5.update(String.valueOf(info.idProvider).getBytes());
-                md5.update(cert);
-                md5.update(info.ha1.getBytes());
-                response.addHeader(SecureSpanConstants.HttpHeaders.CERT_CHECK_PREFIX + info.idProvider,
-                                   HexUtils.encodeMd5Digest(md5.digest()) + "; " + info.realm);
+                    response.addHeader(SecureSpanConstants.HttpHeaders.CERT_CHECK_PREFIX + info.idProvider,
+                                       hash + "; " + info.realm);
+                }
             }
         }
 
