@@ -1,0 +1,111 @@
+<?xml version="1.0"?>
+<!DOCTYPE hibernate-mapping PUBLIC
+        "-//Hibernate/Hibernate Mapping DTD//EN"
+        "http://hibernate.sourceforge.net/hibernate-mapping-1.1.dtd">
+
+<hibernate-mapping>
+    <class name="com.l7tech.ssg.objectmodel.ObjectIdentity" table="object-identity">
+        <subclass name="com.l7tech.ssg.objectmodel.imp.ObjectIdentityImp"/>
+        <id name="oid" column="oid" type="long"/>
+        <property name="tableName" type="string"/>
+        <property name="keySeed" type="long"/>
+        <property name="keyBatchSize" type="int"/>
+        <property name="classSeed" type="int"/>
+        <property name="serverSeed" type="int"/>
+    </class>
+
+    <class name="com.l7tech.ssg.objectmodel.Address" table="address">
+        <subclass name="com.l7tech.ssg.objectmodel.imp.AddressImp"/>
+        <id name="oid" column="oid" type="long">
+                <generator class="hilo.long"/>
+        </id>
+
+        <property name="address" type="string"/>
+        <property name="address2" type="string"/>
+        <property name="city" type="string"/>
+        <property name="state" type="com.l7tech.ssg.objectmodel.State"/>
+        <property name="country" type="com.l7tech.ssg.objectmodel.Country"/>
+        <property name="postalCode" type="string"/>
+    </class>
+
+    <class name="com.l7tech.ssg.objectmodel.Country" table="country">
+        <subclass name="com.l7tech.ssg.objectmodel.imp.CountryImp"/>
+        <id name="oid" column="oid" type="long">
+            <generator class="hilo.long"/>
+        </id>
+        <property name="code" type="string"/>
+    </class>
+
+    <class name="com.l7tech.ssg.objectmodel.State" table="state">
+        <subclass name="com.l7tech.ssg.objectmodel.imp.StateImp"/>
+        <id name="oid" column="oid" type="long">
+            <generator class="hilo.long"/>
+        </id>
+        <property name="code" type="string"/>
+        <property name="country" type="com.l7tech.ssg.objectmodel.Country"/>
+    </class>
+
+    <class name="com.l7tech.ssg.objectmodel.InternalGroup" table="internal_group">
+        <subclass name="com.l7tech.ssg.objectmodel.imp.InternalGroupImp"/>
+
+        <id name="oid" column="oid" type="long">
+            <generator class="hilo.long"/>
+        </id>
+        <property name="description" type="string"/>
+        <property name="members" type="set"/>
+    </class>
+
+    <class name="com.l7tech.ssg.objectmodel.InternalOrganization" table="internal_organization">
+        <subclass name="com.l7tech.ssg.objectmodel.imp.InternalOrganizationImp"/>
+
+        <id name="oid" column="oid" type="long">
+            <generator class="hilo.long"/>
+        </id>
+        <property name="users" type="set"/>
+        <property name="address" type="com.l7tech.ssg.objectmodel.Address"/>
+        <property name="mailingAddress" type="com.l7tech.ssg.objectmodel.Address"/>
+        <property name="billingAddress" type="com.l7tech.ssg.objectmodel.Address"/>
+    </class>
+
+    <class name="com.l7tech.ssg.objectmodel.InternalUser" table="internal_organization">
+        <subclass name="com.l7tech.ssg.objectmodel.imp.InternalUserImp"/>
+
+        <id name="oid" column="oid" type="long">
+            <generator class="hilo.long"/>
+        </id>
+        <property name="login" type="string"/>
+        <property name="password" type="string"/>
+        <property name="firstName" type="string"/>
+        <property name="lastName" type="string"/>
+        <property name="email" type="string"/>
+        <property name="title" type="string"/>
+        <property name="department" type="string"/>
+        <property name="organization" type="com.l7tech.ssg.objectmodel.InternalOrganization"/>
+        <property name="address" type="com.l7tech.ssg.objectmodel.Address"/>
+        <property name="billingAddress" type="com.l7tech.ssg.objectmodel.Address"/>
+        <property name="mailingAddress" type="com.l7tech.ssg.objectmodel.Address"/>
+        <property name="groups" type="set"/>
+    </class>
+
+    <class name="com.l7tech.ssg.objectmodel.IdentityProvider" table="identity_provider">
+        <subclass name="com.l7tech.ssg.objectmodel.imp.IdentityProviderImp"/>
+
+        <id name="oid" column="oid" type="long">
+            <generator class="hilo.long"/>
+        </id>
+
+        <property name="description" type="string"/>
+        <property name="type" type="com.l7tech.ssg.objectmodel.IdentityProviderType"/>
+    </class>
+
+    <class name="com.l7tech.ssg.objectmodel.IdentityProviderType" table="identity_provider_type">
+        <subclass name="com.l7tech.ssg.objectmodel.imp.IdentityProviderTypeImp"/>
+
+        <id name="oid" column="oid" type="long">
+            <generator class="hilo.long"/>
+        </id>
+        <property name="description" type="string"/>
+        <property name="className" type="string"/>
+    </class>
+
+</hibernate-mapping>

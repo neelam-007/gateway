@@ -1,0 +1,26 @@
+<?xml version='1.0' encoding='utf-8'?>
+<!DOCTYPE hibernate-configuration PUBLIC
+        "-//Hibernate/Hibernate Configuration DTD//EN"
+ "http://hibernate.sourceforge.net/hibernate-configuration.dtd">
+
+<hibernate-configuration>
+    <!-- shared properties -->
+    <property name="show_sql">false</property>
+    <property name="use_outer_join">true</property>
+    <property name="jta.UserTransaction">
+        java:comp/UserTransaction/
+    </property>
+
+    <!-- a SessionFactory instance listed as /jndi/name -->
+    <session-factory name="java:comp/env/ssgSessionFactory">
+
+        <!-- properties for this SessionFactory only -->
+        <property name="connection.datasource">java:comp/env/jdbc/ssg</property>
+        <property name="dialect">cirrus.hibernate.sql.MySQLDialect</property>
+
+        <!-- mapping files -->
+        <mapping resource="SSG.hbm.xml"/>
+
+    </session-factory>
+
+</hibernate-configuration>
