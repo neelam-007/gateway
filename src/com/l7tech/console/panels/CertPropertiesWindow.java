@@ -174,7 +174,7 @@ public class CertPropertiesWindow extends JDialog {
         }
 
         // populate the general data
-        SimpleDateFormat sdf = new SimpleDateFormat("mm/dd/yyyy");
+        SimpleDateFormat sdf = new SimpleDateFormat("MM/dd/yyyy");
         Calendar cal = Calendar.getInstance();
         cal.setTime(cert.getNotAfter());
         certExpiredOnTextField.setText(sdf.format(cal.getTime()));
@@ -336,8 +336,8 @@ public class CertPropertiesWindow extends JDialog {
         final JTextField _16;
         _16 = new JTextField();
         certExpiredOnTextField = _16;
-        _16.setEditable(false);
         _16.setText("");
+        _16.setEditable(false);
         _7.add(_16, new com.intellij.uiDesigner.core.GridConstraints(3, 1, 1, 1, 8, 1, 6, 0, null, new Dimension(150, -1), null));
         final JScrollPane _17;
         _17 = new JScrollPane();

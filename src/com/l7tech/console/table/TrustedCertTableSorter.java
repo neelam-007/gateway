@@ -107,7 +107,7 @@ public class TrustedCertTableSorter extends FilteredDefaultTableModel {
                 return ((TrustedCert) sortedData[row]).getName();
              case CertManagerWindow.CERT_TABLE_CERT_EXPIRATION_DATE_COLUMN_INDEX:
                 try {
-                    SimpleDateFormat sdf = new SimpleDateFormat("mm/dd/yyyy");
+                    SimpleDateFormat sdf = new SimpleDateFormat("MM/dd/yyyy");
                     Calendar cal = Calendar.getInstance();
                     cal.setTime(((TrustedCert)sortedData[row]).getCertificate().getNotAfter());
                     return sdf.format(cal.getTime());
