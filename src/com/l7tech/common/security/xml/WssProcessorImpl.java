@@ -118,11 +118,7 @@ public class WssProcessorImpl implements WssProcessor {
 
         // Process elements one by one
         Element securityChildToProcess = XmlUtil.findFirstChildElement(cntx.releventSecurityHeader);
-        //NodeList securityChildren = cntx.releventSecurityHeader.getElementsByTagName("*");
-        //for (int i = 0; i < securityChildren.getLength(); i++) {
         while (securityChildToProcess != null) {
-            //Element securityChildToProcess = (Element)securityChildren.item(i);
-
             if (securityChildToProcess.getLocalName().equals(SoapUtil.ENCRYPTEDKEY_EL_NAME)) {
                 processEncryptedKey(securityChildToProcess, recipientKey,
                                     recipientCert.getExtensionValue("2.5.29.14"), cntx);
@@ -132,7 +128,7 @@ public class WssProcessorImpl implements WssProcessor {
                 processBinarySecurityToken(securityChildToProcess, cntx);
             } else if (securityChildToProcess.getLocalName().equals(SoapUtil.SIGNATURE_EL_NAME)) {
                 processSignature(securityChildToProcess, cntx);
-            } else if (securityChildToProcess.getLocalName().equals("UsernameToken")) {
+            } else if (securityChildToProcess.getLocalName().equals(SoapUtil.USERNAME_TOK_EL_NAME)) {
                 processUsernameToken(securityChildToProcess, cntx);
             } else {
                 // Unhandled child elements of the Security Header
@@ -158,16 +154,16 @@ public class WssProcessorImpl implements WssProcessor {
 
         // Backward compatibility - if we didn't see a timestamp in the security header, look up in the soap header
         if (cntx.timestamp == null) {
-            Element header = XmlUtil.findOnlyOneChildElementByName(soapMsg.getDocumentElement(),
+            Element header = (Element)cntx.releventSecurityHeader.getParentNode();
+                    /*XmlUtil.findOnlyOneChildElementByName(soapMsg.getDocumentElement(),
                                                                    currentSoapNamespace,
-                                                                   SoapUtil.HEADER_EL_NAME);
+                                                                   SoapUtil.HEADER_EL_NAME);*/
             // (header can't be null or we wouldn't be here)
             Element timestamp = XmlUtil.findFirstChildElementByName(header,
                                                                     SoapUtil.WSU_URIS_ARRAY,
                                                                     SoapUtil.TIMESTAMP_EL_NAME);
             if (timestamp != null)
                 processTimestamp(cntx, timestamp);
-
         }
 
         // remove Security element altogether
