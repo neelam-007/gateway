@@ -33,6 +33,7 @@ public class ServerConfig {
     private static final String PARAM_SERVICE_RESOLVERS = "ServiceResolvers";
     private static final String PARAM_SERVER_ID         = "ServerId";
     private static final String PARAM_KEYSTORE          = "KeystorePropertiesPath";
+    private static final String PARAM_LDAP_TEMPLATES    = "LdapTemplatesPath";
     private static final String PARAM_HIBERNATE         = "KeystorePropertiesPath";
     private static final String PARAM_IPS               = "IpAddresses";
     private static final String PARAM_HTTP_PORTS        = "HttpPorts";
@@ -44,6 +45,7 @@ public class ServerConfig {
     private static final String JNDI_SERVICE_RESOLVERS  = JNDI_PREFIX + PARAM_SERVICE_RESOLVERS;
     private static final String JNDI_SERVER_ID          = JNDI_PREFIX + PARAM_SERVER_ID;
     private static final String JNDI_KEYSTORE           = JNDI_PREFIX + PARAM_KEYSTORE;
+    private static final String JNDI_LDAP_TEMPLATES     = JNDI_PREFIX + PARAM_LDAP_TEMPLATES;
     private static final String JNDI_HIBERNATE          = JNDI_PREFIX + PARAM_HIBERNATE;
     private static final String JNDI_IPS                = JNDI_PREFIX + PARAM_IPS;
     private static final String JNDI_HTTP_PORTS         = JNDI_PREFIX + PARAM_HTTP_PORTS;
@@ -54,6 +56,7 @@ public class ServerConfig {
     public static final String PROP_SERVER_ID = "com.l7tech.server.serverId";
     public static final String PROP_RESOLVERS = "com.l7tech.server.serviceResolvers";
     public static final String PROP_KEYSTORE_PROPS_PATH = "com.l7tech.server.keystorePropertiesPath";
+    public static final String PROP_LDAP_TEMPLATES_PATH = "com.l7tech.server.ldapTemplatesPath";
     public static final String PROP_HIBERNATE_PROPS_PATH = "com.l7tech.server.hibernatePropertiesPath";
     public static final String PROP_IPS = "com.l7tech.server.ipAddresses";
     public static final String PROP_HTTP_PORTS = "com.l7tech.server.httpPorts";
@@ -61,6 +64,7 @@ public class ServerConfig {
     public static final String PROP_HOSTNAME = "com.l7tech.server.hostname";
     public static final String PROP_SYSTEMPROPS = "com.l7tech.server.systemPropertiesPath";
 
+    public static final String DEFAULT_LDAP_TEMPLATES_PATH = "/ssg/etc/ldapTemplates";
     public static final String DEFAULT_KEYSTORE_PROPS_PATH = "/ssg/etc/conf/keystore.properties";
     public static final String DEFAULT_HIBERNATE_PROPS_PATH = "/ssg/etc/conf/hibernate.properties";
     public static final String DEFAULT_SYSTEMPROPS_PATH = "/ssg/etc/conf/system.properties";
@@ -102,7 +106,8 @@ public class ServerConfig {
         _serverBootTime = System.currentTimeMillis();
 
         _serviceResolvers = getProperty( PROP_RESOLVERS, JNDI_SERVICE_RESOLVERS, DEFAULT_SERVICE_RESOLVERS );
-        _keystorePropertiesPath = getProperty( PROP_KEYSTORE_PROPS_PATH, JNDI_KEYSTORE, DEFAULT_KEYSTORE_PROPS_PATH );
+        _keystorePropertiesPath = getProperty( PROP_KEYSTORE_PROPS_PATH, JNDI_LDAP_TEMPLATES, DEFAULT_KEYSTORE_PROPS_PATH );
+        _ldapTemplatesPath = getProperty( PROP_LDAP_TEMPLATES_PATH, JNDI_KEYSTORE, DEFAULT_LDAP_TEMPLATES_PATH );
         _hibernatePropertiesPath = getProperty( PROP_HIBERNATE_PROPS_PATH, JNDI_HIBERNATE, DEFAULT_HIBERNATE_PROPS_PATH );
         _systemPropertiesPath = getProperty( PROP_SYSTEMPROPS, JNDI_SYSTEMPROPS, DEFAULT_SYSTEMPROPS_PATH );
 
@@ -257,6 +262,10 @@ public class ServerConfig {
         return _serverBootTime;
     }
 
+    public String getLdapTemplatesPath() {
+        return _ldapTemplatesPath;
+    }
+
     public String getKeystorePropertiesPath() {
         return _keystorePropertiesPath;
     }
@@ -281,6 +290,7 @@ public class ServerConfig {
     private long _serverBootTime;
     private String _serviceResolvers;
     private String _keystorePropertiesPath;
+    private String _ldapTemplatesPath;
     private String _hibernatePropertiesPath;
     private String _systemPropertiesPath;
     private ArrayList _ipProtocolPorts = new ArrayList();
