@@ -2,9 +2,7 @@ package com.l7tech.service;
 
 import com.l7tech.objectmodel.*;
 import com.l7tech.message.Request;
-
-import java.util.Map;
-import java.util.HashMap;
+import com.l7tech.service.resolution.ServiceResolutionException;
 
 /**
  * Layer 7 Technologies, inc.
@@ -64,7 +62,7 @@ public interface ServiceManager extends EntityManager {
      * @param request
      * @return
      */
-    public PublishedService resolveService( Request request );
+    public PublishedService resolveService( Request request ) throws ServiceResolutionException;
 
     // NOTE:
     // add methods as they become necessary
