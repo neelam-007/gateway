@@ -6,6 +6,7 @@
 
 package com.l7tech.proxy.datamodel;
 
+import com.l7tech.common.security.xml.TokenServiceClient;
 import com.l7tech.common.security.xml.WssDecorator;
 import com.l7tech.common.util.HexUtils;
 import com.l7tech.common.util.SoapUtil;
@@ -21,8 +22,8 @@ import java.security.GeneralSecurityException;
 import java.security.SecureRandom;
 import java.util.LinkedHashMap;
 import java.util.Map;
-import java.util.logging.Logger;
 import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Holds request state while the client proxy is processing it.
@@ -331,42 +332,65 @@ public class PendingRequest {
         }
     }
 
-    private void establishSecureConversationSession() {
-        // TODO establish session
+    private void establishSecureConversationSession()
+            throws OperationCanceledException, GeneralSecurityException, ClientCertificateException,
+            KeyStoreCorruptException, PolicyRetryableException, BadCredentialsException,
+            IOException
+    {
+        getCredentials();
+        prepareClientCertificate();
+        Ssg ssg = getSsg();
         log.log(Level.INFO, "Establishing new WS-SecureConversation session with Gateway " + ssg.toString());
-        log.log(Level.WARNING, "Warning: token server and client not implemented yet; using hardcoded session parameters");
-        ssg.secureConversationId("http://www.l7tech.com/uuid/sessionid/123");
-        ssg.secureConversationSharedSecret(new byte[] {5,2,4,5,
-                                                       8,7,9,6,
-                                                       32,4,1,55,
-                                                       8,7,77,7});
+        TokenServiceClient.SecureConversationSession s =
+                TokenServiceClient.obtainSecureConversationSession(ssg.getSsgAddress(),
+                                                                   ssg.getSsgPort(),
+                                                                   SsgKeyStoreManager.getClientCert(ssg),
+                                                                   SsgKeyStoreManager.getClientCertPrivateKey(ssg),
+                                                                   SsgKeyStoreManager.getServerCert(ssg));
+        log.log(Level.INFO, "WS-SecureConversation session established with Gateway " + ssg.toString() + "; session ID=" + s.getSessionId());
+        ssg.secureConversationId(s.getSessionId());
+        ssg.secureConversationSharedSecret(s.getSharedSecret());
+        secureConversationId = s.getSessionId();
+        secureConversationSharedSecret = s.getSharedSecret();
+        // TODO support session expiry
+    }
+
+    /**
+     * Get the secure conversation ID.
+     * @return The secure conversation session ID for this session, or null if there isn't one.
+     */
+    public String getSecureConversationId() {
+        if (secureConversationId != null)
+            return secureConversationId;
+        return secureConversationId = ssg.secureConversationId();
     }
 
     /**
      * Get the secure conversation ID used for this request.
      * Establishes a new session with the SSG if necessary.
+     * @return the secure conversation ID for this session, which may be newly created.  Never null.
      */
-    public String getSecureConversationId() {
+    public String getOrCreateSecureConversationId()
+            throws OperationCanceledException, GeneralSecurityException, IOException, KeyStoreCorruptException,
+                   ClientCertificateException, BadCredentialsException, PolicyRetryableException
+    {
         if (secureConversationId != null)
             return secureConversationId;
         synchronized (ssg) {
             if (ssg.secureConversationId() == null)
                 establishSecureConversationSession();
-            return secureConversationId = ssg.secureConversationId();
+            return secureConversationId;
         }
     }
 
     /**
      * Get the secure conversation shared secret used for this request.
-     * Establishes a new session with the SSG if necessary.
+     * @return the secure conversation shared secret for this session, or null if there isn't one.
      */
-    public byte[] getSecureConversationSharedSecret() {
+    public byte[] getSecureConversationSharedSecret()
+    {
         if (secureConversationSharedSecret != null)
             return secureConversationSharedSecret;
-        synchronized (ssg) {
-            if (ssg.secureConversationSharedSecret() == null)
-                establishSecureConversationSession();
-            return secureConversationSharedSecret = ssg.secureConversationSharedSecret();
-        }
+        return secureConversationSharedSecret = ssg.secureConversationSharedSecret();
     }
 }

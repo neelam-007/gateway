@@ -16,6 +16,7 @@ import org.xml.sax.SAXException;
 
 import javax.xml.soap.SOAPConstants;
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.URL;
 import java.net.URLConnection;
 import java.security.GeneralSecurityException;
@@ -44,9 +45,9 @@ public class TokenServiceClient {
      * @param clientPrivateKey   the private key of the certificate to use to sign the request
      * @param desiredTokenType   the token type being applied for
      * @return a signed SOAP message containing a wst:RequestSecurityToken
-     * @throws CertificateException
+     * @throws CertificateException if ther eis a problem with the clientCertificate
      */
-    public Document createRequestSecurityTokenMessage(X509Certificate clientCertificate,
+    public static Document createRequestSecurityTokenMessage(X509Certificate clientCertificate,
                                                       PrivateKey clientPrivateKey,
                                                       String desiredTokenType)
             throws CertificateException
@@ -95,42 +96,53 @@ public class TokenServiceClient {
         Date getExpiryDate();
     }
 
-    public SecureConversationSession obtainSecureConversationSession(String ssgHostname,
+    public static SecureConversationSession obtainSecureConversationSession(String ssgHostname,
+                                                                            int ssgPort,
                                                                      X509Certificate clientCertificate,
                                                                      PrivateKey clientPrivateKey,
                                                                      X509Certificate serverCertificate)
-            throws IOException, GeneralSecurityException, InvalidDocumentFormatException, WssProcessor.ProcessorException
+            throws IOException, GeneralSecurityException
     {
-        URL url = new URL("http", ssgHostname, SecureSpanConstants.TOKEN_SERVICE_FILE);
+        URL url = new URL("http", ssgHostname, ssgPort, SecureSpanConstants.TOKEN_SERVICE_FILE);
         Document requestDoc = createRequestSecurityTokenMessage(clientCertificate, clientPrivateKey,
                                                                 TOKENTYPE_SECURITYCONTEXT);
-        log.log(Level.INFO, "Applying for new WS-SecureConversation SecurityContextToken for " + clientCertificate.getSubjectDN());
+        log.log(Level.INFO, "Applying for new WS-SecureConversation SecurityContextToken for " + clientCertificate.getSubjectDN() +
+                            " with token server " + url.toString());
 
         URLConnection conn = url.openConnection();
-        conn.setAllowUserInteraction(false);
-        conn.setDoInput(true);
         conn.setDoOutput(true);
+        conn.setAllowUserInteraction(false);
         conn.setRequestProperty(XmlUtil.CONTENT_TYPE, XmlUtil.TEXT_XML);
         XmlUtil.nodeToOutputStream(requestDoc, conn.getOutputStream());
-        if (!XmlUtil.TEXT_XML.equalsIgnoreCase(conn.getContentType()))
+        int len = conn.getContentLength();
+        log.log(Level.FINEST, "Token server response content length=" + len);
+        String contentType = conn.getContentType();
+        if (contentType == null || contentType.indexOf(XmlUtil.TEXT_XML) < 0)
             throw new IOException("Token server returned unsupported content type " + conn.getContentType());
         Document response = null;
         try {
             response = XmlUtil.parse(conn.getInputStream());
         } catch (SAXException e) {
-            throw new InvalidDocumentFormatException("Unable to parse RequestSecurityTokenResponse", e);
+            throw new CausedIOException("Unable to parse RequestSecurityTokenResponse", e);
         }
-        Object result = parseRequestSecurityTokenResponse(response,
-                                                          clientCertificate,
-                                                          clientPrivateKey,
-                                                          serverCertificate);
+        Object result = null;
+        try {
+            result = parseRequestSecurityTokenResponse(response,
+                                                       clientCertificate,
+                                                       clientPrivateKey,
+                                                       serverCertificate);
+        } catch (InvalidDocumentFormatException e) {
+            throw new CausedIOException("Unable to process response from token server", e);
+        } catch (WssProcessor.ProcessorException e) {
+            throw new CausedIOException("Unable to obtain token from token server", e);
+        }
         if (!(result instanceof SecureConversationSession))
             throw new IOException("Token server returned unwanted token type " + result.getClass());
         return (SecureConversationSession)result;
     }
 
 
-    public Object parseRequestSecurityTokenResponse(Document response,
+    public static Object parseRequestSecurityTokenResponse(Document response,
                                                     X509Certificate clientCertificate,
                                                     PrivateKey clientPrivateKey,
                                                     X509Certificate serverCertificate)

@@ -543,20 +543,25 @@ public class MessageProcessor {
             Document responseDocument = XmlUtil.stringToDocument(responseString);
 
             log.info("Running SSG response through WS-Security undecorator");
+            WssProcessor.SecurityContextFinder scf = null;
+            final String sessionId = req.getSecureConversationId();
+            if (sessionId != null) {
+                final byte[] sessionKey = req.getSecureConversationSharedSecret();
+                scf = new WssProcessor.SecurityContextFinder() {
+                    public WssProcessor.SecurityContext getSecurityContext(String securityContextIdentifier) {
+                        return new WssProcessor.SecurityContext() {
+                            public SecretKey getSharedSecret() {
+                                return new AesKey(sessionKey, sessionKey.length * 8);
+                            }
+                        };
+                    }
+                };
+            }
             WssProcessor.ProcessorResult processorResult =
                     wssProcessor.undecorateMessage(responseDocument,
                                                    SsgKeyStoreManager.getClientCert(ssg),
                                                    SsgKeyStoreManager.getClientCertPrivateKey(ssg),
-                                                   new WssProcessor.SecurityContextFinder() {
-                                                       public WssProcessor.SecurityContext getSecurityContext(String securityContextIdentifier) {
-                                                           return new WssProcessor.SecurityContext() {
-                                                               public SecretKey getSharedSecret() {
-                                                                   return new AesKey(req.getSecureConversationSharedSecret(),
-                                                                                     req.getSecureConversationSharedSecret().length * 8);
-                                                               }
-                                                           };
-                                                       }
-                                                   });
+                                                   scf);
             responseDocument = processorResult.getUndecoratedMessage();
 
             SsgResponse response = new SsgResponse(responseDocument, processorResult, status, headers);

@@ -17,4 +17,16 @@ public class CausedIOException extends IOException {
         super();
         initCause(cause);
     }
+
+    public CausedIOException() {        
+    }
+
+    public CausedIOException(String s) {
+        super(s);
+    }
+
+    public CausedIOException(String s, Throwable cause) {
+        super(s);
+        initCause(cause);
+    }
 }

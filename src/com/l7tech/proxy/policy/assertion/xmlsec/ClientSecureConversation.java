@@ -60,7 +60,7 @@ public class ClientSecureConversation extends ClientAssertion {
 
         String expectedSessionId = request.getSecureConversationId();
         if (expectedSessionId == null) {
-            // can't actually happen
+            // can't actually happen; decorateRequest should have made one
             final String msg = "Request did not have a session ID set.";
             log.log(Level.SEVERE, msg);
             throw new IllegalStateException(msg);
@@ -92,7 +92,7 @@ public class ClientSecureConversation extends ClientAssertion {
             PolicyAssertionException, InvalidDocumentFormatException
     {
         // Establish session, if possible
-        final String sessionId = request.getSecureConversationId();
+        final String sessionId = request.getOrCreateSecureConversationId();
         final byte[] sessionKey = request.getSecureConversationSharedSecret();
 
         // Configure outbound decoration to use WS-SecureConversation
