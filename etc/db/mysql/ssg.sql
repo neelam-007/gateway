@@ -262,3 +262,32 @@ CREATE TABLE ssg_logs (
 --
 -- Dumping data for table 'ssg_logs'
 --
+
+--
+-- Table structure for table 'jms_provider'
+--
+
+DROP TABLE IF EXISTS jms_provider;
+CREATE TABLE jms_provider (
+  oid bigint NOT NULL default '0',
+  version integer NOT NULL default '0',
+  name varchar(128) NOT NULL default '',
+  jndi_url varchar(255) NOT NULL default '',
+  destination_factory_url varchar(255) NOT NULL default '',
+  queue_factory_url varchar(255) NOT NULL default '',
+  topic_factory_url varchar(255) NOT NULL default ''
+) TYPE=InnoDB;
+
+--
+-- Table structure for table 'jms_destination'
+--
+
+DROP TABLE IF EXISTS jms_destination;
+CREATE TABLE jms_destination (
+  oid bigint NOT NULL default '0',
+  version integer NOT NULL default '0',
+  provider_oid bigint NOT NULL default '0',
+  name varchar(128) NOT NULL default '',
+  destination_name varchar(128) NOT NULL default '',
+  reply_type integer default '0';
+) TYPE=InnoDB;
