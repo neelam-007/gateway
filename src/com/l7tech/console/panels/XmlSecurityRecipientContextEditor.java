@@ -9,6 +9,8 @@ package com.l7tech.console.panels;
 import com.l7tech.policy.assertion.xmlsec.XmlSecurityAssertionBase;
 import com.l7tech.policy.assertion.xmlsec.RequestWssIntegrity;
 import com.l7tech.common.gui.util.Utilities;
+import com.l7tech.console.util.TopComponents;
+import com.l7tech.console.action.Actions;
 
 import javax.swing.*;
 import javax.swing.border.TitledBorder;
@@ -76,8 +78,37 @@ public class XmlSecurityRecipientContextEditor extends JDialog {
             }
         });
 
-        // todo plugin help
-        // todo, plugin assignCertButton, actorComboBox
+        helpButton.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                help();
+            }
+        });
+
+        // todo, actorComboBox
+
+        assignCertButton.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                CertImportMethodsPanel sp = new CertImportMethodsPanel(new CertDetailsPanel(null) {
+                                                                public boolean canFinish() {
+                                                                   return true;
+                                                                }
+                                                               },
+                                                               true);
+
+                // todo a 3rd panel that lets you set an actor value
+
+                JFrame f = TopComponents.getInstance().getMainWindow();
+                Wizard w = new AddCertificateWizard(f, sp);
+                w.setTitle("Define new XML security recipient");
+                w.pack();
+                w.setSize(780, 560);
+                Utilities.centerOnScreen(w);
+                w.setVisible(true);
+
+                // todo, read captured info and update combo box and txt field
+            }
+        });
+
     }
 
     private void setInitialValues() {
@@ -115,6 +146,10 @@ public class XmlSecurityRecipientContextEditor extends JDialog {
     private void ok() {
         // todo, remember value
         XmlSecurityRecipientContextEditor.this.dispose();
+    }
+
+    private void help() {
+        Actions.invokeHelp(XmlSecurityRecipientContextEditor.this);
     }
 
     private void cancel() {
