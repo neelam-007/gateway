@@ -31,6 +31,10 @@ public class LdapManager {
     }
 
     protected DirContext getBrowseContext() throws NamingException {
+        return getBrowseContext( this.config );
+    }
+
+    protected static DirContext getBrowseContext( IdentityProviderConfig config ) throws NamingException {
         java.util.Hashtable env = new java.util.Hashtable();
         env.put( "java.naming.ldap.version", "3" );
         env.put(Context.INITIAL_CONTEXT_FACTORY, "com.sun.jndi.ldap.LdapCtxFactory");

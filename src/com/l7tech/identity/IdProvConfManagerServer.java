@@ -3,6 +3,7 @@ package com.l7tech.identity;
 import com.l7tech.identity.internal.InternalIdentityProviderServer;
 import com.l7tech.identity.ldap.LdapIdentityProviderServer;
 import com.l7tech.identity.ldap.LdapConfigSettings;
+import com.l7tech.identity.ldap.AbstractLdapIdentityProviderServer;
 import com.l7tech.identity.msad.MsadIdentityProviderServer;
 import com.l7tech.objectmodel.*;
 
@@ -73,7 +74,7 @@ public class IdProvConfManagerServer extends HibernateEntityManager implements I
             Collection res = null;
             try {
                 // construct temp provider
-                LdapIdentityProviderServer tmpProvider = null;
+                AbstractLdapIdentityProviderServer tmpProvider = null;
                 if ( type == IdentityProviderType.LDAP )
                     tmpProvider = new LdapIdentityProviderServer();
                 else if ( type == IdentityProviderType.MSAD )
