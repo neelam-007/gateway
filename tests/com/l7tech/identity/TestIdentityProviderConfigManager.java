@@ -3,6 +3,7 @@ package com.l7tech.identity;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
+import com.l7tech.util.Locator;
 
 /**
  * @author alex
@@ -32,6 +33,17 @@ public class TestIdentityProviderConfigManager extends TestCase {
         // put tear down code here
     }
 
+    /**
+     * basic teast retrieving the identoty provider config manager
+     * @throws Exception
+     */
+    public void testLocateIdentityProviderConfigManager()
+      throws Exception {
+        IdentityProviderConfigManager icm =
+                (IdentityProviderConfigManager)Locator.
+                getDefault().lookup(com.l7tech.identity.IdentityProviderConfigManager.class);
+
+    }
     /**
      * Test <code>TestIdentityProviderConfigManager</code> main.
      */
