@@ -12,7 +12,6 @@ import com.l7tech.identity.imp.*;
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
 import javax.servlet.http.*;
-import javax.naming.InitialContext;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.Iterator;
@@ -37,14 +36,12 @@ public class HibernatePersistenceManagerServlet extends HttpServlet {
         response.setContentType( "text/html" );
         PrintWriter out = response.getWriter();
 
-        PersistenceContext context;
         IdentityProviderConfigManager ipcm;
         IdentityProviderTypeManager iptm;
         try {
-            context = PersistenceManager.getContext();
-            context.beginTransaction();
-            ipcm = new IdentityProviderConfigManagerImp( context );
-            iptm = new IdentityProviderTypeManagerImp( context );
+            PersistenceContext.getCurrent().beginTransaction();
+            ipcm = new IdentityProviderConfigManagerImp();
+            iptm = new IdentityProviderTypeManagerImp();
         } catch ( Exception e ) {
             throw new ServletException( e );
         }
@@ -103,9 +100,9 @@ public class HibernatePersistenceManagerServlet extends HttpServlet {
             try {
                 String rollback = request.getParameter("rollback");
                 if ( "true".equals( rollback ) )
-                    context.rollbackTransaction();
+                    PersistenceContext.getCurrent().rollbackTransaction();
                 else
-                    context.commitTransaction();
+                    PersistenceContext.getCurrent().commitTransaction();
             } catch ( Exception te ) {
                 throw new ServletException( te );
             }

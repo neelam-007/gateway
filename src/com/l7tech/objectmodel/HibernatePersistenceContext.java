@@ -9,6 +9,7 @@ package com.l7tech.objectmodel;
 import cirrus.hibernate.Session;
 
 import javax.transaction.UserTransaction;
+import javax.transaction.SystemException;
 import javax.naming.InitialContext;
 
 /**
@@ -21,6 +22,16 @@ public class HibernatePersistenceContext extends PersistenceContext {
 
     public HibernatePersistenceContext( Session session ) {
         _session = session;
+        _manager = (HibernatePersistenceManager)PersistenceManager.getInstance();
+    }
+
+    public int getTransactionStatus() throws TransactionException {
+        try {
+            UserTransaction txn = getUserTransaction();
+            return txn.getStatus();
+        } catch ( SystemException se ) {
+            throw new TransactionException( se.toString(), se );
+        }
     }
 
     public void commitTransaction() throws TransactionException {
@@ -52,6 +63,8 @@ public class HibernatePersistenceContext extends PersistenceContext {
     public void beginTransaction() throws TransactionException {
         try {
             getUserTransaction().begin();
+            if ( _session == null || !_session.isOpen() )
+                _session = _manager.getSession();
         } catch ( Exception e ) {
             throw new TransactionException( e.toString(), e );
         }
@@ -71,5 +84,6 @@ public class HibernatePersistenceContext extends PersistenceContext {
         }
     }
 
+    protected HibernatePersistenceManager _manager;
     protected Session _session;
 }

@@ -64,7 +64,7 @@ public class HibernatePersistenceManager extends PersistenceManager {
         }
     }
 
-    private Session getSession() throws HibernateException, SQLException {
+    Session getSession() throws HibernateException, SQLException {
         if ( _sessionFactory == null ) throw new IllegalStateException("HibernatePersistenceManager must be initialized before calling getSession()!");
         Session session = _sessionFactory.openSession();
         //Connection conn = session.connection();
