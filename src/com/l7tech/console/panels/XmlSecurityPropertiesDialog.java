@@ -24,6 +24,8 @@ import javax.wsdl.Input;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.ItemListener;
+import java.awt.event.ItemEvent;
 import java.rmi.RemoteException;
 import java.util.*;
 import java.text.MessageFormat;
@@ -48,6 +50,8 @@ public class XmlSecurityPropertiesDialog extends JDialog {
     private JScrollPane tableScrollPane;
     private JScrollPane treeScrollPane;
     private SecuredMessagePartsTableModel securedMessagePartsTableModel;
+    private SecuredMessagePartsTableModel memoTableModelEntireMessage;
+    private SecuredMessagePartsTableModel memoTableModelMessageParts;
 
     public XmlSecurityPropertiesDialog(JFrame owner, boolean modal, XmlSecurityTreeNode n) {
         super(owner, modal);
@@ -72,26 +76,45 @@ public class XmlSecurityPropertiesDialog extends JDialog {
         bg.add(messageParts);
         tableScrollPane.getViewport().setBackground(securedItemsTable.getBackground());
 
-        entireMessage.addChangeListener(new ChangeListener() {
-            public void stateChanged(ChangeEvent e) {
+        entireMessage.addItemListener(new ItemListener() {
+            public void itemStateChanged(ItemEvent e) {
                 boolean selected = entireMessage.isSelected();
                 if (selected) {
                     wsdlMessagesTree.setEnabled(!selected);
                     addButton.setEnabled(!selected);
                     removeButton.setEnabled(!selected);
-                    setScopeIsEntireMessage();
+                    // setScopeIsEntireMessage();
+                    securedMessagePartsTableModel = memoTableModelEntireMessage;
+                    if (securedMessagePartsTableModel == null) {
+                        securedMessagePartsTableModel = new SecuredMessagePartsTableModel();
+                        SecuredMessagePart sp = new SecuredMessagePart();
+                        sp.setOperation("*");
+                        sp.setMessageAndPart("*");
+                        securedMessagePartsTableModel.addPart(sp);
+                    }
+                    securedItemsTable.setModel(securedMessagePartsTableModel);
+                } else {
+                    memoTableModelEntireMessage = securedMessagePartsTableModel;
                 }
             }
         });
 
-        messageParts.addChangeListener(new ChangeListener() {
-            public void stateChanged(ChangeEvent e) {
+        messageParts.addItemListener(new ItemListener() {
+            public void itemStateChanged(ItemEvent e) {
+                if (e.getSource() != messageParts) return;
                 boolean selected = messageParts.isSelected();
                 if (selected) {
                     wsdlMessagesTree.setEnabled(selected);
                     addButton.setEnabled(selected);
                     removeButton.setEnabled(selected);
-                    setScopeIsMessageParts();
+
+                    securedMessagePartsTableModel = memoTableModelMessageParts;
+                    if (securedMessagePartsTableModel == null) {
+                        securedMessagePartsTableModel = new SecuredMessagePartsTableModel();
+                    }
+                    securedItemsTable.setModel(securedMessagePartsTableModel);
+                } else {
+                    memoTableModelMessageParts = securedMessagePartsTableModel;
                 }
             }
         });
@@ -114,7 +137,6 @@ public class XmlSecurityPropertiesDialog extends JDialog {
                     MessageTreeNode mn = (MessageTreeNode)node.getParent();
                     String msg = mn.getMessage().getQName().getLocalPart() + "/" + mpn.getMessagePart().getName();
                     BindingOperationTreeNode bn = (BindingOperationTreeNode)mn.getParent();
-                    BindingOperation bo = bn.getOperation();
                     SecuredMessagePart p = new SecuredMessagePart();
                     p.setOperation(bn.getName());
                     p.setMessageAndPart(msg);
@@ -134,7 +156,6 @@ public class XmlSecurityPropertiesDialog extends JDialog {
                     MessageTreeNode mn = (MessageTreeNode)node;
                     String msg = mn.getMessage().getQName().getLocalPart();
                     BindingOperationTreeNode bn = (BindingOperationTreeNode)node.getParent();
-                    BindingOperation bo = bn.getOperation();
                     SecuredMessagePart p = new SecuredMessagePart();
                     p.setOperation(bn.getName());
                     p.setMessageAndPart(msg);
@@ -173,11 +194,13 @@ public class XmlSecurityPropertiesDialog extends JDialog {
             wsdlMessagesTree.setShowsRootHandles(true);
             wsdlMessagesTree.setCellRenderer(wsdlTreeRenderer);
             wsdlMessagesTree.getSelectionModel().addTreeSelectionListener(treeSelectionListener);
-            securedMessagePartsTableModel = new SecuredMessagePartsTableModel();
-            securedItemsTable.setModel(securedMessagePartsTableModel);
+            // securedMessagePartsTableModel = new SecuredMessagePartsTableModel();
+            // securedItemsTable.setModel(securedMessagePartsTableModel);
             final ListSelectionModel selectionModel = securedItemsTable.getSelectionModel();
             selectionModel.addListSelectionListener(tableSelectionListener);
             selectionModel.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+            entireMessage.setSelected(true);
+
             setContentPane(mainPanel);
         } catch (WSDLException e) {
             throw new RuntimeException(e);
@@ -190,34 +213,28 @@ public class XmlSecurityPropertiesDialog extends JDialog {
 
     private void addSecuredPart(SecuredMessagePart p) {
         java.util.List sparts = securedMessagePartsTableModel.getSecuredMessageParts();
-        if (sparts.contains(p)) {
+        boolean alreadySelected = false;
+        for (Iterator iterator = sparts.iterator(); iterator.hasNext();) {
+            SecuredMessagePart securedMessagePart = (SecuredMessagePart)iterator.next();
+            if (p.implies(securedMessagePart) || securedMessagePart.implies(p)) {
+                alreadySelected = true;
+            }
+        }
+        if (alreadySelected) {
             JFrame f = Registry.getDefault().getComponentRegistry().getMainWindow();
             final String msg = "<html><center>The message/part <i><b>{0}</b></i><br>" +
-              "for operation <i><b>{1}</i></b> has already been selected.</center></html>";
-            JOptionPane.showMessageDialog(f,
-              MessageFormat.format(msg,
-                new Object[] {p.getMessageAndPart() == null ? "" : p.getMessageAndPart(),
-                              p.getOperation() == null ? "" : p.getOperation()}),
-              "Element already exists",
-              JOptionPane.WARNING_MESSAGE);
+              "for operation <i><b>{1}</i></b> has already been selected or<br>" +
+              "overlaps with another selection.</center></html>";
+            final Object[] params = new Object[]{p.getMessageAndPart() == null ? "" : p.getMessageAndPart(),
+                                         p.getOperation() == null ? "" : p.getOperation()};
+            JOptionPane.showMessageDialog(f, MessageFormat.format(msg,params),
+                                          "Element already exists",
+                                          JOptionPane.WARNING_MESSAGE);
             return;
         }
         securedMessagePartsTableModel.addPart(p);
     }
 
-    private void setScopeIsEntireMessage() {
-        securedMessagePartsTableModel.getSecuredMessageParts().clear();
-        SecuredMessagePart sp = new SecuredMessagePart();
-        sp.setOperation("*");
-        sp.setMessageAndPart("*");
-        securedMessagePartsTableModel.addPart(sp);
-        securedMessagePartsTableModel.fireTableDataChanged();
-    }
-
-    private void setScopeIsMessageParts() {
-        securedMessagePartsTableModel.getSecuredMessageParts().clear();
-        securedMessagePartsTableModel.fireTableDataChanged();
-    }
 
 
     private final
@@ -275,12 +292,16 @@ public class XmlSecurityPropertiesDialog extends JDialog {
     };
 
     {
-// do not edit this generated initializer!!! do not add your code here!!!
+// GUI initializer generated by IntelliJ IDEA GUI Designer
+// >>> IMPORTANT!! <<<
+// DO NOT EDIT OR ADD ANY CODE HERE!
         $$$setupUI$$$();
     }
 
     /**
-     * generated code, do not edit or call this method manually !!!
+     * Method generated by IntelliJ IDEA GUI Designer
+     * >>> IMPORTANT!! <<<
+     * DO NOT edit this method OR call it in your code!
      */
     private void $$$setupUI$$$() {
         final JPanel _1;
