@@ -12,9 +12,15 @@ import junit.framework.TestSuite;
 
 import java.util.logging.Logger;
 import java.util.Arrays;
+import java.util.List;
 import java.security.MessageDigest;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.net.URL;
+
+import com.l7tech.proxy.SsgFaker;
+
+import javax.xml.soap.SOAPConstants;
 
 /**
  *
@@ -122,6 +128,32 @@ public class HexUtilsTest extends TestCase {
             byte[] got = HexUtils.slurpStream(bais, 32768);
             assertTrue(got != null);
             assertTrue(got.length == 0);
+        }
+    }
+
+    public void testSlurpUrlPostAbility() throws Exception {
+        SsgFaker ssgFake = null;
+
+        try {
+            ssgFake = new SsgFaker();
+            String pingUrl = ssgFake.start();
+            pingUrl += "/soap/ssg";
+
+            log.info("Got ping url = " + pingUrl);
+
+            String ddd = "<soapenv:Envelope xmlns:soapenv=\"" + SOAPConstants.URI_NS_SOAP_ENVELOPE + "\"><soapenv:Body><foo>" +
+                    "blah blah blah asdf reqw qwer afhsjhsjhs\n";
+            StringBuffer pd = new StringBuffer(ddd);
+            for (int i = 0; i < 20; ++i) pd.append("asdfhasdfh hfsdajkad ashdfkjashdf hasfjahsfka aksjhdfaksfh\n");
+            pd.append("</foo></soapenv:Body></soapenv:Envelope>");
+            byte[] postData = pd.toString().getBytes();
+
+            log.info("Posting: " + pd);
+            HexUtils.Slurpage r = HexUtils.slurpUrl(new URL(pingUrl), postData, "text/xml");
+            assertEquals(((List)r.headers.get("Content-Type")).get(0), "text/xml");
+
+        } finally {
+            if (ssgFake != null) ssgFake.destroy();
         }
     }
 }
