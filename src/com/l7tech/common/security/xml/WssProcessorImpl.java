@@ -273,12 +273,16 @@ public class WssProcessorImpl implements WssProcessor {
         }
         // Remember this as a security token
         final LoginCredentials creds = new LoginCredentials(username, passwd.getBytes());
-        WssProcessor.SecurityToken rememberedSecToken = new WssProcessor.SecurityToken() {
+        WssProcessor.SecurityToken rememberedSecToken = new WssProcessor.UsernameToken() {
             public Object asObject() {
                 return creds;
             }
             public Element asElement() {
                 return usernameTokenElement;
+            }
+
+            public String getUsername() {
+                return creds.getLogin();
             }
         };
         cntx.securityTokens.add(rememberedSecToken);
