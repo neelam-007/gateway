@@ -30,7 +30,7 @@ public class AboutBox extends JDialog implements ActionListener {
     JLabel urlLabel = new JLabel("HomePage -- http://www.layer7-tech.com", JLabel.CENTER);
 
     JPanel infoPanel = new JPanel(new GridBagLayout());
-    String product = "SSG - Policy Editor";
+    String product = "Layer7 - Management COnsole";
     String version = Service.VERSION;
     ResourceThread rThread = new ResourceThread();
     JProgressBar resourceMeter = new JProgressBar();

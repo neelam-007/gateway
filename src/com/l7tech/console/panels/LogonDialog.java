@@ -113,7 +113,7 @@ public class LogonDialog extends JDialog {
         constraints = new GridBagConstraints();
 
         companyLogoJLabel = new JLabel();
-        companyLogoJLabel.setText("SSG Policy Editor");
+        companyLogoJLabel.setText(resources.getString("dialog.title"));
         companyLogoJLabel.setFont(new Font("Dialog", Font.BOLD, 12));
         //companyLogoJLabel.setBorder(BorderFactory.createLoweredBevelBorder());
 

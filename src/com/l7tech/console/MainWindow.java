@@ -96,7 +96,7 @@ public class MainWindow extends JFrame {
     private final ClassLoader cl = getClass().getClassLoader();
 
     private JMenu gotoMenu;
-    public static final String TITLE = "SSG console";
+    public static final String TITLE = "SSG Management Console";
     public static final String NAME = "main.window"; // registered
     private JTree policyTree;
 
