@@ -18,6 +18,7 @@ my @FILES = keys %nsis;
 my %fileversions = ();
 my $MANIFEST_PATH = "../etc/";
 my $MANIFEST_EXT = ".mf";
+my $INCLUDES_EXT = ".installer.include";
 
 my %opt = ();
 
@@ -41,11 +42,35 @@ sub get_jarlist_from_manifest {
 	return @jars;
 }
 
-# Usage: nsi_file_replace("proxy/win32/Agent.nsi", \@jarfiles);
+# Returns a list of filess listed in the file. Each row represents a file name.
+sub get_include_filelist {
+	my $file = shift;
+	my $ln;
+	my @includes = ();
+
+	open(INCLUDES, "<$file") or do {
+      print STDOUT "Can't open $file: $!\n";
+      return @includes; 
+  };
+
+	while (<INCLUDES>) {
+    chomp;
+    next if /^\s*$/;
+    next if /^#/;
+    s/\s//g;
+    push @includes, $_ if $_;
+	}
+	close(INCLUDES);
+	return @includes;
+}
+
+
+# Usage: nsi_file_replace("proxy/win32/Agent.nsi", \@jarfiles, \@includes);
 sub nsi_file_replace {
 	my $file = shift;
 	my $nsi = shift;
 	my $jars = shift;
+	my $includes = shift;
 	local $_;
 	my $new = "${nsi}_new.nsi";
 	my $nsi = "${nsi}.nsi";
@@ -55,14 +80,22 @@ sub nsi_file_replace {
 	while (<NSI>) {
 		if (/%%%JARFILE_FILE_LINES%%%/) {
 			foreach my $jar (@$jars) {
-				print NEW "  File \"\$\{BUILD_DIR\}\\lib\\$jar\"\n";
+				print NEW "  File \"\$\{BUILD_DIR\}\\lib\\$jar\"\n" or die "unable to write $new: $!";
 			}
 		} elsif (/%%%JARFILE_DELETE_LINES%%%/) {
 			foreach my $jar (@$jars) {
-				print NEW "  Delete \"\$INSTDIR\\lib\\$jar\"\n";
+				print NEW "  Delete \"\$INSTDIR\\lib\\$jar\"\n"  or die "unable to write $new: $!";
+			}
+		} elsif (/%%%INCLUDE_FILE_LINES%%%/) {
+			foreach my $include (@$includes) {
+				print NEW "  File \"\$\{BUILD_DIR\}\\$include\"\n" or die "unable to write $new: $!"; 
+			}
+		} elsif (/%%%INCLUDE_DELETE_LINES%%%/) {
+			foreach my $include (@$includes) {
+				print NEW "  Delete \"\$INSTDIR\\$include\"\n" or die "unable to write $new: $!"; 
 			}
 		} else {
-			print NEW $_ or die "unable to write $new: $!";
+			print NEW $_ or die "unable to write $new: $!"; 
 		}
 		if (/^\!define\s+MUI_VERSION\s+\"(.*)\"/) {
 			$fileversions{$file} = $1;
@@ -126,16 +159,23 @@ sub create_file {
 }
 
 sub make_tar_file {
-	my ($file, $jars) = @_;
+	my ($file, $jars, $includes) = @_;
+
 	my $version = $fileversions{$file} || "unknownversion";
 	my $dir = "${file}-${version}";
 	system "rm", "-rf", "./$dir";
 	mkdir($dir) or die "Unable to mkdir ./$dir: $!";
 	mkdir("./$dir/lib") or die "Unable to mkdir ./$dir/lib: $!";
 	docopy("$BUILD_PATH/$file.jar", $dir);
+
 	foreach my $jar (@$jars) {
 		docopy("$BUILD_PATH/lib/$jar", "./$dir/lib");
 	}
+
+	foreach my $include (@$includes) {
+		docopy("$BUILD_PATH/$include", "./$dir");
+	}
+
 	create_file("./$dir/$file.sh", <<"EOM", 0755);
 #!/bin/sh
 
@@ -153,12 +193,14 @@ getopts('bN', \%opt);
 
 foreach my $file (@FILES) {
 	my @jars = get_jarlist_from_manifest("$MANIFEST_PATH/$file$MANIFEST_EXT");
+  my @includes = get_include_filelist("$MANIFEST_PATH/$file$INCLUDES_EXT");
 
 	my $nsi = $nsis{$file};
 	die "No NSI path for $file" unless $nsi;
 	print "Replacing NSI info for $nsi ...\n";
-	my $newnsi = nsi_file_replace($file, $nsi, \@jars);
+	my $newnsi = nsi_file_replace($file, $nsi, \@jars, \@includes);
 	print "Building installer for $nsi ...\n";
 	build_installer($newnsi);
-	make_tar_file($file, \@jars);
+
+	make_tar_file($file, \@jars, \@includes);
 }
