@@ -1,10 +1,11 @@
 package com.l7tech.console.panels;
 
 import com.l7tech.common.gui.util.Utilities;
-import com.l7tech.common.transport.jms.JmsEndpoint;
 import com.l7tech.common.transport.jms.JmsConnection;
+import com.l7tech.common.transport.jms.JmsEndpoint;
 import com.l7tech.console.event.PolicyEvent;
 import com.l7tech.console.event.PolicyListener;
+import com.l7tech.console.util.JmsUtilities;
 import com.l7tech.console.util.Registry;
 import com.l7tech.policy.AssertionPath;
 import com.l7tech.policy.assertion.Assertion;
@@ -13,12 +14,11 @@ import com.l7tech.policy.assertion.composite.CompositeAssertion;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
-import javax.swing.event.ChangeEvent;
-import javax.swing.event.ChangeListener;
 import javax.swing.event.EventListenerList;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.util.ArrayList;
 import java.util.EventListener;
 import java.util.logging.Logger;
 
@@ -34,24 +34,22 @@ import java.util.logging.Logger;
 public class JmsRoutingAssertionDialog extends JDialog {
     static final Logger log = Logger.getLogger(LogonDialog.class.getName());
     private JmsRoutingAssertion assertion;
+    private boolean wasShown = false;
     private boolean wasOkButtonPressed = false;
     private JButton cancelButton;
     private JPanel buttonPanel;
     private JButton okButton;
     private EventListenerList listenerList = new EventListenerList();
 
+    private JmsConnection newlyCreatedConnection = null;
     private JmsEndpoint serviceEndpoint;
+    private JmsEndpoint newlyCreatedEndpoint = null;
     private JPanel serviceEndpointPanel;
-    private JLabel serviceEndpointName;
     private JPanel mainPanel;
     private JPanel credentialsPanel;
-    private JButton changeButton;
-
-    private JRadioButton passwordMethod;
-    private JRadioButton samlMethod;
-    private JSpinner expirySpinner;
-    private JCheckBox memebershipStatementCheck;
-    private JLabel expirySpinLabel;
+    private JButton newQueueButton;
+    private JComboBox queueComboBox;
+    private QueueItem[] queueItems;
 
     /**
      * Creates new form ServicePanel
@@ -62,18 +60,6 @@ public class JmsRoutingAssertionDialog extends JDialog {
         assertion = a;
         initComponents();
         initFormData();
-    }
-
-    public void show() {
-        if (isModal() && !isVisible()) {
-            // Automatically run the Change Endpoint dialog
-            SwingUtilities.invokeLater(new Runnable() {
-                public void run() {
-                    runChangeEndpointConnectionWindow();
-                }
-            });
-        }
-        super.show();
     }
 
     /** @return true unless the dialog was exited via the OK button. */
@@ -125,10 +111,11 @@ public class JmsRoutingAssertionDialog extends JDialog {
 
 
     /**
-     * This method is called from within the constructor to
+     * This method is called from within the static factory to
      * initialize the form.
      */
     private void initComponents() {
+        setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
 
         getContentPane().setLayout(new BorderLayout());
         getServiceEndpointPanel().setBorder(BorderFactory.createEmptyBorder(10, 5, 5, 10));
@@ -137,37 +124,10 @@ public class JmsRoutingAssertionDialog extends JDialog {
         mainPanel = new JPanel(new GridBagLayout());
         mainPanel.setBorder(new EmptyBorder(new Insets(10, 10, 10, 10)));
 
-        ButtonGroup methodGroup = new ButtonGroup();
-
         credentialsPanel = new JPanel(new GridBagLayout());
         GridBagConstraints gridBagConstraints = new GridBagConstraints();
         gridBagConstraints.weightx = 0;
         gridBagConstraints.weighty = 0;
-
-        passwordMethod = new JRadioButton("Authenticate through JMS Endpoint");
-        methodGroup.add(passwordMethod);
-        gridBagConstraints.gridx = 0;
-        gridBagConstraints.gridy = 0;
-        gridBagConstraints.insets = new Insets(0, 0, 5, 10);
-        gridBagConstraints.anchor = GridBagConstraints.WEST;
-        credentialsPanel.add(passwordMethod, gridBagConstraints);
-
-        samlMethod = new JRadioButton("Authenticate using SAML assertion");
-        methodGroup.add(samlMethod);
-        gridBagConstraints = new GridBagConstraints();
-        gridBagConstraints.gridx = 0;
-        gridBagConstraints.gridy = 1;
-        gridBagConstraints.insets = new Insets(0, 0, 5, 0);
-        gridBagConstraints.anchor = GridBagConstraints.WEST;
-        credentialsPanel.add(samlMethod, gridBagConstraints);
-
-        gridBagConstraints = new GridBagConstraints();
-        gridBagConstraints.gridx = 0;
-        gridBagConstraints.gridy = 2;
-        gridBagConstraints.fill = GridBagConstraints.HORIZONTAL;
-        gridBagConstraints.anchor = GridBagConstraints.WEST;
-        gridBagConstraints.insets = new Insets(0, 30, 20, 10);
-        credentialsPanel.add(getSamlAssertionPanel(), gridBagConstraints);
 
         gridBagConstraints = new GridBagConstraints();
         gridBagConstraints.gridx = 0;
@@ -190,30 +150,6 @@ public class JmsRoutingAssertionDialog extends JDialog {
                                              GridBagConstraints.HORIZONTAL,
                                              new Insets(0, 0, 0, 0), 0, 0));
         getContentPane().add(mainPanel, BorderLayout.CENTER);
-
-        // listeners
-        samlMethod.addChangeListener(new ChangeListener() {
-            public void stateChanged(ChangeEvent e) {
-                updateEnableDisable();
-            }
-        });
-        passwordMethod.addChangeListener(new ChangeListener() {
-            public void stateChanged(ChangeEvent e) {
-                updateEnableDisable();
-            }
-        });
-
-    }
-
-    private void updateEnableDisable() {
-        boolean saml = false;
-        if (samlMethod.isSelected()) {
-            saml = true;
-        }
-
-        expirySpinner.setEnabled(saml);
-        expirySpinLabel.setEnabled(saml);
-        memebershipStatementCheck.setEnabled(saml);
     }
 
     private JPanel getServiceEndpointPanel() {
@@ -224,7 +160,7 @@ public class JmsRoutingAssertionDialog extends JDialog {
         serviceEndpointPanel.setLayout(new GridBagLayout());
 
         JLabel serviceUrlLabel = new JLabel();
-        serviceUrlLabel.setText("JMS Endpoint: ");
+        serviceUrlLabel.setText("JMS Queue: ");
         serviceUrlLabel.setBorder(new EmptyBorder(new Insets(1, 1, 1, 5)));
         serviceEndpointPanel.add(serviceUrlLabel,
                                  new GridBagConstraints(0, 0, 1, 1, 0.0, 0.0,
@@ -232,15 +168,13 @@ public class JmsRoutingAssertionDialog extends JDialog {
                                                         GridBagConstraints.NONE,
                                                         new Insets(0, 0, 0, 0), 0, 0));
 
-        serviceEndpointName = new JLabel();
-        serviceEndpointName.setPreferredSize(new Dimension(300, 20));
-        serviceEndpointPanel.add(serviceEndpointName,
+        serviceEndpointPanel.add(getQueueComboBox(),
                                  new GridBagConstraints(1, 0, 1, 1, 1.0, 0.0,
                                                         GridBagConstraints.WEST,
                                                         GridBagConstraints.HORIZONTAL,
-                                                        new Insets(0, 0, 0, 0), 0, 0));
+                                                        new Insets(0, 6, 0, 5), 0, 0));
 
-        serviceEndpointPanel.add(getChangeButton(),
+        serviceEndpointPanel.add(getNewQueueButton(),
                                  new GridBagConstraints(2, 0, 1, 1, 0.0, 0.0,
                                                         GridBagConstraints.EAST,
                                                         GridBagConstraints.NONE,
@@ -250,62 +184,94 @@ public class JmsRoutingAssertionDialog extends JDialog {
         return serviceEndpointPanel;
     }
 
-    private JButton getChangeButton() {
-        if (changeButton == null) {
-            changeButton = new JButton("Change Endpoint");
-            changeButton.addActionListener(new ActionListener() {
+    private static class QueueItem {
+        private JmsUtilities.JmsQueue queue;
+
+        QueueItem(JmsUtilities.JmsQueue q) {
+            this.queue = q;
+        }
+
+        public String toString() {
+            if (queue.endpoint == null) {
+                return "(no endpoints) on " + queue.connection.getJndiUrl();
+            } else {
+                return queue.endpoint.getName() + " on " + queue.connection.getJndiUrl();
+            }
+        }
+    }
+
+    private QueueItem[] loadQueueItems() {
+        ArrayList queues = JmsUtilities.loadJmsQueues(false, true);
+        QueueItem[] items = new QueueItem[queues.size()];
+        for (int i = 0; i < queues.size(); ++i)
+            items[i] = new QueueItem((JmsUtilities.JmsQueue) queues.get(i));
+        return queueItems = items;
+    }
+
+    private QueueItem[] getQueueItems() {
+        if (queueItems == null)
+            queueItems = loadQueueItems();
+        return queueItems;
+    }
+
+    private JComboBox getQueueComboBox() {
+        if (queueComboBox == null) {
+            queueComboBox = new JComboBox(new DefaultComboBoxModel(getQueueItems()));
+            queueComboBox.setPreferredSize(new Dimension(400, 20));
+        }
+        return queueComboBox;
+    }
+
+    private JButton getNewQueueButton() {
+        if (newQueueButton == null) {
+            newQueueButton = new JButton("New Queue");
+            newQueueButton.addActionListener(new ActionListener() {
                 public void actionPerformed(ActionEvent e) {
-                    runChangeEndpointConnectionWindow();
+                    JmsEndpoint ep = newlyCreatedEndpoint;
+                    JmsConnection conn = newlyCreatedConnection;
+                    JmsQueuePropertiesDialog pd = JmsQueuePropertiesDialog.createInstance(getOwner(), conn, ep, true);
+                    Utilities.centerOnScreen(pd);
+                    pd.show();
+                    if (!pd.isCanceled()) {
+                        newlyCreatedEndpoint = serviceEndpoint = pd.getEndpoint();
+                        newlyCreatedConnection = pd.getConnection();
+                        getQueueComboBox().setModel(new DefaultComboBoxModel(loadQueueItems()));
+                        selectCurrentEndpoint();
+                    }
                 }
             });
         }
-        return changeButton;
+        return newQueueButton;
     }
 
-    /**
-     * Run the "Change Endpoint" dialog sequence.
-     */
-    private void runChangeEndpointConnectionWindow() {
-        ChangeEndpointConnectionWindow checw = new ChangeEndpointConnectionWindow();
-        Utilities.centerOnScreen(checw);
-        checw.show();
+    /** Force disposal after dialog has been used once. */
+    public void show() {
+        if (wasShown)
+            throw new IllegalStateException("This dialog has already been shown and/or disposed.");
+        wasShown = true;
+        super.show();
+        hide();
+        dispose();
     }
 
-    private JPanel getSamlAssertionPanel() {
-        JPanel samlPanel = new JPanel();
-        samlPanel.setLayout(new BoxLayout(samlPanel, BoxLayout.Y_AXIS));
-        samlPanel.setBorder(new EmptyBorder(new Insets(5, 5, 5, 0)));
+    private void selectCurrentEndpoint() {
+        if (serviceEndpoint == null ||
+            serviceEndpoint.getOid() == JmsEndpoint.DEFAULT_OID) {
+            getQueueComboBox().setSelectedIndex(-1);
+            return;
+        }
 
-        JPanel expiresPanel = new JPanel();
-        expiresPanel.setLayout(new BoxLayout(expiresPanel, BoxLayout.X_AXIS));
+        QueueItem[] items = getQueueItems();
+        for (int i = 0; i < items.length; i++) {
+            QueueItem item = items[i];
+            if (item.queue.endpoint.getOid() == serviceEndpoint.getOid()) {
+                getQueueComboBox().setSelectedItem(item);
+                return;
+            }
+        }
 
-        expirySpinner = new JSpinner();
-        Integer value = new Integer(5);
-        Integer min = new Integer(1);
-        Integer max = new Integer(120);
-        Integer step = new Integer(1);
-        SpinnerNumberModel spinModel = new SpinnerNumberModel(value, min, max, step);
-        expirySpinner.setModel(spinModel);
-        expirySpinLabel = new JLabel("Ticket expiry (in minutes):");
-        expirySpinLabel.setLabelFor(expirySpinner);
-
-        expiresPanel.add(expirySpinLabel);
-        expiresPanel.add(expirySpinner);
-        expiresPanel.add(Box.createGlue());
-
-        samlPanel.add(expiresPanel);
-        samlPanel.add(Box.createRigidArea(new Dimension(20, 10)));
-
-        JPanel includeGroupsPanel = new JPanel();
-        includeGroupsPanel.setLayout(new BoxLayout(includeGroupsPanel, BoxLayout.X_AXIS));
-        memebershipStatementCheck = new JCheckBox("Group membership statement");
-        includeGroupsPanel.add(memebershipStatementCheck);
-        includeGroupsPanel.add(Box.createGlue());
-        samlPanel.add(includeGroupsPanel);
-        samlPanel.add(Box.createGlue());
-        return samlPanel;
+        getQueueComboBox().setSelectedIndex(-1);
     }
-
 
     /**
      * Returns buttonPanel
@@ -368,13 +334,13 @@ public class JmsRoutingAssertionDialog extends JDialog {
                         assertion.setEndpointName(serviceEndpoint.getName());
                     }
 
-                    final Integer sv = (Integer)expirySpinner.getValue();
-                    assertion.setSamlAssertionExpiry(sv.intValue());
-                    assertion.setGroupMembershipStatement(memebershipStatementCheck.isSelected());
-                    assertion.setAttachSamlSenderVouches(samlMethod.isSelected());
+                    assertion.setGroupMembershipStatement(false);
+                    assertion.setAttachSamlSenderVouches(false);
                     fireEventAssertionChanged(assertion);
-                    JmsRoutingAssertionDialog.this.dispose();
                     wasOkButtonPressed = true;
+                    newlyCreatedConnection = null; // prevent disposal from deleting our new queue
+                    newlyCreatedEndpoint = null;
+                    JmsRoutingAssertionDialog.this.dispose();
                 }
             });
         }
@@ -395,7 +361,7 @@ public class JmsRoutingAssertionDialog extends JDialog {
 
             // Register listener
             cancelButton.addActionListener(new ActionListener() {
-                public void actionPerformed(ActionEvent e) {
+                public void actionPerformed(ActionEvent evt) {
                     JmsRoutingAssertionDialog.this.dispose();
                 }
             });
@@ -404,187 +370,34 @@ public class JmsRoutingAssertionDialog extends JDialog {
         return cancelButton;
     }
 
+    public void dispose() {
+        wasShown = true;
+        super.dispose();
+
+        try {
+            if (newlyCreatedEndpoint != null) {
+                Registry.getDefault().getJmsManager().deleteEndpoint(newlyCreatedEndpoint.getOid());
+                newlyCreatedEndpoint = null;
+            }
+            if (newlyCreatedConnection != null) {
+                Registry.getDefault().getJmsManager().deleteConnection(newlyCreatedConnection.getOid());
+                newlyCreatedConnection = null;
+            }
+        } catch (Exception e) {
+            // TODO log this somewhere instead
+            throw new RuntimeException("Unable to roll back newly-created JMS Queue", e);
+        }
+    }
+
     private void initFormData() {
         Long endpointOid = assertion.getEndpointOid();
         try {
-            if (endpointOid != null)
+            if (endpointOid != null) {
                 serviceEndpoint = Registry.getDefault().getJmsManager().findEndpointByPrimaryKey(endpointOid.longValue());
-        } catch (Exception e) {
-            throw new RuntimeException("Unable to look up JMS Endpoint for this routing assertion", e);
-        }
-
-        if (serviceEndpoint != null)
-            serviceEndpointName.setText(serviceEndpoint.getName());
-
-        memebershipStatementCheck.setSelected(assertion.isGroupMembershipStatement());
-        int expiry = assertion.getSamlAssertionExpiry();
-        if (expiry == 0) {
-            expiry = 5;
-        }
-        expirySpinner.setValue(new Integer(expiry));
-        SwingUtilities.invokeLater(new Runnable() {
-            public void run() {
-                boolean saml = assertion.isAttachSamlSenderVouches();
-                samlMethod.setSelected(saml);
-                passwordMethod.setSelected(!saml);
             }
-        });
-    }
-
-    private void changeJmsEndpoint(JmsEndpoint endpoint) {
-        serviceEndpoint = endpoint;
-        serviceEndpointName.setText(endpoint.getName());
-    }
-
-    private class ChangeEndpointConnectionWindow extends JDialog {
-        ChangeEndpointConnectionWindow() {
-            super(JmsRoutingAssertionDialog.this, "Select JMS Connection", true);
-
-            final JButton okButton = new JButton("Ok");
-            final JButton cancelButton = new JButton("Cancel");
-            final JmsConnectionListPanel jpl = new JmsConnectionListPanel(JmsRoutingAssertionDialog.this);
-
-            jpl.addJmsConnectionListSelectionListener(new JmsConnectionListPanel.JmsConnectionListSelectionListener() {
-                public void onSelected(JmsConnection selected) {
-                    okButton.setEnabled(selected != null);
-                }
-            });
-
-            okButton.setEnabled(false);
-            okButton.addActionListener(new ActionListener() {
-                public void actionPerformed(ActionEvent e) {
-                    JmsConnection connection = jpl.getSelectedJmsConnection();
-                    if (connection == null)
-                        return;
-                    try {
-                        ChangeEndpointConnectionWindow.this.hide();
-                        ChangeEndpointConnectionWindow.this.dispose();
-                        ChangeEndpointWindow chew = new ChangeEndpointWindow(connection);
-                        Utilities.centerOnScreen(chew);
-                        chew.show();
-                    } catch (Exception e1) {
-                        throw new RuntimeException("Unable to use this JMS connection", e1);
-                    }
-                }
-            });
-
-            cancelButton.addActionListener(new ActionListener() {
-                public void actionPerformed(ActionEvent e) {
-                    ChangeEndpointConnectionWindow.this.hide();
-                    ChangeEndpointConnectionWindow.this.dispose();
-                }
-            });
-
-            Container p = getContentPane();
-            p.setLayout(new GridBagLayout());
-            p.add(new JLabel("Which JMS Connection will be providing the JMS Endpoint?"),
-                  new GridBagConstraints(0, 0, 3, 1, 0.0, 0.0,
-                                         GridBagConstraints.WEST,
-                                         GridBagConstraints.NONE,
-                                         new Insets(15, 15, 0, 15), 0, 0));
-
-            p.add(jpl,
-                  new GridBagConstraints(0, 1, 3, 1, 1.0, 1.0,
-                                         GridBagConstraints.CENTER,
-                                         GridBagConstraints.BOTH,
-                                         new Insets(0, 0, 0, 0), 0, 0));
-
-            p.add(Box.createGlue(),
-                  new GridBagConstraints(0, 2, 1, 1, 100.0, 1.0,
-                                         GridBagConstraints.EAST,
-                                         GridBagConstraints.HORIZONTAL,
-                                         new Insets(0, 0, 0, 0), 0, 0));
-
-            p.add(okButton,
-                  new GridBagConstraints(1, 2, 1, 1, 0.0, 0.0,
-                                         GridBagConstraints.EAST,
-                                         GridBagConstraints.NONE,
-                                         new Insets(0, 0, 11, 5), 0, 0));
-
-            p.add(cancelButton,
-                  new GridBagConstraints(2, 2, 1, 1, 0.0, 0.0,
-                                         GridBagConstraints.EAST,
-                                         GridBagConstraints.NONE,
-                                         new Insets(0, 0, 11, 11), 0, 0));
-
-            Utilities.equalizeButtonSizes(new JButton[] { okButton, cancelButton });
-
-            pack();
-        }
-    }
-
-    private class ChangeEndpointWindow extends JDialog {
-        ChangeEndpointWindow(JmsConnection connection) {
-            super(JmsRoutingAssertionDialog.this, "Select JMS Endpoint", true);
-
-            final JButton okButton = new JButton("Ok");
-            final JButton cancelButton = new JButton("Cancel");
-            final JmsEndpointListPanel jpl = new JmsEndpointListPanel(JmsRoutingAssertionDialog.this, connection);
-
-            jpl.addJmsEndpointListSelectionListener(new JmsEndpointListPanel.JmsEndpointListSelectionListener() {
-                public void onSelected(JmsEndpoint selected) {
-                    okButton.setEnabled(selected != null);
-                }
-            });
-
-            okButton.setEnabled(false);
-            okButton.addActionListener(new ActionListener() {
-                public void actionPerformed(ActionEvent e) {
-                    JmsEndpoint endpoint = jpl.getSelectedJmsEndpoint();
-                    if (endpoint == null)
-                        return;
-                    try {
-                        ChangeEndpointWindow.this.hide();
-                        ChangeEndpointWindow.this.dispose();
-                        changeJmsEndpoint(endpoint);
-                    } catch (Exception e1) {
-                        throw new RuntimeException("Unable to use this JMS Endpoint", e1);
-                    }
-                }
-            });
-
-            cancelButton.addActionListener(new ActionListener() {
-                public void actionPerformed(ActionEvent e) {
-                    ChangeEndpointWindow.this.hide();
-                    ChangeEndpointWindow.this.dispose();
-                }
-            });
-
-            Container p = getContentPane();
-            p.setLayout(new GridBagLayout());
-            p.add(new JLabel("Which JMS Endpoint on this Connection leads to the protected service?"),
-                  new GridBagConstraints(0, 0, 3, 1, 0.0, 0.0,
-                                         GridBagConstraints.WEST,
-                                         GridBagConstraints.NONE,
-                                         new Insets(15, 15, 0, 15), 0, 0));
-
-            p.add(jpl,
-                  new GridBagConstraints(0, 1, 3, 1, 1.0, 1.0,
-                                         GridBagConstraints.CENTER,
-                                         GridBagConstraints.BOTH,
-                                         new Insets(0, 0, 0, 0), 0, 0));
-
-            p.add(Box.createGlue(),
-                  new GridBagConstraints(0, 2, 1, 1, 100.0, 1.0,
-                                         GridBagConstraints.EAST,
-                                         GridBagConstraints.HORIZONTAL,
-                                         new Insets(0, 0, 0, 0), 0, 0));
-
-            p.add(okButton,
-                  new GridBagConstraints(1, 2, 1, 1, 0.0, 0.0,
-                                         GridBagConstraints.EAST,
-                                         GridBagConstraints.NONE,
-                                         new Insets(0, 0, 11, 5), 0, 0));
-
-            p.add(cancelButton,
-                  new GridBagConstraints(2, 2, 1, 1, 0.0, 0.0,
-                                         GridBagConstraints.EAST,
-                                         GridBagConstraints.NONE,
-                                         new Insets(0, 0, 11, 11), 0, 0));
-
-            Utilities.equalizeButtonSizes(new JButton[] { okButton, cancelButton });
-
-            pack();
+            selectCurrentEndpoint();
+        } catch (Exception e) {
+            throw new RuntimeException("Unable to look up JMS Queue for this routing assertion", e);
         }
     }
 }

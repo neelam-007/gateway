@@ -12,7 +12,7 @@ import javax.swing.*;
  * Standalone GUI test harness for the JmsEndpointsWindow.  Runs in stub mode.
  * @author mike
  */
-public class JmsEndpointsWindowTest {
+public class JmsQueuesWindowTest {
     public static void main(String[] args) {
         try {
             realMain();
@@ -27,7 +27,7 @@ public class JmsEndpointsWindowTest {
         UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
         final JFrame owner = new JFrame("main");
         owner.show();
-        JmsEndpointsWindow w = new JmsEndpointsWindow(owner);
+        JmsQueuesWindow w = JmsQueuesWindow.createInstance(owner);
         w.show();
     }
 }

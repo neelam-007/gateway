@@ -1070,9 +1070,10 @@ public class MainWindow extends JFrame {
             }
 
             public void performAction() {
-                JmsEndpointsWindow jew = new JmsEndpointsWindow(MainWindow.this);
-                Utilities.centerOnScreen(jew);
-                jew.show();
+                JmsQueuesWindow jqw = JmsQueuesWindow.createInstance(MainWindow.this);
+                Utilities.centerOnScreen(jqw);
+                jqw.show();
+                jqw.dispose();
             }
         };
         manageJmsEndpointsAction.putValue(Action.NAME, atext);
