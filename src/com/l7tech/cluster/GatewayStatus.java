@@ -298,10 +298,6 @@ public class GatewayStatus {
      */
     public void incrementTimeStampUpdateFailureCount() {
         timeStampUpdateFailureCount++;
-
-        if(timeStampUpdateFailureCount >= MAX_UPDATE_FAILURE_COUNT) {
-            logger.warning("The Node " + getName() + " has not updated the status table for " + timeStampUpdateFailureCount * REFRESH_INTERVAL + " seconds.");
-        }
     }
 
     /**
