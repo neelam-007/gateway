@@ -425,8 +425,9 @@ public class MainWindow extends JFrame {
             editMenu.add(getCreateServiceAction());
             editMenu.addSeparator();
 
-            editMenu.add(getManageJmsEndpointsMenuItem());
             editMenu.add(getManageCertificatesMenuItem());
+            editMenu.add(getManageJmsEndpointsMenuItem());
+
             int mnemonic = editMenu.getText().toCharArray()[0];
             editMenu.setMnemonic(mnemonic);
 
