@@ -54,25 +54,31 @@ public class X509AuthorizationHandler extends FederatedAuthorizationHandler {
             return null;
         }
         String subjectDn = requestCert.getSubjectDN().getName();
+        String issuerDn = requestCert.getIssuerDN().getName();
 
         if ( !certOidSet.isEmpty() ) {
             // There could be no trusted certs--this means that specific client certs
             // are trusted no matter who signed them
 
             try {
-                TrustedCert trustedCert = getTrustedCertForRequestCert( requestCert );
-                if ( trustedCert == null ) throw new BadCredentialsException("Signer is not trusted");
+                TrustedCert trustedCert = trustedCertManager.getCachedCertBySubjectDn( issuerDn, MAX_CACHE_AGE );
+                final String untrusted = "The trusted certificate with DN '" + trustedCert.getSubjectDn() + "' is not trusted";
+
+                if ( trustedCert == null ) throw new BadCredentialsException("Signer '" + issuerDn + "' is not trusted");
+
+                if ( !certOidSet.contains(new Long(trustedCert.getOid())) )
+                    throw new BadCredentialsException(untrusted + " by this identity provider");
+
                 if ( !trustedCert.isTrustedForSigningClientCerts() )
-                    throw new BadCredentialsException("The trusted certificate with DN '" +
-                                                      trustedCert.getSubjectDn() +
-                                                      "' is not trusted for signing client certificates");
+                    throw new BadCredentialsException(untrusted + " for signing client certificates");
+
                 try {
                     CertificateExpiry exp = CertUtils.checkValidity(trustedCert.getCertificate());
                     if (exp.getDays() <= CertificateExpiry.FINE_DAYS)
                         trustedCertManager.logWillExpire(trustedCert, exp);
                 } catch ( CertificateException e ) {
-                    trustedCertManager.logInvalidCert(trustedCert, e);
-                    throw new AuthenticationException(e.getMessage(), e);
+                    final String msg = "Trusted cert for " + trustedCert.getSubjectDn() + " is invalid or corrupted: " + e.getMessage();
+                    throw new AuthenticationException(msg, e);
                 }
 
                 // Check that cert was signed by CA key
@@ -125,14 +131,6 @@ public class X509AuthorizationHandler extends FederatedAuthorizationHandler {
         throw new BadCredentialsException("Federated IDP " + providerConfig.getName() + "(" + providerConfig.getOid() +
                                           ") is not configured to trust certificates found with " +
                                           csa.getName() );
-    }
-
-    private TrustedCert getTrustedCertForRequestCert( X509Certificate requestCert )
-            throws FindException, IOException, CertificateException
-    {
-        TrustedCert cert = trustedCertManager.getCachedCertBySubjectDn( requestCert.getIssuerDN().getName(), MAX_CACHE_AGE );
-        if (cert == null) certOidSet.remove(new Long(cert.getOid()));
-        return cert;
     }
 
     private static final Logger logger = Logger.getLogger(X509AuthorizationHandler.class.getName());
