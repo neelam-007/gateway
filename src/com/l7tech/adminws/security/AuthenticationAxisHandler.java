@@ -8,6 +8,9 @@ import org.apache.axis.encoding.Base64;
 import org.apache.axis.transport.http.HTTPConstants;
 import com.l7tech.identity.User;
 import com.l7tech.identity.Group;
+import com.l7tech.logging.LogManager;
+
+import java.util.logging.Level;
 
 /**
  * Layer 7 Technologies, inc.
@@ -48,7 +51,8 @@ public class AuthenticationAxisHandler extends InternalIDSecurityAxisHandler {
         // get the HTTPRequest object
         HttpServletRequest servletrequest = (HttpServletRequest)messageContext.getProperty(HTTPConstants.MC_HTTP_SERVLETREQUEST);
         if (servletrequest == null) {
-            System.err.println("cannot retrieve servlet request from axis context");
+
+            LogManager.getInstance().getSystemLogger().log(Level.SEVERE, "cannot retrieve servlet request from axis context");
         } else {
             // check out for a session
             HttpSession session = servletrequest.getSession(false);
@@ -90,9 +94,10 @@ public class AuthenticationAxisHandler extends InternalIDSecurityAxisHandler {
             HttpSession session = servletrequest.getSession(true);
             session.setAttribute(AUTHENTICATED_USER, authenticatedUser);
             session.setMaxInactiveInterval(30); // 30 seconds times you out
+            LogManager.getInstance().getSystemLogger().log(Level.INFO, "created admin session for user " + authenticatedUser.getLogin());
         }
         else {
-            System.err.println("authorization failure for user " + authenticatedUser.getLogin());
+            LogManager.getInstance().getSystemLogger().log(Level.SEVERE, "authorization failure for user " + authenticatedUser.getLogin());
             throw new AxisFault("Server.Unauthorized", "com.l7tech.adminws.security.AuthenticationAxisHandler failed", null, null );
         }
     }
@@ -135,7 +140,7 @@ public class AuthenticationAxisHandler extends InternalIDSecurityAxisHandler {
             // AUTHENTICATION SUCCESS, move on to authorization
             return internalUser;
         } else {
-            System.err.println("authentication failure for user " + login + " with credentials " + md5edDecodedAuthValue);
+            LogManager.getInstance().getSystemLogger().log(Level.SEVERE, "authentication failure for user " + login + " with credentials " + md5edDecodedAuthValue);
         }
         return null;
     }
