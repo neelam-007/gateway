@@ -497,6 +497,7 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
                   if ("service.name".equals(evt.getPropertyName())) {
                       renderPolicy(false);
                   } else if ("policy".equals(evt.getPropertyName())) {
+                      rootAssertion = null;
                       renderPolicy(false);
                       policyEditorToolbar.buttonSave.setEnabled(true);
                       policyEditorToolbar.buttonSave.getAction().setEnabled(true);
