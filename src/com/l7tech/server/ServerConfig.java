@@ -68,13 +68,13 @@ public class ServerConfig implements ComponentConfig {
         String value = null;
 
         if ( systemValue != null && systemValue.length() > 0 ) {
-            logger.fine("Checking System property " + systemValue);
+            logger.finest("Checking System property " + systemValue);
             value = System.getProperty(systemValue);
         }
 
         if (value == null && jndiValue != null && jndiValue.length() > 0 ) {
             try {
-                logger.fine("Checking JNDI property " + jndiValue);
+                logger.finest("Checking JNDI property " + jndiValue);
                 if (_icontext == null) _icontext = new InitialContext();
                 value = (String)_icontext.lookup(jndiValue);
             } catch (NamingException ne) {
@@ -85,7 +85,7 @@ public class ServerConfig implements ComponentConfig {
         if ( value == null ) value = getPropertyValue( propName );
 
         if ( value == null ) {
-            logger.fine("Using default value " + defaultValue);
+            logger.finest("Using default value " + defaultValue);
             value = defaultValue;
         }
 
@@ -277,7 +277,7 @@ public class ServerConfig implements ComponentConfig {
                             ip = (InetAddress)ips.nextElement();
                             if (ip instanceof Inet4Address && (ip.getAddress()[0] & 0xff) != 127) {
                                 // Ignore localhost for autoconfigured IPs
-                                logger.info("Automatically found IP address " + print(ip) + " on network interface " + net.getName());
+                                logger.info("Found IP address " + print(ip) + " on network interface " + net.getName());
                                 localIps.add(ip);
                             }
                         }
@@ -313,7 +313,7 @@ public class ServerConfig implements ComponentConfig {
                 try {
                     _hostname = InetAddress.getLocalHost().getHostName();
                 } catch (UnknownHostException e) {
-                    logger.fine("HostName parameter not set, assigning hostname " + _hostname);
+                    logger.info("HostName parameter not set, assigning hostname " + _hostname);
                 }
             }
         }
