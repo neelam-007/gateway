@@ -22,8 +22,12 @@ public class PleaseWaitDialog extends JDialog {
         super(Gui.getInstance().getFrame(), "Please wait...", false);
         this.setFocusableWindowState(false);
         Container c = this.getContentPane();
-        c.setLayout(new BorderLayout());
-        c.add(getMessageLabel(), BorderLayout.CENTER);
+        c.setLayout(new GridBagLayout());
+        c.add(getMessageLabel(),
+              new GridBagConstraints(0, 0, 1, 1, 0.0, 0.0,
+                                     GridBagConstraints.CENTER,
+                                     GridBagConstraints.BOTH,
+                                     new Insets(15, 8, 15, 8), 0, 0));
     }
 
     private JLabel getMessageLabel() {
