@@ -33,7 +33,7 @@ public class SecureSpanConstants {
      * The policy servlet is the service that client can use to look up the policy that must be followed in order
      * to access a particular server.
      */
-    public static final String POLICY_PATH = "/ssg/policy/disco.modulator";
+    public static final String POLICY_SERVICE_FILE = "/ssg/policy/disco.modulator";
 
     /**
      * The  filename portion of the URL of the certificate discovery server on the Gateway.
