@@ -2,6 +2,7 @@ package com.l7tech.console.logging;
 
 import com.l7tech.util.Locator;
 import com.l7tech.console.util.WindowManager;
+import com.l7tech.console.panels.Utilities;
 
 import javax.swing.*;
 import java.util.logging.Level;
@@ -27,6 +28,7 @@ public class DefaultErrorManager extends ErrorManager {
         log.log(level, message, t);
         ExceptionDialog d = new ExceptionDialog(mainFrame, "Policy Editor - message", message, t, level);
         d.pack();
+        Utilities.centerOnScreen(d);
         d.show();
     }
 
