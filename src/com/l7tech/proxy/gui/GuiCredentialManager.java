@@ -8,6 +8,7 @@ package com.l7tech.proxy.gui;
 
 import com.l7tech.proxy.datamodel.CredentialManager;
 import com.l7tech.proxy.datamodel.Ssg;
+import com.l7tech.console.panels.Utilities;
 
 import javax.swing.*;
 import java.net.PasswordAuthentication;
@@ -25,6 +26,7 @@ import org.apache.log4j.Category;
 public class GuiCredentialManager implements CredentialManager {
     private static final Category log = Category.getInstance(GuiCredentialManager.class);
     private static GuiCredentialManager INSTANCE = new GuiCredentialManager();
+    private PleaseWaitDialog pleaseWaitDialog;
 
     private GuiCredentialManager() {}
 
@@ -60,7 +62,7 @@ public class GuiCredentialManager implements CredentialManager {
             try {
                 SwingUtilities.invokeAndWait(new Runnable() {
                     public void run() {
-                        PasswordAuthentication pw = LogonDialog.logon(Gui.getInstance().getFrame(), ssg.toString());
+                        PasswordAuthentication pw = LogonDialog.logon(Gui.getInstance().getFrame(), ssg.toString(), ssg.getUsername());
                         if (pw == null) {
                             promptState.credentialsObtained = false;
                             if (ssg.incrementNumTimesLogonDialogCanceled() > 2) {
@@ -121,5 +123,31 @@ public class GuiCredentialManager implements CredentialManager {
                 log.error(e);
             }
         }
+    }
+
+    private PleaseWaitDialog getPleaseWaitDialog() {
+        if (pleaseWaitDialog == null) {
+            pleaseWaitDialog = new PleaseWaitDialog();
+            Utilities.centerOnScreen(pleaseWaitDialog);
+        }
+
+        return pleaseWaitDialog;
+    }
+
+    public void notifyLengthyOperationStarting(Ssg ssg, final String message) {
+        SwingUtilities.invokeLater(new Runnable() {
+            public void run() {
+                getPleaseWaitDialog().setMessage(message);
+                getPleaseWaitDialog().show();
+            }
+        });
+    }
+
+    public void notifyLengthyOperationFinished(Ssg ssg) {
+        SwingUtilities.invokeLater(new Runnable() {
+            public void run() {
+                getPleaseWaitDialog().hide();
+            }
+        });
     }
 }

@@ -48,10 +48,33 @@ public class MessageProcessor {
     private PolicyManager policyManager;
     private static final int MAX_TRIES = 6;
 
+    /**
+     * Construct a Client Proxy MessageProcessor.
+     *
+     * @param policyManager The PolicyManager to be used to determine what policy to apply to a given request
+     */
     public MessageProcessor(PolicyManager policyManager) {
         this.policyManager = policyManager;
     }
 
+    /**
+     * Process the given client request and return the corresponding response.
+     *
+     * @param req  the PendingRequest to process
+     * @return     the SsgResponse containing the response from the Ssg, if processing was successful, or if
+     *             a SOAP fault is being returned to the client from either the CP or the SSG.
+     * @throws ClientCertificateException   if a client certificate was required but could not be obtained
+     * @throws PolicyAssertionException     if the policy evaluation could not be completed due to a serious error
+     * @throws OperationCanceledException   if the user declined to provide a username and password
+     * @throws ConfigurationException       if a response could not be obtained from the SSG due to a problem with
+     *                                      the client or server configuration, and retrying the operation
+     *                                      is unlikely to succeed until the configuration is changed.
+     * @throws ConfigurationException       if we were unable to conform to the policy, and did not get any useful
+     *                                      SOAP fault from the SSG.
+     * @throws GeneralSecurityException     if the SSG SSL certificate could not be obtained or installed
+     * @throws IOException                  if a information couldn't be obtained from the SSG due to network trouble
+     * @throws IOException                  if a certificate could not be saved to disk
+     */
     public SsgResponse processMessage(PendingRequest req)
             throws ClientCertificateException, PolicyAssertionException, OperationCanceledException,
                    ConfigurationException, GeneralSecurityException, IOException
@@ -78,8 +101,9 @@ public class MessageProcessor {
     /**
      * Massage the provided PendingRequest so it conforms to the policy for this operation for the
      * associated Ssg.
+     *
      * @param req   the PendingRequest to decorate
-     * @throws PolicyAssertionException     if the policy evaluation could not be completed
+     * @throws PolicyAssertionException     if the policy evaluation could not be completed due to a serious error
      * @throws PolicyRetryableException     if the policy evaluation should be started over
      * @throws OperationCanceledException   if the user declined to provide a username and password
      * @throws ClientCertificateException   if a client certificate was required but could not be obtained
@@ -131,6 +155,7 @@ public class MessageProcessor {
      * Generate a Certificate Signing Request, and apply to the Ssg for a certificate for the
      * current user.  If this method returns, the certificate will have been downloaded and saved
      * locally.
+     *
      * @param ssg   the Ssg to which we are sending our application
      * @throws GeneralSecurityException   if there was a problem making the CSR
      * @throws GeneralSecurityException   if we were unable to complete SSL handshake with the Ssg
@@ -140,6 +165,8 @@ public class MessageProcessor {
     private void obtainClientCertificate(Ssg ssg) throws GeneralSecurityException, IOException {
         if (!ssg.isCredentialsConfigured())
             throw new IllegalArgumentException("need credentials to apply for a certificate");
+        log.info("Generating new RSA key pair (could take several seconds)...");
+        Managers.getCredentialManager().notifyLengthyOperationStarting(ssg, "Generating new client certificate...");
         JDKKeyPairGenerator.RSA kpg = new JDKKeyPairGenerator.RSA();
         KeyPair keyPair = kpg.generateKeyPair();
         PKCS10CertificationRequest csr = SslUtils.makeCsr(ssg.getUsername(),
@@ -150,11 +177,13 @@ public class MessageProcessor {
                                                                 ssg.password(),
                                                                 csr);
         SsgKeyStoreManager.saveClientCertificate(ssg, keyPair.getPrivate(), cert);
+        Managers.getCredentialManager().notifyLengthyOperationFinished(ssg);
     }
 
     /**
      * Get the appropriate Ssg URL for forwarding the given request.
-     * @param req
+     *
+     * @param req  the PendingRequest to process
      * @return a URL that might have had it's protocol and port modified if SSL is indicated.
      * @throws ConfigurationException if we couldn't find a valid URL in this Ssg configuration.
      */
@@ -182,13 +211,27 @@ public class MessageProcessor {
 
     /**
      * Call the Ssg and obtain its response to the current message.
-     * @param req
-     * @return
-     * @throws ConfigurationException
+     *
+     * @param req the PendingRequest to process
+     * @return the SsgResponse from the SSG
+     * @throws ConfigurationException if the SSG url is invalid
+     * @throws ConfigurationException if the we downloaded a new policy for this request, but we are still being told
+     *                                the policy is out-of-date
+     * @throws ConfigurationException if the SSG sends us an invalid Policy URL
+     * @throws ConfigurationException if the PendingRequest did not contain enough information to construct a
+     *                                valid PolicyAttachmentKey
+     * @throws IOException            if there was a network problem communicating with the SSG
+     * @throws IOException            if there was a network problem downloading a policy from the SSG
+     * @throws PolicyRetryableException if a new policy was downloaded
+     * @throws PolicyRetryableException if new credentials were obtained from the user
+     * @throws ServerCertificateUntrustedException if a policy couldn't be downloaded because the SSG SSL certificate
+     *                                             was not recognized and needs to be (re)imported
+     * @throws OperationCanceledException if credentials were needed to continue processing, but the user canceled
+     *                                    the logon dialog (or we are running headless).
      */
     private SsgResponse obtainResponse(PendingRequest req)
-            throws ConfigurationException, IOException,
-                   PolicyRetryableException, ServerCertificateUntrustedException, OperationCanceledException
+            throws ConfigurationException, IOException, PolicyRetryableException, ServerCertificateUntrustedException,
+                   OperationCanceledException
     {
         URL url = getUrl(req);
         Ssg ssg = req.getSsg();
@@ -223,7 +266,11 @@ public class MessageProcessor {
                 postMethod = null;
                 policyManager.updatePolicy(req, policyUrl);
                 req.setPolicyUpdated(true);
-                throw new PolicyRetryableException();
+                if (status != 200) {
+                    log.info("Retrying request with the new policy");
+                    throw new PolicyRetryableException();
+                }
+                log.info("Will use new policy for future requests.");
             }
 
             Header contentType = postMethod.getResponseHeader("Content-Type");
@@ -249,6 +296,14 @@ public class MessageProcessor {
         }
     }
 
+    /**
+     * Configure HTTP Basic or Digest auth on the specific HttpState and PostMethod, if called for by
+     * the specified PendingRequest.
+     *
+     * @param req  the PendingRequest that might require HTTP level authentication
+     * @param state  the HttpState to adjust
+     * @param postMethod  the PendingRequest to adjust
+     */
     private void setAuthenticationState(PendingRequest req, HttpState state, PostMethod postMethod) {
         state.setAuthenticationPreemptive(false);
         if (req.isBasicAuthRequired()) {

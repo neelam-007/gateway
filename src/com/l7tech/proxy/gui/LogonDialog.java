@@ -50,10 +50,12 @@ public class LogonDialog extends JDialog {
      *
      * @param parent the parent Frame. May be <B>null</B>
      */
-    public LogonDialog(Frame parent, String title) {
+    public LogonDialog(Frame parent, String title, String defaultUsername) {
         super(parent, true);
         setTitle("Log on to SSG " + title);
         initComponents();
+        if (defaultUsername != null)
+            userNameTextField.setText(defaultUsername);
     }
 
 
@@ -227,10 +229,22 @@ public class LogonDialog extends JDialog {
      * invoke logon dialog
      *
      * @param frame the parent frame.  May be null, but then the dialog might appear behind the program window.
+     * @param ssgName SSG name to display in the prompt
+     * @return PasswordAuthentication containing the username and password, or NULL if the dialog was canceled.
+    public static PasswordAuthentication logon(JFrame frame, String ssgName) {
+        return logon(frame, SsgName, null);
+    }
+
+    /**
+     * invoke logon dialog
+     *
+     * @param frame the parent frame.  May be null, but then the dialog might appear behind the program window.
+     * @param ssgName SSG name to display in the prompt
+     * @param defaultUsername what to fill in the Username field with by default.
      * @return PasswordAuthentication containing the username and password, or NULL if the dialog was canceled.
      */
-    public static PasswordAuthentication logon(JFrame frame, String SsgName) {
-        final LogonDialog dialog = new LogonDialog(frame, SsgName);
+    public static PasswordAuthentication logon(JFrame frame, String ssgName, String defaultUsername) {
+        final LogonDialog dialog = new LogonDialog(frame, ssgName, defaultUsername);
         dialog.setResizable(false);
         dialog.setSize(300, 275);
 
@@ -306,7 +320,7 @@ public class LogonDialog extends JDialog {
             frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
             frame.pack();
             frame.setVisible(true);
-            PasswordAuthentication pw = LogonDialog.logon(frame, "Testing123Ssg");
+            PasswordAuthentication pw = LogonDialog.logon(frame, "Testing123Ssg", "Testuser");
             if (pw != null) {
                 log.info("Got username=" + pw.getUserName());
                 log.info("Got password=" + new String(pw.getPassword()));

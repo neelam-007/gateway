@@ -44,4 +44,12 @@ public class CredentialManagerImpl implements CredentialManager {
     public void notifyInvalidCredentials(Ssg ssg) {
         log.error("Credentials are invalid for SSG " + ssg);
     }
+
+    public void notifyLengthyOperationStarting(Ssg ssg, String message) {
+        log.info("Starting lengthy operation: " + message);
+    }
+
+    public void notifyLengthyOperationFinished(Ssg ssg) {
+        log.info("Lengthy operation has completed");
+    }
 }

@@ -30,4 +30,17 @@ public interface CredentialManager {
      * Notify that the credentials for this SSG have been tried and found to be no good.
      */
     void notifyInvalidCredentials(Ssg ssg);
+
+    /**
+     * Unobtrusively notify that a lengthy operation is now in progress.
+     * In the GUI environment, this will put up a "Please wait..." dialog.
+     * Only one "Please wait..." dialog will be active for a given Ssg.
+     */
+    void notifyLengthyOperationStarting(Ssg ssg, String message);
+
+    /**
+     * Unobtrusively notify that a lengthy operation has completed.
+     * Tears down any "Please wait..." dialog.
+     */
+    void notifyLengthyOperationFinished(Ssg ssg);
 }

@@ -1,12 +1,14 @@
 package com.l7tech.proxy.gui;
 
+import com.l7tech.common.gui.CertificatePanel;
 import com.l7tech.console.panels.Utilities;
 import com.l7tech.console.tree.EntityTreeCellRenderer;
 import com.l7tech.console.tree.policy.PolicyTreeModel;
 import com.l7tech.policy.assertion.Assertion;
+import com.l7tech.proxy.ClientProxy;
 import com.l7tech.proxy.datamodel.PolicyAttachmentKey;
 import com.l7tech.proxy.datamodel.Ssg;
-import com.l7tech.proxy.ClientProxy;
+import com.l7tech.proxy.datamodel.SsgKeyStoreManager;
 import org.apache.log4j.Category;
 
 import javax.swing.*;
@@ -17,6 +19,9 @@ import javax.swing.tree.TreeModel;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.security.NoSuchAlgorithmException;
+import java.security.cert.CertificateEncodingException;
+import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.Arrays;
 
@@ -58,6 +63,8 @@ public class SsgPropertyDialog extends PropertyDialog {
     private JButton buttonFlushPolicies;
     private boolean policyFlushRequested = false;
     private ClientProxy clientProxy;
+    private JButton clientCertButton;
+    private JButton serverCertButton;
 
 
     /** Create an SsgPropertyDialog ready to edit an Ssg instance. */
@@ -236,7 +243,7 @@ public class SsgPropertyDialog extends PropertyDialog {
                      new GridBagConstraints(0, gridY++, 2, 1, 1000.0, 0.0,
                                             GridBagConstraints.WEST,
                                             GridBagConstraints.HORIZONTAL,
-                                            new Insets(15, 5, 5, 5), 0, 0));
+                                            new Insets(14, 5, 0, 5), 0, 0));
 
             int oy = gridY;
             gridY = 0;
@@ -318,7 +325,7 @@ public class SsgPropertyDialog extends PropertyDialog {
             pane.add(epp, new GridBagConstraints(0, gridY++, 2, 1, 1000.0, 0.0,
                                                               GridBagConstraints.WEST,
                                                               GridBagConstraints.HORIZONTAL,
-                                                              new Insets(14, 5, 5, 5), 0, 0));
+                                                              new Insets(14, 5, 0, 5), 0, 0));
 
             oy = gridY;
             gridY = 0;
@@ -341,6 +348,32 @@ public class SsgPropertyDialog extends PropertyDialog {
                                                               new Insets(5, 5, 0, 5), 0, 0));
             gridY = oy;
 
+            // Certificate buttons
+
+            JPanel cpan = new JPanel(new GridBagLayout());
+            cpan.setBorder(BorderFactory.createTitledBorder("Certificates"));
+            pane.add(cpan,
+                     new GridBagConstraints(0, gridY++, 2, 1, 1000.0, 0.0,
+                                            GridBagConstraints.WEST,
+                                            GridBagConstraints.HORIZONTAL,
+                                            new Insets(14, 5, 0, 5), 0, 0));
+            oy = gridY;
+            gridY = 0;
+            JButton cb = getClientCertificateButton();
+            cpan.add(cb,
+                     new GridBagConstraints(0, gridY, 1, 1, 0.0, 0.0,
+                                            GridBagConstraints.EAST,
+                                            GridBagConstraints.NONE,
+                                            new Insets(5, 5, 5, 0), 0, 0));
+            JButton scb = getServerCertificateButton();
+            cpan.add(scb,
+                     new GridBagConstraints(1, gridY++, 1, 1, 0.0, 0.0,
+                                            GridBagConstraints.EAST,
+                                            GridBagConstraints.NONE,
+                                            new Insets(5, 5, 5, 5), 0, 0));
+
+            gridY = oy;
+
             // Have a spacer eat any leftover space
             pane.add(new JPanel(),
                      new GridBagConstraints(0, gridY++, 1, 1, 1.0, 1.0,
@@ -350,6 +383,101 @@ public class SsgPropertyDialog extends PropertyDialog {
         }
 
         return generalPane;
+    }
+
+    private JButton getServerCertificateButton() {
+        if (serverCertButton == null) {
+            serverCertButton = new JButton("View SSG's server certificate");
+            serverCertButton.addActionListener(new ActionListener() {
+                public void actionPerformed(ActionEvent e) {
+                    try {
+                        X509Certificate cert = SsgKeyStoreManager.getServerCert(ssg);
+                        if (cert == null) {
+                            JOptionPane.showMessageDialog(Gui.getInstance().getFrame(),
+                                                          "We haven't yet discovered the server certificate\n" +
+                                                          "for the SSG " + ssg,
+                                                          "No server certificate",
+                                                          JOptionPane.INFORMATION_MESSAGE);
+                            return;
+                        }
+                        new CertDialog(cert, "Server Certificate", "Server Certificate for SSG " + ssg).show();
+                    } catch (Exception e1) {
+                        log.error(e1);
+                        JOptionPane.showMessageDialog(Gui.getInstance().getFrame(),
+                                                      "Unable to access server certificate for SSG " + ssg + ": " + e1,
+                                                      "Unable to access server certificate",
+                                                      JOptionPane.ERROR_MESSAGE);
+                    }
+
+                }
+            });
+        }
+        return serverCertButton;
+    }
+
+    private JButton getClientCertificateButton() {
+        if (clientCertButton == null) {
+            clientCertButton = new JButton("View your client certificate");
+            clientCertButton.addActionListener(new ActionListener() {
+                public void actionPerformed(ActionEvent e) {
+                    try {
+                        X509Certificate cert = SsgKeyStoreManager.getClientCert(ssg);
+                        if (cert == null) {
+                            JOptionPane.showMessageDialog(Gui.getInstance().getFrame(),
+                                                          "We don't currently have a client certificate\n" +
+                                                          "for the SSG " + ssg,
+                                                          "No client certificate",
+                                                          JOptionPane.INFORMATION_MESSAGE);
+                            return;
+                        }
+                        new CertDialog(cert, "Client Certificate", "Client Certificate for SSG " + ssg).show();
+                    } catch (Exception e1) {
+                        log.error(e1);
+                        JOptionPane.showMessageDialog(Gui.getInstance().getFrame(),
+                                                      "Unable to access client certificate for SSG " + ssg + ": " + e1,
+                                                      "Unable to access client certificate",
+                                                      JOptionPane.ERROR_MESSAGE);
+                    }
+                }
+            });
+        }
+        return clientCertButton;
+    }
+
+    private class CertDialog extends JDialog {
+        CertDialog(X509Certificate cert, String title, String mess) throws CertificateEncodingException, NoSuchAlgorithmException {
+            super(SsgPropertyDialog.this, title, true);
+            Utilities.centerOnScreen(this);
+            Container c = this.getContentPane();
+            c.setLayout(new GridBagLayout());
+            c.setSize(new Dimension(300, 200));
+            c.add(new JLabel(mess),
+                  new GridBagConstraints(0, 0, 3, 1, 0.0, 0.0,
+                                         GridBagConstraints.CENTER,
+                                         GridBagConstraints.BOTH,
+                                         new Insets(5, 5, 5, 5), 0, 0));
+            c.add(new CertificatePanel(cert),
+                  new GridBagConstraints(0, 1, 3, 1, 1000.0, 1000.0,
+                                         GridBagConstraints.CENTER,
+                                         GridBagConstraints.BOTH,
+                                         new Insets(5, 5, 5, 5), 0, 0));
+            c.add(getCloseButton(),
+                  new GridBagConstraints(2, 2, 1, 1, 0.0, 0.0,
+                                         GridBagConstraints.CENTER,
+                                         GridBagConstraints.NONE,
+                                         new Insets(5, 5, 5, 5), 0, 0));
+            pack();
+        }
+
+        JButton getCloseButton() {
+            JButton cb = new JButton("Ok");
+            cb.addActionListener(new ActionListener() {
+                public void actionPerformed(ActionEvent e) {
+                    CertDialog.this.hide();
+                }
+            });
+            return cb;
+        }
     }
 
     /** Get the Server URL text field. */
