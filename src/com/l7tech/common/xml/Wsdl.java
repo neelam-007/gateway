@@ -5,20 +5,22 @@ import org.xml.sax.InputSource;
 
 import javax.wsdl.*;
 import javax.wsdl.extensions.soap.SOAPAddress;
+import javax.wsdl.extensions.soap.SOAPBody;
 import javax.wsdl.extensions.ExtensibilityElement;
 import javax.wsdl.factory.WSDLFactory;
 import javax.wsdl.xml.WSDLReader;
 import javax.wsdl.xml.WSDLWriter;
+import javax.xml.soap.SOAPConstants;
 import java.io.Reader;
 import java.io.Writer;
 import java.io.OutputStream;
-import java.util.Collection;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.List;
+import java.util.*;
 import java.util.logging.Logger;
+import java.util.logging.Level;
 import java.net.URL;
 import java.net.MalformedURLException;
+
+import com.l7tech.common.util.SoapUtil;
 
 
 /**
@@ -34,6 +36,8 @@ import java.net.MalformedURLException;
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  */
 public class Wsdl {
+    public static final String NS = "ns";
+
     /**
      * The protected constructor accepting the <code>Definition</code>
      * instance. Used by instance factory methods.
@@ -334,6 +338,64 @@ public class Wsdl {
         return soapPort;
     }
 
+    public Map getNamespaces() {
+        List soapUris = SoapUtil.ENVELOPE_URIS;
+        Map namespaceMap = definition.getNamespaces();
+        String tnsUri = definition.getTargetNamespace();
+
+        Map result = new HashMap();
+        boolean soapenv = false;
+        int ns = 1;
+        for (Iterator i = namespaceMap.keySet().iterator(); i.hasNext();) {
+            String prefix = (String) i.next();
+            String uri = (String)namespaceMap.get(prefix);
+
+            if ( soapUris.contains( uri ) ) {
+                result.put( prefix, uri );
+                soapenv = true;
+            } else if ( uri.equals( tnsUri ) ) {
+                result.put( prefix, uri );
+            }
+        }
+
+        if ( !soapenv ) {
+            if ( result.get( SoapUtil.SOAP_ENV_PREFIX) == null )
+                result.put( SoapUtil.SOAP_ENV_PREFIX, SOAPConstants.URI_NS_SOAP_ENVELOPE );
+            else
+                result.put( NS + ns++, SOAPConstants.URI_NS_SOAP_ENVELOPE );
+        }
+
+
+        Collection operations = getBindingOperations();
+        for (Iterator i = operations.iterator(); i.hasNext();) {
+            BindingOperation operation = (BindingOperation)i.next();
+            BindingInput input = operation.getBindingInput();
+            Iterator eels = input.getExtensibilityElements().iterator();
+            while ( eels.hasNext() ) {
+                ExtensibilityElement ee = (ExtensibilityElement)eels.next();
+                if (ee instanceof SOAPBody) {
+                    SOAPBody body = (SOAPBody)ee;
+                    String uri = body.getNamespaceURI();
+                    if ( uri != null ) {
+                        result.put( NS + ns++, uri );
+                    }
+                }
+            }
+        }
+
+        return result;
+    }
+
+    public Collection getBindingOperations() {
+        Iterator bindings = getBindings().iterator();
+        Binding binding;
+        List operations = new ArrayList();
+        while ( bindings.hasNext() ) {
+            binding = (Binding)bindings.next();
+            operations.addAll( binding.getBindingOperations() );
+        }
+        return operations;
+    }
     public URL getUrlFromPort(Port wsdlPort) throws MalformedURLException {
         if (wsdlPort == null)
             throw new IllegalArgumentException("No WSDL port was provided");
@@ -384,4 +446,6 @@ public class Wsdl {
     private Definition definition;
 
     private transient Logger logger = Logger.getLogger(getClass().getName());
+
+
 }
