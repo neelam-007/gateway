@@ -13,7 +13,7 @@ package com.l7tech.common;
  */
 public class BuildInfo {
     // All these fields are replaced by the OFFICIAL-build target of the build script! Don't bother modifying them ever!
-    private static final String BUILD_NUMBER = "NUM";      // ie, 1014
+    private static final String BUILD_NUMBER = "BNUM";      // ie, 1014
     private static final String PRODUCT_VERSION = "HEAD";   // ie, 0.98b
     private static final String PRODUCT_NAME = "Layer 7 SecureSpan Suite";
     private static final String BUILD_DATE = "DATE";  // ie, 20030916
