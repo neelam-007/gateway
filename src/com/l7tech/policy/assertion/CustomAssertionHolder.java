@@ -4,14 +4,14 @@
  * $Id$
  */
 
-package com.l7tech.policy.assertion.ext;
+package com.l7tech.policy.assertion;
 
-import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.composite.CompositeAssertion;
+import com.l7tech.policy.assertion.ext.CustomAssertion;
 
 /**
- * The custom assertion holder wraps a user defined instance that is
- * essentialy user defined property.
+ * The custom assertion holder wraps a user defined bean instance that
+ * represents user defined set of properties that describe the assertion.
  * The <code>customAssertionBean,/code> property is required to
  * be serializable and must offer Java Bean style get/set operations.
  *

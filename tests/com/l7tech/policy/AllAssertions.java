@@ -7,8 +7,6 @@
 package com.l7tech.policy;
 
 import com.l7tech.policy.assertion.*;
-import com.l7tech.policy.assertion.xmlsec.XmlRequestSecurity;
-import com.l7tech.policy.assertion.xmlsec.XmlResponseSecurity;
 import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.assertion.composite.ExactlyOneAssertion;
 import com.l7tech.policy.assertion.composite.OneOrMoreAssertion;
@@ -19,13 +17,15 @@ import com.l7tech.policy.assertion.credential.wss.WssBasic;
 import com.l7tech.policy.assertion.credential.wss.WssDigest;
 import com.l7tech.policy.assertion.identity.MemberOfGroup;
 import com.l7tech.policy.assertion.identity.SpecificUser;
+import com.l7tech.policy.assertion.xmlsec.XmlRequestSecurity;
+import com.l7tech.policy.assertion.xmlsec.XmlResponseSecurity;
 
 /**
  * @author alex
  * @version $Revision$
  */
 public class AllAssertions {
-    public static Assertion[] EVERYTHING = new Assertion[] {
+    public static Assertion[] EVERYTHING = new Assertion[]{
         new HttpBasic(),
         new HttpClientCert(),
         new HttpDigest(),
@@ -44,11 +44,10 @@ public class AllAssertions {
         new XmlResponseSecurity(),
         new XmlRequestSecurity(),
         new RequestXpathAssertion(),
+        new CustomAssertionHolder()
         // TODO new TimeOfDayAssertion(),
         // TODO new DateRangeAssertion(),
         // TODO new DayOfWeekAssertion(),
         // TODO new InetAddressAssertion(),
-        // TODO new XmlDsigAssertion(),
-        // TODO new XmlEncAssertion()
     };
 }

@@ -22,6 +22,6 @@ public class NetegritySiteminderProperties implements CustomAssertion {
     private String resource;
 
     public String getName() {
-        return "Netegritiy Siteminder";
+        return "Netegrity Siteminder";
     }
 }

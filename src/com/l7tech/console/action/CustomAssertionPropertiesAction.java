@@ -1,12 +1,13 @@
 package com.l7tech.console.action;
 
 import com.l7tech.common.gui.util.Utilities;
+import com.l7tech.console.beaneditor.BeanAdapter;
 import com.l7tech.console.beaneditor.BeanEditor;
 import com.l7tech.console.tree.policy.CustomAssertionTreeNode;
 import com.l7tech.console.util.ComponentRegistry;
 import com.l7tech.console.util.Registry;
+import com.l7tech.policy.assertion.CustomAssertionHolder;
 import com.l7tech.policy.assertion.ext.CustomAssertion;
-import com.l7tech.policy.assertion.ext.CustomAssertionHolder;
 
 import javax.swing.*;
 import javax.swing.tree.DefaultTreeModel;
@@ -57,9 +58,17 @@ public class CustomAssertionPropertiesAction extends NodeAction {
      */
     public void performAction() {
         CustomAssertionHolder cah = (CustomAssertionHolder)node.asAssertion();
-        JDialog dialog = new JDialog(Registry.getDefault().getComponentRegistry().getMainWindow(), true);
+        final JDialog dialog = new JDialog(Registry.getDefault().getComponentRegistry().getMainWindow(), true);
         final CustomAssertion ca = cah.getCustomAssertion();
-        BeanEditor be = new BeanEditor(dialog, ca, Object.class);
+        BeanEditor.Options options = new BeanEditor.Options();
+        options.setDescription(ca.getName());
+        options.setExcludeProperties(new String[]{"name"});
+        BeanEditor be = new BeanEditor(dialog, ca, Object.class, options);
+        be.addBeanListener(new BeanAdapter() {
+            public void onEditAccepted(Object source, Object bean) {
+                dialog.dispose();
+            }
+        });
         dialog.setTitle(ca.getName());
         dialog.pack();
         Utilities.centerOnScreen(dialog);

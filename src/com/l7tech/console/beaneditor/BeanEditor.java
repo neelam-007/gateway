@@ -19,6 +19,9 @@ import java.util.Locale;
 import java.util.ResourceBundle;
 
 /**
+ * The generic BeanEditor that uses introspection to discover the properties
+ * and creates the tabular editor.
+ *
  * @author emil
  * @version Feb 17, 2004
  */
@@ -63,9 +66,12 @@ public class BeanEditor extends JPanel {
         });
     }
 
+    public BeanEditor(JDialog dialog, Object bean, Class stopClass) {
+        this(dialog, bean, stopClass, new Options());
+    }
 
-    public BeanEditor(final JDialog dialog, Object bean, Class stopClass) {
-        this(bean, stopClass, new Options());
+    public BeanEditor(final JDialog dialog, Object bean, Class stopClass, Options options) {
+        this(bean, stopClass, options);
         final Container contentPane = dialog.getContentPane();
         contentPane.setLayout(new BorderLayout());
         setBorder(BorderFactory.createEmptyBorder(10, 10, 20, 10));
@@ -97,6 +103,7 @@ public class BeanEditor extends JPanel {
         this.options = options;
         initResources();
         setLayout(new BorderLayout());
+        add(getTitlePanel(), BorderLayout.NORTH);
         beanModel = new BeanInfoTableModel(bean, stopClass, options.excludeProperties);
         propertyTable = new JTable(beanModel);
         propertyTable.getTableHeader().setReorderingAllowed(false);
@@ -104,7 +111,6 @@ public class BeanEditor extends JPanel {
         propertyTable.setRowHeight(20);
         TableColumn column = propertyTable.getColumnModel().getColumn(0);
         column.setCellRenderer(new ButtonRenderer());
-        column.setCellEditor(new ButtonEditor(new JCheckBox()));
         column = propertyTable.getColumnModel().getColumn(1);
         JScrollPane ps = new JScrollPane();
         ps.getViewport().add(propertyTable);
@@ -140,21 +146,35 @@ public class BeanEditor extends JPanel {
         resources = ResourceBundle.getBundle("com.l7tech.console.beaneditor.BeanEditor", locale);
     }
 
+    /**
+     * Creates the title panel of the dialog
+     * <p/>
+     */
+    private JPanel getTitlePanel() {
+        JPanel panel = new JPanel();
+        panel.setBorder(BorderFactory.createEmptyBorder(10, 0, 0, 5));
+        panel.setLayout(new FlowLayout(FlowLayout.LEFT));
+        String title = null;
+        if (options.description == null) {
+            title = resources.getString("dialog.description");
+        } else {
+            title = options.description;
+        }
+        panel.add(new JLabel(title));
+        return panel;
+    }
+
 
     /**
      * Creates the panel of buttons that goes along the bottom
      * of the dialog
-     * <p/>
-     * Sets the variable okButton
      */
     private JPanel getButtonPanel() {
-
         JPanel panel = new JPanel();
         panel.setBorder(BorderFactory.createEmptyBorder(10, 0, 0, 0));
         panel.setLayout(new BoxLayout(panel, BoxLayout.X_AXIS));
         panel.add(Box.createHorizontalGlue());
 
-        // OK button (global variable)
         okButton = new JButton();
         okButton.setText(resources.getString("okButton.label"));
         okButton.addActionListener(new ActionListener() {
@@ -168,7 +188,6 @@ public class BeanEditor extends JPanel {
         });
         panel.add(okButton);
 
-        // cancel button
         cancelButton = new JButton();
         cancelButton.setText(resources.getString("cancelButton.label"));
         cancelButton.addActionListener(new ActionListener() {
@@ -181,14 +200,11 @@ public class BeanEditor extends JPanel {
             }
         });
         panel.add(cancelButton);
-
-        // equalize buttons
         Utilities.equalizeButtonSizes(new JButton[]{okButton, cancelButton});
-
         return panel;
     }
 
-    class ButtonRenderer extends JButton implements TableCellRenderer {
+    class ButtonRenderer extends JLabel implements TableCellRenderer {
         public ButtonRenderer() {
             setOpaque(true);
         }
@@ -200,54 +216,4 @@ public class BeanEditor extends JPanel {
             return this;
         }
     }
-
-    class ButtonEditor extends DefaultCellEditor {
-        protected JButton button;
-        private String label;
-
-        public ButtonEditor(JCheckBox checkBox) {
-            super(checkBox);
-            button = new JButton();
-            button.setOpaque(true);
-            button.addActionListener(new ActionListener() {
-                public void actionPerformed(ActionEvent e) {
-                    int row = propertyTable.getSelectedRow();
-                    fireEditingStopped();
-                    if (row !=-1) {
-                        startEditingValue(row);
-                    }
-                }
-            });
-        }
-
-        public Component getTableCellEditorComponent(JTable table, Object value,
-                                                     boolean isSelected, int row, int column) {
-            label = (value == null) ? "" : value.toString();
-            button.setText(label);
-            return button;
-        }
-
-        public Object getCellEditorValue() {
-            return label;
-        }
-
-        public boolean stopCellEditing() {
-            return super.stopCellEditing();
-        }
-
-        protected void fireEditingStopped() {
-            super.fireEditingStopped();
-        }
-
-        protected void startEditingValue(final int row) {
-            SwingUtilities.invokeLater(new Runnable() {
-                public void run() {
-                    propertyTable.editCellAt(row, 1);
-                }
-            });
-
-        }
-    }
-
-
 }

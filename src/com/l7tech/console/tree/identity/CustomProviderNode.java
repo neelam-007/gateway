@@ -2,8 +2,8 @@ package com.l7tech.console.tree.identity;
 
 import com.l7tech.console.tree.AbstractTreeNode;
 import com.l7tech.policy.assertion.Assertion;
+import com.l7tech.policy.assertion.CustomAssertionHolder;
 import com.l7tech.policy.assertion.ext.CustomAssertion;
-import com.l7tech.policy.assertion.ext.CustomAssertionHolder;
 
 import javax.swing.*;
 

@@ -1,5 +1,7 @@
 package com.l7tech.policy.assertion.ext;
 
+import com.l7tech.policy.assertion.CustomAssertionHolder;
+
 import java.rmi.RemoteException;
 import java.util.ArrayList;
 import java.util.List;

@@ -2,8 +2,8 @@ package com.l7tech.console.tree.policy;
 
 
 import com.l7tech.console.action.CustomAssertionPropertiesAction;
+import com.l7tech.policy.assertion.CustomAssertionHolder;
 import com.l7tech.policy.assertion.ext.CustomAssertion;
-import com.l7tech.policy.assertion.ext.CustomAssertionHolder;
 
 import javax.swing.*;
 import java.util.ArrayList;

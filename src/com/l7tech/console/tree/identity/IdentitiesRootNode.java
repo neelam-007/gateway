@@ -6,8 +6,8 @@ import com.l7tech.console.tree.EntitiesEnumeration;
 import com.l7tech.console.tree.RefreshTreeNodeAction;
 import com.l7tech.console.tree.TreeNodeFactory;
 import com.l7tech.console.util.Registry;
+import com.l7tech.policy.assertion.CustomAssertionHolder;
 import com.l7tech.policy.assertion.ext.Category;
-import com.l7tech.policy.assertion.ext.CustomAssertionHolder;
 import com.l7tech.policy.assertion.ext.CustomAssertionsRegistrar;
 
 import javax.swing.*;
