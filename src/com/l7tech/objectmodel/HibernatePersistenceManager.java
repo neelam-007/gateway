@@ -245,6 +245,8 @@ public class HibernatePersistenceManager extends PersistenceManager {
         } catch ( HibernateException he ) {
             throw new DeleteException( he.toString(), he );
         } catch ( SQLException se ) {
+            LogManager.getInstance().getSystemLogger().throwing( getClass().getName(), "doDelete", se );
+            close( context );
             throw new DeleteException( se.toString(), se );
         }
     }
