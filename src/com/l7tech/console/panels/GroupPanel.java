@@ -141,12 +141,12 @@ public class GroupPanel extends EntityEditorPanel {
                 groupMembers = null;
             } else {
                 Group g = idProvider.getGroupManager().findByPrimaryKey(groupHeader.getStrId());
+                if (g == null) {
+                    throw new NoSuchElementException("User missing " + groupHeader.getOid());
+                }
                 group = g.getGroupBean();
                 groupMembers = idProvider.getGroupManager().getUserHeaders(group.getUniqueIdentifier());
 
-                if (group == null) {
-                    throw new NoSuchElementException("User missing " + groupHeader.getOid());
-                }
             }
             initialize();
             // Populate the form for insert/update
