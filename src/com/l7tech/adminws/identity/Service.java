@@ -182,7 +182,7 @@ public class Service {
         try {
             com.l7tech.identity.User user = userManager.findByPrimaryKey(userId);
             userManager.delete(user);
-            LogManager.getInstance().getSystemLogger().log(Level.INFO, "Deleted User: " + userId);
+            LogManager.getInstance().getSystemLogger().log(Level.INFO, "Deleted User: " + user.getName());
         } catch (DeleteException e) {
             LogManager.getInstance().getSystemLogger().log(Level.SEVERE, null, e);
             throw new java.rmi.RemoteException("DeleteException in deleteUser", e);
@@ -217,10 +217,10 @@ public class Service {
                 User originalUser = userManager.findByPrimaryKey(Long.toString(user.getOid()));
                 originalUser.copyFrom(user);
                 userManager.update(originalUser);
-                LogManager.getInstance().getSystemLogger().log(Level.INFO, "Updated User: " + user.getOid());
+                LogManager.getInstance().getSystemLogger().log(Level.INFO, "Updated User: " + user.getName() + "[" + user.getOid() + "]");
                 return user.getOid();
             }
-            LogManager.getInstance().getSystemLogger().log(Level.INFO, "Saving User: " + user.getOid());
+            LogManager.getInstance().getSystemLogger().log(Level.INFO, "Saving User: " + user.getName());
             return userManager.save(user);
         } catch (Exception e) {
             LogManager.getInstance().getSystemLogger().log(Level.SEVERE, null, e);
@@ -288,6 +288,7 @@ public class Service {
             com.l7tech.identity.Group grp = groupManager.findByPrimaryKey(groupId);
             if (grp == null) throw new java.rmi.RemoteException("Group does not exist");
             groupManager.delete(grp);
+            LogManager.getInstance().getSystemLogger().log(Level.INFO, "Deleted Group: " + grp.getName());
         } catch (ObjectModelException e) {
             LogManager.getInstance().getSystemLogger().log(Level.SEVERE, null, e);
             throw new RemoteException("ObjectModelException in deleteGroup", e);
@@ -318,10 +319,10 @@ public class Service {
                 Group originalGroup = groupManager.findByPrimaryKey(Long.toString(group.getOid()));
                 originalGroup.copyFrom(group);
                 groupManager.update(originalGroup);
-                LogManager.getInstance().getSystemLogger().log(Level.INFO, "Updated Group: " + group.getOid());
+                LogManager.getInstance().getSystemLogger().log(Level.INFO, "Updated Group: " + group.getName() + "[" + group.getOid() + "]");
                 return group.getOid();
             }
-            LogManager.getInstance().getSystemLogger().log(Level.INFO, "Saving Group: " + group.getOid());
+            LogManager.getInstance().getSystemLogger().log(Level.INFO, "Saving Group: " + group.getName());
             return groupManager.save(group);
         } catch (SaveException e) {
             LogManager.getInstance().getSystemLogger().log(Level.SEVERE, null, e);
