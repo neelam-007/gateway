@@ -41,8 +41,8 @@ public class LdapUserManagerServer extends LdapManager implements UserManager {
         try {
             DirContext context = getAnonymousContext();
             Attributes attributes = context.getAttributes(dn);
-            LdapUser out = new LdapUser();
-            out.setDN(dn);
+            User out = new User();
+            out.setName(dn);
             Object tmp = extractOneAttributeValue(attributes, EMAIL_ATTR_NAME);
             if (tmp != null) out.setEmail(tmp.toString());
             tmp = extractOneAttributeValue(attributes, FIRSTNAME_ATTR_NAME);
@@ -51,8 +51,9 @@ public class LdapUserManagerServer extends LdapManager implements UserManager {
             if (tmp != null) out.setLastName(tmp.toString());
             tmp = extractOneAttributeValue(attributes, LOGIN_ATTR_NAME);
             if (tmp != null) out.setLogin(tmp.toString());
-            tmp = extractOneAttributeValue(attributes, NAME_ATTR_NAME);
-            if (tmp != null) out.setName(tmp.toString());
+            // this would override the dn
+            // tmp = extractOneAttributeValue(attributes, NAME_ATTR_NAME);
+            // if (tmp != null) out.setName(tmp.toString());
             tmp = extractOneAttributeValue(attributes, PASSWD_ATTR_NAME);
             if (tmp != null) out.setPassword(tmp.toString());
             Collection groupHeaders = findGroupMembershipsAsHeaders(out);
@@ -200,7 +201,7 @@ public class LdapUserManagerServer extends LdapManager implements UserManager {
     // PRIVATES
     // ************************************************
 
-    private Collection findGroupMembershipsAsHeaders(LdapUser user) {
+    private Collection findGroupMembershipsAsHeaders(User user) {
         Collection out = new ArrayList();
         try
         {
