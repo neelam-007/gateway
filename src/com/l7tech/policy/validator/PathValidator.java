@@ -352,13 +352,13 @@ class PathValidator {
                 if (ns != null && ns.indexOf(':') < 0) {
                     feedback.add(new RelativeURINamespaceProblemFeedback(ns,
                                                                          operation.getName(),
-                                                                         operation.getBindingInput().getName()));
+                                                                         (operation.getBindingInput().getName() != null ? operation.getBindingInput().getName() : operation.getName() + "In")));
                 }
                 ns = parsedWsdl.getBindingOutputNS(operation);
                 if (ns != null && ns.indexOf(':') < 0) {
                     feedback.add(new RelativeURINamespaceProblemFeedback(ns,
                                                                          operation.getName(),
-                                                                         operation.getBindingOutput().getName()));
+                                                                         (operation.getBindingOutput().getName() != null ? operation.getBindingOutput().getName() : operation.getName() + "Out")));
                 }
             }
             if (!feedback.isEmpty()) {
@@ -369,9 +369,7 @@ class PathValidator {
                     RelativeURINamespaceProblemFeedback fb = (RelativeURINamespaceProblemFeedback)iterator.next();
                     msg.append("<br>Namespace: " + fb.ns);
                     msg.append(", Operation Name: " + fb.operationName);
-                    if (fb.msgname != null) {
-                        msg.append(", Message Name: " + fb.msgname);
-                    }
+                    msg.append(", Message Name: " + fb.msgname);
                 }
                 result.addError(new PolicyValidatorResult.Error(a,
                                 assertionPath,
