@@ -119,14 +119,15 @@ public class WssRoundTripTest extends TestCase {
                                                wssDecoratorTest.getSingleSignatureMultipleEncryptionTestDocument()));
     }
 
+    /* we no longer support this
     public void testWrappedSecurityHeader() throws Exception {
         runRoundTripTest(new NamedTestDocument("WrappedSecurityHeader",
                                                wssDecoratorTest.getWrappedSecurityHeaderTestDocument()));
-    }
+    }*/
 
     public void testSkilessRecipientCert() throws Exception {
         runRoundTripTest(new NamedTestDocument("SkilessRecipientCert",
-                                               wssDecoratorTest.getSkilessRecipientCertTestDocument()));        
+                                               wssDecoratorTest.getSkilessRecipientCertTestDocument()));
     }
 
     public void testSigningOnlyWithSecureConversation() throws Exception {
@@ -141,7 +142,7 @@ public class WssRoundTripTest extends TestCase {
 
     public void testSignedSamlHolderOfKeyRequest() throws Exception {
         runRoundTripTest(new NamedTestDocument("SignedSamlHolderOfKeyRequest",
-                                               wssDecoratorTest.getSignedSamlHolderOfKeyRequestTestDocument()));        
+                                               wssDecoratorTest.getSignedSamlHolderOfKeyRequestTestDocument()));
     }
 
     public void testSignedEmptyElement() throws Exception {
@@ -168,7 +169,7 @@ public class WssRoundTripTest extends TestCase {
         runRoundTripTest(new NamedTestDocument("SoapWithSignedEncryptedAttachment",
                                                wssDecoratorTest.getSoapWithSignedEncryptedAttachmentTestDocument()));
     }
-    
+
     private void runRoundTripTest(NamedTestDocument ntd) throws Exception {
         log.info("Running round-trip test on test document: " + ntd.name);
         final WssDecoratorTest.TestDocument td = ntd.td;

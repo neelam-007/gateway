@@ -201,9 +201,10 @@ public class WssDecoratorTest extends TestCase {
                                 new Element[0]);
     }
 
+    /* we no longer support this
     public void testWrappedSecurityHeader() throws Exception {
         runTest(getWrappedSecurityHeaderTestDocument());
-    }
+    }*/
 
     public TestDocument getWrappedSecurityHeaderTestDocument() throws Exception {
         Context c = new Context();
