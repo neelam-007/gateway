@@ -27,6 +27,7 @@ public class Constants {
     public static final String PGP_AUTHENTICATION = "urn:oasis:names:tc:SAML:1.0:am:PGP";
     public static final String SPKI_AUTHENTICATION = "urn:oasis:names:tc:SAML:1.0:am:SPKI";
     public static final String XKMS_AUTHENTICATION = "urn:oasis:names:tc:SAML:1.0:am:XKMS";
+    /** <b>NOTE:</b> this RFC has been obsoleted by RFC3275, let's see if OASIS notices! */
     public static final String XML_DSIG_AUTHENTICATION = "urn:ietf:rfc:3075";
     public static final String UNSPECIFIED_AUTHENTICATION = "urn:oasis:names:tc:SAML:1.0:am:unspecified";
 
