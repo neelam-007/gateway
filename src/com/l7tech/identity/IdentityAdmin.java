@@ -58,6 +58,9 @@ public interface IdentityAdmin  extends Remote {
 
     String getUserCert(User user) throws RemoteException, FindException, CertificateEncodingException;
 
+    /**
+     * will also revoke user's password if internal user
+     */ 
     void revokeCert(User user) throws RemoteException, UpdateException;
 
     void testIdProviderConfig(IdentityProviderConfig cfg)
