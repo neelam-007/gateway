@@ -46,9 +46,6 @@ public class ServerXmlResponseSecurity implements ServerAssertion {
     }
 
     public AssertionStatus checkRequest(Request request, Response response) throws IOException, PolicyAssertionException {
-
-        // todo, xml-enc part
-
         Document soapmsg = null;
         try {
             soapmsg = SoapUtil.getDocument(response);
@@ -61,6 +58,11 @@ public class ServerXmlResponseSecurity implements ServerAssertion {
             String msg = "cannot get an xml document from the response to sign";
             logger.severe(msg);
             throw new PolicyAssertionException(msg);
+        }
+
+        // should we encrypt the body before signing it?
+        if (data.isEncryption()) {
+            // todo, encrypt body
         }
 
         X509Certificate serverCert = null;
