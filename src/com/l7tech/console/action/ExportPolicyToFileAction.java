@@ -1,7 +1,7 @@
 package com.l7tech.console.action;
 
 import com.l7tech.console.logging.ErrorManager;
-import com.l7tech.console.tree.PoliciesFolderNode;
+import com.l7tech.console.tree.*;
 import com.l7tech.console.tree.policy.AssertionTreeNode;
 import com.l7tech.console.util.Preferences;
 import com.l7tech.console.util.TopComponents;
@@ -9,6 +9,10 @@ import com.l7tech.policy.exporter.PolicyExporter;
 import org.xml.sax.SAXException;
 
 import javax.swing.*;
+import javax.swing.tree.DefaultMutableTreeNode;
+import javax.swing.tree.TreeNode;
+import javax.swing.tree.TreePath;
+import javax.swing.tree.DefaultTreeModel;
 import javax.swing.filechooser.FileFilter;
 import java.io.File;
 import java.io.IOException;
@@ -125,10 +129,34 @@ public class ExportPolicyToFileAction extends BaseAction {
         PolicyExporter exporter = new PolicyExporter();
         try {
             exporter.exportToFile(node.asAssertion(), policyFile);
+            if (!policyFileExists) {
+                insertIntoAssertionTree(policyFile);
+            }
         } catch (IOException e) {
             ErrorManager.getDefault().notify(Level.WARNING, e, "Cannot export policy to file " + name);
         } catch (SAXException e) {
             ErrorManager.getDefault().notify(Level.WARNING, e, "Cannot export policy to file " + name);
         }
+    }
+
+    private void insertIntoAssertionTree(File policyFile) {
+        JTree tree = (JTree)TopComponents.getInstance().getComponent(AssertionsTree.NAME);
+        if (tree != null) {
+            AbstractTreeNode node = (AbstractTreeNode)TreeNodeActions.nodeByName(PoliciesFolderNode.NAME,
+                                                                                 (DefaultMutableTreeNode)tree.getModel().getRoot());
+            if (node != null) {
+                TreeNode[] nodes = node.getPath();
+                TreePath nPath = new TreePath(nodes);
+                if (tree.hasBeenExpanded(nPath)) {
+                    DefaultTreeModel model = (DefaultTreeModel)tree.getModel();
+                    PolicyTemplateNode ptn = new PolicyTemplateNode(policyFile);
+                    model.insertNodeInto(ptn, node, node.getInsertPosition(ptn));
+                }
+            } else {
+                log.log(Level.WARNING, "Unable to reach the palette tree.");
+            }
+        }
+
+
     }
 }
