@@ -2,6 +2,7 @@ package com.l7tech.objectmodel;
 
 import java.util.Hashtable;
 import java.io.Serializable;
+import java.io.ObjectStreamException;
 
 /**
  * Layer 7 Technologies, inc.
@@ -91,6 +92,10 @@ public class EntityType implements Serializable {
         else if (interfaceType.equals(com.l7tech.identity.Group.class)) return GROUP;
         else if (interfaceType.equals(com.l7tech.service.PublishedService.class)) return SERVICE;
         throw new IllegalArgumentException("no EntityType for interface " + interfaceType.getName());
+    }
+
+    private Object readResolve() throws ObjectStreamException {
+        return fromValue(val);
     }
 
     /**
