@@ -97,12 +97,23 @@ public class XslTransformationPropertiesDialog extends JDialog {
     private void ok() {
         // validate the contents of the xml control
         String contents = xmlTextArea.getText();
-        if (!docIsXsl(contents)) {
+        if (contents == null || contents.length() < 1 || !docIsXsl(contents)) {
             displayError(resources.getString("error.notxslt"), null);
             return;
         }
         // save new xslt
         subject.setXslSrc(contents);
+        // save the direction
+        Object selectedDirection = directionCombo.getSelectedItem();
+        if (directions[0].equals(selectedDirection)) {
+            log.finest("selected request direction");
+            subject.setDirection(XslTransformation.APPLY_TO_REQUEST);
+        } else if (directions[1].equals(selectedDirection)) {
+            log.finest("selected response direction");
+            subject.setDirection(XslTransformation.APPLY_TO_RESPONSE);
+        } else {
+            log.warning("cannot get direction!");
+        }
         fireEventAssertionChanged(subject);
         // exit
         XslTransformationPropertiesDialog.this.dispose();
@@ -263,7 +274,7 @@ public class XslTransformationPropertiesDialog extends JDialog {
                 return;
             }
             xmlTextArea.setText(printedxml);
-            okButton.setEnabled(true);
+            //okButton.setEnabled(true);
         } else {
             displayError(resources.getString("error.urlnoxslt") + " " + urlstr, null);
         }
@@ -312,11 +323,11 @@ public class XslTransformationPropertiesDialog extends JDialog {
         JLabel xmlTitle = new JLabel(resources.getString("xmldisplayPanel.name"));
         xmldisplayPanel.add(xmlTitle, BorderLayout.NORTH);
 
-        if (subject != null && subject != null && subject.getXslSrc() != null) {
+        if (subject != null && subject.getXslSrc() != null) {
             xmlTextArea.setText(reformatxml(subject.getXslSrc()));
-        } else {
+        } /*else {
             okButton.setEnabled(false);
-        }
+        }*/
         xmlTextArea.setCaretPosition(0);
         xmldisplayPanel.add(xmlTextArea, BorderLayout.CENTER);
 
@@ -340,6 +351,13 @@ public class XslTransformationPropertiesDialog extends JDialog {
         JLabel label = new JLabel(resources.getString("directionCombo.prefix") + "   ");
         loadfromwsdlpanel.add(label);
         loadfromwsdlpanel.add(directionCombo);
+        if (subject != null) {
+            if (subject.getDirection() == XslTransformation.APPLY_TO_RESPONSE) {
+                directionCombo.setSelectedIndex(1);
+            } else if (subject.getDirection() == XslTransformation.APPLY_TO_REQUEST) {
+                directionCombo.setSelectedIndex(0);
+            }
+        }
         // add border
         GridBagConstraints constraints = new GridBagConstraints();
         constraints.fill = GridBagConstraints.BOTH;
@@ -404,8 +422,9 @@ public class XslTransformationPropertiesDialog extends JDialog {
         okButton.setText(resources.getString("okButton.name"));
         cancelButton = new JButton();
         cancelButton.setText(resources.getString("cancelButton.name"));
-        directionCombo = new JComboBox(new String[] {resources.getString("directionCombo.request"),
-                                                     resources.getString("directionCombo.response")});
+        directions = new String[] {resources.getString("directionCombo.request"),
+                                   resources.getString("directionCombo.response")};
+        directionCombo = new JComboBox(directions);
         urlTxtFld = new JTextField();
         resolveButton = new JButton();
         resolveButton.setText(resources.getString("resolveButton.name"));
@@ -436,6 +455,7 @@ public class XslTransformationPropertiesDialog extends JDialog {
     private JButton resolveButton;
     private JTextField urlTxtFld;
     private JEditTextArea xmlTextArea;
+    private String[] directions;
 
     private ResourceBundle resources;
 
