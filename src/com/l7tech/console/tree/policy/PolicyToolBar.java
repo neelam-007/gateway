@@ -134,7 +134,6 @@ public class PolicyToolBar extends JToolBar {
                 this.paletteNode = lastPaletteNode;
                 this.assertionNode = lastAssertionNode;
                 super.performAction();
-                lastAssertionNode = null;
                 updateActions();
             }
         };

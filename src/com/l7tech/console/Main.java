@@ -32,6 +32,10 @@ public class Main {
      */
     public void run(String[] args) {
         try {
+            // AWT event dispatching thread handler
+            System.setProperty("sun.awt.exception.handler",
+              "com.l7tech.console.logging.AwtErroHandler");
+
             final JFrame main;
 
             /* invoke the splash screen */
@@ -42,28 +46,28 @@ public class Main {
             prefs.updateFromProperties(System.getProperties(), false);
             /* so it is visible in help/about */
             prefs.updateSystemProperties();
-
+            // where locator looks for implementaitons
             System.setProperty("com.l7tech.util.locator.properties",
-                    "/com/l7tech/console/resources/services.properties");
+              "/com/l7tech/console/resources/services.properties");
 
             main = Registry.getDefault().getWindowManager().getMainWindow();
             // Window listener
             main.addWindowListener(
-                    new WindowAdapter() {
-                        /**
-                         * Invoked when a window has been opened.
-                         */
-                        public void windowOpened(WindowEvent e) {
-                            if (mainSplashScreen != null) {
-                                mainSplashScreen.dispose();
-                            }
-                        }
+              new WindowAdapter() {
+                  /**
+                   * Invoked when a window has been opened.
+                   */
+                  public void windowOpened(WindowEvent e) {
+                      if (mainSplashScreen != null) {
+                          mainSplashScreen.dispose();
+                      }
+                  }
 
-                        public void windowClosed(WindowEvent e) {
-                            saveWindowPosition(main);
-                            System.exit(0);
-                        }
-                    });
+                  public void windowClosed(WindowEvent e) {
+                      saveWindowPosition(main);
+                      System.exit(0);
+                  }
+              });
 
             main.setVisible(true);
         } catch (HeadlessException e) {
