@@ -370,7 +370,7 @@ CREATE TABLE audit_main (
   audit_level varchar(12) NOT NULL,
   message varchar(255) NOT NULL,
   name varchar(255),
-  ip_address varchar(32) NOT NULL,
+  ip_address varchar(32),
   PRIMARY KEY  (objectid),
   INDEX idx_nodeid (nodeid),
   INDEX idx_time (time),

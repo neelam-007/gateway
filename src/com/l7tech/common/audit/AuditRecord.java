@@ -28,7 +28,7 @@ public abstract class AuditRecord extends SSGLogRecord {
      * Fills in the fields that are common to all types of AuditRecord
      * @param level the {@link Level} of this record.
      * @param nodeId the ID of the cluster node from which this AuditRecord originates (see {@link com.l7tech.cluster.ClusterStatusAdmin#getClusterStatus()})
-     * @param ipAddress the IP address of the entity that caused this AuditRecord to be created.  It could be that of a cluster node, an administrative workstation or a web service requestor.
+     * @param ipAddress the IP address of the entity that caused this AuditRecord to be created.  It could be that of a cluster node, an administrative workstation or a web service requestor, or null if unavailable.
      * @param name the name of the service or system affected by event that generated the AuditRecord
      * @param message a short description of the event that generated the AuditRecord
      */
@@ -40,7 +40,7 @@ public abstract class AuditRecord extends SSGLogRecord {
 
     /**
      * Gets the IP address of the entity that caused this AuditRecord to be created.  It could be that of a cluster node, an administrative workstation or a web service requestor.
-     * @return the IP address of the entity that caused this AuditRecord to be created.
+     * @return the IP address of the entity that caused this AuditRecord to be created, or null if there isn't one.
      */
     public String getIpAddress() {
         return ipAddress;
