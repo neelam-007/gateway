@@ -147,7 +147,7 @@ public class ProviderNode extends EntityHeaderNode {
      * @param open for nodes that can be opened, can have children
      */
     protected String iconResource(boolean open) {
-        return "com/l7tech/console/resources/providers16.gif";
+        return "com/l7tech/console/resources/CreateIdentityProvider16x16.gif";
     }
 
     /**

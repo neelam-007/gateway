@@ -30,7 +30,7 @@ import java.util.logging.Level;
  */
 public class PublishNonSoapServiceAction extends SecureAction {
     public String getName() {
-        return "Publish XML application";
+        return "Publish XML Application";
     }
 
     public String getDescription() {

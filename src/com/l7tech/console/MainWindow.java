@@ -466,7 +466,7 @@ public class MainWindow extends JFrame {
             newProviderSubMenu.setFocusable(false);
 
             newProviderSubMenu.setText("Create Identity Provider");
-            newProviderSubMenu.setIcon(new ImageIcon(ImageCache.getInstance().getIcon("com/l7tech/console/resources/providers16.gif")));
+            newProviderSubMenu.setIcon(new ImageIcon(ImageCache.getInstance().getIcon("com/l7tech/console/resources/CreateIdentityProvider16x16.gif")));
 
             newProviderSubMenu.add(getNewProviderAction());
             newProviderSubMenu.add(getNewFederatedIdentityProviderAction());

@@ -71,7 +71,7 @@ public class FindIdentityAction extends BaseAction {
      * subclasses override this method specifying the resource name
      */
     protected String iconResource() {
-        return "com/l7tech/console/resources/Find16.gif";
+        return "com/l7tech/console/resources/SearchIdentityProvider16x16.gif";
     }
 
     /**
