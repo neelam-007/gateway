@@ -88,8 +88,20 @@ public abstract class CompositeAssertion extends Assertion implements Cloneable,
             throw new PolicyAssertionException("CompositeAssertion has no children: " + this);
     }
 
+    public String toIndentedString(int indentLevel) {
+        StringBuffer b = new StringBuffer();
+        for (int i = 0; i < indentLevel; ++i)
+            b.append("\t");
+        b.append(super.toString());
+        b.append(":\n");
+        for (Iterator i = children.iterator(); i.hasNext();) {
+            Assertion a = (Assertion) i.next();
+            b.append(a.toIndentedString(indentLevel + 1));
+        }
+        return b.toString();
+    }
+
     public String toString() {
-        return "<" + this.getClass().getName() + " children=" + children + " parent=" +
-                (parent == null ? "NULL" : parent.getClass().getName()) + ">";
+        return toIndentedString(0);
     }
 }
