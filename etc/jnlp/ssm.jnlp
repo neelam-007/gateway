@@ -5,7 +5,7 @@
     <vendor>Layer7 Technologies</vendor>
     <description>SecureSpan Manager</description>
     <homepage href="http://www.layer7tech.com"/>
-    <icon href="images/layer7_logo_small_64x64.png"/>
+    <icon href="ssm/images/layer7_logo_small_64x64.png"/>
   </information>
   <security>
       <all-permissions/>
