@@ -1,22 +1,22 @@
 package com.l7tech.console.panels;
 
 import com.l7tech.console.action.Actions;
-import com.l7tech.console.tree.policy.SchemaValidationTreeNode;
 import com.l7tech.console.event.PolicyEvent;
 import com.l7tech.console.event.PolicyListener;
-import com.l7tech.policy.assertion.xml.SchemaValidation;
-import com.l7tech.policy.assertion.Assertion;
+import com.l7tech.console.tree.policy.SchemaValidationTreeNode;
 import com.l7tech.policy.AssertionPath;
+import com.l7tech.policy.assertion.Assertion;
+import com.l7tech.policy.assertion.xml.SchemaValidation;
 import com.l7tech.service.PublishedService;
+import org.apache.xml.serialize.OutputFormat;
+import org.apache.xml.serialize.XMLSerializer;
 import org.syntax.jedit.JEditTextArea;
 import org.syntax.jedit.SyntaxDocument;
 import org.syntax.jedit.tokenmarker.XMLTokenMarker;
-import org.w3c.dom.Element;
 import org.w3c.dom.Document;
+import org.w3c.dom.Element;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
-import org.apache.xml.serialize.XMLSerializer;
-import org.apache.xml.serialize.OutputFormat;
 
 import javax.swing.*;
 import javax.swing.event.EventListenerList;
@@ -25,16 +25,14 @@ import javax.xml.parsers.ParserConfigurationException;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
-import java.io.StringWriter;
-import java.util.logging.Logger;
-import java.util.logging.Level;
+import java.io.*;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.EventListener;
 import java.util.Locale;
 import java.util.ResourceBundle;
-import java.net.URL;
-import java.net.MalformedURLException;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 
 
@@ -108,6 +106,12 @@ public class SchemaValidationPropertiesDialog extends JDialog {
         resolveButton.addActionListener( new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 readFromUrl();
+            }
+        });
+
+        loadFromFile.addActionListener( new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                readFromFile();
             }
         });
     }
@@ -257,6 +261,60 @@ public class SchemaValidationPropertiesDialog extends JDialog {
         okButton.setEnabled(true);
     }
 
+    private void readFromFile() {
+        JFileChooser dlg = new JFileChooser();
+
+        if (JFileChooser.APPROVE_OPTION != dlg.showOpenDialog(this)) {
+            return;
+        }
+        FileInputStream fis = null;
+        String filename = dlg.getSelectedFile().getAbsolutePath();
+        try {
+            fis = new FileInputStream(dlg.getSelectedFile());
+        } catch (FileNotFoundException e) {
+            log.log(Level.FINE, "cannot open file" + filename, e);
+            return;
+        }
+
+        // try to get document
+        InputSource is = new InputSource(fis);
+        DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
+        dbf.setNamespaceAware(true);
+        Document doc = null;
+        try {
+            doc = dbf.newDocumentBuilder().parse(is);
+        } catch (SAXException e) {
+            displayError(resources.getString("error.noxmlaturl") + " " + filename, null);
+            log.log(Level.FINE, "cannot parse " + filename, e);
+            return;
+        } catch (IOException e) {
+            displayError(resources.getString("error.noxmlaturl") + " " + filename, null);
+            log.log(Level.FINE, "cannot parse " + filename, e);
+            return;
+        } catch (ParserConfigurationException e) {
+            displayError(resources.getString("error.noxmlaturl") + " " + filename, null);
+            log.log(Level.FINE, "cannot parse " + filename, e);
+            return;
+        }
+        // check if it's a schema
+        if (docIsSchema(doc)) {
+            // set the new schema
+            String printedSchema = null;
+            try {
+                printedSchema = doc2String(doc);
+            } catch (IOException e) {
+                String msg = "error serializing document";
+                displayError(msg, null);
+                log.log(Level.FINE, msg, e);
+                return;
+            }
+            wsdlTextArea.setText(printedSchema);
+            okButton.setEnabled(true);
+        } else {
+            displayError(resources.getString("error.urlnoschema") + " " + filename, null);
+        }
+    }
+
     private void readFromUrl() {
         // get url
         String urlstr = urlTxtFld.getText();
@@ -344,6 +402,7 @@ public class SchemaValidationPropertiesDialog extends JDialog {
         toppanel.setLayout(new BoxLayout(toppanel, BoxLayout.Y_AXIS));
         toppanel.add(constructLoadFromWsdlPanel());
         toppanel.add(constructLoadFromUrlPanel());
+        toppanel.add(loadFromFilePanel());
 
         // panel that contains the xml display
         JPanel centerpanel = new JPanel();
@@ -357,6 +416,24 @@ public class SchemaValidationPropertiesDialog extends JDialog {
         output.add(centerpanel, BorderLayout.CENTER);
 
         return output;
+    }
+
+    private JPanel loadFromFilePanel() {
+        JPanel blah = new JPanel();
+        blah.setLayout(new BorderLayout());
+        blah.add(loadFromFile, BorderLayout.WEST);
+
+        // wrap this with border settings
+        GridBagConstraints constraints = new GridBagConstraints();
+        constraints.fill = GridBagConstraints.BOTH;
+        constraints.weightx = 1.0;
+        constraints.weighty = 1.0;
+        constraints.insets = new Insets(BORDER_PADDING, BORDER_PADDING, BORDER_PADDING, BORDER_PADDING);
+        JPanel bordered = new JPanel();
+        bordered.setLayout(new GridBagLayout());
+        bordered.add(blah, constraints);
+
+        return bordered;
     }
 
     private JPanel constructXmlDisplayPanel() {
@@ -419,7 +496,7 @@ public class SchemaValidationPropertiesDialog extends JDialog {
         constraints.fill = GridBagConstraints.BOTH;
         constraints.weightx = 1.0;
         constraints.weighty = 1.0;
-        constraints.insets = new Insets(BORDER_PADDING, BORDER_PADDING, BORDER_PADDING, BORDER_PADDING);
+        constraints.insets = new Insets(BORDER_PADDING, BORDER_PADDING, 0, BORDER_PADDING);
         JPanel bordered = new JPanel();
         bordered.setLayout(new GridBagLayout());
         bordered.add(loadFromUrlPanel, constraints);
@@ -465,6 +542,8 @@ public class SchemaValidationPropertiesDialog extends JDialog {
         wsdlTextArea.setDocument(new SyntaxDocument());
         wsdlTextArea.setEditable(false);
         wsdlTextArea.setTokenMarker(new XMLTokenMarker());
+        loadFromFile = new JButton();
+        loadFromFile.setText("Load from file");//todo, resource this string
     }
 
     private void initResources() {
@@ -472,11 +551,19 @@ public class SchemaValidationPropertiesDialog extends JDialog {
         resources = ResourceBundle.getBundle("com.l7tech.console.resources.SchemaValidationPropertiesDialog", locale);
     }
 
+    public static void main(String[] args) {
+        SchemaValidationPropertiesDialog me = new SchemaValidationPropertiesDialog(null, new SchemaValidation(), null);
+        me.pack();
+        me.show();
+        System.exit(0);
+    }
+
     private JButton helpButton;
     private JButton okButton;
     private JButton cancelButton;
     private JButton readFromWsdlButton;
     private JButton resolveButton;
+    private JButton loadFromFile;
     private JTextField urlTxtFld;
     private JEditTextArea wsdlTextArea;
 
