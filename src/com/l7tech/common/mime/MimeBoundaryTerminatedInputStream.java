@@ -83,9 +83,17 @@ class MimeBoundaryTerminatedInputStream extends FilterInputStream {
         crlfBoundary[1] = '\n';
     }
 
+    // This isn't really expected to be the primary mode of use for bulk reading.
+    // We'll just translate this into a single-byte block.
     public int read() throws IOException {
-        if (atEof) return -1;
-        throw new IOException("Single-byte reads not supported"); // TODO make this work if needed
+        if (atEof)
+            return -1;
+
+        byte[] b = new byte[1];
+        int got = this.read(b);
+        if (got < 1)
+            return -1;
+        return b[0] < 0 ? b[0] + 256 : b[0];
     }
 
     // Before Cases:

@@ -6,15 +6,15 @@
 
 package com.l7tech.common.mime;
 
-import com.l7tech.common.util.HexUtils;
 import com.l7tech.common.io.NullOutputStream;
+import com.l7tech.common.util.HexUtils;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
 
 import java.io.*;
-import java.util.logging.Logger;
 import java.util.Random;
+import java.util.logging.Logger;
 
 /**
  * @author mike
@@ -123,7 +123,16 @@ public class MimeBoundaryTerminatedInputStreamTest extends TestCase {
         log.info("Constructed test MIME multipart message " + testMsg.length + " bytes long");
         readParts(testMsg, numparts, 3);
     }
-    
+
+    public void testSingleByteBlockSize() throws Exception {
+        int numparts = 4;
+        int size = 400;
+        SwaTestcaseFactory stfu = makeStfu(numparts, size, -5);
+        byte[] testMsg = stfu.makeTestMessage();
+        log.info("Constructed test MIME multipart message " + testMsg.length + " bytes long");
+        readParts(testMsg, numparts, 1);
+    }
+
     public void testRandomBlockSize() throws Exception {
         int numparts = 20;
         int size = 10;
@@ -131,7 +140,7 @@ public class MimeBoundaryTerminatedInputStreamTest extends TestCase {
         byte[] testMsg = stfu.makeTestMessage();
         log.info("Constructed test MIME multipart message " + testMsg.length + " bytes long");
         //log.info("Message: \n" + new String(testMsg));
-        readParts(testMsg, numparts, stfu.getRandom(), 1, 100, 0, 5);
+        readParts(testMsg, numparts, stfu.getRandom(), 1, 100, 0, 5, false);
     }
 
     public void testHugeBlockSize() throws Exception {
@@ -150,6 +159,15 @@ public class MimeBoundaryTerminatedInputStreamTest extends TestCase {
         byte[] testMsg = stfu.makeTestMessage();
         log.info("Constructed test MIME multipart message " + testMsg.length + " bytes long");
         readParts(testMsg, numparts, 512);
+    }
+
+    public void testSingleByteRead() throws Exception {
+        int numparts = 3;
+        int size = 171;
+        SwaTestcaseFactory stfu = makeStfu(numparts, size, 28);
+        byte[] testMsg = stfu.makeTestMessage();
+        log.info("Constructed test MIME multipart message " + testMsg.length + " bytes long");
+        readParts(testMsg, numparts, stfu.getRandom(), 1, 1, 0, 0, true);
     }
 
     public void testBadIntermediateBoundaries() throws Exception {
@@ -286,6 +304,14 @@ public class MimeBoundaryTerminatedInputStreamTest extends TestCase {
         }
     }
 
+    public static void copyStreamUsingSingleByteReads(InputStream in, OutputStream out) throws IOException {
+        if (in == null || out == null) throw new NullPointerException();
+
+        int ch;
+        while ((ch = in.read()) >= 0)
+            out.write(ch);
+    }
+
     public static long copyStreamInIrregularChunks(InputStream in,
                                   OutputStream out, 
                                   Random random, 
@@ -346,7 +372,7 @@ public class MimeBoundaryTerminatedInputStreamTest extends TestCase {
     private static class NotEnoughPartsException extends Exception {}
 
     private void readParts(byte[] testMsg, int numparts, int blockSize) throws IOException, TooManyPartsException, NotEnoughPartsException {
-        readParts(testMsg, numparts, new Random(), blockSize, blockSize, 0, 0);
+        readParts(testMsg, numparts, new Random(), blockSize, blockSize, 0, 0, false);
     }
     
     private void readParts(byte[] testMsg,
@@ -355,7 +381,8 @@ public class MimeBoundaryTerminatedInputStreamTest extends TestCase {
                            int blockSizeLow,
                            int blockSizeHigh,
                            int blockExtraLow,
-                           int blockExtraHigh)
+                           int blockExtraHigh,
+                           boolean useSingleByteReads)
             throws IOException, TooManyPartsException, NotEnoughPartsException
     {
         ByteArrayInputStream bais = new ByteArrayInputStream(testMsg);
@@ -384,7 +411,11 @@ public class MimeBoundaryTerminatedInputStreamTest extends TestCase {
             // Read first part and count bytes
             mbtis = new MimeBoundaryTerminatedInputStream(boundary, pis, psize);
             partOut = new ByteArrayOutputStream();
-            copyStreamInIrregularChunks(mbtis, partOut, random, blockSizeLow, blockSizeHigh, blockExtraLow, blockExtraHigh);
+            if (useSingleByteReads)
+                copyStreamUsingSingleByteReads(mbtis, partOut);
+            else
+                copyStreamInIrregularChunks(mbtis, partOut, random,
+                                            blockSizeLow, blockSizeHigh, blockExtraLow, blockExtraHigh);
             total = partOut.toByteArray().length;
             assertTrue(total > 0);
             log.info("Successfully read " + total + " bytes of part #" + partNum);
