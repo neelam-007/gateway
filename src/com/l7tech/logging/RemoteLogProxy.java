@@ -28,7 +28,7 @@ public class RemoteLogProxy {
     private Client getStub() throws RemoteException {
         if (localStub == null) {
             try {
-                localStub = new Client(getServiceURL(), getAdminUsername(), getAdminPassword());
+                localStub = new Client(getServiceURL());
             }
             catch (Exception e) {
                 throw new java.rmi.RemoteException("Exception getting admin ws stub", e);
@@ -45,23 +45,6 @@ public class RemoteLogProxy {
         }
         prefUrl += "/services/loggingAdmin";
         return prefUrl;
-    }
-
-    private ClientCredentialManager getCredentialManager() {
-        ClientCredentialManager credentialManager =
-          (ClientCredentialManager)Locator.getDefault().lookup(ClientCredentialManager.class);
-        if (credentialManager == null) { // bug
-            throw new RuntimeException("No credential manager configured in services");
-        }
-        return credentialManager;
-    }
-
-    private String getAdminUsername() {
-        return getCredentialManager().getUsername();
-    }
-
-    private String getAdminPassword() {
-        return getCredentialManager().getPassword();
     }
 
     private Client localStub = null;
