@@ -18,7 +18,7 @@ import java.io.IOException;
  * Time: 3:39:14 PM
  */
 public class SsgManagerTest extends TestCase {
-    static Logger log = Logger.getLogger(ThreadPoolTest.class.getName());
+    static Logger log = Logger.getLogger(SsgManagerTest.class.getName());
 
     private static final SsgManagerImpl sm = SsgManagerImpl.getInstance();
 
