@@ -1,10 +1,8 @@
 package com.l7tech.console.panels;
 
-import com.l7tech.common.util.Locator;
 import com.l7tech.console.table.LogTableModel;
 import com.l7tech.console.table.StatisticsTableSorter;
 import com.l7tech.console.icons.ArrowIcon;
-import com.l7tech.service.ServiceAdmin;
 import com.l7tech.logging.LogAdmin;
 import com.l7tech.logging.StatisticsRecord;
 import com.l7tech.cluster.ServiceUsage;
@@ -31,14 +29,8 @@ import java.util.HashMap;
 
 public class StatisticsPanel extends JPanel {
 
-    private static final String STATISTICS_UNAVAILABLE = "unavailable";
-    private static final String SERVER_UP_TIME_PREFIX = "Server Uptime: ";
-    private static final String LAST_MINUTE_SERVER_LOAD_PREFIX = "Avg load (1 min): ";
-    private static final String MIDDLE_SPACE = "     ";
-    private static final String END_SPACE    = "   ";
-
     LogAdmin logService = null;
-    private ServiceAdmin serviceManager = null;
+//    private ServiceAdmin serviceManager = null;
     private Vector statsList = new Vector();
 
     // IMPORTANT NOTE:
@@ -55,20 +47,9 @@ public class StatisticsPanel extends JPanel {
     private DefaultTableColumnModel columnModel = null;
     private DefaultTableColumnModel totalColumnModel = null;
     private DefaultTableModel statTotalTableModel = null;
-    private JPanel selectPane = null;
-    private JPanel controlPane = null;
-    private JCheckBox autoRefresh = null;
-    private JPanel serverLoadPane = null;
-    private javax.swing.Timer statRefreshTimer = null;
-//    private JLabel serverUpTime = null;
-//    private JLabel lastMinuteServerLoad = null;
-//    private JPanel selectPaneRight = null;
-    private JPanel selectPaneLeft = null;
     private long attemptedCountTotal = 0;
     private long authorizedCountTotal = 0;
     private long completedCountTotal = 0;
-//    private long serverUpTimeMinutues = 0;
-//    private long completedCountPerMinuteTotal = 0;
     private long lastMinuteCompletedCountTotal = 0;
     private HashMap lastMinuteCompletedCountsCache;
     private Icon upArrowIcon = new ArrowIcon(0);
@@ -79,40 +60,10 @@ public class StatisticsPanel extends JPanel {
         setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
         add(getStatTablePane());
         add(getStatTotalTable());
-        add(getSelectPane());
 
         lastMinuteCompletedCountsCache = new HashMap();
-
-   //     setVisible(false);
-
     }
 
-    /**
-     * This function is called when a connection to the server is established.
-     */
-    public void onConnect(){
-
-        logService = (LogAdmin) Locator.getDefault().lookup(LogAdmin.class);
-        if (logService == null) throw new IllegalStateException("Cannot obtain LogAdmin remote reference");
-
-        serviceManager = (ServiceAdmin) Locator.getDefault().lookup(ServiceAdmin.class);
-        if (serviceManager == null) throw new RuntimeException("Cannot obtain ServiceManager remote reference");
-
-        // intantiate the cache
-        lastMinuteCompletedCountsCache = new HashMap();
-
-        statsList = new Vector();
-    }
-
-    public void onDisconnect(){
-
-        logService = null;
-        serviceManager = null;
-        lastMinuteCompletedCountsCache = null;
-
-    //    stopRefreshTimer();
-        clearStatiistics();
-    }
 
     private JScrollPane getStatTablePane() {
         if (statTablePane != null) return statTablePane;
@@ -272,106 +223,6 @@ public class StatisticsPanel extends JPanel {
         return statTotalTableModel;
     }
 
-    private JPanel getSelectPane() {
-        if (selectPane != null) return selectPane;
-
-        selectPane = new JPanel();
-        selectPane.setMinimumSize(new Dimension((int) selectPane.getSize().getWidth(), 35));
-        selectPane.setLayout(new BorderLayout());
-        selectPane.add(getSelectPaneLeft(), BorderLayout.EAST);
-//        selectPane.add(getSelectPaneRight(), BorderLayout.EAST);
-
-        return selectPane;
-    }
-
-/*    private JPanel getSelectPaneRight(){
-        if(selectPaneRight != null) return selectPaneRight;
-
-        selectPaneRight = new JPanel();
-        selectPaneRight.setLayout(new FlowLayout(FlowLayout.LEFT, 5, 10));
-        selectPaneRight.add(getServerLoadPane());
-        return selectPaneRight;
-    }*/
-
-    private JPanel getSelectPaneLeft(){
-        if( selectPaneLeft != null) return selectPaneLeft;
-
-        selectPaneLeft = new JPanel();
-        selectPaneLeft.setLayout(new FlowLayout(FlowLayout.LEFT));
-        selectPaneLeft.add(getControlPane());
-
-        return selectPaneLeft;
-    }
-
-/*    private JPanel getServerLoadPane() {
-        if (serverLoadPane != null) return serverLoadPane;
-
-        serverLoadPane = new JPanel();
-        serverLoadPane.setLayout(new FlowLayout(FlowLayout.RIGHT));
-
-        if (serverUpTime == null) serverUpTime = new JLabel();
-        if (lastMinuteServerLoad == null) lastMinuteServerLoad = new JLabel();
-        serverLoadPane.add(serverUpTime);
-        serverLoadPane.add(lastMinuteServerLoad);
-
-        return serverLoadPane;
-    }*/
-
-    private JPanel getControlPane() {
-        if (controlPane != null) return controlPane;
-
-        controlPane = new JPanel();
-        controlPane.setLayout(new FlowLayout(FlowLayout.LEFT));
-
- /*       if (autoRefresh == null) {
-            autoRefresh = new JCheckBox();
-        }
-        autoRefresh.setFont(new java.awt.Font("Dialog", 0, 11));
-        autoRefresh.setText("Auto-refresh");
-        autoRefresh.setSelected(true);
-        autoRefresh.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                if (autoRefresh.isSelected()) {
-                    getStatRefreshTimer().start();
-                } else {
-                    getStatRefreshTimer().stop();
-                }
-            }
-        });
-        controlPane.add(autoRefresh);
-*/
-
-        return controlPane;
-    }
-
-/*    private javax.swing.Timer getStatRefreshTimer() {
-
-        if (statRefreshTimer != null) return statRefreshTimer;
-
-        // Create a refresh timer.
-        statRefreshTimer = new javax.swing.Timer(STAT_REFRESH_TIMER, new ActionListener() {
-            public void actionPerformed(ActionEvent evt) {
-                refreshStatistics();
-            }
-        });
-
-        return statRefreshTimer;
-    }*/
-
-/*    public void refreshStatistics() {
-
-        getStatRefreshTimer().stop();
-
-        // create a worker thread to retrieve the Service statistics
-        final StatisticsWorker statsWorker = new StatisticsWorker(serviceManager, logService) {
-            public void finished(){
-                //updateServerMetricsFields(getMetrics());
-                updateStatisticsTable(getStatsList());
-            }
-        };
-
-        statsWorker.start();
-    }*/
 
     public void updateStatisticsTable(Vector rawStatsList) {
 
@@ -379,27 +230,20 @@ public class StatisticsPanel extends JPanel {
         attemptedCountTotal = 0;
         authorizedCountTotal = 0;
         completedCountTotal = 0;
-    //    completedCountPerMinuteTotal = 0;
         lastMinuteCompletedCountTotal = 0;
 
         for (int i = 0; i < rawStatsList.size(); i++) {
 
             ServiceUsage stats = (ServiceUsage) rawStatsList.get(i);
             long completedCount = stats.getCompleted();
-            long completedCountPerMinute = 0;
-   /*         if (serverUpTimeMinutues > 0) {
-                completedCountPerMinute = completedCount / serverUpTimeMinutues;
-                completedCountPerMinuteTotal += completedCount / serverUpTimeMinutues;
-            }*/
 
             updateStatCache(stats.getServiceName(), completedCount);
             long lastMinuteCompletedCount = getLastMinuteCompletedCount(stats.getServiceName());
 
             StatisticsRecord statsRec = new StatisticsRecord(stats.getServiceName(),
-                    (long) stats.getRequests(),
-                    (long) stats.getAuthorized(),
+                    stats.getRequests(),
+                    stats.getAuthorized(),
                     completedCount,
-//                    completedCountPerMinute,
                     lastMinuteCompletedCount);
 
             statsList.add(statsRec);
@@ -415,8 +259,6 @@ public class StatisticsPanel extends JPanel {
 
         updateReqeustsTotal();
 
-//        getStatRefreshTimer().start();
-
     }
 
     private void updateReqeustsTotal() {
@@ -428,52 +270,7 @@ public class StatisticsPanel extends JPanel {
        getStatTotalTableModel().fireTableDataChanged();
     }
 
-/*    private void updateServerMetricsFields(UptimeMetrics metrics) {
-
-        if (metrics == null) {
-            serverUpTime.setText(END_SPACE + SERVER_UP_TIME_PREFIX + STATISTICS_UNAVAILABLE + MIDDLE_SPACE);
-            lastMinuteServerLoad.setText(LAST_MINUTE_SERVER_LOAD_PREFIX + STATISTICS_UNAVAILABLE + END_SPACE);
-
-        } else {
-
-            long uptime_ms = (System.currentTimeMillis() - metrics.getServerBootTime()) / 1000;
-
-            serverUpTimeMinutues = uptime_ms/60;
-            long minutes_remain = serverUpTimeMinutues%60;
-            long hrs_total = serverUpTimeMinutues/60;
-            long hrs_remain = hrs_total%24;
-            long days = hrs_total/24;
-            String uptimeString = "";
-
-            if(days == 1){
-                uptimeString += Long.toString(days) + " day ";
-            }
-            else{
-                uptimeString += Long.toString(days) + " days ";
-            }
-            if(hrs_remain == 1){
-                uptimeString += Long.toString(hrs_remain) + " hour ";
-            }
-            else{
-                uptimeString += Long.toString(hrs_remain) + " hours ";
-            }
-            if(minutes_remain == 1){
-                uptimeString += Long.toString(minutes_remain) + " minute " + MIDDLE_SPACE;
-            }
-            else{
-                uptimeString += Long.toString(minutes_remain) + " minutes " + MIDDLE_SPACE;
-            }
-            serverUpTime.setText(END_SPACE + SERVER_UP_TIME_PREFIX + uptimeString);
-            lastMinuteServerLoad.setText(LAST_MINUTE_SERVER_LOAD_PREFIX + Double.toString(metrics.getLoad1()) + END_SPACE);
-
-        }
-    }*/
-
-/*    public void stopRefreshTimer() {
-        getStatRefreshTimer().stop();
-    }*/
-
-    public void clearStatiistics() {
+    public void clearStatistics() {
         while (getStatTableModel().getRowCount() > 0) {
             getStatTableModel().getRealModel().removeRow(0);
         }
