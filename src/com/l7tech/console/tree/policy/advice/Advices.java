@@ -6,6 +6,7 @@ import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.RequestXpathAssertion;
 import com.l7tech.policy.assertion.RoutingAssertion;
 import com.l7tech.policy.assertion.xml.SchemaValidation;
+import com.l7tech.policy.assertion.xml.XslTransformation;
 import com.l7tech.policy.assertion.xmlsec.XmlRequestSecurity;
 import com.l7tech.policy.assertion.xmlsec.XmlResponseSecurity;
 
@@ -90,5 +91,6 @@ public class Advices {
         advicesMap.put(XmlResponseSecurity.class, new Class[]{AddXmlRequestResponseSecurityAssertionAdvice.class});
         advicesMap.put(RoutingAssertion.class, new Class[]{AddRoutingAssertionAdvice.class});
         advicesMap.put(SchemaValidation.class, new Class[]{AddSchemaValidationAssertionAdvice.class});
+        advicesMap.put(XslTransformation.class, new Class[]{AddXslTransformationAssertionAdvice.class});
     }
 }
