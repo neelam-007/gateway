@@ -24,7 +24,7 @@ public class PolicyExporterTest extends TestCase {
         Assertion testPolicy = createTestPolicy();
         Document resultingExport = exporter.exportToDocument(testPolicy);
         // visual inspection for now:
-        System.out.println(XmlUtil.nodeToString(resultingExport));
+        System.out.println(XmlUtil.nodeToFormattedString(resultingExport));
     }
 
     private Assertion createTestPolicy() {
