@@ -5,11 +5,7 @@ import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.DeleteException;
 import com.l7tech.objectmodel.SaveException;
 import com.l7tech.objectmodel.UpdateException;
-import com.l7tech.adminws.identity.Identity;
-import com.l7tech.adminws.identity.IdentityService;
-import com.l7tech.adminws.identity.IdentityServiceLocator;
-import com.l7tech.adminws.translation.TypeTranslator;
-
+import com.l7tech.adminws.identity.Client;
 import java.util.Collection;
 import java.io.IOException;
 
@@ -27,11 +23,9 @@ public class InternalUserManagerClient implements com.l7tech.identity.UserManage
 
     public User findByPrimaryKey(long oid) throws FindException {
         try {
-            return TypeTranslator.serviceUserToGenUser(getStub().findUserByPrimaryKey(identityProviderConfigId, oid));
+            return getStub().findUserByPrimaryKey(identityProviderConfigId, oid);
         } catch (java.rmi.RemoteException e) {
             throw new FindException("RemoteException in findUserByPrimaryKey", e);
-        } catch (ClassNotFoundException e) {
-            throw new FindException("ClassNotFoundException in TypeTranslator.serviceUserToGenUser", e);
         }
     }
 
@@ -45,7 +39,7 @@ public class InternalUserManagerClient implements com.l7tech.identity.UserManage
 
     public long save(User user) throws SaveException {
         try {
-            return getStub().saveUser(identityProviderConfigId, TypeTranslator.genUserToServiceUser(user));
+            return getStub().saveUser(identityProviderConfigId, user);
         } catch (java.rmi.RemoteException e) {
             throw new SaveException("RemoteException in save", e);
         }
@@ -65,23 +59,27 @@ public class InternalUserManagerClient implements com.l7tech.identity.UserManage
     }
 
     public Collection findAllHeaders() throws FindException {
+        com.l7tech.objectmodel.EntityHeader[] array = null;
         try {
-            return TypeTranslator.headerArrayToCollection(getStub().findAllUsers(identityProviderConfigId));
+            array = getStub().findAllUsers(identityProviderConfigId);
         } catch (java.rmi.RemoteException e) {
             throw new FindException("RemoteException in findAllHeaders", e);
-        } catch (ClassNotFoundException e) {
-            throw new FindException("ClassNotFoundException in TypeTranslator.headerArrayToCollection", e);
         }
+        Collection output = new java.util.ArrayList();
+        for (int i = 0; i < array.length; i++) output.add(array[i]);
+        return output;
     }
 
     public Collection findAllHeaders(int offset, int windowSize) throws FindException {
+        com.l7tech.objectmodel.EntityHeader[] array = null;
         try {
-            return TypeTranslator.headerArrayToCollection(getStub().findAllUsersByOffset(identityProviderConfigId, offset, windowSize));
+            array = getStub().findAllUsersByOffset(identityProviderConfigId, offset, windowSize);
         } catch (java.rmi.RemoteException e) {
             throw new FindException("RemoteException in findAllHeaders", e);
-        } catch (ClassNotFoundException e) {
-            throw new FindException("ClassNotFoundException in TypeTranslator.headerArrayToCollection", e);
         }
+        Collection output = new java.util.ArrayList();
+        for (int i = 0; i < array.length; i++) output.add(array[i]);
+        return output;
     }
 
     public Collection findAll() throws FindException {
@@ -95,11 +93,10 @@ public class InternalUserManagerClient implements com.l7tech.identity.UserManage
     // ************************************************
     // PRIVATES
     // ************************************************
-    private Identity getStub() throws java.rmi.RemoteException {
+    private Client getStub() throws java.rmi.RemoteException {
         if (localStub == null) {
-            IdentityService service = new IdentityServiceLocator();
             try {
-                localStub = service.getidentities(new java.net.URL(getServiceURL()));
+                localStub = new Client(getServiceURL());
             }
             catch (Exception e) {
                 throw new java.rmi.RemoteException("cannot instantiate the admin service stub", e);
@@ -109,15 +106,15 @@ public class InternalUserManagerClient implements com.l7tech.identity.UserManage
     }
     private String getServiceURL() throws IOException {
         String prefUrl = com.l7tech.console.util.Preferences.getPreferences().getServiceUrl();
-        if (prefUrl == null || prefUrl.length() < 1) {
+        if (prefUrl == null || prefUrl.length() < 1 || prefUrl.equals("null/ssg")) {
             System.err.println("com.l7tech.console.util.Preferences.getPreferences does not resolve a server address");
             prefUrl = "http://localhost:8080/ssg";
         }
-        prefUrl += "/services/identities";
+        prefUrl += "/services/identityAdmin";
         return prefUrl;
         //return "http://localhost:8080/UneasyRooster/services/identities";
     }
 
     private long identityProviderConfigId;
-    private Identity localStub = null;
+    private Client localStub = null;
 }
