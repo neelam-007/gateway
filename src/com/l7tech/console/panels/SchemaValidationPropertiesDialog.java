@@ -31,15 +31,15 @@ import java.io.StringWriter;
 import java.util.logging.Logger;
 import java.util.logging.Level;
 import java.util.EventListener;
+import java.util.Locale;
+import java.util.ResourceBundle;
 import java.net.URL;
 import java.net.MalformedURLException;
 
 
 
 /**
- * A dialog to view / configure the properties of a schema validation assertion
- *
- * todo: put strings in resource file
+ * A dialog to view / configure the properties of a schema validation assertion.
  *
  * <br/><br/>
  * LAYER 7 TECHNOLOGIES, INC<br/>
@@ -55,7 +55,6 @@ public class SchemaValidationPropertiesDialog extends JDialog {
      */
     public SchemaValidationPropertiesDialog(Frame owner, SchemaValidationTreeNode node, PublishedService service) {
         super(owner, false);
-        setTitle("Schema validation properties");
         subject = node.getAssertion();
         this.service = service;
         initialize();
@@ -66,13 +65,16 @@ public class SchemaValidationPropertiesDialog extends JDialog {
      */
     public SchemaValidationPropertiesDialog(Frame owner, SchemaValidation assertion, PublishedService service) {
         super(owner, true);
-        setTitle("Schema validation properties");
         subject = assertion;
         this.service = service;
         initialize();
     }
 
     private void initialize() {
+
+        initResources();
+        setTitle(resources.getString("window.title"));
+
         // create controls
         allocControls();
 
@@ -114,7 +116,7 @@ public class SchemaValidationPropertiesDialog extends JDialog {
         // validate the contents of the xml control
         String contents = wsdlTextArea.getText();
         if (!docIsSchema(contents)) {
-            displayError("No xml document specified or invalid schema.", null);
+            displayError(resources.getString("error.notschema"), null);
             return;
         }
         // save new schema
@@ -224,20 +226,20 @@ public class SchemaValidationPropertiesDialog extends JDialog {
 
     private void readFromWsdl() {
         if (service == null) {
-            displayError("No access to wsdl.", null);
+            displayError(resources.getString("error.noaccesstowsdl"), null);
             return;
         }
         String wsdl = null;
         try {
             wsdl = service.getWsdlXml();
         } catch (IOException e) {
-            displayError("No access to wsdl.", null);
+            displayError(resources.getString("error.noaccesstowsdl"), null);
             return;
         }
 
         Document wsdlDoc = stringToDoc(wsdl);
         if (wsdlDoc == null) {
-            displayError("WSDL not set.", null);
+            displayError(resources.getString("error.nowsdl"), null);
             return;
         }
 
@@ -245,10 +247,10 @@ public class SchemaValidationPropertiesDialog extends JDialog {
         try {
             tmp.assignSchemaFromWsdl(wsdlDoc);
         } catch (IllegalArgumentException e) {
-            displayError("WSDL not set.", null);
+            displayError(resources.getString("error.noschemainwsdl"), null);
             return;
         } catch (IOException e) {
-            displayError("WSDL not set.", null);
+            displayError(resources.getString("error.nowsdl"), null);
             return;
         }
         wsdlTextArea.setText(tmp.getSchema());
@@ -259,7 +261,7 @@ public class SchemaValidationPropertiesDialog extends JDialog {
         // get url
         String urlstr = urlTxtFld.getText();
         if (urlstr == null || urlstr.length() < 1) {
-            displayError("please provide url", null);
+            displayError(resources.getString("error.nourl"), null);
             return;
         }
         // compose input source
@@ -267,7 +269,7 @@ public class SchemaValidationPropertiesDialog extends JDialog {
         try {
             url = new URL(urlstr);
         } catch (MalformedURLException e) {
-            displayError(urlstr + "this is not a well formed url", null);
+            displayError(urlstr + " " + resources.getString("error.badurl"), null);
             log.log(Level.FINE, "malformed url", e);
             return;
         }
@@ -276,7 +278,7 @@ public class SchemaValidationPropertiesDialog extends JDialog {
         try {
             is = new InputSource(url.openStream());
         } catch (IOException e) {
-            displayError("cannot retrieve source at " + urlstr, null);
+            displayError(resources.getString("error.urlnocontent") + " " + urlstr, null);
             return;
         }
         DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
@@ -285,15 +287,15 @@ public class SchemaValidationPropertiesDialog extends JDialog {
         try {
             doc = dbf.newDocumentBuilder().parse(is);
         } catch (SAXException e) {
-            displayError("cannot parse xml document from " + urlstr, null);
+            displayError(resources.getString("error.noxmlaturl") + " " + urlstr, null);
             log.log(Level.FINE, "cannot parse " + urlstr, e);
             return;
         } catch (IOException e) {
-            displayError("cannot parse xml document from " + urlstr, null);
+            displayError(resources.getString("error.noxmlaturl") + " " + urlstr, null);
             log.log(Level.FINE, "cannot parse " + urlstr, e);
             return;
         } catch (ParserConfigurationException e) {
-            displayError("cannot parse xml document from " + urlstr, null);
+            displayError(resources.getString("error.noxmlaturl") + " " + urlstr, null);
             log.log(Level.FINE, "cannot parse " + urlstr, e);
             return;
         }
@@ -312,7 +314,7 @@ public class SchemaValidationPropertiesDialog extends JDialog {
             wsdlTextArea.setText(printedSchema);
             okButton.setEnabled(true);
         } else {
-            displayError("the document from " + urlstr + " is not a schema.", null);
+            displayError(resources.getString("error.urlnoschema") + " " + urlstr, null);
         }
     }
 
@@ -328,7 +330,7 @@ public class SchemaValidationPropertiesDialog extends JDialog {
     }
 
     private void displayError(String msg, String title) {
-        if (title == null) title = "Schema Validation properties";
+        if (title == null) title = resources.getString("window.title");
         JOptionPane.showMessageDialog(this, msg, title, JOptionPane.ERROR_MESSAGE);
     }
 
@@ -360,7 +362,7 @@ public class SchemaValidationPropertiesDialog extends JDialog {
     private JPanel constructXmlDisplayPanel() {
         JPanel xmldisplayPanel = new JPanel();
         xmldisplayPanel.setLayout(new BorderLayout(0, CONTROL_SPACING));
-        JLabel schemaTitle = new JLabel("Schema to validate against:");
+        JLabel schemaTitle = new JLabel(resources.getString("xmldisplayPanel.name"));
         xmldisplayPanel.add(schemaTitle, BorderLayout.NORTH);
 
         if (subject != null && subject != null && subject.getSchema() != null) {
@@ -407,7 +409,7 @@ public class SchemaValidationPropertiesDialog extends JDialog {
         // make controls
         JPanel loadFromUrlPanel = new JPanel();
         loadFromUrlPanel.setLayout(new BorderLayout(CONTROL_SPACING, 0));
-        JLabel loadfromurllabel = new JLabel("Load schema from URL:");
+        JLabel loadfromurllabel = new JLabel(resources.getString("loadFromUrlPanel.name"));
         loadFromUrlPanel.add(loadfromurllabel, BorderLayout.WEST);
         loadFromUrlPanel.add(urlTxtFld, BorderLayout.CENTER);
         loadFromUrlPanel.add(resolveButton, BorderLayout.EAST);
@@ -449,20 +451,25 @@ public class SchemaValidationPropertiesDialog extends JDialog {
     private void allocControls() {
         // construct buttons
         helpButton = new JButton();
-        helpButton.setText("Help");
+        helpButton.setText(resources.getString("helpButton.name"));
         okButton = new JButton();
-        okButton.setText("Ok");
+        okButton.setText(resources.getString("okButton.name"));
         cancelButton = new JButton();
-        cancelButton.setText("Cancel");
+        cancelButton.setText(resources.getString("cancelButton.name"));
         readFromWsdlButton = new JButton();
-        readFromWsdlButton.setText("Populate schema from WSDL");
+        readFromWsdlButton.setText(resources.getString("readFromWsdlButton.name"));
         urlTxtFld = new JTextField();
         resolveButton = new JButton();
-        resolveButton.setText("Resolve");
+        resolveButton.setText(resources.getString("resolveButton.name"));
         wsdlTextArea = new JEditTextArea();
         wsdlTextArea.setDocument(new SyntaxDocument());
         wsdlTextArea.setEditable(false);
         wsdlTextArea.setTokenMarker(new XMLTokenMarker());
+    }
+
+    private void initResources() {
+        Locale locale = Locale.getDefault();
+        resources = ResourceBundle.getBundle("com.l7tech.console.resources.SchemaValidationPropertiesDialog", locale);
     }
 
     private JButton helpButton;
@@ -472,6 +479,8 @@ public class SchemaValidationPropertiesDialog extends JDialog {
     private JButton resolveButton;
     private JTextField urlTxtFld;
     private JEditTextArea wsdlTextArea;
+
+    private ResourceBundle resources;
 
     private SchemaValidation subject;
     private PublishedService service;
