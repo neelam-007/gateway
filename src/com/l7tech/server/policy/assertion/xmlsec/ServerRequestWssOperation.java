@@ -17,7 +17,6 @@ import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.XpathBasedAssertion;
 import com.l7tech.server.policy.assertion.ServerAssertion;
 import org.w3c.dom.Document;
-import org.w3c.dom.Element;
 import org.xml.sax.SAXException;
 
 import java.io.IOException;
