@@ -362,10 +362,9 @@ class PathValidator {
                 }
             }
             if (!feedback.isEmpty()) {
-                StringBuffer msg = new StringBuffer("The service refers to relative uri " +
-                                                    "which will prevent xml digital signature to " +
-                                                    "function properly. See \"KBUnableToSignRelativeNamespaceURI\" " +
-                                                    "in knowledge base.");
+                StringBuffer msg = new StringBuffer("The service refers to a relative namespace URI, " +
+                                                    "which will prevent XML digital signatures from " +
+                                                    "functioning properly.");
                 for (Iterator iterator = feedback.iterator(); iterator.hasNext();) {
                     RelativeURINamespaceProblemFeedback fb = (RelativeURINamespaceProblemFeedback)iterator.next();
                     msg.append("<br>Namespace: " + fb.ns);

@@ -395,8 +395,7 @@ public class WssDecoratorImpl implements WssDecorator {
         } catch (XSignatureException e) {
             String msg = e.getMessage();
             if (msg != null && msg.indexOf("Found a relative URI") >= 0)       // Bug #1209
-                throw new InvalidDocumentFormatException("Unable to sign this message due to a relative namespace URI. " +
-                                                         "(Layer 7 Knowledge Base: KBUnableToSignRelativeNamespaceURI)", e);
+                throw new InvalidDocumentFormatException("Unable to sign this message due to a relative namespace URI.", e);
             throw new DecoratorException(e);
         }
 
