@@ -6,6 +6,7 @@ import com.l7tech.console.event.EntityListener;
 import com.l7tech.console.event.EntityEvent;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
+import com.l7tech.common.gui.util.Utilities;
 
 import javax.swing.*;
 import java.awt.*;

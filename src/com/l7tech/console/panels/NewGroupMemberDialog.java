@@ -5,6 +5,7 @@ import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.SortedListModel;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.common.gui.util.Utilities;
 
 import javax.swing.*;
 import javax.swing.event.ListSelectionEvent;

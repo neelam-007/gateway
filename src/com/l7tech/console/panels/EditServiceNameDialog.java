@@ -7,6 +7,7 @@ import com.l7tech.console.util.Registry;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.service.PublishedService;
+import com.l7tech.common.gui.util.Utilities;
 
 import javax.swing.*;
 import java.awt.*;

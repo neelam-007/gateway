@@ -10,7 +10,7 @@ import java.awt.Insets;
 import java.awt.Window;
 import java.awt.event.*;
 
-import com.l7tech.console.panels.Utilities;
+import com.l7tech.common.gui.util.Utilities;
 
 /**
  * The class for implementing panels that allow editing of bean data

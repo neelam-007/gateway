@@ -7,6 +7,7 @@ import com.l7tech.identity.IdentityProvider;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
+import com.l7tech.common.gui.util.Utilities;
 
 import javax.swing.*;
 import javax.swing.event.ListSelectionEvent;

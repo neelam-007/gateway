@@ -1,9 +1,9 @@
 /*
  * $Header$
  */
-package com.l7tech.console.panels;
+package com.l7tech.common.gui.util;
 
-import com.l7tech.console.util.IconManager2;
+import com.l7tech.common.gui.util.ImageCache;
 
 import java.awt.*;
 import javax.swing.*;
@@ -220,6 +220,6 @@ public class Utilities {
      * @return icon's Image, or null, if the icon cannot be loaded.
      */
     public static final Image loadImage(String resource) {
-        return IconManager2.getInstance().getIcon(resource);
+        return ImageCache.getInstance().getIcon(resource);
     }
 }

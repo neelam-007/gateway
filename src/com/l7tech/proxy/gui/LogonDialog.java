@@ -6,7 +6,7 @@
 
 package com.l7tech.proxy.gui;
 
-import com.l7tech.console.panels.Utilities;
+import com.l7tech.common.gui.util.Utilities;
 import org.apache.log4j.Category;
 
 import javax.swing.*;

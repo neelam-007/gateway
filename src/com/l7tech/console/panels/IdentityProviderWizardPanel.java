@@ -1,7 +1,8 @@
 package com.l7tech.console.panels;
 
 import com.l7tech.console.util.IconManager;
-import com.l7tech.console.util.IconManager2;
+import com.l7tech.common.gui.util.ImageCache;
+import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.console.util.Registry;
 import com.l7tech.policy.assertion.credential.PrincipalCredentials;
 import com.l7tech.policy.assertion.credential.http.HttpDigest;
@@ -572,9 +573,9 @@ public class IdentityProviderWizardPanel extends WizardStepPanel {
             throw new NullPointerException("type");
         }
         if (type.equals(EntityType.GROUP)) {
-            return new ImageIcon(IconManager2.getInstance().getIcon(GroupPanel.GROUP_ICON_RESOURCE));
+            return new ImageIcon(ImageCache.getInstance().getIcon(GroupPanel.GROUP_ICON_RESOURCE));
         } else if (type.equals(EntityType.USER)) {
-            return new ImageIcon(IconManager2.getInstance().getIcon(UserPanel.USER_ICON_RESOURCE));
+            return new ImageIcon(ImageCache.getInstance().getIcon(UserPanel.USER_ICON_RESOURCE));
         }
         return null;
     }

@@ -1,9 +1,9 @@
 package com.l7tech.proxy.gui;
 
-import com.l7tech.common.gui.CertificatePanel;
-import com.l7tech.common.gui.WrappingLabel;
+import com.l7tech.common.gui.widgets.CertificatePanel;
+import com.l7tech.common.gui.widgets.WrappingLabel;
 import com.l7tech.common.gui.IntegerField;
-import com.l7tech.console.panels.Utilities;
+import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.console.tree.EntityTreeCellRenderer;
 import com.l7tech.console.tree.policy.PolicyTreeModel;
 import com.l7tech.proxy.ClientProxy;
@@ -64,7 +64,7 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
 
     //   View for Network pane
     private JComponent networkPane;
-    private WrappingLabel fieldLocalEndpoint;
+    private com.l7tech.common.gui.widgets.WrappingLabel fieldLocalEndpoint;
     private JRadioButton radioStandardPorts;
     private JRadioButton radioNonstandardPorts;
     private JTextField fieldSsgPort;
@@ -316,7 +316,7 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
             int oy = gridY;
             gridY = 0;
 
-            WrappingLabel splain01 = new WrappingLabel("The Agent will listen for incoming messages at this local " +
+            com.l7tech.common.gui.widgets.WrappingLabel splain01 = new com.l7tech.common.gui.widgets.WrappingLabel("The Agent will listen for incoming messages at this local " +
                                                        "URL, and route any such messages to this Gateway.", 2);
             epp.add(splain01,
                     new GridBagConstraints(0, gridY++, 2, 1, 0.0, 0.0,
@@ -324,7 +324,7 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
                                            GridBagConstraints.HORIZONTAL,
                                            new Insets(0, 5, 0, 0), 0, 0));
 
-            fieldLocalEndpoint = new WrappingLabel("");
+            fieldLocalEndpoint = new com.l7tech.common.gui.widgets.WrappingLabel("");
             epp.add(new JLabel("Proxy URL:"), new GridBagConstraints(0, gridY, 1, 1, 0.0, 0.0,
                                                               GridBagConstraints.EAST,
                                                               GridBagConstraints.NONE,
@@ -347,7 +347,7 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
                                             GridBagConstraints.HORIZONTAL,
                                             new Insets(14, 5, 0, 5), 0, 0));
 
-            gpp.add(new WrappingLabel("If your Gateway is listening on nonstandard ports, " +
+            gpp.add(new com.l7tech.common.gui.widgets.WrappingLabel("If your Gateway is listening on nonstandard ports, " +
                                       "you can configure them here.", 2),
                     new GridBagConstraints(0, 0, 5, 1, 0.0, 0.0,
                                            GridBagConstraints.WEST,
@@ -443,7 +443,7 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
 
             String splaintext = "Please enter the host name or Internet address " +
                                 "of the SecureSpan Gateway that will be processing your requests.";
-            WrappingLabel splain01 = new WrappingLabel(splaintext, 3);
+            com.l7tech.common.gui.widgets.WrappingLabel splain01 = new com.l7tech.common.gui.widgets.WrappingLabel(splaintext, 3);
             pane.add(splain01,
                      new GridBagConstraints(0, gridY++, 2, 1, 1000.0, 0.0,
                                             GridBagConstraints.WEST,
@@ -550,7 +550,7 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
                                          GridBagConstraints.CENTER,
                                          GridBagConstraints.BOTH,
                                          new Insets(5, 5, 5, 5), 0, 0));
-            CertificatePanel cpan = new CertificatePanel(cert);
+            com.l7tech.common.gui.widgets.CertificatePanel cpan = new com.l7tech.common.gui.widgets.CertificatePanel(cert);
             c.add(cpan,
                   new GridBagConstraints(0, 1, 3, 1, 1000.0, 1000.0,
                                          GridBagConstraints.CENTER,

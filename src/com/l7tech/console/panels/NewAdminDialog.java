@@ -2,6 +2,7 @@ package com.l7tech.console.panels;
 
 import com.l7tech.console.text.FilterDocument;
 import com.l7tech.console.tree.AdminFolderNode;
+import com.l7tech.common.gui.util.Utilities;
 
 import javax.swing.*;
 import java.awt.*;

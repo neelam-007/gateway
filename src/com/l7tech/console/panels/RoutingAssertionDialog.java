@@ -5,6 +5,7 @@ import com.l7tech.console.event.PolicyListener;
 import com.l7tech.policy.AssertionPath;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.RoutingAssertion;
+import com.l7tech.common.gui.util.Utilities;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;

@@ -18,6 +18,7 @@ import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.RoutingAssertion;
 import com.l7tech.service.PublishedService;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.common.gui.util.Utilities;
 
 import javax.swing.*;
 import javax.swing.event.TreeModelEvent;

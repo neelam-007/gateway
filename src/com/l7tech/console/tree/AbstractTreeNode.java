@@ -1,6 +1,6 @@
 package com.l7tech.console.tree;
 
-import com.l7tech.console.util.IconManager2;
+import com.l7tech.common.gui.util.ImageCache;
 import com.l7tech.console.util.WeakPropertyChangeSupport;
 import com.l7tech.policy.assertion.Assertion;
 
@@ -164,7 +164,7 @@ public abstract class AbstractTreeNode extends DefaultMutableTreeNode {
      * @return the <code>ImageIcon</code> or null if not found
      */
     public Image getIcon() {
-        return IconManager2.getInstance().getIcon(iconResource(false));
+        return ImageCache.getInstance().getIcon(iconResource(false));
 
     }
 
@@ -175,7 +175,7 @@ public abstract class AbstractTreeNode extends DefaultMutableTreeNode {
      * @return icon to use to represent the bean when opened
      */
     public Image getOpenedIcon() {
-        return IconManager2.getInstance().getIcon(iconResource(true));
+        return ImageCache.getInstance().getIcon(iconResource(true));
     }
 
     /**

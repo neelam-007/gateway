@@ -1,6 +1,6 @@
 package com.l7tech.console.action;
 
-import com.l7tech.console.util.IconManager2;
+import com.l7tech.common.gui.util.ImageCache;
 
 import javax.swing.*;
 import java.awt.*;
@@ -48,7 +48,7 @@ public abstract class BaseAction extends AbstractAction {
      * @return the <code>ImageIcon</code> or null if not found
      */
     public final Image getIcon() {
-        return IconManager2.getInstance().getIcon(iconResource());
+        return ImageCache.getInstance().getIcon(iconResource());
 
     }
 

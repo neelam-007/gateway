@@ -1,6 +1,6 @@
 package com.l7tech.console.action;
 
-import com.l7tech.console.panels.Utilities;
+import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.console.tree.policy.IdentityPolicyView;
 import com.l7tech.console.util.Registry;
 import com.l7tech.policy.assertion.identity.IdentityAssertion;

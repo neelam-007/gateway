@@ -4,7 +4,7 @@ import com.l7tech.console.event.PolicyEvent;
 import com.l7tech.console.event.PolicyListener;
 import com.l7tech.console.event.PolicyListenerAdapter;
 import com.l7tech.console.panels.RoutingAssertionDialog;
-import com.l7tech.console.panels.Utilities;
+import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.console.tree.policy.RoutingAssertionTreeNode;
 import com.l7tech.console.util.ComponentRegistry;
 import com.l7tech.console.util.Registry;

@@ -4,7 +4,7 @@
  * $Id$
  */
 
-package com.l7tech.common.gui;
+package com.l7tech.common.gui.widgets;
 
 import com.l7tech.console.table.TableUtil;
 

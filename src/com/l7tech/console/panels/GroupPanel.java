@@ -5,6 +5,7 @@ import com.l7tech.console.util.Registry;
 import com.l7tech.identity.Group;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
+import com.l7tech.common.gui.util.Utilities;
 
 import javax.swing.*;
 import javax.swing.event.DocumentEvent;

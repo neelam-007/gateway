@@ -4,7 +4,7 @@
  * $Id$
  */
 
-package com.l7tech.common.gui;
+package com.l7tech.common.gui.widgets;
 
 import javax.swing.*;
 import java.awt.*;

@@ -5,7 +5,8 @@ import com.l7tech.console.event.EntityListener;
 import com.l7tech.console.event.EntityListenerAdapter;
 import com.l7tech.console.logging.ErrorManager;
 import com.l7tech.console.text.MaxLengthDocument;
-import com.l7tech.console.util.IconManager2;
+import com.l7tech.common.gui.util.ImageCache;
+import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.console.util.Registry;
 import com.l7tech.identity.User;
 import com.l7tech.identity.UserManager;
@@ -224,7 +225,7 @@ public class UserPanel extends EntityEditorPanel {
         detailsPanel = new JPanel();
         detailsPanel.setLayout(new GridBagLayout());
 
-        detailsPanel.add(new JLabel(new ImageIcon(IconManager2.getInstance().getIcon(USER_ICON_RESOURCE))),
+        detailsPanel.add(new JLabel(new ImageIcon(ImageCache.getInstance().getIcon(USER_ICON_RESOURCE))),
           new GridBagConstraints(0, 0, 1, 1, 0.0, 0.0,
             GridBagConstraints.WEST,
             GridBagConstraints.NONE,

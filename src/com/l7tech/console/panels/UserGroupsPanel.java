@@ -1,6 +1,7 @@
 package com.l7tech.console.panels;
 
-import com.l7tech.console.util.IconManager2;
+import com.l7tech.common.gui.util.ImageCache;
+import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.console.util.SortedListModel;
 import com.l7tech.objectmodel.EntityHeader;
 
@@ -414,7 +415,7 @@ class UserGroupsPanel extends JPanel {
             this.setFont(new Font("Dialog", Font.PLAIN, 12));
 
             // Based on value type, determine cell contents
-            setIcon(new ImageIcon(IconManager2.getInstance().getIcon(GroupPanel.GROUP_ICON_RESOURCE)));
+            setIcon(new ImageIcon(ImageCache.getInstance().getIcon(GroupPanel.GROUP_ICON_RESOURCE)));
             EntityHeader eh = (EntityHeader)value;
             setText(eh.getName());
 

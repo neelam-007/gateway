@@ -8,6 +8,7 @@ import com.l7tech.console.action.ImportCertificateAction;
 import com.l7tech.util.Locator;
 import com.l7tech.common.util.CertificateDownloader;
 import com.l7tech.common.util.ExceptionUtils;
+import com.l7tech.common.gui.util.Utilities;
 import org.apache.commons.httpclient.HttpClient;
 import org.apache.commons.httpclient.HttpException;
 import org.apache.commons.httpclient.methods.GetMethod;

@@ -1,7 +1,7 @@
 package com.l7tech.console.action;
 
 import com.l7tech.console.panels.PolicyAddIdentitiesDialog;
-import com.l7tech.console.panels.Utilities;
+import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.tree.policy.AssertionTreeNode;
 import com.l7tech.policy.assertion.composite.CompositeAssertion;

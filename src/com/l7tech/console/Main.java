@@ -1,6 +1,6 @@
 package com.l7tech.console;
 
-import com.l7tech.console.panels.Utilities;
+import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.console.util.Preferences;
 import com.l7tech.console.util.Registry;
 import net.jini.security.policy.DynamicPolicyProvider;

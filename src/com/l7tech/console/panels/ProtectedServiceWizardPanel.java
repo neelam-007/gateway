@@ -3,6 +3,7 @@ package com.l7tech.console.panels;
 import com.l7tech.policy.assertion.RoutingAssertion;
 import com.l7tech.service.PublishedService;
 import com.l7tech.service.Wsdl;
+import com.l7tech.common.gui.util.Utilities;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;

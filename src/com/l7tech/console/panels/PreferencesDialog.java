@@ -1,6 +1,6 @@
 package com.l7tech.console.panels;
 
-import com.l7tech.console.panels.Utilities;
+import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.console.text.MaxLengthDocument;
 import com.l7tech.console.util.Preferences;
 
