@@ -43,6 +43,23 @@ public class AccessILFactory extends BasicILFactory {
     }
 
     /**
+     * Creates a <code>BasicILFactory</code> with the specified server
+     * constraints, permission class, and a <code>null</code> class
+     * loader.
+     *
+     * @param	serverConstraints the server constraints, or <code>null</code>
+     * @param	permissionClass the permission class, or <code>null</code>
+     * @throws	IllegalArgumentException if the permission class is
+     * abstract, is not a subclass of {@link java.security.Permission}, or does
+     * not have a public constructor that has either one
+     * <code>String</code> parameter or one {@link Method}
+     * parameter and has no declared exceptions
+     */
+    public AccessILFactory(MethodConstraints serverConstraints, Class permissionClass) {
+        super(serverConstraints, permissionClass);
+    }
+
+    /**
      * Creates an <code>AccessILFactory</code>instance with no server
      * constraints, no permission class, and the specified class loader.
      * The specified class loader is used by the {@link #createInstances
@@ -186,7 +203,7 @@ public class AccessILFactory extends BasicILFactory {
                 throw new
                   AccessControlException("Cannot dispatch the request. No principal set.");
             }
-            logger.finest("Invoke: '"+proxy.getClass().getName()+"#"+method.getName()+"' principal : '" + extractPrincipalName(subject)+"'");
+            logger.finest("Invoke: '" + proxy.getClass().getName() + "#" + method.getName() + "' principal : '" + extractPrincipalName(subject) + "'");
             out.writeObject(subject);
             super.marshalMethod(proxy, method, out, context);
         }
@@ -274,7 +291,7 @@ public class AccessILFactory extends BasicILFactory {
                 exisitingSubject.getPublicCredentials().addAll(subject.getPublicCredentials());
             }
             Method m = super.unmarshalMethod(impl, in, context);
-            logger.finest("Invoke: '"+impl.getClass().getName()+"#"+m.getName()+"' principal : '" + extractPrincipalName(subject)+"'");
+            logger.finest("Invoke: '" + impl.getClass().getName() + "#" + m.getName() + "' principal : '" + extractPrincipalName(subject) + "'");
             return m;
         }
 
@@ -297,7 +314,7 @@ public class AccessILFactory extends BasicILFactory {
         for (Iterator iterator = principals.iterator(); iterator.hasNext();) {
             Object o = (Object)iterator.next();
             if (o instanceof User) {
-               return ((User)o).getLogin();
+                return ((User)o).getLogin();
             } else if (o instanceof Principal) {
                 return ((Principal)o).getName();
             } else {
