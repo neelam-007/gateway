@@ -594,8 +594,27 @@ public class WssProcessorImpl implements WssProcessor {
     }
 
     private X509Certificate resolveEmbeddedCert(final Element parentElement,
-                                             ProcessingStatusHolder cntx) throws ProcessorException {
-        // todo
+                                                ProcessingStatusHolder cntx) {
+        // Attempt to get the cert directly from the KeyInfo element
+        KeyInfo keyInfo = null;
+        try {
+            keyInfo = new KeyInfo(parentElement);
+        } catch (XSignatureException e) {
+            // dont throw here on purpose, this should return null if not sucessful to give a chance to
+            // alternate methods to get the cert
+            logger.log(Level.FINE, "could not construct key info element from the parent element", e);
+            return null;
+        }
+        KeyInfo.X509Data[] x509DataArray = keyInfo.getX509Data();
+        if (x509DataArray != null && x509DataArray.length > 0) {
+            KeyInfo.X509Data x509Data = x509DataArray[0];
+            X509Certificate[] certs = x509Data.getCertificates();
+            // according to javadoc, this can be null
+            if (certs == null || certs.length < 1) {
+                return null;
+            }
+            return certs[0];
+        }
         return null;
     }
 
