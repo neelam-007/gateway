@@ -19,12 +19,11 @@ import com.l7tech.objectmodel.TransactionException;
 import com.l7tech.server.audit.SystemAuditListener;
 import com.l7tech.server.event.EventManager;
 import com.l7tech.server.event.system.*;
-import com.l7tech.server.policy.DefaultGatewayPolicies;
 import com.l7tech.server.service.ServiceManager;
 import com.l7tech.server.service.ServiceManagerImp;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
-import org.springframework.context.support.ApplicationObjectSupport;
 import org.springframework.context.ApplicationContext;
+import org.springframework.context.support.ApplicationObjectSupport;
 
 import java.io.*;
 import java.net.InetAddress;
@@ -179,7 +178,6 @@ public class BootProcess extends ApplicationObjectSupport implements ServerCompo
                 logger.log(Level.WARNING, "Couldn't set up Service Cache", e);
             }
 
-            DefaultGatewayPolicies.getInstance();
 
             logger.info("Starting server components...");
             for (Iterator i = _components.iterator(); i.hasNext();) {
