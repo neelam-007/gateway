@@ -159,12 +159,13 @@ public class StatusUpdater extends Thread {
             }
             for (Iterator i = stats.iterator(); i.hasNext();) {
                 ServiceStatistics statobj = (ServiceStatistics)i.next();
-                ServiceUsage sa = new ServiceUsage();
+                ServiceUsage sa = ServiceUsage.fromStat(statobj, ourid);
+                /*ServiceUsage sa = new ServiceUsage();
                 sa.setServiceid(statobj.getServiceOid());
                 sa.setNodeid(ourid);
                 sa.setAuthorized(statobj.getAuthorizedRequestCount());
                 sa.setCompleted(statobj.getCompletedRequestCount());
-                sa.setRequests(statobj.getAttemptedRequestCount());
+                sa.setRequests(statobj.getAttemptedRequestCount());*/
                 try {
                     serviceUsageManager.record(sa);
                 } catch (UpdateException e) {

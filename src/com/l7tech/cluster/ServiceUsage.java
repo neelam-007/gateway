@@ -1,5 +1,7 @@
 package com.l7tech.cluster;
 
+import com.l7tech.service.ServiceStatistics;
+
 import java.io.Serializable;
 
 /**
@@ -15,6 +17,22 @@ import java.io.Serializable;
  *
  */
 public class ServiceUsage implements Serializable {
+
+    /**
+     * Util method to go from ServiceStatistics to ServiceUsage
+     * @param stat
+     * @param nodeid
+     * @return
+     */
+    public static ServiceUsage fromStat(ServiceStatistics stat, String nodeid) {
+        ServiceUsage output = new ServiceUsage();
+        output.setServiceid(stat.getServiceOid());
+        output.setNodeid(nodeid);
+        output.setAuthorized(stat.getAuthorizedRequestCount());
+        output.setCompleted(stat.getCompletedRequestCount());
+        output.setRequests(stat.getAttemptedRequestCount());
+        return output;
+    }
 
     /**
      * id of the service this stat is applicable to
