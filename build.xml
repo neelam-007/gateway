@@ -421,7 +421,7 @@
             <zipfileset dir="${src.root}/etc" prefix="WEB-INF">
                 <include name="server-config.wsdd"/>
             </zipfileset>
-            <zipfileset dir="${src.root}/web" includes="index.html" prefix="ssg"/>
+            <zipfileset dir="${src.root}/web" includes="*" prefix="ssg"/>
             <zipfileset dir="${src.root}/web" includes="*"/>
             <!-- Jini config -->
             <zipfileset dir="${src.root}/etc/jini" includes="start-services.config, services.config, services.policy" prefix="WEB-INF/classes"/>
