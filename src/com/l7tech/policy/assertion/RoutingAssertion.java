@@ -29,7 +29,7 @@ public class RoutingAssertion extends Assertion implements Cloneable, Serializab
     public static final String SOAPACTION = "SOAPAction";
     public static final String TEXT_XML = "text/xml";
     public static final String ENCODING = "UTF-8";
-    public static final int DEFAULT_MAX_CONNECTIONS_PER_HOST = 10; // In flagrant contravention of RFC2616!
+    public static final int DEFAULT_MAX_CONNECTIONS_PER_HOST = 100; // Flagrantly in contravention of RFC2616!
 
     public RoutingAssertion() {
         this(null, null, null, null, -1);
@@ -37,6 +37,11 @@ public class RoutingAssertion extends Assertion implements Cloneable, Serializab
 
     public RoutingAssertion(String protectedServiceUrl) {
         this(protectedServiceUrl, null, null, null, -1);
+    }
+
+
+    public RoutingAssertion( String protectedServiceUrl, String login, String password, String realm ) {
+        this( protectedServiceUrl, login, password, realm, -1 );
     }
 
     /**
