@@ -214,6 +214,14 @@ public class InternalUserManagerServer extends HibernateEntityManager implements
                     throw new UpdateException("This update would revoke admin membership on the last standing administrator");
                 }
             }
+
+            // check for version conflict
+            if (originalUser.getVersion() != imp.getVersion()) {
+                String msg = "version mismatch";
+                logger.info(msg);
+                throw new StaleUpdateException(msg);
+            }
+
             // checks whether the user changed his password
             String originalPasswd = originalUser.getPassword();
             String newPasswd = user.getPassword();

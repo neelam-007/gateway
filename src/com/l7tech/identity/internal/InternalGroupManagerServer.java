@@ -151,6 +151,14 @@ public class InternalGroupManagerServer extends HibernateEntityManager implement
                 }
             }
             InternalGroup originalGroup = (InternalGroup)findByPrimaryKey( group.getUniqueIdentifier() );
+
+            // check for version conflict
+            if (originalGroup.getVersion() != imp.getVersion()) {
+                String msg = "version mismatch";
+                logger.info(msg);
+                throw new StaleUpdateException(msg);
+            }
+
             originalGroup.copyFrom(imp);
             _manager.update(getContext(), originalGroup);
         } catch (FindException e) {
