@@ -110,6 +110,7 @@ public abstract class XpathBasedAssertionPropertiesAction extends NodeAction {
                     String initialValue = xmlSecAssertion.getXpathExpression().getExpression();
                     XPathExpressionPanel panel = new XPathExpressionPanel(null, title, initialValue, xmlSecAssertion.getXpathExpression().getNamespaces());
                     panel.pack();
+                    Utilities.centerOnScreen(panel);
                     panel.show();
                     /*String question = "Please provide xpath value.";
 

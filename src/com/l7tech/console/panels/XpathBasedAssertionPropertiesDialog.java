@@ -2,6 +2,7 @@ package com.l7tech.console.panels;
 
 import com.l7tech.common.gui.util.PauseListener;
 import com.l7tech.common.gui.util.TextComponentPauseListenerManager;
+import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.common.gui.widgets.SquigglyTextField;
 import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.util.XmlUtil;
@@ -159,6 +160,7 @@ public class XpathBasedAssertionPropertiesDialog extends JDialog {
                                                                      namespaces,
                                                                      requiredNS);
                 nseditor.pack();
+                Utilities.centerOnScreen(nseditor);
                 nseditor.show();
                 Map newMap = nseditor.newNSMap();
                 if (newMap != null) {

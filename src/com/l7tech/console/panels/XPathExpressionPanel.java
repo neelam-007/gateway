@@ -1,5 +1,7 @@
 package com.l7tech.console.panels;
 
+import com.l7tech.common.gui.util.Utilities;
+
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionListener;
@@ -69,6 +71,7 @@ public class XPathExpressionPanel extends JDialog {
                                                                      initialNamespaces,
                                                                      null);
                 nseditor.pack();
+                Utilities.centerOnScreen(nseditor);
                 nseditor.show();
                 Map newMap = nseditor.newNSMap();
                 if (newMap != null) {
