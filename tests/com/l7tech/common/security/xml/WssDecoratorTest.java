@@ -98,7 +98,7 @@ public class WssDecoratorTest extends TestCase {
 
     private void runTest(TestDocument d) throws Exception {
         WssDecorator decorator = new WssDecoratorImpl();
-        log.info("Before decoration:" + XmlUtil.nodeToFormattedString(d.c.message));
+        log.info("Before decoration (*note: pretty-printed):" + XmlUtil.nodeToFormattedString(d.c.message));
         decorator.decorateMessage(d.c.message,
                                   d.recipientCert,
                                   d.senderCert,
@@ -106,7 +106,7 @@ public class WssDecoratorTest extends TestCase {
                                   d.signTimestamp,
                                   d.elementsToEncrypt,
                                   d.elementsToSign, null);
-        log.info("Decorated message:" + XmlUtil.nodeToFormattedString(d.c.message));
+        log.info("Decorated message (*note: pretty-printed):" + XmlUtil.nodeToFormattedString(d.c.message));
     }
 
     public void testSimpleDecoration() throws Exception {
