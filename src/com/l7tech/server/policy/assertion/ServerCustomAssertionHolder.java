@@ -52,7 +52,8 @@ public class ServerCustomAssertionHolder implements ServerAssertion {
     }
 
     public AssertionStatus checkRequest(final Request request, final Response response) throws IOException, PolicyAssertionException {
-        logger.entering(ServerCustomAssertionHolder.class.getName(), "checkRequest");
+        // Bugzilla #707 - removed the logger.entering()/exiting() as they are just for debugging purpose
+        //logger.entering(ServerCustomAssertionHolder.class.getName(), "checkRequest");
         try {
             PublishedService service = (PublishedService)request.getParameter(Request.PARAM_SERVICE);
             final CustomAssertionDescriptor descriptor = CustomAssertions.getDescriptor(customAssertion.getClass());
@@ -105,7 +106,7 @@ public class ServerCustomAssertionHolder implements ServerAssertion {
             logger.log(Level.WARNING, "Authorization (access control) failed", e);
             return AssertionStatus.UNAUTHORIZED;
         } finally {
-            logger.exiting(ServerCustomAssertionHolder.class.getName(), "checkRequest");
+            //logger.exiting(ServerCustomAssertionHolder.class.getName(), "checkRequest");
         }
     }
 
