@@ -62,7 +62,6 @@ public class ServerLogManager extends LogManager {
             try {
                 systemLogger.setLevel(getLevel());
             } catch (RuntimeException e) {
-                System.err.println("Can't initialize server log.");
                 // continue without those special log handlers
                 return;
             }
@@ -77,7 +76,6 @@ public class ServerLogManager extends LogManager {
                 systemLogger.addHandler(fileHandler);
             } catch (IOException e) {
                 // dont use normal logger here
-                e.printStackTrace(System.err);
                 throw new RuntimeException(e);
             }
         }
@@ -88,7 +86,6 @@ public class ServerLogManager extends LogManager {
             String strval = getProps().getProperty(LEVEL_PROP_NAME);
             return Level.parse(strval);
         } catch (Throwable e) {
-            e.printStackTrace(System.err);
             // if cant' read from props file, default to all
             return Level.ALL;
         }
@@ -98,7 +95,6 @@ public class ServerLogManager extends LogManager {
         try {
             return getProps().getProperty(FILEPATH_PROP_NAME);
         } catch (Throwable e) {
-            e.printStackTrace(System.err);
             // if cant' read from props file, default to home dir
             return System.getProperties().getProperty("user.home");
         }
@@ -108,7 +104,6 @@ public class ServerLogManager extends LogManager {
         try {
             return Integer.parseInt(getProps().getProperty(SIZELIMIT_PROP_NAME));
         } catch (Throwable e) {
-            e.printStackTrace(System.err);
             // if cant' read from props file, default to 500000
             return 500000;
         }
@@ -118,7 +113,6 @@ public class ServerLogManager extends LogManager {
         try {
             return Integer.parseInt(getProps().getProperty(NRFILES_PROP_NAME));
         } catch (Throwable e) {
-            e.printStackTrace(System.err);
             // if cant' read from props file, default to 4
             return 4;
         }
@@ -129,7 +123,6 @@ public class ServerLogManager extends LogManager {
             try {
                 InputStream inputStream = null;
 
-                /* todo, fix this to get file from right place
                 String path = ServerConfig.getInstance().getLogPropertiesPath();
                 if ( path != null && path.length() > 0 ) {
                     File f = new File( path );
@@ -137,7 +130,6 @@ public class ServerLogManager extends LogManager {
                         try {
                             inputStream = new FileInputStream( f );
                         } catch ( IOException ioe ) {
-                            ioe.printStackTrace( System.err );
                             // inputStream stays null
                         }
                     }
@@ -145,9 +137,7 @@ public class ServerLogManager extends LogManager {
 
                 if ( inputStream == null ) {
                     inputStream = getClass().getResourceAsStream(PROPS_PATH);
-                }*/
-                // todo, not htis
-                inputStream = getClass().getResourceAsStream(PROPS_PATH);
+                }
 
                 props = new Properties();
                 if (props == null) throw new RuntimeException("can't read properties");
