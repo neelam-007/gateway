@@ -6,83 +6,144 @@
 
 package com.l7tech.service.resolution;
 
+import EDU.oswego.cs.dl.util.concurrent.ReadWriteLock;
+import EDU.oswego.cs.dl.util.concurrent.ReentrantWriterPreferenceReadWriteLock;
+import EDU.oswego.cs.dl.util.concurrent.Sync;
+import com.l7tech.logging.LogManager;
 import com.l7tech.message.Request;
 import com.l7tech.service.PublishedService;
 
 import java.util.*;
+import java.util.logging.Logger;
 
 /**
  * @author alex
  * @version $Revision$
  */
 public abstract class NameValueServiceResolver extends ServiceResolver {
-    public synchronized void setServices( Set services ) {
-        Iterator i = services.iterator();
-        _valueToServiceMapMap = new HashMap();
-        _serviceOidToValuesArrayMap = new HashMap();
-        PublishedService service;
-        Object[] values;
+    public void setServices( Set services ) {
+        Sync write = _rwlock.writeLock();
+        try {
+            Iterator i = services.iterator();
+
+            write.acquire();
+            _valueToServiceMapMap = new HashMap();
+            _serviceOidToValuesArrayMap = new HashMap();
+            PublishedService service;
+            Object[] values;
+            Map serviceMap;
+            Long oid;
+            while ( i.hasNext() ) {
+                service = (PublishedService)i.next();
+                oid = new Long( service.getOid() );
+                values = getTargetValues( service );
+                _serviceOidToValuesArrayMap.put( oid, values );
+                for (int j = 0; j < values.length; j++) {
+                    Object value = values[j];
+                    serviceMap = getServiceMap(value);
+                    serviceMap.put( oid, service );
+                }
+            }
+        } catch ( InterruptedException ie ) {
+            logger.fine( "Interrupted acquiring write!" );
+            Thread.currentThread().interrupt();
+        } finally {
+            write.release();
+        }
+    }
+
+    public void serviceCreated( PublishedService service ) {
+        Object[] values = getTargetValues( service );
+        Object value;
         Map serviceMap;
-        Long oid;
-        while ( i.hasNext() ) {
-            service = (PublishedService)i.next();
-            oid = new Long( service.getOid() );
-            values = getTargetValues( service );
+        Long oid = new Long( service.getOid() );
+
+        Sync write = _rwlock.writeLock();
+        try {
+            write.acquire();
             _serviceOidToValuesArrayMap.put( oid, values );
-            for (int j = 0; j < values.length; j++) {
-                Object value = values[j];
-                serviceMap = getServiceMap(value);
+
+            for (int i = 0; i < values.length; i++) {
+                value = values[i];
+                serviceMap = getServiceMap( value );
                 serviceMap.put( oid, service );
             }
+        } catch ( InterruptedException ie ) {
+            logger.fine( "Interrupted acquiring write lock!" );
+            Thread.currentThread().interrupt();
+        } finally {
+            write.release();
         }
     }
 
-    public synchronized void serviceCreated( PublishedService service ) {
+    public void serviceDeleted( PublishedService service ) {
         Object[] values = getTargetValues( service );
         Object value;
         Map serviceMap;
         Long oid = new Long( service.getOid() );
 
-        _serviceOidToValuesArrayMap.put( oid, values );
+        Sync write = _rwlock.writeLock();
+        try {
+            write.acquire();
+            _serviceOidToValuesArrayMap.remove( oid );
 
-        for (int i = 0; i < values.length; i++) {
-            value = values[i];
-            serviceMap = getServiceMap( value );
-            serviceMap.put( oid, service );
+            for (int i = 0; i < values.length; i++) {
+                value = values[i];
+                serviceMap = getServiceMap( value );
+                serviceMap.remove( oid );
+            }
+        } catch ( InterruptedException ie ) {
+            logger.fine( "Interrupted acquiring write lock!" );
+            Thread.currentThread().interrupt();
+        } finally {
+            write.release();
         }
     }
 
-    public synchronized void serviceDeleted( PublishedService service ) {
-        Object[] values = getTargetValues( service );
-        Object value;
-        Map serviceMap;
-        Long oid = new Long( service.getOid() );
+    public void serviceUpdated( PublishedService service ) {
+        Sync write = _rwlock.writeLock();
+        try {
+            write.acquire();
 
-        _serviceOidToValuesArrayMap.remove( oid );
+            serviceDeleted( service );
+            serviceCreated( service );
 
-        for (int i = 0; i < values.length; i++) {
-            value = values[i];
-            serviceMap = getServiceMap( value );
-            serviceMap.remove( oid );
+        } catch ( InterruptedException ie ) {
+            logger.fine( "Interrupted acquiring write lock!" );
+            Thread.currentThread().interrupt();
+        } finally {
+            write.release();
         }
-    }
-
-    public synchronized void serviceUpdated( PublishedService service ) {
-        serviceDeleted( service );
-        serviceCreated( service );
     }
 
     protected abstract String getParameterName();
 
     protected Object[] getTargetValues( PublishedService service ) {
-        Long oid = new Long( service.getOid() );
-        synchronized( _serviceOidToValuesArrayMap ) {
-            Object[] values = (Object[])_serviceOidToValuesArrayMap.get( oid );
-            if ( values == null ) {
-                values = doGetTargetValues( service );
-                _serviceOidToValuesArrayMap.put( oid, values );
+        if ( service.getOid() == PublishedService.DEFAULT_OID ) {
+            // Don't ever cache values for a service with a to-be-determined OID
+            return doGetTargetValues( service );
+        } else {
+            Long oid = new Long( service.getOid() );
+            Sync read = _rwlock.readLock();
+            Sync write = _rwlock.writeLock();
+            try {
+                read.acquire();
+                Object[] values = (Object[])_serviceOidToValuesArrayMap.get( oid );
+                if ( values == null ) {
+                    values = doGetTargetValues( service );
+                    read.release();
+                    write.acquire();
+                    _serviceOidToValuesArrayMap.put( oid, values );
+                    write.release();
+                } else {
+                    read.release();
+                }
+                return values;
+            } catch ( InterruptedException ie ) {
+                logger.fine( "Interrupted acquiring read/write lock!" );
+                Thread.currentThread().interrupt();
+                return null;
             }
-            return values;
         }
     }
 
@@ -90,34 +151,40 @@ public abstract class NameValueServiceResolver extends ServiceResolver {
 
     protected abstract Object getRequestValue( Request request ) throws ServiceResolutionException;
 
-    protected boolean matches( PublishedService matchService ) {
+    protected boolean matches( PublishedService candidateService, PublishedService matchService ) {
         // Get the match values for this service
-        Object[] matchValues = getTargetValues( matchService );
-        Object matchValue;
-        Map serviceMap;
-        for ( int i = 0; i < matchValues.length; i++ ) {
-            // For each matching value...
-            matchValue = matchValues[i];
-            // Find out which service(s) match this value
-            serviceMap = getServiceMap( matchValue );
-            // If there are any, this value matches
-            Set keys = serviceMap.keySet();
-            Long oid;
-            for (Iterator it = keys.iterator(); it.hasNext();) {
-                oid = (Long)it.next();
-                if ( oid.longValue() != matchService.getOid() ) return true;
-            }
+        Set candidateValues = new HashSet( Arrays.asList( getTargetValues( candidateService ) ) );
+        Set matchValues = new HashSet( Arrays.asList( getTargetValues( matchService ) ) );
+
+        for (Iterator i = candidateValues.iterator(); i.hasNext();) {
+            Object value = i.next();
+            if ( matchValues.contains( value ) ) return true;
         }
+
         return false;
     }
 
-    private synchronized Map getServiceMap( Object value ) {
-        Map serviceMap = (Map)_valueToServiceMapMap.get(value);
-        if ( serviceMap == null ) {
-            serviceMap = new HashMap();
-            _valueToServiceMapMap.put( value, serviceMap );
+    private Map getServiceMap( Object value ) {
+        Sync read = _rwlock.readLock();
+        Sync write = _rwlock.writeLock();
+        try {
+            read.acquire();
+            Map serviceMap = (Map)_valueToServiceMapMap.get(value);
+            if ( serviceMap == null ) {
+                serviceMap = new HashMap();
+                read.release();
+                write.acquire();
+                _valueToServiceMapMap.put( value, serviceMap );
+                write.release();
+            } else {
+                read.release();
+            }
+            return serviceMap;
+        } catch ( InterruptedException ie ) {
+            logger.fine( "Interrupted acquiring read lock!" );
+            Thread.currentThread().interrupt();
+            return null;
         }
-        return serviceMap;
     }
 
     public Set resolve( Request request, Set serviceSubset ) throws ServiceResolutionException {
@@ -152,4 +219,6 @@ public abstract class NameValueServiceResolver extends ServiceResolver {
 
     private Map _valueToServiceMapMap;
     private Map _serviceOidToValuesArrayMap;
+    private ReadWriteLock _rwlock = new ReentrantWriterPreferenceReadWriteLock();
+    private Logger logger = LogManager.getInstance().getSystemLogger();
 }
