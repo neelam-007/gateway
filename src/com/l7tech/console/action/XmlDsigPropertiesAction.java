@@ -5,7 +5,7 @@ import com.l7tech.console.event.PolicyListener;
 import com.l7tech.console.event.PolicyListenerAdapter;
 import com.l7tech.console.panels.Utilities;
 import com.l7tech.console.panels.XmlDsigAssertionDialog;
-import com.l7tech.console.tree.policy.XmlDsigAssertionTreeNode;
+import com.l7tech.console.tree.policy.AssertionTreeNode;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.ComponentRegistry;
 import com.l7tech.policy.assertion.xmlsec.XmlDsigAssertion;
@@ -25,7 +25,7 @@ import java.util.logging.Logger;
 public class XmlDsigPropertiesAction extends NodeAction {
     static final Logger log = Logger.getLogger(XmlDsigPropertiesAction.class.getName());
 
-    public XmlDsigPropertiesAction(XmlDsigAssertionTreeNode node) {
+    public XmlDsigPropertiesAction(AssertionTreeNode node) {
         super(node);
     }
 
