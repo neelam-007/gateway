@@ -151,7 +151,8 @@ public class WssProcessorImpl implements WssProcessor {
                     final Element secConTokEl = securityChildToProcess;
                     String identifier = extractIdentifierFromSecConTokElement(secConTokEl);
                     if (identifier == null) {
-                        logger.warning("SecurityContextToken element found, but its identifier was not extracted.");
+                        throw new InvalidDocumentFormatException("SecurityContextToken element found, " +
+                                                                 "but its identifier was not extracted.");
                     } else {
                         final SecurityContext secContext = securityContextFinder.getSecurityContext(identifier);
                         SecurityContextToken secConTok = new SecurityContextToken() {
