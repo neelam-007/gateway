@@ -51,7 +51,7 @@ public class DefaultPolicyPathBuilder extends PolicyPathBuilder {
             AssertionPath path = (AssertionPath)iterator.next();
             path.setPathOrder(pathOrder);
             if (log.isLoggable(Level.FINEST)) {
-                printPath(path);
+                log.finest(pathToString(path));
             }
         }
         return new DefaultPolicyPathResult(paths);
@@ -244,18 +244,23 @@ public class DefaultPolicyPathBuilder extends PolicyPathBuilder {
         return a instanceof OneOrMoreAssertion && !((OneOrMoreAssertion)a).getChildren().isEmpty();
     }
 
-    private static void printPath(AssertionPath ap) {
-        printPath("** Begin assertion path\n", "** End assertion path", ap);
+    public static String pathToString(AssertionPath ap) {
+        String sp = printPath("** Begin assertion path\n", "** End assertion path", ap);
+        return sp;
     }
 
-    private static void printPath(String begin, String end, AssertionPath ap) {
+    private static String printPath(String begin, String end, AssertionPath ap) {
         Assertion[] ass = ap.getPath();
         StringBuffer sb = new StringBuffer(begin);
         for (int i = 0; i < ass.length; i++) {
-            sb.append("" + (i + 1) + " " + ass[i].getClass().toString() + '@' + System.identityHashCode(ass[i]))
-              .append("\n");
+            if (ass[i] instanceof CompositeAssertion) {
+                sb.append("" + (i + 1) + " " + ass[i].getClass().toString() + '@' + System.identityHashCode(ass[i]))
+                .append("\n");
+            }else {
+                sb.append("" + (i + 1) + " " + ass[i]).append("\n");
+            }
         }
         sb.append(end);
-        log.finest(sb.toString());
+        return sb.toString();
     }
 }
