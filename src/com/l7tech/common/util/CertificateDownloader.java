@@ -70,6 +70,7 @@ public class CertificateDownloader {
     private byte[] certBytes = null;
     private List checks = Collections.EMPTY_LIST;
     private String nonce = "";
+    private boolean sawNoPass = false;
 
     public CertificateDownloader() {
     }
@@ -171,6 +172,7 @@ public class CertificateDownloader {
         cert = (X509Certificate) CertificateFactory.getInstance("X.509").generateCertificate(bais);
         this.checks = new ArrayList();
 
+        sawNoPass = false;
         for (Iterator i = headers.keySet().iterator(); i.hasNext();) {
             String key = (String) i.next();
             List list = (List) headers.get(key);
@@ -189,7 +191,11 @@ public class CertificateDownloader {
             String realm = value.substring(semiPos + 1);
             if (realm.substring(0, 1).equals(" "))
                 realm = realm.substring(1);
-            checks.add(new CheckInfo(idp, hash, realm));
+
+            if (SecureSpanConstants.NOPASS.equals(hash))
+                sawNoPass = true;
+            else
+                checks.add(new CheckInfo(idp, hash, realm));
         }
         return isValidCert();
     }
@@ -219,6 +225,6 @@ public class CertificateDownloader {
      * @return
      */
     public boolean isUserUnknown() {
-        return checks.size() < 1;
+        return checks.size() < 1 || sawNoPass;
     }
 }
