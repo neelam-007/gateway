@@ -119,7 +119,7 @@ public class SsgKeyStoreManager {
      */
     public static X509Certificate[] getClientCertificateChain(Ssg ssg)
     {
-        Certificate[] certs = new Certificate[0];
+        Certificate[] certs;
         try {
             certs = getKeyStore(ssg).getCertificateChain(ALIAS);
         } catch (KeyStoreException e) {
@@ -343,7 +343,7 @@ public class SsgKeyStoreManager {
     {
         synchronized (ssg) {
             log.info("Saving client certificate to disk");
-            PasswordAuthentication pw = null;
+            PasswordAuthentication pw;
             try {
                 pw = Managers.getCredentialManager().getCredentials(ssg);
             } catch (OperationCanceledException e) {
