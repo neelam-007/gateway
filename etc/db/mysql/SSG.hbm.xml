@@ -189,7 +189,7 @@
         </id>
         <version name="version" column="version" type="integer"/>
 
-        <property name="provider" column="provider_oid" type="com.l7tech.common.transport.jms.JmsConnection"/>
+        <property name="connection" column="connection_oid" type="com.l7tech.common.transport.jms.JmsConnection"/>
 
         <property name="name" column="name" type="string"/>
         <property name="destinationName" column="destination_name" type="string"/>
