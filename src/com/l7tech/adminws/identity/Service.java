@@ -73,6 +73,7 @@ public class Service {
         try {
             return getIdentityProviderConfigManagerAndBeginTransaction().findByPrimaryKey(oid);
         } catch (FindException e) {
+            e.printStackTrace(System.err);
             throw new java.rmi.RemoteException("FindException in findIdentityProviderConfigByPrimaryKey", e);
         } finally {
             endTransaction();
@@ -86,9 +87,11 @@ public class Service {
             }
             return getIdentityProviderConfigManagerAndBeginTransaction().save(identityProviderConfig);
         } catch (SaveException e) {
+            e.printStackTrace(System.err);
             throw new java.rmi.RemoteException("SaveException in saveIdentityProviderConfig", e);
         }
         catch (UpdateException e) {
+            e.printStackTrace(System.err);
             throw new java.rmi.RemoteException("UpdateException in saveIdentityProviderConfig", e);
         } finally {
             endTransaction();
@@ -99,9 +102,11 @@ public class Service {
             IdentityProviderConfigManager manager = getIdentityProviderConfigManagerAndBeginTransaction();
             manager.delete(manager.findByPrimaryKey(oid));
         } catch (FindException e) {
+            e.printStackTrace(System.err);
             throw new java.rmi.RemoteException("FindException in deleteIdentityProviderConfig", e);
         }
         catch (DeleteException e) {
+            e.printStackTrace(System.err);
             throw new java.rmi.RemoteException("DeleteException in deleteIdentityProviderConfig", e);
         } finally {
             endTransaction();
@@ -113,6 +118,7 @@ public class Service {
             java.util.Collection res = userManager.findAllHeaders();
             return collectionToHeaderArray(res);
         } catch (FindException e) {
+            e.printStackTrace(System.err);
             throw new RemoteException("FindException in findAllUsers", e);
         } finally {
             endTransaction();
@@ -124,6 +130,7 @@ public class Service {
             java.util.Collection res = userManager.findAllHeaders(offset, windowSize);
             return collectionToHeaderArray(res);
         } catch (FindException e) {
+            e.printStackTrace(System.err);
             throw new RemoteException("FindException in findAllUsers", e);
         } finally {
             endTransaction();
@@ -135,6 +142,7 @@ public class Service {
         try {
             return userManager.findByPrimaryKey(userId);
         } catch (FindException e) {
+            e.printStackTrace(System.err);
             throw new java.rmi.RemoteException("FindException in findUserByPrimaryKey", e);
         } finally {
             endTransaction();
@@ -147,8 +155,10 @@ public class Service {
             com.l7tech.identity.User user = userManager.findByPrimaryKey(userId);
             userManager.delete(user);
         } catch (DeleteException e) {
+            e.printStackTrace(System.err);
             throw new java.rmi.RemoteException("DeleteException in deleteUser", e);
         } catch (FindException e) {
+            e.printStackTrace(System.err);
             throw new java.rmi.RemoteException("FindException in deleteUser", e);
         } finally {
             endTransaction();
@@ -164,8 +174,10 @@ public class Service {
             }
             return userManager.save(user);
         } catch (SaveException e) {
+            e.printStackTrace(System.err);
             throw new java.rmi.RemoteException("SaveException in saveUser", e);
         } catch (UpdateException e) {
+            e.printStackTrace(System.err);
             throw new java.rmi.RemoteException("UpdateException in saveUser", e);
         } finally {
             endTransaction();
@@ -176,6 +188,7 @@ public class Service {
             java.util.Collection res = retrieveGroupManagerAndBeginTransaction(identityProviderConfigId).findAllHeaders();
             return collectionToHeaderArray(res);
         } catch (FindException e) {
+            e.printStackTrace(System.err);
             throw new RemoteException("FindException in findAllGroups", e);
         } finally {
             endTransaction();
@@ -186,6 +199,7 @@ public class Service {
             java.util.Collection res = retrieveGroupManagerAndBeginTransaction(identityProviderConfigId).findAllHeaders(offset, windowSize);
             return collectionToHeaderArray(res);
         } catch (FindException e) {
+            e.printStackTrace(System.err);
             throw new RemoteException("FindException in findAllGroups", e);
         } finally {
             endTransaction();
@@ -195,6 +209,7 @@ public class Service {
         try {
             return retrieveGroupManagerAndBeginTransaction(identityProviderConfigId).findByPrimaryKey(groupId);
         } catch (FindException e) {
+            e.printStackTrace(System.err);
             throw new RemoteException("FindException in findGroupByPrimaryKey", e);
         } finally {
             endTransaction();
@@ -207,6 +222,7 @@ public class Service {
             if (grp == null) throw new java.rmi.RemoteException("Group does not exist");
             groupManager.delete(grp);
         } catch (ObjectModelException e) {
+            e.printStackTrace(System.err);
             throw new RemoteException("ObjectModelException in deleteGroup", e);
         } finally {
             endTransaction();
@@ -221,8 +237,10 @@ public class Service {
             }
             return groupManager.save(group);
         } catch (SaveException e) {
+            e.printStackTrace(System.err);
             throw new RemoteException("SaveException in saveGroup", e);
         } catch (UpdateException e) {
+            e.printStackTrace(System.err);
             throw new java.rmi.RemoteException("UpdateException in TypeTranslator.serviceGroupToGenGroup", e);
         } finally {
             endTransaction();
