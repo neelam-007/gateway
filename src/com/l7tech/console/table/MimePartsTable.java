@@ -41,8 +41,7 @@ public class MimePartsTable extends JTable {
         return tableSorter;
     }
 
-    public void removeAll() {
-        super.removeAll();        
+    public void clear() {
         tableSorter.setData(new Vector());
     }
 

@@ -62,7 +62,8 @@ public class MimePartsTableSorter  extends FilteredDefaultTableModel {
     }
 
     public boolean isCellEditable(int row, int col) {
-         if(col == MimePartsTableSorter.MIME_PART_TABLE_MAX_LENGTH_COLUMN_INDEX)
+         if(col == MimePartsTableSorter.MIME_PART_TABLE_MAX_LENGTH_COLUMN_INDEX ||
+            col == MimePartsTableSorter.MIME_PART_TABLE_CONTENT_TYPE_COLUMN_INDEX)
              return true;
          else
              return false;

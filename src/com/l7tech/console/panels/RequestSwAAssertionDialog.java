@@ -8,6 +8,7 @@ import com.l7tech.console.event.PolicyEvent;
 import com.l7tech.console.event.PolicyListener;
 import com.l7tech.console.util.SortedSingleColumnTableModel;
 import com.l7tech.console.table.MimePartsTable;
+import com.l7tech.console.table.ButtonCellEditor;
 import com.l7tech.policy.AssertionPath;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.RequestSwAAssertion;
@@ -186,7 +187,7 @@ public class RequestSwAAssertionDialog extends JDialog {
         if(mimeParts == null) throw new RuntimeException("mimeParts is NULL");
 
         // clear the MIME part table
-        getMimePartsTable().removeAll();
+        getMimePartsTable().clear();
 
         Iterator parts = mimeParts.keySet().iterator();
         Vector pv = new Vector();
@@ -240,6 +241,16 @@ public class RequestSwAAssertionDialog extends JDialog {
         if(mimePartsTable != null) return mimePartsTable;
 
         mimePartsTable = new MimePartsTable();
+        final ButtonCellEditor editor = ButtonCellEditor.attach(mimePartsTable, 1);
+        editor.getButton().addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                // put some nicer dialog
+                JOptionPane.showMessageDialog(RequestSwAAssertionDialog.this,
+                                              editor.getCellEditorValue(), "Content Types",
+                                              JOptionPane.PLAIN_MESSAGE);
+                editor.stopCellEditing();
+            }
+        });
         return mimePartsTable;
     }
 
