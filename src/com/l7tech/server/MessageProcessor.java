@@ -26,6 +26,7 @@ import com.l7tech.service.ServiceListener;
 import com.l7tech.service.ServiceManager;
 import com.l7tech.service.ServiceStatistics;
 import com.l7tech.service.resolution.ServiceResolutionException;
+import com.l7tech.objectmodel.FindException;
 import org.xmlpull.v1.XmlPullParser;
 import org.xmlpull.v1.XmlPullParserException;
 import org.xmlpull.v1.XmlPullParserFactory;
@@ -365,8 +366,17 @@ public class MessageProcessor implements ServiceListener {
     protected static final int VERSIONOUTDATED = 2;
     protected static final int SERVICENOTINDB = 0;
     protected int checkVersionAgainstDB(PublishedService service) {
-        // todo
-        return SERVICENOTINDB;
+        try {
+            int dbVersion = _serviceManager.getCurrentPolicyVersion(service.getOid());
+            if (service.getVersion() == dbVersion) return VERSIONOK;
+            logger.fine("version mismatch for service " + service.getOid() + ". local version="
+                          + service.getVersion() + ", db version=" + dbVersion);
+        } catch (FindException e) {
+            logger.log(Level.WARNING, "exception checking version of service " + service.getOid() +
+                                      ". perhaps service has been deleted on another node?", e);
+            return SERVICENOTINDB;
+        }
+        return VERSIONOUTDATED;
     }
 
     private static MessageProcessor _instance = null;
