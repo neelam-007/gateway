@@ -121,6 +121,7 @@ public class LogonDialog extends JDialog {
      */
     private void initComponents() {
 
+        setTitle(resources.getString("window.title"));
         GridBagConstraints constraints = null;
 
         Container contents = getContentPane();
