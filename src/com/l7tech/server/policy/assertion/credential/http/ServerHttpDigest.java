@@ -65,6 +65,8 @@ public class ServerHttpDigest extends ServerHttpCredentialSource implements Serv
 
     protected AssertionStatus doCheckCredentials(Request request, Response response) {
         Map authParams = (Map)request.getParameter( Request.PARAM_HTTP_AUTH_PARAMS );
+        if ( authParams == null ) return AssertionStatus.AUTH_REQUIRED;
+
         String nonce = (String)authParams.get( HttpDigest.PARAM_NONCE );
         String userName = (String)authParams.get( HttpDigest.PARAM_USERNAME );
         String realmName = (String)authParams.get( HttpDigest.PARAM_REALM );
