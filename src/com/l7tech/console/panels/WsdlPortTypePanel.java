@@ -202,7 +202,7 @@ public class WsdlPortTypePanel extends WizardStepPanel {
            */
           public void actionPerformed(ActionEvent e) {
               int selectedRow = operationsTable.getSelectedRow();
-              if (selectedRow == -1) {
+              if (selectedRow != -1) {
                   operationsModel.removeOperation(selectedRow);
                   return;
               }
