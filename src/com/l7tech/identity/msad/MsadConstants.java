@@ -15,7 +15,7 @@ import com.l7tech.identity.ldap.AbstractLdapConstants;
 public class MsadConstants extends AbstractLdapConstants {
     private static final String GROUP_NAME_ATTR = "cn";
     private static final String[] GROUPOBJ_MEMBER_ATTR = {"member"};
-    private static final String LOGIN_ATTR_NAME = "mailNickName";
+    private static final String LOGIN_ATTR_NAME = "sAMAccountName";
     private static final String[] GROUP_OBJCLASS = {"group"};
     private static final String USER_OBJCLASS = "user";
 
