@@ -459,7 +459,7 @@ public class RoutingAssertionDialog extends JDialog {
                     final Integer sv = (Integer)expirySpinner.getValue();
                     assertion.setSamlAssertionExpiry(sv.intValue());
                     assertion.setGroupMembershipStatement(memebershipStatementCheck.isSelected());
-                    assertion.setAttachSamlAssertion(samlMethod.isSelected());
+                    assertion.setAttachSamlSenderVouches(samlMethod.isSelected());
                     fireEventAssertionChanged(assertion);
                     RoutingAssertionDialog.this.dispose();
                 }
@@ -506,7 +506,7 @@ public class RoutingAssertionDialog extends JDialog {
         expirySpinner.setValue(new Integer(expiry));
         SwingUtilities.invokeLater(new Runnable() {
             public void run() {
-                boolean saml = assertion.isAttachSamlAssertion();
+                boolean saml = assertion.isAttachSamlSenderVouches();
                 samlMethod.setSelected(saml);
                 passwordMethod.setSelected(!saml);
             }

@@ -17,8 +17,16 @@ import com.l7tech.message.XmlResponse;
 import com.l7tech.service.PublishedService;
 import com.l7tech.logging.LogManager;
 import com.l7tech.common.BuildInfo;
+import com.l7tech.common.security.xml.SignerInfo;
+import com.l7tech.common.security.Keys;
+import com.l7tech.common.util.XmlUtil;
+import com.l7tech.server.saml.SamlAssertionGenerator;
+import com.l7tech.server.ServerConfig;
+import com.l7tech.identity.UserBean;
 import org.apache.commons.httpclient.*;
 import org.apache.commons.httpclient.methods.PostMethod;
+import org.xml.sax.SAXException;
+import org.w3c.dom.Document;
 
 import javax.wsdl.WSDLException;
 import java.io.IOException;
@@ -29,6 +37,10 @@ import java.net.URL;
 import java.net.MalformedURLException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.security.NoSuchAlgorithmException;
+import java.security.SignatureException;
+import java.security.InvalidAlgorithmParameterException;
+import java.security.InvalidKeyException;
 
 /**
  * @author alex
@@ -42,12 +54,12 @@ public class ServerRoutingAssertion implements ServerAssertion {
     public static final String TEXT_XML = "text/xml";
     public static final String ENCODING = "UTF-8";
 
-    public ServerRoutingAssertion( RoutingAssertion data ) {
+    public ServerRoutingAssertion(RoutingAssertion data) {
         _data = data;
         _connectionManager = new MultiThreadedHttpConnectionManager();
         int max = data.getMaxConnections();
-        _connectionManager.setMaxConnectionsPerHost( max );
-        _connectionManager.setMaxTotalConnections( max * 10 );
+        _connectionManager.setMaxConnectionsPerHost(max);
+        _connectionManager.setMaxTotalConnections(max * 10);
         //_connectionManager.setConnectionStaleCheckingEnabled( false );
     }
 
@@ -56,24 +68,25 @@ public class ServerRoutingAssertion implements ServerAssertion {
     public static final String DEFAULT_USER_AGENT = PRODUCT + "/v" + BuildInfo.getProductVersion() + "-b" + BuildInfo.getBuildNumber();
 
 
-
     /**
      * Forwards the request along to a ProtectedService at the configured URL.
-     * @param grequest The request to be forwarded.
+     * 
+     * @param grequest  The request to be forwarded.
      * @param gresponse The response that was received from the ProtectedService.
      * @return an AssertionStatus indicating the success or failure of the request.
-     * @throws com.l7tech.policy.assertion.PolicyAssertionException if some error preventing the execution of the PolicyAssertion has occurred.
+     * @throws com.l7tech.policy.assertion.PolicyAssertionException
+     *          if some error preventing the execution of the PolicyAssertion has occurred.
      */
-    public AssertionStatus checkRequest( Request grequest, Response gresponse ) throws IOException, PolicyAssertionException {
-        grequest.setRoutingStatus( RoutingStatus.ATTEMPTED );
+    public AssertionStatus checkRequest(Request grequest, Response gresponse) throws IOException, PolicyAssertionException {
+        grequest.setRoutingStatus(RoutingStatus.ATTEMPTED);
 
         XmlRequest request;
         XmlResponse response;
-        if ( grequest instanceof XmlRequest && gresponse instanceof XmlResponse ) {
+        if (grequest instanceof XmlRequest && gresponse instanceof XmlResponse) {
             request = (XmlRequest)grequest;
             response = (XmlResponse)gresponse;
         } else
-            throw new PolicyAssertionException( "Only XML Requests are supported by ServerRoutingAssertion!" );
+            throw new PolicyAssertionException("Only XML Requests are supported by ServerRoutingAssertion!");
 
         PostMethod postMethod = null;
 
@@ -82,10 +95,10 @@ public class ServerRoutingAssertion implements ServerAssertion {
             URL url;
             URL wsdlUrl = service.serviceUrl(request);
             String psurl = _data.getProtectedServiceUrl();
-            if ( psurl == null) {
+            if (psurl == null) {
                 url = wsdlUrl;
             } else {
-                url = new URL( psurl );
+                url = new URL(psurl);
             }
 
             HttpClient client = new HttpClient(_connectionManager);
@@ -93,11 +106,11 @@ public class ServerRoutingAssertion implements ServerAssertion {
             postMethod = new PostMethod(url.toString());
 
             // TODO: Attachments
-            postMethod.setRequestHeader( CONTENT_TYPE, TEXT_XML + "; charset=" + ENCODING.toLowerCase());
+            postMethod.setRequestHeader(CONTENT_TYPE, TEXT_XML + "; charset=" + ENCODING.toLowerCase());
 
             String userAgent = _data.getUserAgent();
-            if ( userAgent == null || userAgent.length() == 0 ) userAgent = DEFAULT_USER_AGENT;
-            postMethod.setRequestHeader( USER_AGENT, userAgent );
+            if (userAgent == null || userAgent.length() == 0) userAgent = DEFAULT_USER_AGENT;
+            postMethod.setRequestHeader(USER_AGENT, userAgent);
 
             StringBuffer hostValue = new StringBuffer(url.getHost());
             int port = url.getPort();
@@ -111,8 +124,8 @@ public class ServerRoutingAssertion implements ServerAssertion {
             String login = _data.getLogin();
             String password = _data.getPassword();
 
-            if ( login != null && password != null) {
-                logger.fine( "Using login '" + login + "'" );
+            if (login != null && password != null) {
+                logger.fine("Using login '" + login + "'");
                 HttpState state = client.getState();
                 postMethod.setDoAuthentication(true);
                 state.setAuthenticationPreemptive(true);
@@ -120,24 +133,34 @@ public class ServerRoutingAssertion implements ServerAssertion {
             }
 
             String requestXml = request.getRequestXml();
+            if (_data.isAttachSamlSenderVouches()) {
+                Document document = XmlUtil.stringToDocument(requestXml);
+                SamlAssertionGenerator ag = new SamlAssertionGenerator();
+                SignerInfo si = new Keys().asSignerInfo("CN="+ServerConfig.getInstance().getHostname());
+                UserBean ub = new UserBean();
+                ub.setName("CN=fred");
+                ag.attachSenderVouches(document, ub, si);
+                requestXml = XmlUtil.documentToString(document);
+System.out.println(requestXml);
+            }
             postMethod.setRequestBody(requestXml);
             client.executeMethod(postMethod);
 
             int status = postMethod.getStatusCode();
-            if ( status == 200 )
-                logger.fine( "Request routed successfully" );
+            if (status == 200)
+                logger.fine("Request routed successfully");
             else
-                logger.info( "Protected service responded with status " + status );
+                logger.info("Protected service responded with status " + status);
 
-            response.setParameter( Response.PARAM_HTTP_STATUS, new Integer( status ) );
+            response.setParameter(Response.PARAM_HTTP_STATUS, new Integer(status));
 
             // TODO: Attachments
             InputStream responseStream = postMethod.getResponseBodyAsStream();
             String ctype = postMethod.getRequestHeader(CONTENT_TYPE).getValue();
-            response.setParameter( Response.PARAM_HTTP_CONTENT_TYPE, ctype );
+            response.setParameter(Response.PARAM_HTTP_CONTENT_TYPE, ctype);
             if (ctype.indexOf(TEXT_XML) > 0) {
                 // Note that this will consume the first part of the stream...
-                BufferedReader br = new BufferedReader( new InputStreamReader(responseStream, ENCODING  ) );
+                BufferedReader br = new BufferedReader(new InputStreamReader(responseStream, ENCODING));
                 String line;
                 StringBuffer responseXml = new StringBuffer();
                 while ((line = br.readLine()) != null) {
@@ -147,7 +170,7 @@ public class ServerRoutingAssertion implements ServerAssertion {
             }
             response.setProtectedResponseStream(responseStream);
 
-            request.setRoutingStatus( RoutingStatus.ROUTED );
+            request.setRoutingStatus(RoutingStatus.ROUTED);
 
 
             return AssertionStatus.NONE;
@@ -160,6 +183,21 @@ public class ServerRoutingAssertion implements ServerAssertion {
         } catch (IOException ioe) {
             // TODO: Worry about what kinds of exceptions indicate failed routing, and which are "unrecoverable"
             logger.log(Level.SEVERE, null, ioe);
+            return AssertionStatus.FAILED;
+        } catch (SAXException e) {
+            logger.log(Level.SEVERE, null, e);
+            return AssertionStatus.FAILED;
+        } catch (NoSuchAlgorithmException e) {
+            logger.log(Level.SEVERE, null, e);
+            return AssertionStatus.FAILED;
+        } catch (SignatureException e) {
+            logger.log(Level.SEVERE, null, e);
+            return AssertionStatus.FAILED;
+        } catch (InvalidAlgorithmParameterException e) {
+            logger.log(Level.SEVERE, null, e);
+            return AssertionStatus.FAILED;
+        } catch (InvalidKeyException e) {
+            logger.log(Level.SEVERE, null, e);
             return AssertionStatus.FAILED;
         } finally {
             if (postMethod != null) {

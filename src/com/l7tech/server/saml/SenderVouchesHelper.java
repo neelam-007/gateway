@@ -8,10 +8,11 @@ import com.l7tech.identity.User;
 import org.apache.xmlbeans.XmlOptions;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
+import org.w3c.dom.NodeList;
+import org.w3c.dom.Node;
 import org.xml.sax.SAXException;
 import x0Assertion.oasisNamesTcSAML1.*;
 
-import javax.xml.soap.*;
 import java.io.IOException;
 import java.io.StringWriter;
 import java.math.BigInteger;
@@ -22,7 +23,8 @@ import java.util.Map;
 import java.util.logging.Logger;
 
 /**
- * Class SenderVouchesHelper.
+ * Class <code>SenderVouchesHelper</code> is the package private class
+ * that provisions the sender voucher saml scenario.
  * 
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  */
@@ -32,26 +34,41 @@ class SenderVouchesHelper {
     private int expiryMinutes = DEFAULT_EXPIRY_MINUTES;
     private boolean includeGroupStatement = true;
     private User user;
-    private String issuer;
     private SignerInfo signerInfo;
-    private SOAPMessage soapMessage;
+    private Document soapMessage;
+    private static final String CONFIRMATION_SENDER_VOUCHES = "urn:oasis:names:tc:SAML:1.0:cm:sender-vouches";
+    private static final String PASSWORD_AUTHENTICATION = "urn:oasis:names:tc:SAML:1.0:am:password";
+    //todo: add other authentication types (cert, signature etc)
+    private static final String NS_SAML = "urn:oasis:names:tc:SAML:1.0:assertion";
+    private static final String NS_SAML_PREFIX = "saml";
 
-    SenderVouchesHelper(SOAPMessage sm, User user, boolean includeGroupStatement,
-                        int expiryMinutes, String issuer, SignerInfo signer) {
-        if (sm == null || user == null || issuer == null || signer == null || expiryMinutes <= 0) {
+    /**
+     * Instantiate the sender voucher helper
+     * 
+     * @param soapDom               the soap message as a dom.w3c.org document
+     * @param user                  the user that
+     * @param includeGroupStatement include the group statement
+     * @param expiryMinutes         the saml ticket expiry timeout (default 5 minutes)
+     * @param signer                the signer
+     */
+    SenderVouchesHelper(Document soapDom, User user,
+                        boolean includeGroupStatement,
+                        int expiryMinutes, SignerInfo signer) {
+        if (soapDom == null || user == null ||
+          signer == null || expiryMinutes <= 0) {
             throw new IllegalArgumentException();
         }
 
         this.user = user;
         this.includeGroupStatement = includeGroupStatement;
         this.expiryMinutes = expiryMinutes;
-        this.issuer = issuer;
         this.signerInfo = signer;
-        this.soapMessage = sm;
+        this.soapMessage = soapDom;
     }
 
     /**
-     * attach the assertion header to the <code>SOAPMEssage</code>
+     * attach the assertion header to the soap message
+     * 
      * @param sign if true the
      */
     void attachAssertion(boolean sign)
@@ -62,56 +79,56 @@ class SenderVouchesHelper {
             doc.getDocumentElement().setAttribute("Id", "SamlTicket");
             SoapMsgSigner signer = new SoapMsgSigner();
             signer.signEnvelope(doc, signerInfo.getPrivate(), signerInfo.getCertificate());
-            attachAssertionHeader(soapMessage, doc);
+            Element secElement = SoapUtil.getOrMakeSecurityElement(soapMessage);
+            SoapUtil.importNode(soapMessage, doc, secElement);
+            NodeList list = secElement.getElementsByTagNameNS(NS_SAML, "Assertion");
+            if (list.getLength() == 0) {
+                throw new IOException("Cannot locate the samle assertion in \n"+XmlUtil.documentToString(soapMessage));
+            }
+            Node node = list.item(0);
+
         } catch (Exception e) {
-            SignatureException ex =  new SignatureException("error signing the saml ticket");
+            SignatureException ex = new SignatureException("error signing the saml ticket");
             ex.initCause(e);
             throw ex;
         }
     }
 
-    int getExpiryMinutes() {
-        return expiryMinutes;
+    /**
+     * sign te while document (envelope).
+     */
+    void signEnvleope()
+      throws IOException, SAXException, SignatureException {
+        try {
+            SoapMsgSigner signer = new SoapMsgSigner();
+            signer.signEnvelope(soapMessage, signerInfo.getPrivate(), signerInfo.getCertificate());
+        } catch (Exception e) {
+            SignatureException ex = new SignatureException("error signing the saml ticket");
+            ex.initCause(e);
+            throw ex;
+        }
     }
 
-    boolean isIncludeGroupStatement() {
-        return includeGroupStatement;
-    }
-
-    User getUser() {
-        return user;
-    }
 
     /**
      * Attach the assertion the the soap message
-     *
+     * <p/>
      * todo: check if the security header already exists
-     * @param sm the soap message
+     * 
+     * @param soapDom      dom.w3c.org the soap message
      * @param assertionDom the assertion as dom document
-     * @throws SOAPException on soap message processing error
      */
-    private void attachAssertionHeader(SOAPMessage sm, Document assertionDom)
-      throws SOAPException {
-        SOAPEnvelope envelope = sm.getSOAPPart().getEnvelope();
-        envelope.addNamespaceDeclaration("wsse", "http://schemas.xmlsoap.org/ws/2002/xx/secext");
-        envelope.addNamespaceDeclaration("ds", "http://www.w3.org/2000/09/xmldsig#");
-        SOAPHeader sh = envelope.getHeader();
-        if (sh == null) {
-            sh = envelope.addHeader();
-        }
-        Element domNode = assertionDom.getDocumentElement();
-        SOAPHeaderElement she = null;
-        SOAPFactory sf = SOAPFactory.newInstance();
-        Name headerName = sf.createName("Security", "wsse", "http://schemas.xmlsoap.org/ws/2002/xx/secext");
+    private void attachAssertionHeader(Document soapDom, Document assertionDom) {
 
-        she = sh.addHeaderElement(headerName);
-        Name assertionName = sf.createName(domNode.getLocalName(), domNode.getPrefix(), domNode.getNamespaceURI());
-
-        SOAPElement assertionElement = she.addChildElement(assertionName);
-        SoapUtil.domToSOAPElement(assertionElement, domNode);
     }
 
-
+    /**
+     * create saml sender vouches assertion
+     * 
+     * @return the saml assertion as a dom.w3c.org document
+     * @throws IOException  
+     * @throws SAXException 
+     */
     Document createAssertion() throws IOException, SAXException {
         AssertionDocument assertionDocument = AssertionDocument.Factory.newInstance();
         AssertionType assertion = AssertionType.Factory.newInstance();
@@ -120,7 +137,7 @@ class SenderVouchesHelper {
         assertion.setMinorVersion(new BigInteger("0"));
         assertion.setMajorVersion(new BigInteger("1"));
         assertion.setAssertionID(Long.toHexString(System.currentTimeMillis()));
-        assertion.setIssuer(issuer);
+        assertion.setIssuer(signerInfo.getCertificate().getSubjectDN().getName());
         assertion.setIssueInstant(now);
 
         ConditionsType ct = ConditionsType.Factory.newInstance();
@@ -134,13 +151,13 @@ class SenderVouchesHelper {
         assertion.setConditions(ct);
 
         AuthenticationStatementType at = assertion.addNewAuthenticationStatement();
-        at.setAuthenticationMethod("urn:oasis:names:tc:SAML:1.0:am:password");
+        at.setAuthenticationMethod(PASSWORD_AUTHENTICATION);
         at.setAuthenticationInstant(now);
         SubjectType subject = at.addNewSubject();
         NameIdentifierType ni = subject.addNewNameIdentifier();
         ni.setStringValue(user.getName());
         SubjectConfirmationType st = subject.addNewSubjectConfirmation();
-        st.addConfirmationMethod("urn:oasis:names:tc:SAML:1.0:cm:sender-vouches");
+        st.addConfirmationMethod(CONFIRMATION_SENDER_VOUCHES);
 
 
         StringWriter sw = new StringWriter();
@@ -148,8 +165,8 @@ class SenderVouchesHelper {
 
         XmlOptions xo = new XmlOptions();
         Map namespaces = new HashMap();
-        namespaces.put("saml", "urn:oasis:names:tc:SAML:1.0:assertion");
-        xo.setSaveImplicitNamespaces(namespaces);
+        namespaces.put(NS_SAML, NS_SAML_PREFIX);
+        xo.setSaveSuggestedPrefixes(namespaces);
         /*
         xo.setSavePrettyPrint();
         xo.setSavePrettyPrintIndent(2);

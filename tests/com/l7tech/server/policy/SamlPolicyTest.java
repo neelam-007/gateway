@@ -8,6 +8,7 @@ import com.l7tech.objectmodel.SaveException;
 import com.l7tech.objectmodel.UpdateException;
 import com.l7tech.objectmodel.VersionException;
 import com.l7tech.policy.assertion.Assertion;
+import com.l7tech.policy.assertion.RoutingAssertion;
 import com.l7tech.policy.assertion.xmlsec.SamlSecurity;
 import com.l7tech.policy.wsp.WspWriter;
 import com.l7tech.server.MockServletApi;
@@ -16,7 +17,9 @@ import com.l7tech.service.PublishedService;
 import com.l7tech.service.ServiceAdmin;
 import com.l7tech.service.ServiceCache;
 import com.l7tech.service.SoapRequestGenerator;
+import com.l7tech.message.Request;
 import com.mockobjects.servlet.MockHttpServletResponse;
+import com.mockobjects.dynamic.Mock;
 import junit.extensions.TestSetup;
 import junit.framework.Test;
 import junit.framework.TestCase;
@@ -100,7 +103,7 @@ public class SamlPolicyTest extends TestCase {
         // put tear down code here
     }
 
-    public void testSecurityElementCheck() throws Exception {
+    public void xtestSecurityElementCheck() throws Exception {
         for (int i = 0; i < soapRequests.length; i++) {
             MockServletApi servletApi = MockServletApi.defaultMessageProcessingServletApi();
             SoapRequestGenerator.SOAPRequest soapRequest = soapRequests[i];
@@ -117,6 +120,29 @@ public class SamlPolicyTest extends TestCase {
             messageProcessingServlet.doPost(mhreq, mhres);
         }
     }
+
+    public void testSenderVouches() throws Exception {
+        for (int i = 0; i < soapRequests.length; i++) {
+            MockServletApi servletApi = MockServletApi.defaultMessageProcessingServletApi();
+            SoapRequestGenerator.SOAPRequest soapRequest = soapRequests[i];
+            RoutingAssertion assertion = new RoutingAssertion();
+            assertion.setAttachSamlSenderVouches(true);
+            assertion.setProtectedServiceUrl("http://localhost:8081");
+            prepareServicePolicy(assertion);
+            servletApi.setPublishedService(publishedService);
+            Mock sreqMock = servletApi.getServletRequestMock();
+            sreqMock.matchAndReturn("getAttribute", Request.PARAM_HTTP_SOAPACTION, soapRequest.getSOAPAction());
+
+            SOAPMessage soapMessage = soapRequest.getSOAPMessage();
+            servletApi.setSoapRequest(soapMessage, soapRequest.getSOAPAction());
+            HttpServletRequest mhreq = servletApi.getServletRequest();
+            MockHttpServletResponse mhres = new MockHttpServletResponse();
+            messageProcessingServlet = new SoapMessageProcessingServlet();
+            messageProcessingServlet.init(servletApi.getServletConfig());
+            messageProcessingServlet.doPost(mhreq, mhres);
+        }
+    }
+
 
     private void prepareServicePolicy(Assertion assertion)
       throws IOException, SaveException, VersionException, UpdateException, InterruptedException {

@@ -292,6 +292,34 @@ public class SoapUtil {
         return soapElement;
     }
 
+    /**
+     * Will import the importedDocument ointo the importingDocument under
+     * the parentNode.
+     *
+     * @param importingDocument  The document which will have a node import
+     * @param importedDocument The document that will be imported
+     * @param parentNode        The node in importingDocument under which the node
+     *                          is imported
+     * @return The new version of importingDocument with imported document
+     */
+    public static Node importNode(Document importingDocument, Document importedDocument, Node parentNode) {
+
+        //Create a documentFragment of the replacingDocument
+        DocumentFragment docFrag = importedDocument.createDocumentFragment();
+        Element rootElement = importedDocument.getDocumentElement();
+        docFrag.appendChild(rootElement);    
+  
+
+        //Import docFrag under the ownership of replacedDocument
+        Node importNode = ((importingDocument).importNode(docFrag, true));
+
+    
+        //In order to replace the node need to retrieve replacedNode's parent
+        parentNode.insertBefore(importNode, null);
+        return importingDocument;
+    }
+
+
     public static final String FC_CLIENT = "Client";
     public static final String FC_SERVER = "Server";
 }

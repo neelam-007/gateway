@@ -16,10 +16,7 @@ import org.apache.xmlbeans.XmlOptions;
 import org.apache.xmlbeans.XmlError;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
-import x0Assertion.oasisNamesTcSAML1.AssertionDocument;
-import x0Assertion.oasisNamesTcSAML1.AssertionType;
-import x0Assertion.oasisNamesTcSAML1.ConditionsType;
-import x0Assertion.oasisNamesTcSAML1.SubjectStatementAbstractType;
+import x0Assertion.oasisNamesTcSAML1.*;
 
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -101,18 +98,25 @@ public class XmlBeansSamlTest extends TestCase {
         assertion.setIssuer("ssg");
         assertion.setIssueInstant(Calendar.getInstance());
         ConditionsType ct = ConditionsType.Factory.newInstance();
-        Calendar calendar = Calendar.getInstance();
-        calendar.set(Calendar.SECOND, 0);
-        calendar.set(Calendar.MILLISECOND, 0);
-        ct.setNotBefore(calendar);
-        Calendar c2 = (Calendar)calendar.clone();
+        Calendar now = Calendar.getInstance();
+        now.set(Calendar.SECOND, 0);
+        now.set(Calendar.MILLISECOND, 0);
+        ct.setNotBefore(now);
+        Calendar c2 = (Calendar)now.clone();
         c2.roll(Calendar.MINUTE, 5);
         ct.setNotOnOrAfter(c2);
         assertion.setConditions(ct);
-        SubjectStatementAbstractType ss = assertion.addNewSubjectStatement();
-        StringWriter sw = new StringWriter();
-        adoc.setAssertion(assertion);
 
+        AuthenticationStatementType at = assertion.addNewAuthenticationStatement();
+        at.setAuthenticationMethod("urn:oasis:names:tc:SAML:1.0:am:password");
+        at.setAuthenticationInstant(now);
+        SubjectType subject = at.addNewSubject();
+        NameIdentifierType ni = subject.addNewNameIdentifier();
+        ni.setStringValue("fred");
+        SubjectConfirmationType st = subject.addNewSubjectConfirmation();
+        st.addConfirmationMethod("urn:oasis:names:tc:SAML:1.0:cm:sender-vouches");
+
+        adoc.setAssertion(assertion);
         XmlOptions xo = new XmlOptions();
         Map namespaces = new HashMap();
         namespaces.put("saml", "urn:oasis:names:tc:SAML:1.0:assertion");
@@ -121,6 +125,7 @@ public class XmlBeansSamlTest extends TestCase {
         xo.setSavePrettyPrintIndent(2);
         xo.setLoadLineNumbers();
 
+        StringWriter sw = new StringWriter();
         adoc.save(sw, xo);
         System.out.println("The document is: " + sw.toString());
     }

@@ -98,12 +98,12 @@ public class RoutingAssertion extends Assertion implements Cloneable, Serializab
         _userAgent = userAgent;
     }
 
-    public boolean isAttachSamlAssertion() {
-        return attachSamlAssertion;
+    public boolean isAttachSamlSenderVouches() {
+        return attachSamlSenderVouches;
     }
 
-    public void setAttachSamlAssertion(boolean attachSamlAssertion) {
-        this.attachSamlAssertion = attachSamlAssertion;
+    public void setAttachSamlSenderVouches(boolean attachSamlSenderVouches) {
+        this.attachSamlSenderVouches = attachSamlSenderVouches;
     }
 
     public int getSamlAssertionExpiry() {
@@ -137,7 +137,7 @@ public class RoutingAssertion extends Assertion implements Cloneable, Serializab
     protected int _maxConnections;
 
     // saml (model as a different bean when serializer supports it)
-    protected boolean attachSamlAssertion;
+    protected boolean attachSamlSenderVouches;
     protected int samlAssertionExpiry = 5;
     protected boolean groupMembershipStatement;
 }
