@@ -20,13 +20,15 @@ import java.util.List;
  * @version $Revision$
  */
 public class SoapUtil {
-    public static List ENVELOPE_URIS = new ArrayList();
+    public static final List ENVELOPE_URIS = new ArrayList();
     static {
         ENVELOPE_URIS.add( SOAPConstants.URI_NS_SOAP_ENVELOPE );
         ENVELOPE_URIS.add( "http://www.w3.org/2001/06/soap-envelope" );
         ENVELOPE_URIS.add( "http://www.w3.org/2001/09/soap-envelope" );
         ENVELOPE_URIS.add( "urn:schemas-xmlsoap-org:soap.v1" );
     }
+
+    public static final String SOAP_ENV_PREFIX = "soapenv";
 
     public static final String BODY_EL_NAME   = "Body";
     public static final String HEADER_EL_NAME = "Header";
@@ -137,7 +139,6 @@ public class SoapUtil {
         // use the soap flavor of this document
         String soapEnvNS = soapMsg.getDocumentElement().getNamespaceURI();
         // if the body is there, get it so that the header can be inserted before it
-        Element body = null;
         NodeList bodylist = soapMsg.getElementsByTagNameNS(soapEnvNS, BODY_EL_NAME);
         if (bodylist.getLength() > 0) {
             return (Element)bodylist.item(0);
