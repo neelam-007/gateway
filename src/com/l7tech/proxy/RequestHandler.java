@@ -164,16 +164,18 @@ public class RequestHandler extends AbstractHttpHandler {
     private Ssg getDesiredSsg(final HttpRequest request) throws HttpException {
         // Figure out which SSG is being invoked.
         final String endpoint = request.getURI().getPath().substring(1); // skip leading slash
-        final Ssg ssg;
         try {
-            ssg = ssgFinder.getSsgByEndpoint(endpoint);
+            try {
+                return ssgFinder.getSsgByEndpoint(endpoint);
+            } catch (SsgNotFoundException e) {
+                return ssgFinder.getDefaultSsg();
+            }
         } catch (SsgNotFoundException e) {
             HttpException t = new HttpException(404,
                                                 "This Client Proxy has no SSG mapped to the endpoint " + endpoint);
             interceptor.onMessageError(t);
             throw t;
         }
-        return ssg;
     }
 
     /**
