@@ -13,7 +13,9 @@ import org.apache.log4j.Category;
 import org.bouncycastle.asn1.ASN1Set;
 import org.bouncycastle.asn1.x509.X509Name;
 import org.bouncycastle.jce.PKCS10CertificationRequest;
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
 
+import javax.security.auth.x500.X500Principal;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.net.URL;
@@ -33,7 +35,7 @@ public class SslUtils {
     public static final String REQUEST_SIG_ALG = "SHA1withRSA";
 
     static {
-        Security.addProvider( new org.bouncycastle.jce.provider.BouncyCastleProvider() );
+        Security.addProvider(new BouncyCastleProvider());
     }
 
     /**
@@ -41,19 +43,17 @@ public class SslUtils {
      * as the Common Name, and the SSG hostname as the Organizational Unit.
      *
      * @param username the Username, ie "joeblow"
-     * @param ssgHostname the SSG hostname, ie "ssg.some-company.com"
      * @throws SignatureException
      * @throws InvalidKeyException
      * @throws RuntimeException if a needed algorithm or crypto provider was not found
      */
     public static PKCS10CertificationRequest makeCsr(String username,
-                                               String ssgHostname,
                                                PublicKey publicKey,
                                                PrivateKey privateKey)
             throws SignatureException, InvalidKeyException, RuntimeException
     {
-        log.info("Generating CSR for user=" + username + "  ssgHostname=" + ssgHostname);
-        X509Name subject = new X509Name("CN=" + username + ", OU=" + ssgHostname);
+        log.info("Generating CSR for user=" + username);
+        X509Name subject = new X509Name("cn=" + username);
         ASN1Set attrs = null;
 
         // Generate request
@@ -83,25 +83,31 @@ public class SslUtils {
             throws IOException, CertificateException, NoSuchAlgorithmException,
                    InvalidKeyException, NoSuchProviderException
     {
-        log.info("Sending certificate request for DN:" + csr.getCertificationRequestInfo().getSubject());
+        X500Principal csrName = new X500Principal(csr.getCertificationRequestInfo().getSubject().toString());
+        String csrNameString = csrName.getName(X500Principal.CANONICAL);
+        log.info("Sending certificate request to " + url + " for DN:" + csrNameString);
         HttpClient hc = new HttpClient();
         hc.getState().setAuthenticationPreemptive(true);
         hc.getState().setCredentials(null, null,
                                      new UsernamePasswordCredentials(username,
                                                                      new String(password)));
         PostMethod post = new PostMethod(url.toExternalForm());
-        ByteArrayInputStream bais = new ByteArrayInputStream(csr.getEncoded());
+        byte[] csrBytes = csr.getEncoded();
+        ByteArrayInputStream bais = new ByteArrayInputStream(csrBytes);
         post.setRequestBody(bais);
         post.setRequestHeader("Content-Type", "application/pkcs10");
-        post.setRequestHeader("Content-Length", String.valueOf(csr.getEncoded().length));
+        post.setRequestHeader("Content-Length", String.valueOf(csrBytes.length));
         int result = hc.executeMethod(post);
+        log.info("Post of CSR completed with status " + result);
         if ( result != 200 ) throw new CertificateException( "HTTP POST to certificate signer generated status " + result );
         X509Certificate cert = (X509Certificate) CertificateFactory.getInstance("X.509").generateCertificate(post.getResponseBodyAsStream());
+        X500Principal certName = new X500Principal(cert.getSubjectDN().toString());
+        String certNameString = certName.getName(X500Principal.CANONICAL);
 
-        log.info("Got back a certificate with DN:" + cert.getSubjectDN());
+        log.info("Got back a certificate with DN:" + certNameString);
 
         // TODO: Verify using the CA public key for this SSG.
-        if (!cert.getSubjectDN().getName().equals(csr.getCertificationRequestInfo().getSubject().toString()))
+        if (!certNameString.equals(csrNameString))
             throw new CertificateException("We got a certificate, but it's directory name didn't match what we asked for.");
         if (!cert.getPublicKey().equals(csr.getPublicKey()))
             throw new CertificateException("We got a certificate, but it certified the wrong public key.");
