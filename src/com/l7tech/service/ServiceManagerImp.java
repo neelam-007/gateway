@@ -6,19 +6,22 @@
 
 package com.l7tech.service;
 
+import com.l7tech.logging.LogManager;
 import com.l7tech.message.Request;
 import com.l7tech.objectmodel.*;
 import com.l7tech.service.resolution.ServiceResolutionException;
 import com.l7tech.service.resolution.ServiceResolver;
 import com.l7tech.service.resolution.SoapActionResolver;
 import com.l7tech.service.resolution.UrnResolver;
-import org.apache.log4j.Category;
 
 import javax.naming.InitialContext;
 import javax.naming.NamingException;
+import javax.wsdl.WSDLException;
 import java.rmi.RemoteException;
 import java.sql.SQLException;
 import java.util.*;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Manages PublishedService instances.  Note that this object has state, so it should be effectively a Singleton--only get one from the Locator!
@@ -82,6 +85,31 @@ public class ServiceManagerImp extends HibernateEntityManager implements Service
         return set;
     }
 
+    private boolean validate( PublishedService candidateService ) {
+        try {
+            // Make sure WSDL is valid
+            candidateService.parsedWsdl();
+            ServiceResolver resolver;
+            Map services = _oidToServiceMap;
+
+            Map matchingServices = null;
+
+            for (Iterator i = _resolvers.iterator(); i.hasNext(); ) {
+                resolver = (ServiceResolver)i.next();
+                matchingServices = resolver.matchingServices( candidateService, services );
+                if ( matchingServices != null && matchingServices.size() > 0 ) {
+                    // One or more matched... Let's see if anyone else matches.
+                    services = matchingServices;
+                }
+            }
+
+            return ( matchingServices == null || matchingServices.isEmpty() );
+        } catch ( WSDLException we ) {
+            _log.log( Level.SEVERE, we.toString(), we );
+            return false;
+        }
+    }
+
     public ServiceManagerImp() throws ObjectModelException {
         super();
 
@@ -99,7 +127,7 @@ public class ServiceManagerImp extends HibernateEntityManager implements Service
                 InitialContext ic = new InitialContext();
                 serviceResolvers = (String)ic.lookup( "java:comp/env/ServiceResolvers" );
             } catch ( NamingException ne ) {
-                log.error( ne );
+                _log.log( Level.INFO, ne.toString(), ne );
             }
 
             if ( serviceResolvers == null ) {
@@ -126,11 +154,11 @@ public class ServiceManagerImp extends HibernateEntityManager implements Service
 
                     _resolvers.add( resolver );
                 } catch ( ClassNotFoundException cnfe ) {
-                    log.error( cnfe );
+                    _log.log( Level.SEVERE, cnfe.toString(), cnfe );
                 } catch ( InstantiationException ie ) {
-                    log.error( ie );
+                    _log.log( Level.SEVERE, ie.toString(), ie );
                 } catch ( IllegalAccessException iae ) {
-                    log.error( iae );
+                    _log.log( Level.SEVERE, iae.toString(), iae );
                 }
             }
         }
@@ -146,6 +174,11 @@ public class ServiceManagerImp extends HibernateEntityManager implements Service
 
     public long save(PublishedService service) throws SaveException {
         try {
+            if ( !validate( service ) ) {
+                SaveException se = new SaveException( "Duplicate service resolution parameters" );
+                _log.log( Level.SEVERE, se.toString(), se );
+                throw se;
+            }
             long oid = _manager.save( getContext(), service );
             putService( service );
             fireCreated( service );
@@ -157,6 +190,11 @@ public class ServiceManagerImp extends HibernateEntityManager implements Service
 
     public void update(PublishedService service) throws UpdateException {
         try {
+            if ( !validate( service ) ) {
+                UpdateException ue = new UpdateException( "Duplicate service resolution parameters" );
+                _log.log( Level.SEVERE, ue.toString(), ue );
+                throw ue;
+            }
             _manager.update( getContext(), service );
             putService( service );
             fireUpdated( service );
@@ -212,7 +250,8 @@ public class ServiceManagerImp extends HibernateEntityManager implements Service
         _serviceListeners.add( listener );
     }
 
-    private static final Category log = Category.getInstance(ServiceManagerImp.class);
+    private static final Logger _log = LogManager.getInstance().getSystemLogger();
+
     protected SortedSet _resolvers;
 
     protected transient Map _oidToServiceMap = new HashMap();
