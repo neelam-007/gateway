@@ -321,6 +321,7 @@
 
             <classes dir="${build.classes}">
                 <exclude name="com/l7tech/console/**/*"/>
+                <exclude name="com/l7tech/test/**/*"/>
                 <exclude name="com/l7tech/server/jms/**/*" unless="include.jms"/>
             </classes>
 
