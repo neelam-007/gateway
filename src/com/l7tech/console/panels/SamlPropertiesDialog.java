@@ -1,6 +1,7 @@
 package com.l7tech.console.panels;
 
 import com.l7tech.console.tree.policy.SamlTreeNode;
+import com.l7tech.console.action.Actions;
 import com.l7tech.policy.assertion.xmlsec.SamlSecurity;
 
 import javax.swing.*;
@@ -57,6 +58,13 @@ public class SamlPropertiesDialog extends JDialog {
 
             }
         });
+
+        helpButton.addActionListener( new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                Actions.invokeHelp(SamlPropertiesDialog.this);
+            }
+        });
+
     }
 
     {
@@ -111,21 +119,21 @@ public class SamlPropertiesDialog extends JDialog {
         _10 = new JCheckBox();
         requireTimeValidity = _10;
         _10.setHorizontalAlignment(10);
-        _10.setText("Check time and date on ticket");
         _10.setHorizontalTextPosition(11);
+        _10.setText("Check time and date on ticket");
         _9.add(_10, new com.intellij.uiDesigner.core.GridConstraints(1, 1, 1, 1, 8, 0, 3, 0, null, null, null));
         final JCheckBox _11;
         _11 = new JCheckBox();
         requireEncryption = _11;
         _11.setHorizontalAlignment(10);
-        _11.setText("Require encrypted ticket");
         _11.setHorizontalTextPosition(11);
+        _11.setText("Require encrypted ticket");
         _9.add(_11, new com.intellij.uiDesigner.core.GridConstraints(2, 1, 1, 1, 8, 0, 3, 0, null, null, null));
         final JCheckBox _12;
         _12 = new JCheckBox();
         requireSignature = _12;
-        _12.setText("Require signed ticket");
         _12.setHorizontalTextPosition(11);
+        _12.setText("Require signed ticket");
         _9.add(_12, new com.intellij.uiDesigner.core.GridConstraints(3, 1, 1, 1, 8, 0, 3, 0, null, null, null));
         final com.intellij.uiDesigner.core.Spacer _13;
         _13 = new com.intellij.uiDesigner.core.Spacer();
