@@ -21,24 +21,12 @@ import java.util.Iterator;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import com.l7tech.server.ServerConfig;
-
 /**
  * @author alex
  */
 public class HibernatePersistenceContext extends PersistenceContext {
     public static final int MAXRETRIES = 5;
     public static final int RETRYTIME = 250;
-    // TODO: This statement doesn't work on all databases!
-    public static final String DEFAULT_PINGSQL = "select 1";
-    private static String pingSql;
-    static {
-        try {
-            pingSql = ServerConfig.getInstance().getProperty(ServerConfig.PARAM_JDBC_PINGSTATEMENT);
-        } catch ( Throwable t ) {
-            pingSql = DEFAULT_PINGSQL;
-        }
-    }
 
     public HibernatePersistenceContext( Session session ) {
         _session = session;
@@ -162,7 +150,7 @@ public class HibernatePersistenceContext extends PersistenceContext {
                 // test the connection and return the session
                 conn = _session.connection();
                 pingStmt = conn.createStatement();
-                rs = pingStmt.executeQuery( pingSql );
+                rs = pingStmt.executeQuery( HibernatePersistenceManager.pingStatement );
 
                 return _session;
             } catch (SQLException e) {

@@ -26,6 +26,8 @@ import java.util.logging.Logger;
  */
 public class HibernatePersistenceManager extends PersistenceManager {
     public static final String DEFAULT_HIBERNATE_RESOURCEPATH = "SSG.hbm.xml";
+    public static final String DEFAULT_PINGSQL = "select 1";
+    public static String pingStatement = DEFAULT_PINGSQL;
 
     public static void initialize() throws IOException, SQLException {
         HibernatePersistenceManager me = new HibernatePersistenceManager();
@@ -50,7 +52,7 @@ public class HibernatePersistenceManager extends PersistenceManager {
                 logger.info("Loading database configuration from system classpath");
             }
             _sessionFactory = cfg.buildSessionFactory();
-
+            pingStatement = cfg.getProperty("hibernate.dbcp.validationQuery");
         } catch (HibernateException he) {
             logger.throwing(getClass().getName(), "<init>", he);
             throw new SQLException(he.toString());

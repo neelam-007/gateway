@@ -37,7 +37,6 @@ public class ServerConfig implements ComponentConfig {
     public static final String PARAM_SERVERCOMPONENTS = "serverComponents";
     public static final String PARAM_JMS_THREAD_POOL_SIZE = "jmsThreadPoolSize";
     public static final String PARAM_CONFIG_DIRECTORY = "configDirectory";
-    public static final String PARAM_JDBC_PINGSTATEMENT = "pingStatement";
 
     public static final int DEFAULT_JMS_THREAD_POOL_SIZE = 200;
 
