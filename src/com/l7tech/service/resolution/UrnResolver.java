@@ -28,7 +28,6 @@ import java.util.Iterator;
  * @version $Revision$
  */
 public class UrnResolver extends WsdlOperationServiceResolver {
-
     protected String getParameterName() {
         return Request.PARAM_SOAP_URN;
     }
