@@ -25,10 +25,10 @@ my @list=(
 	dbpass        => "SSG Database - Password for the above user                                                                   ",
 	net_front_ip  => "Network Config - Node Public IP; ifcfg-eth1 IPADDR (eg. 192.168.1.8)                                         ",
 	net_front_mask=> "Network Config - Public Network Mask; ifcfg-eht1 NETMASK (eg. 255.255.255.0)                                 ",
-        net_front_rt    => "Network Config - Public Gateway (Load Balancer IP) SSB/client<->gateway; ifcfg-eth1 GATEWAY (eg. 192.168.1.1)",
+        net_front_rt  => "Network Config - Public Gateway (Load Balancer IP) SSB/client<->gateway; ifcfg-eth1 GATEWAY (eg. 192.168.1.1)",
 	net_back_ip   => "Network Config - Node Private IP; back_route, ifcfg-eth0 IPADDR (eg. 10.0.0.8)                               ",
 	net_back_mask => "Network Config - Private Network Mask; back_route netmask, ifcfg-eth0 NETMASK (eg. 255.255.255.0)            ",
-	net_back_rt   => "Network Config - Private Gateway; back_route gw, ifcfg-eth0 GATWAY (eg. 10.0.0.1)                            ",
+	net_back_rt   => "Network Config - Private Gateway; back_route gw (eg. 10.0.0.1)                                               ",
         net_back_net  => "Network Config - Node private Network; back_route -net                                                       "
 );
 
