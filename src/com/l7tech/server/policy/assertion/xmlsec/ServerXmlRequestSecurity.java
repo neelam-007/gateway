@@ -166,7 +166,7 @@ public class ServerXmlRequestSecurity implements ServerAssertion {
         try {
             xmlsession = SessionManager.getInstance().getSession(sessionID);
         } catch (SessionNotFoundException e) {
-            String msg = "Exception finding session with id=" + sessionID;
+            String msg = "Exception finding session with id=" + sessionID + ". session could reside on other cluster member or is no longer valid.";
             logger.log(Level.SEVERE, msg, e);
             throw new PolicyAssertionException(msg, e);
         } catch (NumberFormatException e) {
