@@ -76,7 +76,7 @@ public class ProtectedServiceWizardPanel extends WizardStepPanel {
 
         add(getMainPanel(), BorderLayout.CENTER);
         getServiceUrlTextField().setEditable(false);
-        getButtonChangeUrl().setText("change");
+        getButtonChangeUrl().setText("Change");
     }
 
     private ButtonGroup getAnonymousButtonGroup() {
@@ -88,7 +88,7 @@ public class ProtectedServiceWizardPanel extends WizardStepPanel {
 
     private JRadioButton getCredentialsNeededRadioButton() {
         if (credentialsNeededRadioButton == null) {
-            credentialsNeededRadioButton = new JRadioButton("The Gateway will need to provide credentials to access this service");
+            credentialsNeededRadioButton = new JRadioButton("The Gateway will need to provide credentials to access this Web service");
             getAnonymousButtonGroup().add(credentialsNeededRadioButton);
             credentialsNeededRadioButton.addActionListener(new ActionListener() {
                 public void actionPerformed(ActionEvent e) {
@@ -102,7 +102,7 @@ public class ProtectedServiceWizardPanel extends WizardStepPanel {
 
     private JRadioButton getAnonymousRadioButton() {
         if (anonymousRadioButton == null) {
-            anonymousRadioButton = new JRadioButton("The Gateway can access this Protected Service anonymously");
+            anonymousRadioButton = new JRadioButton("The Gateway can access this protected Web service anonymously");
             getAnonymousButtonGroup().add(anonymousRadioButton);
             anonymousRadioButton.setSelected(true);
             anonymousRadioButton.addActionListener(new ActionListener() {
@@ -225,7 +225,7 @@ public class ProtectedServiceWizardPanel extends WizardStepPanel {
         serviceUrlPanel.setLayout(new BoxLayout(serviceUrlPanel, BoxLayout.X_AXIS));
 
         JLabel serviceUrlLabel = new JLabel();
-        serviceUrlLabel.setText("Service URL");
+        serviceUrlLabel.setText("Web Service URL:");
         serviceUrlLabel.setBorder(new EmptyBorder(new Insets(1, 1, 1, 5)));
         serviceUrlPanel.add(serviceUrlLabel);
 
@@ -372,7 +372,7 @@ public class ProtectedServiceWizardPanel extends WizardStepPanel {
 
     private void doChangeUrl() {
         getServiceUrlTextField().setEditable(true);
-        getButtonChangeUrl().setText("default");
+        getButtonChangeUrl().setText("Default");
     }
 
     private void doDefaultUrl() {
@@ -384,13 +384,12 @@ public class ProtectedServiceWizardPanel extends WizardStepPanel {
             //todo: errormanger?
         }
         getServiceUrlTextField().setEditable(false);
-        getButtonChangeUrl().setText("change");
+        getButtonChangeUrl().setText("Change");
     }
 
     private JButton getButtonChangeUrl() {
         if (buttonChangeUrl == null) {
-            buttonChangeUrl = new JButton("change");
-            FontUtil.resizeFont(buttonChangeUrl, 0.84);
+            buttonChangeUrl = new JButton("Change");           
             buttonChangeUrl.addActionListener(new ActionListener() {
                 public void actionPerformed(ActionEvent e) {
                     buttonChangeUrl.setPreferredSize(buttonChangeUrl.getSize());

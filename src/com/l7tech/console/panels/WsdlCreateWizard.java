@@ -40,7 +40,7 @@ public class WsdlCreateWizard extends Wizard {
     public WsdlCreateWizard(Frame parent, WizardStepPanel panel) {
         super(parent, panel);
         setResizable(true);
-        setTitle("WSDL creation wizard");
+        setTitle("Create WSDL Wizard");
         Definition def = new DefinitionImpl();
         def.setExtensionRegistry(new PopulatedExtensionRegistry());
         wizardInput = def;
