@@ -1,14 +1,14 @@
 package com.l7tech.policy.exporter;
 
-import junit.framework.TestCase;
-import junit.framework.Test;
-import junit.framework.TestSuite;
-import com.l7tech.policy.assertion.Assertion;
-import com.l7tech.policy.assertion.JmsRoutingAssertion;
-import com.l7tech.policy.assertion.identity.SpecificUser;
-import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.common.util.XmlUtil;
 import com.l7tech.identity.IdentityProviderConfigManager;
+import com.l7tech.policy.assertion.Assertion;
+import com.l7tech.policy.assertion.JmsRoutingAssertion;
+import com.l7tech.policy.assertion.composite.AllAssertion;
+import com.l7tech.policy.assertion.identity.SpecificUser;
+import junit.framework.Test;
+import junit.framework.TestCase;
+import junit.framework.TestSuite;
 import org.w3c.dom.Document;
 
 /**
@@ -48,7 +48,7 @@ public class PolicyExporterTest extends TestCase {
         return new TestSuite(PolicyExporterTest.class);
     }
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws Exception {
         System.setProperty("com.l7tech.common.locator", "com.l7tech.common.locator.StubModeLocator");
         junit.textui.TestRunner.run(suite());
     }
