@@ -132,10 +132,16 @@ public class ClusterNodeInfo implements Serializable {
         this.name = name;
     }
 
+    /**
+     * A multicast address for use in the DistributedMessageIdManager.
+     */
     public String getMulticastAddress() {
         return multicastAddress;
     }
 
+    /**
+     * A multicast address for use in the DistributedMessageIdManager.
+     */ 
     public void setMulticastAddress(String multicastAddress) {
         this.multicastAddress = multicastAddress;
     }
