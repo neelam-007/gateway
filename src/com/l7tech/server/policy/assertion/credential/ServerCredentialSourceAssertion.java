@@ -37,7 +37,7 @@ public abstract class ServerCredentialSourceAssertion implements ServerAssertion
             PrincipalCredentials pc = request.getPrincipalCredentials();
             if ( pc == null ) {
                 // No finder has been run yet!
-                pc = findCredentials( request );
+                pc = findCredentials( request, response );
             }
 
             if ( pc == null ) {
@@ -65,7 +65,7 @@ public abstract class ServerCredentialSourceAssertion implements ServerAssertion
         }
     }
 
-    protected abstract PrincipalCredentials findCredentials( Request request ) throws IOException, CredentialFinderException;
+    protected abstract PrincipalCredentials findCredentials( Request request, Response response ) throws IOException, CredentialFinderException;
 
     protected abstract AssertionStatus checkCredentials( Request request, Response response ) throws CredentialFinderException;
 
