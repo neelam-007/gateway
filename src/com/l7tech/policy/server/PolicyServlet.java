@@ -56,7 +56,8 @@ public class PolicyServlet extends AuthenticatableHttpServlet {
         super.init( config );
     }
 
-    protected void doGet(HttpServletRequest httpServletRequest, HttpServletResponse httpServletResponse) throws ServletException, IOException {
+    protected void doGet(HttpServletRequest httpServletRequest, HttpServletResponse httpServletResponse)
+            throws ServletException, IOException {
         // GET THE PARAMETERS PASSED
         String str_oid = httpServletRequest.getParameter(PARAM_SERVICEOID);
         String getCert = httpServletRequest.getParameter(PARAM_GETCERT);
@@ -104,8 +105,10 @@ public class PolicyServlet extends AuthenticatableHttpServlet {
             if (httpServletRequest.getServerPort() == 8080) newUrl += ":8443";
             newUrl += httpServletRequest.getRequestURI() + "?" + httpServletRequest.getQueryString();
             httpServletResponse.setHeader(SecureSpanConstants.HttpHeaders.POLICYURL_HEADER, newUrl);
-            httpServletResponse.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Request must come through SSL. " + newUrl);
-            logger.info("Non-anonymous policy requested on in-secure channel (http). Sending 401 back with secure URL to requestor: " + newUrl);
+            httpServletResponse.sendError(HttpServletResponse.SC_UNAUTHORIZED,
+                                          "Request must come through SSL. " + newUrl);
+            logger.info("Non-anonymous policy requested on in-secure channel (http). " +
+                        "Sending 401 back with secure URL to requestor: " + newUrl);
             return;
         }
         // get credentials and check that they are valid for this policy
@@ -121,7 +124,9 @@ public class PolicyServlet extends AuthenticatableHttpServlet {
             if (user == null) {
                 // send error back with a hint that credentials should be provided
                 String newUrl = "https://"  + httpServletRequest.getServerName();
-                if (httpServletRequest.getServerPort() == 8080 || httpServletRequest.getServerPort() == 8443) newUrl += ":8443";
+                if (httpServletRequest.getServerPort() == 8080 || httpServletRequest.getServerPort() == 8443) {
+                    newUrl += ":8443";
+                }
                 newUrl += httpServletRequest.getRequestURI() + "?" + httpServletRequest.getQueryString();
                 httpServletResponse.setHeader(SecureSpanConstants.HttpHeaders.POLICYURL_HEADER, newUrl);
                 httpServletResponse.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Must provide valid credentials.");
@@ -136,11 +141,16 @@ public class PolicyServlet extends AuthenticatableHttpServlet {
             logger.finer("Policy before filtering: " + targetService.getPolicyXml());
             targetService = FilterManager.getInstance().applyAllFilters(user, targetService);
             // finer, not logged by default. change log level in web.xml to see these
-            logger.finer("Policy after filtering: " + ((targetService == null) ? "null" : targetService.getPolicyXml()));
-            if (targetService == null) logger.warning("requestor tried to download policy that he should not be allowed to see - will return error");
+            logger.finer("Policy after filtering: " +
+                         ((targetService == null) ? "null" : targetService.getPolicyXml()));
+            if (targetService == null) {
+                logger.warning("requestor tried to download policy that " +
+                               "he should not be allowed to see - will return error");
+            }
         } catch (FilteringException e) {
             logger.log(Level.SEVERE, "Could not filter policy", e);
-            httpServletResponse.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Could not process policy. Consult server logs.");
+            httpServletResponse.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR,
+                                          "Could not process policy. Consult server logs.");
             return;
         }
 
@@ -205,10 +215,12 @@ public class PolicyServlet extends AuthenticatableHttpServlet {
 
     private void outputPublishedServicePolicy(PublishedService service, HttpServletResponse response) throws IOException {
         if (service == null) {
-            response.sendError(HttpServletResponse.SC_NOT_FOUND, "ERROR cannot resolve target service or you are not authorized to consult it");
+            response.sendError(HttpServletResponse.SC_NOT_FOUND,
+                               "ERROR cannot resolve target service or you are not authorized to consult it");
             return;
         } else {
-            response.addHeader(SecureSpanConstants.HttpHeaders.POLICY_VERSION, Long.toString(service.getOid()) + '|' + Long.toString(service.getVersion()));
+            response.addHeader(SecureSpanConstants.HttpHeaders.POLICY_VERSION,
+                               Long.toString(service.getOid()) + '|' + Long.toString(service.getVersion()));
             response.setContentType("text/xml; charset=utf-8");
             response.getOutputStream().println(service.getPolicyXml());
         }
@@ -239,8 +251,10 @@ public class PolicyServlet extends AuthenticatableHttpServlet {
                 IdentityProvider provider = (IdentityProvider) i.next();
                 try {
                     User user = provider.getUserManager().findByLogin(username.trim());
-                    if (user != null)
-                        checkInfos.add(new CheckInfo(provider.getConfig().getOid(), user.getPassword(), provider.getAuthRealm()));
+                    if (user != null) {
+                        checkInfos.add(new CheckInfo(provider.getConfig().getOid(),
+                                       user.getPassword(), provider.getAuthRealm()));
+                    }
                 } catch (FindException e) {
                     // Log it and continue
                     logger.log(Level.WARNING, null, e);
@@ -259,7 +273,8 @@ public class PolicyServlet extends AuthenticatableHttpServlet {
         return checkInfos;
     }
 
-    private com.l7tech.service.ServiceManager getServiceManagerAndBeginTransaction() throws java.sql.SQLException, TransactionException {
+    private com.l7tech.service.ServiceManager getServiceManagerAndBeginTransaction()
+            throws SQLException, TransactionException {
         if (serviceManagerInstance == null){
             initialiseServiceManager();
         }
@@ -267,15 +282,17 @@ public class PolicyServlet extends AuthenticatableHttpServlet {
         return serviceManagerInstance;
     }
 
-    private void endTransaction() throws java.sql.SQLException, TransactionException {
+    private void endTransaction() throws SQLException, TransactionException {
         PersistenceContext context = PersistenceContext.getCurrent();
         context.commitTransaction();
         context.close();
     }
 
     private synchronized void initialiseServiceManager() throws ClassCastException, RuntimeException {
-        serviceManagerInstance = (com.l7tech.service.ServiceManager)Locator.getDefault().lookup(com.l7tech.service.ServiceManager.class);
-        if (serviceManagerInstance == null) throw new RuntimeException("Cannot instantiate the ServiceManager");
+        serviceManagerInstance = (ServiceManager)Locator.getDefault().lookup(ServiceManager.class);
+        if (serviceManagerInstance == null) {
+            throw new RuntimeException("Cannot instantiate the ServiceManager");
+        }
     }
 
 

@@ -30,7 +30,7 @@ public class FilterManager {
      * Takes an assertion tree and passes it through the registered filters.
      * @param policyRequestor or null is the requestor is anonymous
      * @param rootAssertion is modified by the filter(s)
-     * @return the filtered policy or null if a filter decided that this user has absolutely no business with this policy
+     * @return the filtered policy, null if a filter decided that this user has absolutely no business with this policy
      * @throws FilteringException
      */
     public Assertion applyAllFilters(User policyRequestor, Assertion rootAssertion) throws FilteringException {
@@ -61,7 +61,8 @@ public class FilterManager {
      * @return the policy filtered by all registered filters
      * @throws FilteringException
      */
-    public PublishedService applyAllFilters(User policyRequestor, PublishedService policyToFilter) throws FilteringException {
+    public PublishedService applyAllFilters(User policyRequestor, PublishedService policyToFilter)
+            throws FilteringException {
         // make local copy. dont touch original!
         PublishedService localCopyOfService = new PublishedService();
         try {

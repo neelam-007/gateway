@@ -123,8 +123,8 @@ public class DefaultPolicyValidator extends PolicyValidator {
         private void processAccessControl(Assertion a) {
             if (!seenCredentials) {
                 result.addError(
-                        new PolicyValidatorResult.Error(a, "Access control specified without authentication scheme.", null)
-                );
+                        new PolicyValidatorResult.Error(
+                                a, "Access control specified without authentication scheme.", null));
             }
 
             if (seenRouting) {
@@ -139,15 +139,16 @@ public class DefaultPolicyValidator extends PolicyValidator {
                 // check that this identity is member of internal id provider
                 IdentityAssertion idass = (IdentityAssertion)a;
                 try {
-                    if (getProviderConfigManager().findByPrimaryKey(idass.getIdentityProviderOid()).type() != IdentityProviderType.INTERNAL) {
+                    if (getProviderConfigManager().findByPrimaryKey(idass.getIdentityProviderOid()).type()
+                            != IdentityProviderType.INTERNAL) {
                         result.addError(
-                            new PolicyValidatorResult.Error(a, "A credential assertion requires client certs. Only internal identities support client certs.", null)
-                        );
+                                new PolicyValidatorResult.Error(a,
+                                                                "A credential assertion requires client certs. " +
+                                                                "Only internal identities support client certs.",
+                                                                null));
                     }
                 } catch (FindException e) {
-                    result.addError(
-                      new PolicyValidatorResult.Error(a, "This identity might no longer be valid.", e)
-                    );
+                    result.addError(new PolicyValidatorResult.Error(a, "This identity might no longer be valid.", e));
                     log.log(Level.INFO, "could not retrieve IdentityProvider", e);
                 }
             }
@@ -260,7 +261,9 @@ public class DefaultPolicyValidator extends PolicyValidator {
         private IdentityProviderConfigManager getProviderConfigManager() throws RuntimeException {
             IdentityProviderConfigManager ipc = (IdentityProviderConfigManager)Locator.
               getDefault().lookup(IdentityProviderConfigManager.class);
-            if (ipc == null)  throw new RuntimeException("Could not find registered " + IdentityProviderConfigManager.class);
+            if (ipc == null) {
+                throw new RuntimeException("Could not find registered " + IdentityProviderConfigManager.class);
+            }
             return ipc;
         }
 
