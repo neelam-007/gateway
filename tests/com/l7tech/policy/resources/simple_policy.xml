@@ -34,6 +34,7 @@
     <RoutingAssertion>
       <Password stringValueNull="null"/>
       <Realm stringValueNull="null"/>
+      <UserAgent stringValueNull="null"/>
       <ProtectedServiceUrl stringValueNull="null"/>
       <MaxConnections intValue="100"/>
       <Login stringValueNull="null"/>
