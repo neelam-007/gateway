@@ -10,7 +10,7 @@ import com.l7tech.identity.IdentityProvider;
 import com.l7tech.message.Request;
 import com.l7tech.message.Response;
 import com.l7tech.policy.assertion.*;
-import com.l7tech.policy.assertion.AssertionError;
+import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.credential.PrincipalCredentials;
 import com.l7tech.proxy.datamodel.PendingRequest;
 
@@ -28,18 +28,21 @@ public abstract class IdentityAssertion extends Assertion {
         super();
     }
 
-    public AssertionError checkRequest(Request request, Response response) throws PolicyAssertionException {
+    public AssertionStatus checkRequest(Request request, Response response) throws PolicyAssertionException {
         return doCheckRequest( request, response );
     }
 
-    public AssertionError doCheckRequest( Request request, Response response ) throws IdentityAssertionException {
+    public AssertionStatus doCheckRequest( Request request, Response response ) throws IdentityAssertionException {
         PrincipalCredentials pc = request.getPrincipalCredentials();
         if ( pc == null ) {
             // No credentials have been found yet
             if ( request.isAuthenticated() )
                 throw new IllegalStateException( "Request is authenticated but request has no PrincipalCredentials!" );
-            else
-                return AssertionError.AUTH_REQUIRED;
+            else {
+                response.addResult( new AssertionResult( this, request, AssertionStatus.AUTH_REQUIRED ) );
+                response.setAuthenticationMissing( true );
+                return AssertionStatus.AUTH_REQUIRED;
+            }
         } else {
             Principal principal = pc.getPrincipal();
             byte[] credentials = pc.getCredentials();
@@ -51,15 +54,16 @@ public abstract class IdentityAssertion extends Assertion {
                     request.setAuthenticated(true);
                     return doCheckPrincipal( principal );
                 } else {
-                    return AssertionError.AUTH_FAILED;
+                    response.setAuthenticationMissing( true );
+                    return AssertionStatus.AUTH_FAILED;
                 }
             }
         }
     }
 
     /** No identity providers on client side. */
-    public AssertionError decorateRequest(PendingRequest requst) throws PolicyAssertionException {
-        return AssertionError.NOT_APPLICABLE;
+    public AssertionStatus decorateRequest(PendingRequest requst) throws PolicyAssertionException {
+        return AssertionStatus.NOT_APPLICABLE;
     }
 
     public void setIdentityProvider( IdentityProvider provider ) {
@@ -70,7 +74,7 @@ public abstract class IdentityAssertion extends Assertion {
         return _identityProvider;
     }
 
-    protected abstract AssertionError doCheckPrincipal( Principal p );
+    protected abstract AssertionStatus doCheckPrincipal( Principal p );
 
     protected IdentityProvider _identityProvider;
 }
