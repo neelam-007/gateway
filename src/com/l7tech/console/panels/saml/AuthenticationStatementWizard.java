@@ -23,5 +23,6 @@ public class AuthenticationStatementWizard extends Wizard {
      */
     public AuthenticationStatementWizard(Frame parent, WizardStepPanel panel) {
         super(parent, panel);
+        setTitle("SAML Authentication Statement Constraints Wizard");
     }
  }

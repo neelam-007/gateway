@@ -9,6 +9,10 @@ import com.l7tech.console.panels.WizardStepPanel;
 
 import javax.swing.*;
 import java.awt.*;
+import java.awt.event.ActionListener;
+import java.awt.event.ActionEvent;
+import java.util.ArrayList;
+import java.util.Collection;
 
 /**
  * The <code>WizardStepPanel</code> that allows selection of SAML
@@ -33,7 +37,7 @@ public class AuthenticationMethodsWizardStepPanel extends WizardStepPanel {
     private JButton buttonSelectAll;
     private JButton buttonSelectNone;
     private JLabel titleLabel;
-
+    private JCheckBox[] allMethods;
     /**
      * Creates new form WizardPanel
      */
@@ -48,6 +52,35 @@ public class AuthenticationMethodsWizardStepPanel extends WizardStepPanel {
 
     private void initialize() {
         titleLabel.setFont(titleLabel.getFont().deriveFont(Font.BOLD));
+        Collection lm = new ArrayList();
+        lm.add(checkBoxPasswordMethod);
+        lm.add(checkBoxKerberosMethod);
+        lm.add(checkBoxSrpMethod);
+        lm.add(checkBoxHardwareTokenMethod);
+        lm.add(checkBoxSslTlsCLientCertMethod);
+        lm.add(checkBoxX509PublicKey);
+        lm.add(checkBoxPgpPublicKey);
+        lm.add(checkBoxSpkiPublicKey);
+        lm.add(checkBoxXkmsPublicKey);
+        lm.add(checkBoxXmlDigitalSignatureMethod);
+        lm.add(checkBoxMethodUnspecified);
+        allMethods = (JCheckBox[])lm.toArray(new JCheckBox[] {});
+        buttonSelectAll.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                for (int i = 0; i < allMethods.length; i++) {
+                    JCheckBox allMethod = allMethods[i];
+                    allMethod.setSelected(true);
+                }
+            }
+        });
+        buttonSelectNone.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                for (int i = 0; i < allMethods.length; i++) {
+                    JCheckBox allMethod = allMethods[i];
+                    allMethod.setSelected(false);
+                }
+            }
+        });
     }
 
     /**

@@ -3,6 +3,7 @@ package com.l7tech.console.tree.policy.advice;
 import com.l7tech.console.tree.policy.PolicyChange;
 import com.l7tech.console.tree.policy.PolicyException;
 import com.l7tech.policy.assertion.*;
+import com.l7tech.policy.assertion.xmlsec.SamlAuthenticationStatement;
 import com.l7tech.policy.assertion.xml.SchemaValidation;
 import com.l7tech.policy.assertion.xml.XslTransformation;
 
@@ -85,5 +86,6 @@ public class Advices {
         advicesMap.put(RemoteIpRange.class, new Class[]{AddRemoteIpRangeAssertionAdvice.class});
         advicesMap.put(TimeRange.class, new Class[]{AddTimeRangeAssertionAdvice.class});
         advicesMap.put(RequestSwAAssertion.class, new Class[] {AddRequestSwAAssertionAdvice.class});
+        advicesMap.put(SamlAuthenticationStatement.class, new Class[] {AddSamlAuthenticationStatementAssertionAdvice.class});
     }
 }
