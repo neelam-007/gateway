@@ -308,19 +308,19 @@ public class NewFederatedUserDialog extends JDialog {
 
     private final DocumentListener documentListener = new DocumentListener() {
         public void changedUpdate(DocumentEvent e) {
-            updateCreateButtonState(e);
+            updateUserNameField(e);
         }
 
         public void insertUpdate(DocumentEvent e) {
-            updateCreateButtonState(e);
+            updateUserNameField(e);
         }
 
         public void removeUpdate(DocumentEvent e) {
-            updateCreateButtonState(e);
+            updateUserNameField(e);
         }
     };
 
-    public void updateCreateButtonState(DocumentEvent e) {
+    public void updateUserNameField(DocumentEvent e) {
         final Document field = e.getDocument();
         if (field.getProperty("name").equals("userId")) {
             SwingUtilities.invokeLater(new Runnable() {
@@ -365,7 +365,7 @@ public class NewFederatedUserDialog extends JDialog {
         }
 
         if (subjectDNRadioButton.isSelected()) {
-            x509SubjectDNTextField.setText("CN=" + userNameTextField.getText().trim());
+            x509SubjectDNTextField.setText(formulateSubjectDN(x509SubjectDNTextField.getText()));
         }
         if (emailRadioButton.isSelected()) {
             emailTextField.setText(userNameTextField.getText() + "@");
@@ -412,7 +412,7 @@ public class NewFederatedUserDialog extends JDialog {
     private void updateUserNameLinkedTextField() {
         if (userNameTextField.isCursorSet() && userNameTextField.getText().trim().length() > 0) {
             if (subjectDNRadioButton.isSelected()) {
-                x509SubjectDNTextField.setText("CN=" + userNameTextField.getText().trim());
+                x509SubjectDNTextField.setText(formulateSubjectDN(x509SubjectDNTextField.getText()));
             }
             if (emailRadioButton.isSelected()) {
                 emailTextField.setText(userNameTextField.getText() + "@");
@@ -421,6 +421,40 @@ public class NewFederatedUserDialog extends JDialog {
                 loginTextField.setText(userNameTextField.getText());
             }
         }
+    }
+
+    private String formulateSubjectDN(String currentDN) {
+
+        int endIndex = -1;
+        int startIndex = -1;
+        String newDN = "";
+
+        if (currentDN.length() == 0) {
+            newDN = "CN=" + userNameTextField.getText();
+        }
+
+        int index1 = currentDN.indexOf("CN=");
+        int index2 = currentDN.indexOf("cn=");
+
+        // cn or CN not found
+        if (index1 < 0 && index2 < 0) {
+            newDN =  "CN=" + userNameTextField.getText();
+        } else {
+            endIndex = currentDN.indexOf(",");
+            if (index1 < 0) {
+                startIndex = index2;
+
+            } else {
+                // index 2 < 0
+                startIndex = index1;
+            }
+
+            newDN = currentDN.substring(0, startIndex+3) + userNameTextField.getText();
+            if(endIndex > 0) {
+                 newDN += currentDN.substring(endIndex);
+            }
+        }
+        return newDN;
     }
 
     private String extractNameFromEmail(String email) {
