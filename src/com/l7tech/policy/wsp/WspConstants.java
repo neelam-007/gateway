@@ -25,23 +25,20 @@ import com.l7tech.policy.assertion.identity.SpecificUser;
 import com.l7tech.policy.assertion.xmlsec.SamlSecurity;
 import com.l7tech.policy.assertion.xmlsec.XmlRequestSecurity;
 import com.l7tech.policy.assertion.xmlsec.XmlResponseSecurity;
-import sun.misc.BASE64Decoder;
-import sun.misc.BASE64Encoder;
-
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
-import java.util.Map;
-import java.util.regex.Pattern;
-
-import org.w3c.dom.Element;
 import org.w3c.dom.Document;
+import org.w3c.dom.Element;
 import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
+
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 /**
  *
@@ -168,7 +165,8 @@ class WspConstants {
             } else {
                 parmElement.setAttribute(typeName, svalue);
             }
-            populateElement(parmElement, document, name, source);
+            if (source != null)
+                populateElement(parmElement, document, name, source);
             return parmElement;
         }
 
@@ -190,6 +188,7 @@ class WspConstants {
             Node attr = attrs.item(0);
             String typeName = attr.getLocalName();
             String value = attr.getNodeValue();
+            System.out.println("Thawing element " + source.getLocalName() + " " + typeName + "=" + value);
 
             // Check for Nulls
             if (typeName.endsWith("Null") && value.equals("null") && typeName.length() > 4) {
@@ -214,8 +213,82 @@ class WspConstants {
         }
     }
 
+    static abstract class ComplexTypeMapping extends TypeMapping {
+        ComplexTypeMapping(Class type, String typeName) {
+            super(type, typeName);
+        }
+
+        protected String freeze(Object in) {
+            return in == null ? null : "included";
+        }
+
+        protected Object thawElementValue(Element source, String value) throws InvalidPolicyStreamException {
+            if (value == null)
+                return value;
+            if (!"included".equals(value))
+                throw new InvalidPolicyStreamException("Complex elements must have the value \"included\"");
+            return thawComplexElement(source);
+        }
+
+        protected abstract Object thawComplexElement(Element source) throws InvalidPolicyStreamException;
+    }
+
+    static final TypeMapping typeMappingString = new TypeMapping(String.class, "stringValue");
+    static final TypeMapping typeMappingMap = new ComplexTypeMapping(Map.class, "mapValue") {
+        protected void populateElement(Element parmElement, Document document, String name, Object source) {
+            Map map = (Map) source;
+            Set entries = map.entrySet();
+            for (Iterator i = entries.iterator(); i.hasNext();) {
+                Map.Entry entry = (Map.Entry) i.next();
+                Object key = entry.getKey();
+                if (key == null)
+                    throw new InvalidPolicyTreeException("Maps with null keys are not currently permitted within a policy");
+                if (!(key instanceof String))
+                    throw new InvalidPolicyTreeException("Maps with non-string keys are not currently permitted within a policy");
+                Object value = entry.getValue();
+                if (value != null && !(value instanceof String))
+                    throw new InvalidPolicyTreeException("Maps with non-string values are not currently permitted within a policy");
+                Element entryElement = document.createElement("entry");
+                entryElement.appendChild(typeMappingString.freeze(document, "key", key));
+                entryElement.appendChild(typeMappingString.freeze(document, "value", value));
+                parmElement.appendChild(entryElement);
+            }
+        }
+
+        protected Object thawComplexElement(Element source) throws InvalidPolicyStreamException {
+            Map map = new HashMap();
+            List entryElements = getChildElements(source, "entry");
+            for (Iterator i = entryElements.iterator(); i.hasNext();) {
+                Element element = (Element) i.next();
+                List keyValueElements = getChildElements(element);
+                if (keyValueElements.size() != 2)
+                    throw new InvalidPolicyStreamException("Map entry does not have exactly two child elements (key and value)");
+                Element keyElement = (Element) keyValueElements.get(0);
+                if (keyElement == null || keyElement.getNodeType() != Node.ELEMENT_NODE || !"key".equals(keyElement.getLocalName()))
+                    throw new InvalidPolicyStreamException("Map entry first child element is not a key element");
+                Element valueElement = (Element) keyValueElements.get(1);
+                if (valueElement == null || valueElement.getNodeType() != Node.ELEMENT_NODE || !"value".equals(valueElement.getLocalName()))
+                    throw new InvalidPolicyStreamException("Map entry last child element is not a value element");
+
+                TypedReference ktr = TypeMapping.thawElement((Element) keyElement);
+                if (!String.class.equals(ktr.type))
+                    throw new InvalidPolicyStreamException("Maps with non-string keys are not currently permitted within a policy");
+                if (ktr.target == null)
+                    throw new InvalidPolicyStreamException("Maps with null keys are not currently permitted within a policy");
+                String key = (String) ktr.target;
+
+                TypedReference vtr = TypeMapping.thawElement((Element) valueElement);
+                if (!String.class.equals(vtr.type))
+                    throw new InvalidPolicyStreamException("Maps with non-string values are not currently permitted within a policy");
+                String value = (String) vtr.target;
+                map.put(key, value);
+            }
+            return map;
+        }
+    };
+
     static TypeMapping[] typeMappings = new TypeMapping[] {
-        new TypeMapping(String.class, "stringValue"),
+        typeMappingString,
         new TypeMapping(long.class, "longValue") {
             protected Object thawValue(String in) {
                 return new Long(in);
@@ -256,41 +329,7 @@ class WspConstants {
             }
         },
 
-        //TODO: we can't leave serialized java objects in the policy
-        new TypeMapping(Map.class, "base64SerializedMapValue") {
-            Pattern nocr = Pattern.compile("\\s+", Pattern.MULTILINE);
-
-            protected String freeze(Object in) {
-                ByteArrayOutputStream baos = new ByteArrayOutputStream();
-                try {
-                    ObjectOutputStream oos = new ObjectOutputStream(baos);
-                    oos.writeObject(in);
-                } catch (IOException e) {
-                    throw new RuntimeException(e); // can't happen
-                }
-                byte[] bay = baos.toByteArray();
-                BASE64Encoder enc = new BASE64Encoder();
-
-                String encoded = enc.encode(bay);
-                return nocr.matcher(encoded).replaceAll(" ");
-            }
-
-            Pattern yescr = Pattern.compile("\\s+", Pattern.MULTILINE);
-
-            protected Object thawValue(String in) throws InvalidPolicyStreamException {
-                BASE64Decoder dec = new BASE64Decoder();
-                try {
-                    in = yescr.matcher(in).replaceAll("\n");
-                    byte[] bay = dec.decodeBuffer(in);
-                    ObjectInputStream ois = new ObjectInputStream(new ByteArrayInputStream(bay));
-                    return ois.readObject();
-                } catch (IOException e) {
-                    throw new InvalidPolicyStreamException("invalid base64 encoded attribute", e);
-                } catch (ClassNotFoundException e) {
-                    throw new InvalidPolicyStreamException("egg error - unsupported serialized Java class", e);
-                }
-            }
-        },
+        typeMappingMap,
     };
 
     static TypeMapping findTypeMappingByClass(Class clazz) {
@@ -319,5 +358,43 @@ class WspConstants {
                  double.class.equals(type) ||
                  byte.class.equals(type) ||
                  char.class.equals(type));
+    }
+
+    /**
+     * Get a list of all immediate child nodes of the given node that are of type ELEMENT.
+     * @param node the node to check
+     * @return a List of Element objects
+     */
+    static List getChildElements(Node node) {
+        return getChildElements(node, null);
+    }
+
+    /**
+     * Get a list of all immediate child nodes of the given node that are of type ELEMENT and
+     * have the specified name.
+     *
+     * <p>For example, if called on the following Foo node, would return
+     * the two Bar subnodes but not the Baz subnode or the Bloof grandchild node:
+     * <pre>
+     *    [Foo]
+     *      [Bar/]
+     *      [Baz/]
+     *      [Bar][Bloof/][/Bar]
+     *    [/Foo]
+     * </pre>
+     *
+     * @param node  the node to check
+     * @param name  the required name
+     * @return a List of Element objects
+     */
+    static List getChildElements(Node node, String name) {
+        NodeList kidNodes = node.getChildNodes();
+        LinkedList kidElements = new LinkedList();
+        for (int i = 0; i < kidNodes.getLength(); ++i) {
+            Node n = kidNodes.item(i);
+            if (n.getNodeType() == Node.ELEMENT_NODE && (name == null || name.equals(n.getLocalName())))
+                kidElements.add(n);
+        }
+        return kidElements;
     }
 }

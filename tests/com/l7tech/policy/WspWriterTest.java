@@ -50,7 +50,8 @@ public class WspWriterTest extends TestCase {
     public void testWritePolicy() throws IOException {
         RequestXpathAssertion rxa = new RequestXpathAssertion();
         Map foo = new HashMap();
-        foo.put("blee", "blah");
+        foo.put("abc", "http://namespaces.somewhere.com/abc#bletch");
+        foo.put("blee", "http://namespaces.nowhere.com/asdf/fdsa/qwer#blortch.1.2");
         rxa.setNamespaceMap(foo);
 
         Assertion policy = new ExactlyOneAssertion(Arrays.asList(new Assertion[] {

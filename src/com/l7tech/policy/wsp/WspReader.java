@@ -44,7 +44,7 @@ public class WspReader {
             if (policy == null)
                 throw new InvalidPolicyStreamException("No enclosing Policy tag was found (using namespace " +
                                                        WspConstants.POLICY_NS + ")");
-            List childElements = getChildElements(policy);
+            List childElements = WspConstants.getChildElements(policy);
             if (childElements.size() != 1)
                 throw new InvalidPolicyStreamException("Policy does not have exactly one immediate child");
             Node node = (Node) childElements.get(0);
@@ -52,18 +52,6 @@ public class WspReader {
         } catch (Exception e) {
             throw new InvalidPolicyStreamException("Unable to parse policy", e);
         }
-    }
-
-    // Return a list of all children which are ELEMENTS
-    private static List getChildElements(Node node) {
-        NodeList kidNodes = node.getChildNodes();
-        LinkedList kidElements = new LinkedList();
-        for (int i = 0; i < kidNodes.getLength(); ++i) {
-            Node n = kidNodes.item(i);
-            if (n.getNodeType() == Node.ELEMENT_NODE)
-                kidElements.add(n);
-        }
-        return kidElements;
     }
 
     private static Assertion nodeToAssertion(Node node) throws InvalidPolicyStreamException {
@@ -79,7 +67,7 @@ public class WspReader {
         if (assertion instanceof CompositeAssertion) {
             // gather children
             List convertedKids = new LinkedList();
-            List kids = getChildElements(node);
+            List kids = WspConstants.getChildElements(node);
             for (Iterator i = kids.iterator(); i.hasNext();) {
                 Node kidNode = (Node) i.next();
                 convertedKids.add(nodeToAssertion(kidNode));
@@ -87,7 +75,7 @@ public class WspReader {
             ((CompositeAssertion)assertion).setChildren(convertedKids);
         } else {
             // gather properties
-            List properties = getChildElements(node);
+            List properties = WspConstants.getChildElements(node);
             for (Iterator i = properties.iterator(); i.hasNext();) {
                 Element kid = (Element) i.next();
                 String parm = kid.getLocalName();
