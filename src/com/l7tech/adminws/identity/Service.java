@@ -172,9 +172,8 @@ public class Service {
         }
     }
     public com.l7tech.objectmodel.EntityHeader[] findAllGroups(long identityProviderConfigId) throws java.rmi.RemoteException {
-        GroupManager groupManager = retrieveGroupManagerAndBeginTransaction(identityProviderConfigId);
         try {
-            java.util.Collection res = groupManager.findAllHeaders();
+            java.util.Collection res = retrieveGroupManagerAndBeginTransaction(identityProviderConfigId).findAllHeaders();
             return collectionToHeaderArray(res);
         } catch (FindException e) {
             throw new RemoteException("FindException in findAllGroups", e);
@@ -183,9 +182,8 @@ public class Service {
         }
     }
     public com.l7tech.objectmodel.EntityHeader[] findAllGroupsByOffset(long identityProviderConfigId, int offset, int windowSize) throws java.rmi.RemoteException {
-        GroupManager groupManager = retrieveGroupManagerAndBeginTransaction(identityProviderConfigId);
         try {
-            java.util.Collection res = groupManager.findAllHeaders(offset, windowSize);
+            java.util.Collection res = retrieveGroupManagerAndBeginTransaction(identityProviderConfigId).findAllHeaders(offset, windowSize);
             return collectionToHeaderArray(res);
         } catch (FindException e) {
             throw new RemoteException("FindException in findAllGroups", e);
@@ -194,9 +192,8 @@ public class Service {
         }
     }
     public com.l7tech.identity.Group findGroupByPrimaryKey(long identityProviderConfigId, long groupId) throws java.rmi.RemoteException {
-        GroupManager groupManager = retrieveGroupManagerAndBeginTransaction(identityProviderConfigId);
         try {
-            return groupManager.findByPrimaryKey(groupId);
+            return retrieveGroupManagerAndBeginTransaction(identityProviderConfigId).findByPrimaryKey(groupId);
         } catch (FindException e) {
             throw new RemoteException("FindException in findGroupByPrimaryKey", e);
         } finally {
