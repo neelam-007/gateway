@@ -1,0 +1,231 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<form xmlns="http://www.intellij.com/uidesigner/form/" version="1" bind-to-class="com.l7tech.console.panels.saml.AuthenticationMethodsWizardStepPanel">
+  <grid id="e2af9" binding="mainPanel" row-count="5" column-count="5" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
+    <margin top="0" left="0" bottom="0" right="0"/>
+    <constraints>
+      <xy x="65" y="111" width="926" height="500"/>
+      <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3"/>
+    </constraints>
+    <properties/>
+    <border type="none"/>
+    <children>
+      <hspacer id="3b4e0">
+        <constraints>
+          <xy x="40" y="4" width="846" height="11"/>
+          <grid row="0" column="2" row-span="1" col-span="1" vsize-policy="1" hsize-policy="6" anchor="0" fill="1"/>
+        </constraints>
+      </hspacer>
+      <component id="c91ef" class="javax.swing.JLabel" binding="titleLabel">
+        <constraints>
+          <xy x="40" y="21" width="144" height="17"/>
+          <grid row="1" column="2" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0"/>
+        </constraints>
+        <properties>
+          <text value="Authentication Methods"/>
+        </properties>
+      </component>
+      <grid id="34a47" row-count="2" column-count="2" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
+        <margin top="0" left="0" bottom="0" right="0"/>
+        <constraints>
+          <xy x="40" y="95" width="846" height="385"/>
+          <grid row="3" column="2" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3"/>
+        </constraints>
+        <properties/>
+        <border type="none"/>
+        <children>
+          <grid id="63b3" row-count="12" column-count="1" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
+            <margin top="0" left="0" bottom="0" right="0"/>
+            <constraints>
+              <xy x="20" y="32" width="826" height="353"/>
+              <grid row="1" column="1" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3"/>
+            </constraints>
+            <properties/>
+            <border type="none"/>
+            <children>
+              <grid id="26117" row-count="1" column-count="2" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
+                <margin top="0" left="0" bottom="0" right="0"/>
+                <constraints>
+                  <xy x="0" y="330" width="826" height="23"/>
+                  <grid row="11" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3"/>
+                </constraints>
+                <properties/>
+                <border type="none"/>
+                <children>
+                  <component id="65259" class="javax.swing.JLabel">
+                    <constraints>
+                      <xy x="0" y="3" width="101" height="17"/>
+                      <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0"/>
+                    </constraints>
+                    <properties>
+                      <text value="Security Domain"/>
+                    </properties>
+                  </component>
+                  <component id="7eb74" class="javax.swing.JTextField" binding="securityDomainTextField">
+                    <constraints>
+                      <xy x="111" y="0" width="715" height="23"/>
+                      <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="6" anchor="8" fill="1">
+                        <preferred-size width="150" height="-1"/>
+                      </grid>
+                    </constraints>
+                    <properties/>
+                  </component>
+                </children>
+              </grid>
+              <component id="76b94" class="javax.swing.JCheckBox" binding="checkBoxPasswordMethod">
+                <constraints>
+                  <xy x="0" y="0" width="83" height="25"/>
+                  <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0"/>
+                </constraints>
+                <properties>
+                  <text value="Password"/>
+                </properties>
+              </component>
+              <component id="9a044" class="javax.swing.JCheckBox" binding="checkBoxKerberosMethod">
+                <constraints>
+                  <xy x="0" y="30" width="79" height="25"/>
+                  <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0"/>
+                </constraints>
+                <properties>
+                  <text value="Kerberos"/>
+                </properties>
+              </component>
+              <component id="155a1" class="javax.swing.JCheckBox" binding="checkBoxSrpMethod">
+                <constraints>
+                  <xy x="0" y="60" width="220" height="25"/>
+                  <grid row="2" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0"/>
+                </constraints>
+                <properties>
+                  <text value="Secure Remote Password (SRP)"/>
+                </properties>
+              </component>
+              <component id="6987c" class="javax.swing.JCheckBox" binding="checkBoxHardwareTokenMethod">
+                <constraints>
+                  <xy x="0" y="90" width="125" height="25"/>
+                  <grid row="3" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0"/>
+                </constraints>
+                <properties>
+                  <text value="Hardware Token"/>
+                </properties>
+              </component>
+              <component id="a22b" class="javax.swing.JCheckBox" binding="checkBoxSslTlsCLientCertMethod">
+                <constraints>
+                  <xy x="0" y="120" width="309" height="25"/>
+                  <grid row="4" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0"/>
+                </constraints>
+                <properties>
+                  <text value="SSL/TLS Certificate Based Client Authentication"/>
+                </properties>
+              </component>
+              <component id="2efd" class="javax.swing.JCheckBox" binding="checkBoxX509PublicKey">
+                <constraints>
+                  <xy x="0" y="150" width="127" height="25"/>
+                  <grid row="5" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0"/>
+                </constraints>
+                <properties>
+                  <text value="X.509 Public Key"/>
+                </properties>
+              </component>
+              <component id="c8f7" class="javax.swing.JCheckBox" binding="checkBoxPgpPublicKey">
+                <constraints>
+                  <xy x="0" y="180" width="116" height="25"/>
+                  <grid row="6" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0"/>
+                </constraints>
+                <properties>
+                  <text value="PGP Public Key"/>
+                </properties>
+              </component>
+              <component id="ee7a7" class="javax.swing.JCheckBox" binding="checkBoxSpkiPublicKey">
+                <constraints>
+                  <xy x="0" y="210" width="119" height="25"/>
+                  <grid row="7" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0"/>
+                </constraints>
+                <properties>
+                  <text value="SPKI Public Key"/>
+                </properties>
+              </component>
+              <component id="89017" class="javax.swing.JCheckBox" binding="checkBoxXkmsPublicKey">
+                <constraints>
+                  <xy x="0" y="240" width="125" height="25"/>
+                  <grid row="8" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0"/>
+                </constraints>
+                <properties>
+                  <text value="XKMS Public Key"/>
+                </properties>
+              </component>
+              <component id="2bf69" class="javax.swing.JCheckBox" binding="checkBoxXmlDigitalSignatureMethod">
+                <constraints>
+                  <xy x="0" y="270" width="152" height="25"/>
+                  <grid row="9" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0"/>
+                </constraints>
+                <properties>
+                  <text value="XML Digital Signature"/>
+                </properties>
+              </component>
+              <component id="62521" class="javax.swing.JCheckBox" binding="checkBoxMethodUnspecified">
+                <constraints>
+                  <xy x="0" y="300" width="93" height="25"/>
+                  <grid row="10" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0"/>
+                </constraints>
+                <properties>
+                  <text value="Unspecified"/>
+                </properties>
+              </component>
+            </children>
+          </grid>
+          <grid id="fa908" row-count="1" column-count="4" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
+            <margin top="0" left="0" bottom="0" right="0"/>
+            <constraints>
+              <xy x="0" y="0" width="846" height="27"/>
+              <grid row="0" column="0" row-span="1" col-span="2" vsize-policy="3" hsize-policy="3" anchor="0" fill="3"/>
+            </constraints>
+            <properties/>
+            <border type="none"/>
+            <children>
+              <hspacer id="5def3">
+                <constraints>
+                  <xy x="168" y="8" width="678" height="11"/>
+                  <grid row="0" column="3" row-span="1" col-span="1" vsize-policy="1" hsize-policy="6" anchor="0" fill="1"/>
+                </constraints>
+              </hspacer>
+              <component id="73ef" class="javax.swing.JLabel">
+                <constraints>
+                  <xy x="0" y="5" width="36" height="17"/>
+                  <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0"/>
+                </constraints>
+                <properties>
+                  <text value="Select"/>
+                </properties>
+              </component>
+              <component id="7086d" class="javax.swing.JButton" binding="buttonSelectAll">
+                <constraints>
+                  <xy x="46" y="0" width="46" height="27"/>
+                  <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1"/>
+                </constraints>
+                <properties>
+                  <text value="All"/>
+                </properties>
+              </component>
+              <component id="99990" class="javax.swing.JButton" binding="buttonSelectNone">
+                <constraints>
+                  <xy x="102" y="0" width="66" height="27"/>
+                  <grid row="0" column="2" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1"/>
+                </constraints>
+                <properties>
+                  <text value="None"/>
+                </properties>
+              </component>
+            </children>
+          </grid>
+        </children>
+      </grid>
+      <vspacer id="fcaca">
+        <constraints>
+          <xy x="457" y="45" width="11" height="50"/>
+          <grid row="2" column="2" row-span="1" col-span="1" vsize-policy="0" hsize-policy="1" anchor="0" fill="2">
+            <minimum-size width="-1" height="50"/>
+          </grid>
+        </constraints>
+      </vspacer>
+    </children>
+  </grid>
+</form>

@@ -187,6 +187,6 @@ public abstract class WizardStepPanel extends JPanel {
      * @return the wizard step label
      */
     public String getStepLabel() {
-        return "implement " + getClass() + "getStepLabel()";
+        return "implement " + getClass() + ".getStepLabel()";
     }
 }

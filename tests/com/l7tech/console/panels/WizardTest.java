@@ -12,8 +12,6 @@ import java.awt.event.WindowEvent;
 public class WizardTest extends JFrame {
 
     public static void main(String[] args) {
-        System.setProperty("com.l7tech.common.locator.properties",
-                "/com/l7tech/console/resources/services.properties");
         WizardTest t = new WizardTest();
         WsdlDefinitionPanel defPanel =
           new WsdlDefinitionPanel(
