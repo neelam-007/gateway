@@ -14,6 +14,8 @@ import com.l7tech.policy.assertion.ConfidentialityAssertion;
  * <p>
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  * @version 1.0
+ *
+ * todo, remove this
  */
 public class XmlEncAssertion extends ConfidentialityAssertion
   implements DirectionConstants {

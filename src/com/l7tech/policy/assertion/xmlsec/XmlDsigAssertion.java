@@ -14,8 +14,10 @@ import com.l7tech.policy.assertion.ConfidentialityAssertion;
  * <p>
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  * @version 1.0
+ *
+ * todo, remove this
  */
-public class XmlDsigAssertion extends ConfidentialityAssertion
+public class XmlDsigAssertion extends ConfidentialityAssertion // ?! Dsig does not provide confidentiality
   implements DirectionConstants {
     private int direction = IN;
     /**

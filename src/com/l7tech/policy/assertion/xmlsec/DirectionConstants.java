@@ -9,6 +9,8 @@ package com.l7tech.policy.assertion.xmlsec;
  * <p>
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  * @version 1.0
+ *
+ * todo, remove this
  */
 public interface DirectionConstants {
     public static int IN = 1;
