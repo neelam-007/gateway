@@ -7,7 +7,7 @@ import java.io.ByteArrayInputStream;
 import java.beans.XMLDecoder;
 
 /**
- * Build a policy tree from a WSP document.
+ * Build a policy tree from an XML document.
  * User: mike
  * Date: Jun 10, 2003
  * Time: 3:44:19 PM
