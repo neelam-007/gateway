@@ -250,10 +250,14 @@ public class PolicyServlet extends AuthenticatableHttpServlet {
 
     private void outputPublishedServicePolicy(PublishedService service, HttpServletResponse response) throws IOException {
         if (service == null) {
+            logger.fine("sending back 404 (either user has no business with this policy or " +
+                        "the service could not be found)");
             response.sendError(HttpServletResponse.SC_NOT_FOUND,
               "ERROR cannot resolve target service or you are not authorized to consult it");
             return;
         } else {
+            logger.fine("sending back filtered policy for service " + service.getOid() + " version " +
+                        service.getVersion());
             response.addHeader(SecureSpanConstants.HttpHeaders.POLICY_VERSION,
               Long.toString(service.getOid()) + '|' + Long.toString(service.getVersion()));
             response.setContentType("text/xml; charset=utf-8");
