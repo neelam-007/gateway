@@ -382,18 +382,17 @@ public class LdapIdentityProviderConfigPanel extends IdentityProviderStepPanel {
             providerTypesCombo.setPreferredSize(new Dimension(217, 20));
             providerTypesCombo.setMinimumSize(new Dimension(217, 20));
 
-            final JPanel thisPanel = this;
             providerTypesCombo.addActionListener(new ActionListener() {
                 public void actionPerformed(ActionEvent e) {
                     Object o = providerTypesCombo.getSelectedItem();
 
                     if (o instanceof LdapIdentityProviderConfig) {
                         if(configPanel == null) {
-                            thisPanel.add(getConfigPanel(), BorderLayout.CENTER);
+                            LdapIdentityProviderConfigPanel.this.add(getConfigPanel(), BorderLayout.CENTER);
 
                             JPanel dummyPanel = new JPanel();
                             dummyPanel.setPreferredSize(new Dimension(400, 60));
-                            thisPanel.add(dummyPanel, BorderLayout.SOUTH);
+                            LdapIdentityProviderConfigPanel.this.add(dummyPanel, BorderLayout.SOUTH);
                         } else {
                             getConfigPanel().setVisible(true);
                             updateControlButtonState();

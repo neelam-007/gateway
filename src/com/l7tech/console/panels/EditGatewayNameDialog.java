@@ -255,8 +255,6 @@ public class EditGatewayNameDialog extends JDialog {
             return;
         }
 
-        final JDialog thisDialog = this;
-
         SwingUtilities.invokeLater(new Runnable() {
             public void run() {
 
@@ -270,7 +268,7 @@ public class EditGatewayNameDialog extends JDialog {
                 } catch (UpdateException e) {
                     logger.warning("Cannot rename the node: " + oldGatewayName);
                     JOptionPane.
-                            showMessageDialog(thisDialog,
+                            showMessageDialog(EditGatewayNameDialog.this,
                                     resources.getString("newGatewayNameField.error.update"),
                                     resources.getString("newGatewayNameField.error.title"),
                                     JOptionPane.ERROR_MESSAGE);
@@ -278,7 +276,7 @@ public class EditGatewayNameDialog extends JDialog {
                 } catch (RemoteException e) {
                     logger.warning("Remote Exception. Cannot rename the node: " + oldGatewayName);
                     JOptionPane.
-                            showMessageDialog(thisDialog,
+                            showMessageDialog(EditGatewayNameDialog.this,
                                     resources.getString("newGatewayNameField.error.remote.exception"),
                                     resources.getString("newGatewayNameField.error.title"),
                                     JOptionPane.ERROR_MESSAGE);

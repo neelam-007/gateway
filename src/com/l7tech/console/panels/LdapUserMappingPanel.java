@@ -45,7 +45,6 @@ public class LdapUserMappingPanel extends IdentityProviderStepPanel {
         initComponents();
         setLayout(new BorderLayout());
         add(mainPanel, BorderLayout.CENTER);
-        thisPanel = this;
     }
 
     /**
@@ -357,7 +356,7 @@ public class LdapUserMappingPanel extends IdentityProviderStepPanel {
 
                 if (currentEntry == null) {
                     // tell user to press the addButton first to add an entry
-                    JOptionPane.showMessageDialog(thisPanel, resources.getString("add.entry.required"),
+                    JOptionPane.showMessageDialog(LdapUserMappingPanel.this, resources.getString("add.entry.required"),
                             resources.getString("add.error.title"),
                             JOptionPane.ERROR_MESSAGE);
 
@@ -375,7 +374,7 @@ public class LdapUserMappingPanel extends IdentityProviderStepPanel {
                     } else {
                         if (objectClass.getText().compareToIgnoreCase(currentEntry.getObjClass()) != 0) {
                             if (!validateInput(objectClass.getText())) {
-                                JOptionPane.showMessageDialog(thisPanel, resources.getString("add.entry.duplicated"),
+                                JOptionPane.showMessageDialog(LdapUserMappingPanel.this, resources.getString("add.entry.duplicated"),
                                         resources.getString("add.error.title"),
                                         JOptionPane.ERROR_MESSAGE);
 
@@ -773,7 +772,7 @@ public class LdapUserMappingPanel extends IdentityProviderStepPanel {
                             } else {
                                 if (ev.getActionCommand().compareToIgnoreCase(currentEntry.getObjClass()) != 0) {
                                     if (!validateInput(ev.getActionCommand())) {
-                                        JOptionPane.showMessageDialog(thisPanel, resources.getString("add.entry.duplicated"),
+                                        JOptionPane.showMessageDialog(LdapUserMappingPanel.this, resources.getString("add.entry.duplicated"),
                                                 resources.getString("add.error.title"),
                                                 JOptionPane.ERROR_MESSAGE);
                                         objectClass.setText(currentEntry.getObjClass());
@@ -842,7 +841,6 @@ public class LdapUserMappingPanel extends IdentityProviderStepPanel {
     private ResourceBundle resources = null;
     private UserMappingConfig lastSelectedUser = null;
 
-    private final JPanel thisPanel;
 }
 
 

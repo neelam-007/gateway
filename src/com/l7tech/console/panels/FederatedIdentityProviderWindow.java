@@ -78,7 +78,6 @@ public class FederatedIdentityProviderWindow extends JDialog {
 
     private void initialize() {
 
-        final JDialog thisDialog = this;
         Container p = getContentPane();
         p.setLayout(new BorderLayout());
         p.add(mainPanel, BorderLayout.CENTER);
@@ -117,7 +116,7 @@ public class FederatedIdentityProviderWindow extends JDialog {
 
         addButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent event) {
-                CertSearchPanel sp = new CertSearchPanel(thisDialog);
+                CertSearchPanel sp = new CertSearchPanel(FederatedIdentityProviderWindow.this);
                 sp.addCertListener(certListener);
                 sp.show();
                 sp.setSize(400, 600);
@@ -139,7 +138,7 @@ public class FederatedIdentityProviderWindow extends JDialog {
 
                 int row = trustedCertTable.getSelectedRow();
                 if (row >= 0) {
-                    CertPropertiesWindow cpw = new CertPropertiesWindow(thisDialog, (TrustedCert) trustedCertTable.getTableSorter().getData(row), false);
+                    CertPropertiesWindow cpw = new CertPropertiesWindow(FederatedIdentityProviderWindow.this, (TrustedCert) trustedCertTable.getTableSorter().getData(row), false);
                     cpw.show();
                 }
             }

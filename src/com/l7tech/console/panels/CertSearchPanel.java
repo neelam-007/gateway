@@ -72,8 +72,6 @@ public class CertSearchPanel extends JDialog {
 
     private void initialize() {
 
-        final JDialog thisDialog = this;
-
         Container p = getContentPane();
         p.setLayout(new BorderLayout());
         p.add(mainPanel, BorderLayout.CENTER);
@@ -157,7 +155,7 @@ public class CertSearchPanel extends JDialog {
                 CertPropertiesWindow cpw = null;
                 int row = trustedCertTable.getSelectedRow();
                 if (row >= 0) {
-                    cpw = new CertPropertiesWindow(thisDialog, (TrustedCert) trustedCertTable.getTableSorter().getData(row), false);
+                    cpw = new CertPropertiesWindow(CertSearchPanel.this, (TrustedCert) trustedCertTable.getTableSorter().getData(row), false);
                 }
 
                 cpw.show();
@@ -237,8 +235,6 @@ public class CertSearchPanel extends JDialog {
      */
     private void loadTrustedCerts() {
 
-        final JDialog thisDialog = this;
-
         SwingUtilities.invokeLater(new Runnable() {
             public void run() {
 
@@ -259,11 +255,11 @@ public class CertSearchPanel extends JDialog {
                     }
 
                 } catch (RemoteException re) {
-                    JOptionPane.showMessageDialog(thisDialog, resources.getString("cert.remote.exception"),
+                    JOptionPane.showMessageDialog(CertSearchPanel.this, resources.getString("cert.remote.exception"),
                             resources.getString("load.error.title"),
                             JOptionPane.ERROR_MESSAGE);
                 } catch (FindException e) {
-                    JOptionPane.showMessageDialog(thisDialog, resources.getString("cert.find.error"),
+                    JOptionPane.showMessageDialog(CertSearchPanel.this, resources.getString("cert.find.error"),
                             resources.getString("load.error.title"),
                             JOptionPane.ERROR_MESSAGE);
                 }
