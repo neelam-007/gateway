@@ -10,6 +10,9 @@ import com.l7tech.common.protocol.SecureSpanConstants;
 import com.l7tech.common.util.CertificateDownloader;
 import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.common.util.XmlUtil;
+import com.l7tech.common.security.xml.WssProcessor;
+import com.l7tech.common.security.xml.WssProcessorImpl;
+import com.l7tech.common.xml.InvalidDocumentFormatException;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.SslAssertion;
 import com.l7tech.policy.assertion.PolicyAssertionException;
@@ -41,6 +44,7 @@ import org.apache.commons.httpclient.*;
 import org.apache.commons.httpclient.protocol.Protocol;
 import org.apache.commons.httpclient.methods.PostMethod;
 import org.xml.sax.SAXException;
+import org.w3c.dom.Document;
 
 import javax.net.ssl.SSLException;
 import java.io.IOException;
@@ -71,6 +75,7 @@ public class MessageProcessor {
 
     private static final int MAX_TRIES = 8;
     private PolicyManager policyManager;
+    private WssProcessor wssProcessor = new WssProcessorImpl();
 
     static {
         // Configure SSL for outgoing connections
@@ -107,11 +112,16 @@ public class MessageProcessor {
      * @throws SAXException                 if the client request needed to be parsed and wasn't well-formed XML
      * @throws ResponseValidationException  if the response was signed, but the signature did not validate
      * @throws HttpChallengeRequiredException if an HTTP 401 should be sent back to the client
+     * @throws InvalidDocumentFormatException if the response from the SSG had a problem with its format that was
+     *                                        too serious to ignore
+     * @throws WssProcessor.ProcessorException if there was a problem processing the wsse:Security header in the
+     *                                         response from the SSG 
      */
     public SsgResponse processMessage(PendingRequest req)
             throws ClientCertificateException, OperationCanceledException,
             ConfigurationException, GeneralSecurityException, IOException, SAXException,
-            ResponseValidationException, HttpChallengeRequiredException, PolicyAssertionException
+            ResponseValidationException, HttpChallengeRequiredException, PolicyAssertionException,
+            InvalidDocumentFormatException, WssProcessor.ProcessorException
     {
         Ssg ssg = req.getSsg();
 
@@ -373,10 +383,15 @@ public class MessageProcessor {
      * @throws ClientCertificateException if our client cert is no longer valid, but we couldn't delete it from
      *                                    the keystore.
      * @throws BadCredentialsException if the SSG rejected our SSG username and/or password.
+     * @throws NoSuchAlgorithmException if the client certificate key was not RSA
+     * @throws InvalidDocumentFormatException if the response from the SSG was not a valid SOAP document
+     * @throws WssProcessor.ProcessorException if the response from the SSG could not be undecorated
      */
     private SsgResponse obtainResponse(PendingRequest req)
-            throws ConfigurationException, IOException, PolicyRetryableException, ServerCertificateUntrustedException,
-            OperationCanceledException, ClientCertificateException, BadCredentialsException, KeyStoreCorruptException, HttpChallengeRequiredException, SAXException
+            throws ConfigurationException, IOException, PolicyRetryableException, GeneralSecurityException,
+            OperationCanceledException, ClientCertificateException, BadCredentialsException,
+            KeyStoreCorruptException, HttpChallengeRequiredException, SAXException, NoSuchAlgorithmException,
+            InvalidDocumentFormatException, WssProcessor.ProcessorException
     {
         URL url = getUrl(req);
         Ssg ssg = req.getSsg();
@@ -493,9 +508,15 @@ public class MessageProcessor {
             if (contentType == null || contentType.getValue() == null || contentType.getValue().indexOf("text/xml") < 0)
                 return new SsgResponse(XmlUtil.stringToDocument(CannedSoapFaults.RESPONSE_NOT_XML), null, 500, null);
 
+            Document responseDocument = XmlUtil.stringToDocument(responseString);
             // TODO trogdor integration goes here
+            WssProcessor.ProcessorResult processorResult =
+                    wssProcessor.undecorateMessage(responseDocument,
+                                                   SsgKeyStoreManager.getClientCert(ssg),
+                                                   SsgKeyStoreManager.getClientCertPrivateKey(ssg));
+            responseDocument = processorResult.getUndecoratedMessage();
 
-            SsgResponse response = new SsgResponse(XmlUtil.stringToDocument(responseString), null, status, headers);
+            SsgResponse response = new SsgResponse(responseDocument, processorResult, status, headers);
             if (status == 401 || status == 402) {
                 req.setLastErrorResponse(response);
                 Header authHeader = postMethod.getResponseHeader("WWW-Authenticate");
