@@ -227,9 +227,10 @@ public class ServerHttpRoutingAssertion extends ServerRoutingAssertion {
                     SamlAssertionGenerator ag = new SamlAssertionGenerator();
                     SignerInfo si = KeystoreUtils.getInstance().getSignerInfo();
                     SamlAssertionGenerator.Options samlOptions = new SamlAssertionGenerator.Options();
-                    if (context.getRequest().getKnob(TcpKnob.class) != null) {
+                    TcpKnob requestTcp = (TcpKnob)context.getRequest().getKnob(TcpKnob.class);
+                    if (requestTcp != null) {
                         try {
-                            InetAddress clientAddress = InetAddress.getByName(context.getRequest().getTcpKnob().getRemoteAddress());
+                            InetAddress clientAddress = InetAddress.getByName(requestTcp.getRemoteAddress());
                             samlOptions.setClientAddress(clientAddress);
                         } catch (UnknownHostException e) {
                             logger.warning("Couldn't resolve client IP address");
