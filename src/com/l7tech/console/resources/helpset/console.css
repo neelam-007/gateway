@@ -22,7 +22,7 @@ ol { margin-top:0px; margin-bottom:0px;  }
 ul { margin-top:0px; margin-bottom:0px;  }
 p.note { margin-top:5pt; margin-bottom:5pt; font-weight:normal; font-style:normal; margin-left:20pt; margin-right:20pt;  }
 li.kadov-p-cnote { font-weight:normal; font-style:normal;  }
-p.procedure { font-weight:bold; font-style:normal; margin-bottom:3pt; font-size:12pt; margin-left:30pt; margin-top:12pt;  }
+p.procedure { font-weight:bold; font-style:normal; margin-bottom:3pt; font-size:12pt; margin-top:12pt; margin-left:20pt;  }
 li.kadov-p-cprocedure { font-weight:bold; font-style:normal; font-size:12pt;  }
 p.numbered { margin-bottom:0pt; list-style:decimal; margin-left:0pt;  }
 li.kadov-p-cnumbered { list-style:decimal;  }

@@ -18,8 +18,9 @@
 <meta name=filetype content=kadov>
 <meta name=filetype-version content=1>
 <meta name=page-count content=1>
-<meta name=layout-height content=531>
-<meta name=layout-width content=896>
+<meta name=layout-height content=621>
+<meta name=layout-width content=899>
+<meta name=x-ignored-words content="TLS;Uptime;uptime;Unix;SecureSpan;cert;francis;LDAP;firewall;policy.templates">
 
 
 
@@ -42,11 +43,22 @@
  as a template. Administrators can then leverage their templates to ensure 
  consistency and to save time when creating multiple services. </p>
 
-<p>location</p>
+<p>Administrators must save policy templates in the appropriate directory 
+ to be able to access them via the Manager. This directory appears as the 
+ default selection in the policy creation process (policy.templates). Templates 
+ saved to this location can be found in the .l7tech\&lt;home&gt; directory 
+ and are saved in the XML format. </p>
 
-<p>file format</p>
+<p class="note"><span style="font-style: italic;"><I>Caution:</I></span> Always 
+ use the Manager to edit template contents. Do not edit the template manually 
+ in the XML format.</p>
 
-<p>&nbsp;</p>
+<h2>Using Policy templates</h2>
+
+<p>Administrators must create their own templates according to their own 
+ security strategy. Once the templates exist, applying them is a simple 
+ drag-and-drop process that eliminates the time-consuming and detailed 
+ task of creating individual policies. </p>
 
 <p class="procedure">To create a policy template</p>
 
@@ -88,13 +100,14 @@
  move button <img src="../movebutton.gif" x-maintain-ratio="TRUE" style="border: none;
 							width: 20px;
 							height: 18px;
-							float: none;" width="20" height="18" border="0">. &nbsp;</p></li>
+							float: none;
+							border-style: none;
+							border-style: none;" width="20" height="18" border="0"> to apply the template contents to the service 
+ policy on the right side of the screen. &nbsp;</p></li>
 	
-	<li class="kadov-p"><p>The <span style="font-weight: bold;"><B>Overwrite 
- Service policy</B></span> dialog appears to confirm that you want to overwrite 
- the current policy with the template. Click <span style="font-weight: bold;"><B>Yes</B></span>. 
- The policy template contents will appear as the policy for the current 
- service. </p></li>
+	<li class="kadov-p"><p>The policy template overwrites the current policy 
+ contents. Click the <span style="font-weight: bold;"><B>Save policy</B></span> 
+ button to save the changes. </p></li>
 </ol>
 
 <p>&nbsp;</p>

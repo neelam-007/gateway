@@ -3,7 +3,7 @@
 <toc version="1.0">
  <tocitem text="SecureSpan Manager Help">
   <tocitem text="Welcome" target="welcome_htm" />
-  <tocitem text="Overview">
+  <tocitem text="Product Overview">
    <tocitem text="Product Overview" target="overview_product_overview_htm" />
    <tocitem text="Audience" target="overview_audience_htm" />
    <tocitem text="Architecture Model" target="overview_product_architecture_model_htm" />
@@ -18,37 +18,32 @@
    <tocitem text="Preferences" target="user_interface_preferences_htm" />
    <tocitem text="Menus" target="user_interface_menus_htm" />
    <tocitem text="Screen Sections" target="user_interface_screen_sections_htm" />
-   <tocitem text="Default Settings" target="user_interface_default_settings_htm" />
    </tocitem>
   <tocitem text="Setup">
    <tocitem text="Setup Overview" target="setup_overview_htm" />
    <tocitem text="Connecting and Disconnecting" target="setup_connecting_and_disconnecting_htm" />
    <tocitem text="Identity Providers" target="setup_identity_providers_htm" />
-   <tocitem text="Creating Users and Groups" target="setup_creating_users_and_groups_htm" />
+   <tocitem text="Users and Groups" target="setup_users_and_groups_htm" />
    <tocitem text="Policy Templates" target="setup_policy_templates_htm" />
    </tocitem>
-  <tocitem text="Web Services">
-   <tocitem text="Web Services Overview" target="publish_services_publish_services_overview_htm" />
-   <tocitem text="Creating Services" target="publish_services_creating_services_htm" />
-   <tocitem text="Publishing Services" target="publish_services_publishing_services_htm" />
-   <tocitem text="Creating Policies" target="publish_services_creating_policies_htm" />
-   <tocitem text="Validating Policies" target="publish_services_validating_policies_htm" />
-   <tocitem text="Policy Views" target="publish_services_policy_views_htm" />
-   <tocitem text="Examples" target="publish_services_examples_htm" />
+  <tocitem text="Services and Policies">
+   <tocitem text="Web Services Overview" target="services_and_policies_web_services_overview_htm" />
+   <tocitem text="Publishing Services" target="services_and_policies_publishing_services_htm" />
+   <tocitem text="Creating Services" target="services_and_policies_creating_services_htm" />
+   <tocitem text="Creating Policies" target="services_and_policies_creating_policies_htm" />
+   <tocitem text="Validating Policies" target="services_and_policies_validating_policies_htm" />
    </tocitem>
   <tocitem text="Gateway Management">
-   <tocitem text="Gateway Controls" target="gateway_management_gateway_controls_htm" />
-   <tocitem text="Logs Overview" target="gateway_management_logs_overview_htm" />
-   <tocitem text="Reviewing Logs" target="gateway_management_reviewing_logs_htm" />
+   <tocitem text="Performance Monitoring" target="gateway_management_performance_monitoring_htm" />
+   <tocitem text="Logs" target="gateway_management_logs_htm" />
    <tocitem text="Statistics" target="gateway_management_statistics_htm" />
    </tocitem>
   <tocitem text="Client Agent">
    <tocitem text="Client Agent Overview" target="client_agent_client_agent_overview_htm" />
    <tocitem text="Client User Interface" target="client_agent_client_user_interface_htm" />
-   <tocitem text="Managing Clients" target="client_agent_managing_clients_htm" />
    </tocitem>
   <tocitem text="Troubleshooting">
-   <tocitem text="Troubleshooting" target="troubleshooting_troubleshooting_htm" />
+   <tocitem text="FAQs and Error Messages" target="troubleshooting_faqs_htm" />
    </tocitem>
   </tocitem>
 </toc>

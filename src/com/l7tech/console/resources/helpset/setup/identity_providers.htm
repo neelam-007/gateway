@@ -18,8 +18,9 @@
 <meta name=filetype content=kadov>
 <meta name=filetype-version content=1>
 <meta name=page-count content=1>
-<meta name=layout-height content=517>
-<meta name=layout-width content=896>
+<meta name=layout-height content=535>
+<meta name=layout-width content=899>
+<meta name=x-ignored-words content="TLS;Uptime;uptime;Unix;SecureSpan;cert;francis;LDAP;firewall">
 
 
 
@@ -48,22 +49,25 @@
 
 <p>The Gateway provides an internal identity provider that can be used 
  for small-scale implementations. Administrators use the Manager to create 
- multiple users and groups. The internal identity provider is best suited 
- for tasks such as acceptance and performance testing or for implementations 
- that have a limited number of users (e.g. external partners). </p>
+ multiple users and groups with full authentication credentials. This data 
+ resides directly on the Gateway. </p>
 
-<p>The Manager acts as the credential coordinator for the internal users. 
- Administrators can add, remove, and customize user credentials. For more 
- information on how to add and customize users and groups, see <a href="creating_users_and_groups.htm">Creating 
- Users and Groups</a>.</p>
+<p>The internal identity provider is best suited for tasks such as acceptance 
+ and performance testing or for implementations that have a limited number 
+ of users (e.g. external partners). The Manager acts as the credential 
+ coordinator for the internal users. Administrators can add, remove, and 
+ customize user credentials. For more information on how to add and customize 
+ users and groups, see <a href="users_and_groups.htm">Creating Users and 
+ Groups</a>.</p>
 
 <h2>External Identity Providers</h2>
 
 <p>External identity providers must be added to the Manager configuration. 
- Administrators can easily connect to their corporate LDAP for access to 
- their established database of users. The Manager offers a simple search 
- view of the external LDAP. This search feature allows administrators to 
- find select groups of users as required. </p>
+ Administrators can easily connect to their corporate LDAP or Microsoft 
+ Active Directory for access to their established database of users. The 
+ Manager offers a simple search view of the external LDAP or Active Directory. 
+ This search feature allows administrators to find select groups of users 
+ as required. </p>
 
 <p class="procedure">To create a new identity provider:</p>
 

@@ -13,25 +13,21 @@
   <mapID target="user_interface_preferences_htm" url="user_interface/preferences.htm" />
   <mapID target="user_interface_menus_htm" url="user_interface/menus.htm" />
   <mapID target="user_interface_screen_sections_htm" url="user_interface/screen_sections.htm" />
-  <mapID target="user_interface_default_settings_htm" url="user_interface/default_settings.htm" />
   <mapID target="setup_overview_htm" url="setup/overview.htm" />
   <mapID target="setup_connecting_and_disconnecting_htm" url="setup/connecting_and_disconnecting.htm" />
   <mapID target="setup_identity_providers_htm" url="setup/identity_providers.htm" />
-  <mapID target="setup_creating_users_and_groups_htm" url="setup/creating_users_and_groups.htm" />
+  <mapID target="setup_users_and_groups_htm" url="setup/users_and_groups.htm" />
   <mapID target="setup_policy_templates_htm" url="setup/policy_templates.htm" />
-  <mapID target="publish_services_publish_services_overview_htm" url="publish_services/publish_services_overview.htm" />
-  <mapID target="publish_services_creating_services_htm" url="publish_services/creating_services.htm" />
-  <mapID target="publish_services_publishing_services_htm" url="publish_services/publishing_services.htm" />
-  <mapID target="publish_services_creating_policies_htm" url="publish_services/creating_policies.htm" />
-  <mapID target="publish_services_validating_policies_htm" url="publish_services/validating_policies.htm" />
-  <mapID target="publish_services_policy_views_htm" url="publish_services/policy_views.htm" />
-  <mapID target="publish_services_examples_htm" url="publish_services/examples.htm" />
-  <mapID target="gateway_management_gateway_controls_htm" url="gateway_management/gateway_controls.htm" />
-  <mapID target="gateway_management_logs_overview_htm" url="gateway_management/logs_overview.htm" />
-  <mapID target="gateway_management_reviewing_logs_htm" url="gateway_management/reviewing_logs.htm" />
+  <mapID target="services_and_policies_web_services_overview_htm" url="services_and_policies/web_services_overview.htm" />
+  <mapID target="services_and_policies_publishing_services_htm" url="services_and_policies/publishing_services.htm" />
+  <mapID target="services_and_policies_creating_services_htm" url="services_and_policies/creating_services.htm" />
+  <mapID target="services_and_policies_creating_policies_htm" url="services_and_policies/creating_policies.htm" />
+  <mapID target="services_and_policies_validating_policies_htm" url="services_and_policies/validating_policies.htm" />
+  <mapID target="gateway_management_performance_monitoring_htm" url="gateway_management/performance_monitoring.htm" />
+  <mapID target="gateway_management_logs_htm" url="gateway_management/logs.htm" />
   <mapID target="gateway_management_statistics_htm" url="gateway_management/statistics.htm" />
   <mapID target="client_agent_client_agent_overview_htm" url="client_agent/client_agent_overview.htm" />
   <mapID target="client_agent_client_user_interface_htm" url="client_agent/client_user_interface.htm" />
+  <mapID target="troubleshooting_faqs_htm" url="troubleshooting/faqs.htm" />
   <mapID target="client_agent_managing_clients_htm" url="client_agent/managing_clients.htm" />
-  <mapID target="troubleshooting_troubleshooting_htm" url="troubleshooting/troubleshooting.htm" />
 </map>
