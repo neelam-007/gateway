@@ -38,6 +38,7 @@ public class HttpTransportMetadata extends TransportMetadata {
     }
 
     protected Object doGetParameter(String name) {
+        if ( name == null ) return null;
         Object value = null;
         value = _request.getAttribute( name );
 
@@ -49,6 +50,8 @@ public class HttpTransportMetadata extends TransportMetadata {
                 ppos = name.indexOf( ".", Request.PREFIX_HTTP_HEADER.length() - 1 );
                 subname = name.substring( ppos + 1 );
                 value = _request.getHeader( subname );
+            } else if ( Request.PARAM_HTTP_REQUEST_URI.equals( name ) ) {
+                return _request.getRequestURI();
             }
         }
 
