@@ -1,0 +1,124 @@
+package com.l7tech.server.policy;
+
+import com.l7tech.common.util.Locator;
+import com.l7tech.common.xml.Wsdl;
+import com.l7tech.objectmodel.EntityHeader;
+import com.l7tech.objectmodel.SaveException;
+import com.l7tech.objectmodel.VersionException;
+import com.l7tech.objectmodel.UpdateException;
+import com.l7tech.server.MockServletApi;
+import com.l7tech.server.SoapMessageProcessingServlet;
+import com.l7tech.service.PublishedService;
+import com.l7tech.service.ServiceAdmin;
+import com.l7tech.service.ServiceCache;
+import com.l7tech.service.SoapRequestGenerator;
+import com.l7tech.policy.wsp.WspWriter;
+import com.l7tech.policy.assertion.xmlsec.SamlSecurity;
+import com.l7tech.policy.assertion.Assertion;
+import com.mockobjects.servlet.MockHttpServletResponse;
+import junit.extensions.TestSetup;
+import junit.framework.Test;
+import junit.framework.TestCase;
+import junit.framework.TestSuite;
+
+import javax.servlet.http.HttpServletRequest;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+
+
+/**
+ * Class SamlPolicyTest.
+ *
+ * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
+ */
+public class SamlPolicyTest extends TestCase {
+    private SoapMessageProcessingServlet messageProcessingServlet;
+    private ServiceAdmin serviceAdmin;
+    private SoapRequestGenerator.SOAPRequest[] soapRequests;
+    private PublishedService publishedService;
+
+    /**
+     * test <code>SamlPolicyTest</code> constructor
+     */
+    public SamlPolicyTest(String name) {
+        super(name);
+    }
+
+    /**
+     * create the <code>TestSuite</code> for the
+     * ServerPolicyFactoryTest <code>TestCase</code>
+     */
+    public static Test suite() {
+        TestSuite suite = new TestSuite(SamlPolicyTest.class);
+        TestSetup wrapper = new TestSetup(suite) {
+            /**
+             * sets the test environment
+             *
+             * @throws Exception on error deleting the stub data store
+             */
+            protected void setUp() throws Exception {
+                System.setProperty(
+                  "com.l7tech.common.locator.properties", "/com/l7tech/common/locator/test.properties");
+
+                ServiceCache.initialize(); // need to do this, otherwise is a no go
+            }
+
+            protected void tearDown() throws Exception {
+                ;
+            }
+        };
+        return wrapper;
+    }
+
+    public void setUp() throws Exception {
+        serviceAdmin = (ServiceAdmin)Locator.getDefault().lookup(ServiceAdmin.class);
+        if (serviceAdmin == null) {
+            throw new AssertionError("could not retrieve admin service");
+        }
+        EntityHeader[] headers = serviceAdmin.findAllPublishedServices();
+        assertTrue("no services have been returned could not execute test", headers.length > 0);
+        publishedService = serviceAdmin.findServiceByPrimaryKey(headers[0].getOid());
+        Wsdl wsdl = publishedService.parsedWsdl();
+
+        SoapRequestGenerator sg = new SoapRequestGenerator();
+        soapRequests = sg.generate(wsdl);
+        assertTrue("no operations could be located in the wsdlt", soapRequests.length > 0);
+
+
+    }
+
+    public void tearDown() throws Exception {
+        // put tear down code here
+    }
+
+    public void testInvokeWithSamlPolicy() throws Exception {
+        for (int i = 0; i < soapRequests.length; i++) {
+            MockServletApi servletApi = MockServletApi.defaultMessageProcessor();
+            SoapRequestGenerator.SOAPRequest soapRequest = soapRequests[i];
+            prepareServicePolicy(new SamlSecurity());
+            servletApi.setPublishedService(publishedService);
+            servletApi.setSoapRequest(soapRequest.getSOAPMessage(), soapRequest.getSOAPAction());
+            HttpServletRequest mhreq = servletApi.getServletRequest();
+            MockHttpServletResponse mhres = new MockHttpServletResponse();
+            messageProcessingServlet = new SoapMessageProcessingServlet();
+            messageProcessingServlet.init(servletApi.getServletConfig());
+            messageProcessingServlet.doPost(mhreq, mhres);
+        }
+    }
+
+    private void prepareServicePolicy(Assertion assertion)
+      throws IOException, SaveException, VersionException, UpdateException, InterruptedException {
+        ByteArrayOutputStream bo = new ByteArrayOutputStream();
+        WspWriter.writePolicy(assertion, bo);
+        publishedService.setPolicyXml(bo.toString());
+        serviceAdmin.savePublishedService(publishedService);
+        ServiceCache.getInstance().cache(publishedService);
+    }
+
+    /**
+     * Test <code>ServerPolicyFactoryTest</code> main.
+     */
+    public static void main(String[] args) throws Throwable {
+        junit.textui.TestRunner.run(suite());
+    }
+}
