@@ -34,6 +34,8 @@ public class JmsReceiver implements ServerComponentLifecycle {
     private static final Logger _logger = LogManager.getInstance().getSystemLogger();
     private static final int MAXIMUM_OOPSES = 5;
     private static final long RECEIVE_TIMEOUT = 5000L;
+    public static final int OOPS_RETRY = 5000; // Five seconds
+    public static final int OOPS_SLEEP = 5 * 60 * 1000; // Five minutes
 
     // Persistence stuff
     private final JmsReplyType _replyType;
@@ -275,9 +277,22 @@ public class JmsReceiver implements ServerComponentLifecycle {
                         _logger.log( Level.WARNING,
                                      "Unable to receive message from JMS endpoint " + _inboundRequestEndpoint,
                                      e );
-                        if ( oopses++ > MAXIMUM_OOPSES ) {
-                            _logger.severe( "Too many errors - shutting down listener for JMS endpoint " + _inboundRequestEndpoint );
-                            return;
+
+                        if ( oopses++ <= MAXIMUM_OOPSES ) {
+                            try {
+                                Thread.sleep(OOPS_RETRY);
+                            } catch ( InterruptedException e1 ) {
+                                _logger.info( "Interrupted during retry interval" );
+                                _thread.interrupt();
+                            }
+                        } else {
+                            _logger.warning( "Too many (" + MAXIMUM_OOPSES + ") errors - listener for JMS endpoint " + _inboundRequestEndpoint + " will try again in " + OOPS_SLEEP + "ms" );
+                            try {
+                                Thread.sleep(OOPS_SLEEP);
+                            } catch ( InterruptedException e1 ) {
+                                _logger.info( "Interrupted during sleep interval" );
+                                _thread.interrupt();
+                            }
                         }
                     }
                 }
