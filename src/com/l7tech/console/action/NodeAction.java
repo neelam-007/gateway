@@ -6,10 +6,11 @@ import com.l7tech.console.tree.ServiceNode;
 import com.l7tech.console.util.Cookie;
 import com.l7tech.console.util.Registry;
 import com.l7tech.identity.IdentityProviderConfig;
+import com.l7tech.identity.IdentityProviderConfigManager;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
 
-import javax.swing.*;
+import javax.swing.JTree;
 import java.util.Iterator;
 import java.util.logging.Level;
 
@@ -76,16 +77,20 @@ public abstract class NodeAction extends SecureAction {
      * @return the identity provider or null if not found
      */
     public IdentityProviderConfig getIdentityProviderConfig(EntityHeaderNode node) {
-
-        if (node instanceof EntityHeaderNode) {
+        long providerId = -1;
+        if (node == null)
+            providerId = IdentityProviderConfigManager.INTERNALPROVIDER_SPECIAL_OID;
+        else if (node instanceof EntityHeaderNode) {
             EntityHeader header = ((EntityHeaderNode) node).getEntityHeader();
             if (header.getType().equals(EntityType.ID_PROVIDER_CONFIG)) {
-                try {
-                    return Registry.getDefault().getIdentityAdmin().findIdentityProviderConfigByPrimaryKey(header.getOid());
-                } catch (Exception e) {
-                    log.log(Level.WARNING, "Couldn't find Identity Provider " + header.getOid(), e);
-                }
+                providerId = header.getOid();
             }
+        }
+
+        try {
+            return Registry.getDefault().getIdentityAdmin().findIdentityProviderConfigByPrimaryKey(providerId);
+        } catch (Exception e) {
+            log.log(Level.WARNING, "Couldn't find Identity Provider " + providerId, e);
         }
 
         return null;
