@@ -68,6 +68,7 @@ class JmsRequestHandler {
 
             try {
                 status = MessageProcessor.getInstance().processMessage( soapRequest, soapResponse );
+                _logger.finest("Policy resulted in status " + status);
                 jmsResponse = jmsMetadata.getResponse();
             } catch ( PolicyVersionException pve ) {
                 String msg = "Request referred to an outdated version of policy";
