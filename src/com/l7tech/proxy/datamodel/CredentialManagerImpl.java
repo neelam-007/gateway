@@ -7,6 +7,7 @@
 package com.l7tech.proxy.datamodel;
 
 import com.l7tech.proxy.datamodel.exceptions.OperationCanceledException;
+import com.l7tech.proxy.datamodel.exceptions.CredentialsUnavailableException;
 import com.l7tech.proxy.util.ClientLogger;
 
 import java.net.PasswordAuthentication;
@@ -38,12 +39,12 @@ public class CredentialManagerImpl extends CredentialManager {
             return pw;
 
         log.error("Headless CredentialManager: unable to obtain new credentials");
-        throw new OperationCanceledException("Unable to obtain new credentials");
+        throw new CredentialsUnavailableException("Unable to obtain new credentials");
     }
 
     public PasswordAuthentication getNewCredentials(Ssg ssg) throws OperationCanceledException {
         log.error("Headless CredentialManager: unable to obtain new credentials");
-        throw new OperationCanceledException("Unable to obtain new credentials");
+        throw new CredentialsUnavailableException("Unable to obtain new credentials");
     }
 
     public void notifyLengthyOperationStarting(Ssg ssg, String message) {
