@@ -37,7 +37,7 @@ public class ServerRequestWssSaml implements ServerAssertion {
     private final Logger logger = Logger.getLogger(getClass().getName());
     private ApplicationContext applicationContext;
     private SamlAssertionValidate assertionValidate;
-    private Auditor auditor;
+    private final Auditor auditor;
 
     /**
      * Create the server side saml security policy element

@@ -42,7 +42,7 @@ import java.util.logging.Logger;
  *
  */
 public class ServerSchemaValidation implements ServerAssertion {
-    private Auditor auditor;
+    private final Auditor auditor;
 
     public ServerSchemaValidation(SchemaValidation data, ApplicationContext springContext) {
         this.data = data;
