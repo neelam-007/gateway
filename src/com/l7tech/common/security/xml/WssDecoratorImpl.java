@@ -89,18 +89,20 @@ public class WssDecoratorImpl implements WssDecorator {
             elementsToSign = (Element[])signList.toArray(new Element[0]);
         }
 
+        Element bst = null;
         if (senderCertificate != null)
-            addX509BinarySecurityToken(securityHeader, senderCertificate);
+            bst = addX509BinarySecurityToken(securityHeader, senderCertificate);
 
         if (elementsToEncrypt.length > 0)
             addEncryptedKey(c, securityHeader, recipientCertificate, elementsToEncrypt);
 
         if (elementsToSign.length > 0)
-            addSignature(c, senderCertificate, senderPrivateKey, elementsToSign, securityHeader);
+            addSignature(c, senderCertificate, senderPrivateKey, elementsToSign, securityHeader, bst);
     }
 
     private Element addSignature(Context c, X509Certificate senderCertificate, PrivateKey senderPrivateKey,
-                                 Element[] elementsToSign, Element securityHeader) throws DecoratorException {
+                                 Element[] elementsToSign, Element securityHeader,
+                                 Element binarySecurityToken) throws DecoratorException {
 
         if (elementsToSign == null || elementsToSign.length < 1) return null;
 
@@ -116,7 +118,7 @@ public class WssDecoratorImpl implements WssDecorator {
         else if (senderPrivateKey instanceof DSAPrivateKey)
             signaturemethod = SignatureMethod.DSA;
         else {
-            //throw new DecoratorException("Private Key type not supported " + senderPrivateKey.getClass().getName());
+            throw new CausedDecoratorException("Private Key type not supported " + senderPrivateKey.getClass().getName());
         }
 
         // Create signature template and populate with appropriate transforms. Reference is to SOAP Envelope
@@ -132,17 +134,14 @@ public class WssDecoratorImpl implements WssDecorator {
         Element emptySignatureElement = template.getSignatureElement();
 
         // Include KeyInfo element in signature and embed cert into subordinate X509Data element
-        // todo, include reference to BCT instead of the cert
-        com.ibm.xml.dsig.KeyInfo keyInfo = new com.ibm.xml.dsig.KeyInfo();
-        com.ibm.xml.dsig.KeyInfo.X509Data x509Data = new com.ibm.xml.dsig.KeyInfo.X509Data();
-        x509Data.setCertificate(senderCertificate);
-        x509Data.setParameters(senderCertificate, true, true, true);
-        keyInfo.setX509Data(new com.ibm.xml.dsig.KeyInfo.X509Data[]{x509Data});
-        try {
-            keyInfo.insertTo(emptySignatureElement, "ds");
-        } catch (SignatureStructureException e) {
-            throw new CausedDecoratorException(e);
-        }
+        // todo, add following KeyInfo
+        String bstId = getOrCreateWsuId(c, binarySecurityToken);
+        // <KeyInfo>
+        //  <wsse:SecurityTokenReference>
+        //      <wsse:Reference	URI="#bstId"
+        //                      ValueType="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-x509-token-profile-1.0#X509v3" />
+        //      </wsse:SecurityTokenReference>
+        // </KeyInfo>
 
         SignatureContext sigContext = new SignatureContext();
         sigContext.setIDResolver(new IDResolver() {
