@@ -19,9 +19,14 @@ import com.l7tech.proxy.datamodel.PendingRequest;
  * @version $Revision$
  */
 public class HttpBasic extends HttpCredentialSourceAssertion {
-    public AssertionStatus doCheckRequest(Request request, Response response) throws CredentialFinderException {
-        // FIXME: Implement
-        return AssertionStatus.NOT_YET_IMPLEMENTED;
+    public AssertionStatus doCheckRequest( Request request, Response response ) throws CredentialFinderException {
+        PrincipalCredentials pc = request.getPrincipalCredentials();
+        if ( pc == null ) return AssertionStatus.FALSIFIED;
+        String realm = pc.getRealm();
+        if ( ( realm == null && _realm == null ) || realm != null && realm.equals( _realm ) ) {
+            return AssertionStatus.NONE;
+        }
+        return AssertionStatus.FALSIFIED;
     }
 
     public Class getCredentialFinderClass() {
