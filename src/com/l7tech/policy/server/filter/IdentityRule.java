@@ -5,10 +5,12 @@ import com.l7tech.identity.Group;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.composite.CompositeAssertion;
 import com.l7tech.policy.assertion.composite.AllAssertion;
+import com.l7tech.policy.assertion.composite.OneOrMoreAssertion;
 import com.l7tech.policy.assertion.identity.IdentityAssertion;
 import com.l7tech.policy.assertion.identity.SpecificUser;
 import com.l7tech.policy.assertion.identity.MemberOfGroup;
 import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.logging.Level;
 
 /**
@@ -55,7 +57,13 @@ public class IdentityRule extends Filter {
                 removeSelfFromParent(arg, false);
             }
             else {
-                if (arg.getParent() instanceof AllAssertion) removeSelfFromParent(arg, true);
+                Assertion parent = arg.getParent();
+                if (parent == null) return true;
+                else if (parent instanceof AllAssertion) {
+                    removeSelfAndAllSiblings(arg);
+                    //removeSelfFromParent(arg, true);
+                }
+                else if (parent instanceof OneOrMoreAssertion) removeSelfFromParent(arg, true);
                 else removeSelfFromParent(arg, false);
             }
             return true;
@@ -77,6 +85,7 @@ public class IdentityRule extends Filter {
                     else i = root.getChildren().iterator();
                 }
             }
+            // else unknown
         }
         return false;
     }
