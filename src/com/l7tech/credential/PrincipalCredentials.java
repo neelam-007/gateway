@@ -27,6 +27,10 @@ public class PrincipalCredentials {
         this( user, credentials, format, null );
     }
 
+    public PrincipalCredentials( User user, byte[] credentials ) {
+        this( user, credentials, CredentialFormat.CLEARTEXT );
+    }
+
     public User getUser() {
         return _user;
     }
