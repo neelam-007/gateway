@@ -186,10 +186,6 @@ public class Client {
         call.registerTypeMapping(com.l7tech.identity.User.class, qn, new org.apache.axis.encoding.ser.BeanSerializerFactory(com.l7tech.identity.User.class, qn), new org.apache.axis.encoding.ser.BeanDeserializerFactory(com.l7tech.identity.User.class, qn));
         qn = new QName(IDENTITY_URN, "Group");
         call.registerTypeMapping(com.l7tech.identity.Group.class, qn, new org.apache.axis.encoding.ser.BeanSerializerFactory(com.l7tech.identity.Group.class, qn), new org.apache.axis.encoding.ser.BeanDeserializerFactory(com.l7tech.identity.Group.class, qn));
-        qn = new QName(IDENTITY_URN, "LdapUser");
-        call.registerTypeMapping(com.l7tech.identity.ldap.LdapUser.class, qn, new org.apache.axis.encoding.ser.BeanSerializerFactory(com.l7tech.identity.ldap.LdapUser.class, qn), new org.apache.axis.encoding.ser.BeanDeserializerFactory(com.l7tech.identity.ldap.LdapUser.class, qn));
-        qn = new QName(IDENTITY_URN, "LdapGroup");
-        call.registerTypeMapping(com.l7tech.identity.ldap.LdapGroup.class, qn, new org.apache.axis.encoding.ser.BeanSerializerFactory(com.l7tech.identity.ldap.LdapGroup.class, qn), new org.apache.axis.encoding.ser.BeanDeserializerFactory(com.l7tech.identity.ldap.LdapGroup.class, qn));
     }
 
     private static final String IDENTITY_URN = "http://www.layer7-tech.com/identity";
