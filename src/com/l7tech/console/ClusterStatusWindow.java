@@ -65,6 +65,7 @@ public class ClusterStatusWindow extends JFrame {
      * @see ActionEvent for details
      */
     private void exitMenuEventHandler(ActionEvent event) {
+        getStatusRefreshTimer().stop();
         this.dispose();
     }
 
@@ -136,27 +137,25 @@ public class ClusterStatusWindow extends JFrame {
 
         mainPane = new javax.swing.JPanel();
         mainPane.setLayout(new BorderLayout());
-        jSplitPane1 = new javax.swing.JSplitPane();
+        mainSplitPane = new javax.swing.JSplitPane();
 
-        jPanel2 = new javax.swing.JPanel();
-        jScrollPane2 = new javax.swing.JScrollPane();
-        jTable2 = new javax.swing.JTable();
-        jLabel4 = new javax.swing.JLabel();
-        jPanel3 = new javax.swing.JPanel();
-        jPanel1 = new javax.swing.JPanel();
-        jLabel1 = new javax.swing.JLabel();
-        jPanel8 = new javax.swing.JPanel();
+        gatewayStatusPanel = new javax.swing.JPanel();
+        clusterStatusScrollPane = new javax.swing.JScrollPane();
+        clusterStatusTable = new javax.swing.JTable();
+        gatewayStatusTitle = new javax.swing.JLabel();
+        serviceStatPanel = new javax.swing.JPanel();
+        serviceStatTitle = new javax.swing.JLabel();
 
-        jSplitPane1.setOrientation(javax.swing.JSplitPane.VERTICAL_SPLIT);
-        jSplitPane1.setResizeWeight(0.5);
-        jPanel2.setLayout(new java.awt.BorderLayout());
+        mainSplitPane.setOrientation(javax.swing.JSplitPane.VERTICAL_SPLIT);
+        mainSplitPane.setResizeWeight(0.5);
+        gatewayStatusPanel.setLayout(new java.awt.BorderLayout());
 
-        jScrollPane2.setMinimumSize(new java.awt.Dimension(400, 220));
-        jTable2.setModel(getClusterStatusTableModel());
+        clusterStatusScrollPane.setMinimumSize(new java.awt.Dimension(400, 220));
+        clusterStatusTable.setModel(getClusterStatusTableModel());
 
         BarIndicator loadShareRenderer = new BarIndicator(MIN, MAX, Color.blue);
         loadShareRenderer.setStringPainted(true);
-        loadShareRenderer.setBackground(jTable2.getBackground());
+        loadShareRenderer.setBackground(clusterStatusTable.getBackground());
 
         // set limit value and fill color
         Hashtable limitColors1 = new Hashtable();
@@ -164,16 +163,16 @@ public class ClusterStatusWindow extends JFrame {
 
         BarIndicator requestRoutedRenderer = new BarIndicator(MIN, MAX, Color.magenta);
         requestRoutedRenderer.setStringPainted(true);
-        requestRoutedRenderer.setBackground(jTable2.getBackground());
+        requestRoutedRenderer.setBackground(clusterStatusTable.getBackground());
 
-        jTable2.getColumnModel().getColumn(2).setCellRenderer(loadShareRenderer);
-        jTable2.getColumnModel().getColumn(3).setCellRenderer(requestRoutedRenderer);
+        clusterStatusTable.getColumnModel().getColumn(2).setCellRenderer(loadShareRenderer);
+        clusterStatusTable.getColumnModel().getColumn(3).setCellRenderer(requestRoutedRenderer);
 
-        jTable2.getColumnModel().getColumn(0).setMinWidth(0);
-        jTable2.getColumnModel().getColumn(0).setMaxWidth(0);
-        jTable2.getColumnModel().getColumn(0).setPreferredWidth(0);
+        clusterStatusTable.getColumnModel().getColumn(0).setMinWidth(0);
+        clusterStatusTable.getColumnModel().getColumn(0).setMaxWidth(0);
+        clusterStatusTable.getColumnModel().getColumn(0).setPreferredWidth(0);
 
-        jTable2.getColumnModel().getColumn(1).setCellRenderer(
+        clusterStatusTable.getColumnModel().getColumn(1).setCellRenderer(
                 new DefaultTableCellRenderer() {
                     private Icon connectIcon =
                             new ImageIcon(ImageCache.getInstance().getIcon(MainWindow.RESOURCE_PATH + "/connect2.gif"));
@@ -188,7 +187,7 @@ public class ClusterStatusWindow extends JFrame {
                         super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
                         setIcon(null);
 
-                        Object s = jTable2.getValueAt(row, 0);
+                        Object s = clusterStatusTable.getValueAt(row, 0);
 
                         if (s.toString().equals("1")) {
                             this.setIcon(connectIcon);
@@ -201,7 +200,7 @@ public class ClusterStatusWindow extends JFrame {
                     }
                 });
 
-        jTable2.getColumnModel().getColumn(5).setCellRenderer(
+        clusterStatusTable.getColumnModel().getColumn(5).setCellRenderer(
                 new DefaultTableCellRenderer() {
 
                     public Component getTableCellRendererComponent(JTable table,
@@ -220,43 +219,39 @@ public class ClusterStatusWindow extends JFrame {
                 });
 
         for (int i = 0; i <= 6; i++) {
-            jTable2.getColumnModel().getColumn(i).setHeaderRenderer(iconHeaderRenderer);
+            clusterStatusTable.getColumnModel().getColumn(i).setHeaderRenderer(iconHeaderRenderer);
         }
 
-        addMouseListenerToHeaderInTable(jTable2);
-        jTable2.getTableHeader().setReorderingAllowed(false);
+        addMouseListenerToHeaderInTable(clusterStatusTable);
+        clusterStatusTable.getTableHeader().setReorderingAllowed(false);
 
-        jScrollPane2.setViewportView(jTable2);
+        clusterStatusScrollPane.setViewportView(clusterStatusTable);
 
-        jPanel2.add(jScrollPane2, java.awt.BorderLayout.CENTER);
+        gatewayStatusPanel.add(clusterStatusScrollPane, java.awt.BorderLayout.CENTER);
 
-        jLabel4.setFont(new java.awt.Font("Dialog", 1, 18));
-        jLabel4.setText("Gateway Status");
-        jLabel4.setMaximumSize(new java.awt.Dimension(136, 40));
-        jLabel4.setMinimumSize(new java.awt.Dimension(136, 40));
-        jLabel4.setPreferredSize(new java.awt.Dimension(136, 40));
-        jPanel2.add(jLabel4, java.awt.BorderLayout.NORTH);
+        gatewayStatusTitle.setFont(new java.awt.Font("Dialog", 1, 18));
+        gatewayStatusTitle.setText("Gateway Status");
+        gatewayStatusTitle.setMaximumSize(new java.awt.Dimension(136, 40));
+        gatewayStatusTitle.setMinimumSize(new java.awt.Dimension(136, 40));
+        gatewayStatusTitle.setPreferredSize(new java.awt.Dimension(136, 40));
+        gatewayStatusPanel.add(gatewayStatusTitle, java.awt.BorderLayout.NORTH);
 
-        jSplitPane1.setLeftComponent(jPanel2);
+        mainSplitPane.setLeftComponent(gatewayStatusPanel);
 
-        jPanel3.setLayout(new java.awt.BorderLayout());
+        serviceStatPanel.setLayout(new java.awt.BorderLayout());
 
-        jPanel3.setPreferredSize(new java.awt.Dimension(400, 308));
-        jPanel1.setLayout(new java.awt.BorderLayout());
+        serviceStatTitle.setFont(new java.awt.Font("Dialog", 1, 18));
+        serviceStatTitle.setText(" Service Statistics");
+        serviceStatTitle.setMaximumSize(new java.awt.Dimension(136, 40));
+        serviceStatTitle.setMinimumSize(new java.awt.Dimension(136, 40));
+        serviceStatTitle.setPreferredSize(new java.awt.Dimension(136, 40));
+        serviceStatPanel.add(serviceStatTitle, java.awt.BorderLayout.NORTH);
 
-        jLabel1.setFont(new java.awt.Font("Dialog", 1, 18));
-        jLabel1.setText(" Service Statistics");
-        jLabel1.setMaximumSize(new java.awt.Dimension(136, 40));
-        jLabel1.setMinimumSize(new java.awt.Dimension(136, 40));
-        jLabel1.setPreferredSize(new java.awt.Dimension(136, 40));
-        jPanel1.add(jLabel1, java.awt.BorderLayout.NORTH);
+        serviceStatPanel.add(getStatisticsPane(), java.awt.BorderLayout.CENTER);
 
-        jPanel8.setLayout(new java.awt.BorderLayout());
-        jPanel1.add(getStatisticsPane(), java.awt.BorderLayout.CENTER);
+        mainSplitPane.setRightComponent(serviceStatPanel);
 
-        jSplitPane1.setRightComponent(jPanel1);
-
-        mainPane.add(jSplitPane1, java.awt.BorderLayout.CENTER);
+        mainPane.add(mainSplitPane, java.awt.BorderLayout.CENTER);
 
         return mainPane;
     }
@@ -530,17 +525,15 @@ public class ClusterStatusWindow extends JFrame {
         clusterRequestCounterCache = new Vector();
     }
 
-    private javax.swing.JLabel jLabel1;
-    private javax.swing.JLabel jLabel4;
+    private javax.swing.JLabel serviceStatTitle;
+    private javax.swing.JLabel gatewayStatusTitle;
 
     private javax.swing.JPanel mainPane;
-    private javax.swing.JPanel jPanel1;
-    private javax.swing.JPanel jPanel2;
-    private javax.swing.JPanel jPanel3;
-    private javax.swing.JPanel jPanel8;
-    private javax.swing.JScrollPane jScrollPane2;
-    private javax.swing.JSplitPane jSplitPane1;
-    private javax.swing.JTable jTable2;
+    private javax.swing.JPanel serviceStatPanel;
+    private javax.swing.JPanel gatewayStatusPanel;
+    private javax.swing.JScrollPane clusterStatusScrollPane;
+    private javax.swing.JSplitPane mainSplitPane;
+    private javax.swing.JTable clusterStatusTable;
 
     private javax.swing.JMenuBar clusterWindowMenuBar;
     private javax.swing.JMenu fileMenu;
