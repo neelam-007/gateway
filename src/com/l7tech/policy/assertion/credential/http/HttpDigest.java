@@ -10,7 +10,7 @@ import com.l7tech.message.Request;
 import com.l7tech.message.Response;
 import com.l7tech.credential.CredentialFinderException;
 import com.l7tech.credential.http.HttpDigestCredentialFinder;
-import com.l7tech.policy.assertion.AssertionError;
+import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.proxy.datamodel.PendingRequest;
 import com.l7tech.proxy.datamodel.Ssg;
@@ -20,9 +20,9 @@ import com.l7tech.proxy.datamodel.Ssg;
  * @version $Revision$
  */
 public class HttpDigest extends HttpCredentialSourceAssertion {
-    public AssertionError doCheckRequest(Request request, Response response) throws CredentialFinderException {
+    public AssertionStatus doCheckRequest(Request request, Response response) throws CredentialFinderException {
         // TODO
-        return AssertionError.NOT_YET_IMPLEMENTED;
+        return AssertionStatus.NOT_YET_IMPLEMENTED;
     }
 
     public Class getCredentialFinderClass() {
@@ -32,16 +32,16 @@ public class HttpDigest extends HttpCredentialSourceAssertion {
     /**
      * ClientProxy client-side processing of the given request.
      * @param request    The request to decorate.
-     * @return AssertionError.NONE if this Assertion was applied to the request successfully; otherwise, some error code
+     * @return AssertionStatus.NONE if this Assertion was applied to the request successfully; otherwise, some error code
      * @throws PolicyAssertionException if processing should not continue due to a serious error
      */
-    public AssertionError decorateRequest(PendingRequest request) throws PolicyAssertionException {
+    public AssertionStatus decorateRequest(PendingRequest request) throws PolicyAssertionException {
         Ssg ssg = request.getSsg();
         if (ssg.getUsername() == null || ssg.getPassword() == null || ssg.getUsername().length() < 1)
-            return AssertionError.NOT_FOUND;
+            return AssertionStatus.NOT_FOUND;
         request.setDigestAuthRequired(true);
         request.setHttpDigestUsername(ssg.getUsername());
         request.setHttpDigestPassword(ssg.getPassword());
-        return AssertionError.NONE;
+        return AssertionStatus.NONE;
     }
 }

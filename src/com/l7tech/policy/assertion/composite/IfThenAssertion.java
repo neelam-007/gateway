@@ -6,7 +6,7 @@
 
 package com.l7tech.policy.assertion.composite;
 
-import com.l7tech.policy.assertion.AssertionError;
+import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.message.Request;
@@ -45,12 +45,12 @@ public class IfThenAssertion extends CompositeAssertion {
         super(parent, children);
     }
 
-    public AssertionError checkRequest(Request request, Response response) throws PolicyAssertionException {
-        AssertionError result = AssertionError.FALSIFIED;
+    public AssertionStatus checkRequest(Request request, Response response) throws PolicyAssertionException {
+        AssertionStatus result = AssertionStatus.FALSIFIED;
         for (Iterator iterator = children(); iterator.hasNext();) {
             Assertion child = (Assertion)iterator.next();
             result = child.checkRequest(request, response);
-            if (result != AssertionError.NONE)
+            if (result != AssertionStatus.NONE)
                 return result;
         }
         return result;
@@ -59,10 +59,10 @@ public class IfThenAssertion extends CompositeAssertion {
     /**
      * ClientProxy client-side processing of the given request.
      * @param requst    The request to decorate.
-     * @return AssertionError.NONE if this Assertion was applied to the request successfully; otherwise, some error code
+     * @return AssertionStatus.NONE if this Assertion was applied to the request successfully; otherwise, some error code
      * @throws PolicyAssertionException if processing should not continue due to a serious error
      */
-    public AssertionError decorateRequest(PendingRequest requst) throws PolicyAssertionException {
-        return AssertionError.NOT_YET_IMPLEMENTED;
+    public AssertionStatus decorateRequest(PendingRequest requst) throws PolicyAssertionException {
+        return AssertionStatus.NOT_YET_IMPLEMENTED;
     }
 }

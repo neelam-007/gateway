@@ -15,26 +15,30 @@ import com.l7tech.message.Request;
  * @version $Revision$
  */
 public class AssertionResult {
-    public AssertionResult( Assertion assertion, Request request, AssertionError error, String message, Object[] params, Throwable cause ) {
+    public AssertionResult( Assertion assertion, Request request, AssertionStatus status, String message, Object[] params, Throwable cause ) {
         // TODO: Defensively copy anything?
         _assertion = assertion;
         _request = request;
-        _error = error;
+        _status = status;
         _message = message;
         _params = params;
         _cause = cause;
     }
 
-    public AssertionResult( Assertion assertion, Request request, AssertionError error, String message ) {
-        this( assertion, request, error, message, null, null );
+    public AssertionResult( Assertion assertion, Request request, AssertionStatus status ) {
+        this( assertion, request, status, null, null, null );
     }
 
-    public AssertionResult( Assertion assertion, Request request, AssertionError error, Throwable cause ) {
-        this( assertion, request, error, null, null, cause );
+    public AssertionResult( Assertion assertion, Request request, AssertionStatus status, String message ) {
+        this( assertion, request, status, message, null, null );
     }
 
-    public AssertionResult( Assertion assertion, Request request, AssertionError error, String message, Object[] params ) {
-        this( assertion, request, error, message, params, null );
+    public AssertionResult( Assertion assertion, Request request, AssertionStatus status, Throwable cause ) {
+        this( assertion, request, status, null, null, cause );
+    }
+
+    public AssertionResult( Assertion assertion, Request request, AssertionStatus status, String message, Object[] params ) {
+        this( assertion, request, status, message, params, null );
     }
 
     public Assertion getAssertion() {
@@ -45,8 +49,8 @@ public class AssertionResult {
         return _request;
     }
 
-    public AssertionError getError() {
-        return _error;
+    public AssertionStatus getStatus() {
+        return _status;
     }
 
     public String getMessage() {
@@ -63,7 +67,7 @@ public class AssertionResult {
 
     private final Assertion _assertion;
     private final Request _request;
-    private final AssertionError _error;
+    private final AssertionStatus _status;
     private final String _message;
     private final Object[] _params;
     private final Throwable _cause;

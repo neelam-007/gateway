@@ -17,11 +17,11 @@ import com.l7tech.proxy.datamodel.PendingRequest;
  * @version $Revision$
  */
 public class FalseAssertion extends Assertion {
-    public AssertionError checkRequest(Request request, Response response) throws PolicyAssertionException {
-        return AssertionError.FALSIFIED;
+    public AssertionStatus checkRequest(Request request, Response response) throws PolicyAssertionException {
+        return AssertionStatus.FALSIFIED;
     }
 
-    public AssertionError decorateRequest(PendingRequest requst) throws PolicyAssertionException {
-        return AssertionError.FALSIFIED;
+    public AssertionStatus decorateRequest(PendingRequest requst) throws PolicyAssertionException {
+        return AssertionStatus.FALSIFIED;
     }
 }

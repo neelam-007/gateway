@@ -7,7 +7,7 @@
 package com.l7tech.policy.assertion.identity;
 
 import com.l7tech.identity.IdentityProvider;
-import com.l7tech.policy.assertion.AssertionError;
+import com.l7tech.policy.assertion.AssertionStatus;
 
 import java.security.Principal;
 
@@ -35,11 +35,11 @@ public class SpecificUser extends IdentityAssertion {
         return _user;
     }
 
-    public AssertionError doCheckPrincipal( Principal p ) {
+    public AssertionStatus doCheckPrincipal( Principal p ) {
         if ( p.equals( _user ) )
-            return AssertionError.NONE;
+            return AssertionStatus.NONE;
         else
-            return AssertionError.AUTH_FAILED;
+            return AssertionStatus.AUTH_FAILED;
     }
 
     protected Principal _user;

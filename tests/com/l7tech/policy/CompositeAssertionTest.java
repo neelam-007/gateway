@@ -11,7 +11,7 @@ import com.l7tech.message.Response;
 import com.l7tech.message.SoapRequest;
 import com.l7tech.message.SoapResponse;
 import com.l7tech.policy.assertion.*;
-import com.l7tech.policy.assertion.AssertionError;
+import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.assertion.composite.ExactlyOneAssertion;
 import com.l7tech.policy.assertion.composite.OneOrMoreAssertion;
@@ -57,10 +57,10 @@ public class CompositeAssertionTest extends TestCase {
                 new FalseAssertion(),
                 new TrueAssertion()
             });
-            assertTrue(new OneOrMoreAssertion(kidsTrueFalseTrue).checkRequest(req, resp) == AssertionError.NONE);
-            assertFalse(new ExactlyOneAssertion(kidsTrueFalseTrue).checkRequest(req, resp) == AssertionError.NONE);
-            assertFalse(new AllAssertion(kidsTrueFalseTrue).checkRequest(req, resp) == AssertionError.NONE);
-            assertFalse(new IfThenAssertion(kidsTrueFalseTrue).checkRequest(req, resp) == AssertionError.NONE);
+            assertTrue(new OneOrMoreAssertion(kidsTrueFalseTrue).checkRequest(req, resp) == AssertionStatus.NONE);
+            assertFalse(new ExactlyOneAssertion(kidsTrueFalseTrue).checkRequest(req, resp) == AssertionStatus.NONE);
+            assertFalse(new AllAssertion(kidsTrueFalseTrue).checkRequest(req, resp) == AssertionStatus.NONE);
+            assertFalse(new IfThenAssertion(kidsTrueFalseTrue).checkRequest(req, resp) == AssertionStatus.NONE);
         }
 
         {
@@ -69,10 +69,10 @@ public class CompositeAssertionTest extends TestCase {
                 new TrueAssertion(),
                 new TrueAssertion()
             });
-            assertTrue(new OneOrMoreAssertion(kidsTrueTrueTrue).checkRequest(req, resp) == AssertionError.NONE);
-            assertFalse(new ExactlyOneAssertion(kidsTrueTrueTrue).checkRequest(req, resp) == AssertionError.NONE);
-            assertTrue(new AllAssertion(kidsTrueTrueTrue).checkRequest(req, resp) == AssertionError.NONE);
-            assertTrue(new IfThenAssertion(kidsTrueTrueTrue).checkRequest(req, resp) == AssertionError.NONE);
+            assertTrue(new OneOrMoreAssertion(kidsTrueTrueTrue).checkRequest(req, resp) == AssertionStatus.NONE);
+            assertFalse(new ExactlyOneAssertion(kidsTrueTrueTrue).checkRequest(req, resp) == AssertionStatus.NONE);
+            assertTrue(new AllAssertion(kidsTrueTrueTrue).checkRequest(req, resp) == AssertionStatus.NONE);
+            assertTrue(new IfThenAssertion(kidsTrueTrueTrue).checkRequest(req, resp) == AssertionStatus.NONE);
         }
 
         {
@@ -81,10 +81,10 @@ public class CompositeAssertionTest extends TestCase {
                 new TrueAssertion(),
                 new FalseAssertion()
             });
-            assertTrue(new OneOrMoreAssertion(kidsFalseTrueFalse).checkRequest(req, resp) == AssertionError.NONE);
-            assertTrue(new ExactlyOneAssertion(kidsFalseTrueFalse).checkRequest(req, resp) == AssertionError.NONE);
-            assertFalse(new AllAssertion(kidsFalseTrueFalse).checkRequest(req, resp) == AssertionError.NONE);
-            assertFalse(new IfThenAssertion(kidsFalseTrueFalse).checkRequest(req, resp) == AssertionError.NONE);
+            assertTrue(new OneOrMoreAssertion(kidsFalseTrueFalse).checkRequest(req, resp) == AssertionStatus.NONE);
+            assertTrue(new ExactlyOneAssertion(kidsFalseTrueFalse).checkRequest(req, resp) == AssertionStatus.NONE);
+            assertFalse(new AllAssertion(kidsFalseTrueFalse).checkRequest(req, resp) == AssertionStatus.NONE);
+            assertFalse(new IfThenAssertion(kidsFalseTrueFalse).checkRequest(req, resp) == AssertionStatus.NONE);
         }
 
         {
@@ -92,10 +92,10 @@ public class CompositeAssertionTest extends TestCase {
                 new FalseAssertion(),
                 new FalseAssertion()
             });
-            assertFalse(new OneOrMoreAssertion(kidsFalseFalse).checkRequest(req, resp) == AssertionError.NONE);
-            assertFalse(new ExactlyOneAssertion(kidsFalseFalse).checkRequest(req, resp) == AssertionError.NONE);
-            assertFalse(new AllAssertion(kidsFalseFalse).checkRequest(req, resp) == AssertionError.NONE);
-            assertFalse(new IfThenAssertion(kidsFalseFalse).checkRequest(req, resp) == AssertionError.NONE);
+            assertFalse(new OneOrMoreAssertion(kidsFalseFalse).checkRequest(req, resp) == AssertionStatus.NONE);
+            assertFalse(new ExactlyOneAssertion(kidsFalseFalse).checkRequest(req, resp) == AssertionStatus.NONE);
+            assertFalse(new AllAssertion(kidsFalseFalse).checkRequest(req, resp) == AssertionStatus.NONE);
+            assertFalse(new IfThenAssertion(kidsFalseFalse).checkRequest(req, resp) == AssertionStatus.NONE);
         }
     }
 
@@ -136,13 +136,13 @@ public class CompositeAssertionTest extends TestCase {
         final Assertion false4 = new AllAssertion(kidsTrueFalse);
         final Assertion true4 = new ExactlyOneAssertion(kidsTrueFalse);
 
-        assertTrue(true1.checkRequest(req, resp) == AssertionError.NONE);
-        assertTrue(true2.checkRequest(req, resp) == AssertionError.NONE);
-        assertTrue(true3.checkRequest(req, resp) == AssertionError.NONE);
-        assertTrue(true4.checkRequest(req, resp) == AssertionError.NONE);
-        assertFalse(false1.checkRequest(req, resp) == AssertionError.NONE);
-        assertFalse(false2.checkRequest(req, resp) == AssertionError.NONE);
-        assertFalse(false3.checkRequest(req, resp) == AssertionError.NONE);
-        assertFalse(false4.checkRequest(req, resp) == AssertionError.NONE);
+        assertTrue(true1.checkRequest(req, resp) == AssertionStatus.NONE);
+        assertTrue(true2.checkRequest(req, resp) == AssertionStatus.NONE);
+        assertTrue(true3.checkRequest(req, resp) == AssertionStatus.NONE);
+        assertTrue(true4.checkRequest(req, resp) == AssertionStatus.NONE);
+        assertFalse(false1.checkRequest(req, resp) == AssertionStatus.NONE);
+        assertFalse(false2.checkRequest(req, resp) == AssertionStatus.NONE);
+        assertFalse(false3.checkRequest(req, resp) == AssertionStatus.NONE);
+        assertFalse(false4.checkRequest(req, resp) == AssertionStatus.NONE);
     }
 }

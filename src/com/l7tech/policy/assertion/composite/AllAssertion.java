@@ -8,7 +8,7 @@ package com.l7tech.policy.assertion.composite;
 
 import com.l7tech.message.Request;
 import com.l7tech.message.Response;
-import com.l7tech.policy.assertion.AssertionError;
+import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.proxy.datamodel.PendingRequest;
@@ -36,15 +36,15 @@ public class AllAssertion extends CompositeAssertion {
         super( parent, children );
     }
 
-    public AssertionError checkRequest(Request request, Response response) throws PolicyAssertionException {
+    public AssertionStatus checkRequest(Request request, Response response) throws PolicyAssertionException {
         mustHaveChildren();
         Iterator kids = children();
         Assertion child;
-        AssertionError result = null;
+        AssertionStatus result = null;
         while ( kids.hasNext() ) {
             child = (Assertion)kids.next();
             result = child.checkRequest( request, response );
-            if ( result != AssertionError.NONE ) return result;
+            if ( result != AssertionStatus.NONE ) return result;
         }
         return result;
     }
@@ -53,16 +53,16 @@ public class AllAssertion extends CompositeAssertion {
      * Modify the provided PendingRequest to conform to this policy assertion.
      * For an AllAssertion, we'll have all our children decorate the request.
      * @param req
-     * @return the AssertionError.NONE if no child returned an error; the rightmost-child error otherwise.
+     * @return the AssertionStatus.NONE if no child returned an error; the rightmost-child error otherwise.
      * @throws PolicyAssertionException
      */
-    public AssertionError decorateRequest(PendingRequest req) throws PolicyAssertionException {
+    public AssertionStatus decorateRequest(PendingRequest req) throws PolicyAssertionException {
         mustHaveChildren();
-        AssertionError result = AssertionError.NONE;
+        AssertionStatus result = AssertionStatus.NONE;
         for (Iterator kids = children.iterator(); kids.hasNext();) {
             Assertion assertion = (Assertion)kids.next();
-            AssertionError thisResult = assertion.decorateRequest(req);
-            if (thisResult != AssertionError.NONE)
+            AssertionStatus thisResult = assertion.decorateRequest(req);
+            if (thisResult != AssertionStatus.NONE)
                 result = thisResult;
         }
         return result;

@@ -22,23 +22,23 @@ public class SslAssertion extends ConfidentialityAssertion {
      */
     public SslAssertion() {}
 
-    public AssertionError checkRequest(Request request, Response response) throws PolicyAssertionException {
+    public AssertionStatus checkRequest(Request request, Response response) throws PolicyAssertionException {
         TransportMetadata tm = request.getTransportMetadata();
         if ( tm.getProtocol() == TransportProtocol.HTTPS )
-            return AssertionError.NONE;
+            return AssertionStatus.NONE;
         else
-            return AssertionError.FALSIFIED;
+            return AssertionStatus.FALSIFIED;
     }
 
     /**
      * ClientProxy client-side processing of the given request.
      * @param request    The request to decorate.
-     * @return AssertionError.NONE if this Assertion was applied to the request successfully; otherwise, some error code
+     * @return AssertionStatus.NONE if this Assertion was applied to the request successfully; otherwise, some error code
      * @throws PolicyAssertionException if processing should not continue due to a serious error
      */
-    public AssertionError decorateRequest(PendingRequest request) throws PolicyAssertionException {
+    public AssertionStatus decorateRequest(PendingRequest request) throws PolicyAssertionException {
         request.setSslRequired(true);
-        return AssertionError.NONE;
+        return AssertionStatus.NONE;
     }
 
     protected Set _cipherSuites = Collections.EMPTY_SET;

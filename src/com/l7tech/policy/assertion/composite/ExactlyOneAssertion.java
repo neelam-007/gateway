@@ -9,7 +9,7 @@ package com.l7tech.policy.assertion.composite;
 import com.l7tech.message.Request;
 import com.l7tech.message.Response;
 import com.l7tech.policy.assertion.composite.CompositeAssertion;
-import com.l7tech.policy.assertion.AssertionError;
+import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.proxy.datamodel.PendingRequest;
@@ -39,35 +39,35 @@ public class ExactlyOneAssertion extends CompositeAssertion implements Serializa
         super( parent, children );
     }
 
-    public AssertionError checkRequest(Request request, Response response) throws PolicyAssertionException {
+    public AssertionStatus checkRequest(Request request, Response response) throws PolicyAssertionException {
         mustHaveChildren();
         Iterator kids = children();
         Assertion child;
-        AssertionError result = null;
+        AssertionStatus result = null;
         int numSucceeded = 0;
         while ( kids.hasNext() ) {
             child = (Assertion)kids.next();
             result = child.checkRequest( request, response );
-            if ( result == AssertionError.NONE )
+            if ( result == AssertionStatus.NONE )
                 ++numSucceeded;
         }
-        return numSucceeded == 1 ? AssertionError.NONE : AssertionError.FALSIFIED;
+        return numSucceeded == 1 ? AssertionStatus.NONE : AssertionStatus.FALSIFIED;
     }
 
     /**
      * Modify the provided PendingRequest to conform to this policy assertion.
      * For ExactlyOneAssertion, we'll run children until one succeeds or we run out.
      * @param req
-     * @return AssertionError.NONE, or the rightmost-child's error if all children failed.
+     * @return AssertionStatus.NONE, or the rightmost-child's error if all children failed.
      * @throws PolicyAssertionException
      */
-    public AssertionError decorateRequest(PendingRequest req) throws PolicyAssertionException {
+    public AssertionStatus decorateRequest(PendingRequest req) throws PolicyAssertionException {
         mustHaveChildren();
-        AssertionError result = AssertionError.FALSIFIED;
+        AssertionStatus result = AssertionStatus.FALSIFIED;
         for (Iterator kids = children.iterator(); kids.hasNext();) {
             Assertion assertion = (Assertion) kids.next();
-            AssertionError thisResult = assertion.decorateRequest(req);
-            if (thisResult == AssertionError.NONE)
+            AssertionStatus thisResult = assertion.decorateRequest(req);
+            if (thisResult == AssertionStatus.NONE)
                 return thisResult;
             result = thisResult;
         }

@@ -10,7 +10,7 @@ import com.l7tech.message.Request;
 import com.l7tech.message.Response;
 import com.l7tech.credential.CredentialFinderException;
 import com.l7tech.credential.wss.WssClientCertCredentialFinder;
-import com.l7tech.policy.assertion.AssertionError;
+import com.l7tech.policy.assertion.AssertionStatus;
 
 
 /**
@@ -18,9 +18,9 @@ import com.l7tech.policy.assertion.AssertionError;
  * @version $Revision$
  */
 public class WssClientCert extends WssCredentialSourceAssertion {
-    public AssertionError doCheckRequest(Request request, Response response) throws CredentialFinderException {
+    public AssertionStatus doCheckRequest(Request request, Response response) throws CredentialFinderException {
         // TODO
-        return AssertionError.NOT_YET_IMPLEMENTED;
+        return AssertionStatus.NOT_YET_IMPLEMENTED;
     }
 
     public Class getCredentialFinderClass() {

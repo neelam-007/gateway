@@ -43,17 +43,17 @@ public class RoutingAssertion extends Assertion implements Cloneable, Serializab
      * Forwards the request along to a ProtectedService at the configured URL.
      * @param request The request to be forwarded.
      * @param response The response that was received from the ProtectedService.
-     * @return an AssertionError indicating the success or failure of the request.
+     * @return an AssertionStatus indicating the success or failure of the request.
      * @throws PolicyAssertionException if some error preventing the execution of the PolicyAssertion has occurred.
      */
-    public AssertionError checkRequest(Request request, Response response) throws PolicyAssertionException {
-        // TODO
-        return AssertionError.NOT_YET_IMPLEMENTED;
+    public AssertionStatus checkRequest( Request request, Response response ) throws PolicyAssertionException {
+        // TODO ANY DAY NOW!
+        return AssertionStatus.NOT_YET_IMPLEMENTED;
     }
 
     /** Client-side doesn't know or care about server-side routing. */
-    public AssertionError decorateRequest(PendingRequest requst) throws PolicyAssertionException {
-        return AssertionError.NOT_APPLICABLE;
+    public AssertionStatus decorateRequest( PendingRequest request ) throws PolicyAssertionException {
+        return AssertionStatus.NOT_APPLICABLE;
     }
 
     protected String protectedServiceUrl;

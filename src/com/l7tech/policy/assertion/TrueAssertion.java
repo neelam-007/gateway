@@ -17,18 +17,19 @@ import com.l7tech.proxy.datamodel.PendingRequest;
  * @version $Revision$
  */
 public class TrueAssertion extends Assertion {
+
     /**
      * Static TrueAssertion with no parent.  Useful as a "do-nothing" policy tree that needn't be
      * instantiated every time such a thing is needed.
      */
     private static final TrueAssertion INSTANCE = new TrueAssertion();
 
-    public AssertionError checkRequest(Request request, Response response) throws PolicyAssertionException {
-        return AssertionError.NONE;
+    public AssertionStatus checkRequest(Request request, Response response) throws PolicyAssertionException {
+        return AssertionStatus.NONE;
     }
 
-    public AssertionError decorateRequest(PendingRequest requst) throws PolicyAssertionException {
-        return AssertionError.NONE;
+    public AssertionStatus decorateRequest(PendingRequest requst) throws PolicyAssertionException {
+        return AssertionStatus.NONE;
     }
 
     /**

@@ -15,7 +15,7 @@ import java.util.Arrays;
 
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.TrueAssertion;
-import com.l7tech.policy.assertion.AssertionError;
+import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.SslAssertion;
 import com.l7tech.policy.assertion.composite.ExactlyOneAssertion;
 import com.l7tech.policy.assertion.composite.AllAssertion;
@@ -53,9 +53,9 @@ public class ClientPolicyTest extends TestCase {
 
         Assertion policy = new TrueAssertion();
 
-        AssertionError result = policy.decorateRequest(req);
+        AssertionStatus result = policy.decorateRequest(req);
 
-        assertTrue(AssertionError.NONE.equals(result));
+        assertTrue(AssertionStatus.NONE.equals(result));
     }
 
     /** Test decoration of a message with an HTTP Basic policy. */
@@ -64,23 +64,23 @@ public class ClientPolicyTest extends TestCase {
         Ssg ssg = new Ssg(1, "Foo ssg", "/foo", "http://foo");
         SOAPEnvelope env = new SOAPEnvelope();
         PendingRequest req;
-        AssertionError result;
+        AssertionStatus result;
 
         ssg.setUsername(null);
         ssg.setPassword("");
         result = policy.decorateRequest(req = new PendingRequest(env, ssg));
-        assertTrue(!AssertionError.NONE.equals(result));
+        assertTrue(!AssertionStatus.NONE.equals(result));
         assertFalse(req.isBasicAuthRequired());
 
         ssg.setUsername("");
         result = policy.decorateRequest(req = new PendingRequest(env, ssg));
-        assertTrue(!AssertionError.NONE.equals(result));
+        assertTrue(!AssertionStatus.NONE.equals(result));
         assertFalse(req.isBasicAuthRequired());
 
         final String USER = "fbunky";
         ssg.setUsername(USER);
         result = policy.decorateRequest(req = new PendingRequest(env, ssg));
-        assertTrue(AssertionError.NONE.equals(result));
+        assertTrue(AssertionStatus.NONE.equals(result));
         assertTrue(req.isBasicAuthRequired());
         assertTrue(USER.equals(req.getHttpBasicUsername()));
         assertTrue("".equals(req.getHttpBasicPassword()));
@@ -88,7 +88,7 @@ public class ClientPolicyTest extends TestCase {
         final String PASS = "s3cr3t";
         ssg.setPassword(PASS);
         result = policy.decorateRequest(req = new PendingRequest(env, ssg));
-        assertTrue(AssertionError.NONE.equals(result));
+        assertTrue(AssertionStatus.NONE.equals(result));
         assertTrue(req.isBasicAuthRequired());
         assertTrue(USER.equals(req.getHttpBasicUsername()));
         assertTrue(PASS.equals(req.getHttpBasicPassword()));
@@ -100,10 +100,10 @@ public class ClientPolicyTest extends TestCase {
         Ssg ssg = new Ssg(1, "Foo ssg", "/foo", "http://foo");
         SOAPEnvelope env = new SOAPEnvelope();
         PendingRequest req;
-        AssertionError result;
+        AssertionStatus result;
 
         result = policy.decorateRequest(req = new PendingRequest(env, ssg));;
-        assertTrue(AssertionError.NONE.equals(result));
+        assertTrue(AssertionStatus.NONE.equals(result));
         assertTrue(req.isSslRequired());
     }
 
@@ -112,7 +112,7 @@ public class ClientPolicyTest extends TestCase {
         Ssg ssg = new Ssg(1, "Foo ssg", "/foo", "http://foo");
         SOAPEnvelope env = new SOAPEnvelope();
         PendingRequest req;
-        AssertionError result;
+        AssertionStatus result;
 
         {
             // Test (SSL + Basic) || Digest
@@ -127,14 +127,14 @@ public class ClientPolicyTest extends TestCase {
             ssg.setUsername("");
             ssg.setPassword("");
             result = policy.decorateRequest(req = new PendingRequest(env, ssg));
-            assertFalse(AssertionError.NONE.equals(result));
+            assertFalse(AssertionStatus.NONE.equals(result));
 
             final String USER = "fbunky";
             final String PASS = "asdfjkal";
             ssg.setUsername(USER);
             ssg.setPassword(PASS);
             result = policy.decorateRequest(req = new PendingRequest(env, ssg));
-            assertTrue(AssertionError.NONE.equals(result));
+            assertTrue(AssertionStatus.NONE.equals(result));
             assertTrue(req.isSslRequired());
             assertFalse(req.isDigestAuthRequired());
             assertTrue(req.isBasicAuthRequired());
@@ -155,14 +155,14 @@ public class ClientPolicyTest extends TestCase {
             ssg.setUsername("");
             ssg.setPassword("");
             result = policy.decorateRequest(req = new PendingRequest(env, ssg));
-            assertFalse(AssertionError.NONE.equals(result));
+            assertFalse(AssertionStatus.NONE.equals(result));
 
             final String USER = "fbunky";
             final String PASS = "asdfjkal";
             ssg.setUsername(USER);
             ssg.setPassword(PASS);
             result = policy.decorateRequest(req = new PendingRequest(env, ssg));
-            assertTrue(AssertionError.NONE.equals(result));
+            assertTrue(AssertionStatus.NONE.equals(result));
             assertFalse(req.isSslRequired());
             assertFalse(req.isBasicAuthRequired());
             assertTrue(req.isDigestAuthRequired());
