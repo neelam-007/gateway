@@ -156,12 +156,6 @@ class PathValidator {
             result.addWarning(new PolicyValidatorResult.Warning(a, assertionPath, "You already have a credential assertion.", null));
         }
 
-        // new fla, check whether an assertion will require a client cert to function, this is important because
-        // we only support client certs for internal users
-        if (a instanceof SslAssertion) {
-            seenCredAssertionThatRequiresClientCert = true;
-        }
-
         if (a instanceof HttpDigest) {
             seenDigestAssertion = true;
         }
@@ -213,18 +207,7 @@ class PathValidator {
     }
 
     private void processPrecondition(final Assertion a) {
-        if (a instanceof SslAssertion) {
-            seenSsl = true;
-            // ssl assertion might be there but it could be forbidden...
-            if (((SslAssertion)a).getOption() == SslAssertion.FORBIDDEN) {
-                sslForbidden = true;
-            }
-            if (seenRouting) {
-                result.addWarning(new PolicyValidatorResult.Warning(a, assertionPath,
-                  "The assertion might not work as configured." +
-                  " There is a routing assertion before this assertion.", null));
-            }
-        } else if (a instanceof XslTransformation) {
+        if (a instanceof XslTransformation) {
             // check that the assertion is on the right side of the routing
             XslTransformation ass = (XslTransformation)a;
 
@@ -475,8 +458,7 @@ class PathValidator {
 
     private boolean hasPreconditionAssertion(Assertion a) {
         // check preconditions for both SslAssertion and  ResponseWssIntegrity assertions - see processPrecondition()
-        if (a instanceof SslAssertion ||
-          a instanceof XpathBasedAssertion ||
+        if (a instanceof XpathBasedAssertion ||
           a instanceof XslTransformation ||
           a instanceof RequestSwAAssertion ||
           a instanceof RequestWssReplayProtection)
@@ -547,9 +529,6 @@ class PathValidator {
     private Map seenWssSignature = new HashMap();
     boolean seenSecureConversation = false;
     private Map seenSamlSecurity = new HashMap();
-    boolean seenSsl = false;
-    boolean sslForbidden = false;
-    boolean seenCredAssertionThatRequiresClientCert = false;
     boolean seenDigestAssertion = false;
     boolean seenSpecificUserAssertion = false;
     boolean seenCustomAssertion = false;
