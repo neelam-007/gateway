@@ -15,15 +15,13 @@ import java.sql.SQLException;
  * @author alex
  */
 public class GroupManagerImp extends ProviderSpecificEntityManager implements GroupManager {
-    public static final Class IMPCLASS = GroupImp.class;
-
     public GroupManagerImp() {
         super();
     }
 
     public Group findByPrimaryKey(long oid) throws FindException {
         try {
-            return (Group)_manager.findByPrimaryKey( getContext(), IMPCLASS, oid );
+            return (Group)_manager.findByPrimaryKey( getContext(), getImpClass(), oid );
         } catch ( SQLException se ) {
             throw new FindException( se.toString(), se );
         }
@@ -54,7 +52,7 @@ public class GroupManagerImp extends ProviderSpecificEntityManager implements Gr
     }
 
     public String getTableName() {
-        return "group";
+        return "internal_group";
     }
 
     public Class getImpClass() {
