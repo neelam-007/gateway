@@ -7,7 +7,9 @@
 package com.l7tech.server.policy.assertion;
 
 import com.l7tech.common.BuildInfo;
+import com.l7tech.common.security.xml.SignerInfo;
 import com.l7tech.common.util.XmlUtil;
+import com.l7tech.common.util.KeystoreUtils;
 import com.l7tech.identity.UserBean;
 import com.l7tech.logging.LogManager;
 import com.l7tech.message.Request;
@@ -34,6 +36,7 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.security.SignatureException;
 
 /**
  * @author alex
@@ -130,11 +133,11 @@ public class ServerRoutingAssertion implements ServerAssertion {
                 Document document = XmlUtil.stringToDocument(requestXml);
                 SamlAssertionGenerator ag = new SamlAssertionGenerator();
 //                SignerInfo si = new com.l7tech.common.security.Keys().asSignerInfo("CN="+ServerConfig.getInstance().getHostname());
+                SignerInfo si = KeystoreUtils.getInstance().getSignerInfo();
                 UserBean ub = new UserBean();
-                ub.setName("CN=fred");
-//                ag.attachSenderVouches(document, ub, si);
+                ub.setName("CN="+login);
+                ag.attachSenderVouches(document, ub, si);
                 requestXml = XmlUtil.documentToString(document);
-System.out.println(requestXml);
             }
             postMethod.setRequestBody(requestXml);
             client.executeMethod(postMethod);
@@ -178,6 +181,9 @@ System.out.println(requestXml);
             logger.log(Level.SEVERE, null, ioe);
             return AssertionStatus.FAILED;
         } catch (SAXException e) {
+            logger.log(Level.SEVERE, null, e);
+            return AssertionStatus.FAILED;
+        } catch (SignatureException e) {
             logger.log(Level.SEVERE, null, e);
             return AssertionStatus.FAILED;
         } finally {
