@@ -81,7 +81,7 @@ public class ServerSchemaValidation implements ServerAssertion {
     AssertionStatus checkRequest(Document soapmsg) throws IOException {
         String[] bodystr = null;
         try {
-            bodystr = getRequestBodyChild(soapmsg);
+            bodystr = getXMLElementsToValidate(soapmsg);
         } catch (ParserConfigurationException e) {
             String msg = "parser configuration exception";
             logger.log(Level.WARNING, msg, e);
@@ -131,6 +131,14 @@ public class ServerSchemaValidation implements ServerAssertion {
         return AssertionStatus.NONE;
     }
 
+    private String[] getXMLElementsToValidate(Document doc) throws IOException, ParserConfigurationException {
+        if (SoapUtil.isSoapMessage(doc)) {
+            return getRequestBodyChild(doc);
+        } else {
+            return new String[] {XmlUtil.nodeToString(doc.getDocumentElement())};
+        }
+    }
+
     private String[] getRequestBodyChild(Document soapenvelope) throws IOException, ParserConfigurationException {
         NodeList bodylist = soapenvelope.getElementsByTagNameNS(soapenvelope.getDocumentElement().getNamespaceURI(),
                                                                 SoapUtil.BODY_EL_NAME);
@@ -142,28 +150,19 @@ public class ServerSchemaValidation implements ServerAssertion {
             default:
                 return null;
         }
-        //Element bodyschild = null;
         NodeList bodychildren = bodyel.getChildNodes();
         ArrayList children = new ArrayList();
         for (int i = 0; i < bodychildren.getLength(); i++) {
             Node child = bodychildren.item(i);
             if (child instanceof Element) {
                 children.add(child);
-                //bodyschild = (Element)child;
-                //break;
             }
         }
-        /*if (bodyschild == null) {
-            System.out.println("could not get body's child");
-            return null;
-        }*/
         String[] output = new String[children.size()];
         int cnt = 0;
         for (Iterator i = children.iterator(); i.hasNext(); cnt++) {
             output[cnt] = SchemaValidation.elementToXml((Element)i.next());
         }
-
-        //return SchemaValidation.elementToXml(bodyschild);
         return output;
     }
 
