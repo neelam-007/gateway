@@ -41,6 +41,7 @@ public class SoapActionResolver extends WsdlOperationServiceResolver {
 
     protected Object getRequestValue( Request request ) {
         String soapAction = (String)request.getParameter( request.PARAM_HTTP_SOAPACTION );
+        // Strip leading and trailing quotes
         if ( soapAction.startsWith("\"") && soapAction.endsWith("\"") ) {
             return soapAction.substring( 1, soapAction.length()-1 );
         } else {
