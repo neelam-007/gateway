@@ -74,25 +74,44 @@ public class CertUtils {
         return map;
     }
 
-    public static boolean dnsMatchWithWildcards(String userDn, String groupDn) throws Exception {
-        Map userStuff = dnToAttributeMap(userDn);
-        Map groupStuff = dnToAttributeMap(groupDn);
+    /**
+     * Tests whether the provided DN matches the provided pattern.
+     * <p>
+     * If the pattern has "*" for any
+     * attribute value, the DN will match if it has any value for the attribute with the same name.
+     * </p><p>
+     * The DN matches if and only if: <ul compact>
+     * <li>Every attribute in the pattern is also present in the DN,
+     *     <b>even if the pattern's value is "*"</b>;</li>
+     * <li>Every attribute in the pattern whose value isn't "*" is present
+     *     <b>with the same value</b> in the DN;</li>
+     * </ul>
+     * </p><p>
+     * Note that the DN can have additional attributes that are not present
+     * in the pattern and can still be considered to match if the rules are met.</p>
+     * @param dn the dn to be matched
+     * @param pattern the pattern to match against
+     * @return true if the dn matches the pattern, false otherwise.
+     */
+    public static boolean dnMatchesPattern(String dn, String pattern) {
+        Map dnMap = dnToAttributeMap(dn);
+        Map patternMap = dnToAttributeMap(pattern);
 
         boolean matches = true;
-        for ( Iterator i = groupStuff.keySet().iterator(); i.hasNext(); ) {
+        for ( Iterator i = patternMap.keySet().iterator(); i.hasNext(); ) {
             String oid = (String)i.next();
-            List groupValues = (List)groupStuff.get(oid);
-            List userValues = (List)userStuff.get(oid);
+            List patternValues = (List)patternMap.get(oid);
+            List dnValues = (List)dnMap.get(oid);
 
-            if ( userValues == null ) {
+            if ( dnValues == null ) {
                 matches = false;
                 break;
             }
 
-            for ( Iterator j = groupValues.iterator(); j.hasNext(); ) {
-                String groupValue = (String) j.next();
-                if ( !userValues.contains(groupValue) ) {
-                    if ( !("*".equals(groupValue)) ) {
+            for ( Iterator j = patternValues.iterator(); j.hasNext(); ) {
+                String patternValue = (String) j.next();
+                if ( !dnValues.contains(patternValue) ) {
+                    if ( !("*".equals(patternValue)) ) {
                         matches = false;
                         break;
                     }

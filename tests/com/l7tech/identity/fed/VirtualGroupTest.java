@@ -29,18 +29,18 @@ public class VirtualGroupTest extends TestCase {
     }
 
     public void testDnPatterns() throws Exception {
-        assertTrue(CertUtils.dnsMatchWithWildcards("O=ACME Inc., OU=Widgets, CN=joe",
+        assertTrue(CertUtils.dnMatchesPattern("O=ACME Inc., OU=Widgets, CN=joe",
                                "O=ACME Inc., OU=Widgets, CN=*"));
 
-        assertFalse(CertUtils.dnsMatchWithWildcards("O=ACME Inc., OU=Widgets, CN=joe",
+        assertFalse(CertUtils.dnMatchesPattern("O=ACME Inc., OU=Widgets, CN=joe",
                                 "O=ACME Inc., OU=Widgets, CN=bob"));
 
         assertTrue("Multi-valued attributes, case and whitespace are insignificant",
-                   CertUtils.dnsMatchWithWildcards("dc=layer7-tech,dc=com, uid=acruise",
+                   CertUtils.dnMatchesPattern("dc=layer7-tech,dc=com, uid=acruise",
                                "dc=layer7-tech, DC=com, UID=*"));
 
         assertFalse("Group value wildcards are required",
-                    CertUtils.dnsMatchWithWildcards("dc=layer7-tech,dc=com, uid=acruise",
+                    CertUtils.dnMatchesPattern("dc=layer7-tech,dc=com, uid=acruise",
                                 "dc=layer7-tech, DC=com, cn=*, UID=*"));
     }
 
