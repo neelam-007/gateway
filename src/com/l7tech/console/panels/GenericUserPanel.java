@@ -550,17 +550,21 @@ public class GenericUserPanel extends UserPanel {
                     if (!exirationChooser.wasCancelled()) {
                         long newvalue = exirationChooser.getExpirationValue();
                         iu.setExpiration(newvalue);
-                        // refresh button with new value
-                        String newExpiration = "never";
-                        if (newvalue > -1) {
-                            newExpiration = DateFormat.getInstance().format(new Date(newvalue));
-                        }
-                        setExpirationButton.setText(newExpiration);
+                        displayExpirationValue(newvalue);
                     }
                 }
             });
         }
         return setExpirationButton;
+    }
+
+    private void displayExpirationValue(long value) {
+        // refresh button with new value
+        String newExpiration = "never";
+        if (value > -1) {
+            newExpiration = DateFormat.getInstance().format(new Date(value));
+        }
+        getSetExpirationButton().setText(newExpiration);
     }
 
     /**
