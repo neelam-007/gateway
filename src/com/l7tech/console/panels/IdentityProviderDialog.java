@@ -597,6 +597,7 @@ public class IdentityProviderDialog extends JDialog {
                                                         Object value,
                                                         int index,
                                                         boolean isSelected, boolean cellHasFocus) {
+              super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
               if (!(value instanceof IdentityProviderType)) {
                   setText(value.toString());
               } else {
