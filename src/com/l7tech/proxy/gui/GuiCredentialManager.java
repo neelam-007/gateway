@@ -11,7 +11,6 @@ import com.l7tech.common.util.CertUtils;
 import com.l7tech.proxy.datamodel.CredentialManager;
 import com.l7tech.proxy.datamodel.Ssg;
 import com.l7tech.proxy.datamodel.SsgManager;
-import com.l7tech.proxy.datamodel.exceptions.KeyStoreCorruptException;
 import com.l7tech.proxy.datamodel.exceptions.OperationCanceledException;
 import com.l7tech.proxy.gui.dialogs.LogonDialog;
 import com.l7tech.proxy.gui.dialogs.PleaseWaitDialog;
@@ -27,10 +26,6 @@ import java.util.logging.Logger;
 
 /**
  * GUI implementation of the CredentialManager.
- *
- * User: mike
- * Date: Jun 27, 2003
- * Time: 10:36:01 AM
  */
 class GuiCredentialManager extends CredentialManager {
     private static final Logger log = Logger.getLogger(GuiCredentialManager.class.getName());
@@ -72,14 +67,7 @@ class GuiCredentialManager extends CredentialManager {
     }
 
     public PasswordAuthentication getCredentials(final Ssg ssg) throws OperationCanceledException {
-        for (;;) {
-            try {
-                return getCredentials(ssg, "", false, false);
-            } catch (KeyStoreCorruptException e) {
-                ssg.getRuntime().handleKeyStoreCorrupt();
-                // FALLTHROUGH -- retry with newly-emptied keystore
-            }
-        }
+        return getCredentials(ssg, "", false, false);
     }
 
     public PasswordAuthentication getCredentialsWithReasonHint(Ssg ssg,
@@ -88,29 +76,15 @@ class GuiCredentialManager extends CredentialManager {
                                                                boolean reportBadPassword)
             throws OperationCanceledException
     {
-        for (;;) {
-            try {
-                return getCredentials(ssg, hint.toString(), disregardExisting, reportBadPassword);
-            } catch (KeyStoreCorruptException e) {
-                ssg.getRuntime().handleKeyStoreCorrupt();
-                // FALLTHROUGH -- retry with newly-emptied keystore
-            }
-        }
+        return getCredentials(ssg, hint.toString(), disregardExisting, reportBadPassword);
     }
 
     public PasswordAuthentication getNewCredentials(final Ssg ssg, boolean displayBadPasswordMessage) throws OperationCanceledException {
-        for (;;) {
-            try {
-                return getCredentials(ssg, "", true, displayBadPasswordMessage);
-            } catch (KeyStoreCorruptException e) {
-                ssg.getRuntime().handleKeyStoreCorrupt();
-                // FALLTHROUGH -- retry with newly-emptied keystore
-            }
-        }
+        return getCredentials(ssg, "", true, displayBadPasswordMessage);
     }
 
     private PasswordAuthentication getCredentials(final Ssg ssg, final String reasonHint, boolean mustGetNewOnes, final boolean oldOnesWereBad)
-            throws OperationCanceledException, KeyStoreCorruptException
+            throws OperationCanceledException
     {
         if (oldOnesWereBad) mustGetNewOnes = true;
 
