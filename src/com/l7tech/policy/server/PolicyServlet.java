@@ -1,13 +1,19 @@
 package com.l7tech.policy.server;
 
 import com.l7tech.common.protocol.SecureSpanConstants;
-import com.l7tech.common.util.HexUtils;
-import com.l7tech.common.util.KeystoreUtils;
-import com.l7tech.common.util.Locator;
-import com.l7tech.common.util.XmlUtil;
-import com.l7tech.identity.*;
+import com.l7tech.common.util.*;
+import com.l7tech.common.xml.SoapFaultDetail;
+import com.l7tech.common.xml.InvalidDocumentFormatException;
+import com.l7tech.identity.AuthenticationException;
+import com.l7tech.identity.IdentityProvider;
+import com.l7tech.identity.IdentityProviderConfigManager;
+import com.l7tech.identity.User;
+import com.l7tech.message.HttpSoapRequest;
+import com.l7tech.message.HttpSoapResponse;
+import com.l7tech.message.HttpTransportMetadata;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.PersistenceContext;
+import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.ext.Category;
 import com.l7tech.policy.assertion.ext.CustomAssertionsRegistrar;
 import com.l7tech.policy.server.filter.FilterManager;
@@ -15,17 +21,31 @@ import com.l7tech.policy.server.filter.FilteringException;
 import com.l7tech.policy.wsp.WspWriter;
 import com.l7tech.server.AuthenticatableHttpServlet;
 import com.l7tech.server.identity.IdProvConfManagerServer;
+import com.l7tech.server.policy.PolicyService;
 import com.l7tech.server.policy.assertion.credential.http.ServerHttpBasic;
 import com.l7tech.service.PublishedService;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.xml.sax.InputSource;
+import org.xml.sax.SAXException;
 
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.rmi.RemoteException;
+import java.security.KeyStoreException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.security.PrivateKey;
+import java.security.cert.CertificateException;
+import java.security.cert.X509Certificate;
 import java.sql.SQLException;
 import java.util.*;
 import java.util.logging.Level;
@@ -55,6 +75,110 @@ public class PolicyServlet extends AuthenticatableHttpServlet {
 
     public void init(ServletConfig config) throws ServletException {
         super.init(config);
+    }
+
+    /**
+     * Soapy policy downloads
+     */
+    protected void doPost(HttpServletRequest req, HttpServletResponse res) throws ServletException, IOException {
+        // check content type
+        if (!req.getContentType().startsWith("text/html")) {
+            logger.warning("Bad content type " + req.getContentType());
+            generateFaultAndSendAsResponse(res, "content type not supported", req.getContentType());
+            return;
+        }
+
+        // get document
+        Document payload = null;
+        try {
+            payload = extractXMLPayload(req);
+        } catch (ParserConfigurationException e) {
+            String msg = "Could not parse payload as xml.";
+            logger.log(Level.SEVERE, msg, e);
+            generateFaultAndSendAsResponse(res, msg, e.getMessage());
+            return;
+        } catch (SAXException e) {
+            String msg = "Could not parse payload as xml.";
+            logger.log(Level.WARNING, msg, e);
+            generateFaultAndSendAsResponse(res, msg, e.getMessage());
+            return;
+        }
+
+        // pass over to the service
+        X509Certificate cert = null;
+        PrivateKey key = null;
+        try {
+            cert = KeystoreUtils.getInstance().getSslCert();
+            key = KeystoreUtils.getInstance().getSSLPrivateKey();
+        } catch (CertificateException e) {
+            logger.log(Level.SEVERE, "configuration exception, cannot get server cert.", e);
+            generateFaultAndSendAsResponse(res, "Internal error", e.getMessage());
+            return;
+        } catch (KeyStoreException e) {
+            logger.log(Level.SEVERE, "configuration exception, cannot get server key.", e);
+            generateFaultAndSendAsResponse(res, "Internal error", e.getMessage());
+            return;
+        }
+
+        PolicyService service = new PolicyService(key, cert);
+        HttpTransportMetadata htm = new HttpTransportMetadata(req, res);
+        HttpSoapRequest sreq = new HttpSoapRequest(htm);
+        sreq.setDocument(payload);
+        HttpSoapResponse sres = new HttpSoapResponse(htm);
+        service.respondToPolicyDownloadRequest(sreq, sres, normalPolicyGetter());
+
+        Document response = null;
+        try {
+            response = sres.getDocument();
+        } catch (SAXException e) {
+            generateFaultAndSendAsResponse(res, "No response available", e.getMessage());
+        }
+        if (response == null) {
+            if (sres.getFaultDetail() != null) {
+                generateFaultAndSendAsResponse(res, sres.getFaultDetail());
+                return;
+            } else {
+                generateFaultAndSendAsResponse(res, "No response available", "");
+            }
+        }
+
+        // check if the response is already a soap fault
+        Element bodyChild = null;
+        try {
+            bodyChild = XmlUtil.findFirstChildElement(SoapUtil.getBodyElement(response));
+        } catch (InvalidDocumentFormatException e) {
+            generateFaultAndSendAsResponse(res, "Response is not soap", e.getMessage());
+        }
+        if ("Fault".equals(bodyChild.getLocalName())) {
+            outputSoapFault(res, response);
+            return;
+        } else {
+            outputPolicyDoc(res, response);
+            return;
+        }
+    }
+
+    protected PolicyService.PolicyGetter normalPolicyGetter() {
+        return new PolicyService.PolicyGetter() {
+            public PolicyService.ServiceInfo getPolicy(String serviceId) {
+                final PublishedService targetService = resolveService(Long.parseLong(serviceId));
+                if (targetService == null) return null;
+                try {
+                    final Assertion policy = targetService.rootAssertion();
+                    return new PolicyService.ServiceInfo() {
+                        public Assertion getPolicy() {
+                            return policy;
+                        }
+                        public String getVersion() {
+                            return Integer.toString(targetService.getVersion());
+                        }
+                    };
+                } catch (IOException e) {
+                    logger.log(Level.SEVERE, "cannot parse policy", e);
+                    return null;
+                }
+            }
+        };
     }
 
     protected void doGet(HttpServletRequest httpServletRequest, HttpServletResponse httpServletResponse)
@@ -246,6 +370,49 @@ public class PolicyServlet extends AuthenticatableHttpServlet {
         response.flushBuffer();
     }
 
+    private void generateFaultAndSendAsResponse(HttpServletResponse res, String msg, String details) throws IOException {
+        Document fault = null;
+        try {
+            fault = SoapFaultUtils.generateSoapFault(SoapFaultUtils.FC_SERVER,
+                                                     msg,
+                                                     details,
+                                                     "");
+        } catch (SAXException e) {
+            throw new RuntimeException(e); // should not happen
+        }
+        outputSoapFault(res, fault);
+        return;
+    }
+
+    private void generateFaultAndSendAsResponse(HttpServletResponse res, SoapFaultDetail sfd) throws IOException {
+        Document fault = null;
+        try {
+            fault = SoapFaultUtils.generateSoapFault(sfd, "");
+        } catch (SAXException e) {
+            throw new RuntimeException(e); // should not happen
+        }
+        outputSoapFault(res, fault);
+        return;
+    }
+
+    private void outputSoapFault(HttpServletResponse res, Document fault) throws IOException {
+        logger.fine("Returning soap fault");
+        res.setContentType(XmlUtil.TEXT_XML);
+        res.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+        OutputStream os = res.getOutputStream();
+        os.write(XmlUtil.nodeToString(fault).getBytes());
+        os.close();
+    }
+
+    private void outputPolicyDoc(HttpServletResponse res, Document doc) throws IOException {
+        logger.fine("Returning soap fault");
+        res.setContentType(XmlUtil.TEXT_XML);
+        res.setStatus(HttpServletResponse.SC_OK);
+        OutputStream os = res.getOutputStream();
+        os.write(XmlUtil.nodeToString(doc).getBytes());
+        os.close();
+    }
+
     private void outputEmptyPolicy(HttpServletResponse res, long serviceid, int serviceversion) throws IOException {
         res.addHeader(SecureSpanConstants.HttpHeaders.POLICY_VERSION,
           Long.toString(serviceid) + '|' + Long.toString(serviceversion));
@@ -325,5 +492,20 @@ public class PolicyServlet extends AuthenticatableHttpServlet {
 
         return checkInfos;
     }
+
+    private Document extractXMLPayload(HttpServletRequest req)
+            throws IOException, ParserConfigurationException, SAXException {
+        BufferedReader reader = new BufferedReader(req.getReader());
+        DocumentBuilder parser = getDomParser();
+        return parser.parse( new InputSource(reader));
+    }
+
+    private DocumentBuilder getDomParser() throws ParserConfigurationException {
+        DocumentBuilder builder = dbf.newDocumentBuilder();
+        builder.setEntityResolver(XmlUtil.getSafeEntityResolver());
+        return builder;
+    }
+
+    private DocumentBuilderFactory dbf;
 }
 
