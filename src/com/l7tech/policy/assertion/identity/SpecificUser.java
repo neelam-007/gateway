@@ -30,5 +30,9 @@ public class SpecificUser extends IdentityAssertion {
         return _userLogin;
     }
 
+    public String toString() {
+        return super.toString() + " " + _userLogin;
+    }
+
     protected String _userLogin;
 }
