@@ -58,6 +58,7 @@ public class NewGroupDialog extends JDialog {
      */
     public NewGroupDialog(JFrame parent, IdentityProviderConfig ipc) {
         super(parent, true);
+        Actions.setEscKeyStrokeDisposes(this);
         this.parent = parent;
         this.ipc = ipc;
         initResources();
