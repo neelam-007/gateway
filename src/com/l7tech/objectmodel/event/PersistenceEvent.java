@@ -7,7 +7,6 @@
 package com.l7tech.objectmodel.event;
 
 import com.l7tech.objectmodel.Entity;
-import com.l7tech.server.event.Event;
 
 /**
  * @author alex
