@@ -125,6 +125,10 @@ public class IdProvConfManagerClient implements IdentityProviderConfigManager {
         return output;
     }
 
+    public Collection search(String searchString) throws FindException {
+        return null;
+    }
+
     // ************************************************
     // PRIVATES
     // ************************************************
