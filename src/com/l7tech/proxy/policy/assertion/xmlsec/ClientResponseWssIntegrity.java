@@ -35,7 +35,7 @@ import java.util.logging.Logger;
  * $Id$
  */
 public class ClientResponseWssIntegrity extends ClientAssertion {
-    private static final Logger log = Logger.getLogger(ClientHttpClientCert.class.getName());
+    private static final Logger log = Logger.getLogger(ClientResponseWssIntegrity.class.getName());
 
     public ClientResponseWssIntegrity(ResponseWssIntegrity data) {
         this.data = data;

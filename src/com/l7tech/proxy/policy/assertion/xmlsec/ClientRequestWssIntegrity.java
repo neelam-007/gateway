@@ -10,7 +10,6 @@ import com.l7tech.proxy.datamodel.exceptions.*;
 import com.l7tech.proxy.message.PolicyApplicationContext;
 import com.l7tech.proxy.policy.assertion.ClientAssertion;
 import com.l7tech.proxy.policy.assertion.ClientDecorator;
-import com.l7tech.proxy.policy.assertion.credential.http.ClientHttpClientCert;
 import org.jaxen.JaxenException;
 import org.xml.sax.SAXException;
 
@@ -18,8 +17,8 @@ import java.io.IOException;
 import java.security.GeneralSecurityException;
 import java.security.cert.CertificateException;
 import java.util.List;
-import java.util.logging.Logger;
 import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * XML Digital signature on the soap request sent from the proxy to the ssg server. Also does XML
@@ -36,7 +35,7 @@ import java.util.logging.Level;
  * $Id$
  */
 public class ClientRequestWssIntegrity extends ClientAssertion {
-    private static final Logger log = Logger.getLogger(ClientHttpClientCert.class.getName());
+    private static final Logger log = Logger.getLogger(ClientRequestWssIntegrity.class.getName());
 
     public ClientRequestWssIntegrity(RequestWssIntegrity data) {
         this.requestWssIntegrity = data;

@@ -10,7 +10,6 @@ import com.l7tech.policy.assertion.xmlsec.ResponseWssConfidentiality;
 import com.l7tech.proxy.datamodel.exceptions.*;
 import com.l7tech.proxy.message.PolicyApplicationContext;
 import com.l7tech.proxy.policy.assertion.ClientAssertion;
-import com.l7tech.proxy.policy.assertion.credential.http.ClientHttpClientCert;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
 
@@ -27,7 +26,7 @@ import java.util.logging.Logger;
  * $Id$
  */
 public class ClientResponseWssConfidentiality extends ClientAssertion {
-    private static final Logger log = Logger.getLogger(ClientHttpClientCert.class.getName());
+    private static final Logger log = Logger.getLogger(ClientResponseWssConfidentiality.class.getName());
 
     public ClientResponseWssConfidentiality(ResponseWssConfidentiality data) {
         this.data = data;
