@@ -83,15 +83,12 @@ public class NamespaceMapEditor extends JDialog {
 
     private void setTableModel() {
         TableModel model = new AbstractTableModel() {
-
             public int getColumnCount() {
                 return 2;
             }
-
             public int getRowCount() {
                 return prefixes.size();
             }
-
             public Object getValueAt(int rowIndex, int columnIndex) {
                 switch (columnIndex) {
                     case 0: return prefixes.get(rowIndex);
@@ -99,7 +96,6 @@ public class NamespaceMapEditor extends JDialog {
                 }
                 return "";
             }
-
             public String getColumnName(int columnIndex) {
                 switch (columnIndex) {
                     case 0: return "Prefix";
@@ -218,11 +214,12 @@ public class NamespaceMapEditor extends JDialog {
         prefixes.add(grabber.prefix);
         namespaces.add(grabber.nsuri);
 
-        setTableModel();
+        ((AbstractTableModel)table1.getModel()).fireTableDataChanged();
         if (selectedRow == -1 && table1.getModel().getRowCount() == 1) selectedRow = 0;
         if (selectedRow >= 0) {
             table1.getSelectionModel().setSelectionInterval(selectedRow, selectedRow);
         }
+        enableRemoveBasedOnSelection();
     }
 
     private void remove() {
@@ -230,8 +227,7 @@ public class NamespaceMapEditor extends JDialog {
         if (selectedRow >= 0) {
             prefixes.remove(selectedRow);
             namespaces.remove(selectedRow);
-
-            setTableModel();
+            ((AbstractTableModel)table1.getModel()).fireTableRowsDeleted(selectedRow, selectedRow);
         }
         if ((selectedRow - 1) >= 0) {
             --selectedRow;
@@ -242,6 +238,7 @@ public class NamespaceMapEditor extends JDialog {
         if (selectedRow >= 0) {
             table1.getSelectionModel().setSelectionInterval(selectedRow, selectedRow);
         }
+        enableRemoveBasedOnSelection();
     }
 
     private void ok() {
