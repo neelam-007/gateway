@@ -4,10 +4,13 @@ import com.l7tech.logging.LogManager;
 import com.l7tech.objectmodel.UpdateException;
 import com.l7tech.objectmodel.PersistenceContext;
 import com.l7tech.objectmodel.TransactionException;
+import com.l7tech.server.util.UptimeMonitor;
+import com.l7tech.common.util.UptimeMetrics;
 
 import java.util.logging.Logger;
 import java.util.logging.Level;
 import java.sql.SQLException;
+import java.io.FileNotFoundException;
 
 /**
  * Thread that updates server status and service usage statistics.
@@ -95,8 +98,19 @@ public class StatusUpdater extends Thread {
     }
 
     public void updateNodeStatus() throws UpdateException {
-        clusterInfoManager.updateSelfStatus(0.5);
-        // todo, real value
+        double load = 0.0;
+        UptimeMetrics metrics = null;
+        try {
+            metrics = UptimeMonitor.getLastUptime();
+        } catch (FileNotFoundException e) {
+            String msg = "cannot get uptime metrics";
+            logger.log(Level.SEVERE, msg, e);
+        } catch (IllegalStateException e) {
+            String msg = "cannot get uptime metrics";
+            logger.log(Level.SEVERE, msg, e);
+        }
+        load = metrics.getLoad1();
+        clusterInfoManager.updateSelfStatus(load);
     }
 
     public void updateServiceUsage() {
