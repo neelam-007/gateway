@@ -30,6 +30,7 @@ import java.security.*;
 import java.util.Iterator;
 import java.util.List;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.logging.Logger;
 import java.util.logging.Level;
 
@@ -319,17 +320,65 @@ public class XmlMangler {
     /**
      * Decrypts all EncryptedKey elements contained in this message. That is, all EncryptedKey elements
      * that can be cedrypted with the passed recipientPrivateKey.
+     * @param soapMsg the soap document to look for encrypted keys for
+     * @param recipientPrivateKey the private key used to decypher the encrypted key
+     * @param ski the subject key identifier used to check if an encrypted key is destined for the associated private key
      * @return never null;
      */
-    public static ProcessedEncryptedKey[] getEncryptedKeyFromMessage(Document soapMsg, PrivateKey recipientPrivateKey) {
+    public static ProcessedEncryptedKey[] getEncryptedKeyFromMessage(Document soapMsg, PrivateKey recipientPrivateKey, byte[] ski) {
         ArrayList output = new ArrayList();
 
         // look for the Header/Security/EncryptedKey element
         NodeList encryptedKeyElements = soapMsg.getElementsByTagNameNS(SoapUtil.XMLENC_NS, "EncryptedKey");
         for (int i = 0; i < encryptedKeyElements.getLength(); i++) {
             Element encryptedKey = (Element)encryptedKeyElements.item(i);
-            // check that this is for us by checking the SecurityTokenReference or something
-            // todo
+            // check that this is for us by checking the ds:KeyInfo/wsse:SecurityTokenReference/wsse:KeyIdentifier
+            if (ski != null) {
+                try {
+                    Element kinfo = XmlUtil.findOnlyOneChildElementByName(encryptedKey, SoapUtil.DIGSIG_URI, "KeyInfo");
+                    if (kinfo != null) {
+                        Element str = XmlUtil.findOnlyOneChildElementByName(kinfo,
+                                                                            new String[] {SoapUtil.SECURITY_NAMESPACE,
+                                                                                          SoapUtil.SECURITY_NAMESPACE2,
+                                                                                          SoapUtil.SECURITY_NAMESPACE3},
+                                                                            "SecurityTokenReference");
+                        if (str != null) {
+                            Element ki = XmlUtil.findOnlyOneChildElementByName(str,
+                                                                               new String[] {SoapUtil.SECURITY_NAMESPACE,
+                                                                                             SoapUtil.SECURITY_NAMESPACE2,
+                                                                                             SoapUtil.SECURITY_NAMESPACE3},
+                                                                               "KeyIdentifier");
+                            if (ki != null) {
+                                String keyIdentifierValue = XmlUtil.getTextValue(ki);
+                                byte[] keyIdValueBytes = null;
+                                try {
+                                    keyIdValueBytes = HexUtils.decodeBase64(keyIdentifierValue);
+                                } catch (IOException e) {
+                                    logger.log(Level.WARNING, "could not decode " + keyIdentifierValue, e);
+                                }
+                                if (keyIdValueBytes != null) {
+                                    // trim if necessary
+                                    byte[] ski2 = ski;
+                                    if (ski.length > keyIdValueBytes.length) {
+                                        ski2 = new byte[keyIdValueBytes.length];
+                                        System.arraycopy(ski, ski.length-keyIdValueBytes.length, ski2, 0, keyIdValueBytes.length);
+                                    }
+                                    if (Arrays.equals(keyIdValueBytes, ski2)) {
+                                        logger.fine("the Key SKI is recognized");
+                                    } else {
+                                        logger.fine("the ski does not match. looking for next encryptedkey");
+                                        continue;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                } catch (XmlUtil.MultipleChildElementsException e) {
+                    logger.log(Level.WARNING, "unexpected construction", e);
+                    continue;
+                }
+                // todo
+            }
             // check that the algo is rsa
             // todo
             // get the xenc:CipherValue
