@@ -9,6 +9,7 @@ import com.l7tech.console.text.FilterDocument;
 import com.l7tech.console.util.Registry;
 import com.l7tech.identity.GroupBean;
 import com.l7tech.identity.IdentityProviderConfig;
+import com.l7tech.identity.IdentityProviderType;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
 
@@ -104,7 +105,20 @@ public class NewGroupDialog extends JDialog {
         panel.setDoubleBuffered(true);
         contents.add(panel);
         panel.setLayout(new GridBagLayout());
-        setTitle(resources.getString("dialog.title"));
+
+        // If ipc is null, the action is invoked either from the Task menu or Home page.
+        // So this must be the Internal group.
+        if(ipc == null) {
+            setTitle(resources.getString("dialog.internal.title"));
+        } else {            
+            if(ipc.type() == IdentityProviderType.FEDERATED) {
+                setTitle(resources.getString("dialog.federated.title"));
+            } else if (ipc.type() == IdentityProviderType.INTERNAL) {
+                setTitle(resources.getString("dialog.internal.title"));
+            } else {
+                setTitle(resources.getString("dialog.title"));
+            }
+        }
 
         addWindowListener(new WindowAdapter() {
             public void windowClosing(WindowEvent event) {
