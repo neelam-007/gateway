@@ -105,13 +105,17 @@ public class LdapUserManager implements UserManager {
             // Close the anon context now that we're done with it
             context.close();
             String dn = null;
-            if (answer.hasMore()) {
-                SearchResult sr = (SearchResult)answer.next();
-                dn = sr.getName() + "," + cfg.getSearchBase();
-                logger.finer("found dn:" + dn + " for login: " + login);
-            } else {
-                logger.info("nothing has cn= " + login);
-                return null;
+            try {
+                if (answer.hasMore()) {
+                    SearchResult sr = (SearchResult)answer.next();
+                    dn = sr.getName() + "," + cfg.getSearchBase();
+                    logger.finer(cfg.getName() + "found dn:" + dn + " for login: " + login);
+                } else {
+                    logger.info(cfg.getName() + "cannot find cn=" + login);
+                    return null;
+                }
+            } finally {
+                answer.close();
             }
             return findByPrimaryKey(dn);
         } catch (NamingException e) {
