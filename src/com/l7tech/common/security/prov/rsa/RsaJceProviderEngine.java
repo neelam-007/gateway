@@ -210,7 +210,7 @@ public class RsaJceProviderEngine implements JceProviderEngine {
         JSAFE_PrivateKey privateKey = null;
         try {
             privateKey = JSAFE_PrivateKey.getInstance(keyPair.getPrivate().getEncoded(), 0, "Native/Java");
-            csr.signCertRequest("SHA1/RSA/PKCS1Block01Pad", "Java", privateKey, new SecureRandom());
+            csr.signCertRequest("SHA1/RSA/PKCS1Block01Pad", DEVICE, privateKey, new SecureRandom());
         } catch (JSAFE_UnimplementedException e) {
             throw new RuntimeException(e); // can't heppen
         } catch (CertificateException e) {
