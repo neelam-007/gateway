@@ -79,7 +79,7 @@ public class NewFederatedIdentityProviderAction extends NewProviderAction {
                 // register itself to listen to the addEvent
                 addEntityListener(listener);
 
-                w.setSize(820, 500);
+                w.setSize(850, 500);
                 Utilities.centerOnScreen(w);
                 w.setVisible(true);
 

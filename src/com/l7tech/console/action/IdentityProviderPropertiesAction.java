@@ -110,7 +110,7 @@ public class IdentityProviderPropertiesAction extends NodeAction {
                         w.pack();
 
                         if (iProvider.type() == IdentityProviderType.FEDERATED) {
-                            w.setSize(820, 500);
+                            w.setSize(850, 500);
                         } else {
                             w.setSize(780, 560);
                         }
