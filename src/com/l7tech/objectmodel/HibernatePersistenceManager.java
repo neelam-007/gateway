@@ -8,53 +8,30 @@ package com.l7tech.objectmodel;
 
 import cirrus.hibernate.*;
 import cirrus.hibernate.type.Type;
+import com.l7tech.logging.LogManager;
 
 import java.sql.SQLException;
 import java.util.List;
-import java.util.Properties;
-import java.io.*;
-
-import com.l7tech.logging.LogManager;
 
 /**
  * @author alex
  * @version $Revision$
  */
 public class HibernatePersistenceManager extends PersistenceManager {
-    public static final String DATASOURCE_URL_PROPERTY = "com.l7tech.objectmodel.hibernatepersistence.datasourceurl";
-    public static final String SESSIONFACTORY_URL_PROPERTY = "com.l7tech.objectmodel.hibernatepersistence.sessionfactoryurl";
-    public static final String DEFAULT_PROPERTIES_RESOURCEPATH = "com/l7tech/objectmodel/hibernatepersistence.properties";
-    public static final String PROPERTIES_RESOURCEPATH_PROPERTY = "com.l7tech.objectmodel.hibernatepersistence.properties.resourcepath";
-//    public static final String DEFAULT_HIBERNATE_RESOURCEPATH = "hibernate.cfg.xml";
     public static final String DEFAULT_HIBERNATE_RESOURCEPATH = "SSG.hbm.xml";
     public static final String HIBERNATE_RESOURCEPATH_PROPERTY = "com.l7tech.objectmodel.hibernatepersistence.hibernateconfigxml";
 
-    public static void initialize() throws IOException, SQLException {
+    public static void initialize() throws SQLException {
         HibernatePersistenceManager me = new HibernatePersistenceManager();
         PersistenceManager.setInstance( me );
     }
 
-    private HibernatePersistenceManager() throws IOException, SQLException {
-        //_initialContext = new InitialContext();
-
-        Properties props = new Properties();
-
-        String resourcePath = System.getProperty( PROPERTIES_RESOURCEPATH_PROPERTY );
-        if ( resourcePath == null || resourcePath.length() == 0 )
-            resourcePath = DEFAULT_PROPERTIES_RESOURCEPATH;
-
+    private HibernatePersistenceManager() throws SQLException {
         String hibernateXmlResourcePath = System.getProperty( HIBERNATE_RESOURCEPATH_PROPERTY );
         if ( hibernateXmlResourcePath == null || hibernateXmlResourcePath.length() == 0 )
             hibernateXmlResourcePath = DEFAULT_HIBERNATE_RESOURCEPATH;
 
-        InputStream is = getClass().getClassLoader().getResourceAsStream(resourcePath);
-        props.load( is );
-        //String sessionFactoryUrl = props.getProperty( SESSIONFACTORY_URL_PROPERTY );
-
         try {
-            //Hibernate.configure();
-            //_sessionFactory = (SessionFactory)_initialContext.lookup( sessionFactoryUrl );
-
             Datastore ds = Hibernate.createDatastore();
             ds.storeResource( hibernateXmlResourcePath, getClass().getClassLoader() );
             _sessionFactory = ds.buildSessionFactory();
@@ -97,20 +74,6 @@ public class HibernatePersistenceManager extends PersistenceManager {
 
         return holder;
     }
-
-    /*
-    void doBeginTransaction( PersistenceContext context ) throws TransactionException {
-        context.beginTransaction();
-    }
-
-    void doCommitTransaction( PersistenceContext context ) throws TransactionException {
-        context.commitTransaction();
-    }
-
-    void doRollbackTransaction( PersistenceContext context ) throws TransactionException {
-        context.rollbackTransaction();
-    }
-    */
 
     List doFind( PersistenceContext context, String query ) throws FindException {
         try {
