@@ -112,7 +112,6 @@ public class LdapUserManager implements UserManager {
                 if (answer.hasMore()) {
                     SearchResult sr = (SearchResult)answer.next();
                     dn = sr.getName() + "," + cfg.getSearchBase();
-                    logger.finer(cfg.getName() + " found dn:" + dn + " for login: " + login);
                 } else {
                     logger.info(cfg.getName() + " cannot find cn=" + login);
                     return null;
@@ -122,7 +121,7 @@ public class LdapUserManager implements UserManager {
             }
             return findByPrimaryKey(dn);
         } catch (NamingException e) {
-            logger.log(Level.SEVERE, e.getMessage(), e);
+            logger.log(Level.WARNING, e.getMessage(), e);
         } finally {
             try {
                 if ( context != null ) context.close();
@@ -218,7 +217,7 @@ public class LdapUserManager implements UserManager {
     }
 
     public boolean authenticateBasic(String dn, String passwd) {
-        Hashtable env = new Hashtable();
+        UnsynchronizedNamingProperties env = new UnsynchronizedNamingProperties();
         env.put(Context.INITIAL_CONTEXT_FACTORY, "com.sun.jndi.ldap.LdapCtxFactory");
         env.put(Context.PROVIDER_URL, cfg.getLdapUrl());
         env.put(Context.SECURITY_AUTHENTICATION, "simple");
@@ -227,6 +226,7 @@ public class LdapUserManager implements UserManager {
         env.put("com.sun.jndi.ldap.connect.pool", "true");
         env.put("com.sun.jndi.ldap.connect.timeout", LdapIdentityProvider.LDAP_CONNECT_TIMEOUT );
         env.put("com.sun.jndi.ldap.connect.pool.timeout", LdapIdentityProvider.LDAP_POOL_IDLE_TIMEOUT );
+        env.lock();
 
         DirContext userCtx = null;
         try
