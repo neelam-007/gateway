@@ -592,9 +592,14 @@ public class MainWindow extends JFrame {
     private Action getNewInternalUserAction() {
         if (newInernalUserAction != null) return newInernalUserAction;
         newInernalUserAction = new NewInternalUserAction(null) {
+
             /**
              * specify the resource name for this action
              */
+             public String getName() {
+               return "Create Internal User";
+            }
+
             protected String iconResource() {
                 return "com/l7tech/console/resources/user16.png";
             }
@@ -620,9 +625,14 @@ public class MainWindow extends JFrame {
     private Action getNewInternalGroupAction() {
         if (newInernalGroupAction != null) return newInernalGroupAction;
         newInernalGroupAction = new NewGroupAction(null) {
+
             /**
              * specify the resource name for this action
              */
+            public String getName() {
+                return "Create Internal Group";
+            }
+
             protected String iconResource() {
                 return "com/l7tech/console/resources/group16.png";
             }
