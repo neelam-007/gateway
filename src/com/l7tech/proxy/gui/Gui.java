@@ -425,7 +425,7 @@ public class Gui {
      * @param msg the error message to display
      */
     public static void errorMessage( final String msg ) {
-        JOptionPane.showMessageDialog( getInstance().getFrame(), msg, "Unable to proceed", JOptionPane.ERROR_MESSAGE );
+        JOptionPane.showMessageDialog( getInstance().getFrame(), msg, "Unable to Proceed", JOptionPane.ERROR_MESSAGE );
     }
 
     /**
