@@ -100,11 +100,14 @@ public class WssProcessorImpl implements WssProcessor {
             if (securityChildToProcess.getLocalName().equals(SoapUtil.ENCRYPTEDKEY_EL_NAME)) {
                 if (securityChildToProcess.getNamespaceURI().equals(SoapUtil.XMLENC_NS)) {
                     // http://www.w3.org/2001/04/xmlenc#
-                    processEncryptedKey(securityChildToProcess, recipientKey,
+                    boolean res = processEncryptedKey(securityChildToProcess, recipientKey,
                                         recipientCert, cntx);
                     // if this element is processed BEFORE the signature validation, it should be removed
                     // for the signature to validate properly
-                    removeProcessedElement = true;
+                    // fla added (but only if the ec was actually processed)
+                    if (res) {
+                        removeProcessedElement = true;
+                    }
                 } else {
                     logger.finer("Encountered EncryptedKey element but not of right namespace (" +
                                 securityChildToProcess.getNamespaceURI() + ")");
@@ -430,7 +433,11 @@ public class WssProcessorImpl implements WssProcessor {
         }
     }
 
-    private void processEncryptedKey(Element encryptedKeyElement,
+    /**
+     * @return true it the encryptedKey was processed, false if the encryptedKey was ignored (intended
+     * for a downstream recipient)
+     */
+    private boolean processEncryptedKey(Element encryptedKeyElement,
                                      PrivateKey recipientKey,
                                      X509Certificate recipientCert,
                                      ProcessingStatusHolder cntx)
@@ -452,7 +459,7 @@ public class WssProcessorImpl implements WssProcessor {
                                        "EncryptedKey. Will leave it alone since the security header is not " +
                                        "explicitely addressed to us.", e);
                 cntx.encryptionIgnored = true;
-                return;
+                return false;
             }
         }
 
@@ -478,6 +485,7 @@ public class WssProcessorImpl implements WssProcessor {
             logger.log(Level.WARNING, "Error decrypting", e);
             throw new ProcessorException(e);
         }
+        return true;
     }
 
     /**
