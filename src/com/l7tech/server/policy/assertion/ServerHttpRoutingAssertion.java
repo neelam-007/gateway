@@ -41,9 +41,6 @@ import java.net.*;
 import java.security.SignatureException;
 import java.security.cert.CertificateException;
 import java.util.Vector;
-import java.util.Map;
-import java.util.Set;
-import java.util.Iterator;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -238,8 +235,20 @@ public class ServerHttpRoutingAssertion extends ServerRoutingAssertion {
                 attachCookies(client, request.getTransportMetadata(), url);
 
                 if(request.isMultipart()) {
-                    String soapMultiPart = MultipartUtil.addModifiedSoapPart(requestXml, request.getSoapPart(), request.getMultipartBoundary());
-                    postMethod.setRequestBody(MultipartUtil.addMultiparts(soapMultiPart, request.getRequestAttachments(), request.getMultipartBoundary()));
+                    StringBuffer sb = new StringBuffer();
+
+                    // add modified SOAP part
+                    MultipartUtil.addModifiedSoapPart(sb,
+                            requestXml,
+                            request.getSoapPart(),
+                            request.getMultipartBoundary());
+
+                    // add all Attachments
+                    MultipartUtil.addMultiparts(sb,
+                            request.getRequestAttachments(),
+                            request.getMultipartBoundary());
+
+                    postMethod.setRequestBody(sb.toString());
                 } else {
                     postMethod.setRequestBody(requestXml);
                 }
