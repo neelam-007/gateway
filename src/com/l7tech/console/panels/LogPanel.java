@@ -2,7 +2,7 @@ package com.l7tech.console.panels;
 
 import com.l7tech.common.audit.*;
 import com.l7tech.common.gui.widgets.ContextMenuTextArea;
-import com.l7tech.common.MessageMap;
+import com.l7tech.common.audit.MessageMap;
 import com.l7tech.console.table.FilteredLogTableSorter;
 import com.l7tech.console.table.AssociatedLogsTable;
 import com.l7tech.console.util.ArrowIcon;

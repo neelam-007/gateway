@@ -1,4 +1,4 @@
-package com.l7tech.common;
+package com.l7tech.common.audit;
 
 import com.l7tech.server.BootMessages;
 import com.l7tech.server.MessageProcessingMessages;

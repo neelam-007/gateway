@@ -5,7 +5,7 @@
  */
 package com.l7tech.server;
 
-import com.l7tech.common.Messages;
+import com.l7tech.common.audit.Messages;
 
 import java.util.logging.Level;
 
