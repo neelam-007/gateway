@@ -15,7 +15,6 @@ import junit.framework.TestSuite;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.Random;
 import java.util.logging.Logger;
 
 /**
@@ -103,11 +102,13 @@ public class StashManagerTest extends TestCase {
         });
     }
 
-    private static byte[] makeRandomByteArray(int size) {
-        byte[] b = new byte[size];
-        new Random().nextBytes(b);
-        log.info("Created random byte array " + size + " bytes long");
-        return b;
+    public void testHybridStashManager() throws IOException {
+        // this is not limited by ram, so go ahead and test the 30mb part
+        doTestStashManager(false, new StashManagerFactory() {
+            public StashManager createNewStashManager() throws IOException {
+                return new HybridStashManager(100000, new File("."), "StashManagerTest" + unique++);
+            }
+        });
     }
 
     private static long unique = 0;

@@ -37,8 +37,8 @@ public class FileStashManager implements StashManager {
      * @throws IOException         if the parent directory does not exist or is not writable
      */
     public FileStashManager(File parentDirectory, String uniqueFilenamePrefix) throws IOException {
-        if (uniqueFilenamePrefix == null || uniqueFilenamePrefix.length() < 4)
-            throw new IllegalArgumentException("Unique filename prefix is missing or too short");
+        if (uniqueFilenamePrefix == null || uniqueFilenamePrefix.length() < 1)
+            throw new IllegalArgumentException("Unique filename prefix is missing or empty");
         if (parentDirectory == null)
             throw new IllegalArgumentException("parentDirectory must not be null");
         if (!parentDirectory.isDirectory() || !parentDirectory.canWrite())

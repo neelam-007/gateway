@@ -31,6 +31,12 @@ public class ByteArrayStashManager implements StashManager {
         stashed.set(ordinal, baos.toByteArray());
     }
 
+    public void unstash(int ordinal) {
+        if (stashed.size() <= ordinal)
+            return;
+        stashed.set(ordinal, null);
+    }
+
     public long getSize(int ordinal) {
         if (stashed.size() <= ordinal)
             return -1;
@@ -61,6 +67,5 @@ public class ByteArrayStashManager implements StashManager {
 
     public void close() {
         stashed.clear();
-        stashed = new ArrayList();
     }
 }
