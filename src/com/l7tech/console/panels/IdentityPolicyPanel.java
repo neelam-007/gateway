@@ -34,7 +34,7 @@ import java.util.List;
  * The <code>IdentityPolicyPanel</code> is the policy panel that allows
  * editing identity policy.
  * The policy allows editing only the elements that are specific to the
- * identity. For exmaple if asseritons are shared with other identites
+ * identity. For exmaple if assertions are shared with other identites
  * then they cannot be edited.
  *
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
@@ -70,6 +70,7 @@ public class IdentityPolicyPanel extends JPanel {
     private RoutingAssertion existingRoutingAssertion = null;
     private boolean routeEdited;
     private boolean routeModifiable = true;
+    private boolean initializing = false;
 
     private PolicyTreeModel policyTreeModel;
     private AssertionTreeNode rootAssertionTreeNode;
@@ -98,7 +99,13 @@ public class IdentityPolicyPanel extends JPanel {
         this.principal = IdentityPath.extractIdentity(identityAssertionNode.asAssertion());
         rootAssertionTreeNode = (AssertionTreeNode) identityAssertionNode.getRoot();
         this.rootAssertion = rootAssertionTreeNode.asAssertion();
-        this.initialize();
+
+        try {
+            initializing = true;
+            this.initialize();
+        } finally {
+            initializing = false;
+        }
         setLayout(new BorderLayout());
         /** Set content pane */
         add(mainPanel, BorderLayout.CENTER);
@@ -110,7 +117,9 @@ public class IdentityPolicyPanel extends JPanel {
         routingProtocolButtonGroup.add(httpRoutingRadioButton);
         ActionListener routingRadioButtonListener = new ActionListener() {
             public void actionPerformed(ActionEvent e) {
-                routeEdited = true;
+                if (!initializing) {
+                    routeEdited = true;
+                }
                 enableOrDisableRoutingControls();
             }
         };
