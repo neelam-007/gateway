@@ -27,10 +27,14 @@ SSG deployment steps for a clean linux box
 [ROOT]  copy UneasyRooster/etc/ssgruntimedefs.sh to /etc/profile.d
 [SSG]   edit /etc/profile.d/ssgruntimedefs.sh. make sure JAVA_HOME and TOMCAT_HOME point to the right place
 [SSG]   edit UneasyRooster/etc/web.xml, uncomment security-constraint and login-config to enforce ssl on admin services
-
+[SSG]   edit UneasyRooster/etc/web.xml, check that the value of "RootKeyStore" points to the correct path (hint is tomcat
+        really installed in that directory)
 [SSG]	edit default_build.properties change database username and password to "ssg" and it's password
 [SSG]	go to root of UneasyRooster and run "./build.sh deploy"
-[SSG]	go to UneasyRooster/etc/ and run sslGen.sh
+[SSG]	go to UneasyRooster/etc/ and run rootcaGen.sh (creation of root keystore)
+        if the password chosen here is different than "password" you must edit web.xml accordingly
+[SSG]	go to UneasyRooster/etc/ and run sslGen.sh (creation of the ssl keystore)
+[SSG]	go to UneasyRooster/etc/ and run signsslcsr.sh (creation of the ssl cert)
 [SSG]	run "resetAdmin.sh ssg the_ssg_password" this creates the admin login + passwd
 [SSG]	remove UneasyRooster
 [SSG]	startssg (start the server)
