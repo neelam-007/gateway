@@ -234,7 +234,9 @@ public class IdentityProviderDialog extends JDialog {
                     e.getDocument().getLength() > 0 &&
                     providerTypesCombo.getSelectedIndex() != -1;
                   enable = enable &&
-                    iProvider.getTypeVal() != IdentityProviderType.INTERNAL.toVal();
+                        providerSettingsPanel != null;
+                  enable = enable &&
+                        iProvider.getTypeVal() != IdentityProviderType.INTERNAL.toVal();
 
                   return enable;
               }
@@ -293,7 +295,10 @@ public class IdentityProviderDialog extends JDialog {
             providersPanel.add(providerSettingsPanel);
             found = true;
         }
+
         if (found) {
+            saveButton.setEnabled(
+              providerSettingsPanel !=null&& providerNameTextField.getText().length() >0);
             Dimension size = origDimension;
             setSize((int)size.getWidth(), (int)(size.getHeight() * 1.5));
             validate();
