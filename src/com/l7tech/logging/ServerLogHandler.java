@@ -101,9 +101,9 @@ public class ServerLogHandler extends Handler {
      * NOTE: the log messages whose message number equals to startMsgNumber and endMsgNumber
      * are not returned.
      *
-     * @param startMsgNumber the message number to locate the start point.
+     * @param highMsgNumber the message number to locate the start point.
      *                       Start from beginning of the message buffer if it equals to -1.
-     * @param endMsgNumber   the message number to locate the end point.
+     * @param lowMsgNumber   the message number to locate the end point.
      *                       Retrieve messages until the end of the message buffer is hit
      *                       if it equals to -1.
      * @param nodeId         the node id for which to retrieve server logs on. if left null, retreives
@@ -111,7 +111,7 @@ public class ServerLogHandler extends Handler {
      * @param size  the max. number of messages retrieved
      * @return LogRecord[] the array of log records retrieved
      */
-    public Collection getLogRecords(String nodeId, long startMsgNumber, long endMsgNumber, int size) {
+    public Collection getLogRecords(String nodeId, long highMsgNumber, long lowMsgNumber, int size) {
         HibernatePersistenceContext context = null;
         try {
             context = (HibernatePersistenceContext)PersistenceContext.getCurrent();
@@ -125,13 +125,13 @@ public class ServerLogHandler extends Handler {
         String selStatement = "from " + TABLE_NAME + " in class " + SSGLogRecord.class.getName() +
                                         " where " + TABLE_NAME + "." + NODEID_COLNAME + " = \'" +
                                         reqnode + "\'";
-        if (startMsgNumber < 0 && endMsgNumber >= 0) {
-            selStatement += " and " + TABLE_NAME + "." + SEQ_COLNAME + " <= " + endMsgNumber;
-        } else if (startMsgNumber >= 0 && endMsgNumber < 0) {
-            selStatement += " and " + TABLE_NAME + "." + SEQ_COLNAME + " >= " + startMsgNumber;
-        } else if (startMsgNumber >= 0 && endMsgNumber >= 0) {
-            selStatement += " and " + TABLE_NAME + "." + SEQ_COLNAME + " >= " + startMsgNumber +
-                            " and " + TABLE_NAME + "." + SEQ_COLNAME + " <= " + endMsgNumber;
+        if (lowMsgNumber < 0 && highMsgNumber >= 0) {
+            selStatement += " and " + TABLE_NAME + "." + SEQ_COLNAME + " < " + highMsgNumber;
+        } else if (lowMsgNumber >= 0 && highMsgNumber < 0) {
+            selStatement += " and " + TABLE_NAME + "." + SEQ_COLNAME + " > " + lowMsgNumber;
+        } else if (lowMsgNumber >= 0 && highMsgNumber >= 0) {
+            selStatement += " and " + TABLE_NAME + "." + SEQ_COLNAME + " > " + lowMsgNumber +
+                            " and " + TABLE_NAME + "." + SEQ_COLNAME + " < " + highMsgNumber;
         }
         selStatement += " order by " + TABLE_NAME + "." + SEQ_COLNAME + " desc limit " + size;
 
