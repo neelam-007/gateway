@@ -37,7 +37,7 @@ public class HttpTransportMetadata extends TransportMetadata {
             return TransportProtocol.UNKNOWN;
     }
 
-    protected Object doGetParameter(String name) {
+    protected Object getParameter(String name) {
         if ( name == null ) return null;
         Object value = null;
         value = _request.getAttribute( name );
