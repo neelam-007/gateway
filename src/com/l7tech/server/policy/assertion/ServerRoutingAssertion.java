@@ -99,8 +99,8 @@ public class ServerRoutingAssertion implements ServerAssertion {
             if ( userAgent == null || userAgent.length() == 0 ) userAgent = DEFAULT_USER_AGENT;
             postMethod.setRequestHeader( USER_AGENT, userAgent );
 
-            int port = wsdlUrl.getPort();
-            StringBuffer hostValue = new StringBuffer(wsdlUrl.getHost());
+            StringBuffer hostValue = new StringBuffer(url.getHost());
+            int port = url.getPort();
             if (port != -1) {
                 hostValue.append(":");
                 hostValue.append(port);
