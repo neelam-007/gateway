@@ -227,12 +227,29 @@ public class IdentityPolicyPanel extends JPanel {
           principalAssertionPaths.getAssignableAssertions(CredentialSourceAssertion.class);
         for (Iterator it = principalCredAssertions.iterator(); it.hasNext();) {
             existingCredAssertion = (CredentialSourceAssertion) it.next();
-            selectAuthMethodComboItem(existingCredAssertion);
-            if (othersCredAssertions.contains(existingCredAssertion)) {
-                canmod = false;
+
+            XmlRequestSecurity xmlSec = null;
+            if (existingCredAssertion instanceof XmlRequestSecurity) {
+                xmlSec = (XmlRequestSecurity) existingCredAssertion;
+                if (!xmlSec.hasAuthenticationElement()) {
+                    // Skip this -- it's not a valid credential source assertion.
+                    // TODO clean up CredentialSourceAssertion design -- See Bug #760 for discussion
+                    continue;
+                }
             }
+
+            selectAuthMethodComboItem(existingCredAssertion);
+            if (othersCredAssertions.contains(existingCredAssertion))
+                canmod = false;
+
+            if (xmlSec != null) {
+                xmlSecOptions.setEnabled(canmod);
+                boolean isXmlEncrypted = xmlSec.hasEncryptionElement();
+                xmlSecOptions.setSelectedIndex(isXmlEncrypted ? 1 : 0);
+            } else
+                xmlSecOptions.setEnabled(false);
         }
-        xmlSecOptions.setEnabled(authMethodComboBox.getSelectedItem() instanceof XmlRequestSecurity);
+
         authMethodComboBox.setEnabled(canmod);
     }
 
@@ -453,7 +470,9 @@ public class IdentityPolicyPanel extends JPanel {
         CredentialSourceAssertion newCredAssertion = (CredentialSourceAssertion) credentialsLocationMap.get(key);
         if (newCredAssertion instanceof XmlRequestSecurity) {
             boolean encrypt = xmlSecOptions.getSelectedItem().equals(XML_SEC_OPTIONS[1]);
-            //((XmlRequestSecurity)newCredAssertion).setEncryption(encrypt);
+            XmlRequestSecurity xmlSec = (XmlRequestSecurity) newCredAssertion;
+            if (xmlSec.getElements().length > 0)
+                xmlSec.getElements()[0].setEncryption(encrypt);
         }
         return newCredAssertion;
     }
