@@ -10,6 +10,7 @@ import com.l7tech.common.transport.jms.JmsConnection;
 import com.l7tech.common.transport.jms.JmsEndpoint;
 import com.l7tech.common.transport.jms.JmsReplyType;
 import com.l7tech.common.util.Locator;
+import com.l7tech.common.protocol.SecureSpanConstants;
 import com.l7tech.logging.LogManager;
 import com.l7tech.message.Request;
 import com.l7tech.message.Response;
@@ -120,7 +121,7 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion {
                         return AssertionStatus.FAILED;
                     }
 
-                    xresp.setParameter( Request.PARAM_HTTP_CONTENT_TYPE, CONTENT_TYPE );
+                    xresp.setParameter( Request.PARAM_HTTP_CONTENT_TYPE, ServerRoutingAssertion.TEXT_XML );
 
                     request.setRoutingStatus( RoutingStatus.ROUTED );
                 }
