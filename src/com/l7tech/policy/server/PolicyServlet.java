@@ -90,10 +90,13 @@ public class PolicyServlet extends HttpServlet {
 
         // RESOLVE THE PUBLISHED SERVICE
         PublishedService targetService = null;
-        if ( str_oid == null || str_oid.length() == 0 )
-            throw new ServletException( PARAM_SERVICEOID + " parameter is required" );
-        else
+        if (str_oid != null && str_oid.length() > 0)
             targetService = resolveService(Long.parseLong(str_oid));
+
+        if (targetService == null) {
+            httpServletResponse.sendError(HttpServletResponse.SC_NOT_FOUND, "Incomplete request or service does not exist.");
+            return;
+        }
 
         // BEFORE SENDING BACK THIS POLICY, WE NEED TO DECIDE IF THE REQUESTOR IS ALLOWED TO SEE IT
         // if policy does not allow anonymous access, then it should not be accessible through http
