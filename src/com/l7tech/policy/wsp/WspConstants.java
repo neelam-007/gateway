@@ -61,9 +61,9 @@ class WspConstants {
 
     /** A reference that knows the nominal type of its target, even when it is null. */
     static class TypedReference {
-        public Class type;
-        public Object target;
-        public String name;
+        public final Class type;
+        public final Object target;
+        public final String name;
         TypedReference(Class type, Object target, String name) {
             this.type = type;
             this.target = target;
@@ -94,7 +94,8 @@ class WspConstants {
          * If object has a null name field, then "Anonymous" format will be used for the returned Element:
          * the object may not be null, and the returned element will look like <code>&lt;Type&gt;...&lt;/Type&gt;</code>
          *
-         * @param object  the object to serialize
+         * @param object  the object to seriali
+         * ze
          * @param container  the container to receive it
          * @return the newly created Element, which has also been appended underneath container
          */
