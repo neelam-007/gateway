@@ -16,6 +16,11 @@ import com.l7tech.server.SoapMessageProcessingServlet;
 import com.l7tech.credential.http.HttpBasicCredentialFinder;
 import com.l7tech.credential.PrincipalCredentials;
 import com.l7tech.credential.CredentialFinderException;
+import com.l7tech.policy.assertion.Assertion;
+import com.l7tech.policy.assertion.composite.CompositeAssertion;
+import com.l7tech.policy.assertion.credential.CredentialSourceAssertion;
+import com.l7tech.policy.wsp.WspReader;
+
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
@@ -252,9 +257,39 @@ public class PolicyServlet extends HttpServlet {
         if (serviceManagerInstance == null) throw new RuntimeException("Cannot instantiate the ServiceManager");
     }
 
-    private boolean policyAllowAnonymous(PublishedService policy) {
-        // todo
-        return false;
+    private boolean policyAllowAnonymous(PublishedService policy) throws IOException {
+        // todo, validate the following assumption
+        // logic: a policy allows anonymous if and only if it does not contains any CredentialSourceAssertion
+        // com.l7tech.policy.assertion.credential.CredentialSourceAssertion
+        Assertion rootassertion = WspReader.parse(policy.getPolicyXml());
+        if (findCredentialAssertion(rootassertion) != null) {
+            LogManager.getInstance().getSystemLogger().log(Level.INFO, "Policy does not allow anonymous requests.");
+            return false;
+        }
+        LogManager.getInstance().getSystemLogger().log(Level.INFO, "Policy does allow anonymous requests.");
+        return true;
+    }
+
+    /**
+     * Look for an assertion extending CredentialSourceAssertion in the assertion passed
+     * and all it's decendents.
+     * Returns null if not there.
+     * (recursive method)
+     */
+    private CredentialSourceAssertion findCredentialAssertion(Assertion arg) {
+        if (arg instanceof CredentialSourceAssertion) {
+            return (CredentialSourceAssertion)arg;
+        }
+        if (arg instanceof CompositeAssertion) {
+            CompositeAssertion root = (CompositeAssertion)arg;
+            Iterator i = root.getChildren().iterator();
+            while (i.hasNext()) {
+                Assertion child = (Assertion)i.next();
+                CredentialSourceAssertion res = findCredentialAssertion(child);
+                if (res != null) return res;
+            }
+        }
+        return null;
     }
 
     /**
