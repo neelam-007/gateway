@@ -41,8 +41,7 @@ public class PolicyTreeModel extends DefaultTreeModel {
             PolicyTreeModel model = new PolicyTreeModel(WspReader.parse(service.getPolicyXml()));
             return model;
         } catch (IOException e) {
-            // TODO: FIXME Emil!
-            throw new IllegalArgumentException("Policy was unparseable");
+            throw new RuntimeException("Error while parsing the service policy - service " + service.getName(), e);
         }
     }
 
@@ -55,6 +54,16 @@ public class PolicyTreeModel extends DefaultTreeModel {
      */
     protected PolicyTreeModel(AbstractTreeNode root) {
         super(root);
+    }
+
+    /**
+     * Creates a new full policy view of PolicyTreeModel for the asserton
+     * tree.
+     * 
+     * @param root the assertion root
+     */
+    public static PolicyTreeModel policyModel(Assertion root) {
+        return new PolicyTreeModel(root);
     }
 
     /**

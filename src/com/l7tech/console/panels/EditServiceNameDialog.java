@@ -97,7 +97,7 @@ public class EditServiceNameDialog extends JDialog {
         });
 
         newServiceNameField = new JTextField(); // needed below
-
+        newServiceNameField.setText(service.getName());
         // password label
         JLabel passwordLabel = new JLabel();
         passwordLabel.setToolTipText(resources.getString("newServiceNameField.tooltip"));

@@ -86,11 +86,11 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
 
     /**
      * Get the service node that thids panel is editing
-     * <p>
+     * <p/>
      * Note that it does not return the copy, therefore any
      * changes made through this method are not visible to
      * the policy editor.
-     *
+     * 
      * @return the noe that the panel is editing
      */
     public ServiceNode getServiceNode() {
@@ -129,7 +129,8 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
 
     /**
      * Render the service policy into the editor
-     * @param identityView
+     * 
+     * @param identityView 
      * @throws FindException 
      */
     private void renderPolicy(boolean identityView)
@@ -141,16 +142,23 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
 
         FilteredTreeModel filteredTreeModel;
         final PolicyToolBar pt = componentRegistry.getMainWindow().getPolicyToolBar();
+
+
         if (identityView) {
             PolicyTreeModel model = PolicyTreeModel.identitityModel(rootAssertion.asAssertion());
             filteredTreeModel = new FilteredTreeModel((TreeNode)model.getRoot());
             filteredTreeModel.setFilter(new PolicyTreeModel.IdentityNodeFilter());
 
         } else {
-            PolicyTreeModel model = PolicyTreeModel.make(service);
-            TreeNode root = (TreeNode)model.getRoot();
-            filteredTreeModel = new FilteredTreeModel(root);
+            PolicyTreeModel model;
+            if (rootAssertion != null) {
+                model = PolicyTreeModel.policyModel(rootAssertion.asAssertion());
+            } else {
+                model = PolicyTreeModel.make(service);
+            }
+            filteredTreeModel = new FilteredTreeModel((TreeNode)model.getRoot());
         }
+
         rootAssertion = (AssertionTreeNode)filteredTreeModel.getRoot();
         rootAssertion.addCookie(new AbstractTreeNode.NodeCookie(serviceNode));
 
@@ -169,7 +177,7 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
 
         SwingUtilities.invokeLater(new Runnable() {
             public void run() {
-                if (root.getChildCount() >0) {
+                if (root.getChildCount() > 0) {
                     final TreeNode selNode = root.getChildAt(0);
                     final TreePath path = new TreePath(((DefaultMutableTreeNode)selNode).getPath());
                     policyTree.setSelectionPath(path);
