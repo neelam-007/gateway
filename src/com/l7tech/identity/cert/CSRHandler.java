@@ -123,15 +123,6 @@ public class CSRHandler extends HttpServlet {
             return;
         }
 
-        /*// test verify that the cert is indeed retrieveable
-        try {
-            Certificate cert2 = userMan.retrieveUserCert(Long.toString(authenticatedUser.getOid()));
-            if (cert2.equals(cert)) LogManager.getInstance().getSystemLogger().log(Level.INFO, "retrieved cert success");
-        } catch (FindException e) {
-            response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Could not record cert. " + e.getMessage());
-            LogManager.getInstance().getSystemLogger().log(Level.SEVERE, "Could not record cert. " + e.getMessage(), e);
-        }*/
-
         // verify that the CN in the subject equals the login name
         X500Name x500name = new X500Name(((X509Certificate)(cert)).getSubjectX500Principal().getName());
         if (!x500name.getCommonName().equals(authenticatedUser.getLogin())) {
@@ -160,13 +151,13 @@ public class CSRHandler extends HttpServlet {
         // csr request might be based64 or not, we need to see what format we are getting
         byte[] contents = HexUtils.slurpStream(request.getInputStream(), 16384);
         String tmpStr = new String(contents);
-        String beginKey = "-----BEGIN CERTIFICATE REQUEST-----";
+        String beginKey = "-----BEGIN NEW CERTIFICATE REQUEST-----";
         int beggining = tmpStr.indexOf(beginKey);
         // the contents is not base64ed and contains the actual bytes
         if (beggining == -1) return contents;
         // otherwise, we need to extract section and unbase64
         beggining += beginKey.length();
-        String endKey = "-----END CERTIFICATE REQUEST-----";
+        String endKey = "-----END NEW CERTIFICATE REQUEST-----";
         int end = tmpStr.indexOf(endKey);
         if (end == -1) {
             LogManager.getInstance().getSystemLogger().log(Level.SEVERE, "Cannot read csr request (bad format?)");
