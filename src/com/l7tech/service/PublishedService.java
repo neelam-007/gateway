@@ -35,7 +35,7 @@ public class PublishedService extends NamedEntityImp {
     public synchronized Assertion rootAssertion() throws IOException {
         String policyXml = getPolicyXml();
         if ( policyXml == null ) {
-            return new FalseAssertion();
+            return FalseAssertion.getInstance();
         } else {
             if ( _rootAssertion == null ) _rootAssertion = WspReader.parse( policyXml );
         }
