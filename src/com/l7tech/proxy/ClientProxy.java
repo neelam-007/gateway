@@ -90,7 +90,7 @@ public class ClientProxy {
             throw new IllegalStateException("ClientProxy is currently running");
     }
 
-    public synchronized void init()
+    private synchronized void init()
             throws NoSuchAlgorithmException, NoSuchProviderException, KeyManagementException
     {
         if (isInitialized)
