@@ -18,7 +18,6 @@ import com.l7tech.logging.SSGLogRecord;
 import com.l7tech.objectmodel.DeleteException;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.server.ServerConfig;
-import net.sf.hibernate.HibernateException;
 import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
@@ -30,10 +29,8 @@ import java.io.PipedOutputStream;
 import java.rmi.RemoteException;
 import java.security.KeyStoreException;
 import java.security.PrivateKey;
-import java.security.SignatureException;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
-import java.sql.SQLException;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -130,25 +127,19 @@ public class AuditAdminImpl extends HibernateDaoSupport implements AuditAdmin, A
                     auditExporter.exportAuditsAsZipFile(pos,
                                                         sslCert,
                                                         sslPrivateKey);
-                } catch (SQLException e) {
-                    producerException = e;
-                } catch (IOException e) {
-                    producerException = e;
-                } catch (SignatureException e) {
-                    producerException = e;
-                } catch (HibernateException e) {
-                    producerException = e;
                 } catch (InterruptedException e) {
                     // avoid overwriting a real exception
-                    if (producerException == null)
-                        producerException = e;
+                    if (getProducerException() == null)
+                        setProducerException(e);
+                } catch (Throwable t) {
+                    setProducerException(t);
                 }
             }
         });
 
         private final AuditExporter auditExporter;
         private final byte[] chunk;
-        private Throwable producerException = null;
+        private volatile Throwable producerException = null;
         private long lastUsed = System.currentTimeMillis();
 
         private DownloadContext(int chunkLength, AuditExporter exporter, X509Certificate sslCert, PrivateKey sslPrivateKey) throws IOException {
@@ -161,24 +152,31 @@ public class AuditAdminImpl extends HibernateDaoSupport implements AuditAdmin, A
             logger.info("Created audit download context " + this);
         }
 
-        private OpaqueId getOpaqueId() {
+        private synchronized OpaqueId getOpaqueId() {
             return opaqueId;
         }
 
-        public long getLastUsed() {
+        public synchronized long getLastUsed() {
             return lastUsed;
         }
 
         public synchronized DownloadChunk nextChunk() throws RemoteException {
             lastUsed = System.currentTimeMillis();
-            if (producerException != null) {
-                close();
-                throw new RemoteException("Producer thread exception: " + producerException.getMessage(), producerException);
-            }
+            checkForException();
             try {
                 logger.log(Level.FINER, "Returning next audit download chunk for context " + this);
                 int i = pis.read(chunk, 0, chunk.length);
-                if (i < 1) return null;
+                if (i < 1) {
+                    // End of file
+                    try {
+                        producerThread.interrupt();
+                        producerThread.join(5000);
+                    } catch (InterruptedException e) {
+                        Thread.currentThread().interrupt();
+                    }
+                    checkForException();
+                    return null;
+                }
                 byte[] got = new byte[i];
                 System.arraycopy(chunk, 0, got, 0, i);
                 long approxTotalAudits = 1;
@@ -188,6 +186,7 @@ public class AuditAdminImpl extends HibernateDaoSupport implements AuditAdmin, A
                     auditsDownloaded = auditExporter.getNumExportedSoFar();
                 }
                 lastUsed = System.currentTimeMillis();
+                checkForException();
                 return new DownloadChunk(auditsDownloaded, approxTotalAudits, got);
             } catch (IOException e) {
                 close();
@@ -195,15 +194,23 @@ public class AuditAdminImpl extends HibernateDaoSupport implements AuditAdmin, A
             }
         }
 
-        public void close() {
-            logger.log(Level.INFO, "Closing audit download context " + this);
-            downloadContexts.remove(this.getOpaqueId());
-            try { producerThread.interrupt(); } catch (Exception e) { /* ignored */ }
-            try { pis.close(); } catch (IOException e) { /* ignored */ }
-            try { pos.close(); } catch (IOException e) { /* ignored */ }
+        public void checkForException() throws RemoteException {
+            final Throwable producerException = getProducerException();
+            if (producerException != null) {
+                close();
+                throw new RemoteException("Audit .zip producer thread exception: " + producerException.getMessage(), producerException);
+            }
         }
 
-        public boolean equals(Object o) {
+        public synchronized void close() {
+            logger.log(Level.INFO, "Closing audit download context " + this);
+            downloadContexts.remove(this.getOpaqueId());
+            try { producerThread.interrupt(); } catch (Throwable t) { /* ignored */ }
+            try { pis.close(); } catch (Throwable t) { /* ignored */ }
+            try { pos.close(); } catch (Throwable t) { /* ignored */ }
+        }
+
+        public synchronized boolean equals(Object o) {
             if (this == o) return true;
             if (!(o instanceof DownloadContext)) return false;
 
@@ -214,12 +221,20 @@ public class AuditAdminImpl extends HibernateDaoSupport implements AuditAdmin, A
             return true;
         }
 
-        public int hashCode() {
+        public synchronized int hashCode() {
             return opaqueId.hashCode();
         }
 
-        public String toString() {
+        public synchronized String toString() {
             return opaqueId.toString();
+        }
+
+        public synchronized Throwable getProducerException() {
+            return producerException;
+        }
+
+        public synchronized void setProducerException(Throwable producerException) {
+            this.producerException = producerException;
         }
     }
 
@@ -228,6 +243,7 @@ public class AuditAdminImpl extends HibernateDaoSupport implements AuditAdmin, A
         try {
             final DownloadContext downloadContext;
             downloadContext = new DownloadContext(0, (AuditExporter)applicationContext.getBean("auditExporter"), keystore.getSslCert(), keystore.getSSLPrivateKey());
+            downloadContext.checkForException();
             downloadContexts.put(downloadContext.getOpaqueId(), downloadContext);
             return downloadContext.getOpaqueId();
         } catch (KeyStoreException e) {
@@ -243,9 +259,11 @@ public class AuditAdminImpl extends HibernateDaoSupport implements AuditAdmin, A
         DownloadContext downloadContext = (DownloadContext)downloadContexts.get(context);
         if (downloadContext == null)
             throw new RemoteException("No such download context is pending");
+        downloadContext.checkForException();
         DownloadChunk chunk = downloadContext.nextChunk();
         if (chunk == null || chunk.chunk == null || chunk.chunk.length < 1)
             downloadContext.close();
+        downloadContext.checkForException();
         return chunk;
     }
 
