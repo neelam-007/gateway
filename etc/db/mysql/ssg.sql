@@ -163,7 +163,7 @@ CREATE TABLE published_service (
 
 DROP TABLE client_cert;
 CREATE TABLE client_cert (
-  objectid bigint NOT NULL primary key default '0',
+  objectid bigint NOT NULL default '0',
   provider bigint NOT NULL default '0',
   login varchar(255) NOT NULL default '',
   cert text DEFAULT NULL,
