@@ -23,5 +23,6 @@ public interface Message {
     TransportMetadata getTransportMetadata();
     Iterator getParameterNames();
     void setParameter( String name, Object value );
+    void setParameterIfEmpty( String name, Object value );
     Object getParameter( String name );
 }
