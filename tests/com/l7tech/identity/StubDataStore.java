@@ -3,6 +3,8 @@ package com.l7tech.identity;
 import com.l7tech.identity.imp.IdentityProviderConfigImp;
 import com.l7tech.identity.internal.imp.GroupImp;
 import com.l7tech.identity.internal.imp.UserImp;
+import com.l7tech.objectmodel.EntityHeader;
+import com.l7tech.objectmodel.imp.EntityHeaderImp;
 
 import java.beans.XMLDecoder;
 import java.beans.XMLEncoder;
@@ -96,14 +98,19 @@ public class StubDataStore {
         group.setOid(nextObjectId());
         group.setName("all-staff");
         group.setDescription("All staff group");
-        Set members = new HashSet();
 
+        Set members = new HashSet();
         for (Iterator i = users.keySet().iterator(); i.hasNext();) {
             members.add(users.get(i.next()));
         }
-
         group.setMembers(members);
 
+        Set membersHeaders = new HashSet();
+        for (Iterator i = users.keySet().iterator(); i.hasNext();) {
+            membersHeaders.add(fromUser((User)users.get(i.next())));
+        }
+
+        group.setMemberHeaders(membersHeaders);
         encoder.writeObject(group);
 
         group = new GroupImp();
@@ -126,7 +133,7 @@ public class StubDataStore {
         try {
             decoder = new XMLDecoder(
                     new BufferedInputStream(
-                            new FileInputStream(path+"/data.xml")));
+                            new FileInputStream(path + "/data.xml")));
             while (true)
                 populate(decoder.readObject());
         } catch (ArrayIndexOutOfBoundsException e) {
@@ -140,11 +147,11 @@ public class StubDataStore {
 
     private void populate(Object o) {
         if (o instanceof Group) {
-            groups.put(new Long(((Group) o).getOid()), o);
+            groups.put(new Long(((Group)o).getOid()), o);
         } else if (o instanceof User) {
-            users.put(new Long(((User) o).getOid()), o);
+            users.put(new Long(((User)o).getOid()), o);
         } else if (o instanceof IdentityProviderConfig) {
-            providerConfigs.put(new Long(((IdentityProviderConfig) o).getOid()), o);
+            providerConfigs.put(new Long(((IdentityProviderConfig)o).getOid()), o);
         } else {
             System.err.println("Don't know how to handle " + o.getClass());
         }
@@ -166,6 +173,13 @@ public class StubDataStore {
             if (encoder != null)
                 encoder.close();
         }
+    }
+
+
+
+    private EntityHeader fromUser(User u) {
+        return
+                new EntityHeaderImp(u.getOid(), User.class, u.getName());
     }
 
     private Map providerConfigs = new HashMap();
