@@ -88,7 +88,6 @@ public class HibernatePersistenceContext extends PersistenceContext {
     }
 
     public void close() {
-        if ( _closed ) return;
         try {
             if ( _htxn != null ) {
                 logger.warning( "Close called with active transaction. Rolling back." );
@@ -103,8 +102,6 @@ public class HibernatePersistenceContext extends PersistenceContext {
             PersistenceContext.releaseContext();
         } catch (HibernateException e) {
             logger.log(Level.FINE, "error closing context", e);
-        } finally {
-            _closed = true;
         }
     }
 
@@ -246,6 +243,5 @@ public class HibernatePersistenceContext extends PersistenceContext {
     protected Transaction _htxn;
     protected ArrayList txListenerList = new ArrayList();
 
-    protected volatile boolean _closed = false;
     private Logger logger = LogManager.getInstance().getSystemLogger();
 }
