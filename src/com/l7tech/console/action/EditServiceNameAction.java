@@ -4,19 +4,15 @@ import com.l7tech.console.event.EntityEvent;
 import com.l7tech.console.event.EntityListener;
 import com.l7tech.console.event.EntityListenerAdapter;
 import com.l7tech.console.panels.EditServiceNameDialog;
-import com.l7tech.console.panels.PolicyEditorPanel;
 import com.l7tech.console.tree.ServiceNode;
 import com.l7tech.console.tree.ServicesTree;
-import com.l7tech.console.tree.policy.PolicyTree;
-import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.ComponentRegistry;
-import com.l7tech.service.PublishedService;
+import com.l7tech.console.util.Registry;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.service.PublishedService;
 
 import javax.swing.*;
 import javax.swing.tree.DefaultTreeModel;
-import javax.swing.tree.TreeNode;
-import javax.swing.tree.TreePath;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -29,6 +25,7 @@ import java.util.logging.Logger;
  */
 public class EditServiceNameAction extends NodeAction {
     static final Logger log = Logger.getLogger(EditServiceNameAction.class.getName());
+    private String lastServiceName; // remeber old name fro for rename property event
 
     public EditServiceNameAction(ServiceNode node) {
         super(node);
@@ -69,6 +66,7 @@ public class EditServiceNameAction extends NodeAction {
                       ComponentRegistry wm =
                         Registry.getDefault().getWindowManager();
                       PublishedService svc = ((ServiceNode)node).getPublishedService();
+                      lastServiceName = svc.getName();
                       EditServiceNameDialog d =
                         new EditServiceNameDialog(wm.getMainWindow(), svc, nameChangeListener);
                       d.show();
@@ -78,28 +76,6 @@ public class EditServiceNameAction extends NodeAction {
                   }
               }
           });
-    }
-
-    /**
-     * check whethewr the current workspace service needs to be reloaded.
-     */
-    private void checkWorkspaceService() {
-        JTree tree = (JTree)ComponentRegistry.
-          getInstance().getComponent(PolicyTree.NAME);
-        PublishedService svc = (PublishedService)tree.getClientProperty("service");
-        try {
-            // if currently edited service was deleted
-            ServiceNode sn = (ServiceNode)node;
-            if (svc != null && (sn.getPublishedService().getOid() == svc.getOid())) {
-
-                ComponentRegistry.getInstance().
-                  getCurrentWorkspace().
-                  setComponent(new PolicyEditorPanel(sn.getPublishedService()));
-            }
-        } catch (FindException e) {
-            e.printStackTrace();
-        }
-
     }
 
     private EntityListener
@@ -119,7 +95,12 @@ public class EditServiceNameAction extends NodeAction {
                       if (tree != null) {
                           DefaultTreeModel model = (DefaultTreeModel)tree.getModel();
                           model.nodeChanged(node);
-                          checkWorkspaceService();
+                          try {
+                              PublishedService svc = ((ServiceNode)node).getPublishedService();
+                              node.firePropertyChange(this, "service.name", lastServiceName, svc.getName());
+                          } catch (FindException e) {
+                              e.printStackTrace();
+                          }
                       } else {
                           log.log(Level.WARNING, "Unable to reach the service tree.");
                       }

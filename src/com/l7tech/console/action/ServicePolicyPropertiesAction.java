@@ -5,9 +5,11 @@ import com.l7tech.console.panels.WorkSpacePanel;
 import com.l7tech.console.tree.ServiceNode;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.ComponentRegistry;
+import com.l7tech.console.logging.ErrorManager;
 import com.l7tech.service.PublishedService;
 
 import javax.swing.*;
+import java.util.logging.Level;
 
 /**
  * The <code>ServicePolicyPropertiesAction</code> invokes the.
@@ -49,6 +51,7 @@ public class ServicePolicyPropertiesAction extends NodeAction {
      * without explicitly asking for the AWT event thread!
      */
     public void performAction() {
+        final ServiceNode serviceNode = (ServiceNode)node;
         SwingUtilities.invokeLater(
           new Runnable() {
               public void run() {
@@ -57,11 +60,10 @@ public class ServicePolicyPropertiesAction extends NodeAction {
                         Registry.getDefault().getWindowManager();
                       WorkSpacePanel wpanel = windowManager.getCurrentWorkspace();
 
-                      PublishedService svc = ((ServiceNode)node).getPublishedService();
-                      wpanel.setComponent(new PolicyEditorPanel(svc));
+                      wpanel.setComponent(new PolicyEditorPanel(serviceNode));
                   } catch (Exception e) {
-                      //todo: ErroManager someday?
-                      e.printStackTrace();
+                      ErrorManager.getDefault().
+                        notify(Level.WARNING, e, "Unable to retrieve service properties "+serviceNode.getName());
                   }
               }
           });

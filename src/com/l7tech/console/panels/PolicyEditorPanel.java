@@ -6,6 +6,7 @@ import com.l7tech.console.action.ValidatePolicyAction;
 import com.l7tech.console.action.SavePolicyTemplateAction;
 import com.l7tech.console.tree.FilteredTreeModel;
 import com.l7tech.console.tree.NodeFilter;
+import com.l7tech.console.tree.ServiceNode;
 import com.l7tech.console.tree.policy.*;
 import com.l7tech.console.util.PopUpMouseListener;
 import com.l7tech.console.util.Registry;
@@ -16,6 +17,7 @@ import com.l7tech.policy.PolicyValidatorResult;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.RoutingAssertion;
 import com.l7tech.service.PublishedService;
+import com.l7tech.objectmodel.FindException;
 
 import javax.swing.*;
 import javax.swing.event.TreeModelEvent;
@@ -39,7 +41,10 @@ import java.util.Iterator;
 import java.util.Set;
 import java.util.Enumeration;
 import java.util.logging.Level;
+import java.util.logging.Logger;
 import java.net.URI;
+import java.beans.PropertyChangeListener;
+import java.beans.PropertyChangeEvent;
 
 /**
  * The class represnts the policy editor
@@ -47,55 +52,97 @@ import java.net.URI;
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  */
 public class PolicyEditorPanel extends JPanel {
+    static Logger log = Logger.getLogger(PolicyEditorPanel.class.getName());
     private PublishedService service;
     private JTextPane messagesTextPane;
     private AssertionTreeNode rootAssertion;
     private JTree policyTree;
     private PolicyEditToolBar policyEditorToolbar;
+    private JSplitPane splitPane;
+    private final ComponentRegistry componentRegistry = Registry.getDefault().getWindowManager();
+    private JScrollPane policyTreePane;
+    private ServiceNode serviceNode;
 
-    public PolicyEditorPanel(PublishedService svc) {
-        this.service = svc;
+    public PolicyEditorPanel(ServiceNode sn) throws FindException {
         layoutComponents();
-        setName(svc.getName());
+        renderService(sn);
+        addServiceListeners(sn);
+        this.serviceNode = sn;
     }
+
+    /**
+     * Sets the name of the component to the specified string. The
+     * method is overriden to support/fire property events
+     * @param name  the string that is to be this
+     *		 component's name
+     * @see #getName
+     */
+    public void setName(String name) {
+        String oldName = getName();
+        super.setName(name);
+        this.firePropertyChange("name", oldName, name);
+    }
+
 
     private void layoutComponents() {
         setLayout(new BorderLayout());
-        ComponentRegistry windowManager =
-          Registry.getDefault().getWindowManager();
-
-        JSplitPane splitPane = new JSplitPane(JSplitPane.VERTICAL_SPLIT);
-
-        splitPane.add(getPolicyTreePane(windowManager), "top");
-        splitPane.add(getMessagePane(), "bottom");
-        splitPane.setDividerSize(2);
-        splitPane.setName(service.getName());
         add(getToolBar(), BorderLayout.NORTH);
-        add(splitPane, BorderLayout.CENTER);
+        add(getSplitPane(), BorderLayout.CENTER);
     }
 
+    public JSplitPane getSplitPane() {
+        if (splitPane != null) return splitPane;
 
-    private JComponent getPolicyTreePane(ComponentRegistry windowManager) {
-        policyTree = windowManager.getPolicyTree();
+        splitPane = new JSplitPane(JSplitPane.VERTICAL_SPLIT);
+        splitPane.add(getPolicyTreePane(), "top");
+        splitPane.add(getMessagePane(), "bottom");
+        splitPane.setDividerSize(2);
+
+        return splitPane;
+    }
+
+    private JComponent getPolicyTreePane() {
+        if (policyTreePane != null) return policyTreePane;
+
+        policyTree = componentRegistry.getPolicyTree();
+        policyTreePane = new JScrollPane(policyTree);
+
+        return policyTreePane;
+    }
+
+    /**
+     * Render the service and the policy into the editor
+     *
+     * @param sn the service node
+     * @throws FindException
+     */
+    private void renderService(ServiceNode sn) throws FindException {
+        this.service = sn.getPublishedService();
+        setName(service.getName());
+        getSplitPane().setName(service.getName());
+
         policyTree.putClientProperty("service", service);
         PolicyTreeModel model = PolicyTreeModel.make(service);
         rootAssertion = (AssertionTreeNode)model.getRoot();
+
         TreeNode root = (TreeNode)model.getRoot();
         FilteredTreeModel filteredTreeModel = new FilteredTreeModel(root);
         policyTree.setModel(filteredTreeModel);
         filteredTreeModel.addTreeModelListener(treeModellistener);
-        policyTree.setName(service.getName());
 
-        JScrollPane scrollPane = new JScrollPane(policyTree);
         final TreePath path = new TreePath(((DefaultMutableTreeNode)root).getPath());
+
         SwingUtilities.invokeLater(new Runnable() {
             public void run() {
                 policyTree.setSelectionPath(path);
             }
         });
-
-        return scrollPane;
     }
+
+    private void addServiceListeners(ServiceNode sn) {
+        sn.addPropertyChangeListener(servicePropertyChangeListener);
+    }
+
 
     private JComponent getMessagePane() {
         messagesTextPane = new JTextPane(new HTMLDocument());
@@ -160,7 +207,14 @@ public class PolicyEditorPanel extends JPanel {
         }
 
         private void initComponents() {
-            buttonSave = new JButton(new SavePolicyAction(rootAssertion));
+            buttonSave = new JButton(new SavePolicyAction() {
+                /** Actually perform the action. */
+                public void performAction() {
+                    this.node = rootAssertion;
+                    super.performAction();
+                }
+            });
+
             this.add(buttonSave);
             buttonSave.setEnabled(false);
             buttonSave.addActionListener(new ActionListener() {
@@ -172,7 +226,13 @@ public class PolicyEditorPanel extends JPanel {
                     buttonSave.setEnabled(false);
                 }
             });
-            buttonSaveTemplate = new JButton(new SavePolicyTemplateAction(rootAssertion));
+            buttonSaveTemplate = new JButton(new SavePolicyTemplateAction() {
+                /** Actually perform the action. */
+                public void performAction() {
+                    this.node = rootAssertion;
+                    super.performAction();
+                }
+            });
             this.add(buttonSaveTemplate);
 
             buttonValidate = new JButton(new ValidatePolicyAction());
@@ -242,15 +302,15 @@ public class PolicyEditorPanel extends JPanel {
              iterator.hasNext();) {
             PolicyValidatorResult.Error pe =
               (PolicyValidatorResult.Error)iterator.next();
-               appendToMessageArea("<a href=\"file://assertion#"+pe.getAssertion().hashCode()+"\"> Assertion : " +
-              pe.getAssertion().getClass() + " Error :" + pe.getMessage()+"</a><br>");
+            appendToMessageArea("<a href=\"file://assertion#" + pe.getAssertion().hashCode() + "\"> Assertion : " +
+              pe.getAssertion().getClass() + " Error :" + pe.getMessage() + "</a><br>");
         }
         for (Iterator iterator = r.getWarnings().iterator();
              iterator.hasNext();) {
             PolicyValidatorResult.Warning pe =
               (PolicyValidatorResult.Warning)iterator.next();
-            appendToMessageArea("<a href=\"file://assertion#"+pe.getAssertion().hashCode()+"\"> Assertion : " +
-              pe.getAssertion().getClass() + " Warning :" + pe.getMessage()+"</a><br>");
+            appendToMessageArea("<a href=\"file://assertion#" + pe.getAssertion().hashCode() + "\"> Assertion : " +
+              pe.getAssertion().getClass() + " Warning :" + pe.getMessage() + "</a><br>");
         }
     }
 
@@ -333,6 +393,25 @@ public class PolicyEditorPanel extends JPanel {
         }
     };
 
+    private final PropertyChangeListener
+      servicePropertyChangeListener = new PropertyChangeListener() {
+          /**
+           * This method gets called when a bound property is changed.
+           * @param evt A PropertyChangeEvent object describing the event source
+           *   	and the property that has changed.
+           */
+          public void propertyChange(PropertyChangeEvent evt) {
+              log.info(evt.getPropertyName() + "changed");
+              if ("service.name".equals(evt.getPropertyName())) {
+                  try {
+                      renderService(serviceNode);
+                  } catch (FindException e) {
+                      e.printStackTrace();  //To change body of catch statement use Options | File Templates.
+                  }
+              }
+          }
+      };
+
     private final HyperlinkListener
       hlinkListener = new HyperlinkListener() {
           /**
@@ -342,10 +421,10 @@ public class PolicyEditorPanel extends JPanel {
            */
           public void hyperlinkUpdate(HyperlinkEvent e) {
               if (HyperlinkEvent.EventType.ACTIVATED != e.getEventType())
-              return;
+                  return;
               URI uri = URI.create(e.getURL().toString());
               String f = uri.getFragment();
-              if (f ==null) return;
+              if (f == null) return;
               try {
                   int hashcode = Integer.parseInt(f);
                   for (Enumeration en = rootAssertion.preorderEnumeration();
@@ -353,19 +432,20 @@ public class PolicyEditorPanel extends JPanel {
                       AssertionTreeNode an = (AssertionTreeNode)en.nextElement();
                       if (an.asAssertion().hashCode() == hashcode) {
                           TreePath p = new TreePath(an.getPath());
-                        if (!policyTree.hasBeenExpanded(p) || !policyTree.isExpanded(p)) {
-                            policyTree.expandPath(p);
-                        }
-                        policyTree.setSelectionPath(p);
+                          if (!policyTree.hasBeenExpanded(p) || !policyTree.isExpanded(p)) {
+                              policyTree.expandPath(p);
+                          }
+                          policyTree.setSelectionPath(p);
                       }
                   }
 
 
-              } catch(NumberFormatException ex) {
+              } catch (NumberFormatException ex) {
                   ex.printStackTrace();
               }
           }
 
       };
+
 
 }

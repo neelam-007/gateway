@@ -1,13 +1,15 @@
 package com.l7tech.console.tree;
 
 import com.l7tech.console.util.IconManager2;
+import com.l7tech.console.util.WeakPropertyChangeSupport;
 import com.l7tech.policy.assertion.Assertion;
 
+import javax.swing.*;
 import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.TreeNode;
-import javax.swing.*;
 import java.awt.*;
 import java.util.Enumeration;
+import java.beans.PropertyChangeListener;
 
 /**
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
@@ -15,7 +17,12 @@ import java.util.Enumeration;
  */
 public abstract class AbstractTreeNode extends DefaultMutableTreeNode {
     protected boolean hasLoadedChildren;
+    protected WeakPropertyChangeSupport propChangeSupport = new WeakPropertyChangeSupport();
 
+    /**
+     * Instantiate the
+     * @param object
+     */
     public AbstractTreeNode(Object object) {
         super(object);
     }
@@ -182,6 +189,33 @@ public abstract class AbstractTreeNode extends DefaultMutableTreeNode {
      * @param open for nodes that can be opened, can have children
      */
     protected abstract String iconResource(boolean open);
+
+
+    /**
+     * Add  listener to listen to change of any property.
+     */
+    public synchronized void addPropertyChangeListener(PropertyChangeListener l) {
+        propChangeSupport.addPropertyChangeListener(l);
+    }
+
+    /**
+     * Add listener to listen to change of the specified property.
+     */
+    public synchronized void addPropertyChangeListener(String propertyName,
+                                                       PropertyChangeListener l) {
+        propChangeSupport.addPropertyChangeListener(propertyName, l);
+    }
+
+    /** Remove listener for changes in properties */
+    public synchronized void removePropertyChangeListener(PropertyChangeListener l) {
+        propChangeSupport.removePropertyChangeListener(l);
+    }
+
+    public void firePropertyChange(Object source, String propertyName,
+                                   Object oldValue, Object newValue) {
+        propChangeSupport.firePropertyChange(source, propertyName, oldValue, newValue);
+    }
+
 
     /**
      * @return the string representation of this node

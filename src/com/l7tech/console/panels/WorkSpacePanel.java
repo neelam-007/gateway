@@ -40,6 +40,19 @@ public class WorkSpacePanel extends JPanel {
     public void setComponent(JComponent jc) {
         tabbedPane.removeAll();
         tabbedPane.addTab(jc.getName(), jc);
+        jc.addPropertyChangeListener(new PropertyChangeListener() {
+            /**
+             * This method gets called when a bound property is changed.
+             * @param evt A PropertyChangeEvent object describing the event source
+             *   	and the property that has changed.
+             */
+            public void propertyChange(PropertyChangeEvent evt) {
+                if ("name".equals(evt.getPropertyName())) {
+                    tabbedPane.setTitleAt(0, (String)evt.getNewValue());
+                }
+            }
+
+        });
     }
 
     /**

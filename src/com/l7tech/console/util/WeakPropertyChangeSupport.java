@@ -33,7 +33,8 @@ public class WeakPropertyChangeSupport {
     private transient ArrayList interestNames = new ArrayList();
 
 
-    /** Add weak listener to listen to change of any property. The caller must
+    /**
+     * Add weak listener to listen to change of any property. The caller must
      * hold the listener object in some instance variable to prevent it
      * from being garbage collected.
      */
@@ -41,7 +42,8 @@ public class WeakPropertyChangeSupport {
         addLImpl(null, l);
     }
 
-    /** Add weak listener to listen to change of the specified property.
+    /**
+     * Add weak listener to listen to change of the specified property.
      * The caller must hold the listener object in some instance variable
      * to prevent it from being garbage collected.
      */
