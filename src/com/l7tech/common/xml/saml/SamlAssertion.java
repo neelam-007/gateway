@@ -6,75 +6,68 @@
 
 package com.l7tech.common.xml.saml;
 
-import org.w3c.dom.Element;
-import org.w3c.dom.Document;
-import org.w3c.dom.NodeList;
-import org.xml.sax.SAXException;
+import com.ibm.xml.dsig.IDResolver;
+import com.ibm.xml.dsig.SignatureContext;
+import com.ibm.xml.dsig.Validity;
+import com.l7tech.common.security.token.SamlSecurityToken;
+import com.l7tech.common.util.CertUtils;
+import com.l7tech.common.util.HexUtils;
+import com.l7tech.common.util.SoapUtil;
+import com.l7tech.common.util.XmlUtil;
+import com.l7tech.common.xml.TooManyChildElementsException;
+import org.apache.xmlbeans.XmlException;
 import org.w3.x2000.x09.xmldsig.KeyInfoType;
 import org.w3.x2000.x09.xmldsig.X509DataType;
-import org.apache.xmlbeans.XmlException;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.xml.sax.SAXException;
+import x0Assertion.oasisNamesTcSAML1.*;
 
-import java.security.cert.X509Certificate;
-import java.security.cert.CertificateException;
-import java.security.SignatureException;
+import java.io.IOException;
 import java.security.PublicKey;
+import java.security.SignatureException;
+import java.security.cert.CertificateException;
+import java.security.cert.X509Certificate;
 import java.util.Calendar;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.io.IOException;
-
-import x0Assertion.oasisNamesTcSAML1.*;
-import com.l7tech.common.util.CertUtils;
-import com.l7tech.common.util.XmlUtil;
-import com.l7tech.common.util.SoapUtil;
-import com.l7tech.common.util.HexUtils;
-import com.l7tech.common.xml.TooManyChildElementsException;
-import com.l7tech.common.security.saml.SamlConstants;
-import com.ibm.xml.dsig.SignatureContext;
-import com.ibm.xml.dsig.IDResolver;
-import com.ibm.xml.dsig.Validity;
 
 /**
- * Encapsulates an abstract saml:Assertion.
+ * Encapsulates an abstract saml:Assertion SecurityToken.
  */
-public abstract class SamlAssertion {
+public class SamlAssertion implements SamlSecurityToken {
     Element assertionElement = null;
     AssertionType assertion = null;
     boolean isSigned = false;
+    boolean holderOfKey = false;
     X509Certificate subjectCertificate = null;
-    X509Certificate attestingEntityCertificate = null;
+    X509Certificate signingCertificate = null;
     X509Certificate issuerCertificate = null;
     private String assertionId = null;
     private Calendar expires = null;
 
     /**
-     * @param assertion xmlassertion the xml element containing the assertion
-     * @return the right type of assertion based on the contents of the xml passed
+     * Currently only ever set by {@link com.l7tech.common.security.xml.processor.WssProcessorImpl#processSamlSecurityToken}
      */
-    public static SamlAssertion fromElement(Element assertion) throws SAXException {
-        // look for element
-        // saml:Assertion/saml:AuthenticationStatement/saml:Subject/saml:SubjectConfirmation/saml:ConfirmationMethod
-        // HOK should be urn:oasis:names:tc:SAML:1.0:cm:holder-of-key
-        // SV should be urn:oasis:names:tc:SAML:1.0:cm:sender-vouches
-        NodeList list = assertion.getElementsByTagNameNS(SamlConstants.NS_SAML, "ConfirmationMethod");
-        for (int i = 0; i < list.getLength(); i++) {
-            Element el = (Element)list.item(i);
-            String value = XmlUtil.getTextValue(el);
-            if (value != null) {
-                if (value.indexOf("holder-of-key") >= 0) {
-                    return new SamlHolderOfKeyAssertion(assertion);
-                } else if (value.indexOf("sender-vouches") >= 0) {
-                    return new SamlSenderVouchesAssertion(assertion);
-                }
-            }
-        }
-        // todo, fallback on something?
-        String msg = "Could not determine the saml ConfirmationMethod (neither holder-of-key nor sender-vouches)";
-        logger.severe(msg);
-        throw new SAXException(msg);
+    protected boolean possessionProved = false;
+
+    public SamlAssertion asSamlAssertion() {
+        return this;
     }
 
-    protected SamlAssertion(Element ass) throws SAXException {
+    public boolean isHolderOfKey() {
+        return holderOfKey;
+    }
+
+    /**
+     * Constructs a new SamlAssertion from an XML Element.
+     * <p>
+     * The resulting object could be either sender-vouches or holder-of-key depending on the
+     * SubjectConfirmation/ConfirmationMethod found in the XML; separate subclasses are no longer used.
+     *
+     * @param ass xmlassertion the xml element containing the assertion
+     */
+    public SamlAssertion(Element ass) throws SAXException {
         assertionElement = ass;
         assertionId = assertionElement.getAttribute("AssertionID");
         if (assertionId == null || assertionId.length() < 1)
@@ -124,6 +117,23 @@ public abstract class SamlAssertion {
                 if (issuerCertificate == null) throw new SAXException("SAML assertion is signed but unable to recover issuer certificate"); // can't happen
             }
 
+            String[] confMethods = subjectConfirmation.getConfirmationMethodArray();
+            if (confMethods == null || confMethods.length != 1) {
+                throw new IllegalArgumentException("One and only one SubjectConfirmation/ConfirmationMethod must be present");
+            }
+            String confMethod = confMethods[0];
+            if (confMethod.indexOf("holder-of-key") >= 0) {
+                holderOfKey = true;
+                signingCertificate = subjectCertificate;
+            } else if (confMethod.indexOf("sender-vouches") >= 0) {
+                holderOfKey = false;
+                signingCertificate = issuerCertificate;
+            } else {
+                // todo, fallback on something?
+                String msg = "Could not determine the saml ConfirmationMethod (neither holder-of-key nor sender-vouches)";
+                logger.severe(msg);
+                throw new SAXException(msg);
+            }
         } catch (XmlException e) {
             throw new SAXException(e);
         } catch ( CertificateException e ) {
@@ -149,16 +159,37 @@ public abstract class SamlAssertion {
         return subjectCertificate;
     }
 
+    /**
+     * @return true if the subject described by this assertion has proven possession of the private key
+     *              corresponding to the subject certificate here. Only meaningful if {@link #isHolderOfKey()}.
+     */
+    public boolean isPossessionProved() {
+        return possessionProved;
+    }
+
+    public void onPossessionProved() {
+        possessionProved = true;
+    }
+
+    public X509Certificate getMessageSigningCertificate() {
+        // TODO is this strictly true?
+        if (holderOfKey) {
+            return subjectCertificate;
+        } else {
+            return issuerCertificate;
+        }
+    }
+
     public X509Certificate getIssuerCertificate() {
         return issuerCertificate;
     }
 
-    public X509Certificate getAttestingEntityCertificate() {
-        return attestingEntityCertificate;
-    }
-
     public Element asElement() {
         return assertionElement;
+    }
+
+    public String getElementId() {
+        return assertionId;
     }
 
     static class CausedSignatureException extends SignatureException {
@@ -228,10 +259,12 @@ public abstract class SamlAssertion {
         return expires;
     }
 
-    /**
-     * @return The cert signing rest of message if any
-     */
-    public abstract X509Certificate getSigningCertificate();
+    public X509Certificate getSigningCertificate() {
+        if (holderOfKey)
+            return subjectCertificate;
+        else
+            return issuerCertificate;
+    }
 
     private String nameIdentifierFormat;
     private String nameQualifier;

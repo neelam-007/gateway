@@ -4,7 +4,7 @@
  * $Id$
  */
 
-package com.l7tech.common.security.xml.processor;
+package com.l7tech.common.security.token;
 
 import com.l7tech.common.xml.saml.SamlAssertion;
 
@@ -13,9 +13,8 @@ import java.security.cert.X509Certificate;
 /**
  * @author mike
  */
-public interface SamlSecurityToken extends SecurityToken {
+public interface SamlSecurityToken extends SigningSecurityToken {
     SamlAssertion asSamlAssertion();
     X509Certificate getSubjectCertificate();
-    boolean isPossessionProved();
     X509Certificate getIssuerCertificate();
 }

@@ -9,6 +9,7 @@ import com.ibm.xml.enc.type.EncryptedData;
 import com.l7tech.common.security.AesKey;
 import com.l7tech.common.security.JceProvider;
 import com.l7tech.common.security.saml.SamlConstants;
+import com.l7tech.common.security.token.*;
 import com.l7tech.common.security.xml.SecureConversationKeyDeriver;
 import com.l7tech.common.security.xml.XencUtil;
 import com.l7tech.common.util.*;
@@ -238,7 +239,7 @@ public class WssProcessorImpl implements WssProcessor {
         This is no longer done, if a security header needs to be promoted, it needs to be described in the routing
         assertion
 
-        
+
         // if there were other security headers and one with a special actor set by the Bridge, we
         // want to change the actor here to set it back to default value
         // in the case of multiple wrapped actors, the one with the higest value must be stripped
@@ -692,15 +693,18 @@ public class WssProcessorImpl implements WssProcessor {
             throws InvalidDocumentFormatException
     {
         logger.finest("Processing saml:Assertion XML SecurityToken");
-        SamlSecurityToken samlToken = new SamlSecurityTokenImpl(securityTokenElement);
+        SamlSecurityToken samlToken = null;
+        try {
+            samlToken = new SamlAssertion(securityTokenElement);
+        } catch (SAXException e) {
+            throw new InvalidDocumentFormatException(e);
+        }
         context.securityTokens.add(samlToken);
         context.x509TokensById.put(samlToken.getElementId(), samlToken);
-
-        // TODO verify sender-vouches + proof-of-possession    (?? please explain?  -lyonsm)
     }
 
-    private SigningSecurityTokenImpl resolveCertByRef(final Element parentElement, ProcessingStatusHolder cntx) {
-        // TODO SAML
+    private SigningSecurityToken resolveCertByRef(final Element parentElement, ProcessingStatusHolder cntx) {
+        // TODO SAML Assertion reference by URI (Bug #1434)
         // Looking for reference to a wsse:BinarySecurityToken or to a derived key
         // 1. look for a wsse:SecurityTokenReference element
         List secTokReferences = XmlUtil.findChildElementsByName(parentElement,
@@ -726,7 +730,7 @@ public class WssProcessorImpl implements WssProcessor {
                     uriAttr = uriAttr.substring(1);
                 }
                 // try to see if this reference matches a previously parsed SigningSecurityToken
-                final SigningSecurityTokenImpl token = (SigningSecurityTokenImpl)cntx.x509TokensById.get(uriAttr);
+                final SigningSecurityToken token = (SigningSecurityToken)cntx.x509TokensById.get(uriAttr);
                 if (token != null) {
                     logger.finest("The keyInfo referred to a previously parsed Security Token '" + uriAttr + "'");
                     return token;
@@ -821,10 +825,10 @@ public class WssProcessorImpl implements WssProcessor {
         // Try to find ref to derived key
         final DerivedKeyTokenImpl dkt = resolveDerivedKeyByRef(keyInfoElement, cntx);
         // Try to resolve cert by reference
-        final SigningSecurityTokenImpl signingCertToken = resolveCertByRef(keyInfoElement, cntx);
+        final SigningSecurityToken signingCertToken = resolveCertByRef(keyInfoElement, cntx);
 
         if (signingCertToken != null) {
-            signingCert = signingCertToken.getCertificate();
+            signingCert = signingCertToken.getMessageSigningCertificate();
         }
         if (signingCert == null) { //try to resolve it as embedded
             signingCert = resolveEmbeddedCert(keyInfoElement);
@@ -1000,12 +1004,12 @@ public class WssProcessorImpl implements WssProcessor {
         Map x509TokensById = new HashMap();
     }
 
-    private static class X509SecurityTokenImpl extends SigningSecurityTokenImpl implements X509SecurityToken {
+    private static class X509SecurityTokenImpl implements X509SecurityToken, SigningSecurityToken {
         private final X509Certificate finalcert;
         private final Element binarySecurityTokenElement;
+        private boolean possessionProved = false;
 
         public X509SecurityTokenImpl(X509Certificate finalcert, Element binarySecurityTokenElement) {
-            super(binarySecurityTokenElement);
             this.finalcert = finalcert;
             this.binarySecurityTokenElement = binarySecurityTokenElement;
         }
@@ -1014,7 +1018,7 @@ public class WssProcessorImpl implements WssProcessor {
             return SoapUtil.getElementWsuId(binarySecurityTokenElement);
         }
 
-        protected X509Certificate getCertificate() {
+        public X509Certificate getMessageSigningCertificate() {
             return finalcert;
         }
 
@@ -1030,67 +1034,14 @@ public class WssProcessorImpl implements WssProcessor {
             return "X509SecurityToken: " + finalcert.toString();
         }
 
-    }
-
-    private static abstract class SigningSecurityTokenImpl extends ParsedElementImpl implements SecurityToken {
-        protected abstract X509Certificate getCertificate();
-
         public boolean isPossessionProved() {
             return possessionProved;
         }
 
-        protected void onPossessionProved() {
+        public void onPossessionProved() {
             possessionProved = true;
         }
-
-        private boolean possessionProved = false;
-
-        protected SigningSecurityTokenImpl(Element element) {
-            super(element);
-        }
     }
-
-    private static class SamlSecurityTokenImpl extends SigningSecurityTokenImpl implements SamlSecurityToken {
-        SamlAssertion assertion;
-
-        public SamlSecurityTokenImpl(Element element) throws InvalidDocumentFormatException {
-            super(element);
-            try {
-                this.assertion = SamlAssertion.fromElement(element);
-            } catch (SAXException e) {
-                throw new InvalidDocumentFormatException(e);
-            }
-        }
-
-        /**
-         * May be null if the assertion has no SubjectConfirmation with a KeyInfo block inside.
-         * @return the X509Certificate from the SAML Assertion's //SubjectConfirmation/KeyInfo. May be null.
-         */
-        public X509Certificate getCertificate() {
-            return assertion.getSigningCertificate();
-        }
-
-        public SamlAssertion asSamlAssertion() {
-            return assertion;
-        }
-
-        public X509Certificate getSubjectCertificate() {
-            return assertion.getSubjectCertificate();
-        }
-
-        public X509Certificate getIssuerCertificate() {
-            return this.assertion.getIssuerCertificate();
-        }
-
-        public String getElementId() {
-            return assertion.getAssertionId();
-        }
-
-        public String toString() {
-            return "SamlSecurityToken: " + assertion.toString();
-        }
-    }
-
 
     private static class TimestampImpl extends ParsedElementImpl implements WssTimestamp {
         private final TimestampDate createdTimestampDate;

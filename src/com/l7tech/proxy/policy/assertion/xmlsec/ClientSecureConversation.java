@@ -1,9 +1,9 @@
 package com.l7tech.proxy.policy.assertion.xmlsec;
 
+import com.l7tech.common.security.token.SecurityContextToken;
+import com.l7tech.common.security.token.SecurityToken;
 import com.l7tech.common.security.xml.decorator.DecorationRequirements;
 import com.l7tech.common.security.xml.processor.ProcessorResult;
-import com.l7tech.common.security.xml.processor.SecurityContextToken;
-import com.l7tech.common.security.xml.processor.SecurityToken;
 import com.l7tech.common.xml.InvalidDocumentFormatException;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;

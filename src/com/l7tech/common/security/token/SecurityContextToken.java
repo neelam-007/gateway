@@ -4,7 +4,9 @@
  * $Id$
  */
 
-package com.l7tech.common.security.xml.processor;
+package com.l7tech.common.security.token;
+
+import com.l7tech.common.security.xml.processor.SecurityContext;
 
 /**
  * @author mike

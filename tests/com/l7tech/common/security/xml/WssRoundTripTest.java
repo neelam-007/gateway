@@ -6,6 +6,7 @@
 
 package com.l7tech.common.security.xml;
 
+import com.l7tech.common.security.token.*;
 import com.l7tech.common.security.xml.decorator.DecorationRequirements;
 import com.l7tech.common.security.xml.decorator.WssDecorator;
 import com.l7tech.common.security.xml.decorator.WssDecoratorImpl;

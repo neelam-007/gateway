@@ -2,10 +2,10 @@ package com.l7tech.proxy.policy.assertion.xmlsec;
 
 import com.l7tech.common.message.Message;
 import com.l7tech.common.message.XmlKnob;
+import com.l7tech.common.security.token.SignedElement;
 import com.l7tech.common.security.xml.processor.ProcessorException;
 import com.l7tech.common.security.xml.processor.ProcessorResult;
 import com.l7tech.common.security.xml.processor.ProcessorResultUtil;
-import com.l7tech.common.security.xml.processor.SignedElement;
 import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.xml.InvalidDocumentFormatException;
 import com.l7tech.common.xml.XpathExpression;

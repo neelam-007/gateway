@@ -1,8 +1,8 @@
 package com.l7tech.server.policy.assertion.xmlsec;
 
+import com.l7tech.common.security.token.SecurityToken;
+import com.l7tech.common.security.token.X509SecurityToken;
 import com.l7tech.common.security.xml.processor.ProcessorResult;
-import com.l7tech.common.security.xml.processor.SecurityToken;
-import com.l7tech.common.security.xml.processor.X509SecurityToken;
 import com.l7tech.common.util.CausedIOException;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;

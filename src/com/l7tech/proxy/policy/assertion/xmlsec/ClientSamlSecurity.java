@@ -8,7 +8,7 @@ package com.l7tech.proxy.policy.assertion.xmlsec;
 
 import com.l7tech.common.security.xml.decorator.DecorationRequirements;
 import com.l7tech.common.xml.InvalidDocumentFormatException;
-import com.l7tech.common.xml.saml.SamlHolderOfKeyAssertion;
+import com.l7tech.common.xml.saml.SamlAssertion;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.xmlsec.SamlSecurity;
@@ -47,7 +47,7 @@ public class ClientSamlSecurity extends ClientAssertion {
         final PrivateKey privateKey = SsgKeyStoreManager.getClientCertPrivateKey(ssg);
 
         // Look up or apply for SAML ticket
-        final SamlHolderOfKeyAssertion ass = context.getOrCreateSamlHolderOfKeyAssertion();
+        final SamlAssertion ass = context.getOrCreateSamlAssertion();
 
         context.getPendingDecorations().put(this, new ClientDecorator() {
             public AssertionStatus decorateRequest(PolicyApplicationContext context) {

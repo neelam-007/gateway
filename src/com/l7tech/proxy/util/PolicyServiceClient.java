@@ -8,6 +8,10 @@ package com.l7tech.proxy.util;
 
 import com.l7tech.common.mime.MimeUtil;
 import com.l7tech.common.protocol.SecureSpanConstants;
+import com.l7tech.common.security.token.ParsedElement;
+import com.l7tech.common.security.token.SecurityToken;
+import com.l7tech.common.security.token.SignedElement;
+import com.l7tech.common.security.token.X509SecurityToken;
 import com.l7tech.common.security.xml.decorator.DecorationRequirements;
 import com.l7tech.common.security.xml.decorator.DecoratorException;
 import com.l7tech.common.security.xml.decorator.WssDecorator;
@@ -20,7 +24,7 @@ import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.xml.InvalidDocumentFormatException;
 import com.l7tech.common.xml.MessageNotSoapException;
 import com.l7tech.common.xml.MissingRequiredElementException;
-import com.l7tech.common.xml.saml.SamlHolderOfKeyAssertion;
+import com.l7tech.common.xml.saml.SamlAssertion;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.wsp.InvalidPolicyStreamException;
 import com.l7tech.policy.wsp.WspConstants;
@@ -68,7 +72,7 @@ public class PolicyServiceClient {
     }
 
     public static Document createSignedGetPolicyRequest(String serviceId,                                                  
-                                                  SamlHolderOfKeyAssertion samlAss,
+                                                  SamlAssertion samlAss,
                                                   PrivateKey clientKey,
                                                   Date timestampCreatedDate)
             throws GeneralSecurityException
@@ -77,7 +81,7 @@ public class PolicyServiceClient {
     }
     
     private static Document createSignedGetPolicyRequest(String serviceId,
-                                                         SamlHolderOfKeyAssertion samlAss,
+                                                         SamlAssertion samlAss,
                                                          X509Certificate clientCert,
                                                          PrivateKey clientKey,
                                                          Date timestampCreatedDate)
@@ -493,6 +497,11 @@ public class PolicyServiceClient {
      * and verifying that the response signature was valid and made by the specified serverCertificate.
      *
      * @param ssg                required. the Ssg from which we are downloading.  Used to keep CurrentRequest.getPeerSsg() up-to-date.
+     * @return a new Policy.  Never null.
+     * @throws IOException if there is a network problem
+     * @throws GeneralSecurityException if there is a problem with a certificate or a crypto operation.
+     * @throws InvalidDocumentFormatException if the policy service response was not formatted correctly
+     * @throws BadCredentialsException if the policy service denies access to this policy to your (lack of) credentials
      * @param serviceId          required. the identifier of the service whose policy we wish to download.  Opaque to the client.
      * @param serverCertificate  required. used to verify identity of signer of downloaded policy.
      * @param useSsl             If true, will use HTTPS instead of HTTP.  If we have a client cert for this Ssg it
@@ -500,17 +509,12 @@ public class PolicyServiceClient {
      * @param samlAss            required. a Saml holder-of-key assertion containing your client cert as the subject.
      *                           The whole assertion must already be signed by an issuer trusted by this policy service.
      * @param subjectPrivateKey  required. The private key corresponding to the subject certificate in samlAss.
-     * @return a new Policy.  Never null.
-     * @throws IOException if there is a network problem
-     * @throws GeneralSecurityException if there is a problem with a certificate or a crypto operation.
-     * @throws InvalidDocumentFormatException if the policy service response was not formatted correctly
-     * @throws BadCredentialsException if the policy service denies access to this policy to your (lack of) credentials
      */
     public static Policy downloadPolicyWithSamlAssertion(Ssg ssg,
                                                          String serviceId,
                                                          X509Certificate serverCertificate,
                                                          boolean useSsl,
-                                                         SamlHolderOfKeyAssertion samlAss,
+                                                         SamlAssertion samlAss,
                                                          PrivateKey subjectPrivateKey)
             throws IOException, GeneralSecurityException, BadCredentialsException, InvalidDocumentFormatException
     {

@@ -1,7 +1,12 @@
 package com.l7tech.server.policy.assertion.xmlsec;
 
 import com.l7tech.cluster.DistributedMessageIdManager;
-import com.l7tech.common.security.xml.processor.*;
+import com.l7tech.common.security.token.SamlSecurityToken;
+import com.l7tech.common.security.token.SecurityContextToken;
+import com.l7tech.common.security.token.SecurityToken;
+import com.l7tech.common.security.token.X509SecurityToken;
+import com.l7tech.common.security.xml.processor.ProcessorResult;
+import com.l7tech.common.security.xml.processor.WssTimestamp;
 import com.l7tech.common.util.CausedIOException;
 import com.l7tech.common.util.CertUtils;
 import com.l7tech.common.util.HexUtils;

@@ -4,7 +4,7 @@
  * $Id$
  */
 
-package com.l7tech.common.security.xml.processor;
+package com.l7tech.common.security.token;
 
 import org.w3c.dom.Element;
 

@@ -12,7 +12,7 @@ import com.l7tech.common.security.saml.SamlConstants;
 import com.l7tech.common.util.HexUtils;
 import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.xml.TestDocuments;
-import com.l7tech.common.xml.saml.SamlHolderOfKeyAssertion;
+import com.l7tech.common.xml.saml.SamlAssertion;
 import com.l7tech.identity.User;
 import com.l7tech.identity.UserBean;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
@@ -152,9 +152,10 @@ public class TokenServiceTest extends TestCase {
                                                                                   subjectCertificate,
                                                                                   subjectPrivateKey,
                                                                                   issuerCertificate);
-        assertTrue("Token obtained must be SAML", responseObj instanceof SamlHolderOfKeyAssertion);
-        SamlHolderOfKeyAssertion token = (SamlHolderOfKeyAssertion)responseObj;
+        assertTrue("Token obtained must be SAML", responseObj instanceof SamlAssertion);
+        SamlAssertion token = (SamlAssertion)responseObj;
         assertTrue("Obtained saml token must be signed", token.isSigned());
+        assertTrue("Obtained saml token must be holder-of-key", token.isHolderOfKey());
         assertTrue("Obtained saml token must have non-null assertion ID", token.getAssertionId() != null);
         assertTrue("Obtained saml token must have non-empty assertion ID", token.getAssertionId().length() > 0);
         assertTrue("Obtained saml token must have subject certificate", token.getSubjectCertificate() != null);

@@ -11,12 +11,12 @@ import com.l7tech.common.message.ProcessingContext;
 import com.l7tech.common.security.xml.decorator.DecorationRequirements;
 import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.xml.InvalidDocumentFormatException;
-import com.l7tech.common.xml.saml.SamlHolderOfKeyAssertion;
+import com.l7tech.common.xml.saml.SamlAssertion;
 import com.l7tech.policy.assertion.credential.CredentialFormat;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
+import com.l7tech.proxy.ConfigurationException;
 import com.l7tech.proxy.NullRequestInterceptor;
 import com.l7tech.proxy.RequestInterceptor;
-import com.l7tech.proxy.ConfigurationException;
 import com.l7tech.proxy.datamodel.*;
 import com.l7tech.proxy.datamodel.exceptions.*;
 import com.l7tech.proxy.util.TokenServiceClient;
@@ -53,7 +53,7 @@ public class PolicyApplicationContext extends ProcessingContext {
     private Long nonce = null; // nonce.  set on-demand, and only set once
     private String secureConversationId = null;
     private byte[] secureConversationSharedSecret = null;
-    private SamlHolderOfKeyAssertion samlHolderOfKeyAssertion = null;
+    private SamlAssertion samlAssertion = null;
     private Calendar secureConversationExpiryDate = null;
     private ClientSidePolicy clientSidePolicy = ClientSidePolicy.getPolicy();
 
@@ -505,23 +505,23 @@ public class PolicyApplicationContext extends ProcessingContext {
     /**
      * Check the expiry date of our hok, and throw it away if it has started to smell a bit off.
      */
-    private void checkExpiredHolderOfKeyAssertion() {
-        if (samlHolderOfKeyAssertion != null) {
-            Calendar expires = samlHolderOfKeyAssertion.getExpires();
+    private void checkExpiredAssertion() {
+        if (samlAssertion != null) {
+            Calendar expires = samlAssertion.getExpires();
             Calendar nowUtc = Calendar.getInstance(UTC_TIME_ZONE);
             nowUtc.add(Calendar.SECOND, SAML_PREEXPIRE_SEC);
             if (!expires.after(nowUtc)) {
                 // See if we need to throw out the one cached in the Ssg as well
                 synchronized (ssg) {
-                    SamlHolderOfKeyAssertion ssgHok = ssg.samlHolderOfKeyAssertion();
-                    if (ssgHok == samlHolderOfKeyAssertion || (ssgHok != null && !ssgHok.getExpires().after(nowUtc))) {
+                    SamlAssertion ssgHok = ssg.samlAssertion();
+                    if (ssgHok == samlAssertion || (ssgHok != null && !ssgHok.getExpires().after(nowUtc))) {
                         logger.log(Level.INFO, "Our SAML Holder-of-key assertion has expired or will do so within the next " +
                           SAML_PREEXPIRE_SEC + " seconds.  Will throw it away and get a new one.");
-                        ssg.samlHolderOfKeyAssertion(null);
+                        ssg.samlAssertion(null);
                     }
                 }
 
-                samlHolderOfKeyAssertion = null;
+                samlAssertion = null;
             }
         }
     }
@@ -539,37 +539,37 @@ public class PolicyApplicationContext extends ProcessingContext {
      * @throws BadCredentialsException    if we need a certificate but our username and password is wrong
      * @throws PolicyRetryableException   if we should retry policy processing from the beginning
      */
-    public SamlHolderOfKeyAssertion getOrCreateSamlHolderOfKeyAssertion()
+    public SamlAssertion getOrCreateSamlAssertion()
       throws OperationCanceledException, GeneralSecurityException, IOException, KeyStoreCorruptException,
       ClientCertificateException, BadCredentialsException, PolicyRetryableException {
-        checkExpiredHolderOfKeyAssertion();
-        if (samlHolderOfKeyAssertion != null)
-            return samlHolderOfKeyAssertion;
+        checkExpiredAssertion();
+        if (samlAssertion != null)
+            return samlAssertion;
 
-        samlHolderOfKeyAssertion = ssg.samlHolderOfKeyAssertion();
-        checkExpiredHolderOfKeyAssertion();
-        if (samlHolderOfKeyAssertion != null)
-            return samlHolderOfKeyAssertion;
+        samlAssertion = ssg.samlAssertion();
+        checkExpiredAssertion();
+        if (samlAssertion != null)
+            return samlAssertion;
 
-        return samlHolderOfKeyAssertion = acquireSamlHolderOfKeyAssertion();
+        return samlAssertion = acquireSamlAssertion();
     }
 
     /**
      * Get our SAML holder-of-key assertion for the current SSG (or Trusted SSG).
      *
-     * @return our currently valid SAML holder-of-key assertion or null if we don't have one.
+     * @return our currently valid SAML assertion or null if we don't have one.
      */
-    public SamlHolderOfKeyAssertion getSamlHolderOfKeyAssertion() {
-        if (samlHolderOfKeyAssertion != null) {
-            checkExpiredHolderOfKeyAssertion();
-            return samlHolderOfKeyAssertion;
+    public SamlAssertion getSamlAssertion() {
+        if (samlAssertion != null) {
+            checkExpiredAssertion();
+            return samlAssertion;
         }
-        samlHolderOfKeyAssertion = ssg.samlHolderOfKeyAssertion();
-        checkExpiredHolderOfKeyAssertion();
-        return samlHolderOfKeyAssertion;
+        samlAssertion = ssg.samlAssertion();
+        checkExpiredAssertion();
+        return samlAssertion;
     }
 
-    private SamlHolderOfKeyAssertion acquireSamlHolderOfKeyAssertion()
+    private SamlAssertion acquireSamlAssertion()
       throws OperationCanceledException, GeneralSecurityException, ClientCertificateException,
       KeyStoreCorruptException, PolicyRetryableException, BadCredentialsException, IOException {
         prepareClientCertificate();
@@ -577,15 +577,15 @@ public class PolicyApplicationContext extends ProcessingContext {
         Ssg tokenServerSsg = ssg.getTrustedGateway();
         if (tokenServerSsg == null) tokenServerSsg = ssg;
         logger.log(Level.INFO, "Applying for SAML holder-of-key assertion from Gateway " + tokenServerSsg.toString());
-        SamlHolderOfKeyAssertion s =
-          TokenServiceClient.obtainSamlHolderOfKeyAssertion(tokenServerSsg,
+        SamlAssertion s =
+          TokenServiceClient.obtainSamlAssertion(tokenServerSsg,
             SsgKeyStoreManager.getClientCert(tokenServerSsg),
             SsgKeyStoreManager.getClientCertPrivateKey(tokenServerSsg),
             SsgKeyStoreManager.getServerCert(tokenServerSsg));
         logger.log(Level.INFO, "Obtained SAML holder-of-key assertion from Gateway " + tokenServerSsg.toString());
-        ssg.samlHolderOfKeyAssertion(s);
-        samlHolderOfKeyAssertion = s;
-        return samlHolderOfKeyAssertion;
+        ssg.samlAssertion(s);
+        samlAssertion = s;
+        return samlAssertion;
     }
 
     /**

@@ -2,7 +2,7 @@ package com.l7tech.proxy.datamodel;
 
 import com.l7tech.common.util.CausedIOException;
 import com.l7tech.common.xml.InvalidDocumentFormatException;
-import com.l7tech.common.xml.saml.SamlHolderOfKeyAssertion;
+import com.l7tech.common.xml.saml.SamlAssertion;
 import com.l7tech.proxy.ConfigurationException;
 import com.l7tech.proxy.datamodel.exceptions.*;
 import com.l7tech.proxy.message.PolicyApplicationContext;
@@ -78,7 +78,7 @@ public class PolicyDownloader {
                     // Federated SSG -- use a SAML token for authentication.
                     log.info("Trying SAML-authenticated policy download from Federated Gateway " + ssg);
                     request.prepareClientCertificate();
-                    SamlHolderOfKeyAssertion samlHok = request.getOrCreateSamlHolderOfKeyAssertion();
+                    SamlAssertion samlHok = request.getOrCreateSamlAssertion();
                     PrivateKey key = SsgKeyStoreManager.getClientCertPrivateKey(ssg);
                     if (key == null) throw new ConfigurationException("Unable to obtain client cert private key"); // shouldn't happen
                     policy = PolicyServiceClient.downloadPolicyWithSamlAssertion(ssg, serviceId, serverCert, useSsl, samlHok, key);

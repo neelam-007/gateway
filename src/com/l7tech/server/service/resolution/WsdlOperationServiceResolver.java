@@ -24,11 +24,12 @@ public abstract class WsdlOperationServiceResolver extends NameValueServiceResol
     protected Object[] doGetTargetValues( PublishedService service ) {
         // non soap services do not have those parameters
         if (!service.isSoap()) {
-            return new Object[] {null};
+            return new Object[0];
         }
         List values = new ArrayList(2);
         try {
             Wsdl wsdl = service.parsedWsdl();
+            if (wsdl == null) return new Object[0];
             Iterator operations = wsdl.getBindingOperations().iterator();
             BindingOperation operation;
             while ( operations.hasNext() ) {

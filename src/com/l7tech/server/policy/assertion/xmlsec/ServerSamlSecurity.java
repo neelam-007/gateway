@@ -1,12 +1,10 @@
 package com.l7tech.server.policy.assertion.xmlsec;
 
+import com.l7tech.common.security.token.SamlSecurityToken;
+import com.l7tech.common.security.token.SecurityToken;
 import com.l7tech.common.security.xml.processor.ProcessorResult;
-import com.l7tech.common.security.xml.processor.SamlSecurityToken;
-import com.l7tech.common.security.xml.processor.SecurityToken;
 import com.l7tech.common.util.CausedIOException;
 import com.l7tech.common.xml.saml.SamlAssertion;
-import com.l7tech.common.xml.saml.SamlHolderOfKeyAssertion;
-import com.l7tech.common.xml.saml.SamlSenderVouchesAssertion;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.credential.CredentialFormat;
@@ -98,14 +96,14 @@ public class ServerSamlSecurity implements ServerAssertion {
         if (samlAssertion != null) {
             // check that the right type of assertion is present
             if (assertion.getConfirmationMethodType() == SamlSecurity.CONFIRMATION_METHOD_HOLDER_OF_KEY) {
-                if (!(samlAssertion instanceof SamlHolderOfKeyAssertion)) {
+                if (!(samlAssertion.isHolderOfKey())) {
                     logger.warning("We got a request that presented a valid signature from a SAML assertion, but " +
                                    "it was not a Holder-of-Key assertion. " +
                                    "This policy assertion requires hok type of confirmation.");
                     return AssertionStatus.BAD_REQUEST;
                 }
             } else if (assertion.getConfirmationMethodType() == SamlSecurity.CONFIRMATION_METHOD_SENDER_VOUCHES) {
-                if (!(samlAssertion instanceof SamlSenderVouchesAssertion)) {
+                if (samlAssertion.isHolderOfKey()) {
                     logger.warning("We got a request that presented a valid signature from a SAML assertion, but " +
                                    "it was not a Sender-vouches assertion. " +
                                    "This policy assertion requires sv type of confirmation.");

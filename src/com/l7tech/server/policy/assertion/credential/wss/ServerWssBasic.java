@@ -6,9 +6,9 @@
 
 package com.l7tech.server.policy.assertion.credential.wss;
 
+import com.l7tech.common.security.token.SecurityToken;
+import com.l7tech.common.security.token.UsernameToken;
 import com.l7tech.common.security.xml.processor.ProcessorResult;
-import com.l7tech.common.security.xml.processor.SecurityToken;
-import com.l7tech.common.security.xml.processor.UsernameToken;
 import com.l7tech.common.util.CausedIOException;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;

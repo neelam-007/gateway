@@ -6,6 +6,8 @@
 
 package com.l7tech.common.security.xml.processor;
 
+import com.l7tech.common.security.token.ParsedElement;
+
 import java.util.Date;
 
 /**

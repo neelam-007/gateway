@@ -7,6 +7,7 @@
 package com.l7tech.common.security.xml;
 
 import com.l7tech.common.security.saml.SignedSamlTest;
+import com.l7tech.common.security.token.*;
 import com.l7tech.common.security.xml.processor.*;
 import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.xml.MessageNotSoapException;

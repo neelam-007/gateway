@@ -48,8 +48,13 @@ public class SenderVouchesHelper extends SamlAssertionHelper {
         AssertionType assertion = getGenericAssertion( now, assertionId );
         AuthenticationStatementType at = attachAuthenticationStatement(assertion, now);
 
-        SubjectConfirmationType st = at.getSubject().addNewSubjectConfirmation();
-        st.addConfirmationMethod(SamlConstants.CONFIRMATION_SENDER_VOUCHES);
+        SubjectConfirmationType st = at.getSubject().getSubjectConfirmation();
+        if (st == null) {
+            st = at.getSubject().addNewSubjectConfirmation();
+        }
+        if (st.getConfirmationMethodArray().length == 0) {
+            st.addConfirmationMethod(SamlConstants.CONFIRMATION_SENDER_VOUCHES);
+        }
         return assertionToDocument( assertion );
     }
 }

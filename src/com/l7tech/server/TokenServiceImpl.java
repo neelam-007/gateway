@@ -2,6 +2,8 @@ package com.l7tech.server;
 
 import com.l7tech.common.message.XmlKnob;
 import com.l7tech.common.security.saml.SamlConstants;
+import com.l7tech.common.security.token.SecurityToken;
+import com.l7tech.common.security.token.X509SecurityToken;
 import com.l7tech.common.security.xml.SignerInfo;
 import com.l7tech.common.security.xml.XencUtil;
 import com.l7tech.common.security.xml.decorator.DecorationRequirements;

@@ -6,24 +6,27 @@
  */
 package com.l7tech.common.security.xml;
 
-import junit.framework.TestCase;
-import junit.framework.Test;
-import junit.framework.TestSuite;
-
-import java.util.logging.Logger;
-
 import com.l7tech.common.security.JceProvider;
+import com.l7tech.common.security.token.ParsedElement;
+import com.l7tech.common.security.token.SignedElement;
 import com.l7tech.common.security.xml.decorator.DecorationRequirements;
 import com.l7tech.common.security.xml.decorator.WssDecorator;
 import com.l7tech.common.security.xml.decorator.WssDecoratorImpl;
-import com.l7tech.common.security.xml.processor.*;
-import com.l7tech.common.xml.TestDocuments;
-import com.l7tech.common.util.XmlUtil;
+import com.l7tech.common.security.xml.processor.ProcessorResult;
+import com.l7tech.common.security.xml.processor.WssProcessor;
+import com.l7tech.common.security.xml.processor.WssProcessorImpl;
 import com.l7tech.common.util.SoapUtil;
+import com.l7tech.common.util.XmlUtil;
+import com.l7tech.common.xml.TestDocuments;
+import junit.framework.Test;
+import junit.framework.TestCase;
+import junit.framework.TestSuite;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
-import org.w3c.dom.NodeList;
 import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
+
+import java.util.logging.Logger;
 
 /**
  * Tests decoration and processing of soap messages secured for multiple recipients.

@@ -1,9 +1,11 @@
 package com.l7tech.proxy.datamodel;
 
 import com.l7tech.common.protocol.SecureSpanConstants;
+import com.l7tech.common.security.token.SecurityToken;
+import com.l7tech.common.security.token.SecurityTokenType;
 import com.l7tech.common.util.DateTranslator;
 import com.l7tech.common.util.HexUtils;
-import com.l7tech.common.xml.saml.SamlHolderOfKeyAssertion;
+import com.l7tech.common.xml.saml.SamlAssertion;
 import com.l7tech.proxy.ClientProxy;
 import com.l7tech.proxy.ssl.ClientProxyKeyManager;
 import com.l7tech.proxy.ssl.ClientProxyTrustManager;
@@ -13,7 +15,7 @@ import org.apache.commons.httpclient.MultiThreadedHttpConnectionManager;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.X509KeyManager;
 import javax.net.ssl.X509TrustManager;
-import javax.swing.*;
+import javax.swing.SwingUtilities;
 import java.io.File;
 import java.io.IOException;
 import java.io.Serializable;
@@ -97,8 +99,11 @@ public class Ssg implements Serializable, Cloneable, Comparable {
     private transient byte[] secureConversationSharedSecret = null;
     private transient String secureConversationId = null;
     private transient Calendar secureConversationExpiryDate = null;
-    private transient SamlHolderOfKeyAssertion samlHolderOfKeyAssertion = null;
+    private transient SamlAssertion samlAssertion = null;
     private transient long timeOffset = 0;
+
+    private transient Map tokensByType = new HashMap();
+    private transient Map tokenStrategiesByType;
 
     private transient final MultiThreadedHttpConnectionManager httpConnectionManager = new MultiThreadedHttpConnectionManager();
 
@@ -708,6 +713,33 @@ public class Ssg implements Serializable, Cloneable, Comparable {
         return null;
     }
 
+    public SecurityToken getSecurityToken(SecurityTokenType tokenType) {
+        return null;
+/*
+        synchronized(this) {
+            SecurityToken token = (SecurityToken)tokensByType.get(tokenType);
+            if (token == null) {
+
+            } else {
+                TokenStrategy strategy = getTokenStrategy(tokenType);
+            }
+        }
+*/
+    }
+
+    private TokenStrategy getTokenStrategy(SecurityTokenType tokenType) {
+        if (tokenStrategiesByType == null) {
+            tokenStrategiesByType = new HashMap();
+            tokenStrategiesByType.put(SecurityTokenType.SAML,
+                                      new DefaultSamlTokenStrategy());
+        }
+        TokenStrategy strategy = (TokenStrategy)tokenStrategiesByType.get(tokenType);
+        if (strategy == null) {
+
+        }
+        return strategy;
+    }
+
     public boolean isChainCredentialsFromClient() {
         return chainCredentialsFromClient;
     }
@@ -853,16 +885,16 @@ public class Ssg implements Serializable, Cloneable, Comparable {
      * Transient record of SAML holder-of-key assertion for holder-of-key authentication.
      * Don't use directly; go through PendingRequest to avoid races.
      */
-    public void samlHolderOfKeyAssertion(SamlHolderOfKeyAssertion ass) {
-        samlHolderOfKeyAssertion = ass;
+    public void samlAssertion(SamlAssertion ass) {
+        samlAssertion = ass;
     }
 
     /**
      * Transient record of SAML holder-of-key assertion for holder-of-key authentication.
      * Don't use directly; go through PendingRequest to avoid races.
      */
-    public SamlHolderOfKeyAssertion samlHolderOfKeyAssertion() {
-        return samlHolderOfKeyAssertion;
+    public SamlAssertion samlAssertion() {
+        return samlAssertion;
     }
 
     /**
@@ -954,5 +986,19 @@ public class Ssg implements Serializable, Cloneable, Comparable {
 
     public MultiThreadedHttpConnectionManager getHttpConnectionManager() {
         return httpConnectionManager;
+    }
+
+    private static class DefaultSamlTokenStrategy extends AbstractTokenStrategy {
+        public DefaultSamlTokenStrategy() {
+            super(SecurityTokenType.SAML);
+        }
+
+        public SecurityToken getOrCreate() {
+            return null;
+        }
+
+        public SecurityToken getIfPresent() {
+            return null;
+        }
     }
 }

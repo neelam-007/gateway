@@ -9,6 +9,9 @@ package com.l7tech.proxy.util;
 import com.l7tech.common.mime.MimeUtil;
 import com.l7tech.common.protocol.SecureSpanConstants;
 import com.l7tech.common.security.saml.SamlConstants;
+import com.l7tech.common.security.token.SecurityToken;
+import com.l7tech.common.security.token.SignedElement;
+import com.l7tech.common.security.token.X509SecurityToken;
 import com.l7tech.common.security.xml.XencUtil;
 import com.l7tech.common.security.xml.decorator.DecorationRequirements;
 import com.l7tech.common.security.xml.decorator.DecoratorException;
@@ -19,7 +22,6 @@ import com.l7tech.common.util.*;
 import com.l7tech.common.xml.InvalidDocumentFormatException;
 import com.l7tech.common.xml.MessageNotSoapException;
 import com.l7tech.common.xml.saml.SamlAssertion;
-import com.l7tech.common.xml.saml.SamlHolderOfKeyAssertion;
 import com.l7tech.proxy.datamodel.CurrentRequest;
 import com.l7tech.proxy.datamodel.Managers;
 import com.l7tech.proxy.datamodel.Ssg;
@@ -167,7 +169,7 @@ public class TokenServiceClient {
         return (SecureConversationSession)result;
     }
 
-    public static SamlHolderOfKeyAssertion obtainSamlHolderOfKeyAssertion(Ssg ssg,
+    public static SamlAssertion obtainSamlAssertion(Ssg ssg,
                                                                           X509Certificate clientCertificate,
                                                                           PrivateKey clientPrivateKey,
                                                                           X509Certificate serverCertificate)
@@ -180,9 +182,9 @@ public class TokenServiceClient {
         requestDoc.getDocumentElement().setAttribute("xmlns:saml", SamlConstants.NS_SAML);
         Object result = obtainResponse(clientCertificate, url, ssg, requestDoc, clientPrivateKey, serverCertificate);
 
-        if (!(result instanceof SamlHolderOfKeyAssertion))
+        if (!(result instanceof SamlAssertion))
             throw new IOException("Token server returned unwanted token type " + result.getClass());
-        return (SamlHolderOfKeyAssertion)result;
+        return (SamlAssertion)result;
     }
 
     private static Object obtainResponse(X509Certificate clientCertificate,
@@ -365,7 +367,7 @@ public class TokenServiceClient {
         if (samlTokenEl != null) {
             // It's a signed SAML assertion
             try {
-                return SamlAssertion.fromElement(samlTokenEl);
+                return new SamlAssertion(samlTokenEl);
             } catch (SAXException e) {
                 throw new InvalidDocumentFormatException(e);
             }
