@@ -11,30 +11,27 @@ import com.ibm.xml.enc.*;
 import com.ibm.xml.enc.type.*;
 import com.l7tech.common.security.AesKey;
 import com.l7tech.common.security.JceProvider;
+import com.l7tech.common.util.HexUtils;
 import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.util.XmlUtil;
-import com.l7tech.common.util.HexUtils;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
-import org.w3c.dom.Text;
 import org.w3c.dom.NodeList;
+import org.w3c.dom.Text;
 import org.xml.sax.SAXException;
 
-import javax.xml.parsers.ParserConfigurationException;
-import javax.crypto.BadPaddingException;
-import javax.crypto.IllegalBlockSizeException;
-import javax.crypto.NoSuchPaddingException;
 import javax.crypto.Cipher;
+import javax.xml.parsers.ParserConfigurationException;
 import java.io.IOException;
-import java.security.*;
-import java.util.Iterator;
-import java.util.List;
+import java.security.GeneralSecurityException;
+import java.security.Key;
+import java.security.PrivateKey;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.logging.Logger;
+import java.util.Iterator;
+import java.util.List;
 import java.util.logging.Level;
-
-import sun.misc.BASE64Decoder;
+import java.util.logging.Logger;
 
 /**
  * Class that encrypts and decrypts XML documents.
@@ -377,10 +374,26 @@ public class XmlMangler {
                     logger.log(Level.WARNING, "unexpected construction", e);
                     continue;
                 }
-                // todo
             }
-            // check that the algo is rsa
-            // todo
+            // verify that the algo is supported
+            Element encryptionMethodEl = null;
+            try {
+                encryptionMethodEl = XmlUtil.findOnlyOneChildElementByName(encryptedKey,
+                                                                           SoapUtil.XMLENC_NS,
+                                                                           "EncryptionMethod");
+            } catch (XmlUtil.MultipleChildElementsException e) {
+                logger.warning("EncryptedKey has more than one EncryptionMethod element");
+            }
+            if (encryptionMethodEl != null) {
+                String encMethodValue = encryptionMethodEl.getAttribute("Algorithm");
+                if (encMethodValue == null || encMethodValue.length() < 1) {
+                    logger.warning("Algorithm not specified in EncryptionMethod element");
+                    continue;
+                } else if (!encMethodValue.equals("http://www.w3.org/2001/04/xmlenc#rsa-1_5")) {
+                    logger.warning("Algorithm not supported " + encMethodValue);
+                    continue;
+                }
+            }
             // get the xenc:CipherValue
             Element cipherValue = null;
             try {
