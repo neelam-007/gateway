@@ -1,21 +1,23 @@
 package com.l7tech.console.panels;
 
-import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.IconManager;
+import com.l7tech.console.util.Registry;
 import com.l7tech.identity.IdentityProvider;
-import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
+import com.l7tech.objectmodel.FindException;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import javax.swing.border.TitledBorder;
+import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.TableCellRenderer;
-import javax.swing.table.DefaultTableCellRenderer;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Iterator;
 
 
@@ -48,14 +50,14 @@ public class IdentityProviderPanel extends WizardStepPanel {
         identitiesPanel = new JPanel();
         identitiesjPanel = new JPanel();
         identitiesOutjScrollPane = new JScrollPane();
-        usersOutjTable = new JTable();
-        usersLablejPanel = new JPanel();
+        identitiesOutjTable = new JTable();
+        usersLabeljPanel = new JPanel();
         jButtonAdd = new JButton();
         jButtonAddAll = new JButton();
         jButtonRemove = new JButton();
         jButtonRemoveAll = new JButton();
         identitiesInjScrollPane = new JScrollPane();
-        usersInjTable = new JTable();
+        identitiesInjTable = new JTable();
         buttonjPanel = new JPanel();
         credentialsAndTransportjPanel = new JPanel();
         credentialsLocationjPanel = new JPanel();
@@ -90,8 +92,9 @@ public class IdentityProviderPanel extends WizardStepPanel {
                 e.getSource();
                 try {
                     IdentityProvider ip = (IdentityProvider)providersComboBoxModel.getSelectedItem();
-                    DefaultTableModel modelOut = new DefaultTableModel();
-                    modelOut.addColumn("No permission");
+                    DefaultTableModel modelOut = getIdentitiesOutTableModel();
+                    modelOut.getDataVector().clear();
+
                     Iterator i = ip.getUserManager().findAllHeaders().iterator();
                     while(i.hasNext()) {
                         modelOut.addRow(new Object[] {i.next()});
@@ -100,10 +103,10 @@ public class IdentityProviderPanel extends WizardStepPanel {
                     while(i.hasNext()) {
                         modelOut.addRow(new Object[] {i.next()});
                     }
-                    usersOutjTable.setModel(modelOut);
-                    DefaultTableModel modelIn = new DefaultTableModel();
-                    modelIn.addColumn("Have permission");
-                    usersInjTable.setModel(modelIn);
+                    DefaultTableModel modelIn = getIdentitiesInTableModel();
+                    modelIn.getDataVector().clear();
+                    getIdentitiesOutTableModel().fireTableDataChanged();
+                    getIdentitiesInTableModel().fireTableDataChanged();
                 } catch (FindException ex) {
                     ex.printStackTrace();  //todo: fix this with better, general exception management
                 }
@@ -120,43 +123,116 @@ public class IdentityProviderPanel extends WizardStepPanel {
         identitiesjPanel.setBorder(new EmptyBorder(new Insets(20, 5, 10, 5)));
         identitiesOutjScrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
         identitiesOutjScrollPane.setPreferredSize(new java.awt.Dimension(150, 50));
-        usersOutjTable.setModel(getUsersOutTableModel());
+        identitiesOutjTable.setModel(getIdentitiesOutTableModel());
 
-        /*usersOutjTable.setMinimumSize(new Dimension(15, 15));
-        usersOutjTable.setPreferredSize(new Dimension(50, 50));*/
-        usersOutjTable.setShowHorizontalLines(false);
-        usersOutjTable.setShowVerticalLines(false);
-        usersOutjTable.setDefaultRenderer(Object.class, tableRenderer);
-        identitiesOutjScrollPane.getViewport().setBackground(usersOutjTable.getBackground());
-        identitiesOutjScrollPane.setViewportView(usersOutjTable);
+        identitiesOutjTable.setShowHorizontalLines(false);
+        identitiesOutjTable.setShowVerticalLines(false);
+        identitiesOutjTable.setDefaultRenderer(Object.class, tableRenderer);
+        identitiesOutjScrollPane.getViewport().setBackground(identitiesOutjTable.getBackground());
+        identitiesOutjScrollPane.setViewportView(identitiesOutjTable);
 
         identitiesjPanel.add(identitiesOutjScrollPane);
 
-        usersLablejPanel.setLayout(new BoxLayout(usersLablejPanel, BoxLayout.Y_AXIS));
+        usersLabeljPanel.setLayout(new BoxLayout(usersLabeljPanel, BoxLayout.Y_AXIS));
 
-        usersLablejPanel.setBorder(new EmptyBorder(new Insets(5, 5, 5, 5)));
+        usersLabeljPanel.setBorder(new EmptyBorder(new Insets(5, 5, 5, 5)));
         jButtonAdd.setText("Add");
-        usersLablejPanel.add(jButtonAdd);
+        jButtonAdd.setHorizontalTextPosition(SwingConstants.RIGHT);
+        jButtonAdd.setHorizontalAlignment(SwingConstants.RIGHT);
+        jButtonAdd.setIcon(IconManager.getInstance().getIconAdd());
+
+        jButtonAdd.addActionListener(new ActionListener() {
+            /** Invoked when an action occurs. */
+            public void actionPerformed(ActionEvent e) {
+                int[] rows = identitiesOutjTable.getSelectedRows();
+                Collection toAdd = new ArrayList();
+                java.util.List listOut = getIdentitiesOutTableModel().getDataVector();
+
+                for(int i=0; i < rows.length; i++) {
+                    toAdd.add(listOut.get(rows[i]));
+                }
+                getIdentitiesOutTableModel().getDataVector().removeAll(toAdd);
+                getIdentitiesOutTableModel().fireTableDataChanged();
+                getIdentitiesInTableModel().getDataVector().addAll(toAdd);
+                getIdentitiesInTableModel().fireTableDataChanged();
+
+            }
+        });
+        usersLabeljPanel.add(jButtonAdd);
 
         jButtonAddAll.setText("Add All");
-        usersLablejPanel.add(jButtonAddAll);
+        jButtonAddAll.setHorizontalTextPosition(SwingConstants.RIGHT);
+        jButtonAddAll.setHorizontalAlignment(SwingConstants.RIGHT);
+        jButtonAddAll.setIcon(IconManager.getInstance().getIconAddAll());
+
+        jButtonAddAll.addActionListener(new ActionListener() {
+            /** Invoked when an action occurs. */
+            public void actionPerformed(ActionEvent e) {
+                java.util.List listOut = getIdentitiesOutTableModel().getDataVector();
+
+                getIdentitiesInTableModel().getDataVector().addAll(listOut);
+                getIdentitiesOutTableModel().getDataVector().clear();
+                getIdentitiesOutTableModel().fireTableDataChanged();
+                getIdentitiesInTableModel().fireTableDataChanged();
+
+            }
+        });
+        usersLabeljPanel.add(jButtonAddAll);
 
         jButtonRemove.setText("Remove");
-        usersLablejPanel.add(jButtonRemove);
+        jButtonRemove.setHorizontalTextPosition(SwingConstants.RIGHT);
+        jButtonRemove.setHorizontalAlignment(SwingConstants.RIGHT);
+        jButtonRemove.setIcon(IconManager.getInstance().getIconRemove());
+
+        jButtonRemove.addActionListener(new ActionListener() {
+                 /** Invoked when an action occurs. */
+                 public void actionPerformed(ActionEvent e) {
+                     int[] rows = identitiesInjTable.getSelectedRows();
+                     Collection toRemove = new ArrayList();
+                     java.util.List listIn = getIdentitiesInTableModel().getDataVector();
+
+                     for(int i=0; i < rows.length; i++) {
+                         toRemove.add(listIn.get(rows[i]));
+                     }
+                     getIdentitiesInTableModel().getDataVector().removeAll(toRemove);
+                     getIdentitiesInTableModel().fireTableDataChanged();
+                     getIdentitiesOutTableModel().getDataVector().addAll(toRemove);
+                     getIdentitiesOutTableModel().fireTableDataChanged();
+                 }
+             });
+
+        usersLabeljPanel.add(jButtonRemove);
 
         jButtonRemoveAll.setText("Remove all");
-        usersLablejPanel.add(jButtonRemoveAll);
+        jButtonRemoveAll.setHorizontalTextPosition(SwingConstants.RIGHT);
+        jButtonRemoveAll.setHorizontalAlignment(SwingConstants.RIGHT);
+        jButtonRemoveAll.setIcon(IconManager.getInstance().getIconRemoveAll());
 
-        identitiesjPanel.add(usersLablejPanel);
+        jButtonRemoveAll.addActionListener(new ActionListener() {
+                 /** Invoked when an action occurs. */
+                 public void actionPerformed(ActionEvent e) {
+                     java.util.List listIn = getIdentitiesInTableModel().getDataVector();
+                     getIdentitiesOutTableModel().getDataVector().addAll(listIn);
+                     getIdentitiesInTableModel().getDataVector().clear();
+                     getIdentitiesOutTableModel().fireTableDataChanged();
+                     getIdentitiesInTableModel().fireTableDataChanged();
+
+                 }
+             });
+
+        usersLabeljPanel.add(jButtonRemoveAll);
+
+        identitiesjPanel.add(usersLabeljPanel);
 
         identitiesInjScrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
         identitiesInjScrollPane.setPreferredSize(new java.awt.Dimension(150, 50));
-        usersInjTable.setModel(getUsersInTableModel());
+        identitiesInjTable.setModel(getIdentitiesInTableModel());
 
-        usersInjTable.setShowHorizontalLines(false);
-        usersInjTable.setShowVerticalLines(false);
-        identitiesInjScrollPane.getViewport().setBackground(usersInjTable.getBackground());
-        identitiesInjScrollPane.setViewportView(usersInjTable);
+        identitiesInjTable.setShowHorizontalLines(false);
+        identitiesInjTable.setShowVerticalLines(false);
+        identitiesInjTable.setDefaultRenderer(Object.class, tableRenderer);
+        identitiesInjScrollPane.getViewport().setBackground(identitiesInjTable.getBackground());
+        identitiesInjScrollPane.setViewportView(identitiesInjTable);
 
         identitiesjPanel.add(identitiesInjScrollPane);
 
@@ -212,23 +288,25 @@ public class IdentityProviderPanel extends WizardStepPanel {
      * @return the table model representing the identities that
      *         have permisison to use the service.
      */
-    private DefaultTableModel getUsersInTableModel() {
-        if (usersInTableMode != null)
-            return usersInTableMode;
+    private DefaultTableModel getIdentitiesInTableModel() {
+        if (identitiesInTableModel != null)
+            return identitiesInTableModel;
 
-        usersInTableMode = new DefaultTableModel();
-        return usersInTableMode;
+        identitiesInTableModel = new DefaultTableModel();
+        identitiesInTableModel.addColumn("Have permission");
+        return identitiesInTableModel;
     }
 
     /**
      * @return the table model representing the identities that
      *         are not permitted to use the service.
      */
-    private DefaultTableModel getUsersOutTableModel() {
-        if (usersOutTableMode != null)
-            return usersOutTableMode;
-        usersOutTableMode = new DefaultTableModel();
-        return usersOutTableMode;
+    private DefaultTableModel getIdentitiesOutTableModel() {
+        if (identitiesOutTableModel != null)
+            return identitiesOutTableModel;
+        identitiesOutTableModel = new DefaultTableModel();
+        identitiesOutTableModel.addColumn("No permission");
+        return identitiesOutTableModel;
     }
 
     public String getDescription() {
@@ -248,7 +326,7 @@ public class IdentityProviderPanel extends WizardStepPanel {
             jButtonRemove,
             jButtonRemoveAll
         };
-        Utilities.equalizeButtonSizes(buttons);
+        Utilities.equalizeComponentSizes(buttons);
     }
 
 
@@ -284,10 +362,10 @@ public class IdentityProviderPanel extends WizardStepPanel {
             };
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
-    private JTable usersInjTable;
-    private JTable usersOutjTable;
-    private DefaultTableModel usersInTableMode;
-    private DefaultTableModel usersOutTableMode;
+    private JTable identitiesInjTable;
+    private JTable identitiesOutjTable;
+    private DefaultTableModel identitiesInTableModel;
+    private DefaultTableModel identitiesOutTableModel;
 
     private JScrollPane identitiesOutjScrollPane;
     private JPanel ssljPanel;
@@ -306,7 +384,7 @@ public class IdentityProviderPanel extends WizardStepPanel {
     private JComboBox credentialsLocationjComboBox;
     private JPanel credentialsAndTransportjPanel;
     private JPanel buttonjPanel;
-    private JPanel usersLablejPanel;
+    private JPanel usersLabeljPanel;
 
     private JCheckBox ssljCheckBox;
 

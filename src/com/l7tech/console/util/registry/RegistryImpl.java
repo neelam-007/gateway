@@ -7,6 +7,7 @@ import com.l7tech.identity.IdentityProviderConfigManager;
 import com.l7tech.util.Locator;
 import com.l7tech.console.util.Registry;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.service.ServiceManager;
 
 import java.util.Collection;
 
@@ -67,5 +68,18 @@ public class RegistryImpl extends Registry {
      */
     public GroupManager getInternalGroupManager() {
      return getInternalProvider().getGroupManager();
+    }
+
+    /**
+     * @return the service managerr
+     */
+    public ServiceManager getServiceManager() {
+        ServiceManager sm =
+        (ServiceManager)Locator.
+                getDefault().lookup(ServiceManager.class);
+        if (sm == null) {
+            throw new RuntimeException("Could not find registered "+ServiceManager.class);
+        }
+        return sm;
     }
 }

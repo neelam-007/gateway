@@ -5,6 +5,7 @@ import com.l7tech.identity.UserManager;
 import com.l7tech.identity.GroupManager;
 import com.l7tech.identity.IdentityProviderConfigManager;
 import com.l7tech.util.Locator;
+import com.l7tech.service.ServiceManager;
 
 
 /**
@@ -30,7 +31,7 @@ public abstract class Registry {
         if (instance != null) {
             return instance;
         }
-        instance = (Registry) Locator.getDefault().lookup(Registry.class);
+        instance = (Registry)Locator.getDefault().lookup(Registry.class);
         if (instance == null) {
             instance = EMPTY;
         }
@@ -62,6 +63,12 @@ public abstract class Registry {
     abstract public GroupManager getInternalGroupManager();
 
     /**
+     * @return the service managerr
+     */
+    abstract public ServiceManager getServiceManager();
+
+
+    /**
      * Implementation of the default 'no-op' registry
      */
     private static final class Empty extends Registry {
@@ -84,6 +91,13 @@ public abstract class Registry {
         }
 
         public GroupManager getInternalGroupManager() {
+            return null;
+        }
+
+        /**
+         * @return the service managerr
+         */
+        public ServiceManager getServiceManager() {
             return null;
         }
     }

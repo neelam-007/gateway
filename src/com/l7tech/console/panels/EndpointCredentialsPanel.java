@@ -33,7 +33,7 @@ public class EndpointCredentialsPanel extends WizardStepPanel {
         serviceUrljPanel = new JPanel();
         panelTitlejLabel = new JLabel();
         jPanel3 = new JPanel();
-        jPanel1 = new JPanel();
+        mainjPanel = new JPanel();
         credentialsAndTransportjPanel = new JPanel();
         authenticationjPanel = new JPanel();
         credentialsjLabel = new JLabel();
@@ -44,8 +44,7 @@ public class EndpointCredentialsPanel extends WizardStepPanel {
         passwordjLabel = new JLabel();
         jPasswordField1 = new JPasswordField();
         tlsjPanel = new JPanel();
-        tlsjCheckBox = new JCheckBox();
-        certificatejButton = new JButton();
+
         rigidAreajPanel = new JPanel();
 
         setLayout(new BorderLayout());
@@ -59,9 +58,9 @@ public class EndpointCredentialsPanel extends WizardStepPanel {
 
         add(serviceUrljPanel, BorderLayout.NORTH);
 
-        jPanel1.setLayout(new BoxLayout(jPanel1, BoxLayout.X_AXIS));
+        mainjPanel.setLayout(new BoxLayout(mainjPanel, BoxLayout.X_AXIS));
 
-        jPanel1.setBorder(new EmptyBorder(new Insets(10, 10, 10, 10)));
+        mainjPanel.setBorder(new EmptyBorder(new Insets(10, 10, 10, 10)));
         credentialsAndTransportjPanel.setLayout(new GridBagLayout());
 
         authenticationjPanel.setLayout(new BoxLayout(authenticationjPanel, BoxLayout.X_AXIS));
@@ -74,12 +73,8 @@ public class EndpointCredentialsPanel extends WizardStepPanel {
         authenticationMethodjComboBox.setModel(
                 new DefaultComboBoxModel(new String[] {
                     "Anonymous (no authentication required)",
-                    "Basic authentication (Transport/HTTP headers)",
-                    "Digest authentication (Transport/HTTP headers)",
-                    "Basic authentication (SOAP message)",
-                    "Digest authentication (SOAP message)",
-                    "Client certificate (requires SSL)",
-                    "Client certificate (SOAP message)" }));
+                    "Basic authentication (Transport/HTTP headers)"
+                    }));
         authenticationjPanel.add(authenticationMethodjComboBox);
 
         gridBagConstraints = new GridBagConstraints();
@@ -113,28 +108,6 @@ public class EndpointCredentialsPanel extends WizardStepPanel {
         gridBagConstraints.anchor = GridBagConstraints.WEST;
         credentialsAndTransportjPanel.add(credentialsjPanel, gridBagConstraints);
 
-        tlsjPanel.setLayout(new BoxLayout(tlsjPanel, BoxLayout.X_AXIS));
-
-        tlsjPanel.setBorder(new EmptyBorder(new Insets(5, 5, 5, 0)));
-        tlsjCheckBox.setText("SSL/TLS");
-        tlsjCheckBox.setHorizontalTextPosition(SwingConstants.LEADING);
-        tlsjCheckBox.addChangeListener(new ChangeListener() {
-            public void stateChanged(ChangeEvent evt) {
-                tlsjCheckBoxStateChanged(evt);
-            }
-        });
-
-        tlsjPanel.add(tlsjCheckBox);
-
-        certificatejButton.setText("Client certificate");
-        certificatejButton.setEnabled(false);
-        certificatejButton.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent evt) {
-                certificatejButtonActionPerformed(evt);
-            }
-        });
-
-        tlsjPanel.add(certificatejButton);
 
         gridBagConstraints = new GridBagConstraints();
         gridBagConstraints.gridx = 0;
@@ -150,28 +123,15 @@ public class EndpointCredentialsPanel extends WizardStepPanel {
         gridBagConstraints.weighty = 1.0;
         credentialsAndTransportjPanel.add(rigidAreajPanel, gridBagConstraints);
 
-        jPanel1.add(credentialsAndTransportjPanel);
+        mainjPanel.add(credentialsAndTransportjPanel);
 
-        add(jPanel1, BorderLayout.CENTER);
-    }
-
-    private void tlsjCheckBoxStateChanged(ChangeEvent evt) {
-        // Add your handling code here:
-        certificatejButton.setEnabled(tlsjCheckBox.isSelected());
-    }
-    
-    private void certificatejButtonActionPerformed(ActionEvent evt) {
-        JFileChooser chooser = new JFileChooser();
-        int returnVal = chooser.showOpenDialog(this);
-        if(returnVal == JFileChooser.APPROVE_OPTION) {
-            System.out.println("The file is: " +  chooser.getSelectedFile().getName());
-        }
+        add(mainjPanel, BorderLayout.CENTER);
     }
 
     /** @return the wizard step description as string  */
     public String getDescription() {
-        return "Enter the protected service credentials, credentials policy"
-        +" transport requirements, certificate";
+        return "Enter the protected service credentials and credentials policy";
+
     }
 
     /** @return the wizard step label    */
@@ -189,12 +149,12 @@ public class EndpointCredentialsPanel extends WizardStepPanel {
     private JPanel credentialsjPanel;
     private JLabel passwordjLabel;
     private JPanel rigidAreajPanel;
-    private JButton certificatejButton;
+
     private JLabel identityjLabel;
     private JPanel authenticationjPanel;
     private JPanel serviceUrljPanel;
-    private JCheckBox tlsjCheckBox;
-    private JPanel jPanel1;
+
+    private JPanel mainjPanel;
     private JTextField identityjTextField;
     
 }
