@@ -1,10 +1,13 @@
 package com.l7tech.console.panels;
 
 import com.l7tech.common.gui.util.Utilities;
+import com.l7tech.console.action.UserPropertiesAction;
 import com.l7tech.console.event.EntityEvent;
 import com.l7tech.console.event.EntityListener;
 import com.l7tech.console.logging.ErrorManager;
 import com.l7tech.console.text.FilterDocument;
+import com.l7tech.console.tree.TreeNodeFactory;
+import com.l7tech.console.tree.UserNode;
 import com.l7tech.console.util.Registry;
 import com.l7tech.identity.UserBean;
 import com.l7tech.objectmodel.EntityHeader;
@@ -507,18 +510,15 @@ public class NewUserDialog extends JDialog {
                 SwingUtilities.invokeLater(
                         new Runnable() {
                             public void run() {
-                                UserPanel panel = new UserPanel();
-                                if (panel == null) return;
                                 EntityHeader header = new EntityHeader();
                                 header.setType(EntityType.USER);
                                 header.setName(user.getName());
                                 header.setStrId(user.getUniqueIdentifier());
-                                panel.edit(header, Registry.getDefault().getInternalProvider());
-
-                                EditorDialog dialog = new EditorDialog(parent, panel);
-                                dialog.pack();
-                                Utilities.centerOnScreen(dialog);
-                                dialog.show();
+                                UserPropertiesAction ua =
+                                  new UserPropertiesAction((UserNode)TreeNodeFactory.asTreeNode(header));
+                                // only internal provider currently
+                                ua.setIdProvider(Registry.getDefault().getInternalProvider());
+                                ua.performAction();
                                 insertSuccess = false;
                             }
                         });

@@ -54,21 +54,21 @@ public class UserManagerClient extends IdentityManagerClient implements UserMana
         return save(user, null);
     }
 
-    public void update(User user) throws UpdateException {
+    public void update(User user) throws UpdateException, ObjectNotFoundException {
         update(user, null);
     }
 
     public String save(User user, Set groupHeaders) throws SaveException {
         try {
             return getStub().saveUser(config.getOid(), user, groupHeaders );
-        } catch (UpdateException e) { // because the stub uses same method for save and update
+        } catch (ObjectModelException e) { // because the stub uses same method for save and update
             throw new SaveException(e.getMessage(), e);
         } catch (RemoteException e) {
             throw new SaveException(e.getMessage(), e);
         }
     }
 
-    public void update(User user, Set groupHeaders ) throws UpdateException {
+    public void update(User user, Set groupHeaders ) throws UpdateException, ObjectNotFoundException {
         try {
             getStub().saveUser(config.getOid(), user, groupHeaders );
         } catch (RemoteException e) {

@@ -1,8 +1,9 @@
 package com.l7tech.identity.cert;
 
-import com.l7tech.objectmodel.FindException;
-import com.l7tech.objectmodel.UpdateException;
 import com.l7tech.identity.User;
+import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.ObjectNotFoundException;
+import com.l7tech.objectmodel.UpdateException;
 
 import java.security.cert.Certificate;
 
@@ -44,7 +45,7 @@ public interface ClientCertManager {
     /**
      * revokes the cert (if applicable) for this user
      */
-    void revokeUserCert(User user) throws UpdateException;
+    void revokeUserCert(User user) throws UpdateException, ObjectNotFoundException;
 
     /**
      * record the fact that the a user cert was used successfully in an authentication operation

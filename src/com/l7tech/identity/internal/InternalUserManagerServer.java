@@ -187,7 +187,7 @@ public class InternalUserManagerServer extends HibernateEntityManager implements
     }
 
 
-    public void update( User user ) throws UpdateException {
+    public void update( User user ) throws UpdateException , ObjectNotFoundException{
         update( user, null );
     }
 
@@ -196,7 +196,7 @@ public class InternalUserManagerServer extends HibernateEntityManager implements
      * checks if the user is the last standing admin account, throws if so
      * @param user existing user
      */
-    public void update( User user, Set groupHeaders ) throws UpdateException {
+    public void update( User user, Set groupHeaders ) throws UpdateException , ObjectNotFoundException{
         InternalUser imp = cast( user );
 
         try {

@@ -2,6 +2,8 @@ package com.l7tech.console.panels;
 
 import com.l7tech.common.gui.util.ImageCache;
 import com.l7tech.common.gui.util.Utilities;
+import com.l7tech.common.util.ExceptionUtils;
+import com.l7tech.console.MainWindow;
 import com.l7tech.console.event.EntityEvent;
 import com.l7tech.console.event.EntityListener;
 import com.l7tech.console.event.EntityListenerAdapter;
@@ -11,9 +13,7 @@ import com.l7tech.console.util.Registry;
 import com.l7tech.identity.IdentityProvider;
 import com.l7tech.identity.User;
 import com.l7tech.identity.UserBean;
-import com.l7tech.objectmodel.EntityHeader;
-import com.l7tech.objectmodel.EntityType;
-import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.*;
 
 import javax.swing.*;
 import javax.swing.event.DocumentEvent;
@@ -77,8 +77,11 @@ public class UserPanel extends EntityEditorPanel {
     private JLabel emailLabel;
     private JTextField emailTextField;
     private JButton changePassButton;
+    private final String USER_DOES_NOT_EXIST_MSG = "This user no longer exists";
 
     private IdentityProvider idProvider;
+    private final MainWindow mainWindow = Registry.getDefault().getComponentRegistry().getMainWindow();
+;
 
 
     /**
@@ -152,8 +155,10 @@ public class UserPanel extends EntityEditorPanel {
                 userGroups = null;
             } else {
                 User u = idProvider.getUserManager().findByPrimaryKey(userHeader.getStrId());
-                if ( u == null )
+                if ( u == null ) {
+                    JOptionPane.showMessageDialog(mainWindow, USER_DOES_NOT_EXIST_MSG, "Warning", JOptionPane.WARNING_MESSAGE);
                     throw new NoSuchElementException("User missing " + userHeader.getOid());
+                }
                 user = u.getUserBean();
                 userGroups = idProvider.getGroupManager().getGroupHeaders(u.getUniqueIdentifier());
             }
@@ -550,7 +555,7 @@ public class UserPanel extends EntityEditorPanel {
               addActionListener(new ActionListener() {
                   public void actionPerformed(ActionEvent e) {
                       new PasswordDialog(
-                        Registry.getDefault().getComponentRegistry().getMainWindow(), userPanel,
+                        mainWindow, userPanel,
                         user, passwordChangeListener).show();
                       // Refresh the panel (since the agent's cert might have been revoked)
                   }
@@ -646,17 +651,18 @@ public class UserPanel extends EntityEditorPanel {
 
             // Cleanup
             formModified = false;
-        } catch (Exception e) {
+        } catch (SaveException e) {
+            // handle
+        } catch (UpdateException e) {
             StringBuffer msg = new StringBuffer();
             msg.append("There was an error updating ");
             msg.append("User ").append(userHeader.getName()).append(".\n");
-            JOptionPane.showMessageDialog(null,
-              msg.toString(),
-              "Error",
-              JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(mainWindow, msg.toString(), "Error", JOptionPane.ERROR_MESSAGE);
             log.log(Level.SEVERE, "Error updating User: " + e.toString());
             e.printStackTrace();
             result = false;
+        } catch (ObjectNotFoundException e) {
+            // handle
         }
         return result;
     }
@@ -672,6 +678,9 @@ public class UserPanel extends EntityEditorPanel {
         return true;
     }
 
+    private void handleThrowable(Throwable t) {
+        Throwable cause = ExceptionUtils.unnestToRoot(t);
+    }
     // debug
     public static void main(String[] args) {
 

@@ -2,16 +2,13 @@ package com.l7tech.console.panels;
 
 import com.l7tech.common.gui.util.TableUtil;
 import com.l7tech.common.util.Locator;
+import com.l7tech.console.event.EntityEvent;
+import com.l7tech.console.event.EntityListener;
 import com.l7tech.console.util.ComponentRegistry;
 import com.l7tech.console.util.Preferences;
-import com.l7tech.console.event.EntityListener;
-import com.l7tech.console.event.EntityEvent;
 import com.l7tech.identity.UserBean;
 import com.l7tech.identity.cert.ClientCertManager;
-import com.l7tech.objectmodel.FindException;
-import com.l7tech.objectmodel.UpdateException;
-import com.l7tech.objectmodel.EntityHeader;
-import com.l7tech.objectmodel.EntityType;
+import com.l7tech.objectmodel.*;
 
 import javax.swing.*;
 import javax.swing.table.AbstractTableModel;
@@ -208,6 +205,8 @@ class CertificatePanel extends JPanel {
                             eh.setType(EntityType.USER);
                             parentListener.entityUpdated(new EntityEvent(this, eh));
                         } catch (UpdateException e) {
+                            log.log(Level.WARNING, "ERROR Revoking certificate", e);
+                        } catch (ObjectNotFoundException e) {
                             log.log(Level.WARNING, "ERROR Revoking certificate", e);
                         }
                         // reset values and redisplay

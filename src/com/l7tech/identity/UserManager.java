@@ -13,7 +13,7 @@ public interface UserManager extends EntityManager {
     void delete( User user ) throws DeleteException;
     void delete( String identifier ) throws DeleteException;
     String save( User user ) throws SaveException;
-    void update( User user ) throws UpdateException;
+    void update( User user ) throws UpdateException, ObjectNotFoundException;
     String save( User user, Set groupHeaders ) throws SaveException;
-    void update( User user, Set groupHeaders ) throws UpdateException;
+    void update( User user, Set groupHeaders ) throws UpdateException, ObjectNotFoundException;
 }

@@ -1,21 +1,22 @@
 package com.l7tech.identity.ws;
 
-import com.l7tech.objectmodel.*;
-import com.l7tech.identity.*;
-import com.l7tech.identity.internal.InternalUser;
-import com.l7tech.identity.cert.ClientCertManager;
-import com.l7tech.common.util.Locator;
 import com.l7tech.common.protocol.SecureSpanConstants;
+import com.l7tech.common.util.Locator;
+import com.l7tech.identity.*;
+import com.l7tech.identity.cert.ClientCertManager;
+import com.l7tech.identity.internal.InternalUser;
 import com.l7tech.logging.LogManager;
+import com.l7tech.objectmodel.*;
 import com.l7tech.server.SessionManager;
 
 import java.rmi.RemoteException;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-import java.util.*;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateEncodingException;
 import java.sql.SQLException;
+import java.util.Collection;
+import java.util.Set;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Layer 7 Technologies, inc.
@@ -182,7 +183,7 @@ public class IdentityAdminImpl implements IdentityAdmin {
     }
 
     public String saveUser(long identityProviderConfigId, User user, Set groupHeaders )
-                                    throws RemoteException, SaveException, UpdateException {
+                                    throws RemoteException, SaveException, UpdateException, ObjectNotFoundException {
         beginTransaction();
         try {
             IdentityProviderConfig cfg = getIdProvCfgMan().findByPrimaryKey(identityProviderConfigId);
@@ -292,7 +293,7 @@ public class IdentityAdminImpl implements IdentityAdmin {
         }
     }
 
-    public void revokeCert(User user) throws RemoteException, UpdateException {
+    public void revokeCert(User user) throws RemoteException, UpdateException, ObjectNotFoundException {
         beginTransaction();
         try {
             // revoke the cert in internal CA

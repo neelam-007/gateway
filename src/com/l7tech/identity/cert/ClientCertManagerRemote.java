@@ -1,18 +1,19 @@
 package com.l7tech.identity.cert;
 
-import com.l7tech.identity.User;
-import com.l7tech.identity.IdentityAdmin;
-import com.l7tech.objectmodel.UpdateException;
-import com.l7tech.objectmodel.FindException;
 import com.l7tech.common.util.Locator;
+import com.l7tech.identity.IdentityAdmin;
+import com.l7tech.identity.User;
+import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.ObjectNotFoundException;
+import com.l7tech.objectmodel.UpdateException;
 
-import java.security.cert.Certificate;
-import java.security.cert.CertificateEncodingException;
-import java.security.cert.CertificateFactory;
-import java.security.cert.CertificateException;
-import java.rmi.RemoteException;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.rmi.RemoteException;
+import java.security.cert.Certificate;
+import java.security.cert.CertificateEncodingException;
+import java.security.cert.CertificateException;
+import java.security.cert.CertificateFactory;
 
 /**
  * LAYER 7 TECHNOLOGIES, INC
@@ -45,7 +46,7 @@ public class ClientCertManagerRemote implements ClientCertManager {
         }
     }
 
-    public void revokeUserCert(User user) throws UpdateException {
+    public void revokeUserCert(User user) throws UpdateException, ObjectNotFoundException {
         try {
             getStub().revokeCert(user);
         } catch (RemoteException e) {

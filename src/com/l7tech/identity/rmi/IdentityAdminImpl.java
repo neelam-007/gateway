@@ -1,16 +1,15 @@
 package com.l7tech.identity.rmi;
 
-import com.l7tech.objectmodel.*;
 import com.l7tech.identity.*;
+import com.l7tech.objectmodel.*;
 import com.l7tech.remote.jini.export.RemoteService;
 import com.sun.jini.start.LifeCycle;
+import net.jini.config.ConfigurationException;
 
-import java.rmi.RemoteException;
 import java.io.IOException;
+import java.rmi.RemoteException;
 import java.security.cert.CertificateEncodingException;
 import java.util.Set;
-
-import net.jini.config.ConfigurationException;
 
 /**
  * Layer 7 Technologies, inc.
@@ -91,7 +90,8 @@ public class IdentityAdminImpl extends RemoteService implements IdentityAdmin {
         delegate.deleteUser(idProvCfgId, userId);
     }
 
-    public String saveUser(long idProvCfgId, User user, Set groupHeaders ) throws RemoteException, SaveException, UpdateException {
+    public String saveUser(long idProvCfgId, User user, Set groupHeaders )
+      throws RemoteException, SaveException, UpdateException, ObjectNotFoundException {
         return delegate.saveUser(idProvCfgId, user, groupHeaders );
     }
 
@@ -121,7 +121,7 @@ public class IdentityAdminImpl extends RemoteService implements IdentityAdmin {
         return delegate.getUserCert(user);
     }
 
-    public void revokeCert(User user) throws RemoteException, UpdateException {
+    public void revokeCert(User user) throws RemoteException, UpdateException, ObjectNotFoundException{
         delegate.revokeCert(user);
     }
 

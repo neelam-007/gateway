@@ -2,8 +2,8 @@ package com.l7tech.identity;
 
 import com.l7tech.objectmodel.*;
 
-import java.rmi.RemoteException;
 import java.rmi.Remote;
+import java.rmi.RemoteException;
 import java.security.cert.CertificateEncodingException;
 import java.util.Set;
 
@@ -42,7 +42,8 @@ public interface IdentityAdmin  extends Remote {
 
     void deleteUser(long idProvCfgId, String userId) throws RemoteException, DeleteException;
 
-    String saveUser(long idProvCfgId, User user, Set groupHeaders ) throws RemoteException, SaveException, UpdateException;
+    String saveUser(long idProvCfgId, User user, Set groupHeaders )
+      throws RemoteException, SaveException, UpdateException, ObjectNotFoundException;
 
     EntityHeader[] findAllGroups(long idProvCfgId) throws RemoteException, FindException;
 
@@ -62,7 +63,7 @@ public interface IdentityAdmin  extends Remote {
     /**
      * will also revoke user's password if internal user
      */ 
-    void revokeCert(User user) throws RemoteException, UpdateException;
+    void revokeCert(User user) throws RemoteException, UpdateException, ObjectNotFoundException;
 
     void testIdProviderConfig(IdentityProviderConfig cfg)
                                 throws RemoteException, InvalidIdProviderCfgException;
