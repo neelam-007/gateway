@@ -285,7 +285,8 @@ public class PasswordDialog extends JDialog {
 
         if ((newPass.length < MIN_PASSWORD_LENGTH) || (newPass.length > MAX_PASSWORD_LENGTH)) {
             JOptionPane.
-              showMessageDialog(this,
+              showMessageDialog(
+                this,
                 resources.getString("newPasswordField.error.length"),
                 resources.getString("newPasswordField.error.title"),
                 JOptionPane.ERROR_MESSAGE);
@@ -293,7 +294,13 @@ public class PasswordDialog extends JDialog {
             confirmPasswordField.setText("");
             return false;
         }
-        if (JOptionPane.showConfirmDialog(null, "Changing the password will also revoke the client cert (if any).\nAre you sure you want to proceed?") != JOptionPane.YES_OPTION) {
+
+        int res = JOptionPane.showConfirmDialog(
+                    null,
+                    resources.getString("confirmPassChange.question"),
+                    resources.getString("confirmPassChange.title"),
+                    JOptionPane.YES_NO_OPTION);
+        if (res != JOptionPane.YES_OPTION) {
             return false;
         }
         return true;
