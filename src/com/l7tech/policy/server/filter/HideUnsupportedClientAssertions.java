@@ -75,6 +75,7 @@ public class HideUnsupportedClientAssertions extends Filter {
         WssBasic.class,
         WssDigest.class,
         RequestWssX509Cert.class,
+        SecureConversation.class,
         RequestWssIntegrity.class,
         RequestWssConfidentiality.class,
         ResponseWssIntegrity.class,
