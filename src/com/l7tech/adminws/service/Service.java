@@ -114,18 +114,16 @@ public class Service {
     // ************************************************
 
     private com.l7tech.service.ServiceManager getServiceManagerAndBeginTransaction() throws java.rmi.RemoteException {
-        if (serviceManagerInstance == null){
-            initialiseServiceManager();
-        }
+
         try {
             PersistenceContext.getCurrent().beginTransaction();
-        }
-        catch (java.sql.SQLException e) {
+            if (serviceManagerInstance == null) {
+                initialiseServiceManager();
+            }
+        } catch (Throwable e) {
+            System.out.println("Exception in initialiseServiceManager");
             e.printStackTrace(System.err);
-            throw new java.rmi.RemoteException("SQLException in ServiceManager.getServiceManagerAndBeginTransaction : "+ e.getMessage(), e);
-        } catch (TransactionException e) {
-            e.printStackTrace(System.err);
-            throw new java.rmi.RemoteException("TransactionException in ServiceManager.getServiceManagerAndBeginTransaction : "+ e.getMessage(), e);
+            throw new java.rmi.RemoteException("Exception in ServiceManager.getServiceManagerAndBeginTransaction : "+ e.getMessage(), e);
         }
         return serviceManagerInstance;
     }
@@ -163,12 +161,10 @@ public class Service {
         try {
             serviceManagerInstance = (com.l7tech.service.ServiceManager)Locator.getDefault().lookup(com.l7tech.service.ServiceManager.class);
             if (serviceManagerInstance == null) throw new java.rmi.RemoteException("Cannot instantiate the ServiceManager");
-        } catch (ClassCastException e) {
+        } catch (Throwable e) {
+            System.out.println("Exception in Locator.getDefault().lookup(com.l7tech.service.ServiceManager.class)" + e.getMessage());
             e.printStackTrace(System.err);
-            throw new java.rmi.RemoteException("ClassCastException in ServiceManager.initialiseServiceManager from Locator.getDefault().lookup", e);
-        } catch (RuntimeException e) {
-            e.printStackTrace(System.err);
-            throw new java.rmi.RemoteException("RuntimeException in ServiceManager.initialiseServiceManager from Locator.getDefault().lookup: "+ e.getMessage(), e);
+            throw new java.rmi.RemoteException("Exception in Locator.getDefault().lookup: "+ e.getMessage(), e);
         }
     }
 
