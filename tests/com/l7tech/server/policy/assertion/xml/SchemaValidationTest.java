@@ -11,10 +11,12 @@ import javax.xml.parsers.ParserConfigurationException;
 import java.io.IOException;
 import java.io.InputStream;
 
+import junit.framework.TestCase;
+import junit.framework.Test;
+import junit.framework.TestSuite;
+
 /**
  * Tests for schema validation code.
- *
- * Todo: turn this class into a TestCase
  *
  * <br/><br/>
  * LAYER 7 TECHNOLOGIES, INC<br/>
@@ -23,14 +25,23 @@ import java.io.InputStream;
  * $Id$<br/>
  *
  */
-public class SchemaValidationTest {
-    public static void main(String[] args) throws Exception {
-        SchemaValidationTest me = new SchemaValidationTest();
-        me.testWarehouseValidations();
-        me.testCaseWith2BodyChildren();
+public class SchemaValidationTest extends TestCase {
+
+    public SchemaValidationTest(String name) {
+        super(name);
     }
 
-    private void testCaseWith2BodyChildren() throws Exception {
+    public static Test suite() {
+        TestSuite suite = new TestSuite(SchemaValidationTest.class);
+        return suite;
+    }
+
+    public static void main(String[] args) throws Throwable {
+        junit.textui.TestRunner.run(suite());
+        System.out.println("Test complete: " + SchemaValidationTest.class);
+    }
+
+    public void testCaseWith2BodyChildren() throws Exception {
         // create assertion based on the wsdl
         SchemaValidation assertion = new SchemaValidation();
         assertion.assignSchemaFromWsdl(getResAsDoc(DOCLIT_WSDL_WITH2BODYCHILDREN));
@@ -38,14 +49,20 @@ public class SchemaValidationTest {
 
         // try to validate a number of different soap messages
         String[] resources = {DOCLIT_WITH2BODYCHILDREN_REQ};
+        boolean[] expectedResults = {true};
         for (int i = 0; i < resources.length; i++) {
             AssertionStatus res = serverAssertion.checkRequest(getResAsDoc(resources[i]));
-            System.out.println("DOCUMENT " + resources[i] +
-                                (res == AssertionStatus.NONE ? " VALIDATES OK" : " DOES NOT VALIDATE"));
+            //System.out.println("DOCUMENT " + resources[i] +
+            //                    (res == AssertionStatus.NONE ? " VALIDATES OK" : " DOES NOT VALIDATE"));
+            if (expectedResults[i]) {
+                assertTrue(res == AssertionStatus.NONE);
+            } else {
+                assertFalse(res == AssertionStatus.NONE);
+            }
         }
     }
 
-    private void testWarehouseValidations() throws Exception {
+    public void testWarehouseValidations() throws Exception {
         // create assertion based on the wsdl
         SchemaValidation assertion = new SchemaValidation();
         assertion.assignSchemaFromWsdl(getResAsDoc(WAREHOUSE_WSDL_PATH));
@@ -53,10 +70,16 @@ public class SchemaValidationTest {
 
         // try to validate a number of different soap messages
         String[] resources = {LISTREQ_PATH, BAD_LISTREQ_PATH, LISTRES_PATH};
+        boolean[] expectedResults = {true, false, true};
         for (int i = 0; i < resources.length; i++) {
             AssertionStatus res = serverAssertion.checkRequest(getResAsDoc(resources[i]));
-            System.out.println("DOCUMENT " + resources[i] +
-                                (res == AssertionStatus.NONE ? " VALIDATES OK" : " DOES NOT VALIDATE"));
+            //System.out.println("DOCUMENT " + resources[i] +
+            //                    (res == AssertionStatus.NONE ? " VALIDATES OK" : " DOES NOT VALIDATE"));
+            if (expectedResults[i]) {
+                assertTrue(res == AssertionStatus.NONE);
+            } else {
+                assertFalse(res == AssertionStatus.NONE);
+            }
         }
     }
 
