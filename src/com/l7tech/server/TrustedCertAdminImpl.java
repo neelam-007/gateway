@@ -62,6 +62,18 @@ public class TrustedCertAdminImpl extends RemoteService implements TrustedCertAd
         }
     }
 
+    public TrustedCert findCertBySubjectDn(final String dn) throws FindException, RemoteException {
+        try {
+            return (TrustedCert)doInTransactionAndClose(new PersistenceAction() {
+                public Object run() throws ObjectModelException {
+                    return (TrustedCert)getManager().findBySubjectDn(dn);
+                }
+            });
+        } catch ( ObjectModelException e ) {
+            throw new FindException("Couldn't find cert", e);
+        }
+    }
+
     public long saveCert(final TrustedCert cert) throws SaveException, UpdateException, VersionException, RemoteException {
         try {
             Long oid = (Long)doInTransactionAndClose(new PersistenceAction() {

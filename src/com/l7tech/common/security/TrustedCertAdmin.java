@@ -38,6 +38,15 @@ public interface TrustedCertAdmin extends Remote {
     public TrustedCert findCertByPrimaryKey(long oid) throws FindException, RemoteException;
 
     /**
+     * Retrieves the {@link TrustedCert} with the specified subject DN.
+     * @param dn the Subject DN of the {@link TrustedCert} to retrieve
+     * @return
+     * @throws FindException
+     * @throws RemoteException
+     */
+    public TrustedCert findCertBySubjectDn(String dn) throws FindException, RemoteException;
+
+    /**
      * Saves a new or existing {@link TrustedCert} to the database.
      * @param cert the {@link TrustedCert} to be saved
      * @return

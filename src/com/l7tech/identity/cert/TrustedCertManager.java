@@ -24,6 +24,15 @@ public interface TrustedCertManager extends EntityManager {
     TrustedCert findByPrimaryKey(long oid) throws FindException;
 
     /**
+     * Retrieves the {@link TrustedCert} with the specified DN, or null if it does not exist.
+     * <b>NOTE:</b> The corresponding field in the database must have a unique constraint!
+     * @param dn the DN of the {@link TrustedCert} to retrieve
+     * @return the retrieved {@link TrustedCert}, or null if it does not exist.
+     * @throws FindException if the retrieval fails for any reason other than nonexistence
+     */
+    TrustedCert findBySubjectDn(String dn) throws FindException;
+
+    /**
      * Saves a new {@link TrustedCert}, returning the oid that was generated.
      * @param cert The new {@link TrustedCert} to be saved.
      * @return the oid of the newly saved object

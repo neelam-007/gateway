@@ -11,6 +11,7 @@ import com.l7tech.objectmodel.*;
 
 import java.sql.SQLException;
 import java.util.logging.Level;
+import java.util.List;
 
 /**
  * @author alex
@@ -21,6 +22,26 @@ public class TrustedCertManagerImp extends HibernateEntityManager implements Tru
         try {
             TrustedCert cert = (TrustedCert)PersistenceManager.findByPrimaryKey( getContext(), getImpClass(), oid );
             return cert;
+        } catch ( SQLException e ) {
+            logger.log( Level.SEVERE, e.getMessage(), e );
+            throw new FindException("Couldn't retrieve cert", e);
+        }
+    }
+
+    public TrustedCert findBySubjectDn(String dn) throws FindException {
+        StringBuffer hql = new StringBuffer("FROM ");
+        hql.append(getTableName()).append(" IN CLASS " ).append(getImpClass().getName());
+        hql.append(" WHERE " ).append(getTableName()).append(".subjectDn = ?");
+        try {
+            List found = PersistenceManager.find( getContext(), hql.toString(), dn, String.class );
+            switch ( found.size() ) {
+                case 0:
+                    return null;
+                case 1:
+                    return (TrustedCert)found.get(0);
+                default:
+                    throw new FindException("Found multiple TrustedCerts with the same DN");
+            }
         } catch ( SQLException e ) {
             logger.log( Level.SEVERE, e.getMessage(), e );
             throw new FindException("Couldn't retrieve cert", e);
