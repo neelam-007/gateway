@@ -103,8 +103,17 @@ public class MessageProcessor {
         _currentRequest.set( request );
     }
 
+    public static Response getCurrentResponse() {
+        return (Response)_currentResponse.get();
+    }
+
+    public static void setCurrentResponse( Response response ) {
+        _currentResponse.set( response );
+    }
+
     private static MessageProcessor _instance = null;
     private static ThreadLocal _currentRequest = new ThreadLocal();
+    private static ThreadLocal _currentResponse = new ThreadLocal();
 
     private ServiceManager _serviceManager;
     //private Logger _log = LogManager.getInstance().getSystemLogger();
