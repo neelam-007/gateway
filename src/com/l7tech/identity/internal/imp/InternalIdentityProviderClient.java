@@ -3,7 +3,8 @@ package com.l7tech.identity.internal.imp;
 import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.identity.UserManager;
 import com.l7tech.identity.GroupManager;
-import com.l7tech.identity.User;
+
+import java.security.Principal;
 
 /**
  * Layer 7 Technologies, inc.
@@ -38,7 +39,7 @@ public class InternalIdentityProviderClient implements com.l7tech.identity.Ident
         return null;
     }
 
-    public boolean authenticate(User user, Object credential) {
+    public boolean authenticate( Principal user, byte[] credentials ) {
         // this doesnt make sense on the client side.
         return false;
     }
