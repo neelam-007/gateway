@@ -150,7 +150,7 @@ public class MainWindow extends JFrame {
      * Return the menuItemPref property value.
      * @return JMenuItem
      */
-    private JMenuItem getJMenuItemPref() {
+    private JMenuItem getMenuItemPreferences() {
         if (menuItemPref == null) {
             menuItemPref = new JMenuItem(getPreferencesAction());
             menuItemPref.setIcon(null);
@@ -233,10 +233,7 @@ public class MainWindow extends JFrame {
             fileMenu.setText(resapplication.getString("Session"));
             fileMenu.add(getConnectMenuItem());
             fileMenu.add(getDisconnectMenuItem());
-            fileMenu.add(getJMenuItemPref());
-            fileMenu.addSeparator();
-            fileMenu.add(new ImportCertificateAction());
-
+            fileMenu.add(getMenuItemPreferences());
 
             fileMenu.add(getExitMenuItem());
             int mnemonic = fileMenu.getText().toCharArray()[0];
@@ -928,15 +925,6 @@ public class MainWindow extends JFrame {
         return mainLeftJPanel;
     }
 
-
-    /**
-     * Return the TreeNodeJPopupMenu property value.
-     * @return JPopupMenu
-     */
-    private JPopupMenu getTreeNodeJPopupMenu(final AbstractTreeNode node) {
-//
-        return node.getPopupMenu();
-    }
 
 
     // --- Event listeners ---------------------------------------
