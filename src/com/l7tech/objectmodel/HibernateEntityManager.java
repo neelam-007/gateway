@@ -7,6 +7,7 @@
 package com.l7tech.objectmodel;
 
 import com.l7tech.logging.LogManager;
+import com.l7tech.common.transport.jms.JmsEndpoint;
 
 import java.sql.SQLException;
 import java.util.*;
@@ -182,6 +183,13 @@ public abstract class HibernateEntityManager implements EntityManager {
         return "from " + alias + " in class " + getImpClass().getName();
     }
 
+    public void delete( long oid ) throws DeleteException, FindException {
+        try {
+            PersistenceManager.delete( getContext(), getImpClass(), oid );
+        } catch ( SQLException e ) {
+            throw new DeleteException( e.toString(), e );
+        }
+    }
 
     protected PersistenceContext getContext() throws SQLException {
         return PersistenceContext.getCurrent();
