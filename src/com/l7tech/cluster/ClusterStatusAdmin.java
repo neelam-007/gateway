@@ -42,6 +42,8 @@ public interface ClusterStatusAdmin extends Remote {
      * the getClusterStatus calls will no longer refer to this node. this operation will not be permitted
      * unless this node's status has not been updated for a while.
      *
+     * tables potentially affected by this call are cluster_info, service_usage and ssg_logs
+     *
      * @param nodeid the mac of the stale node to remove
      */
     void removeStaleNode(String nodeid) throws RemoteException, DeleteException;

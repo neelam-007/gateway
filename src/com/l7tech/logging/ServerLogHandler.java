@@ -6,6 +6,7 @@ import com.l7tech.message.Request;
 import com.l7tech.objectmodel.HibernatePersistenceContext;
 import com.l7tech.objectmodel.PersistenceContext;
 import com.l7tech.objectmodel.TransactionException;
+import com.l7tech.objectmodel.DeleteException;
 import com.l7tech.server.MessageProcessor;
 import net.sf.hibernate.HibernateException;
 
@@ -192,6 +193,24 @@ public class ServerLogHandler extends Handler {
         };
         flusherDeamon.setDaemon(true);
         flusherDeamon.start();
+    }
+
+    /**
+     * this clears all recorded log records for a given node. it is called by
+     * ClusterStatusAdmin.removeStaleNode
+     */
+    public static void cleanAllRecordsForNode(HibernatePersistenceContext context, String nodeid)
+                                                throws DeleteException {
+        String deleteSQLStatement = "from " + TABLE_NAME + " in class " + SSGLogRecord.class.getName() +
+                                    " where " + TABLE_NAME + "." + NODEID_COLNAME +
+                                    " = \'" + nodeid + "\'";
+        try {
+            context.getSession().delete(deleteSQLStatement);
+        } catch (HibernateException e) {
+            throw new DeleteException("exception deleting logs for node " + nodeid, e);
+        } catch (SQLException e) {
+            throw new DeleteException("exception deleting logs for node " + nodeid, e);
+        }
     }
 
     /**

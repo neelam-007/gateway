@@ -3,6 +3,7 @@ package com.l7tech.cluster;
 import com.l7tech.objectmodel.*;
 import com.l7tech.remote.jini.export.RemoteService;
 import com.l7tech.logging.LogManager;
+import com.l7tech.logging.ServerLogHandler;
 import com.sun.jini.start.LifeCycle;
 import net.jini.config.ConfigurationException;
 
@@ -98,6 +99,8 @@ public class ClusterStatusAdminImp extends RemoteService implements ClusterStatu
      * the getClusterStatus calls will no longer refer to this node. this operation will not be permitted
      * unless this node's status has not been updated for a while.
      *
+     * tables potentially affected by this call are cluster_info, service_usage and ssg_logs
+     *
      * @param nodeid the mac of the stale node to remove
      */
     public void removeStaleNode(String nodeid) throws RemoteException, DeleteException {
@@ -110,8 +113,11 @@ public class ClusterStatusAdminImp extends RemoteService implements ClusterStatu
         }
         try {
             try {
+                logger.info("removing stale node: " + nodeid);
                 context.beginTransaction();
                 ciman.deleteNode(nodeid);
+                suman.clear(nodeid);
+                ServerLogHandler.cleanAllRecordsForNode((HibernatePersistenceContext)context, nodeid);
                 context.commitTransaction();
             } catch (TransactionException e) {
                 logger.log(Level.WARNING, "transaction exception", e);
