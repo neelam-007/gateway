@@ -163,7 +163,7 @@ public class Viewer extends JPanel implements XDocumentListener {
         try {
             XElement rootElement = document.getRoot();
             StringWriter sw = new StringWriter();
-            XMLWriter writer = new XMLWriter();
+            XMLWriter writer = new XMLWriter(sw);
             writer.write(rootElement);
             return sw.toString();
         } catch (Exception e) {
