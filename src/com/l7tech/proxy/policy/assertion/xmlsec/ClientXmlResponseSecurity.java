@@ -115,7 +115,11 @@ public class ClientXmlResponseSecurity extends ClientAssertion {
         try {
             X509Certificate caCert = SsgKeyStoreManager.getServerCert(request.getSsg());
             SecurityProcessor.Result result = verifier.processInPlace(doc);
-            result.getCertificate().verify(caCert.getPublicKey());
+
+            final X509Certificate certificate = result.getCertificate();
+            if (certificate !=null) {
+                certificate.verify(caCert.getPublicKey());
+            }
         } catch (Exception e) {
             handleResponseThrowable(e);
         }
