@@ -15,6 +15,7 @@ import java.util.Iterator;
  *
  * Util class used by the console-side implementations of Manager to translate
  * between types used in the admin service and generic types used by the model.
+ *
  */
 public class TypeTranslator {
     public static com.l7tech.objectmodel.EntityHeader serviceHeaderToGenHeader(com.l7tech.adminws.identity.Header stubHeader) {
@@ -88,7 +89,7 @@ public class TypeTranslator {
         com.l7tech.adminws.identity.User ret = new com.l7tech.adminws.identity.User();
         ret.setEmail(genUser.getEmail());
         ret.setFirstName(genUser.getFirstName());
-        ret.setGroups(collectionToServiceHeaders(genUser.getGroups()));
+        ret.setGroups(collectionToServiceHeaders(genUser.getGroupHeaders()));
         ret.setLastName(genUser.getLastName());
         ret.setLogin(genUser.getLogin());
         ret.setOid(genUser.getOid());
@@ -102,9 +103,11 @@ public class TypeTranslator {
         com.l7tech.identity.User ret = new com.l7tech.identity.internal.imp.UserImp();
         ret.setEmail(svcUser.getEmail());
         ret.setFirstName(svcUser.getFirstName());
+
         Collection groups = headerArrayToCollection(svcUser.getGroups());
-        ret.getGroups().clear();
         ret.getGroups().addAll(groups);
+        ret.getGroupHeaders().addAll(groups);
+
         ret.setLastName(svcUser.getLastName());
         ret.setLogin(svcUser.getLogin());
         ret.setOid(svcUser.getOid());
@@ -117,7 +120,7 @@ public class TypeTranslator {
         if (genGroup == null) return null;
         com.l7tech.adminws.identity.Group ret = new com.l7tech.adminws.identity.Group();
         ret.setDescription(genGroup.getDescription());
-        ret.setMembers(collectionToServiceHeaders(genGroup.getMembers()));
+        ret.setMembers(collectionToServiceHeaders(genGroup.getMemberHeaders()));
         ret.setName(genGroup.getName());
         ret.setOid(genGroup.getOid());
         return ret;
@@ -127,8 +130,12 @@ public class TypeTranslator {
         if (svcGroup == null) return null;
         com.l7tech.identity.Group ret = new com.l7tech.identity.internal.imp.GroupImp();
         ret.setDescription(svcGroup.getDescription());
-        ret.getMembers().clear();
-        ret.getMembers().addAll(headerArrayToCollection(svcGroup.getMembers()));
+
+        Collection col = headerArrayToCollection(svcGroup.getMembers());
+        // add it both places (just in case)
+        ret.getMembers().addAll(col);
+        ret.getMemberHeaders().addAll(col);
+
         ret.setName(svcGroup.getName());
         ret.setOid(svcGroup.getOid());
         return ret;
