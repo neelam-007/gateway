@@ -1,8 +1,15 @@
 package com.l7tech.server.secureconversation;
 
 import com.l7tech.common.security.xml.WssProcessor;
+import com.l7tech.server.identity.IdentityProviderFactory;
+import com.l7tech.identity.IdentityProvider;
+import com.l7tech.identity.User;
+import com.l7tech.objectmodel.FindException;
 
+import javax.crypto.SecretKey;
 import java.util.HashMap;
+import java.util.logging.Logger;
+import java.util.logging.Level;
 
 /**
  * Server-side manager that manages the SecureConversation sessions.
@@ -46,6 +53,34 @@ public class SecureConversationContextManager implements WssProcessor.SecurityCo
         return getSession(securityContextIdentifier);
     }
 
+    public void loadFakeSession() {
+        SecureConversationSession fakesession = new SecureConversationSession();
+        fakesession.setCreation(System.currentTimeMillis());
+        fakesession.setExpiration(System.currentTimeMillis() + (1000*60*60));
+        fakesession.setIdentifier("http://www.l7tech.com/uuid/sessionid/123");
+        fakesession.setSharedSecret(new SecretKey(){
+            public byte[] getEncoded() {
+                return new byte[] {5,2,4,5,
+                                   8,7,9,6,
+                                   32,4,1,55,
+                                   8,7,77,7};
+            }
+            public String getAlgorithm() {
+                return "blah";
+            }
+            public String getFormat() {
+                return "blah";
+            }
+        });
+        try {
+            IdentityProvider internalProvider = IdentityProviderFactory.getProvider(-2);
+            User user = internalProvider.getUserManager().findByLogin("mike");
+            fakesession.setUsedBy(user);
+        } catch (FindException e) {
+            logger.log(Level.SEVERE, "Cannot set fake session", e);
+        }
+    }
+
     private SecureConversationContextManager() {
         // maybe in the future we use some distributed cache?
     }
@@ -59,4 +94,6 @@ public class SecureConversationContextManager implements WssProcessor.SecurityCo
     private static class SingletonHolder {
         private static SecureConversationContextManager singleton = new SecureConversationContextManager();
     }
+
+    private final Logger logger = Logger.getLogger(SecureConversationContextManager.class.getName());
 }
