@@ -187,8 +187,6 @@ public class InternalGroupManagerServer extends HibernateEntityManager implement
             throw new FindException( e.getMessage(), e );
         } catch (HibernateException e) {
             throw new FindException( e.getMessage(), e );
-        } finally {
-            if ( hpc != null ) hpc.close();
         }
     }
 
@@ -209,8 +207,6 @@ public class InternalGroupManagerServer extends HibernateEntityManager implement
             throw new FindException( e.getMessage(), e );
         } catch (HibernateException e) {
             throw new FindException( e.getMessage(), e );
-        } finally {
-            if ( hpc != null ) hpc.close();
         }
     }
 
@@ -231,8 +227,6 @@ public class InternalGroupManagerServer extends HibernateEntityManager implement
             throw new FindException( e.getMessage(), e );
         } catch (HibernateException e) {
             throw new FindException( e.getMessage(), e );
-        } finally {
-            if ( hpc != null ) hpc.close();
         }
     }
 
@@ -253,8 +247,6 @@ public class InternalGroupManagerServer extends HibernateEntityManager implement
             throw new FindException( e.getMessage(), e );
         } catch (HibernateException e) {
             throw new FindException( e.getMessage(), e );
-        } finally {
-            if ( hpc != null ) hpc.close();
         }
     }
 
@@ -275,8 +267,6 @@ public class InternalGroupManagerServer extends HibernateEntityManager implement
             throw new FindException( e.getMessage(), e );
         } catch (HibernateException e) {
             throw new FindException( e.getMessage(), e );
-        } finally {
-            if ( hpc != null ) hpc.close();
         }
     }
 
@@ -295,8 +285,6 @@ public class InternalGroupManagerServer extends HibernateEntityManager implement
             throw new FindException( e.getMessage(), e );
         } catch (HibernateException e) {
             throw new FindException( e.getMessage(), e );
-        } finally {
-            if ( hpc != null ) hpc.close();
         }
     }
 
@@ -313,8 +301,6 @@ public class InternalGroupManagerServer extends HibernateEntityManager implement
             throw new FindException( e.getMessage(), e );
         } catch (HibernateException e) {
             throw new FindException( e.getMessage(), e );
-        } finally {
-            if ( hpc != null ) hpc.close();
         }
     }
 
@@ -331,8 +317,6 @@ public class InternalGroupManagerServer extends HibernateEntityManager implement
             throw new FindException( se.toString(), se );
         } catch ( HibernateException he ) {
             throw new FindException( he.toString(), he );
-        } finally {
-            if ( hpc != null ) hpc.close();
         }
 
     }
@@ -379,8 +363,6 @@ public class InternalGroupManagerServer extends HibernateEntityManager implement
             throw new UpdateException( te.toString(), te );
         } catch ( HibernateException he ) {
             throw new UpdateException( he.toString(), he );
-        } finally {
-            if ( hpc != null ) hpc.close();
         }
 
     }
@@ -402,8 +384,6 @@ public class InternalGroupManagerServer extends HibernateEntityManager implement
             throw new FindException( se.toString(), se );
         } catch ( HibernateException he ) {
             throw new FindException( he.toString(), he );
-        } finally {
-            if ( hpc != null ) hpc.close();
         }
     }
 
@@ -485,8 +465,6 @@ public class InternalGroupManagerServer extends HibernateEntityManager implement
             throw new UpdateException( te.toString(), te );
         } catch ( HibernateException he ) {
             throw new UpdateException( he.toString(), he );
-        } finally {
-            if ( hpc != null ) hpc.close();
         }
 
     }
