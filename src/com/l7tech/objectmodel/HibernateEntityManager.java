@@ -10,10 +10,7 @@ import EDU.oswego.cs.dl.util.concurrent.ReadWriteLock;
 import EDU.oswego.cs.dl.util.concurrent.ReaderPreferenceReadWriteLock;
 import EDU.oswego.cs.dl.util.concurrent.Sync;
 import com.l7tech.common.util.ExceptionUtils;
-import net.sf.hibernate.Criteria;
-import net.sf.hibernate.Hibernate;
-import net.sf.hibernate.HibernateException;
-import net.sf.hibernate.Session;
+import net.sf.hibernate.*;
 import org.springframework.dao.DataAccessException;
 import org.springframework.orm.hibernate.support.HibernateDaoSupport;
 
@@ -44,13 +41,17 @@ public abstract class HibernateEntityManager extends HibernateDaoSupport impleme
           + " FROM " + alias + " IN CLASS " + getImpClass().getName()
           + " WHERE " + alias + ".oid = ?";
         try {
-            List results = getHibernateTemplate().find(query, new Long(oid));
+            FlushMode beforeMode = null;
+            Session s = getSession();
+            s.setFlushMode(FlushMode.NEVER); // getVersion() always wants to know what's actually in the database; stale objects are unimportant
+            List results = s.find(query, new Long(oid), Hibernate.LONG);
+            s.setFlushMode(beforeMode);
             if (results.size() == 0) return null;
             if (results.size() > 1) throw new FindException("Multiple results found");
             Object result = results.get(0);
             if (!(result instanceof Integer)) throw new FindException("Found " + result.getClass().getName() + " when looking for Integer!");
             return (Integer)result;
-        } catch (DataAccessException e) {
+        } catch (Exception e) {
             throw new FindException(e.toString(), e);
         }
     }
@@ -61,13 +62,17 @@ public abstract class HibernateEntityManager extends HibernateDaoSupport impleme
           " IN CLASS " + getImpClass() +
           " WHERE " + alias + ".oid = ?";
         try {
-            List results = getHibernateTemplate().find(query, new Long(oid));
+            FlushMode beforeMode = null;
+            Session s = getSession();
+            s.setFlushMode(FlushMode.COMMIT);
+            List results = s.find(query, new Long(oid), Hibernate.LONG);
+            s.setFlushMode(beforeMode);
             if (results.size() == 0) return null;
             if (results.size() > 1) throw new FindException("Multiple results found!");
             Object result = results.get(0);
             if (!(result instanceof Entity)) throw new FindException("Found " + result.getClass().getName() + " when looking for Entity!");
             return (Entity)results.get(0);
-        } catch (DataAccessException e) {
+        } catch (Exception e) {
             throw new FindException(e.toString(), e);
         }
     }
@@ -83,7 +88,11 @@ public abstract class HibernateEntityManager extends HibernateDaoSupport impleme
           " IN CLASS " + getImpClass();
 
         try {
-            List results = getHibernateTemplate().find(query);
+            FlushMode beforeMode = null;
+            Session s = getSession();
+            s.setFlushMode(FlushMode.COMMIT);
+            List results = s.find(query);
+            s.setFlushMode(beforeMode);
             if (results.size() > 0) {
                 for (Iterator i = results.iterator(); i.hasNext();) {
                     Object[] row = (Object[])i.next();
@@ -94,7 +103,7 @@ public abstract class HibernateEntityManager extends HibernateDaoSupport impleme
                     }
                 }
             }
-        } catch (DataAccessException e) {
+        } catch (Exception e) {
             throw new FindException(e.toString(), e);
         }
 
@@ -331,16 +340,22 @@ public abstract class HibernateEntityManager extends HibernateDaoSupport impleme
      * Retrieve the persistent object instance by it's primary key (object id). If the
      * object is not found returns <code>null</code>
      *
-     * @param impClass the oobject class
+     * @param impClass the object class
      * @param oid      the object id
      * @return the object instance or <code>null</code> if no instance has been found
      * @throws FindException if there was an data access error
      */
     protected Object findByPrimaryKey(Class impClass, long oid) throws FindException {
         try {
-            return getHibernateTemplate().load(impClass, new Long(oid));
-        } catch (DataAccessException e) {
-            if (ExceptionUtils.causedBy(e, net.sf.hibernate.ObjectNotFoundException.class)) {
+            FlushMode beforeMode = null;
+            Session s = getSession();
+            s.setFlushMode(FlushMode.COMMIT);
+            Object thing = s.load(impClass, new Long(oid));
+            s.setFlushMode(beforeMode);
+            return thing;
+        } catch (Exception e) {
+            if (ExceptionUtils.causedBy(e, net.sf.hibernate.ObjectNotFoundException.class) ||
+                ExceptionUtils.causedBy(e, ObjectDeletedException.class)) {
                 return null;
             }
             throw new FindException("Data access error ", e);
