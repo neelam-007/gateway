@@ -155,7 +155,7 @@ public class Gui {
     /** Get the main frame. */
     public JFrame getFrame() {
         if (frame == null) {
-            frame = new JFrame("Client Proxy");
+            frame = new JFrame("Layer7 Client Proxy");
             frame.setIconImage(IconManager.getAppImage());
             frame.addWindowListener(new WindowAdapter() {
                 public void windowClosing(final WindowEvent e) {
