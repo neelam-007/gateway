@@ -24,17 +24,32 @@ public class Main {
 
     private static ClientProxy clientProxy;
 
+    private static int getIntProperty(String name, int def) {
+        try {
+            String p = System.getProperty(name);
+            if (p == null || p.length() < 1)
+                return def;
+            return Integer.parseInt(p);
+        } catch (NumberFormatException e) {
+            return def;
+        }
+    }
+
     /** Start a GUI-equipped client proxy and run it until it's shut down. */
     public static void main(final String[] argv) {
         log.info("Starting Layer7 Client Proxy in GUI mode");
 
         SsgManager ssgManager = SsgManagerImpl.getSsgManagerImpl();
 
+        int port = getIntProperty("com.l7tech.proxy.listener.port", DEFAULT_PORT);
+        int minThreads = getIntProperty("com.l7tech.proxy.listener.minthreads", MIN_THREADS);
+        int maxThreads = getIntProperty("com.l7tech.proxy.listener.maxthreads", MAX_THREADS);
+
         clientProxy = new ClientProxy(ssgManager,
                                       new MessageProcessor(Managers.getPolicyManager()),
-                                      DEFAULT_PORT,
-                                      MIN_THREADS,
-                                      MAX_THREADS);
+                                      port,
+                                      minThreads,
+                                      maxThreads);
 
         // Set up the GUI
         Gui.setInstance(Gui.createGui(clientProxy, ssgManager));
