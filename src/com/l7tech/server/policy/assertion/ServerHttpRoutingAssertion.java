@@ -13,10 +13,7 @@ import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.util.SoapUtil;
 import com.l7tech.identity.UserBean;
 import com.l7tech.logging.LogManager;
-import com.l7tech.message.Request;
-import com.l7tech.message.Response;
-import com.l7tech.message.XmlRequest;
-import com.l7tech.message.XmlResponse;
+import com.l7tech.message.*;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.HttpRoutingAssertion;
 import com.l7tech.policy.assertion.PolicyAssertionException;
@@ -33,6 +30,8 @@ import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
 
 import javax.wsdl.WSDLException;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.Cookie;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
@@ -142,6 +141,7 @@ public static final String CONTENT_TYPE = "Content-Type";
                 ag.attachSenderVouches(document, ub, si);
                 requestXml = XmlUtil.documentToString(document);
             }
+            attachCookies(client, request.getTransportMetadata());
             postMethod.setRequestBody(requestXml);
             client.executeMethod(postMethod);
 
@@ -194,6 +194,40 @@ public static final String CONTENT_TYPE = "Content-Type";
                 response.runOnClose(mc);
             }
         }
+    }
+
+    /**
+     * Attach cookies received by the client to the protected service
+     * @param client the http client sender
+     * @param transportMetadata the transport metadat
+     * @throws IllegalArgumentException thrown if transportMetadata is not
+     *                                  <code>HttpTransportMetadata</code> type
+     */
+    private void attachCookies(HttpClient client, TransportMetadata transportMetadata)
+      throws IllegalArgumentException {
+        if (!(transportMetadata instanceof HttpTransportMetadata)) {
+            throw new IllegalArgumentException(HttpTransportMetadata.class +" expected");
+        }
+        HttpTransportMetadata httpTransportMetaData = (HttpTransportMetadata)transportMetadata;
+        HttpServletRequest req = httpTransportMetaData.getRequest();
+        HttpState state = client.getState();
+
+        Cookie[] cookies = req.getCookies();
+        for (int i = 0; cookies !=null && i < cookies.length; i++) {
+            Cookie incomingCookie = cookies[i];
+            org.apache.commons.httpclient.Cookie cookieOut = new org.apache.commons.httpclient.Cookie();
+            cookieOut.setDomain(incomingCookie.getDomain());
+            cookieOut.setPath(incomingCookie.getPath());
+            cookieOut.setName(incomingCookie.getName());
+            cookieOut.setValue(incomingCookie.getValue());
+            cookieOut.setSecure(incomingCookie.getSecure());
+            cookieOut.setVersion(incomingCookie.getVersion());
+            cookieOut.setComment(incomingCookie.getComment());
+            // cookieOut.setExpiryDate(??); // how to translate the getMaxAge() to the date? em
+            logger.fine("Adding outgoing cookie "+cookieOut);
+            state.addCookie(cookieOut);
+        }
+
     }
 
     private static class MethodCloser implements Runnable {
