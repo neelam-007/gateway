@@ -3,13 +3,18 @@
  *
  * $Id$
  */
-package com.l7tech.policy.assertion.xmlsec;
+package com.l7tech.server.policy.assertion.xmlsec;
 
 import com.l7tech.common.security.token.SignedElement;
 import com.l7tech.common.security.xml.processor.ProcessorResult;
 import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.xml.InvalidDocumentFormatException;
+import com.l7tech.server.policy.assertion.xmlsec.SamlAuthenticationStatementValidate;
+import com.l7tech.policy.assertion.xmlsec.SamlAuthenticationStatement;
+import com.l7tech.policy.assertion.xmlsec.SamlAuthorizationStatement;
+import com.l7tech.policy.assertion.xmlsec.SamlAttributeStatement;
+import com.l7tech.policy.assertion.xmlsec.SamlStatementAssertion;
 import org.apache.xmlbeans.XmlException;
 import org.springframework.context.ApplicationContext;
 import org.w3c.dom.Document;

@@ -6,7 +6,7 @@ import com.l7tech.policy.assertion.credential.CredentialSourceAssertion;
  * The <code>SamlStatementAssertion</code> assertion describes
  * the common SAML constraints shared by Authentication Statement constraints.
  */
-abstract class SamlStatementAssertion extends CredentialSourceAssertion implements SecurityHeaderAddressable {
+public abstract class SamlStatementAssertion extends CredentialSourceAssertion implements SecurityHeaderAddressable {
     private String[] subjectConfirmations = new String[] {};
     private String nameQualifier  = null;
     private String[] nameFormats  = new String[] {};

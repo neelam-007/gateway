@@ -1,6 +1,7 @@
-package com.l7tech.policy.assertion.xmlsec;
+package com.l7tech.server.policy.assertion.xmlsec;
 
 import com.l7tech.common.security.xml.processor.ProcessorResult;
+import com.l7tech.policy.assertion.xmlsec.SamlStatementAssertion;
 import org.springframework.context.ApplicationContext;
 import org.w3c.dom.Document;
 import x0Assertion.oasisNamesTcSAML1.SubjectStatementAbstractType;
