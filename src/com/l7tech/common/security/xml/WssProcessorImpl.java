@@ -92,7 +92,7 @@ public class WssProcessorImpl implements WssProcessor {
                                                           X509Certificate recipientCert,
                                                           PrivateKey recipientKey,
                                                           SecurityContextFinder securityContextFinder)
-            throws com.l7tech.common.security.xml.ProcessorException, InvalidDocumentFormatException, GeneralSecurityException, BadContextException
+            throws ProcessorException, InvalidDocumentFormatException, GeneralSecurityException, BadContextException
     {
         // Reset all potential outputs
         ProcessingStatusHolder cntx = new ProcessingStatusHolder();
