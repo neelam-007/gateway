@@ -26,14 +26,14 @@ public class ClusterStatusAdminStub implements ClusterStatusAdmin{
         ClusterNodeInfo c7 = new ClusterNodeInfo();
         ClusterNodeInfo c8 = new ClusterNodeInfo();
 
-        c1.setMac("00:0c:11:f0:43:01"); c1.setName("SSG1"); c1.setAddress("192.128.1.100"); c1.setAvgLoad(1.5); c1.setUptime(1072746384);
-        c2.setMac("00:0c:11:f0:43:02");c2.setName("SSG2"); c2.setAddress("192.128.1.101"); c2.setAvgLoad(1.8); c2.setUptime(1072656394);
-        c3.setMac("00:0c:11:f0:43:03");c3.setName("SSG3"); c3.setAddress("192.128.1.102"); c3.setAvgLoad(0); c3.setUptime(1072746404);
-        c4.setMac("00:0c:11:f0:43:04");c4.setName("SSG4"); c4.setAddress("192.128.2.10"); c4.setAvgLoad(1.1); c4.setUptime(1072776414);
-        c5.setMac("00:0c:11:f0:43:05");c5.setName("SSG5"); c5.setAddress("192.128.2.11"); c5.setAvgLoad(2.1); c5.setUptime(1072746484);
-        c6.setMac("00:0c:11:f0:43:06");c6.setName("SSG6"); c6.setAddress("192.128.3.1"); c6.setAvgLoad(0.8); c6.setUptime(1072736464);
-        c7.setMac("00:0c:11:f0:43:07");c7.setName("SSG7"); c7.setAddress("192.128.3.2"); c7.setAvgLoad(0); c7.setUptime(1072808010);
-        c8.setMac("00:0c:11:f0:43:08");c8.setName("SSG8"); c8.setAddress("192.128.3.3"); c8.setAvgLoad(0); c8.setUptime(1072808325);
+        c1.setMac("00:0c:11:f0:43:01"); c1.setName("SSG1"); c1.setAddress("192.128.1.100"); c1.setAvgLoad(1.5); c1.setBootTime(1072746384);
+        c2.setMac("00:0c:11:f0:43:02");c2.setName("SSG2"); c2.setAddress("192.128.1.101"); c2.setAvgLoad(1.8); c2.setBootTime(1072656394);
+        c3.setMac("00:0c:11:f0:43:03");c3.setName("SSG3"); c3.setAddress("192.128.1.102"); c3.setAvgLoad(0); c3.setBootTime(1072746404);
+        c4.setMac("00:0c:11:f0:43:04");c4.setName("SSG4"); c4.setAddress("192.128.2.10"); c4.setAvgLoad(1.1); c4.setBootTime(1072776414);
+        c5.setMac("00:0c:11:f0:43:05");c5.setName("SSG5"); c5.setAddress("192.128.2.11"); c5.setAvgLoad(2.1); c5.setBootTime(1072746484);
+        c6.setMac("00:0c:11:f0:43:06");c6.setName("SSG6"); c6.setAddress("192.128.3.1"); c6.setAvgLoad(0.8); c6.setBootTime(1072736464);
+        c7.setMac("00:0c:11:f0:43:07");c7.setName("SSG7"); c7.setAddress("192.128.3.2"); c7.setAvgLoad(0); c7.setBootTime(1072808010);
+        c8.setMac("00:0c:11:f0:43:08");c8.setName("SSG8"); c8.setAddress("192.128.3.3"); c8.setAvgLoad(0); c8.setBootTime(1072808325);
 
         cluster[0] = c1;
         cluster[1] = c2;

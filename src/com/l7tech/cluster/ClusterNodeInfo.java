@@ -60,17 +60,34 @@ public class ClusterNodeInfo implements Serializable {
     }
 
     /**
-     * the timestamp of when this node last booted
+     * how long has this been running (in ms). this is always calculated at server side.
      */
     public long getUptime() {
         return uptime;
     }
 
     /**
-     * the timestamp of when this node last booted
+     * how long has this been running (in ms). this is always calculated at server side.
      */
     public void setUptime(long uptime) {
         this.uptime = uptime;
+    }
+
+    /**
+     * the timestamp of when this node last booted
+     */
+    public long getBootTime() {
+        return boottime;
+    }
+
+    /**
+     * the timestamp of when this node last booted
+     */
+    public void setBootTime(long timestamp) {
+        this.boottime = timestamp;
+        if (uptime == 0) {
+            uptime = System.currentTimeMillis() - boottime;
+        }
     }
 
     /**
@@ -119,6 +136,7 @@ public class ClusterNodeInfo implements Serializable {
     private String address;
     private String name;
     private boolean isMaster;
+    private long boottime;
     private long uptime;
     private double avgLoad;
     private long lastUpdateTimeStamp;

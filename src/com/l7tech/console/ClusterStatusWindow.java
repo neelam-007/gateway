@@ -522,7 +522,7 @@ public class ClusterStatusWindow extends JFrame {
 
         if (uptime == 0) return new String("0 mins");
 
-        long uptime_ms = (System.currentTimeMillis() - uptime) / 1000;
+        long uptime_ms = (/*System.currentTimeMillis() - */uptime) / 1000;
 
         long serverUpTimeMinutues = uptime_ms / 60;
         long minutes_remain = serverUpTimeMinutues % 60;

@@ -143,11 +143,11 @@ public class ClusterInfoManager {
      * table.
      */
     public void updateSelfUptime() throws UpdateException {
-        long newuptimevalue = System.currentTimeMillis();
+        long newboottimevalue = System.currentTimeMillis();
         ClusterNodeInfo selfCI = getSelfNodeInf();
         if (selfCI != null) {
-            selfCI.setUptime(newuptimevalue);
-            selfCI.setLastUpdateTimeStamp(newuptimevalue);
+            selfCI.setBootTime(newboottimevalue);
+            selfCI.setLastUpdateTimeStamp(newboottimevalue);
             try {
                 String add = null;
                 add = InetAddress.getLocalHost().getHostAddress();
