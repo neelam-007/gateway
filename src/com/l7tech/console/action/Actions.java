@@ -11,6 +11,7 @@ import com.l7tech.identity.IdentityAdmin;
 import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.objectmodel.DeleteException;
 import com.l7tech.objectmodel.EntityHeader;
+import com.l7tech.service.ServiceAdmin;
 
 import javax.swing.*;
 import java.awt.*;
@@ -172,9 +173,8 @@ public class Actions {
 
         // Delete the  node and update the tree
         try {
-            Registry.getDefault().
-              getServiceManager().
-              deletePublishedService(node.getPublishedService().getOid());
+            final ServiceAdmin serviceManager = Registry.getDefault().getServiceManager();
+            serviceManager.deletePublishedService(Long.toString(node.getPublishedService().getOid()));
             return true;
         } catch (Exception e) {
             log.log(Level.SEVERE, "Error deleting service", e);

@@ -11,6 +11,7 @@ import com.l7tech.identity.internal.GroupMembership;
 import com.l7tech.identity.ldap.LdapIdentityProviderConfig;
 import com.l7tech.objectmodel.*;
 import com.l7tech.server.identity.ldap.LdapConfigTemplateManager;
+import com.l7tech.service.PublishedService;
 
 import javax.security.auth.Subject;
 import java.rmi.RemoteException;
@@ -36,7 +37,7 @@ public class IdentityAdminStub implements IdentityAdmin {
         for (Iterator i = configs.keySet().iterator(); i.hasNext();) {
             Object key = i.next();
             IdentityProviderConfig config = (IdentityProviderConfig)configs.get(key);
-            headers.add(EntityHeader.fromIdentityProviderConfig(config));
+            headers.add(fromIdentityProviderConfig(config));
         }
         return (EntityHeader[])headers.toArray(new EntityHeader[0]);
     }
@@ -74,7 +75,7 @@ public class IdentityAdminStub implements IdentityAdmin {
         for (Iterator i = users.keySet().iterator(); i.hasNext();) {
             String uid = (String)i.next();
             User u = (User)users.get(uid);
-            results.add(EntityHeader.fromUser(u));
+            results.add(fromUser(u));
         }
         return (EntityHeader[])results.toArray(new EntityHeader[0]);
     }
@@ -145,7 +146,7 @@ public class IdentityAdminStub implements IdentityAdmin {
         for (Iterator i = groups.keySet().iterator(); i.hasNext();) {
             String gid = (String)i.next();
             Group g = (Group)groups.get(gid);
-            results.add(EntityHeader.fromGroup(g));
+            results.add(fromGroup(g));
         }
         return (EntityHeader[])results.toArray(new EntityHeader[0]);
     }
@@ -197,7 +198,7 @@ public class IdentityAdminStub implements IdentityAdmin {
             GroupMembership gm = (GroupMembership)i.next();
             if (userId.equals(Long.toString(gm.getUserOid()))) {
                 Group g = (Group)store.getGroups().get(Long.toString(gm.getGroupOid()));
-                results.add(EntityHeader.fromGroup(g));
+                results.add(fromGroup(g));
             }
         }
         return results;
@@ -211,7 +212,7 @@ public class IdentityAdminStub implements IdentityAdmin {
             GroupMembership gm = (GroupMembership)i.next();
             if (groupId.equals(Long.toString(gm.getGroupOid()))) {
                 User u = (User)store.getUsers().get(Long.toString(gm.getUserOid()));
-                results.add(EntityHeader.fromUser(u));
+                results.add(fromUser(u));
             }
         }
         return results;
@@ -235,4 +236,54 @@ public class IdentityAdminStub implements IdentityAdmin {
         roles.add(Group.OPERATOR_GROUP_NAME);
         return roles;
     }
+
+
+    /**
+     * User to header
+     *
+     * @param u the user to get the header for
+     * @return the corresponding header
+     */
+    public static EntityHeader fromUser(User u) {
+        if (u == null) {
+            throw new IllegalArgumentException();
+        }
+        return new EntityHeader(u.getUniqueIdentifier(), EntityType.USER, u.getLogin(), u.getName());
+    }
+
+    /**
+     * Group to header
+     *
+     * @param g the group to get the header for
+     * @return the corresponding header
+     */
+    static EntityHeader fromGroup(Group g) {
+        if (g == null) {
+            throw new IllegalArgumentException();
+        }
+        return new EntityHeader(g.getUniqueIdentifier(), EntityType.GROUP, g.getName(), g.getDescription());
+    }
+
+    /**
+     * Service to header
+     *
+     * @param s the service to get the header for
+     * @return the corresponding header
+     */
+    static EntityHeader fromService(PublishedService s) {
+        if (s == null) {
+            throw new IllegalArgumentException();
+        }
+        return new EntityHeader(Long.toString(s.getOid()), EntityType.SERVICE, s.getName(), "");
+    }
+
+    static EntityHeader fromIdentityProviderConfig(IdentityProviderConfig config) {
+        EntityHeader out = new EntityHeader();
+        out.setDescription(config.getDescription());
+        out.setName(config.getName());
+        out.setOid(config.getOid());
+        out.setType(EntityType.ID_PROVIDER_CONFIG);
+        return out;
+    }
+
 }

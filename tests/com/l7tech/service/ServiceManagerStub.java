@@ -276,7 +276,6 @@ public class ServiceManagerStub implements ServiceManager {
     }
 
     private EntityHeader fromService(PublishedService s) {
-        return
-          new EntityHeader(s.getOid(), EntityType.SERVICE, s.getName(), null);
+        return new EntityHeader(Long.toString(s.getOid()), EntityType.SERVICE, s.getName(), null);
     }
 }

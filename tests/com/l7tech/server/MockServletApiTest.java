@@ -62,7 +62,7 @@ public class MockServletApiTest extends TestCase {
         }
         EntityHeader[] headers = serviceAdmin.findAllPublishedServices();
         assertTrue("no services have been returned could not execute test", headers.length > 0);
-        publishedService = serviceAdmin.findServiceByID(headers[0].getOid());
+        publishedService = serviceAdmin.findServiceByID(headers[0].getStrId());
         Wsdl wsdl = publishedService.parsedWsdl();
 
         SoapMessageGenerator sg = new SoapMessageGenerator();

@@ -9,11 +9,6 @@
 package com.l7tech.objectmodel;
 
 
-import com.l7tech.identity.Group;
-import com.l7tech.identity.IdentityProviderConfig;
-import com.l7tech.identity.User;
-import com.l7tech.service.PublishedService;
-
 import java.io.Serializable;
 
 /**
@@ -24,14 +19,6 @@ import java.io.Serializable;
  */
 public class EntityHeader implements Serializable {
 
-    public EntityHeader(long oid, EntityType type, String name, String description) {
-        setOid(oid);
-        strId = Long.toString(oid);
-        setType(type);
-        setName(name);
-        setDescription(description);
-    }
-
     public EntityHeader(String id, EntityType type, String name, String description) {
         setStrId(id);
         setType(type);
@@ -39,56 +26,6 @@ public class EntityHeader implements Serializable {
         setDescription(description);
     }
 
-    /**
-     * User to header
-     *
-     * @param u the user to get the header for
-     *
-     * @return the corresponding header
-     */
-    public static EntityHeader fromUser(User u) {
-        if (u == null) {
-            throw new IllegalArgumentException();
-        }
-        return new EntityHeader(u.getUniqueIdentifier(),EntityType.USER, u.getLogin(), u.getName());
-    }
-
-    /**
-     * Group to header
-     *
-     * @param g the group to get the header for
-     *
-     * @return the corresponding header
-     */
-    public static EntityHeader fromGroup(Group g) {
-        if (g == null) {
-            throw new IllegalArgumentException();
-        }
-        return new EntityHeader(g.getUniqueIdentifier(),EntityType.GROUP, g.getName(), g.getDescription());
-    }
-
-    /**
-       * Service to header
-       *
-       * @param s the service to get the header for
-       *
-       * @return the corresponding header
-       */
-      public static EntityHeader fromService(PublishedService s) {
-          if (s == null) {
-              throw new IllegalArgumentException();
-          }
-          return new EntityHeader(s.getOid(),EntityType.SERVICE, s.getName(), "");
-      }
-
-    public static EntityHeader fromIdentityProviderConfig(IdentityProviderConfig config) {
-        EntityHeader out = new EntityHeader();
-        out.setDescription(config.getDescription());
-        out.setName(config.getName());
-        out.setOid(config.getOid());
-        out.setType(EntityType.ID_PROVIDER_CONFIG);
-        return out;
-    }
 
     public EntityHeader() {
         type = EntityType.UNDEFINED;

@@ -81,8 +81,9 @@ public class ServiceAdminImpl extends RemoteService implements ServiceAdmin {
         }
     }
 
-    public PublishedService findServiceByID(long oid) throws RemoteException, FindException {
+    public PublishedService findServiceByID(String serviceID) throws RemoteException, FindException {
         try {
+            long oid = toLong(serviceID);
             PublishedService service = getServiceManager().findByPrimaryKey(oid);
             if (service != null) {
                 logger.finest("Returning service id " + oid + ", version " + service.getVersion());
@@ -180,11 +181,11 @@ public class ServiceAdminImpl extends RemoteService implements ServiceAdmin {
         }
     }
 
-    public void deletePublishedService(long oid) throws RemoteException, DeleteException {
+    public void deletePublishedService(String serviceID) throws RemoteException, DeleteException {
         ServiceManager manager = null;
         PublishedService service = null;
-
         try {
+            long oid = toLong(serviceID);
             enforceAdminRole();
             beginTransaction();
             manager = getServiceManager();
@@ -255,6 +256,22 @@ public class ServiceAdminImpl extends RemoteService implements ServiceAdmin {
             ++count;
         }
         return output;
+    }
+
+    /**
+     * Parse the String service ID to long (database format). Throws runtime exc
+     * @param serviceID the service ID, must not be null, and .
+     * @return the service ID representing <code>long</code>
+     *
+     * @throws IllegalArgumentException if service ID is null
+     * @throws NumberFormatException on parse error
+     */
+    private long toLong(String serviceID)
+      throws IllegalArgumentException, NumberFormatException {
+        if (serviceID == null) {
+                throw new IllegalArgumentException();
+            }
+        return Long.parseLong(serviceID);
     }
 
     private final Logger logger = Logger.getLogger(getClass().getName());

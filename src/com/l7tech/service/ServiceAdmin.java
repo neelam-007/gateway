@@ -34,7 +34,7 @@ public interface ServiceAdmin extends Remote {
      * @throws FindException   if there was a problem accessing the requested information.
      * @throws RemoteException on remote communication error
      */
-    PublishedService findServiceByID(long oid) throws RemoteException, FindException;
+    PublishedService findServiceByID(String oid) throws RemoteException, FindException;
 
     /**
      * Retrieve a chunk of the available {@link PublishedService} headers  This is a version of
@@ -71,7 +71,7 @@ public interface ServiceAdmin extends Remote {
      * @throws RemoteException on remote communication error
      * @throws DeleteException if the requested information could not be deleted
      */
-    void deletePublishedService(long oid) throws RemoteException, DeleteException;
+    void deletePublishedService(String oid) throws RemoteException, DeleteException;
 
     /**
      * Get a wsdl document from a URL. The WSDL document will be resolved by the gateway so that the manager

@@ -47,7 +47,7 @@ public class JmsConnection extends NamedEntityImp implements Serializable {
     }
 
     public EntityHeader toEntityHeader() {
-        return new EntityHeader(getOid(), EntityType.JMS_CONNECTION, getName(), null);        
+        return new EntityHeader(Long.toString(getOid()), EntityType.JMS_CONNECTION, getName(), null);        
     }
 
     public String getUsername() {

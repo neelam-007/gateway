@@ -34,7 +34,7 @@ public class ServiceAdminStub implements ServiceAdmin {
      * @return
      * @throws RemoteException
      */
-    public PublishedService findServiceByID(long oid) throws RemoteException {
+    public PublishedService findServiceByID(String oid) throws RemoteException {
         return
           (PublishedService)services.get(new Long(oid));
     }
@@ -83,7 +83,7 @@ public class ServiceAdminStub implements ServiceAdmin {
      * @param id service id
      * @throws RemoteException
      */
-    public void deletePublishedService(long id) throws RemoteException {
+    public void deletePublishedService(String id) throws RemoteException {
           if (services.remove(new Long(id)) == null) {
             throw new RemoteException("Could not find service oid= " + id);
         }
@@ -137,7 +137,6 @@ public class ServiceAdminStub implements ServiceAdmin {
     }
 
     private EntityHeader fromService(PublishedService s) {
-        return
-                new EntityHeader(s.getOid(), EntityType.SERVICE, s.getName(), null);
+        return new EntityHeader(Long.toString(s.getOid()), EntityType.SERVICE, s.getName(), null);
     }
 }

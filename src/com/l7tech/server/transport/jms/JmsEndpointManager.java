@@ -76,8 +76,7 @@ public class JmsEndpointManager extends HibernateEntityManager {
             for ( Iterator i = results.iterator(); i.hasNext(); ) {
                 Object[] row = (Object[]) i.next();
                 if ( row[0] instanceof Long ) {
-                    long oid = ((Long)row[0]).longValue();
-                    EntityHeader header = new EntityHeader( oid, EntityType.JMS_ENDPOINT, (String)row[1], (String)row[2] );
+                    EntityHeader header = new EntityHeader( row[0].toString(), EntityType.JMS_ENDPOINT, (String)row[1], (String)row[2] );
                     result.add( header );
                 }
             }
