@@ -16,8 +16,6 @@ import com.l7tech.proxy.datamodel.PendingRequest;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.Entity;
 
-import java.security.Principal;
-
 import org.apache.log4j.Category;
 
 /**
@@ -48,14 +46,14 @@ public abstract class IdentityAssertion extends Assertion {
             }
         } else {
             // A CredentialFinder has already run.
-            Principal principal = pc.getPrincipal();
+            User user = pc.getUser();
             byte[] credentials = pc.getCredentials();
 
             AssertionStatus status;
             if ( request.isAuthenticated() ) {
                 // Is this possible?
                 _log.warn( "Weird! The request was already authenticated by someone else!" );
-                status = doCheckPrincipal( principal );
+                status = doCheckUser( user );
             } else {
                 if ( _identityProviderOid == Entity.DEFAULT_OID ) {
                     String err = "Can't call checkRequest() when no valid identityProviderOid has been set!";
@@ -64,22 +62,21 @@ public abstract class IdentityAssertion extends Assertion {
                 }
 
                 try {
-                    getIdentityProvider();
+                    if ( getIdentityProvider().authenticate( user, credentials ) ) {
+                        // Authentication succeeded
+                        request.setAuthenticated(true);
+                        // Make sure this guy matches our criteria
+                        status = doCheckUser( user );
+                    } else {
+                        // Authentication failure
+                        status = AssertionStatus.AUTH_FAILED;
+                    }
                 } catch ( FindException fe ) {
                     String err = "Couldn't find identity provider!";
                     _log.error( err, fe );
                     throw new IdentityAssertionException( err, fe );
                 }
 
-                if ( _identityProvider.authenticate( principal, credentials ) ) {
-                    // Authentication succeeded
-                    request.setAuthenticated(true);
-                    // Make sure this guy matches our criteria
-                    status = doCheckPrincipal( principal );
-                } else {
-                    // Authentication failure
-                    status = AssertionStatus.AUTH_FAILED;
-                }
             }
 
             if ( status == AssertionStatus.AUTH_FAILED ) response.setAuthenticationMissing( true );
@@ -94,10 +91,11 @@ public abstract class IdentityAssertion extends Assertion {
     }
 
     public void setIdentityProviderOid( long provider ) {
+        if ( _identityProviderOid != provider ) _identityProvider = null;
         _identityProviderOid = provider;
     }
 
-    private IdentityProvider getIdentityProvider() throws FindException {
+    protected IdentityProvider getIdentityProvider() throws FindException {
         if ( _identityProvider == null ) {
             IdentityProviderConfigManager configManager = new IdProvConfManagerServer();
             IdentityProviderConfig config = configManager.findByPrimaryKey( _identityProviderOid );
@@ -110,7 +108,7 @@ public abstract class IdentityAssertion extends Assertion {
         return _identityProviderOid;
     }
 
-    protected abstract AssertionStatus doCheckPrincipal( Principal p );
+    protected abstract AssertionStatus doCheckUser( User u );
 
     protected long _identityProviderOid = Entity.DEFAULT_OID;
 

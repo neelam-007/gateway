@@ -6,12 +6,10 @@
 
 package com.l7tech.policy.assertion.identity;
 
-import com.l7tech.identity.IdentityProvider;
 import com.l7tech.identity.User;
+import com.l7tech.identity.UserManager;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.objectmodel.FindException;
-
-import java.security.Principal;
 
 import org.apache.log4j.Category;
 
@@ -22,45 +20,46 @@ import org.apache.log4j.Category;
  * @version $Revision$
  */
 public class SpecificUser extends IdentityAssertion {
-    public SpecificUser( IdentityProvider provider, Principal user ) {
-        super( provider.getConfig().getOid() );
-        _user = user;
-    }
-
     public SpecificUser() {
         super();
     }
 
-    public void setUser( Principal principal ) {
-        User tempUser;
-        if ( principal instanceof User ) {
-            tempUser = (User)principal;
-        } else {
-            String err = "Principal " + principal + " is not a User!";
-            _log.error( err );
-            throw new RuntimeException( err );
-        }
-
-        try {
-            _user = _identityProvider.getUserManager().findByLogin( tempUser.getLogin() );
-        } catch ( FindException fe ) {
-            _log.error( "Couldn't find user " + tempUser.getName(), fe );
-
-        }
+    public SpecificUser( long providerId, String userOid ) {
+        super( providerId );
+        _userOid = userOid;
     }
 
-    public Principal getUser() {
+    public void setUserOid( String userOid ) {
+        if ( userOid != _userOid ) _user = null;
+        _userOid = userOid;
+    }
+
+    public String getUserOid() {
+        return _userOid;
+    }
+
+    protected User getUser() throws FindException {
+        if ( _user == null ) {
+            UserManager uman = getIdentityProvider().getUserManager();
+            _user = uman.findByPrimaryKey( _userOid );
+        }
         return _user;
     }
 
-    public AssertionStatus doCheckPrincipal( Principal p ) {
-        if ( p.equals( _user ) )
-            return AssertionStatus.NONE;
-        else
-            return AssertionStatus.AUTH_FAILED;
+    public AssertionStatus doCheckUser( User u ) {
+        try {
+            if ( u.equals( getUser() ) )
+                return AssertionStatus.NONE;
+            else
+                return AssertionStatus.AUTH_FAILED;
+        } catch ( FindException fe ) {
+            _log.error( fe );
+            return AssertionStatus.FAILED;
+        }
     }
 
-    protected Principal _user;
+    protected String _userOid;
+    protected User _user;
 
     protected transient Category _log = Category.getInstance( getClass() );
 }

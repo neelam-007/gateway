@@ -8,8 +8,8 @@ package com.l7tech.policy.assertion.identity;
 
 import com.l7tech.identity.*;
 import com.l7tech.policy.assertion.AssertionStatus;
+import com.l7tech.objectmodel.FindException;
 
-import java.security.Principal;
 import java.util.Set;
 
 /**
@@ -23,29 +23,48 @@ public class MemberOfGroup extends IdentityAssertion {
         super();
     }
 
-    public void setGroup( Group group ) {
-        _group = group;
+    public MemberOfGroup( long providerOid, String groupOid ) {
+        super( providerOid );
+        _groupOid = groupOid;
     }
 
-    public Group getGroup() {
+    public void setGroupOid( String oid ) {
+        if ( oid != _groupOid ) _group = null;
+        _groupOid = oid;
+
+    }
+
+    public String getGroupOid() {
+        return _groupOid;
+    }
+
+    protected Group getGroup() throws FindException {
+        if ( _group == null ) {
+            try {
+                GroupManager gman = getIdentityProvider().getGroupManager();
+                _group = gman.findByPrimaryKey( _groupOid );
+            } catch ( FindException fe ) {
+                _log.error( fe );
+            }
+        }
         return _group;
     }
 
-    public MemberOfGroup( IdentityProvider provider, Group group ) {
-        super( provider );
-        _group = group;
-    }
-
-    public AssertionStatus doCheckPrincipal( Principal p ) {
-        if ( !(p instanceof User) ) throw new IllegalArgumentException( "Authenticated Principal is not a User!" );
-        User u = (User)p;
-        Set groups = u.getGroups();
-        if ( groups.contains( _group ) )
-            return AssertionStatus.NONE;
-        else {
-            return AssertionStatus.AUTH_FAILED;
+    public AssertionStatus doCheckUser( User user ) {
+        Set groups = user.getGroups();
+        try {
+            if ( groups.contains( getGroup() ) )
+                return AssertionStatus.NONE;
+            else {
+                return AssertionStatus.AUTH_FAILED;
+            }
+        } catch ( FindException fe ) {
+            _log.error( fe );
+            return AssertionStatus.FAILED;
         }
     }
 
-    protected Group _group;
+    protected String _groupOid;
+
+    protected transient Group _group;
 }
