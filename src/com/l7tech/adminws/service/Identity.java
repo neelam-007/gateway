@@ -1,5 +1,9 @@
 package com.l7tech.adminws.service;
 
+import com.l7tech.identity.IdentityProviderConfigManager;
+import com.l7tech.misc.Locator;
+import com.l7tech.adminws.translation.TypeTranslator;
+
 import java.util.Collection;
 
 /**
@@ -14,7 +18,8 @@ public class Identity {
     }
     // identity provider config
     public Header[] findAlllIdentityProviderConfig(){
-
+        return TypeTranslator.collectionToServiceHeaders(getIdentityProviderConfigManager().findAllHeaders());
+        /*
         // test
         Header[] res = new Header[3];
         res[0] = new Header(321, "blahtype1", "blahname1");
@@ -22,8 +27,11 @@ public class Identity {
         res[2] = new Header(322, "blahtype3", "blahname3");
         return res;
         //
+        */
     }
     public Header[] findAllIdentityProviderConfigByOffset(int offset, int windowSize){
+        return TypeTranslator.collectionToServiceHeaders(getIdentityProviderConfigManager().findAllHeaders(offset, windowSize));
+        /*
         // test
         Header[] res = new Header[3];
         res[0] = new Header(321, "blahtype1", "blahname1");
@@ -31,14 +39,16 @@ public class Identity {
         res[2] = new Header(322, "blahtype3", "blahname3");
         return res;
         //
+        */
     }
     public IdentityProviderConfig findIdentityProviderConfigByPrimaryKey( long oid ){
-        return null;
+        return TypeTranslator.genericToServiceIdProviderConfig(getIdentityProviderConfigManager().findByPrimaryKey(oid));
     }
-    public long saveIdentityProviderConfig( IdentityProviderConfig identityProviderConfig ){
-        return 0;
+    public long saveIdentityProviderConfig(IdentityProviderConfig identityProviderConfig) {
+        return getIdentityProviderConfigManager().save(TypeTranslator.serviceIdentityProviderConfigToGenericOne(identityProviderConfig));
     }
     public void deleteIdentityProviderConfig(long oid){
+        getIdentityProviderConfigManager().delete(getIdentityProviderConfigManager().findByPrimaryKey(oid));
     }
     // user manager
     public User findUserByPrimaryKey(long identityProviderConfigId, long userId){
@@ -94,4 +104,18 @@ public class Identity {
         return res;
         //
     }
+
+    // ************************************************
+    // PRIVATES
+    // ************************************************
+
+    private IdentityProviderConfigManager getIdentityProviderConfigManager() {
+        if (identityProviderConfigManager == null){
+            // instantiate the server-side manager
+            identityProviderConfigManager = (IdentityProviderConfigManager)Locator.getInstance().locate(com.l7tech.identity.IdentityProviderConfigManager.class);
+        }
+        return identityProviderConfigManager;
+    }
+
+    IdentityProviderConfigManager identityProviderConfigManager = null;
 }
