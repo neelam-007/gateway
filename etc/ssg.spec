@@ -1,8 +1,8 @@
 # $Id$
 Summary: Secure Span Gateway
 Name: ssg
-Version: 3.1.0
-Release: 1
+Version: 3.1
+Release: m0a
 Group: Applications/Internet
 Copyright: Copyright Layer7 Technologies 2003-2004
 URL: http://www.layer7tech.com
