@@ -133,15 +133,19 @@ public class SubjectConfirmationWizardStepPanel extends WizardStepPanel {
         }
 
         titleLabel.setFont(titleLabel.getFont().deriveFont(Font.BOLD));
+        String toolTipPRoofOfPosession = "<html>Require the Proof Of Posession -  Signed Message Body" +
+          "<br>Alternatively, Proof of Possession can be secured with SSL Client Certificate by using SSL transport.</html>";
+
         checkBoxHolderOfKey.setToolTipText("<html>Key Info for the Subject, that the Assertion describes<br>" +
           " MUST be present within the Subject Confirmation.</html>");
 
         checkBoxHolderOfKey.addItemListener(new ItemListener() {
             public void itemStateChanged(ItemEvent e) {
                 checkBoxHoKMessageSignature.setEnabled(checkBoxHolderOfKey.isSelected());
-
             }
         });
+        checkBoxHoKMessageSignature.setToolTipText(toolTipPRoofOfPosession);
+
         checkBoxSenderVouches.setToolTipText("<html>The attesting entity, different form the subject,<br>" +
           " vouches for the verification of the subject.</html>");
         checkBoxSenderVouches.addItemListener(new ItemListener() {
@@ -157,7 +161,7 @@ public class SubjectConfirmationWizardStepPanel extends WizardStepPanel {
         confirmationsMap.put(SamlConstants.CONFIRMATION_SENDER_VOUCHES, checkBoxSenderVouches);
         confirmationsMap.put(SamlConstants.CONFIRMATION_BEARER, checkBoxBearer);
 
-        checkBoxSVMessageSignature.setToolTipText("<html>Require the message signature that provides the proof material</html>");
+        checkBoxSVMessageSignature.setToolTipText(toolTipPRoofOfPosession);
 
         for (Iterator iterator = confirmationsMap.entrySet().iterator(); iterator.hasNext();) {
             Map.Entry entry = (Map.Entry)iterator.next();
