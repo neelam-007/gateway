@@ -565,7 +565,7 @@ public class Ssg implements Serializable, Cloneable, Comparable {
      * Get the configured credentials for this Ssg, if any.
      * @return The configuration credentials, or null if there aren't any yet.
      */
-    public PasswordAuthentication fgetCredentials() {
+    public PasswordAuthentication getCredentials() {
         String username = getUsername();
         char[] password = cmPassword();
         if (username != null && username.length() > 0 && password != null)
