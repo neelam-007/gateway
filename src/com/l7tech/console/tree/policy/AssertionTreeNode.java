@@ -12,6 +12,8 @@ import com.l7tech.policy.assertion.composite.CompositeAssertion;
 import javax.swing.*;
 import javax.swing.tree.DefaultTreeModel;
 import javax.swing.tree.DefaultMutableTreeNode;
+import javax.swing.tree.TreeNode;
+import javax.swing.tree.TreePath;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -107,14 +109,24 @@ public abstract class AssertionTreeNode extends AbstractTreeNode {
      * node.
      */
     public void swap(AssertionTreeNode target) {
-        JTree tree = ComponentRegistry.getInstance().getPolicyTree();
-        DefaultTreeModel model = (DefaultTreeModel)tree.getModel();
-        DefaultMutableTreeNode parent = (DefaultMutableTreeNode)this.getParent();
+        final JTree tree = ComponentRegistry.getInstance().getPolicyTree();
+        final DefaultTreeModel model = (DefaultTreeModel)tree.getModel();
+        final DefaultMutableTreeNode parent = (DefaultMutableTreeNode)this.getParent();
         int indexThis = parent.getIndex(this);
         int indexThat = parent.getIndex(target);
         parent.insert(this, indexThat);
         parent.insert(target, indexThis);
         model.nodeStructureChanged(parent);
+        SwingUtilities.invokeLater(new Runnable() {
+            public void run() {
+                TreeNode[] path =
+                        ((DefaultMutableTreeNode)AssertionTreeNode.this).getPath();
+                if (path !=null) {
+                    tree.setSelectionPath(new TreePath(path));
+                }
+
+            }
+        });
         // todo: do this with tree model listener
         List newChildren = new ArrayList();
         CompositeAssertion ca = (CompositeAssertion)((AssertionTreeNode)parent).asAssertion();
