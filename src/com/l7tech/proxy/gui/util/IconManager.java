@@ -3,6 +3,7 @@ package com.l7tech.proxy.gui.util;
 import com.l7tech.proxy.gui.Gui;
 
 import javax.swing.*;
+import java.net.URL;
 
 /**
  * Created by IntelliJ IDEA.
@@ -17,6 +18,11 @@ public class IconManager {
     private static ImageIcon iconAdd;
     private static ImageIcon iconEdit;
     private static ImageIcon iconRemove;
+
+    private static ImageIcon loadImage(String path) {
+        URL url = cl.getResource(path);
+        return url == null ? new ImageIcon() : new ImageIcon(url);
+    }
 
     public static ImageIcon getAdd() {
         if (iconAdd == null)
