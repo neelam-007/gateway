@@ -23,16 +23,17 @@ public class CustomAssertions {
     }
 
     /**
-     * Return client assertion for a given assertion or <b>null<b>
+     * Return the <code>CustomAssertionDescriptor</code> for a given assertion or
+     * <b>null<b>
      *
      * @param a the assertion class
-     * @return the client assertion class or <b>null</b>
+     * @return the server assertion class or <b>null</b>
      */
-    public static Class getClientAssertion(Class a) {
-        for (Iterator iterator = assertions.keySet().iterator(); iterator.hasNext();) {
-            CustomAssertionDescriptor eh = (CustomAssertionDescriptor)iterator.next();
-            if (a.equals(eh.getAssertion())) {
-                return eh.getClientAssertion();
+    public static CustomAssertionDescriptor getDescriptor(Class a) {
+        for (Iterator iterator = assertions.values().iterator(); iterator.hasNext();) {
+            CustomAssertionDescriptor cd = (CustomAssertionDescriptor)iterator.next();
+            if (a.equals(cd.getAssertion())) {
+                return cd;
             }
         }
         return null;
@@ -45,9 +46,8 @@ public class CustomAssertions {
      * @return the server assertion class or <b>null</b>
      */
     public static Class getServerAssertion(Class a) {
-        for (Iterator iterator = assertions.keySet().iterator(); iterator.hasNext();) {
-            Object key = iterator.next();
-            CustomAssertionDescriptor eh = (CustomAssertionDescriptor)assertions.get(key);
+        for (Iterator iterator = assertions.values().iterator(); iterator.hasNext();) {
+            CustomAssertionDescriptor eh = (CustomAssertionDescriptor)iterator.next();
             if (a.equals(eh.getAssertion())) {
                 return eh.getServerAssertion();
             }
@@ -56,13 +56,29 @@ public class CustomAssertions {
     }
 
     /**
+     * Return client assertion for a given assertion or <b>null<b>
+     *
+     * @param a the assertion class
+     * @return the client assertion class or <b>null</b>
+     */
+    public static Class getClientAssertion(Class a) {
+        for (Iterator iterator = assertions.values().iterator(); iterator.hasNext();) {
+            CustomAssertionDescriptor eh = (CustomAssertionDescriptor)iterator.next();
+            if (a.equals(eh.getAssertion())) {
+                return eh.getClientAssertion();
+            }
+        }
+        return null;
+    }
+
+
+    /**
      * @return the set of all assertions registered
      */
     public static Set getAssertions() {
         Set allAssertions = new HashSet();
-        for (Iterator iterator = assertions.keySet().iterator(); iterator.hasNext();) {
-            Object key = iterator.next();
-            CustomAssertionDescriptor eh = (CustomAssertionDescriptor)assertions.get(key);
+        for (Iterator iterator = assertions.values().iterator(); iterator.hasNext();) {
+            CustomAssertionDescriptor eh = (CustomAssertionDescriptor)iterator.next();
             allAssertions.add(eh.getAssertion());
         }
         return allAssertions;
@@ -73,9 +89,8 @@ public class CustomAssertions {
      */
     public static Set getAssertions(Category cat) {
         Set allAssertions = new HashSet();
-        for (Iterator iterator = assertions.keySet().iterator(); iterator.hasNext();) {
-            Object key = iterator.next();
-            CustomAssertionDescriptor eh = (CustomAssertionDescriptor)assertions.get(key);
+        for (Iterator iterator = assertions.values().iterator(); iterator.hasNext();) {
+            CustomAssertionDescriptor eh = (CustomAssertionDescriptor)iterator.next();
             if (cat.equals(eh.getCategory())) {
                 allAssertions.add(eh.getAssertion());
             }

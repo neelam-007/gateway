@@ -1,32 +1,30 @@
 package com.l7tech.policy.assertion.ext;
 
 import org.w3c.dom.Document;
-import org.xml.sax.SAXException;
 
-import javax.help.Map;
-import java.io.IOException;
+import java.util.Map;
 
 /**
  * Defines an interface to provide request information to custom assertions.
  *
- * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
+ * @author <a href="mailto:emarceta@layer7tech.com">Emil Marceta</a>
  * @see ServiceInvocation
  */
 public interface ServiceRequest {
     /**
+     * Get the copy of the document that is associated with the current request.
+     *
      * @return the DOM <code>Document</code> attached to this service request.
-     * @throws org.xml.sax.SAXException
-     * @throws java.io.IOException
      */
-    Document getDocument() throws SAXException, IOException;
+    Document getDocument();
 
     /**
-     * Get the security context (principal, authentication status) for this request.
+     * Set or replace the request document
      *
-     * @return the security context associated with this request
-     * @see SecurityContext
+     * @param document the DOM <code>Document</code> to attach to this service
+     *                 request. The exisitng document will be replaced.
      */
-    SecurityContext getSecurityContext();
+    void stDocument(Document document);
 
     /**
      * Context is a <code>Map</code> of key/value properties that is associated
