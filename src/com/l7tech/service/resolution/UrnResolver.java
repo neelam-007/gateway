@@ -31,6 +31,9 @@ public class UrnResolver extends WsdlOperationServiceResolver {
 
     protected String getTargetValue( BindingOperation operation ) {
         BindingInput input = operation.getBindingInput();
+        if (input == null) {
+            return null;
+        }
         Iterator eels = input.getExtensibilityElements().iterator();
         ExtensibilityElement ee;
         while ( eels.hasNext() ) {
