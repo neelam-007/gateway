@@ -6,10 +6,7 @@
 
 package com.l7tech.common.transport.jms;
 
-import com.l7tech.objectmodel.imp.NamedEntityImp;
-
 import java.io.Serializable;
-import java.util.Set;
 
 /**
  * A reference to a preconfigured JMS provider.
@@ -19,30 +16,30 @@ import java.util.Set;
  * @author alex
  * @version $Revision$
  */
-public class JmsProvider extends NamedEntityImp implements Serializable {
+public class JmsProvider implements Serializable {
+    private String _name;
     private String _initialContextFactoryClassname;
-    private String _jndiUrl;
-    private String _queueFactoryUrl;
-    private String _topicFactoryUrl;
-    private String _destinationFactoryUrl;
-    private String _username;
-    private String _password;
-    private Set _destinations;
+    private String _defaultQueueFactoryUrl;
+    private String _defaultTopicFactoryUrl;
+    private String _defaultDestinationFactoryUrl;
 
-    public String getUsername() {
-        return _username;
+    public JmsProvider() {
     }
 
-    public void setUsername( String username ) {
-        _username = username;
+    public JmsProvider(String name, String initialContextFactoryClassname, String defaultQueueFactoryUrl) {
+        _name = name;
+        _initialContextFactoryClassname = initialContextFactoryClassname;
+        _defaultQueueFactoryUrl = defaultQueueFactoryUrl;
     }
 
-    public String getPassword() {
-        return _password;
+    /** Get the human-readable name of this JmsProvider, as displayed in the GUI. */
+    public String getName() {
+        return _name;
     }
 
-    public void setPassword( String password ) {
-        _password = password;
+    /** Set the human-readable name of this JmsProvider, as displayed in the GUI. */
+    public void setName(String name) {
+        _name = name;
     }
 
     public String getInitialContextFactoryClassname() {
@@ -53,43 +50,27 @@ public class JmsProvider extends NamedEntityImp implements Serializable {
         _initialContextFactoryClassname = initialContextFactoryClassname;
     }
 
-    public String getJndiUrl() {
-        return _jndiUrl;
+    public String getDefaultQueueFactoryUrl() {
+        return _defaultQueueFactoryUrl;
     }
 
-    public void setJndiUrl(String jndiUrl) {
-        _jndiUrl = jndiUrl;
+    public void setDefaultQueueFactoryUrl(String queueFactoryUrl) {
+        _defaultQueueFactoryUrl = queueFactoryUrl;
     }
 
-    public String getQueueFactoryUrl() {
-        return _queueFactoryUrl;
+    public String getDefaultTopicFactoryUrl() {
+        return _defaultTopicFactoryUrl;
     }
 
-    public void setQueueFactoryUrl(String queueFactoryUrl) {
-        _queueFactoryUrl = queueFactoryUrl;
+    public void setDefaultTopicFactoryUrl(String topicFactoryUrl) {
+        _defaultTopicFactoryUrl = topicFactoryUrl;
     }
 
-    public String getTopicFactoryUrl() {
-        return _topicFactoryUrl;
+    public String getDefaultDestinationFactoryUrl() {
+        return _defaultDestinationFactoryUrl;
     }
 
-    public void setTopicFactoryUrl(String topicFactoryUrl) {
-        _topicFactoryUrl = topicFactoryUrl;
-    }
-
-    public String getDestinationFactoryUrl() {
-        return _destinationFactoryUrl;
-    }
-
-    public void setDestinationFactoryUrl( String destinationFactoryUrl ) {
-        _destinationFactoryUrl = destinationFactoryUrl;
-    }
-
-    public Set getDestinations() {
-        return _destinations;
-    }
-
-    public void setDestinations( Set destinations ) {
-        _destinations = destinations;
+    public void setDefaultDestinationFactoryUrl( String destinationFactoryUrl ) {
+        _defaultDestinationFactoryUrl = destinationFactoryUrl;
     }
 }
