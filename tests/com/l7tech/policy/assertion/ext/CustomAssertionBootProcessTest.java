@@ -11,7 +11,7 @@ import junit.framework.TestCase;
 import junit.framework.TestSuite;
 
 /**
- * Test the assertion traversal functionality.
+ * Test the custom assertion boot element.
  *
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  * @version 1.0
