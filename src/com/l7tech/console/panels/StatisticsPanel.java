@@ -18,6 +18,8 @@ import javax.swing.table.TableColumn;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.ComponentListener;
+import java.awt.event.ComponentEvent;
 import java.rmi.RemoteException;
 import java.util.Vector;
 import java.util.HashMap;
@@ -89,6 +91,24 @@ public class StatisticsPanel extends JPanel {
 
         statTablePane.setViewportView(getStatTable());
         statTablePane.getViewport().setBackground(getStatTable().getBackground());
+        statTablePane.getVerticalScrollBar().addComponentListener(new ComponentListener(){
+            public void componentHidden(ComponentEvent e){
+                getStatTotalColumnModel().getColumn(6).setMinWidth(0);
+                getStatTotalColumnModel().getColumn(6).setMaxWidth(0);
+                getStatTotalColumnModel().getColumn(6).setPreferredWidth(0);
+            }
+            public void componentResized(ComponentEvent e){
+                // not used - the scroll bar width is fixed
+            }
+            public void componentMoved(ComponentEvent e){
+                // not used
+            }
+            public void componentShown(ComponentEvent e){
+                getStatTotalColumnModel().getColumn(6).setMinWidth(((JScrollBar) e.getSource()).getWidth() + 1);
+                getStatTotalColumnModel().getColumn(6).setMaxWidth(((JScrollBar) e.getSource()).getWidth() + 1);
+                getStatTotalColumnModel().getColumn(6).setPreferredWidth(((JScrollBar) e.getSource()).getWidth() + 1);
+            }
+        });
 
         return statTablePane;
     }
@@ -164,7 +184,7 @@ public class StatisticsPanel extends JPanel {
         totalColumnModel.addColumn(new TableColumn(3, 50));
         totalColumnModel.addColumn(new TableColumn(4, 100));
         totalColumnModel.addColumn(new TableColumn(5, 80));
-
+        totalColumnModel.addColumn(new TableColumn(6, 15));
         return totalColumnModel;
     }
 
@@ -195,7 +215,7 @@ public class StatisticsPanel extends JPanel {
             return statTotalTableModel;
         }
 
-        String[] cols = {"Total", "Attempted Total", "Authorized", "Completed", "Completed requests/min", "Completed (last min.)"};
+        String[] cols = {"Total", "Attempted Total", "Authorized", "Completed", "Completed requests/min", "Completed (last min.)", "dummy"};
         String[][] rows = new String[][]{
             {"TOTAL", null, null, null},
         };
@@ -392,7 +412,7 @@ public class StatisticsPanel extends JPanel {
        getStatTotalTable().setValueAt(new Long(authorizedCountTotal), 0, 2);
        getStatTotalTable().setValueAt(new Long(completedCountTotal), 0, 3);
        getStatTotalTable().setValueAt(new Long(completedCountPerMinuteTotal), 0, 4);
-        getStatTotalTable().setValueAt(new Long(lastMinuteCompletedCountTotal), 0, 5);
+       getStatTotalTable().setValueAt(new Long(lastMinuteCompletedCountTotal), 0, 5);
        getStatTotalTableModel().fireTableDataChanged();
     }
 
