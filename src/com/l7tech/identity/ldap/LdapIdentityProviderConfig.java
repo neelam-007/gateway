@@ -60,6 +60,14 @@ public class LdapIdentityProviderConfig extends NamedEntityImp implements Identi
         this.searchBase = searchBase;
     }
 
+    public String toString() {
+        return "LdapIdentityProviderConfig \t" +
+                "\n\tname:" + getName() +
+                "\n\tdesc:" + desc +
+                "\n\tldapHostURL:" + ldapHostURL +
+                "\n\tsearchBase:" + searchBase;
+    }
+
     // ************************************************
     // PRIVATES
     // ************************************************
