@@ -12,6 +12,7 @@ import com.l7tech.common.security.xml.decorator.WssDecorator;
 import com.l7tech.common.security.xml.decorator.WssDecoratorImpl;
 import com.l7tech.common.security.xml.processor.*;
 import com.l7tech.common.util.XmlUtil;
+import com.l7tech.common.xml.saml.SamlAssertion;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
@@ -269,7 +270,7 @@ public class WssRoundTripTest extends TestCase {
                            ((X509SecurityToken)signer).asX509Certificate().equals(td.senderCert));
             } else if (signer instanceof SamlSecurityToken) {
                 assertTrue("Timestamp signing security token must match sender cert",
-                           ((SamlSecurityToken)signer).getSubjectCertificate().equals(td.senderCert));
+                           ((SamlSecurityToken)signer).getSubjectCertificate().equals(new SamlAssertion(td.senderSamlAssertion).getSubjectCertificate()));
             } else if (signer instanceof SecurityContextToken) {
                 SecurityContextToken sct = (SecurityContextToken)signer;
                 assertTrue("SecurityContextToken was supposed to have proven possession", sct.isPossessionProved());

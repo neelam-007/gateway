@@ -382,7 +382,7 @@ public class WssDecoratorTest extends TestCase {
                                                         TestDocuments.getDotNetServerPrivateKey());
         return new TestDocument(c,
                                 senderSamlToken,
-                                TestDocuments.getEttkClientCertificate(),
+                                null,
                                 TestDocuments.getEttkClientPrivateKey(),
                                 TestDocuments.getDotNetServerCertificate(),
                                 TestDocuments.getDotNetServerPrivateKey(),
