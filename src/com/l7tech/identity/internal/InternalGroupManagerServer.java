@@ -92,7 +92,7 @@ public class InternalGroupManagerServer extends HibernateEntityManager implement
 
     public void delete(Group group) throws DeleteException {
         try {
-            InternalGroup imp = (InternalGroup)group;
+            InternalGroup imp = cast( group );
             // it is not allowed to delete the admin group
             if ( Group.ADMIN_GROUP_NAME.equals( imp.getName() ) ) {
                 logger.severe("an attempt to delete the admin group was made.");
@@ -112,12 +112,7 @@ public class InternalGroupManagerServer extends HibernateEntityManager implement
 
     public String save(Group group) throws SaveException {
         try {
-            InternalGroup imp;
-            if ( group instanceof GroupBean ) {
-                imp = new InternalGroup( (GroupBean)group );
-            } else {
-                imp = (InternalGroup)group;
-            }
+            InternalGroup imp = cast(group);
             // check that no existing group have same name
             Group existingGrp = null;
             try {
@@ -134,13 +129,19 @@ public class InternalGroupManagerServer extends HibernateEntityManager implement
         }
     }
 
-    public void update(Group group) throws UpdateException {
+    public static InternalGroup cast(Group group) {
         InternalGroup imp;
         if ( group instanceof GroupBean ) {
             imp = new InternalGroup( (GroupBean)group );
         } else {
             imp = (InternalGroup)group;
         }
+        return imp;
+    }
+
+    public void update(Group group) throws UpdateException {
+        InternalGroup imp = cast( group );
+
         try {
             // if this is the admin group, make sure that we are not removing all memberships
             if (Group.ADMIN_GROUP_NAME.equals(group.getName())) {
@@ -184,7 +185,7 @@ public class InternalGroupManagerServer extends HibernateEntityManager implement
     }
 
     public void addUsers(Group group, Set users) throws FindException, UpdateException {
-        InternalGroup imp = (InternalGroup)group;
+        InternalGroup imp = cast( group );
         GroupMembership membership = new GroupMembership( -1, imp.getOid() );
         HibernatePersistenceContext hpc = null;
         try {
@@ -206,7 +207,7 @@ public class InternalGroupManagerServer extends HibernateEntityManager implement
     }
 
     public void removeUsers( Group group, Set users ) throws FindException, UpdateException {
-        InternalGroup imp = (InternalGroup)group;
+        InternalGroup imp = cast(group);
         GroupMembership membership = new GroupMembership( -1, imp.getOid() );
         HibernatePersistenceContext hpc = null;
         try {
@@ -228,7 +229,7 @@ public class InternalGroupManagerServer extends HibernateEntityManager implement
     }
 
     public void addUser(User user, Set groups) throws FindException, UpdateException {
-        InternalUser imp = (InternalUser)user;
+        InternalUser imp = InternalUserManagerServer.cast( user );
         GroupMembership membership = new GroupMembership( imp.getOid(), -1 );
         HibernatePersistenceContext hpc = null;
         try {
@@ -250,7 +251,7 @@ public class InternalGroupManagerServer extends HibernateEntityManager implement
     }
 
     public void removeUser(User user, Set groups) throws FindException, UpdateException {
-        InternalUser imp = (InternalUser)user;
+        InternalUser imp = InternalUserManagerServer.cast( user );
         GroupMembership membership = new GroupMembership( imp.getOid(), -1 );
         HibernatePersistenceContext hpc = null;
         try {
@@ -272,8 +273,8 @@ public class InternalGroupManagerServer extends HibernateEntityManager implement
     }
 
     public void addUser( User user, Group group ) throws FindException, UpdateException {
-        InternalUser userImp = (InternalUser)user;
-        InternalGroup groupImp = (InternalGroup)group;
+        InternalUser userImp = InternalUserManagerServer.cast(user);
+        InternalGroup groupImp = cast(group);
         HibernatePersistenceContext hpc = null;
         try {
             hpc = context();
@@ -292,8 +293,8 @@ public class InternalGroupManagerServer extends HibernateEntityManager implement
     }
 
     public void removeUser( User user, Group group ) throws FindException, UpdateException {
-        InternalUser userImp = (InternalUser)user;
-        InternalGroup groupImp = (InternalGroup)group;
+        InternalUser userImp = InternalUserManagerServer.cast(user);
+        InternalGroup groupImp = cast(group);
         HibernatePersistenceContext hpc = null;
         try {
             hpc = context();
