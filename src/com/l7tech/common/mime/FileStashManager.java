@@ -158,12 +158,8 @@ public class FileStashManager implements StashManager {
          * callers are advised to close the OutputStream themselves before calling this method.
          */
         private void closeOutputStream() {
-            try {
-                outputStream.close();
-                outputStream = null;
-            } catch (IOException e) {
-                throw new RuntimeException(e); // can't happen
-            }
+            try { outputStream.close(); } catch (IOException e) { } // expected to throw
+            outputStream = null;
         }
 
         /**
