@@ -1,27 +1,27 @@
 package com.l7tech.console;
 
+import com.l7tech.cluster.ClusterStatusAdmin;
 import com.l7tech.common.gui.util.ImageCache;
 import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.common.util.Locator;
 import com.l7tech.console.action.*;
+import com.l7tech.console.event.ConnectionAdapter;
 import com.l7tech.console.event.ConnectionEvent;
 import com.l7tech.console.event.ConnectionListener;
 import com.l7tech.console.event.WeakEventListenerList;
-import com.l7tech.console.event.ConnectionAdapter;
 import com.l7tech.console.panels.*;
+import com.l7tech.console.poleditor.PolicyEditorPanel;
 import com.l7tech.console.security.ClientCredentialManager;
 import com.l7tech.console.tree.*;
 import com.l7tech.console.tree.identity.IdentitiesRootNode;
 import com.l7tech.console.tree.identity.IdentityProvidersTree;
 import com.l7tech.console.tree.policy.PolicyToolBar;
 import com.l7tech.console.util.*;
-import com.l7tech.console.poleditor.PolicyEditorPanel;
-import com.l7tech.cluster.ClusterStatusAdmin;
 
+import javax.help.DefaultHelpBroker;
 import javax.help.HelpBroker;
 import javax.help.HelpSet;
 import javax.help.HelpSetException;
-import javax.help.DefaultHelpBroker;
 import javax.swing.*;
 import javax.swing.border.Border;
 import javax.swing.event.EventListenerList;
@@ -36,13 +36,13 @@ import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.io.IOException;
 import java.net.URL;
+import java.rmi.RemoteException;
 import java.util.ArrayList;
 import java.util.EventListener;
 import java.util.MissingResourceException;
 import java.util.ResourceBundle;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.rmi.RemoteException;
 
 
 /**
@@ -145,6 +145,7 @@ public class MainWindow extends JFrame {
     private ValidatePolicyAction validatePolicyAction;
     private ExportPolicyToFileAction exportPolicyAction;
     private SavePolicyAction savePolicyAction;
+    private static MainWindow singleMainWindow = null;
 
     /**
      * MainWindow constructor comment.
@@ -152,6 +153,15 @@ public class MainWindow extends JFrame {
     public MainWindow() {
         super(TITLE);
         initialize();
+        MainWindow.setCurrentMain(this);
+    }
+
+    private synchronized static void setCurrentMain(MainWindow mainWindow) {
+        singleMainWindow = mainWindow;
+    }
+
+    public static MainWindow getMain() {
+        return singleMainWindow;
     }
 
     /**
@@ -342,8 +352,7 @@ public class MainWindow extends JFrame {
 
     private JMenuItem getImportMenuItem() {
         if (importMenuItem == null) {
-            // todo, action
-            importMenuItem = new JMenuItem("Import");
+            importMenuItem = new JMenuItem(new ImportPolicyFromFileAction());
             importMenuItem.setEnabled(false);
             Icon icon = new ImageIcon(cl.getResource(RESOURCE_PATH + "/saveTemplate.gif"));
             importMenuItem.setIcon(icon);
@@ -2122,4 +2131,12 @@ public class MainWindow extends JFrame {
               ;
           }
       };
+
+    public void firePolicyEdit(PolicyEditorPanel policyPanel) {
+        // enable the items that make sense to show when a policy is being edited
+        getValidateMenuItem().setAction(policyPanel.getValidateAction());
+        getSaveMenuItem().setAction(policyPanel.getSaveAction());
+        getExportMenuItem().setAction(policyPanel.getExportAction());
+        getImportMenuItem().setAction(policyPanel.getImportAction());
+    }
 }
