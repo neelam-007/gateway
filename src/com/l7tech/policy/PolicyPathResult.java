@@ -20,7 +20,7 @@ public interface PolicyPathResult {
     /**
      * return the <code>Set</code> of paths that this path result contains
      *
-     * @see com.l7tech.policy.validator.AssertionPath
+     * @see com.l7tech.policy.AssertionPath
      * @return the set of assertion paths
      */
     Set paths();
