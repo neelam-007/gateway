@@ -34,7 +34,7 @@ public class SsgKeyStoreManager {
     private static final Category log = Category.getInstance(SsgKeyStoreManager.class);
     private static final String ALIAS = "clientProxy";
     private static final String SSG_ALIAS = "ssgCa";
-    private static char[] KEYSTORE_PASSWORD = "password".toCharArray();
+    private static final char[] KEYSTORE_PASSWORD = "lwbnasudg".toCharArray();
 
     /**
      * Very quickly check if a client certificate is available for the specified SSG.
@@ -145,7 +145,7 @@ public class SsgKeyStoreManager {
                                      new FileUtils.Saver() {
                                          public void doSave(FileOutputStream fos) throws IOException {
                                              try {
-                                                 ssg.keyStore().store(fos, ssg.password());
+                                                 ssg.keyStore().store(fos, KEYSTORE_PASSWORD);
                                                  fos.close();
                                              } catch (KeyStoreException e) {
                                                  throw new IOException("Unable to write KeyStore for SSG " + ssg + ": " + e);
