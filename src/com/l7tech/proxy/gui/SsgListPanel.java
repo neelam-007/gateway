@@ -98,8 +98,8 @@ public class SsgListPanel extends JPanel {
                                                               "registration for the SSG " + ssg + "?\n" +
                                                               "This action cannot be undone.",
                                                               "Delete SSG?",
-                                                              JOptionPane.DEFAULT_OPTION, JOptionPane.WARNING_MESSAGE,
-                                                              null, options, options[0]);
+                                                              0, JOptionPane.WARNING_MESSAGE,
+                                                              null, options, options[1]);
                     if (result == 0)
                         ssgListModel.removeSsg(ssg);
                 }
