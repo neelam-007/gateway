@@ -97,8 +97,10 @@ public class AccessILFactory extends BasicILFactory {
                                    Method method,
                                    InvocationConstraints constraints,
                                    Collection context) {
-            //todo: rework this em
-            // LocalAccess.check();
+            //todo: rework this once the admin subject is available - em
+            if (!"lookup".equals(method.getName())) {
+                LocalAccess.check();
+            }
         }
     }
 }
