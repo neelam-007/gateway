@@ -186,12 +186,19 @@ class CertificatePanel extends JPanel {
             revokeCertButton.setText("Revoke");
             revokeCertButton.addActionListener(new ActionListener() {
                 public void actionPerformed(ActionEvent event) {
-                    int answer = (JOptionPane.showConfirmDialog(
-                      ComponentRegistry.getInstance().getMainWindow(),
-                      "<html><center><b>Please confirm certificate revoke " +
-                      "for user '" + user.getLogin() + "'<br>This will also revoke the user's password.</b></center></html>",
-                      "Revoke User Certificate",
-                      JOptionPane.YES_NO_OPTION));
+                    String msg = null;
+                    if (userPanel.getProvider().isReadOnly()) {
+                        msg = "<html><center><b>Please confirm certificate revoke " +
+                              "for user '" + user.getLogin() + "'<br>Contact the directory administrator to" +
+                              " revoke the corresponding password.</b></center></html>";
+                    } else {
+                        msg = "<html><center><b>Please confirm certificate revoke " +
+                              "for user '" + user.getLogin() + "'<br>This will also" +
+                              " revoke the user's password.</b></center></html>";
+                    }
+                    int answer = (JOptionPane.showConfirmDialog(ComponentRegistry.getInstance().getMainWindow(),
+                                                                msg, "Revoke User Certificate",
+                                                                JOptionPane.YES_NO_OPTION));
                     if (answer == JOptionPane.YES_OPTION) {
 
                         // revoke the user cert
