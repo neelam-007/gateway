@@ -6,10 +6,15 @@ import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.xmlsec.XmlResponseSecurity;
 import com.l7tech.message.Request;
 import com.l7tech.message.Response;
+import com.l7tech.message.HttpTransportMetadata;
 import com.l7tech.util.SoapUtil;
 import com.l7tech.util.KeystoreUtils;
 import com.l7tech.logging.LogManager;
 import com.l7tech.xmlsig.SoapMsgSigner;
+import com.l7tech.xmlenc.SessionManager;
+import com.l7tech.xmlenc.Session;
+import com.l7tech.xmlenc.SessionNotFoundException;
+import com.l7tech.xmlenc.XmlMangler;
 import com.ibm.xml.dsig.SignatureStructureException;
 import com.ibm.xml.dsig.XSignatureException;
 import java.io.IOException;
@@ -18,6 +23,7 @@ import java.util.logging.Logger;
 import java.util.logging.Level;
 import java.security.PrivateKey;
 import java.security.KeyStoreException;
+import java.security.GeneralSecurityException;
 import java.security.cert.X509Certificate;
 import java.security.cert.CertificateFactory;
 import java.security.cert.CertificateException;
@@ -62,7 +68,47 @@ public class ServerXmlResponseSecurity implements ServerAssertion {
 
         // should we encrypt the body before signing it?
         if (data.isEncryption()) {
-            // todo, encrypt body
+            // get the header containing the xml session id
+            HttpTransportMetadata meta = (HttpTransportMetadata)request.getTransportMetadata();
+            String sessionIDHeaderValue = meta.getRequest().getHeader(XmlResponseSecurity.XML_ENC_HEADER_NAME);
+            if (sessionIDHeaderValue == null || sessionIDHeaderValue.length() < 1) {
+                String msg = "Could not encrypt response because xml session id was not provided by requestor.";
+                logger.severe(msg);
+                throw new PolicyAssertionException(msg);
+            }
+
+            // retrieve the session id
+            Session xmlsession = null;
+            try {
+                xmlsession = SessionManager.getInstance().getSession(Long.parseLong(sessionIDHeaderValue));
+            } catch (SessionNotFoundException e) {
+                String msg = "Exception finding session with id=" + sessionIDHeaderValue;
+                logger.log(Level.SEVERE, msg, e);
+                throw new PolicyAssertionException(msg, e);
+            } catch (NumberFormatException e) {
+                String msg = "Session id is not long value : " + sessionIDHeaderValue;
+                logger.log(Level.SEVERE, msg, e);
+                throw new PolicyAssertionException(msg, e);
+            }
+
+            // encrypt the message
+            try {
+                XmlMangler.encryptXml(soapmsg, xmlsession.getKeyOut(), sessionIDHeaderValue);
+            } catch (GeneralSecurityException e) {
+                String msg = "Exception trying to encrypt response";
+                logger.log(Level.SEVERE, msg, e);
+                throw new PolicyAssertionException(msg, e);
+            } catch (IOException e) {
+                String msg = "Exception trying to encrypt response";
+                logger.log(Level.SEVERE, msg, e);
+                throw new PolicyAssertionException(msg, e);
+            } catch (IllegalArgumentException e) {
+                String msg = "Exception trying to encrypt response";
+                logger.log(Level.SEVERE, msg, e);
+                throw new PolicyAssertionException(msg, e);
+            }
+
+            logger.info("Response document was encrypted.");
         }
 
         X509Certificate serverCert = null;
