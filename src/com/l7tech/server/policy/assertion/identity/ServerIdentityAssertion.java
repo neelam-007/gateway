@@ -22,6 +22,10 @@ import com.l7tech.objectmodel.FindException;
 import java.util.logging.Level;
 
 /**
+ * Subclasses of ServerIdentityAssertion are responsible for verifying that the entity
+ * making a <code>Request</code> (as previously found using a CredentialSourceAssertion)
+ * is authorized to do so.
+ *
  * @author alex
  * @version $Revision$
  */
@@ -30,6 +34,17 @@ public abstract class ServerIdentityAssertion implements ServerAssertion {
         _data = data;
     }
 
+    /**
+     * Attempts to authenticate the request using the <code>PrincipalCredentials</code>
+     * previously found with a <code>ServerCredentialSourceAssertion</code>, and if
+     * successful calls checkUser() to verify that the authenticated user is
+     * authorized to make the request.
+     *
+     * @param request
+     * @param response
+     * @return
+     * @throws IdentityAssertionException
+     */
     public AssertionStatus checkRequest( Request request, Response response ) throws IdentityAssertionException {
         PrincipalCredentials pc = request.getPrincipalCredentials();
         if ( pc == null ) {
@@ -53,7 +68,7 @@ public abstract class ServerIdentityAssertion implements ServerAssertion {
             if ( request.isAuthenticated() ) {
                 // The user was authenticated by a previous IdentityAssertion.
                 LogManager.getInstance().getSystemLogger().log(Level.FINEST, "Request already authenticated");
-                status = doCheckUser( user );
+                status = checkUser( user );
             } else {
                 if ( _data.getIdentityProviderOid() == Entity.DEFAULT_OID ) {
                     String err = "Can't call checkRequest() when no valid identityProviderOid has been set!";
@@ -67,7 +82,7 @@ public abstract class ServerIdentityAssertion implements ServerAssertion {
                         request.setAuthenticated(true);
                         LogManager.getInstance().getSystemLogger().log(Level.FINEST, "Authenticated " + user.getLogin() );
                         // Make sure this guy matches our criteria
-                        status = doCheckUser( user );
+                        status = checkUser( user );
                     } else {
                         // Authentication failure
                         status = AssertionStatus.AUTH_FAILED;
@@ -85,17 +100,24 @@ public abstract class ServerIdentityAssertion implements ServerAssertion {
         }
     }
 
+    /**
+     * Loads the <code>IdentityProvider</code> object corresponding to the
+     * <code>identityProviderOid</code> property, using a cache if possible.
+     * @return
+     * @throws FindException
+     */
     protected IdentityProvider getIdentityProvider() throws FindException {
         if ( _identityProvider == null ) {
-            IdentityProviderConfigManager configManager = new IdProvConfManagerServer();
-            IdentityProviderConfig config = configManager.findByPrimaryKey( _data.getIdentityProviderOid() );
+            if ( _configManager == null ) _configManager = new IdProvConfManagerServer();
+            IdentityProviderConfig config = _configManager.findByPrimaryKey( _data.getIdentityProviderOid() );
             _identityProvider = IdentityProviderFactory.makeProvider( config );
         }
         return _identityProvider;
     }
 
-    protected abstract AssertionStatus doCheckUser( User u );
+    protected abstract AssertionStatus checkUser( User u );
 
+    protected transient IdentityProviderConfigManager _configManager = null;
     protected transient IdentityProvider _identityProvider;
     protected IdentityAssertion _data;
 }

@@ -28,7 +28,8 @@ public class ServerMemberOfGroup extends ServerIdentityAssertion implements Serv
     }
 
     /**
-     * Attempts to resolve a <code>Group</code> from the <code>groupOid</code> and <code>groupName</code> properties, in that order.
+     * Attempts to resolve a <code>Group</code> from the <code>groupOid</code> and
+     * <code>groupName</code> properties, in that order.
      * @return
      * @throws com.l7tech.objectmodel.FindException
      */
@@ -42,11 +43,12 @@ public class ServerMemberOfGroup extends ServerIdentityAssertion implements Serv
     }
 
     /**
-     * Returns <code>AssertionStatus.NONE</code> if the authenticated <code>User</code> is a member of the <code>Group</code> with which this assertion was initialized.
+     * Returns <code>AssertionStatus.NONE</code> if the authenticated <code>User</code>
+     * is a member of the <code>Group</code> with which this assertion was initialized.
      * @param user
      * @return
      */
-    public AssertionStatus doCheckUser(User user) {
+    public AssertionStatus checkUser(User user) {
         try {
             Group targetGroup = getGroup();
             if ( targetGroup.getMembers().contains( user ) )
