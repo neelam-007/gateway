@@ -68,7 +68,6 @@ public class DefaultPolicyPathBuilder extends PolicyPathBuilder {
 
         for (; preorder.hasNext();) {
             Assertion anext = (Assertion)preorder.next();
-
             if (parentCreatesNewPaths(anext)) {
                 AssertionPath cp = (AssertionPath)pathStack.peek();
                 assertionPaths.remove(cp);
@@ -95,7 +94,8 @@ public class DefaultPolicyPathBuilder extends PolicyPathBuilder {
                     Assertion lastAssertion = path.lastAssertion();
                     if (lastAssertion instanceof OneOrMoreAssertion) {
                         OneOrMoreAssertion oom = (OneOrMoreAssertion)lastAssertion;
-                        if (!oom.getChildren().isEmpty())
+                        List children = oom.getChildren();
+                        if (!children.isEmpty())
                             pathStack.push(path);
                     }
                 }
@@ -106,8 +106,9 @@ public class DefaultPolicyPathBuilder extends PolicyPathBuilder {
             List siblings = anext.getParent().getChildren();
             // if last sibling and the parent path was pushed on stack, pop the parent
             if (siblings.indexOf(anext) + 1 == siblings.size()) {
-                if (parentCreatesNewPaths(anext) && !isSplitPath(anext)) {
-                    pathStack.pop();
+                if (parentCreatesNewPaths(anext)) {
+                    AssertionPath p = (AssertionPath)pathStack.pop();
+                    assertionPaths.remove(p);
                 }
             }
         }
@@ -206,7 +207,7 @@ public class DefaultPolicyPathBuilder extends PolicyPathBuilder {
         Assertion[] ass = ap.getPath();
         StringBuffer sb = new StringBuffer("** Begin assertion path\n");
         for (int i = 0; i < ass.length; i++) {
-            sb.append(""+(i+1)+" "+ass[i].getClass().toString())
+            sb.append("" + (i + 1) + " " + ass[i].getClass().toString())
               .append("\n");
         }
         sb.append("** End assertion path");
