@@ -163,6 +163,24 @@ public class DecorationRequirements {
                 (senderCertificate != null && senderPrivateKey != null);
     }
 
+    /**
+     * If not null, the wss decorations will be placed in a soap security header whose actor attribute value
+     * is specified here.
+     * @return the soap security header actor value
+     */
+    public String getSecurityHeaderActor() {
+        return securityHeaderActor;
+    }
+
+    /**
+     * Set the soap security header actor value for the security header in which those wss decorations
+     * must be inserted. null value means that these wss decorations belong in the default security
+     * header (the one with no actor attribute).
+     */
+    public void setSecurityHeaderActor(String securityHeaderActor) {
+        this.securityHeaderActor = securityHeaderActor;
+    }
+
     private X509Certificate recipientCertificate = null;
     private X509Certificate senderCertificate = null;
     private LoginCredentials usernameTokenCredentials = null;
@@ -176,4 +194,5 @@ public class DecorationRequirements {
     private String preferredWSUNamespace = SoapUtil.WSU_NAMESPACE;
     private Date timestampCreatedDate = null;
     private int timestampTimeoutMillis = 0;
+    private String securityHeaderActor = null;
 }
