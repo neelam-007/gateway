@@ -1,11 +1,12 @@
 package com.l7tech.message;
 
+import com.l7tech.credential.PrincipalCredentials;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
 
-import java.io.*;
-
-import com.l7tech.credential.PrincipalCredentials;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.Reader;
 
 /**
  * @author alex
@@ -24,31 +25,40 @@ public class SoapRequest extends XmlMessageAdapter implements SoapMessage, XmlRe
      */
     public synchronized Document getDocument() throws SAXException, IOException {
         if ( _document == null ) {
-            InputStream requestStream = getRequestStream();
-            if ( requestStream == null )
-                throw new IllegalStateException( "No Document or Reader yet!" );
+            String xml = getRequestXml();
+            if ( xml == null )
+                throw new IllegalStateException( "No XML yet!" );
             else
-                parse( requestStream );
+                parse( xml );
 
         }
 
         return _document;
     }
 
-    /**
-     * Returns a Reader for the request. Could be null!
-     *
-     * @return The Reader from the request, if any.
-     * @throws IOException
-     */
-    public InputStream getRequestStream() throws IOException {
-        if ( _requestStream == null ) {
-            if ( _transportMetadata instanceof HttpTransportMetadata ) {
-                HttpTransportMetadata htm = (HttpTransportMetadata)_transportMetadata;
-                _requestStream = htm.getRequest().getInputStream();
+   private Reader getRequestReader() throws IOException {
+        if ( _transportMetadata instanceof HttpTransportMetadata ) {
+            HttpTransportMetadata htm = (HttpTransportMetadata)_transportMetadata;
+            return htm.getRequest().getReader();
+        } else throw new IllegalStateException( "I don't know how to get a Reader from a non-HTTP TransportMetadata!" );
+    }
+
+    public String getRequestXml() throws IOException {
+        // TODO: Attachments
+        if ( _requestXml == null ) {
+            BufferedReader reader = new BufferedReader( getRequestReader() );
+            StringBuffer xml = new StringBuffer();
+            String line;
+            while ( ( line = reader.readLine() ) != null ) {
+                xml.append( line );
             }
+            _requestXml = xml.toString();
         }
-        return _requestStream;
+        return _requestXml;
+    }
+
+    public void setRequestXml( String xml ) {
+        _requestXml = xml;
     }
 
     /** Returns the PrincipalCredentials associated with this request.  Could be null! */
@@ -88,6 +98,6 @@ public class SoapRequest extends XmlMessageAdapter implements SoapMessage, XmlRe
     protected boolean _authenticated;
     protected boolean _routed;
 
+    protected String _requestXml;
     protected PrincipalCredentials _principalCredentials;
-    protected InputStream _requestStream;
 }
