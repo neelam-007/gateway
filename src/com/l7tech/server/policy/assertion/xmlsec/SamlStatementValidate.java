@@ -5,19 +5,16 @@
  */
 package com.l7tech.server.policy.assertion.xmlsec;
 
-import com.l7tech.common.security.token.SignedElement;
+import com.l7tech.common.security.token.SecurityToken;
+import com.l7tech.common.security.token.SecurityTokenType;
 import com.l7tech.common.security.xml.processor.ProcessorResult;
-import com.l7tech.common.util.SoapUtil;
-import com.l7tech.common.util.XmlUtil;
-import com.l7tech.common.xml.InvalidDocumentFormatException;
+import com.l7tech.common.xml.saml.SamlAssertion;
 import com.l7tech.policy.assertion.xmlsec.SamlAttributeStatement;
 import com.l7tech.policy.assertion.xmlsec.SamlAuthenticationStatement;
 import com.l7tech.policy.assertion.xmlsec.SamlAuthorizationStatement;
 import com.l7tech.policy.assertion.xmlsec.SamlStatementAssertion;
-import org.apache.xmlbeans.XmlException;
 import org.springframework.context.ApplicationContext;
 import org.w3c.dom.Document;
-import org.w3c.dom.Element;
 import x0Assertion.oasisNamesTcSAML1.*;
 
 import java.util.*;
@@ -90,82 +87,52 @@ public abstract class SamlStatementValidate {
     /**
      * Validates the SAML statement.
      *
-     * @param document the document/message to validate
+     * @param soapMessageDoc the soapMessageDoc/message to validate
      * @param wssResults  the wssresults
      * @param validationResults
      */
-    public void validate(Document document, ProcessorResult wssResults, Collection validationResults) {
+    public void validate(Document soapMessageDoc, ProcessorResult wssResults, Collection validationResults) {
         String securityNS = wssResults.getSecurityNS();
         if (null == securityNS) {  // assume no security header was found
-            validationResults.add(new Error("No Security Header found", document, null, null));
+            validationResults.add(new Error("No Security Header found", soapMessageDoc, null, null));
             return;
         }
-        boolean assertionFound = false;
         boolean statementFound = false;
-        SignedElement signedAssertionElement = null;
-        SignedElement proofOfPossessionElement = null;
 
-        SignedElement[] signedElements = wssResults.getElementsThatWereSigned();
-        for (int i = 0; i < signedElements.length; i++) {
-            SignedElement signedElement = signedElements[i];
-            Element element = signedElement.asElement();
-
-            if ("Assertion".equals(element.getNodeName()) && !statementFound) {
-                assertionFound = true;
-                try {
-                    AssertionType assertionType = AssertionType.Factory.parse(element);
-                    SubjectStatementAbstractType[] statementArray = assertionType.getSubjectStatementArray();
-                    for (int j = 0; j < statementArray.length; j++) {
-                        SubjectStatementAbstractType subjectStatementAbstractType = statementArray[j];
-                        if (subjectStatementAbstractType.getClass().equals(statementMapingType)) { // bingo
-                            validateSubjectConfirmation(subjectStatementAbstractType, validationResults);
-                            validateConditions(assertionType, validationResults);
-                            validateStatement(document, subjectStatementAbstractType, wssResults, validationResults);
-                            statementFound = true;
-                        }
+        SamlAssertion assertion = null;
+        SecurityToken[] tokens = wssResults.getSecurityTokens();
+        for (int i = 0; i < tokens.length; i++) {
+            SecurityToken token = tokens[i];
+            if (token.getType() == SecurityTokenType.SAML_ASSERTION && !statementFound) {
+                assertion = (SamlAssertion)token;
+                AssertionType assertionType = assertion.getXmlBeansAssertionType();
+                StatementAbstractType[] statementArray = assertionType.getStatementArray();
+                for (int j = 0; j < statementArray.length; j++) {
+                    StatementAbstractType statementAbstractType = statementArray[j];
+                    if (statementAbstractType.getClass().equals(statementMapingType)) { // bingo
+                        validateSubjectConfirmation((SubjectStatementAbstractType)statementAbstractType, validationResults);
+                        validateConditions(assertionType, validationResults);
+                        validateStatement(soapMessageDoc, (SubjectStatementAbstractType)statementAbstractType, wssResults, validationResults);
+                        statementFound = true;
                     }
-                } catch (XmlException e) {
-                    if (!assertionFound) {
-                        validationResults.add(new Error("Unable to parse SAML assertion", document, null, null));
-                    }
-                }
-            } else { // there must be something signed in the message if the proof of posession is requied
-                if (!statementAssertionConstraints.isRequireProofOfPosession()) {
-                    continue;
-                }
-                try {
-                    Element bodyElement = SoapUtil.getBodyElement(document);
-                    if (XmlUtil.isElementAncestor(element, bodyElement)) {
-                        proofOfPossessionElement = signedElement;
-                    }
-                } catch (InvalidDocumentFormatException e) {
-                    validationResults.add(new Error("Non SOAP document", document, null, null));
                 }
             }
         }
 
-        if (!assertionFound) {
-            validationResults.add(new Error("No SAML assertion found in security Header", document, null, null));
+        if (assertion == null) {
+            validationResults.add(new Error("No SAML assertion found in security Header", soapMessageDoc, null, null));
             return;
-        }
+        } else {
+            if (!assertion.isSigned()) {
 
-        if (signedAssertionElement == null) {
-            validationResults.add(new Error("Unsigned SAML assertion found in security Header", document, null, null));
-            return;
-        }
-
-        if (statementAssertionConstraints.isRequireProofOfPosession()) {
-            if (proofOfPossessionElement == null) {
-                validationResults.add(new Error("No Proof Of Possesion found", document, null, null));
-                return;
             }
-            if (proofOfPossessionElement.getSigningSecurityToken() != signedAssertionElement.getSigningSecurityToken()) {
-                validationResults.add(new Error("Proof Of Possesion Security token and Assertion token do not match",
-                                                document, new Object[] {proofOfPossessionElement.getSigningSecurityToken(),
-                                                                        signedAssertionElement.getSigningSecurityToken()}, null));
+            if (statementAssertionConstraints.isRequireProofOfPosession()) {
+                if (!assertion.isPossessionProved()) {
+                    validationResults.add(new Error("No Proof Of Possession found", soapMessageDoc, null, null));
+                    return;
+                }
             }
         }
-
     }
 
     /**
