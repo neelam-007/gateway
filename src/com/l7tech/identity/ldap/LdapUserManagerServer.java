@@ -22,10 +22,10 @@ import java.util.HashSet;
  * This manager does not support save, update or delete.
  *
  */
-public class LdapUserManagerServer implements UserManager {
+public class LdapUserManagerServer extends LdapManager implements UserManager {
 
     public LdapUserManagerServer(LdapIdentityProviderConfig config) {
-        this.config = config;
+        super(config);
     }
 
     /**
@@ -240,38 +240,6 @@ public class LdapUserManagerServer implements UserManager {
         }
         return out;
     }
-
-    private Object extractOneAttributeValue(Attributes attributes, String attrName) {
-        Attribute valuesWereLookingFor = attributes.get(attrName);
-        if (valuesWereLookingFor != null && valuesWereLookingFor.size() > 0) {
-            try {
-                return valuesWereLookingFor.get(0);
-            } catch (NamingException e) {
-                e.printStackTrace(System.err);
-            }
-        }
-        return null;
-    }
-
-    private DirContext getAnonymousContext() throws NamingException {
-        if (anonymousContext == null) createAnonymousContext();
-        return anonymousContext;
-    }
-
-    private synchronized void createAnonymousContext() throws NamingException {
-
-        // Create the initial directory context. So anonymous bind for search
-        // Identify service provider to use
-        java.util.Hashtable env = new java.util.Hashtable();
-        env.put(Context.INITIAL_CONTEXT_FACTORY, "com.sun.jndi.ldap.LdapCtxFactory");
-        env.put(Context.PROVIDER_URL, config.getLdapHostURL());
-
-        // Create the initial directory context. So anonymous bind for search
-        anonymousContext = new InitialDirContext(env);
-    }
-
-    private DirContext anonymousContext = null;
-    private LdapIdentityProviderConfig config;
 
     // mappings for attribute names
     // these may become properties of the LdapIdentityProviderConfig
