@@ -31,6 +31,8 @@ import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import org.springframework.context.ApplicationContext;
+
 /**
  * The Federated Identity Provider allows authorization of {@link User}s and {@link Group}s
  * whose identities are managed by trusted third-party authorities.  It supports federated credentials
@@ -41,10 +43,14 @@ import java.util.logging.Logger;
  * @version $Revision$
  */
 public class FederatedIdentityProvider extends PersistentIdentityProvider {
-    public FederatedIdentityProvider( IdentityProviderConfig config ) {
+    private ApplicationContext applicationContext;
+
+    public FederatedIdentityProvider( IdentityProviderConfig config, ApplicationContext applicationContext ) {
         if ( !(config instanceof FederatedIdentityProviderConfig) )
             throw new IllegalArgumentException("Config must be an instance of FederatedIdentityProviderConfig");
         this.providerConfig = (FederatedIdentityProviderConfig)config;
+        this.applicationContext = applicationContext;
+
         this.userManager = new FederatedUserManager(this);
         this.groupManager = new FederatedGroupManager(this);
         this.trustedCertManager = (TrustedCertManager)Locator.getDefault().lookup(TrustedCertManager.class);

@@ -64,13 +64,13 @@ for i in "$SRC_ROOT/lib"/*.jar
     	fi
       fi
     done 
-CLASSPATH="${JDK_CLASSES}:${BUILD_CLASSES}:${LOCALCLASSPATH}"
+CLASSPATH="${JDK_CLASSES}:${BUILD_CLASSES}:${LOCALCLASSPATH}:${CLASSPATH}"
 # Cygwin - switch paths to Windows format before running java
 if $cygwin; then
   CLASSPATH=`cygpath --path --windows "$CLASSPATH"`
 fi
 export CLASSPATH
-#echo $CLASSPATH
+echo $CLASSPATH
 
 foo=$1
 shift

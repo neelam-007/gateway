@@ -13,6 +13,7 @@ import com.l7tech.identity.InvalidIdProviderCfgException;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.FindException;
 import org.springframework.context.support.ApplicationObjectSupport;
+import org.springframework.context.ApplicationContext;
 
 import java.lang.reflect.Constructor;
 import java.util.*;
@@ -109,13 +110,14 @@ public class IdentityProviderFactory extends ApplicationObjectSupport {
      * @throws InvalidIdProviderCfgException if the specified configuration cannot be used to construct an
      * IdentityProvider. Call {@link Throwable#getCause()} to find out why!
      */
-    public IdentityProvider makeProvider( IdentityProviderConfig config ) throws InvalidIdProviderCfgException {
+    public IdentityProvider makeProvider( IdentityProviderConfig config)
+      throws InvalidIdProviderCfgException {
         IdentityProvider cachedProvider;
         String classname = config.type().getClassname();
         try {
             Class providerClass = Class.forName(classname);
-            Constructor ctor = providerClass.getConstructor(new Class[] { IdentityProviderConfig.class });
-            cachedProvider = (IdentityProvider)ctor.newInstance(new Object[] { config });
+            Constructor ctor = providerClass.getConstructor(new Class[] { IdentityProviderConfig.class, ApplicationContext.class });
+            cachedProvider = (IdentityProvider)ctor.newInstance(new Object[] { config, getApplicationContext() });
         } catch ( Exception e ) {
             throw new InvalidIdProviderCfgException(e);
         }

@@ -1,5 +1,8 @@
 package com.l7tech.server.identity.ldap;
 
+import EDU.oswego.cs.dl.util.concurrent.ReadWriteLock;
+import EDU.oswego.cs.dl.util.concurrent.Sync;
+import EDU.oswego.cs.dl.util.concurrent.WriterPreferenceReadWriteLock;
 import com.l7tech.common.util.CertUtils;
 import com.l7tech.common.util.HexUtils;
 import com.l7tech.common.util.KeystoreUtils;
@@ -16,11 +19,12 @@ import com.l7tech.policy.assertion.credential.CredentialFormat;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.assertion.credential.http.HttpDigest;
 import com.l7tech.server.ServerConfig;
+import org.springframework.context.ApplicationContext;
 
+import javax.naming.CommunicationException;
 import javax.naming.Context;
 import javax.naming.NamingEnumeration;
 import javax.naming.NamingException;
-import javax.naming.CommunicationException;
 import javax.naming.directory.*;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -33,10 +37,6 @@ import java.security.cert.X509Certificate;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-
-import EDU.oswego.cs.dl.util.concurrent.ReadWriteLock;
-import EDU.oswego.cs.dl.util.concurrent.WriterPreferenceReadWriteLock;
-import EDU.oswego.cs.dl.util.concurrent.Sync;
 
 /**
  * Server-side implementation of the LDAP provider.
@@ -55,9 +55,11 @@ public class LdapIdentityProvider implements IdentityProvider {
     public static final String LDAP_CONNECT_TIMEOUT = new Integer(5 * 1000).toString();
     /** An unused LDAP connection will be closed after 30 seconds of inactivity */
     public static final String LDAP_POOL_IDLE_TIMEOUT = new Integer(30 * 1000).toString();
+    private ApplicationContext applicationContext;
 
-    public LdapIdentityProvider(IdentityProviderConfig config) {
+    public LdapIdentityProvider(IdentityProviderConfig config, ApplicationContext applicationContext) {
         this.config = (LdapIdentityProviderConfig)config;
+        this.applicationContext = applicationContext;
         if (this.config.getLdapUrl() == null || this.config.getLdapUrl().length < 1) {
             throw new IllegalArgumentException("This config does not contain an ldap url"); // should not happen
         }

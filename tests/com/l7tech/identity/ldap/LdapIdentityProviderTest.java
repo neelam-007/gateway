@@ -8,12 +8,15 @@ import com.l7tech.policy.assertion.credential.wss.WssBasic;
 import com.l7tech.policy.assertion.credential.http.HttpBasic;
 import com.l7tech.server.identity.ldap.LdapConfigTemplateManager;
 import com.l7tech.server.identity.ldap.LdapIdentityProvider;
+import com.l7tech.common.ApplicationContexts;
 import junit.framework.TestCase;
 
 import java.io.IOException;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.Set;
+
+import org.springframework.context.ApplicationContext;
 
 /**
  * A test class for the ldap redesign.
@@ -96,32 +99,32 @@ public class LdapIdentityProviderTest extends TestCase {
     }
 
     private LdapIdentityProvider getSpockProviderWithBadSearchBase() throws IOException {
-        LdapIdentityProvider spock =  new LdapIdentityProvider(getConfigForSpockWithBadSearchBase());
+        LdapIdentityProvider spock =  new LdapIdentityProvider(getConfigForSpockWithBadSearchBase(), applicationContext);
         return spock;
     }
 
     private LdapIdentityProvider getSpockProvider() throws IOException {
-        LdapIdentityProvider spock =  new LdapIdentityProvider(getConfigForSpock());
+        LdapIdentityProvider spock =  new LdapIdentityProvider(getConfigForSpock(), applicationContext);
         return spock;
     }
 
     private LdapIdentityProvider getTimTamProvider() throws IOException {
-        LdapIdentityProvider timtam =  new LdapIdentityProvider(getConfigForTimTam());
+        LdapIdentityProvider timtam =  new LdapIdentityProvider(getConfigForTimTam(), applicationContext);
         return timtam;
     }
 
     private LdapIdentityProvider getMSADProvider() throws IOException {
-        LdapIdentityProvider spock =  new LdapIdentityProvider(getConfigForMSAD());
+        LdapIdentityProvider spock =  new LdapIdentityProvider(getConfigForMSAD(), applicationContext);
         return spock;
     }
 
     private LdapIdentityProvider getOracleProvider() throws IOException {
-        LdapIdentityProvider orcl =  new LdapIdentityProvider(getConfigForOracle());
+        LdapIdentityProvider orcl =  new LdapIdentityProvider(getConfigForOracle(), applicationContext);
         return orcl;
     }
 
     private LdapIdentityProvider getModifiedOracleProvider() throws IOException {
-        LdapIdentityProvider orcl =  new LdapIdentityProvider(getModifiedConfigForOracle());
+        LdapIdentityProvider orcl =  new LdapIdentityProvider(getModifiedConfigForOracle(), applicationContext);
         return orcl;
     }
 
@@ -201,6 +204,6 @@ public class LdapIdentityProviderTest extends TestCase {
             Thread.sleep(10001);
         }
     }
-
+    private ApplicationContext applicationContext = ApplicationContexts.getTestApplicationContext();
     private LdapIdentityProvider localProvider;
 }
