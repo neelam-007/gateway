@@ -42,6 +42,22 @@ public class SecurityContextTokenHandlerTest extends TestCase {
         System.out.println("sessionid match");
     }
 
+    public void testAppendAndReadSessionWithCreation() throws Exception {
+        Document doc = readDocFromString(simpleDoc);
+        System.out.println("Original doc");
+        System.out.println(serializeDocWithXMLSerializer(doc));
+        byte[] sessionid = SecurityContextTokenHandler.generateNewSessionId();
+        SecurityContextTokenHandler.appendSessionInfoToSoapMessage(doc, sessionid, 69, System.currentTimeMillis());
+        System.out.println("Modified doc");
+        System.out.println(serializeDocWithXMLSerializer(doc));
+        // test that we can get sesionid out of this.
+        byte[] session2 = SecurityContextTokenHandler.getSessionIdFromWSCToken(doc);
+        for (int i = 0; i < sessionid.length; i++) {
+            assertTrue(sessionid[i] == session2[i]);
+        }
+        System.out.println("sessionid match");
+    }
+
     private Document readDocFromString(String docStr)  throws Exception {
         DocumentBuilder builder = DOMParserNS.createBuilder();
         builder.setErrorHandler(new StandardErrorHandler());
