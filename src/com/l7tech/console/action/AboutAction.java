@@ -22,7 +22,7 @@ public class AboutAction extends BaseAction {
      * @return the aciton description
      */
     public String getDescription() {
-        return "Show about the program information";
+        return "View SecureSpan Manager information";
     }
 
     /**
