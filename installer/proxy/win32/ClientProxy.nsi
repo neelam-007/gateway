@@ -6,7 +6,12 @@
 !define J2RE_PATH "C:\${J2RE}"   ;Full path to directory containing JRE (at .nsi compile-time)
 !define COMPANY "Layer7 Technologies"
 !define MUI_PRODUCT "Layer7 Client Proxy" ;Define your own software name here
-!define MUI_VERSION "0.91b" ;Define your own software version here
+
+; Edit this to set the version number in the build
+;!define MUI_VERSION "0.97b"
+;!define MUI_VERSION "HEAD-2003-Aug-26"
+!define MUI_VERSION "HEAD"
+
 !define BUILD_DIR "..\..\..\build" ;UneasyRooster\build dir, root of jar files and things
 
 !include "MUI.nsh"
@@ -89,7 +94,7 @@ Section "Client Proxy" SecCopyUI
     CreateDirectory "$SMPROGRAMS\${MUI_STARTMENUPAGE_VARIABLE}"
     CreateShortCut "$SMPROGRAMS\${MUI_STARTMENUPAGE_VARIABLE}\Start Layer7 Client Proxy.lnk" "$INSTDIR\Layer7 Client Proxy.exe" parameters "$INSTDIR\Layer7 Client Proxy.exe" 0
     CreateShortCut "$SMPROGRAMS\${MUI_STARTMENUPAGE_VARIABLE}\Start Layer7 Client Proxy in Troubleshooting Mode.lnk" "$INSTDIR\Layer7 Client Proxy.bat" parameters "$INSTDIR\Layer7 Client Proxy.exe" 1
-    CreateShortCut "$SMPROGRAMS\${MUI_STARTMENUPAGE_VARIABLE}\Start Layer7 Client Proxy in Text Mode.lnk" "$INSTDIR\Layer7 Client Proxy in Text Mode.bat" parameters "$INSTDIR\Layer7 Client Proxy.exe" 2
+    ;CreateShortCut "$SMPROGRAMS\${MUI_STARTMENUPAGE_VARIABLE}\Start Layer7 Client Proxy in Text Mode.lnk" "$INSTDIR\Layer7 Client Proxy in Text Mode.bat" parameters "$INSTDIR\Layer7 Client Proxy.exe" 2
     CreateShortCut "$SMPROGRAMS\${MUI_STARTMENUPAGE_VARIABLE}\Uninstall Layer7 Client Proxy.lnk" "$INSTDIR\Uninstall.exe"
   
   !insertmacro MUI_STARTMENU_WRITE_END
