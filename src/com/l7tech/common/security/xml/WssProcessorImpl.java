@@ -147,9 +147,30 @@ public class WssProcessorImpl implements WssProcessor {
                                 securityChildToProcess.getNamespaceURI() + ")");
                 }
             } else if (securityChildToProcess.getLocalName().equals(SoapUtil.SECURITY_CONTEXT_TOK_EL_NAME)) {
-
-                // todo, handle the security context token
-
+                if (securityChildToProcess.getNamespaceURI().equals(SoapUtil.WSSC_NAMESPACE)) {
+                    final Element secConTokEl = securityChildToProcess;
+                    String identifier = extractIdentifierFromSecConTokElement(secConTokEl);
+                    if (identifier == null) {
+                        logger.warning("SecurityContextToken element found, but its identifier was not extracted.");
+                    } else {
+                        final SecurityContext secContext = securityContextFinder.getSecurityContext(identifier);
+                        SecurityContextToken secConTok = new SecurityContextToken() {
+                            public SecurityContext getSecurityContext() {
+                                return secContext;
+                            }
+                            public Object asObject() {
+                                return secContext;
+                            }
+                            public Element asElement() {
+                                return secConTokEl;
+                            }
+                        };
+                        cntx.securityTokens.add(secConTok);
+                    }
+                } else {
+                    logger.info("Encountered SecurityContextToken element but not of right namespace (" +
+                                securityChildToProcess.getNamespaceURI() + ")");
+                }
             } else {
                 // Unhandled child elements of the Security Header
                 String mu = securityChildToProcess.getAttributeNS(currentSoapNamespace,
@@ -227,6 +248,15 @@ public class WssProcessorImpl implements WssProcessor {
             soapHeader.getParentNode().removeChild(soapHeader);
 
         return produceResult(cntx);
+    }
+
+    private String extractIdentifierFromSecConTokElement(Element secConTokEl) {
+        // look for the wssc:Identifier child
+        Element id = XmlUtil.findFirstChildElementByName(secConTokEl,
+                                                         SoapUtil.WSSC_NAMESPACE,
+                                                         SoapUtil.WSSC_ID_EL_NAME);
+        if (id == null) return null;
+        return XmlUtil.getTextValue(id);
     }
 
     /**
