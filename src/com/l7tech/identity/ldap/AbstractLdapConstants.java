@@ -34,4 +34,5 @@ public abstract class AbstractLdapConstants {
     protected static final String PASSWD_ATTR_NAME = "userPassword";
     protected static final String OU_OBJCLASS_NAME = "organizationalUnit";
     protected static final String OU_ATTR_NAME = "ou";
+    public static final String OBJCLASS_ATTR = "objectClass";
 }
