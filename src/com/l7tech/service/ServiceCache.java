@@ -23,7 +23,9 @@ import javax.wsdl.WSDLException;
  * Time: 1:30:29 PM
  * $Id$
  *
- * Contains cached services and maintains the corresponding service resolution parameters.
+ * Contains cached services, entry point for resolution.
+ * todo: cache corresponding server policies
+ * 
  */
 public class ServiceCache {
 
