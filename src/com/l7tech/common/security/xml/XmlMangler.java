@@ -277,8 +277,6 @@ public class XmlMangler {
                     if (!referenceList.hasChildNodes())
                         referenceList.getParentNode().removeChild(referenceList);
                     return;
-                } else {
-                    System.out.println("URI did not match the id " + dataRefUri + ", " + messagePartId);
                 }
             }
         }
@@ -312,6 +310,41 @@ public class XmlMangler {
     public static class ProcessedEncryptedKey {
         public Key decryptedKey;
         public Element referenceList;
+    }
+
+    /**
+     * This handles the padding of the encryption method designated by http://www.w3.org/2001/04/xmlenc#rsa-1_5.
+     *
+     * Exceprt from the spec:
+     * the padding is of the following special form:
+     * 02 | PS* | 00 | key
+     * where "|" is concatenation, "02" and "00" are fixed octets of the corresponding hexadecimal value, PS is
+     * a string of strong pseudo-random octets [RANDOM] at least eight octets long, containing no zero octets,
+     * and long enough that the value of the quantity being CRYPTed is one octet shorter than the RSA modulus,
+     * and "key" is the key being transported. The key is 192 bits for TRIPLEDES and 128, 192, or 256 bits for
+     * AES. Support of this key transport algorithm for transporting 192 bit keys is MANDATORY to implement.
+     *
+     * @param paddedKey the decrpted but still padded key
+     * @return the unpadded decrypted key
+     */
+    private static byte[] unPadRSADecryptedSymettricKey(byte[] paddedKey) throws IllegalArgumentException {
+        // the first byte should be 02
+        if (paddedKey[0] != 2) throw new IllegalArgumentException("paddedKey has wrong format");
+        // traverse the next series of byte until we get to the first 00
+        int pos = 0;
+        for (pos = 0; pos < paddedKey.length; pos++) {
+            if (paddedKey[pos] == 0) {
+                break;
+            }
+        }
+        // the remainder is the key to return
+        int keylength = paddedKey.length - 1 - pos;
+        if (keylength < 16) {
+            throw new IllegalArgumentException("key length " + keylength + "is not a valid length");
+        }
+        byte[] output = new byte[keylength];
+        System.arraycopy(paddedKey, pos+1, output, 0, keylength);
+        return output;
     }
 
     /**
@@ -430,19 +463,22 @@ public class XmlMangler {
                 } catch (Exception e) {
                     logger.log(Level.WARNING, "decryption error", e);
                 }
-                // todo, how do i know the length of the key?
-                int keyLength = 128;
-                byte[] unencryptedKey = new byte[keyLength];
-                System.arraycopy(decryptedPadded, decryptedPadded.length-(keyLength/8), unencryptedKey, 0, (keyLength/8));
+                // unpad
+                byte[] unencryptedKey = null;
+                try {
+                    unencryptedKey = unPadRSADecryptedSymettricKey(decryptedPadded);
+                } catch (IllegalArgumentException e) {
+                    logger.log(Level.WARNING, "The key could not be unpadded", e);
+                    continue;
+                }
                 ProcessedEncryptedKey item = new ProcessedEncryptedKey();
-                item.decryptedKey = new AesKey(unencryptedKey, keyLength);
+                item.decryptedKey = new AesKey(unencryptedKey, unencryptedKey.length*8);
                 try {
                     item.referenceList = XmlUtil.findOnlyOneChildElementByName(encryptedKey, SoapUtil.XMLENC_NS, "ReferenceList");
                 } catch (XmlUtil.MultipleChildElementsException e) {
                     logger.warning("unexpected multiple reference list elements in encrypted key " + e.getMessage());
                 }
                 output.add(item);
-
             }
         }
         if (output.isEmpty()) {
