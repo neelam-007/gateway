@@ -6,6 +6,7 @@ import com.l7tech.console.logging.ErrorManager;
 import com.l7tech.console.text.FilterDocument;
 import com.l7tech.console.util.Registry;
 import com.l7tech.identity.Group;
+import com.l7tech.identity.GroupBean;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.common.gui.util.Utilities;
@@ -43,7 +44,7 @@ public class NewGroupDialog extends JDialog {
     private boolean insertSuccess = false;
     private boolean createThenEdit = false;
 
-    Group group = new Group();
+    GroupBean group = new GroupBean();
     private EventListenerList listenerList = new EventListenerList();
 
     /**
@@ -328,7 +329,7 @@ public class NewGroupDialog extends JDialog {
                             EntityHeader header = new EntityHeader();
                             header.setType(EntityType.GROUP);
                             header.setName(group.getName());
-                            header.setOid(Registry.getDefault().getInternalGroupManager().save(group));
+                            header.setStrId(Registry.getDefault().getInternalGroupManager().save(group));
                             NewGroupDialog.this.fireEventGroupAdded(header);
                             insertSuccess = true;
                         } catch (Exception e) {
@@ -371,7 +372,7 @@ public class NewGroupDialog extends JDialog {
                                 EntityHeader header = new EntityHeader();
                                 header.setType(EntityType.GROUP);
                                 header.setName(group.getName());
-                                header.setOid(group.getOid());
+                                header.setStrId(group.getUniqueIdentifier());
                                 panel.edit(header);
                                 EditorDialog dialog = new EditorDialog(parent, panel);
                                 dialog.pack();

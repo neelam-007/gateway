@@ -2,9 +2,11 @@ package com.l7tech.console.panels;
 
 import com.l7tech.common.gui.util.ImageCache;
 import com.l7tech.common.gui.util.Utilities;
+import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.SortedListModel;
-import com.l7tech.console.Main;
+import com.l7tech.identity.GroupManager;
 import com.l7tech.objectmodel.EntityHeader;
+import com.l7tech.objectmodel.FindException;
 import com.l7tech.identity.Group;
 
 import javax.swing.*;
@@ -192,7 +194,13 @@ class GroupUsersPanel extends JPanel {
             }
 
             private void updateGroupMembers() {
-                final Set memberHeaders = groupPanel.getGroup().getMemberHeaders();
+                GroupManager gman = getGroupManager();
+                final Set memberHeaders;
+                try {
+                    memberHeaders = gman.getUserHeaders( groupPanel.getGroup().getUniqueIdentifier() );
+                } catch (FindException e) {
+                    throw new RuntimeException( "Couldn't retrieve members of group " + groupPanel.getGroup().getName(), e );
+                }
                 memberHeaders.clear();
                 for (int i = 0; i < listInModel.getSize(); i++) {
                     EntityHeader g = (EntityHeader) listInModel.getElementAt(i);
@@ -203,6 +211,10 @@ class GroupUsersPanel extends JPanel {
         });
 
         return listInModel;
+    }
+
+    private GroupManager getGroupManager() {
+        return Registry.getDefault().getInternalGroupManager();
     }
 
 
@@ -381,7 +393,7 @@ class GroupUsersPanel extends JPanel {
                             (listInModel.getSize() - removals.length > 0)) ||
                             (!Group.ADMIN_GROUP_NAME.equals(groupPanel.getGroup().getName()))){
 
-                        Set members = groupPanel.getGroup().getMembers();
+                        Set members = groupPanel.getGroupMembers();
 
                         for (int i = 0; removals != null && i < removals.length; i++) {
                             listInModel.removeElement(removals[i]);
@@ -423,7 +435,7 @@ class GroupUsersPanel extends JPanel {
     private void loadGroupUsers() {
         try {
             isLoading = true;
-            Collection members = groupPanel.getGroup().getMemberHeaders();
+            Collection members = groupPanel.getGroupMembers();
             if (members != null) {
                 listInModel.addAll(members);
             }

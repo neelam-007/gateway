@@ -6,7 +6,7 @@
 
 package com.l7tech.policy.server.filter;
 
-import com.l7tech.identity.User;
+import com.l7tech.identity.internal.InternalUser;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.RoutingAssertion;
 import com.l7tech.policy.assertion.SslAssertion;
@@ -18,7 +18,6 @@ import com.l7tech.policy.assertion.credential.http.HttpClientCert;
 import com.l7tech.policy.assertion.credential.http.HttpDigest;
 import com.l7tech.policy.assertion.identity.MemberOfGroup;
 import com.l7tech.policy.assertion.identity.SpecificUser;
-import com.l7tech.policy.wsp.WspWriter;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
@@ -62,7 +61,7 @@ public class FilterTest extends TestCase {
             new RoutingAssertion()
         }));
 
-        User alice = new User();
+        InternalUser alice = new InternalUser();
         alice.setLogin("alice");
         alice.setProviderId(providerid);
 
@@ -104,14 +103,14 @@ public class FilterTest extends TestCase {
         log.info("Policy forAnon = " + forAnon);
         assertTrue("Filtered policy for invalid user is null", forAnon == null);
 
-        User alice = new User();
+        InternalUser alice = new InternalUser();
         alice.setProviderId(providerid);
         alice.setLogin("alice");
         Assertion forAlice = FilterManager.getInstance().applyAllFilters(alice, policy.getCopy());
         log.info("Policy forAlice = " + forAlice);
         assertTrue("Filtered policy for valid user alice is not null", forAlice != null);
 
-        User bob = new User();
+        InternalUser bob = new InternalUser();
         bob.setProviderId(providerid);
         bob.setLogin("bob");
         Assertion forBob = FilterManager.getInstance().applyAllFilters(bob, policy.getCopy());

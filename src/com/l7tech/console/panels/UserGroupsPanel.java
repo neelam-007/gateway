@@ -191,7 +191,7 @@ class UserGroupsPanel extends JPanel {
             }
 
             private void updateUserHeaders() {
-                final Set groupHeaders = userPanel.getUser().getGroupHeaders();
+                final Set groupHeaders = userPanel.getUserGroups();
                 groupHeaders.clear();
                 for (int i = 0; i < listInModel.getSize(); i++) {
                     EntityHeader g = (EntityHeader) listInModel.getElementAt(i);
@@ -375,7 +375,7 @@ class UserGroupsPanel extends JPanel {
             groupRemove.addActionListener(new ActionListener() {
                 public void actionPerformed(ActionEvent e) {
                     Object[] removals = groupMemberList.getSelectedValues();
-                    Set groups = userPanel.getUser().getGroups();
+                    Set groups = userPanel.getUserGroups();
 
                     for (int i = 0; removals != null && i < removals.length; i++) {
                         listInModel.removeElement(removals[i]);
@@ -404,7 +404,7 @@ class UserGroupsPanel extends JPanel {
     private void loadUserGroups() {
         try {
             isLoading = true;
-            Collection groups = userPanel.getUser().getGroupHeaders();
+            Collection groups = userPanel.getUserGroups();
             if (groups != null) {
                 listInModel.addAll(groups);
             }

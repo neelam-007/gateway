@@ -8,7 +8,10 @@ import com.l7tech.console.event.EntityListenerAdapter;
 import com.l7tech.console.logging.ErrorManager;
 import com.l7tech.console.text.MaxLengthDocument;
 import com.l7tech.console.util.Registry;
+import com.l7tech.identity.UserBean;
+import com.l7tech.identity.UserManager;
 import com.l7tech.identity.User;
+import com.l7tech.identity.GroupManager;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
 
@@ -22,6 +25,8 @@ import java.awt.event.HierarchyEvent;
 import java.awt.event.HierarchyListener;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.Set;
+import java.util.HashSet;
 
 /**
  * UserPanel - edits the <CODE>User/CODE> instances.
@@ -55,7 +60,8 @@ public class UserPanel extends EntityEditorPanel {
 
     // user
     private EntityHeader userHeader;
-    private User user;
+    private UserBean user;
+    private Set userGroups;
 
     private boolean formModified;
 
@@ -119,14 +125,16 @@ public class UserPanel extends EntityEditorPanel {
 
             boolean isNew = userHeader.getOid() == 0;
             if (isNew) {
-                user = new User();
+                user = new UserBean();
                 user.setName(userHeader.getName());
+                userGroups = null;
             } else {
-                user =
-                  Registry.getDefault().getInternalUserManager().findByPrimaryKey(userHeader.getStrId());
-                if (user == null) {
+                User u = getUserManager().findByPrimaryKey(userHeader.getStrId());
+                if ( u == null )
                     throw new RuntimeException("User missing " + userHeader.getOid());
-                }
+
+                user = u.getUserBean();
+                userGroups = getGroupManager().getGroupHeaders(u.getUniqueIdentifier());
             }
 
             // Populate the form for insert/update
@@ -137,6 +145,14 @@ public class UserPanel extends EntityEditorPanel {
         }
     }
 
+    private UserManager getUserManager() {
+        return Registry.getDefault().getInternalUserManager();
+    }
+
+    private GroupManager getGroupManager() {
+        return Registry.getDefault().getInternalGroupManager();
+    }
+
     /**
      * Retrieve the <code>USer</code> this panel is editing.
      * It is a convenience, and package private method, for
@@ -145,8 +161,13 @@ public class UserPanel extends EntityEditorPanel {
      *
      * @return the user that this panel is currently editing
      */
-    User getUser() {
+    UserBean getUser() {
         return user;
+    }
+
+    Set getUserGroups() {
+        if ( userGroups == null ) userGroups = new HashSet();
+        return userGroups;
     }
 
 
@@ -527,7 +548,7 @@ public class UserPanel extends EntityEditorPanel {
           public void entityUpdated(EntityEvent ev) {
               try {
                   user =
-                    Registry.getDefault().getInternalUserManager().findByPrimaryKey(userHeader.getStrId());
+                    getUserManager().findByPrimaryKey(userHeader.getStrId()).getUserBean();
                   user = collectChanges();
                   boolean b = formModified;
                   setData(user);
@@ -548,7 +569,7 @@ public class UserPanel extends EntityEditorPanel {
      *
      * @param user
      */
-    private void setData(User user) throws Exception {
+    private void setData(UserBean user) throws Exception {
         // Set tabbed panels (add/remove extranet tab)
         nameLabel.setText(user.getName());
         getFirstNameTextField().setText(user.getFirstName());
@@ -563,7 +584,7 @@ public class UserPanel extends EntityEditorPanel {
      *
      * @return User   the instance with changes applied
      */
-    private User collectChanges() {
+    private UserBean collectChanges() {
         user.setLastName(this.getLastNameTextField().getText());
         user.setFirstName(this.getFirstNameTextField().getText());
         user.setEmail(getEmailTextField().getText());
@@ -590,15 +611,17 @@ public class UserPanel extends EntityEditorPanel {
 
         collectChanges();
 
-        // Try adding/updating the Group
+        // Try adding/updating the User
         try {
+            String id;
             if (userHeader.getOid() != 0) {
-                Registry.getDefault().getInternalUserManager().update(user);
+                id = user.getUniqueIdentifier();
+                getUserManager().update(user);
             } else {
-                long id =
-                  Registry.getDefault().getInternalUserManager().save(user);
-                userHeader.setOid(id);
+                id = getUserManager().save(user);
+                userHeader.setStrId(id);
             }
+            getGroupManager().setGroupHeaders(id, userGroups);
 
             // Cleanup
             formModified = false;

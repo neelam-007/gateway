@@ -1,11 +1,12 @@
 package com.l7tech.console.panels;
 
+import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.console.text.MaxLengthDocument;
 import com.l7tech.console.util.Registry;
-import com.l7tech.identity.Group;
+import com.l7tech.identity.GroupBean;
+import com.l7tech.identity.GroupManager;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
-import com.l7tech.common.gui.util.Utilities;
 
 import javax.swing.*;
 import javax.swing.event.DocumentEvent;
@@ -15,8 +16,10 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.HierarchyEvent;
 import java.awt.event.HierarchyListener;
-import java.util.logging.Logger;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * GroupPanel is the main entry point panel for the <CODE>Group</CODE>.
@@ -45,7 +48,8 @@ public class GroupPanel extends EntityEditorPanel {
 
     // group
     private EntityHeader groupHeader;
-    private Group group;
+    private GroupBean group;
+    private Set groupMembers;
 
     // Titles/Labels
     private static final String DETAILS_LABEL = "General";
@@ -105,11 +109,14 @@ public class GroupPanel extends EntityEditorPanel {
 
             boolean isNew = groupHeader.getOid() == 0;
             if (isNew) {
-                group = new Group();
+                group = new GroupBean();
                 group.setName(groupHeader.getName());
+                groupMembers = null;
             } else {
-                group =
-                        Registry.getDefault().getInternalGroupManager().findByPrimaryKey(groupHeader.getStrId());
+                GroupManager gman = getGroupManager();
+                group = gman.findByPrimaryKey(groupHeader.getStrId()).getGroupBean();
+                groupMembers = gman.getUserHeaders( group.getUniqueIdentifier() );
+                // TODO load members
                 if (group == null) {
                     throw new RuntimeException("Group missing " + groupHeader.getOid());
                 }
@@ -122,6 +129,10 @@ public class GroupPanel extends EntityEditorPanel {
         }
     }
 
+    private GroupManager getGroupManager() {
+        return Registry.getDefault().getInternalGroupManager();
+    }
+
     /**
      * Retrieve the <code>Group</code> this panel is editing.
      * It is a convenience, and package private method, for
@@ -130,10 +141,15 @@ public class GroupPanel extends EntityEditorPanel {
      *
      * @return the group that this panel is currently editing
      */
-    Group getGroup() {
+    GroupBean getGroup() {
         return group;
     }
 
+
+    Set getGroupMembers() {
+        if ( groupMembers == null ) groupMembers = new HashSet();
+        return groupMembers;
+    }
 
     /**
      * Initialize all form panel components
@@ -399,7 +415,7 @@ public class GroupPanel extends EntityEditorPanel {
      *
      * @param group
      */
-    private void setData(Group group) throws Exception {
+    private void setData(GroupBean group) throws Exception {
         // Set tabbed panels (add/remove extranet tab)
         nameLabel.setText(group.getName());
         getDescriptionTextField().setText(group.getDescription());
@@ -412,7 +428,7 @@ public class GroupPanel extends EntityEditorPanel {
      *
      * @return Group   the instance with changes applied
      */
-    private Group collectChanges() {
+    private GroupBean collectChanges() {
         group.setDescription(this.getDescriptionTextField().getText());
         // group.setMemberHeaders(usersPanel.getCurrentUsers());
         return group;
@@ -439,13 +455,16 @@ public class GroupPanel extends EntityEditorPanel {
 
         // Try adding/updating the Group
         try {
+            GroupManager gman = getGroupManager();
+            String id;
             if (groupHeader.getOid() != 0) {
-                Registry.getDefault().getInternalGroupManager().update(group);
+                gman.update(group);
+                id = group.getUniqueIdentifier();
             } else {
-                long id =
-                        Registry.getDefault().getInternalGroupManager().save(group);
-                groupHeader.setOid(id);
+                id = gman.save(group);
+                groupHeader.setStrId(id);
             }
+            gman.setUserHeaders( id, groupMembers );
 
             // Cleanup
         } catch (Exception e) {

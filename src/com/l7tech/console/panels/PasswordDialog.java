@@ -1,13 +1,13 @@
 package com.l7tech.console.panels;
 
-import com.l7tech.identity.User;
-import com.l7tech.identity.internal.InternalIdentityProviderServer;
-import com.l7tech.console.util.Registry;
-import com.l7tech.console.event.EntityListener;
+import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.console.event.EntityEvent;
+import com.l7tech.console.event.EntityListener;
+import com.l7tech.console.util.Registry;
+import com.l7tech.identity.UserBean;
+import com.l7tech.identity.internal.InternalIdentityProviderServer;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
-import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.policy.assertion.credential.http.HttpDigest;
 
 import javax.swing.*;
@@ -16,12 +16,12 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
+import java.io.UnsupportedEncodingException;
 import java.util.Arrays;
 import java.util.Locale;
 import java.util.ResourceBundle;
-import java.util.logging.Logger;
 import java.util.logging.Level;
-import java.io.UnsupportedEncodingException;
+import java.util.logging.Logger;
 
 /**
  * This class is the Password change dialog.
@@ -57,7 +57,7 @@ public class PasswordDialog extends JDialog {
     private JPasswordField confirmPasswordField = null;
 
     /* the user to change the password for */
-    private User user;
+    private UserBean user;
 
     private int MIN_PASSWORD_LENGTH = 6;
     private int MAX_PASSWORD_LENGTH = 32;
@@ -69,7 +69,7 @@ public class PasswordDialog extends JDialog {
      *
      * @param parent the parent Frame. May be <B>null</B>
      */
-    public PasswordDialog(Frame parent, UserPanel userPanel, User user, EntityListener l) {
+    public PasswordDialog(Frame parent, UserPanel userPanel, UserBean user, EntityListener l) {
         super(parent, true);
         this.userPanel = userPanel;
         this.user = user;
@@ -301,7 +301,7 @@ public class PasswordDialog extends JDialog {
         }
 
         try {
-            if (user.getPassword().equals(User.encodePasswd(user.getLogin(), new String((new String(newPass)).getBytes(), InternalIdentityProviderServer.ENCODING), HttpDigest.REALM))) {
+            if (user.getPassword().equals(UserBean.encodePasswd(user.getLogin(), new String((new String(newPass)).getBytes(), InternalIdentityProviderServer.ENCODING), HttpDigest.REALM))) {
                 JOptionPane.showMessageDialog(
                         this,
                         resources.getString("sameOldPassord.question"),
@@ -342,7 +342,7 @@ public class PasswordDialog extends JDialog {
             dispose();
             if (listener != null) {
                 EntityHeader eh = new EntityHeader();
-                eh.setOid(user.getOid());
+                eh.setStrId(user.getUniqueIdentifier());
                 eh.setName(user.getName());
                 eh.setType(EntityType.USER);
                 listener.entityUpdated(new EntityEvent(this, eh));

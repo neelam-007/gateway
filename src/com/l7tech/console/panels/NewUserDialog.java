@@ -1,26 +1,25 @@
 package com.l7tech.console.panels;
 
-import com.l7tech.console.text.FilterDocument;
-import com.l7tech.console.text.MaxLengthDocument;
-import com.l7tech.console.util.Registry;
-import com.l7tech.console.event.EntityListener;
+import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.console.event.EntityEvent;
+import com.l7tech.console.event.EntityListener;
 import com.l7tech.console.logging.ErrorManager;
-import com.l7tech.identity.User;
+import com.l7tech.console.text.FilterDocument;
+import com.l7tech.console.util.Registry;
+import com.l7tech.identity.UserBean;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
-import com.l7tech.common.gui.util.Utilities;
 
 import javax.swing.*;
-import javax.swing.text.Document;
-import javax.swing.event.EventListenerList;
-import javax.swing.event.DocumentListener;
 import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
+import javax.swing.event.EventListenerList;
+import javax.swing.text.Document;
 import java.awt.*;
 import java.awt.event.*;
+import java.util.EventListener;
 import java.util.Locale;
 import java.util.ResourceBundle;
-import java.util.EventListener;
 import java.util.logging.Level;
 
 /**
@@ -49,7 +48,7 @@ public class NewUserDialog extends JDialog {
     private boolean createThenEdit = false;
 
     /* the user instance */
-    private User user = new User();
+    private UserBean user = new UserBean();
 
     private int MIN_PASSWORD_LENGTH = 6;
     private EventListenerList listenerList = new EventListenerList();
@@ -476,7 +475,7 @@ public class NewUserDialog extends JDialog {
                             EntityHeader header = new EntityHeader();
                             header.setType(EntityType.USER);
                             header.setName(user.getName());
-                            header.setOid(Registry.getDefault().getInternalUserManager().save(user));
+                            header.setStrId(Registry.getDefault().getInternalUserManager().save(user));
                             fireEventUserAdded(header);
                             insertSuccess = true;
                         } catch (Exception e) {
@@ -512,7 +511,7 @@ public class NewUserDialog extends JDialog {
                                 EntityHeader header = new EntityHeader();
                                 header.setType(EntityType.USER);
                                 header.setName(user.getName());
-                                header.setOid(user.getOid());
+                                header.setStrId(user.getUniqueIdentifier());
                                 panel.edit(header);
 
                                 EditorDialog dialog = new EditorDialog(parent, panel);

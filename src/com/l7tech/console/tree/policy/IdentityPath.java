@@ -8,6 +8,8 @@ import com.l7tech.policy.PolicyPathBuilder;
 import com.l7tech.policy.PolicyPathResult;
 import com.l7tech.identity.User;
 import com.l7tech.identity.Group;
+import com.l7tech.identity.UserBean;
+import com.l7tech.identity.GroupBean;
 
 import java.security.Principal;
 import java.util.*;
@@ -96,7 +98,7 @@ public class IdentityPath {
 
 
     private static IdentityPath anonymousPaths(Assertion root) {
-        User anon = new User();
+        UserBean anon = new UserBean();
         anon.setLogin("Anonymous");
         anon.setName(anon.getLogin());
         IdentityPath ipath = new IdentityPath(anon);
@@ -217,14 +219,14 @@ public class IdentityPath {
     public static Principal extractIdentity(Object assertion) {
         if (assertion instanceof SpecificUser) {
             SpecificUser su = ((SpecificUser)assertion);
-            User u = new User();
+            UserBean u = new UserBean();
             u.setLogin(su.getUserLogin());
             u.setName(su.getUserLogin());
             u.setProviderId(su.getIdentityProviderOid());
             return u;
         } else if (assertion instanceof MemberOfGroup) {
             MemberOfGroup mog = ((MemberOfGroup)assertion);
-            Group g = new Group();
+            GroupBean g = new GroupBean();
             g.setName(mog.getGroupName());
             g.setProviderId(mog.getIdentityProviderOid());
             return g;

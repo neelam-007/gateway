@@ -4,9 +4,7 @@ import com.l7tech.common.gui.util.ImageCache;
 import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.console.util.IconManager;
 import com.l7tech.console.util.Registry;
-import com.l7tech.identity.Group;
-import com.l7tech.identity.IdentityProvider;
-import com.l7tech.identity.User;
+import com.l7tech.identity.*;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.FindException;
@@ -426,12 +424,12 @@ public class IdentityProviderWizardPanel extends WizardStepPanel {
                 java.util.List row = (java.util.List)it.next();
                 EntityHeader eh = (EntityHeader)row.get(0);
                 if (EntityType.USER.equals(eh.getType())) {
-                    User u = new User();
+                    UserBean u = new UserBean();
                     u.setName(eh.getName());
                     u.setLogin(eh.getName());
                     identityAssertions.add(new SpecificUser(ip.getConfig().getOid(), u.getLogin()));
                 } else if (EntityType.GROUP.equals(eh.getType())) {
-                    Group g = new Group();
+                    GroupBean g = new GroupBean();
                     g.setName(eh.getName());
                     g.getName();
                     MemberOfGroup ma = new MemberOfGroup(ip.getConfig().getOid(), g.getName());
@@ -490,12 +488,12 @@ public class IdentityProviderWizardPanel extends WizardStepPanel {
             java.util.List row = (java.util.List)it.next();
             EntityHeader eh = (EntityHeader)row.get(0);
             if (EntityType.USER.equals(eh.getType())) {
-                User u = new User();
+                UserBean u = new UserBean();
                 u.setName(eh.getName());
                 u.setLogin(eh.getName());
                 identityAssertion.add(new SpecificUser(ip.getConfig().getOid(), u.getLogin()));
             } else if (EntityType.GROUP.equals(eh.getType())) {
-                Group g = new Group();
+                GroupBean g = new GroupBean();
                 g.setName(eh.getName());
                 g.getName();
                 MemberOfGroup ma = new MemberOfGroup(ip.getConfig().getOid(), g.getName());

@@ -1,6 +1,7 @@
 package com.l7tech.identity;
 
 import com.l7tech.identity.*;
+import com.l7tech.identity.internal.InternalUser;
 import com.l7tech.console.security.ClientCredentialManager;
 import com.l7tech.common.util.Locator;
 import com.l7tech.objectmodel.DeleteException;
@@ -56,7 +57,7 @@ public class IdentityProviderClientTest {
 
     public void testCreateDeleteUser() throws Exception {
         System.out.println("creating user");
-        User newuser = new User();
+        InternalUser newuser = new InternalUser();
         newuser.setName("test user");
         newuser.setLogin("tuser");
         newuser.setPassword("i am the grand cornolio");
@@ -64,9 +65,9 @@ public class IdentityProviderClientTest {
         System.out.println("getting user manager");
         UserManager userManager = idProvider.getUserManager();
         System.out.println("saving user");
-        long userId = userManager.save(newuser);
+        String userId = userManager.save(newuser);
         System.out.println("user saved, oid=" + userId);
-        newuser.setOid(userId);
+        newuser.setOid( new Long( userId ).longValue() );
         System.out.println("deleting user");
         userManager.delete(newuser);
         System.out.println("done testCreateDeleteUser");
@@ -75,7 +76,7 @@ public class IdentityProviderClientTest {
     public void testDeleteAdminUser() throws Exception {
         UserManager userMan = idProvider.getUserManager();
         System.out.println("getting admin dude");
-        User administrator = userMan.findByLogin("ssgadmin");
+        InternalUser administrator = (InternalUser)userMan.findByLogin("ssgadmin");
         if (administrator != null) {
             System.out.println("we got him, let's try to delete him");
             try {

@@ -1,7 +1,7 @@
 package com.l7tech.identity;
 
 import com.l7tech.console.util.Registry;
-import com.l7tech.policy.assertion.credential.PrincipalCredentials;
+import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.assertion.credential.http.HttpDigest;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.FindException;
@@ -37,7 +37,7 @@ public class IdentityProviderStub implements IdentityProvider {
         return Registry.getDefault().getInternalGroupManager();
     }
 
-    public void authenticate( PrincipalCredentials pc ) throws AuthenticationException {
+    public User authenticate( LoginCredentials pc ) throws AuthenticationException {
         throw new AuthenticationException("not implemented");
     }
 

@@ -12,6 +12,8 @@ import com.l7tech.policy.wsp.WspWriter;
 import com.l7tech.service.PublishedService;
 import com.l7tech.common.xml.Wsdl;
 import com.l7tech.service.WsdlTest;
+import com.l7tech.identity.internal.InternalUser;
+import com.l7tech.identity.internal.InternalGroup;
 
 import javax.wsdl.WSDLException;
 import java.beans.XMLDecoder;
@@ -100,7 +102,7 @@ public class StubDataStore {
     }
 
     private void initialUsers(XMLEncoder encoder, long providerId) {
-        User user = new User();
+        InternalUser user = new InternalUser();
         user.setOid(nextObjectId());
         user.setLogin("fred");
         user.setName(user.getLogin());
@@ -110,7 +112,7 @@ public class StubDataStore {
         encoder.writeObject(user);
         populate(user);
 
-        user = new User();
+        user = new InternalUser();
         user.setOid(nextObjectId());
         user.setLogin("don");
         user.setName(user.getLogin());
@@ -120,7 +122,7 @@ public class StubDataStore {
         encoder.writeObject(user);
         populate(user);
 
-        user = new User();
+        user = new InternalUser();
         user.setOid(nextObjectId());
         user.setLogin("schwartz");
         user.setName(user.getLogin());
@@ -132,7 +134,7 @@ public class StubDataStore {
     }
 
     private void initialGroups(XMLEncoder encoder, long providerId) {
-        Group group = new Group();
+        InternalGroup group = new InternalGroup();
         group.setOid(nextObjectId());
         group.setName("all-staff");
         group.setDescription("All staff group");
@@ -141,7 +143,7 @@ public class StubDataStore {
         for (Iterator i = users.keySet().iterator(); i.hasNext();) {
             members.add(users.get(i.next()));
         }
-        group.setMembers(members);
+        //group.setMembers(members);
 
         Set membersHeaders = new HashSet();
         for (Iterator i = users.keySet().iterator(); i.hasNext();) {
@@ -149,18 +151,18 @@ public class StubDataStore {
         }
 
 
-        group.setMemberHeaders(membersHeaders);
+        //group.setMemberHeaders(membersHeaders);
         encoder.writeObject(group);
         populate(group);
 
-        group = new Group();
+        group = new InternalGroup();
         group.setOid(nextObjectId());
         group.setName("marketing");
         group.setDescription("Marketing group");
         encoder.writeObject(group);
         populate(group);
 
-        group = new Group();
+        group = new InternalGroup();
         group.setOid(nextObjectId());
         group.setName("engineering");
         group.setDescription("Engineering group");
@@ -237,10 +239,10 @@ public class StubDataStore {
     }
 
     private void populate(Object o) {
-        if (o instanceof Group) {
-            groups.put(new Long(((Group)o).getOid()), o);
-        } else if (o instanceof User) {
-            users.put(new Long(((User)o).getOid()), o);
+        if (o instanceof InternalGroup) {
+            groups.put(new Long(((InternalGroup)o).getOid()), o);
+        } else if (o instanceof InternalUser) {
+            users.put(new Long(((InternalUser)o).getOid()), o);
         } else if (o instanceof IdentityProviderConfig) {
             providerConfigs.put(new Long(((IdentityProviderConfig)o).getOid()), o);
         } else if (o instanceof PublishedService) {
@@ -274,8 +276,9 @@ public class StubDataStore {
 
 
     private EntityHeader fromUser(User u) {
+        InternalUser imp = (InternalUser)u;
         return
-          new EntityHeader(u.getOid(), EntityType.USER, u.getName(), null);
+          new EntityHeader(imp.getOid(), EntityType.USER, u.getName(), null);
     }
 
     private Map providerConfigs = new HashMap();

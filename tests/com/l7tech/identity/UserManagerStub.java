@@ -1,6 +1,7 @@
 package com.l7tech.identity;
 
 import com.l7tech.objectmodel.*;
+import com.l7tech.identity.internal.InternalUser;
 
 import java.util.*;
 
@@ -35,31 +36,47 @@ public class UserManagerStub implements UserManager {
     }
 
     public void delete(User user) throws DeleteException {
-        if (dataStore.getUsers().remove(new Long(user.getOid())) == null) {
-            throw new DeleteException("Could not find user oid= " + user.getOid());
+        InternalUser imp = (InternalUser)user;
+        if (dataStore.getUsers().remove(new Long(imp.getOid())) == null) {
+            throw new DeleteException("Could not find user oid= " + imp.getOid());
         }
     }
 
-    public long save(User user) throws SaveException {
+    public void delete(String identifier) throws DeleteException {
+        InternalUser imp = new InternalUser();
+        imp.setOid( Long.valueOf( identifier ).longValue() );
+        delete( imp );
+    }
+
+    public String save(User user) throws SaveException {
+        InternalUser imp = (InternalUser)user;
         long oid = dataStore.nextObjectId();
-        user.setOid(oid);
+        imp.setOid(oid);
         Long key = new Long(oid);
         if (dataStore.getUsers().get(key) != null) {
-            throw new SaveException("Record exists, user oid= " + user.getOid());
+            throw new SaveException("Record exists, user oid= " + imp.getOid());
         }
         dataStore.getUsers().put(key, user);
-        return oid;
+        return new Long( oid ).toString();
 
+    }
+
+    public String save(UserBean user) throws SaveException {
+        return null;
     }
 
     public void update(User user) throws UpdateException {
-        Long key = new Long(user.getOid());
+        InternalUser imp = (InternalUser)user;
+        Long key = new Long(imp.getOid());
         if (dataStore.getUsers().get(key) == null) {
-            throw new UpdateException("Record missing, user oid= " + user.getOid());
+            throw new UpdateException("Record missing, user oid= " + imp.getOid());
         }
         dataStore.getUsers().remove(key);
         dataStore.getUsers().put(key, user);
 
+    }
+
+    public void update(UserBean user) throws UpdateException {
     }
 
     public EntityHeader userToHeader(User user) {
@@ -145,8 +162,9 @@ public class UserManagerStub implements UserManager {
     }
 
     private EntityHeader fromUser(User u) {
+        InternalUser imp = (InternalUser)u;
         return
-                new EntityHeader(u.getOid(), EntityType.USER, u.getLogin(), null);
+                new EntityHeader(imp.getOid(), EntityType.USER, u.getLogin(), null);
     }
 
     private StubDataStore dataStore;

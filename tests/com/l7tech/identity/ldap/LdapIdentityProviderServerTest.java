@@ -1,7 +1,7 @@
 package com.l7tech.identity.ldap;
 
 import com.l7tech.policy.assertion.credential.CredentialFormat;
-import com.l7tech.policy.assertion.credential.PrincipalCredentials;
+import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.identity.*;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
@@ -82,8 +82,8 @@ public class LdapIdentityProviderServerTest extends junit.framework.TestCase {
         System.out.println(francois);
         System.out.println("authenticating");
 
-        PrincipalCredentials validcreds = new PrincipalCredentials(francois, "rockclimbing".getBytes(), CredentialFormat.CLEARTEXT);
-        PrincipalCredentials invalidcreds = new PrincipalCredentials(francois, "i like to golf".getBytes(), CredentialFormat.CLEARTEXT);
+        LoginCredentials validcreds = new LoginCredentials( francois.getLogin(), "rockclimbing".getBytes(), CredentialFormat.CLEARTEXT);
+        LoginCredentials invalidcreds = new LoginCredentials( francois.getLogin(), "i like to golf".getBytes(), CredentialFormat.CLEARTEXT);
 
         try {
             provider.authenticate(validcreds);
