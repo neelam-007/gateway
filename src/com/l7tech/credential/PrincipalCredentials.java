@@ -16,19 +16,24 @@ import com.l7tech.identity.User;
  * @author alex
  */
 public class PrincipalCredentials {
-    public PrincipalCredentials( User user, byte[] credentials, CredentialFormat format, String realm  ) {
+    public PrincipalCredentials( User user, byte[] credentials, CredentialFormat format, String realm, Object payload ) {
         _user = user;
         _credentials = credentials;
         _realm = realm;
         _format = format;
+        _payload = payload;
+    }
+
+    public PrincipalCredentials( User user, byte[] credentials, CredentialFormat format, String realm ) {
+        this( user, credentials, format, realm, null );
     }
 
     public PrincipalCredentials( User user, byte[] credentials, CredentialFormat format ) {
-        this( user, credentials, format, null );
+        this( user, credentials, format, null, null );
     }
 
     public PrincipalCredentials( User user, byte[] credentials ) {
-        this( user, credentials, CredentialFormat.CLEARTEXT );
+        this( user, credentials, CredentialFormat.CLEARTEXT, null, null );
     }
 
     public User getUser() {
@@ -51,8 +56,17 @@ public class PrincipalCredentials {
         return _format;
     }
 
+    /**
+     * Could be null.
+     * @return
+     */
+    public Object getPayload() {
+        return _payload;
+    }
+
     private final User _user;
     private final byte[] _credentials;
     private final String _realm;
     private CredentialFormat _format;
+    private Object _payload;
 }
