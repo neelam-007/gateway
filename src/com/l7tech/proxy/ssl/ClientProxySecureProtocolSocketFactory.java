@@ -43,8 +43,6 @@ public class ClientProxySecureProtocolSocketFactory implements SecureProtocolSoc
         public void handshakeCompleted(HandshakeCompletedEvent event) {
             log.info("MyHandshakeCompletedListner: connection was made to " + expectedHostname);
             try {
-                // TODO: Invalidate session only if a cert has changed
-                //event.getSession().invalidate();
                 Certificate[] certs = event.getPeerCertificates();
                 if (certs.length < 1)
                     throw new RuntimeException("Server presented no server certificates");
