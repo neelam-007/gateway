@@ -21,7 +21,7 @@ public class JmsAdminStub implements JmsAdmin {
     private Map endpoints;
 
     private static JmsProvider[] providers = new JmsProvider[] {
-        new JmsProvider("IBM MQSeries 5.2.1", "com.ibm.jms.jndi.InitialContextFactory", "JmsQueueConnectionFactory"),
+        new JmsProvider("WebSphere MQ 5.2.1", "com.ibm.jms.jndi.InitialContextFactory", "JmsQueueConnectionFactory"),
         new JmsProvider("OpenJMS 0.7.6-rc3", "org.exolab.jms.jndi.InitialContextFactory", "JmsQueueConnectionFactory"),
     };
 
