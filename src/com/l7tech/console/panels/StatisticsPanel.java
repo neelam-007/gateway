@@ -27,8 +27,12 @@ import java.util.Vector;
  */
 public class StatisticsPanel extends JPanel {
 
+    private static final String STATISTICS_UNAVAILABLE = "unavailable";
     private static final String SERVER_UP_TIME_PREFIX = "Server Uptime: ";
     private static final String LAST_MINUTE_SERVER_LOAD_PREFIX = "Avg load (1 min): ";
+    private static final String MIDDLE_SPACE = "        ";
+    private static final String END_SPACE = "     ";
+    private static final int STAT_REFRESH_TIMER = 5000;
 
     private JTextArea data = new JTextArea("Hello");
     private com.l7tech.adminws.service.ServiceManager serviceManager = null;
@@ -101,7 +105,7 @@ public class StatisticsPanel extends JPanel {
         String[][] rows = new String[][]{};
 
         statTableModel = new LogTableModel(rows, cols) {
-            public Class getColumnClass(int columnIndex){
+            public Class getColumnClass(int columnIndex) {
                 Class dataType = java.lang.String.class;
                 // Only the value of the first column is a string, other columns contains numbers which should be aligned to the right
                 if (columnIndex > 0) {
@@ -175,7 +179,7 @@ public class StatisticsPanel extends JPanel {
         if (statRefreshTimer != null) return statRefreshTimer;
 
         // Create a refresh timer.
-        statRefreshTimer = new javax.swing.Timer(3000, new ActionListener() {
+        statRefreshTimer = new javax.swing.Timer(STAT_REFRESH_TIMER, new ActionListener() {
             public void actionPerformed(ActionEvent evt) {
                 refreshStatistics();
             }
@@ -200,7 +204,6 @@ public class StatisticsPanel extends JPanel {
         try {
             entityHeaders = serviceManager.findAllPublishedServices();
 
-            System.out.println("Number of published services: " + entityHeaders.length);
             EntityHeader header = null;
             for (int i = 0; i < entityHeaders.length; i++) {
 
@@ -213,24 +216,16 @@ public class StatisticsPanel extends JPanel {
                 }
 
                 header = entityHeaders[i];
-                System.out.println("Name of the published service: " + header.getName());
-                System.out.println("Type of the published service: " + header.getType());
-
-                if ( header.getType().toString() == com.l7tech.objectmodel.EntityType.SERVICE.toString()) {
+                if (header.getType().toString() == com.l7tech.objectmodel.EntityType.SERVICE.toString()) {
                     Vector newRow = new Vector();
 
                     newRow.add(header.getName());
                     ServiceStatistics stats = null;
 
                     try {
-                        //System.out.println("Service Oid: " + header.getOid());
                         stats = serviceManager.getStatistics(header.getOid());
 
                         if (stats != null) {
-                            //System.out.println("Attempted Request Count: " + stats.getAttemptedRequestCount());
-                            //System.out.println("Authorized Request Count: " + stats.getAuthorizedRequestCount());
-                            //System.out.println("Completeded Request Count: " + stats.getCompletedRequestCount());
-
                             newRow.add(new Integer(stats.getAttemptedRequestCount()));
                             newRow.add(new Integer(stats.getAuthorizedRequestCount()));
                             newRow.add(new Integer(stats.getCompletedRequestCount()));
@@ -239,7 +234,7 @@ public class StatisticsPanel extends JPanel {
                         }
 
                     } catch (Throwable t) {
-                       t.printStackTrace();
+                        t.printStackTrace();
                     }
 
                 }
@@ -264,8 +259,8 @@ public class StatisticsPanel extends JPanel {
             metrics = null;
         }
         if (metrics == null) {
-             serverUpTime.setText(SERVER_UP_TIME_PREFIX + "unavailable" + "        ");
-             lastMinuteServerLoad.setText(LAST_MINUTE_SERVER_LOAD_PREFIX + "unavailable" + "    ");
+            serverUpTime.setText(SERVER_UP_TIME_PREFIX + STATISTICS_UNAVAILABLE + MIDDLE_SPACE);
+            lastMinuteServerLoad.setText(LAST_MINUTE_SERVER_LOAD_PREFIX + STATISTICS_UNAVAILABLE + END_SPACE);
 
             //fiveminuteLoadText.setText("unavailable");
             //fifteenminuteLoadText.setText("unavailable");
@@ -277,9 +272,9 @@ public class StatisticsPanel extends JPanel {
             String uptime = "";
             if (days > 0) uptime += Integer.toString(days) + " days ";
             if (hrs > 0) uptime += Integer.toString(hrs) + " hrs ";
-            if (minutes > 0) uptime += Integer.toString(minutes) + " minutes " + "        ";
+            if (minutes > 0) uptime += Integer.toString(minutes) + " minutes " + MIDDLE_SPACE;
             serverUpTime.setText(SERVER_UP_TIME_PREFIX + uptime);
-            lastMinuteServerLoad.setText(LAST_MINUTE_SERVER_LOAD_PREFIX + Double.toString(metrics.getLoad1()) + "    ");
+            lastMinuteServerLoad.setText(LAST_MINUTE_SERVER_LOAD_PREFIX + Double.toString(metrics.getLoad1()) + END_SPACE);
 
             //fiveminuteLoadText.setText(Double.toString(metrics.getLoad2()));
             //fifteenminuteLoadText.setText(Double.toString(metrics.getLoad3()));
@@ -288,6 +283,16 @@ public class StatisticsPanel extends JPanel {
 
     public void stopRefreshTimer() {
         getStatRefreshTimer().stop();
+    }
+
+    public void clearStatiistics() {
+        while (getStatTableModel().getRowCount() > 0) {
+            getStatTableModel().removeRow(0);
+        }
+        getStatTableModel().fireTableDataChanged();
+        serverUpTime.setText(SERVER_UP_TIME_PREFIX + STATISTICS_UNAVAILABLE + MIDDLE_SPACE);
+        lastMinuteServerLoad.setText(LAST_MINUTE_SERVER_LOAD_PREFIX + STATISTICS_UNAVAILABLE + END_SPACE);
+
     }
 
 }
