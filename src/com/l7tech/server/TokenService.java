@@ -133,6 +133,9 @@ public class TokenService {
                                                                                  null,
                                                                                  null,
                                                                                  clientCert));
+        if (authenticatedUser == null) {
+            // todo, some authentication exception
+        }
         // Actually handle the request
         Document response = null;
         if (isValidRequestForSecureConversationContext(wssOutput.getUndecoratedMessage(), wssOutput)) {
@@ -316,7 +319,7 @@ public class TokenService {
             return false;
         }
         String value = XmlUtil.getTextValue(tokenTypeEl);
-        if (!value.equals("http://schemas.xmlsoap.org/ws/2004/04/sct")) {
+        if (!value.equals("http://schemas.xmlsoap.org/ws/2004/04/security/sc/sct") {
             logger.warning("TokenType not supported." + value);
             return false;
         }
