@@ -532,7 +532,9 @@ public class Wsdl {
                 ee = (ExtensibilityElement)eels.next();
                 if (ee instanceof SOAPBody) {
                     SOAPBody body = (SOAPBody)ee;
-                    return body.getNamespaceURI();
+                    if (body.getNamespaceURI() != null) {
+                        return body.getNamespaceURI();
+                    }
                 }
             }
         }
@@ -548,7 +550,9 @@ public class Wsdl {
                 ee = (ExtensibilityElement)eels.next();
                 if (ee instanceof SOAPBody) {
                     SOAPBody body = (SOAPBody)ee;
-                    return body.getNamespaceURI();
+                    if (body.getNamespaceURI() != null) {
+                        return body.getNamespaceURI();
+                    }
                 }
             }
         }
