@@ -111,13 +111,16 @@ public class BeanEditor extends JPanel {
         propertyTable.getTableHeader().setResizingAllowed(true);
         propertyTable.setRowHeight(20);
         propertyTable.putClientProperty("terminateEditOnFocusLost", Boolean.TRUE);
-
         TableColumn column = propertyTable.getColumnModel().getColumn(0);
         column.setCellRenderer(new ButtonRenderer());
+
         column = propertyTable.getColumnModel().getColumn(1);
         TableCellEditor te = column.getCellEditor();
-        if (te !=null && te instanceof DefaultCellEditor) {
-            ((DefaultCellEditor)te).setClickCountToStart(1);
+        if (te == null) {
+            final JTextField textField = new JTextField();
+            final DefaultCellEditor cellEditor = new DefaultCellEditor(textField);
+            cellEditor.setClickCountToStart(1);
+            column.setCellEditor(cellEditor);
         }
         JScrollPane ps = new JScrollPane();
         ps.getViewport().add(propertyTable);
