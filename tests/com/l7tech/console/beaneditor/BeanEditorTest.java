@@ -11,7 +11,7 @@ import javax.swing.*;
  * @author emil
  * @version Feb 17, 2004
  */
-public class BeanEditorTerst {
+public class BeanEditorTest {
     public static void main(String[] args) {
         Person person = new Person();
         JFrame frame = new JFrame();
