@@ -340,19 +340,22 @@ public class Wsdl {
         List soapUris = SoapUtil.ENVELOPE_URIS;
         Map namespaceMap = definition.getNamespaces();
         String tnsUri = definition.getTargetNamespace();
+        int ns = 1;
+        final String TEMP = "l7tempprefix";
 
         // Get it into URL order
         SortedMap uris = new TreeMap();
         for (Iterator i = namespaceMap.keySet().iterator(); i.hasNext();) {
             String prefix = (String) i.next();
             String uri = (String)namespaceMap.get(prefix);
+            if ( prefix == null || prefix.length() == 0 ) prefix = TEMP + ns++;
             uris.put( uri, prefix );
         }
 
         // Now assign prefixes
         LinkedHashMap result = new LinkedHashMap();
+
         boolean soapenv = false;
-        int ns = 1;
         for (Iterator i = uris.keySet().iterator(); i.hasNext();) {
             String uri = (String) i.next();
             String prefix = (String)namespaceMap.get( uri );
@@ -369,7 +372,7 @@ public class Wsdl {
             if ( result.get( SoapUtil.SOAP_ENV_PREFIX) == null )
                 result.put( SoapUtil.SOAP_ENV_PREFIX, SOAPConstants.URI_NS_SOAP_ENVELOPE );
             else if ( !result.containsValue(SOAPConstants.URI_NS_SOAP_ENVELOPE ) )
-                result.put( NS + ns++, SOAPConstants.URI_NS_SOAP_ENVELOPE );
+                result.put( TEMP + ns++, SOAPConstants.URI_NS_SOAP_ENVELOPE );
         }
 
         Collection operations = getBindingOperations();
@@ -383,13 +386,22 @@ public class Wsdl {
                     SOAPBody body = (SOAPBody)ee;
                     String uri = body.getNamespaceURI();
                     if ( uri != null && !result.containsValue(uri) ) {
-                        result.put( NS + ns++, uri );
+                        result.put( TEMP + ns++, uri );
                     }
                 }
             }
         }
 
-        return result;
+        ns = 1;
+        LinkedHashMap result2 = new LinkedHashMap();
+        for (Iterator i = result.keySet().iterator(); i.hasNext();) {
+            String prefix = (String) i.next();
+            String uri = (String)result.get(prefix);
+            if ( prefix == null || prefix.length() == 0 || prefix.startsWith( TEMP ) ) prefix = NS + ns++;
+            result2.put( prefix, uri );
+        }
+
+        return result2;
     }
 
     public Collection getBindingOperations() {
