@@ -3,6 +3,7 @@ package com.l7tech.service;
 import com.l7tech.objectmodel.*;
 import com.l7tech.adminws.service.Client;
 import com.l7tech.message.Request;
+import com.l7tech.service.resolution.ServiceResolutionException;
 
 import java.util.Collection;
 import java.io.IOException;
@@ -53,9 +54,8 @@ public class ServiceManagerClientImp implements ServiceManager {
     public void delete(PublishedService service) throws DeleteException {
     }
 
-    public PublishedService resolveService(Request request) {
-        // not implemented at run time
-        return null;
+    public PublishedService resolveService(Request request) throws ServiceResolutionException {
+        throw new ServiceResolutionException("No console side implementation.");
     }
 
     // ************************************************
