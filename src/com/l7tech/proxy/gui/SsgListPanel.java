@@ -336,7 +336,7 @@ public class SsgListPanel extends JPanel {
                                              "action on the corresponding Trusted Gateway instead." );
                             return;
                         }
-                                                        
+
                         boolean retry = true;
                         boolean prompted = false;
                         char[] newpass = null;
@@ -414,7 +414,7 @@ public class SsgListPanel extends JPanel {
                                     log.log(Level.WARNING, e1.getMessage(), e1);
                                     Gui.errorMessage("Unable to change your password -- the Gateway reports that your current " +
                                                      "password or client certificate is not valid.");
-                                    return;                                    
+                                    return;
                                 } catch (Exception e1) {
                                     log.log(Level.WARNING, e1.getMessage(), e1);
                                     Gui.errorMessage("Unable to change your password", "Unable to negotiate an SSL connection " +
@@ -442,7 +442,10 @@ public class SsgListPanel extends JPanel {
                             }
                         }
 
-                        Gui.errorMessage("Your password has been changed successfully.");
+                        JOptionPane.showMessageDialog(Gui.getInstance().getFrame(),
+                                                      "Your password has been changed successfully.",
+                                                      "Password change succeeded",
+                                                      JOptionPane.INFORMATION_MESSAGE);
                     }
                 }
             };
