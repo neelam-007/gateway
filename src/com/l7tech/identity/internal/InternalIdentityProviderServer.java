@@ -167,7 +167,8 @@ public class InternalIdentityProviderServer implements IdentityProvider {
                                 logger.log(Level.WARNING, "transaction error around forbidCertReset", e);
                             }
                         } else {
-                            String err = "Failed to authenticate user " + login + " using an SSL client certificate (request certificate doesn't match database)";
+                            String err = "Failed to authenticate user " + login + " using a client certificate " +
+                                         "(request certificate doesn't match database's)";
                             logger.warning(err);
                             throw new InvalidClientCertificateException( err );
                         }
