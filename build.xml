@@ -91,6 +91,8 @@
     </target>
 
 
+    <target name="cleandev" depends="clean, dev"/>
+
     <!--
       ** configure and invoke developer's build
       -->
