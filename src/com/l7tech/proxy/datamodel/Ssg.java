@@ -57,6 +57,7 @@ public class Ssg implements Serializable, Cloneable, Comparable {
     private String ssgFile = SecureSpanConstants.SSG_FILE;
     private int sslPort = SSG_SSL_PORT;
     private String username = null;
+    private String keyStorePath = null;
     private boolean defaultSsg = false;
     private boolean chainCredentialsFromClient = false;
     private boolean useSslByDefault = true;
@@ -523,6 +524,35 @@ public class Ssg implements Serializable, Cloneable, Comparable {
         this.defaultSsg = defaultSsg;
     }
 
+    /**
+     * Get the pathname of the key store file this SSG will use.
+     * @return the key store pathname
+     */
+    public synchronized String getKeyStorePath() {
+        if (keyStorePath == null)
+            keyStorePath = KEY_FILE + getId();
+        return keyStorePath;
+    }
+
+    /**
+     * Set the pathname of the key store file this SSG should use.
+     * @param keyStorePath the key store pathname
+     */
+    public void setKeyStorePath(String keyStorePath) {
+        if (keyStorePath == null)
+            throw new IllegalArgumentException("keyStorePath may not be null");
+        this.keyStorePath = keyStorePath;
+        flushKeyStoreData();
+    }
+
+    /** Flush any cached data from the key store. */
+    private synchronized void flushKeyStoreData() {
+        keyStore = null;
+        haveClientCert = null;
+        privateKey = null;
+        passwordWorkedForPrivateKey = false;
+    }
+
     /** Cached session.  Package private; used by SsgSessionManager. */
     Session session() {
         return session;
@@ -535,7 +565,7 @@ public class Ssg implements Serializable, Cloneable, Comparable {
 
     /** Key store file.  Package private; used by SsgKeyStoreManager. */
     File getKeyStoreFile() {
-        return new File(KEY_FILE + getId());
+        return new File(getKeyStorePath());
     }
 
     /** Transient in-core cache of KeyStore.  Package private; used by SsgKeyStoreManager. */
