@@ -1,7 +1,7 @@
 <?xml version='1.0' encoding='ISO-8859-1' ?>
-<!DOCTYPE map PUBLIC "-//Sun Microsystems Inc.//DTD JavaHelp Map Version 1.0//EN" "http://java.sun.com/products/javahelp/map_1_0.dtd">
+<!DOCTYPE map PUBLIC "-//Sun Microsystems Inc.//DTD JavaHelp Map Version 2.0//EN" "http://java.sun.com/products/javahelp/map_2_0.dtd">
 
-<map version="1.0">
+<map version="2.0">
   <mapID target="overview_product_overview_htm" url="overview/product_overview.htm" />
   <mapID target="overview_audience_htm" url="overview/audience.htm" />
   <mapID target="overview_product_architecture_model_htm" url="overview/product_architecture_model.htm" />
