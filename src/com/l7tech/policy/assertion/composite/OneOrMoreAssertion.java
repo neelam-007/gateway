@@ -21,7 +21,6 @@ import java.util.List;
  *
  * Semantically equivalent to a non-short-circuited OR.
  *
-
  * @author alex
  * @version $Revision$
  */

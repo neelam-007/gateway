@@ -20,7 +20,6 @@ import java.util.List;
  *
  * Semantically equivalent to a non-short-circuited AND.
  *
-
  * @author alex
  * @version $Revision$
  */

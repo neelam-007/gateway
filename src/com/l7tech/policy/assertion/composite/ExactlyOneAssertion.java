@@ -19,6 +19,7 @@ import java.io.Serializable;
 
 /**
  * Asserts that one and only one child assertion returns a true value.
+ *
  * Semantically equivalent to a non-short-circuited exclusive-OR.
  *
  * @author alex
