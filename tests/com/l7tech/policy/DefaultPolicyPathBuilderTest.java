@@ -7,24 +7,26 @@
 package com.l7tech.policy;
 
 import com.l7tech.common.xml.TestDocuments;
-import com.l7tech.policy.assertion.Assertion;
-import com.l7tech.policy.assertion.FalseAssertion;
-import com.l7tech.policy.assertion.HttpRoutingAssertion;
-import com.l7tech.policy.assertion.TrueAssertion;
+import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.assertion.composite.OneOrMoreAssertion;
 import com.l7tech.policy.assertion.credential.http.HttpBasic;
 import com.l7tech.policy.assertion.credential.http.HttpDigest;
-import com.l7tech.policy.assertion.credential.http.HttpClientCert;
 import com.l7tech.policy.assertion.credential.wss.WssBasic;
 import com.l7tech.policy.assertion.identity.SpecificUser;
-import com.l7tech.policy.assertion.xmlsec.*;
+import com.l7tech.policy.assertion.xmlsec.RequestWssReplayProtection;
+import com.l7tech.policy.assertion.xmlsec.RequestWssSaml;
+import com.l7tech.policy.assertion.xmlsec.RequestWssX509Cert;
+import com.l7tech.policy.assertion.xmlsec.SecureConversation;
 import com.l7tech.policy.wsp.WspReader;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Iterator;
+import java.util.List;
 
 /**
  * Test the default policy assertion path builder/analyzer class
@@ -258,7 +260,7 @@ public class DefaultPolicyPathBuilderTest extends TestCase {
 
         credentialsLocationList.add(new HttpBasic());
         credentialsLocationList.add(new HttpDigest());
-        credentialsLocationList.add(new HttpClientCert());
+        credentialsLocationList.add(new SslAssertion(true));
         credentialsLocationList.add(new WssBasic());
         credentialsLocationList.add(new RequestWssX509Cert());
         credentialsLocationList.add(new SecureConversation());

@@ -5,7 +5,6 @@ import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.assertion.composite.OneOrMoreAssertion;
 import com.l7tech.policy.assertion.credential.http.HttpBasic;
-import com.l7tech.policy.assertion.credential.http.HttpClientCert;
 import com.l7tech.policy.assertion.credential.http.HttpDigest;
 import com.l7tech.policy.assertion.credential.wss.WssBasic;
 import com.l7tech.policy.assertion.credential.wss.WssDigest;
@@ -47,7 +46,6 @@ public class AssertionTreeNodeFactory {
         assertionMap.put(SecureConversation.class, SecureConversationTreeNode.class);
         assertionMap.put(RequestWssReplayProtection.class, RequestWssReplayProtectionTreeNode.class);
 
-        assertionMap.put(HttpClientCert.class, HttpClientCertAssertionTreeNode.class);
         assertionMap.put(RoutingAssertion.class, HttpRoutingAssertionTreeNode.class);
         assertionMap.put(HttpRoutingAssertion.class, HttpRoutingAssertionTreeNode.class);
         assertionMap.put(BridgeRoutingAssertion.class, BridgeRoutingAssertionTreeNode.class);

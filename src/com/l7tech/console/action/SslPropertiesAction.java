@@ -1,6 +1,6 @@
 package com.l7tech.console.action;
 
-import com.l7tech.console.tree.SslTransportNode;
+import com.l7tech.console.panels.EditSslAssertionPropertiesDialog;
 import com.l7tech.console.tree.policy.AssertionTreeNode;
 import com.l7tech.console.tree.policy.PolicyTreeModel;
 import com.l7tech.console.tree.policy.SslAssertionTreeNode;
@@ -8,7 +8,6 @@ import com.l7tech.console.util.TopComponents;
 import com.l7tech.policy.assertion.SslAssertion;
 
 import javax.swing.*;
-import java.util.Iterator;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -55,33 +54,29 @@ public class SslPropertiesAction extends NodeAction {
      * without explicitly asking for the AWT event thread!
      */
     protected void performAction() {
-        String[] options = new String[SslAssertion.options().size()];
-        int index = 0;
-        for (Iterator iterator = SslAssertion.options().iterator(); iterator.hasNext();) {
-            SslAssertion.Option option = (SslAssertion.Option)iterator.next();
-            options[index++] = option.getName();
-        }
-        SslAssertionTreeNode sn = (SslAssertionTreeNode)node;
         SslAssertion sslAssertion = (SslAssertion)node.asAssertion();
-
-        String s =
-          (String)JOptionPane.showInputDialog(TopComponents.getInstance().getMainWindow(),
-            "Select an SSL option:\n",
-            "SSL Properties",
-            JOptionPane.PLAIN_MESSAGE,
-            new ImageIcon(new SslTransportNode().getIcon()),
-            options,
-            sslAssertion.getOption().getName());
-        if ((s != null) && (s.length() > 0)) {
-            for (Iterator iterator = SslAssertion.options().iterator(); iterator.hasNext();) {
-                SslAssertion.Option option = (SslAssertion.Option)iterator.next();
-                if (option.getName().equals(s)) {
-                    sslAssertion.setOption(option);
-                    assertionChanged();
-                    break;
-                }
-            }
-        }
+        new EditSslAssertionPropertiesDialog(TopComponents.getInstance().getMainWindow(), sslAssertion).show();
+        assertionChanged();
+//
+//        String s =
+//          (String)JOptionPane.showInputDialog(TopComponents.getInstance().getMainWindow(),
+//            "Select an SSL option:\n",
+//            "SSL Properties",
+//            JOptionPane.PLAIN_MESSAGE,
+//            new ImageIcon(new SslTransportNode(false).getIcon()),
+//            options,
+//            sslAssertion.getOption().getName());
+//
+//        if ((s != null) && (s.length() > 0)) {
+//            for (Iterator iterator = SslAssertion.options().iterator(); iterator.hasNext();) {
+//                SslAssertion.Option option = (SslAssertion.Option)iterator.next();
+//                if (option.getName().equals(s)) {
+//                    sslAssertion.setOption(option);
+//                    assertionChanged();
+//                    break;
+//                }
+//            }
+//        }
     }
 
     public void assertionChanged() {

@@ -12,7 +12,7 @@ import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.credential.CredentialFinderException;
 import com.l7tech.policy.assertion.credential.CredentialFormat;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
-import com.l7tech.policy.assertion.credential.http.HttpClientCert;
+import com.l7tech.policy.assertion.credential.http.HttpCredentialSourceAssertion;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.ServerAssertion;
 import com.l7tech.server.policy.assertion.credential.ServerCredentialSourceAssertion;
@@ -27,6 +27,10 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
+ * This class functionality heas been replaces with the ServerSslAssertion that
+ * requires the client certificate. This class exists as the SslAssertion uses it
+ * to extract and validate the ssl client certificate.   
+ *
  * The server-side processing for HTTPS with client certificates.  Note that this
  * class is not a subclass of <code>ServerHttpCredentialSource</code> because it
  * works at a lower level without stuff like <code>WWW-Authenticate</code> and
@@ -38,9 +42,13 @@ import java.util.logging.Logger;
 public class ServerHttpClientCert extends ServerCredentialSourceAssertion implements ServerAssertion {
     public static final String PARAM_HTTP_X509CERT = "javax.servlet.request.X509Certificate";
 
-    public ServerHttpClientCert( HttpClientCert data ) {
-        super( data );
-        _data = data;
+    public ServerHttpClientCert() {
+     super(new HttpCredentialSourceAssertion() {
+            public String scheme() {
+                return SCHEME;
+            }
+            public static final String SCHEME = "ClientCert";
+        });
     }
 
     protected LoginCredentials findCredentials(Message request, Map authParams)
@@ -94,8 +102,6 @@ public class ServerHttpClientCert extends ServerCredentialSourceAssertion implem
         return new LoginCredentials( certCN, null, CredentialFormat.CLIENTCERT, _data.getClass(), null, clientCert );
     }
 
-    protected HttpClientCert _data;
-
     protected AssertionStatus checkCredentials(LoginCredentials pc, Map authParams) throws CredentialFinderException {
         return AssertionStatus.NONE;
     }
@@ -104,5 +110,6 @@ public class ServerHttpClientCert extends ServerCredentialSourceAssertion implem
         // HOW DO I CHALLENGED X.509
     }
 
-    protected final Logger logger = Logger.getLogger(getClass().getName());    
+
+    protected final Logger logger = Logger.getLogger(getClass().getName());
 }

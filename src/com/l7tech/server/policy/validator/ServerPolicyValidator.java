@@ -12,7 +12,7 @@ import com.l7tech.policy.PolicyValidator;
 import com.l7tech.policy.PolicyValidatorResult;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.JmsRoutingAssertion;
-import com.l7tech.policy.assertion.credential.http.HttpClientCert;
+import com.l7tech.policy.assertion.SslAssertion;
 import com.l7tech.policy.assertion.credential.http.HttpDigest;
 import com.l7tech.policy.assertion.identity.IdentityAssertion;
 import com.l7tech.policy.assertion.identity.MemberOfGroup;
@@ -87,7 +87,7 @@ public class ServerPolicyValidator extends PolicyValidator
                     for (Iterator iterator = pathContext.credentialSources.iterator(); iterator.hasNext();) {
                         Assertion credSrc = (Assertion)iterator.next();
                         if (credSrc instanceof RequestWssSaml || credSrc instanceof RequestWssX509Cert ||
-                          credSrc instanceof SecureConversation || credSrc instanceof HttpClientCert)
+                          credSrc instanceof SecureConversation || credSrc instanceof SslAssertion)
                             ;
                         else {
                             r.addError(new PolicyValidatorResult.Error(a,
@@ -119,7 +119,7 @@ public class ServerPolicyValidator extends PolicyValidator
                     for (Iterator iterator = pathContext.credentialSources.iterator(); iterator.hasNext();) {
                         Assertion credSrc = (Assertion)iterator.next();
                         if (!(credSrc instanceof RequestWssX509Cert || credSrc instanceof SecureConversation ||
-                          credSrc instanceof HttpClientCert)) {
+                          credSrc instanceof SslAssertion)) {
                             r.addError(new PolicyValidatorResult.Error(a,
                               ap,
                               "This identity can only authenticate using " +

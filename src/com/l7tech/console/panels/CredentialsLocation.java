@@ -1,8 +1,8 @@
 package com.l7tech.console.panels;
 
+import com.l7tech.policy.assertion.SslAssertion;
 import com.l7tech.policy.assertion.TrueAssertion;
 import com.l7tech.policy.assertion.credential.http.HttpBasic;
-import com.l7tech.policy.assertion.credential.http.HttpClientCert;
 import com.l7tech.policy.assertion.credential.http.HttpDigest;
 import com.l7tech.policy.assertion.credential.wss.WssBasic;
 import com.l7tech.policy.assertion.xmlsec.RequestWssX509Cert;
@@ -73,7 +73,7 @@ public class CredentialsLocation {
 
         credentialsLocationMap.put("HTTP Basic", new HttpBasic());
         credentialsLocationMap.put("HTTP Digest", new HttpDigest());
-        credentialsLocationMap.put("HTTP Client Certificate", new HttpClientCert());
+        credentialsLocationMap.put("SSL or TLS with Client Certificate", new SslAssertion(true));
         if (soap) {
             credentialsLocationMap.put("WS Token Basic", new WssBasic());
             credentialsLocationMap.put("WSS Signature", new RequestWssX509Cert());

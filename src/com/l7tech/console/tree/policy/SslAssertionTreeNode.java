@@ -1,8 +1,6 @@
 package com.l7tech.console.tree.policy;
 
-
 import com.l7tech.console.action.SslPropertiesAction;
-import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.SslAssertion;
 
 import javax.swing.*;
@@ -12,11 +10,11 @@ import java.util.Arrays;
 /**
  * Class <code>SslAssertionTreeNode</code> specifies the SSL
  * assertion requirement.
+ *
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  */
 public class SslAssertionTreeNode extends LeafAssertionTreeNode {
-
-    public SslAssertionTreeNode(Assertion assertion) {
+    public SslAssertionTreeNode(SslAssertion assertion) {
         super(assertion);
     }
 
@@ -24,23 +22,24 @@ public class SslAssertionTreeNode extends LeafAssertionTreeNode {
      * @return the node name that is displayed
      */
     public String getName() {
-        String ret = "Require SSL Transport";
-        Object uo = getUserObject();
-        if (uo instanceof SslAssertion) {
-            SslAssertion sa = (SslAssertion) getUserObject();
-            if (SslAssertion.FORBIDDEN.equals(sa.getOption()))
-                ret = "Forbid SSL transport";
-            else if (SslAssertion.OPTIONAL.equals(sa.getOption()))
-                ret = "Optional SSL transport";
+        String ret = "Require SSL or TLS Transport";
+        SslAssertion sa = (SslAssertion)getUserObject();
+        if (SslAssertion.FORBIDDEN.equals(sa.getOption()))
+            ret = "Forbid SSL or TLS transport";
+        else if (SslAssertion.OPTIONAL.equals(sa.getOption()))
+            ret = "Optional SSL or TLS transport";
+        if (sa.isRequireClientAuthentication()) {
+            ret += " with Client Certificate Authentication";
         }
+
         return ret;
     }
 
     /**
-     *Test if the node can be deleted. Default is <code>true</code>
-     *
-     * @return true if the node can be deleted, false otherwise
-     */
+         * Test if the node can be deleted. Default is <code>true</code>
+         *
+         * @return true if the node can be deleted, false otherwise
+         */
     public boolean canDelete() {
         return true;
     }
@@ -66,7 +65,7 @@ public class SslAssertionTreeNode extends LeafAssertionTreeNode {
         Action a = new SslPropertiesAction(this);
         list.add(a);
         list.addAll(Arrays.asList(super.getActions()));
-        return (Action[]) list.toArray(new Action[]{});
+        return (Action[])list.toArray(new Action[]{});
     }
 
 

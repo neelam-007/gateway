@@ -3,7 +3,6 @@
  *
  * $Id$
  */
-
 package com.l7tech.policy.assertion;
 
 import java.util.Arrays;
@@ -68,7 +67,17 @@ public class SslAssertion extends ConfidentialityAssertion {
             result = 29 * result + (_name != null ? _name.hashCode() : 0);
             return result;
         }
+    }
 
+    /**
+     * Test whether the assertion is a credential source. The SSL Assertion
+     * is a credential source if the SSL is REQUIRED and client authentication has
+     * been requested
+     *
+     * @return true if credential source, false otherwise
+     */
+    public boolean isCredentialSource() {
+        return requireClientAuthentication && _option == REQUIRED;
     }
 
     /**
@@ -76,13 +85,13 @@ public class SslAssertion extends ConfidentialityAssertion {
      */
     public static final List options() {
         return
-          Arrays.asList(
-            new Option[]{
-                OPTIONAL,
-                REQUIRED,
-                FORBIDDEN
+        Arrays.asList(
+          new Option[]{
+              OPTIONAL,
+              REQUIRED,
+              FORBIDDEN
             }
-          );
+        );
     }
 
     /**
@@ -91,9 +100,19 @@ public class SslAssertion extends ConfidentialityAssertion {
     public SslAssertion() {
         this(REQUIRED);
     }
+    /**
+     * Constructs an SslAssertion with option REQUIRED and the client authentication
+     * specified by boolean flag.
+     */
+    public SslAssertion(boolean requireClientAuthentication) {
+        this(REQUIRED);
+        this.requireClientAuthentication = requireClientAuthentication;
+
+    }
 
     /**
      * Constructs an SslAssertion with a specific option.
+     *
      * @param option
      */
     public SslAssertion(Option option) {
@@ -102,12 +121,39 @@ public class SslAssertion extends ConfidentialityAssertion {
 
     public void setOption(Option option) {
         _option = option;
+        if (_option.equals(REQUIRED)) { // client auth and SSL !REQUIRED do not mix
+            setRequireClientAuthentication(false);
+        }
     }
 
     public Option getOption() {
         return _option;
     }
 
+    /**
+     * Returns whether the client authentication has been requested
+     *
+     * @return true if client auth has been requested, false otherwise
+     */
+    public boolean isRequireClientAuthentication() {
+        return requireClientAuthentication;
+    }
+
+    /**
+     * Set whether the client authentication has been requested. Setting this to
+     * <code>true</code> automatically enables the
+     *
+     * @param requireClientAuthentication the boolean flag indicating whether the client authentication is requested
+     */
+    public void setRequireClientAuthentication(boolean requireClientAuthentication) {
+        this.requireClientAuthentication = requireClientAuthentication;
+        if (requireClientAuthentication) {
+            _option = REQUIRED;
+        }
+    }
+
     protected Set _cipherSuites = Collections.EMPTY_SET;
     protected Option _option = REQUIRED;
+
+    private boolean requireClientAuthentication = false;
 }

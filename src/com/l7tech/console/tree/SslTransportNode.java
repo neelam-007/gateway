@@ -14,11 +14,18 @@ import javax.swing.*;
  * @version 1.0
  */
 public class SslTransportNode extends AbstractTreeNode {
+    private boolean requireClientAuthentication;
+
     /**
-     * construct the <CODE>SslTransportNode</CODE> instance.
+     * construct the <CODE>SslTransportNode</CODE> instance indicating
+     * whether the client Certificate Auth4ntication is required or not.
+     *
+     * @param requireClientAuthentication true if the client authentication is required,
+     *                                    false otherwise
      */
-    public SslTransportNode(){
+    public SslTransportNode(boolean requireClientAuthentication){
         super(null);
+        this.requireClientAuthentication = requireClientAuthentication;
     }
 
     /**
@@ -38,7 +45,7 @@ public class SslTransportNode extends AbstractTreeNode {
      * @return the popup menu
      */
     public Assertion asAssertion() {
-        return new SslAssertion();
+        return new SslAssertion(requireClientAuthentication);
 
     }
     /**
@@ -66,7 +73,10 @@ public class SslTransportNode extends AbstractTreeNode {
      * @return the node name that is displayed
      */
     public String getName() {
-        return "SSL Transport";
+        if (requireClientAuthentication)  {
+            return "SSL with Client Certificate Authentication";
+        }
+        return "SSL or TLS Transport";
 
     }
 

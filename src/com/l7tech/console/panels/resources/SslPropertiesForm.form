@@ -1,0 +1,171 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<form xmlns="http://www.intellij.com/uidesigner/form/" version="1" bind-to-class="com.l7tech.console.panels.EditSslAssertionPropertiesDialog">
+  <grid id="b5bcd" binding="mainPanel" row-count="6" column-count="3" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
+    <margin top="0" left="0" bottom="0" right="0"/>
+    <constraints>
+      <xy x="48" y="146" width="480" height="301"/>
+      <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3"/>
+    </constraints>
+    <properties/>
+    <border type="bevel-raised"/>
+    <children>
+      <grid id="a3088" row-count="5" column-count="3" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
+        <margin top="0" left="0" bottom="0" right="0"/>
+        <constraints>
+          <xy x="22" y="2" width="456" height="120"/>
+          <grid row="0" column="1" row-span="1" col-span="2" vsize-policy="3" hsize-policy="3" anchor="0" fill="3"/>
+        </constraints>
+        <properties/>
+        <border type="none"/>
+        <children>
+          <component id="262cc" class="javax.swing.JRadioButton" binding="sslForbiddenRadioButton">
+            <constraints>
+              <xy x="322" y="65" width="86" height="25"/>
+              <grid row="3" column="2" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0"/>
+            </constraints>
+            <properties>
+              <text value="Forbidden"/>
+            </properties>
+          </component>
+          <component id="49dde" class="javax.swing.JRadioButton" binding="sslOptionalRadioButton">
+            <constraints>
+              <xy x="164" y="65" width="75" height="25"/>
+              <grid row="3" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0"/>
+            </constraints>
+            <properties>
+              <text value="Optional"/>
+            </properties>
+          </component>
+          <component id="ff0e9" class="javax.swing.JRadioButton" binding="sslRequiredRadioButton">
+            <constraints>
+              <xy x="0" y="65" width="79" height="25"/>
+              <grid row="3" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0"/>
+            </constraints>
+            <properties>
+              <text value="Required"/>
+            </properties>
+          </component>
+          <vspacer id="3e2cd">
+            <constraints>
+              <xy x="71" y="90" width="11" height="30"/>
+              <grid row="4" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="1" anchor="0" fill="2">
+                <minimum-size width="-1" height="20"/>
+              </grid>
+            </constraints>
+          </vspacer>
+          <vspacer id="2a5e8">
+            <constraints>
+              <xy x="71" y="45" width="11" height="20"/>
+              <grid row="2" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="1" anchor="0" fill="2">
+                <minimum-size width="-1" height="5"/>
+              </grid>
+            </constraints>
+          </vspacer>
+          <component id="4b51f" class="javax.swing.JLabel">
+            <constraints>
+              <xy x="0" y="21" width="215" height="17"/>
+              <grid row="1" column="0" row-span="1" col-span="2" vsize-policy="0" hsize-policy="0" anchor="8" fill="0"/>
+            </constraints>
+            <properties>
+              <text value="Select the SSL or TLS requirements"/>
+            </properties>
+          </component>
+          <vspacer id="b87c2">
+            <constraints>
+              <xy x="232" y="0" width="11" height="20"/>
+              <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="1" anchor="0" fill="2">
+                <minimum-size width="-1" height="10"/>
+              </grid>
+            </constraints>
+          </vspacer>
+        </children>
+      </grid>
+      <grid id="c0df5" row-count="1" column-count="3" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
+        <margin top="0" left="0" bottom="0" right="0"/>
+        <constraints>
+          <xy x="22" y="252" width="436" height="27"/>
+          <grid row="4" column="1" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3"/>
+        </constraints>
+        <properties/>
+        <border type="none"/>
+        <children>
+          <component id="4d21a" class="javax.swing.JButton" binding="cancelButton">
+            <constraints>
+              <xy x="362" y="0" width="74" height="27"/>
+              <grid row="0" column="2" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1"/>
+            </constraints>
+            <properties>
+              <text value="Cancel"/>
+            </properties>
+          </component>
+          <component id="14ac4" class="javax.swing.JButton" binding="okButton">
+            <constraints>
+              <xy x="300" y="0" width="52" height="27"/>
+              <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1"/>
+            </constraints>
+            <properties>
+              <text value="OK"/>
+            </properties>
+          </component>
+          <hspacer id="b8150">
+            <constraints>
+              <xy x="0" y="8" width="300" height="11"/>
+              <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="1" hsize-policy="6" anchor="0" fill="1"/>
+            </constraints>
+          </hspacer>
+        </children>
+      </grid>
+      <component id="728cd" class="javax.swing.JCheckBox" binding="requireClientCertificateCheckBox">
+        <constraints>
+          <xy x="22" y="152" width="264" height="25"/>
+          <grid row="2" column="1" row-span="1" col-span="2" vsize-policy="0" hsize-policy="3" anchor="8" fill="0"/>
+        </constraints>
+        <properties>
+          <text value="Require Client Certificate Authentication"/>
+          <horizontalTextPosition value="11"/>
+        </properties>
+      </component>
+      <hspacer id="929ad">
+        <constraints>
+          <xy x="2" y="159" width="20" height="11"/>
+          <grid row="2" column="0" row-span="1" col-span="1" vsize-policy="1" hsize-policy="0" anchor="0" fill="1">
+            <minimum-size width="10" height="-1"/>
+          </grid>
+        </constraints>
+      </hspacer>
+      <vspacer id="194a6">
+        <constraints>
+          <xy x="244" y="182" width="11" height="70"/>
+          <grid row="3" column="1" row-span="1" col-span="2" vsize-policy="6" hsize-policy="1" anchor="0" fill="2">
+            <minimum-size width="-1" height="30"/>
+          </grid>
+        </constraints>
+      </vspacer>
+      <vspacer id="4ae04">
+        <constraints>
+          <xy x="244" y="279" width="11" height="20"/>
+          <grid row="5" column="1" row-span="1" col-span="2" vsize-policy="0" hsize-policy="1" anchor="0" fill="2">
+            <minimum-size width="-1" height="10"/>
+          </grid>
+        </constraints>
+      </vspacer>
+      <hspacer id="b219d">
+        <constraints>
+          <xy x="458" y="260" width="20" height="11"/>
+          <grid row="4" column="2" row-span="1" col-span="1" vsize-policy="1" hsize-policy="0" anchor="0" fill="1">
+            <minimum-size width="10" height="-1"/>
+          </grid>
+        </constraints>
+      </hspacer>
+      <component id="4772b" class="javax.swing.JLabel">
+        <constraints>
+          <xy x="22" y="128" width="119" height="17"/>
+          <grid row="1" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0"/>
+        </constraints>
+        <properties>
+          <text value="Peer Authentication"/>
+        </properties>
+      </component>
+    </children>
+  </grid>
+</form>

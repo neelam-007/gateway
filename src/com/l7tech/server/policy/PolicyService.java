@@ -21,11 +21,11 @@ import com.l7tech.policy.PolicyPathResult;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
+import com.l7tech.policy.assertion.SslAssertion;
 import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.assertion.composite.CompositeAssertion;
 import com.l7tech.policy.assertion.composite.OneOrMoreAssertion;
 import com.l7tech.policy.assertion.credential.http.HttpBasic;
-import com.l7tech.policy.assertion.credential.http.HttpClientCert;
 import com.l7tech.policy.assertion.credential.http.HttpDigest;
 import com.l7tech.policy.assertion.credential.wss.WssBasic;
 import com.l7tech.policy.assertion.identity.IdentityAssertion;
@@ -79,7 +79,7 @@ public class PolicyService extends ApplicationObjectSupport {
         //new SamlAttributeStatement(),
         new RequestWssX509Cert(),
         new SecureConversation(),
-        new HttpClientCert(),
+        new SslAssertion(true),
         new HttpDigest(),
         new WssBasic(),
         new HttpBasic()

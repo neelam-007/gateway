@@ -6,7 +6,6 @@ import com.l7tech.policy.PolicyValidatorResult;
 import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.assertion.composite.CompositeAssertion;
 import com.l7tech.policy.assertion.credential.http.HttpBasic;
-import com.l7tech.policy.assertion.credential.http.HttpClientCert;
 import com.l7tech.policy.assertion.credential.http.HttpDigest;
 import com.l7tech.policy.assertion.credential.wss.WssBasic;
 import com.l7tech.policy.assertion.ext.Category;
@@ -159,7 +158,7 @@ class PathValidator {
 
         // new fla, check whether an assertion will require a client cert to function, this is important because
         // we only support client certs for internal users
-        if (a instanceof HttpClientCert) {
+        if (a instanceof SslAssertion) {
             seenCredAssertionThatRequiresClientCert = true;
         }
 
@@ -225,19 +224,6 @@ class PathValidator {
                   "The assertion might not work as configured." +
                   " There is a routing assertion before this assertion.", null));
             }
-        } else if (a instanceof HttpClientCert) {
-            DefaultPolicyValidator.DeferredValidate dv = new DefaultPolicyValidator.DeferredValidate() {
-                public void validate(PathValidator pv, Assertion[] path) {
-                    if (!pv.seenSsl) {
-                        result.addError(new PolicyValidatorResult.Error(a, assertionPath,
-                          "HTTP client certificate requires SSL transport.", null));
-                    } else if (pv.sslForbidden) {
-                        result.addError(new PolicyValidatorResult.Error(a, assertionPath,
-                          "HTTP client certificate requires SSL transport (not forbidden).", null));
-                    }
-                }
-            };
-            deferredValidators.add(dv);
         } else if (a instanceof XslTransformation) {
             // check that the assertion is on the right side of the routing
             XslTransformation ass = (XslTransformation)a;
@@ -491,7 +477,6 @@ class PathValidator {
         // check preconditions for both SslAssertion and  ResponseWssIntegrity assertions - see processPrecondition()
         if (a instanceof SslAssertion ||
           a instanceof XpathBasedAssertion ||
-          a instanceof HttpClientCert ||
           a instanceof XslTransformation ||
           a instanceof RequestSwAAssertion ||
           a instanceof RequestWssReplayProtection)

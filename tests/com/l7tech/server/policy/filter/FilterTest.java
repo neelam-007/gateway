@@ -16,7 +16,6 @@ import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.assertion.composite.CompositeAssertion;
 import com.l7tech.policy.assertion.composite.ExactlyOneAssertion;
 import com.l7tech.policy.assertion.credential.http.HttpBasic;
-import com.l7tech.policy.assertion.credential.http.HttpClientCert;
 import com.l7tech.policy.assertion.credential.http.HttpDigest;
 import com.l7tech.policy.assertion.identity.SpecificUser;
 import junit.extensions.TestSetup;
@@ -111,8 +110,7 @@ public class FilterTest extends TestCase {
                     new HttpRoutingAssertion()
                 })),
                 new AllAssertion(Arrays.asList(new Assertion[] {
-                    new SslAssertion(),
-                    new HttpClientCert(),
+                    new SslAssertion(true),
                     new SpecificUser(providerid, "alice", null, null),
                     new HttpRoutingAssertion()
                 })),

@@ -5,12 +5,11 @@
  */
 package com.l7tech.common.security.saml;
 
+import com.l7tech.policy.assertion.SslAssertion;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
-import com.l7tech.policy.assertion.credential.wss.WssBasic;
-import com.l7tech.policy.assertion.credential.http.HttpClientCert;
 import com.l7tech.policy.assertion.credential.http.HttpCredentialSourceAssertion;
+import com.l7tech.policy.assertion.credential.wss.WssBasic;
 import com.l7tech.policy.assertion.xmlsec.RequestWssX509Cert;
-import com.l7tech.common.security.saml.SamlConstants;
 
 import java.util.Calendar;
 import java.util.Date;
@@ -32,7 +31,7 @@ class AuthenticationStatement extends SubjectStatement {
 
     private static final String mapAuthMethod(Class credentialSourceClass) {
         String authMethod = SamlConstants.UNSPECIFIED_AUTHENTICATION;
-        if (credentialSourceClass.isAssignableFrom(HttpClientCert.class)) {
+        if (credentialSourceClass.isAssignableFrom(SslAssertion.class)) {
             authMethod = SamlConstants.SSL_TLS_CERTIFICATE_AUTHENTICATION;
         } else if (credentialSourceClass.isAssignableFrom(RequestWssX509Cert.class)) {
             authMethod = SamlConstants.XML_DSIG_AUTHENTICATION;

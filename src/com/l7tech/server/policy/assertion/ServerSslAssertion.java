@@ -6,14 +6,17 @@
 
 package com.l7tech.server.policy.assertion;
 
+import com.l7tech.common.audit.AssertionMessages;
+import com.l7tech.common.audit.Auditor;
+import com.l7tech.common.message.HttpRequestKnob;
+import com.l7tech.common.message.Message;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.SslAssertion;
 import com.l7tech.server.message.PolicyEnforcementContext;
-import com.l7tech.common.audit.AssertionMessages;
-import com.l7tech.common.audit.Auditor;
+import com.l7tech.server.policy.assertion.credential.http.ServerHttpClientCert;
 
-import java.util.logging.Level;
+import java.io.IOException;
 import java.util.logging.Logger;
 
 /**
@@ -25,7 +28,7 @@ public class ServerSslAssertion implements ServerAssertion {
         _data = data;
     }
 
-    public AssertionStatus checkRequest(PolicyEnforcementContext context) throws PolicyAssertionException {
+    public AssertionStatus checkRequest(PolicyEnforcementContext context) throws PolicyAssertionException, IOException {
         boolean ssl = context.getHttpServletRequest().isSecure();
         AssertionStatus status;
 
@@ -39,6 +42,9 @@ public class ServerSslAssertion implements ServerAssertion {
             } else {
                 status = AssertionStatus.FALSIFIED;
                 auditor.logAndAudit(AssertionMessages.SSL_REQUIRED_ABSENT);
+            }
+            if (_data.isCredentialSource()) {
+                return processAsCredentialSourceAssertion(context, auditor);
             }
         } else if ( option == SslAssertion.FORBIDDEN) {
             if (ssl) {
@@ -63,6 +69,25 @@ public class ServerSslAssertion implements ServerAssertion {
         return status;
     }
 
+    /**
+     * Process the SSL assertion as credential source. Look for the client side certificate over
+     * various protocols. Currently works only over http.
+     */
+    private AssertionStatus processAsCredentialSourceAssertion(PolicyEnforcementContext context, Auditor auditor)
+      throws PolicyAssertionException, IOException {
+        Message request = context.getRequest();
+        HttpRequestKnob httpReq = (HttpRequestKnob)request.getKnob(HttpRequestKnob.class);
+        if (httpReq != null) {
+            return serverHttpClientCert.checkRequest(context);
+        }
+        // add SSL support for different protocols
+        logger.info("Request not received over HTTP; cannot check for client certificate");
+        context.setAuthenticationMissing();
+        auditor.logAndAudit(AssertionMessages.AUTH_REQUIRED);
+        return AssertionStatus.AUTH_REQUIRED;
+    }
+
     protected SslAssertion _data;
+    private final ServerHttpClientCert serverHttpClientCert = new ServerHttpClientCert();
     protected final Logger logger = Logger.getLogger(getClass().getName());
 }

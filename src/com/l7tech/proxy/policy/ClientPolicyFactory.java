@@ -12,7 +12,6 @@ import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.assertion.composite.ExactlyOneAssertion;
 import com.l7tech.policy.assertion.composite.OneOrMoreAssertion;
 import com.l7tech.policy.assertion.credential.http.HttpBasic;
-import com.l7tech.policy.assertion.credential.http.HttpClientCert;
 import com.l7tech.policy.assertion.credential.http.HttpDigest;
 import com.l7tech.policy.assertion.credential.wss.WssBasic;
 import com.l7tech.policy.assertion.credential.wss.WssDigest;
@@ -23,7 +22,6 @@ import com.l7tech.proxy.policy.assertion.composite.ClientAllAssertion;
 import com.l7tech.proxy.policy.assertion.composite.ClientExactlyOneAssertion;
 import com.l7tech.proxy.policy.assertion.composite.ClientOneOrMoreAssertion;
 import com.l7tech.proxy.policy.assertion.credential.http.ClientHttpBasic;
-import com.l7tech.proxy.policy.assertion.credential.http.ClientHttpClientCert;
 import com.l7tech.proxy.policy.assertion.credential.http.ClientHttpDigest;
 import com.l7tech.proxy.policy.assertion.credential.wss.ClientWssBasic;
 import com.l7tech.proxy.policy.assertion.credential.wss.ClientWssDigest;
@@ -62,7 +60,6 @@ public class ClientPolicyFactory extends PolicyFactory {
     // so the closure finder will notice that we need them in the JAR
     public static ClientAssertion[] EVERYTHING = new ClientAssertion[] {
         new ClientHttpBasic(new HttpBasic()),
-        new ClientHttpClientCert(new HttpClientCert()),
         new ClientHttpDigest(new HttpDigest()),
         new ClientWssBasic(new WssBasic()),
         new ClientWssDigest(new WssDigest()),

@@ -25,7 +25,6 @@ import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.assertion.composite.OneOrMoreAssertion;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.assertion.credential.http.HttpBasic;
-import com.l7tech.policy.assertion.credential.http.HttpClientCert;
 import com.l7tech.policy.assertion.credential.http.HttpDigest;
 import com.l7tech.policy.assertion.credential.wss.WssBasic;
 import com.l7tech.policy.assertion.xmlsec.RequestWssIntegrity;
@@ -200,7 +199,7 @@ public class TokenServiceImpl implements TokenService {
             validCredsOverSSL.addChild(new HttpBasic());
             validCredsOverSSL.addChild(new WssBasic());
             validCredsOverSSL.addChild(new HttpDigest());
-            validCredsOverSSL.addChild(new HttpClientCert());
+            validCredsOverSSL.addChild(new SslAssertion(true));
             RequestWssSaml samlBearerToken = new RequestWssSaml();
             samlBearerToken.setRequireProofOfPosession(false);
             validCredsOverSSL.addChild(samlBearerToken);

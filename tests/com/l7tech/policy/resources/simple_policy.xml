@@ -7,9 +7,6 @@
                 <HttpBasic>
                     <Realm stringValueNull="null"/>
                 </HttpBasic>
-                <HttpClientCert>
-                    <Realm stringValueNull="null"/>
-                </HttpClientCert>
                 <HttpDigest>
                     <NonceTimeout intValue="1800000"/>
                     <Realm stringValueNull="null"/>
@@ -28,6 +25,7 @@
                 <FalseAssertion/>
                 <SslAssertion>
                     <Option optionValue="Required"/>
+                    <RequireClientAuthentication booleanValue="false"/>
                 </SslAssertion>
                 <HttpRoutingAssertion>
                     <XmlSecurityActorToPromote stringValueNull="null"/>

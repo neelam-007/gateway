@@ -6,6 +6,8 @@
 
 package com.l7tech.policy.validator;
 
+import com.l7tech.common.util.XmlUtil;
+import com.l7tech.common.xml.TestDocuments;
 import com.l7tech.policy.PolicyValidator;
 import com.l7tech.policy.PolicyValidatorResult;
 import com.l7tech.policy.assertion.Assertion;
@@ -13,22 +15,18 @@ import com.l7tech.policy.assertion.HttpRoutingAssertion;
 import com.l7tech.policy.assertion.SslAssertion;
 import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.assertion.credential.http.HttpBasic;
-import com.l7tech.policy.assertion.credential.http.HttpClientCert;
 import com.l7tech.policy.assertion.identity.SpecificUser;
 import com.l7tech.policy.assertion.xmlsec.RequestWssIntegrity;
 import com.l7tech.policy.assertion.xmlsec.RequestWssX509Cert;
 import com.l7tech.service.PublishedService;
-import com.l7tech.common.xml.TestDocuments;
-import com.l7tech.common.util.XmlUtil;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
+import org.w3c.dom.Document;
 
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
-
-import org.w3c.dom.Document;
 
 /**
  * Test the default policy assertion path validator functionality.
@@ -192,7 +190,7 @@ public class DefaultPolicyValidatorTest extends TestCase {
         List kids =
           Arrays.asList(new Assertion[]{
               new SslAssertion(),
-              new HttpClientCert(),
+              new SslAssertion(true),
               new SpecificUser(),
               httpRoutingAssertion
           });
@@ -203,18 +201,18 @@ public class DefaultPolicyValidatorTest extends TestCase {
         List messages = result.getMessages();
         assertTrue("Expected no errors/warnings", messages.isEmpty(), messages);
 
-        HttpClientCert httpClientCert = new HttpClientCert();
+        SslAssertion clientCert = new SslAssertion(true);
         kids =
           Arrays.asList(new Assertion[]{
-              httpClientCert,
+              clientCert,
               new SpecificUser(),
               httpRoutingAssertion
           });
         aa = new AllAssertion();
         aa.setChildren(kids);
         result = dfpv.validate(aa, getBogusService());
-        messages = result.messages(httpClientCert);
-        assertTrue("Expected errors/warnings for the " + HttpClientCert.class + " assertion, got 0", !messages.isEmpty());
+        messages = result.messages(clientCert);
+        assertTrue("Expected no errors/warnings", messages.isEmpty(), messages);
     }
 
     private static void assertTrue(String msg, boolean expression, List messages) {
