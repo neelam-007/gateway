@@ -235,10 +235,11 @@ public class ClusterStatusWindow extends JFrame implements ConnectionListener {
         serviceStatTitle = new javax.swing.JLabel();
 
         mainSplitPane.setOrientation(javax.swing.JSplitPane.VERTICAL_SPLIT);
-        mainSplitPane.setResizeWeight(0.5);
+        mainSplitPane.setResizeWeight(0.3);
         clusterStatusPane.setLayout(new java.awt.BorderLayout());
 
-        clusterStatusScrollPane.setMinimumSize(new java.awt.Dimension(400, 220));
+        clusterStatusScrollPane.setMinimumSize(new java.awt.Dimension(400, 120));
+        clusterStatusScrollPane.setPreferredSize(new java.awt.Dimension(400, 180));
         clusterStatusScrollPane.setViewportView(getClusterStatusTable());
         clusterStatusScrollPane.getViewport().setBackground(getClusterStatusTable().getBackground());
 

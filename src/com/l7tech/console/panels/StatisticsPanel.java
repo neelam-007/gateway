@@ -63,7 +63,8 @@ public class StatisticsPanel extends JPanel {
         setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
         add(getStatTablePane());
         add(getStatTotalTable());
-
+        setMinimumSize(new java.awt.Dimension(400, 200));
+        setPreferredSize(new java.awt.Dimension(400, 400));
         lastMinuteCompletedCountsCache = new HashMap();
     }
 
