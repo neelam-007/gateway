@@ -53,8 +53,10 @@ public class DistributedMessageIdManager implements MessageIdManager {
                     }
                 }
                 tx.commit();
+                tx = null;
             } catch ( Exception e ) {
                 logger.log( Level.WARNING, "Caught exception while trying to begin garbage collection transaction", e );
+            } finally {
                 try {
                     if (tx != null) tx.rollback();
                 } catch ( SystemException e1 ) {
