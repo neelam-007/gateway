@@ -142,9 +142,9 @@ public abstract class PersistentGroupManager extends HibernateEntityManager impl
 
     protected abstract Class getMembershipClass();
 
-    protected abstract void preDelete( Group group ) throws DeleteException;
+    protected void preDelete( Group group ) throws DeleteException { }
 
-    protected abstract void preUpdate( Group group ) throws FindException, UpdateException;
+    protected void preUpdate( Group group ) throws FindException, UpdateException { }
 
     protected abstract PersistentGroup cast( Group group );
 
