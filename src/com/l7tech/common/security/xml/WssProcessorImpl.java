@@ -88,13 +88,16 @@ public class WssProcessorImpl implements WssProcessor {
             throw new ProcessorException(e);
         } catch (IOException e) {
             throw new ProcessorException(e);
+        } catch (GeneralSecurityException e) {
+            throw new ProcessorException(e);
         }
     }
 
     private WssProcessor.ProcessorResult doUndecorateMessage(Document soapMsg,
                                                           X509Certificate recipientCert,
                                                           PrivateKey recipientKey)
-            throws WssProcessor.ProcessorException, XmlUtil.MultipleChildElementsException, ParseException, IOException
+            throws WssProcessor.ProcessorException, XmlUtil.MultipleChildElementsException,
+                   ParseException, IOException, GeneralSecurityException
     {
         // Reset all potential outputs
         ProcessingStatusHolder cntx = new ProcessingStatusHolder();
@@ -191,60 +194,48 @@ public class WssProcessorImpl implements WssProcessor {
     private void processEncryptedKey(Element encryptedKeyElement,
                                      PrivateKey recipientKey,
                                      byte[] ski,
-                                     ProcessingStatusHolder cntx) throws ProcessorException {
+                                     ProcessingStatusHolder cntx) throws ProcessorException,
+                                                                         IOException,
+                                                                         XmlUtil.MultipleChildElementsException,
+                                                                         GeneralSecurityException {
         logger.finest("Processing EncryptedKey");
 
         // Check that this is for us by checking the ds:KeyInfo/wsse:SecurityTokenReference/wsse:KeyIdentifier
         if (ski != null) {
-            try {
-                Element kinfo = XmlUtil.findOnlyOneChildElementByName(encryptedKeyElement, SoapUtil.DIGSIG_URI, "KeyInfo");
-                if (kinfo != null) {
-                    Element str = XmlUtil.findOnlyOneChildElementByName(kinfo,
-                                                                        SoapUtil.SECURITY_URIS_ARRAY,
-                                                                        SoapUtil.SECURITYTOKENREFERENCE_EL_NAME);
-                    if (str != null) {
-                        Element ki = XmlUtil.findOnlyOneChildElementByName(str,
-                                                                           SoapUtil.SECURITY_URIS_ARRAY,
-                                                                           SoapUtil.KEYIDENTIFIER_EL_NAME);
-                        if (ki != null) {
-                            String keyIdentifierValue = XmlUtil.getTextValue(ki);
-                            byte[] keyIdValueBytes = null;
-                            try {
-                                keyIdValueBytes = HexUtils.decodeBase64(keyIdentifierValue);
-                            } catch (IOException e) {
-                                logger.log(Level.WARNING, "could not decode " + keyIdentifierValue, e);
+            Element kinfo = XmlUtil.findOnlyOneChildElementByName(encryptedKeyElement, SoapUtil.DIGSIG_URI, "KeyInfo");
+            if (kinfo != null) {
+                Element str = XmlUtil.findOnlyOneChildElementByName(kinfo,
+                                                                    SoapUtil.SECURITY_URIS_ARRAY,
+                                                                    SoapUtil.SECURITYTOKENREFERENCE_EL_NAME);
+                if (str != null) {
+                    Element ki = XmlUtil.findOnlyOneChildElementByName(str,
+                                                                       SoapUtil.SECURITY_URIS_ARRAY,
+                                                                       SoapUtil.KEYIDENTIFIER_EL_NAME);
+                    if (ki != null) {
+                        String keyIdentifierValue = XmlUtil.getTextValue(ki);
+                        byte[] keyIdValueBytes = HexUtils.decodeBase64(keyIdentifierValue);
+                        if (keyIdValueBytes != null) {
+                            // trim if necessary
+                            byte[] ski2 = ski;
+                            if (ski.length > keyIdValueBytes.length) {
+                                ski2 = new byte[keyIdValueBytes.length];
+                                System.arraycopy(ski, ski.length-keyIdValueBytes.length, ski2, 0, keyIdValueBytes.length);
                             }
-                            if (keyIdValueBytes != null) {
-                                // trim if necessary
-                                byte[] ski2 = ski;
-                                if (ski.length > keyIdValueBytes.length) {
-                                    ski2 = new byte[keyIdValueBytes.length];
-                                    System.arraycopy(ski, ski.length-keyIdValueBytes.length, ski2, 0, keyIdValueBytes.length);
-                                }
-                                if (Arrays.equals(keyIdValueBytes, ski2)) {
-                                    logger.fine("the Key SKI is recognized");
-                                } else {
-                                    logger.info("the ski does not match. looking for next encryptedkey");
-                                    return;
-                                }
+                            if (Arrays.equals(keyIdValueBytes, ski2)) {
+                                logger.fine("the Key SKI is recognized");
+                            } else {
+                                logger.info("the ski does not match. looking for next encryptedkey");
+                                return;
                             }
                         }
                     }
                 }
-            } catch (XmlUtil.MultipleChildElementsException e) {
-                logger.log(Level.WARNING, "unexpected construction", e);
-                throw new ProcessorException(e);
             }
         }
         // verify that the algo is supported
-        Element encryptionMethodEl = null;
-        try {
-            encryptionMethodEl = XmlUtil.findOnlyOneChildElementByName(encryptedKeyElement,
-                                                                       SoapUtil.XMLENC_NS,
-                                                                       "EncryptionMethod");
-        } catch (XmlUtil.MultipleChildElementsException e) {
-            logger.warning("EncryptedKey has more than one EncryptionMethod element");
-        }
+        Element encryptionMethodEl = XmlUtil.findOnlyOneChildElementByName(encryptedKeyElement,
+                                                                           SoapUtil.XMLENC_NS,
+                                                                           "EncryptionMethod");
         if (encryptionMethodEl != null) {
             String encMethodValue = encryptionMethodEl.getAttribute("Algorithm");
             if (encMethodValue == null || encMethodValue.length() < 1) {
@@ -258,13 +249,9 @@ public class WssProcessorImpl implements WssProcessor {
 
         // get the xenc:CipherValue
         Element cipherValue = null;
-        try {
-            Element cipherData = XmlUtil.findOnlyOneChildElementByName(encryptedKeyElement, SoapUtil.XMLENC_NS, "CipherData");
-            if (cipherData != null) {
-                cipherValue = XmlUtil.findOnlyOneChildElementByName(cipherData, SoapUtil.XMLENC_NS, "CipherValue");
-            }
-        } catch (XmlUtil.MultipleChildElementsException e) {
-            logger.warning("EncryptedKey has more than one CipherData or CipherValue");
+        Element cipherData = XmlUtil.findOnlyOneChildElementByName(encryptedKeyElement, SoapUtil.XMLENC_NS, "CipherData");
+        if (cipherData != null) {
+            cipherValue = XmlUtil.findOnlyOneChildElementByName(cipherData, SoapUtil.XMLENC_NS, "CipherValue");
         }
         if (cipherValue == null) {
             logger.warning("element missing CipherValue");
@@ -272,26 +259,12 @@ public class WssProcessorImpl implements WssProcessor {
         }
         // we got the value, decrypt it
         String value = XmlUtil.getTextValue(cipherValue);
-        byte[] encryptedKeyBytes = null;
-        try {
-            encryptedKeyBytes = HexUtils.decodeBase64(value);
-        } catch (IOException e) {
-            logger.log(Level.WARNING, "cannot b64 decode CipherValue contents: " + value, e);
-        }
+        byte[] encryptedKeyBytes = HexUtils.decodeBase64(value);
         Cipher rsa = null;
-        try {
-            rsa = Cipher.getInstance("RSA");
-            rsa.init(Cipher.DECRYPT_MODE, recipientKey);
-        } catch (Exception e) {
-            logger.log(Level.WARNING, "init error", e);
-        }
+        rsa = Cipher.getInstance("RSA");
+        rsa.init(Cipher.DECRYPT_MODE, recipientKey);
 
-        byte[] decryptedPadded = new byte[0];
-        try {
-            decryptedPadded = rsa.doFinal(encryptedKeyBytes);
-        } catch (Exception e) {
-            logger.log(Level.WARNING, "decryption error", e);
-        }
+        byte[] decryptedPadded = rsa.doFinal(encryptedKeyBytes);
         // unpad
         byte[] unencryptedKey = null;
         try {
@@ -302,22 +275,10 @@ public class WssProcessorImpl implements WssProcessor {
         }
 
         // We got the key. Get the list of elements to decrypt.
-        Element refList = null;
-        try {
-            refList = XmlUtil.findOnlyOneChildElementByName(encryptedKeyElement, SoapUtil.XMLENC_NS, "ReferenceList");
-        } catch (XmlUtil.MultipleChildElementsException e) {
-            logger.warning("unexpected multiple reference list elements in encrypted key " + e.getMessage());
-            throw new ProcessorException(e);
-        }
+        Element refList = XmlUtil.findOnlyOneChildElementByName(encryptedKeyElement, SoapUtil.XMLENC_NS, "ReferenceList");
         try {
             decryptReferencedElements(new AesKey(unencryptedKey, unencryptedKey.length*8), refList, cntx);
-        } catch (GeneralSecurityException e) {
-            logger.log(Level.WARNING, "Error decrypting", e);
-            throw new ProcessorException(e);
         } catch (ParserConfigurationException e) {
-            logger.log(Level.WARNING, "Error decrypting", e);
-            throw new ProcessorException(e);
-        } catch (IOException e) {
             logger.log(Level.WARNING, "Error decrypting", e);
             throw new ProcessorException(e);
         } catch (SAXException e) {
