@@ -32,12 +32,14 @@ public class JceProviderTest {
     private static final Logger log = Logger.getLogger(JceProviderTest.class.getName());
     //$ ls c:/cygwin/kstores
     //ca.cer  ca.ks  ssl.csr  ssl.ks  ssl_self.cer
-    private static final String DIR = "/ssg/etc/keys/";
-    private static String KEY_STORE = DIR + "ca.ks";
-    private static String PK_PASS = "tralala";
+    private static final String DFLT_DIR = "/ssg/etc/keys/";
+    private static final String DFLT_PROVIDER = "bc";
+    public static final String KS = "ca.ks";
+    private static String KEY_STORE = DFLT_DIR + KS;
+    private static String DFLT_PK_PASS = "tralala";
     private static String ALIAS = "ssgroot";
-    private static String STORE_PASS = "tralala";
-    public static final String USAGE = "Usage: JceProviderTest [phaos|bc|rsa|ncipher] scale";
+    private static String DFLT_STORE_PASS = "tralala";
+    public static final String USAGE = "Usage: JceProviderTest [phaos|bc|rsa|ncipher] scale dir keypass storepass";
 
     public static interface Testable {
         void run() throws Throwable;
@@ -46,8 +48,24 @@ public class JceProviderTest {
     public static void main(String[] args) throws Throwable {
         if (args.length < 2 || args[0].length() < 1 || args[1].length() < 1)
             throw new IllegalArgumentException(USAGE);
-        String prov = args[0].trim();
-        int scale = Integer.parseInt(args[1]);
+        String prov = null;
+        String sscale = null;
+        String dir = null;
+        String pkpass = null;
+        String kspass = null;
+        if ( args.length >= 1 ) prov = args[0].trim();
+        if ( args.length >= 2 ) sscale = args[1].trim();
+        if ( args.length >= 3 ) dir = args[2].trim();
+        if ( args.length >= 4 ) pkpass = args[3].trim();
+        if ( args.length >= 5 ) kspass = args[4].trim();
+
+        if ( prov == null || prov.length() == 0 ) prov = DFLT_PROVIDER;
+        if ( sscale == null || sscale.length() == 0 ) sscale = "1";
+        if ( dir == null || dir.length() == 0 ) dir = DFLT_DIR;
+        if ( pkpass == null || pkpass.length() == 0 ) dir = DFLT_PK_PASS;
+        if ( kspass == null || kspass.length() == 0 ) kspass = DFLT_STORE_PASS;
+
+        int scale = Integer.parseInt(sscale);
         String driver;
         if ("phaos".equalsIgnoreCase(prov)) {
             driver = "com.l7tech.common.security.prov.phaos.PhaosJceProviderEngine";
@@ -69,7 +87,7 @@ public class JceProviderTest {
         };
 
         final Key key = new AesKey(keyBytes, 128);
-        final RsaSignerEngine signer = JceProvider.createRsaSignerEngine(KEY_STORE, STORE_PASS, ALIAS, PK_PASS);
+        final RsaSignerEngine signer = JceProvider.createRsaSignerEngine(dir + KS, kspass, ALIAS, pkpass);
         CertificateRequest csr;
         KeyPair kp; // client cert private (and public) key
         X509Certificate signedClientCert; // signedClientCert client cert
