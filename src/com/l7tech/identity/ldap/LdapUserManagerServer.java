@@ -322,5 +322,5 @@ public class LdapUserManagerServer extends LdapManager implements UserManager {
     private static final String FIRSTNAME_ATTR_NAME = "givenName";
     private static final String LASTNAME_ATTR_NAME = "sn";
     private static final String PASSWD_ATTR_NAME = "userPassword";
-    private boolean valid = true;
+    private volatile boolean valid = true;
 }

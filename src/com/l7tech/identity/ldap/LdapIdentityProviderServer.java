@@ -76,5 +76,5 @@ public class LdapIdentityProviderServer implements com.l7tech.identity.IdentityP
     private IdentityProviderConfig cfg = null;
     private LdapGroupManagerServer groupManager = null;
     private LdapUserManagerServer userManager = null;
-    private boolean valid = true;
+    private volatile boolean valid = true;
 }

@@ -27,7 +27,7 @@ public class IdentityProviderFactory {
         return Collections.unmodifiableList(providers);
     }
 
-    public static IdentityProvider makeProvider(IdentityProviderConfig config) {
+    public synchronized static IdentityProvider makeProvider(IdentityProviderConfig config) {
         try {
             if (providers == null) providers = new HashMap();
             IdentityProvider existingProvider = (IdentityProvider)providers.get(new Long(config.getOid()));
