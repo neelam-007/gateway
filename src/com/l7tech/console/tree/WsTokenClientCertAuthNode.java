@@ -1,9 +1,7 @@
 package com.l7tech.console.tree;
 
 import com.l7tech.policy.assertion.Assertion;
-import com.l7tech.policy.assertion.credential.http.HttpBasic;
-import com.l7tech.policy.assertion.credential.wss.WssBasic;
-import com.l7tech.policy.assertion.credential.wss.WssClientCert;
+import com.l7tech.policy.assertion.xmlsec.XmlDsigReqAssertion;
 
 
 /**
@@ -44,7 +42,7 @@ public class WsTokenClientCertAuthNode extends AbstractTreeNode {
      * @return the popup menu
      */
     public Assertion asAssertion() {
-        return new WssClientCert();
+        return new XmlDsigReqAssertion();
     }
 
     /**
@@ -56,7 +54,7 @@ public class WsTokenClientCertAuthNode extends AbstractTreeNode {
      * @return the node name that is displayed
      */
     public String getName() {
-        return "WS Token client cert";
+        return "WSS signed request";
     }
 
     /**
