@@ -83,8 +83,12 @@ public class Gui {
             }
         }
 
-        // incors.org Kunststoff faq says we need the following line if we want to use Java Web Start:
-        UIManager.getLookAndFeelDefaults().put("ClassLoader", getClass().getClassLoader());
+        try {
+            // incors.org Kunststoff faq says we need the following line if we want to use Java Web Start:
+            UIManager.getLookAndFeelDefaults().put("ClassLoader", getClass().getClassLoader());
+        } catch (Exception e) {
+            log.warn(e);
+        }
     }
 
     /**
@@ -232,7 +236,7 @@ public class Gui {
      * Display an error message.
      * @param msg the error message to display
      */
-    public static void errorMessage(final String msg) {
+    public void errorMessage(final String msg) {
         JOptionPane.showMessageDialog(getInstance().getFrame(), msg, "Unable to proceed", JOptionPane.ERROR_MESSAGE);
     }
 }
