@@ -32,12 +32,6 @@ public class ClientProxy {
             throw new IllegalStateException("ClientProxy has been destroyed");
     }
 
-    private void mustBeRunning() {
-        mustNotBeDestroyed();
-        if (!isRunning)
-            throw new IllegalStateException("ClientProxy is not currently running");
-    }
-
     private void mustNotBeRunning() {
         mustNotBeDestroyed();
         if (isRunning)
