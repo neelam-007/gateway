@@ -29,6 +29,7 @@ public class NcipherJceProviderEngine implements JceProviderEngine {
     public static final String REQUEST_SIG_ALG = "SHA1withRSA";
 
     public NcipherJceProviderEngine() {
+        Security.insertProviderAt(bouncyCastleProvider, 0);
         Security.insertProviderAt(PROVIDER, 0);
     }
 
