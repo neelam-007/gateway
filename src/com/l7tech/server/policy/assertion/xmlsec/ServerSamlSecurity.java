@@ -1,5 +1,6 @@
 package com.l7tech.server.policy.assertion.xmlsec;
 
+import com.l7tech.common.security.saml.InvalidAssertionException;
 import com.l7tech.logging.LogManager;
 import com.l7tech.message.Request;
 import com.l7tech.message.Response;
@@ -8,10 +9,9 @@ import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.xmlsec.SamlSecurity;
 import com.l7tech.server.policy.assertion.ServerAssertion;
-import com.l7tech.common.security.saml.InvalidAssertionException;
+import org.apache.xmlbeans.XmlError;
 import org.apache.xmlbeans.XmlException;
 import org.apache.xmlbeans.XmlOptions;
-import org.apache.xmlbeans.XmlError;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
@@ -22,6 +22,7 @@ import x0Assertion.oasisNamesTcSAML1.ConditionsType;
 
 import java.io.IOException;
 import java.io.StringWriter;
+import java.text.DateFormat;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -112,6 +113,7 @@ public class ServerSamlSecurity implements ServerAssertion {
       throws InvalidAssertionException {
         checkNonNullAssertionElement("Assertion", at);
         Calendar now = Calendar.getInstance();
+        now.setTimeZone(TimeZone.getTimeZone("GMT")); // spec says UTC, that is GMT for our purpose
         now.setTime(new Date());
         ConditionsType type = at.getConditions();
         checkNonNullAssertionElement("Conditions", type);
@@ -123,10 +125,12 @@ public class ServerSamlSecurity implements ServerAssertion {
 
         if (!retb && logger.getLevel().intValue() <= Level.INFO.intValue()) {
             StringBuffer sb = new StringBuffer();
+            DateFormat df = DateFormat.getDateTimeInstance(DateFormat.SHORT, DateFormat.LONG);
+            df.setTimeZone(TimeZone.getTimeZone("GMT"));
             sb.append("Date/time range check failed").append("\n")
-              .append("Time Now is:"+now.toString()).append("\n")
-              .append("Not  Before is:"+notBefore.getTime().toString()).append("\n")
-              .append("Not  After is:"+notAfter.getTime().toString());
+              .append("Time Now is:"+df.format(now.getTime())).append("\n")
+              .append("Not Before is:"+df.format(notBefore.getTime())).append("\n")
+              .append("Not After is:"+df.format(notAfter.getTime()));
             logger.info(sb.toString());
 
         }
