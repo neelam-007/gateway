@@ -14,6 +14,7 @@ import com.l7tech.server.util.MessageId;
 import com.l7tech.server.util.MessageIdManager;
 
 import java.io.IOException;
+import java.security.MessageDigest;
 import java.security.cert.X509Certificate;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -108,16 +109,13 @@ public class ServerRequestWssReplayProtection implements ServerAssertion {
             }
 
             // Use cert info as sender id
-            StringBuffer sb = new StringBuffer();
-            sb.append(signingCert.getSubjectDN().toString());
-            sb.append(";");
-            sb.append(skiToString(signingCert));
-            sb.append(";");
-            sb.append(signingCert.getIssuerDN().toString());
-            sb.append(";");
-            sb.append(created);
-            messageIdStr = sb.toString();
-
+            MessageDigest md = HexUtils.getSha1();
+            md.update(new Long(created).toString().getBytes("UTF-8"));
+            md.update(signingCert.getSubjectDN().toString().getBytes("UTF-8"));
+            md.update(signingCert.getIssuerDN().toString().getBytes("UTF-8"));
+            md.update(skiToString(signingCert).getBytes("UTF-8"));
+            byte[] digest = md.digest();
+            messageIdStr = HexUtils.hexDump(digest);
         } else if (signingToken instanceof SecurityContextToken) {
             // It was signed by a WS-SecureConversation session's derived key
             logger.log(Level.FINER, "Timestamp was signed with a WS-SecureConversation derived key");
@@ -125,10 +123,10 @@ public class ServerRequestWssReplayProtection implements ServerAssertion {
 
             // Use session ID as sender ID
             StringBuffer sb = new StringBuffer();
+            sb.append(created);
+            sb.append(";");
             sb.append("SessionID=");
             sb.append(sessionID);
-            sb.append(";");
-            sb.append(created);
             messageIdStr = sb.toString();
         } else
             throw new IOException("Unable to generate replay-protection ID for timestamp -- " +
