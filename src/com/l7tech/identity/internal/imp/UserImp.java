@@ -63,6 +63,10 @@ public class UserImp extends EntityImp implements User {
         return _groups;
     }
 
+    public Collection getGroupHeaders() {
+        return null;
+    }
+
     public void setLogin(String login) {
         _login = login;
     }
