@@ -6,7 +6,6 @@
 
 package com.l7tech.objectmodel;
 
-import com.l7tech.logging.LogManager;
 import com.l7tech.server.ServerConfig;
 import net.sf.hibernate.*;
 import net.sf.hibernate.cfg.Configuration;

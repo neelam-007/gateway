@@ -6,14 +6,12 @@
 
 package com.l7tech.remote.jini.lookup;
 
+import com.l7tech.common.util.Locator;
 import com.l7tech.identity.*;
-import com.l7tech.objectmodel.PersistenceContext;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.PersistenceContext;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
-import com.l7tech.common.util.Locator;
-import com.l7tech.logging.LogManager;
-import com.l7tech.remote.jini.export.RemoteService;
 import net.jini.config.*;
 import net.jini.core.discovery.LookupLocator;
 import net.jini.core.lookup.ServiceRegistrar;
@@ -31,11 +29,11 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.ObjectOutputStream;
 import java.net.URL;
+import java.security.AccessControlException;
 import java.sql.SQLException;
+import java.util.Iterator;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.Iterator;
-import java.security.AccessControlException;
 
 /**
  * The servlet that serializes the registrar obtained by the lookup

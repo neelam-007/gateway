@@ -6,8 +6,6 @@
 
 package com.l7tech.server.transport.jms;
 
-import com.l7tech.common.util.CausedIOException;
-import com.l7tech.logging.LogManager;
 import com.l7tech.message.SoapRequest;
 
 import javax.jms.BytesMessage;
@@ -15,8 +13,8 @@ import javax.jms.JMSException;
 import javax.jms.Message;
 import javax.jms.TextMessage;
 import java.io.*;
-import java.util.logging.Logger;
 import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * @author alex

@@ -1,12 +1,11 @@
 package com.l7tech.identity.ldap;
 
-import com.l7tech.identity.UserManager;
 import com.l7tech.identity.User;
+import com.l7tech.identity.UserManager;
 import com.l7tech.objectmodel.*;
-import com.l7tech.logging.LogManager;
 
-import javax.naming.directory.*;
 import javax.naming.*;
+import javax.naming.directory.*;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;

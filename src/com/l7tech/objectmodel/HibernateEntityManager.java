@@ -6,16 +6,13 @@
 
 package com.l7tech.objectmodel;
 
-import com.l7tech.logging.LogManager;
-import com.l7tech.common.transport.jms.JmsEndpoint;
+import net.sf.hibernate.HibernateException;
+import net.sf.hibernate.Session;
 
 import java.sql.SQLException;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-
-import net.sf.hibernate.Session;
-import net.sf.hibernate.HibernateException;
 
 /**
  * @author alex

@@ -1,21 +1,20 @@
 package com.l7tech.policy.server.filter;
 
-import com.l7tech.identity.*;
-import com.l7tech.policy.assertion.identity.IdentityAssertion;
-import com.l7tech.policy.assertion.identity.SpecificUser;
-import com.l7tech.policy.assertion.identity.MemberOfGroup;
-import com.l7tech.policy.assertion.Assertion;
-import com.l7tech.policy.assertion.composite.CompositeAssertion;
-import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.common.util.Locator;
-import com.l7tech.objectmodel.FindException;
+import com.l7tech.identity.*;
 import com.l7tech.objectmodel.EntityHeader;
-import com.l7tech.logging.LogManager;
+import com.l7tech.objectmodel.FindException;
+import com.l7tech.policy.assertion.Assertion;
+import com.l7tech.policy.assertion.composite.AllAssertion;
+import com.l7tech.policy.assertion.composite.CompositeAssertion;
+import com.l7tech.policy.assertion.identity.IdentityAssertion;
+import com.l7tech.policy.assertion.identity.MemberOfGroup;
+import com.l7tech.policy.assertion.identity.SpecificUser;
 
 import java.util.Iterator;
 import java.util.Set;
-import java.util.logging.Logger;
 import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * If there is at least one identity assertion, and the user does not "pass" any of them, the result will be null

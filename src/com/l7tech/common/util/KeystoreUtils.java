@@ -1,7 +1,6 @@
 package com.l7tech.common.util;
 
 import com.l7tech.common.security.xml.SignerInfo;
-import com.l7tech.logging.LogManager;
 import com.l7tech.server.ServerConfig;
 
 import java.io.*;

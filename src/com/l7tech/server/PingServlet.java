@@ -7,7 +7,6 @@
 package com.l7tech.server;
 
 import com.l7tech.common.BuildInfo;
-import com.l7tech.logging.LogManager;
 import com.l7tech.objectmodel.HibernatePersistenceContext;
 import com.l7tech.objectmodel.PersistenceContext;
 import net.sf.hibernate.Session;

@@ -1,14 +1,13 @@
 package com.l7tech.identity.ws;
 
 import com.l7tech.common.protocol.SecureSpanConstants;
-import com.l7tech.common.util.Locator;
 import com.l7tech.common.util.HexUtils;
+import com.l7tech.common.util.Locator;
 import com.l7tech.identity.*;
-import com.l7tech.identity.ldap.LdapIdentityProviderConfig;
-import com.l7tech.identity.ldap.LdapConfigTemplateManager;
 import com.l7tech.identity.cert.ClientCertManager;
 import com.l7tech.identity.internal.InternalUser;
-import com.l7tech.logging.LogManager;
+import com.l7tech.identity.ldap.LdapConfigTemplateManager;
+import com.l7tech.identity.ldap.LdapIdentityProviderConfig;
 import com.l7tech.objectmodel.*;
 import com.l7tech.server.SessionManager;
 

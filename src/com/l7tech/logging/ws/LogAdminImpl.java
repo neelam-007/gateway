@@ -1,7 +1,6 @@
 package com.l7tech.logging.ws;
 
 import com.l7tech.logging.LogAdmin;
-import com.l7tech.logging.LogManager;
 import com.l7tech.logging.SSGLogRecord;
 import com.l7tech.logging.ServerLogManager;
 import com.l7tech.objectmodel.PersistenceContext;

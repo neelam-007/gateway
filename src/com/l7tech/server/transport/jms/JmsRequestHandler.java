@@ -7,7 +7,6 @@
 package com.l7tech.server.transport.jms;
 
 import com.l7tech.common.util.SoapUtil;
-import com.l7tech.logging.LogManager;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.server.MessageProcessor;
 import com.l7tech.server.policy.PolicyVersionException;

@@ -1,7 +1,6 @@
 package com.l7tech.identity.ldap;
 
 import com.l7tech.common.util.HexUtils;
-import com.l7tech.logging.LogManager;
 import com.l7tech.server.ServerConfig;
 
 import java.io.*;

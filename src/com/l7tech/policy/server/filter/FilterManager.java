@@ -1,12 +1,11 @@
 package com.l7tech.policy.server.filter;
 
-import com.l7tech.service.PublishedService;
 import com.l7tech.identity.User;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.wsp.WspReader;
 import com.l7tech.policy.wsp.WspWriter;
-import com.l7tech.logging.LogManager;
+import com.l7tech.service.PublishedService;
 
 import java.io.IOException;
 import java.util.logging.Logger;

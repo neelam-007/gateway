@@ -1,6 +1,5 @@
 package com.l7tech.cluster;
 
-import com.l7tech.logging.LogManager;
 import com.l7tech.remote.jini.lookup.ServiceLookup;
 import net.jini.config.ConfigurationException;
 import net.jini.core.lookup.ServiceMatches;

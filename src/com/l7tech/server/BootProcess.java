@@ -10,7 +10,6 @@ import com.l7tech.cluster.ClusterInfoManager;
 import com.l7tech.cluster.StatusUpdater;
 import com.l7tech.common.BuildInfo;
 import com.l7tech.common.util.Locator;
-import com.l7tech.logging.LogManager;
 import com.l7tech.logging.ServerLogManager;
 import com.l7tech.objectmodel.HibernatePersistenceManager;
 import com.l7tech.objectmodel.PersistenceContext;

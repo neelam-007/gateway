@@ -3,7 +3,6 @@ package com.l7tech.identity.ldap;
 import com.l7tech.identity.Group;
 import com.l7tech.identity.GroupManager;
 import com.l7tech.identity.User;
-import com.l7tech.logging.LogManager;
 import com.l7tech.objectmodel.*;
 
 import javax.naming.NamingEnumeration;

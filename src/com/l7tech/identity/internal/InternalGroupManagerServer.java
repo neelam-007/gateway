@@ -1,17 +1,15 @@
 package com.l7tech.identity.internal;
 
 import com.l7tech.identity.*;
-import com.l7tech.logging.LogManager;
 import com.l7tech.objectmodel.*;
+import net.sf.hibernate.HibernateException;
+import net.sf.hibernate.Query;
+import net.sf.hibernate.Session;
 
 import java.sql.SQLException;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-
-import net.sf.hibernate.Session;
-import net.sf.hibernate.Query;
-import net.sf.hibernate.HibernateException;
 
 /**
  * GroupManager implementation for the internal identity provider.

@@ -1,7 +1,6 @@
 package com.l7tech.policy.server.filter;
 
 import com.l7tech.identity.User;
-import com.l7tech.logging.LogManager;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.composite.CompositeAssertion;
 

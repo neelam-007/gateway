@@ -1,6 +1,5 @@
 package com.l7tech.remote.jini;
 
-import com.l7tech.logging.LogManager;
 import com.sun.jini.start.ServiceStarter;
 import net.jini.config.ConfigurationException;
 

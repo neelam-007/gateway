@@ -2,18 +2,16 @@ package com.l7tech.cluster;
 
 import com.l7tech.objectmodel.*;
 import com.l7tech.remote.jini.export.RemoteService;
-import com.l7tech.logging.LogManager;
-import com.l7tech.logging.ServerLogHandler;
 import com.sun.jini.start.LifeCycle;
 import net.jini.config.ConfigurationException;
 
 import java.io.IOException;
-import java.util.Collection;
-import java.util.Calendar;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import java.rmi.RemoteException;
 import java.sql.SQLException;
+import java.util.Calendar;
+import java.util.Collection;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Server side implementation of the ClusterStatusAdmin interface.

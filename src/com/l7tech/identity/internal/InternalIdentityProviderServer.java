@@ -1,15 +1,14 @@
 package com.l7tech.identity.internal;
 
 import com.l7tech.common.util.HexUtils;
+import com.l7tech.common.util.KeystoreUtils;
+import com.l7tech.common.util.Locator;
 import com.l7tech.identity.*;
 import com.l7tech.identity.cert.ClientCertManager;
-import com.l7tech.logging.LogManager;
 import com.l7tech.objectmodel.*;
 import com.l7tech.policy.assertion.credential.CredentialFormat;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.assertion.credential.http.HttpDigest;
-import com.l7tech.common.util.KeystoreUtils;
-import com.l7tech.common.util.Locator;
 
 import java.io.*;
 import java.security.GeneralSecurityException;
@@ -20,12 +19,12 @@ import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
+import java.sql.SQLException;
 import java.util.Collection;
 import java.util.Map;
 import java.util.TreeSet;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.sql.SQLException;
 
 /**
  * IdentityProvider implementation for the internal identity provider.

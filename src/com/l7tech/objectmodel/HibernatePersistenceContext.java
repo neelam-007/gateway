@@ -6,18 +6,20 @@
 
 package com.l7tech.objectmodel;
 
-import javax.sql.DataSource;
-import java.sql.*;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-import java.util.ArrayList;
-import java.util.Iterator;
-
-import com.l7tech.logging.LogManager;
-import net.sf.hibernate.Session;
 import net.sf.hibernate.HibernateException;
+import net.sf.hibernate.Session;
 import net.sf.hibernate.Transaction;
 import org.apache.commons.dbcp.PoolableConnection;
+
+import javax.sql.DataSource;
+import java.sql.Connection;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * @author alex

@@ -1,16 +1,14 @@
 package com.l7tech.cluster;
 
 import com.l7tech.objectmodel.*;
-import com.l7tech.logging.LogManager;
+import net.sf.hibernate.HibernateException;
+import net.sf.hibernate.Session;
 
+import java.sql.SQLException;
 import java.util.Collection;
 import java.util.List;
-import java.util.logging.Logger;
 import java.util.logging.Level;
-import java.sql.SQLException;
-
-import net.sf.hibernate.Session;
-import net.sf.hibernate.HibernateException;
+import java.util.logging.Logger;
 
 /**
  * Hibernate abstraction of the service_usage table.

@@ -3,7 +3,6 @@ package com.l7tech.identity.internal;
 import com.l7tech.common.util.Locator;
 import com.l7tech.identity.*;
 import com.l7tech.identity.cert.ClientCertManager;
-import com.l7tech.logging.LogManager;
 import com.l7tech.objectmodel.*;
 
 import java.sql.SQLException;

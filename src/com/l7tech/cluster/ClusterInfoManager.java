@@ -2,23 +2,22 @@ package com.l7tech.cluster;
 
 import com.l7tech.common.util.HexUtils;
 import com.l7tech.common.util.KeystoreUtils;
-import com.l7tech.logging.LogManager;
 import com.l7tech.objectmodel.*;
 import net.sf.hibernate.HibernateException;
 import net.sf.hibernate.Session;
 
 import java.io.BufferedInputStream;
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.File;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.sql.SQLException;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.net.InetAddress;
-import java.net.UnknownHostException;
 
 /**
  * Hibernate layer over the cluster_info table.

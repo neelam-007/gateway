@@ -1,19 +1,18 @@
 package com.l7tech.cluster;
 
-import com.l7tech.logging.LogManager;
+import com.l7tech.common.util.Locator;
+import com.l7tech.common.util.UptimeMetrics;
 import com.l7tech.objectmodel.*;
 import com.l7tech.server.util.UptimeMonitor;
-import com.l7tech.common.util.UptimeMetrics;
-import com.l7tech.common.util.Locator;
 import com.l7tech.service.ServiceManager;
 import com.l7tech.service.ServiceStatistics;
 
-import java.util.logging.Logger;
-import java.util.logging.Level;
+import java.io.FileNotFoundException;
+import java.sql.SQLException;
 import java.util.Collection;
 import java.util.Iterator;
-import java.sql.SQLException;
-import java.io.FileNotFoundException;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 
 /**

@@ -1,23 +1,21 @@
 package com.l7tech.identity.cert;
 
+import com.l7tech.common.util.HexUtils;
 import com.l7tech.identity.User;
 import com.l7tech.objectmodel.*;
-import com.l7tech.logging.LogManager;
-import com.l7tech.common.util.HexUtils;
-
-import java.security.cert.*;
-import java.util.logging.Logger;
-import java.util.logging.Level;
-import java.util.List;
-import java.util.Collections;
-import java.sql.SQLException;
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
-
-import net.sf.hibernate.Session;
 import net.sf.hibernate.HibernateException;
 import net.sf.hibernate.Query;
+import net.sf.hibernate.Session;
 import sun.security.x509.X500Name;
+
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.security.cert.*;
+import java.sql.SQLException;
+import java.util.Collections;
+import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 
 /**

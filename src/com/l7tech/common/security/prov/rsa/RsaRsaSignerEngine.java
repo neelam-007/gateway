@@ -7,7 +7,6 @@
 package com.l7tech.common.security.prov.rsa;
 
 import com.l7tech.common.security.RsaSignerEngine;
-import com.l7tech.logging.LogManager;
 import com.rsa.certj.cert.PKCS10CertRequest;
 import com.rsa.certj.cert.X500Name;
 import com.rsa.jsafe.JSAFE_PrivateKey;
@@ -16,12 +15,7 @@ import sun.security.x509.X509CertImpl;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.security.KeyStore;
-import java.security.KeyStoreException;
-import java.security.NoSuchAlgorithmException;
-import java.security.PrivateKey;
-import java.security.SecureRandom;
-import java.security.UnrecoverableKeyException;
+import java.security.*;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
