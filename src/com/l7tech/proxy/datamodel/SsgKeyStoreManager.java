@@ -368,9 +368,9 @@ public class SsgKeyStoreManager {
 
         boolean isValidated = cd.downloadCertificate();
         if (!isValidated) {
-            if (cd.isUserUnknown()) {
-                // We got no cert-check headers, so this might be an LDAP user.  Prompt for manual
-                // certificate verification.
+            if (cd.isUncheckablePassword()) {
+                // The username was known to the SSG, but at least one of the accounts with that username
+                // had an uncheckable password (either unavailable or hashed in an unsupported way).
                 Managers.getCredentialManager().notifySsgCertificateUntrusted(ssg, cd.getCertificate());
             } else
                 throw new BadCredentialsException("The downloaded Gateway server certificate could not be verified with the current username and password.");

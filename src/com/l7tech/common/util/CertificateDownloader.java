@@ -221,10 +221,17 @@ public class CertificateDownloader {
 
     /**
      * Check whether the specified username was known to the SSG.
-     * Returns true, unless at least one Cert-Check-NNN: header was returned.
-     * @return
+     * @return false if the SSG recognized the username; otherwise true
      */
     public boolean isUserUnknown() {
-        return checks.size() < 1 || sawNoPass;
+        return checks.size() < 1 && !sawNoPass;
+    }
+
+    /**
+     * Check whether an account with this username exists but whose password isn't available to the SSG.
+     * @return true if at least one Cert-Check-NNN: header contatining "NOPASS" was in the response
+     */
+    public boolean isUncheckablePassword() {
+        return sawNoPass;
     }
 }
