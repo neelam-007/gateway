@@ -428,7 +428,7 @@ public abstract class GroupPanel extends EntityEditorPanel {
         // Set tabbed panels (add/remove extranet tab)
         nameLabel.setText(group.getName());
         String desc = group.getDescription();
-        if (desc.length() > MAX_DESC_LENGTH) {
+        if (desc != null && desc.length() > MAX_DESC_LENGTH) {
             desc = desc.substring(0, MAX_DESC_LENGTH-1);
         }
         getDescriptionTextField().setText(desc);
