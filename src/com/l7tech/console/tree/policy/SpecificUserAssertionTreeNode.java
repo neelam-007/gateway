@@ -2,6 +2,8 @@ package com.l7tech.console.tree.policy;
 
 
 import com.l7tech.policy.assertion.identity.SpecificUser;
+import com.l7tech.policy.assertion.identity.IdentityAssertion;
+import com.l7tech.console.action.IdentityPolicyAction;
 
 import javax.swing.*;
 import java.util.ArrayList;
@@ -34,10 +36,9 @@ public class SpecificUserAssertionTreeNode extends LeafAssertionTreeNode {
      */
     public Action[] getActions() {
         java.util.List list = new ArrayList();
+        Action a = new IdentityPolicyAction((IdentityAssertion)getUserObject());
+        list.add(a);
         list.addAll(Arrays.asList(super.getActions()));
-        // Action a = new AddIdentityAssertionAction();
-        // a.setEnabled(false);
-        // list.add(a);
         return (Action[]) list.toArray(new Action[]{});
     }
 

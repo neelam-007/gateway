@@ -1,10 +1,9 @@
 package com.l7tech.console.action;
 
-import com.l7tech.console.panels.*;
-import com.l7tech.console.tree.*;
+import com.l7tech.console.panels.IdentityProviderDialog;
+import com.l7tech.console.tree.EntityHeaderNode;
+import com.l7tech.console.tree.ProviderNode;
 import com.l7tech.console.util.Registry;
-import com.l7tech.objectmodel.EntityHeader;
-import com.l7tech.objectmodel.EntityType;
 
 import javax.swing.*;
 

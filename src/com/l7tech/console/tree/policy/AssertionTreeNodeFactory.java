@@ -31,9 +31,9 @@ import java.util.Map;
  * @version 1.1
  */
 public class AssertionTreeNodeFactory {
-    static Map assertionMap = new HashMap();
+    private static Map assertionMap = new HashMap();
 
-    // maping assertion to tree nodes to
+    // maping assertions to assertion tree nodes
     static {
         assertionMap.put(SslAssertion.class, SslAssertionTreeNode.class);
         assertionMap.put(SpecificUser.class, SpecificUserAssertionTreeNode.class);
@@ -55,21 +55,22 @@ public class AssertionTreeNodeFactory {
     }
 
     /**
-     * Returns the corresponding TreeNode instance for
-     * an directory <code>Entry</code>
+     * Returns the corresponding <code>AssertionTreeNode</code> instance
+     * for an <code>Assertion</code><br>
+     * In case there is no corresponding <code>AssertionTreeNode</code>
+     * the <code>UnknownAssertionTreeNode</code> is returned
      *
-     * @return the TreeNode for a given Entry
+     * @return the AssertionTreeNode for a given assertion
      */
     public static AssertionTreeNode asTreeNode(Assertion assertion) {
         if (assertion == null) {
             throw new IllegalArgumentException();
         }
-
+        // assertion lookup, find the  assertion tree node
         Class classNode = (Class) assertionMap.get(assertion.getClass());
         if (null == classNode) {
             return new UnknownAssertionTreeNode(assertion);
         }
-
         try {
             return makeAssertionNode(classNode, assertion);
         } catch (Exception e) {
@@ -77,24 +78,32 @@ public class AssertionTreeNodeFactory {
         }
     }
 
+    /**
+     * Create the assertion tree node <code>classNode</code> using reflection.
+     * The target class is searched for the constructor that accepts the assertion
+     * as a parameter.
+     * That is, the <code>AssertionTreeNode</code> subclass is searched for
+     * the constructor accepting the <code>Aseertion</code> parameter.
+     *
+     * @param classNode the class that is a subclass of AssertionTreeNode
+     * @param assertion the assertion constructor parameter
+     * @return the corresponding assertion tree node
+     * @throws InstantiationException thrown on error instantiating the assertion
+     *         tree node
+     * @throws InvocationTargetException thrown on error invoking the constructor
+     * @throws IllegalAccessException thrown if there is no access to the desired
+     *         constructor
+     * @see Assertions#findMatchingConstructor(Class, Class[])
+     */
     private static AssertionTreeNode makeAssertionNode(Class classNode, Assertion assertion)
       throws InstantiationException, InvocationTargetException, IllegalAccessException {
 
-        Constructor ctor = findMatchingConstructor(classNode, new Class[]{assertion.getClass()});
+        Constructor ctor =
+          Assertions.findMatchingConstructor(classNode, new Class[]{assertion.getClass()});
         if (ctor != null)
             return (AssertionTreeNode) ctor.newInstance(new Object[]{assertion});
         throw new RuntimeException("Cannot locate expected he constructor in " + classNode);
 
-    }
-
-    private static Constructor findMatchingConstructor(Class cls, Class[] params) {
-        Constructor[] constructors = cls.getConstructors();
-        for (int i = 0; i < constructors.length; i++) {
-            if (isAssignable(constructors[i].getParameterTypes(), params)) {
-                return constructors[i];
-            }
-        }
-        return null;
     }
 
     /**
@@ -118,38 +127,5 @@ public class AssertionTreeNodeFactory {
         public String getName() {
             return "Unknown assertion " + getUserObject().getClass();
         }
-    }
-
-
-    /**
-     * Determine whether the assignTo array accepts assignFrom classes in
-     * the given order.
-     *
-     * {@link Class#isAssignableFrom(Class) is used to determine if the
-     * assignTo accepts the parameter from the assignFrom.
-     *
-     * @param assignTo the array receiving
-     * @param assignFrom the class array to check
-     * @return true if assignable, false otherwise
-     */
-    private static boolean isAssignable(Class[] assignTo, Class[] assignFrom) {
-        if (assignTo == null) {
-            return assignFrom == null || assignFrom.length == 0;
-        }
-
-        if (assignFrom == null) {
-            return assignTo.length == 0;
-        }
-
-        if (assignTo.length != assignFrom.length) {
-            return false;
-        }
-
-        for (int i = 0; i < assignTo.length; i++) {
-            if (!(assignTo[i].isAssignableFrom(assignFrom[i]))) {
-                return false;
-            }
-        }
-        return true;
     }
 }

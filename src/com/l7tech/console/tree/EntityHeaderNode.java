@@ -1,11 +1,9 @@
 package com.l7tech.console.tree;
 
-import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.console.action.DeleteEntityAction;
+import com.l7tech.objectmodel.EntityHeader;
 
 import javax.swing.*;
-import java.util.Collections;
-import java.util.Enumeration;
 
 /**
  * The class represents an entity gui node element in the

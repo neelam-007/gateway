@@ -302,15 +302,25 @@ public class PolicyEditorPanel extends JPanel {
              iterator.hasNext();) {
             PolicyValidatorResult.Error pe =
               (PolicyValidatorResult.Error)iterator.next();
-            appendToMessageArea("<a href=\"file://assertion#" + pe.getAssertion().hashCode() + "\"> Assertion : " +
-              pe.getAssertion().getClass() + " Error :" + pe.getMessage() + "</a><br>");
+            appendToMessageArea(
+              "Assertion : "+
+              "<a href=\"file://assertion#" +
+              pe.getAssertion().hashCode() + "\">" +
+              Descriptions.getDescription(pe.getAssertion()).getShortDescription() +
+              "</a>"+ " Error :" + pe.getMessage() + ""
+            );
         }
         for (Iterator iterator = r.getWarnings().iterator();
              iterator.hasNext();) {
             PolicyValidatorResult.Warning pe =
               (PolicyValidatorResult.Warning)iterator.next();
-            appendToMessageArea("<a href=\"file://assertion#" + pe.getAssertion().hashCode() + "\"> Assertion : " +
-              pe.getAssertion().getClass() + " Warning :" + pe.getMessage() + "</a><br>");
+            appendToMessageArea(
+              "Assertion : "+
+              "<a href=\"file://assertion#" +
+              pe.getAssertion().hashCode() + "\">" +
+              Descriptions.getDescription(pe.getAssertion()).getShortDescription() +
+              "</a>"+ " Error :" + pe.getMessage() + ""
+            );
         }
     }
 
@@ -395,8 +405,6 @@ public class PolicyEditorPanel extends JPanel {
                       }
                   }
               });
-
-
         }
 
         public void treeNodesRemoved(TreeModelEvent e) {
@@ -456,8 +464,6 @@ public class PolicyEditorPanel extends JPanel {
                           policyTree.setSelectionPath(p);
                       }
                   }
-
-
               } catch (NumberFormatException ex) {
                   ex.printStackTrace();
               }
