@@ -141,9 +141,12 @@ public class ServiceNode extends EntityHeaderNode {
         try {
             return getPublishedService().getName();
         } catch (Exception e) {
-            ErrorManager.getDefault().notify(Level.SEVERE, e, "Unable to find the service "+getEntityHeader().getOid());
+            log.log(Level.SEVERE, "Unable to find the service", e);
+            // dont call the error manager here because this node is being refreshed constantly and it
+            // causes some sort of error loop
+            //ErrorManager.getDefault().notify(Level.SEVERE, e, "Unable to find the service "+getEntityHeader().getOid());
         }
-        return "Error Retrieving the service";
+        return "*invalid*";
     }
 
     /**
@@ -152,7 +155,7 @@ public class ServiceNode extends EntityHeaderNode {
      * @param open for nodes that can be opened, can have children
      */
     protected String iconResource(boolean open) {
-        if (svc.isDisabled())
+        if (svc == null || svc.isDisabled())
             return "com/l7tech/console/resources/services_disabled16.png";
         else
             return "com/l7tech/console/resources/services16.png";
