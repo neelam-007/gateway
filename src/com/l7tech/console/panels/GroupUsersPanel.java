@@ -48,7 +48,7 @@ class GroupUsersPanel extends JPanel {
     private JButton groupRemove = null;
     private boolean isLoading = false;
 
-    private final static String USER_GROUP_MEMBER_LABEL = "Group memberships:";
+    private final static String USER_GROUP_MEMBER_LABEL = "Group Membership:";
 
 
     /**
@@ -343,7 +343,7 @@ class GroupUsersPanel extends JPanel {
     private JButton getGroupAdd() {
         if (groupAdd == null) {
             groupAdd = new JButton();
-            groupAdd.setText("Add..");
+            groupAdd.setText("Add");
 
             groupAdd.addActionListener(new ActionListener() {
                 public void actionPerformed(ActionEvent e) {
