@@ -37,51 +37,59 @@ public class SquigglyTextField extends JTextField {
         super(doc, text, columns);
     }
 
-    public synchronized int getSquiggleBegin() {
-        return _squiggleBegin;
+    public synchronized int getBegin() {
+        return _begin;
     }
 
-    public synchronized int getSquiggleEnd() {
-        return _squiggleEnd;
+    public synchronized int getEnd() {
+        return _end;
     }
 
-    public synchronized void setSquiggle( int begin, int end ) {
-        _squiggleBegin = begin;
-        _squiggleEnd = end;
+    public synchronized void setRange( int begin, int end ) {
+        _begin = begin;
+        _end = end;
     }
 
-    public synchronized void setSquiggleAll() {
-        _squiggleBegin = ALL;
-        _squiggleEnd = ALL;
+    public synchronized void setAll() {
+        _begin = ALL;
+        _end = ALL;
     }
 
-    public synchronized void setSquiggleNone() {
-        _squiggleBegin = NONE;
-        _squiggleEnd = NONE;
+    public synchronized void setNone() {
+        _begin = NONE;
+        _end = NONE;
     }
 
-    public synchronized Color getSquiggleColor() {
-        return _squiggleColor;
+    public synchronized Color getColor() {
+        return _color;
     }
 
-    public synchronized void setSquiggleColor(Color squiggleColor) {
-        _squiggleColor = squiggleColor;
+    public synchronized void setColor(Color color) {
+        _color = color;
     }
 
-    public void paint( Graphics g ) {
-        super.paint(g);
+    public synchronized void setSquiggly() {
+        _style = SQUIGGLY;
+    }
+
+    public synchronized void setStraight() {
+        _style = STRAIGHT;
+    }
+
+    public void paintComponent( Graphics g ) {
+        super.paintComponent(g);
 
         int begin;
         int end;
 
         synchronized( this ) {
-            begin = _squiggleBegin;
-            end = _squiggleEnd;
+            begin = _begin;
+            end = _end;
         }
 
         if ( begin == NONE || end == NONE ) return;
 
-        g.setColor( _squiggleColor );
+        g.setColor( _color );
 
         int ya = getHeight()-7;
         int xb = 0;
@@ -96,24 +104,41 @@ public class SquigglyTextField extends JTextField {
             Rectangle firstChar = modelToView( begin == ALL ? 0 : begin );
             ya = (int)(firstChar.getY() + firstChar.getHeight());
             xb = (int)firstChar.getX();
-            Rectangle lastChar = modelToView( _squiggleEnd == ALL || _squiggleEnd > len ? len : _squiggleEnd );
+            Rectangle lastChar = modelToView( _end == ALL || _end > len ? len : _end );
             xe = (int)(lastChar.getX()+lastChar.getWidth());
         } catch (BadLocationException e) {
         }
 
-        int oldx = xb;
-        int oldy = ya;
-        for ( int x = xb; x < xe; x++ ) {
-            int y = (int)(0.5 + ya + (Math.sin(x/0.8) * 2) );
-            g.drawLine( oldx, oldy, x, y );
-            oldx = x;
-            oldy = y;
-        }
+        _style.draw( g, xb, xe, ya );
     }
 
-    private Color _squiggleColor = Color.RED;
-    private int _squiggleBegin = NONE;
-    private int _squiggleEnd = NONE;
+    private static abstract class UnderlineStyle {
+        public abstract void draw( Graphics g, int x1, int x2, int y );
+    }
+
+    private static final UnderlineStyle SQUIGGLY = new UnderlineStyle() {
+        public void draw(Graphics g, int x1, int x2, int y) {
+            int oldx = x1;
+            int oldy = y;
+            for ( int x = x1; x < x2; x++ ) {
+                int yy = (int)(0.5 + y + (Math.sin(x/0.8) * 2) );
+                g.drawLine( oldx, oldy, x, yy );
+                oldx = x;
+                oldy = yy;
+            }
+        }
+    };
+
+    private static final UnderlineStyle STRAIGHT = new UnderlineStyle() {
+        public void draw(Graphics g, int x1, int x2, int y) {
+            g.drawLine( x1, y, x2, y );
+        }
+    };
+
+    private int _begin = NONE;
+    private int _end = NONE;
+    private Color _color = Color.RED;
+    private UnderlineStyle _style = SQUIGGLY;
 
     public static final int NONE = -2;
     public static final int ALL = -1;
