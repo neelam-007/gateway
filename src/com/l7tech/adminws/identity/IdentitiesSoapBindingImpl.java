@@ -1,10 +1,3 @@
-/**
- * IdentitiesSoapBindingImpl.java
- *
- * This file was auto-generated from WSDL
- * by the Apache Axis WSDL2Java emitter.
- */
-
 package com.l7tech.adminws.identity;
 
 import com.l7tech.adminws.translation.TypeTranslator;
@@ -14,6 +7,14 @@ import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.SaveException;
 import com.l7tech.objectmodel.DeleteException;
 
+/**
+ * Layer 7 Technologies, inc.
+ * User: flascelles
+ * Date: May 13, 2003
+ *
+ * Implementation of the Identity admin web service.
+ * This service is consumed by the console-side managers relating to identity management.
+ */
 public class IdentitiesSoapBindingImpl implements com.l7tech.adminws.identity.Identity{
     public com.l7tech.adminws.identity.Header[] findAlllIdentityProviderConfig() throws java.rmi.RemoteException {
         return TypeTranslator.collectionToServiceHeaders(getIdentityProviderConfigManager().findAllHeaders());
