@@ -168,8 +168,8 @@ public class FederatedIdentityProvider extends PersistentIdentityProvider {
 
             FederatedUser u = userManager.findBySubjectDN(subjectDn);
             if (u == null && trustedCerts.isEmpty())
-                throw new BadCredentialsException("No Federated User with DN = '" +
-                                                  subjectDn + "' could be found and virtual groups" +
+                throw new BadCredentialsException("No Federated User with DN = '" + subjectDn +
+                                                  "' could be found, and virtual groups" +
                                                   " are not permitted without trusted certs");
 
             X509Certificate storedCert = (X509Certificate)clientCertManager.getUserCert(u);
