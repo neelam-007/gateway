@@ -85,7 +85,14 @@ public class PasswdServlet extends AuthenticatableHttpServlet {
             }
             // make sure it's different from current one
             UserBean tmpUser = new UserBean();
-            tmpUser.setPassword(str_newpasswd);
+            tmpUser.setLogin(internalUser.getLogin());
+            try {
+                tmpUser.setPassword(str_newpasswd);
+            } catch (IllegalStateException e) {
+                logger.log(Level.SEVERE, "could not compare password", e);
+                res.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, e.getMessage());
+                return;
+            }
             if (tmpUser.getPassword().equals(internalUser.getPassword())) {
                 logger.warning("New password same as old one, returning 400.");
                 res.sendError(HttpServletResponse.SC_BAD_REQUEST, "Please provide new password " +
@@ -103,6 +110,7 @@ public class PasswdServlet extends AuthenticatableHttpServlet {
                                                 IdProvConfManagerServer.INTERNALPROVIDER_SPECIAL_OID);
                 UserManager userManager = provider.getUserManager();
                 userManager.update(internalUser);
+                logger.fine("Password changed for user" + internalUser.getLogin());
                 // end transaction
                 pc.commitTransaction();
                 // return 200
