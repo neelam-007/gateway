@@ -1,0 +1,19 @@
+%packager               Build System
+%distribution           Any
+%vendor                 Layer 7 Technologies
+
+%_signature gpg
+%_gpg_path ~/.gnupg 
+%_gpg_name CIT Linux Support  
+%_gpgbin /usr/bin/gpg
+
+%_topdir                %(echo $HOME)/RPMBUILD
+%_tmppath               %{_topdir}/tmp
+%_builddir              %{_tmppath}
+
+%_rpmtopdir             %{_topdir}/%{name}
+%_sourcedir             %{_rpmtopdir}
+%_specdir               %{_topdir}/SPECS
+%_rpmdir                %{_topdir}/RPMS
+%_srcrpmdir             %{_topdir}/SRPMS
+%_rpmfilename           %%{NAME}-%%{VERSION}-%%{RELEASE}.%%{ARCH}.rpm
