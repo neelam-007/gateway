@@ -17,6 +17,7 @@ import java.security.cert.X509Certificate;
 public class SamlHolderOfKeyAssertion extends SamlAssertion {
     protected SamlHolderOfKeyAssertion(Element ass) throws SAXException {
         super(ass);
+        attestingEntityCertificate = subjectCertificate;
     }
 
     public X509Certificate getSigningCertificate() {

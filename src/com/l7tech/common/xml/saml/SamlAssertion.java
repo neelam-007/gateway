@@ -42,6 +42,7 @@ public abstract class SamlAssertion {
     AssertionType assertion = null;
     boolean isSigned = false;
     X509Certificate subjectCertificate = null;
+    X509Certificate attestingEntityCertificate = null;
     X509Certificate issuerCertificate = null;
     private String assertionId = null;
     private Calendar expires = null;
@@ -150,6 +151,10 @@ public abstract class SamlAssertion {
 
     public X509Certificate getIssuerCertificate() {
         return issuerCertificate;
+    }
+
+    public X509Certificate getAttestingEntityCertificate() {
+        return attestingEntityCertificate;
     }
 
     public Element asElement() {

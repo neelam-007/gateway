@@ -157,6 +157,10 @@ public class SoapUtil {
      * soap body xpath '/soapenv:Envelope/soapenv:Body'
      */
     public static final String SOAP_BODY_XPATH = SOAP_ENVELOPE_XPATH + "/" + NamespaceConstants.NSPREFIX_SOAP_ENVELOPE + ":Body";
+    /**
+     * soap header xpath '/soapenv:Envelope/soapenv:Header'
+     */
+    public static final String SOAP_HEADER_XPATH = SOAP_ENVELOPE_XPATH + "/" + NamespaceConstants.NSPREFIX_SOAP_ENVELOPE + ":Header";
 
     /**
      * Get the SOAP envelope from the message
