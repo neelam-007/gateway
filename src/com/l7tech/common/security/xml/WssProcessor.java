@@ -61,7 +61,8 @@ public interface WssProcessor {
      *
      * @param message the xml document containing the soap message. this document may be modified on exit
      * @param recipientCertificate the recipient's cert to which encrypted keys may be encoded for
-     * @param recipientPrivateKey the private key corresponding to the recipientCertificate used to decypher the encrypted keys 
+     * @param recipientPrivateKey the private key corresponding to the recipientCertificate used to decypher the encrypted keys
+     * @return a ProcessorResult object reffering to all the WSS related processing that happened. 
      * @throws ProcessorException
      */
     ProcessorResult undecorateMessage(Document message,
