@@ -57,6 +57,10 @@ public class TimeRangeTreeNode extends LeafAssertionTreeNode {
         return new TimeRangePropertiesAction(this);
     }
 
+    public boolean canDelete() {
+        return true;
+    }
+
     public TimeRange getTimeRange() {return nodeAssertion;}
 
     private TimeRange nodeAssertion;
