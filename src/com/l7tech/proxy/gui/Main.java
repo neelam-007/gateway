@@ -18,7 +18,7 @@ import java.net.BindException;
  */
 public class Main {
     private static final Category log = Category.getInstance(Main.class);
-    private static final int DEFAULT_PORT = 5555;
+    private static final int DEFAULT_PORT = 7700;
     private static final int MIN_THREADS = 4;
     private static final int MAX_THREADS = 20;
 
