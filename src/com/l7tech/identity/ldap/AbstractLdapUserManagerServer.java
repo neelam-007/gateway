@@ -85,18 +85,25 @@ public abstract class AbstractLdapUserManagerServer extends LdapManager implemen
         try {
             DirContext context = getBrowseContext();
             // Search using attribute list.
-            Attributes matchAttrs = new BasicAttributes(true); // ignore attribute name case
-            matchAttrs.put(new BasicAttribute( getConstants().userLoginAttribute(), login));
-            String[] attrToReturn = {"dn"};
+            /*Attributes matchAttrs = new BasicAttributes(true); // ignore attribute name case
+            matchAttrs.put(new BasicAttribute( getConstants().userLoginAttribute(), login));*/
+
+            String filter = "(" + getConstants().userNameAttribute() + "=" + login + ")";
+            SearchControls sc = new SearchControls();
+            sc.setSearchScope(SearchControls.SUBTREE_SCOPE);
             NamingEnumeration answer = null;
-            answer = context.search(config.getProperty(LdapConfigSettings.LDAP_SEARCH_BASE), matchAttrs, attrToReturn);
+            answer = context.search(config.getProperty(LdapConfigSettings.LDAP_SEARCH_BASE), filter, sc);
             // Close the anon context now that we're done with it
             context.close();
             String dn = null;
             if (answer.hasMore()) {
                 SearchResult sr = (SearchResult)answer.next();
                 dn = sr.getName() + "," + config.getProperty(LdapConfigSettings.LDAP_SEARCH_BASE);
-            } else return null;
+                logger.finer("found dn:" + dn + " for login: " + login);
+            } else {
+                logger.info("nothing has cn= " + login);
+                return null;
+            }
             return findByPrimaryKey(dn);
         } catch (NamingException e) {
             logger.log(Level.SEVERE, e.getMessage(), e);
@@ -299,6 +306,18 @@ public abstract class AbstractLdapUserManagerServer extends LdapManager implemen
 
     protected abstract String doGetGroupMembershipFilter( User user );
 
+    /*private void buildGroupMembershipsBasedOnOUs(User user) {
+        String dn = user.getName();
+        // look for traces of "ou=" in the dn, see if the user belongs to any ous
+        String lookfor = AbstractLdapConstants.oUObjAttrName() + "=";
+        int foundat = -1;
+        foundat = dn.indexOf(lookfor, 0);
+        while (foundat >= 0) {
+            // todo
+        }
+
+    }*/
+
     private Collection findGroupMembershipsAsHeaders(User user) {
         // todo, add group memberships based on "OU"s
         AbstractLdapConstants constants = getConstants();
@@ -326,7 +345,7 @@ public abstract class AbstractLdapUserManagerServer extends LdapManager implemen
                 if (tmp != null) description = tmp.toString();
 
                 dn = sr.getName() + "," + config.getProperty(LdapConfigSettings.LDAP_SEARCH_BASE);
-                EntityHeader grpheader = new EntityHeader(dn, EntityType.USER, cn, description);
+                EntityHeader grpheader = new EntityHeader(dn, EntityType.GROUP, cn, description);
                 out.add(grpheader);
             }
             if (answer != null) answer.close();
