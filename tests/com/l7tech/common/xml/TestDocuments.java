@@ -6,8 +6,16 @@ import org.xml.sax.SAXException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.FileNotFoundException;
+import java.io.ByteArrayInputStream;
+import java.util.Properties;
+import java.security.KeyStore;
+import java.security.PrivateKey;
+import java.security.GeneralSecurityException;
+import java.security.cert.X509Certificate;
+import java.security.cert.CertificateFactory;
 
 import com.l7tech.common.util.XmlUtil;
+import com.l7tech.common.util.HexUtils;
 
 /**
  * The class is a container for test documents, SOAP tmessages etc
@@ -61,5 +69,81 @@ public final class TestDocuments {
             throw new FileNotFoundException(resourcetoread);
         }
         return i;
+    }
+
+    private static Properties ettkKeystoreProperties = null;
+    private static synchronized Properties getEttkKeystoreProperties() throws IOException {
+        if (ettkKeystoreProperties != null) return ettkKeystoreProperties;
+        Properties ksp = new Properties();
+        ksp.load(getInputStream(ETTK_KS_PROPERTIES));
+        return ettkKeystoreProperties = ksp;
+    }
+
+    private static KeyStore ettkKeystore = null;
+    private static synchronized KeyStore getEttkKeystore() throws IOException, GeneralSecurityException {
+        if (ettkKeystore != null) return ettkKeystore;
+        Properties ksp = getEttkKeystoreProperties();
+        String keystorePassword = ksp.getProperty("keystore.storepass");
+        KeyStore keyStore = KeyStore.getInstance(ksp.getProperty("keystore.type"));
+        InputStream fis = null;
+        try {
+            fis = getInputStream(ETTK_KS);
+            keyStore.load(fis, keystorePassword.toCharArray());
+        } finally {
+            if (fis != null)
+                fis.close();
+        }
+        return ettkKeystore = keyStore;
+    }
+
+    private static PrivateKey ettkServerPrivateKey = null;
+    public static synchronized PrivateKey getEttkServerPrivateKey() throws GeneralSecurityException, IOException
+    {
+        if (ettkServerPrivateKey != null) return ettkServerPrivateKey;
+        KeyStore keyStore = getEttkKeystore();
+        Properties ksp = getEttkKeystoreProperties();
+        String serverAlias = ksp.getProperty("keystore.server.alias");
+        String serverKeyPassword = ksp.getProperty("keystore.server.keypass");
+        return ettkServerPrivateKey = (PrivateKey)keyStore.getKey(serverAlias, serverKeyPassword.toCharArray());
+    }
+
+    private static X509Certificate ettkServerCertificate = null;
+    public static synchronized X509Certificate getEttkServerCertificate() throws IOException, GeneralSecurityException {
+        if (ettkServerCertificate != null) return ettkServerCertificate;
+        KeyStore keyStore = getEttkKeystore();
+        Properties ksp = getEttkKeystoreProperties();
+        String serverAlias = ksp.getProperty("keystore.server.alias");
+        return ettkServerCertificate = (X509Certificate)keyStore.getCertificate(serverAlias);
+    }
+
+    private static PrivateKey dotNetServerPrivateKey = null;
+    public static synchronized PrivateKey getDotNetServerPrivateKey() throws Exception {
+        if (dotNetServerPrivateKey != null) return dotNetServerPrivateKey;
+        KeyStore keyStore = KeyStore.getInstance(KeyStore.getDefaultType());
+        InputStream fis = getInputStream(SSL_KS);
+        //fis = FileUtils.loadFileSafely(sslkeystorepath);
+        final String RIKER_KEYSTORE_PASSWORD = "blahblah";
+        keyStore.load(fis, RIKER_KEYSTORE_PASSWORD.toCharArray());
+        fis.close();
+        final String RIKER_PRIVATE_KEY_PASSWORD = "blahblah";
+        final String RIKER_PRIVATE_KEY_ALIAS = "tomcat";
+        PrivateKey output = (PrivateKey)keyStore.getKey(RIKER_PRIVATE_KEY_ALIAS,
+                                                        RIKER_PRIVATE_KEY_PASSWORD.toCharArray());
+        return dotNetServerPrivateKey = output;
+    }
+
+    private static X509Certificate dotNetServerCertificate = null;
+    public static synchronized X509Certificate getDotNetServerCertificate() throws Exception {
+        if (dotNetServerCertificate != null) return dotNetServerCertificate;
+        InputStream fis = getInputStream(SSL_CER);
+        byte[] certbytes;
+        try {
+            certbytes = HexUtils.slurpStream(fis, 16384);
+        } finally {
+            fis.close();
+        }
+        // construct the x509 based on the bytes
+        return dotNetServerCertificate = (X509Certificate)(CertificateFactory.getInstance("X.509").
+                                                    generateCertificate(new ByteArrayInputStream(certbytes)));
     }
 }

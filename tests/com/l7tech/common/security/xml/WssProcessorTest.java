@@ -6,7 +6,6 @@
 
 package com.l7tech.common.security.xml;
 
-import com.l7tech.common.util.HexUtils;
 import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.xml.TestDocuments;
 import junit.framework.Test;
@@ -15,13 +14,8 @@ import junit.framework.TestSuite;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
-import java.io.ByteArrayInputStream;
-import java.io.InputStream;
-import java.security.KeyStore;
 import java.security.PrivateKey;
-import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
-import java.util.Properties;
 import java.util.logging.Logger;
 
 /**
@@ -128,24 +122,9 @@ public class WssProcessorTest extends TestCase {
     private TestDocument makeEttkTestDocument(String testname, String docname) {
         try {
             Document d = TestDocuments.getTestDocument(docname);
-
-            Properties ksp = new Properties();
-            ksp.load(TestDocuments.getInputStream(TestDocuments.ETTK_KS_PROPERTIES));
-            String keystorePassword = ksp.getProperty("keystore.storepass");
-            String serverAlias = ksp.getProperty("keystore.server.alias");
-            String serverKeyPassword = ksp.getProperty("keystore.server.keypass");
-            KeyStore keyStore = KeyStore.getInstance(ksp.getProperty("keystore.type"));
-            InputStream fis = null;
-            try {
-                fis = TestDocuments.getInputStream(TestDocuments.ETTK_KS);
-                keyStore.load(fis, keystorePassword.toCharArray());
-            } finally {
-                if (fis != null)
-                    fis.close();
-            }
-            PrivateKey rpk = (PrivateKey)keyStore.getKey(serverAlias, serverKeyPassword.toCharArray());
-            X509Certificate rc = (X509Certificate)keyStore.getCertificate(serverAlias);
-            return new TestDocument(testname, d, rpk, rc);
+            return new TestDocument(testname, d,
+                                    TestDocuments.getEttkServerPrivateKey(),
+                                    TestDocuments.getEttkServerCertificate());
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -154,36 +133,12 @@ public class WssProcessorTest extends TestCase {
     private static TestDocument makeDotNetTestDocument(String testname, String docname) {
         try {
             Document d = TestDocuments.getTestDocument(docname);
-            return new TestDocument(testname, d, getDotNetRecipientPrivateKey(), getDotNetRecipientCertificate());
+            return new TestDocument(testname, d,
+                                    TestDocuments.getDotNetServerPrivateKey(),
+                                    TestDocuments.getDotNetServerCertificate());
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
     }
 
-    private static PrivateKey getDotNetRecipientPrivateKey() throws Exception {
-        KeyStore keyStore = KeyStore.getInstance(KeyStore.getDefaultType());
-        InputStream fis = TestDocuments.getInputStream(TestDocuments.SSL_KS);
-        //fis = FileUtils.loadFileSafely(sslkeystorepath);
-        final String RIKER_KEYSTORE_PASSWORD = "blahblah";
-        keyStore.load(fis, RIKER_KEYSTORE_PASSWORD.toCharArray());
-        fis.close();
-        final String RIKER_PRIVATE_KEY_PASSWORD = "blahblah";
-        final String RIKER_PRIVATE_KEY_ALIAS = "tomcat";
-        PrivateKey output = (PrivateKey)keyStore.getKey(RIKER_PRIVATE_KEY_ALIAS,
-                                                        RIKER_PRIVATE_KEY_PASSWORD.toCharArray());
-        return output;
-    }
-
-    private static X509Certificate getDotNetRecipientCertificate() throws Exception {
-        InputStream fis = TestDocuments.getInputStream(TestDocuments.SSL_CER);
-        byte[] certbytes;
-        try {
-            certbytes = HexUtils.slurpStream(fis, 16384);
-        } finally {
-            fis.close();
-        }
-        // construct the x509 based on the bytes
-        return (X509Certificate)(CertificateFactory.getInstance("X.509").
-                                 generateCertificate(new ByteArrayInputStream(certbytes)));
-    }
 }

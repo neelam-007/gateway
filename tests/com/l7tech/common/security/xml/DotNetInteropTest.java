@@ -175,26 +175,11 @@ public class DotNetInteropTest extends TestCase {
     }
 
     private PrivateKey getRikerPrivateKey() throws Exception {
-        KeyStore keyStore = KeyStore.getInstance(KeyStore.getDefaultType());
-        InputStream fis = TestDocuments.getInputStream(TestDocuments.SSL_KS);
-        //fis = FileUtils.loadFileSafely(sslkeystorepath);
-        keyStore.load(fis, "blahblah".toCharArray());
-        fis.close();
-        PrivateKey output = (PrivateKey)keyStore.getKey("tomcat", "blahblah".toCharArray());
-        return output;
+        return TestDocuments.getDotNetServerPrivateKey();
     }
 
     private X509Certificate getRikerCert() throws Exception {
-        InputStream fis = TestDocuments.getInputStream(TestDocuments.SSL_CER);
-        byte[] certbytes;
-        try {
-            certbytes = HexUtils.slurpStream(fis, 16384);
-        } finally {
-            fis.close();
-        }
-        // construct the x509 based on the bytes
-        return (X509Certificate)(CertificateFactory.getInstance("X.509").
-                                 generateCertificate(new ByteArrayInputStream(certbytes)));
+        return TestDocuments.getDotNetServerCertificate();
     }
 
     private Document getEncryptedDoc() throws Exception {
