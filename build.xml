@@ -1030,6 +1030,8 @@ ssgadmin.md5 = '${install.pass.ssgadmin.md5}'
     </target>
 
     <target name="INTERNAL-ssg-install-properties-full" if="install.full">
+        <copy file="${src.root}/etc/system.properties" tofile="${install.src.conf}"/>
+
         <copy file="${src.root}/etc/keystore.properties" tofile="${install.src.keystore.properties}"/>
         <echo>Patching ${install.src.keystore.properties}...</echo>
 
@@ -1358,6 +1360,8 @@ ssgadmin.md5 = '${install.pass.ssgadmin.md5}'
                 <include name="ssg-initd"/>
                 <include name="tcp_tune.sh"/>
                 <include name="back_route"/>
+                <include name="upgrade_keystore2.1_3.0.pl"/>
+                <include name="upgrade_keystore_config2.1_3.0.sh"/>
             </fileset>
             <fileset dir="${src.root}/etc/db/mysql">
                 <include name="my.cnf"/>
