@@ -8,7 +8,6 @@ package com.l7tech.objectmodel;
 
 import com.l7tech.objectmodel.EntityManager;
 import com.l7tech.objectmodel.HibernatePersistenceManager;
-import com.l7tech.objectmodel.imp.EntityHeaderImp;
 
 import java.util.*;
 import java.sql.SQLException;
