@@ -33,9 +33,6 @@ public class SoapUtil {
     public static final String HEADER = "Header";
     public static final String BODY   = "Body";
 
-    static final String CBODY   = ":" + BODY;
-    static final String CHEADER = ":" + HEADER;
-
     public static Element getEnvelope( Request request ) throws SAXException, IOException {
         if ( request instanceof XmlRequest ) {
             XmlRequest xreq = (XmlRequest)request;
@@ -48,11 +45,11 @@ public class SoapUtil {
     }
 
     public static Element getHeaderElement( Request request ) throws SAXException, IOException {
-        return getEnvelopePart( request, CHEADER );
+        return getEnvelopePart( request, HEADER );
     }
 
     public static Element getBodyElement( Request request ) throws SAXException, IOException {
-        return getEnvelopePart( request, CBODY );
+        return getEnvelopePart( request, BODY );
     }
 
     static Element getEnvelopePart( Request request, String elementName ) throws SAXException, IOException {
@@ -67,8 +64,8 @@ public class SoapUtil {
             while ( node != null ) {
                 if ( node.getNodeType() == Node.ELEMENT_NODE ) {
                     element = (Element)node;
-                    String tn = element.getTagName();
-                    if ( tn.endsWith( elementName ) ) {
+                    String ln = element.getLocalName();
+                    if ( ln.equals( elementName ) ) {
                         String uri = element.getNamespaceURI();
                         if ( uri.equals( env ) ) return element;
                     }
