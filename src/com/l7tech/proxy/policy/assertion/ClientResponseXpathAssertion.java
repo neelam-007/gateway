@@ -11,15 +11,13 @@ import com.l7tech.common.xml.XpathExpression;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.ResponseXpathAssertion;
-import com.l7tech.proxy.datamodel.PendingRequest;
-import com.l7tech.proxy.datamodel.SsgResponse;
 import com.l7tech.proxy.datamodel.exceptions.BadCredentialsException;
 import com.l7tech.proxy.datamodel.exceptions.KeyStoreCorruptException;
 import com.l7tech.proxy.datamodel.exceptions.OperationCanceledException;
 import com.l7tech.proxy.datamodel.exceptions.ResponseValidationException;
+import com.l7tech.proxy.message.PolicyApplicationContext;
 import org.jaxen.JaxenException;
 import org.xml.sax.SAXException;
-import org.w3c.dom.Document;
 
 import java.io.IOException;
 import java.security.GeneralSecurityException;
@@ -39,17 +37,17 @@ public class ClientResponseXpathAssertion extends ClientAssertion {
         this.responseXpathAssertion = responseXpathAssertion;
     }
 
-    public AssertionStatus decorateRequest(PendingRequest request) {
+    public AssertionStatus decorateRequest(PolicyApplicationContext context) {
         // No action required on request.
         return AssertionStatus.NONE;
     }
 
-    public AssertionStatus unDecorateReply(PendingRequest request, SsgResponse response)
+    public AssertionStatus unDecorateReply(PolicyApplicationContext context)
             throws BadCredentialsException, OperationCanceledException, GeneralSecurityException, IOException,
             SAXException, ResponseValidationException, KeyStoreCorruptException, PolicyAssertionException
     {
         final XpathExpression xpathExpression = responseXpathAssertion.getXpathExpression();
-        final XpathEvaluator eval = XpathEvaluator.newEvaluator(response.getOriginalDocument(),
+        final XpathEvaluator eval = XpathEvaluator.newEvaluator(context.getOriginalDocument(),
                                                                 xpathExpression.getNamespaces());
         try {
             List nodes = eval.select(xpathExpression.getExpression());

@@ -6,6 +6,7 @@
 
 package com.l7tech.proxy;
 
+import com.l7tech.common.message.Message;
 import com.l7tech.common.security.xml.processor.BadSecurityContextException;
 import com.l7tech.common.security.xml.processor.ProcessorException;
 import com.l7tech.common.util.CausedIOException;
@@ -15,6 +16,7 @@ import com.l7tech.common.xml.InvalidDocumentFormatException;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.proxy.datamodel.*;
 import com.l7tech.proxy.datamodel.exceptions.*;
+import com.l7tech.proxy.message.PolicyApplicationContext;
 import com.l7tech.proxy.processor.MessageProcessor;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
@@ -153,16 +155,21 @@ public class SecureSpanBridgeFactory {
             final URL origUrl = new URL("http://layer7tech.com" + localUri);
             String namespaceUri = SoapUtil.getPayloadNamespaceUri(message);
             PolicyAttachmentKey pak = new PolicyAttachmentKey(namespaceUri, soapAction, origUrl.getFile());
-            PendingRequest pr = new PendingRequest(ssg, null, null, message, nri, pak, origUrl);
+            Message request = new Message();
+            request.initialize(message);
+            Message response = new Message();
+            PolicyApplicationContext context = null;
             try {
-                final SsgResponse response = mp.processMessage(pr);
+                context = new PolicyApplicationContext(ssg, request, response, nri, pak, origUrl);
+                mp.processMessage(context);
+                final PolicyApplicationContext context1 = context;
                 return new Result() {
                     public int getHttpStatus() {
-                        return response.getHttpStatus();
+                        return context1.getResponse().getHttpResponseKnob().getStatus();
                     }
 
-                    public Document getResponse() throws IOException, SAXException {
-                        return response.getOriginalDocument();
+                    public Document getResponse() {
+                        return context1.getOriginalDocument();
                     }
                 };
             } catch (com.l7tech.proxy.datamodel.exceptions.CertificateAlreadyIssuedException e) {
@@ -193,6 +200,9 @@ public class SecureSpanBridgeFactory {
                 throw new CausedSendException(e);
             } catch (BadSecurityContextException e) {
                 throw new CausedSendException(e);
+            } finally {
+                if (context != null)
+                    context.close();
             }
         }
 
@@ -306,7 +316,7 @@ public class SecureSpanBridgeFactory {
             try {
                 synchronized (ssg) {
                     SsgKeyStoreManager.AliasPicker aliasPicker = new SsgKeyStoreManager.AliasPicker() {
-                        public String selectAlias(String[] options) throws SsgKeyStoreManager.AliasNotFoundException {
+                        public String selectAlias(String[] options) {
                             if (alias != null)
                                 return alias;
                             if (options == null || options.length < 1)  // sanity check

@@ -4,11 +4,10 @@ import com.l7tech.common.security.xml.decorator.DecorationRequirements;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.xmlsec.RequestWssX509Cert;
-import com.l7tech.proxy.datamodel.PendingRequest;
 import com.l7tech.proxy.datamodel.Ssg;
 import com.l7tech.proxy.datamodel.SsgKeyStoreManager;
-import com.l7tech.proxy.datamodel.SsgResponse;
 import com.l7tech.proxy.datamodel.exceptions.*;
+import com.l7tech.proxy.message.PolicyApplicationContext;
 import com.l7tech.proxy.policy.assertion.ClientAssertion;
 import com.l7tech.proxy.policy.assertion.ClientDecorator;
 import org.xml.sax.SAXException;
@@ -34,25 +33,25 @@ public class ClientRequestWssX509Cert extends ClientAssertion {
         this.subject = subject;
     }
     
-    public AssertionStatus decorateRequest(final PendingRequest request) throws BadCredentialsException,
+    public AssertionStatus decorateRequest(PolicyApplicationContext context) throws BadCredentialsException,
             OperationCanceledException, GeneralSecurityException, ClientCertificateException,
             IOException, SAXException, KeyStoreCorruptException, HttpChallengeRequiredException,
             PolicyRetryableException, PolicyAssertionException
     {
-        request.prepareClientCertificate();
+        context.prepareClientCertificate();
 
-        final Ssg ssg = request.getSsg();
+        final Ssg ssg = context.getSsg();
         final PrivateKey userPrivateKey = SsgKeyStoreManager.getClientCertPrivateKey(ssg);
         final X509Certificate userCert = SsgKeyStoreManager.getClientCert(ssg);
         final X509Certificate ssgCert = SsgKeyStoreManager.getServerCert(ssg);
 
         // add a pending decoration that will be applied only if the rest of this policy branch succeeds
-        request.getPendingDecorations().put(this, new ClientDecorator() {
-            public AssertionStatus decorateRequest(PendingRequest request)
+        context.getPendingDecorations().put(this, new ClientDecorator() {
+            public AssertionStatus decorateRequest(PolicyApplicationContext context)
             {
                 // get the client cert and private key
                 // We must have credentials to get the private key
-                DecorationRequirements wssReqs = request.getWssRequirements();
+                DecorationRequirements wssReqs = context.getWssRequirements();
                 wssReqs.setRecipientCertificate(ssgCert);
                 wssReqs.setSenderCertificate(userCert);
                 wssReqs.setSenderPrivateKey(userPrivateKey);
@@ -64,7 +63,7 @@ public class ClientRequestWssX509Cert extends ClientAssertion {
         return AssertionStatus.NONE;
     }
 
-    public AssertionStatus unDecorateReply(PendingRequest request, SsgResponse response) throws BadCredentialsException,
+    public AssertionStatus unDecorateReply(PolicyApplicationContext context) throws BadCredentialsException,
             OperationCanceledException, GeneralSecurityException, IOException, SAXException,
             ResponseValidationException, KeyStoreCorruptException, PolicyAssertionException
     {

@@ -1,15 +1,19 @@
 package com.l7tech.proxy;
 
+import com.l7tech.common.message.HttpResponseKnob;
+import com.l7tech.common.message.Message;
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.common.mime.MimeUtil;
-import com.l7tech.common.mime.MimeBody;
-import com.l7tech.common.util.HexUtils;
-import com.l7tech.common.util.SoapUtil;
-import com.l7tech.common.util.XmlUtil;
+import com.l7tech.common.mime.NoSuchPartException;
+import com.l7tech.common.util.*;
 import com.l7tech.common.xml.Wsdl;
+import com.l7tech.policy.assertion.credential.CredentialFormat;
+import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.proxy.datamodel.*;
 import com.l7tech.proxy.datamodel.exceptions.HttpChallengeRequiredException;
 import com.l7tech.proxy.datamodel.exceptions.SsgNotFoundException;
+import com.l7tech.proxy.message.HttpHeadersKnob;
+import com.l7tech.proxy.message.PolicyApplicationContext;
 import com.l7tech.proxy.processor.MessageProcessor;
 import org.mortbay.http.HttpException;
 import org.mortbay.http.HttpRequest;
@@ -19,6 +23,7 @@ import org.w3c.dom.Document;
 import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
+import org.xml.sax.SAXException;
 
 import javax.wsdl.Port;
 import java.io.IOException;
@@ -26,7 +31,6 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.PrintStream;
 import java.net.MalformedURLException;
-import java.net.PasswordAuthentication;
 import java.net.URL;
 import java.util.Enumeration;
 import java.util.Iterator;
@@ -120,38 +124,36 @@ public class RequestHandler extends AbstractHttpHandler {
      *
      * @param pathInContext
      * @param pathParams
-     * @param request
-     * @param response
+     * @param httpRequest
+     * @param httpResponse
      */
     public void handle(final String pathInContext,
                        final String pathParams,
-                       final HttpRequest request,
-                       final HttpResponse response)
-      throws IOException {
-        PendingRequest pendingRequest = null;
+                       final HttpRequest httpRequest,
+                       final HttpResponse httpResponse)
+      throws IOException
+    {
         try {
-            pendingRequest = doHandle(request, response);
+            doHandle(httpRequest, httpResponse);
         } catch (HttpException e) {
-            SsgResponse fault = SsgResponse.makeFaultResponse(e.getCode() == 404 ? "Client" : "Server",
-              e.getMessage(),
-              getOriginalUrl(request, request.getURI().toString()).toExternalForm());
-            transmitResponse(e.getCode(), response, fault);
+            Message reply = new Message();
+            reply.initialize(exceptionToFault(e,
+                                              e.getCode() == 404 ? "Client" : "Server",
+                                              getOriginalUrl(httpRequest, httpRequest.getURI().toString())));
+            transmitResponse(e.getCode(), httpResponse, reply);
         } catch (Error e) {
             log.log(Level.SEVERE, e.getMessage(), e);
             throw e;
-        } finally {
-            if (pendingRequest != null) {
-                pendingRequest.close();
-            }
         }
     }
 
-    private PendingRequest doHandle(final HttpRequest request, final HttpResponse response)
-      throws HttpException, IOException {
-        log.info("Incoming request: " + request.getURI().getPath());
+    private void doHandle(final HttpRequest httpRequest, final HttpResponse httpResponse)
+      throws HttpException, IOException
+    {
+        log.info("Incoming request: " + httpRequest.getURI().getPath());
 
         // Find endpoint, and see if this is a WSDL request
-        String endpoint = request.getURI().getPath().substring(1); // skip leading slash
+        String endpoint = httpRequest.getURI().getPath().substring(1); // skip leading slash
         boolean isWsdl = false;
         if (endpoint.endsWith(ClientProxy.WSDL_SUFFIX)) {
             endpoint = endpoint.substring(0, endpoint.length() - ClientProxy.WSDL_SUFFIX.length());
@@ -170,19 +172,19 @@ public class RequestHandler extends AbstractHttpHandler {
         CurrentRequest.setCurrentSsg(ssg);
 
         if (isWsdl) {
-            handleWsdlRequest(request, response, ssg);
-            return null;
+            handleWsdlRequest(httpRequest, httpResponse, ssg);
+            return;
         }
 
-        if (request.getMethod().compareToIgnoreCase("POST") != 0) {
-            handleNonPostMethod(request, response);
-            return null;
+        if (httpRequest.getMethod().compareToIgnoreCase("POST") != 0) {
+            handleNonPostMethod(httpRequest, httpResponse);
+            return;
         }
 
         String reqUsername = null;
         String reqPassword = null;
         if (ssg.isChainCredentialsFromClient()) {
-            String authHeader = request.getField("Authorization");
+            String authHeader = httpRequest.getField("Authorization");
             if (authHeader != null && "Basic ".equalsIgnoreCase(authHeader.substring(0, 6))) {
                 byte[] authStuff = HexUtils.decodeBase64(authHeader.substring(6));
                 for (int i = 0; i < authStuff.length - 1; ++i) {
@@ -192,52 +194,66 @@ public class RequestHandler extends AbstractHttpHandler {
                     }
                 }
             } else {
-                sendChallenge(response);
+                sendChallenge(httpResponse);
                 log.info("Send HTTP Basic auth challenge back to the client");
-                return null;
+                return;
             }
         }
 
-        PendingRequest pendingRequest;
+        PolicyApplicationContext context = null;
+        final Message prequest = new Message();
+        final Message ssgresponse = new Message();
         try {
-            // TODO: PERF: doing full XML parsing for every request is causing a performance bottleneck
-            HttpHeaders headers = gatherHeaders(request);
-            ContentTypeHeader outerContentType = gatherContentTypeHeader(request);
-            MimeBody mimeBody = null;
-            mimeBody = new MimeBody(Managers.createStashManager(),
-                                                    outerContentType,
-                                                    request.getInputStream());
-            Document envelope = XmlUtil.parse(mimeBody.getFirstPart().getInputStream(true)); // throw away undecorated soap part as we parse it
-            URL originalUrl = getOriginalUrl(request, endpoint);
-            PolicyAttachmentKey pak = gatherPolicyAttachmentKey(request, envelope, originalUrl);
-            pendingRequest = new PendingRequest(ssg,
-                                                headers,
-                                                mimeBody,
-                                                envelope,
-                                                interceptor,
-                                                pak,
-                                                originalUrl);
+            try {
+                // TODO: PERF: doing full XML parsing for every request is causing a performance bottleneck
+                ContentTypeHeader outerContentType = gatherContentTypeHeader(httpRequest);
 
-            if (ssg.isChainCredentialsFromClient())
-                pendingRequest.setCredentials(new PasswordAuthentication(reqUsername, reqPassword.toCharArray()));
-            interceptor.onReceiveMessage(pendingRequest);
-        } catch (Exception e) {
-            interceptor.onMessageError(e);
-            log.log(Level.WARNING, "unable to parse incoming request", e);
-            throw new HttpException(500, "Invalid SOAP envelope: " + e);
+                prequest.initialize(Managers.createStashManager(),
+                                    outerContentType,
+                                    httpRequest.getInputStream());
+                prequest.getXmlKnob(); // assert request is XML.  Will throw SAXException early, otherwise.
+                prequest.attachKnob(HttpHeadersKnob.class, new HttpHeadersKnob(gatherHeaders(httpRequest)));
+
+                URL originalUrl = getOriginalUrl(httpRequest, endpoint);
+                PolicyAttachmentKey pak = gatherPolicyAttachmentKey(httpRequest, prequest.getXmlKnob().getDocument(), originalUrl);
+
+                context = new PolicyApplicationContext(ssg,
+                                                       prequest,
+                                                       ssgresponse,
+                                                       interceptor,
+                                                       pak,
+                                                       originalUrl);
+
+                if (ssg.isChainCredentialsFromClient())
+                    context.setCredentials(new LoginCredentials(reqUsername,
+                                                                reqPassword.toCharArray(),
+                                                                CredentialFormat.CLEARTEXT,
+                                                                null));
+                interceptor.onReceiveMessage(context);
+            } catch (Exception e) {
+                interceptor.onMessageError(e);
+                log.log(Level.WARNING, "unable to parse incoming request", e);
+                throw new HttpException(500, "Invalid SOAP envelope: " + e);
+            }
+
+            try {
+                getServerResponse(context);
+            } catch (HttpChallengeRequiredException e) {
+                interceptor.onMessageError(e);
+                sendChallenge(httpResponse);
+                log.info("Send HTTP Basic auth challenge back to the client");
+            }
+
+            int status = 200;
+            HttpResponseKnob respHttp = (HttpResponseKnob)context.getResponse().getKnob(HttpResponseKnob.class);
+            if (respHttp != null && respHttp.getStatus() > 0)
+                status = respHttp.getStatus();
+            context.getResponse().getHttpResponseKnob().getStatus();
+            transmitResponse(status, httpResponse, context.getResponse());
+        } finally {
+            if (context != null)
+                context.close();
         }
-
-        SsgResponse responseMessage = null;
-        try {
-            responseMessage = getServerResponse(pendingRequest);
-        } catch (HttpChallengeRequiredException e) {
-            interceptor.onMessageError(e);
-            sendChallenge(response);
-            log.info("Send HTTP Basic auth challenge back to the client");
-        }
-
-        transmitResponse(200, response, responseMessage);
-        return pendingRequest;
     }
 
     /**
@@ -284,27 +300,28 @@ public class RequestHandler extends AbstractHttpHandler {
     /**
      * Send the reponse SOAPEnvelope back to the client.
      *
-     * @param response    the interested client's HttpResponse
-     * @param ssgResponse the response we are to send them
+     * @param httpResponse    the interested client's HttpResponse
+     * @param response the response we are to send them
      * @throws IOException if something went wrong
      */
-    private void transmitResponse(int status, final HttpResponse response, SsgResponse ssgResponse) throws IOException {
+    private void transmitResponse(int status, final HttpResponse httpResponse, Message response) throws IOException {
         try {
-            OutputStream os = response.getOutputStream();
+            OutputStream os = httpResponse.getOutputStream();
 
-            response.setStatus(status);
-            response.setContentType(ssgResponse.getOuterContentType().getFullValue());
-            final long contentLength = ssgResponse.getContentLength();
+            httpResponse.setStatus(status);
+            httpResponse.setContentType(response.getMimeKnob().getOuterContentType().getFullValue());
+            final long contentLength = response.getMimeKnob().getContentLength();
             if (contentLength > Integer.MAX_VALUE)
                 throw new IOException("Resposne from Gateway was too large to be processed; maximum size is " + Integer.MAX_VALUE + " bytes");
-            response.setContentLength((int) contentLength);
-            HexUtils.copyStream(ssgResponse.getEntireMessageBody(), os);
-            response.commit();
+            httpResponse.setContentLength((int) contentLength);
+            HexUtils.copyStream(response.getMimeKnob().getEntireMessageBodyAsInputStream(), os);
+            httpResponse.commit();
         } catch (IOException e) {
             interceptor.onReplyError(e);
             throw e;
-        } finally {
-            ssgResponse.close();
+        } catch (NoSuchPartException e) {
+            interceptor.onReplyError(e);
+            throw new CausedIllegalStateException("At least one multipart parts content was lost", e);
         }
     }
 
@@ -387,32 +404,46 @@ public class RequestHandler extends AbstractHttpHandler {
     /**
      * Send a request to an SSG and return its response.
      *
-     * @param request the request to send it
-     * @return the response it sends back
+     * @param context the request to process
      */
-    private SsgResponse getServerResponse(PendingRequest request)
+    private void getServerResponse(PolicyApplicationContext context)
       throws HttpChallengeRequiredException {
-        log.fine("Processing message to Gateway " + request.getSsg());
+        log.fine("Processing message to Gateway " + context.getSsg());
 
         try {
-            SsgResponse reply = messageProcessor.processMessage(request);
-            interceptor.onReceiveReply(reply);
+            messageProcessor.processMessage(context);
+            interceptor.onReceiveReply(context);
             log.fine("Returning result");
-            return reply;
+            return;
         } catch (HttpChallengeRequiredException e) {
             log.fine("Returning challenge");
             throw e;
         } catch (Exception e) {
             log.log(Level.SEVERE, e.getClass().getName() + ": " + e.getMessage(), e);
             interceptor.onReplyError(e);
-            e.printStackTrace(System.err);
-            SsgResponse reply = SsgResponse.makeFaultResponse("Server",
-              e.getMessage(),
-              request.getOriginalUrl().toExternalForm());
             log.info("Returning fault");
-            return reply;
+            context.getResponse().initialize(exceptionToFault(e, null, context.getOriginalUrl()));
         } finally {
             CurrentRequest.clearCurrentRequest();
+        }
+    }
+
+    /**
+     * Convert the specified context's response message into a SOAP fault representing the specified exception.
+     *
+     * @param t  the exception to turn into a fault.  Must not be null.
+     * @param actorUrl the URL to use as the actor for the fault.  Must not be null.
+     */
+    private static Document exceptionToFault(Throwable t, String faultCode, URL actorUrl) {
+        try {
+            return SoapFaultUtils.generateSoapFaultDocument(faultCode != null ? faultCode : "Server",
+                                                            t.getMessage(),
+                                                            null,
+                                                            actorUrl.toExternalForm());
+        } catch (IOException e1) {
+            throw new RuntimeException(e1); // can't happen
+        } catch (SAXException e1) {
+            throw new RuntimeException(e1); // can't happen
         }
     }
 

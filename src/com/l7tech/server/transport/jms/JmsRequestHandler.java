@@ -98,7 +98,7 @@ class JmsRequestHandler {
                     if ( faultMessage == null ) faultMessage = status.getMessage();
                     try {
                         responseStream = new ByteArrayInputStream(
-                                SoapFaultUtils.generateRawSoapFault(faultCode == null ? SoapFaultUtils.FC_SERVER : faultCode,
+                                SoapFaultUtils.generateSoapFaultXml(faultCode == null ? SoapFaultUtils.FC_SERVER : faultCode,
                                                                     faultMessage, null, "").getBytes("UTF-8"));
                     } catch (SAXException e) {
                         throw new JmsRuntimeException(e);

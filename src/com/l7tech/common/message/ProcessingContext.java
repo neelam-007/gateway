@@ -8,6 +8,9 @@ package com.l7tech.common.message;
 
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -22,18 +25,28 @@ public abstract class ProcessingContext {
     private final Message response;
 
     private LoginCredentials credentials;
+    private final List runOnClose = new ArrayList();
 
+    /**
+     * Create a processing context holding the specified request and response.
+     *
+     * @param request   request message holder, or null to create a new empty one.
+     * @param response  response message holder, or null to create a new empty one.
+     */
     public ProcessingContext(Message request, Message response) {
-        if (request == null || response == null) throw new NullPointerException();
+        if (request == null)
+            request = new Message();
+        if (response == null)
+            response = new Message();
         this.request = request;
         this.response = response;
     }
 
-    public final LoginCredentials getCredentials() {
+    public LoginCredentials getCredentials() {
         return credentials;
     }
 
-    public final void setCredentials(LoginCredentials credentials) {
+    public void setCredentials(LoginCredentials credentials) {
         this.credentials = credentials;
     }
 
@@ -45,8 +58,13 @@ public abstract class ProcessingContext {
         return response;
     }
 
+    public synchronized void runOnClose( Runnable runMe ) {
+        runOnClose.add( runMe );
+    }
+
     /**
-     * Free any resources being used by this ProcessingContext.  After this call, the behaviour of other methods
+     * Free any resources being used by this ProcessingContext, and run all {@link #runOnClose} {@link Runnable}s.
+     * After this call, the behaviour of other methods
      * called on this ProcessingContext, or its Request or Response, is undefined.
      * <p>
      * This method calls {@link Message#close()} on {@link #request} and {@link #response}.
@@ -54,15 +72,29 @@ public abstract class ProcessingContext {
      * close the request and response themselves.
      */
     public void close() {
+        Runnable runMe;
+        Iterator i = runOnClose.iterator();
         try {
-            response.close();
-        } catch (Exception e) {
-            logger.log(Level.INFO, "Caught exception closing response", e);
+            while ( i.hasNext() ) {
+                runMe = (Runnable)i.next();
+                try {
+                    runMe.run();
+                } catch (Throwable t) {
+                    logger.log(Level.WARNING, "Cleanup runnable threw exception", t);
+                }
+                i.remove();
+            }
         } finally {
             try {
-                request.close();
+                response.close();
             } catch (Exception e) {
-                logger.log(Level.INFO, "Caught exception closing request", e);
+                logger.log(Level.INFO, "Caught exception closing response", e);
+            } finally {
+                try {
+                    request.close();
+                } catch (Exception e) {
+                    logger.log(Level.INFO, "Caught exception closing request", e);
+                }
             }
         }
     }

@@ -15,11 +15,9 @@ import java.util.List;
  * Implementation of {@link HttpResponseKnob} that knows how to place the HTTP response transport metadata
  * into a servlet response.
  */
-public class HttpServletResponseKnob implements HttpResponseKnob {
+public class HttpServletResponseKnob extends AbstractHttpResponseKnob {
     private final HttpServletResponse response;
-    private final List headersToSend = new ArrayList();
     private final List cookiesToSend = new ArrayList();
-    private int statusToSet;
 
     public HttpServletResponseKnob(HttpServletResponse response) {
         if (response == null) throw new NullPointerException();
@@ -35,53 +33,6 @@ public class HttpServletResponseKnob implements HttpResponseKnob {
         if (cookie.getExpiryDate() != null)
             c.setMaxAge((int)((cookie.getExpiryDate().getTime() - System.currentTimeMillis()) / 1000));
         cookiesToSend.add(c);
-    }
-
-    private static final class Pair {
-        Pair(String name, Object value) {
-            this.name = name;
-            this.value = value;
-        }
-        String name;
-        Object value;
-    }
-
-    public void setDateHeader(String name, long date) {
-        headersToSend.add(new Pair(name, new Long(date)));
-    }
-
-    public void addDateHeader(String name, long date) {
-        headersToSend.add(new Pair(name, new Long(date)));
-    }
-
-    public void setHeader(String name, String value) {
-        // Clear out any previous value
-        for (Iterator i = headersToSend.iterator(); i.hasNext();) {
-            Pair pair = (Pair)i.next();
-            if (name.equals(pair.name)) i.remove();
-        }
-        headersToSend.add(new Pair(name, value));
-    }
-
-    public void addHeader(String name, String value) {
-        headersToSend.add(new Pair(name, value));
-    }
-
-    public boolean containsHeader(String name) {
-        for (Iterator i = headersToSend.iterator(); i.hasNext();) {
-            Pair pair = (Pair)i.next();
-            if (name.equals(pair.name)) return true;
-        }
-
-        return false;
-    }
-
-    public void setStatus(int code) {
-        statusToSet = code;
-    }
-
-    public int getStatus() {
-        return statusToSet;
     }
 
     /**

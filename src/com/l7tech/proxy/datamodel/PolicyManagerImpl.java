@@ -11,6 +11,7 @@ import com.l7tech.common.xml.InvalidDocumentFormatException;
 import com.l7tech.common.xml.saml.SamlHolderOfKeyAssertion;
 import com.l7tech.proxy.ConfigurationException;
 import com.l7tech.proxy.datamodel.exceptions.*;
+import com.l7tech.proxy.message.PolicyApplicationContext;
 import com.l7tech.proxy.util.PolicyServiceClient;
 
 import javax.net.ssl.SSLHandshakeException;
@@ -51,7 +52,7 @@ public class PolicyManagerImpl implements PolicyManager {
      * @param request the request whose policy is to be found
      * @return The Policy we found, or null if we didn't find one.
      */
-    public Policy getPolicy(PendingRequest request) {
+    public Policy getPolicy(PolicyApplicationContext request) {
         Policy policy = request.getSsg().lookupPolicy(request.getPolicyAttachmentKey());
         if (policy != null) {
             if (LogFlags.logPolicies)
@@ -68,7 +69,7 @@ public class PolicyManagerImpl implements PolicyManager {
      * The PolicyManager will not attempt to download a replacement one at this time.
      * @param request The request that failed in a way suggestive that its policy may be out-of-date.
      */
-    public void flushPolicy(PendingRequest request) {
+    public void flushPolicy(PolicyApplicationContext request) {
         request.getSsg().removePolicy(request.getPolicyAttachmentKey());
     }
 
@@ -84,7 +85,7 @@ public class PolicyManagerImpl implements PolicyManager {
      *                                             the SSG's SSL certificate being unrecognized
      * @throws com.l7tech.proxy.datamodel.exceptions.OperationCanceledException if credentials were required, but the user canceled the logon dialog
      */
-    public void updatePolicy(PendingRequest request, String serviceId)
+    public void updatePolicy(PolicyApplicationContext request, String serviceId)
             throws ConfigurationException, IOException, GeneralSecurityException,
                    OperationCanceledException, HttpChallengeRequiredException, KeyStoreCorruptException,
                    ClientCertificateException, PolicyRetryableException
@@ -137,7 +138,7 @@ public class PolicyManagerImpl implements PolicyManager {
                 } else {
                     // Trusted SSG, but with no client cert -- use HTTP Basic over SSL for authentication.
                     log.info("Trying HTTP Basic-over-SSL authenticated policy download from Trusted Gateway " + ssg);
-                    PasswordAuthentication creds = request.getCredentials();
+                    PasswordAuthentication creds = request.getCredentialsForTrustedSsg();
                     policy = PolicyServiceClient.downloadPolicyWithHttpBasicOverSsl(ssg, serviceId, serverCert, creds);
                 }
                 if (policy == null)

@@ -452,7 +452,7 @@ public class Ssg implements Serializable, Cloneable, Comparable {
     /**
      * Read the in-memory cached password for this SSG. Should be used only by a CredentialManager
      * or the SsgPropertiesDialog.
-     * Others should use the CredentialManager's getCredentials() method instead.
+     * Others should use the CredentialManager's getCredentialsForTrustedSsg() method instead.
      *
      * @return the password, or null if we don't have one in memory for this SSG
      */

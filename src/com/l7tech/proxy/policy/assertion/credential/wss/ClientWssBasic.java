@@ -10,9 +10,8 @@ import com.l7tech.common.security.xml.decorator.DecorationRequirements;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.assertion.credential.wss.WssBasic;
-import com.l7tech.proxy.datamodel.PendingRequest;
-import com.l7tech.proxy.datamodel.SsgResponse;
 import com.l7tech.proxy.datamodel.exceptions.OperationCanceledException;
+import com.l7tech.proxy.message.PolicyApplicationContext;
 import com.l7tech.proxy.policy.assertion.ClientDecorator;
 import org.xml.sax.SAXException;
 
@@ -41,27 +40,27 @@ public class ClientWssBasic extends ClientWssCredentialSource {
     /**
      * Decorate the xml soap message with a WSS header containing the username and password.
      *
-     * @param request
+     * @param context
      * @return
      */
-    public AssertionStatus decorateRequest(PendingRequest request)
+    public AssertionStatus decorateRequest(PolicyApplicationContext context)
             throws OperationCanceledException, IOException, SAXException
     {
-        if (request.getSsg().getTrustedGateway() != null) {
+        if (context.getSsg().getTrustedGateway() != null) {
             log.log(Level.INFO, "Plaintext passwords not permitted with Federated Gateway.  Assertion therefore fails.");
             return AssertionStatus.FAILED;
         }
 
         // get the username and passwords
-        final String username = request.getUsername();
-        final char[] password = request.getPassword();
+        final String username = context.getUsername();
+        final char[] password = context.getPassword();
 
-        request.getPendingDecorations().put(this, new ClientDecorator() {
-            public AssertionStatus decorateRequest(PendingRequest request) {
-                DecorationRequirements wssReq = request.getWssRequirements();
+        context.getPendingDecorations().put(this, new ClientDecorator() {
+            public AssertionStatus decorateRequest(PolicyApplicationContext context) {
+                DecorationRequirements wssReq = context.getWssRequirements();
                 wssReq.setUsernameTokenCredentials(new LoginCredentials(username, password, WssBasic.class));
-                if (!request.getClientSidePolicy().isPlaintextAuthAllowed())
-                    request.setSslRequired(true); // force SSL when using WSS basic
+                if (!context.getClientSidePolicy().isPlaintextAuthAllowed())
+                    context.setSslRequired(true); // force SSL when using WSS basic
                 return AssertionStatus.NONE;
             }
         });
@@ -69,7 +68,7 @@ public class ClientWssBasic extends ClientWssCredentialSource {
         return AssertionStatus.NONE;
     }
 
-    public AssertionStatus unDecorateReply(PendingRequest request, SsgResponse response) {
+    public AssertionStatus unDecorateReply(PolicyApplicationContext context) {
         // no action on response
         return AssertionStatus.NONE;
     }

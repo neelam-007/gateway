@@ -6,14 +6,20 @@
 
 package com.l7tech.proxy.gui;
 
+import com.l7tech.common.message.Message;
 import com.l7tech.common.util.XmlUtil;
 import com.l7tech.policy.assertion.FalseAssertion;
 import com.l7tech.proxy.RequestInterceptor;
-import com.l7tech.proxy.datamodel.*;
+import com.l7tech.proxy.datamodel.Policy;
+import com.l7tech.proxy.datamodel.PolicyAttachmentKey;
+import com.l7tech.proxy.datamodel.Ssg;
+import com.l7tech.proxy.datamodel.SsgManagerStub;
+import com.l7tech.proxy.message.PolicyApplicationContext;
+import org.xml.sax.SAXException;
 
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
-import java.util.logging.Logger;
+import java.io.IOException;
 
 /**
  *
@@ -22,7 +28,13 @@ import java.util.logging.Logger;
  * Time: 3:50:01 PM
  */
 public class MessageViewerTest {
-    private static Logger log = Logger.getLogger(MessageViewerTest.class.getName());
+    private static PolicyApplicationContext request(String what, RequestInterceptor ri) throws IOException, SAXException {
+        return new PolicyApplicationContext(null, new Message(XmlUtil.stringToDocument(what)), null, ri, null, null);
+    }
+
+    private static PolicyApplicationContext reply(String what, RequestInterceptor ri) throws IOException, SAXException {
+        return new PolicyApplicationContext(null, null, new Message(XmlUtil.stringToDocument(what)), ri, null, null);
+    }
 
     public static void main(String[] args) throws Exception {
         Gui.setInstance(Gui.createGui(null, new SsgManagerStub()));
@@ -31,15 +43,15 @@ public class MessageViewerTest {
         MessageViewer mv = new MessageViewer("Message viewer test");
         mv.show();
         RequestInterceptor ri = mv.getMessageViewerModel();
-        ri.onReceiveMessage(new PendingRequest(null, null, null, XmlUtil.stringToDocument("<foo><bar/><baz/></foo>"), ri, null, null));
+        ri.onReceiveMessage(request("<foo><bar/><baz/></foo>", ri));
         ri.onReplyError(new Exception("BlahException: Blah blah blah!"));
-        ri.onReceiveMessage(new PendingRequest(null, null, null, XmlUtil.stringToDocument("<foo><bar/><baz/></foo>"), ri, null, null));
-        ri.onReceiveReply(new SsgResponse(null, XmlUtil.stringToDocument("<reply>blah blah blah, if this were an actual response, this would be a real SOAPEnvelope document.</reply>"), null, 200, null));
+        ri.onReceiveMessage(request("<foo><bar/><baz/></foo>", ri));
+        ri.onReceiveReply(reply("<reply>blah blah blah, if this were an actual response, this would be a real SOAPEnvelope document.</reply>", null));
         ri.onMessageError(new Exception("DumbException: you r teh dumb"));
-        ri.onReceiveMessage(new PendingRequest(null, null, null, XmlUtil.stringToDocument("<foo><bar/><baz/></foo>"), ri, null, null));
-        ri.onReceiveReply(new SsgResponse(null, XmlUtil.stringToDocument("<reply>blah blah blah, if this were an actual response, this would be a real SOAPEnvelope document.</reply>"), null, 200, null));
-        ri.onReceiveMessage(new PendingRequest(null, null, null, XmlUtil.stringToDocument("<foo><bar/><baz/></foo>"), ri, null, null));
-        ri.onReceiveReply(new SsgResponse(null, XmlUtil.stringToDocument("<reply>blah blah blah, if this were an actual response, this would be a real SOAPEnvelope document.</reply>"), null, 200, null));
+        ri.onReceiveMessage(request("<foo><bar/><baz/></foo>", ri));
+        ri.onReceiveReply(reply("<reply>blah blah blah, if this were an actual response, this would be a real SOAPEnvelope document.</reply>", null));
+        ri.onReceiveMessage(request("<foo><bar/><baz/></foo>", ri));
+        ri.onReceiveReply(reply("<reply>blah blah blah, if this were an actual response, this would be a real SOAPEnvelope document.</reply>", null));
         ri.onPolicyUpdated(new Ssg(22, "whatever"),
                            new PolicyAttachmentKey("http://example.com/schemas/wompfoo",
                                                    "http://example.com/schemas/wompfoo#WompSomeFoos",

@@ -8,9 +8,8 @@ package com.l7tech.proxy.policy.assertion.credential.http;
 
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.credential.http.HttpDigest;
-import com.l7tech.proxy.datamodel.PendingRequest;
-import com.l7tech.proxy.datamodel.SsgResponse;
 import com.l7tech.proxy.datamodel.exceptions.OperationCanceledException;
+import com.l7tech.proxy.message.PolicyApplicationContext;
 import com.l7tech.proxy.policy.assertion.ClientAssertion;
 
 import java.util.logging.Logger;
@@ -28,22 +27,22 @@ public class ClientHttpDigest extends ClientAssertion {
 
     /**
      * ClientProxy client-side processing of the given request.
-     * @param request    The request to decorate.
+     * @param context
      * @return AssertionStatus.NONE if this Assertion was applied to the request successfully; otherwise, some error code
      */
-    public AssertionStatus decorateRequest(PendingRequest request)
+    public AssertionStatus decorateRequest(PolicyApplicationContext context)
             throws OperationCanceledException
     {
-        if (request.getSsg().getTrustedGateway() != null) {
+        if (context.getSsg().getTrustedGateway() != null) {
             log.info("this is a Federated SSG.  Assertion therefore fails.");
             return AssertionStatus.FAILED;
         }
-        request.getCredentials();
-        request.setDigestAuthRequired(true);
+        context.getCredentialsForTrustedSsg();
+        context.setDigestAuthRequired(true);
         return AssertionStatus.NONE;
     }
 
-    public AssertionStatus unDecorateReply(PendingRequest request, SsgResponse response) {
+    public AssertionStatus unDecorateReply(PolicyApplicationContext context) {
         // no action on response
         return AssertionStatus.NONE;
     }

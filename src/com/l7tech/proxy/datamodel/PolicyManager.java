@@ -8,10 +8,9 @@ package com.l7tech.proxy.datamodel;
 
 import com.l7tech.proxy.ConfigurationException;
 import com.l7tech.proxy.datamodel.exceptions.*;
-import com.l7tech.proxy.policy.assertion.ClientAssertion;
+import com.l7tech.proxy.message.PolicyApplicationContext;
 
 import java.io.IOException;
-import java.net.URL;
 import java.security.GeneralSecurityException;
 
 /**
@@ -28,14 +27,14 @@ public interface PolicyManager {
      * @param request the request whos policy is to be found
      * @return The root of policy Assertion tree.
      */
-    Policy getPolicy(PendingRequest request);
+    Policy getPolicy(PolicyApplicationContext request);
 
     /**
      * Notify the PolicyManager that a policy may be out-of-date and should be flushed from the cache.
      * The PolicyManager will not attempt to download a replacement one at this time.
      * @param request The request that failed in a way suggestive that its policy may be out-of-date.
      */
-    void flushPolicy(PendingRequest request);
+    void flushPolicy(PolicyApplicationContext request);
 
     /**
      * Notify the PolicyManager that a policy may be out-of-date.
@@ -46,5 +45,8 @@ public interface PolicyManager {
      * @throws IOException if there was a problem getting the policy from the server
      * @throws com.l7tech.proxy.datamodel.exceptions.OperationCanceledException if the user canceled the login dialog
      */
-    void updatePolicy(PendingRequest request, String serviceid) throws ConfigurationException, IOException, GeneralSecurityException, OperationCanceledException, HttpChallengeRequiredException, KeyStoreCorruptException, ClientCertificateException, PolicyRetryableException;
+    void updatePolicy(PolicyApplicationContext request, String serviceid)
+            throws ConfigurationException, IOException, GeneralSecurityException, OperationCanceledException,
+                   HttpChallengeRequiredException, KeyStoreCorruptException, ClientCertificateException,
+                   PolicyRetryableException;
 }

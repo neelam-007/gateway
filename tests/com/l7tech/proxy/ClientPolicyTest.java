@@ -6,6 +6,8 @@
 
 package com.l7tech.proxy;
 
+import com.l7tech.common.message.Message;
+import com.l7tech.common.util.XmlUtil;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.SslAssertion;
@@ -14,22 +16,22 @@ import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.assertion.composite.ExactlyOneAssertion;
 import com.l7tech.policy.assertion.credential.http.HttpBasic;
 import com.l7tech.policy.assertion.credential.http.HttpDigest;
-import com.l7tech.proxy.datamodel.PendingRequest;
 import com.l7tech.proxy.datamodel.Ssg;
 import com.l7tech.proxy.datamodel.exceptions.OperationCanceledException;
+import com.l7tech.proxy.message.PolicyApplicationContext;
 import com.l7tech.proxy.policy.ClientPolicyFactory;
 import com.l7tech.proxy.policy.assertion.ClientAssertion;
 import com.l7tech.proxy.policy.assertion.ClientSslAssertion;
 import com.l7tech.proxy.policy.assertion.ClientTrueAssertion;
 import com.l7tech.proxy.policy.assertion.credential.http.ClientHttpBasic;
-import com.l7tech.common.util.XmlUtil;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
 import org.w3c.dom.Document;
+import org.xml.sax.SAXException;
 
+import java.io.IOException;
 import java.util.Arrays;
-import java.util.logging.Logger;
 
 /**
  *
@@ -38,8 +40,6 @@ import java.util.logging.Logger;
  * Time: 11:23:25 AM
  */
 public class ClientPolicyTest extends TestCase {
-    private static Logger log = Logger.getLogger(ClientPolicyTest.class.getName());
-
     public ClientPolicyTest(String name) {
         super(name);
     }
@@ -56,11 +56,11 @@ public class ClientPolicyTest extends TestCase {
     public void testNullPolicy() throws Exception {
         Ssg ssg = new Ssg(1, "foo");
         Document env = XmlUtil.stringToDocument("<foo/>");
-        PendingRequest req = new PendingRequest(ssg, null, null, env, NullRequestInterceptor.INSTANCE, null, null);
+        PolicyApplicationContext context = new PolicyApplicationContext(ssg, new Message(env), null, null, null, null);
 
         ClientAssertion policy = new ClientTrueAssertion( TrueAssertion.getInstance() );
 
-        AssertionStatus result = policy.decorateRequest(req);
+        AssertionStatus result = policy.decorateRequest(context);
 
         assertTrue(AssertionStatus.NONE.equals(result));
     }
@@ -70,13 +70,13 @@ public class ClientPolicyTest extends TestCase {
         ClientAssertion policy = new ClientHttpBasic( new HttpBasic() );
         Ssg ssg = new Ssg(1, "foo");
         Document env = XmlUtil.stringToDocument("<foo/>");
-        PendingRequest req;
+        PolicyApplicationContext context = new PolicyApplicationContext(ssg, new Message(env), null, null, null, null);
         AssertionStatus result;
 
         ssg.setUsername(null);
         ssg.cmPassword("".toCharArray());
         try {
-            result = policy.decorateRequest(req = new PendingRequest(ssg, null, null, env, NullRequestInterceptor.INSTANCE, null, null));
+            result = policy.decorateRequest(context);
             fail("HttpBasic was provided null username, and didn't throw");
         } catch (OperationCanceledException e) {
             // Ok
@@ -84,7 +84,7 @@ public class ClientPolicyTest extends TestCase {
 
         ssg.setUsername("");
         try {
-            result = policy.decorateRequest(req = new PendingRequest(ssg, null, null, env, NullRequestInterceptor.INSTANCE, null, null));
+            result = policy.decorateRequest(context);
             fail("HttpBasic was provided empty username, and didn't throw");
         } catch (OperationCanceledException e) {
             // Ok
@@ -92,15 +92,15 @@ public class ClientPolicyTest extends TestCase {
 
         final String USER = "fbunky";
         ssg.setUsername(USER);
-        result = policy.decorateRequest(req = new PendingRequest(ssg, null, null, env, NullRequestInterceptor.INSTANCE, null, null));
+        result = policy.decorateRequest(context);
         assertTrue(AssertionStatus.NONE.equals(result));
-        assertTrue(req.isBasicAuthRequired());
+        assertTrue(context.isBasicAuthRequired());
 
         final String PASS = "s3cr3t";
         ssg.cmPassword(PASS.toCharArray());
-        result = policy.decorateRequest(req = new PendingRequest(ssg, null, null, env, NullRequestInterceptor.INSTANCE, null, null));
+        result = policy.decorateRequest(context);
         assertTrue(AssertionStatus.NONE.equals(result));
-        assertTrue(req.isBasicAuthRequired());
+        assertTrue(context.isBasicAuthRequired());
     }
 
     /** Test decoration of a message with an SSL policy (specifying no certificates in particular). */
@@ -108,19 +108,23 @@ public class ClientPolicyTest extends TestCase {
         ClientAssertion policy = new ClientSslAssertion( new SslAssertion() );
         Ssg ssg = new Ssg(1, "foo");
         Document env = XmlUtil.stringToDocument("<foo/>");
-        PendingRequest req;
+        PolicyApplicationContext context = new PolicyApplicationContext(ssg, new Message(env), null, null, null, null);
         AssertionStatus result;
 
-        result = policy.decorateRequest(req = new PendingRequest(ssg, null, null, env, NullRequestInterceptor.INSTANCE, null, null));;
+        result = policy.decorateRequest(context);;
         assertTrue(AssertionStatus.NONE.equals(result));
-        assertTrue(req.isSslRequired());
+        assertTrue(context.isSslRequired());
+    }
+
+    private PolicyApplicationContext context;
+    private PolicyApplicationContext makeContext(Ssg ssg,Document env) throws IOException, SAXException {
+        return context = new PolicyApplicationContext(ssg, new Message(env), null, null, null, null);
     }
 
     /** Test a composite policy. */
     public void testCompositePolicy() throws Exception {
         Ssg ssg = new Ssg(1, "foo");
         Document env = XmlUtil.stringToDocument("<foo/>");
-        PendingRequest req;
         AssertionStatus result;
 
         {
@@ -138,7 +142,7 @@ public class ClientPolicyTest extends TestCase {
             ssg.setUsername("");
             ssg.cmPassword("".toCharArray());
             try {
-                result = clientPolicy.decorateRequest(req = new PendingRequest(ssg, null, null, env, NullRequestInterceptor.INSTANCE, null, null));
+                result = clientPolicy.decorateRequest(makeContext(ssg, env));
                 fail("Policy was given empty username, but failed to throw");
             } catch (OperationCanceledException e) {
                 // Ok
@@ -148,11 +152,11 @@ public class ClientPolicyTest extends TestCase {
             final String PASS = "asdfjkal";
             ssg.setUsername(USER);
             ssg.cmPassword(PASS.toCharArray());
-            result = clientPolicy.decorateRequest(req = new PendingRequest(ssg, null, null, env, NullRequestInterceptor.INSTANCE, null, null));
+            result = clientPolicy.decorateRequest(makeContext(ssg, env));
             assertTrue(AssertionStatus.NONE.equals(result));
-            assertTrue(req.isSslRequired());
-            assertFalse(req.isDigestAuthRequired());
-            assertTrue(req.isBasicAuthRequired());
+            assertTrue(context.isSslRequired());
+            assertFalse(context.isDigestAuthRequired());
+            assertTrue(context.isBasicAuthRequired());
         }
 
         {
@@ -170,7 +174,7 @@ public class ClientPolicyTest extends TestCase {
             ssg.setUsername("");
             ssg.cmPassword("".toCharArray());
             try {
-                result = clientPolicy.decorateRequest(req = new PendingRequest(ssg, null, null, env, NullRequestInterceptor.INSTANCE, null, null));
+                result = clientPolicy.decorateRequest(makeContext(ssg, env));
                 fail("Policy was given empty username, and failed to throw");
             } catch (OperationCanceledException e) {
                 // Ok
@@ -180,11 +184,11 @@ public class ClientPolicyTest extends TestCase {
             final String PASS = "asdfjkal";
             ssg.setUsername(USER);
             ssg.cmPassword(PASS.toCharArray());
-            result = clientPolicy.decorateRequest(req = new PendingRequest(ssg, null, null, env, NullRequestInterceptor.INSTANCE, null, null));
+            result = clientPolicy.decorateRequest(makeContext(ssg, env));
             assertTrue(AssertionStatus.NONE.equals(result));
-            assertFalse(req.isSslRequired());
-            assertFalse(req.isBasicAuthRequired());
-            assertTrue(req.isDigestAuthRequired());
+            assertFalse(context.isSslRequired());
+            assertFalse(context.isBasicAuthRequired());
+            assertTrue(context.isDigestAuthRequired());
         }
     }
 }

@@ -10,9 +10,8 @@ import com.l7tech.common.xml.XpathExpression;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.xmlsec.ResponseWssIntegrity;
-import com.l7tech.proxy.datamodel.PendingRequest;
-import com.l7tech.proxy.datamodel.SsgResponse;
 import com.l7tech.proxy.datamodel.exceptions.*;
+import com.l7tech.proxy.message.PolicyApplicationContext;
 import com.l7tech.proxy.policy.assertion.ClientAssertion;
 import com.l7tech.proxy.policy.assertion.ClientDecorator;
 import com.l7tech.proxy.policy.assertion.credential.http.ClientHttpClientCert;
@@ -43,15 +42,15 @@ public class ClientResponseWssIntegrity extends ClientAssertion {
         }
     }
 
-    public AssertionStatus decorateRequest(PendingRequest request)
+    public AssertionStatus decorateRequest(PolicyApplicationContext context)
             throws GeneralSecurityException,
             OperationCanceledException, BadCredentialsException,
             IOException, KeyStoreCorruptException, ClientCertificateException, PolicyRetryableException
     {
-        request.getPendingDecorations().put(this, new ClientDecorator() {
-            public AssertionStatus decorateRequest(PendingRequest request) throws InvalidDocumentFormatException {
+        context.getPendingDecorations().put(this, new ClientDecorator() {
+            public AssertionStatus decorateRequest(PolicyApplicationContext context) throws InvalidDocumentFormatException {
                 log.log(Level.FINER, "Expecting a signed reply; will be sure to include L7a:MessageID");
-                request.prepareWsaMessageId();
+                context.prepareWsaMessageId();
                 return AssertionStatus.NONE;
             }
         });
@@ -62,20 +61,20 @@ public class ClientResponseWssIntegrity extends ClientAssertion {
     /**
      * validate the signature of the response by the ssg server
      *
-     * @param request
-     * @param response
+     * @param context
      * @return
      */
-    public AssertionStatus unDecorateReply(PendingRequest request, SsgResponse response)
-            throws ServerCertificateUntrustedException, IOException, SAXException, ResponseValidationException, KeyStoreCorruptException, InvalidDocumentFormatException, PolicyAssertionException {
-        Document soapmsg = response.getOriginalDocument();
-        ProcessorResult wssRes = response.getProcessorResult();
+    public AssertionStatus unDecorateReply(PolicyApplicationContext context)
+            throws ServerCertificateUntrustedException, IOException, SAXException, ResponseValidationException, KeyStoreCorruptException, InvalidDocumentFormatException, PolicyAssertionException
+    {
+        Document soapmsg = context.getResponse().getXmlKnob().getDocument();
+        ProcessorResult wssRes = context.getResponse().getXmlKnob().getProcessorResult();
         if (wssRes == null) {
             log.info("WSS processing was not done on this response.");
             return AssertionStatus.FAILED;
         }
 
-        String sentMessageId = request.getL7aMessageId();
+        String sentMessageId = context.getL7aMessageId();
         if (sentMessageId != null) {
             String receivedRelatesTo = SoapUtil.getL7aRelatesTo(soapmsg);
             log.log(Level.FINEST, "Response included L7a:RelatesTo of \"" + receivedRelatesTo + "\"");
@@ -88,7 +87,7 @@ public class ClientResponseWssIntegrity extends ClientAssertion {
             }
 
             // Skip this check on subsequent ResponseWssIntegrity assertions.
-            request.setL7aMessageId(null);
+            context.setL7aMessageId(null);
         }
 
         ProcessorResultUtil.SearchResult result = null;

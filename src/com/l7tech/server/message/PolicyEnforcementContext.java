@@ -45,7 +45,6 @@ public class PolicyEnforcementContext extends ProcessingContext {
     private SoapFaultDetail faultDetail = null;
     private boolean isAuthenticationMissing = false;
     private boolean isPolicyViolated = false;
-    private final List runOnClose = new ArrayList();
     private PublishedService service;
     private final Vector updatedCookies = new Vector();
 
@@ -174,29 +173,6 @@ public class PolicyEnforcementContext extends ProcessingContext {
 
     public void setPolicyViolated(boolean policyViolated) {
         isPolicyViolated = policyViolated;
-    }
-
-    public synchronized void runOnClose( Runnable runMe ) {
-        runOnClose.add( runMe );
-    }
-
-    /** Runs all {@link runOnClose} {@link Runnable}s. */
-    public void close() {
-        Runnable runMe;
-        Iterator i = runOnClose.iterator();
-        try {
-            while ( i.hasNext() ) {
-                runMe = (Runnable)i.next();
-                try {
-                    runMe.run();
-                } catch (Throwable t) {
-                    logger.log(Level.WARNING, "Cleanup runnable threw exception", t);
-                }
-                i.remove();
-            }
-        } finally {
-            super.close();
-        }
     }
 
     public void setService(PublishedService service) {

@@ -6,20 +6,18 @@
 
 package com.l7tech.proxy.policy.assertion;
 
-import com.l7tech.policy.assertion.UnknownAssertion;
 import com.l7tech.policy.assertion.AssertionStatus;
-import com.l7tech.proxy.datamodel.PendingRequest;
-import com.l7tech.proxy.datamodel.SsgResponse;
+import com.l7tech.policy.assertion.UnknownAssertion;
 import com.l7tech.proxy.datamodel.exceptions.BadCredentialsException;
-import com.l7tech.proxy.datamodel.exceptions.OperationCanceledException;
 import com.l7tech.proxy.datamodel.exceptions.ClientCertificateException;
+import com.l7tech.proxy.datamodel.exceptions.OperationCanceledException;
 import com.l7tech.proxy.datamodel.exceptions.ResponseValidationException;
-
-import java.util.logging.Logger;
-import java.security.GeneralSecurityException;
-import java.io.IOException;
-
+import com.l7tech.proxy.message.PolicyApplicationContext;
 import org.xml.sax.SAXException;
+
+import java.io.IOException;
+import java.security.GeneralSecurityException;
+import java.util.logging.Logger;
 
 /**
  * @author mike
@@ -32,7 +30,7 @@ public class ClientUnknownAssertion extends UnimplementedClientAssertion {
         this.unknownAssertion = data;
     }
 
-    public AssertionStatus decorateRequest(PendingRequest request) throws BadCredentialsException, OperationCanceledException, GeneralSecurityException, ClientCertificateException, IOException, SAXException {
+    public AssertionStatus decorateRequest(PolicyApplicationContext context) throws BadCredentialsException, OperationCanceledException, GeneralSecurityException, ClientCertificateException, IOException, SAXException {
         String desc = getDesc();
         logger.warning("The unknown assertion invoked. Detail message is '" + desc + "'");
         return AssertionStatus.FALSIFIED;
@@ -44,7 +42,7 @@ public class ClientUnknownAssertion extends UnimplementedClientAssertion {
         return desc;
     }
 
-    public AssertionStatus unDecorateReply(PendingRequest request, SsgResponse response) throws BadCredentialsException, OperationCanceledException, GeneralSecurityException, IOException, SAXException, ResponseValidationException {
+    public AssertionStatus unDecorateReply(PolicyApplicationContext context) throws BadCredentialsException, OperationCanceledException, GeneralSecurityException, IOException, SAXException, ResponseValidationException {
         String desc = getDesc();
         logger.warning("The unknown assertion invoked. Detail message is '" + desc + "'");
         return AssertionStatus.FALSIFIED;

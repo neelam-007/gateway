@@ -8,16 +8,10 @@ package com.l7tech.proxy.policy.assertion.credential.http;
 
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.credential.http.HttpClientCert;
-import com.l7tech.proxy.datamodel.PendingRequest;
 import com.l7tech.proxy.datamodel.Ssg;
 import com.l7tech.proxy.datamodel.SsgKeyStoreManager;
-import com.l7tech.proxy.datamodel.SsgResponse;
-import com.l7tech.proxy.datamodel.exceptions.BadCredentialsException;
-import com.l7tech.proxy.datamodel.exceptions.ClientCertificateException;
-import com.l7tech.proxy.datamodel.exceptions.HttpChallengeRequiredException;
-import com.l7tech.proxy.datamodel.exceptions.KeyStoreCorruptException;
-import com.l7tech.proxy.datamodel.exceptions.OperationCanceledException;
-import com.l7tech.proxy.datamodel.exceptions.PolicyRetryableException;
+import com.l7tech.proxy.datamodel.exceptions.*;
+import com.l7tech.proxy.message.PolicyApplicationContext;
 import com.l7tech.proxy.policy.assertion.ClientAssertion;
 
 import java.security.GeneralSecurityException;
@@ -34,25 +28,25 @@ public class ClientHttpClientCert extends ClientAssertion {
 
     /**
      * ClientProxy client-side processing of the given request.
-     * @param request    The request to decorate.
+     * @param context
      * @return AssertionStatus.NONE if this Assertion was applied to the request successfully; otherwise, some error code
      */
-    public AssertionStatus decorateRequest(PendingRequest request)
+    public AssertionStatus decorateRequest(PolicyApplicationContext context)
             throws OperationCanceledException, BadCredentialsException, GeneralSecurityException, ClientCertificateException, KeyStoreCorruptException, HttpChallengeRequiredException, PolicyRetryableException
     {
-        Ssg ssg = request.getSsg();
-        request.prepareClientCertificate();
+        Ssg ssg = context.getSsg();
+        context.prepareClientCertificate();
         try {
             // Make sure the private key is available
             SsgKeyStoreManager.getClientCertPrivateKey(ssg);
         } catch (NoSuchAlgorithmException e) {
             throw new RuntimeException(e); // can't happen
         }
-        request.setSslRequired(true);  // client cert requires an SSL request
+        context.setSslRequired(true);  // client cert requires an SSL request
         return AssertionStatus.NONE;
     }
 
-    public AssertionStatus unDecorateReply(PendingRequest request, SsgResponse response) {
+    public AssertionStatus unDecorateReply(PolicyApplicationContext context) {
         // no action on response
         return AssertionStatus.NONE;
     }

@@ -1,11 +1,13 @@
 package com.l7tech.common.util;
 
 import com.l7tech.common.xml.InvalidDocumentFormatException;
+import com.l7tech.common.xml.MissingRequiredElementException;
 import com.l7tech.common.xml.SoapFaultDetail;
+import com.l7tech.common.xml.SoapFaultDetailImpl;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
-import org.w3c.dom.NodeList;
 import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 
 import java.io.IOException;
@@ -20,10 +22,15 @@ import java.io.IOException;
  * $Id$
  */
 public class SoapFaultUtils {
-    public static Document generateSoapFault(SoapFaultDetail soapFaultDetail, String faultActor) throws IOException, SAXException {
-        return generateSoapFault(soapFaultDetail.getFaultCode(),
+    private static final String FAULTCODE = "faultcode";
+    private static final String FAULTSTRING = "faultstring";
+    private static final String FAULTACTOR = "faultactor";
+    private static final String FAULTDETAIL = "faultdetail";
+
+    public static Document generateSoapFaultDocument(SoapFaultDetail soapFaultDetail, String faultActor) throws IOException, SAXException {
+        return generateSoapFaultDocument(soapFaultDetail.getFaultCode(),
                                  soapFaultDetail.getFaultString(),
-                                 soapFaultDetail.getFaultDetails(),
+                                 soapFaultDetail.getFaultDetail(),
                                  faultActor);
     }
 
@@ -35,7 +42,7 @@ public class SoapFaultUtils {
         return tmp.getDocumentElement();
     }
 
-    public static Document generateSoapFault(String faultCode,
+    public static Document generateSoapFaultDocument(String faultCode,
                                              String faultString,
                                              Element faultDetails,
                                              String faultActor) throws IOException, SAXException {
@@ -76,19 +83,48 @@ public class SoapFaultUtils {
         return tmpDoc;
     }
 
-    public static String generateRawSoapFault(SoapFaultDetail soapFaultDetail, String faultActor) throws IOException, SAXException {
-        return generateRawSoapFault(soapFaultDetail.getFaultCode(),
-                                    soapFaultDetail.getFaultString(),
-                                    soapFaultDetail.getFaultDetails(),
-                                    faultActor);
+    /**
+     * Check if the specified SOAP envelope is a SOAP fault and, if it is, return the SoapFaultDetail information.
+     *
+     * @param soapFault  the Document to examine, which is assumed to be a SOAP envelope.  Must not be null.
+     * @return the SoapFaultDetail if this was a fault, or null if it wasn't.
+     * @throws InvalidDocumentFormatException if the message is not SOAP or there is more than one Body
+     * @throws MissingRequiredElementException if the message looks like a SOAP fault but has a missing or empty faultcode
+     */
+    public static SoapFaultDetail gatherSoapFaultDetail(Document soapFault) throws InvalidDocumentFormatException {
+        final String faultcode;
+        String faultstring = "";
+        String faultactor = null;
+        Element faultdetail = null;
+        Element payload = SoapUtil.getPayloadElement(soapFault);
+        if (payload != null && "Fault".equals(payload.getLocalName()) &&
+            payload.getNamespaceURI().equals(soapFault.getDocumentElement().getNamespaceURI()))
+        {
+            Element faultcodeEl = XmlUtil.findFirstChildElementByName(payload, (String)null, FAULTCODE);
+            if (faultcodeEl == null)
+                throw new MissingRequiredElementException("SOAP fault did not have a faultcode element");
+            faultcode = XmlUtil.getTextValue(faultcodeEl);
+            if (faultcode == null || faultcode.length() < 1)
+                throw new MissingRequiredElementException("SOAP fault had an empty faultcode element");
+            Element faultstringEl = XmlUtil.findFirstChildElementByName(payload, (String)null, FAULTSTRING);
+            if (faultstringEl != null)
+                faultstring = XmlUtil.getTextValue(faultstringEl);
+            Element faultactorEl = XmlUtil.findFirstChildElementByName(payload, (String)null, FAULTACTOR);
+            if (faultactorEl != null)
+                faultactor = XmlUtil.getTextValue(faultactorEl);
+            faultdetail = XmlUtil.findFirstChildElementByName(payload, (String)null, FAULTDETAIL);
+            return new SoapFaultDetailImpl(faultcode, faultstring, faultdetail, faultactor);
+        }
+
+        return null;
     }
 
-    public static String generateRawSoapFault(String faultCode,
+    public static String generateSoapFaultXml(String faultCode,
                                               String faultString,
                                               Element faultDetails,
                                               String faultActor) throws IOException, SAXException {
 
-        Document doc = generateSoapFault(faultCode, faultString, faultDetails, faultActor);
+        Document doc = generateSoapFaultDocument(faultCode, faultString, faultDetails, faultActor);
         return XmlUtil.nodeToFormattedString(doc);
     }
 

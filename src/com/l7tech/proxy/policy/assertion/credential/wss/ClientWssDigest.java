@@ -7,10 +7,8 @@
 package com.l7tech.proxy.policy.assertion.credential.wss;
 
 import com.l7tech.policy.assertion.AssertionStatus;
-import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.credential.wss.WssDigest;
-import com.l7tech.proxy.datamodel.PendingRequest;
-import com.l7tech.proxy.datamodel.SsgResponse;
+import com.l7tech.proxy.message.PolicyApplicationContext;
 
 /**
  * @author alex
@@ -23,14 +21,14 @@ public class ClientWssDigest extends ClientWssCredentialSource {
 
     /**
      * ClientProxy client-side processing of the given request.
-     * @param requst    The request to decorate.
+     * @param context
      * @return AssertionStatus.NONE if this Assertion was applied to the request successfully; otherwise, some error code
      */
-    public AssertionStatus decorateRequest(PendingRequest requst) {
+    public AssertionStatus decorateRequest(PolicyApplicationContext context) {
         return AssertionStatus.NOT_YET_IMPLEMENTED;
     }
 
-    public AssertionStatus unDecorateReply(PendingRequest request, SsgResponse response) {
+    public AssertionStatus unDecorateReply(PolicyApplicationContext context) {
         // no action on response
         return AssertionStatus.NONE;
     }

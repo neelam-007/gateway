@@ -3,8 +3,6 @@ package com.l7tech.console.tree.wsdl;
 import com.l7tech.common.xml.Wsdl;
 import com.l7tech.console.tree.AbstractTreeNode;
 
-import javax.swing.tree.MutableTreeNode;
-import java.util.Iterator;
 import java.util.List;
 
 
@@ -108,41 +106,4 @@ public abstract class WsdlTreeNode extends AbstractTreeNode {
     public interface FolderLister {
         List list();
     }
-}
-
-class FolderTreeNode extends WsdlTreeNode {
-    private FolderLister lister;
-
-    FolderTreeNode(FolderLister l, Options options) {
-        super(null, options);
-        this.lister = l;
-    }
-
-    protected void loadChildren() {
-        int index = 0;
-        children = null;
-        for (Iterator i = lister.list().iterator(); i.hasNext();) {
-            insert((MutableTreeNode)i.next(), index++);
-        }
-    }
-
-    /**
-     * subclasses override this method specifying the resource name
-     * 
-     * @param open for nodes that can be opened, can have children
-     */
-    protected String iconResource(boolean open) {
-        if (open)
-            return "com/l7tech/console/resources/folderOpen.gif";
-
-        return "com/l7tech/console/resources/folder.gif";
-    }
-
-    /**
-     * @return a string representation of the object.
-     */
-    public String toString() {
-        return lister.toString();
-    }
-
 }

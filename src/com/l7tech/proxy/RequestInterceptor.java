@@ -1,10 +1,9 @@
 package com.l7tech.proxy;
 
-import com.l7tech.proxy.datamodel.PendingRequest;
 import com.l7tech.proxy.datamodel.Policy;
 import com.l7tech.proxy.datamodel.PolicyAttachmentKey;
 import com.l7tech.proxy.datamodel.Ssg;
-import com.l7tech.proxy.datamodel.SsgResponse;
+import com.l7tech.proxy.message.PolicyApplicationContext;
 
 /**
  * Interface implemented by someone who wants to trace progress of each client proxy request.
@@ -18,16 +17,16 @@ public interface RequestInterceptor {
      * Fired immediately after a message is received from a client, after it is parsed
      * but before it has been transformed or fed to our message processor.
      *
-     * @param request
+     * @param context
      */
-    void onReceiveMessage(PendingRequest request);
+    void onReceiveMessage(PolicyApplicationContext context);
 
     /**
      * Fired when a reply is read from the SSG, after it has come back through our message processor.
      *
-     * @param reply
+     * @param context
      */
-    void onReceiveReply(SsgResponse reply);
+    void onReceiveReply(PolicyApplicationContext context);
 
     /**
      * Fired when an error is encountered while reading the message from a client.

@@ -223,7 +223,10 @@ public class SoapMessageProcessingServlet extends HttpServlet {
                 res.setHeader(SecureSpanConstants.HttpHeaders.POLICYURL_HEADER, purl);
             }
 
-            responseStream.write(SoapFaultUtils.generateRawSoapFault(faultDetail, actor).getBytes());
+            responseStream.write(SoapFaultUtils.generateSoapFaultXml(faultDetail.getFaultCode(),
+                                                            faultDetail.getFaultString(),
+                                                            faultDetail.getFaultDetail(),
+                                                            actor).getBytes());
         } finally {
             if (responseStream != null) responseStream.close();
         }
@@ -264,7 +267,7 @@ public class SoapMessageProcessingServlet extends HttpServlet {
                 hresp.setHeader(SecureSpanConstants.HttpHeaders.POLICYURL_HEADER, purl);
             }
             Element exceptiondetails = SoapFaultUtils.makeFaultDetailsSubElement("policyURL", purl);
-            responseStream.write(SoapFaultUtils.generateRawSoapFault(faultCode, faultString,
+            responseStream.write(SoapFaultUtils.generateSoapFaultXml(faultCode, faultString,
                                                                      exceptiondetails, actor).getBytes());
         } finally {
             if (responseStream != null) responseStream.close();

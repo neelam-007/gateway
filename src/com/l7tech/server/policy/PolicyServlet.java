@@ -349,7 +349,7 @@ public class PolicyServlet extends AuthenticatableHttpServlet {
             if (details != null && details.length() > 0) {
                 exceptiondetails = SoapFaultUtils.makeFaultDetailsSubElement("more", details);
             }
-            fault = SoapFaultUtils.generateSoapFault(SoapFaultUtils.FC_SERVER,
+            fault = SoapFaultUtils.generateSoapFaultDocument(SoapFaultUtils.FC_SERVER,
                                                      msg,
                                                      exceptiondetails,
                                                      "");
@@ -363,7 +363,7 @@ public class PolicyServlet extends AuthenticatableHttpServlet {
     private void generateFaultAndSendAsResponse(HttpServletResponse res, SoapFaultDetail sfd) throws IOException {
         Document fault = null;
         try {
-            fault = SoapFaultUtils.generateSoapFault(sfd, "");
+            fault = SoapFaultUtils.generateSoapFaultDocument(sfd, "");
         } catch (SAXException e) {
             throw new RuntimeException(e); // should not happen
         }

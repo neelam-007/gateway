@@ -85,7 +85,7 @@ public class SecurityTokenServiceServlet extends AuthenticatableHttpServlet {
             if (e.getMessage() != null && e.getMessage().length() > 0) {
                 exceptiondetails = SoapFaultUtils.makeFaultDetailsSubElement("more", e.getMessage());
             }
-            String fault = SoapFaultUtils.generateRawSoapFault(SoapFaultUtils.FC_SERVER, faultString, exceptiondetails, "");
+            String fault = SoapFaultUtils.generateSoapFaultXml(SoapFaultUtils.FC_SERVER, faultString, exceptiondetails, "");
             os.write(fault.getBytes());
         } catch (IOException se) {
             se.printStackTrace();

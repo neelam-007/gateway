@@ -6,34 +6,23 @@
 
 package com.l7tech.proxy.policy.assertion.composite;
 
+import com.l7tech.common.xml.InvalidDocumentFormatException;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.composite.ExactlyOneAssertion;
-import com.l7tech.proxy.datamodel.PendingRequest;
-import com.l7tech.proxy.datamodel.SsgResponse;
-import com.l7tech.proxy.datamodel.exceptions.BadCredentialsException;
-import com.l7tech.proxy.datamodel.exceptions.OperationCanceledException;
-import com.l7tech.proxy.datamodel.exceptions.ClientCertificateException;
-import com.l7tech.proxy.datamodel.exceptions.ResponseValidationException;
-import com.l7tech.proxy.datamodel.exceptions.KeyStoreCorruptException;
-import com.l7tech.proxy.datamodel.exceptions.HttpChallengeRequiredException;
-import com.l7tech.proxy.datamodel.exceptions.PolicyRetryableException;
+import com.l7tech.proxy.datamodel.exceptions.*;
+import com.l7tech.proxy.message.PolicyApplicationContext;
 import com.l7tech.proxy.policy.assertion.ClientAssertion;
-import com.l7tech.common.xml.InvalidDocumentFormatException;
-
-import java.util.logging.Logger;
 import org.xml.sax.SAXException;
 
-import java.security.GeneralSecurityException;
 import java.io.IOException;
+import java.security.GeneralSecurityException;
 
 /**
  * @author alex
  * @version $Revision$
  */
 public class ClientExactlyOneAssertion extends ClientCompositeAssertion {
-    private static final Logger log = Logger.getLogger(ClientExactlyOneAssertion.class.getName());
-
     public ClientExactlyOneAssertion( ExactlyOneAssertion data ) {
         super( data );
         this.data = data;
@@ -42,25 +31,25 @@ public class ClientExactlyOneAssertion extends ClientCompositeAssertion {
     /**
      * Modify the provided PendingRequest to conform to this policy assertion.
      * For ExactlyOneAssertion, we'll run children until one succeeds or we run out.
-     * @param req
+     * @param context
      * @return AssertionStatus.NONE, or the rightmost-child's error if all children failed.
      */
-    public AssertionStatus decorateRequest(PendingRequest req) throws OperationCanceledException, BadCredentialsException, GeneralSecurityException, IOException, ClientCertificateException, SAXException, KeyStoreCorruptException, HttpChallengeRequiredException, PolicyRetryableException, PolicyAssertionException, InvalidDocumentFormatException {
+    public AssertionStatus decorateRequest(PolicyApplicationContext context) throws OperationCanceledException, BadCredentialsException, GeneralSecurityException, IOException, ClientCertificateException, SAXException, KeyStoreCorruptException, HttpChallengeRequiredException, PolicyRetryableException, PolicyAssertionException, InvalidDocumentFormatException {
         mustHaveChildren(data);
         AssertionStatus result = AssertionStatus.FALSIFIED;
         for ( int i = 0; i < children.length; i++ ) {
             ClientAssertion assertion = children[i];
-            AssertionStatus thisResult = assertion.decorateRequest(req);
+            AssertionStatus thisResult = assertion.decorateRequest(context);
             if (thisResult == AssertionStatus.NONE)
                 return thisResult;
             result = thisResult;
         }
         if (result != AssertionStatus.NONE)
-            rollbackPendingDecorations(req);
+            rollbackPendingDecorations(context);
         return result;
     }
 
-    public AssertionStatus unDecorateReply(PendingRequest request, SsgResponse response)
+    public AssertionStatus unDecorateReply(PolicyApplicationContext context)
             throws OperationCanceledException, BadCredentialsException, GeneralSecurityException,
             IOException, ResponseValidationException, SAXException, KeyStoreCorruptException, PolicyAssertionException, InvalidDocumentFormatException
     {
@@ -68,13 +57,13 @@ public class ClientExactlyOneAssertion extends ClientCompositeAssertion {
         AssertionStatus result = AssertionStatus.FALSIFIED;
         for ( int i = 0; i < children.length; i++ ) {
             ClientAssertion assertion = children[i];
-            AssertionStatus thisResult = assertion.unDecorateReply(request, response);
+            AssertionStatus thisResult = assertion.unDecorateReply(context);
             if (thisResult == AssertionStatus.NONE)
                 return thisResult;
             result = thisResult;
         }
         if (result != AssertionStatus.NONE)
-            rollbackPendingDecorations(request);
+            rollbackPendingDecorations(context);
         return result;
     }
 

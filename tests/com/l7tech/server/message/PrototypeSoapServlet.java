@@ -11,6 +11,7 @@ import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.common.protocol.SecureSpanConstants;
 import com.l7tech.common.util.HexUtils;
 import com.l7tech.common.util.SoapFaultUtils;
+import com.l7tech.common.xml.SoapFaultDetail;
 import com.l7tech.objectmodel.ObjectModelException;
 import com.l7tech.objectmodel.PersistenceContext;
 import com.l7tech.policy.assertion.AssertionStatus;
@@ -155,7 +156,11 @@ public class PrototypeSoapServlet extends HttpServlet {
                 res.setHeader(SecureSpanConstants.HttpHeaders.POLICYURL_HEADER, purl);
             }
 
-            responseStream.write(SoapFaultUtils.generateRawSoapFault(context.getFaultDetail(), actor).getBytes());
+            SoapFaultDetail soapFaultDetail = context.getFaultDetail();
+            responseStream.write(SoapFaultUtils.generateSoapFaultXml(soapFaultDetail.getFaultCode(),
+                                                            soapFaultDetail.getFaultString(),
+                                                            soapFaultDetail.getFaultDetail(),
+                                                            actor).getBytes());
         } finally {
             if (responseStream != null) responseStream.close();
         }
@@ -196,7 +201,7 @@ public class PrototypeSoapServlet extends HttpServlet {
                 hresp.setHeader(SecureSpanConstants.HttpHeaders.POLICYURL_HEADER, purl);
             }
             Element exceptiondetails = SoapFaultUtils.makeFaultDetailsSubElement("policyURL", purl);
-            responseStream.write(SoapFaultUtils.generateRawSoapFault(faultCode, faultString,
+            responseStream.write(SoapFaultUtils.generateSoapFaultXml(faultCode, faultString,
                                                                      exceptiondetails, actor).getBytes());
         } finally {
             if (responseStream != null) responseStream.close();

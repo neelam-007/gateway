@@ -6,14 +6,14 @@ import com.l7tech.common.xml.XpathExpression;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.xmlsec.RequestWssConfidentiality;
-import com.l7tech.proxy.datamodel.PendingRequest;
 import com.l7tech.proxy.datamodel.Ssg;
 import com.l7tech.proxy.datamodel.SsgKeyStoreManager;
-import com.l7tech.proxy.datamodel.SsgResponse;
 import com.l7tech.proxy.datamodel.exceptions.*;
+import com.l7tech.proxy.message.PolicyApplicationContext;
 import com.l7tech.proxy.policy.assertion.ClientAssertion;
 import com.l7tech.proxy.policy.assertion.ClientDecorator;
 import org.jaxen.JaxenException;
+import org.xml.sax.SAXException;
 
 import java.io.IOException;
 import java.security.GeneralSecurityException;
@@ -48,24 +48,26 @@ public class ClientRequestWssConfidentiality extends ClientAssertion {
     /**
      * ClientProxy client-side processing of the given request.
      *
-     * @param request The request to decorate.
+     * @param context
      * @return AssertionStatus.NONE if this Assertion was applied to the request successfully; otherwise, some error code
      */
-    public AssertionStatus decorateRequest(PendingRequest request)
+    public AssertionStatus decorateRequest(PolicyApplicationContext context)
             throws OperationCanceledException, BadCredentialsException,
                    GeneralSecurityException, IOException, KeyStoreCorruptException, HttpChallengeRequiredException,
                    PolicyRetryableException, ClientCertificateException
     {
-        final Ssg ssg = request.getSsg();
+        final Ssg ssg = context.getSsg();
         final X509Certificate serverCert = SsgKeyStoreManager.getServerCert(ssg);
 
         // add a pending decoration that will be applied only if the rest of this policy branch succeeds
-        request.getPendingDecorations().put(this, new ClientDecorator() {
-            public AssertionStatus decorateRequest(PendingRequest request) throws PolicyAssertionException {
+        context.getPendingDecorations().put(this, new ClientDecorator() {
+            public AssertionStatus decorateRequest(PolicyApplicationContext context)
+                    throws PolicyAssertionException, SAXException, IOException
+            {
                 final XpathExpression xpathExpression = requestWssConfidentiality.getXpathExpression();
-                final XpathEvaluator eval = XpathEvaluator.newEvaluator(request.getDecoratedDocument(),
-                                                                        xpathExpression.getNamespaces());
                 try {
+                    final XpathEvaluator eval = XpathEvaluator.newEvaluator(context.getRequest().getXmlKnob().getDocument(),
+                                                                            xpathExpression.getNamespaces());
                     List elements = eval.selectElements(xpathExpression.getExpression());
                     if (elements == null || elements.size() < 1) {
                         log.info("ClientRequestWssConfidentiality: No elements matched xpath expression \"" +
@@ -76,7 +78,7 @@ public class ClientRequestWssConfidentiality extends ClientAssertion {
 
                     // get the client cert and private key
                     // We must have credentials to get the private key
-                    DecorationRequirements wssReqs = request.getWssRequirements();
+                    DecorationRequirements wssReqs = context.getWssRequirements();
                     if (serverCert != null)
                         wssReqs.setRecipientCertificate(serverCert);
                     wssReqs.getElementsToEncrypt().addAll(elements);
@@ -92,7 +94,7 @@ public class ClientRequestWssConfidentiality extends ClientAssertion {
         return AssertionStatus.NONE;
     }
 
-    public AssertionStatus unDecorateReply(PendingRequest request, SsgResponse response) {
+    public AssertionStatus unDecorateReply(PolicyApplicationContext context) {
         // no action on response
         return AssertionStatus.NONE;
     }

@@ -3,18 +3,23 @@ package com.l7tech.proxy.gui;
 import com.l7tech.common.gui.widgets.ContextMenuTextArea;
 import com.l7tech.common.util.XmlUtil;
 import com.l7tech.proxy.RequestInterceptor;
-import com.l7tech.proxy.datamodel.*;
+import com.l7tech.proxy.datamodel.HttpHeaders;
+import com.l7tech.proxy.datamodel.Policy;
+import com.l7tech.proxy.datamodel.PolicyAttachmentKey;
+import com.l7tech.proxy.datamodel.Ssg;
 import com.l7tech.proxy.gui.policy.PolicyTreeCellRenderer;
 import com.l7tech.proxy.gui.policy.PolicyTreeModel;
+import com.l7tech.proxy.message.HttpHeadersKnob;
+import com.l7tech.proxy.message.PolicyApplicationContext;
 import com.l7tech.proxy.policy.assertion.ClientAssertion;
 import org.w3c.dom.Document;
 
 import javax.swing.*;
 import javax.swing.tree.TreeModel;
 import java.awt.*;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.PrintStream;
-import java.io.ByteArrayOutputStream;
 import java.io.UnsupportedEncodingException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -240,22 +245,24 @@ class MessageViewerModel extends AbstractListModel implements RequestInterceptor
     /**
      * Fired when a message is received from a client, after it is parsed.
      * Can be called from any thread.
+     * @param context
      */
-    public void onReceiveMessage(PendingRequest request) {
+    public void onReceiveMessage(PolicyApplicationContext context) {
+        HttpHeadersKnob hhk = (HttpHeadersKnob)context.getRequest().getKnobAlways(HttpHeadersKnob.class);
         appendMessage(new SavedXmlMessage("From Client",
-                                          request.getOriginalDocument(),
-                                          request.getHeaders()));
+                                          context.getOriginalDocument(),
+                                          hhk.getHeaders()));
     }
 
     /**
      * Fired when a reply is read from the SSG, after it is parsed.
      * Can be called from any thread.
-     * @param reply
+     * @param context
      */
-    public void onReceiveReply(SsgResponse reply) {
-        Object r = reply.getOriginalDocument();
-        if (r instanceof Document) appendMessage(new SavedXmlMessage("From Server", (Document) r, reply.getHeaders()));
-        else appendMessage(new SavedXmlMessage("From Server", r.toString(), reply.getHeaders()));
+    public void onReceiveReply(PolicyApplicationContext context) {
+        Document responseDoc = context.getOriginalDocument();
+        HttpHeadersKnob hhk = (HttpHeadersKnob)context.getResponse().getKnobAlways(HttpHeadersKnob.class);
+        appendMessage(new SavedXmlMessage("From Server", responseDoc, hhk.getHeaders()));
     }
 
     /**

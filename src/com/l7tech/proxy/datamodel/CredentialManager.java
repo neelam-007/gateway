@@ -45,7 +45,7 @@ public abstract class CredentialManager {
     public abstract PasswordAuthentication getCredentials(Ssg ssg) throws OperationCanceledException;
 
     /**
-     * Same as getCredentials(), but can provide a hint to the user about what the credentials are to be
+     * Same as getCredentialsForTrustedSsg(), but can provide a hint to the user about what the credentials are to be
      * used for.
      * @param ssg the Ssg whose credentials you want
      * @param hint optional hint to the user about what we plan to do with the password when we get it.

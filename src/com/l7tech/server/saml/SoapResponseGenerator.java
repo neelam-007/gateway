@@ -1,8 +1,8 @@
 package com.l7tech.server.saml;
 
+import com.l7tech.common.util.SoapFaultUtils;
 import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.util.XmlUtil;
-import com.l7tech.common.util.SoapFaultUtils;
 import com.l7tech.common.xml.InvalidDocumentFormatException;
 import com.l7tech.common.xml.MessageNotSoapException;
 import org.apache.xmlbeans.XmlException;
@@ -12,8 +12,9 @@ import org.w3c.dom.Node;
 import org.xml.sax.SAXException;
 import x0Protocol.oasisNamesTcSAML1.ResponseDocument;
 
-import javax.xml.soap.*;
 import javax.servlet.ServletOutputStream;
+import javax.xml.soap.MessageFactory;
+import javax.xml.soap.SOAPException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -105,7 +106,7 @@ class SoapResponseGenerator {
             if (e.getMessage() != null && e.getMessage().length() > 0) {
                 exceptiondetails = SoapFaultUtils.makeFaultDetailsSubElement("more", e.getMessage());
             }
-            String fault = SoapFaultUtils.generateRawSoapFault(SoapFaultUtils.FC_SERVER, faultString, exceptiondetails, "");
+            String fault = SoapFaultUtils.generateSoapFaultXml(SoapFaultUtils.FC_SERVER, faultString, exceptiondetails, "");
             os.write(fault.getBytes());
         } catch (IOException se) {
             se.printStackTrace();

@@ -8,9 +8,8 @@ import com.l7tech.common.xml.InvalidDocumentFormatException;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.xmlsec.SecureConversation;
-import com.l7tech.proxy.datamodel.PendingRequest;
-import com.l7tech.proxy.datamodel.SsgResponse;
 import com.l7tech.proxy.datamodel.exceptions.*;
+import com.l7tech.proxy.message.PolicyApplicationContext;
 import com.l7tech.proxy.policy.assertion.ClientAssertion;
 import com.l7tech.proxy.policy.assertion.ClientDecorator;
 import org.xml.sax.SAXException;
@@ -34,20 +33,20 @@ public class ClientSecureConversation extends ClientAssertion {
         // nothing in assertion we need to remember
     }
 
-    public AssertionStatus decorateRequest(PendingRequest request)
+    public AssertionStatus decorateRequest(PolicyApplicationContext context)
             throws BadCredentialsException, OperationCanceledException,
             GeneralSecurityException, ClientCertificateException, IOException, SAXException,
             KeyStoreCorruptException, HttpChallengeRequiredException, PolicyRetryableException,
             PolicyAssertionException, InvalidDocumentFormatException
     {
         // Establish session, if possible
-        final String sessionId = request.getOrCreateSecureConversationId();
-        final byte[] sessionKey = request.getSecureConversationSharedSecret();
+        final String sessionId = context.getOrCreateSecureConversationId();
+        final byte[] sessionKey = context.getSecureConversationSharedSecret();
 
         // Configure outbound decoration to use WS-SecureConversation
-        request.getPendingDecorations().put(this, new ClientDecorator() {
-            public AssertionStatus decorateRequest(PendingRequest request) {
-                DecorationRequirements wssReqs = request.getWssRequirements();
+        context.getPendingDecorations().put(this, new ClientDecorator() {
+            public AssertionStatus decorateRequest(PolicyApplicationContext context) {
+                DecorationRequirements wssReqs = context.getWssRequirements();
                 wssReqs.setSignTimestamp(true);
                 wssReqs.setSecureConversationSession(new DecorationRequirements.SecureConversationSession() {
                     public String getId() {
@@ -65,13 +64,13 @@ public class ClientSecureConversation extends ClientAssertion {
         return AssertionStatus.NONE;
     }
 
-    public AssertionStatus unDecorateReply(PendingRequest request, SsgResponse response)
+    public AssertionStatus unDecorateReply(PolicyApplicationContext context)
             throws BadCredentialsException, OperationCanceledException, GeneralSecurityException,
             IOException, SAXException, ResponseValidationException, KeyStoreCorruptException,
             PolicyAssertionException, InvalidDocumentFormatException
     {
         // Make sure the response's WssProcessor.Results contain a reference to the Secure Conversation
-        ProcessorResult pr = response.getProcessorResult();
+        ProcessorResult pr = context.getResponse().getXmlKnob().getProcessorResult();
         if (pr == null) {
             log.info("WSS processing was not done on this response.");
             return AssertionStatus.FAILED;
@@ -95,7 +94,7 @@ public class ClientSecureConversation extends ClientAssertion {
             return AssertionStatus.FALSIFIED;
         }
 
-        String expectedSessionId = request.getSecureConversationId();
+        String expectedSessionId = context.getSecureConversationId();
         if (expectedSessionId == null) {
             // can't actually happen; decorateRequest should have made one
             final String msg = "Request did not have a session ID set.";

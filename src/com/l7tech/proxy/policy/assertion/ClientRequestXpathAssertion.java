@@ -11,8 +11,7 @@ import com.l7tech.common.xml.XpathExpression;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.RequestXpathAssertion;
-import com.l7tech.proxy.datamodel.PendingRequest;
-import com.l7tech.proxy.datamodel.SsgResponse;
+import com.l7tech.proxy.message.PolicyApplicationContext;
 import org.jaxen.JaxenException;
 
 import java.util.List;
@@ -31,10 +30,10 @@ public class ClientRequestXpathAssertion extends ClientAssertion {
         this.requestXpathAssertion = requestXpathAssertion;
     }
 
-    public AssertionStatus decorateRequest(PendingRequest request) throws PolicyAssertionException {
+    public AssertionStatus decorateRequest(PolicyApplicationContext context) throws PolicyAssertionException {
         final XpathExpression xpathExpression = requestXpathAssertion.getXpathExpression();
         // Match the Original _undecorated_ document always, so operation-specific paths are deterministic
-        final XpathEvaluator eval = XpathEvaluator.newEvaluator(request.getOriginalDocument(),
+        final XpathEvaluator eval = XpathEvaluator.newEvaluator(context.getOriginalDocument(),
                                                                 xpathExpression.getNamespaces());
         try {
             List nodes = eval.select(xpathExpression.getExpression());
@@ -52,8 +51,8 @@ public class ClientRequestXpathAssertion extends ClientAssertion {
         }
     }
 
-    public AssertionStatus unDecorateReply(PendingRequest request, SsgResponse response) throws PolicyAssertionException {
-        return decorateRequest(request); // make sure we follow the same policy path when processing the response
+    public AssertionStatus unDecorateReply(PolicyApplicationContext context) throws PolicyAssertionException {
+        return decorateRequest(context); // make sure we follow the same policy path when processing the response
     }
 
     public String getName() {

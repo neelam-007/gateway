@@ -6,30 +6,23 @@
 
 package com.l7tech.proxy.policy;
 
+import com.l7tech.common.message.Message;
+import com.l7tech.common.xml.TestDocuments;
+import com.l7tech.common.xml.XpathExpression;
+import com.l7tech.policy.assertion.*;
+import com.l7tech.proxy.datamodel.Ssg;
+import com.l7tech.proxy.message.PolicyApplicationContext;
+import com.l7tech.proxy.policy.assertion.ClientRequestXpathAssertion;
+import com.l7tech.proxy.policy.assertion.ClientResponseXpathAssertion;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
-
-import java.util.logging.Logger;
-import java.util.Map;
-import java.io.IOException;
-
-import com.l7tech.proxy.datamodel.PendingRequest;
-import com.l7tech.proxy.datamodel.Ssg;
-import com.l7tech.proxy.datamodel.SsgResponse;
-import com.l7tech.proxy.policy.assertion.ClientRequestXpathAssertion;
-import com.l7tech.proxy.policy.assertion.ClientResponseXpathAssertion;
-import com.l7tech.proxy.NullRequestInterceptor;
-import com.l7tech.proxy.RequestInterceptor;
-import com.l7tech.common.xml.TestDocuments;
-import com.l7tech.common.xml.XpathExpression;
-import com.l7tech.common.util.XmlUtil;
-import com.l7tech.common.mime.MimeBody;
-import com.l7tech.common.mime.ContentTypeHeader;
-import com.l7tech.common.mime.NoSuchPartException;
-import com.l7tech.common.security.xml.processor.ProcessorResult;
-import com.l7tech.policy.assertion.*;
 import org.w3c.dom.Document;
+import org.xml.sax.SAXException;
+
+import java.io.IOException;
+import java.util.Map;
+import java.util.logging.Logger;
 
 /**
  * @author mike
@@ -52,18 +45,14 @@ public class ClientXpathAssertionsTest extends TestCase {
 
     public void testClientResponseXpathAssertion() throws Exception {
         Ssg ssg = new Ssg(1);
-        RequestInterceptor ri = NullRequestInterceptor.INSTANCE;
-        Document emptyDoc = XmlUtil.stringToDocument(
-                "<s:Envelope xmlns:s=\"http://schemas.xmlsoap.org/soap/envelope/\"/>");
-        PendingRequest emptyReq = new PendingRequest(ssg, null, null, emptyDoc, ri, null, null);
 
         // build simulated placeOrder response (we'll fake it with the request XML though)
         Document placeorderDoc = TestDocuments.getTestDocument(TestDocuments.PLACEORDER_CLEARTEXT);
-        SsgResponse placeorderRes = new SsgResponse(makemm(placeorderDoc), placeorderDoc, null, 200, null);
+        PolicyApplicationContext placeorderRes = makereq(ssg, placeorderDoc);
 
         // build simulated getQuote response (we'll faek it with the request XML though)
         Document getquoteDoc = TestDocuments.getTestDocument(TestDocuments.ETTK_SIGNED_REQUEST);
-        SsgResponse getquoteRes = new SsgResponse(makemm(placeorderDoc), getquoteDoc, null, 200, null);
+        PolicyApplicationContext getquoteRes = makereq(ssg, getquoteDoc);
 
         // build xpath assertion that matches placeorder, with a namespace prefix
         Map placeorderNsmap = XpathBasedAssertion.createDefaultNamespaceMap();
@@ -78,19 +67,19 @@ public class ClientXpathAssertionsTest extends TestCase {
         ClientResponseXpathAssertion getquoteCrxa = new ClientResponseXpathAssertion(getquoteRxa);
 
         // test positive match with namespace
-        AssertionStatus result = placeorderCrxa.unDecorateReply(emptyReq, placeorderRes);
+        AssertionStatus result = placeorderCrxa.unDecorateReply(placeorderRes);
         assertEquals(result, AssertionStatus.NONE);
 
         // test positive match without namespace
-        result = getquoteCrxa.unDecorateReply(emptyReq, getquoteRes);
+        result = getquoteCrxa.unDecorateReply(getquoteRes);
         assertEquals(result, AssertionStatus.NONE);
 
         // test negative match1
-        result = placeorderCrxa.unDecorateReply(emptyReq, getquoteRes);
+        result = placeorderCrxa.unDecorateReply(getquoteRes);
         assertEquals(result, AssertionStatus.FALSIFIED);
 
         // test negative match2
-        result = getquoteCrxa.unDecorateReply(emptyReq, placeorderRes);
+        result = getquoteCrxa.unDecorateReply(placeorderRes);
         assertEquals(result, AssertionStatus.FALSIFIED);
 
         // test invalid xpath expression
@@ -98,35 +87,33 @@ public class ClientXpathAssertionsTest extends TestCase {
         ResponseXpathAssertion badRxa = new ResponseXpathAssertion(badXpath);
         ClientResponseXpathAssertion badCrxa = new ClientResponseXpathAssertion(badRxa);
         try {
-            result = badCrxa.unDecorateReply(emptyReq, placeorderRes);
+            result = badCrxa.unDecorateReply(placeorderRes);
             fail("Failed to throw expected exception due to bad xpath");
         } catch (PolicyAssertionException e) {
             log.info("The correct exception was thrown.");
         }
     }
 
-    private MimeBody makemm(Document placeorderDoc) {
+    private PolicyApplicationContext makereq(Ssg ssg, Document d) {
         try {
-            return new MimeBody(XmlUtil.nodeToString(placeorderDoc).getBytes("UTF-8"),
-                                        ContentTypeHeader.XML_DEFAULT);
+            return new PolicyApplicationContext(ssg, new Message(d), new Message(d), null, null, null);
         } catch (IOException e) {
             throw new RuntimeException(e);
-        } catch (NoSuchPartException e) {
+        } catch (SAXException e) {
             throw new RuntimeException(e);
         }
     }
 
     public void testClientRequestXpathAssertion() throws Exception {
         Ssg ssg = new Ssg(1);
-        RequestInterceptor ri = NullRequestInterceptor.INSTANCE;
 
         // build simulated placeOrder request
         Document placeorderDoc = TestDocuments.getTestDocument(TestDocuments.PLACEORDER_CLEARTEXT);
-        PendingRequest placeorderReq = new PendingRequest(ssg, null, null, placeorderDoc, ri, null, null);
+        PolicyApplicationContext placeorderReq = makereq(ssg, placeorderDoc);
 
         // build simulated getQuote request
         Document getquoteDoc = TestDocuments.getTestDocument(TestDocuments.ETTK_SIGNED_REQUEST);
-        PendingRequest getquoteReq = new PendingRequest(ssg, null, null, getquoteDoc, ri, null, null);
+        PolicyApplicationContext getquoteReq = makereq(ssg, getquoteDoc);
 
         // build xpath assertion that matches placeorder, with a namespace prefix
         Map placeorderNsmap = XpathBasedAssertion.createDefaultNamespaceMap();

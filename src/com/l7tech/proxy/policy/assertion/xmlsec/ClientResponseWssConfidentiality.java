@@ -7,9 +7,8 @@ import com.l7tech.common.xml.XpathExpression;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.xmlsec.ResponseWssConfidentiality;
-import com.l7tech.proxy.datamodel.PendingRequest;
-import com.l7tech.proxy.datamodel.SsgResponse;
 import com.l7tech.proxy.datamodel.exceptions.*;
+import com.l7tech.proxy.message.PolicyApplicationContext;
 import com.l7tech.proxy.policy.assertion.ClientAssertion;
 import com.l7tech.proxy.policy.assertion.credential.http.ClientHttpClientCert;
 import org.w3c.dom.Document;
@@ -37,7 +36,7 @@ public class ClientResponseWssConfidentiality extends ClientAssertion {
         }
     }
 
-    public AssertionStatus decorateRequest(PendingRequest request)
+    public AssertionStatus decorateRequest(PolicyApplicationContext context)
             throws GeneralSecurityException,
             OperationCanceledException, BadCredentialsException,
             IOException, KeyStoreCorruptException, ClientCertificateException, PolicyRetryableException
@@ -46,10 +45,10 @@ public class ClientResponseWssConfidentiality extends ClientAssertion {
         return AssertionStatus.NONE;
     }
 
-    public AssertionStatus unDecorateReply(PendingRequest request, SsgResponse response)
+    public AssertionStatus unDecorateReply(PolicyApplicationContext context)
             throws ServerCertificateUntrustedException, IOException, SAXException, ResponseValidationException, KeyStoreCorruptException, PolicyAssertionException {
-        Document soapmsg = response.getOriginalDocument();
-        ProcessorResult wssRes = response.getProcessorResult();
+        Document soapmsg = context.getResponse().getXmlKnob().getDocument();
+        ProcessorResult wssRes = context.getResponse().getXmlKnob().getProcessorResult();
         if (wssRes == null) {
             log.info("WSS processing was not done on this response.");
             return AssertionStatus.FAILED;

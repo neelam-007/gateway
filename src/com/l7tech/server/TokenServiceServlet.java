@@ -264,7 +264,7 @@ public class TokenServiceServlet extends HttpServlet {
                 if (e != null && e.getMessage() != null && e.getMessage().length() > 0) {
                     exceptiondetails = SoapFaultUtils.makeFaultDetailsSubElement("exception", e.getMessage());
                 }
-                responseStream.write(SoapFaultUtils.generateRawSoapFault(SoapFaultUtils.FC_SERVER,
+                responseStream.write(SoapFaultUtils.generateSoapFaultXml(SoapFaultUtils.FC_SERVER,
                                                                          msg,
                                                                          exceptiondetails,
                                                                          req.getRequestURL().toString()).getBytes());

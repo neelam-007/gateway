@@ -7,9 +7,9 @@
 package com.l7tech.proxy.datamodel;
 
 import com.l7tech.proxy.ConfigurationException;
+import com.l7tech.proxy.message.PolicyApplicationContext;
 
 import java.io.IOException;
-import java.net.URL;
 
 /**
  * PolicyManager for testing.  Provides a fixed policy that is manually set.
@@ -28,13 +28,13 @@ public class PolicyManagerStub implements PolicyManager {
         return policy;
     }
 
-    public Policy getPolicy(PendingRequest request) {
+    public Policy getPolicy(PolicyApplicationContext request) {
         return policy;
     }
 
-    public void flushPolicy(PendingRequest request) {
+    public void flushPolicy(PolicyApplicationContext request) {
     }
 
-    public void updatePolicy(PendingRequest request, String serviceId) throws ConfigurationException, IOException {
+    public void updatePolicy(PolicyApplicationContext request, String serviceId) throws ConfigurationException, IOException {
     }
 }

@@ -6,13 +6,13 @@ import com.l7tech.common.xml.XpathExpression;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.xmlsec.RequestWssIntegrity;
-import com.l7tech.proxy.datamodel.PendingRequest;
-import com.l7tech.proxy.datamodel.SsgResponse;
 import com.l7tech.proxy.datamodel.exceptions.*;
+import com.l7tech.proxy.message.PolicyApplicationContext;
 import com.l7tech.proxy.policy.assertion.ClientAssertion;
 import com.l7tech.proxy.policy.assertion.ClientDecorator;
 import com.l7tech.proxy.policy.assertion.credential.http.ClientHttpClientCert;
 import org.jaxen.JaxenException;
+import org.xml.sax.SAXException;
 
 import java.io.IOException;
 import java.security.GeneralSecurityException;
@@ -46,19 +46,21 @@ public class ClientRequestWssIntegrity extends ClientAssertion {
     /**
      * ClientProxy client-side processing of the given request.
      *
-     * @param request The request to decorate.
+     * @param context
      * @return AssertionStatus.NONE if this Assertion was applied to the request successfully; otherwise, some error code
      */
-    public AssertionStatus decorateRequest(PendingRequest request)
+    public AssertionStatus decorateRequest(PolicyApplicationContext context)
             throws OperationCanceledException, BadCredentialsException,
                    GeneralSecurityException, IOException, KeyStoreCorruptException, HttpChallengeRequiredException,
                    PolicyRetryableException, ClientCertificateException
     {
         // add a pending decoration that will be applied only if the rest of this policy branch succeeds
-        request.getPendingDecorations().put(this, new ClientDecorator() {
-            public AssertionStatus decorateRequest(PendingRequest request) throws PolicyAssertionException {
+        context.getPendingDecorations().put(this, new ClientDecorator() {
+            public AssertionStatus decorateRequest(PolicyApplicationContext context)
+                    throws PolicyAssertionException, SAXException, IOException
+            {
                 final XpathExpression xpathExpression = requestWssIntegrity.getXpathExpression();
-                final XpathEvaluator eval = XpathEvaluator.newEvaluator(request.getDecoratedDocument(),
+                final XpathEvaluator eval = XpathEvaluator.newEvaluator(context.getRequest().getXmlKnob().getDocument(),
                                                                         xpathExpression.getNamespaces());
                 try {
                     List elements = eval.selectElements(xpathExpression.getExpression());
@@ -71,7 +73,7 @@ public class ClientRequestWssIntegrity extends ClientAssertion {
 
                     // get the client cert and private key
                     // We must have credentials to get the private key
-                    DecorationRequirements wssReqs = request.getWssRequirements();
+                    DecorationRequirements wssReqs = context.getWssRequirements();
                     wssReqs.getElementsToSign().addAll(elements);
                     return AssertionStatus.NONE;
                 } catch (JaxenException e) {
@@ -85,7 +87,7 @@ public class ClientRequestWssIntegrity extends ClientAssertion {
         return AssertionStatus.NONE;
     }
 
-    public AssertionStatus unDecorateReply(PendingRequest request, SsgResponse response) {
+    public AssertionStatus unDecorateReply(PolicyApplicationContext context) {
         // no action on response
         return AssertionStatus.NONE;
     }

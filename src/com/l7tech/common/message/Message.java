@@ -51,6 +51,15 @@ public final class Message {
     }
 
     /**
+     * Create a Message pre-initialized with a Document.
+     *
+     * @param doc the Document to use.  Must not be null.
+     */
+    public Message(Document doc) {
+        initialize(doc);
+    }
+
+    /**
      * Initialize, or re-initialize, a Message with a MIME facet attached to the specified InputStream.
      * <p>
      * With the exception of {@link HttpRequestKnob} and {@link HttpResponseKnob}s, which will be preserved in new facets,
@@ -102,6 +111,20 @@ public final class Message {
         } catch (SAXException e) {
             throw new RuntimeException(e); // can't happen, the content type is set to xml
         }
+    }
+
+    /**
+     * Initialize, or re-initialize, a Message using the specified Message as a source.  <b>Note:</b>This does not do
+     * a deep copy of the source Message's facets -- it just takes them and uses them for this Message.
+     * <p>
+     * All existing facets of this Message will be removed; unlike other initialize() methods, no existing facets will
+     * be preserved.
+     *
+     * @param msg a Message whose facets should be taken by this Message.  Must not be null.
+     */
+    public void initialize(Message msg)
+    {
+        rootFacet = msg.rootFacet;
     }
 
     /**
@@ -306,6 +329,36 @@ public final class Message {
         if (knob == null)
             throw new IllegalStateException("This Message is not configured as having arrived over JMS");
         return knob;
+    }
+
+    /**
+     * Attach the specified knob to this message if and only if it does not already provide that knob.
+     *
+     * @param knobClass the class of the interface provided by this knob implementation.
+     * @param knob the knob to attach.  It will be attached in a new facet.  Must not be null.
+     */
+    public void attachKnob(Class knobClass, MessageKnob knob) {
+        if (getKnob(knobClass) != null)
+            throw new IllegalStateException("An implementation of the knob " + knobClass + " is already attached to this Message.");
+        if (!knobClass.isAssignableFrom(knob.getClass()))
+            throw new IllegalArgumentException("knob was not an implementation of knobClass " + knobClass);
+        rootFacet = new KnobHolderFacet(this, rootFacet, knobClass, knob);
+        if (getKnob(knobClass) == null)
+            throw new IllegalArgumentException("knob failed to provide an implementation of knobClass" + knobClass); // can't happen
+    }
+
+    /**
+     * Get the specified knob, which must already be provided.
+     *
+     * @param c a Class derived from MessageKnob.  Must be non-null.
+     * @return the requested MessageKnob.  Never null.
+     * @throws IllegalStateException if no such knob is currently available from this Message.
+     */
+    public MessageKnob getKnobAlways(Class c) throws IllegalStateException {
+        MessageKnob got = getKnob(c);
+        if (got == null)
+            throw new IllegalStateException("This Message is not currently configured with " + c.getName());
+        return got;
     }
 
     /**

@@ -163,7 +163,7 @@ public class PolicyService {
             logger.info("cannot find target policy from id: " + policyId);
             Document fault = null;
             try {
-                fault = SoapFaultUtils.generateSoapFault(SoapFaultUtils.FC_SERVER,
+                fault = SoapFaultUtils.generateSoapFaultDocument(SoapFaultUtils.FC_SERVER,
                                                          "policy " + policyId + " not found",
                                                          null,
                                                          "");
@@ -244,7 +244,7 @@ public class PolicyService {
             if (msg != null) {
                 detailEl = SoapFaultUtils.makeFaultDetailsSubElement("more", msg);
             }
-            fault = SoapFaultUtils.generateSoapFault(SoapFaultUtils.FC_SERVER,
+            fault = SoapFaultUtils.generateSoapFaultDocument(SoapFaultUtils.FC_SERVER,
                                                      "unauthorized policy download",
                                                      detailEl,
                                                      "");
@@ -337,9 +337,9 @@ public class PolicyService {
         try {
             Document fault;
             if (e instanceof SoapFaultDetail) {
-                fault = SoapFaultUtils.generateSoapFault((SoapFaultDetail)e, SoapFaultUtils.FC_SERVER);
+                fault = SoapFaultUtils.generateSoapFaultDocument((SoapFaultDetail)e, SoapFaultUtils.FC_SERVER);
             } else {
-                fault = SoapFaultUtils.generateSoapFault(SoapFaultUtils.FC_SERVER,
+                fault = SoapFaultUtils.generateSoapFaultDocument(SoapFaultUtils.FC_SERVER,
                                                          e.getMessage(),
                                                          null,
                                                          e.getClass().getName());

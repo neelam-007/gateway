@@ -7,15 +7,14 @@
 package com.l7tech.proxy;
 
 import com.l7tech.common.util.XmlUtil;
-import com.l7tech.proxy.datamodel.PendingRequest;
 import com.l7tech.proxy.datamodel.Policy;
 import com.l7tech.proxy.datamodel.PolicyAttachmentKey;
 import com.l7tech.proxy.datamodel.Ssg;
-import com.l7tech.proxy.datamodel.SsgResponse;
-import java.util.logging.Logger;
-import java.util.logging.Level;
+import com.l7tech.proxy.message.PolicyApplicationContext;
 
 import java.io.IOException;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * RequestInterceptor that logs all messages in and out.
@@ -31,11 +30,10 @@ public class MessageLogger implements RequestInterceptor {
 
     /**
      * Fired when a message is received from a client, after it is parsed.
-     * @param message
      */
-    public void onReceiveMessage(PendingRequest message) {
+    public void onReceiveMessage(PolicyApplicationContext context) {
         try {
-            log.info("Received client request: " + XmlUtil.nodeToString(message.getOriginalDocument()));
+            log.info("Received client request: " + XmlUtil.nodeToString(context.getOriginalDocument()));
         } catch (IOException e) {
             log.log(Level.SEVERE, "Error examining client request", e);
         }
@@ -43,10 +41,10 @@ public class MessageLogger implements RequestInterceptor {
 
     /**
      * Fired when a reply is read from the SSG, after it is parsed.
-     * @param reply
+     * @param context
      */
-    public void onReceiveReply(SsgResponse reply) {
-        log.info("Received server response: " + reply);
+    public void onReceiveReply(PolicyApplicationContext context) {
+        log.info("Received server response: " + context.getResponse());
     }
 
     /**

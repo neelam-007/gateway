@@ -8,35 +8,31 @@ package com.l7tech.proxy.policy.assertion;
 
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.SslAssertion;
-import com.l7tech.proxy.datamodel.PendingRequest;
-import com.l7tech.proxy.datamodel.SsgResponse;
-import java.util.logging.Logger;
+import com.l7tech.proxy.message.PolicyApplicationContext;
 
 /**
  * @author alex
  * @version $Revision$
  */
 public class ClientSslAssertion extends ClientAssertion {
-    private static final Logger log = Logger.getLogger(ClientSslAssertion.class.getName());
-
     public ClientSslAssertion( SslAssertion data ) {
         this.data = data;
     }
 
     /**
      * ClientProxy client-side processing of the given request.
-     * @param request    The request to decorate.
+     * @param context
      * @return AssertionStatus.NONE if this Assertion was applied to the request successfully; otherwise, some error code
      */
-    public AssertionStatus decorateRequest(PendingRequest request)  {
+    public AssertionStatus decorateRequest(PolicyApplicationContext context)  {
         if (data.getOption() == SslAssertion.FORBIDDEN)
-            request.setSslForbidden(true);
+            context.setSslForbidden(true);
         if (data.getOption() == SslAssertion.REQUIRED)
-            request.setSslRequired(true);
+            context.setSslRequired(true);
         return AssertionStatus.NONE;
     }
 
-    public AssertionStatus unDecorateReply(PendingRequest request, SsgResponse response)  {
+    public AssertionStatus unDecorateReply(PolicyApplicationContext context)  {
         // no action on response
         return AssertionStatus.NONE;
     }

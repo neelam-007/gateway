@@ -6,7 +6,13 @@
 
 package com.l7tech.proxy.processor;
 
-import com.l7tech.common.mime.*;
+import com.l7tech.common.message.AbstractHttpResponseKnob;
+import com.l7tech.common.message.Message;
+import com.l7tech.common.message.MimeKnob;
+import com.l7tech.common.message.SoapKnob;
+import com.l7tech.common.mime.ContentTypeHeader;
+import com.l7tech.common.mime.MimeUtil;
+import com.l7tech.common.mime.NoSuchPartException;
 import com.l7tech.common.protocol.SecureSpanConstants;
 import com.l7tech.common.security.AesKey;
 import com.l7tech.common.security.xml.decorator.DecoratorException;
@@ -22,6 +28,8 @@ import com.l7tech.policy.assertion.SslAssertion;
 import com.l7tech.proxy.ConfigurationException;
 import com.l7tech.proxy.datamodel.*;
 import com.l7tech.proxy.datamodel.exceptions.*;
+import com.l7tech.proxy.message.HttpHeadersKnob;
+import com.l7tech.proxy.message.PolicyApplicationContext;
 import com.l7tech.proxy.policy.assertion.ClientAssertion;
 import com.l7tech.proxy.policy.assertion.ClientDecorator;
 import com.l7tech.proxy.ssl.ClientProxySecureProtocolSocketFactory;
@@ -95,9 +103,7 @@ public class MessageProcessor {
     /**
      * Process the given client request and return the corresponding response.
      *
-     * @param req the PendingRequest to process
-     * @return the SsgResponse containing the response from the Ssg, if processing was successful, or if
-     *         a SOAP fault is being returned to the client from either the CP or the SSG.
+     * @param context the PendingRequest to process
      * @throws ClientCertificateException     if a client certificate was required but could not be obtained
      * @throws OperationCanceledException     if the user declined to provide a username and password
      * @throws ConfigurationException         if a response could not be obtained from the SSG due to a problem with
@@ -117,60 +123,55 @@ public class MessageProcessor {
      *                                        if there was a problem processing the wsse:Security header in the
      *                                        response from the SSG
      */
-    public SsgResponse processMessage(final PendingRequest req)
+    public void processMessage(final PolicyApplicationContext context)
       throws ClientCertificateException, OperationCanceledException,
       ConfigurationException, GeneralSecurityException, IOException, SAXException,
       ResponseValidationException, HttpChallengeRequiredException, PolicyAssertionException,
-      InvalidDocumentFormatException, ProcessorException, BadSecurityContextException {
+      InvalidDocumentFormatException, ProcessorException, BadSecurityContextException
+    {
         boolean succeeded = false;
         try {
-            Ssg ssg = req.getSsg();
+            Ssg ssg = context.getSsg();
 
             for (int attempts = 0; attempts < MAX_TRIES; ++attempts) {
                 CurrentRequest.setPeerSsg(null); // force all SSL connections to set peer SSG first
                 try {
                     try {
-                        SsgResponse responseNeedingClose = null;
                         try {
-                            enforcePolicy(req);
-                            SsgResponse res = obtainResponse(req);
-                            responseNeedingClose = res;
-                            undecorateResponse(req, res);
+                            enforcePolicy(context);
+                            obtainResponse(context);
+                            undecorateResponse(context);
                             succeeded = true;
-                            responseNeedingClose = null;
-                            return res;
+                            return;
                         } catch (SSLException e) {
-                            if (req.getSsg().getTrustedGateway() != null) {
+                            if (context.getSsg().getTrustedGateway() != null) {
                                 Ssg peerSsg = CurrentRequest.getPeerSsg();
-                                if (peerSsg == req.getSsg())
-                                    handleSslException(req.getSsg(), null, e);
-                                else if (peerSsg == req.getSsg().getTrustedGateway())
-                                    handleSslException(peerSsg, req.getFederatedCredentials(), e);
+                                if (peerSsg == context.getSsg())
+                                    handleSslException(context.getSsg(), null, e);
+                                else if (peerSsg == context.getSsg().getTrustedGateway())
+                                    handleSslException(peerSsg, context.getFederatedCredentials(), e);
                                 else
                                     throw new ConfigurationException("SSL handshake failed, but peer Gateway was neither the Trusted nor Federated Gateway.");
                             } else
-                                handleSslException(req.getSsg(), req.getCredentials(), e);
+                                handleSslException(context.getSsg(), context.getCredentialsForTrustedSsg(), e);
                             // FALLTHROUGH -- retry with new server certificate
                         } catch (ServerCertificateUntrustedException e) {
-                            if (req.getSsg().getTrustedGateway() != null) {
+                            if (context.getSsg().getTrustedGateway() != null) {
                                 Ssg peerSsg = CurrentRequest.getPeerSsg();
-                                if (peerSsg == req.getSsg())
+                                if (peerSsg == context.getSsg())
                                     SsgKeyStoreManager.installSsgServerCertificate(ssg, null);
-                                else if (peerSsg == req.getSsg().getTrustedGateway())
-                                    SsgKeyStoreManager.installSsgServerCertificate(peerSsg, req.getFederatedCredentials());
+                                else if (peerSsg == context.getSsg().getTrustedGateway())
+                                    SsgKeyStoreManager.installSsgServerCertificate(peerSsg, context.getFederatedCredentials());
                                 else
                                     throw new ConfigurationException("SSL handshake failed, but peer Gateway was neither the Trusted nor Federated Gateway.");
                             } else
-                                SsgKeyStoreManager.installSsgServerCertificate(ssg, req.getCredentials()); // might throw BadCredentialsException
+                                SsgKeyStoreManager.installSsgServerCertificate(ssg, context.getCredentialsForTrustedSsg()); // might throw BadCredentialsException
                             // FALLTHROUGH allow policy to reset and retry
-                        } finally {
-                            if (responseNeedingClose != null)
-                                responseNeedingClose.close();
                         }
                     } catch (PolicyRetryableException e) {
                         // FALLTHROUGH allow policy to reset and retry
                     } catch (BadCredentialsException e) {
-                        handleBadCredentialsException(ssg, req, e);
+                        handleBadCredentialsException(ssg, context, e);
                         // FALLTHROUGH allow policy to reset and retry
                     }
                 } catch (KeyStoreCorruptException e) {
@@ -183,24 +184,24 @@ public class MessageProcessor {
                 } catch (DecoratorException e) {
                     throw new ConfigurationException(e);
                 }
-                req.reset();
+                context.reset();
             }
 
             log.warning("Too many attempts to conform to policy; giving up");
-            if (req.getLastErrorResponse() != null)
-                return req.getLastErrorResponse();
+            if (context.getResponse().isXml())
+                return;
             throw new ConfigurationException("Unable to conform to policy, and no useful fault from Gateway.");
         } finally {
             if (!succeeded) {
-                if (req.getActivePolicy() != null) {
+                if (context.getActivePolicy() != null) {
                     log.log(Level.FINE, "Request failed to get a response from the SSG -- marking cached policy as invalid");
-                    req.getActivePolicy().invalidate();
+                    context.getActivePolicy().invalidate();
                 }
             }
         }
     }
 
-    private void handleBadCredentialsException(Ssg ssg, PendingRequest req, BadCredentialsException e)
+    private void handleBadCredentialsException(Ssg ssg, PolicyApplicationContext context, BadCredentialsException e)
       throws KeyStoreCorruptException, IOException, OperationCanceledException,
             KeyStoreException, HttpChallengeRequiredException {
         if (ssg.isChainCredentialsFromClient())
@@ -212,12 +213,12 @@ public class MessageProcessor {
         // If we have a client cert, and the current password worked to decrypt it's private key, but something
         // has rejected the password anyway, we need to reestablish the validity of this account with the SSG.
         if (SsgKeyStoreManager.isClientCertAvailabile(ssg) && SsgKeyStoreManager.isPasswordWorkedForPrivateKey(ssg)) {
-            if (securePasswordPing(req)) {
+            if (securePasswordPing(context)) {
                 // password works with our keystore, and with the SSG, so why did it fail just now?
                 String message = "Recieved password failure, but it worked with our keystore and the Gateway liked it when we double-checked it.  " +
                   "Most likely that your account exists but is not permitted to access this service.";
                 log.severe(message);
-                req.getNewCredentials();
+                context.getNewCredentials();
                 return;
             }
             log.severe("The Gateway password that was used to obtain this client cert is no longer valid -- deleting the client cert");
@@ -234,7 +235,7 @@ public class MessageProcessor {
             // FALLTHROUGH -- retry, creating new keystore
         }
 
-        req.getNewCredentials();
+        context.getNewCredentials();
     }
 
     /**
@@ -293,22 +294,22 @@ public class MessageProcessor {
     /**
      * Contact the SSG and determine whether this SSG password is still valid.
      *
-     * @param req request we are processing.  must be configured with the credentials you wish to validate
+     * @param context request we are processing.  must be configured with the credentials you wish to validate
      * @return true if these credentials appear to be valid on this SSG; false otherwise
      * @throws IOException                if we were unable to validate this password either way
      * @throws OperationCanceledException if a logon dialog appeared and the user canceled it;
      *                                    this shouldn't happen unless the user clears the credentials
      */
-    private boolean securePasswordPing(PendingRequest req)
+    private boolean securePasswordPing(PolicyApplicationContext context)
       throws IOException, OperationCanceledException {
-        Ssg ssg = req.getSsg();
+        Ssg ssg = context.getSsg();
         if (ssg.getTrustedGateway() != null)
             throw new OperationCanceledException("Unable to perform password ping with Federated SSG"); // can't happen
 
         // We'll just use the CertificateDownloader for this.
         CertificateDownloader cd = new CertificateDownloader(ssg.getServerUrl(),
-          req.getUsername(),
-          req.getPassword());
+          context.getUsername(),
+          context.getPassword());
         try {
             // TODO: remove this stupid hack.  it doesn't help LDAP users anyway
             boolean worked = cd.downloadCertificate();
@@ -325,43 +326,43 @@ public class MessageProcessor {
      * associated Ssg.  On return, the PendingRequest's activePolicy will be set to the policy
      * we applied.
      *
-     * @param req the PendingRequest to decorate
+     * @param context the PendingRequest to decorate
      * @throws OperationCanceledException if the user declined to provide a username and password
      * @throws ServerCertificateUntrustedException
      *                                    if the Ssg certificate needs to be (re)imported.
      */
-    private void enforcePolicy(PendingRequest req)
+    private void enforcePolicy(PolicyApplicationContext context)
       throws OperationCanceledException, GeneralSecurityException, BadCredentialsException,
       IOException, SAXException, ClientCertificateException, KeyStoreCorruptException,
       HttpChallengeRequiredException, PolicyRetryableException, PolicyAssertionException,
       InvalidDocumentFormatException, DecoratorException, ConfigurationException {
-        Policy policy = policyManager.getPolicy(req);
+        Policy policy = policyManager.getPolicy(context);
         if (policy == null || !policy.isValid()) {
             if (policy != null)
                 log.warning("Ignoring this policy -- it has previously failed to complete successfully.");
-            if (req.getSsg().isUseSslByDefault()) {
+            if (context.getSsg().isUseSslByDefault()) {
                 // Use a default policy requiring SSL.
                 policy = SSL_POLICY;
             } else {
                 // No policy found for this request.
-                req.setActivePolicy(null);
+                context.setActivePolicy(null);
                 return;
             }
         }
 
-        req.setActivePolicy(policy);
+        context.setActivePolicy(policy);
         AssertionStatus result;
         ClientAssertion rootAssertion = policy.getClientAssertion();
         if (rootAssertion != null) {
             try {
-                result = rootAssertion.decorateRequest(req);
+                result = rootAssertion.decorateRequest(context);
 
                 // Do any deferred decorations that weren't rolled back
                 if (result == AssertionStatus.NONE) {
-                    Map deferredDecorations = req.getPendingDecorations();
+                    Map deferredDecorations = context.getPendingDecorations();
                     for (Iterator i = deferredDecorations.values().iterator(); i.hasNext();) {
                         ClientDecorator decorator = (ClientDecorator)i.next();
-                        result = decorator.decorateRequest(req);
+                        result = decorator.decorateRequest(context);
                         if (result != AssertionStatus.NONE)
                             break;
                     }
@@ -369,15 +370,17 @@ public class MessageProcessor {
 
                 if (result == AssertionStatus.NONE) {
                     // Ensure L7a:MessageID exists if we are supposed to have one
-                    if (req.getL7aMessageId() != null)
-                        if (SoapUtil.getL7aMessageId(req.getDecoratedDocument()) == null)
-                            SoapUtil.setL7aMessageId(req.getDecoratedDocument(), req.getL7aMessageId());
+                    final Message request = context.getRequest();
+                    final Document requestDoc = request.getXmlKnob().getDocument();
+                    if (context.getL7aMessageId() != null)
+                        if (SoapUtil.getL7aMessageId(requestDoc) == null)
+                            SoapUtil.setL7aMessageId(requestDoc, context.getL7aMessageId());
 
                     // Do all WSS processing all at once
-                    if (req.isSoap()) {
+                    if (request.isSoap()) {
                         log.info("Running pending request through WS-Security decorator");
-                        req.getWssRequirements().setTimestampCreatedDate(req.getSsg().dateTranslatorToSsg().translate(new Date()));
-                        wssDecorator.decorateMessage(req.getDecoratedDocument(), req.getWssRequirements());
+                        context.getWssRequirements().setTimestampCreatedDate(context.getSsg().dateTranslatorToSsg().translate(new Date()));
+                        wssDecorator.decorateMessage(requestDoc, context.getWssRequirements());
                     } else
                         log.info("Request isn't SOAP; skipping WS-Security decoration");
                 }
@@ -398,35 +401,41 @@ public class MessageProcessor {
      * Process the response from the SSG, stripping any stuff the end user client doesn't care about or shouldn't
      * see, according to the dictates of the policy for this request.
      *
-     * @param req the request we are processing
-     * @param res the reply we received from the Gateway
+     * @param context the request we are processing
      */
-    private void undecorateResponse(PendingRequest req, SsgResponse res)
+    private void undecorateResponse(PolicyApplicationContext context)
       throws OperationCanceledException,
       GeneralSecurityException, BadCredentialsException, IOException,
       ResponseValidationException, SAXException, KeyStoreCorruptException, PolicyAssertionException,
-      ConfigurationException, InvalidDocumentFormatException, PolicyRetryableException {
-        Policy appliedPolicy = req.getActivePolicy();
+      ConfigurationException, InvalidDocumentFormatException, PolicyRetryableException
+    {
+        Policy appliedPolicy = context.getActivePolicy();
         log.info(appliedPolicy == null ? "skipping undecorate step" : "undecorating response");
         if (appliedPolicy == null)
             return;
 
         // Bug #1026 - If request used WS-SecureConversation, check if response is a BadContextToken fault.
-        if (req.getSecureConversationId() != null) {
-            // TODO we should do a proper QNAME
-            if (res.isFault() && res.getFaultcode() != null &&
-              res.getFaultcode().trim().equals(SecureSpanConstants.FAULTCODE_BADCONTEXTTOKEN)) {
-                // TODO we should only trust this fault if it is signed
-                log.info("Gateway reports " + SecureSpanConstants.FAULTCODE_BADCONTEXTTOKEN +
-                  ".  Will throw away the current WS-SecureConversationSession and try again.");
-                req.closeSecureConversationSession();
-                throw new PolicyRetryableException("Flushed bad secure conversation session.");
+        if (context.getSecureConversationId() != null) {
+            Message response = context.getResponse();
+            if (response.isSoap()) {
+                SoapKnob respSoap = response.getSoapKnob();
+                // TODO we should do a proper QNAME
+                if (respSoap.isFault() && respSoap.getFaultDetail().getFaultCode() != null &&
+                        respSoap.getFaultDetail().getFaultCode().trim().equals(SecureSpanConstants.FAULTCODE_BADCONTEXTTOKEN))
+                {
+                    // TODO we should only trust this fault if it is signed
+                    log.info("Gateway reports " + SecureSpanConstants.FAULTCODE_BADCONTEXTTOKEN +
+                             ".  Will throw away the current WS-SecureConversationSession and try again.");
+                    context.closeSecureConversationSession();
+                    throw new PolicyRetryableException("Flushed bad secure conversation session.");
+                }
             }
+            // TODO should we reject the response if isn't SOAP, but the request used WS-SC
         }
 
         ClientAssertion rootAssertion = appliedPolicy.getClientAssertion();
         if (rootAssertion != null) {
-            AssertionStatus result = rootAssertion.unDecorateReply(req, res);
+            AssertionStatus result = rootAssertion.unDecorateReply(context);
             if (result != AssertionStatus.NONE) {
                 log.warning("Response policy processing failed with status " + result + "; aborting");
                 throw new ConfigurationException("Unable to undecorate response; policy evaluated with error: " + result);
@@ -437,17 +446,17 @@ public class MessageProcessor {
     /**
      * Get the appropriate Ssg URL for forwarding the given request.
      *
-     * @param req the PendingRequest to process
-     * @return a URL that might have had it's protocol and port modified if SSL is indicated.
+     * @param context the context containing the request to process and the SSG it is bound for.  May not be null.
+     * @return a URL that might have had it's protocol and port modified if SSL is indicated.  Never null.
      * @throws ConfigurationException if we couldn't find a valid URL in this Ssg configuration.
      */
-    private URL getUrl(PendingRequest req) throws ConfigurationException {
-        Ssg ssg = req.getSsg();
+    private URL getUrl(PolicyApplicationContext context) throws ConfigurationException {
+        Ssg ssg = context.getSsg();
         URL url = null;
         try {
             url = ssg.getServerUrl();
-            if (req.isSslRequired()) {
-                if (req.isSslForbidden())
+            if (context.isSslRequired()) {
+                if (context.isSslForbidden())
                     log.severe("Error: SSL is both forbidden and required by policy -- leaving SSL enabled");
                 if ("http".equalsIgnoreCase(url.getProtocol())) {
                     log.info("Changing http to https per policy for this request (using SSL port " +
@@ -468,8 +477,8 @@ public class MessageProcessor {
     /**
      * Call the Ssg and obtain its response to the current message.
      *
-     * @param req the PendingRequest to process.  If a policy was applied, the request's activePolicy must point at it.
-     * @return the SsgResponse from the SSG
+     * @param context       the Context containing the request to process.
+     *                      If a policy was applied, the context's activePolicy must point at it.
      * @throws ConfigurationException         if the SSG url is invalid
      * @throws ConfigurationException         if the we downloaded a new policy for this request, but we are still being told
      *                                        the policy is out-of-date
@@ -492,23 +501,24 @@ public class MessageProcessor {
      * @throws com.l7tech.common.security.xml.processor.ProcessorException
      *                                        if the response from the SSG could not be undecorated
      */
-    private SsgResponse obtainResponse(final PendingRequest req)
+    private void obtainResponse(final PolicyApplicationContext context)
       throws ConfigurationException, IOException, PolicyRetryableException, GeneralSecurityException,
       OperationCanceledException, ClientCertificateException, BadCredentialsException,
       KeyStoreCorruptException, HttpChallengeRequiredException, SAXException, NoSuchAlgorithmException,
-      InvalidDocumentFormatException, ProcessorException, BadSecurityContextException {
-        URL url = getUrl(req);
-        final Ssg ssg = req.getSsg();
+      InvalidDocumentFormatException, ProcessorException, BadSecurityContextException
+    {
+        URL url = getUrl(context);
+        final Ssg ssg = context.getSsg();
 
-        HttpClient client = req.getSsg().httpClient();
+        HttpClient client = context.getSsg().httpClient();
         HttpState state = client.getState();
 
         // Forget any cached session cookies, for all services shared by this SSG        
-        if (req.isPolicyUpdated()) {
+        if (context.isPolicyUpdated()) {
             ssg.clearSessionCookies();
         }
 
-        Cookie[] cookies = req.getSsg().retrieveSessionCookies();
+        Cookie[] cookies = context.getSsg().retrieveSessionCookies();
         if (cookies != null) {
             for (int i = 0; i < cookies.length; i++) {
                 Cookie cookie = cookies[i];
@@ -517,41 +527,43 @@ public class MessageProcessor {
         }
 
         PostMethod postMethod = null;
-        SsgResponse response = null;
+        final Message request = context.getRequest();
+        final Message response = context.getResponse();
 
         try {
             postMethod = new PostMethod(url.toString());
-            setAuthenticationAndBufferingState(req, state, postMethod);
-            postMethod.addRequestHeader("SOAPAction", req.getPolicyAttachmentKey().getSoapAction());
-            postMethod.addRequestHeader(SecureSpanConstants.HttpHeaders.ORIGINAL_URL, req.getOriginalUrl().toString());
+            setAuthenticationAndBufferingState(context, state, postMethod);
+            postMethod.addRequestHeader("SOAPAction", context.getPolicyAttachmentKey().getSoapAction());
+            postMethod.addRequestHeader(SecureSpanConstants.HttpHeaders.ORIGINAL_URL, context.getOriginalUrl().toString());
 
             // Let the Gateway know what policy version we used for the request.
-            Policy policy = req.getActivePolicy();
+            Policy policy = context.getActivePolicy();
             if (policy != null && policy.getVersion() != null)
                 postMethod.addRequestHeader(SecureSpanConstants.HttpHeaders.POLICY_VERSION, policy.getVersion());
 
-            String postBody = XmlUtil.nodeToString(req.getDecoratedDocument());
+            final Document decoratedDocument = request.getXmlKnob().getDocument();
+            String postBody = XmlUtil.nodeToString(decoratedDocument);
 
             if (LogFlags.logPosts) {
                 if (LogFlags.reformatLoggedXml) {
                     log.info("Posting to Gateway (reformatted):\n" +
-                             XmlUtil.nodeToFormattedString(req.getDecoratedDocument()));
+                             XmlUtil.nodeToFormattedString(decoratedDocument));
                 } else {
-                    if (LogFlags.logAttachments && req.isMultipart()) {
+                    if (LogFlags.logAttachments && request.getMimeKnob().isMultipart()) {
                         ByteArrayOutputStream baos = new ByteArrayOutputStream();
-                        InputStream bodyStream = req.getEntireMessageBody();
+                        InputStream bodyStream = request.getMimeKnob().getEntireMessageBodyAsInputStream();
                         HexUtils.copyStream(bodyStream, baos);
                         log.info("Posting to Gateway (unformatted, including attachments):\n" +
-                                 baos.toString(req.getOuterContentType().getEncoding()));
+                                 baos.toString(request.getMimeKnob().getOuterContentType().getEncoding()));
                     } else {
                         log.info("Posting to Gateway (unformatted):\n" + postBody);
                     }
                 }
             }
 
-            postMethod.addRequestHeader(MimeUtil.CONTENT_TYPE, req.getOuterContentType().getFullValue());
+            postMethod.addRequestHeader(MimeUtil.CONTENT_TYPE, request.getMimeKnob().getOuterContentType().getFullValue());
 
-            final InputStream bodyInputStream = req.getEntireMessageBody();
+            final InputStream bodyInputStream = request.getMimeKnob().getEntireMessageBodyAsInputStream();
             postMethod.setRequestBody(bodyInputStream);
 
             log.info("Posting request to Gateway " + ssg + ", url " + url);
@@ -565,11 +577,11 @@ public class MessageProcessor {
                 log.info("Gateway response contained a certficate status:invalid header.  Will get new client cert.");
                 // Try to get a new client cert; if this succeeds, it'll replace the old one
                 try {
-                    if (req.getSsg().getTrustedGateway() != null) {
-                        log.log(Level.SEVERE, "Federated Gateway " + req.getSsg() + " is trying to tell us to destroy our Trusted client certificate; ignoring it");
+                    if (context.getSsg().getTrustedGateway() != null) {
+                        log.log(Level.SEVERE, "Federated Gateway " + context.getSsg() + " is trying to tell us to destroy our Trusted client certificate; ignoring it");
                         throw new ConfigurationException("Federated Gateway rejected our client certificate");
                     }
-                    SsgKeyStoreManager.obtainClientCertificate(req.getSsg(), req.getCredentials());
+                    SsgKeyStoreManager.obtainClientCertificate(context.getSsg(), context.getCredentialsForTrustedSsg());
                     throw new PolicyRetryableException(); // try again with the new cert
                 } catch (GeneralSecurityException e) {
                     throw new ClientCertificateException("Unable to obtain new client certificate", e);
@@ -577,8 +589,8 @@ public class MessageProcessor {
                     throw new ClientCertificateException("Unable to obtain new client certificate", e);
                 } catch (CertificateAlreadyIssuedException e) {
                     // Bug #380 - if we haven't updated policy yet, try that first - mlyons
-                    if (!req.isPolicyUpdated()) {
-                        Managers.getPolicyManager().flushPolicy(req);
+                    if (!context.isPolicyUpdated()) {
+                        Managers.getPolicyManager().flushPolicy(context);
                         throw new PolicyRetryableException();
                     } else {
                         Managers.getCredentialManager().notifyCertificateAlreadyIssued(ssg);
@@ -591,7 +603,7 @@ public class MessageProcessor {
             if (policyUrlHeader != null) {
                 log.info("Gateway response contained a PolicyUrl header: " + policyUrlHeader.getValue());
                 // Have we already updated a policy while processing this request?
-                if (req.isPolicyUpdated())
+                if (context.isPolicyUpdated())
                     throw new ConfigurationException("Policy was updated, but Gateway says it's still out-of-date");
                 String serviceid = null;
                 try {
@@ -609,8 +621,8 @@ public class MessageProcessor {
                     throw new ConfigurationException("Gateway sent us an invalid Policy URL.");
                 }
 
-                policyManager.updatePolicy(req, serviceid);
-                req.setPolicyUpdated(true);
+                policyManager.updatePolicy(context, serviceid);
+                context.setPolicyUpdated(true);
                 if (status != 200) {
                     log.info("Retrying request with the new policy");
                     throw new PolicyRetryableException();
@@ -630,33 +642,34 @@ public class MessageProcessor {
 
             InputStream responseBodyAsStream = postMethod.getResponseBodyAsStream();
             //responseBodyAsStream = new TeeInputStream(responseBodyAsStream, System.err);
-            final MimeBody mimeBody = new MimeBody(Managers.createStashManager(),
-                                                                           outerContentType,
-                                                                           responseBodyAsStream);
+            response.initialize(Managers.createStashManager(),
+                                             outerContentType,
+                                             responseBodyAsStream);
+            final PostMethod postMethod1 = postMethod;
+            context.runOnClose(new Runnable() {
+                public void run() {
+                    postMethod1.releaseConnection();
+                }
+            });
 
-            PartInfo firstPart = mimeBody.getFirstPart();
-            ContentTypeHeader firstPartContentType = firstPart.getContentType();
-            if (!firstPartContentType.isXml())
-                throw new IOException("Multipart response from Gateway contained a non-XML first part of type " + firstPartContentType.getFullValue());
-            // TODO pester Sun for a DocumentBuilder that will take an encoding hint along with the InputStream
-            // we'll eat (destructively read) the first body part here; it will always be overwritten anyway by the undecorated XML
-            boolean destroyAsRead = !LogFlags.logResponse; // save it if we'll need to log it
-            Document responseDocument = XmlUtil.parse(firstPart.getInputStream(destroyAsRead));
+            // Assert that response is XML
+            Document responseDocument = response.getXmlKnob().getDocument();
 
             if (LogFlags.logResponse) {
+                final MimeKnob respMime = response.getMimeKnob();
                 if (LogFlags.reformatLoggedXml) {
-                    String logStr = mimeBody.getOuterContentType().toString() + "\r\n" +
+                    String logStr = respMime.getOuterContentType().toString() + "\r\n" +
                             XmlUtil.nodeToFormattedString(responseDocument);
                     log.info("Got response from Gateway (reformatted):\n" + logStr);
                 } else {
-                    if (LogFlags.logAttachments && mimeBody.isMultipart()) {
+                    if (LogFlags.logAttachments && respMime.isMultipart()) {
                         ByteArrayOutputStream baos = new ByteArrayOutputStream();
-                        InputStream bodyStream = mimeBody.getEntireMessageBodyAsInputStream(false);
+                        InputStream bodyStream = respMime.getEntireMessageBodyAsInputStream();
                         HexUtils.copyStream(bodyStream, baos);
                         log.info("Got response from Gateway (unformatted, including attachments):\n" +
-                                 baos.toString(mimeBody.getOuterContentType().getEncoding()));
+                                 baos.toString(respMime.getOuterContentType().getEncoding()));
                     } else {
-                        String logStr = mimeBody.getOuterContentType().toString() + "\r\n" +
+                        String logStr = respMime.getOuterContentType().toString() + "\r\n" +
                                 XmlUtil.nodeToString(responseDocument);
                         log.info("Got response from Gateway (unformatted):\n" + logStr);
                     }
@@ -665,9 +678,9 @@ public class MessageProcessor {
 
             log.info("Running SSG response through WS-Security undecorator");
             SecurityContextFinder scf = null;
-            final String sessionId = req.getSecureConversationId();
+            final String sessionId = context.getSecureConversationId();
             if (sessionId != null) {
-                final byte[] sessionKey = req.getSecureConversationSharedSecret();
+                final byte[] sessionKey = context.getSecureConversationSharedSecret();
                 scf = new SecurityContextFinder() {
                     public SecurityContext getSecurityContext(String securityContextIdentifier) {
                         return new SecurityContext() {
@@ -702,9 +715,17 @@ public class MessageProcessor {
                 processorResult = null;
             }
 
-            response = new SsgResponse(mimeBody, responseDocument, processorResult, status, headers);
+            response.attachKnob(HttpHeadersKnob.class, new HttpHeadersKnob(headers));
+            response.getXmlKnob().setDocument(responseDocument);
+            response.getXmlKnob().setProcessorResult(processorResult);
+            response.attachHttpResponseKnob(new AbstractHttpResponseKnob() {
+                public void addCookie(Cookie cookie) {
+                    // Agent currently stores cookies in the Ssg, and does not pass them on to the client
+                    throw new UnsupportedOperationException();
+                }
+            });
+            response.getHttpResponseKnob().setStatus(status);
             if (status == 401 || status == 402) {
-                req.setLastErrorResponse(response);
                 Header authHeader = postMethod.getResponseHeader("WWW-Authenticate");
                 log.info("Got auth header: " + (authHeader == null ? "<null>" : authHeader.getValue()));
                 if (authHeader == null && "https".equals(url.getProtocol()) && SsgKeyStoreManager.isClientCertAvailabile(ssg)) {
@@ -714,23 +735,14 @@ public class MessageProcessor {
                 throw new BadCredentialsException();
             }
 
-            // Transfer ownership of this PostMethod to the response so it will be closed when the response is disposed of
-            response.setDownstreamPostMethod(postMethod);
-            return response;
-
         } catch (NoSuchPartException e) {
             throw new CausedIOException("Response from Gateway used invalid or unsupported MIME multipart syntax", e);
         } finally {
             if (postMethod != null) {
                 if (state.getCookies() == null) {
-                    req.getSsg().clearSessionCookies();
+                    context.getSsg().clearSessionCookies();
                 } else {
-                    req.getSsg().storeSessionCookies(state.getCookies());
-                }
-
-                // if not deferring the connection release, release it now
-                if (response != null && !response.isDownstreamPostMethod()) {
-                    postMethod.releaseConnection();
+                    context.getSsg().storeSessionCookies(state.getCookies());
                 }
             }
             try {
@@ -753,39 +765,39 @@ public class MessageProcessor {
      * the specified PendingRequest, and set the request to be unbuffered if possible (ie, if Digest
      * is not required).
      *
-     * @param req        the PendingRequest that might require HTTP level authentication
+     * @param context        the Context containing the request that might require HTTP level authentication
      * @param state      the HttpState to adjust
      * @param postMethod the PostMethod to adjust
      */
-    private void setAuthenticationAndBufferingState(PendingRequest req, HttpState state, PostMethod postMethod)
+    private void setAuthenticationAndBufferingState(PolicyApplicationContext context, HttpState state, PostMethod postMethod)
             throws OperationCanceledException, IOException
     {
         // Turn off request buffering unless HTTP digest is required (Bug #1376)
-        if (!req.isDigestAuthRequired()) {
+        if (!context.isDigestAuthRequired()) {
             // Fix for Bug #1282 - Must set a content-length on PostMethod or it will try to buffer the whole thing
-            final long contentLength = req.getContentLength();
+            final long contentLength = context.getRequest().getMimeKnob().getContentLength();
             if (contentLength > Integer.MAX_VALUE)
                 throw new IOException("Body content is too long to be processed -- maximum is " + Integer.MAX_VALUE + " bytes");
             postMethod.setRequestContentLength((int)contentLength);
         }
 
         // Turn on preemptive authentication only if HTTP basic is called for in the policy
-        state.setAuthenticationPreemptive(req.isBasicAuthRequired());
+        state.setAuthenticationPreemptive(context.isBasicAuthRequired());
 
         // Do we need HTTP client auth?
-        if (!req.isBasicAuthRequired() && !req.isDigestAuthRequired()) {
+        if (!context.isBasicAuthRequired() && !context.isDigestAuthRequired()) {
             // No -- tell the HTTP client to keep the password to itself (if it's caching one)
             log.info("No HTTP Basic or Digest authentication required by current policy");
             postMethod.setDoAuthentication(false);
             return;
         }
 
-        if (req.getSsg().getTrustedGateway() != null) // can't happen; password based assertions should have all failed
+        if (context.getSsg().getTrustedGateway() != null) // can't happen; password based assertions should have all failed
             throw new OperationCanceledException("Password based authentication is not supported for Federated Gateway");
 
         // Set credentials and enable HTTP client auth
-        String username = req.getUsername();
-        char[] password = req.getPassword();
+        String username = context.getUsername();
+        char[] password = context.getPassword();
         log.info("Enabling HTTP Basic or Digest auth with user name=" + username);
         postMethod.setDoAuthentication(true);
         state.setCredentials(null, null,

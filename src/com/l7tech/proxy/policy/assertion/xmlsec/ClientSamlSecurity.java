@@ -12,11 +12,10 @@ import com.l7tech.common.xml.saml.SamlHolderOfKeyAssertion;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.xmlsec.SamlSecurity;
-import com.l7tech.proxy.datamodel.PendingRequest;
 import com.l7tech.proxy.datamodel.Ssg;
 import com.l7tech.proxy.datamodel.SsgKeyStoreManager;
-import com.l7tech.proxy.datamodel.SsgResponse;
 import com.l7tech.proxy.datamodel.exceptions.*;
+import com.l7tech.proxy.message.PolicyApplicationContext;
 import com.l7tech.proxy.policy.assertion.ClientAssertion;
 import com.l7tech.proxy.policy.assertion.ClientDecorator;
 import org.xml.sax.SAXException;
@@ -37,22 +36,22 @@ public class ClientSamlSecurity extends ClientAssertion {
         this.data = data;
     }
 
-    public AssertionStatus decorateRequest(PendingRequest request)
+    public AssertionStatus decorateRequest(PolicyApplicationContext context)
             throws BadCredentialsException, OperationCanceledException, GeneralSecurityException,
                    ClientCertificateException, IOException, SAXException, KeyStoreCorruptException,
                    HttpChallengeRequiredException, PolicyRetryableException, PolicyAssertionException,
                    InvalidDocumentFormatException
     {
-        request.prepareClientCertificate();
-        final Ssg ssg = request.getSsg();
+        context.prepareClientCertificate();
+        final Ssg ssg = context.getSsg();
         final PrivateKey privateKey = SsgKeyStoreManager.getClientCertPrivateKey(ssg);
 
         // Look up or apply for SAML ticket
-        final SamlHolderOfKeyAssertion ass = request.getOrCreateSamlHolderOfKeyAssertion();
+        final SamlHolderOfKeyAssertion ass = context.getOrCreateSamlHolderOfKeyAssertion();
 
-        request.getPendingDecorations().put(this, new ClientDecorator() {
-            public AssertionStatus decorateRequest(PendingRequest request) {
-                DecorationRequirements wssReqs = request.getWssRequirements();
+        context.getPendingDecorations().put(this, new ClientDecorator() {
+            public AssertionStatus decorateRequest(PolicyApplicationContext context) {
+                DecorationRequirements wssReqs = context.getWssRequirements();
                 wssReqs.setSignTimestamp(true);
                 wssReqs.setSenderSamlToken(ass.asElement());
                 wssReqs.setSenderPrivateKey(privateKey);
@@ -63,7 +62,7 @@ public class ClientSamlSecurity extends ClientAssertion {
         return AssertionStatus.NONE;
     }
 
-    public AssertionStatus unDecorateReply(PendingRequest request, SsgResponse response)
+    public AssertionStatus unDecorateReply(PolicyApplicationContext context)
             throws BadCredentialsException, OperationCanceledException, GeneralSecurityException, IOException,
                    SAXException, ResponseValidationException, KeyStoreCorruptException, PolicyAssertionException,
                    InvalidDocumentFormatException

@@ -1,8 +1,8 @@
 package com.l7tech.common.util;
 
 import junit.framework.Test;
-import junit.framework.TestSuite;
 import junit.framework.TestCase;
+import junit.framework.TestSuite;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
@@ -46,7 +46,7 @@ public class SoapFaultUtilsTest extends TestCase {
             exceptiondetails = SoapFaultUtils.makeFaultDetailsSubElement("more", faultDetails);
         }
 
-        String fault = SoapFaultUtils.generateRawSoapFault(faultCode, faultString, exceptiondetails, faultActor);
+        String fault = SoapFaultUtils.generateSoapFaultXml(faultCode, faultString, exceptiondetails, faultActor);
         logger.info("Raw result:\n" + fault);
         Document output = XmlUtil.stringToDocument(fault);
         logger.info("Parsed result:\n" + XmlUtil.nodeToFormattedString(output));
