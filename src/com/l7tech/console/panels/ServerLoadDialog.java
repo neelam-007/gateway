@@ -307,8 +307,8 @@ public class ServerLoadDialog extends JDialog {
             int minutes = metrics.getMinutes();
             String uptime = "";
             if (days > 0) uptime += Integer.toString(days) + " days ";
-            if (hrs > 0) uptime += Integer.toString(days) + " hrs ";
-            if (minutes > 0) uptime += Integer.toString(days) + " minutes ";
+            if (hrs > 0) uptime += Integer.toString(hrs) + " hrs ";
+            if (minutes > 0) uptime += Integer.toString(minutes) + " minutes ";
             uptimeText.setText(uptime);
             lastminuteLoadText.setText(Double.toString(metrics.getLoad1()));
             fiveminuteLoadText.setText(Double.toString(metrics.getLoad2()));
