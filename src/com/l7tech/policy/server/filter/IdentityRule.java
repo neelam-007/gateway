@@ -93,17 +93,21 @@ public class IdentityRule extends Filter {
      * check whether the user validates this assertion
      */
     private boolean validateIdAssertion(IdentityAssertion idassertion) throws FilteringException {
-        if (requestor == null) return false;
+        return canUserPassIDAssertion(idassertion, requestor);
+    }
+
+    public static boolean canUserPassIDAssertion(IdentityAssertion idassertion, User user) throws FilteringException {
+        if (user == null) return false;
         // check what type of assertion we have
         if (idassertion instanceof SpecificUser) {
             SpecificUser userass = (SpecificUser)idassertion;
-            if (userass.getIdentityProviderOid() == requestor.getProviderId())
-                if (userass.getUserLogin().equals(requestor.getLogin())) return true;
+            if (userass.getIdentityProviderOid() == user.getProviderId())
+                if (userass.getUserLogin().equals(user.getLogin())) return true;
             return false;
         } else if (idassertion instanceof MemberOfGroup) {
             MemberOfGroup grpmemship = (MemberOfGroup)idassertion;
-            if (grpmemship.getIdentityProviderOid() == requestor.getProviderId()) {
-                Iterator i = requestor.getGroups().iterator();
+            if (grpmemship.getIdentityProviderOid() == user.getProviderId()) {
+                Iterator i = user.getGroups().iterator();
                 while (i.hasNext()) {
                     Group grp = (Group)i.next();
                     if (grp.getName().equals(grpmemship.getGroupName())) return true;
