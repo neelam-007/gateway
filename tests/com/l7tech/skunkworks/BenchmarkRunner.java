@@ -100,7 +100,7 @@ public class BenchmarkRunner {
             synchronized (this) {
                 try {
                     this.wait();
-                    threadPool.close(1000);
+                    threadPool.close(10000);
                 } catch (InterruptedException e) {
                     // swallow
                 }
