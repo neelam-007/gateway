@@ -1,11 +1,11 @@
 package com.l7tech.console.action;
 
 import com.l7tech.console.logging.ErrorManager;
-import com.l7tech.console.poleditor.PolicyEditorPanel;
 import com.l7tech.console.panels.WorkSpacePanel;
+import com.l7tech.console.poleditor.PolicyEditorPanel;
 import com.l7tech.console.tree.ServiceNode;
+import com.l7tech.console.tree.policy.PolicyTree;
 import com.l7tech.console.util.TopComponents;
-import com.l7tech.console.util.Registry;
 import com.l7tech.objectmodel.FindException;
 
 import javax.swing.*;
@@ -81,7 +81,13 @@ public class EditServicePolicyAction extends NodeAction {
             wpanel.clearWorkspace();
 
             serviceNode.clearServiceHolder();
-            final PolicyEditorPanel pep = new PolicyEditorPanel(serviceNode, validate);
+            TopComponents topComponents = TopComponents.getInstance();
+            topComponents.unregisterComponent(PolicyTree.NAME);
+            PolicyTree policyTree = (PolicyTree)topComponents.getPolicyTree();
+
+            policyTree.addFocusListener(topComponents.getMainWindow().getActionsFocusListener());
+
+            final PolicyEditorPanel pep = new PolicyEditorPanel(serviceNode, policyTree, validate);
             wpanel.setComponent(pep);
             wpanel.addWorkspaceContainerListener(pep);
         } catch (ActionVetoException e) {

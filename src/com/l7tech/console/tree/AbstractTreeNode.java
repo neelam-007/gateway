@@ -22,6 +22,7 @@ import java.util.logging.Logger;
  */
 public abstract class AbstractTreeNode extends DefaultMutableTreeNode {
     static protected Logger logger = Logger.getLogger(AbstractTreeNode.class.getName());
+
     protected boolean hasLoadedChildren;
     protected WeakPropertyChangeSupport propChangeSupport = new WeakPropertyChangeSupport();
     private java.util.List cookies = new ArrayList();
@@ -214,7 +215,6 @@ public abstract class AbstractTreeNode extends DefaultMutableTreeNode {
             return null;
         JPopupMenu pm = new JPopupMenu();
         for (int i = 0; i < actions.length; i++) {
-            //todo: consider reworking this a bit. em
             if (actions[i] instanceof NodeAction) {
                 ((NodeAction)actions[i]).setTree(tree);
             }

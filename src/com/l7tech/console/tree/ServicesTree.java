@@ -1,7 +1,7 @@
 package com.l7tech.console.tree;
 
-import com.l7tech.console.action.DeleteServiceAction;
-import com.l7tech.console.action.EditServicePolicyAction;
+import com.l7tech.console.action.*;
+import com.l7tech.console.util.Refreshable;
 
 import javax.swing.*;
 import javax.swing.tree.DefaultTreeModel;
@@ -11,6 +11,7 @@ import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.util.logging.Logger;
 
 /**
  * Class ServiceTree is the speciaqliced <code>JTree</code> that
@@ -18,8 +19,12 @@ import java.awt.event.MouseEvent;
  *
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  */
-public class ServicesTree extends JTree {
-    /** component name */
+public class ServicesTree extends JTree implements Refreshable {
+    static Logger log = Logger.getLogger(ServicesTree.class.getName());
+
+    /**
+     * component name
+     */
     public final static String NAME = "services.tree";
 
     /**
@@ -40,11 +45,40 @@ public class ServicesTree extends JTree {
         this(null);
     }
 
-    /** initialize */
+    /**
+     * initialize
+     */
     private void initialize() {
         addKeyListener(new TreeKeyListener());
         addMouseListener(new TreeMouseListener());
         setCellRenderer(new EntityTreeCellRenderer());
+    }
+
+    public void refresh() {
+        TreePath path = getSelectionPath();
+        if (path != null) {
+            AbstractTreeNode n = (AbstractTreeNode)path.getLastPathComponent();
+            final Action[] actions = n.getActions(RefreshAction.class);
+            if (actions.length == 0) {
+                log.warning("No refresh action found");
+            } else {
+                ((NodeAction)actions[0]).setTree(this);
+                ActionManager.getInstance().invokeAction(actions[0]);
+            }
+            setSelectionPath(path);
+        }
+    }
+
+    /**
+     * This tree can always be refreshed
+     * <p/>
+     * May consider introducing the logic arround disabling this while the tree is
+     * refreshing if needed
+     *
+     * @return always true
+     */
+    public boolean canRefresh() {
+        return true;
     }
 
     /**
@@ -52,7 +86,9 @@ public class ServicesTree extends JTree {
      */
     class TreeKeyListener extends KeyAdapter {
 
-        /** Invoked when a key has been pressed.*/
+        /**
+         * Invoked when a key has been pressed.
+         */
         public void keyPressed(KeyEvent e) {
             JTree tree = (JTree)e.getSource();
             TreePath path = tree.getSelectionPath();
@@ -126,6 +162,7 @@ public class ServicesTree extends JTree {
 
                     JPopupMenu menu = node.getPopupMenu(ServicesTree.this);
                     if (menu != null) {
+                        menu.setFocusable(false);
                         menu.show(mouseEvent.getComponent(), mouseEvent.getX(), mouseEvent.getY());
                     }
                 }

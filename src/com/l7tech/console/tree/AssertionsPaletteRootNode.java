@@ -3,7 +3,6 @@ package com.l7tech.console.tree;
 import com.l7tech.console.util.Preferences;
 import com.l7tech.console.util.Registry;
 
-import javax.swing.*;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -64,30 +63,6 @@ public class AssertionsPaletteRootNode extends AbstractTreeNode {
         for (int i = 0; i < nodes.length; i++) {
             insert(nodes[i], i);
         }
-    }
-
-
-    /**
-     * test whether the node can refresh its children. The provider
-     * node can always refresh its children
-     *
-     * @return always true
-     */
-    public boolean canRefresh() {
-        return true;
-    }
-
-    /**
-     * Get the set of actions associated with this node.
-     * This may be used e.g. in constructing a context menu.
-     * <p/>
-     * <P>
-     * By default returns the empty actions arrays.
-     *
-     * @return actions appropriate to the node
-     */
-    public Action[] getActions() {
-        return new Action[]{new RefreshTreeNodeAction(this)};
     }
 
     /**

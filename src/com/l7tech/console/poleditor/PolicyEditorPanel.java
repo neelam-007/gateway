@@ -57,7 +57,7 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
     private PolicyTree policyTree;
     private PolicyEditToolBar policyEditorToolbar;
     private JSplitPane splitPane;
-    private final TopComponents componentRegistry = TopComponents.getInstance();
+    private final TopComponents topComponents = TopComponents.getInstance();
     private JScrollPane policyTreePane;
     private ServiceNode serviceNode;
     private boolean initialValidate = false;
@@ -69,13 +69,19 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
      * Instantiate the policy editor, optionally validating the policy.
      * 
      * @param sn             the service node
+     * @param pt             the polict tree
      * @param validateOnOpen true, the service will be validated, false otherwise
      * @throws FindException   if the service cannot be found
      * @throws RemoteException on error invoking the remote service
      */
-    public PolicyEditorPanel(ServiceNode sn, boolean validateOnOpen) throws FindException, RemoteException {
-        layoutComponents();
+    public PolicyEditorPanel(ServiceNode sn, PolicyTree pt, boolean validateOnOpen) throws FindException, RemoteException {
+        if (pt == null || sn == null) {
+            throw new IllegalArgumentException();
+        }
         this.serviceNode = sn;
+        this.policyTree = pt;
+        layoutComponents();
+
         renderPolicy(false);
         setEditorListeners();
         if (validateOnOpen) {
@@ -199,10 +205,6 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
 
     private JComponent getPolicyTreePane() {
         if (policyTreePane != null) return policyTreePane;
-        // todo: hack, rework policy tree do it is instantiated
-        // here.
-        componentRegistry.unregisterComponent(PolicyTree.NAME);
-        policyTree = (PolicyTree)componentRegistry.getPolicyTree();
         policyTree.setPolicyEditor(this);
         policyTree.setRootVisible(false);
         policyTree.setShowsRootHandles(true);
@@ -227,7 +229,7 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
         getSplitPane().setName(service.getName());
 
         TreeModel policyTreeModel;
-        final PolicyToolBar pt = componentRegistry.getMainWindow().getPolicyToolBar();
+        final PolicyToolBar pt = topComponents.getMainWindow().getPolicyToolBar();
 
 
         if (identityView) {
@@ -267,6 +269,7 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
                     final TreeNode selNode = root.getChildAt(0);
                     final TreePath path = new TreePath(((DefaultMutableTreeNode)selNode).getPath());
                     policyTree.setSelectionPath(path);
+                    policyTree.requestFocusInWindow();
                 }
             }
         });
@@ -277,7 +280,7 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
      */
     private void setEditorListeners() {
         serviceNode.addPropertyChangeListener(servicePropertyChangeListener);
-        JTree tree = (JTree)componentRegistry.getComponent(ServicesTree.NAME);
+        JTree tree = (JTree)topComponents.getComponent(ServicesTree.NAME);
         if (tree == null) {
             throw new IllegalStateException("Internal error - (could not get services tree component)");
         }
@@ -687,7 +690,7 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
         serviceNode = null;
         policyTree.setPolicyEditor(null);
         policyTree.setModel(null);
-        final PolicyToolBar pt = componentRegistry.getMainWindow().getPolicyToolBar();
+        final PolicyToolBar pt = topComponents.getMainWindow().getPolicyToolBar();
         if (pt !=null) {
             pt.unregisterPolicyTree(policyTree);
         }
@@ -727,7 +730,7 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
                     throw new ContainerVetoException(e, "User aborted");
                 }
             }
-            final PolicyToolBar pt = componentRegistry.getMainWindow().getPolicyToolBar();
+            final PolicyToolBar pt = topComponents.getMainWindow().getPolicyToolBar();
             pt.disableAll();
         }
     }

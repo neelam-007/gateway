@@ -2,6 +2,7 @@ package com.l7tech.console.tree.policy;
 
 import com.l7tech.console.action.ActionManager;
 import com.l7tech.console.action.DeleteAssertionAction;
+import com.l7tech.console.action.EditServicePolicyAction;
 import com.l7tech.console.poleditor.PolicyEditorPanel;
 import com.l7tech.console.tree.AbstractTreeNode;
 import com.l7tech.console.tree.AssertionsTree;
@@ -9,7 +10,7 @@ import com.l7tech.console.tree.FilteredTreeModel;
 import com.l7tech.console.tree.TransferableTreePath;
 import com.l7tech.console.util.ArrowImage;
 import com.l7tech.console.util.PopUpMouseListener;
-import com.l7tech.console.poleditor.PolicyEditorPanel;
+import com.l7tech.console.util.Refreshable;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.composite.CompositeAssertion;
 
@@ -39,7 +40,7 @@ import java.util.logging.Logger;
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  */
 public class PolicyTree extends JTree implements DragSourceListener,
-  DragGestureListener, Autoscroll, TreeModelListener {
+  DragGestureListener, Autoscroll, TreeModelListener, Refreshable {
     static final Logger log = Logger.getLogger(PolicyTree.class.getName());
     /** component name */
     public final static String NAME = "policy.tree";
@@ -768,6 +769,7 @@ public class PolicyTree extends JTree implements DragSourceListener,
         Runnable doSelect = new Runnable() {
             public void run() {
                 setSelectionPath(childPath);
+                PolicyTree.this.requestFocusInWindow();
             }
         };
 
@@ -838,5 +840,15 @@ public class PolicyTree extends JTree implements DragSourceListener,
     public void treeStructureChanged(TreeModelEvent e) {
         log.fine("treeStructureChanged ");
         sayWhat(e);
+    }
+
+    public void refresh() {
+        if (canRefresh()) {
+            new EditServicePolicyAction(policyEditorPanel.getServiceNode(), true).performAction();
+        }
+    }
+
+    public boolean canRefresh() {
+        return policyEditorPanel != null && policyEditorPanel.getServiceNode() !=null;
     }
 }

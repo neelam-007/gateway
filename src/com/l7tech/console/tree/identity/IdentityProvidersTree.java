@@ -1,9 +1,8 @@
 package com.l7tech.console.tree.identity;
 
-import com.l7tech.console.action.ActionManager;
-import com.l7tech.console.action.DeleteEntityAction;
-import com.l7tech.console.action.DeletePolicyTemplateAction;
+import com.l7tech.console.action.*;
 import com.l7tech.console.tree.*;
+import com.l7tech.console.util.Refreshable;
 
 import javax.swing.*;
 import javax.swing.event.TreeExpansionEvent;
@@ -33,7 +32,7 @@ import java.util.logging.Logger;
  *
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  */
-public class IdentityProvidersTree extends JTree implements DragGestureListener {
+public class IdentityProvidersTree extends JTree implements DragGestureListener, Refreshable {
     static final Logger log = Logger.getLogger(IdentityProvidersTree.class.getName());
     /**
      * assertion data flavor for DnD
@@ -116,6 +115,31 @@ public class IdentityProvidersTree extends JTree implements DragGestureListener 
         return null;
     }
 
+    public void refresh() {
+        TreePath path = getSelectionPath();
+        if (path != null) {
+            AbstractTreeNode n = (AbstractTreeNode)path.getLastPathComponent();
+            final Action[] actions = n.getActions(RefreshAction.class);
+            if (actions.length == 0) {
+                log.warning("No refresh action found");
+            } else {
+                ((NodeAction)actions[0]).setTree(this);
+                ActionManager.getInstance().invokeAction(actions[0]);
+            }
+        }
+    }
+
+    /**
+     * This tree can always be refreshed
+     * <p/>
+     * May consider introducing the logic arround disabling this while the tree is
+     * refreshing if needed
+     *
+     * @return always true
+     */
+    public boolean canRefresh() {
+        return true;
+    }
 
     /**
      * KeyAdapter for the policy trees

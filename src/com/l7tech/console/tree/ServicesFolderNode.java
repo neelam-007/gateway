@@ -1,16 +1,13 @@
 package com.l7tech.console.tree;
 
-import com.l7tech.console.action.PublishServiceAction;
 import com.l7tech.console.action.CreateServiceWsdlAction;
-import com.l7tech.console.action.RefreshAction;
+import com.l7tech.console.action.PublishServiceAction;
 import com.l7tech.service.ServiceAdmin;
 
 import javax.swing.*;
 import javax.swing.tree.MutableTreeNode;
-import javax.swing.tree.DefaultTreeModel;
-import javax.swing.tree.TreePath;
 import java.util.Enumeration;
-import java.awt.*;
+import java.util.logging.Logger;
 
 
 /**
@@ -21,6 +18,8 @@ import java.awt.*;
  * @version 1.1
  */
 public class ServicesFolderNode extends AbstractTreeNode {
+    static Logger log = Logger.getLogger(ServicesFolderNode.class.getName());
+
     private ServiceAdmin serviceManager;
     private String title;
 
@@ -60,7 +59,7 @@ public class ServicesFolderNode extends AbstractTreeNode {
         return new Action[]{
             new PublishServiceAction(),
             new CreateServiceWsdlAction(),
-            new ServicesFolderRefreshAction(this)
+            new RefreshTreeNodeAction(this)
         };
     }
 
@@ -105,39 +104,5 @@ public class ServicesFolderNode extends AbstractTreeNode {
      */
     protected String iconResource(boolean open) {
         return "com/l7tech/console/resources/ServerRegistry.gif";
-    }
-
-    /**
-     * the refresh users action class
-     */
-    class ServicesFolderRefreshAction extends RefreshAction {
-        public ServicesFolderRefreshAction(ServicesFolderNode node) {
-            super(node);
-
-        }
-
-        public void performAction() {
-            if (tree == null) {
-                logger.warning("No tree assigned, ignoring the refresh action");
-                return;
-            }
-
-            Runnable runnable = new Runnable() {
-                public void run() {
-                    tree.setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
-                    DefaultTreeModel model = (DefaultTreeModel)tree.getModel();
-                    TreePath treePath = new TreePath(ServicesFolderNode.this.getPath());
-                    try {
-                        if (tree.isExpanded(treePath)) {
-                            ServicesFolderNode.this.hasLoadedChildren = false;
-                            model.reload(ServicesFolderNode.this);
-                        }
-                    } finally {
-                        tree.setCursor(Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR));
-                    }
-                }
-            };
-            SwingUtilities.invokeLater(runnable);
-        }
     }
 }
