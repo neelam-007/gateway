@@ -32,4 +32,17 @@ public class ExceptionUtils {
         }
         return false;
     }
+
+    /**
+     * Unnest a throwable to the root <code>Throwable</code>.
+     * If no nested exception exist, same Throwable is returned.
+     * 
+     * @param exception the throwable to unnest
+     * @return the root Throwable
+     */
+    public static Throwable unnestToRoot(Throwable exception) {
+        Throwable nestedException = exception.getCause();
+        return nestedException == null ? exception : unnestToRoot(nestedException);
+    }
+
 }
