@@ -5,6 +5,7 @@ import com.l7tech.common.security.TrustedCertAdmin;
 import com.l7tech.common.util.CertUtils;
 import com.l7tech.common.util.HexUtils;
 import com.l7tech.common.util.Locator;
+import com.l7tech.common.gui.util.FontUtil;
 import com.intellij.uiDesigner.core.GridLayoutManager;
 import com.intellij.uiDesigner.core.GridConstraints;
 import com.intellij.uiDesigner.core.Spacer;
@@ -39,6 +40,7 @@ public class CertImportMethodsPanel extends WizardStepPanel {
     private static String PEM_CERT_BEGIN_MARKER = "-----BEGIN CERTIFICATE-----";
     private static String PEM_CERT_END_MARKER = "-----END CERTIFICATE-----";
     private JPanel mainPanel;
+    private JLabel headerLabel;
     private JRadioButton copyAndPasteRadioButton;
     private JRadioButton fileRadioButton;
     private JRadioButton urlConnRadioButton;
@@ -68,6 +70,7 @@ public class CertImportMethodsPanel extends WizardStepPanel {
     private void initialize() {
         setLayout(new BorderLayout());
         add(mainPanel);
+        FontUtil.resizeFont(headerLabel, 1.2);
 
         browseButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent event) {
@@ -427,8 +430,8 @@ public class CertImportMethodsPanel extends WizardStepPanel {
         final JPanel panel2 = new JPanel();
         panel2.setLayout(new GridLayoutManager(1, 1, new Insets(10, 0, 10, 0), -1, -1));
         mainPanel.add(panel2, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null));
-        final JLabel label1 = new JLabel();
-        label1.setText("Select one of the following methods for obtaining a certificate:");
-        panel2.add(label1, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null));
+        headerLabel = new JLabel();
+        headerLabel.setText("Select one of the following methods for obtaining a certificate:");
+        panel2.add(headerLabel, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null));
     }
 }

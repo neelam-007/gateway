@@ -1,6 +1,7 @@
 package com.l7tech.console.panels;
 
 import com.l7tech.common.security.TrustedCert;
+import com.l7tech.common.gui.util.FontUtil;
 import com.intellij.uiDesigner.core.GridLayoutManager;
 import com.intellij.uiDesigner.core.GridConstraints;
 import com.intellij.uiDesigner.core.Spacer;
@@ -26,6 +27,7 @@ public class CertUsagePanel extends WizardStepPanel {
     private JCheckBox signingSAMLTokenCheckBox;
     private JCheckBox signingClientCertCheckBox;
     private JCheckBox outboundSSLConnCheckBox;
+    private JLabel headerLabel;
     private static Logger logger = Logger.getLogger(CertUsagePanel.class.getName());
     private static ResourceBundle resources = ResourceBundle.getBundle("com.l7tech.console.resources.CertificateDialog", Locale.getDefault());
 
@@ -37,6 +39,7 @@ public class CertUsagePanel extends WizardStepPanel {
     private void initialize() {
         setLayout(new BorderLayout());
         add(mainPanel);
+        FontUtil.resizeFont(headerLabel, 1.2);
     }
 
     /**
@@ -155,9 +158,9 @@ public class CertUsagePanel extends WizardStepPanel {
         final JPanel panel1 = new JPanel();
         panel1.setLayout(new GridLayoutManager(1, 1, new Insets(10, 0, 10, 0), -1, -1));
         certUsagePane.add(panel1, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null));
-        final JLabel label1 = new JLabel();
-        label1.setText("Select one or more certificate usage  options:");
-        panel1.add(label1, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null));
+        headerLabel = new JLabel();
+        headerLabel.setText("Select one or more certificate usage  options:");
+        panel1.add(headerLabel, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null));
         signingServerCertCheckBox = new JCheckBox();
         signingServerCertCheckBox.setText("Signing Certificates for Outbound SSL Connections");
         certUsagePane.add(signingServerCertCheckBox, new GridConstraints(2, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null));

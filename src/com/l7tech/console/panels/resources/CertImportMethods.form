@@ -20,7 +20,7 @@
         <children>
           <component id="80750" class="javax.swing.JRadioButton" binding="urlConnRadioButton">
             <constraints>
-              <xy x="0" y="0" width="261" height="23"/>
+              <xy x="0" y="0" width="228" height="22"/>
               <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0"/>
             </constraints>
             <properties>
@@ -30,7 +30,7 @@
           </component>
           <component id="d000d" class="javax.swing.JRadioButton" binding="fileRadioButton">
             <constraints>
-              <xy x="0" y="29" width="132" height="23"/>
+              <xy x="0" y="28" width="114" height="22"/>
               <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0"/>
             </constraints>
             <properties>
@@ -41,7 +41,7 @@
           </component>
           <component id="6c384" class="javax.swing.JRadioButton" binding="copyAndPasteRadioButton">
             <constraints>
-              <xy x="0" y="58" width="198" height="23"/>
+              <xy x="0" y="56" width="174" height="22"/>
               <grid row="2" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0"/>
             </constraints>
             <properties>
@@ -50,7 +50,7 @@
           </component>
           <component id="a273d" class="javax.swing.JTextField" binding="urlConnTextField">
             <constraints>
-              <xy x="271" y="0" width="215" height="22"/>
+              <xy x="238" y="0" width="254" height="21"/>
               <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="6" anchor="8" fill="1">
                 <preferred-size width="150" height="-1"/>
               </grid>
@@ -59,7 +59,7 @@
           </component>
           <component id="c5113" class="javax.swing.JTextField" binding="certFileName">
             <constraints>
-              <xy x="271" y="29" width="215" height="22"/>
+              <xy x="238" y="28" width="254" height="21"/>
               <grid row="1" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="6" anchor="8" fill="1">
                 <preferred-size width="150" height="-1"/>
               </grid>
@@ -68,7 +68,7 @@
           </component>
           <component id="9079f" class="javax.swing.JButton" binding="browseButton">
             <constraints>
-              <xy x="496" y="28" width="75" height="25"/>
+              <xy x="502" y="27" width="69" height="24"/>
               <grid row="1" column="2" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1"/>
             </constraints>
             <properties>
@@ -77,7 +77,7 @@
           </component>
           <scrollpane id="a900b">
             <constraints>
-              <xy x="271" y="58" width="215" height="196"/>
+              <xy x="238" y="56" width="254" height="198"/>
               <grid row="2" column="1" row-span="2" col-span="1" vsize-policy="7" hsize-policy="7" anchor="0" fill="3"/>
             </constraints>
             <properties/>
@@ -93,7 +93,7 @@
           </scrollpane>
           <vspacer id="f58f3">
             <constraints>
-              <xy x="125" y="81" width="11" height="173"/>
+              <xy x="108" y="78" width="11" height="176"/>
               <grid row="3" column="0" row-span="1" col-span="1" vsize-policy="6" hsize-policy="1" anchor="0" fill="2"/>
             </constraints>
           </vspacer>
@@ -108,9 +108,9 @@
         <properties/>
         <border type="none"/>
         <children>
-          <component id="e7138" class="javax.swing.JLabel">
+          <component id="e7138" class="javax.swing.JLabel" binding="headerLabel">
             <constraints>
-              <xy x="0" y="12" width="355" height="15"/>
+              <xy x="0" y="13" width="299" height="14"/>
               <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0"/>
             </constraints>
             <properties>
