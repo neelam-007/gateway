@@ -39,7 +39,7 @@ public abstract class Assertion implements Cloneable, Serializable {
         this.parent = parent;
     }
 
-    /** Properly clone this Assertion.  The clone will have it's parent set to null. */
+    /** Properly clone this Assertion.  The clone will have its parent set to null. */
     public Object clone() throws CloneNotSupportedException {
         Assertion clone = (Assertion)super.clone();
         clone.setParent(null);
