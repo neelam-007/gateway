@@ -141,6 +141,9 @@ public class DefaultPolicyValidator extends PolicyValidator {
         private void processPrecondition(Assertion a) {
             if (a instanceof SslAssertion) {
                 seenSsl = true;
+                if (((SslAssertion)a).getOption() == SslAssertion.FORBIDDEN) {
+                    sslForbidden = true;
+                }
                 if (seenRouting) {
                     result.addWarning(
                       new PolicyValidatorResult.Warning(a,
@@ -162,6 +165,12 @@ public class DefaultPolicyValidator extends PolicyValidator {
                       new PolicyValidatorResult.Warning(a,
                         "The assertion might not work as configured." +
                        "\nHttpClientCert requires to have SSL transport.", null)
+                    );
+                } else if (sslForbidden) {
+                    result.addWarning(
+                      new PolicyValidatorResult.Warning(a,
+                        "The assertion might not work as configured." +
+                       "\nHttpClientCert requires to have SSL transport but SSL is forbidden.", null)
                     );
                 }
                 processCredentialSource(a);
@@ -201,6 +210,7 @@ public class DefaultPolicyValidator extends PolicyValidator {
         boolean seenAccessControl = false;
         boolean seenRouting = false;
         boolean seenSsl = false;
+        boolean sslForbidden = false;
     }
 
 }
