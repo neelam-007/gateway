@@ -21,12 +21,12 @@ import java.io.IOException;
  * @version $Revision$
  */
 public class SoapUtil {
-    public static List ENVELOPES = new ArrayList();
+    public static List ENVELOPE_URIS = new ArrayList();
     static {
-        ENVELOPES.add( SOAPConstants.URI_NS_SOAP_ENVELOPE );
-        ENVELOPES.add( "http://www.w3.org/2001/06/soap-envelope" );
-        ENVELOPES.add( "http://www.w3.org/2001/09/soap-envelope" );
-        ENVELOPES.add( "urn:schemas-xmlsoap-org:soap.v1" );
+        ENVELOPE_URIS.add( SOAPConstants.URI_NS_SOAP_ENVELOPE );
+        ENVELOPE_URIS.add( "http://www.w3.org/2001/06/soap-envelope" );
+        ENVELOPE_URIS.add( "http://www.w3.org/2001/09/soap-envelope" );
+        ENVELOPE_URIS.add( "urn:schemas-xmlsoap-org:soap.v1" );
     }
 
     public static final String HEADER = "Header";
@@ -56,8 +56,8 @@ public class SoapUtil {
         String env;
         NodeList elementList;
         Element element = null;
-        for ( int i = 0; i < ENVELOPES.size(); i++ ) {
-            env = (String)ENVELOPES.get(i);
+        for ( int i = 0; i < ENVELOPE_URIS.size(); i++ ) {
+            env = (String)ENVELOPE_URIS.get(i);
             elementList = envelope.getElementsByTagNameNS( env, elementName );
             int len = elementList.getLength();
             if ( len == 1 ) {
