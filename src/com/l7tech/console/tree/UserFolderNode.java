@@ -1,11 +1,8 @@
 package com.l7tech.console.tree;
 
-import com.l7tech.objectmodel.EntityHeader;
+import com.l7tech.identity.UserManager;
 
-import java.util.Collections;
 import java.util.Enumeration;
-import java.util.List;
-import java.util.ArrayList;
 
 
 /**
@@ -16,15 +13,15 @@ import java.util.ArrayList;
  * @version 1.1
  */
 public class UserFolderNode implements BasicTreeNode {
-    private final Enumeration children;
+    private UserManager userManager;
 
     /**
      * construct the <CODE>UserFolderNode</CODE> instance
      *
-     * @param ce the children enumeration
+     * @param um the children enumeration
      */
-    public UserFolderNode(Enumeration ce) {
-        children = ce;
+    public UserFolderNode(UserManager um) {
+        userManager = um;
     }
 
     /**
@@ -44,7 +41,8 @@ public class UserFolderNode implements BasicTreeNode {
      *                      retrieving child nodes.
      */
     public Enumeration children() throws Exception {
-       return children;
+        Enumeration e = new EntitiesEnumeration(new UserEntitiesCollection(userManager));
+        return TreeNodeFactory.getTreeNodeEnumeration(e);
     }
 
     /**

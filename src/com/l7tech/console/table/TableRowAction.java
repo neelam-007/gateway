@@ -1,13 +1,8 @@
 package com.l7tech.console.table;
 
 
-import com.l7tech.console.tree.AdminFolderNode;
-import com.l7tech.console.tree.BasicTreeNode;
-import com.l7tech.console.tree.EntityTreeNode;
-import com.l7tech.console.tree.EntityHeaderNode;
-import com.l7tech.console.tree.ProviderNode;
-import com.l7tech.console.tree.ProvidersFolderNode;
-import com.l7tech.console.tree.UserFolderNode;
+import com.l7tech.console.tree.*;
+import com.l7tech.objectmodel.EntityHeader;
 import org.apache.log4j.Category;
 
 import javax.swing.*;
@@ -27,36 +22,6 @@ public class TableRowAction {
 
     // Hide the constructor
     private TableRowAction() {
-    }
-
-    /**
-     * locate the name
-     * the method is not geenral, that is it assumes that the
-     * userObject() contains <CODE>BasicTreeNode</CODE>
-     * instance.
-     *
-     * @param name   the name to look for
-     * @param node   the intiial position where the search starts
-     * @return the <CODE>TreeNode</CODE> that contains the
-     *         userObject with the given name, or <B>null</B> if
-     *         not found
-     */
-    public static TreeNode nodeByName(String name, DefaultMutableTreeNode node) {
-        Enumeration enum = node.breadthFirstEnumeration();
-        while (enum.hasMoreElements()) {
-            DefaultMutableTreeNode tn =
-                    (DefaultMutableTreeNode) enum.nextElement();
-            Object o = tn.getUserObject();
-            if (!(o instanceof BasicTreeNode)) {
-                continue;
-            }
-            BasicTreeNode dobj = (BasicTreeNode) o;
-
-            if (name.equals(dobj.getName())) {
-                return tn;
-            }
-        }
-        return null;
     }
 
     /**
@@ -88,7 +53,7 @@ public class TableRowAction {
         if (dobj instanceof ProviderNode) {
             rb = delete((ProviderNode) dobj, askQuestion);
         } else if (dobj instanceof EntityHeaderNode) {
-            rb = delete((EntityHeaderNode) dobj, askQuestion);
+            rb = delete(dobj, askQuestion);
         } else {
             // Unknown node type .. do nothing
             rb = false;
@@ -119,12 +84,14 @@ public class TableRowAction {
     }
 
     /**
-     * @param dobj   BasicTreeNode  the object to determine if it
+     * @param bn   BasicTreeNode  the object to determine if it
      *               has properties
      * @return true if the node has properties, false otherwise
      */
-    public static boolean hasProperties(BasicTreeNode dobj) {
-        return dobj instanceof EntityHeaderNode;
+    public static boolean hasProperties(Object bn) {
+        return
+                bn instanceof EntityHeaderNode ||
+                bn instanceof EntityHeader ;
     }
 
     /**
@@ -142,28 +109,30 @@ public class TableRowAction {
     }
 
     /**
-     * @param dobj   BasicTreeNode  the object to determine if it
+     * @param bn   BasicTreeNode  the object to determine if it
      *               it supports browsing (that is, has children)
      * @return true if the node supports browsing, false otherwise
      */
-    public static boolean isBrowseable(BasicTreeNode dobj) {
+    public static boolean isBrowseable(Object bn) {
         return
-                (dobj instanceof ProvidersFolderNode ||
-                dobj instanceof AdminFolderNode ||
-                dobj instanceof UserFolderNode ||
-                dobj instanceof ProviderNode);
+                (bn instanceof ProvidersFolderNode ||
+                bn instanceof AdminFolderNode ||
+                bn instanceof GroupFolderNode ||
+                bn instanceof UserFolderNode ||
+                bn instanceof ProviderNode);
     }
 
     /**
-     * @param dobj   BasicTreeNode  the object to determine if it
+     * @param bn   BasicTreeNode  the object to determine if it
      *               it supports new children (that is, new operation)
      * @return true if the node accpets children, false otherwise
      */
-    public static boolean acceptNewChildren(BasicTreeNode dobj) {
+    public static boolean acceptNewChildren(BasicTreeNode bn) {
         return
-                (dobj instanceof ProvidersFolderNode) ||
-                (dobj instanceof AdminFolderNode) ||
-                (dobj instanceof UserFolderNode);
+                (bn instanceof ProvidersFolderNode) ||
+                (bn instanceof AdminFolderNode) ||
+                (bn instanceof GroupFolderNode) ||
+                (bn instanceof UserFolderNode);
     }
 
     /**
@@ -173,11 +142,7 @@ public class TableRowAction {
      */
     public static boolean canDelete(EntityTreeNode node) {
         Object object = node.getUserObject();
-
-        if (object instanceof BasicTreeNode) {
-            return canDelete((BasicTreeNode) object);
-        }
-        return false;
+        return canDelete(object);
     }
 
     /**
@@ -185,19 +150,20 @@ public class TableRowAction {
      *               can be deleted
      * @return true if the node can be deleted, false otherwise
      */
-    public static boolean canDelete(BasicTreeNode obj) {
-        return obj instanceof EntityHeaderNode;
+    public static boolean canDelete(Object obj) {
+        return obj instanceof EntityHeaderNode ||
+               obj instanceof EntityHeader ;
     }
 
 
-    // Deletes the given Realm
-    private static boolean delete(ProviderNode realmTreeNode,
+    // Deletes the given provider
+    private static boolean delete(ProviderNode provider,
                                   boolean askQuestion) {
         // Make sure
         if (askQuestion && ((JOptionPane.showConfirmDialog(null,
                 "Are you sure you wish to delete " +
-                realmTreeNode.getName() + "?",
-                "Delete realm",
+                provider.getName() + "?",
+                "Delete Provider",
                 JOptionPane.YES_NO_OPTION)) == 1)) {
             return false;
         }

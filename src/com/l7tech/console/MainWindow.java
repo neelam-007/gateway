@@ -783,7 +783,7 @@ public class MainWindow extends JFrame {
         treeView.putClientProperty("JTree.lineStyle", "Angled");
 
         TreeNode node = new DefaultMutableTreeNode("Disconnected");
-        //treeView.setUI(CustomTreeUI.getTreeUI());
+        treeView.setUI(CustomTreeUI.getTreeUI());
 
         DefaultTreeModel treeModel =
                 new DefaultTreeModel(node);
@@ -1890,7 +1890,7 @@ public class MainWindow extends JFrame {
         SwingUtilities.updateComponentTreeUI(MainWindow.this);
         MainWindow.this.validate();
         //PanelFactory.clearCachedPanels();
-        // treeView.setUI(CustomTreeUI.getTreeUI());
+        treeView.setUI(CustomTreeUI.getTreeUI());
     }
 
     /**

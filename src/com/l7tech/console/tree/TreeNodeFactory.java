@@ -60,7 +60,7 @@ public class TreeNodeFactory {
     }
 
     /**
-     * The class <CODE>TreeNodeEnumeraiton</CODE> is a transparent
+     * The class <CODE>TreeNodeEnumeration</CODE> is a transparent
      * closure (Decorator pattern) over an Enumeration.
      * It is used to create BasicTreeNode instances from enumerations
      * of Entry instances.

@@ -43,13 +43,11 @@ public class RootNode implements BasicTreeNode {
      */
     public Enumeration children() throws Exception {
         Registry r = Registry.getDefault();
-        UserEntitiesCollection ue =
-                new UserEntitiesCollection(r.getInternalUserManager());
         List list =
                 Arrays.asList(
                         new BasicTreeNode[]{
-                            new UserFolderNode(new EntitiesEnumeration(ue)),
-                            new GroupFolderNode(),
+                            new UserFolderNode(r.getInternalUserManager()),
+                            new GroupFolderNode(r.getInternalGroupManager()),
                             new ProvidersFolderNode(),
                             new PoliciesFolderNode(),
                             new ServicesFolderNode()

@@ -2,6 +2,7 @@ package com.l7tech.console.tree;
 
 
 import com.l7tech.objectmodel.EntityHeader;
+import com.l7tech.identity.GroupManager;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -17,11 +18,14 @@ import java.util.List;
  * @version 1.1
  */
 public class GroupFolderNode implements BasicTreeNode {
+    private final GroupManager groupManager;
+
     /**
-     * construct the <CODE>UserFolderNode</CODE> instance for
+     * construct the <CODE>GroupFolderNode</CODE> instance for
      * a given entry.
      */
-    public GroupFolderNode() {
+    public GroupFolderNode(GroupManager gm) {
+        groupManager = gm;
 
     }
 
@@ -42,12 +46,8 @@ public class GroupFolderNode implements BasicTreeNode {
      *                      retrieving child nodes.
      */
     public Enumeration children() throws Exception {
-        EntityHeader[] res = new EntityHeader[0];
-        List list = new ArrayList();
-        for (int i = 0; i < res.length; i++) {
-            list.add(new GroupNode(res[i]));
-        }
-        return Collections.enumeration(list);
+         Enumeration e = new EntitiesEnumeration(new GroupEntitiesCollection(groupManager));
+        return TreeNodeFactory.getTreeNodeEnumeration(e);
     }
 
     /**

@@ -197,6 +197,6 @@ public final class CustomTreeUI {
      * @return true if object is any of the folders, false otherwise
      */
     static boolean isNonExpandableFolder(Object object) {
-        return false;
+        return true;
     }
 }

@@ -432,6 +432,14 @@ public class ContainerListPanel extends EntityEditorPanel {
                             setIcon(icon);
                             setText(bn.getName());
                         }
+                    } else if (value instanceof EntityHeader) {
+                        EntityHeader h = (EntityHeader) value;
+                        Class cls = h.getType();
+                        if (column == 0) {
+                            ImageIcon icon = IconManager.getIcon(cls);
+                            if (icon != null) setIcon(icon);
+                            setText(h.getName());
+                        }
                     } else if (value instanceof String) {
                         setIcon(null);
                         setText((String) value);
@@ -580,10 +588,16 @@ public class ContainerListPanel extends EntityEditorPanel {
          *
          * @param object an arbitrary object set by the Panel
          */
-        public void onInsert(Object object) {
-            BasicTreeNode row =
-                    TreeNodeFactory.getTreeNode((EntityHeader) object);
-            tableModel.addRow(row);
+        public void onInsert(final Object object) {
+            SwingUtilities.
+                    invokeLater(new Runnable() {
+                        public void run() {
+                            BasicTreeNode row =
+                                    TreeNodeFactory.getTreeNode((EntityHeader) object);
+                            tableModel.addRow(row);
+                        }
+                    });
+
 
         }
 
@@ -760,11 +774,11 @@ public class ContainerListPanel extends EntityEditorPanel {
             // return the basictreenode
             Object o = jTable.getModel().getValueAt(row, 0);
             if (o == null) return;
-            BasicTreeNode n = (BasicTreeNode) o;
 
-            buttonDelete.setEnabled(TableRowAction.canDelete(n));
-            buttonEdit.setEnabled(TableRowAction.hasProperties(n));
-            buttonOpen.setEnabled(TableRowAction.isBrowseable(n));
+
+            buttonDelete.setEnabled(TableRowAction.canDelete(o));
+            buttonEdit.setEnabled(TableRowAction.hasProperties(o));
+            buttonOpen.setEnabled(TableRowAction.isBrowseable(o));
 
         }
     }
