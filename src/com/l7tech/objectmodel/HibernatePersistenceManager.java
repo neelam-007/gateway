@@ -117,6 +117,8 @@ public class HibernatePersistenceManager extends PersistenceManager {
             type = Hibernate.STRING;
         else if ( param instanceof Long )
             type = Hibernate.LONG;
+        else if ( param instanceof Boolean )
+            type = Hibernate.BOOLEAN;
         else
             throw new FindException( "I don't know how to find with parameters that aren't either String or Long!" );
         return type;
