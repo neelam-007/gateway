@@ -183,7 +183,7 @@ public class CertificateDownloader {
             List list = (List) headers.get(key);
             String value = (String) list.get(0);
             if (key == null || key.length() <= CHECK_PREFIX_LENGTH ||
-                    !key.substring(0, CHECK_PREFIX_LENGTH).equals(
+                    !key.substring(0, CHECK_PREFIX_LENGTH).equalsIgnoreCase(
                             SecureSpanConstants.HttpHeaders.CERT_CHECK_PREFIX))
                 continue;
             String idp = key.substring(CHECK_PREFIX_LENGTH);
