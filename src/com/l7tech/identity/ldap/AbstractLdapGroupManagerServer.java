@@ -114,7 +114,7 @@ public abstract class AbstractLdapGroupManagerServer extends LdapManager impleme
         return null;
     }
 
-    private Group buildOUGroup(String dn) throws FindException{
+    private Group buildOUGroup(String dn) throws FindException {
         try {
             DirContext context = getBrowseContext();
             Attributes attributes = context.getAttributes(dn);
@@ -124,7 +124,34 @@ public abstract class AbstractLdapGroupManagerServer extends LdapManager impleme
             out.setName(dn);
             Object tmp = extractOneAttributeValue(attributes, constants.descriptionAttribute() );
             if (tmp != null) out.setDescription(tmp.toString());
-            // todo, build group memberships
+            // build group memberships
+            NamingEnumeration answer = null;
+            String filter = "(objectclass=" + constants.userObjectClass() + ")";
+            SearchControls sc = new SearchControls();
+            sc.setSearchScope(SearchControls.SUBTREE_SCOPE);
+            // use dn of group as base
+            answer = context.search(dn, filter, sc);
+            Set memberHeaders = new HashSet();
+            Set members = new HashSet();
+            while (answer.hasMore())
+            {
+                String login = null;
+                String userdn = null;
+                SearchResult sr = (SearchResult)answer.next();
+                userdn = sr.getName() + "," + dn;
+                Attributes atts = sr.getAttributes();
+                tmp = extractOneAttributeValue(atts, constants.userLoginAttribute());
+                if (tmp != null) login = tmp.toString();
+                if (login != null && userdn != null) {
+                    User u = getUserManager().findByPrimaryKey(userdn);
+                    memberHeaders.add(getUserManager().userToHeader(u));
+                    members.add(u);
+                }
+            }
+            out.setMembers( members );
+            out.setMemberHeaders(memberHeaders);
+            if (answer != null) answer.close();
+            context.close();
             return out;
         } catch (NamingException e) {
             logger.log(Level.SEVERE, null, e);
