@@ -93,7 +93,7 @@ public class PolicyServlet extends HttpServlet {
         if ( str_oid == null || str_oid.length() == 0 ) {
             String err = PARAM_SERVICEOID + " parameter is required";
             logger.warning( err );
-            httpServletResponse.sendError( HttpServletResponse.SC_BAD_REQUEST, err );
+            httpServletResponse.sendError( HttpServletResponse.SC_INTERNAL_SERVER_ERROR, err );
             return;
         } else {
             targetService = resolveService(Long.parseLong(str_oid));
