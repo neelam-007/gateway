@@ -55,6 +55,12 @@ public class SamlPropertiesAction extends SecureAction {
      * without explicitly asking for the AWT event thread!
      */
     protected void performAction() {
+        // TODO No action currently -- reenable this dialog when there is something to configure.
+        return;
+    }
+
+    // Old disabled performAction dialog.  Here in cold storage until there is something to configure.
+    private void old_performAction() {
         Frame f = TopComponents.getInstance().getMainWindow();
         SamlPropertiesDialog pw = new SamlPropertiesDialog(f, assertion);
         pw.pack();
