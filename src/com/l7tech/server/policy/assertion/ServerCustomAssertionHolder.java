@@ -7,9 +7,14 @@
 package com.l7tech.server.policy.assertion;
 
 import com.l7tech.common.message.XmlKnob;
+import com.l7tech.common.message.Message;
 import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.common.util.XmlUtil;
+import com.l7tech.common.util.HexUtils;
 import com.l7tech.common.audit.Auditor;
+import com.l7tech.common.mime.PartIterator;
+import com.l7tech.common.mime.PartInfo;
+import com.l7tech.common.mime.NoSuchPartException;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.CustomAssertionHolder;
 import com.l7tech.policy.assertion.PolicyAssertionException;
@@ -18,7 +23,7 @@ import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.assertion.ext.*;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.AssertionMessages;
-import com.l7tech.server.audit.AuditContextImpl;
+
 import com.l7tech.service.PublishedService;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
@@ -27,9 +32,7 @@ import javax.security.auth.Subject;
 import javax.security.auth.login.FailedLoginException;
 import java.io.IOException;
 import java.security.*;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Vector;
+import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -152,6 +155,41 @@ public class ServerCustomAssertionHolder implements ServerAssertion {
         return true;
     }
 
+    private Object[][] extractParts(Message m) throws IOException {
+        ArrayList contentTypes = new ArrayList();
+        ArrayList bodies = new ArrayList();
+        try {
+            for (PartIterator i = m.getMimeKnob().getParts(); i.hasNext();) {
+                PartInfo pi = i.next();
+                String contentType = pi.getContentType().getFullValue();
+                byte[] content = HexUtils.slurpStream(pi.getInputStream(false));
+                if (contentType == null || contentType.length() < 1 || content == null || content.length < 1) {
+                    logger.warning("empty partinfo (?)");
+                } else {
+
+                }
+                contentTypes.add(contentType);
+                bodies.add(content);
+            }
+        } catch (NoSuchPartException e) {
+            String msg = "cannot iterate through message's parts";
+            logger.log(Level.WARNING, msg, e);
+            throw new RuntimeException(msg, e);
+        }
+        Object[][] messageParts = new Object[contentTypes.size()][2];
+        int i = 0;
+        for (Iterator iterator = contentTypes.iterator(); iterator.hasNext();) {
+            messageParts[i][0] = iterator.next();
+            i++;
+        }
+        i = 0;
+        for (Iterator iterator = bodies.iterator(); iterator.hasNext();) {
+            messageParts[i][1] = iterator.next();
+            i++;
+        }
+        return messageParts;
+    }
+
     private class CustomServiceResponse implements ServiceResponse {
         private final PolicyEnforcementContext pec;
         private final Map context = new HashMap();
@@ -164,6 +202,10 @@ public class ServerCustomAssertionHolder implements ServerAssertion {
 
             context.put("httpRequest", pec.getHttpServletRequest());
             context.put("httpResponse", pec.getHttpServletResponse());
+
+            // plug in the message parts in here
+            context.put("messageParts", extractParts(pec.getResponse()));
+
             securityContext = new SecurityContext() {
                 public Subject getSubject() {
                     return Subject.getSubject(AccessController.getContext());
@@ -220,6 +262,9 @@ public class ServerCustomAssertionHolder implements ServerAssertion {
             context.put("httpRequest", pec.getHttpServletRequest());
             context.put("httpResponse", pec.getHttpServletResponse());
             context.put("updatedCookies", newCookies);
+            // plug in the message parts in here
+            context.put("messageParts", extractParts(pec.getRequest()));
+            
             securityContext = new SecurityContext() {
                 public Subject getSubject() {
                     return Subject.getSubject(AccessController.getContext());
