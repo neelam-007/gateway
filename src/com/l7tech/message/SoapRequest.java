@@ -5,13 +5,10 @@ import com.l7tech.server.MessageProcessor;
 import com.l7tech.server.RequestIdGenerator;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
-import org.apache.xml.serialize.XMLSerializer;
-import org.apache.xml.serialize.OutputFormat;
 
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.Reader;
-import java.io.StringWriter;
 import java.math.BigInteger;
 
 /**
