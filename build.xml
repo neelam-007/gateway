@@ -380,6 +380,7 @@
 
             <fileset dir="${src.root}/etc">
                 <include name="keystore.properties"/>
+                <include name="ssglog.properties"/>
             </fileset>
 
             <fileset dir="${src.root}/src">
