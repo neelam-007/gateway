@@ -11,7 +11,6 @@ import junit.framework.TestCase;
 import junit.framework.TestSuite;
 
 import java.util.logging.Logger;
-import java.io.IOException;
 
 /**
  * Tests for exception utilities.
@@ -58,6 +57,12 @@ public class ExceptionUtilsTest extends TestCase {
     private static class MovingException extends Exception {
         MovingException() {}
         MovingException(Throwable cause) { super(cause); }
+    }
+
+    public void testGetCause() throws Exception {
+        WidthException fat = new WidthException();
+        RuntimeException re = new RuntimeException(fat);
+        assertTrue(ExceptionUtils.getCauseIfCausedBy(re, WidthException.class) == fat);
     }
 
     public void testCausedBy() throws Exception {
