@@ -1,6 +1,7 @@
 package com.l7tech.identity;
 
 import com.l7tech.common.xml.Wsdl;
+import com.l7tech.common.xml.TestDocuments;
 import com.l7tech.identity.internal.GroupMembership;
 import com.l7tech.identity.internal.InternalGroup;
 import com.l7tech.identity.internal.InternalUser;
@@ -195,7 +196,7 @@ public class StubDataStore {
 
     private void initialServices(XMLEncoder encoder, IdentityProviderConfig pc)
       throws IOException, WSDLException, MalformedURLException {
-        String[] wsdls = {WsdlTest.WSDL, WsdlTest.WSDL_DOC_STYLE};
+        String[] wsdls = {TestDocuments.WSDL, TestDocuments.WSDL_DOC_LITERAL, TestDocuments.WSDL_DOC_LITERAL2, TestDocuments.WSDL_DOC_LITERAL3};
         for (int i = 0; i < wsdls.length; i++) {
             String fileName = wsdls[i];
             Wsdl wsdl = Wsdl.newInstance(null, new WsdlTest("blah").getWsdlReader(fileName));
