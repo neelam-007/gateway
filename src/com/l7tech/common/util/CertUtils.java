@@ -176,7 +176,7 @@ public class CertUtils {
                 }
             }
 
-            if (cert.getIssuerDN().equals(trustedDN)) {
+            if (cert.getIssuerDN().toString().equals(trustedDN.toString())) {
                 try {
                     cert.verify(trustedCert.getPublicKey());
                     return; // success
