@@ -10,6 +10,8 @@ import com.l7tech.proxy.NullRequestInterceptor;
 import com.l7tech.proxy.RequestInterceptor;
 import org.w3c.dom.Document;
 
+import java.net.URL;
+
 /**
  * Holds request state while the client proxy is processing it.
  * User: mike
@@ -25,6 +27,7 @@ public class PendingRequest {
     private String uri = "";
     private SsgResponse lastErrorResponse = null; // Last response received from SSG in the case of 401 or 500 status
     private boolean isPolicyUpdated = false;
+    private URL originalUrl = null;
 
     // Policy settings, filled in by traversing policy tree
     private static class PolicySettings {
@@ -47,6 +50,11 @@ public class PendingRequest {
         this.initialEnvelope = soapEnvelope;
         this.ssg = ssg;
         setRequestInterceptor(requestInterceptor);
+    }
+
+    public PendingRequest(Document soapEnvelope, Ssg ssg, RequestInterceptor ri, URL origUrl) {
+        this(soapEnvelope, ssg, ri);
+        this.originalUrl = origUrl;
     }
 
     /**
@@ -209,5 +217,13 @@ public class PendingRequest {
 
     public void setLastErrorResponse(SsgResponse lastErrorResponse) {
         this.lastErrorResponse = lastErrorResponse;
+    }
+
+    public URL getOriginalUrl() {
+        return originalUrl;
+    }
+
+    public void setOriginalUrl(URL originalUrl) {
+        this.originalUrl = originalUrl;
     }
 }
