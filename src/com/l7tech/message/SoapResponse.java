@@ -11,7 +11,10 @@ import org.xml.sax.SAXException;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.*;
+import java.util.Collections;
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.List;
 
 /**
  * Encapsulates a SOAP response.  Not thread-safe.
@@ -19,7 +22,7 @@ import java.util.*;
  * @author alex
  * @version $Revision$
  */
-public abstract class SoapResponse extends XmlMessageAdapter implements SoapMessage, Response {
+public abstract class SoapResponse extends XmlMessageAdapter implements SoapMessage, XmlResponse {
     public static final String ENCODING = "UTF-8";
 
     public SoapResponse( TransportMetadata tm ) {
