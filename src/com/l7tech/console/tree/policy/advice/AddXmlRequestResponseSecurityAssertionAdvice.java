@@ -1,15 +1,15 @@
 package com.l7tech.console.tree.policy.advice;
 
+import com.l7tech.common.xml.XpathExpression;
 import com.l7tech.console.tree.policy.PolicyChange;
 import com.l7tech.console.tree.policy.PolicyException;
 import com.l7tech.policy.assertion.Assertion;
-import com.l7tech.policy.assertion.xmlsec.XmlSecurityAssertion;
 import com.l7tech.policy.assertion.xmlsec.ElementSecurity;
-import com.l7tech.common.xml.XpathExpression;
+import com.l7tech.policy.assertion.xmlsec.XmlSecurityAssertion;
 
 import javax.xml.soap.SOAPConstants;
-import java.util.Map;
 import java.util.HashMap;
+import java.util.Map;
 
 /**
  * The class <code>AddXmlRequestResponseSecurityAssertionAdvice</code>
@@ -42,9 +42,9 @@ public class AddXmlRequestResponseSecurityAssertionAdvice implements Advice {
         }
         XpathExpression xpathExpression = new XpathExpression(ENVELOPE_XPATH, namespaces);
         XmlSecurityAssertion a = (XmlSecurityAssertion)assertions[0];
-          final ElementSecurity elementSecurity =
-              new ElementSecurity(xpathExpression, false, ElementSecurity.DEFAULT_CIPHER, ElementSecurity.DEFAULT_KEYBITS);
-        a.setElements(new ElementSecurity[] {elementSecurity});
+        final ElementSecurity elementSecurity =
+          new ElementSecurity(xpathExpression, "*", false, ElementSecurity.DEFAULT_CIPHER, ElementSecurity.DEFAULT_KEYBITS);
+        a.setElements(new ElementSecurity[]{elementSecurity});
         pc.proceed();
     }
 }

@@ -69,7 +69,7 @@ public class ElementSecurityTest extends TestCase {
             Map namespaces = XpathEvaluator.getNamespaces(request.getSOAPMessage());
             XpathExpression xpathExpression = new XpathExpression(xp, namespaces);
             final ElementSecurity elementSecurity =
-              new ElementSecurity(xpathExpression, false, ElementSecurity.DEFAULT_CIPHER, ElementSecurity.DEFAULT_KEYBITS);
+              new ElementSecurity(xpathExpression, null, false, ElementSecurity.DEFAULT_CIPHER, ElementSecurity.DEFAULT_KEYBITS);
             securedElements.add(elementSecurity);
         }
         ElementSecurity[] data = (ElementSecurity[])securedElements.toArray(new ElementSecurity[]{});

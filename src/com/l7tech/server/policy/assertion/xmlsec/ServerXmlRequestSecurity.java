@@ -3,7 +3,6 @@ package com.l7tech.server.policy.assertion.xmlsec;
 import com.l7tech.common.security.AesKey;
 import com.l7tech.common.security.xml.*;
 import com.l7tech.common.util.SoapUtil;
-import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.xml.XpathEvaluator;
 import com.l7tech.common.xml.XpathExpression;
 import com.l7tech.logging.LogManager;
@@ -26,13 +25,10 @@ import org.xml.sax.SAXException;
 import sun.security.x509.X500Name;
 
 import javax.xml.parsers.ParserConfigurationException;
-import javax.xml.soap.SOAPException;
-import javax.xml.soap.SOAPMessage;
 import java.io.IOException;
 import java.security.GeneralSecurityException;
 import java.security.cert.X509Certificate;
 import java.util.List;
-import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -63,7 +59,7 @@ public class ServerXmlRequestSecurity implements ServerAssertion {
     public AssertionStatus checkRequest(Request request, Response response) throws IOException, PolicyAssertionException {
         // get the document
         Document soapmsg = extractDocumentFromRequest(request);
- // XmlUtil.documentToOutputStream(soapmsg, System.out);
+        // XmlUtil.documentToOutputStream(soapmsg, System.out);
 
         // get the session
         Session xmlsecSession = null;
@@ -102,8 +98,8 @@ public class ServerXmlRequestSecurity implements ServerAssertion {
                 XpathExpression xpath = elementSecurity.getXpathExpression();
                 nodes = XpathEvaluator.newEvaluator(soapmsg, xpath.getNamespaces()).select(xpath.getExpression());
                 if (nodes.isEmpty()) {
-                    logger.log(Level.WARNING, "XPath expression '"+xpath.getExpression()+"' returns no elements.");
-                    return AssertionStatus.FALSIFIED;
+                    logger.log(Level.FINE, "XPath expression '" + xpath.getExpression() + "' returns no elements.");
+                    continue;
                 }
             } catch (JaxenException e) {
                 logger.log(Level.SEVERE, e.getMessage(), e);

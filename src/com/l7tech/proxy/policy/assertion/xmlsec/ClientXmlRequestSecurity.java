@@ -128,6 +128,7 @@ public class ClientXmlRequestSecurity extends ClientAssertion {
         }
 
         // SET BACK ALL THIS IN PENDING REQUEST
+        XmlUtil.documentToOutputStream(soapmsg, System.out);
         request.setSoapEnvelope(soapmsg);
 
         return AssertionStatus.NONE;

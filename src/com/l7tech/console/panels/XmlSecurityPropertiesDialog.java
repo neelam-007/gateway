@@ -70,7 +70,7 @@ public class XmlSecurityPropertiesDialog extends JDialog {
     /**
      * @param owner this panel owner
      * @param modal is this modal dialog or not
-     * @param n the xml security node
+     * @param n     the xml security node
      */
     public XmlSecurityPropertiesDialog(JFrame owner, boolean modal, XmlSecurityTreeNode n) {
         super(owner, modal);
@@ -78,8 +78,8 @@ public class XmlSecurityPropertiesDialog extends JDialog {
             throw new IllegalArgumentException();
         }
         if (!(n instanceof XmlRequestSecurityTreeNode ||
-              n instanceof XmlResponseSecurityTreeNode)) {
-            throw new IllegalArgumentException("Unsupported security node: "+n.getClass());
+          n instanceof XmlResponseSecurityTreeNode)) {
+            throw new IllegalArgumentException("Unsupported security node: " + n.getClass());
         }
         node = n;
         setTitle("XML security properties");
@@ -186,15 +186,13 @@ public class XmlSecurityPropertiesDialog extends JDialog {
                     try {
                         NameSpace ns = getOperationNamespace(bo.getName());
                         String nameSpacePrefix = "";
-                        if (ns !=null) {
-                            nameSpacePrefix = ns.m_prefix +":";
+                        if (ns != null) {
+                            nameSpacePrefix = ns.m_prefix + ":";
                         }
-                        if ("rpc".equals(serviceWsdl.getBindingStyle(bo))) {
-                            xpathExpression += ("/" + nameSpacePrefix + bn.getName());
-                        }
+                        xpathExpression += ("/" + nameSpacePrefix + bn.getName());
                         xpathExpression += ("/" + mpn.getMessagePart().getName());
                         SecuredMessagePart p = new SecuredMessagePart();
-                        p.setOperation(bo.getName());
+                        p.setOperation(bn.getName());
                         p.setXpathExpression(xpathExpression);
                         addSecuredPart(p);
                     } catch (SOAPException e1) {
@@ -203,13 +201,21 @@ public class XmlSecurityPropertiesDialog extends JDialog {
                 } else if (node instanceof BindingOperationTreeNode) {
                     BindingOperationTreeNode bn = (BindingOperationTreeNode)node;
                     BindingOperation bo = bn.getOperation();
-                    SecuredMessagePart p = new SecuredMessagePart();
-                    p.setOperation(bo.getName());
                     String xpathExpression = SOAP_BODY;
-                    xpathExpression += ("/" + bn.getName());
-                    p.setXpathExpression(xpathExpression);
-
-                    addSecuredPart(p);
+                    try {
+                        NameSpace ns = getOperationNamespace(bo.getName());
+                        String nameSpacePrefix = "";
+                        if (ns != null) {
+                            nameSpacePrefix = ns.m_prefix + ":";
+                        }
+                        xpathExpression += ("/" + nameSpacePrefix + bn.getName());
+                        SecuredMessagePart p = new SecuredMessagePart();
+                        p.setOperation(bn.getName());
+                        p.setXpathExpression(xpathExpression);
+                        addSecuredPart(p);
+                    } catch (SOAPException e1) {
+                        throw new RuntimeException(e1);
+                    }
                 } else if (node instanceof XmlElementTreeNode) {
                     XmlElementTreeNode xe = (XmlElementTreeNode)node;
                     SecuredMessagePart p = new SecuredMessagePart();
@@ -287,6 +293,7 @@ public class XmlSecurityPropertiesDialog extends JDialog {
         es.setKeyLength(sp.getKeyLength());
         XpathExpression xe = new XpathExpression(sp.getXpathExpression(), namespaces);
         es.setXpathExpression(xe);
+        es.setOperation(sp.getOperation());
         return es;
     }
 
@@ -296,6 +303,7 @@ public class XmlSecurityPropertiesDialog extends JDialog {
         sp.setXpathExpression(es.getXpathExpression().getExpression());
         sp.setEncrypt(es.isEncryption());
         sp.setKeyLength(es.getKeyLength());
+        sp.setOperation(es.getOperation());
         return sp;
     }
 

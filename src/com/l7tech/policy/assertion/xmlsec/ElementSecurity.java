@@ -5,13 +5,12 @@ import com.l7tech.common.xml.XpathExpression;
 /**
  * Class <code>ElementSecurity</code> contains the security propertiesfor an XML document
  * portion (document element).
- *
+ * <p/>
  * It contains properties such as:
  * <ul>
  * <li>XPath expression (may be <code>null</code>). It is evaluating context responsibility
- *     to determine the exact behaviour and if it is required or not. For example <code>null</code>
- *     value may be interpreted as the whole document signing.
- * <li>required, indicating wheter the security element is required or not
+ * to determine the exact behaviour and if it is required or not. For example <code>null</code>
+ * value may be interpreted as the whole document signing.
  * <li> the encryption toggle, whether the document is signed only or signed and encrypted
  * <li>the encryption cypher name
  * <li>the encryption key length
@@ -32,7 +31,7 @@ public class ElementSecurity {
     public static final int DEFAULT_KEYBITS = 128;
 
     private XpathExpression xpathExpression;
-    private boolean required;
+    private String operation;
     private boolean encryption;
     private String cipher = DEFAULT_CIPHER;
     private int keyLength = DEFAULT_KEYBITS;
@@ -48,20 +47,23 @@ public class ElementSecurity {
      *
      * @param xpathExpression the xpath expression that is evaluated in the context
      *                        may be null
+     * @param operation       indicates the operation identifier
      * @param encryption      whether the element is encrypted or signed only
      * @param cipher          the cipher name for encryption, may not be null if encryption
      *                        is requested
      * @param keyLength       the key length, required if the encyption is requested
      */
-    public ElementSecurity(XpathExpression xpathExpression, boolean encryption, String cipher, int keyLength) {
+    public ElementSecurity(XpathExpression xpathExpression, String operation, boolean encryption, String cipher, int keyLength) {
         this.encryption = encryption;
+        this.operation = operation;
         this.cipher = cipher;
         this.keyLength = keyLength;
         this.xpathExpression = xpathExpression;
     }
 
     /**
-     * The xpath expression that is
+     * The xpath expression that selects the element to apply the
+     * security (sign/encryption)
      *
      * @return the xpath expression, may be null
      */
@@ -70,7 +72,7 @@ public class ElementSecurity {
     }
 
     /**
-     * Set the xpath expression
+     * Set the new xpath expression
      *
      * @param xpathExpression the xpath expression value (or null)
      */
@@ -79,22 +81,21 @@ public class ElementSecurity {
     }
 
     /**
-     * Return the required value. This is context dependent property that
-     * typically indicates whether the security element is required or not.
+     * Get the operation identifier, this is mainly for informational purposes.
      *
-     * @return true if required, false otherwise
+     * @return the operation identifier, may be <b>null</b>
      */
-    public boolean isRequired() {
-        return required;
+    public String getOperation() {
+        return operation;
     }
 
     /**
-     * Set the required property for this security element.
+     * Set the operation identifier
      *
-     * @param required the boolean required value
+     * @param operation the operation identifier
      */
-    public void setRequired(boolean required) {
-        this.required = required;
+    public void setOperation(String operation) {
+        this.operation = operation;
     }
 
     /**
