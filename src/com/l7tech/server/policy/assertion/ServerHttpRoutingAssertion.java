@@ -184,7 +184,7 @@ public class ServerHttpRoutingAssertion extends ServerRoutingAssertion {
                         logger.fine(requestXml);
                     }
                 }
-                attachCookies(client, request.getTransportMetadata());
+                attachCookies(client, request.getTransportMetadata(), url);
                 postMethod.setRequestBody(requestXml);
 
                 if ( hconf == null ) {
@@ -271,8 +271,9 @@ public class ServerHttpRoutingAssertion extends ServerRoutingAssertion {
      * Attach cookies received by the client to the protected service
      * @param client the http client sender
      * @param transportMetadata the transport metadata
+     * @param url
      */
-    private void attachCookies(HttpClient client, TransportMetadata transportMetadata)  {
+    private void attachCookies(HttpClient client, TransportMetadata transportMetadata, URL url)  {
         if (!(transportMetadata instanceof HttpTransportMetadata)) {
             return;
         }
@@ -293,8 +294,8 @@ public class ServerHttpRoutingAssertion extends ServerRoutingAssertion {
                     if (o instanceof Cookie) {
                         Cookie newCookie = (Cookie) o;
                         cookieOut = new org.apache.commons.httpclient.Cookie();
-                        cookieOut.setDomain(newCookie.getDomain());
-                        cookieOut.setPath(newCookie.getPath());
+                        cookieOut.setDomain(url.getHost());
+                        cookieOut.setPath(url.getPath());
                         cookieOut.setName(newCookie.getName());
                         cookieOut.setSecure(newCookie.getSecure());
                         cookieOut.setVersion(newCookie.getVersion());
@@ -308,10 +309,8 @@ public class ServerHttpRoutingAssertion extends ServerRoutingAssertion {
         } else {
             for (int i = 0; cookies != null && i < cookies.length; i++) {
                 Cookie incomingCookie = cookies[i];
-                cookieOut = new org.apache.commons.httpclient.Cookie();
-                cookieOut.setDomain(incomingCookie.getDomain());
-                cookieOut.setPath(incomingCookie.getPath());
-                cookieOut.setName(incomingCookie.getName());
+                cookieOut = new org.apache.commons.httpclient.Cookie(url.getHost(), incomingCookie.getName(), incomingCookie.getValue());
+                cookieOut.setPath(url.getPath());
 
                 // override the old cookie if the new one is found
                 updatedCookie = findCookieByName(updatedCookies, incomingCookie.getName());
