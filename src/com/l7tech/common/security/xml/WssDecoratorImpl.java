@@ -470,11 +470,11 @@ public class WssDecoratorImpl implements WssDecorator {
         Element referenceList;
         if (desiredNextSibling == null) {
             referenceList = XmlUtil.createAndAppendElementNS(securityHeader,
-                                                            "ReferenceList",
+                                                            SoapUtil.REFLIST_EL_NAME,
                                                             xencNs, "xenc");
         } else {
             referenceList = XmlUtil.createAndInsertBeforeElementNS(desiredNextSibling,
-                                                                  "ReferenceList",
+                                                                  SoapUtil.REFLIST_EL_NAME,
                                                                   xencNs, "xenc");
         }
         String xenc = referenceList.getPrefix();
@@ -539,7 +539,7 @@ public class WssDecoratorImpl implements WssDecorator {
         Element cipherValue = XmlUtil.createAndAppendElementNS(cipherData, "CipherValue", xencNs, xenc);
         final String base64 = XencUtil.encryptKeyWithRsaAndPad(keyBytes, recipientCertificate.getPublicKey(), c.rand);
         cipherValue.appendChild(soapMsg.createTextNode(base64));
-        Element referenceList = XmlUtil.createAndAppendElementNS(encryptedKey, "ReferenceList", xencNs, xenc);
+        Element referenceList = XmlUtil.createAndAppendElementNS(encryptedKey, SoapUtil.REFLIST_EL_NAME, xencNs, xenc);
 
         for (int i = 0; i < elementsToEncrypt.length; i++) {
             Element element = elementsToEncrypt[i];
