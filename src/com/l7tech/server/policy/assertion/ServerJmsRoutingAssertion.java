@@ -318,5 +318,5 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion {
     private Destination endpointResponseDestination;
 
     private Logger logger = LogManager.getInstance().getSystemLogger();
-    public static final int BUFFER_SIZE = 79; // TODO set to something reasonable when testing is finished
+    public static final int BUFFER_SIZE = 8192;
 }
