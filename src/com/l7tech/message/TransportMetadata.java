@@ -26,7 +26,16 @@ public abstract class TransportMetadata {
             return param;
     }
 
+    public TransportProtocol getProtocol() {
+        return _protocol;
+    }
+
+    public void setTransportProtocol( TransportProtocol protocol ) {
+        _protocol = protocol;
+    }
+
     protected abstract Object doGetParameter( String name );
 
     protected Map _params = Collections.EMPTY_MAP;
+    protected TransportProtocol _protocol;
 }
