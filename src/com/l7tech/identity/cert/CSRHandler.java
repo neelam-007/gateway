@@ -42,10 +42,18 @@ public class CSRHandler extends HttpServlet {
     }
 
     protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+        // make sure we come in through ssl
         if (!request.isSecure()) {
             response.sendError(HttpServletResponse.SC_FORBIDDEN, "CSR requests must come through ssl port");
             return;
         }
+
+        // if the kstore cannot be found, try to proxy the request to the ssg that has the kstore
+        if (!keystorePresent()) {
+            proxyRequestToSsgThatHasRootKStore(request, response);
+            return;
+        }
+
         // Process the Auth stuff in the headers
         String tmp = request.getHeader(HTTPConstants.HEADER_AUTHORIZATION);
         if (tmp != null ) tmp = tmp.trim();
@@ -185,6 +193,16 @@ public class CSRHandler extends HttpServlet {
         }
         return rsasigner;
         */
+    }
+
+    private boolean keystorePresent() {
+        // todo, implement this
+        return true;
+    }
+
+    private void proxyRequestToSsgThatHasRootKStore(HttpServletRequest request, HttpServletResponse response) {
+        // todo, implement this
+        return;
     }
 
     private IdentityProviderConfigManager identityProviderConfigManager = null;
