@@ -48,6 +48,7 @@ public class SoapUtil {
     public static final String DIGSIG_URI = "http://www.w3.org/2000/09/xmldsig#";
     public static final String WSU_NAMESPACE = "http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-utility-1.0.xsd";
     public static final String WSU_NAMESPACE2 = "http://schemas.xmlsoap.org/ws/2002/07/utility";
+    public static final String WSSC_NAMESPACE = "http://schemas.xmlsoap.org/ws/2004/04/sc";
 
     public static final String L7_MESSAGEID_NAMESPACE = "http://www.layer7tech.com/ws/addr";
     public static final String L7_MESSAGEID_PREFIX = "L7a";
@@ -102,6 +103,7 @@ public class SoapUtil {
     public static final String UNTOK_PASSWORD_EL_NAME = "Password";
     public static final String MESSAGEID_EL_NAME = "MessageID";
     public static final String RELATESTO_EL_NAME = "RelatesTo";
+    public static final String WSSC_ID_EL_NAME = "Identifier";
 
     // Misc
     public static final String FC_CLIENT = "Client";
