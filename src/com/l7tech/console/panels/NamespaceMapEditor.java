@@ -34,6 +34,15 @@ public class NamespaceMapEditor extends JDialog {
     private java.util.List namespaces = new ArrayList();
     boolean cancelled = false;
 
+    public NamespaceMapEditor(Dialog owner, Map predefinedNamespaces) {
+        super(owner, true);
+        if (predefinedNamespaces != null) {
+            prefixes.addAll(predefinedNamespaces.keySet());
+            namespaces.addAll(predefinedNamespaces.values());
+        }
+        initialize();
+    }
+
     public NamespaceMapEditor(Frame owner, Map predefinedNamespaces) {
         super(owner, true);
         if (predefinedNamespaces != null) {
@@ -205,7 +214,7 @@ public class NamespaceMapEditor extends JDialog {
 
     public static void main(String[] args) {
         // test the dlg
-        NamespaceMapEditor blah = new NamespaceMapEditor(null, null);
+        NamespaceMapEditor blah = new NamespaceMapEditor((Frame)null, null);
         blah.pack();
         blah.show();
         System.exit(0);

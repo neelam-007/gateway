@@ -92,6 +92,7 @@ public class XpathBasedAssertionPropertiesDialog extends JDialog {
     private ActionListener okActionListener;
     private boolean isEncryption;
     private XpathEvaluator testEvaluator;
+    private JButton namespaceButton;
 
     /**
      * @param owner this panel owner
@@ -147,6 +148,20 @@ public class XpathBasedAssertionPropertiesDialog extends JDialog {
 
     private void initialize() {
         Actions.setEscKeyStrokeDisposes(this);
+
+        namespaceButton.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                NamespaceMapEditor nseditor = new NamespaceMapEditor(XpathBasedAssertionPropertiesDialog.this, namespaces);
+                nseditor.pack();
+                nseditor.show();
+                Map newMap = nseditor.newNSMap();
+                if (newMap != null) {
+                    // todo, make sure important namespaces were not removed
+                    namespaces = newMap;
+                }
+            }
+        });
+
         cancelButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 XpathBasedAssertionPropertiesDialog.this.dispose();
