@@ -189,7 +189,7 @@ public abstract class AssertionTreeNode extends AbstractTreeNode {
      */
     public void swap(AssertionTreeNode target) {
         final JTree tree = ComponentRegistry.getInstance().getPolicyTree();
-        final DefaultTreeModel model = (DefaultTreeModel)tree.getModel();
+        final PolicyTreeModel model = (PolicyTreeModel)tree.getModel();
         final DefaultMutableTreeNode parent = (DefaultMutableTreeNode)this.getParent();
 
         int indexThis = parent.getIndex(this);
@@ -197,8 +197,8 @@ public abstract class AssertionTreeNode extends AbstractTreeNode {
         int indexThat = parent.getIndex(target);
         model.removeNodeFromParent(target);
 
-        model.insertNodeInto(this, parent, indexThat);
-        model.insertNodeInto(target, parent, indexThis);
+        model.moveNodeInto(this, parent, indexThat);
+        model.moveNodeInto(target, parent, indexThis);
 
         Runnable runnable = new Runnable() {
             public void run() {

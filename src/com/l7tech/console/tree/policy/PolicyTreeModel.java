@@ -200,13 +200,52 @@ public class PolicyTreeModel extends DefaultTreeModel {
     }
 
     /**
-     * Invoked this to insert newChild at location index in parents children with
+     * Invoke this to insert newChild at location index in parents children with
      * advice support.
      */
     private void insertNodeIntoAdvised(MutableTreeNode newChild, MutableTreeNode parent, int index) {
         super.insertNodeInto(newChild, parent, index);
     }
 
+     /**
+     * Invoke this to move (after remove node) to insert newChild at location index in parents
+      * children without advice support. Will trigger only the validation advice
+     */
+    void moveNodeInto(AssertionTreeNode newChild, DefaultMutableTreeNode parent, int index) {
+        checkArgumentIsAssertionTreeNode(newChild);
+        checkArgumentIsAssertionTreeNode(parent);
+        Assertion p = ((AssertionTreeNode)parent).asAssertion();
+        Assertion a = ((AssertionTreeNode)newChild).asAssertion();
+        PolicyEvent event = new PolicyEvent(this,
+          new AssertionPath(p.getPath()),
+          new int[]{index}, new Assertion[]{a});
+
+        try {
+            fireWillReceiveListeners(event);
+            AssertionTreeNode assertionTreeNode = (AssertionTreeNode)getRoot();
+            ServiceNode sn = assertionTreeNode.getServiceNodeCookie();
+            PublishedService service = null;
+            if (sn != null) {
+                service = sn.getPublishedService();
+            }
+            Assertion policy = assertionTreeNode.asAssertion();
+            PolicyTreeModelChange pc = new PolicyTreeModelChange(policy,
+              event,
+              service,
+              this, (AssertionTreeNode)newChild,
+              (AssertionTreeNode)parent, index);
+            pc.advices = new Advice[]{new PolicyValidatorAdvice()};
+            pc.proceed();
+        } catch (PolicyChangeVetoException e) {
+            // vetoed
+        } catch (PolicyException e) {
+            throw new RuntimeException(e);
+        } catch (RemoteException e) {
+            throw new RuntimeException(e);
+        } catch (FindException e) {
+            throw new RuntimeException(e);
+        }
+    }
 
     /**
      * Advices invocation. Supports invoking the policy change advice chain.

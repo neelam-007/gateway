@@ -599,31 +599,34 @@ public class PolicyTree extends JTree implements DragSourceListener,
                         }
                         TreePath pathSource = (TreePath)transferable.getTransferData(flavor);
                         log.fine("DROPPING: " + pathSource.getLastPathComponent());
-                        DefaultTreeModel model = (DefaultTreeModel)getModel();
+                        PolicyTreeModel model = (PolicyTreeModel)getModel();
                         TreePath pathNewChild = null;
 
                         final AssertionTreeNode an = (AssertionTreeNode)pathSource.getLastPathComponent();
                         Assertion a = (Assertion)an.asAssertion().clone();
                         final AssertionTreeNode assertionTreeNodeCopy = AssertionTreeNodeFactory.asTreeNode(a);
 
-                        // todo: look into this!
                         DefaultMutableTreeNode targetTreeNode =
                           ((DefaultMutableTreeNode)pathTarget.getLastPathComponent());
-                        DefaultMutableTreeNode sourceTreeNode =
-                          ((DefaultMutableTreeNode)pathSource.getLastPathComponent());
 
                         if (targetTreeNode.getAllowsChildren()) {
                             int targetIndex = 0;
                             if (targetTreeNode == model.getRoot()) {
                                 targetIndex = targetTreeNode.getChildCount();
                             }
-                            model.insertNodeInto(assertionTreeNodeCopy, targetTreeNode, targetIndex);
+                            if (e.getDropAction() == DnDConstants.ACTION_MOVE)
+                                model.moveNodeInto(assertionTreeNodeCopy, targetTreeNode, targetIndex);
+                            else
+                                model.insertNodeInto(assertionTreeNodeCopy, targetTreeNode, targetIndex);
                         } else {
                             final DefaultMutableTreeNode parent = (DefaultMutableTreeNode)targetTreeNode.getParent();
 
                             int index = parent.getIndex(targetTreeNode);
                             if (index != -1) {
-                                model.insertNodeInto(assertionTreeNodeCopy, parent, index + 1);
+                                if (e.getDropAction() == DnDConstants.ACTION_MOVE)
+                                    model.moveNodeInto(assertionTreeNodeCopy, parent, index + 1);
+                                else
+                                    model.insertNodeInto(assertionTreeNodeCopy, parent, index + 1);
                             }
                         }
 
