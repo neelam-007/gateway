@@ -172,7 +172,7 @@ public class CertImportMethodsPanel extends WizardStepPanel {
     public boolean onNextButton() {
 
         InputStream is = null;
-        CertificateFactory cf = null;
+        CertificateFactory cf = CertUtils.getFactory();
 
         if (fileRadioButton.isSelected()) {
             try {
