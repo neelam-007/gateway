@@ -6,7 +6,6 @@
 package com.l7tech.console.beaneditor;
 
 import com.l7tech.common.gui.util.Utilities;
-import com.l7tech.console.util.WeakPropertyChangeSupport;
 
 import javax.swing.*;
 import javax.swing.table.TableCellRenderer;
@@ -15,6 +14,7 @@ import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.beans.PropertyChangeListener;
+import java.beans.PropertyChangeSupport;
 import java.util.Locale;
 import java.util.ResourceBundle;
 
@@ -32,7 +32,7 @@ public class BeanEditor extends JPanel {
     private Class stopClass;
     private ResourceBundle resources;
     private JButton okButton;
-    private WeakPropertyChangeSupport beanListeners = new WeakPropertyChangeSupport();
+    private PropertyChangeSupport beanListeners = new PropertyChangeSupport(this);
     private JButton cancelButton;
     private Options options = new Options();
 
@@ -109,6 +109,8 @@ public class BeanEditor extends JPanel {
         propertyTable.getTableHeader().setReorderingAllowed(false);
         propertyTable.getTableHeader().setResizingAllowed(true);
         propertyTable.setRowHeight(20);
+        propertyTable.putClientProperty("terminateEditOnFocusLost", Boolean.TRUE);
+
         TableColumn column = propertyTable.getColumnModel().getColumn(0);
         column.setCellRenderer(new ButtonRenderer());
         column = propertyTable.getColumnModel().getColumn(1);

@@ -67,6 +67,7 @@ public class CustomAssertionPropertiesAction extends NodeAction {
         be.addBeanListener(new BeanAdapter() {
             public void onEditAccepted(Object source, Object bean) {
                 dialog.dispose();
+                assertionChanged();
             }
         });
         dialog.setTitle(ca.getName());
