@@ -1,12 +1,10 @@
 package com.l7tech.identity.internal;
 
-import cirrus.hibernate.HibernateException;
-import cirrus.hibernate.Session;
+import com.l7tech.common.util.Locator;
 import com.l7tech.identity.*;
 import com.l7tech.identity.cert.ClientCertManager;
 import com.l7tech.logging.LogManager;
 import com.l7tech.objectmodel.*;
-import com.l7tech.common.util.Locator;
 
 import java.sql.SQLException;
 import java.util.*;
@@ -94,37 +92,6 @@ public class InternalUserManagerServer extends HibernateEntityManager implements
             final String msg = "Error while searching for "+getInterfaceClass() + " instances.";
             logger.log(Level.SEVERE, msg, e);
             throw new FindException(msg, e);
-        }
-    }
-
-    /**
-     * determines whether a user is allowed to get a new cert.
-     * the rules are: if a cert is already present and had been used -> not allowed
-     * if a cert is present and has never been user -> user can reset maximum of ten times
-     */
-    public boolean userCanResetCert(String oid) throws FindException{
-        HibernatePersistenceContext hpc = null;
-        try {
-            hpc = hibernateContext();
-            Session s = hpc.getSession();
-            List results = s.find( getFieldQuery( oid, F_CERTRESETCOUNTER ) );
-            Integer i = (Integer)results.get(0);
-            int res = i.intValue();
-
-            logger.finest("cert_reset_counter value for user " + oid + " = " + res);
-            if (res < CERTRESETCOUNTER_MAX) return true;
-            else {
-                logger.log(Level.SEVERE, "user " + oid + " not authorized to regen cert.");
-                return false;
-            }
-        } catch (SQLException e) {
-            logger.log(Level.SEVERE, "error getting cert_reset_counter value for " + oid, e);
-            throw new FindException(e.toString(), e);
-        } catch (HibernateException e) {
-            logger.log(Level.SEVERE, "error getting cert_reset_counter value for " + oid, e);
-            throw new FindException(e.toString(), e);
-        } finally {
-            if ( hpc != null ) hpc.close();
         }
     }
 
@@ -278,10 +245,6 @@ public class InternalUserManagerServer extends HibernateEntityManager implements
         return User.class;
     }
 
-    private HibernatePersistenceContext hibernateContext() throws SQLException {
-        return (HibernatePersistenceContext)PersistenceContext.getCurrent();
-    }
-
     /**
      * check whether this user is the last standing administrator
      * this is used at update time to prevent the last administrator to nuke his admin accout membership
@@ -303,13 +266,6 @@ public class InternalUserManagerServer extends HibernateEntityManager implements
         return false;
     }
 
-    private static final String F_CERTRESETCOUNTER = "certResetCounter";
-    // this value for the F_CERTRESETCOUNTER column represent the maximum number of retries that
-    // a user can regen his cert until the admin must revoke. once a cert is used in the authentication
-    // code, the F_CERTRESETCOUNTER value is automatically set to that value so that it cannot be regen once
-    // it is used.
-    private static final int CERTRESETCOUNTER_MAX = 10;
-    public static final String F_CERT = "cert";
     public static final String F_LOGIN = "login";
     public static final String F_NAME = "name";
     private Logger logger = null;
