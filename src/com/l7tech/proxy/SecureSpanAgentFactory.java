@@ -112,15 +112,6 @@ public class SecureSpanAgentFactory {
                 } catch (ClientCertificateException e) {
                     throw new CausedSendException(e);
                 } catch (CredentialsUnavailableException e) {
-                    if (SsgKeyStoreManager.isPasswordWorkedForPrivateKey(ssg))
-                        destroyClientCertificate();
-                    else {
-                        try {
-                            getClientCertPrivateKey();
-                        } catch (CausedBadCredentialsException ee) {
-                            destroyClientCertificate();
-                        }
-                    }
                     throw new CausedBadCredentialsException(e);
                 } catch (OperationCanceledException e) {
                     throw new CausedSendException(e);
