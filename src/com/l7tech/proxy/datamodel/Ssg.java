@@ -137,6 +137,8 @@ public class Ssg implements Serializable, Cloneable, Comparable {
 
     /**
      * Add a listener to be notified of changes to this Ssg's state, including policy changes.
+     * Adding a listener requires that a Gui be available, since event delivery is done on the Swing
+     * thread.
      */
     public synchronized void addSsgListener(SsgListener listener) {
         listeners.add(new WeakReference(listener));
