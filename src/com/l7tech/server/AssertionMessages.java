@@ -179,4 +179,11 @@ public class AssertionMessages extends Messages {
     // ServerUnknownAssertion
     public static final M UNKNOWN_ASSERTION                                 = m(5800, Level.WARNING, "The unknown assertion invoked. Detail message is: {0}");
 
+    // ServerXslTransformation
+    public static final M XSL_TRAN_REQUEST_NOT_XML                        = m(5900, Level.INFO, "Request not XML; cannot perform XSL transformation");
+    public static final M XSL_TRAN_REQUEST                                = m(5901, Level.FINEST, "Transforming request");
+    public static final M XSL_TRAN_RESPONSE_NOT_XML                       = m(5902, Level.INFO, "Response not XML; cannot perform XSL transformation");
+    public static final M XSL_TRAN_RESPONSE                               = m(5903, Level.FINEST, "Transforming response");
+    public static final M XSL_TRAN_CONFIG_ISSUE                           = m(5904, Level.WARNING, "Assertion is not configured properly. should specify if transformation should apply to request or to response. returning failure.");
+
 }

@@ -5,6 +5,8 @@ import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.xml.XslTransformation;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.ServerAssertion;
+import com.l7tech.server.AssertionMessages;
+import com.l7tech.common.audit.Auditor;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 import org.xml.sax.SAXException;
@@ -43,32 +45,33 @@ public class ServerXslTransformation implements ServerAssertion {
      * @param context
      */
     public AssertionStatus checkRequest(PolicyEnforcementContext context) throws IOException, PolicyAssertionException {
+
+        Auditor auditor = new Auditor(context.getAuditContext(), logger);
         // 1. Get document to transform
         Document doctotransform = null;
         try {
             switch (subject.getDirection()) {
                 case XslTransformation.APPLY_TO_REQUEST:
                     if (!context.getRequest().isXml()) {
-                        logger.info("Request not XML; cannot perform XSL transformation");
+                        auditor.logAndAudit(AssertionMessages.XSL_TRAN_REQUEST_NOT_XML);
                         return AssertionStatus.NOT_APPLICABLE;
                     }
 
-                    logger.finest("transforming request");
+                    auditor.logAndAudit(AssertionMessages.XSL_TRAN_REQUEST);
                     doctotransform = context.getRequest().getXmlKnob().getDocumentWritable();
                     break;
                 case XslTransformation.APPLY_TO_RESPONSE:
                     if (!context.getResponse().isXml()) {
-                        logger.info("Response not XML; cannot perform XSL transformation");
+                        auditor.logAndAudit(AssertionMessages.XSL_TRAN_RESPONSE_NOT_XML);
                         return AssertionStatus.NOT_APPLICABLE;
                     }
 
-                    logger.finest("transforming response");
+                    auditor.logAndAudit(AssertionMessages.XSL_TRAN_RESPONSE);
                     doctotransform = context.getResponse().getXmlKnob().getDocumentWritable();
                     break;
                 default:
                     // should not get here!
-                    logger.warning("assertion is not configured properly. should specify if transformation should" +
-                                   "apply to request or to response. returning failure.");
+                    auditor.logAndAudit(AssertionMessages.XSL_TRAN_CONFIG_ISSUE);
                     return AssertionStatus.SERVER_ERROR;
             }
 
@@ -78,7 +81,7 @@ public class ServerXslTransformation implements ServerAssertion {
                 output = transform(doctotransform);
             } catch (TransformerException e) {
                 String msg = "error transforming document";
-                logger.log(Level.WARNING, msg, e);
+                auditor.logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[] {msg}, e);
                 throw new PolicyAssertionException(msg, e);
             }
 
@@ -93,7 +96,7 @@ public class ServerXslTransformation implements ServerAssertion {
             }
         } catch (SAXException e) {
             String msg = "cannot get document to tranform";
-            logger.log(Level.WARNING, msg, e);
+            auditor.logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[] {msg}, e);
             throw new PolicyAssertionException(msg, e);
         }
 
