@@ -246,12 +246,6 @@ public final class SoapMsgSigner {
     }
 
     private static Element getSignatureHeaderElement(Document doc, Element bodyElement) {
-        Element header = XmlUtil.findFirstChildElement( doc.getDocumentElement() );
-        if ( header == null ) {
-            logger.info( "SOAP header not found" );
-            return null;
-        }
-
         String bodyId = bodyElement.getAttribute( ID_ATTRIBUTE_NAME );
         if ( bodyId == null ) {
             logger.info( "ID attribute not found in supposedly signed body element" );
@@ -259,7 +253,7 @@ public final class SoapMsgSigner {
         }
 
         try {
-            Element security = XmlUtil.findOnlyOneChildElementByName( header, SoapUtil.SECURITY_NAMESPACE, SoapUtil.SECURITY_EL_NAME );
+            Element security = SoapUtil.getSecurityElement(doc);
             if ( security == null ) {
                 logger.info( SoapUtil.SECURITY_EL_NAME + " header not found" );
                 return null;
