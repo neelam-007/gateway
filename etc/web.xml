@@ -22,6 +22,11 @@
     <servlet>
         <servlet-name>SoapMessageProcessingServlet</servlet-name>
         <servlet-class>com.l7tech.server.SoapMessageProcessingServlet</servlet-class>
+
+        <init-param>
+            <param-name>PolicyServletUri</param-name>
+            <param-value>/policy/disco.modulator?serviceoid=</param-value>
+        </init-param>
     </servlet>
 
     <!-- Axis servlet properties -->
