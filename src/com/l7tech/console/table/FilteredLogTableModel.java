@@ -4,11 +4,10 @@ import com.l7tech.adminws.logging.Log;
 import com.l7tech.common.util.Locator;
 import com.l7tech.logging.LogMessage;
 import com.l7tech.console.panels.LogPanel;
+import com.l7tech.console.util.LogsWorker;
 
 import java.util.Vector;
 import java.util.logging.Logger;
-import java.util.logging.Level;
-import java.rmi.RemoteException;
 
 /**
  * Created by IntelliJ IDEA.
@@ -19,8 +18,8 @@ import java.rmi.RemoteException;
  */
 public class FilteredLogTableModel extends FilteredDefaultTableModel{
 
-     private static final int MAX_MESSAGE_BLOCK_SIZE = 100;
-     private static final int MAX_NUMBER_OF_LOG_MESSGAES = 4096;
+     public static final int MAX_MESSAGE_BLOCK_SIZE = 100;
+     public static final int MAX_NUMBER_OF_LOG_MESSGAES = 4096;
      private Log log = null;
       static Logger logger = Logger.getLogger(FilteredLogTableModel.class.getName());
 
@@ -31,7 +30,7 @@ public class FilteredLogTableModel extends FilteredDefaultTableModel{
          while (realModel.getRowCount() > 0) {
               realModel.removeRow(0);
          }
-         updateLogTable(logsCache, newFilterLevel);
+         appendLogsToTable(logsCache, newFilterLevel);
          realModel.fireTableDataChanged();
      }
 
@@ -47,87 +46,64 @@ public class FilteredLogTableModel extends FilteredDefaultTableModel{
          logsCache.removeAllElements();
      }
 
-     public void refreshLogs(int msgFilterLevel){
+     public void refreshLogs(final int msgFilterLevel, final LogPanel logPane, final String msgNumSelected){
 
          if (log == null) {
              log = (Log) Locator.getDefault().lookup(Log.class);
              if (log == null) throw new IllegalStateException("cannot obtain log remote reference");
          }
 
-         String[] rawLogs = new String[]{};
          long startMsgNumber = -1;
          long endMsgNumber = -1;
-         boolean cleanUp = true;
-         Vector newLogsCache = new Vector();
-         int accumulatedNewLogs = 0;
 
          if(logsCache.size() > 0){
              endMsgNumber = ((LogMessage) logsCache.firstElement()).getMsgNumber();
          }
 
-         LogMessage logMsg = null;
+         // create a worker thread to retrieve the Service statistics
+        final LogsWorker logsWorker = new LogsWorker(log, startMsgNumber, endMsgNumber) {
+            public void finished(){
+                updateLogsTable(getNewLogs(), msgFilterLevel);
+                logPane.updateMsgTotal();
+                logPane.setSelectedRow(msgNumSelected);
+            }
+        };
 
-         do {
-             try {
-                 rawLogs = log.getSystemLog(startMsgNumber, endMsgNumber, MAX_MESSAGE_BLOCK_SIZE);
-
-                 if (rawLogs.length > 0) {
-
-                     // table clean up required only for the first time
-                     if (cleanUp) {
-                         while (realModel.getRowCount() > 0) {
-                             realModel.removeRow(0);
-                         }
-                         cleanUp = false;
-                     }
-
-                     Vector newLogs = new Vector();
-                     for (int i = 0; i < rawLogs.length; i++) {
-                         logMsg = new LogMessage(rawLogs[i]);
-                         newLogs.add(logMsg);
-                     }
-
-
-                     if (accumulatedNewLogs + rawLogs.length <= MAX_NUMBER_OF_LOG_MESSGAES) {
-                         // update the startMsgNumber
-                         startMsgNumber = logMsg.getMsgNumber();
-
-                         newLogsCache.addAll(newLogs);
-                         updateLogTable(newLogs, msgFilterLevel);
-                         realModel.fireTableDataChanged();
-
-                         accumulatedNewLogs += rawLogs.length;
-                     } else {
-                         for (int i = 0; accumulatedNewLogs < MAX_NUMBER_OF_LOG_MESSGAES; i++) {
-                             newLogsCache.add(newLogs.get(i));
-                             accumulatedNewLogs++;
-
-                             updateLogTable(newLogs, msgFilterLevel);
-                             realModel.fireTableDataChanged();
-                         }
-                         break;
-                     }
-                 }
-
-             } catch (RemoteException e) {
-                 logger.log( Level.SEVERE, "Unable to retrieve logs from server", e);
-             }
-         } while (rawLogs.length == MAX_MESSAGE_BLOCK_SIZE);    // may be more messages for retrieval
-
-         // append the old logs to the new logs
-         if (accumulatedNewLogs > 0) {
-
-             while (logsCache.size() + newLogsCache.size() > MAX_NUMBER_OF_LOG_MESSGAES) {
-                 // remove the last element
-                 logsCache.remove(logsCache.size() - 1);
-             }
-             updateLogTable(logsCache, msgFilterLevel);
-             realModel.fireTableDataChanged();
-             newLogsCache.addAll(logsCache);
-
-             logsCache = newLogsCache;
-         }
+        logsWorker.start();
      }
+
+    private void updateLogsTable(Vector newLogs, int msgFilterLevel) {
+        boolean cleanUp = true;
+
+        if (newLogs.size() > 0) {
+
+            // table clean up required only for the first time
+            if (cleanUp) {
+                while (realModel.getRowCount() > 0) {
+                    realModel.removeRow(0);
+                }
+                cleanUp = false;
+            }
+
+            // populate the new logs to the table
+            appendLogsToTable(newLogs, msgFilterLevel);
+
+            while (logsCache.size() + newLogs.size() > MAX_NUMBER_OF_LOG_MESSGAES) {
+                // remove the last element
+                logsCache.remove(logsCache.size() - 1);
+            }
+
+            // append the old logs to the table
+            appendLogsToTable(logsCache, msgFilterLevel);
+
+            realModel.fireTableDataChanged();
+
+            // append the old logs to the cache
+            newLogs.addAll(logsCache);
+
+            logsCache = newLogs;
+        }
+    }
 
 
      private boolean isFilteredMsg(LogMessage logMsg, int msgFilterLevel) {
@@ -144,7 +120,7 @@ public class FilteredLogTableModel extends FilteredDefaultTableModel{
          }
      }
 
-    private void updateLogTable(Vector logs, int msgFilterLevel){
+    private void appendLogsToTable(Vector logs, int msgFilterLevel){
 
          for (int i = 0; i < logs.size(); i++) {
 

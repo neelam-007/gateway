@@ -3,12 +3,21 @@ package com.l7tech.service;
 import java.io.Serializable;
 
 public class ServiceStatistics implements Serializable {
+
     public ServiceStatistics( long serviceOid  ) {
         _serviceOid = serviceOid;
     }
 
     public long getServiceOid() {
         return _serviceOid;
+    }
+
+    public String getServiceName() {
+        return _serviceName;
+    }
+
+    public void setServiceName(String name) {
+        _serviceName = name;
     }
 
     public int getAttemptedRequestCount() {
@@ -59,6 +68,7 @@ public class ServiceStatistics implements Serializable {
     }
 
     private long _serviceOid = PublishedService.DEFAULT_OID;
+    private String _serviceName = "";
     private int _attemptedRequestCount = 0;
     private int _authorizedRequestCount = 0;
     private int _completedRequestCount = 0;

@@ -1,13 +1,11 @@
 package com.l7tech.console.panels;
 
-import com.l7tech.adminws.logging.Log;
-import com.l7tech.common.util.Locator;
 import com.l7tech.common.util.UptimeMetrics;
+import com.l7tech.common.util.Locator;
 import com.l7tech.console.table.LogTableModel;
-import com.l7tech.console.table.FilteredLogTableModel;
-import com.l7tech.objectmodel.EntityHeader;
-import com.l7tech.objectmodel.FindException;
+import com.l7tech.console.util.StatisticsWorker;
 import com.l7tech.service.ServiceStatistics;
+import com.l7tech.adminws.logging.Log;
 
 import javax.swing.*;
 import javax.swing.event.TableColumnModelListener;
@@ -22,11 +20,9 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.ComponentListener;
 import java.awt.event.ComponentEvent;
-import java.rmi.RemoteException;
 import java.util.Vector;
 import java.util.HashMap;
 import java.util.logging.Logger;
-import java.util.logging.Level;
 
 
 /**
@@ -43,7 +39,9 @@ public class StatisticsPanel extends JPanel {
     private static final String LAST_MINUTE_SERVER_LOAD_PREFIX = "Avg load (1 min): ";
     private static final String MIDDLE_SPACE = "     ";
     private static final String END_SPACE    = "   ";
-    static Logger logger = Logger.getLogger(FilteredLogTableModel.class.getName());
+    static Logger logger = Logger.getLogger(StatisticsPanel.class.getName());
+    static Log logstub = (Log) Locator.getDefault().lookup(Log.class);
+    private com.l7tech.adminws.service.ServiceManager serviceManager = null;
 
     // IMPORTANT NOTE:
     // 1. need to make sure that NUMBER_OF_SAMPLE_PER_MINUTE has no fraction when REFRESH_INTERVAL is changed
@@ -52,7 +50,6 @@ public class StatisticsPanel extends JPanel {
     private static final int STAT_REFRESH_TIMER = 1000 * REFRESH_INTERVAL;
     private static final int NUMBER_OF_SAMPLE_PER_MINUTE = 60 / REFRESH_INTERVAL;
 
-    private com.l7tech.adminws.service.ServiceManager serviceManager = null;
     private JTable statTable = null;
     private JTable statTotalTable = null;
     private JScrollPane statTablePane = null;
@@ -67,7 +64,6 @@ public class StatisticsPanel extends JPanel {
     private javax.swing.Timer statRefreshTimer = null;
     private JLabel serverUpTime = null;
     private JLabel lastMinuteServerLoad = null;
-    private Log logstub = (Log) Locator.getDefault().lookup(Log.class);
     private JPanel selectPaneRight = null;
     private JPanel selectPaneLeft = null;
     private long attemptedCountTotal = 0;
@@ -328,91 +324,75 @@ public class StatisticsPanel extends JPanel {
 
         getStatRefreshTimer().stop();
 
-        // also update the server load statistics
-        loadServerMetricsValues();
-
-        boolean cleanUp = true;
-
         if (serviceManager == null) {
             serviceManager = (com.l7tech.adminws.service.ServiceManager) Locator.getDefault().lookup(com.l7tech.adminws.service.ServiceManager.class);
             if (serviceManager == null) throw new RuntimeException("Cannot instantiate the ServiceManager");
         }
 
-        com.l7tech.objectmodel.EntityHeader[] entityHeaders = null;
-
-        try {
-            entityHeaders = serviceManager.findAllPublishedServices();
-
-            EntityHeader header = null;
-            for (int i = 0; i < entityHeaders.length; i++) {
-
-                // remove old table data
-                if (cleanUp) {
-                    while (getStatTableModel().getRowCount() > 0) {
-                        getStatTableModel().removeRow(0);
-                    }
-                    attemptedCountTotal = 0;
-                    authorizedCountTotal = 0;
-                    completedCountTotal = 0;
-                    completedCountPerMinuteTotal = 0;
-                    lastMinuteCompletedCountTotal = 0;
-                    cleanUp = false;
-                }
-
-                header = entityHeaders[i];
-                if (header.getType().toString() == com.l7tech.objectmodel.EntityType.SERVICE.toString()) {
-                    Vector newRow = new Vector();
-
-                    newRow.add(header.getName());
-                    ServiceStatistics stats = null;
-
-                    try {
-                        stats = serviceManager.getStatistics(header.getOid());
-
-                        if (stats != null) {
-                            long completedCounts = stats.getCompletedRequestCount();
-
-                            newRow.add(new Integer(stats.getAttemptedRequestCount()));
-                            newRow.add(new Integer(stats.getAuthorizedRequestCount()));
-                            newRow.add(new Long(completedCounts));
-
-                            if(serverUpTimeMinutues > 0){
-                                newRow.add(new Long(completedCounts/serverUpTimeMinutues));
-                                completedCountPerMinuteTotal += completedCounts/serverUpTimeMinutues;
-                            }
-                            else{
-                                newRow.add(new Long(0));
-                            }
-
-                            updateStatCache(header.getName(), completedCounts);
-
-                            long lastMinuteCompletedCount = getLastMinuteCompletedCount(header.getName());
-                            newRow.add(new Long(lastMinuteCompletedCount));
-
-                            getStatTableModel().addRow(newRow);
-                            attemptedCountTotal += stats.getAttemptedRequestCount();
-                            authorizedCountTotal += stats.getAuthorizedRequestCount();
-                            completedCountTotal += stats.getCompletedRequestCount();
-                            lastMinuteCompletedCountTotal += lastMinuteCompletedCount;
-                        }
-
-                    } catch (RemoteException e) {
-                        logger.log( Level.SEVERE, "Unable to retrieve statistics from server", e);
-                    }
-
-                }
-
+        // create a worker thread to retrieve the Service statistics
+        final StatisticsWorker statsWorker = new StatisticsWorker(serviceManager, logstub) {
+            public void finished(){
+                updateServerMetricsFields(getMetrics());
+                updateStatisticsTable(getStatsList());
             }
-        } catch (RemoteException e) {
-            logger.log( Level.SEVERE, "Remote exception when retrieving published services from server", e);
-        } catch (FindException e) {
-            logger.log( Level.WARNING, "Unable to find all published services from server", e);
+        };
+
+        statsWorker.start();
+    }
+
+    private void updateStatisticsTable(Vector statsList) {
+        boolean cleanUp = true;
+
+        for (int i = 0; i < statsList.size(); i++) {
+
+            // remove old table data
+            if (cleanUp) {
+                while (getStatTableModel().getRowCount() > 0) {
+                    getStatTableModel().removeRow(0);
+                }
+                attemptedCountTotal = 0;
+                authorizedCountTotal = 0;
+                completedCountTotal = 0;
+                completedCountPerMinuteTotal = 0;
+                lastMinuteCompletedCountTotal = 0;
+                cleanUp = false;
+            }
+
+            Vector newRow = new Vector();
+            ServiceStatistics stats = (ServiceStatistics) statsList.get(i);
+
+            newRow.add(stats.getServiceName());
+            long completedCounts = stats.getCompletedRequestCount();
+
+            newRow.add(new Integer(stats.getAttemptedRequestCount()));
+            newRow.add(new Integer(stats.getAuthorizedRequestCount()));
+            newRow.add(new Long(completedCounts));
+
+            if (serverUpTimeMinutues > 0) {
+                newRow.add(new Long(completedCounts / serverUpTimeMinutues));
+                completedCountPerMinuteTotal += completedCounts / serverUpTimeMinutues;
+            } else {
+                newRow.add(new Long(0));
+            }
+
+            updateStatCache(stats.getServiceName(), completedCounts);
+
+            long lastMinuteCompletedCount = getLastMinuteCompletedCount(stats.getServiceName());
+            newRow.add(new Long(lastMinuteCompletedCount));
+
+            getStatTableModel().addRow(newRow);
+            attemptedCountTotal += stats.getAttemptedRequestCount();
+            authorizedCountTotal += stats.getAuthorizedRequestCount();
+            completedCountTotal += stats.getCompletedRequestCount();
+            lastMinuteCompletedCountTotal += lastMinuteCompletedCount;
         }
 
         getStatTableModel().fireTableDataChanged();
+
         updateReqeustsTotal();
 
         getStatRefreshTimer().start();
+
     }
 
     private void updateReqeustsTotal(){
@@ -425,14 +405,8 @@ public class StatisticsPanel extends JPanel {
        getStatTotalTableModel().fireTableDataChanged();
     }
 
-    private void loadServerMetricsValues() {
-        UptimeMetrics metrics = null;
-        try {
-            metrics = logstub.getUptime();
-        } catch (RemoteException e) {
-            logger.log( Level.SEVERE, "Unable to retrieve server metrics from server", e);
-            metrics = null;
-        }
+    private void updateServerMetricsFields(UptimeMetrics metrics) {
+
         if (metrics == null) {
             serverUpTime.setText(END_SPACE + SERVER_UP_TIME_PREFIX + STATISTICS_UNAVAILABLE + MIDDLE_SPACE);
             lastMinuteServerLoad.setText(LAST_MINUTE_SERVER_LOAD_PREFIX + STATISTICS_UNAVAILABLE + END_SPACE);

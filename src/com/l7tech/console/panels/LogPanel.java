@@ -461,20 +461,14 @@ public class LogPanel extends JPanel {
         }
 
         // retrieve the new logs
-        ((FilteredLogTableModel) getMsgTable().getModel()).refreshLogs(getMsgFilterLevel());
-
-        if(msgNumSelected != null){
-            setSelectedRow(msgNumSelected);
-        }
-
-        updateMsgTotal();
+        ((FilteredLogTableModel) getMsgTable().getModel()).refreshLogs(getMsgFilterLevel(), this, msgNumSelected);
 
         if(autoRefresh.isSelected()){
             getLogsRefreshTimer().start();
         }
     }
 
-    private void setSelectedRow(String msgNumber) {
+    public void setSelectedRow(String msgNumber) {
         if (msgNumber != null) {
             // keep the current row selection
             int rowCount = getMsgTable().getRowCount();
@@ -555,7 +549,7 @@ public class LogPanel extends JPanel {
         return logsRefreshTimer;
     }
 
-    private void updateMsgTotal(){
+    public void updateMsgTotal(){
          msgTotal.setText(MSG_TOTAL_PREFIX + msgTable.getRowCount());
     }
 
