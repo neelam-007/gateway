@@ -59,24 +59,50 @@ public abstract class AbstractLdapGroupManagerServer implements GroupManager {
     protected abstract String doGetGroupMembershipFilter( LdapUser user );
 
     public Set getGroupHeaders( User user ) throws FindException {
-        Collection allgroups = findAll();
-        Set output = new HashSet();
-        for (Iterator i = allgroups.iterator(); i.hasNext();) {
-            Group agrp = (Group)i.next();
-            if (isMember(user, agrp)) {
-                output.add(new EntityHeader(agrp.getUniqueIdentifier(), EntityType.GROUP, agrp.getName(), agrp.getDescription()));
-            }
-        }
-        return output;
-        /*
-        logger.finest("getGroupHeaders " + user.getClass().getName() + " " + ((LdapUser)user).getDn());
+        // Non-optimized but sure way to achieve this:
+        //        Collection allgroups = findAll();
+        //        Set output = new HashSet();
+        //        for (Iterator i = allgroups.iterator(); i.hasNext();) {
+        //            Group agrp = (Group)i.next();
+        //            if (isMember(user, agrp)) {
+        //                output.add(new EntityHeader(agrp.getUniqueIdentifier(), EntityType.GROUP, agrp.getName(), agrp.getDescription()));
+        //            }
+        //        }
+        //        return output;
+
         LdapUser userImp = (LdapUser)user;
+        Set output = new HashSet();
         AbstractLdapConstants constants = getConstants();
+
+        // look for OU memberships
+        String tmpdn = userImp.getDn();
+        int pos = 0;
+        int res = tmpdn.indexOf(constants.oUObjAttrName(), pos);
+        while (res >= 0) {
+            // is there a valid organizational unit there?
+            Group maybegrp = null;
+            try {
+                maybegrp = findByPrimaryKey(tmpdn.substring(res));
+            } catch (FindException e) {
+                logger.finest("could not resolve this group " + e.getMessage());
+                maybegrp = null;
+            }
+            if (maybegrp != null) {
+                LdapGroup ldapgrp = (LdapGroup)maybegrp;
+                EntityHeader grpheader = new EntityHeader(ldapgrp.getDn(), EntityType.GROUP, ldapgrp.getCn(),
+                                            ldapgrp.getDescription());
+                output.add(grpheader);
+            }
+            pos = res+1;
+            res = tmpdn.indexOf(constants.oUObjAttrName(), pos);
+        }
+
+        // add self contained groups
         NamingEnumeration answer = null;
         DirContext context = null;
-        Set headers = new HashSet();
         try {
             String filter = doGetGroupMembershipFilter( userImp );
+            logger.finest("using filter " + filter);
             SearchControls sc = new SearchControls();
             sc.setSearchScope(SearchControls.SUBTREE_SCOPE);
             context = _ldapManager.getBrowseContext();
@@ -98,7 +124,7 @@ public abstract class AbstractLdapGroupManagerServer implements GroupManager {
                 dn = sr.getName() + "," + _config.getProperty(LdapConfigSettings.LDAP_SEARCH_BASE);
 
                 EntityHeader grpheader = new EntityHeader(dn, EntityType.GROUP, cn, description);
-                headers.add(grpheader);
+                output.add(grpheader);
             }
         } catch (NamingException e) {
             // if nothing can be found, just trace this exception and return empty collection
@@ -111,7 +137,7 @@ public abstract class AbstractLdapGroupManagerServer implements GroupManager {
                 throw new FindException( ne.getMessage(), ne );
             }
         }
-        return headers;*/
+        return output;
     }
 
 
