@@ -205,10 +205,12 @@
                 <WsTrustCredentialExchange>
                     <TokenServiceUrl stringValueNull="null"/>
                     <RequestType requestTypeNull="null"/>
+                    <Issuer stringValueNull="null"/>
                     <AppliesTo stringValueNull="null"/>
                 </WsTrustCredentialExchange>
                 <Regex>
                     <Regex stringValueNull="null"/>
+                    <MimePart intValue="0"/>
                     <Replace booleanValue="false"/>
                     <Replacement stringValueNull="null"/>
                     <CaseInsensitive booleanValue="false"/>
