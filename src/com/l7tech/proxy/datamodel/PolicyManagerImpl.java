@@ -70,7 +70,7 @@ public class PolicyManagerImpl implements PolicyManager {
         client.getState().setAuthenticationPreemptive(false);
         client.getState().setCredentials(null, null, null);
         GetMethod getMethod = new GetMethod(policyUrl.toString());
-        getMethod.setDoAuthentication(false); // TODO: will authentication be required to download a policy?
+        getMethod.setDoAuthentication(false);
         try {
             log.info("Downloading new policy from " + policyUrl);
             int status = client.executeMethod(getMethod);
