@@ -1,8 +1,8 @@
 package com.l7tech.proxy;
 
 import org.apache.axis.AxisEngine;
-import org.apache.axis.encoding.DeserializationContextImpl;
 import org.apache.axis.encoding.Base64;
+import org.apache.axis.encoding.DeserializationContextImpl;
 import org.apache.axis.message.SOAPBody;
 import org.apache.axis.message.SOAPEnvelope;
 import org.apache.axis.message.SOAPHandler;
@@ -15,16 +15,32 @@ import org.mortbay.http.HttpRequest;
 import org.mortbay.http.HttpResponse;
 import org.mortbay.http.HttpServer;
 import org.mortbay.http.SocketListener;
+import org.mortbay.http.SunJsseListener;
 import org.mortbay.http.handler.AbstractHttpHandler;
 import org.mortbay.util.MultiException;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.AttributesImpl;
 
+import javax.net.ssl.KeyManager;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLServerSocketFactory;
+import javax.net.ssl.TrustManager;
+import javax.net.ssl.X509KeyManager;
+import javax.net.ssl.X509TrustManager;
 import javax.xml.soap.SOAPException;
 import java.io.IOException;
+import java.io.InputStream;
+import java.net.Socket;
+import java.net.URL;
+import java.security.KeyStore;
+import java.security.KeyStoreException;
+import java.security.NoSuchAlgorithmException;
+import java.security.Principal;
+import java.security.PrivateKey;
+import java.security.SecureRandom;
+import java.security.cert.CertificateException;
+import java.security.cert.X509Certificate;
 import java.util.Enumeration;
-
-import com.l7tech.common.util.HexUtils;
 
 /**
  * A "test" Ssg that can be controlled programmatically.  Used to test the Client Proxy.
@@ -35,16 +51,16 @@ import com.l7tech.common.util.HexUtils;
  */
 public class SsgFaker {
     private static final Category log = Category.getInstance(SsgFaker.class);
+    private static final String CERT_PATH = "com/l7tech/proxy/resources/selfsigned.ks";
 
     private HttpServer httpServer;
     private int maxThreads = 4;
     private int minThreads = 1;
     private int localPort = 7566;
-    private int sslPort = 443;
+    private int sslPort = 7443;
     private String ssgUrl = "http://localhost:" + localPort;
     private String sslUrl = "https://localhost:" + sslPort;
     private boolean destroyed = false;
-    //private static final String KEYSTORE = "com/l7tech/proxy/resources/ssgfaker-sv.keystore";
 
     /**
      * Create an SsgFaker with default settings.
@@ -56,7 +72,16 @@ public class SsgFaker {
      * Start the test SSG.
      * @return The SSG's soap URL.
      */
-    public synchronized String start() throws IOException {
+    public String start() throws Exception{
+        try {
+            return doStart();
+        } catch (Exception e) {
+            log.error("SsgFaker: unable to start: " + e, e);
+            throw e;
+        }
+    }
+
+    public synchronized String doStart() throws Exception {
         if (destroyed)
             throw new IllegalStateException("this SsgFaker is no more");
 
@@ -67,10 +92,6 @@ public class SsgFaker {
         context.addHandler(requestHandler);
         httpServer.addContext(context);
 
-        //URL ksUrl = getClass().getClassLoader().getResource(KEYSTORE);
-        //if (ksUrl == null)
-        //    throw new FileNotFoundException("Can't find keystore file: " + KEYSTORE);
-
         // Set up HTTP listener
         SocketListener socketListener = new SocketListener();
         socketListener.setMaxThreads(maxThreads);
@@ -79,24 +100,80 @@ public class SsgFaker {
         httpServer.addListener(socketListener);
 
         // Set up SSL listener
-        //SunJsseListener sslListener = new SunJsseListener();
-        //sslListener.setMaxThreads(maxThreads);
-        //sslListener.setMinThreads(minThreads);
-        //sslListener.setPort(sslPort);
-        //sslListener.setKeystore(ksUrl.getPath());
-        //sslListener.setKeyPassword("password");
-        //sslListener.setPassword("password");
-        //httpServer.addListener(sslListener);
+        SunJsseListener sslListener = new SunJsseListener() {
+            protected SSLServerSocketFactory createFactory()
+                    throws Exception {
+                SSLContext sslc = SSLContext.getInstance( "SSL" );
+                final KeyStore ks = loadKeyStore();
+                final X509Certificate cert = (X509Certificate) ks.getCertificate("testcert");
+                final PrivateKey key = (PrivateKey) ks.getKey("testcert", new char[0]);
+
+                KeyManager km = new X509KeyManager() {
+                    public PrivateKey getPrivateKey(String s) {
+                        return key;
+                    }
+
+                    public X509Certificate[] getCertificateChain(String s) {
+                        return new X509Certificate[] { cert };
+                    }
+
+                    public String[] getClientAliases(String s, Principal[] principals) {
+                        return new String[] { "testcert" };
+                    }
+
+                    public String[] getServerAliases(String s, Principal[] principals) {
+                        return new String[] { "testcert" };
+                    }
+
+                    public String chooseServerAlias(String s, Principal[] principals, Socket socket) {
+                        return "testcert";
+                    }
+
+                    public String chooseClientAlias(String[] strings, Principal[] principals, Socket socket) {
+                        return "testcert";
+                    }
+                };
+
+                TrustManager tm = new X509TrustManager() {
+                    public X509Certificate[] getAcceptedIssuers() {
+                        return new X509Certificate[0];
+                    }
+
+                    public void checkClientTrusted(X509Certificate[] x509Certificates, String s) throws CertificateException {
+                    }
+
+                    public void checkServerTrusted(X509Certificate[] x509Certificates, String s) throws CertificateException {
+                    }
+                };
+
+                sslc.init(new KeyManager[] {km}, new TrustManager[] {tm}, new SecureRandom());
+                return sslc.getServerSocketFactory();
+            }
+        };
+        sslListener.setMaxThreads(maxThreads);
+        sslListener.setMinThreads(minThreads);
+        sslListener.setPort(sslPort);
+        httpServer.addListener(sslListener);
 
         try {
             httpServer.start();
         } catch (MultiException e) {
             log.error("Unable to start up test SSG", e);
-            throw new IOException("Failed to start the SSG: " + e.toString());
+            throw e.getException(0);
         }
         log.info("SsgFaker started; listening for http connections on " + ssgUrl);
         log.info("SsgFaker listeneing for https connections on " + sslUrl);
         return ssgUrl;
+    }
+
+    private KeyStore loadKeyStore() throws IOException, KeyStoreException, CertificateException, NoSuchAlgorithmException {
+        URL url = getClass().getClassLoader().getResource(CERT_PATH);
+        if (url == null)
+            throw new RuntimeException("Certificate is missing: " + CERT_PATH);
+        KeyStore ks = KeyStore.getInstance(KeyStore.getDefaultType());
+        InputStream is = url.openConnection().getInputStream();
+        ks.load(is, new char[0]);
+        return ks;
     }
 
     public String getSsgUrl() {
@@ -225,7 +302,7 @@ public class SsgFaker {
     }
 
     /** Fire up an SsgFaker for testing purposes. */
-    public static void main(String[] args) throws IOException {
+    public static void main(String[] args) throws Exception {
         SsgFaker ssgFaker = new SsgFaker();
         String url = ssgFaker.start();
         System.out.println("SSG Faker is now listening on " + url);
