@@ -378,7 +378,7 @@ public class MessageProcessor {
                 return new SsgResponse(CannedSoapFaults.RESPONSE_NOT_XML, null);
 
             SsgResponse response = new SsgResponse(postMethod.getResponseBodyAsString(), headers);
-            log.info("Got response from SSG: " + response);
+            //log.info("Got response from SSG: " + response);
             if (status == 401) {
                 req.setLastErrorResponse(response);
                 Header authHeader = postMethod.getResponseHeader("WWW-Authenticate");
