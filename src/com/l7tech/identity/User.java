@@ -2,10 +2,9 @@ package com.l7tech.identity;
 
 import com.l7tech.identity.internal.Address;
 import com.l7tech.identity.internal.Organization;
-import com.l7tech.objectmodel.Entity;
 import com.l7tech.objectmodel.NamedEntity;
 
-import java.util.Collection;
+import java.util.Set;
 
 public interface User extends NamedEntity {
     long getProviderOid();
@@ -21,11 +20,11 @@ public interface User extends NamedEntity {
     Address getMailingAddress();
     Address getBillingAddress();
 
-    Collection getGroups();
-    Collection getGroupHeaders();
+    Set getGroups();
+    Set getGroupHeaders();
 
-    void setGroups( Collection groups );
-    void setGroupHeaders( Collection groupHeaders );
+    void setGroups( Set groups );
+    void setGroupHeaders( Set groupHeaders );
 
     void setProviderOid( long oid );
     void setLogin( String login );
