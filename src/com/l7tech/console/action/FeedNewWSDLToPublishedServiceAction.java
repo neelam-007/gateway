@@ -21,6 +21,7 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.rmi.RemoteException;
 import java.util.logging.Level;
+import java.awt.*;
 
 /**
  * This action resets the wsdl of an already published web service (for example if the downstream
@@ -66,7 +67,8 @@ public class FeedNewWSDLToPublishedServiceAction extends NodeAction {
         }
         String existingURL = svc.getWsdlUrl();
         if (existingURL == null) existingURL = "";
-        String response = JOptionPane.showInputDialog(mw, "Enter URL for new WSDL", existingURL);
+        String response = (String)JOptionPane.showInputDialog(mw, "Enter the URL for a new WSDL:", "Reset WSDL",
+                                                              JOptionPane.QUESTION_MESSAGE, null, null, existingURL);
         if (response == null) return;
         String newWSDL = null;
         try {
