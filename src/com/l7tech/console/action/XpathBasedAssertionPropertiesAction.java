@@ -86,6 +86,7 @@ public class XpathBasedAssertionPropertiesAction extends NodeAction {
                                                              xmlSecAssertion.getXpathExpression().getExpression());
                     if (isValidValue(res)) {
                         xmlSecAssertion.setXpathExpression(new XpathExpression(res));
+                        okListener.actionPerformed(null);
                     }
                 } else {
                     JOptionPane.showMessageDialog(mw, "Cannot edit this assertion because it is not configurable " +
