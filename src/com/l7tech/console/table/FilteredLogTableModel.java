@@ -50,123 +50,77 @@ public class FilteredLogTableModel extends FilteredDefaultTableModel{
 
          String[] rawLogs = new String[]{};
          long startMsgNumber = -1;
-         long endMsgNumber;
+         long endMsgNumber = -1;
          boolean cleanUp = true;
          Vector newLogsCache = new Vector();
          int accumulatedNewLogs = 0;
 
-         if(logsCache.size() <= 0){
-             // retrieve all logs
-             getLogs(msgFilterLevel);
-             return;
-         }
-         else{
-
+         if(logsCache.size() > 0){
              endMsgNumber = ((LogMessage) logsCache.firstElement()).getMsgNumber();
+         }
 
-             LogMessage logMsg = null;
+         LogMessage logMsg = null;
 
-             do {
-                 try {
-                     rawLogs = log.getSystemLog(startMsgNumber, endMsgNumber, MAX_MESSAGE_BLOCK_SIZE);
+         do {
+             try {
+                 rawLogs = log.getSystemLog(startMsgNumber, endMsgNumber, MAX_MESSAGE_BLOCK_SIZE);
 
-                     if (rawLogs.length > 0) {
+                 if (rawLogs.length > 0) {
 
-                         // table clean up required only for the first time
-                         if(cleanUp){
-                             while (realModel.getRowCount() > 0) {
-                                 realModel.removeRow(0);
-                             }
+                     // table clean up required only for the first time
+                     if (cleanUp) {
+                         while (realModel.getRowCount() > 0) {
+                             realModel.removeRow(0);
                          }
-
-                         Vector newLogs = new Vector();
-                         for (int i = 0; i < rawLogs.length; i++) {
-                             logMsg = new LogMessage(rawLogs[i]);
-                             newLogs.add(logMsg);
-                         }
-
-
-                         if(accumulatedNewLogs + rawLogs.length <= MAX_NUMBER_OF_LOG_MESSGAES){
-                             // update the startMsgNumber
-                             startMsgNumber = logMsg.getMsgNumber();
-
-                             newLogsCache.addAll(newLogs);
-                             updateLogTable(newLogs, msgFilterLevel);
-                             realModel.fireTableDataChanged();
-
-                             accumulatedNewLogs += rawLogs.length;
-                         }
-                         else{
-                             for(int i=0; accumulatedNewLogs < MAX_NUMBER_OF_LOG_MESSGAES; i++){
-                                 newLogsCache.add(newLogs.get(i));
-                                 accumulatedNewLogs++;
-
-                                 updateLogTable(newLogs, msgFilterLevel);
-                                 realModel.fireTableDataChanged();
-                             }
-                             break;
-                         }
+                         cleanUp = false;
                      }
 
-                 } catch (RemoteException e) {
-                     System.err.println("Unable to retrieve logs from server");
+                     Vector newLogs = new Vector();
+                     for (int i = 0; i < rawLogs.length; i++) {
+                         logMsg = new LogMessage(rawLogs[i]);
+                         newLogs.add(logMsg);
+                     }
+
+
+                     if (accumulatedNewLogs + rawLogs.length <= MAX_NUMBER_OF_LOG_MESSGAES) {
+                         // update the startMsgNumber
+                         startMsgNumber = logMsg.getMsgNumber();
+
+                         newLogsCache.addAll(newLogs);
+                         updateLogTable(newLogs, msgFilterLevel);
+                         realModel.fireTableDataChanged();
+
+                         accumulatedNewLogs += rawLogs.length;
+                     } else {
+                         for (int i = 0; accumulatedNewLogs < MAX_NUMBER_OF_LOG_MESSGAES; i++) {
+                             newLogsCache.add(newLogs.get(i));
+                             accumulatedNewLogs++;
+
+                             updateLogTable(newLogs, msgFilterLevel);
+                             realModel.fireTableDataChanged();
+                         }
+                         break;
+                     }
                  }
-             } while (rawLogs.length == MAX_MESSAGE_BLOCK_SIZE);    // may be more messages for retrieval
 
-            // append the old logs to the new logs
-             if (accumulatedNewLogs > 0) {
-
-                 while (logsCache.size() + newLogsCache.size() > MAX_NUMBER_OF_LOG_MESSGAES) {
-                     // remove the last element
-                     logsCache.remove(logsCache.size() - 1);
-                 }
-                 updateLogTable(logsCache, msgFilterLevel);
-                 realModel.fireTableDataChanged();
-                 newLogsCache.addAll(logsCache);
-
-                 logsCache = newLogsCache;
+             } catch (RemoteException e) {
+                 System.err.println("Unable to retrieve logs from server");
              }
+         } while (rawLogs.length == MAX_MESSAGE_BLOCK_SIZE);    // may be more messages for retrieval
+
+         // append the old logs to the new logs
+         if (accumulatedNewLogs > 0) {
+
+             while (logsCache.size() + newLogsCache.size() > MAX_NUMBER_OF_LOG_MESSGAES) {
+                 // remove the last element
+                 logsCache.remove(logsCache.size() - 1);
+             }
+             updateLogTable(logsCache, msgFilterLevel);
+             realModel.fireTableDataChanged();
+             newLogsCache.addAll(logsCache);
+
+             logsCache = newLogsCache;
          }
-     }
-
-     public void getLogs(int msgFilterLevel) {
-
-          Log log = (Log) Locator.getDefault().lookup(Log.class);
-          if (log == null) throw new IllegalStateException("cannot obtain log remote reference");
-
-          String[] rawLogs = new String[]{};
-          int numOfMsgReceived = 0;
-          boolean cleanUp = true;
-          do {
-              try {
-                  rawLogs = log.getSystemLog(numOfMsgReceived, MAX_MESSAGE_BLOCK_SIZE);
-
-                  numOfMsgReceived += rawLogs.length;
-
-                  if (cleanUp) {
-                      logsCache = new Vector();
-                      while (realModel.getRowCount() > 0) {
-                          realModel.removeRow(0);
-                      }
-                      cleanUp = false;
-                  }
-
-                  Vector newLogs = new Vector();
-                   for (int i = 0; i < rawLogs.length; i++) {
-
-                      LogMessage logMsg = new LogMessage(rawLogs[i]);
-                      newLogs.add(logMsg);
-
-                  }
-
-                  logsCache.addAll(newLogs);
-                  updateLogTable(newLogs, msgFilterLevel);
-                  realModel.fireTableDataChanged();
-
-              } catch (RemoteException e) {
-                  System.err.println("Unable to retrieve logs from server");
-              }
-          } while (rawLogs.length == MAX_MESSAGE_BLOCK_SIZE);    // may be more messages for retrieval
      }
 
 
