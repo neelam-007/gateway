@@ -6,8 +6,9 @@ import com.l7tech.common.mime.MimeBodyTest;
 import com.l7tech.common.util.HexUtils;
 import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.xml.MessageNotSoapException;
-import com.l7tech.common.xml.TarariUtil;
+import com.l7tech.common.xml.TarariProber;
 import com.l7tech.common.xml.TestDocuments;
+import com.l7tech.common.xml.tarari.TarariUtil;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
@@ -170,7 +171,7 @@ public class KnobblyMessageTest extends TestCase {
             // ok
         }
 
-        if (TarariUtil.isTarariPresent()) {
+        if (TarariProber.isTarariPresent()) {
             logger.info("Initializing XML Hardware Acceleration");
             TarariUtil.setupIsSoap();
         }

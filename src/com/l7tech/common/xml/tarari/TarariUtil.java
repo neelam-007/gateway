@@ -4,9 +4,11 @@
  * $Id$
  */
 
-package com.l7tech.common.xml;
+package com.l7tech.common.xml.tarari;
 
 import com.l7tech.common.util.SoapUtil;
+import com.l7tech.common.xml.SoftwareFallbackException;
+import com.l7tech.common.xml.TarariProber;
 import com.tarari.xml.XMLDocumentException;
 import com.tarari.xml.XMLErrorCode;
 import com.tarari.xml.xpath.XPathCompiler;
@@ -15,7 +17,6 @@ import com.tarari.xml.xpath.XPathLoaderException;
 import com.tarari.xml.xpath.XPathProcessorException;
 import org.xml.sax.SAXException;
 
-import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Arrays;
 
@@ -24,9 +25,6 @@ import java.util.Arrays;
  * @version $Revision$
  */
 public class TarariUtil {
-    public static final String ENABLE_PROPERTY = "com.l7tech.common.xml.tarari.enable";
-    public static final String XPATH_COMPILER_CLASSNAME = "com.tarari.xml.xpath.XPathCompiler";
-    private static Boolean present = null;
     public static final String[] ISSOAP_XPATHS = {
         // Don't change the first five, they're important for Tarari's magical isSoap() method
         "/*[local-name()=\"Envelope\"]",
@@ -48,45 +46,6 @@ public class TarariUtil {
 
     public static int[] getUriIndices() {
         return uriIndices;
-    }
-
-    public static boolean isTarariPresent() {
-        if (present == null) {
-            if (Boolean.getBoolean(ENABLE_PROPERTY)) {
-                try {
-                    Class xpathCompilerClass = Class.forName(XPATH_COMPILER_CLASSNAME, false, TarariUtil.class.getClassLoader());
-                    Method resetMethod = xpathCompilerClass.getMethod("reset", new Class[0]);
-                    resetMethod.invoke(null, new Object[0]);
-                    present = Boolean.TRUE;
-                } catch (UnsatisfiedLinkError e) {
-                    present = Boolean.FALSE;
-                } catch (Throwable t) {
-                    present = Boolean.FALSE;
-                }
-            } else {
-                // Disabled -- skip the probe
-                present = Boolean.FALSE;
-            }
-        }
-        return present.booleanValue();
-    }
-
-    /** Thrown when a document cannot be processed in hardware for some reason but should be retried in software. */
-    public static class SoftwareFallbackException extends Exception {
-        public SoftwareFallbackException() {
-        }
-
-        public SoftwareFallbackException(String message) {
-            super(message);
-        }
-
-        public SoftwareFallbackException(Throwable cause) {
-            super(cause);
-        }
-
-        public SoftwareFallbackException(String message, Throwable cause) {
-            super(message, cause);
-        }
     }
 
     public static void translateTarariErrorCode(Exception cause, int code)
@@ -127,7 +86,7 @@ public class TarariUtil {
     }
 
     public static void setupIsSoap() throws XPathCompilerException {
-        if (!isTarariPresent()) throw new IllegalStateException("No Tarari card present");
+        if (!TarariProber.isTarariPresent()) throw new IllegalStateException("No Tarari card present");
 
         ArrayList xpaths0 = new ArrayList();
         xpaths0.addAll(Arrays.asList(ISSOAP_XPATHS));
@@ -143,4 +102,5 @@ public class TarariUtil {
 
         XPathCompiler.compile(xpaths0, 0);
     }
+
 }

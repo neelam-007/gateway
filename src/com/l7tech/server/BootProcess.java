@@ -10,7 +10,8 @@ import com.l7tech.common.BuildInfo;
 import com.l7tech.common.Component;
 import com.l7tech.common.security.JceProvider;
 import com.l7tech.common.util.JdkLoggerConfigurator;
-import com.l7tech.common.xml.TarariUtil;
+import com.l7tech.common.xml.TarariProber;
+import com.l7tech.common.xml.tarari.TarariUtil;
 import com.l7tech.logging.ServerLogHandler;
 import com.l7tech.logging.ServerLogManager;
 import com.l7tech.server.audit.SystemAuditListener;
@@ -64,7 +65,7 @@ public class BootProcess extends ApplicationObjectSupport implements ServerCompo
     }
 
     public void setServerConfig(ServerConfig config) throws LifecycleException {
-        if (TarariUtil.isTarariPresent()) {
+        if (TarariProber.isTarariPresent()) {
             logger.info("Initializing Hardware XML Acceleration");
             try {
                 TarariUtil.setupIsSoap();

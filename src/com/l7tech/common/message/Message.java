@@ -236,7 +236,7 @@ public final class Message {
             return false;
 
         // We have an XML knob but no SOAP knob.  See if we can create a SOAP knob.
-        SoapFacet.SoapInfo info = null;
+        SoapInfo info = null;
         try {
             info = SoapFacet.getSoapInfo(this);
         } catch (NoSuchPartException e) {

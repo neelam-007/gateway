@@ -4,8 +4,8 @@
 package com.l7tech.skunkworks.tarari;
 
 import com.l7tech.common.util.HexUtils;
-import com.l7tech.common.xml.TarariUtil;
 import com.l7tech.common.xml.TestDocuments;
+import com.l7tech.common.xml.tarari.TarariUtil;
 import com.tarari.xml.XMLDocument;
 import com.tarari.xml.XMLDocumentException;
 import com.tarari.xml.xpath.RAXContext;

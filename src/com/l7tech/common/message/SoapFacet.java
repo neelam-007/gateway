@@ -11,19 +11,12 @@ import com.l7tech.common.util.SoapFaultUtils;
 import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.xml.InvalidDocumentFormatException;
 import com.l7tech.common.xml.SoapFaultDetail;
-import com.l7tech.common.xml.TarariUtil;
-import com.tarari.xml.Node;
-import com.tarari.xml.NodeSet;
-import com.tarari.xml.XMLDocument;
-import com.tarari.xml.XMLDocumentException;
-import com.tarari.xml.xpath.RAXContext;
-import com.tarari.xml.xpath.XPathProcessor;
-import com.tarari.xml.xpath.XPathProcessorException;
+import com.l7tech.common.xml.SoftwareFallbackException;
+import com.l7tech.common.xml.TarariProber;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -37,74 +30,6 @@ class SoapFacet extends MessageFacet {
 
     private transient static final Logger logger = Logger.getLogger(SoapFacet.class.getName());
 
-    /**
-     * Load the specified InputStream, which is expected to produce an XML document, into the Tarari board,
-     * run the current XPaths against it, and return the TarariContext.
-     *
-     * @param inputStream  An InputStream containing an XML document.  Must not be null.
-     * @return the TarariContext pointing at the document and the processed results.  Never null.
-     * @throws SAXException if this document is invalid.
-     * @throws TarariUtil.SoftwareFallbackException if this document could not be processed in hardware.
-     *                                              the operation should be retried using software.
-     */
-    private static TarariContext getProcessedContext(InputStream inputStream)
-            throws TarariUtil.SoftwareFallbackException, SAXException
-    {
-        try {
-            XMLDocument tarariDoc = null;
-            tarariDoc = new XMLDocument(inputStream);
-            XPathProcessor tproc = new XPathProcessor(tarariDoc);
-            RAXContext context = tproc.processXPaths();
-            return new TarariContext(tarariDoc, context);
-        } catch (XPathProcessorException e) {
-            TarariUtil.translateException(e);
-        } catch (XMLDocumentException e) {
-            TarariUtil.translateException(e);
-        }
-        throw new RuntimeException(); // unreachable
-    }
-
-    /**
-     * Represents information extracted from a SOAP document that can be used for future service resolution.
-     * The same SoapInfo class is used for both software or hardware processing.
-     */
-    static class SoapInfo {
-        SoapInfo(String payloadNsUri, boolean hasSecurityNode) {
-            this.payloadNsUri = payloadNsUri;
-            this.hasSecurityNode = hasSecurityNode;
-        }
-
-        final String payloadNsUri;
-        final boolean hasSecurityNode;
-    }
-
-    /**
-     * Represents resources held in kernel-memory by the Tarari driver, namely
-     * a document in one buffer and a token list in the other.
-     */
-    private static class TarariContext {
-        private TarariContext(XMLDocument doc, RAXContext context) {
-            this.tarariDoc = doc;
-            this.raxContext = context;
-        }
-
-        void close() {
-            tarariDoc.release();
-            raxContext = null;
-            tarariDoc = null;
-        }
-
-        protected void finalize() throws Throwable {
-            try {
-                super.finalize();
-            } finally {
-                close();
-            }
-        }
-
-        XMLDocument tarariDoc;
-        RAXContext raxContext;
-    }
 
     /**
      * Create a new SoapFacet for the specified message, wrapping the specified root facet.  SoapFacets can only
@@ -132,10 +57,10 @@ class SoapFacet extends MessageFacet {
      * @throws NoSuchPartException if the Message first part has already been destructively read
      */
     public static SoapInfo getSoapInfo(Message message) throws IOException, SAXException, NoSuchPartException {
-        if (TarariUtil.isTarariPresent()) {
+        if (TarariProber.isTarariPresent()) {
             try {
-                return getSoapInfoTarari(message.getMimeKnob().getFirstPart().getInputStream(false));
-            } catch (TarariUtil.SoftwareFallbackException e) {
+                return TarariProber.getSoapInfoTarari(message.getMimeKnob().getFirstPart().getInputStream(false));
+            } catch (SoftwareFallbackException e) {
                 // TODO if this happens a lot for perfectly reasonable reasons, downgrade to something below INFO
                 logger.log(Level.INFO, "Falling back from hardware to software processing", e);
                 // fallthrough to software
@@ -159,56 +84,6 @@ class SoapFacet extends MessageFacet {
             }
         } else {
             return null;
-        }
-    }
-
-    /** Hardware version of getSoapInfo.  Might require software fallback if hardware processing can't be done. */
-    private static SoapInfo getSoapInfoTarari(InputStream in) throws SAXException, TarariUtil.SoftwareFallbackException {
-        TarariContext context = null;
-        String payloadNs = null;
-        boolean hasSecurityHeaders = false;
-        try {
-            context = getProcessedContext(in);
-            if (context.raxContext.isSoap(TarariUtil.getUriIndices())) {
-                int numUris = context.raxContext.getCount(0,6);
-                if (numUris <= 0) {
-                    logger.info("Couldn't find a namespace URI for SOAP payload");
-                } else {
-                    NodeSet payloadNodes = context.raxContext.getNodeSet(0,6);
-                    if (payloadNodes == null) {
-                        throw new SAXException("SOAP payload NodeSet was null but count was >= 1");
-                    }
-                    Node first = payloadNodes.getFirstNode();
-                    if (first.getNodeType() == Node.ELEMENT_NODE) {
-                        payloadNs = context.raxContext.getNamespaceByPrefix(first, first.getPrefix());
-                    }
-                }
-
-                int numSec = context.raxContext.getCount(0,7);
-                if (numSec <= 0) {
-                    logger.fine("No Security header found");
-                } else {
-                    NodeSet secNodes = context.raxContext.getNodeSet(0,7);
-                    if (secNodes == null || secNodes.getNodeCount() <= 0) {
-                        throw new SAXException("Security NodeSet empty or null, but count was >= 1");
-                    }
-
-                    Node node = secNodes.getFirstNode();
-                    while (node != null) {
-                        String uri = context.raxContext.getNamespaceByPrefix(node, node.getPrefix());
-                        if (SoapUtil.SECURITY_URIS.contains(uri)) {
-                            hasSecurityHeaders = true;
-                            break;
-                        }
-                        node = secNodes.getNextNode();
-                    }
-                }
-                return new SoapInfo(payloadNs, hasSecurityHeaders);
-            } else {
-                return null;
-            }
-        } finally {
-            if (context != null) context.close();
         }
     }
 
