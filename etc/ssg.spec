@@ -59,7 +59,13 @@ rm -rf %{buildroot}/ssg/j2sdk1.4.2_05/demo
 
 
 %pre
-adduser gateway
+if [ `grep ^gateway: /etc/passwd` ]
+then
+  echo "user/group gateway already existed"
+else
+  adduser gateway
+fi
+
 %post
 # Check for existence of install crumbs left by install.pl
 if [ -e /etc/SSG_INSTALL ]; then 
