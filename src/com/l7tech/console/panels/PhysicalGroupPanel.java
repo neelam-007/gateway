@@ -38,7 +38,7 @@ public class PhysicalGroupPanel extends GroupPanel {
     public void initialize() {
         try {
             super.initialize();
-            usersPanel = new GroupUsersPanel(this, config);
+
             // Initialize form components
         } catch (Exception e) {
             log.log(Level.SEVERE, "GroupPanel()", e);
@@ -119,6 +119,10 @@ public class PhysicalGroupPanel extends GroupPanel {
     }
 
     protected JPanel getMembershipPanel() {
+        if(usersPanel != null) return usersPanel;
+
+        usersPanel = new GroupUsersPanel(this, config);
+
         return usersPanel;
     }
 
