@@ -68,6 +68,7 @@ public interface Request extends Message {
 
     public static final String PARAM_HTTP_XML_NONCE         = PREFIX_HTTP_HEADER + "." + SecureSpanConstants.HttpHeaders.XML_NONCE_HEADER_NAME;
     public static final String PARAM_HTTP_XML_SESSID        = PREFIX_HTTP_HEADER + "." + SecureSpanConstants.HttpHeaders.XML_SESSID_HEADER_NAME;
+    public static final String PARAM_HTTP_POLICY_VERSION    = PREFIX_HTTP_HEADER + "." + SecureSpanConstants.HttpHeaders.POLICY_VERSION;
 
     /**
      * Returns the <code>PrincipalCredentials</code> associated with this request,
