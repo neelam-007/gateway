@@ -16,9 +16,8 @@
         <servlet-class>com.l7tech.policy.server.PolicyServlet</servlet-class>
         <init-param>
             <param-name>CertPath</param-name>
+            <!-- value ssg.cer will replaced by ssl_rootcerted.cer by the signsslcsr.sh config script -->
             <param-value>../../kstores/ssg.cer</param-value>
-            <!-- use this instead to send back ssl cert signed by root ca
-            <param-value>../../kstores/ssl_rootcerted.cer</param-value> -->
         </init-param>
     </servlet>
 
