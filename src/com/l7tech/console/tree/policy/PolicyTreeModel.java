@@ -5,6 +5,7 @@ import com.l7tech.policy.wsp.WspReader;
 import com.l7tech.service.PublishedService;
 
 import javax.swing.tree.DefaultTreeModel;
+import java.io.IOException;
 
 
 /**
@@ -30,7 +31,12 @@ public class PolicyTreeModel extends DefaultTreeModel {
      * @param service
      */
     public static PolicyTreeModel make(PublishedService service) {
-        return new PolicyTreeModel(WspReader.parse(service.getPolicyXml()));
+        try {
+            return new PolicyTreeModel(WspReader.parse(service.getPolicyXml()));
+        } catch (IOException e) {
+            // TODO: FIXME Emil!
+            throw new IllegalStateException("Policy was unparseable");
+        }
     }
 }
 
