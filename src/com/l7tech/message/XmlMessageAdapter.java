@@ -25,12 +25,16 @@ import javax.xml.parsers.ParserConfigurationException;
 import java.io.*;
 import java.util.Map;
 import java.util.Iterator;
+import java.util.logging.Logger;
+import java.util.logging.Level;
 
 /**
  * @author alex
  * @version $Revision$
  */
 public abstract class XmlMessageAdapter extends MessageAdapter implements XmlMessage {
+    private static final Logger logger = Logger.getLogger(XmlMessageAdapter.class.getName());
+
     public XmlMessageAdapter( TransportMetadata tm ) {
         super(tm);
     }
@@ -151,10 +155,11 @@ public abstract class XmlMessageAdapter extends MessageAdapter implements XmlMes
                 docEl = getDocument().getDocumentElement();
                 ok = true;
             } catch ( Exception e ) {
+                logger.log(Level.INFO, "Unable to check if document is SOAP", e);
                 ok = false;
             }
 
-            ok = ok && docEl.getNodeName().equals(SoapUtil.BODY_EL_NAME);
+            ok = ok && docEl.getLocalName().equals(SoapUtil.ENVELOPE_EL_NAME);
             if ( ok ) {
                 String docUri = docEl.getNamespaceURI();
 
