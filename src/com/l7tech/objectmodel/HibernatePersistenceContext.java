@@ -54,7 +54,7 @@ public class HibernatePersistenceContext extends PersistenceContext {
                 throw new IllegalStateException( "Can't commit when there's no session!" );
 
             if ( mainTransaction == null ) {
-                logger.warning( "Commit called with no transaction active!" );
+                logger.log(Level.WARNING, "Commit called with no transaction active!", new TransactionException());
             } else {
                 mainTransaction.commit();
             }
