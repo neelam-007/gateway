@@ -49,7 +49,7 @@ public class SymantecAntivirusScanEngineClientTest extends TestCase {
         boolean[] infected = interpretResults(res);
         assertTrue("got the right number of response outputs", res.length == 2);
         assertFalse("the first part is not infected", infected[0]);
-        assertFalse("the first part is infected", infected[1]);
+        assertFalse("the first part is not infected", infected[1]);
     }
 
     public void testCleanSimpleMsg() throws Exception {
