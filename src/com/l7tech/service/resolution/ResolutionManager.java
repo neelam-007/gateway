@@ -4,10 +4,7 @@ import cirrus.hibernate.HibernateException;
 import cirrus.hibernate.Query;
 import cirrus.hibernate.Session;
 import com.l7tech.logging.LogManager;
-import com.l7tech.objectmodel.DuplicateObjectException;
-import com.l7tech.objectmodel.HibernatePersistenceContext;
-import com.l7tech.objectmodel.PersistenceContext;
-import com.l7tech.objectmodel.UpdateException;
+import com.l7tech.objectmodel.*;
 import com.l7tech.service.PublishedService;
 
 import java.sql.SQLException;
@@ -48,7 +45,7 @@ public class ResolutionManager {
      */
     public void recordResolutionParameters(PublishedService service) throws DuplicateObjectException, UpdateException {
         Collection distinctItemsToSave = getDistinct(service);
-        Collection existingParameters = existingResolutionParameters(service);
+        Collection existingParameters = existingResolutionParameters(service.getOid());
 
         if (isSameParameters(distinctItemsToSave, existingParameters)) {
             logger.finest("resolution parameters unchanged");
@@ -71,7 +68,6 @@ public class ResolutionManager {
             throw new UpdateException(msg, e);
         }
 
-        // remove all trace of resolution parameters for this service
         try {
             for (Iterator i = existingParameters.iterator(); i.hasNext();) {
                 ResolutionParameters todelete = (ResolutionParameters)i.next();
@@ -105,6 +101,31 @@ public class ResolutionManager {
         }
     }
 
+    /**
+     * deletes all resolution parameters previously recorded for a particular service
+     * @param serviceOid id of the service for which recorded resolution parameters will be recorded
+     */
+    public void deleteResolutionParameters(long serviceOid) throws DeleteException {
+        String query = "from " + TABLE_NAME + " in class " + ResolutionParameters.class.getName() +
+                       " where " + TABLE_NAME + "." + SVCID_COLUMN + " = " + serviceOid;
+        HibernatePersistenceContext context = null;
+        Session session = null;
+        try {
+            context = (HibernatePersistenceContext)PersistenceContext.getCurrent();
+            session = context.getSession();
+            int deleted = session.delete(query);
+            logger.finest("deleted " + deleted + " resolution parameters.");
+        } catch (SQLException e) {
+            String msg = "error deleting resolution parameters with query " + query;
+            logger.log(Level.WARNING, msg, e);
+            throw new DeleteException(msg, e);
+        } catch (HibernateException e) {
+            String msg = "error deleting resolution parameters with query " + query;
+            logger.log(Level.WARNING, msg, e);
+            throw new DeleteException(msg, e);
+        }
+    }
+
     private boolean isSameParameters(Collection paramcol1, Collection paramcol2) {
         if (paramcol1.size() != paramcol2.size()) return false;
         if (!paramcol2.containsAll(paramcol1)) return false;
@@ -130,7 +151,7 @@ public class ResolutionManager {
         return listOfParameters;
     }
 
-    private Collection existingResolutionParameters(PublishedService service) {
+    private Collection existingResolutionParameters(long serviceid) {
         String query = "from " + TABLE_NAME + " in class " + ResolutionParameters.class.getName() +
                        " where " + TABLE_NAME + "." + SVCID_COLUMN + " = ?";
 
@@ -139,14 +160,14 @@ public class ResolutionManager {
         try {
             context = (HibernatePersistenceContext)PersistenceContext.getCurrent();
             Query q = context.getSession().createQuery(query);
-            q.setLong(0, service.getOid());
+            q.setLong(0, serviceid);
             hibResults = q.list();
         } catch (SQLException e) {
             hibResults = Collections.EMPTY_LIST;
-            logger.log(Level.WARNING, "hibernate error finding resolution parameters for " + service.getOid(), e);
+            logger.log(Level.WARNING, "hibernate error finding resolution parameters for " + serviceid, e);
         }  catch (HibernateException e) {
             hibResults = Collections.EMPTY_LIST;
-            logger.log(Level.WARNING, "hibernate error finding resolution parameters for " + service.getOid(), e);
+            logger.log(Level.WARNING, "hibernate error finding resolution parameters for " + serviceid, e);
         }
 
         return hibResults;
@@ -154,8 +175,8 @@ public class ResolutionManager {
 
     private static final String TABLE_NAME = "service_resolution";
     private static final String SVCID_COLUMN = "serviceid";
-    private static final String SOAPACTION_COLUMN = "soapaction";
-    private static final String URN_COLUMN = "urn";
+    //private static final String SOAPACTION_COLUMN = "soapaction";
+    //private static final String URN_COLUMN = "urn";
 
     protected Logger logger = LogManager.getInstance().getSystemLogger();
 }
