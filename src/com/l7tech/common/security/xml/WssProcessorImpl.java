@@ -807,7 +807,6 @@ public class WssProcessorImpl implements WssProcessor {
 
         // This certificate successfully validated a signature.  Consider proof-of-possession of private key
         // to have been successful.
-        // TODO: perhaps save more info about just which elements were signed by this cert, anyway
         signingCertToken.onPossessionProved();
 
         // Remember which elements were covered
@@ -834,6 +833,8 @@ public class WssProcessorImpl implements WssProcessor {
                     return finalElementCovered;
                 }
             });
+
+            // TODO remove this expensive feature if it remains unneeded
             signingCertToken.elementsSignedWithCert.add(elementCovered);
 
             // if this is a timestamp in the security header, note that it was signed
