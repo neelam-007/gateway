@@ -34,7 +34,7 @@ public class EditServiceRoutingURIAction extends NodeAction {
     }
 
     public String getName() {
-        return "Routing URL";
+        return "View Routing URL";
     }
 
     public String getDescription() {
@@ -55,7 +55,7 @@ public class EditServiceRoutingURIAction extends NodeAction {
                 existingRoutingURI = existingRoutingURI.substring(NonSoapServicePanel.DEF_PREFIX.length());
             }
             String prefix = mw.ssgURL() + NonSoapServicePanel.DEF_PREFIX;
-            String res = JOptionPane.showInputDialog(mw, "Complete URL\n" + prefix, existingRoutingURI);
+            String res = JOptionPane.showInputDialog(mw, "View or edit the Gateway URL that will receive service requests:\n" + prefix, existingRoutingURI);
             if (res != null && !res.equals(existingRoutingURI)) {
                 if (res.length() > 0) {
                     if (res.startsWith("/")) res = res.substring(1);

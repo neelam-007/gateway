@@ -42,7 +42,7 @@ public class ViewServiceWsdlAction extends NodeAction {
      * @return the action name
      */
     public String getName() {
-        return "View Service WSDL";
+        return "View WSDL";
     }
 
     /**

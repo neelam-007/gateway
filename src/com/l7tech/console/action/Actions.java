@@ -163,8 +163,8 @@ public class Actions {
     static boolean deleteService(ServiceNode node) {
         // Make sure
         if ((JOptionPane.showConfirmDialog(getMainWindow(),
-          "Are you sure you want to delete the " + node.getName() +  " Web service?",
-          "Delete Web Service",
+          "Are you sure you want to delete the " + node.getName() +  " service?",
+          "Delete Service",
           JOptionPane.YES_NO_OPTION)) != JOptionPane.YES_OPTION) {
             return false;
         }
