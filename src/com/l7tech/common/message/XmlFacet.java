@@ -6,10 +6,7 @@
 
 package com.l7tech.common.message;
 
-import com.l7tech.common.mime.ContentTypeHeader;
-import com.l7tech.common.mime.NoSuchPartException;
-import com.l7tech.common.mime.PartInfo;
-import com.l7tech.common.mime.PartIterator;
+import com.l7tech.common.mime.*;
 import com.l7tech.common.security.xml.decorator.DecorationRequirements;
 import com.l7tech.common.security.xml.processor.ProcessorResult;
 import com.l7tech.common.util.CertUtils;
@@ -84,7 +81,7 @@ public class XmlFacet extends MessageFacet {
 
         public PartIterator getParts() throws IOException {
             ensureFirstPartValid();
-            return mk.getParts();
+            return new PartIteratorWrapper(mk.getParts());
         }
 
         public PartInfo getPartByContentId(String contentId) throws IOException, NoSuchPartException {
@@ -112,7 +109,7 @@ public class XmlFacet extends MessageFacet {
          * @throws IOException if XML serialization throws IOException
          */
         public PartInfo getFirstPart() throws IOException {
-            final PartInfo firstPart = mk.getFirstPart();
+            final PartInfo firstPart = new PartInfoWrapper(mk.getFirstPart());
             if (firstPartValid)
                 return firstPart;
             ensureFirstPartValid();
@@ -143,6 +140,24 @@ public class XmlFacet extends MessageFacet {
             firstPartValid = true;
         }
 
+        private class PartIteratorWrapper implements PartIterator {
+            private final PartIterator delegate;
+
+            private PartIteratorWrapper(PartIterator delegate) {
+                this.delegate = delegate;
+            }
+
+            public boolean hasNext() throws IOException {
+                return delegate.hasNext();
+            }
+
+            public PartInfo next() throws IOException, NoSuchPartException {
+                final PartInfo pi = delegate.next();
+                if (pi.getPosition() == 0)
+                    return getFirstPart();
+                return pi;
+            }
+        }
     }
 
     private class XmlKnobImpl implements XmlKnob {
@@ -186,7 +201,7 @@ public class XmlFacet extends MessageFacet {
 
         public void setDocument(Document document) {
             firstPartValid = false;
-            XmlFacet.this.workingDocument = document;
+            workingDocument = document;
             TarariKnob.invalidate(getMessage());
         }
 
@@ -245,6 +260,73 @@ public class XmlFacet extends MessageFacet {
                 decorationRequirements = new DecorationRequirements();
             }
             return decorationRequirements;
+        }
+    }
+
+    private class PartInfoWrapper implements PartInfo {
+        private final PartInfo delegate;
+
+        private PartInfoWrapper(PartInfo delegate) {
+            this.delegate = delegate;
+        }
+
+        public MimeHeader getHeader(String name) {
+            return delegate.getHeader(name);
+        }
+
+        public int getPosition() {
+            return delegate.getPosition();
+        }
+
+        public InputStream getInputStream(boolean destroyAsRead) throws IOException, NoSuchPartException {
+            return delegate.getInputStream(destroyAsRead);
+        }
+
+        public void setBodyBytes(byte[] newBody) throws IOException {
+            delegate.setBodyBytes(newBody);
+            if (isFirstPart()) {
+                if (workingDocument != null && getMessage().isEnableOriginalDocument() && originalDocument == null)
+                    originalDocument = (Document)workingDocument.cloneNode(true); // todo find a way to skip this if it wont be needed
+                workingDocument = null;
+                firstPartValid = false;
+                TarariKnob.invalidate(getMessage());
+            }
+        }
+
+        private boolean isFirstPart() {
+            return delegate.getPosition() == 0;
+        }
+
+        public void setContentType(ContentTypeHeader newContentType) {
+            delegate.setContentType(newContentType);
+        }
+
+        public MimeHeaders getHeaders() {
+            return delegate.getHeaders();
+        }
+
+        public long getContentLength() {
+            return delegate.getContentLength();
+        }
+
+        public long getActualContentLength() throws IOException, NoSuchPartException {
+            return delegate.getActualContentLength();
+        }
+
+        public ContentTypeHeader getContentType() {
+            return delegate.getContentType();
+        }
+
+        public String getContentId() {
+            return delegate.getContentId();
+        }
+
+        public boolean isValidated() {
+            return delegate.isValidated();
+        }
+
+        public void setValidated(boolean validated) {
+            delegate.setValidated(validated);
         }
     }
 }

@@ -3,6 +3,7 @@ package com.l7tech.common.message;
 import com.l7tech.common.mime.ByteArrayStashManager;
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.common.mime.MimeBodyTest;
+import com.l7tech.common.mime.PartInfo;
 import com.l7tech.common.util.HexUtils;
 import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.xml.MessageNotSoapException;
@@ -13,6 +14,7 @@ import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
 import org.w3c.dom.Document;
+import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 
 import java.io.ByteArrayInputStream;
@@ -140,6 +142,41 @@ public class KnobblyMessageTest extends TestCase {
         } catch (MessageNotSoapException e) {
             logger.info("Expected exception was thrown: " + e);
         }
+    }
+
+    public void testCombinedDomAndByteOperations() throws Exception {
+        final String xml = "<foobarbaz/>";
+        Message msg = new Message(XmlUtil.stringToDocument(xml));
+
+        // Get read-only doc
+        Document docro = msg.getXmlKnob().getDocumentReadOnly();
+        NodeList rofoos = docro.getElementsByTagName("foobarbaz");
+        assertTrue(rofoos.getLength() > 0);
+
+        // Upgrade to writable
+        Document docrw = msg.getXmlKnob().getDocumentWritable();
+        assertTrue(docrw == docro);
+
+        // Change document
+        docro.getDocumentElement().appendChild(XmlUtil.createTextNode(docro, "Blah!"));
+        String curDoc = XmlUtil.nodeToString(docro);
+        final String xmlWithBlah = "<foobarbaz>Blah!</foobarbaz>";
+        assertEquals(curDoc, xmlWithBlah);
+
+        // Make sure change is reflected in the bytes message
+        PartInfo fp1 = msg.getMimeKnob().getFirstPart();
+        byte[] bb1a = HexUtils.slurpStream(fp1.getInputStream(false));
+        assertEquals(new String(bb1a), xmlWithBlah);
+
+        // Change the bytes message
+        final String xmlFooBar = "<foo><bar/></foo>";
+        fp1.setBodyBytes(xmlFooBar.getBytes());
+
+        // Make sure change is reflected in the document
+        Document docFooBar = msg.getXmlKnob().getDocumentReadOnly();
+        String xmlDocFooBar = XmlUtil.nodeToString(docFooBar);
+        byte[] bb1b = HexUtils.slurpStream(msg.getMimeKnob().getParts().next().getInputStream(false));
+        assertEquals(new String(bb1b), xmlDocFooBar);
     }
 
     public void testGetSoapKnob() throws Exception {

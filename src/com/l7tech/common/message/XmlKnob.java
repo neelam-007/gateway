@@ -26,7 +26,8 @@ public interface XmlKnob extends MessageKnob {
      * <p>
      * The actual Document instance returned by this method is guaranteed to refer to the same underlying
      * object as would be returned by a later call to {@link #getDocumentWritable}, assuming no other major changes
-     * have been made to the content of the Message in the meantime (ie, a call to @{link #setDocument}).
+     * have been made to the content of the Message in the meantime (ie, a call to @{link #setDocument} or changing
+     * the MIME part out from underneath it with {@link MimeKnob#getFirstPart()}.setBytes()).
      * <p>
      * Thus, a caller can initially call {@link #getDocumentReadOnly} to get a read-only document,
      * but then upgrade their returned Document reference to be writable
