@@ -76,6 +76,15 @@ public class UptimeMonitorTest extends TestCase {
         assertTrue(um.getLoad1() > 0.01 && um.getLoad1() < 0.03);
         assertTrue(um.getLoad2() > 0.39 && um.getLoad2() < 0.41);
         assertTrue(um.getLoad3() > 4.99 && um.getLoad3() < 5.01);
+
+        um = new UptimeMetrics(" 12:28:55  up  3:24,  4 users,  load average: 0.20, 0.35, 0.43\n");
+        //logUptimeMetrics(um);
+        assertTrue(um.getDays() == 0);
+        assertTrue(um.getHours() == 3);
+        assertTrue(um.getMinutes() == 24);
+        assertTrue(um.getLoad1() > 0.19 && um.getLoad1() < 0.21);
+        assertTrue(um.getLoad2() > 0.34 && um.getLoad2() < 0.36);
+        assertTrue(um.getLoad3() > 0.42 && um.getLoad3() < 0.44);
     }
 
     public void testUptime() throws Exception {
