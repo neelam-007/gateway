@@ -132,7 +132,7 @@ public class WssDecoratorImpl implements WssDecorator {
         Element emptySignatureElement = template.getSignatureElement();
 
         // Include KeyInfo element in signature and embed cert into subordinate X509Data element
-        // todo, include the ski instead of the cert ?
+        // todo, include reference to BCT instead of the cert
         com.ibm.xml.dsig.KeyInfo keyInfo = new com.ibm.xml.dsig.KeyInfo();
         com.ibm.xml.dsig.KeyInfo.X509Data x509Data = new com.ibm.xml.dsig.KeyInfo.X509Data();
         x509Data.setCertificate(senderCertificate);
