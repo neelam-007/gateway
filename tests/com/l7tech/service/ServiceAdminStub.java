@@ -1,19 +1,19 @@
 package com.l7tech.service;
 
+import com.l7tech.common.xml.Wsdl;
 import com.l7tech.identity.StubDataStore;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
-import com.l7tech.service.PublishedService;
-import com.l7tech.common.xml.Wsdl;
-import com.l7tech.service.ServiceStatistics;
-import com.l7tech.service.ServiceAdmin;
 
 import javax.wsdl.WSDLException;
 import java.io.InputStreamReader;
 import java.io.StringWriter;
 import java.net.URL;
 import java.rmi.RemoteException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Iterator;
+import java.util.Map;
 
 /**
  * Class ServiceAdminStub.
@@ -89,8 +89,7 @@ public class ServiceAdminStub implements ServiceAdmin {
     }
 
     public ServiceStatistics getStatistics(long oid) throws RemoteException {
-        // Not applicable?
-        return null;
+        return new ServiceStatistics(oid);
     }
 
     /**
