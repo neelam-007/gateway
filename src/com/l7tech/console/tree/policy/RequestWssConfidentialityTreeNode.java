@@ -1,7 +1,7 @@
 package com.l7tech.console.tree.policy;
 
 
-import com.l7tech.policy.assertion.xmlsec.RequestWssIntegrity;
+import com.l7tech.policy.assertion.xmlsec.RequestWssConfidentiality;
 
 /**
  * Class <code>XmlDsigReqAssertionTreeNode</code> specifies the policy
@@ -11,7 +11,7 @@ import com.l7tech.policy.assertion.xmlsec.RequestWssIntegrity;
  */
 public class RequestWssConfidentialityTreeNode extends XmlSecurityTreeNode {
 
-    public RequestWssConfidentialityTreeNode(RequestWssIntegrity assertion) {
+    public RequestWssConfidentialityTreeNode(RequestWssConfidentiality assertion) {
         super(assertion);
         data = assertion;
     }
@@ -22,5 +22,5 @@ public class RequestWssConfidentialityTreeNode extends XmlSecurityTreeNode {
     public String getBaseName() {
         return "Encrypt request element " + data.getXpathExpression().getExpression();
     }
-    private RequestWssIntegrity data;
+    private RequestWssConfidentiality data;
 }
