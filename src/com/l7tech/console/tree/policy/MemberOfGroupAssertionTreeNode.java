@@ -1,13 +1,7 @@
 package com.l7tech.console.tree.policy;
 
 
-import com.l7tech.policy.assertion.Assertion;
-import com.l7tech.policy.assertion.composite.CompositeAssertion;
-import com.l7tech.policy.assertion.identity.IdentityAssertion;
 import com.l7tech.policy.assertion.identity.MemberOfGroup;
-import com.l7tech.policy.assertion.identity.SpecificUser;
-
-import java.util.Iterator;
 
 /**
  * Class AssertionTreeNode.
@@ -40,6 +34,6 @@ class MemberOfGroupAssertionTreeNode extends LeafAssertionTreeNode {
      * @return the node name that is displayed
      */
     public String getName() {
-        return "Group membership "+ ((MemberOfGroup)getUserObject()).getGroup().getName();
+        return "Group membership "+ ((MemberOfGroup)getUserObject()).getGroupOid();
     }
 }
