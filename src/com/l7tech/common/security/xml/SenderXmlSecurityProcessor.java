@@ -72,7 +72,7 @@ class SenderXmlSecurityProcessor extends SecurityProcessor {
         List toSign = new ArrayList();
         List toCrypt = new ArrayList();
 
-        boolean atLeastOnePreconditionMatched = false;
+        boolean atLeastOneElementWasProcessed = false;
 
         try {
             for (int i = 0; i < elements.length; i++) {
@@ -81,7 +81,6 @@ class SenderXmlSecurityProcessor extends SecurityProcessor {
                 boolean preconditionMatched = preconditionMatches(elementSecurity, document);
                 if (!preconditionMatched)
                     continue; // skip: there was a precondition and it failed
-                atLeastOnePreconditionMatched = true;
 
                 FoundElements found = findXpathElement(document, elementSecurity);
                 if (found.foundElements.isEmpty())
@@ -98,6 +97,7 @@ class SenderXmlSecurityProcessor extends SecurityProcessor {
 
                     // Always sign it
                     toSign.add(element);
+                    atLeastOneElementWasProcessed = true;
 
                     // Do we need to encrypt it?
                     if (elementSecurity.isEncryption()) {
@@ -129,7 +129,7 @@ class SenderXmlSecurityProcessor extends SecurityProcessor {
                                       (Element[])toSign.toArray(new Element[0]),
                                       null);
 
-            return atLeastOnePreconditionMatched
+            return atLeastOneElementWasProcessed
                         ? Result.ok(document, signerInfo.getCertificateChain())
                         : Result.notApplicable();
 
