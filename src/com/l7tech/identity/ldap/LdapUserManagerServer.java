@@ -197,25 +197,6 @@ public class LdapUserManagerServer extends LdapManager implements UserManager {
     // PRIVATES
     // ************************************************
 
-    public static void main(String[] args) throws Exception {
-        LdapIdentityProviderConfig config = new LdapIdentityProviderConfig();
-        // use this url when ssh forwarding locally
-        config.setLdapHostURL("ldap://localhost:3899");
-        // use this url when in the office
-        //config.setLdapHostURL("ldap://spock:389");
-        config.setSearchBase("dc=layer7-tech,dc=com");
-        LdapUserManagerServer me = new LdapUserManagerServer(config);
-
-        Collection headers = me.findAllHeaders();
-        Iterator i = headers.iterator();
-        while (i.hasNext()) {
-            EntityHeader header = (EntityHeader)i.next();
-            User usr = me.findByPrimaryKey(header.getStrId());
-            System.out.println(usr);
-        }
-
-    }
-
     private Collection findGroupMembershipsAsHeaders(LdapUser user) {
         Collection out = new ArrayList();
         try
