@@ -232,7 +232,6 @@
             <formatter type="plain"/>
             <sysproperty key="src.root" value="${src.root}"/>
             <test name="com.l7tech.common.util.ThreadPoolTest" haltonfailure="no"/>
-            <test name="com.l7tech.common.locator.AbstractLocatorTest" haltonfailure="no"/>
             <test name="com.l7tech.proxy.datamodel.SsgManagerTest" haltonfailure="no"/>
             <test name="com.l7tech.proxy.datamodel.SsgTest" haltonfailure="no"/>
             <test name="com.l7tech.proxy.FunctionalTest" haltonfailure="no"/>
