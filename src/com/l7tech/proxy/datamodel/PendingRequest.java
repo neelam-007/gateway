@@ -59,7 +59,25 @@ public class PendingRequest {
 
     // Getters and setters
 
+    /**
+     * Get (a copy of) the Document representing the request.  This returns a copy that can be
+     * modified freely.  If you will not be modifying the returned Document in any way, you can
+     * get additional performance by using getSoapEnvelopeDirect() instead.
+     *
+     * @return A copy of the SOAP envelope Document, which may be freely modified.
+     */
     public Document getSoapEnvelope() {
+        return (Document) soapEnvelope.cloneNode(true);
+    }
+
+    /**
+     * Get the actual Document representing the request, which should not be modified.  Any change
+     * to this Document will prevent the reset() method from returning this PendingRequest to
+     * its original state.  If you need to change the Document, use getSoapEnvelope() instead.
+     *
+     * @return A reference to the SOAP envelope Document, which must not be modified in any way.
+     */
+    public Document getSoapEnvelopeDirectly() {
         return soapEnvelope;
     }
 
