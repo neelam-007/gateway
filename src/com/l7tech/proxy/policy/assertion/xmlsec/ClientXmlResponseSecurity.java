@@ -36,13 +36,16 @@ public class ClientXmlResponseSecurity extends ClientAssertion {
     }
 
     /**
-     * i dont want to decorate a request but rather validate something in the response
+     * If this assertion includes xml-enc, the proxy will add a header to the request that tells the server
+     * which xml-enc session to use.
      *
-     * @param request left untouched
+     * @param request might receive a header containing the xml-enc session
      * @return AssertionStatus.NONE (always)
      * @throws PolicyAssertionException no
      */
     public AssertionStatus decorateRequest(PendingRequest request) throws PolicyAssertionException {
+        // todo Mike, set a header on the request that contains the xml session id (i'm not sure where you store that)
+        // the header name is : XmlResponseSecurity.XML_ENC_HEADER_NAME
         return AssertionStatus.NONE;
     }
 
