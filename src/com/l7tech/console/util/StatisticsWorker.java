@@ -69,7 +69,8 @@ public class StatisticsWorker extends SwingWorker {
                     try {
                         stats = serviceManager.getStatistics(header.getOid());
                         stats.setServiceName(header.getName());
-
+                        // todo: the line above invokes the method and the line below
+                        // checks for null? The NPE clock is ticking.... em28102003
                         if (stats != null) {
                             statsList.add(stats);
 
