@@ -6,7 +6,7 @@ import com.l7tech.console.panels.PanelListenerBroker;
 import com.l7tech.console.panels.Utilities;
 import com.l7tech.console.table.ContextListTableModel;
 import com.l7tech.console.tree.DirectoryTreeNode;
-import com.l7tech.console.tree.EntryTreeNode;
+import com.l7tech.console.tree.EntityHeaderNode;
 import org.apache.log4j.Category;
 
 import javax.swing.*;
@@ -85,7 +85,7 @@ public class FindDialog extends JDialog {
   private Dimension origDimension = null;
 
   /** the search context (where the search begins) */
-  private EntryTreeNode entry = null;
+  private EntityHeaderNode entry = null;
   /** the search info with search expression and parameters */
   private SearchInfo searchInfo = new SearchInfo();
 
@@ -108,8 +108,8 @@ public class FindDialog extends JDialog {
       throw new NullPointerException("node");
     }
     Object o = n.getUserObject();
-    if (o instanceof EntryTreeNode) {
-      this.entry = (EntryTreeNode)o;
+    if (o instanceof EntityHeaderNode) {
+      this.entry = (EntityHeaderNode)o;
     } else {
       throw new
       IllegalArgumentException("node must contain Entry. received "+o.getClass());

@@ -163,7 +163,7 @@ public class TreeNodeAction {
    * @return true if the node can be deleted, false otherwise
    */
   public static boolean canDelete(BasicTreeNode bn) {
-    return bn instanceof EntryTreeNode;
+    return bn instanceof EntityHeaderNode;
   }
 
 

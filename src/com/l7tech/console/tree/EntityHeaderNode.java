@@ -11,14 +11,14 @@ import com.l7tech.objectmodel.EntityHeader;
  * @author <a href="mailto:emarceta@layer7-tech.com>Emil Marceta</a>
  * @version 1.1
  */
-public class EntryTreeNode implements BasicTreeNode {
+public class EntityHeaderNode implements BasicTreeNode {
     /**
-     * construct the <CODE>EntryTreeNode</CODE> instance for a given
+     * construct the <CODE>EntityHeaderNode</CODE> instance for a given
      * <CODE>id</CODE>
      *
-     * @param entry  the entry represented by this <CODE>EntryTreeNode</CODE>
+     * @param entry  the entry represented by this <CODE>EntityHeaderNode</CODE>
      */
-    public EntryTreeNode(EntityHeader entry) {
+    public EntityHeaderNode(EntityHeader entry) {
         this.entry = entry;
     }
 

@@ -516,7 +516,7 @@ public class ContainerListPanel extends EditorPanel {
                 suffix = " / " + bn.getFqName().substring(index + 1);
             }
             return bn.getLabel() + suffix;
-        } else if (bn instanceof EntryTreeNode) {
+        } else if (bn instanceof EntityHeaderNode) {
             return bn.getFqName();
         } else {
             throw new IllegalArgumentException("don't know how to handle " + bn.getClass());
@@ -550,7 +550,7 @@ public class ContainerListPanel extends EditorPanel {
                 }
                 BasicTreeNode bn = (BasicTreeNode) object;
 
-                if (object instanceof EntryTreeNode) {
+                if (object instanceof EntityHeaderNode) {
 
                     // a node or expandable folder with properties
                     if (TableRowMenu.BROWSE.equals(e.getActionCommand())) {

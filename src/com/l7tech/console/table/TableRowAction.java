@@ -4,7 +4,7 @@ package com.l7tech.console.table;
 import com.l7tech.console.tree.AdminFolderTreeNode;
 import com.l7tech.console.tree.BasicTreeNode;
 import com.l7tech.console.tree.DirectoryTreeNode;
-import com.l7tech.console.tree.EntryTreeNode;
+import com.l7tech.console.tree.EntityHeaderNode;
 import com.l7tech.console.tree.ProviderTreeNode;
 import com.l7tech.console.tree.ProvidersFolderTreeNode;
 import com.l7tech.console.tree.UserFolderTreeNode;
@@ -87,8 +87,8 @@ public class TableRowAction {
         boolean rb = false;
         if (dobj instanceof ProviderTreeNode) {
             rb = delete((ProviderTreeNode) dobj, askQuestion);
-        } else if (dobj instanceof EntryTreeNode) {
-            rb = delete((EntryTreeNode) dobj, askQuestion);
+        } else if (dobj instanceof EntityHeaderNode) {
+            rb = delete((EntityHeaderNode) dobj, askQuestion);
         } else {
             // Unknown node type .. do nothing
             rb = false;
@@ -124,7 +124,7 @@ public class TableRowAction {
      * @return true if the node has properties, false otherwise
      */
     public static boolean hasProperties(BasicTreeNode dobj) {
-        return dobj instanceof EntryTreeNode;
+        return dobj instanceof EntityHeaderNode;
     }
 
     /**
@@ -186,7 +186,7 @@ public class TableRowAction {
      * @return true if the node can be deleted, false otherwise
      */
     public static boolean canDelete(BasicTreeNode obj) {
-        return obj instanceof EntryTreeNode;
+        return obj instanceof EntityHeaderNode;
     }
 
 

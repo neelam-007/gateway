@@ -13,7 +13,7 @@ import java.util.Enumeration;
  *
  * @author <a href="mailto:emarceta@layer7-tech.com>Emil Marceta</a>
  * @version $1.1
- * @see com.l7tech.console.tree.EntryTreeNode
+ * @see com.l7tech.console.tree.EntityHeaderNode
  */
 public interface BasicTreeNode {
 
