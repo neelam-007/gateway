@@ -5,12 +5,14 @@ import com.l7tech.common.security.xml.decorator.DecorationRequirements;
 import com.l7tech.common.util.CausedIOException;
 import com.l7tech.common.util.KeystoreUtils;
 import com.l7tech.common.xml.XpathEvaluator;
+import com.l7tech.common.audit.Auditor;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.xmlsec.ResponseWssIntegrity;
 import com.l7tech.policy.assertion.xmlsec.XmlSecurityRecipientContext;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.ServerAssertion;
+import com.l7tech.server.AssertionMessages;
 import org.jaxen.JaxenException;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
@@ -51,9 +53,10 @@ public class ServerResponseWssIntegrity implements ServerAssertion {
     public AssertionStatus checkRequest(PolicyEnforcementContext context)
             throws IOException, PolicyAssertionException
     {
+        Auditor auditor = new Auditor(context.getAuditContext(), logger);
         try {
             if (!context.getRequest().isSoap()) {
-                logger.info("Request not SOAP; cannot verify WS-Security signature");
+                auditor.logAndAudit(AssertionMessages.RESPONSE_WSS_INT_REQUEST_NOT_SOAP);
                 return AssertionStatus.NOT_APPLICABLE;
             }
         } catch (SAXException e) {
@@ -66,9 +69,11 @@ public class ServerResponseWssIntegrity implements ServerAssertion {
             public AssertionStatus checkRequest(PolicyEnforcementContext context)
                     throws IOException, PolicyAssertionException
             {
+                Auditor auditor = new Auditor(context.getAuditContext(), logger);
+                
                 try {
                     if (!context.getResponse().isSoap()) {
-                        logger.warning("Response not SOAP; cannot apply WS-Security signature");
+                        auditor.logAndAudit(AssertionMessages.RESPONSE_WSS_INT_RESPONSE_NOT_SOAP);
                         return AssertionStatus.NOT_APPLICABLE;
                     }
                 } catch (SAXException e) {
@@ -82,7 +87,7 @@ public class ServerResponseWssIntegrity implements ServerAssertion {
                     soapmsg = context.getResponse().getXmlKnob().getDocumentReadOnly();
                 } catch (SAXException e) {
                     String msg = "cannot get an xml document from the response to sign";
-                    logger.severe(msg);
+                    auditor.logAndAudit(AssertionMessages.EXCEPTION_SEVERE_WITH_MORE_INFO, new String[] {msg}, e);
                     return AssertionStatus.SERVER_ERROR;
                 }
 
@@ -98,7 +103,7 @@ public class ServerResponseWssIntegrity implements ServerAssertion {
                 }
 
                 if (selectedElements == null || selectedElements.size() < 1) {
-                    logger.fine("No matching elements to sign in response.  Returning success.");
+                    auditor.logAndAudit(AssertionMessages.RESPONSE_WSS_INT_RESPONSE_NOT_SIGNED);
                     return AssertionStatus.NONE;
                 }
 
@@ -113,14 +118,14 @@ public class ServerResponseWssIntegrity implements ServerAssertion {
                     throw new RuntimeException(e); // can't happen, we did this before successfully
                 } catch (CertificateException e) {
                     String msg = "cannot set the recipient cert.";
-                    logger.severe(msg);
+                    auditor.logAndAudit(AssertionMessages.EXCEPTION_SEVERE_WITH_MORE_INFO, new String[] {msg}, e);
                     return AssertionStatus.SERVER_ERROR;
                 }
                 wssReq.setSenderMessageSigningCertificate(signerInfo.getCertificateChain()[0]);
                 wssReq.setSenderMessageSigningPrivateKey(signerInfo.getPrivate());
                 wssReq.getElementsToSign().addAll(selectedElements);
                 wssReq.setSignTimestamp();
-                logger.fine("Designated " + selectedElements.size() + " response elements for signing");
+                 auditor.logAndAudit(AssertionMessages.RESPONSE_WSS_INT_RESPONSE_SIGNED, new String[] {String.valueOf(selectedElements.size())});
 
                 return AssertionStatus.NONE;
             }

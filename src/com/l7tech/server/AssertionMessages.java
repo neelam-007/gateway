@@ -153,4 +153,11 @@ public class AssertionMessages extends Messages {
     public static final M RESPONSE_WSS_CONF_RESPONSE_NOT_ENCRYPTED          = m(5405, Level.FINE, "No matching elements to encrypt in response.  Returning success.");
     public static final M RESPONSE_WSS_CONF_RESPONSE_ENCRYPTED              = m(5406, Level.FINEST, "Designated {0} response elements for encryption");
 
+    // ServerResponseWssIntegrity
+    public static final M RESPONSE_WSS_INT_REQUEST_NOT_SOAP                 = m(5500, Level.INFO, "Request not SOAP; cannot verify WS-Security signature");
+    public static final M RESPONSE_WSS_INT_RESPONSE_NOT_SOAP                = m(5501, Level.WARNING, "Response not SOAP; cannot apply WS-Security signature");
+    public static final M RESPONSE_WSS_INT_RESPONSE_NOT_SIGNED              = m(5502, Level.FINE, "No matching elements to sign in response.  Returning success.");
+    public static final M RESPONSE_WSS_INT_RESPONSE_SIGNED                  = m(5503, Level.FINE, "Designated {0} response elements for signing");
+
+
 }
