@@ -178,11 +178,6 @@ public class ClientCertSslClient {
                    KeyManagementException, IOException, HttpException
     {
         // Set up SSL trust store
-        // TODO: we still need better cert management than this grody hack
-        Properties props = System.getProperties();
-        //props.put("java.protocol.handler.pkgs", "com.sun.net.ssl.internal.www.protocol");
-        //props.put("javax.net.ssl.trustStore", TRUST_FILE.getAbsolutePath());
-        //props.put("javax.net.ssl.trustStorePassword", TRUST_PASS);
         MyKeyManager keyManager = new MyKeyManager();
         MyTrustManager trustManager = new MyTrustManager();
         SSLContext sslContext = SSLContext.getInstance("SSL", "SunJSSE");
