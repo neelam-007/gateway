@@ -786,6 +786,7 @@
         <!-- Absolute source paths -->
         <property name="install.src.base" value="${build.dir}/install/ssg"/>
         <property name="install.src.bin" value="${install.src.base}/${install.rel.bin}"/>
+        <property name="install.src.lib" value="${install.src.base}/lib"/>
         <property name="install.src.dist" value="${install.src.base}/${install.rel.dist}"/>
         <property name="install.src.doc" value="${install.src.base}/${install.rel.doc}"/>
         <property name="install.src.jdk" value="${install.src.base}/${install.rel.jdk}"/>
@@ -823,6 +824,7 @@
 
         <echo>Making directories...</echo>
         <mkdir dir="${install.src.base}"/>
+        <mkdir dir="${install.src.lib}"/>
         <mkdir dir="${install.src.dist}"/>
         <mkdir dir="${install.src.doc}"/>
         <mkdir dir="${install.src.etc}"/>
