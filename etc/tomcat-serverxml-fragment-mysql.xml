@@ -1,41 +1,38 @@
-<Resource name="jdbc/ssg" scope="Shareable" type="javax.sql.XADataSource"/>
-
-<ResourceParams name="jdbc/ssg">
-   <parameter>
-      <name>factory</name>
-      <value>org.apache.commons.dbcp.BasicDataSourceFactory</value>
-  </parameter>
-
-  <parameter>
-    <name>validationQuery</name>
-    <value></value>
-  </parameter>
-  <parameter>
-    <name>maxWait</name>
-    <value>5000</value>
-  </parameter>
-  <parameter>
-    <name>maxActive</name>
-    <value>4</value>
-  </parameter>
-  <parameter>
-    <name>password</name>
-    <value>resubew</value>
-  </parameter>
-  <parameter>
-    <name>url</name>
-    <value>jdbc:mysql://spock/ssg</value>
-  </parameter>
-  <parameter>
-    <name>driverClassName</name>
-    <value>com.mysql.jdbc.Driver</value>
-  </parameter>
-  <parameter>
-    <name>maxIdle</name>
-    <value>2</value>
-  </parameter>
-  <parameter>
-    <name>username</name>
-    <value>webuser</value>
-  </parameter>
-</ResourceParams>
+                    <Context path="/ssg.war" docBase="ssg" debug="5" reloadable="true" crossContext="true">
+                        <Logger className="org.apache.catalina.logger.FileLogger" prefix="localhost_DBTest_log." suffix=".txt" timestamp="true"/>
+                        <Resource name="jdbc/TestDB" auth="Container" type="javax.sql.DataSource"/>
+                        <ResourceParams name="jdbc/ssg">
+                            <parameter>
+                                <name>maxWait</name>
+                                <value>5000</value>
+                            </parameter>
+                            <parameter>
+                                <name>maxActive</name>
+                                <value>4</value>
+                            </parameter>
+                            <parameter>
+                                <name>password</name>
+                                <value>resubew</value>
+                            </parameter>
+                            <parameter>
+                                <name>url</name>
+                                <value>jdbc:mysql://localhost:3306/ssg</value>
+                            </parameter>
+                            <parameter>
+                                <name>driverClassName</name>
+                                <value>com.mysql.jdbc.Driver</value>
+                            </parameter>
+                            <parameter>
+                                <name>maxIdle</name>
+                                <value>2</value>
+                            </parameter>
+                            <parameter>
+                                <name>username</name>
+                                <value>webuser</value>
+                            </parameter>
+                            <parameter>
+                                <name>factory</name>
+                                <value>org.apache.commons.dbcp.BasicDataSourceFactory</value>
+                            </parameter>
+                        </ResourceParams>
+                    </Context>
