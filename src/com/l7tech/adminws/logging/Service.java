@@ -32,7 +32,7 @@ public class Service {
                         logs[i].getSourceMethodName() +  " - " +
                         logs[i].getMessage();
             if (logs[i].getThrown() != null)
-                        output[i] += " Exception: " + logs[i].getThrown().getMessage();
+                        output[i] += " Exception: " + logs[i].getThrown().getClass().getName() + " " + logs[i].getThrown().getMessage();
         }
         return output;
     }
