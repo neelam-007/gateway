@@ -89,25 +89,26 @@ public class GuiCredentialManager extends CredentialManager {
         }
 
         long now = System.currentTimeMillis();
+        final CredHolder holder = new CredHolder();
+        synchronized (ssg) {
+            pw = ssg.getCredentials();
+            if (ssg.credentialsUpdatedTime() > now && pw != null)
+                return pw;
+
+            // Check if username is locked into a client certificate
+            holder.showUsername = ssg.getUsername();
+            if (SsgKeyStoreManager.isClientCertAvailabile(ssg)) {
+                X509Certificate cert = SsgKeyStoreManager.getClientCert(ssg);
+                X500Principal certName = new X500Principal(cert.getSubjectDN().toString());
+                String certNameString = certName.getName(X500Principal.CANONICAL);
+                holder.showUsername = certNameString.substring(3);
+                ssg.setUsername(holder.showUsername);
+                holder.lockUsername = true;
+            }
+        }
+
         synchronized(this) {
             // If another instance already updated the credentials while we were waiting, we've done our job
-            final CredHolder holder = new CredHolder();
-            synchronized (ssg) {
-                pw = ssg.getCredentials();
-                if (ssg.credentialsUpdatedTime() > now && pw != null)
-                    return pw;
-
-                // Check if username is locked into a client certificate
-                holder.showUsername = ssg.getUsername();
-                if (SsgKeyStoreManager.isClientCertAvailabile(ssg)) {
-                    X509Certificate cert = SsgKeyStoreManager.getClientCert(ssg);
-                    X500Principal certName = new X500Principal(cert.getSubjectDN().toString());
-                    String certNameString = certName.getName(X500Principal.CANONICAL);
-                    holder.showUsername = certNameString.substring(3);
-                    ssg.setUsername(holder.showUsername);
-                    holder.lockUsername = true;
-                }
-            }
 
             log.info("Displaying logon prompt for SSG " + ssg);
             invokeDialog(new Runnable() {
