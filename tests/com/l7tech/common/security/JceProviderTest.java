@@ -7,16 +7,23 @@
 package com.l7tech.common.security;
 
 import org.apache.log4j.Category;
+import org.w3c.dom.Document;
 
 import java.security.KeyPair;
 import java.security.PublicKey;
 import java.security.PrivateKey;
+import java.security.Key;
 import java.security.cert.Certificate;
 import java.security.cert.X509Certificate;
 import java.security.interfaces.RSAPrivateKey;
 import java.security.interfaces.RSAPublicKey;
 
 import com.l7tech.common.util.CertUtils;
+import com.l7tech.common.util.XmlUtil;
+import com.l7tech.common.util.HexUtils;
+import com.l7tech.common.security.xml.XmlManglerTest;
+import com.l7tech.common.security.xml.XmlMangler;
+import com.l7tech.common.security.xml.SoapMsgSigner;
 
 /**
  * Test the performance of a JceProviderEngine.
@@ -42,52 +49,97 @@ public class JceProviderTest {
             throw new IllegalArgumentException("Usage: JceProviderTest [phaos|bc|rsa]");
         String prov = args[0].trim();
 
-        String driver;
-        if ("phaos".equalsIgnoreCase(prov)) {
-            driver = "com.l7tech.common.security.prov.phaos.PhaosJceProviderEngine";
-        } else if ("rsa".equalsIgnoreCase(prov)) {
-            driver = "com.l7tech.common.security.prov.rsa.RsaJceProviderEngine";
-        } else if ("bc".equalsIgnoreCase(prov)) {
-            driver = "com.l7tech.common.security.prov.bc.BouncyCastleJceProviderEngine";
-        } else
-            throw new IllegalArgumentException("Usage: JceProviderTest [phaos|bc|rsa]");
+        final byte[] keyBytes = new byte[] {
+            (byte) 0x9f,(byte) 0x04,(byte) 0xe4,(byte) 0xcf,(byte) 0x95,(byte) 0x9e,(byte) 0xd6,(byte) 0x16,
+            (byte) 0xa1,(byte) 0x58,(byte) 0xf9,(byte) 0x8a,(byte) 0xc6,(byte) 0x2c,(byte) 0xf7,(byte) 0x33,
+            (byte) 0xc8,(byte) 0x1b,(byte) 0xe2,(byte) 0x67,(byte) 0xd1,(byte) 0x52,(byte) 0xa0,(byte) 0xb1,
+            (byte) 0x75,(byte) 0xcf,(byte) 0x38,(byte) 0x0c,(byte) 0xc1,(byte) 0xf8,(byte) 0x61,(byte) 0xcd,
+        };
 
-        System.setProperty("com.l7tech.common.security.jceProviderEngine", driver);
-        JceProvider.init();
-        log.info("Using crypto provider: " + JceProvider.getProvider().getName());
+        final Key key = new AesKey(keyBytes, 128);
 
-        log.info("pretest: generating key pair...");
-        KeyPair kp = JceProvider.generateRsaKeyPair();
-        log.info("Public key: " + publicKeyInfo(kp.getPublic()));
-        log.info("Private key: " + privateKeyInfo(kp.getPrivate()));
+        {
+            String driver;
+            if ("phaos".equalsIgnoreCase(prov)) {
+                driver = "com.l7tech.common.security.prov.phaos.PhaosJceProviderEngine";
+            } else if ("rsa".equalsIgnoreCase(prov)) {
+                driver = "com.l7tech.common.security.prov.rsa.RsaJceProviderEngine";
+            } else if ("bc".equalsIgnoreCase(prov)) {
+                driver = "com.l7tech.common.security.prov.bc.BouncyCastleJceProviderEngine";
+            } else
+                throw new IllegalArgumentException("Usage: JceProviderTest [phaos|bc|rsa]");
 
-        log.info("pretest: generating a certificate signing request...");
-        CertificateRequest csr = JceProvider.makeCsr("mike", kp);
-        log.info("CSR username = " + csr.getSubjectAsString());
-        log.info("CSR public key: " + publicKeyInfo(csr.getPublicKey()));
+            System.setProperty("com.l7tech.common.security.jceProviderEngine", driver);
+            JceProvider.init();
+            log.info("Using crypto provider: " + JceProvider.getProvider().getName());
 
-        final byte[] csrEnc = csr.getEncoded();
+            log.info("pretest: generating key pair...");
+            KeyPair kp = JceProvider.generateRsaKeyPair();
+            log.info("Public key: " + publicKeyInfo(kp.getPublic()));
+            log.info("Private key: " + privateKeyInfo(kp.getPrivate()));
 
-        final RsaSignerEngine signer = JceProvider.createRsaSignerEngine(KEY_STORE, STORE_PASS, ALIAS, PK_PASS);
-        Certificate signed = signer.createCertificate(csrEnc);
-        log.info("Signed: " + CertUtils.toString((X509Certificate) signed));
+            log.info("pretest: generating a certificate signing request...");
+            CertificateRequest csr = JceProvider.makeCsr("mike", kp);
+            log.info("CSR username = " + csr.getSubjectAsString());
+            log.info("CSR public key: " + publicKeyInfo(csr.getPublicKey()));
 
-        reportTime("Empty loop", 10000, new Testable() {
+            final byte[] csrEnc = csr.getEncoded();
+
+            final RsaSignerEngine signer = JceProvider.createRsaSignerEngine(KEY_STORE, STORE_PASS, ALIAS, PK_PASS);
+            Certificate signed = signer.createCertificate(csrEnc);
+            log.info("Signed: " + CertUtils.toString((X509Certificate) signed));
+        }
+
+        int scale = 1; // turn up to 10 or 100 or some shit like that there, when doing an actual test
+
+        reportTime("Empty loop (baseline)", 10000 * scale, new Testable() {
             public void run() {
+                int i = 0;
+                i++;
             }
         });
 
-        reportTime("Generate key pair", 50, new Testable() {
+        reportTime("Generate key pair", 4 * scale, new Testable() {
             public void run() {
                 JceProvider.generateRsaKeyPair();
             }
         });
 
-        reportTime("Sign CSR", 50, new Testable() {
+        /*reportTime("Sign CSR", 50 * scale, new Testable() {
             public void run() throws Exception {
                 signer.createCertificate(csrEnc);
             }
+        });*/
+
+        Document testDoc = XmlManglerTest.makeTestMessage();
+        final String testXml = XmlUtil.documentToString(testDoc);
+
+        reportTime("Parse document (baseline)", 1000 * scale, new Testable() {
+            public void run() throws Throwable {
+                Document blah = XmlUtil.stringToDocument(testXml);
+            }
         });
+
+        final Document encryptedDoc = XmlUtil.stringToDocument(testXml);
+        XmlMangler.encryptXml(encryptedDoc, keyBytes, "MyKeyName");
+        final String encryptedXml = XmlUtil.documentToString(encryptedDoc);
+
+        reportTime("Encrypt document", 1000 * scale, new Testable() {
+            public void run() throws Throwable {
+                Document blah = XmlUtil.stringToDocument(testXml);
+                XmlMangler.encryptXml(blah, keyBytes, "MyKeyName");
+            }
+        });
+
+        reportTime("Decrypt document", 200 * scale, new Testable() {
+            public void run() throws Throwable {
+                Document blah = XmlUtil.stringToDocument(encryptedXml);
+                XmlMangler.decryptXml(blah, key);
+            }
+        });
+
+        SoapMsgSigner signer = new SoapMsgSigner();
+        //final Document signedDocument =
     }
 
     private static String trunc10(String orig) {
@@ -135,6 +187,6 @@ public class JceProviderTest {
                     r.run();
             }
         });
-        log.info("Timed " + count + " executions of " + name + ": " + t + " ms");
+        log.info("Timed " + count + " executions of " + name + ": " + t + " ms; " + (t/count) + " ms per execution");
     }
 }
