@@ -50,7 +50,7 @@ public class PolicyAddIdentitiesDialog extends JDialog {
     /** Creates new form PolicyAddIdentitiesDialog */
     public PolicyAddIdentitiesDialog(Frame owner, AssertionTreeNode node) {
         super(owner, true);
-        setTitle("Add identity asssertion(s)");
+        setTitle("Add Identity Assertion(s)");
         targetNode = node;
         initComponents();
         equalizeButtons();

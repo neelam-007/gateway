@@ -34,7 +34,7 @@ public class RoutingAssertionDialog extends JDialog {
     /** Creates new form ServicePanel */
     public RoutingAssertionDialog(Frame owner, RoutingAssertion a) {
         super(owner, true);
-        setTitle("Edit routing asssertion");
+        setTitle("Edit Routing Assertion");
         assertion = a;
         initComponents();
     }
