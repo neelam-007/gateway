@@ -7,18 +7,19 @@ import java.util.Set;
 
 import com.l7tech.identity.User;
 import com.l7tech.objectmodel.imp.EntityImp;
+import com.l7tech.objectmodel.imp.NamedEntityImp;
 
 /**
  * @author alex
  */
-public class UserImp extends EntityImp implements User {
-    public String getName() {
+public class UserImp extends NamedEntityImp /*implements User*/ {
+    /*public String getName() {
         return _login;
     }
 
     public void setName( String name ) {
         _login = name;
-    }
+    }*/
 
     public long getProviderOid() {
         return _providerOid;
@@ -103,7 +104,12 @@ public class UserImp extends EntityImp implements User {
     }
 
     public String toString() {
-        return "com.l7tech.identity.internal.imp.UserImp. First name=" + _firstName + " Last name=" + _lastName + " Login=" + _login;
+        return "com.l7tech.identity.internal.imp.UserImp." +
+                "\n\tName=" + _name +
+                "\n\tFirst name=" + _firstName +
+                "\n\tLast name=" + _lastName +
+                "\n\tLogin=" + _login +
+                "\n\tPassword=" + _password;
     }
 
     public boolean equals(Object o) {
