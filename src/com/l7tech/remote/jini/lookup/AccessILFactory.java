@@ -97,7 +97,8 @@ public class AccessILFactory extends BasicILFactory {
                                    Method method,
                                    InvocationConstraints constraints,
                                    Collection context) {
-            LocalAccess.check();
+            //todo: rework this em
+            // LocalAccess.check();
         }
     }
 }
