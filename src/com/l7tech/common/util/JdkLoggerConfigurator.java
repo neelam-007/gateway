@@ -71,7 +71,7 @@ public class JdkLoggerConfigurator {
                 }
             }
             if (configFound) {
-                Logger.getLogger(classname).info("Policy editor logging initialized from '" + configCandidate + "'");
+                Logger.getLogger(classname).info("Logging initialized from '" + configCandidate + "'");
             }
         } catch (IOException e) {
             e.printStackTrace(System.err);
