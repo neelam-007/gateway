@@ -1,9 +1,9 @@
 package com.l7tech.console.tree;
 
 import com.l7tech.console.action.*;
+import com.l7tech.console.logging.ErrorManager;
 import com.l7tech.console.tree.wsdl.WsdlTreeNode;
 import com.l7tech.console.util.Registry;
-import com.l7tech.console.logging.ErrorManager;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.service.PublishedService;
@@ -12,10 +12,12 @@ import com.l7tech.service.Wsdl;
 import javax.swing.*;
 import javax.swing.tree.MutableTreeNode;
 import java.io.StringReader;
-import java.util.Enumeration;
+import java.rmi.RemoteException;
+import java.util.Collections;
+import java.util.Iterator;
+import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.rmi.RemoteException;
 
 
 /**
@@ -121,16 +123,18 @@ public class ServiceNode extends EntityHeaderNode {
             if (s != null) {
                 Wsdl wsdl = Wsdl.newInstance(null, new StringReader(svc.getWsdlXml()));
                 WsdlTreeNode node = WsdlTreeNode.newInstance(wsdl);
-                node.loadChildren();
-                int index = 0;
                 children = null;
-                for (Enumeration e = node.children(); e.hasMoreElements();) {
-                    insert((MutableTreeNode) e.nextElement(), index++);
+                node.getChildCount();
+                List nodes = Collections.list(node.children());
+                int index = 0;
+                for (Iterator iterator = nodes.iterator(); iterator.hasNext();) {
+                    MutableTreeNode n = (MutableTreeNode)iterator.next();
+                    insert(n, index++);
                 }
             }
         } catch (Exception e) {
             ErrorManager.getDefault().
-              notify(Level.WARNING, e,
+              notify(Level.SEVERE, e,
               "Error loading service elements"+getEntityHeader().getOid());
         }
     }
