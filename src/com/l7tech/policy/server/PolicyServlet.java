@@ -13,12 +13,13 @@ import com.l7tech.service.ServiceManager;
 import com.l7tech.util.Locator;
 import com.l7tech.common.util.HexUtils;
 import com.l7tech.server.SoapMessageProcessingServlet;
-import com.l7tech.credential.http.HttpBasicCredentialFinder;
-import com.l7tech.credential.PrincipalCredentials;
-import com.l7tech.credential.CredentialFinderException;
+import com.l7tech.server.policy.assertion.credential.http.ServerHttpBasic;
+import com.l7tech.policy.assertion.credential.PrincipalCredentials;
+import com.l7tech.policy.assertion.credential.CredentialFinderException;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.composite.CompositeAssertion;
 import com.l7tech.policy.assertion.credential.CredentialSourceAssertion;
+import com.l7tech.policy.assertion.credential.http.HttpBasic;
 import com.l7tech.policy.wsp.WspReader;
 import com.l7tech.policy.server.filter.FilterManager;
 import com.l7tech.policy.server.filter.FilteringException;
@@ -339,10 +340,12 @@ public class PolicyServlet extends HttpServlet {
             logger.warning("No authorization header found.");
             return null;
         }
-        HttpBasicCredentialFinder credsFinder = new HttpBasicCredentialFinder();
+
+        // TODO: Realm?
+        ServerHttpBasic httpBasic = new ServerHttpBasic( new HttpBasic() );
         PrincipalCredentials creds = null;
         try {
-            creds = credsFinder.findCredentials(authorizationHeader);
+            creds = httpBasic.findCredentials(authorizationHeader);
         } catch (CredentialFinderException e) {
             logger.log(Level.SEVERE, "Exception looking for exception.", e);
             return null;
