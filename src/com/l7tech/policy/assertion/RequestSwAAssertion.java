@@ -1,7 +1,7 @@
 package com.l7tech.policy.assertion;
 
-import java.util.Map;
 import java.util.HashMap;
+import java.util.Map;
 
 /**
  * <p> Copyright (C) 2004 Layer 7 Technologies Inc.</p>
@@ -19,12 +19,16 @@ public class RequestSwAAssertion extends SwAAssertion {
         this.bindings = bindings;
     }
 
-    /** @return the Bindings map.  Never null. */
+    /**
+     * @return the Bindings map.  Never null.
+     */
     public Map getBindings() {
         return bindings;
     }
 
-    /** @param bindings the new Binding info.  May not be null. */
+    /**
+     * @param bindings the new Binding info.  May not be null.
+     */
     public void setBindings(Map bindings) {
         if (bindings == null)
             throw new IllegalArgumentException("bindings map may not be null");
@@ -39,8 +43,4 @@ public class RequestSwAAssertion extends SwAAssertion {
         this.namespaceMap = namespaceMap;
     }
 
-    public boolean hasMimeParts(String operationName) {
-
-        return true;
-    }
 }

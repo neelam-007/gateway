@@ -1,15 +1,17 @@
 package com.l7tech.policy.validator;
 
-import com.l7tech.policy.PolicyValidatorResult;
+import com.l7tech.common.util.ConstructorInvocation;
 import com.l7tech.policy.AssertionPath;
+import com.l7tech.policy.PolicyValidatorResult;
 import com.l7tech.policy.assertion.Assertion;
+import com.l7tech.policy.assertion.RequestSwAAssertion;
 import com.l7tech.policy.assertion.RequestXpathAssertion;
 import com.l7tech.policy.assertion.ResponseXpathAssertion;
-import com.l7tech.policy.assertion.xmlsec.RequestWssIntegrity;
 import com.l7tech.policy.assertion.xmlsec.RequestWssConfidentiality;
-import com.l7tech.policy.assertion.xmlsec.ResponseWssIntegrity;
+import com.l7tech.policy.assertion.xmlsec.RequestWssIntegrity;
 import com.l7tech.policy.assertion.xmlsec.ResponseWssConfidentiality;
-import com.l7tech.common.util.ConstructorInvocation;
+import com.l7tech.policy.assertion.xmlsec.ResponseWssIntegrity;
+import com.l7tech.service.PublishedService;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
@@ -20,7 +22,7 @@ import java.util.Map;
 /**
  * The class <code>ValidatorFactory</code> creates <code>AssertionValidator</code>
  * instances based on <code>Assertion</code> instances.
- * 
+ *
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  * @version 1.1
  */
@@ -35,6 +37,7 @@ class ValidatorFactory {
         assertionMap.put(RequestWssConfidentiality.class, XpathBasedAssertionValidator.class);
         assertionMap.put(ResponseWssIntegrity.class, XpathBasedAssertionValidator.class);
         assertionMap.put(ResponseWssConfidentiality.class, XpathBasedAssertionValidator.class);
+        assertionMap.put(RequestSwAAssertion.class, SwaRequestAssertionValidator.class);
         // add mapping
     }
 
@@ -49,7 +52,7 @@ class ValidatorFactory {
      * for an <code>Assertion</code><br>
      * In case there is no corresponding <code>AssertionTreeNode</code>
      * the <code>UnknownAssertionTreeNode</code> is returned
-     * 
+     *
      * @return the AssertionTreeNode for a given assertion
      */
     static AssertionValidator getValidator(Assertion assertion) {
@@ -74,7 +77,7 @@ class ValidatorFactory {
      * as a parameter.
      * That is, the <code>AssertionValidator</code> implementation is searched for
      * the constructor accepting the <code>Assertion</code> parameter.
-     * 
+     *
      * @param classNode the class that is a subclass of AssertionTreeNode
      * @param assertion the assertion constructor parameter
      * @return the corresponding validator
@@ -102,6 +105,6 @@ class ValidatorFactory {
             assertion = a;
         }
 
-        public void validate(AssertionPath path, PolicyValidatorResult result) {}
+        public void validate(AssertionPath path, PublishedService service, PolicyValidatorResult result) {}
     }
 }

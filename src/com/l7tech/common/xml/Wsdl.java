@@ -6,8 +6,9 @@ import org.xml.sax.InputSource;
 
 import javax.wsdl.*;
 import javax.wsdl.extensions.ExtensibilityElement;
-import javax.wsdl.extensions.mime.MIMEPart;
 import javax.wsdl.extensions.http.HTTPBinding;
+import javax.wsdl.extensions.mime.MIMEMultipartRelated;
+import javax.wsdl.extensions.mime.MIMEPart;
 import javax.wsdl.extensions.soap.SOAPAddress;
 import javax.wsdl.extensions.soap.SOAPBinding;
 import javax.wsdl.extensions.soap.SOAPBody;
@@ -76,13 +77,13 @@ public class Wsdl {
      *                        an XML document obeying the WSDL schema.
      *                        <p/>
      *                        <p>The example reads the WSDL definition from StringReader: <pre>
-     *                                                                                                                    // Retrieve the WSDL definition from the string representing
-     *                                                                                                                    // the wsdl and iterate over the services.
-     *                                                                                                                    <p/>
-     *                                                                                                                    Wsdl wsdl = Wsdl.newInstance(null, new StringReader(wsdlString));
-     *                                                                                                                    Iterator services = wsdl.getServices().iterator();
-     *                                                                                                                    ...
-     *                                                                                                                    </pre>
+     *                                                                                                                                                                                         // Retrieve the WSDL definition from the string representing
+     *                                                                                                                                                                                         // the wsdl and iterate over the services.
+     *                                                                                                                                                                                         <p/>
+     *                                                                                                                                                                                         Wsdl wsdl = Wsdl.newInstance(null, new StringReader(wsdlString));
+     *                                                                                                                                                                                         Iterator services = wsdl.getServices().iterator();
+     *                                                                                                                                                                                         ...
+     *                                                                                                                                                                                         </pre>
      * @throws javax.wsdl.WSDLException throw on error parsing the WSDL definition
      */
     public static Wsdl newInstance(String documentBaseURI, Reader reader)
@@ -238,6 +239,25 @@ public class Wsdl {
         }
         return null;
     }
+
+    /**
+     * @param localName the binding local name
+     * @return the binding with the given local name or <b>null</b>
+     */
+    public Binding getBinding(String localName) {
+        if (localName == null) {
+            throw new IllegalArgumentException();
+        }
+        Iterator bindings = getBindings().iterator();
+        while (bindings.hasNext()) {
+            Binding binding = (Binding)bindings.next();
+            if (localName.equals(binding.getQName().getLocalPart())) {
+                return binding;
+            }
+        }
+        return null;
+    }
+
 
     /**
      * @return the collection of WSDL <code>Message</code>
@@ -571,15 +591,63 @@ public class Wsdl {
     }
 
     public Collection getInputParameters(BindingOperation bindingOperation) {
-        if(bindingOperation != null) {
+        if (bindingOperation != null) {
             return bindingOperation.getBindingInput().getExtensibilityElements();
         } else {
             throw new IllegalArgumentException("The argument bindingOperation is NULL");
         }
     }
 
+    public Collection getOutputParameters(BindingOperation bindingOperation) {
+        if (bindingOperation == null) {
+            throw new IllegalArgumentException("The argument bindingOperation is NULL");
+        }
+        return bindingOperation.getBindingOutput().getExtensibilityElements();
+    }
+
+
+    /**
+     * Get a <i>MIME Multipart Related</i> container for the input parameters
+     * declared for the given binding operation.
+     *
+     * @param bo the binding operation
+     */
+    public MIMEMultipartRelated getMimeMultipartRelatedInput(BindingOperation bo) {
+        Collection elements = getInputParameters(bo);
+
+        // for each input parameter of the binding operation
+        for (Iterator itr = elements.iterator(); itr.hasNext();) {
+            Object o = (Object)itr.next();
+            if (o instanceof MIMEMultipartRelated) {
+                return (MIMEMultipartRelated)o;
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Get a <i>MIME Multipart Related</i> container for the input parameters
+     * declared for the given binding operation.
+     *
+     * @param bo the binding operation
+     */
+    public MIMEMultipartRelated getMimeMultipartRelateOutput(BindingOperation bo) {
+        Collection elements = getOutputParameters(bo);
+
+        // for each input parameter of the binding operation
+        for (Iterator itr = elements.iterator(); itr.hasNext();) {
+
+            Object o = (Object)itr.next();
+            if (o instanceof MIMEMultipartRelated) {
+                return (MIMEMultipartRelated)o;
+            }
+        }
+        return null;
+    }
+
+
     public Collection getMimePartSubElements(MIMEPart mimePart) {
-        if(mimePart != null) {
+        if (mimePart != null) {
             return mimePart.getExtensibilityElements();
         } else {
             throw new IllegalArgumentException("The argument mimePart is NULL");
@@ -636,6 +704,4 @@ public class Wsdl {
     private Definition definition;
 
     private transient Logger logger = Logger.getLogger(getClass().getName());
-
-
 }

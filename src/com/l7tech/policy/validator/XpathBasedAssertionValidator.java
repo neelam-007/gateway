@@ -6,11 +6,12 @@
 
 package com.l7tech.policy.validator;
 
-import com.l7tech.policy.PolicyValidatorResult;
 import com.l7tech.policy.AssertionPath;
+import com.l7tech.policy.PolicyValidatorResult;
 import com.l7tech.policy.assertion.XpathBasedAssertion;
-import com.l7tech.policy.assertion.xmlsec.ResponseWssConfidentiality;
 import com.l7tech.policy.assertion.xmlsec.RequestWssConfidentiality;
+import com.l7tech.policy.assertion.xmlsec.ResponseWssConfidentiality;
+import com.l7tech.service.PublishedService;
 import org.jaxen.dom.DOMXPath;
 
 import java.util.logging.Logger;
@@ -27,7 +28,7 @@ public class XpathBasedAssertionValidator implements AssertionValidator {
         assertion = ra;
     }
 
-    public void validate(AssertionPath path, PolicyValidatorResult result) {
+    public void validate(AssertionPath path, PublishedService service, PolicyValidatorResult result) {
         String pattern = null;
         if (assertion.getXpathExpression() != null) {
             pattern = assertion.getXpathExpression().getExpression();
@@ -41,7 +42,7 @@ public class XpathBasedAssertionValidator implements AssertionValidator {
         if (assertion instanceof ResponseWssConfidentiality || assertion instanceof RequestWssConfidentiality) {
             if (pattern.equals("/soapenv:Envelope")) {
                 result.addError(new PolicyValidatorResult.Error(assertion, path, "The path " + pattern + " is " +
-                                                                                 "not valid for XML encryption", null));
+                  "not valid for XML encryption", null));
 
             }
         }

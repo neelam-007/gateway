@@ -29,11 +29,13 @@ import java.util.List;
 /**
  * validate single path, and collect the validation results in the
  * <code>PolicyValidatorResult</code>.
- *
+ * <p/>
  * TODO: refactor this into asserton specific validators (expand the ValidatorFactory).
  */
 class PathValidator {
-    /** result accumulator*/
+    /**
+     * result accumulator
+     */
     PolicyValidatorResult result;
     List deferredValidators = new ArrayList();
     private AssertionPath assertionPath;
@@ -47,7 +49,7 @@ class PathValidator {
     }
 
     public void validate(Assertion a) {
-        ValidatorFactory.getValidator(a).validate(assertionPath, result);
+        ValidatorFactory.getValidator(a).validate(assertionPath, service, result);
         // has precondition
         if (hasPreconditionAssertion(a)) {
             processPrecondition(a);
@@ -192,9 +194,9 @@ class PathValidator {
         if (a instanceof SecureConversation) {
             if (seenSecureConversation) {
                 result.addError(new PolicyValidatorResult.Error(a,
-                                                                assertionPath,
-                                                                "Secure Conversation already specified.",
-                                                                null));
+                  assertionPath,
+                  "Secure Conversation already specified.",
+                  null));
             }
             seenSecureConversation = true;
         }
@@ -249,7 +251,7 @@ class PathValidator {
                   "XSL transformation on the response must be positioned after routing.", null));
             }
         } else if (a instanceof RequestSwAAssertion) {
-            if(seenRouting) {
+            if (seenRouting) {
                 result.addError(new PolicyValidatorResult.Error(a, assertionPath,
                   "The assertion must be positioned before the routing assertion.", null));
             }
@@ -332,7 +334,7 @@ class PathValidator {
         if (service != null && service.isSoap()) {
             Wsdl parsedWsdl = service.parsedWsdl();
             if (wsdlBindingOperations == null) {
-                    wsdlBindingOperations = parsedWsdl.getBindingOperations();
+                wsdlBindingOperations = parsedWsdl.getBindingOperations();
             }
             class RelativeURINamespaceProblemFeedback {
                 String ns;
@@ -347,24 +349,24 @@ class PathValidator {
             }
             Collection feedback = new ArrayList();
             for (Iterator iterator = wsdlBindingOperations.iterator(); iterator.hasNext();) {
-                BindingOperation operation = (BindingOperation) iterator.next();
+                BindingOperation operation = (BindingOperation)iterator.next();
                 String ns = parsedWsdl.getBindingInputNS(operation);
                 if (ns != null && ns.indexOf(':') < 0) {
                     feedback.add(new RelativeURINamespaceProblemFeedback(ns,
-                                                                         operation.getName(),
-                                                                         (operation.getBindingInput().getName() != null ? operation.getBindingInput().getName() : operation.getName() + "In")));
+                      operation.getName(),
+                      (operation.getBindingInput().getName() != null ? operation.getBindingInput().getName() : operation.getName() + "In")));
                 }
                 ns = parsedWsdl.getBindingOutputNS(operation);
                 if (ns != null && ns.indexOf(':') < 0) {
                     feedback.add(new RelativeURINamespaceProblemFeedback(ns,
-                                                                         operation.getName(),
-                                                                         (operation.getBindingOutput().getName() != null ? operation.getBindingOutput().getName() : operation.getName() + "Out")));
+                      operation.getName(),
+                      (operation.getBindingOutput().getName() != null ? operation.getBindingOutput().getName() : operation.getName() + "Out")));
                 }
             }
             if (!feedback.isEmpty()) {
                 StringBuffer msg = new StringBuffer("The service refers to a relative namespace URI, " +
-                                                    "which will prevent XML digital signatures from " +
-                                                    "functioning properly.");
+                  "which will prevent XML digital signatures from " +
+                  "functioning properly.");
                 for (Iterator iterator = feedback.iterator(); iterator.hasNext();) {
                     RelativeURINamespaceProblemFeedback fb = (RelativeURINamespaceProblemFeedback)iterator.next();
                     msg.append("<br>Namespace: " + fb.ns);
@@ -372,13 +374,12 @@ class PathValidator {
                     msg.append(", Message Name: " + fb.msgname);
                 }
                 result.addError(new PolicyValidatorResult.Error(a,
-                                assertionPath,
-                                msg.toString(),
-                                null));
+                  assertionPath,
+                  msg.toString(),
+                  null));
             }
         }
     }
-
 
 
     private void processSoapSpecific(Assertion a) {
@@ -425,19 +426,19 @@ class PathValidator {
 
     private boolean involvesSignature(Assertion a) {
         if (a instanceof SecureConversation ||
-            a instanceof RequestWssIntegrity  ||
-            a instanceof RequestWssX509Cert ||
-            a instanceof ResponseWssIntegrity)
+          a instanceof RequestWssIntegrity ||
+          a instanceof RequestWssX509Cert ||
+          a instanceof ResponseWssIntegrity)
             return true;
         return false;
     }
 
     private boolean onlyForSoap(Assertion a) {
         if (a instanceof SecureConversation || a instanceof WssBasic ||
-            a instanceof RequestWssConfidentiality  || a instanceof RequestWssIntegrity  ||
-            a instanceof RequestWssReplayProtection || a instanceof RequestWssX509Cert ||
-            a instanceof ResponseWssConfidentiality  || a instanceof ResponseWssIntegrity ||
-            a instanceof SamlSecurity || a instanceof SwAAssertion)
+          a instanceof RequestWssConfidentiality || a instanceof RequestWssIntegrity ||
+          a instanceof RequestWssReplayProtection || a instanceof RequestWssX509Cert ||
+          a instanceof ResponseWssConfidentiality || a instanceof ResponseWssIntegrity ||
+          a instanceof SamlSecurity || a instanceof SwAAssertion)
             return true;
         return false;
     }
@@ -445,10 +446,10 @@ class PathValidator {
     private boolean hasPreconditionAssertion(Assertion a) {
         // check preconditions for both SslAssertion and  ResponseWssIntegrity assertions - see processPrecondition()
         if (a instanceof SslAssertion ||
-            a instanceof XpathBasedAssertion ||
-            a instanceof HttpClientCert ||
-            a instanceof XslTransformation ||
-            a instanceof RequestSwAAssertion)
+          a instanceof XpathBasedAssertion ||
+          a instanceof HttpClientCert ||
+          a instanceof XslTransformation ||
+          a instanceof RequestSwAAssertion)
             return true;
         return false;
     }
