@@ -85,9 +85,12 @@ public class TarariSoapInfoFactory implements SoapInfoFactory {
     /**
      * Load the specified InputStream, which is expected to produce an XML document, into the Tarari board,
      * run the current XPaths against it, and return the TarariContext.
+     * <p>
+     * The caller must close the TarariContext when they are finished with it.
      *
      * @param inputStream  An InputStream containing an XML document.  Must not be null.
      * @return the TarariContext pointing at the document and the processed results.  Never null.
+     *         Caller is responsible for closing the context.
      * @throws SAXException if this document is invalid.
      * @throws SoftwareFallbackException if this document could not be processed in hardware.
      *                                              the operation should be retried using software.
