@@ -1,6 +1,7 @@
 package com.l7tech.console.panels;
 
 import com.l7tech.common.gui.util.TableUtil;
+import com.l7tech.common.util.Locator;
 import com.l7tech.console.util.Preferences;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.ComponentRegistry;
@@ -9,6 +10,7 @@ import com.l7tech.identity.UserManager;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.UpdateException;
 import com.l7tech.identity.UserManagerClient;
+import com.l7tech.identity.cert.ClientCertManager;
 
 import javax.swing.*;
 import javax.swing.table.AbstractTableModel;
@@ -194,9 +196,8 @@ class CertificatePanel extends JPanel {
 
                         // revoke the user cert
                         try {
-                            final UserManagerClient userManagerClient =
-                              ((UserManagerClient)Registry.getDefault().getInternalUserManager());
-                            userManagerClient.revokeCert(Long.toString(user.getOid()));
+                            ClientCertManager man = (ClientCertManager)Locator.getDefault().lookup(ClientCertManager.class);
+                            man.revokeUserCert(user);
                         } catch (UpdateException e) {
                             log.log(Level.WARNING, "ERROR Revoking certificate", e);
                         }
@@ -325,15 +326,9 @@ class CertificatePanel extends JPanel {
     }
 
     private void getUserCert() {
-        // fla note, in the future the cert will come from some sort of CertManager instead of the interal user manager
+        ClientCertManager man = (ClientCertManager)Locator.getDefault().lookup(ClientCertManager.class);
         try {
-            String uidStr = Long.toString(user.getOid());
-            Registry reg = Registry.getDefault();
-            UserManager um = reg.getInternalUserManager();
-            UserManagerClient umc = (UserManagerClient)um;
-            Certificate clientCert = umc.retrieveUserCert(uidStr);
-
-            cert = (X509Certificate)clientCert;
+            cert = (X509Certificate)man.getUserCert(user);
         } catch (FindException e) {
             log.log(Level.WARNING, "There was an error loading the certificate", e);
         }
