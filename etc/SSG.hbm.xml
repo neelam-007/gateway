@@ -118,6 +118,21 @@
         <property name="address" type="com.l7tech.identity.internal.imp.AddressImp"/>
         <property name="billingAddress" column="billing_address" type="com.l7tech.identity.internal.imp.AddressImp"/>
         <property name="mailingAddress" column="mailing_address" type="com.l7tech.identity.internal.imp.AddressImp"/>
+
+        <set role="groups" lazy="false" table="internal_user_group">
+            <key column="internal_user"/>
+            <many-to-many class="com.l7tech.identity.internal.imp.GroupImp" column="internal_group"/>
+        </set>
+    </class>
+
+    <class name="com.l7tech.service.PublishedService" table="protected_service">
+        <id name="oid" column="oid" type="long">
+            <generator class="hilo.long"/>
+        </id>
+        <property name="name" column="name" type="string"/>
+        <property name="wsdlUrl" column="wsdl_url" type="string"/>
+        <property name="wsdlXml" column="wsdl_xml" type="string"/>
+        <property name="policyXml" column="policy_xml" type="string"/>
     </class>
 
 </hibernate-mapping>
