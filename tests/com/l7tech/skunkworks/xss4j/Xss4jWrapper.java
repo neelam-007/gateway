@@ -42,15 +42,14 @@ import java.util.List;
  * @version $Revision$
  */
 public class Xss4jWrapper {
-    public static final String DIGSIG_URI = "http://www.w3.org/2000/09/xmldsig#";
 
-    public Xss4jWrapper() {
+    Xss4jWrapper() {
         dbf = DocumentBuilderFactory.newInstance();
         dbf.setNamespaceAware( true );
         dbf.setValidating( false );
     }
 
-    public Document munge() throws Exception, IOException, SAXException {
+    Document munge() throws Exception, IOException, SAXException {
         Document doc = parse( CLEARTEXT );
 
         // encrypt & sign price
@@ -65,7 +64,7 @@ public class Xss4jWrapper {
         return doc;
     }
 
-    public Document unmunge( Document doc ) throws Exception {
+    Document unmunge( Document doc ) throws Exception {
         checkSignatureOnElement( doc, "accountid" ); // *** boom ***
         checkSignatureOnElement( doc, "price" );
         checkSignatureOnElement( doc, "amount" );
@@ -80,15 +79,19 @@ public class Xss4jWrapper {
         return doc;
     }
 
-    private Document parse( String xml ) throws Exception {
+    Document parse( String xml ) throws Exception {
         return dbf.newDocumentBuilder().parse( new ByteArrayInputStream( xml.getBytes("UTF-8") ) );
     }
 
-    private SecretKey getSecretKey() {
+    byte[] getSymmetricKeyBytes() {
+        return unHexDump( SYMMETRIC );
+    }
+
+    SecretKey getSecretKey() {
         return new SecretKey() {
             public byte[] getEncoded() {
                 byte[] newbytes = new byte[16];
-                byte[] bad = unHexDump( SYMMETRIC );
+                byte[] bad = getSymmetricKeyBytes();
                 System.arraycopy( bad, 0, newbytes, 0, 16 );
                 return newbytes;
             }
@@ -322,7 +325,7 @@ public class Xss4jWrapper {
         refEl.appendChild(dataRefEl);
     }
 
-    public static Element getOrMakeSecurityElement(Document soapMsg) {
+    static Element getOrMakeSecurityElement(Document soapMsg) {
         NodeList listSecurityElements = soapMsg.getElementsByTagNameNS(SECURITY_NAMESPACE, SECURITY_EL_NAME);
         if (listSecurityElements.getLength() < 1) {
             listSecurityElements = soapMsg.getElementsByTagNameNS(SECURITY_NAMESPACE2, SECURITY_EL_NAME);
@@ -340,7 +343,7 @@ public class Xss4jWrapper {
         }
     }
 
-    public static Element getOrMakeHeader(Document soapMsg) {
+    static Element getOrMakeHeader(Document soapMsg) {
         // use the soap flavor of this document
         String soapEnvNS = soapMsg.getDocumentElement().getNamespaceURI();
         NodeList list = soapMsg.getElementsByTagNameNS(soapEnvNS, HEADER_EL_NAME);
@@ -362,7 +365,7 @@ public class Xss4jWrapper {
             return (Element)list.item(0);
     }
 
-    public static Element getBody(Document soapMsg) {
+    static Element getBody(Document soapMsg) {
         // use the soap flavor of this document
         String soapEnvNS = soapMsg.getDocumentElement().getNamespaceURI();
         // if the body is there, get it so that the header can be inserted before it
@@ -374,18 +377,18 @@ public class Xss4jWrapper {
     }
 
     private RSAPublicKey clientCertPublicKey = null;
-    private RSAPublicKey getClientCertPublicKey() throws Exception {
+    RSAPublicKey getClientCertPublicKey() throws Exception {
         if (clientCertPublicKey != null) return clientCertPublicKey;
         return clientCertPublicKey = (RSAPublicKey)getClientCertificate().getPublicKey();
     }
 
-    private BigInteger getClientPrivateExponent() throws Exception {
+    BigInteger getClientPrivateExponent() throws Exception {
         String keyHex = PRIVATE_EXPONENT;
         return new BigInteger(keyHex, 16);
     }
 
 
-    private RSAPrivateKey getClientCertPrivateKey() throws Exception {
+    RSAPrivateKey getClientCertPrivateKey() throws Exception {
         final RSAPublicKey pubkey = getClientCertPublicKey();
         final BigInteger exp = getClientPrivateExponent();
         RSAPrivateKey privkey = new RSAPrivateKey() {
@@ -394,7 +397,7 @@ public class Xss4jWrapper {
             }
 
             public byte[] getEncoded() {
-                throw new UnsupportedOperationException();
+                return null;
             }
 
             public String getAlgorithm() {
@@ -414,7 +417,7 @@ public class Xss4jWrapper {
     }
 
 
-    private X509Certificate getClientCertificate() throws Exception {
+    X509Certificate getClientCertificate() throws Exception {
         // Find KeyInfo bodyElement, and extract certificate from this
         Document keyInfoDoc = parse( KEYINFO );
         Element keyInfoElement = keyInfoDoc.getDocumentElement();
@@ -443,7 +446,7 @@ public class Xss4jWrapper {
         System.err.println( "Got unmunged:\n" + documentToString(unmunged) );
     }
 
-    private static String documentToString( Document doc ) throws IOException {
+    static String documentToString( Document doc ) throws IOException {
         XMLSerializer xmlSerializer = new XMLSerializer();
         OutputFormat of = new OutputFormat();
         of.setIndent(4);
@@ -457,7 +460,7 @@ public class Xss4jWrapper {
 
     private DocumentBuilderFactory dbf;
 
-    private byte[] unHexDump( String hexData ) {
+    byte[] unHexDump( String hexData ) {
         if ( hexData.length() % 2 != 0 ) throw new IllegalArgumentException( "String must be of even length" );
         byte[] bytes = new byte[hexData.length()/2];
         for ( int i = 0; i < hexData.length(); i+=2 ) {
@@ -595,7 +598,7 @@ public class Xss4jWrapper {
         throw new Exception( "Did not find any matching Signature element" );
     }
 
-    public static Element findFirstChildElement( Element parent ) {
+    static Element findFirstChildElement( Element parent ) {
         NodeList children = parent.getChildNodes();
         for ( int i = 0; i < children.getLength(); i++ ) {
             Node n = children.item(i);
@@ -603,7 +606,7 @@ public class Xss4jWrapper {
         }
         return null;
     }
-    public static Element findFirstChildElementByName( Element parent, String nsuri, String name ) {
+    static Element findFirstChildElementByName( Element parent, String nsuri, String name ) {
         if ( nsuri == null || name == null ) throw new IllegalArgumentException( "nsuri and name must be non-null!" );
         NodeList children = parent.getChildNodes();
         for ( int i = 0; i < children.getLength(); i++ ) {
@@ -615,7 +618,7 @@ public class Xss4jWrapper {
         }
         return null;
     }
-    public static Element findOnlyOneChildElementByName( Element parent, String nsuri, String name ) throws Exception {
+    static Element findOnlyOneChildElementByName( Element parent, String nsuri, String name ) throws Exception {
         if ( nsuri == null || name == null ) throw new IllegalArgumentException( "nsuri and name must be non-null!" );
         NodeList children = parent.getChildNodes();
         Element result = null;
@@ -630,7 +633,7 @@ public class Xss4jWrapper {
         }
         return result;
     }
-    public static List findChildElementsByName( Element parent, String nsuri, String name ) {
+    static List findChildElementsByName( Element parent, String nsuri, String name ) {
         if ( nsuri == null || name == null ) throw new IllegalArgumentException( "nsuri and name must be non-null!" );
         List found = new ArrayList();
 
@@ -667,7 +670,7 @@ public class Xss4jWrapper {
                                          "    </ds:X509Data>\n" +
                                          "</ds:KeyInfo>";
 
-    public static final String CLEARTEXT = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+    static final String CLEARTEXT = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
         "<soapenv:Envelope\n" +
         "    xmlns:soapenv=\"http://schemas.xmlsoap.org/soap/envelope/\"\n" +
         "    xmlns:xsd=\"http://www.w3.org/2001/XMLSchema\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\">\n" +
@@ -682,23 +685,24 @@ public class Xss4jWrapper {
         "    </soapenv:Body>\n" +
         "</soapenv:Envelope>";
 
-    private static final String SYMMETRIC = "31a4418777d573b9349211db8b7a96b38249f351a7abb8b93fd2f8c81b5fbdbc";
-    private static final String SESSION_ID = "5901929434192275332";
-    private static final String PRIVATE_EXPONENT = "575971570e11dfbd9f4586763d88b08b79a7bd3d266bff189871fb9216a021080d7140411d87f1db13f99b68b983c5cf8071aebc28fb0553f366a6b387e435b44f4ea87aeef8bb247ce557bd1a7b09d4754c0eab239ad99d51c7df152956e03ab9e2bd61230b70dc8851113978f39c9d99f5e555aed0d3471619d4873a4520b1";
+    static final String SYMMETRIC = "31a4418777d573b9349211db8b7a96b38249f351a7abb8b93fd2f8c81b5fbdbc";
+    static final String SESSION_ID = "5901929434192275332";
+    static final String PRIVATE_EXPONENT = "575971570e11dfbd9f4586763d88b08b79a7bd3d266bff189871fb9216a021080d7140411d87f1db13f99b68b983c5cf8071aebc28fb0553f366a6b387e435b44f4ea87aeef8bb247ce557bd1a7b09d4754c0eab239ad99d51c7df152956e03ab9e2bd61230b70dc8851113978f39c9d99f5e555aed0d3471619d4873a4520b1";
 
-    public static final String NS_ENC_URI = "http://www.w3.org/2000/xmlns/";
-    public static final String XMLENC_NS = "http://www.w3.org/2001/04/xmlenc#";
-    public static final String SECURITY_NAMESPACE = "http://schemas.xmlsoap.org/ws/2002/xx/secext";
-    public static final String SECURITY_NAMESPACE2 = "http://schemas.xmlsoap.org/ws/2002/12/secext";
+    static final String DIGSIG_URI = "http://www.w3.org/2000/09/xmldsig#";
+    static final String NS_ENC_URI = "http://www.w3.org/2000/xmlns/";
+    static final String XMLENC_NS = "http://www.w3.org/2001/04/xmlenc#";
+    static final String SECURITY_NAMESPACE = "http://schemas.xmlsoap.org/ws/2002/xx/secext";
+    static final String SECURITY_NAMESPACE2 = "http://schemas.xmlsoap.org/ws/2002/12/secext";
 
-    public static final String SECURITY_NAMESPACE_PREFIX = "wsse";
-    private static final String DS_PREFIX = "ds";
+    static final String SECURITY_NAMESPACE_PREFIX = "wsse";
+    static final String DS_PREFIX = "ds";
 
-    public static final String SECURITY_EL_NAME = "Security";
-    public static final String BODY_EL_NAME = "Body";
-    public static final String HEADER_EL_NAME = "Header";
-    public static final String ID_ATTRIBUTE_NAME = "Id";
-    public static final String SIGNATURE_EL_NAME = "Signature";
-    public static final String SIGNED_INFO_EL_NAME = "SignedInfo";
-    public static final String REFERENCE_EL_NAME = "Reference";
+    static final String SECURITY_EL_NAME = "Security";
+    static final String BODY_EL_NAME = "Body";
+    static final String HEADER_EL_NAME = "Header";
+    static final String ID_ATTRIBUTE_NAME = "Id";
+    static final String SIGNATURE_EL_NAME = "Signature";
+    static final String SIGNED_INFO_EL_NAME = "SignedInfo";
+    static final String REFERENCE_EL_NAME = "Reference";
 }
