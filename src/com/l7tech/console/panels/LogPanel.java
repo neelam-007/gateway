@@ -430,7 +430,7 @@ public class LogPanel extends JPanel {
 
     private void detailsActionPerformed(java.awt.event.ActionEvent evt) {
         if (details.isSelected()) {
-            getLogPaneTop().setDividerLocation(getSize().getWidth() * 0.7);
+            getLogPaneTop().setDividerLocation(0.7);
             getMsgDetails().setVisible(true);
         } else {
             hideMsgDetails();
@@ -439,7 +439,7 @@ public class LogPanel extends JPanel {
 
     private void hideMsgDetails() {
 
-        getLogPaneTop().setDividerLocation(getLogPaneTop().getMaximumDividerLocation());
+        getLogPaneTop().setDividerLocation(1.0);
         getMsgDetails().setVisible(false);
     }
 
