@@ -184,6 +184,14 @@ public class PublishedService extends NamedEntityImp {
         return result;
     }
 
+    public int requestCount() {
+        return _requestCount;
+    }
+
+    public void incrementRequestCount() {
+        _requestCount++;
+    }
+
     // ************************************************
     // PRIVATES
     // ************************************************
@@ -192,6 +200,7 @@ public class PublishedService extends NamedEntityImp {
     protected String _wsdlXml;
     protected boolean _disabled;
 
+    protected transient volatile int _requestCount = 0;
     protected transient Logger _log = LogManager.getInstance().getSystemLogger();
     protected transient Wsdl _parsedWsdl;
     protected transient Port _wsdlPort;
