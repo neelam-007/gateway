@@ -129,6 +129,7 @@ public class ServerLogManager extends LogManager {
             try {
                 InputStream inputStream = null;
 
+                /* todo, fix this to get file from right place
                 String path = ServerConfig.getInstance().getLogPropertiesPath();
                 if ( path != null && path.length() > 0 ) {
                     File f = new File( path );
@@ -144,7 +145,9 @@ public class ServerLogManager extends LogManager {
 
                 if ( inputStream == null ) {
                     inputStream = getClass().getResourceAsStream(PROPS_PATH);
-                }
+                }*/
+                // todo, not htis
+                inputStream = getClass().getResourceAsStream(PROPS_PATH);
 
                 props = new Properties();
                 if (props == null) throw new RuntimeException("can't read properties");
