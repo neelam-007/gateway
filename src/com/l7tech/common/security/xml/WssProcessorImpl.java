@@ -14,6 +14,7 @@ import com.l7tech.common.util.XmlUtil;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
+import org.w3c.dom.Node;
 import org.xml.sax.SAXException;
 
 import javax.crypto.Cipher;
@@ -356,8 +357,17 @@ public class WssProcessorImpl implements WssProcessor {
                                                         null, null);
             dc.setKey(key);
             try {
+                // do the actual decryption
                 dc.decrypt();
                 dc.replace();
+                // remember encrypted element
+                NodeList dataList = dc.getDataAsNodeList();
+                for (int i = 0; i < dataList.getLength(); i++) {
+                    Node node = dataList.item(i);
+                    if (node.getNodeType() == Node.ELEMENT_NODE) {
+                        cntx.elementsThatWereEncrypted.add(node);
+                    }
+                }
             } catch (XSignatureException e) {
                 logger.log(Level.WARNING, "Error decrypting", e);
                 throw new ProcessorException(e);
@@ -368,12 +378,6 @@ public class WssProcessorImpl implements WssProcessor {
                 logger.log(Level.WARNING, "Error decrypting", e);
                 throw new ProcessorException(e);
             }
-
-            // remember encrypted element
-            encryptedDataElement = SoapUtil.getElementById(cntx.originalDocument, dataRefUri);
-            if (encryptedDataElement == null) {
-                logger.warning("cannot resolve encrypted data element " + dataRefUri + " from original doc");
-            } else cntx.elementsThatWereEncrypted.add(encryptedDataElement);
         }
     }
 
