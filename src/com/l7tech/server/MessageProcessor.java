@@ -26,7 +26,6 @@ import com.l7tech.service.ServiceListener;
 import com.l7tech.service.ServiceManager;
 import com.l7tech.service.ServiceStatistics;
 import com.l7tech.service.resolution.ServiceResolutionException;
-import com.l7tech.objectmodel.FindException;
 import org.xmlpull.v1.XmlPullParser;
 import org.xmlpull.v1.XmlPullParserException;
 import org.xmlpull.v1.XmlPullParserFactory;
@@ -274,114 +273,6 @@ public class MessageProcessor implements ServiceListener {
 
     public void serviceUpdated(PublishedService service) {
         _serverPolicyCache.remove( new Long( service.getOid() ) );
-    }
-
-    // todo make this live, when all dependencies are complete
-    /**
-     * resolves a service from a request. ensure cache integrity through version checking
-     * @param request
-     * @return
-     */
-    protected PublishedService resolveService(Request request) throws ServiceResolutionException {
-        // logic (from wiki design page)
-        // 1. request comes in soap processor
-        // 2. soap processor tries to resolves using cache
-        //    * 2.1. if no service resolves, do the following
-        //          o 2.1.1. if no "db resolve" attempt occured for this particular request, do a "db resolve", go
-        //                   back to 2.1
-        //          o 2.2.2. if we already tried to do a "db resolve", return SERVICE_NOT_FOUND
-        // 3. the service is resolved.
-        // 4. if no "db resolve" occured to get there, do the following
-        //    * 4.1. do a version check (between cache and database version) on the published service this step
-        //           should be fast â a query on the version column only, dont let hibernate parse the entire
-        //           service object from the database.
-        //    * 4.2. if version mismatch
-        //          o 4.2.1. update the cache (this service only)
-        //          o 4.2.2. go back to step 2
-        //    * 4.3. if version check reveals that service no longer exist (it has been deleted)
-        //          o 4.3.1. delete the cached version
-        //          o 4.3.2. do a "db resolve" and go back to step 2.1
-        // 5. execute policy
-        boolean resolvedFromDB = false;
-        PublishedService service = cacheResolve(request);
-        for (int i = 0; i < 2; i++) {
-            if (service == null) {
-                if (!resolvedFromDB) {
-                    service = dbResolve(request);
-                    resolvedFromDB = true;
-                }
-                if (service == null) {
-                    logger.warning("Request does not resolve to service either against cache nor db.");
-                    return null;
-                }
-            }
-
-            if (resolvedFromDB) {
-                return service;
-            } else {
-                int versioncheckres = checkVersionAgainstDB(service);
-                switch (versioncheckres) {
-                    case VERSIONOK:
-                        return service;
-                    case VERSIONOUTDATED:
-                        // update the service
-                        updateCache(service.getOid());
-                        // back to resolve from cache
-                        service = cacheResolve(request);
-                        break; // will go back
-                    case SERVICENOTINDB:
-                        // delete cache version
-                        deleteFromCache(service.getOid());
-                        // try to resolve from db
-                        service = null;
-                        break;
-                }
-            }
-        }
-        logger.fine("**should not get here**");
-        return null;
-    }
-
-    protected void deleteFromCache(long serviceOidToDelete) {
-        // todo
-    }
-
-    protected void updateCache(long serviceOidToUpdate) {
-        // todo
-    }
-
-    protected PublishedService cacheResolve(Request request) throws ServiceResolutionException {
-        // todo
-        return null;
-    }
-
-    protected PublishedService dbResolve(Request request) throws ServiceResolutionException {
-        // todo
-        // resolve service
-        // if something is found, update or add service to cache
-        return null;
-    }
-
-    protected static final int VERSIONOK = 1;
-    protected static final int VERSIONOUTDATED = 2;
-    protected static final int SERVICENOTINDB = 0;
-    /**
-     * checks the version of the passed service against it's version in the database. meant for checking
-     * if a service from the cache is "up-to-date"
-     * @return VERSIONOK, VERSIONOUTDATED (cached version is outdated), or SERVICENOTINDB (service has been deleted)
-     */
-    protected int checkVersionAgainstDB(PublishedService service) {
-        try {
-            int dbVersion = _serviceManager.getCurrentPolicyVersion(service.getOid());
-            if (service.getVersion() == dbVersion) return VERSIONOK;
-            logger.fine("version mismatch for service " + service.getOid() + ". local version="
-                          + service.getVersion() + ", db version=" + dbVersion);
-        } catch (FindException e) {
-            logger.log(Level.WARNING, "exception checking version of service " + service.getOid() +
-                                      ". perhaps service has been deleted on another node?", e);
-            return SERVICENOTINDB;
-        }
-        return VERSIONOUTDATED;
     }
 
     private static MessageProcessor _instance = null;
