@@ -18,6 +18,7 @@ import com.l7tech.proxy.datamodel.PolicyManager;
 import com.l7tech.proxy.datamodel.Ssg;
 import com.l7tech.proxy.datamodel.SsgKeyStoreManager;
 import com.l7tech.proxy.datamodel.SsgResponse;
+import com.l7tech.proxy.datamodel.BadCredentialsException;
 import com.l7tech.proxy.policy.assertion.ClientAssertion;
 import com.l7tech.proxy.ssl.ClientProxySslException;
 import com.l7tech.proxy.util.CannedSoapFaults;
