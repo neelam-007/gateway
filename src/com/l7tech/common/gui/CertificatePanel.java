@@ -51,20 +51,15 @@ public class CertificatePanel extends JPanel {
      */
     private void initComponents() {
         setLayout(new GridBagLayout());
-        // setTitle("Certificate Information");
 
         certificateTable = new JTable();
-        certificateTable.setPreferredScrollableViewportSize(new Dimension(500, 160));
-        //certificateTable.setPreferredSize(new Dimension(500, 160));
-        certificateTable.setAutoResizeMode(JTable.AUTO_RESIZE_ALL_COLUMNS);
 
         tableScrollPane = new JScrollPane(certificateTable);
         add(tableScrollPane,
-          new GridBagConstraints(0, 0, 1, 1, 1.0, 1.0,
+          new GridBagConstraints(0, 0, 1, 1, 0.0, 0.0,
             GridBagConstraints.CENTER,
-            GridBagConstraints.BOTH,
+            GridBagConstraints.NONE,
             new Insets(15, 15, 0, 15), 0, 0));
-
     }
 
     /**
@@ -75,7 +70,7 @@ public class CertificatePanel extends JPanel {
      * @throws java.security.NoSuchAlgorithmException
      * @throws java.security.cert.CertificateEncodingException
      */
-    public AbstractTableModel getCertificateTableModel()
+    private AbstractTableModel getCertificateTableModel()
       throws NoSuchAlgorithmException, CertificateEncodingException {
         if (certificateTableModel != null) {
             return certificateTableModel;
@@ -102,37 +97,9 @@ public class CertificatePanel extends JPanel {
             }
         };
 
-        SwingUtilities.invokeLater(
-          new Runnable() {
-              public void run() {
-
-                  DefaultTableCellRenderer dft = new DefaultTableCellRenderer();
-                  dft.setText("Value");
-                  dft.setHorizontalAlignment(SwingConstants.LEFT);
-                  dft.setBackground(tableScrollPane.getBackground());
-                  certificateTable.getColumn("Value").setHeaderRenderer(dft);
-
-                  dft = new DefaultTableCellRenderer();
-                  dft.setText("Certificate Field");
-                  dft.setHorizontalAlignment(SwingConstants.LEFT);
-                  dft.setBackground(tableScrollPane.getBackground());
-                  certificateTable.getColumn("Certificate Field").setHeaderRenderer(dft);
-
-                  int rows = certificateTableModel.getRowCount();
-
-                  String[] cols = {"Certificate Field", "Value"};
-                  for (int i = 0; i < cols.length; i++) {
-                      String longest = cols[i];
-                      for (int j = 0; j < rows; j++) {
-                          String val = (String)certificateTableModel.getValueAt(j, i);
-                          if (val.length() > longest.length()) {
-                              longest = val;
-                          }
-                      }
-                      TableUtil.adjustColumnWidth(certificateTable, i, longest);
-                  }
-              }
-          });
+        certificateTable.setPreferredScrollableViewportSize(
+                new Dimension(500,
+                              certificateTableModel.getRowCount() * certificateTable.getRowHeight()));
 
         return certificateTableModel;
     }
@@ -164,6 +131,7 @@ public class CertificatePanel extends JPanel {
             AbstractTableModel
               certificateTableModel = getCertificateTableModel();
             certificateTable.setModel(certificateTableModel);
+        TableUtil.adjustColumnWidth(certificateTable, 0);
     }
 
 
