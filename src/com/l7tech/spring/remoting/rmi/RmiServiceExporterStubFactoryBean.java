@@ -204,20 +204,25 @@ public class RmiServiceExporterStubFactoryBean
         if (logger.isInfoEnabled()) {
             logger.info("Looking for RMI registry at port '" + registryPort + "'");
         }
+
+        // check the registry socket factories
+        if ((this.registryClientSocketFactory != null && this.registryServerSocketFactory == null) ||
+          (this.registryClientSocketFactory == null && this.registryServerSocketFactory != null)) {
+            throw new IllegalArgumentException("Both RMIClientSocketFactory and RMIServerSocketFactory or none required");
+        }
+
         Registry registry;
         try {
             // retrieve registry
-            registry = LocateRegistry.getRegistry(registryPort);
+            if (registryClientSocketFactory == null) {
+                registry = LocateRegistry.getRegistry(registryPort);
+            } else {
+                registry = LocateRegistry.getRegistry(null, registryPort, registryClientSocketFactory);
+            }
             registry.list();
         } catch (RemoteException ex) {
             logger.debug("RMI registry access threw exception", ex);
             logger.debug("Could not detect RMI registry - creating new one");
-
-            // assume no registry found -> create new one
-            if ((this.registryClientSocketFactory != null && this.registryServerSocketFactory == null) ||
-              (this.registryClientSocketFactory == null && this.registryServerSocketFactory != null)) {
-                throw new IllegalArgumentException("Both RMIClientSocketFactory and RMIServerSocketFactory or none required");
-            }
             if (registryClientSocketFactory == null) {
                 registry = LocateRegistry.createRegistry(registryPort);
             } else {
@@ -259,8 +264,8 @@ public class RmiServiceExporterStubFactoryBean
             logger.info("Unbinding RMI service '" + getDisplayServiceName() +
               "' from registry at port '" + this.registryPort + "'");
         }
-        if (this.serviceName == null) {
-            Registry registry = LocateRegistry.getRegistry(this.registryPort);
+        if (this.serviceName != null) {
+            Registry registry = getRegistry(this.registryPort);
             registry.unbind(this.serviceName);
         }
         UnicastRemoteObject.unexportObject(this.exportedObject, true);

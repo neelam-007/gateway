@@ -11,9 +11,10 @@ import sun.security.action.GetPropertyAction;
 import java.net.MalformedURLException;
 import java.rmi.server.RMIClassLoader;
 import java.rmi.server.RMIClassLoaderSpi;
-import java.util.logging.Logger;
-import java.util.Collection;
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.StringTokenizer;
+import java.util.logging.Logger;
 
 /**
  * The <code>ClassSetAnnotation</code> is the implementation of the
@@ -29,7 +30,11 @@ import java.util.ArrayList;
  */
 public final class ClassSetAnnotation extends RMIClassLoaderSpi {
     /**
-     * "default" provider instance
+     * logger
+     */
+    private static final Logger logger = Logger.getLogger(ClassSetAnnotation.class.getName());
+    /**
+     * "default" <code>RMIClassLoaderSpi</code> provider instance
      */
     private static final RMIClassLoaderSpi defaultProvider = RMIClassLoader.getDefaultProviderInstance();
     /**
@@ -37,26 +42,61 @@ public final class ClassSetAnnotation extends RMIClassLoaderSpi {
      * initialization time.  It may contain malformed URLs.
      */
     private static String codebaseProperty = null;
+
     static {
-	String prop = (String) java.security.AccessController.doPrivileged(
-            new GetPropertyAction("java.rmi.server.codebase"));
-	if (prop != null && prop.trim().length() > 0) {
-	    codebaseProperty = prop;
-	}
+        String prop = (String)java.security.AccessController.doPrivileged(new GetPropertyAction("java.rmi.server.codebase"));
+        if (prop != null && prop.trim().length() > 0) {
+            codebaseProperty = prop;
+        }
     }
 
     /**
      * Include patterns, may include ?, *, **
      */
-    private static Collection includePatterns = new ArrayList();
+    private static String[] includePatterns = new String[]{};
     /**
      * Exclude patterns, may include ?, *, **
      */
-    private static Collection excludePatterns = new ArrayList();
+    private static String[] excludePatterns = new String[]{};
+
     /**
-     * logger
+     * Set the new include patterns value. The patterns value is a comma or space
+     * delimited set of tokens. The tokens may contain special characters ?, *, **
+     * If <code>null</code> the patterns
+     *
+     * @param includePatterns the string containing the include tokens
      */
-    private static final Logger logger = Logger.getLogger(ClassSetAnnotation.class.getName());
+    public static synchronized void setIncludePatterns(String includePatterns) {
+        if (includePatterns == null) {
+            ClassSetAnnotation.includePatterns = new String[]{};
+        }
+        StringTokenizer st = new StringTokenizer(includePatterns, " ,", false);
+        Collection patterns = new ArrayList();
+        while (st.hasMoreTokens()) {
+            patterns.add(st.nextToken());
+        }
+        ClassSetAnnotation.includePatterns = (String[])patterns.toArray(new String[]{});
+    }
+
+    /**
+      * Set the new exclude patterns value. The patterns value is a comma or space
+      * delimited set of tokens. The tokens may contain special characters ?, *, **
+      * If <code>null</code> the patterns
+      *
+      * @param excludePatterns the string containing the include tokens
+      */
+     public static synchronized void setExludePatterns(String excludePatterns) {
+         if (excludePatterns == null) {
+             ClassSetAnnotation.excludePatterns = new String[]{};
+         }
+         StringTokenizer st = new StringTokenizer(excludePatterns, " ,", false);
+         Collection patterns = new ArrayList();
+         while (st.hasMoreTokens()) {
+             patterns.add(st.nextToken());
+         }
+         ClassSetAnnotation.excludePatterns = (String[])patterns.toArray(new String[]{});
+     }
+
 
     /**
      * Returns the annotation string (representing a location for the class definition) that
@@ -78,7 +118,23 @@ public final class ClassSetAnnotation extends RMIClassLoaderSpi {
                 return null;
             }
         }
+        if (codebaseProperty == null) {
+            return null;
+        }
         String annotation = null;
+        for (int i = 0; i < includePatterns.length; i++) {
+            String includePattern = includePatterns[i];
+            if (matchClassName(includePattern, name)) {
+                annotation = codebaseProperty;
+                break;
+            }
+        }
+        for (int i = 0; i < excludePatterns.length; i++) {
+            String excludePattern = excludePatterns[i];
+            if (matchClassName(excludePattern, name)) {
+                return null;
+            }
+        }
         return annotation;
     }
 
@@ -190,10 +246,10 @@ public final class ClassSetAnnotation extends RMIClassLoaderSpi {
     /**
      * Tests whether or not a given class matches a given pattern.
      *
-     * @param pattern The pattern to match against. Must not be
-     *                <code>null</code>.
-     * @param className     The class to match, as a String. Must not be
-     *                <code>null</code>.
+     * @param pattern   The pattern to match against. Must not be
+     *                  <code>null</code>.
+     * @param className The class to match, as a String. Must not be
+     *                  <code>null</code>.
      * @return <code>true</code> if the pattern matches against the string,
      *         or <code>false</code> otherwise.
      */
