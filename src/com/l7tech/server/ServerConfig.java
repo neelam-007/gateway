@@ -81,6 +81,8 @@ public class ServerConfig implements ComponentConfig {
                 logger.fine(ne.getMessage());
             }
         }
+        
+        if ( value == null ) value = getPropertyValue( propName );
 
         if ( value == null ) {
             logger.fine("Using default value " + defaultValue);
@@ -168,10 +170,6 @@ public class ServerConfig implements ComponentConfig {
             if (i < addr.length - 1) result.append(".");
         }
         return result.toString();
-    }
-
-    public static void main(String[] args) {
-        ComponentConfig config = ServerConfig.getInstance();
     }
 
     public int getServerId() {
