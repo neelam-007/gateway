@@ -300,6 +300,7 @@ public abstract class AbstractLdapUserManagerServer extends LdapManager implemen
     protected abstract String doGetGroupMembershipFilter( User user );
 
     private Collection findGroupMembershipsAsHeaders(User user) {
+        // todo, add group memberships based on "OU"s
         AbstractLdapConstants constants = getConstants();
         Collection out = new ArrayList();
         try
