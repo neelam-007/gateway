@@ -8,6 +8,7 @@ import com.l7tech.policy.AssertionPath;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.xml.SchemaValidation;
 import com.l7tech.service.PublishedService;
+import com.l7tech.common.gui.util.Utilities;
 import org.apache.xml.serialize.OutputFormat;
 import org.apache.xml.serialize.XMLSerializer;
 import org.syntax.jedit.JEditTextArea;
@@ -251,19 +252,16 @@ public class SchemaValidationPropertiesDialog extends JDialog {
             return;
         }
 
-        SchemaValidation tmp = new SchemaValidation();
-        try {
-            tmp.assignSchemaFromWsdl(wsdlDoc);
-        } catch (IllegalArgumentException e) {
-            displayError(resources.getString("error.noschemainwsdl"), null);
-            return;
-        } catch (IOException e) {
-            displayError(resources.getString("error.nowsdl"), null);
-            return;
+        SelectWsdlSchemaDialog schemafromwsdlchooser = new SelectWsdlSchemaDialog(this, wsdlDoc);
+        schemafromwsdlchooser.pack();
+        Utilities.centerOnScreen(schemafromwsdlchooser);
+        schemafromwsdlchooser.show();
+        schemafromwsdlchooser.dispose();
+        String result = schemafromwsdlchooser.getOkedSchema();
+        if (result != null) {
+            wsdlTextArea.setText(result);
+            wsdlTextArea.setCaretPosition(0);
         }
-        wsdlTextArea.setText(tmp.getSchema());
-        wsdlTextArea.setCaretPosition(0);
-        //okButton.setEnabled(true);
     }
 
     private void readFromFile() {
