@@ -21,7 +21,7 @@ public class DeleteAuditEventsAction extends SecureAction {
     private Action chainAction = null;
 
     public String getName() {
-        return "Delete old audit events";
+        return "Delete Old Audit Events";
     }
 
     public String getDescription() {

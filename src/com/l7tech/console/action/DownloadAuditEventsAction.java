@@ -28,7 +28,7 @@ import java.util.logging.Level;
  */
 public class DownloadAuditEventsAction extends SecureAction {
     public String getName() {
-        return "Download all audit events";
+        return "Download All Audit Events";
     }
 
     public String getDescription() {
