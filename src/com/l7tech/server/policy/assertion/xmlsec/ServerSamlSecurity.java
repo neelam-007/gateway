@@ -64,8 +64,12 @@ public class ServerSamlSecurity implements ServerAssertion {
         } catch (SAXException e) {
             throw new CausedIOException(e);
         }
-        if (wssResults == null)
-            throw new IOException("This request was not processed for WSS level security.");
+        if (wssResults == null) {
+            logger.info("This request did not contain any WSS level security.");
+            context.setAuthenticationMissing(true);
+            context.setPolicyViolated(true);
+            return AssertionStatus.FALSIFIED;
+        }
 
         SecurityToken[] tokens = wssResults.getSecurityTokens();
         if (tokens == null) {

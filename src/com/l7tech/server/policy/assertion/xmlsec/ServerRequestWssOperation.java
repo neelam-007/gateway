@@ -46,7 +46,9 @@ public abstract class ServerRequestWssOperation implements ServerAssertion {
             throw new CausedIOException(e);
         }
         if (wssResults == null) {
-            throw new IOException("This request was not processed for WSS level security.");
+            logger.info("This request did not contain any WSS level security.");
+            context.setPolicyViolated(true);
+            return AssertionStatus.FALSIFIED;
         }
 
         // get the document

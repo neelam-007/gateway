@@ -44,6 +44,7 @@ public class ServerWssBasic implements ServerAssertion {
         }
         if (wssResults == null) {
             logger.info("Request did not include WSS Basic credentials.");
+            context.setAuthenticationMissing(true);
             context.setPolicyViolated(true);
             return AssertionStatus.AUTH_REQUIRED;
         }

@@ -12,8 +12,8 @@ import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.ServerAssertion;
 import com.l7tech.server.util.MessageId;
 import com.l7tech.server.util.MessageIdManager;
-import org.xml.sax.SAXException;
 import org.springframework.context.ApplicationContext;
+import org.xml.sax.SAXException;
 
 import java.io.IOException;
 import java.security.MessageDigest;
@@ -55,8 +55,13 @@ public class ServerRequestWssReplayProtection implements ServerAssertion {
                 return AssertionStatus.BAD_REQUEST;
             }
             wssResults = context.getRequest().getXmlKnob().getProcessorResult();
-            if (wssResults == null)
-                throw new IOException("This request was not processed for WSS level security.");
+            if (wssResults == null) {
+                logger.info("This request did not contain any WSS level security.");
+                context.setPolicyViolated(true);
+                context.setAuthenticationMissing(true);
+                return AssertionStatus.FALSIFIED;
+            }
+
         } catch (SAXException e) {
             throw new CausedIOException(e);
         }

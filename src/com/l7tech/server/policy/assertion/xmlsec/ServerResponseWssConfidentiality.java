@@ -59,6 +59,12 @@ public class ServerResponseWssConfidentiality implements ServerAssertion {
             throw new CausedIOException(e);
         }
 
+        if (wssResult == null) {
+            logger.info("This request did not contain any WSS level security.");
+            context.setPolicyViolated(true);
+            return AssertionStatus.FAILED;
+        }
+
         // Ecrypting the Response will require either the presence of a client cert (to encrypt the symmetric key)
         // or a SecureConversation in progress
 
