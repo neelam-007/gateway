@@ -28,7 +28,7 @@ class SerializedJavaClassMapping extends WspConstants.BeanTypeMapping {
         }
         try {
             Serializable se = (Serializable)object.target;
-            Element entryElement = element.getOwnerDocument().createElement("base64SerializedValue");
+            Element entryElement = element.getOwnerDocument().createElement(ELEMENT_NAME);
             element.appendChild(entryElement);
             entryElement.appendChild(element.getOwnerDocument().createTextNode(objectToBase64(se)));
         } catch (IOException e) {
