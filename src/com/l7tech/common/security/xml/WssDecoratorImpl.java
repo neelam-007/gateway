@@ -110,6 +110,7 @@ public class WssDecoratorImpl implements WssDecorator {
 
     }
 
+    // todo: replace use of this method with the effectively-identical XmlUtil.isElementAncestor()
     private boolean isWrappingOrSame(Element potentialParent, Element element) {
         if (potentialParent == element) return true;
         Element parent = (Element)element.getParentNode();
