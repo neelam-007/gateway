@@ -9,6 +9,7 @@ package com.l7tech.common.security.xml;
 import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.xml.TestDocuments;
+import com.l7tech.common.security.JceProvider;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
@@ -24,6 +25,10 @@ import java.util.logging.Logger;
  */
 public class WssDecoratorTest extends TestCase {
     private static Logger log = Logger.getLogger(WssDecoratorTest.class.getName());
+
+    static {
+        JceProvider.init();
+    }
 
     public WssDecoratorTest(String name) {
         super(name);
@@ -112,6 +117,22 @@ public class WssDecoratorTest extends TestCase {
                                   TestDocuments.getEttkClientPrivateKey(),
                                   new Element[] { c.productid,  c.accountid },
                                   new Element[] { c.body });
+
+        log.info("Decorated message:" + XmlUtil.documentToFormattedString(c.message));
+    }
+
+    public void testEncryptedBodySignedEnvelope() throws Exception {
+        Context c = new Context();
+        WssDecorator decorator = new WssDecoratorImpl();
+
+        log.info("Before decoration:" + XmlUtil.documentToFormattedString(c.message));
+
+        decorator.decorateMessage(c.message,
+                                  TestDocuments.getDotNetServerCertificate(),
+                                  TestDocuments.getEttkClientCertificate(),
+                                  TestDocuments.getEttkClientPrivateKey(),
+                                  new Element[] { c.body },
+                                  new Element[] { c.message.getDocumentElement() });
 
         log.info("Decorated message:" + XmlUtil.documentToFormattedString(c.message));
     }
