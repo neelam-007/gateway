@@ -374,6 +374,7 @@ public class PolicyService {
 
     /**
      * copied from AuthenticatableHttpServlet
+     * Todo, fix this so that a policy allows anonymous is AT LEAST ONE OF IT"S PATH DOES
      */
     protected boolean policyAllowAnonymous(Assertion rootassertion) throws IOException {
         // logic: a policy allows anonymous if and only if it does not contains any CredentialSourceAssertion
