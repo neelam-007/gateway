@@ -15,9 +15,10 @@ import java.security.Principal;
  * @author alex
  */
 public class PrincipalCredentials {
-    public PrincipalCredentials( Principal principal, byte[] credentials, CredentialFinder finder ) {
+    public PrincipalCredentials( Principal principal, byte[] credentials, String realm, CredentialFinder finder ) {
         _principal = principal;
         _credentials = credentials;
+        _realm = realm;
         _finder = finder;
     }
 
@@ -27,6 +28,10 @@ public class PrincipalCredentials {
 
     public byte[] getCredentials() {
         return _credentials;
+    }
+
+    public String getRealm() {
+        return _realm;
     }
 
     public CredentialFinder getFinder() {
@@ -39,5 +44,6 @@ public class PrincipalCredentials {
 
     private final Principal _principal;
     private final byte[] _credentials;
+    private final String _realm;
     private CredentialFinder _finder;
 }
