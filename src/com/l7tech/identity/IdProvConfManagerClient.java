@@ -24,7 +24,7 @@ public class IdProvConfManagerClient implements GlobalIdProviderConfManager {
 
     public IdentityProvider getInternalIdentityProvider() {
         InternalIdentityProviderImp internalProvider = new InternalIdentityProviderImp();
-        internalProvider.initialize(new InternalIDProviderConfig());
+        internalProvider.initialize(new IdentityProviderConfig(IdentityProviderType.INTERNAL));
         return internalProvider;
     }
 
@@ -71,10 +71,13 @@ public class IdProvConfManagerClient implements GlobalIdProviderConfManager {
             IdentityProvider provider = null;
 
             // construct the provider based on the config type
-            if (conf instanceof com.l7tech.identity.ldap.LdapIdentityProviderConfig) {
+            if (conf.type() == IdentityProviderType.LDAP) {
                 provider = new com.l7tech.identity.ldap.LdapIdentityProviderClient();
             }
-            else provider = new InternalIdentityProviderClient();
+            else if (conf.type() == IdentityProviderType.INTERNAL) {
+                provider = new InternalIdentityProviderClient();
+            }
+            else throw new FindException("no provider type specified");
 
             provider.initialize(conf);
             output.add(provider);

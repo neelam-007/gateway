@@ -2,9 +2,7 @@ package com.l7tech.identity;
 
 import com.l7tech.objectmodel.*;
 import com.l7tech.identity.ldap.LdapIdentityProviderConfigManager;
-import com.l7tech.identity.ldap.LdapIdentityProviderConfig;
 import com.l7tech.identity.internal.imp.InternalIdentityProviderImp;
-import com.l7tech.identity.internal.InternalIDProviderConfig;
 
 import java.util.Collection;
 import java.util.ArrayList;
@@ -20,13 +18,18 @@ import java.util.ArrayList;
  */
 public class IdProvConfManagerServer implements GlobalIdProviderConfManager {
 
+    // since this provider config is not persisted, we need a special id to identify it for certain operations
+    public static final long INTERNALPROVIDER_SPECIAL_OID = -2;
+
     public IdProvConfManagerServer() {
         // construct the ldapidentity provider
         ldapConfigManager = new LdapIdentityProviderConfigManager();
 
         // construct the internal id provider
         internalProvider = new InternalIdentityProviderImp();
-        internalProvider.initialize(new InternalIDProviderConfig());
+        IdentityProviderConfig cfg = new IdentityProviderConfig(IdentityProviderType.INTERNAL);
+        cfg.setOid(INTERNALPROVIDER_SPECIAL_OID);
+        internalProvider.initialize(cfg);
     }
 
     public IdentityProvider getInternalIdentityProvider() {
@@ -34,13 +37,13 @@ public class IdProvConfManagerServer implements GlobalIdProviderConfManager {
     }
 
     public IdentityProviderConfig findByPrimaryKey(long oid) throws FindException {
-        if (oid == InternalIDProviderConfig.internalProviderConfigID()) return internalProvider.getConfig();
+        if (oid == INTERNALPROVIDER_SPECIAL_OID) return internalProvider.getConfig();
         else return ldapConfigManager.findByPrimaryKey(oid);
     }
 
     public long save(IdentityProviderConfig identityProviderConfig) throws SaveException {
         // check the type and save accordingly
-        if (identityProviderConfig instanceof LdapIdentityProviderConfig) {
+        if (identityProviderConfig.type() == IdentityProviderType.LDAP) {
             return ldapConfigManager.save(identityProviderConfig);
         }
         // handle other types as they are added
@@ -49,7 +52,7 @@ public class IdProvConfManagerServer implements GlobalIdProviderConfManager {
 
     public void update(IdentityProviderConfig identityProviderConfig) throws UpdateException {
         // check the type and save accordingly
-        if (identityProviderConfig instanceof LdapIdentityProviderConfig) {
+        if (identityProviderConfig.type() == IdentityProviderType.LDAP) {
             ldapConfigManager.update(identityProviderConfig);
         }
         // handle other types as they are added
@@ -58,7 +61,7 @@ public class IdProvConfManagerServer implements GlobalIdProviderConfManager {
 
     public void delete(IdentityProviderConfig identityProviderConfig) throws DeleteException {
         // check the type and delete accordingly
-        if (identityProviderConfig instanceof LdapIdentityProviderConfig) {
+        if (identityProviderConfig.type() == IdentityProviderType.LDAP) {
             ldapConfigManager.delete(identityProviderConfig);
         }
         // handle other types as they are added
@@ -111,4 +114,5 @@ public class IdProvConfManagerServer implements GlobalIdProviderConfManager {
     }
     protected LdapIdentityProviderConfigManager ldapConfigManager;
     protected InternalIdentityProviderImp internalProvider;
+
 }
