@@ -1,4 +1,4 @@
-adminws			server.war
+adminws			server.war, console.jar
 common			everywhere
 console			console.jar
 identity		server.war, console.jar
