@@ -3,7 +3,7 @@
 if [ ! $# = 1 ]; then
   echo "ERROR: Usage - $0 [getFromRelease|getToRelease|doUpgrade]"
   echo "ERROR: $0 exits"
-  exit 0
+  exit 1
 fi
 
 option="$1"
@@ -27,14 +27,14 @@ if [ "$option" = "getFromRelease" -o "$option" = "getToRelease" ]; then
   if [ ! -e $mapFile -o -d $mapFile ]; then
     echo "ERROR: Missing <$mapFile> - unable to derive the installed SSG version number"
     echo "ERROR: $0 exits"
-    exit 0
+    exit 1
   fi
 
   # verify existence for /ssg/dist/ROOT-b<buildNumber>.war
   if [ ! -e /ssg/dist/ROOT-b*.war -o -d /ssg/dist/ROOT-b*.war ]; then
     echo "ERROR: Missing WAR distribution </ssg/dist/ROOT-b*.war> - unable to derive the installed SSG build number"
     echo "ERROR: $0 exits"
-    exit 0
+    exit 1
   fi
 
   # derive build number from /ssg/dist/ROOT-b<buildNumber>.war
@@ -46,7 +46,7 @@ if [ "$option" = "getFromRelease" -o "$option" = "getToRelease" ]; then
     echo "ERROR: <$mapFile> contains more than one record (total of <$grepCount>) for buildNumber <$buildNumber>"
     echo `grep ^.*$buildNumber.*= $mapFile`
     echo "ERROR: $0 exits"
-    exit 0
+    exit 1
   fi
   # get version number base on build number from $mapFile
   versionNumber=`grep ^.*$buildNumber.*= $mapFile | sed -e 's/^.*=//'`
@@ -61,7 +61,7 @@ if [ "$option" = "getFromRelease" -o "$option" = "getToRelease" ]; then
   else
     echo "ERROR: <$mapFile> missing map record for buildNumber <$buildNumber>"
     echo "ERROR: $0 exits"
-    exit 0
+    exit 1
   fi
 fi
 
@@ -73,7 +73,7 @@ if [ "$option" = "doUpgrade" ]; then
   if [ ! -e $releaseFromFile -o -d $releaseFromFile -o ! -e $releaseToFile -o -d $releaseToFile ]; then
     echo "ERROR: Missing <$releaseFromFile> or/and <$releaseToFile> - unable to derive the SSG fromVersion and toVeresion number"
     echo "ERROR: $0 exits"
-    exit 0
+    exit 1
   fi
   releaseFromVersion=`cat $releaseFromFile`
   releaseToVersion=`cat $releaseToFile`
