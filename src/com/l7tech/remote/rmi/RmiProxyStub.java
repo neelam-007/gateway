@@ -5,8 +5,6 @@
  */
 package com.l7tech.remote.rmi;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.springframework.aop.framework.ProxyFactory;
 import org.springframework.remoting.rmi.RmiClientInterceptor;
 import org.springframework.remoting.support.RemoteInvocationFactory;
@@ -22,7 +20,6 @@ import java.rmi.Remote;
  * @version Dec 6, 2004
  */
 final class RmiProxyStub extends RmiClientInterceptor implements Serializable {
-    protected final Log logger = LogFactory.getLog(getClass());
     private Object serviceProxy;
     private Remote serviceStub;
     private Class remoteInvocationFactoryClass;
