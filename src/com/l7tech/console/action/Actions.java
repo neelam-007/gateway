@@ -192,7 +192,7 @@ public class Actions {
         if ((JOptionPane.showConfirmDialog(getMainWindow(),
           "Are you sure you want to delete assertion " +
           node.getName() + "?",
-          "Delete assertion",
+          "Delete Assertion",
           JOptionPane.YES_NO_OPTION)) != JOptionPane.YES_OPTION) {
             return false;
         }

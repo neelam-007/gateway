@@ -38,7 +38,7 @@ public class AddOneOrMoreAssertionAction extends BaseAction {
      * @return the action name
      */
     public String getName() {
-        return "Add 'One or more' assertion";
+        return "Add 'One or More' Assertion";
     }
 
     /**

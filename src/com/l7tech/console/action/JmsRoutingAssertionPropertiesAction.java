@@ -34,7 +34,7 @@ public class JmsRoutingAssertionPropertiesAction extends NodeAction {
      * @return the action name
      */
     public String getName() {
-        return "Routing properties";
+        return "Routing Properties";
     }
 
     /**

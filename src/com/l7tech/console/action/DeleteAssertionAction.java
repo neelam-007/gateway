@@ -28,7 +28,7 @@ public class DeleteAssertionAction extends BaseAction {
      * @return the action name
      */
     public String getName() {
-        return "Delete assertion";
+        return "Delete Assertion";
     }
 
     /**

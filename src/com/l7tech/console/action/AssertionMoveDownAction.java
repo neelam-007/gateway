@@ -22,7 +22,7 @@ public class AssertionMoveDownAction extends BaseAction {
      * @return the action name
      */
     public String getName() {
-        return "Move assertion down";
+        return "Move Assertion Down";
     }
 
     /**

@@ -40,7 +40,7 @@ public class AddAllAssertionAction extends BaseAction {
      * @return the action name
      */
     public String getName() {
-        return "Add 'All' assertion";
+        return "Add 'All' Assertion";
     }
 
     /**
