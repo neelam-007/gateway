@@ -224,6 +224,7 @@ public class LdapGroupMappingPanel extends WizardStepPanel {
 
         addButton = new JButton();
         addButton.setText("Add");
+        addButton.setToolTipText("Add a new group object class");
 
         addButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
@@ -256,6 +257,8 @@ public class LdapGroupMappingPanel extends WizardStepPanel {
 
         removeButton = new JButton();
         removeButton.setText("Remove");
+        removeButton.setToolTipText("Remove the selected group object class");
+
         removeButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 Object o = getGroupList().getSelectedValue();
@@ -293,6 +296,7 @@ public class LdapGroupMappingPanel extends WizardStepPanel {
 
         objectClass = new JTextField();
         objectClass.setPreferredSize(new java.awt.Dimension(170, 20));
+        objectClass.setToolTipText(resources.getString("objectClassNameTextField.tooltip"));
 
         final JPanel thisPanel = this;
         objectClass.addKeyListener(new KeyListener() {
@@ -480,7 +484,7 @@ public class LdapGroupMappingPanel extends WizardStepPanel {
         groupAttributesPanel.add(attributeTitleLabel, gridBagConstraints);
 
         nameAttributeLabel.setFont(new java.awt.Font("Dialog", 0, 12));
-        nameAttributeLabel.setText("Name:");
+        nameAttributeLabel.setText(resources.getString("groupNameAttributeTextField.label"));
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 0;
         gridBagConstraints.gridy = 4;
@@ -489,7 +493,7 @@ public class LdapGroupMappingPanel extends WizardStepPanel {
         groupAttributesPanel.add(nameAttributeLabel, gridBagConstraints);
 
         memberAttributeLabel.setFont(new java.awt.Font("Dialog", 0, 12));
-        memberAttributeLabel.setText("Member:");
+        memberAttributeLabel.setText(resources.getString("groupMemberAttributeTextField.label"));
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 0;
         gridBagConstraints.gridy = 5;
@@ -497,7 +501,7 @@ public class LdapGroupMappingPanel extends WizardStepPanel {
         gridBagConstraints.anchor = java.awt.GridBagConstraints.WEST;
         groupAttributesPanel.add(memberAttributeLabel, gridBagConstraints);
 
-        nameAttribute.setToolTipText("Name Attribute Name");
+        nameAttribute.setToolTipText(resources.getString("groupNameAttributeTextField.tooltip"));
         nameAttribute.setMinimumSize(new java.awt.Dimension(120, 20));
         nameAttribute.setPreferredSize(new java.awt.Dimension(170, 20));
         gridBagConstraints = new java.awt.GridBagConstraints();
@@ -507,6 +511,7 @@ public class LdapGroupMappingPanel extends WizardStepPanel {
         gridBagConstraints.anchor = java.awt.GridBagConstraints.WEST;
         groupAttributesPanel.add(nameAttribute, gridBagConstraints);
 
+        memberAttribute.setToolTipText(resources.getString("groupMemberAttributeTextField.tooltip"));
         memberAttribute.setPreferredSize(new java.awt.Dimension(170, 20));
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 1;
@@ -516,7 +521,7 @@ public class LdapGroupMappingPanel extends WizardStepPanel {
         groupAttributesPanel.add(memberAttribute, gridBagConstraints);
 
         memberStrategyAttributeLabel.setFont(new java.awt.Font("Dialog", 0, 12));
-        memberStrategyAttributeLabel.setText("Member Strategy:");
+        memberStrategyAttributeLabel.setText(resources.getString("groupMemberStrategy.label"));
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 0;
         gridBagConstraints.gridy = 11;
@@ -524,6 +529,7 @@ public class LdapGroupMappingPanel extends WizardStepPanel {
         gridBagConstraints.anchor = java.awt.GridBagConstraints.WEST;
         groupAttributesPanel.add(memberStrategyAttributeLabel, gridBagConstraints);
 
+        memberStrategy.setToolTipText(resources.getString("groupMemberStrategy.tooltip"));
         memberStrategy.setFont(new java.awt.Font("Dialog", 0, 12));
         memberStrategy.setModel(new javax.swing.DefaultComboBoxModel(new String[]{"MEMBERS_ARE_DN", "MEMBERS_ARE_LOGIN", "MEMBERS_ARE_NVPAIR", "MEMBERS_BY_OU"}));
         memberStrategy.setPreferredSize(new java.awt.Dimension(170, 20));
@@ -551,7 +557,7 @@ public class LdapGroupMappingPanel extends WizardStepPanel {
         gridBagConstraints.anchor = java.awt.GridBagConstraints.WEST;
         groupAttributesPanel.add(mappingTitle, gridBagConstraints);
 
-        objectClassLabel.setText("Object Class Name");
+        objectClassLabel.setText(resources.getString("objectClassNameTextField.Label"));
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 0;
         gridBagConstraints.gridy = 0;

@@ -239,6 +239,7 @@ public class LdapUserMappingPanel extends WizardStepPanel {
 
         addButton = new JButton();
         addButton.setText("Add");
+        addButton.setToolTipText("Add a new user object class");
 
         addButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
@@ -270,6 +271,8 @@ public class LdapUserMappingPanel extends WizardStepPanel {
 
         removeButton = new JButton();
         removeButton.setText("Remove");
+        removeButton.setToolTipText("Remove the selected user object class");
+
         removeButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 Object o = getUserList().getSelectedValue();
@@ -306,6 +309,7 @@ public class LdapUserMappingPanel extends WizardStepPanel {
 
         objectClass = new JTextField();
         objectClass.setPreferredSize(new java.awt.Dimension(150, 20));
+        objectClass.setToolTipText(resources.getString("objectClassNameTextField.tooltip"));
 
         final JPanel thisPanel = this;
         objectClass.addKeyListener(new KeyListener() {
@@ -497,7 +501,7 @@ public class LdapUserMappingPanel extends WizardStepPanel {
         userAttributePanel.add(attributeTitleLabel, gridBagConstraints);
 
         nameAttributeLabel.setFont(new java.awt.Font("Dialog", 0, 12));
-        nameAttributeLabel.setText("Name:");
+        nameAttributeLabel.setText(resources.getString("userNameAttributeTextField.label"));
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 0;
         gridBagConstraints.gridy = 4;
@@ -506,7 +510,7 @@ public class LdapUserMappingPanel extends WizardStepPanel {
         userAttributePanel.add(nameAttributeLabel, gridBagConstraints);
 
         loginNameAttributeLabel.setFont(new java.awt.Font("Dialog", 0, 12));
-        loginNameAttributeLabel.setText("Login Name:");
+        loginNameAttributeLabel.setText(resources.getString("loginNameAttributeTextField.label"));
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 0;
         gridBagConstraints.gridy = 5;
@@ -514,7 +518,7 @@ public class LdapUserMappingPanel extends WizardStepPanel {
         gridBagConstraints.insets = new java.awt.Insets(5, 0, 0, 0);
         userAttributePanel.add(loginNameAttributeLabel, gridBagConstraints);
 
-        nameAttribute.setToolTipText("Name Attribute Name");
+        nameAttribute.setToolTipText(resources.getString("userNameAttributeTextField.tooltip"));
         nameAttribute.setMinimumSize(new java.awt.Dimension(120, 20));
         nameAttribute.setPreferredSize(new java.awt.Dimension(150, 20));
         gridBagConstraints = new java.awt.GridBagConstraints();
@@ -525,6 +529,7 @@ public class LdapUserMappingPanel extends WizardStepPanel {
         userAttributePanel.add(nameAttribute, gridBagConstraints);
 
         loginNameAttribute.setPreferredSize(new java.awt.Dimension(150, 20));
+        loginNameAttribute.setToolTipText(resources.getString("loginNameAttributeTextField.tooltip"));
 
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 1;
@@ -534,7 +539,7 @@ public class LdapUserMappingPanel extends WizardStepPanel {
         userAttributePanel.add(loginNameAttribute, gridBagConstraints);
 
         passwordAttributeLabel.setFont(new java.awt.Font("Dialog", 0, 12));
-        passwordAttributeLabel.setText("Password:");
+        passwordAttributeLabel.setText(resources.getString("passwordAttributeTextField.label"));
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 0;
         gridBagConstraints.gridy = 7;
@@ -543,6 +548,7 @@ public class LdapUserMappingPanel extends WizardStepPanel {
         userAttributePanel.add(passwordAttributeLabel, gridBagConstraints);
 
         passwordAttribute.setPreferredSize(new java.awt.Dimension(150, 20));
+        passwordAttribute.setToolTipText(resources.getString("passwordAttributeTextField.tooltip"));
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 1;
         gridBagConstraints.gridy = 7;
@@ -551,7 +557,7 @@ public class LdapUserMappingPanel extends WizardStepPanel {
         userAttributePanel.add(passwordAttribute, gridBagConstraints);
 
         firstNameAttributeLabel.setFont(new java.awt.Font("Dialog", 0, 12));
-        firstNameAttributeLabel.setText("First Name:");
+        firstNameAttributeLabel.setText(resources.getString("firstNameAttributeTextField.label"));
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 0;
         gridBagConstraints.gridy = 8;
@@ -560,7 +566,7 @@ public class LdapUserMappingPanel extends WizardStepPanel {
         userAttributePanel.add(firstNameAttributeLabel, gridBagConstraints);
 
         firstNameAttribute.setPreferredSize(new java.awt.Dimension(150, 20));
-
+        firstNameAttribute.setToolTipText(resources.getString("firstNameAttributeTextField.tooltip"));
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 1;
         gridBagConstraints.gridy = 8;
@@ -569,7 +575,7 @@ public class LdapUserMappingPanel extends WizardStepPanel {
         userAttributePanel.add(firstNameAttribute, gridBagConstraints);
 
         lastNameAttributeLabel.setFont(new java.awt.Font("Dialog", 0, 12));
-        lastNameAttributeLabel.setText("Last Name:");
+        lastNameAttributeLabel.setText(resources.getString("lastNameAttributeTextField.label"));
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 0;
         gridBagConstraints.gridy = 9;
@@ -578,6 +584,7 @@ public class LdapUserMappingPanel extends WizardStepPanel {
         userAttributePanel.add(lastNameAttributeLabel, gridBagConstraints);
 
         lastNameAttribute.setPreferredSize(new java.awt.Dimension(150, 20));
+        lastNameAttribute.setToolTipText(resources.getString("lastNameAttributeTextField.tooltip"));
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 1;
         gridBagConstraints.gridy = 9;
@@ -586,7 +593,7 @@ public class LdapUserMappingPanel extends WizardStepPanel {
         userAttributePanel.add(lastNameAttribute, gridBagConstraints);
 
         emailAttributeLabel.setFont(new java.awt.Font("Dialog", 0, 12));
-        emailAttributeLabel.setText("Email:");
+        emailAttributeLabel.setText(resources.getString("emailAttributeTextField.label"));
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 0;
         gridBagConstraints.gridy = 10;
@@ -595,6 +602,7 @@ public class LdapUserMappingPanel extends WizardStepPanel {
         userAttributePanel.add(emailAttributeLabel, gridBagConstraints);
 
         emailAttribute.setPreferredSize(new java.awt.Dimension(150, 20));
+        emailAttribute.setToolTipText(resources.getString("emailAttributeTextField.tooltip"));
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 1;
         gridBagConstraints.gridy = 10;
@@ -603,7 +611,7 @@ public class LdapUserMappingPanel extends WizardStepPanel {
         userAttributePanel.add(emailAttribute, gridBagConstraints);
 
         passwordStrategyAttributeLabel.setFont(new java.awt.Font("Dialog", 0, 12));
-        passwordStrategyAttributeLabel.setText("Password Strategy:");
+        passwordStrategyAttributeLabel.setText(resources.getString("passwordStrategyAttributeTextField.label"));
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 0;
         gridBagConstraints.gridy = 11;
@@ -614,6 +622,7 @@ public class LdapUserMappingPanel extends WizardStepPanel {
         passwordStrategyAttribute.setFont(new java.awt.Font("Dialog", 0, 12));
         passwordStrategyAttribute.setModel(new javax.swing.DefaultComboBoxModel(new String[]{"CLEAR", "HASHED"}));
         passwordStrategyAttribute.setPreferredSize(new java.awt.Dimension(150, 20));
+        passwordStrategyAttribute.setToolTipText(resources.getString("passwordStrategyAttributeTextField.tooltip"));
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 1;
         gridBagConstraints.gridy = 11;
@@ -638,7 +647,7 @@ public class LdapUserMappingPanel extends WizardStepPanel {
         gridBagConstraints.insets = new java.awt.Insets(25, 0, 8, 0);
         userAttributePanel.add(mappingTitleLabel, gridBagConstraints);
 
-        objectClassLabel.setText("Object Class Name");
+        objectClassLabel.setText(resources.getString("objectClassNameTextField.Label"));
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 0;
         gridBagConstraints.gridy = 0;
