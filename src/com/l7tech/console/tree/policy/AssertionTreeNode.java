@@ -38,8 +38,6 @@ public abstract class AssertionTreeNode extends AbstractTreeNode {
     private static final Logger log =
       Logger.getLogger(AssertionTreeNode.class.getName());
 
-    protected Precondition precondition;
-
     /**
      * package private constructor accepting the asseriton
      * this node represents.
@@ -170,14 +168,6 @@ public abstract class AssertionTreeNode extends AbstractTreeNode {
             return true;
         }
         return false;
-    }
-
-    /**
-     * Get the precondition for this node.
-     * @return the precondition for this node
-     */
-    public Precondition getPrecondition() {
-        return precondition;
     }
 
     /**

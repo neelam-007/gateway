@@ -22,8 +22,7 @@ import java.util.Map;
  * The class <code>AssertionTreeNodeFactory</code> is a factory
  * class that creates <code>TreeNode</code> instances based on
  * <code>Assertion</code> instances.
- *
- *
+ * 
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  * @version 1.1
  */
@@ -63,7 +62,7 @@ public class AssertionTreeNodeFactory {
      * for an <code>Assertion</code><br>
      * In case there is no corresponding <code>AssertionTreeNode</code>
      * the <code>UnknownAssertionTreeNode</code> is returned
-     *
+     * 
      * @return the AssertionTreeNode for a given assertion
      */
     public static AssertionTreeNode asTreeNode(Assertion assertion) {
@@ -71,7 +70,7 @@ public class AssertionTreeNodeFactory {
             throw new IllegalArgumentException();
         }
         // assertion lookup, find the  assertion tree node
-        Class classNode = (Class) assertionMap.get(assertion.getClass());
+        Class classNode = (Class)assertionMap.get(assertion.getClass());
         if (null == classNode) {
             return new UnknownAssertionTreeNode(assertion);
         }
@@ -88,15 +87,15 @@ public class AssertionTreeNodeFactory {
      * as a parameter.
      * That is, the <code>AssertionTreeNode</code> subclass is searched for
      * the constructor accepting the <code>Aseertion</code> parameter.
-     *
+     * 
      * @param classNode the class that is a subclass of AssertionTreeNode
      * @param assertion the assertion constructor parameter
      * @return the corresponding assertion tree node
-     * @throws InstantiationException thrown on error instantiating the assertion
-     *         tree node
+     * @throws InstantiationException    thrown on error instantiating the assertion
+     *                                   tree node
      * @throws InvocationTargetException thrown on error invoking the constructor
-     * @throws IllegalAccessException thrown if there is no access to the desired
-     *         constructor
+     * @throws IllegalAccessException    thrown if there is no access to the desired
+     *                                   constructor
      * @see Assertions#findMatchingConstructor(Class, Class[])
      */
     private static AssertionTreeNode makeAssertionNode(Class classNode, Assertion assertion)
@@ -105,7 +104,7 @@ public class AssertionTreeNodeFactory {
         Constructor ctor =
           Assertions.findMatchingConstructor(classNode, new Class[]{assertion.getClass()});
         if (ctor != null)
-            return (AssertionTreeNode) ctor.newInstance(new Object[]{assertion});
+            return (AssertionTreeNode)ctor.newInstance(new Object[]{assertion});
         throw new RuntimeException("Cannot locate expected he constructor in " + classNode);
 
     }
@@ -121,7 +120,7 @@ public class AssertionTreeNodeFactory {
 
         /**
          * subclasses override this method specifying the resource name
-         *
+         * 
          * @param open for nodes that can be opened, can have children
          */
         protected String iconResource(boolean open) {

@@ -3,8 +3,6 @@ package com.l7tech.console.event;
 import com.l7tech.policy.AssertionPath;
 import com.l7tech.policy.assertion.Assertion;
 
-import javax.swing.event.TreeModelListener;
-import javax.swing.event.TreeModelEvent;
 import java.util.EventObject;
 
 /**
