@@ -43,7 +43,7 @@ public abstract class AbstractLdapGroupManagerServer extends LdapManager impleme
 
     public Group findByPrimaryKey(String dn) throws FindException {
         // if the group is a posixGroup, use standard method
-        if (dn.indexOf(getConstants().groupNameAttribute() + "=") >= 0) {
+        if (dn.toLowerCase().indexOf(getConstants().groupNameAttribute().toLowerCase() + "=") >= 0) {
             return buildSelfDescriptiveGroup(dn);
         } else { // otherwise, use the OU method for building a group
             return buildOUGroup(dn);
@@ -55,7 +55,7 @@ public abstract class AbstractLdapGroupManagerServer extends LdapManager impleme
         // list the OU based groups
         try {
             NamingEnumeration answer = null;
-            String filter = "(objectclass=" + AbstractLdapConstants.oUObjClassName() + ")";
+            String filter = "(objectclass=" + getConstants().oUObjClassName() + ")";
             SearchControls sc = new SearchControls();
             sc.setSearchScope(SearchControls.SUBTREE_SCOPE);
             DirContext context = getBrowseContext();
@@ -79,7 +79,7 @@ public abstract class AbstractLdapGroupManagerServer extends LdapManager impleme
             int sofar = res.size();
             try {
                 NamingEnumeration answer = null;
-                String filter = "(objectclass=" + AbstractLdapConstants.oUObjClassName() + ")";
+                String filter = "(objectclass=" + getConstants().oUObjClassName() + ")";
                 SearchControls sc = new SearchControls();
                 sc.setSearchScope(SearchControls.SUBTREE_SCOPE);
                 DirContext context = getBrowseContext();
@@ -102,7 +102,7 @@ public abstract class AbstractLdapGroupManagerServer extends LdapManager impleme
 
     public EntityHeader headerFromOuSearchResult(SearchResult sr) throws NamingException {
         Attributes atts = sr.getAttributes();
-        Object tmp = extractOneAttributeValue(atts, AbstractLdapConstants.oUObjAttrName());
+        Object tmp = extractOneAttributeValue(atts, getConstants().oUObjAttrName());
         String ou = null;
         if (tmp != null) ou = tmp.toString();
 
