@@ -99,7 +99,7 @@ public class SavePolicyTemplateAction extends BaseAction {
         int ret =
           chooser.showSaveDialog(Registry.
           getDefault().
-          getWindowManager().getMainWindow());
+          getComponentRegistry().getMainWindow());
         if (JFileChooser.APPROVE_OPTION != ret) return;
         String name = chooser.getSelectedFile().getPath();
         System.out.println(name);
@@ -109,7 +109,7 @@ public class SavePolicyTemplateAction extends BaseAction {
         if (policyFileExists) {
             overwrite =
               JOptionPane.showConfirmDialog(
-                Registry.getDefault().getWindowManager().getMainWindow(),
+                Registry.getDefault().getComponentRegistry().getMainWindow(),
                 "Overwrite " + name + "?",
                 "Warning",
                 JOptionPane.YES_NO_OPTION);

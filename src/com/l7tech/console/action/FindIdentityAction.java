@@ -55,7 +55,7 @@ public class FindIdentityAction extends BaseAction {
      */
     public void performAction() {
         Frame f =
-          Registry.getDefault().getWindowManager().getMainWindow();
+          Registry.getDefault().getComponentRegistry().getMainWindow();
         FindDialog fd = new FindDialog(f, true);
         fd.pack();
         Utilities.centerOnScreen(fd);

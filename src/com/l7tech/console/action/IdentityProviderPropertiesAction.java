@@ -51,7 +51,7 @@ public class IdentityProviderPropertiesAction extends NodeAction {
         SwingUtilities.invokeLater(
           new Runnable() {
             public void run() {
-                JFrame f = Registry.getDefault().getWindowManager().getMainWindow();
+                JFrame f = Registry.getDefault().getComponentRegistry().getMainWindow();
                 IdentityProviderDialog d =
                   new IdentityProviderDialog(f, ((EntityHeaderNode)node).getEntityHeader());
                 d.setResizable(false);

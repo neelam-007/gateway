@@ -1,10 +1,13 @@
 package com.l7tech.console.action;
 
 import com.l7tech.common.gui.util.ImageCache;
+import com.l7tech.console.event.WeakEventListenerList;
 
 import javax.swing.*;
+import javax.swing.event.EventListenerList;
 import java.awt.*;
 import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 
 /**
  * This class provides default implementations for the application
@@ -21,6 +24,7 @@ import java.awt.event.ActionEvent;
  */
 public abstract class BaseAction extends AbstractAction {
     public static final String LARGE_ICON = "LargeIcon";
+    private EventListenerList listenerList = new WeakEventListenerList();
 
     /**
      * Default constructorr. Defines an <code>Action</code> object with
@@ -40,6 +44,78 @@ public abstract class BaseAction extends AbstractAction {
             putValue(Action.SMALL_ICON, new ImageIcon(img));
         }
     }
+
+    /**
+     * Notifies all listeners that have registered interest for
+     * notification on this event type.  The event instance 
+     * is lazily created using the <code>event</code> 
+     * parameter.
+     *
+     * @param event  the <code>ActionEvent</code> object
+     * @see javax.swing.event.EventListenerList
+     */
+    protected void fireActionPerformed(ActionEvent event) {
+        if (event == null) {
+            throw new IllegalArgumentException("event == null");
+        }
+        Object[] listeners = listenerList.getListenerList();
+        ActionEvent e = null;
+        for (int i = listeners.length - 1; i >= 0; i--) {
+            if (listeners[i] == ActionListener.class) {
+                // Lazily create the event:
+                if (e == null) {
+                    String actionCommand = event.getActionCommand();
+                    if (actionCommand == null) {
+                        actionCommand = getName();
+                    }
+                    e = new ActionEvent(this,
+                      ActionEvent.ACTION_PERFORMED,
+                      actionCommand,
+                      event.getWhen(),
+                      event.getModifiers());
+                }
+                ((ActionListener)listeners[i + 1]).actionPerformed(e);
+            }
+        }
+    }
+
+
+    /**
+     * Notifies all listeners that have registered interest for
+     * notification on this event type.  The event instance 
+     * is lazily created using the <code>event</code> 
+     * parameter.
+     *
+     * @param event  the <code>ActionEvent</code> object
+     * @see javax.swing.event.EventListenerList
+     */
+    protected void fireActionWillPerform(VetoableActionEvent event) {
+        Object[] listeners = listenerList.getListenerList();
+        VetoableActionEvent e = null;
+        for (int i = listeners.length - 1; i >= 0; i--) {
+            if (listeners[i] == VetoableActionListener.class) {
+                // Lazily create the event:
+                if (e == null) {
+                    String actionCommand = event.getActionCommand();
+                    if (actionCommand == null) {
+                        actionCommand = getName();
+                    }
+                    e = new VetoableActionEvent(this,
+                      VetoableActionEvent.ACTION_WILL_PERFORM,
+                      actionCommand,
+                      event.getWhen(),
+                      event.getModifiers());
+                }
+
+                try {
+                    ((VetoableActionListener)listeners[i + 1]).actionWillPerform(e);
+                } catch (ActionVetoException ex) {
+                    // vetoed
+                }
+            }
+        }
+    }
+
 
     /**
      * loads the icon specified by subclass iconResource()
@@ -76,13 +152,21 @@ public abstract class BaseAction extends AbstractAction {
      */
     public abstract void performAction();
 
-
-    /* Implementation of method of javax.swing.Action interface.
-    * Delegates the execution to performAction method.
-    *
-    * @param ev ignored
-    */
+    /**
+     * Implementation of method of javax.swing.Action interface.
+     * Delegates the execution to performAction method.
+     *
+     * @param ev ignored
+     */
     public final void actionPerformed(ActionEvent ev) {
+        if (ev == null) {
+            ev = new ActionEvent(this,
+              ActionEvent.ACTION_PERFORMED,
+              getName());
+        }
+        VetoableActionEvent vev = VetoableActionEvent.create(ev);
+        fireActionWillPerform(vev);
         performAction();
+        fireActionPerformed(ev);
     }
 }

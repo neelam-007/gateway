@@ -62,10 +62,10 @@ public class ServicesTree extends JTree {
             if (keyCode == KeyEvent.VK_DELETE) {
                 if (!node.canDelete()) return;
                 if (node instanceof ServiceNode)
-                    new DeleteServiceAction((ServiceNode)node).performAction();
+                    new DeleteServiceAction((ServiceNode)node).actionPerformed(null);
             } else if (keyCode == KeyEvent.VK_ENTER) {
                 if (node instanceof ServiceNode)
-                    new ServicePolicyPropertiesAction((ServiceNode)node).performAction();
+                    new ServicePolicyPropertiesAction((ServiceNode)node).actionPerformed(null);
             }
         }
     }
@@ -83,7 +83,7 @@ public class ServicesTree extends JTree {
               (AbstractTreeNode)path.getLastPathComponent();
             if (node == null) return;
             if (node instanceof ServiceNode)
-                new ServicePolicyPropertiesAction((ServiceNode)node).performAction();
+                new ServicePolicyPropertiesAction((ServiceNode)node).actionPerformed(null);
         }
 
         public void mousePressed(MouseEvent e) {

@@ -63,7 +63,7 @@ public class NewGroupAction extends NodeAction {
         SwingUtilities.invokeLater(
           new Runnable() {
             public void run() {
-                JFrame f = Registry.getDefault().getWindowManager().getMainWindow();
+                JFrame f = Registry.getDefault().getComponentRegistry().getMainWindow();
                 NewGroupDialog dialog = new NewGroupDialog(f);
                 dialog.addEntityListener(listener);
                 dialog.setResizable(false);

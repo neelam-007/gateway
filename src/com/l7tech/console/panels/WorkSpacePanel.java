@@ -1,16 +1,23 @@
 package com.l7tech.console.panels;
 
 import com.l7tech.console.util.Preferences;
+import com.l7tech.console.event.WeakEventListenerList;
+import com.l7tech.console.event.VetoableContainerListener;
+import com.l7tech.console.event.ContainerVetoException;
 
 import javax.swing.*;
+import javax.swing.event.EventListenerList;
 import java.awt.*;
 import java.awt.event.HierarchyEvent;
 import java.awt.event.HierarchyListener;
+import java.awt.event.ContainerListener;
+import java.awt.event.ContainerEvent;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.io.IOException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.EventListener;
 
 /**
  * <CODE>WorkSpacePanel</CODE> represents the main editing panel
@@ -19,7 +26,7 @@ import java.util.logging.Logger;
 public class WorkSpacePanel extends JPanel {
     static public final String NAME = "workspace.panel";
     static final Logger log = Logger.getLogger(WorkSpacePanel.class.getName());
-    private final JTabbedPane tabbedPane = new JTabbedPane();
+    private final TabbedPane tabbedPane = new TabbedPane();
     /* this class classloader */
     private final ClassLoader cl = getClass().getClassLoader();
 
@@ -32,6 +39,7 @@ public class WorkSpacePanel extends JPanel {
         initializePropertiesListener();
     }
 
+
     /**
      * Set the active component for the work space.
      *
@@ -39,6 +47,8 @@ public class WorkSpacePanel extends JPanel {
      */
     public void setComponent(JComponent jc) {
         tabbedPane.removeAll();
+        if (tabbedPane.lastActionVetoed) return;
+
         tabbedPane.addTab(jc.getName(), jc);
         jc.addPropertyChangeListener(new PropertyChangeListener() {
             /**
@@ -51,7 +61,6 @@ public class WorkSpacePanel extends JPanel {
                     tabbedPane.setTitleAt(0, (String)evt.getNewValue());
                 }
             }
-
         });
     }
 
@@ -61,6 +70,33 @@ public class WorkSpacePanel extends JPanel {
      */
     public void clearWorskpace() {
         tabbedPane.removeAll();
+    }
+
+
+    /**
+     * Adds the specified container listener to receive container events
+     * from this container.
+     * If l is null, no exception is thrown and no action is performed.
+     * This is a specialized version of the container listener, and it is
+     * delegated to the Container that hosts the <i>workspace</i> component.  
+     *
+     * @param    l the container listener
+     */
+    public synchronized void addWorkspaceContainerListener(ContainerListener l) {
+        tabbedPane.addContainerListener(l);
+    }
+
+    /**
+     * Removes the specified container listener so it no longer receives
+     * container events from this container.
+     * If l is null, no exception is thrown and no action is performed.
+     * This is a specialized version of the container listener and it is
+     * delegated to the Container that hosts the <i>workspace</i> component.  
+     *
+     * @param 	l the container listener
+     */
+    public synchronized void removeWorkspaceContainerListener(ContainerListener l) {
+        tabbedPane.removeContainerListener(l);
     }
 
 
@@ -130,4 +166,123 @@ public class WorkSpacePanel extends JPanel {
               }
           }
       };
+
+    /**
+     * The tabbed pane with veto support (for removing/adding tabs)
+     */
+    private static class TabbedPane extends JTabbedPane {
+        EventListenerList listenerList = new WeakEventListenerList();
+        boolean lastActionVetoed = false;
+
+        public TabbedPane() {
+        }
+
+        /**
+         * Adds the specified container listener to receive container events
+         * from this container.
+         * If l is null, no exception is thrown and no action is performed.
+         * This is a specialized version of the container listener, that 
+         * support the VetoableContainerListener
+         *
+         * @param    l the container listener
+         */
+        public synchronized void addContainerListener(ContainerListener l) {
+            if (l instanceof VetoableContainerListener) {
+                listenerList.add(VetoableContainerListener.class, l);
+            } else {
+                super.addContainerListener(l);
+            }
+        }
+
+        /**
+         * Removes the specified container listener so it no longer receives
+         * container events from this container.
+         * If l is null, no exception is thrown and no action is performed.
+         * This is a specialized version of the container listener, that 
+         * supports the VetoableContainerListener
+         *
+         * @param 	l the container listener
+         */
+        public synchronized void removeContainerListener(ContainerListener l) {
+            if (l instanceof VetoableContainerListener) {
+                listenerList.remove(VetoableContainerListener.class, l);
+            } else {
+                super.removeContainerListener(l);
+            }
+        }
+
+        /**
+         * Removes the tab at <code>index</code>. This method is overriden
+         * for veto support.
+         *
+         * @see #addTab
+         * @see #insertTab  
+         */
+        public void removeTabAt(int index) {
+            lastActionVetoed = false;
+            EventListener[] listeners =
+              listenerList.getListeners(VetoableContainerListener.class);
+            ContainerEvent e =
+              new ContainerEvent(this,
+                ContainerEvent.COMPONENT_REMOVED,
+                getComponentAt(index));
+            try {
+                for (int i = 0; i < listeners.length; i++) {
+                    EventListener listener = listeners[i];
+                    ((VetoableContainerListener)listener).componentWillRemove(e);
+                }
+                super.removeTabAt(index);
+            } catch (ContainerVetoException e1) {
+                lastActionVetoed = true;
+            }
+        }
+
+        /**
+         * Inserts a <code>component</code>, at <code>index</code>. This method
+         * is overriden for veto uspprt.           
+         */
+        public void insertTab
+          (String
+          title, Icon
+          icon, Component
+          component, String
+          tip, int index) {
+
+            lastActionVetoed = false;
+            EventListener[] listeners =
+              listenerList.getListeners(VetoableContainerListener.class);
+            ContainerEvent e =
+              new ContainerEvent(this,
+                ContainerEvent.COMPONENT_ADDED,
+                component);
+            try {
+                for (int i = 0; i < listeners.length; i++) {
+                    EventListener listener = listeners[i];
+                    ((VetoableContainerListener)listener).componentWillRemove(e);
+                }
+                super.insertTab(title, icon, component, tip, index);
+            } catch (ContainerVetoException e1) {
+                lastActionVetoed = true;
+            }
+        }
+
+        /**
+         * Removes all the tabs and their corresponding components
+         * from the <code>tabbedpane</code>.
+         *
+         * @see #addTab
+         * @see #removeTabAt  
+         */
+        public void removeAll() {
+            //setSelectedIndexImpl(-1);
+
+            int tabCount = getTabCount();
+            // We invoke removeTabAt for each tab, otherwise we may end up
+            // removing Components added by the UI.
+            while (tabCount-- > 0) {
+                removeTabAt(tabCount);
+            }
+        }
+    }
 }
+    

@@ -60,7 +60,7 @@ public class Main {
             System.setProperty("com.l7tech.buildstring", BuildInfo.getBuildString());
             System.setProperty("com.l7tech.builddate", BuildInfo.getBuildDate() + BuildInfo.getBuildTime());
 
-            main = Registry.getDefault().getWindowManager().getMainWindow();
+            main = Registry.getDefault().getComponentRegistry().getMainWindow();
             // Window listener
             main.addWindowListener(
                     new WindowAdapter() {

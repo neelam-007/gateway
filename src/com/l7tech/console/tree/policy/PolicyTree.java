@@ -77,7 +77,7 @@ public class PolicyTree extends JTree {
             if (keyCode == KeyEvent.VK_DELETE) {
                 if (!node.canDelete()) return;
                 if (node instanceof AssertionTreeNode)
-                    new DeleteAssertionAction((AssertionTreeNode)node).performAction();
+                    new DeleteAssertionAction((AssertionTreeNode)node).actionPerformed(null);
             } else if (keyCode == KeyEvent.VK_ENTER) {
                 // default properties
             }

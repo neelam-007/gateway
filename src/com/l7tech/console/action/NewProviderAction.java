@@ -68,7 +68,7 @@ public class NewProviderAction extends NodeAction {
                 header.setType(EntityType.ID_PROVIDER_CONFIG);
                 IdentityProviderDialog dialog =
                   new IdentityProviderDialog(Registry.getDefault().
-                                        getWindowManager().getMainWindow(), header);
+                  getComponentRegistry().getMainWindow(), header);
                 dialog.addEntityListener(listener);
 
                 dialog.setResizable(false);

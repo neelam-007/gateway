@@ -55,7 +55,7 @@ public class IdentityPolicyAction extends BaseAction {
      * without explicitly asking for the AWT event thread!
      */
     public void performAction() {
-       Frame f = Registry.getDefault().getWindowManager().getMainWindow();
+       Frame f = Registry.getDefault().getComponentRegistry().getMainWindow();
         IdentityPolicyView pw = new IdentityPolicyView(f, assertion);
         pw.pack();
         Utilities.centerOnScreen(pw);

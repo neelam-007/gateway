@@ -1,17 +1,18 @@
 package com.l7tech.console.tree;
 
-import com.l7tech.console.action.Actions;
+import com.l7tech.console.action.ActionManager;
 import com.l7tech.console.action.DeleteEntityAction;
 import com.l7tech.console.action.DeletePolicyTemplateAction;
 
 import javax.swing.*;
-import javax.swing.event.TreeWillExpandListener;
 import javax.swing.event.TreeExpansionEvent;
 import javax.swing.event.TreeExpansionListener;
+import javax.swing.event.TreeWillExpandListener;
 import javax.swing.tree.DefaultTreeModel;
+import javax.swing.tree.ExpandVetoException;
 import javax.swing.tree.TreePath;
 import javax.swing.tree.TreeSelectionModel;
-import javax.swing.tree.ExpandVetoException;
+import java.awt.*;
 import java.awt.datatransfer.DataFlavor;
 import java.awt.datatransfer.Transferable;
 import java.awt.datatransfer.UnsupportedFlavorException;
@@ -19,7 +20,6 @@ import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
-import java.awt.*;
 import java.util.logging.Logger;
 
 /**
@@ -93,13 +93,13 @@ public class AssertionsTree extends JTree {
             if (keyCode == KeyEvent.VK_DELETE) {
                 if (!node.canDelete()) return;
                 if (node instanceof EntityHeaderNode)
-                    new DeleteEntityAction((EntityHeaderNode)node).performAction();
+                    new DeleteEntityAction((EntityHeaderNode)node).actionPerformed(null);
                 else if (node instanceof PolicyTemplateNode)
-                    new DeletePolicyTemplateAction((PolicyTemplateNode)node).performAction();
+                    new DeletePolicyTemplateAction((PolicyTemplateNode)node).actionPerformed(null);
             } else if (keyCode == KeyEvent.VK_ENTER) {
                 Action a = node.getPreferredAction();
                 if (a != null) {
-                    Actions.invokeAction(a);
+                    ActionManager.getInstance().invokeAction(a);
                 }
             }
         }
@@ -120,7 +120,7 @@ public class AssertionsTree extends JTree {
 
             Action a = node.getPreferredAction();
             if (a != null) {
-                Actions.invokeAction(a);
+                ActionManager.getInstance().invokeAction(a);
             }
         }
 

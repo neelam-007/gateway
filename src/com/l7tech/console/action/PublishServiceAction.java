@@ -61,7 +61,7 @@ public class PublishServiceAction extends BaseAction {
     public void performAction() {
         SwingUtilities.invokeLater(new Runnable() {
             public void run() {
-                JFrame f = Registry.getDefault().getWindowManager().getMainWindow();
+                JFrame f = Registry.getDefault().getComponentRegistry().getMainWindow();
                 PublishServiceWizard dialog = new PublishServiceWizard(f, true);
                 dialog.addEntityListener(listener);
                 dialog.setResizable(false);

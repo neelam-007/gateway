@@ -1,18 +1,18 @@
 package com.l7tech.console.action;
 
+import com.l7tech.console.logging.ErrorManager;
 import com.l7tech.console.panels.PolicyEditorPanel;
 import com.l7tech.console.panels.WorkSpacePanel;
 import com.l7tech.console.tree.ServiceNode;
-import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.ComponentRegistry;
-import com.l7tech.console.logging.ErrorManager;
-import com.l7tech.service.PublishedService;
+import com.l7tech.console.util.Registry;
 
 import javax.swing.*;
 import java.util.logging.Level;
 
 /**
- * The <code>ServicePolicyPropertiesAction</code> invokes the.
+ * The <code>ServicePolicyPropertiesAction</code> invokes the service
+ * policy editor.
  *
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  * @version 1.0
@@ -57,10 +57,12 @@ public class ServicePolicyPropertiesAction extends NodeAction {
               public void run() {
                   try {
                       ComponentRegistry windowManager =
-                        Registry.getDefault().getWindowManager();
+                        Registry.getDefault().getComponentRegistry();
                       WorkSpacePanel wpanel = windowManager.getCurrentWorkspace();
 
-                      wpanel.setComponent(new PolicyEditorPanel(serviceNode));
+                      PolicyEditorPanel pep = new PolicyEditorPanel(serviceNode);
+                      wpanel.setComponent(pep);
+                      wpanel.addWorkspaceContainerListener(pep);
                   } catch (Exception e) {
                       ErrorManager.getDefault().
                         notify(Level.WARNING, e, "Unable to retrieve service properties "+serviceNode.getName());

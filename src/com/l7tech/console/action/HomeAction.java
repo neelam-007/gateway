@@ -28,7 +28,7 @@ public class HomeAction extends BaseAction {
         // Law of Demeter oh yeah
         wpanel =
           Registry.getDefault().
-          getWindowManager().getCurrentWorkspace();
+          getComponentRegistry().getCurrentWorkspace();
     }
 
     /**
@@ -97,7 +97,7 @@ public class HomeAction extends BaseAction {
                                       (AbstractTreeNode)TreeNodeActions.
                                       nodeByName(UserFolderNode.INTERNAL_USERS_NAME,
                                                  (DefaultMutableTreeNode)tree.getModel().getRoot());
-                                    if (node !=null) new NewUserAction(node).performAction();
+                                    if (node !=null) new NewUserAction(node).actionPerformed(null);
                                 }
 
                             }
@@ -112,7 +112,7 @@ public class HomeAction extends BaseAction {
                                       (AbstractTreeNode)TreeNodeActions.
                                       nodeByName(GroupFolderNode.INTERNAL_GROUPS_NAME,
                                                  (DefaultMutableTreeNode)tree.getModel().getRoot());
-                                    if (node !=null) new NewGroupAction(node).performAction();
+                                    if (node !=null) new NewGroupAction(node).actionPerformed(null);
                                 }
 
                             }
@@ -127,7 +127,6 @@ public class HomeAction extends BaseAction {
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
-
     }
 
     private static final String ADD_SERVICE = "file://add.service";

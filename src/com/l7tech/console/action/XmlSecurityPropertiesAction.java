@@ -58,7 +58,7 @@ public class XmlSecurityPropertiesAction extends NodeAction {
         String s =
           (String)JOptionPane.showInputDialog(
             Registry.getDefault().
-          getWindowManager().getMainWindow(),
+          getComponentRegistry().getMainWindow(),
             "Please select the " + n.getBaseName() + " options:\n",
             n.getBaseName() + " assertion properties",
             JOptionPane.PLAIN_MESSAGE,

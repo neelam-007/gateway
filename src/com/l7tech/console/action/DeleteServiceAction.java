@@ -5,7 +5,6 @@ import com.l7tech.console.tree.ServicesTree;
 import com.l7tech.console.tree.policy.PolicyTree;
 import com.l7tech.console.util.ComponentRegistry;
 import com.l7tech.service.PublishedService;
-import com.l7tech.objectmodel.FindException;
 
 import javax.swing.*;
 import javax.swing.tree.DefaultTreeModel;

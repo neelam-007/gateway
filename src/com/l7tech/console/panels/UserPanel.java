@@ -509,7 +509,7 @@ public class UserPanel extends EntityEditorPanel {
               addActionListener(new ActionListener() {
                   public void actionPerformed(ActionEvent e) {
                       new PasswordDialog(
-                        Registry.getDefault().getWindowManager().getMainWindow(),
+                        Registry.getDefault().getComponentRegistry().getMainWindow(),
                         user, passwordChangeListener).show();
                       // Refresh the panel (since the agent's cert might have been revoked)
                   }

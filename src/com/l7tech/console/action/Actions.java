@@ -190,7 +190,7 @@ public class Actions {
 
 
     private static JFrame getMainWindow() {
-        return Registry.getDefault().getWindowManager().getMainWindow();
+        return Registry.getDefault().getComponentRegistry().getMainWindow();
     }
 
     static boolean deleteAssertion(AssertionTreeNode node) {
@@ -205,17 +205,6 @@ public class Actions {
         }
 
         return true;
-    }
-
-    /**
-     * perform the action passed
-     *
-     * @param a the action to invoke
-     */
-    public static void invokeAction(Action a) {
-        if (a instanceof BaseAction) {
-            ((BaseAction)a).performAction();
-        }
     }
 
     public static boolean deletePolicyTemplate(PolicyTemplateNode node) {

@@ -58,7 +58,7 @@ public class AddIdentityAssertionAction extends BaseAction {
           new Runnable() {
             public void run() {
                 JFrame f =
-                          Registry.getDefault().getWindowManager().getMainWindow();
+                          Registry.getDefault().getComponentRegistry().getMainWindow();
                 JDialog d = new PolicyAddIdentitiesDialog(f, node);
                 d.pack();
                 Utilities.centerOnScreen(d);

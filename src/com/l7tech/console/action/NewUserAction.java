@@ -64,7 +64,7 @@ public class NewUserAction extends NodeAction {
           new Runnable() {
             public void run() {
                 JFrame f =
-                  Registry.getDefault().getWindowManager().getMainWindow();
+                  Registry.getDefault().getComponentRegistry().getMainWindow();
                 NewUserDialog dialog = new NewUserDialog(f);
                 dialog.addEntityListener(listener);
                 dialog.setResizable(false);

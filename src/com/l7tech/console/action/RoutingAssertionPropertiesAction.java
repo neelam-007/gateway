@@ -60,7 +60,7 @@ public class RoutingAssertionPropertiesAction extends NodeAction {
         SwingUtilities.invokeLater(
           new Runnable() {
               public void run() {
-                  JFrame f = Registry.getDefault().getWindowManager().getMainWindow();
+                  JFrame f = Registry.getDefault().getComponentRegistry().getMainWindow();
                   RoutingAssertionDialog d =
                     new RoutingAssertionDialog(f, (RoutingAssertion)node.asAssertion());
                   d.addPolicyListener(listener);

@@ -64,7 +64,7 @@ public class EditServiceNameAction extends NodeAction {
               public void run() {
                   try {
                       ComponentRegistry wm =
-                        Registry.getDefault().getWindowManager();
+                        Registry.getDefault().getComponentRegistry();
                       PublishedService svc = ((ServiceNode)node).getPublishedService();
                       lastServiceName = svc.getName();
                       EditServiceNameDialog d =

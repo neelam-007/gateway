@@ -45,7 +45,7 @@ public abstract class Registry {
     /**
      * @return the current window manager
      */
-    public ComponentRegistry getWindowManager() {
+    public ComponentRegistry getComponentRegistry() {
         return ComponentRegistry.getInstance();
     }
 

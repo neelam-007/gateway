@@ -882,7 +882,7 @@ public class MainWindow extends JFrame {
         if (policyToolBar != null) return policyToolBar;
         policyToolBar = new PolicyToolBar();
         policyToolBar.registerPaletteTree(getAssertionPaletteTree());
-        policyTree = Registry.getDefault().getWindowManager().getPolicyTree();
+        policyTree = Registry.getDefault().getComponentRegistry().getPolicyTree();
         policyToolBar.registerPolicyTree(policyTree);
         return policyToolBar;
     }
@@ -1428,7 +1428,7 @@ public class MainWindow extends JFrame {
                                 }
                             });
                     toggleConnectedMenus(true);
-                    new HomeAction().performAction();
+                    new HomeAction().actionPerformed(null);
                 }
 
                 /* invoked on authentication failure */
