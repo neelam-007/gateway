@@ -8,7 +8,6 @@ import com.l7tech.console.tree.*;
 import com.l7tech.console.util.Preferences;
 import com.l7tech.console.action.*;
 import com.l7tech.objectmodel.EntityHeader;
-import net.sourceforge.mlf.metouia.MetouiaLookAndFeel;
 import org.apache.log4j.Category;
 
 import javax.help.HelpBroker;
@@ -1644,7 +1643,6 @@ public class MainWindow extends JFrame {
             UIManager.put("ClassLoader", cl);
             KunststoffLookAndFeel lf = new com.incors.plaf.kunststoff.KunststoffLookAndFeel();
             KunststoffLookAndFeel.setCurrentTheme(new KunststoffDesktopTheme());
-            new MetouiaLookAndFeel();
             Preferences prefs = Preferences.getPreferences();
         } catch (IOException e) {
             log.warn("cannot get preferences", e);
