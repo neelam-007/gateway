@@ -1,0 +1,134 @@
+--- ./org/apache/catalina/net/SSLServerSocketFactory.java.orig	2003-08-06 11:36:22.000000000 -0700
++++ ./org/apache/catalina/net/SSLServerSocketFactory.java	2003-09-12 15:45:51.000000000 -0700
+@@ -58,28 +58,15 @@
+  */
+ package org.apache.catalina.net;
+ 
++import javax.net.ssl.*;
+ import java.io.File;
+ import java.io.FileInputStream;
+ import java.io.IOException;
+ import java.net.InetAddress;
+ import java.net.ServerSocket;
+-import java.security.KeyStore;
+-import java.security.KeyStoreException;
+-import java.security.NoSuchAlgorithmException;
+-import java.security.UnrecoverableKeyException;
+-import java.security.KeyManagementException;
+-import java.security.Security;
++import java.security.*;
+ import java.security.cert.CertificateException;
+-import javax.net.ServerSocketFactory;
+-import javax.net.ssl.SSLServerSocket;
+-import javax.net.ssl.SSLSocket;
+-import javax.net.ssl.HandshakeCompletedListener;
+-import javax.net.ssl.HandshakeCompletedEvent;
+-
+-import com.sun.net.ssl.KeyManagerFactory;
+-import com.sun.net.ssl.SSLContext;
+-import com.sun.net.ssl.TrustManagerFactory;
+-
++import java.security.cert.X509Certificate;
+ 
+ /**
+  * Socket factory for SSL sockets, using the Java Server Sockets Extension
+@@ -139,7 +126,7 @@
+     /**
+      * The trust manager factory used with JSSE 1.0.1.
+      */
+-    //    TrustManagerFactory trustManagerFactory = null;
++    TrustManagerFactory trustManagerFactory = null;
+ 
+ 
+     // ------------------------------------------------------------- Properties
+@@ -174,6 +161,20 @@
+ 
+ 
+     /**
++     * Is client authentication optional? (i.e. wanted vs. needed )
++     */
++    private boolean clientAuthOptional = false;
++    
++    public boolean getClientAuthOptional() {
++        return (this.clientAuthOptional);
++    }
++
++    public void setClientAuthOptional(boolean clientAuthOptional) {
++        this.clientAuthOptional = clientAuthOptional;
++    }
++
++
++    /**
+      * The internal represenation of the key store file that contains
+      * our server certificate.
+      */
+@@ -473,21 +474,49 @@
+             KeyManagerFactory.getInstance(algorithm);
+         keyManagerFactory.init(keyStore, keystorePass.toCharArray());
+ 
+-        // Create the trust manager factory used for checking certificates
+-        /*
+-          trustManagerFactory = TrustManagerFactory.getInstance(algorithm);
+-          trustManagerFactory.init(keyStore);
+-        */
+-
+         // Initialize the context with the key managers
+-        context.init(keyManagerFactory.getKeyManagers(), null,
+-                     new java.security.SecureRandom());
++        context.init( keyManagerFactory.getKeyManagers(), new TrustManager[] { new L7TrustManager() }, new java.security.SecureRandom());
+ 
+         // Create the proxy and return
+         sslProxy = context.getServerSocketFactory();
+ 
+     }
+ 
++    private class L7TrustManager implements X509TrustManager {
++        protected TrustManager[] _trustManagers = null;
++        protected X509TrustManager _delegate = null;
++
++        private X509TrustManager getDelegate() {
++            if ( _delegate == null ) {
++                try {
++                    if ( _trustManagers == null ) _trustManagers = TrustManagerFactory.getInstance( algorithm ).getTrustManagers();
++                } catch ( NoSuchAlgorithmException nsae ) {
++                    throw new RuntimeException( nsae );
++                }
++
++                for (int i = 0; i < _trustManagers.length; i++) {
++                    TrustManager trustManager = _trustManagers[i];
++                    if ( trustManager instanceof X509TrustManager ) _delegate = (X509TrustManager)trustManager;
++                }
++            }
++            return _delegate;
++        }
++
++        public void checkClientTrusted(X509Certificate[] x509Certificates, String s) throws CertificateException {
++        }
++
++        public void checkServerTrusted(X509Certificate[] x509Certificates, String s) throws CertificateException {
++            getDelegate().checkServerTrusted( x509Certificates, s );
++        }
++
++        public X509Certificate[] getAcceptedIssuers() {
++            if ( _delegate == null ) return new X509Certificate[0];
++            return getDelegate().getAcceptedIssuers();
++        }
++    }
++
++
++
+ 
+     /**
+      * Set the requested properties for this server socket.
+@@ -503,7 +532,10 @@
+         socket.setEnabledCipherSuites(cipherSuites);
+ 
+         // Set client authentication if necessary
+-        socket.setNeedClientAuth(clientAuth);
++        if ( clientAuthOptional )
++            socket.setWantClientAuth(clientAuth);
++        else
++            socket.setNeedClientAuth(clientAuth);
+ 
+     }
+ 
