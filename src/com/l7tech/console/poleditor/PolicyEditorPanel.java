@@ -1,4 +1,4 @@
-package com.l7tech.console.panels;
+package com.l7tech.console.poleditor;
 
 import com.l7tech.console.action.*;
 import com.l7tech.console.event.ContainerVetoException;
@@ -358,6 +358,7 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
         JButton buttonSaveTemplate;
         JButton buttonValidate;
         JToggleButton identityViewButton;
+        JToggleButton policyViewButton;
 
         public PolicyEditToolBar() {
             super();
@@ -421,24 +422,39 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
             });
             this.add(buttonValidate);
 
+            policyViewButton = new JToggleButton(new PolicyViewAction());
+            policyViewButton.addActionListener(new ActionListener() {
+                public void actionPerformed(ActionEvent e) {
+                    renderPolicyView(false);
+                }
+            });
+            this.add(policyViewButton);
+            policyViewButton.setSelected(true);
+
             identityViewButton = new JToggleButton(new PolicyIdentityViewAction());
             identityViewButton.addActionListener(new ActionListener() {
                 public void actionPerformed(ActionEvent e) {
-                    boolean selected = identityViewButton.isSelected();
-                    policyTree.getModel().removeTreeModelListener(policyTreeModellistener);
-                    try {
-                        renderPolicy(selected);
-                        validatePolicy();
-                    } catch (FindException e1) {
-                        log.log(Level.SEVERE, "Unable to retrieve the service " + service.getName(), e1);
-                    } catch (RemoteException e1) {
-                        log.log(Level.SEVERE, "Remote error while retrieving the service " + service.getName(), e1);
-                    }
-                    policyTree.getModel().addTreeModelListener(policyTreeModellistener);
+                    renderPolicyView(true);
                 }
             });
             this.add(identityViewButton);
+            ButtonGroup bg = new ButtonGroup();
+            bg.add(identityViewButton);
+            bg.add(policyViewButton);
             this.add(Box.createHorizontalGlue());
+        }
+
+        private void renderPolicyView(boolean identityView) {
+            policyTree.getModel().removeTreeModelListener(policyTreeModellistener);
+            try {
+                renderPolicy(identityView);
+                validatePolicy();
+            } catch (FindException e1) {
+                log.log(Level.SEVERE, "Unable to retrieve the service " + service.getName(), e1);
+            } catch (RemoteException e1) {
+                log.log(Level.SEVERE, "Remote error while retrieving the service " + service.getName(), e1);
+            }
+            policyTree.getModel().addTreeModelListener(policyTreeModellistener);
         }
     }
 

@@ -1,6 +1,6 @@
-package com.l7tech.console.action;
+package com.l7tech.console.poleditor;
 
-
+import com.l7tech.console.action.BaseAction;
 
 
 /**
@@ -10,30 +10,30 @@ package com.l7tech.console.action;
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  * @version 1.0
  */
-public class PolicyIdentityViewAction extends BaseAction {
+public class PolicyViewAction extends BaseAction {
 
-    public PolicyIdentityViewAction() {
+    public PolicyViewAction() {
     }
 
     /**
      * @return the action name
      */
     public String getName() {
-        return "Identity View";
+        return "Policy View";
     }
 
     /**
      * @return the aciton description
      */
     public String getDescription() {
-        return "Toggle the policy view policy/identity";
+        return "Toggle the policy view";
     }
 
     /**
      * subclasses override this method specifying the resource name
      */
     protected String iconResource() {
-        return "com/l7tech/console/resources/identity.png";
+        return "com/l7tech/console/resources/policy16.gif";
     }
 
     /** Actually perform the action.

@@ -17,6 +17,7 @@ import com.l7tech.console.util.TopComponents;
 import com.l7tech.console.util.Preferences;
 import com.l7tech.console.util.ProgressBar;
 import com.l7tech.console.util.Registry;
+import com.l7tech.console.poleditor.PolicyEditorPanel;
 import com.l7tech.cluster.ClusterStatusAdmin;
 
 import javax.help.HelpBroker;

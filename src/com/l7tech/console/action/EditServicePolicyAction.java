@@ -1,7 +1,7 @@
 package com.l7tech.console.action;
 
 import com.l7tech.console.logging.ErrorManager;
-import com.l7tech.console.panels.PolicyEditorPanel;
+import com.l7tech.console.poleditor.PolicyEditorPanel;
 import com.l7tech.console.panels.WorkSpacePanel;
 import com.l7tech.console.tree.ServiceNode;
 import com.l7tech.console.util.TopComponents;

@@ -2,13 +2,14 @@ package com.l7tech.console.tree.policy;
 
 import com.l7tech.console.action.ActionManager;
 import com.l7tech.console.action.DeleteAssertionAction;
-import com.l7tech.console.panels.PolicyEditorPanel;
+import com.l7tech.console.poleditor.PolicyEditorPanel;
 import com.l7tech.console.tree.AbstractTreeNode;
 import com.l7tech.console.tree.AssertionsTree;
 import com.l7tech.console.tree.FilteredTreeModel;
 import com.l7tech.console.tree.TransferableTreePath;
 import com.l7tech.console.util.ArrowImage;
 import com.l7tech.console.util.PopUpMouseListener;
+import com.l7tech.console.poleditor.PolicyEditorPanel;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.composite.CompositeAssertion;
 

@@ -6,6 +6,7 @@ import com.l7tech.console.action.Actions;
 import com.l7tech.console.tree.policy.*;
 import com.l7tech.console.util.JmsUtilities;
 import com.l7tech.console.util.TopComponents;
+import com.l7tech.console.poleditor.PolicyEditorPanel;
 import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.assertion.credential.CredentialSourceAssertion;
@@ -241,6 +242,7 @@ public class IdentityPolicyPanel extends JPanel {
                 break;
             }
         }
+        xmlSecOptions.setEnabled(authMethodComboBox.getSelectedItem() instanceof XmlRequestSecurity);
     }
 
     private void updateRouting() {
