@@ -15,6 +15,8 @@ import com.l7tech.server.ServerConfig;
 
 import java.net.Socket;
 import java.net.UnknownHostException;
+import java.net.InetSocketAddress;
+import java.net.SocketTimeoutException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.HashMap;
@@ -33,8 +35,24 @@ public class SymantecAntivirusScanEngineClient {
     private static final Logger logger =  Logger.getLogger(SymantecAntivirusScanEngineClient.class.getName());
     private static final String SCAN_REQ = "RESPMOD icap://{0}:{1}/AVSCAN?action=SCAN ICAP/1.0\r\n";
     private static final String DEF_HEADER = "Content-Type: application/octet-stream\r\n\r\n";
+    private  static final int TIMEOUT = 250; // in ms. this is used for both server connection and reading responses
     private String scannerHostName;
     private Integer scannerPort;
+    private static ThreadLocal socketHolder = new ThreadLocal();
+
+    /**
+     * We maintain one socket per thread (thread pool maintained by the container) and we leave them open.
+     */
+    private Socket getOpenedSocket() throws UnknownHostException, SocketTimeoutException, IOException {
+        Socket output = (Socket)socketHolder.get();
+        if (output == null || output.isClosed()) {
+            InetSocketAddress address = new InetSocketAddress(scannerHostName(), scannerPort());
+            output = new Socket();
+            output.connect(address, TIMEOUT);
+            socketHolder.set(output);
+        }
+        return output;
+    }
 
     /**
      * Send content to scan using ICAP and read response from sav scan engine.
@@ -65,7 +83,7 @@ public class SymantecAntivirusScanEngineClient {
                              "Encapsulated: req-hdr=0, res-hdr=" + reshdr + ", res-body=" + resbodylngt + "\r\n\r\n" +
                              get + hdr + Long.toHexString(bodylength) + "\r\n";
 
-        Socket socket = new Socket(scanEngineHostname, scanEnginePort);
+        Socket socket = getOpenedSocket();
         socket.getOutputStream().write(new MessageFormat(SCAN_REQ).format(new Object[]{scanEngineHostname,
                                                                                        ""+scanEnginePort}).getBytes());
         socket.getOutputStream().write(icapRequest.getBytes());
@@ -73,8 +91,7 @@ public class SymantecAntivirusScanEngineClient {
         socket.getOutputStream().write("\r\n0\r\n\r\n".getBytes());
 
         byte[] returnedfromsav = new byte[4096];
-        int read = readFromSocket(socket, returnedfromsav, 250);
-        socket.close();
+        int read = readFromSocket(socket, returnedfromsav);
         if (read <= 0) {
             throw new IOException("server did not return anything");
         }
@@ -87,14 +104,14 @@ public class SymantecAntivirusScanEngineClient {
      * The sav scan engine will not close the socket when it is done transmitting response. To ensure that
      * the entire response is sent back, reading from the server involves a timeout.
      */
-    private int readFromSocket(Socket s, byte[] buffer, long timeout) throws IOException {
+    private int readFromSocket(Socket s, byte[] buffer) throws IOException {
         int read = 0;
         int offset = 0;
         InputStream stream = s.getInputStream();
         do {
             if (stream.available() <= 0) {
                 try {
-                    Thread.sleep(timeout);
+                    Thread.sleep(TIMEOUT);
                 } catch (InterruptedException e) {
                     String msg = "Reading from socket interupted";
                     logger.log(Level.SEVERE, msg, e);
@@ -279,11 +296,10 @@ public class SymantecAntivirusScanEngineClient {
 
     public String getSavScanEngineOptions() throws IOException, UnknownHostException {
         String req = "OPTIONS icap://savse.com/avscan ICAP/1.0\r\n\r\n";
-        Socket socket = new Socket(scannerHostName(), scannerPort());
+        Socket socket = getOpenedSocket();
         socket.getOutputStream().write(req.getBytes());
         byte[] returnedfromsav = new byte[4096];
-        int read = readFromSocket(socket, returnedfromsav, 250);
-        socket.close();
+        int read = readFromSocket(socket, returnedfromsav);
         if (read <= 0) {
             throw new IOException("server did not return anything");
         }
