@@ -1,29 +1,26 @@
 package com.l7tech.server;
 
-import com.l7tech.identity.User;
-import com.l7tech.policy.assertion.credential.LoginCredentials;
-import com.l7tech.policy.assertion.credential.CredentialFormat;
-import com.l7tech.policy.assertion.credential.CredentialFinderException;
-import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.common.security.xml.WssProcessor;
 import com.l7tech.common.security.xml.WssProcessorImpl;
-import com.l7tech.common.xml.InvalidDocumentFormatException;
 import com.l7tech.common.util.KeystoreUtils;
+import com.l7tech.common.xml.InvalidDocumentFormatException;
+import com.l7tech.identity.User;
+import com.l7tech.policy.assertion.credential.CredentialFormat;
+import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.server.secureconversation.SecureConversationContextManager;
 import org.w3c.dom.Document;
+import sun.security.x509.X500Name;
 
-import java.util.logging.Logger;
-import java.util.logging.Level;
-import java.security.cert.X509Certificate;
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.security.GeneralSecurityException;
+import java.security.KeyStoreException;
+import java.security.PrivateKey;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
-import java.security.PrivateKey;
-import java.security.KeyStoreException;
-import java.security.GeneralSecurityException;
-import java.io.IOException;
-import java.io.ByteArrayInputStream;
-
-import sun.security.x509.X500Name;
+import java.security.cert.X509Certificate;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Handles WS Trust RequestSecurityToken requests as well as SAML token requests.
@@ -46,7 +43,7 @@ public class TokenService {
      * @param authenticator resolved credentials such as an X509Certificate to an actual user to associate the context with
      * @return
      */
-    public Document respondToRequestSecurityToken(Document request, CredentialsAuthenticator authenticator) {
+    public Document respondToRequestSecurityToken(Document request, CredentialsAuthenticator authenticator) throws InvalidDocumentFormatException {
         // Pass request to the trogdorminator!
         WssProcessor trogdor = new WssProcessorImpl();
         X509Certificate serverSSLcert = null;
@@ -114,6 +111,9 @@ public class TokenService {
             Document response = handleSecureConversationContextRequest(authenticatedUser, clientCert);
         } else if (isValidRequestForSAMLToken(request, wssOutput)) {
             // todo, plug in your saml handling here alex --fla
+        } else {
+            throw new InvalidDocumentFormatException("This request cannot be recognized as a valid " +
+                                                     "RequestSecurityToken");
         }
         return null;
     }
@@ -129,8 +129,8 @@ public class TokenService {
     }
 
     private boolean isValidRequestForSAMLToken(Document request, WssProcessor.ProcessorResult wssOutput) {
-        // todo
-        return true;
+        // todo, alex what makes this request a saml token request?
+        return false;
     }
 
     private synchronized PrivateKey getServerKey() throws KeyStoreException {
