@@ -33,6 +33,16 @@ public abstract class PersistenceContext {
     }
 
     /**
+     * Looks at the current persistence context.
+     *
+     * @return the current persistence context or <b>null</b> if no context.
+     */
+    public static PersistenceContext peek() {
+        return (PersistenceContext)_contextLocal.get();
+    }
+
+
+    /**
      * called by implementing class when the context is being closed.
      * this is done so that further calls to getCurrent will create a
      * new context (this one is closed therefore unusable).
