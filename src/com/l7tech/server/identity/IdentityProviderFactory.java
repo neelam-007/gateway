@@ -82,7 +82,7 @@ public class IdentityProviderFactory {
             if ( config == null ) throw new FindException("Couldn't find IdentityProviderConfig with oid=" + oid );
 
             try {
-                cachedProvider = makeProvider( config );
+                cachedProvider = makeProvider(config);
             } catch ( InvalidIdProviderCfgException e ) {
                 final String msg = "Can't initialize an identity cachedProvider with type " + config.type();
                 logger.log(Level.SEVERE, msg, e);
@@ -96,8 +96,8 @@ public class IdentityProviderFactory {
     }
 
     /**
-     * Creates a new IdentityProvider of the correct type indicated by, and initialized with, the specified
-     * {@link IdentityProviderConfig}
+     * Creates a new IdentityProvider of the correct type indicated by the specified
+     * {@link IdentityProviderConfig} and initializes it.
      *
      * Uses reflection, so don't call often!  Call {@link #getProvider(long)} for runtime use, it has a cache.
      *
