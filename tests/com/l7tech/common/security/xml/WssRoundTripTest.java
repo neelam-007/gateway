@@ -6,24 +6,20 @@
 
 package com.l7tech.common.security.xml;
 
+import com.l7tech.common.util.XmlUtil;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
-
-import java.util.logging.Logger;
-import java.util.logging.Level;
-import java.util.*;
-import java.lang.reflect.Method;
-import java.io.ByteArrayOutputStream;
-import java.io.OutputStream;
-import java.io.IOException;
-
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
-import com.l7tech.common.util.XmlUtil;
-import com.ibm.xml.dsig.Canonicalizer;
-import com.ibm.xml.dsig.transform.ExclusiveC11r;
+
+import java.io.IOException;
+import java.lang.reflect.Method;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Decorate messages with WssDecorator and then send them through WssProcessor
@@ -232,11 +228,8 @@ public class WssRoundTripTest extends TestCase {
         }
     }
 
-    private static Canonicalizer canon = new ExclusiveC11r();
     private String canonicalize(Node node) throws IOException {
-        OutputStream baos = new ByteArrayOutputStream(1024);
-        canon.canonicalize(node, baos);
-        return baos.toString();
+        return XmlUtil.nodeToString(node);
     }
 
     /**
