@@ -515,6 +515,9 @@ public class JmsQueuePropertiesDialog extends JDialog {
         if (getOptionalCredentialsPanel().isUsernameAndPasswordRequired()) {
             conn.setUsername(getOptionalCredentialsPanel().getUsername());
             conn.setPassword(new String(getOptionalCredentialsPanel().getPassword()));
+        } else {
+            conn.setUsername(null);
+            conn.setPassword(null);
         }
 
         conn.setJndiUrl(getJndiUrlTextField().getText());
@@ -552,6 +555,9 @@ public class JmsQueuePropertiesDialog extends JDialog {
         if (getOptionalCredentialsPanel().isUsernameAndPasswordRequired()) {
             ep.setUsername(getOptionalCredentialsPanel().getUsername());
             ep.setPassword(new String(getOptionalCredentialsPanel().getPassword()));
+        } else {
+            ep.setUsername(null);
+            ep.setPassword(null);
         }
 
         // Preserve old OID, if we have one
