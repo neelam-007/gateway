@@ -6,6 +6,8 @@ import com.l7tech.identity.GroupManager;
 
 import java.security.Principal;
 
+import java.security.Principal;
+
 /**
  * Layer 7 Technologies, inc.
  * User: flascelles
@@ -14,7 +16,7 @@ import java.security.Principal;
  * Console-side implemenation of the internal identity provider object giving access
  * to both the user manager and the group manager.
  * Authentication in not implemented in this version since this is intended to be used on the console only.
- * 
+ *
  */
 public class InternalIdentityProviderClient implements com.l7tech.identity.IdentityProvider {
     public void initialize(IdentityProviderConfig config) {
@@ -39,7 +41,8 @@ public class InternalIdentityProviderClient implements com.l7tech.identity.Ident
         return null;
     }
 
-    public boolean authenticate( Principal user, byte[] credentials ) {
+
+    public boolean authenticate(Principal user, byte[] credentials) {
         // this doesnt make sense on the client side.
         return false;
     }

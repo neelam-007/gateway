@@ -4,6 +4,8 @@ import com.l7tech.identity.*;
 import com.l7tech.identity.internal.InternalIdentityProvider;
 import com.l7tech.objectmodel.PersistenceManager;
 
+import java.security.Principal;
+
 /**
  * Layer 7 Technologies, inc.
  * User: alex, flascell
@@ -30,12 +32,12 @@ public class InternalIdentityProviderImp implements InternalIdentityProvider {
         return _groupManager;
     }
 
-    public IdentityProviderConfig getConfig() {
-        return _identityProviderConfig;
+    public boolean authenticate(Principal user, byte[] credentials) {
+        return false;
     }
 
-    public boolean authenticate(User user, Object credential) {
-        return false;
+    public IdentityProviderConfig getConfig() {
+        return _identityProviderConfig;
     }
 
     private IdentityProviderConfig _identityProviderConfig;

@@ -2,6 +2,8 @@ package com.l7tech.identity;
 
 import com.l7tech.identity.imp.IdentityProviderConfigImp;
 
+import java.security.Principal;
+
 /**
  * Test stub for identity manager.
  *
@@ -29,6 +31,10 @@ public class IdentityProviderStub implements IdentityProvider {
         return gm;
     }
 
+    public boolean authenticate(Principal user, byte[] credentials) {
+        return false;
+    }
+
 
     public void setUserManager(UserManager um) {
         this.um = um;
@@ -36,10 +42,6 @@ public class IdentityProviderStub implements IdentityProvider {
 
     public void setGroupManager(GroupManager gm) {
         this.gm = gm;
-    }
-
-    public boolean authenticate(User user, Object credential) {
-        return false;
     }
 
     private IdentityProviderConfig icf = new IdentityProviderConfigImp();
