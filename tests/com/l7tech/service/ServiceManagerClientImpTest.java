@@ -23,6 +23,16 @@ public class ServiceManagerClientImpTest {
         System.out.println("done id=" + svc.getOid());
     }
 
+    public static void testUpdateServiceOfPreviouslySaved(ServiceManagerClientImp manager) throws Exception {
+        System.out.println("retrieving existing service");
+        PublishedService svc = manager.findByPrimaryKey(5111809);
+        System.out.println("change something in service");
+        svc.setName("Jimmy Hendrix");
+        System.out.println("update service id=" + svc.getOid());
+        manager.update(svc);
+        System.out.println("done id=" + svc.getOid());
+    }
+
     public static PublishedService testCreateService(ServiceManagerClientImp manager) throws Exception {
         System.out.println("creating service");
         PublishedService originalService = new PublishedService();
@@ -46,7 +56,7 @@ public class ServiceManagerClientImpTest {
 
         ServiceManagerClientImp manager = new ServiceManagerClientImp();
 
-        testUpdateService(manager);
+        testUpdateServiceOfPreviouslySaved(manager);
 
         System.exit(0);
     }
