@@ -27,11 +27,12 @@ public class ServiceFactory implements ObjectFactory {
         ServiceLookup sl =
           (ServiceLookup)Locator.getDefault().lookup(ServiceLookup.class);
         if (sl == null) {
-            String msg = "Service Locator could not be obtained" +
+            String msg = "Service Locator could not be obtained\n" +
               "Check the application services configuration";
             logger.severe(msg);
             throw new RuntimeException(msg);
         }
+        logger.fine("Lookup "+cl);
         return sl.lookup(cl, context);
     }
 }

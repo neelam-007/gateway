@@ -266,9 +266,10 @@ public abstract class Locator {
         public String toString() {
             return "Locator.Item[type=" +
               getType() + ",id=" +
-              (getId() == null ? "null" : getId()) +
-              ",instance=" + getInstance() + "]";
+              (getId() == null ? "null" : getId()) /*+
+              ",instance=" + getInstance() */+ "]";
         }
+
     }
 
 

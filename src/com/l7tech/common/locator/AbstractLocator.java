@@ -194,14 +194,14 @@ public abstract class AbstractLocator extends Locator {
                     Object instance;
                     WeakReference ref = (WeakReference)instancesCache.get(this);
                     if (ref == null) {
-                        logger.finest("Cache lookup failed, creating new instance - type " + itemImplementation.getName());
+                        logger.finest("Cache lookup failed '"+itemInterface.getName()+"', creating new instance - type " + itemImplementation.getName());
                         Object o = createInstance();
                         instancesCache.put(this, new WeakReference(o));
                         instance = o;
                     } else {
                         Object o = ref.get();
                         if (o == null) {
-                            logger.finest("Cache lookup failed, removing weak reference - type " + itemImplementation.getName());
+                            logger.finest("Cache lookup failed '"+itemInterface.getName()+"', removing weak reference - type " + itemImplementation.getName());
                             instancesCache.remove(this);
                             return getInstance();
                         }
@@ -230,9 +230,7 @@ public abstract class AbstractLocator extends Locator {
          * @return string representing the item
          */
         public String getId() {
-            if (id != null) return id;
-
-            return "ID[" + itemImplementation.toString() + "]";
+            return id;
         }
 
         /** The class of this item.
@@ -273,11 +271,25 @@ public abstract class AbstractLocator extends Locator {
      */
     public String toString() {
         StringBuffer sb = new StringBuffer();
+        sb.append("------------ Items -----------------\n");
         Locator.Matches matches = lookup(new Locator.Template());
-        Iterator it = matches.allInstances().iterator();
+        Iterator it = matches.allItems().iterator();
         while (it.hasNext()) {
             sb.append(it.next()).append("\n");
         }
+        sb.append("------------ Instances -------------\n");
+        it = instancesCache.keySet().iterator();
+        while (it.hasNext()) {
+            Item key = (Locator.Item)it.next();
+            WeakReference wr = (WeakReference)instancesCache.get(key);
+            Object o = wr.get();
+            String s = " Reference cleared (null) ";
+            if (o != null) {
+                s = o.getClass().getName();
+            }
+            sb.append("Type : "+key.getType()+ " "+s).append("\n");
+        }
+
         return sb.toString();
     }
 

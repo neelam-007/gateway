@@ -114,6 +114,8 @@ public class HttpServiceLookup extends ServiceLookup {
 
         try {
             registrar = (ServiceRegistrar)oi.readObject();
+            logger.fine("Obtained registrar " + registrar);
+
             return registrar;
 
         } finally {
