@@ -102,12 +102,14 @@ public class FilterTest extends TestCase {
         assertTrue("Filtered policy for invalid user is null", forAnon == null);
 
         User alice = new User();
+        alice.setProviderId(0);
         alice.setLogin("alice");
         Assertion forAlice = FilterManager.getInstance().applyAllFilters(alice, policy.getCopy());
         log.info("Policy forAlice = " + forAlice);
         assertTrue("Filtered policy for valid user alice is not null", forAlice != null);
 
         User bob = new User();
+        bob.setProviderId(0);
         bob.setLogin("bob");
         Assertion forBob = FilterManager.getInstance().applyAllFilters(bob, policy.getCopy());
         log.info("Policy forBob = " + forBob);
