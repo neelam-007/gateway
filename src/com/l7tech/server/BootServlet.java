@@ -41,7 +41,7 @@ public class BootServlet extends HttpServlet {
         } finally {
             if (failure) {
                 try {
-                    _boot.close();
+                    if ( _boot != null ) _boot.close();
                 } catch ( LifecycleException e ) {
                     throw new ServletException(e);
                 }
