@@ -17,16 +17,12 @@ import java.io.Serializable;
  * Time: 10:04:47 AM
  */
 public class UptimeMetrics implements Serializable {
-    private static Pattern findDaysHoursMinutes = Pattern.compile("^.*? up (\\d+) days?\\, (\\d+)\\:(\\d+)\\,.*$", Pattern.DOTALL);
-    // note fla: the following 4 reg ex dont work for me. those new ones work on my linux box
-    //private static Pattern findDays = Pattern.compile("^.*? (\\d+) day.*$", Pattern.DOTALL);
-    //private static Pattern findHours = Pattern.compile("^.*? (\\d+) hr.*$", Pattern.DOTALL);
-    //private static Pattern findMinutes = Pattern.compile("^.*? (\\d+) min.*$", Pattern.DOTALL);
-    //private static Pattern findLoads = Pattern.compile("^.*?\\s+load averages?: ([0-9.]+), ([0-9.]+), ([0-9.]+).*$", Pattern.DOTALL);
-    private static Pattern findDays = Pattern.compile(".*\\s+(\\d+)\\s+day.*", Pattern.DOTALL);
-    private static Pattern findHours = Pattern.compile(".*\\s+(\\d+):\\d+,\\s+\\d+\\s+user.*", Pattern.DOTALL);
-    private static Pattern findMinutes = Pattern.compile(".*\\s+\\d+:(\\d+),\\s+\\d+\\s+user.*", Pattern.DOTALL);
-    private static Pattern findLoads = Pattern.compile(".*average:\\s+(\\d+.\\d+),\\s+(\\d+.\\d+),\\s+(\\d+.\\d+).*", Pattern.DOTALL);
+    private static Pattern findDaysHoursMinutes = Pattern.compile(".*\\s+up\\s+(\\d+)\\s+days?\\,\\s+(\\d+)\\:(\\d+)\\,.*", Pattern.DOTALL);
+    private static Pattern findHoursMinutes = Pattern.compile(".*\\s+up\\s+(\\d+)\\:(\\d+)\\,.*", Pattern.DOTALL);
+    private static Pattern findDays = Pattern.compile("^.*\\s+(\\d+)\\s+day.*", Pattern.DOTALL);
+    private static Pattern findHours = Pattern.compile("^.*\\s+(\\d+)\\s+hr.*", Pattern.DOTALL);
+    private static Pattern findMinutes = Pattern.compile("^.*\\s+(\\d+)\\s+min.*", Pattern.DOTALL);
+    private static Pattern findLoads = Pattern.compile(".*averages?:\\s*(\\d+\\.\\d+),\\s*(\\d+\\.\\d+),\\s*(\\d+\\.\\d+).*", Pattern.DOTALL);
 
     private final String rawUptimeOutput;
     private final long timestamp;
@@ -78,6 +74,7 @@ public class UptimeMetrics implements Serializable {
      * <pre>
      * Example uptime formats:
      *   Red Hat 9       | 11:22:20  up 28 days, 18:57,  1 user,  load average: 0.00, 0.00, 0.00
+     *   Red Hat 9       | 12:28:55  up  3:24,  4 users,  load average: 0.20, 0.35, 0.43
      *   FreeBSD 4.8     |11:36AM  up 10 days, 14 hrs, 2 users, load averages: 0.00, 0.00, 0.00
      *   SunOS 5.9       |10:47am  up 27 day(s), 50 mins,  1 user,	load average: 0.18, 0.26, 0.20
      *   cygwin          | 11:47:39 up 5 days, 18:40,  0 users,  load average: 0.00, 0.00, 0.00
@@ -113,15 +110,21 @@ public class UptimeMetrics implements Serializable {
             hours = strToInt(matchDaysHoursMinutes.group(2));
             minutes = strToInt(matchDaysHoursMinutes.group(3));
         } else {
-            Matcher matchDays = findDays.matcher(result);
-            if (matchDays.matches())
-                days = strToInt(matchDays.group(1));
-            Matcher matchHours = findHours.matcher(result);
-            if (matchHours.matches())
-                hours = strToInt(matchHours.group(1));
-            Matcher matchMinutes = findMinutes.matcher(result);
-            if (matchMinutes.matches())
-                minutes = strToInt(matchMinutes.group(1));
+            Matcher matchHoursMinutes = findHoursMinutes.matcher(result);
+            if (matchHoursMinutes.matches()) {
+                hours = strToInt(matchHoursMinutes.group(1));
+                minutes = strToInt(matchHoursMinutes.group(2));
+            } else {
+                Matcher matchDays = findDays.matcher(result);
+                if (matchDays.matches())
+                    days = strToInt(matchDays.group(1));
+                Matcher matchHours = findHours.matcher(result);
+                if (matchHours.matches())
+                    hours = strToInt(matchHours.group(1));
+                Matcher matchMinutes = findMinutes.matcher(result);
+                if (matchMinutes.matches())
+                    minutes = strToInt(matchMinutes.group(1));
+            }
         }
 
         double load1 = 0.0;
