@@ -4,7 +4,6 @@ import com.l7tech.identity.ldap.LdapIdentityProviderConfig;
 import com.l7tech.objectmodel.*;
 
 import javax.security.auth.Subject;
-import java.rmi.Remote;
 import java.rmi.RemoteException;
 import java.security.AccessControlException;
 import java.security.cert.Certificate;
@@ -19,7 +18,7 @@ import java.util.Set;
  * @see EntityHeader
  * @see Entity
  */
-public interface IdentityAdmin extends Remote {
+public interface IdentityAdmin {
     /**
      * Retrieve the server admin protocol version string.
      *

@@ -6,24 +6,21 @@
 
 package com.l7tech.server;
 
-import com.l7tech.remote.jini.Services;
-import com.l7tech.remote.jini.export.RemoteService;
-import com.l7tech.common.util.KeystoreUtils;
 import com.l7tech.common.util.KeystoreInfo;
+import com.l7tech.common.util.KeystoreUtils;
+import com.l7tech.remote.jini.export.RemoteService;
 
-import java.util.Timer;
-import java.util.TimerTask;
-import java.util.Properties;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import java.io.File;
 import java.io.FileNotFoundException;
-import java.io.IOException;
 import java.io.FileOutputStream;
+import java.io.IOException;
 import java.security.KeyStore;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
 import java.security.cert.CertificateException;
+import java.util.Properties;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * @author alex
@@ -32,7 +29,6 @@ import java.security.cert.CertificateException;
 public class AdminServicesBootProcess implements ServerComponentLifecycle {
 
     public void setComponentConfig(ComponentConfig config) throws LifecycleException {
-        this.services = Services.getInstance();
         try {
             initializeSslEnvironment();
         } catch (Exception e) {
@@ -108,29 +104,13 @@ public class AdminServicesBootProcess implements ServerComponentLifecycle {
     }
 
     public void start() throws LifecycleException {
-        logger.info("Starting admin services");
-        Timer timer = new Timer(true);
-        timer.schedule(new TimerTask() {
-            public void run() {
-                try {
-                    services.start();
-                } catch (Exception e) {
-                    logger.log(Level.WARNING,
-                      "There was an error in initalizing admin services.\n" +
-                      " The admin services may not be available.", e);
-                }
-            }
-        }, 3000);
     }
 
     public void stop() throws LifecycleException {
     }
 
     public void close() throws LifecycleException {
-        logger.info("Stopping admin services.");
-        RemoteService.unexportAll();
     }
 
     private final Logger logger = Logger.getLogger(getClass().getName());
-    private Services services;
 }

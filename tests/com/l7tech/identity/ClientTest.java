@@ -104,7 +104,7 @@ public class ClientTest extends TestCase {
         System.setProperty("javax.net.ssl.trustStorePassword", "password");
         SecurityProvider credsManager = (SecurityProvider)Locator.getDefault().lookup(SecurityProvider.class);
         PasswordAuthentication creds = new PasswordAuthentication("ssgadmin", "ssgadminpasswd".toCharArray());
-        credsManager.getAuthenticationProvider().login(creds);
+        credsManager.getAuthenticationProvider().login(creds, null);
 
         ClientTest toto = new ClientTest();
         toto.testFinds();

@@ -7,8 +7,6 @@ import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.ext.Category;
 import com.l7tech.policy.assertion.ext.CustomAssertionsRegistrar;
 import com.l7tech.remote.jini.export.RemoteService;
-import com.sun.jini.start.LifeCycle;
-import net.jini.config.ConfigurationException;
 
 import java.io.IOException;
 import java.rmi.RemoteException;
@@ -24,14 +22,8 @@ public class CustomAssertionsRegistrarImpl extends RemoteService implements Cust
     static Logger logger = Logger.getLogger(CustomAssertionsRegistrar.class.getName());
     protected CustomAssertionsRegistrar delegate;
 
-    public CustomAssertionsRegistrarImpl(String[] options, LifeCycle lifeCycle)
-      throws ConfigurationException, IOException {
-        super(options, lifeCycle);
-        try {
+    public CustomAssertionsRegistrarImpl() {
             getDelegate();
-        } catch (RuntimeException e) {
-            logger.log(Level.WARNING, "Error obtaining the custom assertion delegate", e);
-        }
     }
 
     /**
@@ -86,6 +78,7 @@ public class CustomAssertionsRegistrarImpl extends RemoteService implements Cust
         if (delegate != null) {
             return delegate;
         }
+        // todo: this to be done witrh spring
         delegate = (CustomAssertionsRegistrar)Locator.getDefault().lookup(CustomAssertionsRegistrar.class);
         if (delegate == null) {
             throw new RuntimeException("Unable to obtain the 'custom assertions' registrar implementation");

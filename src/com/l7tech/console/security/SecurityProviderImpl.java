@@ -1,9 +1,10 @@
 package com.l7tech.console.security;
 
+import com.l7tech.admin.AdminContext;
+import com.l7tech.admin.AdminLogin;
 import com.l7tech.common.VersionException;
 import com.l7tech.common.protocol.SecureSpanConstants;
-import com.l7tech.common.util.Locator;
-import com.l7tech.identity.IdentityAdmin;
+import com.l7tech.remote.rmi.EditableRmiProxyFactoryBean;
 import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
@@ -12,7 +13,6 @@ import org.springframework.context.ApplicationListener;
 
 import javax.security.auth.login.LoginException;
 import java.net.PasswordAuthentication;
-import java.rmi.ConnectException;
 import java.rmi.RemoteException;
 
 /**
@@ -29,24 +29,25 @@ public class SecurityProviderImpl extends SecurityProvider
      * Determines if the passed credentials will grant access to the admin service.
      * If successful, those credentials will be cached for future admin ws calls.
      */
-    public synchronized void login(PasswordAuthentication creds)
+    public synchronized void login(PasswordAuthentication creds, String host)
       throws LoginException, VersionException, RemoteException {
         boolean authenticated = false;
         resetCredentials();
         setCredentials(creds);
 
         try {
+            EditableRmiProxyFactoryBean bean = (EditableRmiProxyFactoryBean)applicationContext.getBean("&adminLogin");
+            bean.setServiceUrl("rmi://"+host+"/AdminLogin");
+            bean.resetStub();
+            AdminLogin adminLogin = (AdminLogin)applicationContext.getBean("adminLogin");
+            AdminContext context = adminLogin.login(creds.getUserName(), new String(creds.getPassword()));
             // version check
-            IdentityAdmin is = (IdentityAdmin)Locator.getDefault().lookup(IdentityAdmin.class);
-            if (is == null) {
-                throw new ConnectException("Unable to connect to the remote service");
-            }
-            String remoteVersion = is.echoVersion();
+            String remoteVersion = context.getVersion();
             if (!SecureSpanConstants.ADMIN_PROTOCOL_VERSION.equals(remoteVersion)) {
                 throw new VersionException("Version mismatch", SecureSpanConstants.ADMIN_PROTOCOL_VERSION, remoteVersion);
             }
             authenticated = true;
-            LogonEvent le = new LogonEvent(this, LogonEvent.LOGON);
+            LogonEvent le = new LogonEvent(context, LogonEvent.LOGON);
             applicationContext.publishEvent(le);
         } finally {
             if (!authenticated) {

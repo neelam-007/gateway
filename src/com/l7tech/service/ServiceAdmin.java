@@ -3,10 +3,9 @@ package com.l7tech.service;
 import com.l7tech.objectmodel.*;
 import com.l7tech.policy.PolicyValidatorResult;
 
-import java.rmi.Remote;
-import java.rmi.RemoteException;
-import java.net.MalformedURLException;
 import java.io.IOException;
+import java.net.MalformedURLException;
+import java.rmi.RemoteException;
 
 /**
  * Provides a remote interface for publishing searching and updating published services
@@ -16,7 +15,7 @@ import java.io.IOException;
  * @see EntityHeader
  * @see Entity
  */
-public interface ServiceAdmin extends Remote {
+public interface ServiceAdmin {
     /**
      * Retrieve all available published services.
      *

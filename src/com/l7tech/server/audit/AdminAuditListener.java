@@ -17,11 +17,11 @@ import com.l7tech.server.event.GenericListener;
 import com.l7tech.server.event.admin.*;
 import com.l7tech.server.service.ServiceEvent;
 import com.l7tech.service.PublishedService;
-import net.jini.export.ServerContext;
-import net.jini.io.context.ClientHost;
-import net.jini.io.context.ClientSubject;
 
+import javax.security.auth.Subject;
 import java.rmi.server.ServerNotActiveException;
+import java.rmi.server.UnicastRemoteObject;
+import java.security.AccessController;
 import java.security.Principal;
 import java.util.*;
 import java.util.logging.Level;
@@ -202,14 +202,14 @@ public class AdminAuditListener implements GenericListener, CreateListener, Upda
     }
 
     private AdminInfo getAdminInfo() {
-        ClientSubject clientSubject = null;
+        Subject clientSubject = null;
         String login = null;
         String address = null;
         try {
-            clientSubject = (ClientSubject)ServerContext.getServerContextElement(ClientSubject.class);
-            ClientHost host = (ClientHost)ServerContext.getServerContextElement(ClientHost.class);
-            if (host != null) {
-                address = host.getClientHost().getHostAddress();
+            //todo: verify that this is equivalent to what it used to be 
+            clientSubject = Subject.getSubject(AccessController.getContext());
+            address = UnicastRemoteObject.getClientHost();
+            if (address != null) {
             } else {
                 logger.warning("Could not determine administrator IP address. Will use " + LOCALHOST_IP);
                 address = LOCALHOST_IP;
@@ -218,7 +218,7 @@ public class AdminAuditListener implements GenericListener, CreateListener, Upda
             return null;
         }
         if (clientSubject != null) {
-            Set principals = clientSubject.getClientSubject().getPrincipals();
+            Set principals = clientSubject.getPrincipals();
             if (principals != null && !principals.isEmpty()) {
                 Principal p = (Principal)principals.iterator().next();
                 if (p instanceof User) login = ((User)p).getLogin();

@@ -5,6 +5,7 @@ import com.l7tech.common.audit.AuditAdminStub;
 import com.l7tech.common.security.TrustedCertAdmin;
 import com.l7tech.common.transport.jms.JmsAdmin;
 import com.l7tech.console.util.Registry;
+import com.l7tech.console.security.SecurityProvider;
 import com.l7tech.identity.*;
 import com.l7tech.logging.LogAdmin;
 import com.l7tech.logging.LogAdminStub;
@@ -13,6 +14,8 @@ import com.l7tech.policy.assertion.ext.CustomAssertionsRegistrarStub;
 import com.l7tech.service.JmsAdminStub;
 import com.l7tech.service.ServiceAdmin;
 import com.l7tech.service.ServiceAdminStub;
+import com.l7tech.cluster.ClusterStatusAdmin;
+import com.l7tech.cluster.ClusterStatusAdminStub;
 
 
 /**
@@ -73,6 +76,14 @@ public class RegistryStub extends Registry {
         return logAdmin;
     }
 
+    public ClusterStatusAdmin getClusterStatusAdmin() {
+        return clusterStatusAdmin;
+    }
+
+    public SecurityProvider getSecurityProvider() {
+        return null; //todo: stub implementation!
+    }
+
     StubDataStore dataStore = StubDataStore.defaultStore();
 
     private IdentityAdmin identityAdmin = new IdentityAdminStub();
@@ -81,6 +92,6 @@ public class RegistryStub extends Registry {
     private CustomAssertionsRegistrar customAssertionsRegistrar = new CustomAssertionsRegistrarStub();
     private AuditAdmin auditAdmin = new AuditAdminStub();
     private LogAdmin logAdmin = new LogAdminStub();
-
+    private ClusterStatusAdmin clusterStatusAdmin = new ClusterStatusAdminStub();
     private TrustedCertAdmin trustedCertAdmin;
 }

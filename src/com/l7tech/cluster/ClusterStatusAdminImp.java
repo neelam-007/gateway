@@ -2,10 +2,7 @@ package com.l7tech.cluster;
 
 import com.l7tech.objectmodel.*;
 import com.l7tech.remote.jini.export.RemoteService;
-import com.sun.jini.start.LifeCycle;
-import net.jini.config.ConfigurationException;
 
-import java.io.IOException;
 import java.rmi.RemoteException;
 import java.sql.SQLException;
 import java.util.Calendar;
@@ -26,9 +23,6 @@ import java.util.logging.Logger;
  */
 public class ClusterStatusAdminImp extends RemoteService implements ClusterStatusAdmin {
 
-    public ClusterStatusAdminImp(String[] configOptions, LifeCycle lc) throws ConfigurationException, IOException {
-        super(configOptions, lc);
-    }
 
     /**
      * get status for all nodes recorded as part of the cluster.

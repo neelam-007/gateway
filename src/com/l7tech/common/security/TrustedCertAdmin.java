@@ -9,16 +9,15 @@ package com.l7tech.common.security;
 import com.l7tech.objectmodel.*;
 
 import java.io.IOException;
-import java.rmi.Remote;
 import java.rmi.RemoteException;
-import java.security.cert.X509Certificate;
 import java.security.cert.CertificateException;
+import java.security.cert.X509Certificate;
 import java.util.List;
 
 /**
  * Remote interface to get/save/delete certs trusted by the gateway.
  */
-public interface TrustedCertAdmin extends Remote {
+public interface TrustedCertAdmin  {
 
     /**
      * Retrieves all {@link TrustedCert}s from the database.

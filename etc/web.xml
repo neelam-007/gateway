@@ -4,6 +4,9 @@
 <web-app>
     <display-name>Layer7 Secure Span Gateway</display-name>
 
+    <!--  Spring configuration file
+          used by the org.springframework.web.context.ContextLoaderListener
+    -->
     <context-param>
         <param-name>contextConfigLocation</param-name>
         <param-value>/WEB-INF/webApplicationContext.xml</param-value>
@@ -29,6 +32,7 @@
         <url-pattern>/*</url-pattern>
     </filter-mapping>
 
+    <!--  Spring context loader listener that loads the spring beans -->
     <listener>
         <listener-class>org.springframework.web.context.ContextLoaderListener</listener-class>
     </listener>
@@ -70,11 +74,6 @@
             <param-name>PolicyServletUri</param-name>
             <param-value>/ssg/policy/disco.modulator?serviceoid=</param-value>
         </init-param>
-    </servlet>
-
-    <servlet>
-        <servlet-name>RegistrarServlet</servlet-name>
-        <servlet-class>com.l7tech.remote.jini.lookup.RegistrarLookupServlet</servlet-class>
     </servlet>
 
     <servlet>
@@ -158,11 +157,6 @@
     </servlet-mapping>
 
     <servlet-mapping>
-        <servlet-name>RegistrarServlet</servlet-name>
-        <url-pattern>/ssg/registrar</url-pattern>
-    </servlet-mapping>
-
-    <servlet-mapping>
         <servlet-name>ClassServerServlet</servlet-name>
         <url-pattern>/classserver/*</url-pattern>
     </servlet-mapping>
@@ -226,21 +220,6 @@
         <welcome-file>index.jsp</welcome-file>
         <welcome-file>index.jws</welcome-file>
     </welcome-file-list>
-
-    <!-- enforce SSL in the admin Web Service -->
-    <!-- uncomment security-constraint and login-config to enable   -->
-
-    <security-constraint>
-        <web-resource-collection>
-            <web-resource-name>Admin Service Registrar</web-resource-name>
-            <url-pattern>/ssg/registrar</url-pattern>
-        </web-resource-collection>
-
-        <user-data-constraint>
-            <description>SSL required</description>
-            <transport-guarantee>CONFIDENTIAL</transport-guarantee>
-        </user-data-constraint>
-    </security-constraint>
 
     <!-- uncomment login-config to enable (currently not used)
     <login-config>

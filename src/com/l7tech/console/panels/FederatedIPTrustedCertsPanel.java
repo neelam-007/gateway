@@ -1,35 +1,35 @@
 package com.l7tech.console.panels;
 
-import com.l7tech.console.table.TrustedCertsTable;
-import com.l7tech.console.table.TrustedCertTableSorter;
-import com.l7tech.console.event.*;
-import com.l7tech.console.util.Registry;
-import com.l7tech.identity.fed.FederatedIdentityProviderConfig;
-import com.l7tech.identity.IdentityAdmin;
-import com.l7tech.identity.IdentityProviderConfig;
+import com.intellij.uiDesigner.core.GridConstraints;
+import com.intellij.uiDesigner.core.GridLayoutManager;
+import com.intellij.uiDesigner.core.Spacer;
+import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.common.security.TrustedCert;
 import com.l7tech.common.security.TrustedCertAdmin;
-import com.l7tech.common.util.Locator;
-import com.l7tech.common.util.HexUtils;
 import com.l7tech.common.util.CertUtils;
-import com.l7tech.common.gui.util.Utilities;
-import com.l7tech.objectmodel.FindException;
+import com.l7tech.common.util.HexUtils;
+import com.l7tech.console.event.*;
+import com.l7tech.console.table.TrustedCertTableSorter;
+import com.l7tech.console.table.TrustedCertsTable;
+import com.l7tech.console.util.Registry;
+import com.l7tech.identity.IdentityAdmin;
+import com.l7tech.identity.IdentityProviderConfig;
+import com.l7tech.identity.fed.FederatedIdentityProviderConfig;
 import com.l7tech.objectmodel.EntityHeader;
-import com.intellij.uiDesigner.core.GridLayoutManager;
-import com.intellij.uiDesigner.core.GridConstraints;
-import com.intellij.uiDesigner.core.Spacer;
+import com.l7tech.objectmodel.FindException;
 
 import javax.swing.*;
-import javax.swing.event.ListSelectionListener;
 import javax.swing.event.ListSelectionEvent;
+import javax.swing.event.ListSelectionListener;
+import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.io.IOException;
+import java.rmi.RemoteException;
+import java.security.cert.CertificateException;
+import java.security.cert.X509Certificate;
 import java.util.*;
 import java.util.logging.Logger;
-import java.awt.*;
-import java.awt.event.*;
-import java.rmi.RemoteException;
-import java.security.cert.X509Certificate;
-import java.security.cert.CertificateException;
-import java.io.IOException;
 
 /**
  * This class provides the step panel for the Federated Identity Provider dialog.
@@ -136,13 +136,7 @@ public class FederatedIPTrustedCertsPanel extends IdentityProviderStepPanel {
      * @throws RuntimeException if the object reference of the Trusted Cert Admin service is not found.
      */
     private TrustedCertAdmin getTrustedCertAdmin() throws RuntimeException {
-        TrustedCertAdmin tca =
-                (TrustedCertAdmin) Locator.
-                getDefault().lookup(TrustedCertAdmin.class);
-        if (tca == null) {
-            throw new RuntimeException("Could not find registered " + TrustedCertAdmin.class);
-        }
-
+        TrustedCertAdmin tca = Registry.getDefault().getTrustedCertManager();
         return tca;
     }
 

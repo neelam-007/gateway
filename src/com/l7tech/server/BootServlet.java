@@ -8,6 +8,7 @@ package com.l7tech.server;
 
 import org.springframework.web.context.support.WebApplicationContextUtils;
 import org.springframework.web.context.WebApplicationContext;
+import org.springframework.web.context.ContextLoaderServlet;
 import org.springframework.context.ApplicationContext;
 
 import javax.servlet.ServletConfig;
@@ -28,14 +29,13 @@ public class BootServlet extends HttpServlet {
     private final Logger logger = Logger.getLogger(getClass().getName());
     private ServerComponentLifecycle _boot;
 
-    public void init( ServletConfig sc ) throws ServletException {
-        super.init( sc );
+    public void init() throws ServletException {
         boolean failure = false;
-
         try {
-            ApplicationContext acx = WebApplicationContextUtils.getWebApplicationContext(sc.getServletContext());
+            ApplicationContext acx = WebApplicationContextUtils.getWebApplicationContext(getServletContext());
             _boot = (ServerComponentLifecycle)acx.getBean("ssgBoot");
             _boot.start();
+            logger.fine("Boot process completed");
         } catch ( Throwable e ) {
             logger.log(Level.SEVERE, "ERROR IN BOOT SERVLET", e);
             failure = true;
@@ -56,6 +56,7 @@ public class BootServlet extends HttpServlet {
      *
      */
     public void destroy() {
+        super.destroy();
         try {
             if ( _boot != null ) {
                 try {

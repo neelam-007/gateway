@@ -6,7 +6,6 @@
 
 package com.l7tech.logging;
 
-import java.rmi.Remote;
 import java.rmi.RemoteException;
 
 /**
@@ -15,7 +14,7 @@ import java.rmi.RemoteException;
  * @author mike
  * @version $Id$
  */
-public interface GenericLogAdmin extends Remote {
+public interface GenericLogAdmin {
     /**
      * Retrieve the system logs of a node in between the startMsgNumber and endMsgNumber specified
      * up to the specified size. The retrieved block of logs will not contain the log whose

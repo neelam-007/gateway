@@ -1,14 +1,8 @@
 package com.l7tech.logging;
 
-import com.l7tech.logging.LogAdmin;
-import com.l7tech.logging.SSGLogRecord;
-import com.l7tech.logging.ServerLogManager;
-import com.l7tech.remote.jini.export.RemoteService;
 import com.l7tech.objectmodel.PersistenceContext;
-import com.sun.jini.start.LifeCycle;
-import net.jini.config.ConfigurationException;
+import com.l7tech.remote.jini.export.RemoteService;
 
-import java.io.IOException;
 import java.rmi.RemoteException;
 import java.sql.SQLException;
 import java.util.logging.Logger;
@@ -20,17 +14,6 @@ import java.util.logging.Logger;
  * @version $Id$
  */
 public class LogAdminImpl extends RemoteService implements LogAdmin {
-    /**
-     * Creates the server.
-     *
-     * @param configOptions options to use when getting the Configuration
-     * @throws ConfigurationException if a problem occurs creating the
-     *	       configuration
-     */
-    public LogAdminImpl(String[] configOptions, LifeCycle lc)
-      throws ConfigurationException, IOException {
-        super(configOptions, lc);
-    }
 
     /**
      * Retrieve the system logs of a node in between the startMsgNumber and endMsgNumber specified

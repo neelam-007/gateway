@@ -10,13 +10,10 @@ import com.l7tech.common.transport.jms.*;
 import com.l7tech.common.util.Locator;
 import com.l7tech.objectmodel.*;
 import com.l7tech.remote.jini.export.RemoteService;
-import com.sun.jini.start.LifeCycle;
-import net.jini.config.ConfigurationException;
 
 import javax.jms.*;
 import javax.naming.Context;
 import javax.naming.NamingException;
-import java.io.IOException;
 import java.rmi.RemoteException;
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -31,9 +28,6 @@ import java.util.logging.Logger;
  * @version $Revision$
  */
 public class JmsAdminImpl extends RemoteService implements JmsAdmin {
-    public JmsAdminImpl( String[] configOptions, LifeCycle lifecycle ) throws ConfigurationException, IOException {
-        super( configOptions, lifecycle );
-    }
 
     public JmsProvider[] getProviderList() throws RemoteException, FindException {
         try {

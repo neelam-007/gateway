@@ -1,33 +1,33 @@
 package com.l7tech.console.panels;
 
-import com.l7tech.common.gui.util.Utilities;
-import com.l7tech.common.security.TrustedCertAdmin;
-import com.l7tech.common.security.TrustedCert;
-import com.l7tech.common.util.Locator;
-import com.l7tech.common.util.CertUtils;
-import com.l7tech.console.table.TrustedCertsTable;
-import com.l7tech.console.table.TrustedCertTableSorter;
-import com.l7tech.console.event.CertListener;
-import com.l7tech.console.event.CertEvent;
-import com.l7tech.objectmodel.FindException;
-import com.intellij.uiDesigner.core.GridLayoutManager;
 import com.intellij.uiDesigner.core.GridConstraints;
+import com.intellij.uiDesigner.core.GridLayoutManager;
 import com.intellij.uiDesigner.core.Spacer;
+import com.l7tech.common.gui.util.Utilities;
+import com.l7tech.common.security.TrustedCert;
+import com.l7tech.common.security.TrustedCertAdmin;
+import com.l7tech.common.util.CertUtils;
+import com.l7tech.console.event.CertEvent;
+import com.l7tech.console.event.CertListener;
+import com.l7tech.console.table.TrustedCertTableSorter;
+import com.l7tech.console.table.TrustedCertsTable;
+import com.l7tech.console.util.Registry;
+import com.l7tech.objectmodel.FindException;
 
 import javax.swing.*;
 import javax.swing.event.*;
 import java.awt.*;
-import java.awt.event.ActionListener;
 import java.awt.event.ActionEvent;
-import java.util.ResourceBundle;
-import java.util.Locale;
-import java.util.Vector;
-import java.util.EventListener;
-import java.util.logging.Logger;
-import java.rmi.RemoteException;
-import java.security.cert.X509Certificate;
-import java.security.cert.CertificateException;
+import java.awt.event.ActionListener;
 import java.io.IOException;
+import java.rmi.RemoteException;
+import java.security.cert.CertificateException;
+import java.security.cert.X509Certificate;
+import java.util.EventListener;
+import java.util.Locale;
+import java.util.ResourceBundle;
+import java.util.Vector;
+import java.util.logging.Logger;
 
 /**
  * <p> Copyright (C) 2004 Layer 7 Technologies Inc.</p>
@@ -331,13 +331,7 @@ public class CertSearchPanel extends JDialog {
      * @throws RuntimeException  if the object reference of the Trusted Cert Admin service is not found.
      */
     private TrustedCertAdmin getTrustedCertAdmin() throws RuntimeException {
-        TrustedCertAdmin tca =
-                (TrustedCertAdmin) Locator.
-                getDefault().lookup(TrustedCertAdmin.class);
-        if (tca == null) {
-            throw new RuntimeException("Could not find registered " + TrustedCertAdmin.class);
-        }
-
+        TrustedCertAdmin tca = Registry.getDefault().getTrustedCertManager();
         return tca;
     }
 

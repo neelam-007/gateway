@@ -10,7 +10,6 @@ import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.common.transport.jms.JmsAdmin;
 import com.l7tech.common.transport.jms.JmsConnection;
 import com.l7tech.common.transport.jms.JmsEndpoint;
-import com.l7tech.common.util.Locator;
 import com.l7tech.console.action.Actions;
 import com.l7tech.console.security.FormAuthorizationPreparer;
 import com.l7tech.console.security.SecurityProvider;
@@ -62,7 +61,7 @@ public class JmsQueuesWindow extends JDialog {
         else
             throw new IllegalArgumentException("Owner must be derived from either Frame or Window");
 
-        final SecurityProvider provider = (SecurityProvider)Locator.getDefault().lookup(SecurityProvider.class);
+        final SecurityProvider provider = Registry.getDefault().getSecurityProvider();
         if (provider == null) {
             throw new IllegalStateException("Could not instantiate security provider");
         }

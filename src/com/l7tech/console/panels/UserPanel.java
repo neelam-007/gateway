@@ -1,9 +1,9 @@
 package com.l7tech.console.panels;
 
-import com.l7tech.common.util.Locator;
 import com.l7tech.console.MainWindow;
 import com.l7tech.console.security.FormAuthorizationPreparer;
 import com.l7tech.console.security.SecurityProvider;
+import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.identity.Group;
 import com.l7tech.identity.IdentityProviderConfig;
@@ -39,7 +39,7 @@ abstract public class UserPanel extends EntityEditorPanel {
     abstract public boolean certExist();
 
     protected UserPanel() {
-        final SecurityProvider provider = (SecurityProvider)Locator.getDefault().lookup(SecurityProvider.class);
+        final SecurityProvider provider = Registry.getDefault().getSecurityProvider();
         if (provider == null) {
             throw new IllegalStateException("Could not instantiate security provider");
         }

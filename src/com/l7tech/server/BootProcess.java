@@ -11,7 +11,6 @@ import com.l7tech.common.Component;
 import com.l7tech.common.security.JceProvider;
 import com.l7tech.common.util.JdkLoggerConfigurator;
 import com.l7tech.common.util.Locator;
-import com.l7tech.common.util.KeystoreUtils;
 import com.l7tech.logging.ServerLogHandler;
 import com.l7tech.objectmodel.HibernatePersistenceContext;
 import com.l7tech.objectmodel.HibernatePersistenceManager;
@@ -23,6 +22,7 @@ import com.l7tech.server.event.system.*;
 import com.l7tech.server.policy.DefaultGatewayPolicies;
 import com.l7tech.server.service.ServiceManager;
 import com.l7tech.server.service.ServiceManagerImp;
+import org.springframework.context.support.ApplicationObjectSupport;
 
 import java.io.*;
 import java.net.InetAddress;
@@ -36,7 +36,7 @@ import java.util.logging.Logger;
  * @author alex
  * @version $Revision$
  */
-public class BootProcess implements ServerComponentLifecycle {
+public class BootProcess extends ApplicationObjectSupport implements ServerComponentLifecycle {
     public static final String DEFAULT_LOGPROPERTIES_PATH = "/ssg/etc/conf/ssglog.properties";
 
     static {

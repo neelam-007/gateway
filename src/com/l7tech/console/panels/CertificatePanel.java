@@ -1,6 +1,6 @@
 package com.l7tech.console.panels;
 
-import com.l7tech.common.util.Locator;
+import com.l7tech.console.SsmApplication;
 import com.l7tech.console.event.EntityEvent;
 import com.l7tech.console.event.EntityListener;
 import com.l7tech.console.util.Preferences;
@@ -121,7 +121,7 @@ class CertificatePanel extends JPanel {
 
                         // revoke the user cert
                         try {
-                            final ClientCertManager man = (ClientCertManager)Locator.getDefault().lookup(ClientCertManager.class);
+                            final ClientCertManager man = (ClientCertManager)SsmApplication.getApplication().getBean("clientCertManager");
                             man.revokeUserCert(user);
                             // must tell parent to update user because version might have changed
                             EntityHeader eh = new EntityHeader();
@@ -240,7 +240,7 @@ class CertificatePanel extends JPanel {
     }
 
     private void getUserCert() {
-        ClientCertManager man = (ClientCertManager)Locator.getDefault().lookup(ClientCertManager.class);
+        ClientCertManager man = (ClientCertManager)SsmApplication.getApplication().getBean("clientCertManager");
         try {
             cert = (X509Certificate)man.getUserCert(user);
         } catch (FindException e) {

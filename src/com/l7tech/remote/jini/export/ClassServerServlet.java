@@ -18,7 +18,7 @@ import java.io.InputStream;
 import java.util.logging.Logger;
 
 /**
- * The servlet that works as a Jini class server.
+ * The servlet that works as a class server.
  *
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  * @version 1.0

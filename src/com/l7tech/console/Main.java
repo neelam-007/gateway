@@ -7,13 +7,10 @@ import com.jgoodies.plaf.plastic.PlasticXPLookAndFeel;
 import com.jgoodies.plaf.plastic.theme.SkyBluerTahoma;
 import com.jgoodies.plaf.windows.ExtWindowsLookAndFeel;
 import com.l7tech.common.BuildInfo;
-import com.l7tech.common.locator.SpringLocator;
 import com.l7tech.common.util.FileUtils;
 import com.l7tech.common.util.JdkLoggerConfigurator;
-import com.l7tech.common.util.Locator;
 import com.l7tech.console.util.Preferences;
 import com.l7tech.console.util.SplashScreen;
-import net.jini.security.policy.DynamicPolicyProvider;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
 
@@ -27,7 +24,6 @@ import java.net.URL;
 import java.rmi.RMISecurityManager;
 import java.security.AccessController;
 import java.security.Permission;
-import java.security.Policy;
 import java.security.PrivilegedAction;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -61,8 +57,6 @@ public class Main {
                 ensureSecurityManager();
                 installEventQueue();
 
-                Policy.setPolicy(new DynamicPolicyProvider());
-
                 initializeUIPreferences();
 
 
@@ -77,7 +71,6 @@ public class Main {
                     log.log(Level.WARNING, "error on copying resources", e);
                 }
                 ApplicationContext ctx = createApplicationContext();
-                Locator.setDefault(new SpringLocator(ctx));
                 SsmApplication app = (SsmApplication)ctx.getBean("ssmApplication");
                 app.run();
             } finally {
@@ -211,8 +204,6 @@ public class Main {
         //System.setProperty("java.security.policy", "etc/jini/policy.all");
         System.setProperty("java.protocol.handler.pkgs", "com.l7tech.remote.jini");
 
-        // where locator looks for implementaitons
-        System.setProperty("com.l7tech.common.locator.properties", "/com/l7tech/console/resources/services.properties");
         // Build information
         System.setProperty("com.l7tech.buildstring", BuildInfo.getBuildString());
         System.setProperty("com.l7tech.builddate", BuildInfo.getBuildDate() + BuildInfo.getBuildTime());

@@ -3,7 +3,6 @@ package com.l7tech.console;
 import com.l7tech.cluster.ClusterStatusAdmin;
 import com.l7tech.common.gui.util.ImageCache;
 import com.l7tech.common.gui.util.Utilities;
-import com.l7tech.common.util.Locator;
 import com.l7tech.console.action.*;
 import com.l7tech.console.event.WeakEventListenerList;
 import com.l7tech.console.panels.FindIdentitiesDialog;
@@ -1565,20 +1564,6 @@ public class MainWindow extends JFrame {
      * Initializes listeners for the form
      */
     private void initListeners() {
-        final Preferences prefs = Preferences.getPreferences();
-        prefs.addPropertyChangeListener(new PropertyChangeListener() {
-            /**
-             * This method gets called when a property is changed.
-             *
-             * @param evt A PropertyChangeEvent object describing the
-             *            event source and the property that has changed.
-             */
-            public void propertyChange(PropertyChangeEvent evt) {
-                MainWindow.log.finest("preferences have been updated");
-                MainWindow.this.setLookAndFeel(prefs.getString(Preferences.LOOK_AND_FEEL));
-                MainWindow.this.setInactivitiyTimeout(prefs.getInactivityTimeout());
-            }
-        });
 
 
         // exitMenuItem listener
@@ -1809,7 +1794,7 @@ public class MainWindow extends JFrame {
      *
      * @param newTimeout new inactivity timeout
      */
-    private void setInactivitiyTimeout(int newTimeout) {
+    void setInactivitiyTimeout(int newTimeout) {
         int inactivityTimeout = newTimeout * 60 * 1000;
         if (!isConnected()) return;
 
@@ -1834,42 +1819,6 @@ public class MainWindow extends JFrame {
     }
 
 
-    /**
-     * set the look and feel
-     *
-     * @param lookAndFeel a string specifying the name of the class that implements
-     *                    the look and feel
-     */
-    private void setLookAndFeel(String lookAndFeel) {
-
-        if (lookAndFeel == null) return;
-        boolean lfSet = true;
-
-        // if same look and feel quick exit
-        if (lookAndFeel.
-          equals(UIManager.getLookAndFeel().getClass().getName())) {
-            return;
-        }
-
-        try {
-            Object lafObject =
-              Class.forName(lookAndFeel).newInstance();
-            UIManager.setLookAndFeel((LookAndFeel)lafObject);
-        } catch (Exception e) {
-            lfSet = false;
-        }
-        // there was a problem setting l&f, try crossplatform one (best bet)
-        if (!lfSet) {
-            try {
-                UIManager.setLookAndFeel(UIManager.getCrossPlatformLookAndFeelClassName());
-            } catch (Exception e) {
-                return;
-            }
-        }
-        // update panels with new l&f
-        SwingUtilities.updateComponentTreeUI(MainWindow.this);
-        MainWindow.this.validate();
-    }
 
     /**
      * invoke logon dialog
@@ -1974,8 +1923,7 @@ public class MainWindow extends JFrame {
                   log.log(Level.WARNING, "onAuthSuccess()", e);
               }
 
-              ClusterStatusAdmin clusterStatusAdmin = (ClusterStatusAdmin)Locator.getDefault().lookup(ClusterStatusAdmin.class);
-              if (clusterStatusAdmin == null) throw new RuntimeException("Cannot obtain ClusterStatusAdmin remote reference");
+              ClusterStatusAdmin clusterStatusAdmin = Registry.getDefault().getClusterStatusAdmin();
 
               String nodeName = "";
               try {

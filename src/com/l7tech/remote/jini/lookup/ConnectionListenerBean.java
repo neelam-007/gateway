@@ -34,17 +34,18 @@ public class ConnectionListenerBean extends ApplicationObjectSupport
     }
 
     private void resetServiceStubs() {
-        final ApplicationContext ctx = getApplicationContext();
-        Iterator it = ctx.getBeansOfType(JiniProxyFactoryBean.class, false, true).keySet().iterator();
-        while (it.hasNext()) {
-            try {
-                JiniProxyFactoryBean bean = (JiniProxyFactoryBean)ctx.getBean("&" + it.next());
-                bean.resetStub();
-            } catch (Exception e) {
-                logger.error("Error while resetting service ", e);
-            }
-        }
-        HttpServiceLookup serviceLookup = (HttpServiceLookup)getApplicationContext().getBean("serviceLookup");
-        serviceLookup.resetRegistrar();
+        //todo: rework
+//        final ApplicationContext ctx = getApplicationContext();
+//        Iterator it = ctx.getBeansOfType(JiniProxyFactoryBean.class, false, true).keySet().iterator();
+//        while (it.hasNext()) {
+//            try {
+//                JiniProxyFactoryBean bean = (JiniProxyFactoryBean)ctx.getBean("&" + it.next());
+//                bean.resetStub();
+//            } catch (Exception e) {
+//                logger.error("Error while resetting service ", e);
+//            }
+//        }
+//        HttpServiceLookup serviceLookup = (HttpServiceLookup)getApplicationContext().getBean("serviceLookup");
+//        serviceLookup.resetRegistrar();
     }
 }

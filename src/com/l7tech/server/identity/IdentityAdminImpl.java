@@ -11,13 +11,11 @@ import com.l7tech.identity.ldap.LdapIdentityProviderConfig;
 import com.l7tech.objectmodel.*;
 import com.l7tech.remote.jini.export.RemoteService;
 import com.l7tech.server.identity.ldap.LdapConfigTemplateManager;
-import com.sun.jini.start.LifeCycle;
-import net.jini.config.ConfigurationException;
 
 import javax.security.auth.Subject;
-import java.io.IOException;
 import java.rmi.RemoteException;
 import java.security.AccessControlException;
+import java.security.AccessController;
 import java.security.SecureRandom;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateEncodingException;
@@ -28,6 +26,8 @@ import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import org.springframework.beans.factory.InitializingBean;
+
 /**
  * Server side implementation of the IdentityAdmin interface.
  * This was originally used with the Axis layer
@@ -37,10 +37,8 @@ import java.util.logging.Logger;
  * User: flascelles<br/>
  * Date: May 26, 2003
  */
-public class IdentityAdminImpl extends RemoteService implements IdentityAdmin {
-    public IdentityAdminImpl(String[] options, LifeCycle lifeCycle) throws ConfigurationException, IOException {
-        super(options, lifeCycle);
-    }
+public class IdentityAdminImpl extends RemoteService
+  implements IdentityAdmin, InitializingBean {
 
     public static final String SERVICE_DEPENDENT_URL_PORTION = "/services/identityAdmin";
 
@@ -145,7 +143,6 @@ public class IdentityAdminImpl extends RemoteService implements IdentityAdmin {
         } catch (ObjectNotFoundException e) {
             throw new DeleteException("This object cannot be found (it no longer exist?).", e);
         }
-
     }
 
     /**
@@ -588,7 +585,7 @@ public class IdentityAdminImpl extends RemoteService implements IdentityAdmin {
             throw new IllegalArgumentException();
         }
 
-        final Subject currentSubject = getCurrentSubject();
+        final Subject currentSubject = Subject.getSubject(AccessController.getContext());
         if (currentSubject == null) {
             return Collections.EMPTY_SET;
         }
@@ -606,14 +603,27 @@ public class IdentityAdminImpl extends RemoteService implements IdentityAdmin {
         throw new AccessControlException("Access denied, accessing subject " + subject);
     }
 
+    public void setIdentityProviderConfigManager(IdentityProviderConfigManager icf) {
+        this.identityProviderConfigManager = icf;
+    }
+
+    public void afterPropertiesSet() throws Exception {
+         checkidentityProviderConfigManager();
+     }
+
+
+
     // ************************************************
     // PRIVATES
     // ************************************************
 
-    private IdentityProviderConfigManager getIdProvCfgMan() throws RemoteException {
+    private void checkidentityProviderConfigManager() {
         if (identityProviderConfigManager == null) {
-            initialiseConfigManager();
+            throw new IllegalArgumentException("identity provider config is required");
         }
+    }
+
+    private IdentityProviderConfigManager getIdProvCfgMan() throws RemoteException {
         return identityProviderConfigManager;
     }
 
@@ -695,27 +705,6 @@ public class IdentityAdminImpl extends RemoteService implements IdentityAdmin {
         return ret;
     }
 
-    private synchronized void initialiseConfigManager() throws RemoteException {
-        try {
-            // get the config manager implementation
-            identityProviderConfigManager = (IdentityProviderConfigManager)Locator.
-              getDefault().
-              lookup(IdentityProviderConfigManager.class);
-            if (identityProviderConfigManager == null) {
-                throw new RemoteException("Cannot instantiate the IdentityProviderConfigManager");
-            }
-        } catch (ClassCastException e) {
-            String msg = "ClassCastException in IdentitiesSoapBindingImpl.initialiseConfigManager " +
-              "from Locator.getDefault().lookup";
-            logger.log(Level.SEVERE, msg, e);
-            throw new RemoteException(msg, e);
-        } catch (RuntimeException e) {
-            String msg = "RuntimeException in IdentitiesSoapBindingImpl.initialiseConfigManager" +
-              " from Locator.getDefault().lookup: ";
-            logger.log(Level.SEVERE, msg, e);
-            throw new RemoteException(msg + e.getMessage(), e);
-        }
-    }
 
     /**
      * Parse the String service ID to long (database format). Throws runtime exc

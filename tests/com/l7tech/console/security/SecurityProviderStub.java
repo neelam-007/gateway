@@ -15,7 +15,7 @@ public class SecurityProviderStub extends SecurityProvider {
     /**
      * Stub mode login. Set the new credenitals with what was passed
      */
-    public void login(PasswordAuthentication creds)
+    public void login(PasswordAuthentication creds, String host)
       throws LoginException, VersionException {
         setCredentials(creds);
     }

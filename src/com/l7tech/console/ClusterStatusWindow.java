@@ -521,12 +521,8 @@ public class ClusterStatusWindow extends JFrame implements LogonListener {
      * Initialize the object references of the remote services
      */
     private void initAdminConnection() {
-        serviceManager = (ServiceAdmin)Locator.getDefault().lookup(ServiceAdmin.class);
-        if (serviceManager == null) throw new IllegalStateException("Cannot obtain ServiceManager remote reference");
-
-        clusterStatusAdmin = (ClusterStatusAdmin)Locator.getDefault().lookup(ClusterStatusAdmin.class);
-        if (clusterStatusAdmin == null) throw new RuntimeException("Cannot obtain ClusterStatusAdmin remote reference");
-
+        serviceManager = Registry.getDefault().getServiceManager();
+        clusterStatusAdmin = Registry.getDefault().getClusterStatusAdmin();
     }
 
     /**

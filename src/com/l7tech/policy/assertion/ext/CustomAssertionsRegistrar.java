@@ -14,7 +14,7 @@ import java.io.IOException;
  * provide access to the custom assertions that have been registered with
  * the runtime.
  */
-public interface CustomAssertionsRegistrar extends Remote {
+public interface CustomAssertionsRegistrar {
     /**
      * @return the list of all assertions known to the runtime
      * @throws RemoteException on remote communication error

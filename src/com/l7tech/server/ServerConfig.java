@@ -17,11 +17,13 @@ import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import org.springframework.context.support.ApplicationObjectSupport;
+
 /**
  * @author alex
  * @version $Revision$
  */
-public class ServerConfig implements ComponentConfig {
+public class ServerConfig extends ApplicationObjectSupport implements ComponentConfig {
     public static final String PARAM_SERVICE_RESOLVERS = "serviceResolvers";
     public static final String PARAM_SERVER_ID = "serverId";
     public static final String PARAM_KEYSTORE = "keystorePropertiesPath";

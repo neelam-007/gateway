@@ -3,7 +3,6 @@ package com.l7tech.console.panels;
 import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.common.security.TrustedCert;
 import com.l7tech.common.security.TrustedCertAdmin;
-import com.l7tech.common.util.Locator;
 import com.l7tech.console.action.Actions;
 import com.l7tech.console.event.WizardAdapter;
 import com.l7tech.console.event.WizardEvent;
@@ -12,6 +11,7 @@ import com.l7tech.console.security.FormAuthorizationPreparer;
 import com.l7tech.console.security.SecurityProvider;
 import com.l7tech.console.table.TrustedCertTableSorter;
 import com.l7tech.console.table.TrustedCertsTable;
+import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.identity.Group;
 import com.l7tech.objectmodel.*;
@@ -56,7 +56,7 @@ public class CertManagerWindow extends JDialog {
     public CertManagerWindow(Frame owner) {
         super(owner, resources.getString("dialog.title"), true);
 
-        final SecurityProvider provider = (SecurityProvider)Locator.getDefault().lookup(SecurityProvider.class);
+        final SecurityProvider provider = Registry.getDefault().getSecurityProvider();
         if (provider == null) {
             throw new IllegalStateException("Could not instantiate security provider");
         }
@@ -369,12 +369,7 @@ public class CertManagerWindow extends JDialog {
      * @throws RuntimeException if the object reference of the Trusted Cert Admin service is not found.
      */
     private TrustedCertAdmin getTrustedCertAdmin() throws RuntimeException {
-        TrustedCertAdmin tca =
-          (TrustedCertAdmin)Locator.
-          getDefault().lookup(TrustedCertAdmin.class);
-        if (tca == null) {
-            throw new RuntimeException("Could not find registered " + TrustedCertAdmin.class);
-        }
+        TrustedCertAdmin tca = Registry.getDefault().getTrustedCertManager();
 
         return tca;
     }

@@ -159,19 +159,7 @@ public class WorkSpacePanel extends JPanel {
 
         UIManager.addPropertyChangeListener(l);
         Preferences pref = Preferences.getPreferences();
-        l = new PropertyChangeListener() {
-            /**
-             * This method gets called when a property is changed.
-             */
-            public void propertyChange(PropertyChangeEvent evt) {
-                log.info("toolbar view changed to " + evt.getNewValue());
-            }
-        };
-
-        // toolbars (icon, text etc)
-        pref.
-          addPropertyChangeListener(Preferences.STATUS_BAR_VISIBLE, l);
-
+      
 
         tabbedPane.addContainerListener(new ContainerAdapter() {
 

@@ -1,7 +1,6 @@
 package com.l7tech.console.panels;
 
 import com.l7tech.common.gui.util.Utilities;
-import com.l7tech.common.util.Locator;
 import com.l7tech.console.MainWindow;
 import com.l7tech.console.action.SecureAction;
 import com.l7tech.console.logging.ErrorManager;
@@ -14,8 +13,8 @@ import com.l7tech.identity.Group;
 import com.l7tech.identity.IdentityAdmin;
 import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.identity.PersistentGroup;
-import com.l7tech.identity.ldap.LdapGroup;
 import com.l7tech.identity.fed.VirtualGroup;
+import com.l7tech.identity.ldap.LdapGroup;
 import com.l7tech.objectmodel.*;
 
 import javax.swing.*;
@@ -80,7 +79,7 @@ public abstract class GroupPanel extends EntityEditorPanel {
 
     protected GroupPanel(IdentityProviderConfig config) {
         this.config = config;
-        final SecurityProvider provider = (SecurityProvider)Locator.getDefault().lookup(SecurityProvider.class);
+        final SecurityProvider provider = Registry.getDefault().getSecurityProvider();
         if (provider == null) {
             throw new IllegalStateException("Could not instantiate security provider");
         }

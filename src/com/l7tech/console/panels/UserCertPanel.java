@@ -1,32 +1,37 @@
 package com.l7tech.console.panels;
 
-import com.l7tech.console.util.TopComponents;
-import com.l7tech.console.event.*;
+import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.common.security.TrustedCert;
 import com.l7tech.common.security.TrustedCertAdmin;
-import com.l7tech.common.util.Locator;
-import com.l7tech.common.util.HexUtils;
 import com.l7tech.common.util.CertUtils;
-import com.l7tech.common.gui.util.Utilities;
-import com.l7tech.objectmodel.*;
-import com.l7tech.identity.cert.ClientCertManager;
+import com.l7tech.common.util.HexUtils;
+import com.l7tech.console.SsmApplication;
+import com.l7tech.console.event.WizardAdapter;
+import com.l7tech.console.event.WizardEvent;
+import com.l7tech.console.event.WizardListener;
+import com.l7tech.console.util.Registry;
+import com.l7tech.console.util.TopComponents;
 import com.l7tech.identity.UserBean;
+import com.l7tech.identity.cert.ClientCertManager;
+import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.ObjectNotFoundException;
+import com.l7tech.objectmodel.UpdateException;
 
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.ActionListener;
 import java.awt.event.ActionEvent;
-import java.awt.event.HierarchyListener;
+import java.awt.event.ActionListener;
 import java.awt.event.HierarchyEvent;
-import java.util.logging.Logger;
-import java.util.logging.Level;
-import java.util.ResourceBundle;
-import java.util.Locale;
-import java.security.cert.X509Certificate;
+import java.awt.event.HierarchyListener;
+import java.io.IOException;
+import java.security.NoSuchAlgorithmException;
 import java.security.cert.CertificateEncodingException;
 import java.security.cert.CertificateException;
-import java.security.NoSuchAlgorithmException;
-import java.io.IOException;
+import java.security.cert.X509Certificate;
+import java.util.Locale;
+import java.util.ResourceBundle;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * <p> Copyright (C) 2004 Layer 7 Technologies Inc.</p>
@@ -120,7 +125,7 @@ public class UserCertPanel extends JPanel {
 
                         // remove the user cert
                         try {
-                            final ClientCertManager man = (ClientCertManager) Locator.getDefault().lookup(ClientCertManager.class);
+                            ClientCertManager man = (ClientCertManager)SsmApplication.getApplication().getBean("clientCertManager");
                             man.revokeUserCert(user);
                         } catch (UpdateException e) {
                             log.log(Level.WARNING, "ERROR Removing certificate", e);
@@ -238,7 +243,7 @@ public class UserCertPanel extends JPanel {
     };
 
     private void getUserCert() {
-        ClientCertManager man = (ClientCertManager) Locator.getDefault().lookup(ClientCertManager.class);
+        final ClientCertManager man = (ClientCertManager)SsmApplication.getApplication().getBean("clientCertManager");
         try {
             cert = (X509Certificate) man.getUserCert(user);
         } catch (FindException e) {
@@ -247,7 +252,7 @@ public class UserCertPanel extends JPanel {
     }
 
     private void saveUserCert(TrustedCert tc) throws IOException, CertificateException, UpdateException {
-        ClientCertManager man = (ClientCertManager) Locator.getDefault().lookup(ClientCertManager.class);
+        final ClientCertManager man = (ClientCertManager)SsmApplication.getApplication().getBean("clientCertManager");
 
         man.recordNewUserCert(user, tc.getCertificate());
     }
@@ -396,13 +401,7 @@ public class UserCertPanel extends JPanel {
     }
 
     private TrustedCertAdmin getTrustedCertAdmin() throws RuntimeException {
-        TrustedCertAdmin tca =
-                (TrustedCertAdmin) Locator.
-                getDefault().lookup(TrustedCertAdmin.class);
-        if (tca == null) {
-            throw new RuntimeException("Could not find registered " + TrustedCertAdmin.class);
-        }
-
+        TrustedCertAdmin tca = Registry.getDefault().getTrustedCertManager();
         return tca;
     }
 

@@ -6,6 +6,7 @@ import com.l7tech.cluster.LogRequest;
 import com.l7tech.common.util.Locator;
 import com.l7tech.console.panels.LogPanel;
 import com.l7tech.console.util.ClusterLogWorker;
+import com.l7tech.console.util.Registry;
 import com.l7tech.logging.GenericLogAdmin;
 import com.l7tech.logging.LogAdmin;
 import com.l7tech.logging.LogMessage;
@@ -342,11 +343,9 @@ public class FilteredLogTableSorter extends FilteredLogTableModel {
      * Initialize the variables when the connection with the cluster is established.
      */
     public void onConnect() {
-        logAdmin = (GenericLogAdmin)logAdminLocator.lookup(GenericLogAdmin.class);
-        if (logAdmin == null) throw new IllegalStateException("cannot obtain GenericLogAdmin implementation");
 
-        clusterStatusAdmin = (ClusterStatusAdmin) Locator.getDefault().lookup(ClusterStatusAdmin.class);
-        if (clusterStatusAdmin == null) throw new RuntimeException("Cannot obtain ClusterStatusAdmin remote reference");
+        logAdmin = Registry.getDefault().getLogAdmin();
+        clusterStatusAdmin = Registry.getDefault().getClusterStatusAdmin();
 
         currentNodeList = new Hashtable();
 

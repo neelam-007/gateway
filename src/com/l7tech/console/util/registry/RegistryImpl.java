@@ -1,17 +1,28 @@
 package com.l7tech.console.util.registry;
 
+import com.l7tech.admin.AdminContext;
 import com.l7tech.common.audit.AuditAdmin;
 import com.l7tech.common.security.TrustedCertAdmin;
 import com.l7tech.common.transport.jms.JmsAdmin;
-import com.l7tech.common.util.Locator;
 import com.l7tech.console.util.Registry;
+import com.l7tech.console.security.LogonEvent;
+import com.l7tech.console.security.SecurityProvider;
 import com.l7tech.identity.IdentityAdmin;
 import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.identity.IdentityProviderConfigManager;
 import com.l7tech.logging.LogAdmin;
 import com.l7tech.policy.assertion.ext.CustomAssertionsRegistrar;
 import com.l7tech.service.ServiceAdmin;
+import com.l7tech.cluster.ClusterStatusAdmin;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+import org.springframework.beans.BeansException;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.ApplicationContextAware;
+import org.springframework.context.ApplicationListener;
+import org.springframework.context.ApplicationEvent;
 
+import java.rmi.RemoteException;
 
 
 /**
@@ -21,27 +32,46 @@ import com.l7tech.service.ServiceAdmin;
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  * @version 1.0
  */
-public class RegistryImpl extends Registry {
+public final class RegistryImpl extends Registry
+  implements ApplicationContextAware, ApplicationListener {
+    protected final Log logger = LogFactory.getLog(getClass());
+
+    private ApplicationContext applicationContext;
+    private AdminContext adminContext = null;
+    private IdentityAdmin identityAdmin;
+    private ServiceAdmin serviceAdmin;
+    private JmsAdmin jmsAdmin;
+    private TrustedCertAdmin trustedCertAdmin;
+    private CustomAssertionsRegistrar customAssertionsRegistrar;
+    private AuditAdmin auditAdmin;
+    private LogAdmin logAdmin;
+    private ClusterStatusAdmin clusterStatusAdmin;
+
     /**
      * @return the {@link IdentityAdmin} implementation
      */
-    public IdentityAdmin getIdentityAdmin() {
-        IdentityAdmin admin = (IdentityAdmin)Locator.getDefault().lookup(IdentityAdmin.class);
-        if (admin == null) throw new RuntimeException("Could not get " + IdentityAdmin.class);
-        return admin;
+    public synchronized IdentityAdmin getIdentityAdmin() {
+        checkAdminContext();
+        if (identityAdmin != null) {
+            return identityAdmin;
+        }
+        try {
+            identityAdmin = adminContext.getIdentityAdmin();
+            return identityAdmin;
+        } catch (RemoteException e) {
+            throw new RuntimeException(e);
+        }
     }
+
 
     /**
      * @return the internal identity provider
      */
     public IdentityProviderConfig getInternalProviderConfig() {
         IdentityAdmin admin = getIdentityAdmin();
-        if (admin == null) {
-            throw new RuntimeException("Could not get " + IdentityAdmin.class);
-        }
         try {
             return admin.findIdentityProviderConfigByID(IdentityProviderConfigManager.INTERNALPROVIDER_SPECIAL_OID);
-        } catch (Exception e ) {
+        } catch (Exception e) {
             throw new RuntimeException(e);
         }
     }
@@ -49,67 +79,185 @@ public class RegistryImpl extends Registry {
     /**
      * @return the service manager
      */
-    public ServiceAdmin getServiceManager() {
-        ServiceAdmin sm = (ServiceAdmin)Locator.getDefault().lookup(ServiceAdmin.class);
-        if (sm == null) {
-            throw new RuntimeException("Could not get " + ServiceAdmin.class);
+    public synchronized ServiceAdmin getServiceManager() {
+        checkAdminContext();
+        if (serviceAdmin != null) {
+            return serviceAdmin;
         }
-        return sm;
+        try {
+            serviceAdmin = adminContext.getServiceAdmin();
+            return serviceAdmin;
+        } catch (RemoteException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     /**
      * @return the JMS manager
      */
-    public JmsAdmin getJmsManager() {
-        JmsAdmin ja = (JmsAdmin)Locator.getDefault().lookup(JmsAdmin.class);
-        if (ja == null) {
-            throw new RuntimeException("Could not get " + JmsAdmin.class);
+    public synchronized JmsAdmin getJmsManager() {
+        checkAdminContext();
+        if (jmsAdmin != null) {
+            return jmsAdmin;
         }
-        return ja;
+        try {
+            jmsAdmin = adminContext.getJmsAdmin();
+            return jmsAdmin;
+        } catch (RemoteException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     /**
      * @return the Trusted Cert Manager
      */
-    public TrustedCertAdmin getTrustedCertManager() {
-        TrustedCertAdmin tca = (TrustedCertAdmin)Locator.getDefault().lookup(TrustedCertAdmin.class);
-        if (tca == null) {
-            throw new RuntimeException("Could not get " + TrustedCertAdmin.class);
+    public synchronized TrustedCertAdmin getTrustedCertManager() {
+        checkAdminContext();
+        if (trustedCertAdmin != null) {
+            return trustedCertAdmin;
         }
-        return tca;
+        try {
+            trustedCertAdmin = adminContext.getTrustedCertAdmin();
+            return trustedCertAdmin;
+        } catch (RemoteException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     /**
      * @return the custome assertions registrar
      */
-    public CustomAssertionsRegistrar getCustomAssertionsRegistrar() {
-        CustomAssertionsRegistrar cr =
-          (CustomAssertionsRegistrar)Locator.getDefault().lookup(CustomAssertionsRegistrar.class);
-        if (cr == null) {
-            throw new RuntimeException("Could not get " + CustomAssertionsRegistrar.class);
+    public synchronized CustomAssertionsRegistrar getCustomAssertionsRegistrar() {
+        checkAdminContext();
+        if (customAssertionsRegistrar != null) {
+            return customAssertionsRegistrar;
         }
-        return cr;
+        try {
+            customAssertionsRegistrar = adminContext.getCustomAssertionsRegistrar();
+            return customAssertionsRegistrar;
+        } catch (RemoteException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     /**
      * @return the {@link AuditAdmin} implementation
      */
-    public AuditAdmin getAuditAdmin() {
-        AuditAdmin aa = (AuditAdmin)Locator.getDefault().lookup(AuditAdmin.class);
-        if (aa == null) {
-            throw new RuntimeException("Could not get " + AuditAdmin.class);
+    public synchronized AuditAdmin getAuditAdmin() {
+        checkAdminContext();
+        if (auditAdmin !=null) {
+            return auditAdmin;
         }
-        return aa;
+        try {
+            auditAdmin = adminContext.getAuditAdmin();
+            return auditAdmin;
+        } catch (RemoteException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     /**
      * @return the {@link LogAdmin} implementation
      */
-    public LogAdmin getLogAdmin() {
-        LogAdmin la = (LogAdmin)Locator.getDefault().lookup(LogAdmin.class);
-        if (la == null) {
-            throw new RuntimeException("Could not get " + LogAdmin.class);
+    public synchronized LogAdmin getLogAdmin() {
+        checkAdminContext();
+        if (logAdmin !=null) {
+            return logAdmin;
         }
-        return la;
+        try {
+            logAdmin = adminContext.getLogAdmin();
+            return logAdmin;
+        } catch (RemoteException e) {
+            throw new RuntimeException(e);
+        }
     }
+
+    public ClusterStatusAdmin getClusterStatusAdmin() {
+        checkAdminContext();
+        if (clusterStatusAdmin !=null) {
+            return clusterStatusAdmin;
+        }
+        try {
+            clusterStatusAdmin = adminContext.getClusterStatusAdmin();
+            return clusterStatusAdmin;
+        } catch (RemoteException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public SecurityProvider getSecurityProvider() {
+        return (SecurityProvider)applicationContext.getBean("securityProvider");
+    }
+
+    /**
+     * Set the ApplicationContext that this object runs in.
+     * Normally this call will be used to initialize the object.
+     * <p>Invoked after population of normal bean properties but before an init
+     * callback like InitializingBean's afterPropertiesSet or a custom init-method.
+     * Invoked after ResourceLoaderAware's setResourceLoader.
+     *
+     * @param applicationContext ApplicationContext object to be used by this object
+     * @throws org.springframework.context.ApplicationContextException
+     *          in case of applicationContext initialization errors
+     * @throws org.springframework.beans.BeansException
+     *          if thrown by application applicationContext methods
+     * @see org.springframework.beans.factory.BeanInitializationException
+     */
+    public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
+        this.applicationContext = applicationContext;
+    }
+
+    /**
+      * Handle an application event.
+      *
+      * @param event the event to respond to
+      */
+     public void onApplicationEvent(ApplicationEvent event) {
+         if (event instanceof LogonEvent) {
+             LogonEvent le = (LogonEvent)event;
+             if (le.getType() == LogonEvent.LOGOFF) {
+                 onLogoff(le);
+             } else {
+                 onLogon(le);
+             }
+         }
+     }
+
+    /**
+     * check whether the admin context is set
+     *
+     * @throws IllegalStateException if admin context not set
+     */
+    private void checkAdminContext() throws IllegalStateException {
+        if (adminContext == null) {
+            throw new IllegalStateException("Admin Context is requred");
+        }
+    }
+
+    private synchronized void resetAdminContext() {
+        adminContext = null;
+        identityAdmin = null;
+        serviceAdmin = null;
+        jmsAdmin = null;
+        trustedCertAdmin = null;
+        customAssertionsRegistrar = null;
+        auditAdmin = null;
+        logAdmin = null;
+    }
+
+
+     private void onLogoff(LogonEvent e) {
+         logger.trace("Logoff message received, invalidating admin context");
+         resetAdminContext();
+     }
+
+
+     private void onLogon(LogonEvent le) {
+         Object source = le.getSource();
+         if (!(source instanceof AdminContext)) {
+             throw new IllegalArgumentException("Admin Context is required");
+         }
+         adminContext = (AdminContext)source;
+     }
+
 }

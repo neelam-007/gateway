@@ -11,7 +11,6 @@ import com.l7tech.common.gui.widgets.OptionalCredentialsPanel;
 import com.l7tech.common.transport.jms.JmsConnection;
 import com.l7tech.common.transport.jms.JmsEndpoint;
 import com.l7tech.common.transport.jms.JmsProvider;
-import com.l7tech.common.util.Locator;
 import com.l7tech.console.action.Actions;
 import com.l7tech.console.security.FormAuthorizationPreparer;
 import com.l7tech.console.security.SecurityProvider;
@@ -97,7 +96,7 @@ public class JmsQueuePropertiesDialog extends JDialog {
             that = new JmsQueuePropertiesDialog((Dialog)parent);
         else
             throw new IllegalArgumentException("parent must be derived from either Frame or Dialog");
-        final SecurityProvider provider = (SecurityProvider)Locator.getDefault().lookup(SecurityProvider.class);
+        final SecurityProvider provider = Registry.getDefault().getSecurityProvider();
         if (provider == null) {
             throw new IllegalStateException("Could not instantiate security provider");
         }

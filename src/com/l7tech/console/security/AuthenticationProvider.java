@@ -24,8 +24,9 @@ public interface AuthenticationProvider {
      *
      * @param creds the credentials to authenticate
      * @see com.l7tech.console.security.SecurityProviderImpl
+     * @param host the host in the host[:port] format
      */
-    void login(PasswordAuthentication creds)
+    void login(PasswordAuthentication creds, String host)
       throws LoginException, VersionException, RemoteException;
 
     /**

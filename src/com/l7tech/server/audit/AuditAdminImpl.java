@@ -17,8 +17,6 @@ import com.l7tech.logging.SSGLogRecord;
 import com.l7tech.objectmodel.*;
 import com.l7tech.remote.jini.export.RemoteService;
 import com.l7tech.server.ServerConfig;
-import com.sun.jini.start.LifeCycle;
-import net.jini.config.ConfigurationException;
 import net.sf.hibernate.HibernateException;
 
 import java.io.IOException;
@@ -62,9 +60,6 @@ public class AuditAdminImpl extends RemoteService implements AuditAdmin {
         Background.schedule(downloadReaperTask, CONTEXT_TIMEOUT, CONTEXT_TIMEOUT);
     }
 
-    public AuditAdminImpl( String[] options, LifeCycle lifeCycle ) throws ConfigurationException, IOException {
-        super( options, lifeCycle );
-    }
 
     public AuditRecord findByPrimaryKey( final long oid ) throws FindException, RemoteException {
         try {

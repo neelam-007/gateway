@@ -1,8 +1,9 @@
 package com.l7tech.console.util;
 
+import org.springframework.context.support.ApplicationObjectSupport;
+
 import java.awt.*;
 import java.beans.PropertyChangeEvent;
-import java.beans.PropertyChangeSupport;
 import java.io.*;
 import java.util.*;
 import java.util.List;
@@ -25,10 +26,9 @@ import java.util.List;
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  * @see java.beans.PropertyChangeSupport
  */
-public class Preferences extends PropertyChangeSupport {
+public class Preferences extends ApplicationObjectSupport {
     private static boolean debug = false;
     public static final String SERVICE_URL = "service.url";
-    public static final String SERVICE_URL_SUFFIX = "/ssg";
     private static Preferences prefs = null;
 
     protected Properties props = new Properties();
@@ -39,7 +39,6 @@ public class Preferences extends PropertyChangeSupport {
      * instantiate the Preferences
      */
     protected Preferences() {
-        super("preferences"); // unused value for super constructor
     }
 
     /**
@@ -342,7 +341,7 @@ public class Preferences extends PropertyChangeSupport {
         if (value == null) throw new NullPointerException("value == null");
         Object old = props.setProperty(key, value);
         PropertyChangeEvent e = new PropertyChangeEvent(this, key, old, value);
-        firePropertyChange(e);
+        //firePropertyChange(e);
     }
 
     /**
@@ -357,7 +356,7 @@ public class Preferences extends PropertyChangeSupport {
         if (key == null) throw new NullPointerException("key == null");
         Object old = props.remove(key);
         PropertyChangeEvent e = new PropertyChangeEvent(this, key, old, null);
-        firePropertyChange(e);
+        //firePropertyChange(e);
     }
 
     /**
@@ -367,7 +366,7 @@ public class Preferences extends PropertyChangeSupport {
      * @return the service url.
      */
     public String getServiceUrl() {
-        return props.getProperty(SERVICE_URL) + SERVICE_URL_SUFFIX;
+        return props.getProperty(SERVICE_URL);
     }
 
     /**

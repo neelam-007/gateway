@@ -169,7 +169,6 @@ public class ResolveForeignIdentityProviderPanel extends WizardStepPanel {
     private void populateIdProviders() {
         // populate provider selector
         IdentityAdmin admin = null;
-        //manager = (IdentityProviderConfigManager)Locator.getDefault().lookup(IdentityProviderConfigManager.class);
         admin = Registry.getDefault().getIdentityAdmin();
         if (admin == null) {
             logger.severe("Cannot get the IdentityAdmin");

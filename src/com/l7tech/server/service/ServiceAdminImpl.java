@@ -11,8 +11,6 @@ import com.l7tech.server.policy.validator.ServerPolicyValidator;
 import com.l7tech.service.PublishedService;
 import com.l7tech.service.ResolutionParameterTooLongException;
 import com.l7tech.service.ServiceAdmin;
-import com.sun.jini.start.LifeCycle;
-import net.jini.config.ConfigurationException;
 import org.apache.commons.httpclient.HttpClient;
 import org.apache.commons.httpclient.HttpException;
 import org.apache.commons.httpclient.HttpState;
@@ -37,9 +35,6 @@ import java.util.logging.Logger;
  * Date: Jun 6, 2003
  */
 public class ServiceAdminImpl extends RemoteService implements ServiceAdmin {
-    public ServiceAdminImpl( String[] options, LifeCycle lifeCycle ) throws ConfigurationException, IOException {
-        super( options, lifeCycle );
-    }
 
     public static final String SERVICE_DEPENDENT_URL_PORTION = "/services/serviceAdmin";
 

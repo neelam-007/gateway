@@ -58,7 +58,7 @@ public abstract class SsgAdminSession {
         PrivilegedExceptionAction action = new PrivilegedExceptionAction() {
             public Object run() throws Exception {
                 SecurityProvider ccm = getCredentialManager();
-                ccm.getAuthenticationProvider().login(new PasswordAuthentication(_adminlogin, _adminpass.toCharArray()));
+                ccm.getAuthenticationProvider().login(new PasswordAuthentication(_adminlogin, _adminpass.toCharArray()), null);
                 return doSomething();
             }
         };

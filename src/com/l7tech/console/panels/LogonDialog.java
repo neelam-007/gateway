@@ -8,15 +8,13 @@ import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.common.util.CertificateDownloader;
 import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.common.util.KeystoreUtils;
-import com.l7tech.common.util.Locator;
 import com.l7tech.console.MainWindow;
 import com.l7tech.console.action.ImportCertificateAction;
 import com.l7tech.console.security.SecurityProvider;
 import com.l7tech.console.text.FilterDocument;
 import com.l7tech.console.util.History;
 import com.l7tech.console.util.Preferences;
-import org.apache.commons.httpclient.protocol.Protocol;
-import org.apache.commons.httpclient.protocol.SecureProtocolSocketFactory;
+import com.l7tech.console.util.Registry;
 
 import javax.net.ssl.*;
 import javax.security.auth.login.FailedLoginException;
@@ -352,8 +350,14 @@ public class LogonDialog extends JDialog {
             public void run() {
                 Object[] urls = serverUrlHistory.getEntries();
                 for (int i = 0; i < urls.length; i++) {
-                    Object url = urls[i];
-                    serverComboBox.addItem(url);
+                    String surl = urls[i].toString();
+                    String hostNamePort = surl;
+                    try {
+                        URL url = new URL(surl);
+                        hostNamePort = url.getHost() + ":" + url.getPort();
+                    } catch (MalformedURLException e) {
+                    }
+                    serverComboBox.addItem(hostNamePort);
                     if (i == 0) {
                         serverComboBox.setSelectedIndex(0);
                     }
@@ -451,16 +455,12 @@ public class LogonDialog extends JDialog {
         authentication = new PasswordAuthentication(userNameTextField.getText(),
           passwordField.getPassword());
 
-
-        String serviceURL = null;
         Container parentContainer = getParent();
+        // service URL
+        final String serverURL = (String)serverComboBox.getSelectedItem();
         try {
             sslHostNameMismatchUserNotified = false;
             parentContainer.setCursor(Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR));
-
-            // service URL
-            final String serverURL = (String)serverComboBox.getSelectedItem();
-            serviceURL = serverURL + Preferences.SERVICE_URL_SUFFIX;
 
             parentContainer.setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
             final SecurityProvider securityProvider = getCredentialManager();
@@ -469,16 +469,15 @@ public class LogonDialog extends JDialog {
             serverUrlHistory.add(serverURL);
 
             // if the service is not avail, format the message and show to te client (if not already notified)
-            if (!isServiceAvailable(serviceURL)) {
+            if (!isServiceAvailable(serverURL)) {
                 if (!sslHostNameMismatchUserNotified) {
                     String msg = MessageFormat.format(resources.getString("logon.connect.error"),
-                      new Object[]{getHostPart(serviceURL)});
+                      new Object[]{serverURL});
                     JOptionPane.showMessageDialog(this, msg, "Error", JOptionPane.ERROR_MESSAGE);
                 }
                 return;
             }
 
-            final String serviceURL1 = serviceURL;
             final SwingWorker sw =
               new SwingWorker() {
                   private Exception memoException = null;
@@ -486,7 +485,7 @@ public class LogonDialog extends JDialog {
 
                   public Object construct() {
                       try {
-                          securityProvider.getAuthenticationProvider().login(authentication);
+                          securityProvider.getAuthenticationProvider().login(authentication, serverURL);
                       } catch (Exception e) {
                           if (!Thread.currentThread().isInterrupted()) {
                               memoException = e;
@@ -501,7 +500,7 @@ public class LogonDialog extends JDialog {
                   public void finished() {
                       progressDialog.dispose();
                       if (memoException != null) {
-                          handleLogonThrowable(memoException, LogonDialog.this, serviceURL1);
+                          handleLogonThrowable(memoException, LogonDialog.this, serverURL);
                       }
                       if (get() != null) {
                           dispose();
@@ -528,7 +527,7 @@ public class LogonDialog extends JDialog {
 
             sw.start();
         } catch (Exception e) {
-            handleLogonThrowable(e, this, serviceURL);
+            handleLogonThrowable(e, this, serverURL);
         } finally {
             parentContainer.setCursor(Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR));
         }
@@ -583,11 +582,7 @@ public class LogonDialog extends JDialog {
     }
 
     private static SecurityProvider getCredentialManager() {
-        SecurityProvider credentialManager =
-          (SecurityProvider)Locator.getDefault().lookup(SecurityProvider.class);
-        if (credentialManager == null) { // bug
-            throw new IllegalStateException("No credential manager configured in services");
-        }
+        SecurityProvider credentialManager = Registry.getDefault().getSecurityProvider();
         return credentialManager;
     }
 
@@ -601,7 +596,7 @@ public class LogonDialog extends JDialog {
     private boolean isServiceAvailable(String serviceUrl) {
         boolean serviceAvailable = false;
         boolean b = Boolean.getBoolean(DISABLE_SERVER_CHECK);
-        if (b) return true;
+        if (b || !b) return true;
 
         // try to connect and read the HTTP(S) code. We are ok if it
         // is 200, 401, 403, 302.
@@ -695,26 +690,6 @@ public class LogonDialog extends JDialog {
         tmf.init(KeystoreUtils.getKeyStore(trustStoreFile, password));
         final SSLContext ctx = SSLContext.getInstance("SSL");
         ctx.init(null, tmf.getTrustManagers(), null);
-        HttpsURLConnection.setDefaultSSLSocketFactory(ctx.getSocketFactory());
-
-        Protocol https = new Protocol("https",
-          new SecureProtocolSocketFactory() {
-              public Socket createSocket(Socket socket, String host, int port, boolean autoClose)
-                throws IOException, UnknownHostException {
-                  return ctx.getSocketFactory().createSocket(socket, host, port, autoClose);
-              }
-
-              public Socket createSocket(String host, int port, InetAddress clientAddress, int clientPort)
-                throws IOException, UnknownHostException {
-                  return ctx.getSocketFactory().createSocket(host, port, clientAddress, clientPort);
-              }
-
-              public Socket createSocket(String host, int port)
-                throws IOException, UnknownHostException {
-                  return ctx.getSocketFactory().createSocket(host, port);
-              }
-          }, 443);
-        Protocol.registerProtocol("https", https);
     }
 
     private void addSslHostNameVerifier(HttpURLConnection conn) {
@@ -773,8 +748,7 @@ public class LogonDialog extends JDialog {
     private static String getHostPart(String serviceUrl) {
         String hostPart = serviceUrl;
         try {
-            URL url =
-              new URL(serviceUrl);
+            URL url = new URL(serviceUrl);
             String sPort =
               (url.getPort() == -1 ? "" : ":" + Integer.toString(url.getPort()));
             hostPart = url.getProtocol() + "://" + url.getHost() + sPort;
@@ -839,20 +813,14 @@ public class LogonDialog extends JDialog {
         if (null == userName || "".equals(userName)) {
             return false;
         }
-        try {
-            if (serverComboBox == null) return false;
+        if (serverComboBox == null) return false;
 
-            JTextField editor = (JTextField)serverComboBox.getEditor().getEditorComponent();
-            String surl = editor.getText();
-            if (surl == null || "".equals(surl)) {
-                return false;
-            }
-            URL url = new URL(surl);
-            String host = url.getHost();
-            return host != null && !"".equals(host);
-        } catch (MalformedURLException e) {
+        JTextField editor = (JTextField)serverComboBox.getEditor().getEditorComponent();
+        String surl = editor.getText();
+        if (surl == null || "".equals(surl)) {
+            return false;
         }
-        return false;
+        return true;
     }
 
     /**
@@ -884,7 +852,7 @@ public class LogonDialog extends JDialog {
           cause instanceof UnknownHostException ||
           cause instanceof FileNotFoundException) {
             log.log(Level.WARNING, "logon()", e);
-            String msg = MessageFormat.format(dialog.resources.getString("logon.connect.error"), new Object[]{getHostPart(serviceUrl)});
+            String msg = MessageFormat.format(dialog.resources.getString("logon.connect.error"), new Object[]{serviceUrl});
             JOptionPane.showMessageDialog(dialog, msg, "Error", JOptionPane.ERROR_MESSAGE);
         } else if (cause instanceof LoginException || cause instanceof FailedLoginException) {
             log.log(Level.WARNING, "logon()", e);
@@ -903,7 +871,7 @@ public class LogonDialog extends JDialog {
         } else {
             log.log(Level.WARNING, "logon()", e);
             String msg =
-              MessageFormat.format(dialog.resources.getString("logon.connect.error"), new Object[]{getHostPart(serviceUrl)});
+              MessageFormat.format(dialog.resources.getString("logon.connect.error"), new Object[]{serviceUrl});
             JOptionPane.showMessageDialog(dialog, msg, "Error", JOptionPane.ERROR_MESSAGE);
         }
     }

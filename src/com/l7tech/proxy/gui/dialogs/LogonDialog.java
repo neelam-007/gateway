@@ -41,7 +41,6 @@ public class LogonDialog extends JDialog {
     private JTextField userNameTextField;
     private JPasswordField passwordField;
 
-    private static JFrame frame;
     private boolean badPasswordMessage;
     private boolean lockUsername;
     private String ssgName;
@@ -60,7 +59,6 @@ public class LogonDialog extends JDialog {
     {
         super(parent, ssgName, true);
         this.ssgName = ssgName;
-        this.frame = parent;   // XXX using a static for this is admittedly fugly
         this.badPasswordMessage = badPasswordMessage;
         this.reasonHint = reasonHint;
 
@@ -354,9 +352,10 @@ public class LogonDialog extends JDialog {
              * Invoked when a window has been opened.
              */
             public void windowOpened(WindowEvent e) {
-                frame.setState(Frame.NORMAL);
-                frame.show();
-                frame.toFront();
+                JFrame parent = (JFrame)getParent();
+                parent.setState(Frame.NORMAL);
+                parent.show();
+                parent.toFront();
                 LogonDialog.this.toFront();
                 //LogonDialog.this.requestFocus();
                 focusComponent.requestFocus();

@@ -13,8 +13,6 @@ import com.l7tech.common.util.KeystoreUtils;
 import com.l7tech.identity.cert.TrustedCertManager;
 import com.l7tech.objectmodel.*;
 import com.l7tech.remote.jini.export.RemoteService;
-import com.sun.jini.start.LifeCycle;
-import net.jini.config.ConfigurationException;
 
 import javax.net.ssl.*;
 import java.io.IOException;
@@ -36,9 +34,6 @@ import java.util.logging.Logger;
  * @version $Revision$
  */
 public class TrustedCertAdminImpl extends RemoteService implements TrustedCertAdmin {
-    public TrustedCertAdminImpl( String[] options, LifeCycle lifeCycle ) throws ConfigurationException, IOException {
-        super( options, lifeCycle );
-    }
 
     public List findAllCerts() throws FindException, RemoteException {
         try {

@@ -1,9 +1,9 @@
 package com.l7tech.console.action;
 
-import com.l7tech.common.util.Locator;
 import com.l7tech.console.security.LogonEvent;
 import com.l7tech.console.security.LogonListener;
 import com.l7tech.console.security.SecurityProvider;
+import com.l7tech.console.util.Registry;
 import com.l7tech.identity.Group;
 
 import javax.security.auth.Subject;
@@ -86,7 +86,7 @@ public abstract class SecureAction extends BaseAction implements LogonListener {
     }
 
     protected final SecurityProvider getSecurityProvider() {
-        return (SecurityProvider)Locator.getDefault().lookup(SecurityProvider.class);
+        return Registry.getDefault().getSecurityProvider();
     }
 
     /**

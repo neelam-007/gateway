@@ -1,7 +1,7 @@
 package com.l7tech.console.security;
 
 import com.l7tech.common.Authorizer;
-import com.l7tech.common.util.Locator;
+import com.l7tech.console.util.Registry;
 import com.l7tech.identity.IdentityAdmin;
 import com.l7tech.identity.UserBean;
 
@@ -72,6 +72,7 @@ public abstract class SecurityProvider extends Authorizer implements Authenticat
             subject.getPrincipals().clear();
             final UserBean u = new UserBean();
             u.setLogin(pa.getUserName());
+            u.setName(pa.getUserName());
             subject.getPrincipals().add(u);
             subject.getPrivateCredentials().clear();
             subject.getPrivateCredentials().add(pa.getPassword());
@@ -114,7 +115,7 @@ public abstract class SecurityProvider extends Authorizer implements Authenticat
         if (!subjectRoles.isEmpty()) {
             return subjectRoles;
         }
-        IdentityAdmin is = (IdentityAdmin)Locator.getDefault().lookup(IdentityAdmin.class);
+        IdentityAdmin is = Registry.getDefault().getIdentityAdmin();
         if (is == null) {
             throw new IllegalStateException("Unable to obtain admin service");
         }

@@ -184,18 +184,14 @@
         </delete>
 
         <copy todir="${tomcat.home}/common/classpath">
-            <fileset dir="${src.root}/lib">
-                <include name="jsk-*.jar"/>
-            </fileset>
-
             <!-- Needed for PKCS#12 keystore -->
             <fileset dir="${src.root}/lib/crypto/bc">
                 <include name="bcprov-*.jar"/>
             </fileset>
-
-            <fileset dir="${src.root}/lib">
-                <include name="webapp-rmiannotation.jar"/>
-            </fileset>
+<!--            todo: to be restored - em -->
+<!--            <fileset dir="${src.root}/lib">-->
+<!--                <include name="webapp-rmiannotation.jar"/>-->
+<!--            </fileset>-->
         </copy>
 
         <!--
@@ -370,6 +366,7 @@
                 <include name="dom4j.jar"/>
                 <include name="hibernate2.jar"/>
                 <include name="spring-aop.jar"/>
+                <include name="aopalliance.jar"/>
                 <include name="spring-context.jar"/>
                 <include name="spring-core.jar"/>
                 <include name="spring-dao.jar"/>
@@ -379,8 +376,6 @@
                 <include name="ehcache-0.9.jar"/>
                 <include name="jaxen-1.1-beta-2-l7.jar"/>
                 <include name="jaxrpc.jar"/>
-                <include name="jini-core.jar"/>
-                <include name="jini-ext.jar"/>
                 <include name="jms-1.1.jar"/>
                 <include name="jnlp.jar"/>
                 <include name="jnlp-servlet.jar"/>
@@ -388,12 +383,8 @@
                 <include name="odmg.jar"/>
                 <include name="oswego-concurrent.jar"/>
                 <include name="qname.jar"/>
-                <include name="reggie-dl.jar"/>
-                <include name="reggie.jar"/>
                 <include name="saaj.jar"/>
                 <include name="saxpath.jar"/>
-                <include name="sdm-dl.jar"/>
-                <include name="start.jar"/>
                 <include name="wsdl4j.jar"/>
                 <include name="xbean.jar"/>
                 <include name="xbean-common.jar"/>
@@ -435,9 +426,6 @@
             <zipfileset dir="${src.root}/web" includes="*" prefix="ssg"/>
             <zipfileset dir="${src.root}/web" includes="*"/>
             <zipfileset dir="${src.root}/src/com/l7tech/common/resources" includes="wsil2xhtml.xml" prefix="ssg"/>
-            <!-- Jini config -->
-            <zipfileset dir="${src.root}/etc/jini" includes="start-services.config, services.config, services.policy" prefix="WEB-INF/classes"/>
-            <zipfileset dir="${src.root}/etc/jini" includes="PREFERRED.LIST" prefix="WEB-INF/classes/META-INF"/>
             <!-- Spring config -->
             <zipfileset dir="${src.root}/etc" includes="webApplicationContext.xml" prefix="WEB-INF"/>
         </war>
@@ -505,12 +493,6 @@
                 <include name="com/l7tech/cluster/GatewayStatus.class"/>
                 <include name="com/l7tech/cluster/LogRequest.class"/>
                 <include name="com/l7tech/console/**/*"/>
-                <include name="com/l7tech/remote/jini/lookup/*ServiceLookup*"/>
-                <include name="com/l7tech/remote/jini/lookup/ServiceFactory.class"/>
-                <include name="com/l7tech/remote/jini/lookup/AccessILFactory*.class"/>
-                <include name="com/l7tech/remote/jini/lookup/ConnectionListenerBean.class"/>
-                <include name="com/l7tech/remote/jini/lookup/JiniProxyFactoryBean.class"/>
-                <include name="com/l7tech/remote/jini/export/RemoteService.class"/>
                 <include name="com/l7tech/logging/**/*"/>
                 <!-- <include name="com/l7tech/message/**/*"/> -->
                 <include name="com/l7tech/message/Message.class"/>
@@ -598,7 +580,7 @@
     <target name="ssm-webstart" if="ssm.webstart">
         <!-- sign the ssm jar  -->
         <signjar keystore="${src.root}/etc/ssgKeyStore" alias="signer" storepass="password">
-            <fileset dir="${build.dir}/lib" includes="jini-core.jar,jini-ext.jar,reggie-dl.jar,reggie.jar,jh.jar,kunststoff.jar,
+            <fileset dir="${build.dir}/lib" includes="jh.jar,kunststoff.jar,
                                                        looks-1.1.3.jar,odmg.jar,hibernate2.jar,oswego-concurrent.jar,wsdl4j.jar,qname.jar, xercesImpl.jar,xml-apis.jar,
                                                        axis.jar,commons-httpclient-2.0.2.jar,commons-lang-1.0.1.jar,commons-collections-2.1.1.jar, commons-logging-1.0.4.jar, forms_rt.jar,jedit-syntax.jar,
                                                        jaxen-1.1-beta-2-l7.jar,saxpath.jar,jaxrpc.jar,saaj.jar, dom4j.jar, commons-discovery.jar"/>
@@ -609,7 +591,7 @@
             <!-- SSM webstart -->
             <zipfileset dir="${src.root}/etc/jnlp" includes="ssm.jnlp" prefix="ssm"/>
             <zipfileset dir="${src.root}/src/com/l7tech/console/resources" includes="layer7_logo_small_64x64.gif" prefix="ssm/images"/>
-            <zipfileset dir="${build.dir}/lib" includes="jini-core.jar,jini-ext.jar,reggie-dl.jar,reggie.jar,jh.jar,kunststoff.jar,
+            <zipfileset dir="${build.dir}/lib" includes="jh.jar,kunststoff.jar,
                                                          looks-1.1.3.jar,odmg.jar,hibernate2.jar,oswego-concurrent.jar,wsdl4j.jar,qname.jar, xercesImpl.jar,xml-apis.jar,
                                                          axis.jar,commons-httpclient-2.0.2.jar,commons-lang-1.0.1.jar,commons-collections-2.1.1.jar, commons-logging-1.0.4.jar, forms_rt.jar,jedit-syntax.jar,
                                                          jaxen-1.1-beta-2-l7.jar,saxpath.jar,jaxrpc.jar,saaj.jar, dom4j.jar,commons-discovery.jar" prefix="ssm/lib"/>
@@ -778,10 +760,6 @@
             <fileset dir="${src.root}/src">
                 <include name="com/l7tech/proxy/resources/**"/>
             </fileset>
-
-            <fileset dir="${src.root}/src">
-                <include name="com/l7tech/remote/jini/lookup/*.config"/>
-            </fileset>
         </copy>
 
         <antcall target="prepare.jms"/>
@@ -828,11 +806,21 @@
                 <include name="serverconfig.properties"/>
             </fileset>
         </copy>
+        <antcall target="compile-rmi"/>
+
     </target>
 
     <target name="compile.forms">
         <javac2 srcdir="src" destdir="${build.classes}" debug="on"
             classpathref="project.classpath"/>
+    </target>
+
+    <!-- Compile RMI stubs -->
+    <target name="compile-rmi">
+      <rmic base="${build.classes}" stubVersion="1.2">
+          <classpath refid="project.classpath"/>
+          <include name="com/l7tech/admin/rmi/AdminLoginImpl.class"/>
+      </rmic>
     </target>
 
     <target name="db.properties" depends="db.properties.mysql, db.properties.postgres, db.properties.oracle8, db.properties.oracle9, db.properties.oracle10"/>
@@ -944,7 +932,8 @@
         </parallel>
     </target>
 
-    <target name="start-tomcat"> <!-- depends="deploy" -->
+    <target name="start-tomcat">
+        <!-- depends="deploy" -->
         <exec executable="${java.home}/bin/java" dir="${tomcat.home}">
             <arg line="-Djava.security.policy=${tomcat.home}/conf/catalina.policy"/>
             <arg line="-Dcatalina.home=${tomcat.home}"/>
@@ -1173,8 +1162,8 @@
         <mkdir dir="${install.src.keys}"/>
         <mkdir dir="${install.src.conf}"/>
         <mkdir dir="${install.src.logs}"/>
-        <mkdir dir="${install.src.var}" />
-        <mkdir dir="${install.src.var.attachments}" />
+        <mkdir dir="${install.src.var}"/>
+        <mkdir dir="${install.src.var.attachments}"/>
 
         <antcall target="INTERNAL-ssg-install-optional-1"/>
 

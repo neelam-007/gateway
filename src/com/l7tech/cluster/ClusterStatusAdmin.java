@@ -10,7 +10,7 @@ import java.rmi.RemoteException;
 /**
  * Remote interface for getting the status of nodes in a gateway cluster.
  */
-public interface ClusterStatusAdmin extends Remote {
+public interface ClusterStatusAdmin {
     /**
      * Get status for all nodes part of the cluster.
      * @return An array of ClusterNodeInfo (one for each node)

@@ -1,9 +1,10 @@
 package com.l7tech.console.util;
 
+import com.l7tech.cluster.ClusterStatusAdmin;
 import com.l7tech.common.audit.AuditAdmin;
 import com.l7tech.common.security.TrustedCertAdmin;
 import com.l7tech.common.transport.jms.JmsAdmin;
-import com.l7tech.common.util.Locator;
+import com.l7tech.console.security.SecurityProvider;
 import com.l7tech.identity.IdentityAdmin;
 import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.logging.LogAdmin;
@@ -37,13 +38,17 @@ public abstract class Registry {
         if (instance != null) {
             return instance;
         }
-        instance = (Registry)Locator.getDefault().lookup(Registry.class);
-        if (instance == null) {
-            instance = EMPTY;
-        }
-        return instance;
+        return EMPTY;
     }
 
+    /**
+     * Static method to set the global registry
+     *
+     * @param registry the new registry
+     */
+    public static synchronized void setDefault(Registry registry) {
+        instance = registry;
+    }
     /**
      * Empty constructor for use by subclasses.
      */
@@ -85,6 +90,16 @@ public abstract class Registry {
      * @return the log admin interface implementation.
      */
     abstract public LogAdmin getLogAdmin();
+
+    /**
+     * @return the cluster status admin interface implementation.
+     */
+    abstract public ClusterStatusAdmin getClusterStatusAdmin();
+
+    /**
+      * @return the security provider implementation.
+      */
+     abstract public SecurityProvider getSecurityProvider();
 
     /**
      * Implementation of the default 'no-op' registry
@@ -130,13 +145,13 @@ public abstract class Registry {
         public LogAdmin getLogAdmin() {
             return null;
         }
-    }
 
-    /**
-     * recycle the current locator, (used by testing)
-     */
-    protected static void recycle() {
-        instance = null;
-    }
+        public ClusterStatusAdmin getClusterStatusAdmin() {
+            return null;
+        }
 
+        public SecurityProvider getSecurityProvider() {
+            return null;  //To change body of implemented methods use File | Settings | File Templates.
+        }
+    }
 }

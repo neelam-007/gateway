@@ -8,14 +8,12 @@ import com.l7tech.common.security.TrustedCert;
 import com.l7tech.common.security.TrustedCertAdmin;
 import com.l7tech.common.util.CertUtils;
 import com.l7tech.common.util.HexUtils;
-import com.l7tech.common.util.Locator;
+import com.l7tech.console.util.Registry;
 
 import javax.swing.*;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
-import java.awt.BorderLayout;
-import java.awt.Dimension;
-import java.awt.Insets;
+import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.*;
@@ -376,13 +374,7 @@ public class CertImportMethodsPanel extends WizardStepPanel {
      * @throws RuntimeException  if the object reference of the Trusted Cert Admin service is not found.
      */
     private TrustedCertAdmin getTrustedCertAdmin() throws RuntimeException {
-        TrustedCertAdmin tca =
-                (TrustedCertAdmin) Locator.
-                getDefault().lookup(TrustedCertAdmin.class);
-        if (tca == null) {
-            throw new RuntimeException("Could not find registered " + TrustedCertAdmin.class);
-        }
-
+        TrustedCertAdmin tca = Registry.getDefault().getTrustedCertManager();
         return tca;
     }
 

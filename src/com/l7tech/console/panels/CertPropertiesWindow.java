@@ -1,23 +1,24 @@
 package com.l7tech.console.panels;
 
+import com.intellij.uiDesigner.core.GridConstraints;
+import com.intellij.uiDesigner.core.GridLayoutManager;
+import com.intellij.uiDesigner.core.Spacer;
 import com.l7tech.common.Authorizer;
 import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.common.security.TrustedCert;
 import com.l7tech.common.security.TrustedCertAdmin;
 import com.l7tech.common.util.CertUtils;
-import com.l7tech.common.util.Locator;
+import com.l7tech.console.util.Registry;
 import com.l7tech.identity.Group;
 import com.l7tech.objectmodel.SaveException;
 import com.l7tech.objectmodel.UpdateException;
 import com.l7tech.objectmodel.VersionException;
-import com.intellij.uiDesigner.core.GridLayoutManager;
-import com.intellij.uiDesigner.core.GridConstraints;
-import com.intellij.uiDesigner.core.Spacer;
 
 import javax.security.auth.Subject;
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.io.IOException;
 import java.rmi.RemoteException;
 import java.security.AccessController;
@@ -71,7 +72,7 @@ public class CertPropertiesWindow extends JDialog {
     public CertPropertiesWindow(Dialog owner, TrustedCert tc, boolean editable) {
         super(owner, resources.getString("cert.properties.dialog.title"), true);
 
-        final Authorizer authorizer = (Authorizer)Locator.getDefault().lookup(Authorizer.class);
+        final Authorizer authorizer = Registry.getDefault().getSecurityProvider();
         if (authorizer == null) {
             throw new IllegalStateException("Could not instantiate authorization provider");
         }
@@ -301,13 +302,7 @@ public class CertPropertiesWindow extends JDialog {
      * @throws RuntimeException if the object reference of the Trusted Cert Admin service is not found.
      */
     private TrustedCertAdmin getTrustedCertAdmin() throws RuntimeException {
-        TrustedCertAdmin tca =
-          (TrustedCertAdmin)Locator.
-          getDefault().lookup(TrustedCertAdmin.class);
-        if (tca == null) {
-            throw new RuntimeException("Could not find registered " + TrustedCertAdmin.class);
-        }
-
+        TrustedCertAdmin tca = Registry.getDefault().getTrustedCertManager();
         return tca;
     }
 

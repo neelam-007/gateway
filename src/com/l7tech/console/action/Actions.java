@@ -1,6 +1,5 @@
 package com.l7tech.console.action;
 
-import com.l7tech.common.util.Locator;
 import com.l7tech.console.logging.ErrorManager;
 import com.l7tech.console.tree.*;
 import com.l7tech.console.tree.policy.AssertionTreeNode;
@@ -62,7 +61,7 @@ public class Actions {
         // Delete the  node and update the tree
         try {
             EntityHeader eh = node.getEntityHeader();
-            IdentityAdmin admin = getIdentityAdmin();
+            IdentityAdmin admin = Registry.getDefault().getIdentityAdmin();
             admin.deleteUser(config.getOid(), eh.getStrId());
             return true;
         } catch (CannotDeleteAdminAccountException e) {
@@ -87,11 +86,6 @@ public class Actions {
         return false;
     }
 
-    private static IdentityAdmin getIdentityAdmin() {
-        return (IdentityAdmin)Locator.getDefault().lookup(IdentityAdmin.class);
-    }
-
-
     // Deletes the given user
     private static boolean deleteGroup(GroupNode node, IdentityProviderConfig config) {
         if (!config.isWritable()) return false;
@@ -108,7 +102,7 @@ public class Actions {
         // Delete the  node and update the tree
         try {
             EntityHeader eh = node.getEntityHeader();
-            getIdentityAdmin().deleteGroup(config.getOid(), eh.getStrId());
+            Registry.getDefault().getIdentityAdmin().deleteGroup(config.getOid(), eh.getStrId());
             return true;
         } catch (Exception e) {
             log.log(Level.SEVERE, "Error deleting group", e);
