@@ -39,8 +39,6 @@ import java.util.logging.Logger;
 public class XmlManglerTest extends TestCase {
     private static Logger log = Logger.getLogger(XmlManglerTest.class.getName());
     private static final String xmlencNS = "http://www.w3.org/2001/04/xmlenc#";
-    private static Key encryptionKey;
-    private static Document encryptedMessage = null;
 
     public XmlManglerTest(String name) {
         super(name);
@@ -96,18 +94,26 @@ public class XmlManglerTest extends TestCase {
         return sw.toString();
     }
 
+    private static Document stringToDocument(String xml) throws Exception {
+        StringInputStream sis = new StringInputStream(xml);
 
-    public void testEncryption() throws Exception {
-        if (encryptedMessage != null)
-            return;
+        DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
+        dbf.setNamespaceAware(true);
+        Document soapDocument = dbf.newDocumentBuilder().parse(sis);
 
+        return soapDocument;
+    }
+
+    private Document makeTestMessage() throws Exception {
         MessageFactory mf = MessageFactory.newInstance();
         SOAPMessage soapMsg = mf.createMessage();
         SOAPEnvelope env = soapMsg.getSOAPPart().getEnvelope();
+        String p = "gq";
+        String ns = "http://www.l7tech.com/tests/quoter3333";
         env.getBody().detachNode();
         SOAPBody body = env.addBody();
-        SOAPBodyElement belm = body.addBodyElement(env.createName("getQuote"));
-        belm.addChildElement(env.createName("symbol")).addTextNode("IBM");
+        SOAPBodyElement belm = body.addBodyElement(env.createName("getQuote", p, ns));
+        belm.addChildElement("symbol").addTextNode("IBM");
 
         StringWriter sw = new StringWriter();
         soapMsg.writeTo(new WriterOutputStream(sw));
@@ -117,23 +123,35 @@ public class XmlManglerTest extends TestCase {
         dbf.setNamespaceAware(true);
         Document soapDocument = dbf.newDocumentBuilder().parse(sis);
 
-        encryptionKey = new RawKey(32);
+        return soapDocument;
+    }
+
+    public void testEncryption() throws Exception {
+        Document soapDocument = makeTestMessage();
+        Key encryptionKey = new RawKey(32);
 
         log.info("Document before encryption: \n" + documentToString(soapDocument));
         XmlMangler.encryptXml(soapDocument, encryptionKey.getEncoded(), "MyKeyName");
         log.info("Document after encryption: \n" + documentToString(soapDocument));
 
-        Node cipherData = soapDocument.getElementsByTagNameNS(xmlencNS, "CipherData").item(0);
-        assertTrue(cipherData != null);
-        // todo: fix this assertTrue(cipherData.getLastChild().getNodeValue().length() > 20);
-        encryptedMessage = soapDocument;
+        Node cval = soapDocument.getElementsByTagNameNS(xmlencNS, "CipherValue").item(0);
+        assertTrue(cval != null);
+        assertTrue(cval.getChildNodes().item(0).getNodeValue().length() > 20);
     }
 
     public void testDecryption() throws Exception {
-        testEncryption();
-        if (encryptedMessage == null)
-            TestCase.fail("Decryption test could not execute -- encryption test failed to complete");
+        Document orig = makeTestMessage();
+        Key encryptionKey = new RawKey(32);
+        Document crypted = stringToDocument(documentToString(orig));  // preserve a copy of original
+        XmlMangler.encryptXml(crypted, encryptionKey.getEncoded(), "MyKeyName");
 
-        XmlMangler.decryptXml(encryptedMessage, encryptionKey);
+        // Ensure that no info not in the serialized XML is retained
+        crypted = stringToDocument(documentToString(crypted));
+        Node cipherData = crypted.getElementsByTagNameNS(xmlencNS, "CipherData").item(0);
+        assertTrue(cipherData != null);
+
+        Document decrypted = stringToDocument(documentToString(crypted));
+        XmlMangler.decryptXml(decrypted, encryptionKey);
+        log.info("Document after decryption: \n" + documentToString(decrypted));
     }
 }
