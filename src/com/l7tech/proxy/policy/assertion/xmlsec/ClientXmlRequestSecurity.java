@@ -52,10 +52,6 @@ public class ClientXmlRequestSecurity extends ClientAssertion {
     private static final ClientLogger log = ClientLogger.getInstance(ClientHttpClientCert.class);
 
     public ClientXmlRequestSecurity(XmlRequestSecurity data) {
-        /*
-            todo: temporary change in migration to multielement sign/encrypt
-            need to upgrade the multielement handling below
-        */   
         this.data = data.getElements();
         if (data == null) {
             throw new IllegalArgumentException("security elements is null");
@@ -125,13 +121,13 @@ public class ClientXmlRequestSecurity extends ClientAssertion {
                 Element element = (Element)nodes.get(0);
                 if (isEncryption()) {
                     checkEncryptionProperties(elementSecurity);
-                    XmlMangler.encryptXml(element, keyreq, Long.toString(sessId), signReferenceId + signReferenceIdSuffix);
-                    ++signReferenceIdSuffix;
+                    XmlMangler.encryptXml(element, keyreq, Long.toString(sessId), encReferenceId + encReferenceIdSuffix);
+                    ++encReferenceIdSuffix;
                     log.info("Encrypted request OK");
                 }
                 // digital sighnature
-                dsigHelper.signElement(soapmsg, element, encReferenceId + encReferenceIdSuffix, userPrivateKey, userCert);
-                ++encReferenceIdSuffix;
+                dsigHelper.signElement(soapmsg, element, signReferenceId + signReferenceIdSuffix, userPrivateKey, userCert);
+                ++signReferenceIdSuffix;
                 log.info("Signed request OK");
             }
         } catch (SignatureStructureException e) {
