@@ -779,7 +779,9 @@ public class WssProcessorImpl implements WssProcessor {
             throw new ProcessorException("Signature KeyInfo does not reference a declared BinarySecurityToken");
 
         X509Certificate signingCert = signingCertToken.asX509Certificate();
+
         // Try to resolve embedded cert
+        // TODO can this ever happen?  If so under what circumstances?  --mike
         if (signingCert == null) {
             signingCert = resolveEmbeddedCert(keyInfoElement);
         }
