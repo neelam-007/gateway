@@ -13,7 +13,39 @@ import com.l7tech.identity.internal.GroupMembership;
  * @version $Revision$
  */
 public class FederatedGroupMembership extends GroupMembership {
-    public FederatedGroupMembership(long userOid, long groupOid) {
+    public FederatedGroupMembership(long providerOid, long userOid, long groupOid) {
         super(userOid, groupOid);
+        this.providerOid = providerOid;
     }
+
+    public long getProviderOid() {
+        return providerOid;
+    }
+
+    public void setProviderOid( long providerOid ) {
+        this.providerOid = providerOid;
+    }
+
+    public boolean equals(Object other) {
+        if (this == other) return true;
+        if (!(other instanceof FederatedGroupMembership)) return false;
+
+        final FederatedGroupMembership groupMembership = (FederatedGroupMembership)other;
+
+        if (providerOid != groupMembership.providerOid) return false;
+        if (groupOid != groupMembership.groupOid) return false;
+        if (userOid != groupMembership.userOid) return false;
+
+        return true;
+    }
+
+    public int hashCode() {
+        int result;
+        result = (int) (userOid ^ (userOid >>> 32));
+        result = 29 * result + (int) (providerOid ^ (providerOid >>> 32));
+        result = 29 * result + (int) (groupOid ^ (groupOid >>> 32));
+        return result;
+    }
+
+    private long providerOid;
 }

@@ -21,24 +21,24 @@ public class GroupMembership implements Serializable {
     }
 
     public GroupMembership( long userOid, long groupOid ) {
-        _userOid = userOid;
-        _groupOid = groupOid;
+        this.userOid = userOid;
+        this.groupOid = groupOid;
     }
 
     public long getUserOid() {
-        return _userOid;
+        return userOid;
     }
 
     public void setUserOid(long userOid) {
-        _userOid = userOid;
+        this.userOid = userOid;
     }
 
     public long getGroupOid() {
-        return _groupOid;
+        return groupOid;
     }
 
     public void setGroupOid(long groupOid) {
-        _groupOid = groupOid;
+        this.groupOid = groupOid;
     }
 
     public boolean equals(Object other) {
@@ -47,19 +47,19 @@ public class GroupMembership implements Serializable {
 
         final GroupMembership groupMembership = (GroupMembership)other;
 
-        if (_groupOid != groupMembership._groupOid) return false;
-        if (_userOid != groupMembership._userOid) return false;
+        if (groupOid != groupMembership.groupOid) return false;
+        if (userOid != groupMembership.userOid) return false;
 
         return true;
     }
 
     public int hashCode() {
         int result;
-        result = (int) (_userOid ^ (_userOid >>> 32));
-        result = 29 * result + (int) (_groupOid ^ (_groupOid >>> 32));
+        result = (int) (userOid ^ (userOid >>> 32));
+        result = 29 * result + (int) (groupOid ^ (groupOid >>> 32));
         return result;
     }
 
-    private long _userOid;
-    private long _groupOid;
+    protected long userOid;
+    protected long groupOid;
 }

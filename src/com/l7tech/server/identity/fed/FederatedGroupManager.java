@@ -28,7 +28,7 @@ public class FederatedGroupManager extends PersistentGroupManager {
     }
 
     protected GroupMembership newMembership( long userOid, long groupOid ) {
-        return new FederatedGroupMembership(userOid, groupOid);
+        return new FederatedGroupMembership(provider.getConfig().getOid(), userOid, groupOid);
     }
 
     protected Class getMembershipClass() {
