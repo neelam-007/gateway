@@ -30,6 +30,8 @@ import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.util.logging.Logger;
 
+import com.l7tech.xmlsig.XMLSecurityElementNotFoundException;
+
 /**
  * Test XML encryption and decryption.
  * User: mike
@@ -153,5 +155,16 @@ public class XmlManglerTest extends TestCase {
         Document decrypted = stringToDocument(documentToString(crypted));
         XmlMangler.decryptXml(decrypted, encryptionKey);
         log.info("Document after decryption: \n" + documentToString(decrypted));
+    }
+
+    public void testDecryptingAMessageThatsNotEncrypted() throws Exception {
+        Document orig = makeTestMessage();
+        Key key = new RawKey(32);
+        try {
+            XmlMangler.decryptXml(orig, key);
+            fail("Should have thrown XMLSecurityElementNotFound");
+        } catch (XMLSecurityElementNotFoundException e) {
+            // ok
+        }
     }
 }
