@@ -153,10 +153,11 @@
     </class>
 
     <class name="com.l7tech.logging.SSGLogRecord" table="ssg_logs">
-        <composite-id>
-            <key-property name="sequenceNumber" column="sequencenumber" type="long"/>
-            <key-property name="nodeId" column="nodeid" type="string"/>
-        </composite-id>
+        <id name="oid" column="objectid" type="long">
+            <generator class="hilo"/>
+        </id>
+        <property name="sequenceNumber" column="sequencenumber" type="long"/>
+        <property name="nodeId" column="nodeid" type="string"/>
         <property name="message" column="message" type="string"/>
         <property name="strLvl" column="strlvl" type="string"/>
         <property name="loggerName" column="loggername" type="string"/>

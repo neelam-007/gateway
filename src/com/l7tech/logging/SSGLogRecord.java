@@ -116,6 +116,15 @@ public class SSGLogRecord extends LogRecord implements Serializable {
         return true;
     }
 
+    public long getOid() {
+        return oid;
+    }
+
+    public void setOid( long oid ) {
+        this.oid = oid;
+    }
+
+    private long oid;
     public String requestId;
     public String nodeId;
 }
