@@ -177,9 +177,18 @@ public class MultipartUtil {
         public Map getHeaders() {
             return headers;
         }
+        
+        public boolean isValidated() {
+            return validated;
+        }
+
+        public void setValidated(boolean validated) {
+            this.validated = validated;
+        }
 
         protected String content;
         protected Map headers = new HashMap();
         protected int position;
+        protected boolean validated = false;
     }
 }
