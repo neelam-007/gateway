@@ -1,5 +1,9 @@
 package com.l7tech.cluster;
 
+import com.l7tech.objectmodel.UpdateException;
+
+import java.rmi.RemoteException;
+
 /*
  * Test stub for ClusterStatusAdmin interface
  * Copyright (C) 2003 Layer 7 Technologies Inc.
@@ -77,5 +81,13 @@ public class ClusterStatusAdminStub implements ClusterStatusAdmin{
         serviceUsage[9] = s10;
 
         return serviceUsage;
+    }
+
+    public void changeNodeName(String nodeid, String newName) throws RemoteException, UpdateException {
+        throw new UnsupportedOperationException();
+    }
+
+    public void removeStaleNode(String nodeid) throws RemoteException, UpdateException {
+        throw new UnsupportedOperationException();
     }
 }
