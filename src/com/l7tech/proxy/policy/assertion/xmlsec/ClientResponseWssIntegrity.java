@@ -49,14 +49,15 @@ public class ClientResponseWssIntegrity extends ClientAssertion {
             OperationCanceledException, BadCredentialsException,
             IOException, KeyStoreCorruptException, ClientCertificateException, PolicyRetryableException
     {
-        context.getPendingDecorations().put(this, new ClientDecorator() {
-            public AssertionStatus decorateRequest(PolicyApplicationContext context) throws InvalidDocumentFormatException, IOException, SAXException {
-                log.log(Level.FINER, "Expecting a signed reply; will be sure to include L7a:MessageID");
-                context.prepareWsaMessageId();
-                return AssertionStatus.NONE;
-            }
-        });
-
+        if (data.getRecipientContext().localRecipient()) {
+            context.getPendingDecorations().put(this, new ClientDecorator() {
+                public AssertionStatus decorateRequest(PolicyApplicationContext context) throws InvalidDocumentFormatException, IOException, SAXException {
+                    log.log(Level.FINER, "Expecting a signed reply; will be sure to include L7a:MessageID");
+                    context.prepareWsaMessageId();
+                    return AssertionStatus.NONE;
+                }
+            });
+        }
         return AssertionStatus.NONE;
     }
 

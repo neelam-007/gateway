@@ -23,6 +23,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.Map;
 import java.util.HashMap;
+import java.util.Set;
+import java.util.Iterator;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 
@@ -194,12 +196,28 @@ public class XmlFacet extends MessageFacet {
             processorResult = pr;
         }
 
-        public void setDecorationRequirements(DecorationRequirements dr) {
-            decorationRequirements = dr;
-        }
-
-        public DecorationRequirements getDecorationRequirements() {
-            return decorationRequirements;
+        /**
+         * Get the decorations that should be applied to this Message some time in the future. One DecorationRequirements
+         * per recipient, the default recipient having its requirements at the end of the array. Can return an empty array
+         * but never null.
+         */
+        public DecorationRequirements[] getDecorationRequirements() {
+            Set keys = decorationRequirementsForAlternateRecipients.keySet();
+            int arraysize = keys.size();
+            if (decorationRequirements != null) {
+                arraysize += 1;
+            }
+            DecorationRequirements[] output = new DecorationRequirements[arraysize];
+            int i = 0;
+            for (Iterator iterator = keys.iterator(); iterator.hasNext();) {
+                DecorationRequirements dr = (DecorationRequirements)decorationRequirementsForAlternateRecipients.get(iterator.next());
+                output[i] = dr;
+                i++;
+            }
+            if (decorationRequirements != null) {
+                output[arraysize-1] = decorationRequirements;
+            }
+            return output;
         }
 
         public DecorationRequirements getAlternateDecorationRequirements(XmlSecurityRecipientContext recipient) 
@@ -214,17 +232,17 @@ public class XmlFacet extends MessageFacet {
                 X509Certificate clientCert;
                 clientCert = CertUtils.decodeCert(HexUtils.decodeBase64(recipient.getBase64edX509Certificate(), true));
                 output.setRecipientCertificate(clientCert);
+                output.setSecurityHeaderActor(actor);
                 decorationRequirementsForAlternateRecipients.put(actor, output);
             }
             return output;
         }
 
         public DecorationRequirements getOrMakeDecorationRequirements() {
-            DecorationRequirements dr = getDecorationRequirements();
-            if (dr != null) return dr;
-            dr = new DecorationRequirements();
-            setDecorationRequirements(dr);
-            return dr;
+            if (decorationRequirements == null) {
+                decorationRequirements = new DecorationRequirements();
+            }
+            return decorationRequirements;
         }
     }
 }

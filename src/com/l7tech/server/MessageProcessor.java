@@ -242,15 +242,14 @@ public class MessageProcessor extends ApplicationObjectSupport {
                 // Run response through WssDecorator if indicated
                 if (status == AssertionStatus.NONE &&
                         response.isSoap() &&
-                        response.getXmlKnob().getDecorationRequirements() != null)
+                        response.getXmlKnob().getDecorationRequirements().length > 0)
                 {
                     Document doc = null;
                     try {
                         final XmlKnob respXml = response.getXmlKnob();
-                        final DecorationRequirements responseDecoReq = respXml.getDecorationRequirements();
+                        DecorationRequirements[] allrequirements = respXml.getDecorationRequirements();
                         XmlKnob reqXml = request.getXmlKnob();
                         doc = respXml.getDocumentWritable(); // writable, we are about to decorate it
-
                         if (request.isSoap()) {
                             final String messageId = SoapUtil.getL7aMessageId(reqXml.getDocumentReadOnly());
                             if (messageId != null) {
@@ -258,16 +257,18 @@ public class MessageProcessor extends ApplicationObjectSupport {
                             }
                         }
 
-                        if (responseDecoReq != null) {
-                            if (wssOutput != null && wssOutput.getSecurityNS() != null) {
-                                responseDecoReq.setPreferredSecurityNamespace(wssOutput.getSecurityNS());
+                        for (int i = 0; i < allrequirements.length; i++) {
+                            final DecorationRequirements responseDecoReq = allrequirements[i];
+                            if (responseDecoReq != null) {
+                                if (wssOutput != null && wssOutput.getSecurityNS() != null) {
+                                    responseDecoReq.setPreferredSecurityNamespace(wssOutput.getSecurityNS());
+                                }
+                                if (wssOutput != null && wssOutput.getWSUNS() != null) {
+                                    responseDecoReq.setPreferredWSUNamespace(wssOutput.getWSUNS());
+                                }
                             }
-                            if (wssOutput != null && wssOutput.getWSUNS() != null) {
-                                responseDecoReq.setPreferredWSUNamespace(wssOutput.getWSUNS());
-                            }
+                            wssDecorator.decorateMessage(doc, responseDecoReq);
                         }
-
-                        wssDecorator.decorateMessage(doc, responseDecoReq);
                     } catch (Exception e) {
                         throw new PolicyAssertionException("Failed to apply WSS decoration to response", e);
                     }

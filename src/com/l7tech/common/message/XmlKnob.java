@@ -81,15 +81,11 @@ public interface XmlKnob extends MessageKnob {
     void setProcessorResult(ProcessorResult pr);
 
     /**
-     * Set the decorations that should be applied to this Message some time in the future.
+     * Get the decorations that should be applied to this Message some time in the future. One DecorationRequirements
+     * per recipient, the default recipient having its requirements at the end of the array. Can return an empty array
+     * but never null.
      */
-    void setDecorationRequirements(DecorationRequirements decorationRequirements);
-
-    /**
-     * Get the decorations that should be applied to this Message some time in the future,
-     * or null if the message is not to be decorated.
-     */
-    DecorationRequirements getDecorationRequirements();
+    DecorationRequirements[] getDecorationRequirements();
 
     /**
      * Get the decorations that should be applied to this Message some time in the future,
