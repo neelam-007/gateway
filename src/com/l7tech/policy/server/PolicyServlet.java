@@ -11,6 +11,7 @@ import com.l7tech.objectmodel.TransactionException;
 import com.l7tech.service.PublishedService;
 import com.l7tech.service.ServiceManager;
 import com.l7tech.util.Locator;
+import com.l7tech.util.KeystoreUtils;
 import com.l7tech.common.util.HexUtils;
 import com.l7tech.server.SoapMessageProcessingServlet;
 import com.l7tech.server.policy.assertion.credential.http.ServerHttpBasic;
@@ -60,8 +61,6 @@ import java.util.logging.Logger;
  *
  */
 public class PolicyServlet extends HttpServlet {
-    public static final String DEFAULT_CERT_PATH = "../../kstores/ssg.cer";
-    public static final String PARAM_CERT_PATH = "CertPath";
     public static final String PARAM_SERVICEOID = "serviceoid";
     public static final String PARAM_GETCERT = "getcert";
     public static final String PARAM_USERNAME = "username";
@@ -164,17 +163,7 @@ public class PolicyServlet extends HttpServlet {
             throws FindException, IOException, NoSuchAlgorithmException
     {
         // Find our certificate
-        String certPath = getServletConfig().getInitParameter( PARAM_CERT_PATH );
-        if ( certPath == null || certPath.length() == 0 ) certPath = DEFAULT_CERT_PATH;
-
-        String gotpath = request.getSession().getServletContext().getRealPath( certPath );
-        InputStream certStream = new FileInputStream(gotpath);
-        byte[] cert;
-        try {
-            cert = HexUtils.slurpStream(certStream, 16384);
-        } finally {
-            certStream.close();
-        }
+        byte[] cert = KeystoreUtils.getInstance().readSSLCert();
 
         // Insert Cert-Check-NNN: headers if we can.
         if (username != null) {
@@ -198,7 +187,7 @@ public class PolicyServlet extends HttpServlet {
         response.setContentLength(cert.length);
         response.getOutputStream().write(cert);
         response.flushBuffer();
-        logger.info("Sent ssl cert: " + gotpath);
+        //logger.info("Sent ssl cert: " + gotpath);
     }
 
     private PublishedService resolveService(long oid) {

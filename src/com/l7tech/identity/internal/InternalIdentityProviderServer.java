@@ -8,6 +8,7 @@ import com.l7tech.logging.LogManager;
 import com.l7tech.policy.assertion.credential.PrincipalCredentials;
 import com.l7tech.policy.assertion.credential.CredentialFormat;
 import com.l7tech.common.util.HexUtils;
+import com.l7tech.util.KeystoreUtils;
 
 import javax.naming.NamingException;
 import java.io.*;
@@ -78,7 +79,7 @@ public class InternalIdentityProviderServer implements IdentityProvider {
                     Certificate rootcacert = null;
                     try {
                         javax.naming.Context cntx = new javax.naming.InitialContext();
-                        String rootCertLoc = (String)(cntx.lookup("java:comp/env/RootCertLocation"));
+                        String rootCertLoc = KeystoreUtils.getInstance().getRootCertPath();
                         InputStream certStream = new FileInputStream(rootCertLoc);
                         byte[] rootcacertbytes = HexUtils.slurpStream(certStream, 16384);
                         certStream.close();
