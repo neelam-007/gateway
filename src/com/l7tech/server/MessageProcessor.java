@@ -33,7 +33,7 @@ import java.util.logging.Logger;
  * @author alex
  * @version $Revision$
  */
-public class MessageProcessor /*implements ServiceListener*/ {
+public class MessageProcessor {
     public AssertionStatus processMessage( Request request, Response response ) throws IOException, PolicyAssertionException {
         try {
             PublishedService service = ServiceCache.getInstance().resolve(request);
