@@ -26,6 +26,7 @@ public class MultipartMessageReader {
     String fileCacheId = null;
     FileOutputStream fileCache = null;
     String fileCacheName = null;
+    boolean bufferFlushed = false;
 
     public MultipartMessageReader(InputStream inputStream, String multipartBoundary) {
         pushbackInputStream = new PushbackInputStream(inputStream, SOAP_PART_BUFFER_SIZE);
@@ -347,16 +348,21 @@ public class MultipartMessageReader {
         delimiter[0] = 0x0d;  // CR
         delimiter[1] = 0x0a;  // LF
 
-        if(fileCache != null) {
-            writeDataToFileCache(delimiter);
-        } else {
+        if(!bufferFlushed) {
+            if (writeIndex + 4 > attachmentsRawData.length) {
+                // write the data in the buffer to the file cache
+                writeDataToFileCache(attachmentsRawData, 0, writeIndex);
+                bufferFlushed = true;
 
-            if(writeIndex + 4 > attachmentsRawData.length) {
+                // write the header to the file cache
                 writeDataToFileCache(delimiter);
             } else {
                 attachmentsRawData[writeIndex++] = delimiter[0];     // CR
                 attachmentsRawData[writeIndex++] = delimiter[1];     // LF
             }
+        } else {
+            // write the header to the file cache
+            writeDataToFileCache(delimiter);
         }
     }
 
@@ -375,22 +381,27 @@ public class MultipartMessageReader {
         // NOTE: getBytes returns the byte[] which does not contains the white space characters, i.e. <CR><LF>
         byte[] rawHeader = line.getBytes();
 
-        if(fileCache != null) {
-            writeDataToFileCache(line.getBytes());
-            addLineDelimiter();
-        } else {
-            // check if there is enough room
+        // check if there is enough room
+        if(!bufferFlushed) {
             if(writeIndex + rawHeader.length + 4 > attachmentsRawData.length) {
+
+                // write the data in the buffer to the file cache
+                writeDataToFileCache(attachmentsRawData, 0, writeIndex);
+                bufferFlushed = true;
+
+                // write the header to the file cache
                 writeDataToFileCache(line.getBytes());
                 addLineDelimiter();
             } else {
-
                 for(int i=0; i < rawHeader.length; i++) {
                     attachmentsRawData[writeIndex++] = rawHeader[i];
                 }
 
                 addLineDelimiter();
             }
+        } else {
+            writeDataToFileCache(line.getBytes());
+            addLineDelimiter();
         }
     }
 
@@ -454,14 +465,18 @@ public class MultipartMessageReader {
             }
         } while((writeIndex < attachmentsRawData.length) && (d != -1));
 
+        // if the buffer is full but boundary not found and some more data from the input stream
         if(!boundaryFound && (d != -1)) {
+            int count;
             if(startIndex > 2) {
                 // push back the data from the last <cr><lf> seen
                 pushbackInputStream.unread(attachmentsRawData, startIndex - 2, attachmentsRawData.length - startIndex + 2);
-                return storeRawPartContentToFileCache(attachmentsRawData, 0, startIndex - 2);
+                count = storeRawPartContentToFileCache(attachmentsRawData, 0, startIndex - 2);
             } else {
-                return storeRawPartContentToFileCache(attachmentsRawData);
+                count = storeRawPartContentToFileCache(attachmentsRawData);
             }
+            bufferFlushed = true;
+            return count;
         } else {
             return (writeIndex - oldWriteIndex);
         }
