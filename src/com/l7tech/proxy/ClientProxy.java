@@ -139,7 +139,7 @@ public class ClientProxy {
     }
 
     /**
-     * Start up the client proxy.
+     * Start up the client proxy and return immediately.
      * @return the client proxy's base URL.
      * @throws MultiException if the proxy could not be started
      */
