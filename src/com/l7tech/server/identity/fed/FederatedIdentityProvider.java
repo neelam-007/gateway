@@ -126,15 +126,6 @@ public class FederatedIdentityProvider extends PersistentIdentityProvider {
             String subjectDn = requestCert.getSubjectDN().getName();
             String issuerDn = requestCert.getIssuerDN().getName();
 
-//            try {
-//                requestCert.checkValidity();
-//            } catch ( CertificateExpiredException e ) {
-//                logger.log( Level.WARNING, e.getMessage(), e );
-//                throw new BadCredentialsException
-//            } catch ( CertificateNotYetValidException e ) {
-//                logger.log( Level.INFO, e.getMessage(), e );
-//            }
-
             if ( !trustedCerts.isEmpty() ) {
                 // There could be no trusted certs--this means that specific client certs
                 // are trusted no matter what

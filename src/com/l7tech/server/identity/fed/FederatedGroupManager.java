@@ -6,17 +6,14 @@
 
 package com.l7tech.server.identity.fed;
 
-import com.l7tech.identity.Group;
-import com.l7tech.identity.GroupBean;
-import com.l7tech.identity.IdentityProvider;
-import com.l7tech.identity.PersistentGroup;
-import com.l7tech.identity.fed.FederatedGroup;
-import com.l7tech.identity.fed.FederatedGroupMembership;
+import com.l7tech.common.util.CertUtils;
+import com.l7tech.identity.*;
+import com.l7tech.identity.fed.*;
 import com.l7tech.identity.internal.GroupMembership;
-import com.l7tech.objectmodel.DeleteException;
 import com.l7tech.objectmodel.FindException;
-import com.l7tech.objectmodel.UpdateException;
 import com.l7tech.server.identity.PersistentGroupManager;
+
+import java.util.logging.Logger;
 
 /**
  * @author alex
@@ -25,22 +22,40 @@ import com.l7tech.server.identity.PersistentGroupManager;
 public class FederatedGroupManager extends PersistentGroupManager {
     public FederatedGroupManager( IdentityProvider provider ) {
         super( provider );
+        this.providerConfig = (FederatedIdentityProviderConfig)provider.getConfig();
     }
 
     protected GroupMembership newMembership( long userOid, long groupOid ) {
-        return new FederatedGroupMembership(provider.getConfig().getOid(), userOid, groupOid);
+        return new FederatedGroupMembership(providerConfig.getOid(), userOid, groupOid);
     }
 
     protected Class getMembershipClass() {
         return FederatedGroupMembership.class;
     }
 
-    protected void preDelete( Group group ) throws DeleteException {
-        // No admin group, don't care
-    }
+    public boolean isMember( User user, Group genericGroup ) throws FindException {
+        PersistentGroup group = cast(genericGroup);
+        if ( group instanceof VirtualGroup ) {
+            if ( providerConfig.isX509Supported() ) {
+                String pattern = ((VirtualGroup)group).getX509SubjectDnPattern();
+                if ( pattern != null ) {
+                    String dn = user.getSubjectDn();
+                    return dn == null ? false : CertUtils.dnMatchesPattern( user.getSubjectDn(), pattern );
+                }
+            }
 
-    protected void preUpdate( Group group ) throws FindException, UpdateException {
-        // No admin group, don't care
+            if ( providerConfig.isSamlSupported() ) {
+                SamlConfig config = providerConfig.getSamlConfig();
+                logger.severe("SAML is not yet implemented!"); // TODO
+                return false;
+            }
+
+            logger.warning("Neither X.509 nor SAML are supported by this Federated Identity Provider. Cannot use Virtual Groups.");
+            return false;
+        } else {
+            // Same as internal groups
+            return super.isMember( user, group );
+        }
     }
 
     public PersistentGroup cast(Group group) {
@@ -64,4 +79,7 @@ public class FederatedGroupManager extends PersistentGroupManager {
     public String getTableName() {
         return "fed_group";
     }
+
+    private final Logger logger = Logger.getLogger(getClass().getName());
+    private FederatedIdentityProviderConfig providerConfig;
 }
