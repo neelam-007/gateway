@@ -1,5 +1,7 @@
 package com.l7tech.console.table;
 
+import com.l7tech.policy.assertion.xmlsec.ElementSecurity;
+
 import javax.swing.table.AbstractTableModel;
 import javax.wsdl.BindingOperation;
 import java.util.ArrayList;
@@ -66,8 +68,8 @@ public class SecuredMessagePartsTableModel extends AbstractTableModel {
         private BindingOperation operation;
         private String xpathExpression;
         private boolean encrypt;
-        private String algorithm;
-        private int keyLength;
+        private String algorithm = ElementSecurity.DEFAULT_CIPHER; // default
+        private int keyLength = ElementSecurity.DEFAULT_KEYBITS; // defaault
 
         /**
          * Tests whether this message part implies the part specified by the
