@@ -9,14 +9,12 @@ import com.l7tech.identity.User;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.FindException;
-import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.SslAssertion;
 import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.assertion.composite.OneOrMoreAssertion;
 import com.l7tech.policy.assertion.credential.http.HttpBasic;
 import com.l7tech.policy.assertion.identity.MemberOfGroup;
 import com.l7tech.policy.assertion.identity.SpecificUser;
-import com.l7tech.console.panels.PublishServiceWizard.ServiceAndAssertion;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
@@ -28,7 +26,6 @@ import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Iterator;
 
@@ -259,7 +256,7 @@ public class IdentityProviderPanel extends WizardStepPanel {
         credentialsAndTransportjPanel.setBorder(new TitledBorder("Credentials/transport"));
         credentialsLocationjPanel.setLayout(new FlowLayout(FlowLayout.LEFT));
         ssljPanel.setLayout(new java.awt.FlowLayout(FlowLayout.LEFT));
-        credentialsLocationjComboBox.setModel(new DefaultComboBoxModel(new String[]{"HTTP Basic", "HTTP Digest", "Message Basic"}));
+        credentialsLocationjComboBox.setModel(new DefaultComboBoxModel(new String[]{"Anonymous access", "HTTP Basic", "HTTP Digest", "Message Basic"}));
         credentialsLocationjPanel.add(credentialsLocationjComboBox);
         credentialsAndTransportjPanel.add(credentialsLocationjPanel);
 
@@ -361,6 +358,7 @@ public class IdentityProviderPanel extends WizardStepPanel {
             if (EntityType.USER.equals(eh.getType())) {
                 User u = new User();
                 u.setName(eh.getName());
+                u.setLogin(eh.getName());
                 identityAssertions.add(new SpecificUser(ip, u));
             } else if (EntityType.GROUP.equals(eh.getType())) {
                 Group g = new Group();
@@ -374,10 +372,15 @@ public class IdentityProviderPanel extends WizardStepPanel {
         if (ssljCheckBox.isSelected()) {
             allAssertions.add(new SslAssertion());
         }
-        allAssertions.add(new HttpBasic());
-        allAssertions.add(new OneOrMoreAssertion(identityAssertions));
 
-        collect.setAssertion(new AllAssertion(allAssertions));
+        if (credentialsLocationjComboBox.getSelectedIndex() > 0) {
+            allAssertions.add(new HttpBasic());
+        }
+
+        if (!allAssertions.isEmpty()) {
+            allAssertions.add(new OneOrMoreAssertion(identityAssertions));
+            collect.setAssertion(new AllAssertion(allAssertions));
+        }
     }
 
     /** @return the wizard step label    */

@@ -7,6 +7,7 @@ import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.SaveException;
 import com.l7tech.policy.assertion.Assertion;
+import com.l7tech.policy.assertion.TrueAssertion;
 import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.assertion.composite.CompositeAssertion;
 import com.l7tech.policy.wsp.WspWriter;
@@ -178,7 +179,6 @@ public class PublishServiceWizard extends JDialog {
                     ByteArrayOutputStream bo = new ByteArrayOutputStream();
                     WspWriter.writePolicy(saBundle.getAssertion(), bo);
                     saBundle.getService().setPolicyXml(bo.toString());
-
                     long oid =
                       Registry.getDefault().getServiceManager().save(saBundle.getService());
                     EntityHeader header = new EntityHeader();
