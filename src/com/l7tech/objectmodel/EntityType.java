@@ -3,7 +3,7 @@ package com.l7tech.objectmodel;
 import com.l7tech.identity.Group;
 import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.identity.User;
-import com.l7tech.jms.JmsProvider;
+import com.l7tech.common.transport.jms.JmsProvider;
 import com.l7tech.service.PublishedService;
 
 import java.io.ObjectStreamException;
