@@ -66,11 +66,11 @@ public class UserManagerStub implements UserManager {
 
     }
 
-    public void update(User user) throws UpdateException {
+    public void update(User user) throws UpdateException, ObjectNotFoundException {
         String key = user.getUniqueIdentifier();
         InternalUser iu = (InternalUser)dataStore.getUsers().get(key);
         if (iu == null) {
-            throw new UpdateException("Record missing, user oid= " + key);
+            throw new ObjectNotFoundException("Record missing, user oid= " + key);
         }
         iu.copyFrom(user);
     }
@@ -91,8 +91,18 @@ public class UserManagerStub implements UserManager {
         }
     }
 
-    public void update(User user, Set groupHeaders) throws UpdateException {
-        update(user, null);
+    public void update(User user, Set groupHeaders) throws UpdateException, ObjectNotFoundException {
+        update(user);
+        GroupManager gman = (GroupManager)Locator.getDefault().lookup(GroupManager.class);
+        if (gman == null) {
+            throw new RuntimeException("Could not obtain the group manager service");
+        }
+        final String uid = user.getUniqueIdentifier();
+        try {
+            gman.setGroupHeaders(uid, groupHeaders);
+        } catch (FindException e) {
+            throw new UpdateException("Error saving groups for uid "+uid, e);
+        }
     }
 
 

@@ -155,11 +155,11 @@ public abstract class AbstractLdapUserManagerServer implements UserManager {
      * This is actually not supported in this UserManager since the we assume the ldap connector is only used to
      * read user information
      */
-    public void update(User user) throws UpdateException {
+    public void update(User user) throws UpdateException, ObjectNotFoundException {
         throw new UpdateException( UNSUPPORTED );
     }
 
-    public void update(User user, Set groupHeaders ) throws UpdateException {
+    public void update(User user, Set groupHeaders ) throws UpdateException, ObjectNotFoundException {
         throw new UpdateException( UNSUPPORTED );
     }
 
