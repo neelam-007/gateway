@@ -238,30 +238,8 @@ public class ServerHttpRoutingAssertion extends ServerRoutingAssertion {
                 attachCookies(client, request.getTransportMetadata(), url);
 
                 if(request.isMultipart()) {
-                    StringBuffer sb = new StringBuffer();
-                    sb.append(XmlUtil.MULTIPART_BOUNDARY_PREFIX + request.getMultipartBoundary() + "\n");
-
-                    Message.Part soapPart = request.getSoapPart();
-                    Map headerMap = soapPart.getHeaders();
-                    Set headerKeys = headerMap.keySet();
-                    Iterator headerItr = headerKeys.iterator();
-                    while(headerItr.hasNext()) {
-                        Message.HeaderValue headerValue = (Message.HeaderValue) headerMap.get(headerItr.next());
-                        sb.append(headerValue.getName()).append(":").append(headerValue.getValue());
-
-                        // append parameters of the header
-                        Map parameters = headerValue.getParams();
-                        Set paramKeys = parameters.keySet();
-                        Iterator paramItr = paramKeys.iterator();
-                        while (paramItr.hasNext()) {
-                            String paramName = (String) paramItr.next();
-                            sb.append("; ").append(paramName).append("=").append(parameters.get(paramName));
-                        }
-                        sb.append("\n");
-                    }
-                    sb.append(requestXml).append("\n");
-                    sb.append(XmlUtil.MULTIPART_BOUNDARY_PREFIX + request.getMultipartBoundary() + "\n");
-                    postMethod.setRequestBody(MultipartUtil.addAttachments(sb.toString(), request.getRequestAttachments(), request.getMultipartBoundary()));
+                    String soapMultiPart = MultipartUtil.addModifiedSoapPart(requestXml, request.getSoapPart(), request.getMultipartBoundary());
+                    postMethod.setRequestBody(MultipartUtil.addMultiparts(soapMultiPart, request.getRequestAttachments(), request.getMultipartBoundary()));
                 } else {
                     postMethod.setRequestBody(requestXml);
                 }

@@ -550,7 +550,7 @@ public class MessageProcessor {
                 sb.append(postBody).append("\n");
                 sb.append(XmlUtil.MULTIPART_BOUNDARY_PREFIX + req.getMultipartReader().getMultipartBoundary() + "\n");
 
-                String multipartBody = MultipartUtil.addAttachments(sb.toString(), req.getMultipartReader().getMessageAttachments(), req.getMultipartReader().getMultipartBoundary());
+                String multipartBody = MultipartUtil.addMultiparts(sb.toString(), req.getMultipartReader().getMessageAttachments(), req.getMultipartReader().getMultipartBoundary());
 
                 postMethod.setRequestBody(multipartBody);
             } else {

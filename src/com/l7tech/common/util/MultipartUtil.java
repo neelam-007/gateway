@@ -14,18 +14,44 @@ import java.util.Iterator;
  */
 public class MultipartUtil {
 
-    static public String addAttachments(String requestXml, Map attachments, String boundary) throws IOException {
+    static public String addModifiedSoapPart(String modifiedSoapEnvelope, Message.Part part, String boundary) throws IOException {
+        StringBuffer sb = new StringBuffer();
+        sb.append(XmlUtil.MULTIPART_BOUNDARY_PREFIX + boundary + "\n");
+        Map headerMap = part.getHeaders();
+        Set headerKeys = headerMap.keySet();
+        Iterator headerItr = headerKeys.iterator();
+        while(headerItr.hasNext()) {
+            Message.HeaderValue headerValue = (Message.HeaderValue) headerMap.get(headerItr.next());
+            sb.append(headerValue.getName()).append(":").append(headerValue.getValue());
+
+            // append parameters of the header
+            Map parameters = headerValue.getParams();
+            Set paramKeys = parameters.keySet();
+            Iterator paramItr = paramKeys.iterator();
+            while (paramItr.hasNext()) {
+                String paramName = (String) paramItr.next();
+                sb.append("; ").append(paramName).append("=").append(parameters.get(paramName));
+            }
+            sb.append("\n");
+        }
+        sb.append(modifiedSoapEnvelope).append("\n");
+        sb.append(XmlUtil.MULTIPART_BOUNDARY_PREFIX + boundary + "\n");
+        return sb.toString();
+    }
+
+
+    static public String addMultiparts(String requestXml, Map multiparts, String boundary) throws IOException {
         StringBuffer sb = new StringBuffer();
 
         // append the SOAP part
         sb.append(requestXml);
 
         // add attachments
-        Set attachmentKeys = attachments.keySet();
+        Set attachmentKeys = multiparts.keySet();
         Iterator itr = attachmentKeys.iterator();
         while (itr.hasNext()) {
             Object o = (Object) itr.next();
-            Message.Part part = (Message.Part) attachments.get(o);
+            Message.Part part = (Message.Part) multiparts.get(o);
 
             Map headers = part.getHeaders();
             Set headerKeys = headers.keySet();
