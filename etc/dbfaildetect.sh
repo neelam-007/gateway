@@ -3,7 +3,7 @@
 IFCONFIG="/sbin/ifconfig"
 GARP="/usr/local/bin/garp"
 WGET="/usr/bin/wget"
-NC="/usr/bin/nc"
+NC=/usr/bin/nc
 # globals and configuration
 
 EMAIL="jthorne@layer7tech.com"
@@ -66,8 +66,9 @@ doiptakeover() {
 	echo "Taking over IP $HOST";
 	$IFCONFIG $INTERFACE $HOST
 	echo "Sending gratuitous arp"
-	$GARP -i $INTERFACE -a $HOST
-	echo "echo 'SSG Database Failover' | mail -s 'SSG Database Failover' $EMAIL" 
+	$GARP -i eth0 -a $HOST
+	$GARP -i eth0 -a $HOST
+	echo "echo 'SSG Failover' | mail -s 'SSG Failover' $EMAIL" 
 }
 
 doget() {
