@@ -78,12 +78,11 @@ class SenderXmlSecurityProcessor extends SecurityProcessor {
         try {
             int encReferenceIdSuffix = 1;
             int signReferenceIdSuffix = 1;
-            boolean envelopeProcessed = false;
             boolean preconditionMatched = false;
 
             // Process operations with encryption first
             List deferred = new LinkedList(); // defer processing of sign-only ElementSecurity
-            for (int i = 0; i < elements.length && !envelopeProcessed; i++) {
+            for (int i = 0; i < elements.length; i++) {
                 ElementSecurity elementSecurity = elements[i];
 
                 if (!elementSecurity.isEncryption()) {
@@ -92,7 +91,6 @@ class SenderXmlSecurityProcessor extends SecurityProcessor {
                     continue;
                 }
 
-                envelopeProcessed = ElementSecurity.isEnvelope(elementSecurity);
                 preconditionMatched = preconditionMatches(elementSecurity, document);
                 if (!preconditionMatched)
                     continue; // skip: there was a precondition and it failed
@@ -100,14 +98,12 @@ class SenderXmlSecurityProcessor extends SecurityProcessor {
                 FoundElement foundElement = findXpathElement(document, elementSecurity);
                 Element element = foundElement.found;
                 XpathExpression elementXpath = foundElement.expression;
-                if (foundElement.envelopeProcessed)
-                    envelopeProcessed = true;
 
                 // Do encryption, since it is now known that isEncryption() is true for this ElementSecurity
                 if (element.hasChildNodes()) {
                     check(elementSecurity);
                     Element encElement = element;
-                    if (envelopeProcessed) { // kludge/legacy, to preserve the session elements in clear, encrypt body only
+                    if (element == document.getDocumentElement()) {
                         encElement = SoapUtil.getBody(document);
                         if (encElement == null) {
                             logger.severe("Could not retrieve SOAP Body from the document \n" + XmlUtil.documentToString(document));
@@ -132,7 +128,7 @@ class SenderXmlSecurityProcessor extends SecurityProcessor {
             for (Iterator i = deferred.iterator(); i.hasNext();) {
                 ElementSecurity elementSecurity = (ElementSecurity)i.next();
 
-                envelopeProcessed = ElementSecurity.isEnvelope(elementSecurity);
+                //envelopeProcessed = ElementSecurity.isEnvelope(elementSecurity); // todo: what is this for?
                 preconditionMatched = preconditionMatches(elementSecurity, document);
                 if (!preconditionMatched)
                     continue; // skip: there was a precondition and it failed
@@ -140,8 +136,6 @@ class SenderXmlSecurityProcessor extends SecurityProcessor {
                 FoundElement foundElement = findXpathElement(document, elementSecurity);
                 Element element = foundElement.found;
                 XpathExpression elementXpath = foundElement.expression;
-                if (foundElement.envelopeProcessed)
-                    envelopeProcessed = true;
 
                 signReferenceIdSuffix = doSignElement(signReferenceIdSuffix, document, element, elementXpath);
             }
@@ -175,16 +169,11 @@ class SenderXmlSecurityProcessor extends SecurityProcessor {
 
     private static final class FoundElement {
         private FoundElement(XpathExpression expression, Element found) {
-            this(expression, found, false);
-        }
-        private FoundElement(XpathExpression expression, Element found, boolean envelopeProcessed) {
             this.expression = expression;
             this.found = found;
-            this.envelopeProcessed = envelopeProcessed;
         }
         private final XpathExpression expression;
         private final Element found;
-        private final boolean envelopeProcessed;
     }
 
     private FoundElement findXpathElement(Document document, ElementSecurity elementSecurity) throws JaxenException, IOException, SecurityProcessorException {
@@ -205,7 +194,7 @@ class SenderXmlSecurityProcessor extends SecurityProcessor {
             logger.warning(message);
             throw new SecurityProcessorException(message);
         } else {
-            return new FoundElement(elementXpath, document.getDocumentElement(), true);
+            return new FoundElement(elementXpath, document.getDocumentElement());
         }
     }
 
