@@ -6,6 +6,7 @@ import com.l7tech.console.action.*;
 import com.l7tech.console.panels.PreferencesDialog;
 import com.l7tech.console.panels.Utilities;
 import com.l7tech.console.panels.WorkSpacePanel;
+import com.l7tech.console.panels.LogonDialog;
 import com.l7tech.console.tree.*;
 import com.l7tech.console.util.Preferences;
 import com.l7tech.console.util.Registry;
@@ -37,7 +38,7 @@ import java.util.logging.Level;
  */
 public class MainWindow extends JFrame {
     static Logger log = Logger.getLogger(MainWindow.class.getName());
-        /** the resource path for the application */
+    /** the resource path for the application */
     public static final String RESOURCE_PATH = "com/l7tech/console/resources";
 
     /** the path to JavaHelp helpset file */
@@ -1033,11 +1034,7 @@ public class MainWindow extends JFrame {
      * @param event  ActionEvent
      */
     private void connectHandler(ActionEvent event) {
-        if (logon()) {
-            toggleConnectedMenus(true);
-            new HomeAction().performAction();
-
-        }
+        logon();
     }
 
     /**
@@ -1694,21 +1691,6 @@ public class MainWindow extends JFrame {
      */
     private boolean logon() {
         LogonDialog.logon(this, logonListenr);
-        setJtreeRootNodes();
-        int timeout = 0;
-        try {
-            timeout = Preferences.getPreferences().getInactivityTimeout();
-        } catch (IOException e) {
-            log.log(Level.WARNING, "unable to get preferences", e);
-        }
-        final int fTimeout = timeout;
-        SwingUtilities.invokeLater(
-          new Runnable() {
-              public void run() {
-                  MainWindow.this.
-                    setInactivitiyTimeout(fTimeout);
-              }
-          });
         return true;
     }
 
@@ -1738,6 +1720,24 @@ public class MainWindow extends JFrame {
               } catch (IOException e) {
                   log.log(Level.WARNING, "onAuthSuccess()", e);
               }
+              setJtreeRootNodes();
+              int timeout = 0;
+              try {
+                  timeout = Preferences.getPreferences().getInactivityTimeout();
+              } catch (IOException e) {
+                  log.log(Level.WARNING, "unable to get preferences", e);
+              }
+              final int fTimeout = timeout;
+              SwingUtilities.invokeLater(
+                new Runnable() {
+                    public void run() {
+                        MainWindow.this.
+                          setInactivitiyTimeout(fTimeout);
+                    }
+                });
+              toggleConnectedMenus(true);
+              new HomeAction().performAction();
+
           }
 
           /* invoked on authentication failure */

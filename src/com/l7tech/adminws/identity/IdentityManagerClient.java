@@ -1,6 +1,8 @@
 package com.l7tech.adminws.identity;
 
 import com.l7tech.identity.IdentityProviderConfig;
+import com.l7tech.adminws.ClientCredentialManager;
+import com.l7tech.util.Locator;
 
 import java.io.IOException;
 
@@ -14,6 +16,11 @@ public class IdentityManagerClient {
 
     public IdentityManagerClient(IdentityProviderConfig config) {
         this.config = config;
+        credentialManager =
+          (ClientCredentialManager)Locator.getDefault().lookup(ClientCredentialManager.class);
+        if (credentialManager == null) { // bug
+            throw new RuntimeException("No credential manager configured in services");
+        }
     }
     // ************************************************
     // PRIVATES
@@ -39,13 +46,16 @@ public class IdentityManagerClient {
         return prefUrl;
         //return "http://localhost:8080/UneasyRooster/services/identities";
     }
+
     protected String getAdminUsername() throws IOException {
-        return com.l7tech.adminws.ClientCredentialManager.getCachedUsername();
-    }
-    protected String getAdminPassword() throws IOException {
-        return com.l7tech.adminws.ClientCredentialManager.getCachedPasswd();
+        return credentialManager.getUsername();
     }
 
+    protected String getAdminPassword() throws IOException {
+        return credentialManager.getPassword();
+    }
+
+    private ClientCredentialManager credentialManager = null;
     protected Client localStub = null;
     protected IdentityProviderConfig config;
 }

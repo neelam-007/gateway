@@ -1,6 +1,12 @@
 package com.l7tech.adminws;
 
+import com.l7tech.adminws.identity.Client;
+import com.l7tech.adminws.identity.Service;
+
 import java.io.IOException;
+import java.net.PasswordAuthentication;
+import java.rmi.RemoteException;
+import javax.security.auth.login.LoginException;
 
 /**
  * Layer 7 Technologies, inc.
@@ -8,51 +14,55 @@ import java.io.IOException;
  * Date: Jun 5, 2003
  *
  */
-public class ClientCredentialManager {
+public abstract class ClientCredentialManager {
 
     /**
-     * Determines if the passed credentials will grant access to the admin web service. If successful, those credentials
-     * will be cached for future admin ws calls.
+     * Subclasses implement this method to provide the concrete login implementation.
      *
-     * This requires the URL to be available in com.l7tech.console.util.Preferences.getPreferences().getServiceUrl();
-     * IOException might be thrown otherwise.
+     * @param creds the credentials to authenticate
+     * @see ClientCredentialManagerImpl
      */
-    public static boolean validateAdminCredentials(java.net.PasswordAuthentication creds) throws IOException {
-        String targetUrl = getServiceURL();
-        com.l7tech.adminws.identity.Client testStub = new com.l7tech.adminws.identity.Client(targetUrl, creds.getUserName(), new String(creds.getPassword()));
-        try {
-            String remoteVersion = testStub.echoVersion();
-            if (remoteVersion == null) return false;
-            username = creds.getUserName();
-            passwd = new String(creds.getPassword());
-            if (!remoteVersion.equals(com.l7tech.adminws.identity.Service.VERSION)) {
-                // todo, change this so that this check is propagated to console somehow
-                System.err.println("ERROR in com.l7tech.adminws.ClientCredentialManager. version mismatch between client and server implementation.");
-            }
-        } catch (java.rmi.RemoteException e) {
-            e.printStackTrace(System.err);
-            return false;
+    public abstract void login(PasswordAuthentication creds)
+      throws LoginException, VersionException;
+
+
+    /**
+     * @return the username that was last authenticated. Emtpy string
+     * otherwise, never <b>null</b>
+     */
+    public final String getUsername() {
+        return cachedCredentials.getUserName();
+    }
+
+    /**
+     * @return the password that was last authenticated. Emtpy string
+     * otherwise, never <b>null</b>
+     */
+    public final String getPassword() {
+        return String.valueOf(cachedCredentials.getPassword());
+    }
+
+    /**
+     * Subclasses reset the credentials using this method.
+     */
+    protected final void resetCredentials() {
+        synchronized (ClientCredentialManager.class) {
+            cachedCredentials = new PasswordAuthentication("", new char[]{});
         }
-        return true;
     }
 
-    public static String getCachedUsername() {
-        return username;
+    /**
+     * Subclasses update the credentials using this method.
+     * @param pa the username/password instance
+     */
+    protected final void setCredentials(PasswordAuthentication pa) {
+        synchronized (ClientCredentialManager.class) {
+            cachedCredentials = pa;
+        }
+
     }
 
-    public static String getCachedPasswd() {
-        return passwd;
-    }
-
-    public static void setCachedUsername(String arg) {
-        username = arg;
-    }
-
-    public static void setCachedPasswd(String arg) {
-        passwd = arg;
-    }
-
-    private static String getServiceURL() throws IOException {
+    private String getServiceURL() throws IOException {
         String prefUrl = com.l7tech.console.util.Preferences.getPreferences().getServiceUrl();
         if (prefUrl == null || prefUrl.length() < 1 || prefUrl.equals("null/ssg")) {
             System.err.println("com.l7tech.console.util.Preferences.getPreferences does not resolve a server address");
@@ -62,6 +72,6 @@ public class ClientCredentialManager {
         return prefUrl;
     }
 
-    private static String username;
-    private static String passwd;
+    protected static PasswordAuthentication cachedCredentials = new PasswordAuthentication("", new char[]{});
+
 }

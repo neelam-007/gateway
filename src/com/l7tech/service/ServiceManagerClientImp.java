@@ -2,8 +2,10 @@ package com.l7tech.service;
 
 import com.l7tech.objectmodel.*;
 import com.l7tech.adminws.service.Client;
+import com.l7tech.adminws.ClientCredentialManager;
 import com.l7tech.message.Request;
 import com.l7tech.service.resolution.ServiceResolutionException;
+import com.l7tech.util.Locator;
 
 import java.util.Collection;
 import java.io.IOException;
@@ -152,11 +154,23 @@ public class ServiceManagerClientImp implements ServiceManager {
         return prefUrl;
         //return "http://localhost:8080/UneasyRooster/services/identities";
     }
-    private String getAdminUsername() throws IOException {
-        return com.l7tech.adminws.ClientCredentialManager.getCachedUsername();
+
+    private String getAdminUsername() {
+        return getCredentialManager().getUsername();
     }
-    private String getAdminPassword() throws IOException {
-        return com.l7tech.adminws.ClientCredentialManager.getCachedPasswd();
+
+    private String getAdminPassword() {
+        return getCredentialManager().getPassword();
+    }
+
+
+    private ClientCredentialManager getCredentialManager() {
+        ClientCredentialManager credentialManager =
+          (ClientCredentialManager)Locator.getDefault().lookup(ClientCredentialManager.class);
+        if (credentialManager == null) { // bug
+            throw new RuntimeException("No credential manager configured in services");
+        }
+        return credentialManager;
     }
 
     private Client localStub = null;

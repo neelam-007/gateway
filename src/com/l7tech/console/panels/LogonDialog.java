@@ -1,12 +1,15 @@
-package com.l7tech.console;
+package com.l7tech.console.panels;
 
-import com.l7tech.console.panels.Utilities;
+import com.l7tech.adminws.ClientCredentialManager;
+import com.l7tech.adminws.VersionException;
 import com.l7tech.console.text.FilterDocument;
 import com.l7tech.console.util.Preferences;
+import com.l7tech.util.Locator;
 import org.apache.commons.httpclient.HttpClient;
 import org.apache.commons.httpclient.HttpException;
 import org.apache.commons.httpclient.methods.GetMethod;
 
+import javax.security.auth.login.LoginException;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
@@ -17,8 +20,8 @@ import java.net.URL;
 import java.text.MessageFormat;
 import java.util.Locale;
 import java.util.ResourceBundle;
-import java.util.logging.Logger;
 import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * This class is the SSG console Logon dialog.
@@ -27,8 +30,6 @@ import java.util.logging.Level;
  */
 public class LogonDialog extends JDialog {
     static final Logger log = Logger.getLogger(LogonDialog.class.getName());
-    /* this class classloader */
-    private final ClassLoader cl = getClass().getClassLoader();
 
     /* the PasswordAuthentication instance with user supplied credentials */
     private PasswordAuthentication authentication = null;
@@ -390,6 +391,7 @@ public class LogonDialog extends JDialog {
                 pw = dialog.getAuthentication();
                 if (dialog.isAborted()) break;
                 frame.setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
+                ClientCredentialManager credentialManager = getCredentialManager();
 
                 // if the service is not avail, format the message and show to te client
                 if (!isServiceAvailable(serviceURL)) {
@@ -401,14 +403,27 @@ public class LogonDialog extends JDialog {
                     break;
                 }
 
-                authenticated = com.l7tech.adminws.ClientCredentialManager.validateAdminCredentials(pw);
-
-                if (!authenticated) {
-                    JOptionPane.showMessageDialog(null, "Authentication failure.", "Error", JOptionPane.ERROR_MESSAGE);
-                    continue;
-                }
-
+                credentialManager.login(pw);
+                authenticated = true;
                 break;
+            } catch (VersionException e) {
+                frame.setCursor(Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR));
+                log.log(Level.WARNING, "logon()", e);
+                String msg =
+                  MessageFormat.format(
+                    dialog.resources.getString("logon.version.mismatch"),
+                    new Object[]{e.getExpectedVersion()});
+                JOptionPane.
+                  showMessageDialog(dialog, msg, "Warning", JOptionPane.ERROR_MESSAGE);
+            } catch (LoginException e) { // on invalid credentials
+                frame.setCursor(Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR));
+                log.log(Level.WARNING, "logon()", e);
+                JOptionPane.
+                  showMessageDialog(dialog,
+                    dialog.resources.getString("logon.invalid.credentials"),
+                    "Warning",
+                    JOptionPane.WARNING_MESSAGE);
+
             } catch (Exception e) { // everything else, generic error message
                 log.log(Level.WARNING, "logon()", e);
                 frame.setCursor(Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR));
@@ -417,7 +432,7 @@ public class LogonDialog extends JDialog {
                     dialog.resources.getString("logon.connect.error"),
                     new Object[]{getHostPart(serviceURL)});
                 JOptionPane.
-                  showMessageDialog(null, msg, "Error", JOptionPane.ERROR_MESSAGE);
+                  showMessageDialog(dialog, msg, "Error", JOptionPane.ERROR_MESSAGE);
             }
         }
 
@@ -446,6 +461,15 @@ public class LogonDialog extends JDialog {
             userNameTextField.selectAll();
         }
         super.show();
+    }
+
+    private static ClientCredentialManager getCredentialManager() {
+        ClientCredentialManager credentialManager =
+          (ClientCredentialManager)Locator.getDefault().lookup(ClientCredentialManager.class);
+        if (credentialManager == null) { // bug
+            throw new IllegalStateException("No credential manager configured in services");
+        }
+        return credentialManager;
     }
 
 
@@ -514,7 +538,7 @@ public class LogonDialog extends JDialog {
     }
 
     /**
-     * logoff from the PMI
+     * logoff from the
      */
     public static void logoff() {
         try {
@@ -525,6 +549,7 @@ public class LogonDialog extends JDialog {
 
         }
     }
+
 
     /**
      *

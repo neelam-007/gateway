@@ -3,6 +3,9 @@ package com.l7tech.identity;
 import com.l7tech.objectmodel.*;
 import com.l7tech.adminws.identity.Client;
 import com.l7tech.adminws.identity.IdentityProviderClient;
+import com.l7tech.adminws.ClientCredentialManager;
+import com.l7tech.util.Locator;
+
 import java.util.Collection;
 import java.util.Iterator;
 import java.io.IOException;
@@ -131,14 +134,14 @@ public class IdProvConfManagerClient implements IdentityProviderConfigManager {
         if (localStub == null) {
             try {
                 localStub = new Client(getServiceURL(), getAdminUsername(), getAdminPassword());
-            }
-            catch (Exception e) {
+            } catch (Exception e) {
                 throw new java.rmi.RemoteException("Exception getting admin ws stub", e);
             }
             if (localStub == null) throw new java.rmi.RemoteException("Exception getting admin ws stub");
         }
         return localStub;
     }
+
     private String getServiceURL() throws IOException {
         String prefUrl = com.l7tech.console.util.Preferences.getPreferences().getServiceUrl();
         if (prefUrl == null || prefUrl.length() < 1 || prefUrl.equals("null/ssg")) {
@@ -149,11 +152,22 @@ public class IdProvConfManagerClient implements IdentityProviderConfigManager {
         return prefUrl;
         //return "http://localhost:8080/UneasyRooster/services/identities";
     }
-    private String getAdminUsername() throws IOException {
-        return com.l7tech.adminws.ClientCredentialManager.getCachedUsername();
+
+    private String getAdminUsername() {
+        return getCredentialManager().getUsername();
     }
-    private String getAdminPassword() throws IOException {
-        return com.l7tech.adminws.ClientCredentialManager.getCachedPasswd();
+
+    private String getAdminPassword() {
+        return getCredentialManager().getPassword();
+    }
+
+    private ClientCredentialManager getCredentialManager() {
+        ClientCredentialManager credentialManager =
+          (ClientCredentialManager)Locator.getDefault().lookup(ClientCredentialManager.class);
+        if (credentialManager == null) { // bug
+            throw new RuntimeException("No credential manager configured in services");
+        }
+        return credentialManager;
     }
 
     private Client localStub = null;
