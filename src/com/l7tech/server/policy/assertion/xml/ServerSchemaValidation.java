@@ -3,8 +3,11 @@ package com.l7tech.server.policy.assertion.xml;
 import com.l7tech.logging.LogManager;
 import com.l7tech.message.Request;
 import com.l7tech.message.Response;
+import com.l7tech.message.SoapRequest;
+import com.l7tech.message.SoapResponse;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
+import com.l7tech.policy.assertion.RoutingStatus;
 import com.l7tech.policy.assertion.xml.SchemaValidation;
 import com.l7tech.server.policy.assertion.ServerAssertion;
 import org.w3c.dom.Document;
@@ -45,12 +48,29 @@ public class ServerSchemaValidation implements ServerAssertion {
 
     /**
      * validates the soap envelope's body's child against the schema
-     * todo, validate the request or the response
      */
     public AssertionStatus checkRequest(Request request, Response response) throws IOException,
                                                                               PolicyAssertionException {
-        // todo
-        return null;
+
+        // decide which document to act upon based on routing status
+        RoutingStatus routing = request.getRoutingStatus();
+        if (routing == RoutingStatus.ROUTED || routing == RoutingStatus.ATTEMPTED) {
+            // try to validate response
+            try {
+                logger.finest("validating response document");
+                return checkRequest(((SoapResponse)response).getDocument());
+            } catch (SAXException e) {
+                throw new PolicyAssertionException("could not parse response document", e);
+            }
+        } else {
+            // try to validate request
+            try {
+                logger.finest("validating request document");
+                return checkRequest(((SoapRequest)request).getDocument());
+            } catch (SAXException e) {
+                throw new PolicyAssertionException("could not parse request document", e);
+            }
+        }
     }
 
     /**
@@ -104,6 +124,7 @@ public class ServerSchemaValidation implements ServerAssertion {
                 return AssertionStatus.FAILED;
             }
         }
+        logger.finest("schema validation success");
         return AssertionStatus.NONE;
     }
 
