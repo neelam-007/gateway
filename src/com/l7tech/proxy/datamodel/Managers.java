@@ -1,3 +1,9 @@
+/*
+ * Copyright (C) 2003 Layer 7 Technologies Inc.
+ *
+ * $Id$
+ */
+
 package com.l7tech.proxy.datamodel;
 
 /**
@@ -8,6 +14,7 @@ package com.l7tech.proxy.datamodel;
  * To change this template use Options | File Templates.
  */
 public class Managers {
+    private static CredentialManager credentialManager = null;
 
     /**
      * Get the SsgManager.
@@ -23,5 +30,24 @@ public class Managers {
      */
     public static PolicyManager getPolicyManager() {
         return PolicyManagerImpl.getInstance();
+    }
+
+    /**
+     * Get the CredentialManager.
+     * @return the current CredentialManager instance.
+     */
+    public static CredentialManager getCredentialManager() {
+        if (credentialManager == null) {
+            credentialManager = CredentialManagerImpl.getInstance();
+        }
+        return credentialManager;
+    }
+
+    /**
+     * Change the CredentialManager.
+     * @param credentialManager the new CredentialManager to use.
+     */
+    public static void setCredentialManager(CredentialManager credentialManager) {
+        Managers.credentialManager = credentialManager;
     }
 }
