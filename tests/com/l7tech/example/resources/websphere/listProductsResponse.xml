@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/"
+                  xmlns:soapenc="http://schemas.xmlsoap.org/soap/encoding/" xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+                  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+    <soapenv:Body>
+        <listProductsResponse xmlns="http://warehouse.acme.com/ws">
+            <listProductsResult>
+                <productListHeader>
+                    <productName>Speakers</productName>
+                    <productId>6131570315880520648</productId>
+                </productListHeader>
+                <productListHeader>
+                    <productName>Wall Clock</productName>
+                    <productId>6131570315880520645</productId>
+                </productListHeader>
+                <productListHeader>
+                    <productName>PhoneBook</productName>
+                    <productId>6131570315880520644</productId>
+                </productListHeader>
+                <productListHeader>
+                    <productName>White board</productName>
+                    <productId>6131570315880520646</productId>
+                </productListHeader>
+                <productListHeader>
+                    <productName>Digital camera</productName>
+                    <productId>6131570315880520647</productId>
+                </productListHeader>
+            </listProductsResult>
+        </listProductsResponse>
+    </soapenv:Body>
+</soapenv:Envelope>
