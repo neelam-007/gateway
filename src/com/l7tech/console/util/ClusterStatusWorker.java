@@ -30,10 +30,16 @@ public class ClusterStatusWorker extends SwingWorker {
     private Hashtable currentNodeList;
     private long clusterRequestCount;
     private boolean remoteExceptionCaught;
-
     private ServiceAdmin serviceManager = null;
     static Logger logger = Logger.getLogger(ClusterStatusWorker.class.getName());
 
+    /**
+     * Constructor
+     *
+     * @param manager  The reference to the remote ServiceAdmin object.
+     * @param clusterStatusService   The reference to the remote ClusterStatusService object.
+     * @param currentNodeList   The list of nodes in the cluster obtained from the last retrieval.
+     */
     public ClusterStatusWorker(ServiceAdmin manager, ClusterStatusAdmin clusterStatusService, Hashtable currentNodeList){
         this.clusterStatusService = clusterStatusService;
         this.serviceManager = manager;
@@ -43,17 +49,38 @@ public class ClusterStatusWorker extends SwingWorker {
         remoteExceptionCaught = false;
     }
 
+    /**
+     * Return the new list of the nodes in the cluter
+     *
+     * @return  Hashtable  The new node list.
+     */
     public Hashtable getNewNodeList(){
         return newNodeList;
     }
+
+    /**
+     * Return the total request count of the cluster
+     *
+     * @return long  The total request count of the cluster.
+     */
     public long getClusterRequestCount(){
         return clusterRequestCount;
     }
 
+    /**
+     * Indicate if the remote exception was caught during the data retrieval
+     *
+     * @return boolean  true if remote exception was caught, false otherwise.
+     */
     public boolean isRemoteExceptionCaught(){
         return remoteExceptionCaught;
     }
 
+    /**
+     * Return the list of statistics for the service usages in every nodes of the cluster.
+     *
+     * @return  Vector  The list of statistics.
+     */
     public Vector getStatisticsList(){
         Vector stats = new Vector();
 
@@ -66,6 +93,11 @@ public class ClusterStatusWorker extends SwingWorker {
         return stats;
     }
 
+    /**
+     * Consturct the value. This function performs the actual work of retrieving statistics.
+     *
+     * @return Object  An object with the value constructed by this function.
+     */
     public Object construct() {
 
         if(serviceManager == null || clusterStatusService == null)
