@@ -6,6 +6,7 @@ import com.l7tech.console.logging.ErrorManager;
 import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.identity.IdentityProviderConfigManager;
 import com.l7tech.identity.IdentityProviderType;
+import com.l7tech.identity.InvalidIdProviderCfgException;
 import com.l7tech.identity.ldap.LdapConfigSettings;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
@@ -382,6 +383,8 @@ public class IdentityProviderDialog extends JDialog {
                 return;
             }
             addOrUpdateProvider();
+        } else if (actionCommand.equals(CMD_TEST)) {
+            testSettings();
         }
     }
 
@@ -402,6 +405,29 @@ public class IdentityProviderDialog extends JDialog {
                 }
             }
             providerTypesCombo.setEnabled(false);
+        }
+    }
+
+    private void testSettings() {
+        IdentityProviderConfig tmp = new IdentityProviderConfig();
+        tmp.setName(providerNameTextField.getText());
+        providerSettingsPanel.readSettings(tmp);
+        String errorMsg = null;
+        try {
+            getProviderConfigManager().test(tmp);
+        } catch (InvalidIdProviderCfgException e) {
+            errorMsg = e.getMessage();
+        } catch (RuntimeException e) {
+            errorMsg = resources.getString("test.error.runtime") + "\n" + e.getMessage();
+        }
+        if (errorMsg == null) {
+            JOptionPane.showMessageDialog(this, resources.getString("test.res.ok"),
+                    resources.getString("test.res.title"),
+                    JOptionPane.INFORMATION_MESSAGE);
+        } else {
+            JOptionPane.showMessageDialog(this, errorMsg,
+                    resources.getString("test.res.title"),
+                    JOptionPane.ERROR_MESSAGE);
         }
     }
 
@@ -517,11 +543,11 @@ public class IdentityProviderDialog extends JDialog {
         JButton testButton = new JButton();
         testButton.setText(resources.getString("testLdapButton.label"));
         testButton.setToolTipText(resources.getString("testLdapButton.tooltip"));
-        testButton.setEnabled(false);
+        testButton.setActionCommand(CMD_TEST);
         testButton.
           addActionListener(new ActionListener() {
               public void actionPerformed(ActionEvent event) {
-                  // test ldap here
+                  windowAction(event.getActionCommand());
               }
           });
 
@@ -666,6 +692,7 @@ public class IdentityProviderDialog extends JDialog {
     private String CMD_CANCEL = "cmd.cancel";
 
     private String CMD_OK = "cmd.ok";
+    private String CMD_TEST = "cmd.test";
 
     private JButton saveButton = null;
 
