@@ -75,7 +75,24 @@ public class DotNetInteropTest extends TestCase {
         return encryptionKeys[0];
     }
 
-    public void _testDerivedKeyToken() throws Exception {
+    public void _testDecryptMessageWithDerivedKeyToken() throws Exception {
+        Document derivedKeyEncryptedDoc = getDerviedKeyEncryptedRequest();
+        Element header = SoapUtil.getHeaderElement(derivedKeyEncryptedDoc);
+
+        Element security = SoapUtil.getSecurityElement(header);
+        Element derivedKeyToken = (Element) ((XmlUtil.findChildElementsByName(security, "http://schemas.xmlsoap.org/ws/2004/04/sc", "DerivedKeyToken")).get(0));
+        byte[] secret = {5, 2, 4, 5, 8, 7, 9, 6, 32, 4, 1, 55, 8, 7, 77, 7};
+
+        SecureConversationKeyDeriver sckd = new SecureConversationKeyDeriver();
+        Key key = sckd.derivedKeyTokenToKey(derivedKeyToken, secret);
+
+        Element bodyEl = SoapUtil.getBody(derivedKeyEncryptedDoc);
+
+        SoapMsgSigner.validateSignature(derivedKeyEncryptedDoc, bodyEl, key);
+        System.out.println("Message decrypted successfully with the derived key");
+    }
+
+    public void testDerivedKeyToken() throws Exception {
         Document derivedKeySignedDoc = getDerviedKeySignedRequest();
         Element header = SoapUtil.getHeaderElement(derivedKeySignedDoc);
 
@@ -139,7 +156,11 @@ public class DotNetInteropTest extends TestCase {
 
     private Document getDerviedKeySignedRequest() throws Exception {
             return TestDocuments.getTestDocument(TestDocuments.DOTNET_SIGNED_USING_DERIVED_KEY_TOKEN);
-        }
+    }
+
+    private Document getDerviedKeyEncryptedRequest() throws Exception {
+            return TestDocuments.getTestDocument(TestDocuments.DOTNET_ENCRYPTED_USING_DERIVED_KEY_TOKEN);
+    }
 
     public static final byte[] DECRYPTED_KEY = {-54, 33,-19, 87, -46, 31, -86, 44, -10, 3, -37, 111, 125, -94, -64, 24};
 }
