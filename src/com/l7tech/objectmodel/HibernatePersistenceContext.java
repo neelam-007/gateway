@@ -243,8 +243,9 @@ public class HibernatePersistenceContext extends PersistenceContext {
     protected Session _session;
     protected DataSource _dataSource;
     protected Connection _conn;
-    protected boolean _closed = false;
     protected Transaction _htxn;
     protected ArrayList txListenerList = new ArrayList();
+
+    protected volatile boolean _closed = false;
     private Logger logger = LogManager.getInstance().getSystemLogger();
 }
