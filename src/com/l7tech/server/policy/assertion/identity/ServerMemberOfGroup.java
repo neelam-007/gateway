@@ -51,10 +51,10 @@ public class ServerMemberOfGroup extends ServerIdentityAssertion implements Serv
      */
     public AssertionStatus checkUser(User user) {
         try {
-            Group targetGroup = getGroup();
-            if ( targetGroup.getMembers().contains( user ) )
+            GroupManager gman = getIdentityProvider().getGroupManager();
+            if ( gman.isMember( user, getGroup() ) ) {
                 return AssertionStatus.NONE;
-            else {
+            } else {
                 logger.info("user not member of group");
                 return AssertionStatus.UNAUTHORIZED;
             }
