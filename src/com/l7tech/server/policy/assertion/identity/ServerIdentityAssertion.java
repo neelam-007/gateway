@@ -134,7 +134,8 @@ public abstract class ServerIdentityAssertion implements ServerAssertion {
             message.append(": ");
             message.append(e.getMessage());
         }
-        logger.info(message.toString());
+        // fla note: this is debug information since ServerSpecificUser.checkUser is already logging failure or success
+        logger.finest(message.toString());
         return AssertionStatus.AUTH_FAILED;
     }
 
