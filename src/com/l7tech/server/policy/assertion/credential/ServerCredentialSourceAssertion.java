@@ -35,7 +35,7 @@ public abstract class ServerCredentialSourceAssertion implements ServerAssertion
             throw new IllegalArgumentException();
         }
         if (!data.isCredentialSource())  {
-            throw new IllegalArgumentException("Not a credential source "+data);
+            throw new IllegalArgumentException("Not a credential source " + data);
         }
         _data = data;
     }
@@ -67,16 +67,16 @@ public abstract class ServerCredentialSourceAssertion implements ServerAssertion
                 context.setCredentials( pc );
                 return checkCredentials(pc, authParams);
             }
-        } catch ( CredentialFinderException cfe ) {
+        } catch (CredentialFinderException cfe) {
             AssertionStatus status = cfe.getStatus();
-            if ( status == null ) {
-                auditor.logAndAudit(AssertionMessages.EXCEPTION_SEVERE, null, cfe);
-                throw new PolicyAssertionException( cfe.getMessage(), cfe );
+            if (status == null) {
+                auditor.logAndAudit(AssertionMessages.EXCEPTION_INFO, null, cfe);
+                throw new PolicyAssertionException(cfe.getMessage(), cfe);
             } else {
                 context.addResult( new AssertionResult( _data, status, cfe.getMessage() ) );
                 challenge( context, authParams );
                 // Suppress exception trace by omitting exception argument
-                auditor.logAndAudit(AssertionMessages.EXCEPTION_SEVERE, null, cfe);
+                auditor.logAndAudit(AssertionMessages.EXCEPTION_INFO, null, cfe);
 
                 if ( status == AssertionStatus.AUTH_REQUIRED )
                     context.setAuthenticationMissing();
