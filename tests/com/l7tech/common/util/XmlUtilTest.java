@@ -68,6 +68,30 @@ public class XmlUtilTest extends TestCase {
         assertNull( none );
     }
 
+    public void testFindOnlyOne() throws Exception {
+        Document d = getTestDocument();
+        Element header = XmlUtil.findOnlyOneChildElementByName( d.getDocumentElement(),
+                                                              SOAPConstants.URI_NS_SOAP_ENVELOPE,
+                                                              SoapUtil.HEADER_EL_NAME );
+        assertNotNull(header);
+
+        Element security = XmlUtil.findOnlyOneChildElementByName( header, SoapUtil.SECURITY_NAMESPACE, SoapUtil.SECURITY_EL_NAME );
+        assertNotNull(security);
+
+        try {
+            Element firstSignature = XmlUtil.findOnlyOneChildElementByName( security,
+                                                                          SoapUtil.DIGSIG_URI,
+                                                                          SoapUtil.SIGNATURE_EL_NAME );
+            fail("Expected exception not thrown");
+        } catch ( XmlUtil.MultipleChildElementsException e ) {
+            // Expected
+        }
+
+        Element nil = XmlUtil.findOnlyOneChildElementByName( security, "Foo", "Bar" );
+        assertNull(nil);
+    }
+
+
     public void testFindFirstChildElementByName() throws Exception {
         Document d = getTestDocument();
         Element header = XmlUtil.findFirstChildElementByName( d.getDocumentElement(),
@@ -76,15 +100,15 @@ public class XmlUtilTest extends TestCase {
         assertElementEquals( header, SOAPConstants.URI_NS_SOAP_ENVELOPE, SoapUtil.HEADER_EL_NAME );
         Element security = XmlUtil.findFirstChildElement( header );
         Element firstSignature = XmlUtil.findFirstChildElementByName( security,
-                                                                      DIGSIG_URI,
-                                                                      XMLENC_SIGNATURE_ELEMENT );
+                                                                      SoapUtil.DIGSIG_URI,
+                                                                      SoapUtil.SIGNATURE_EL_NAME );
         // Make sure it's really the first one
         assertTrue( XmlUtil.elementToString( firstSignature ).indexOf( "#signref1" ) >= 0 );
-        assertElementEquals( firstSignature, DIGSIG_URI, XMLENC_SIGNATURE_ELEMENT );
+        assertElementEquals( firstSignature, SoapUtil.DIGSIG_URI, SoapUtil.SIGNATURE_EL_NAME );
 
         Element sctoken = XmlUtil.findFirstChildElement( security );
         // Make sure it doesn't find spurious children
-        Element none = XmlUtil.findFirstChildElementByName( sctoken, XMLENC_URI, "Foo" );
+        Element none = XmlUtil.findFirstChildElementByName( sctoken, SoapUtil.XMLENC_NS, "Foo" );
         assertNull(none);
     }
 
@@ -97,22 +121,18 @@ public class XmlUtilTest extends TestCase {
         Element header = (Element)children.get(0);
         assertElementEquals( header, SOAPConstants.URI_NS_SOAP_ENVELOPE, SoapUtil.HEADER_EL_NAME );
         Element security = XmlUtil.findFirstChildElement( header );
-        List signatures = XmlUtil.findChildElementsByName( security, DIGSIG_URI, XMLENC_SIGNATURE_ELEMENT );
+        List signatures = XmlUtil.findChildElementsByName( security, SoapUtil.DIGSIG_URI, SoapUtil.SIGNATURE_EL_NAME);
 
         assertTrue( signatures.size() == 3 );
         for ( int i = 0; i < signatures.size(); i++ ) {
             Element child  = (Element)signatures.get(i);
-            assertElementEquals( child, DIGSIG_URI, XMLENC_SIGNATURE_ELEMENT );
+            assertElementEquals( child, SoapUtil.DIGSIG_URI, SoapUtil.SIGNATURE_EL_NAME );
             assertTrue( XmlUtil.elementToString( child ).indexOf( "#signref" + (i+1) ) >= 0 );
         }
 
         Element sctoken = XmlUtil.findFirstChildElement( security );
         // Make sure it doesn't find spurious children
-        List none = XmlUtil.findChildElementsByName( sctoken, XMLENC_URI, "Foo" );
+        List none = XmlUtil.findChildElementsByName( sctoken, SoapUtil.XMLENC_NS, "Foo" );
         assertTrue(none.isEmpty());
     }
-
-    public static final String XMLENC_URI = "http://www.w3.org/2001/04/xmlenc#";
-    public static final String DIGSIG_URI = "http://www.w3.org/2000/09/xmldsig#";
-    public static final String XMLENC_SIGNATURE_ELEMENT = "Signature";
 }
