@@ -151,6 +151,9 @@ public class ClusterStatusWorker extends SwingWorker {
 
                         // store the last update time
                         nodeStatus.setSecondLastUpdateTimeStamp(((GatewayStatus) node).getLastUpdateTimeStamp());
+
+                        // store the last node state
+                        nodeStatus.setLastState(((GatewayStatus) node).getLastState());
                     }
                 }
 
