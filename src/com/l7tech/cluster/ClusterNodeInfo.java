@@ -1,5 +1,7 @@
 package com.l7tech.cluster;
 
+import java.io.Serializable;
+
 /**
  * Bean representation of a row in the cluster_info table.
  *
@@ -13,7 +15,7 @@ package com.l7tech.cluster;
  * $Id$
  * 
  */
-public class ClusterNodeInfo {
+public class ClusterNodeInfo implements Serializable {
 
     /**
      * mac address of the node that uniquely identifies this node in the cluster
