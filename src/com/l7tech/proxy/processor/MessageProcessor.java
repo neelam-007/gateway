@@ -28,6 +28,7 @@ import org.apache.commons.httpclient.UsernamePasswordCredentials;
 import org.apache.commons.httpclient.methods.PostMethod;
 import org.apache.log4j.Category;
 import org.apache.xml.serialize.XMLSerializer;
+import org.apache.xml.serialize.OutputFormat;
 import org.bouncycastle.jce.PKCS10CertificationRequest;
 import org.bouncycastle.jce.provider.JDKKeyPairGenerator;
 
@@ -271,6 +272,9 @@ public class MessageProcessor {
             final StringWriter sw = new StringWriter();
             XMLSerializer xmlSerializer = new XMLSerializer();
             xmlSerializer.setOutputCharStream(sw);
+            OutputFormat of = new OutputFormat();
+            of.setIndent(4);
+            xmlSerializer.setOutputFormat(of);
             xmlSerializer.serialize(req.getSoapEnvelope());
 
             String postBody = sw.toString();
