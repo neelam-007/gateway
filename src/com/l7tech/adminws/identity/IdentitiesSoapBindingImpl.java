@@ -22,7 +22,7 @@ public class IdentitiesSoapBindingImpl implements com.l7tech.adminws.identity.Id
         try {
             return TypeTranslator.collectionToServiceHeaders(getIdentityProviderConfigManager().findAllHeaders());
         } catch (FindException e) {
-            throw new RemoteException( e.toString(), e );
+            throw new RemoteException("FindException in findAlllIdentityProviderConfig", e);
         }
     }
 
@@ -30,7 +30,7 @@ public class IdentitiesSoapBindingImpl implements com.l7tech.adminws.identity.Id
         try {
             return TypeTranslator.collectionToServiceHeaders(getIdentityProviderConfigManager().findAllHeaders(offset, windowSize));
         } catch (FindException e) {
-            throw new RemoteException( e.toString(), e );
+            throw new RemoteException("FindException in findAllIdentityProviderConfigByOffset", e);
         }
     }
 
@@ -38,7 +38,7 @@ public class IdentitiesSoapBindingImpl implements com.l7tech.adminws.identity.Id
         try {
             return TypeTranslator.genericToServiceIdProviderConfig(getIdentityProviderConfigManager().findByPrimaryKey(oid));
         } catch (FindException e) {
-            throw new java.rmi.RemoteException("IdentityProviderConfigManager FindException : " + e.getMessage());
+            throw new java.rmi.RemoteException("FindException in findIdentityProviderConfigByPrimaryKey", e);
         }
     }
 
@@ -46,7 +46,7 @@ public class IdentitiesSoapBindingImpl implements com.l7tech.adminws.identity.Id
         try {
             return getIdentityProviderConfigManager().save(TypeTranslator.serviceIdentityProviderConfigToGenericOne(identityProviderConfig));
         } catch (SaveException e) {
-            throw new java.rmi.RemoteException("IdentityProviderConfigManager SaveException : " + e.getMessage());
+            throw new java.rmi.RemoteException("SaveException in saveIdentityProviderConfig", e);
         }
     }
 
@@ -54,10 +54,10 @@ public class IdentitiesSoapBindingImpl implements com.l7tech.adminws.identity.Id
         try {
             getIdentityProviderConfigManager().delete(getIdentityProviderConfigManager().findByPrimaryKey(oid));
         } catch (FindException e) {
-            throw new java.rmi.RemoteException("IdentityProviderConfigManager FindException : " + e.getMessage());
+            throw new java.rmi.RemoteException("FindException in deleteIdentityProviderConfig", e);
         }
         catch (DeleteException e) {
-            throw new java.rmi.RemoteException("IdentityProviderConfigManager DeleteException : " + e.getMessage());
+            throw new java.rmi.RemoteException("DeleteException in deleteIdentityProviderConfig", e);
         }
     }
 
@@ -68,7 +68,7 @@ public class IdentitiesSoapBindingImpl implements com.l7tech.adminws.identity.Id
             com.l7tech.identity.User user = userManager.findByPrimaryKey(userId);
             return TypeTranslator.genUserToServiceUser(user);
         } catch (FindException e) {
-            throw new java.rmi.RemoteException("IdentityProviderConfigManager FindException : " + e.getMessage());
+            throw new java.rmi.RemoteException("FindException in findUserByPrimaryKey", e);
         }
     }
 
@@ -79,9 +79,9 @@ public class IdentitiesSoapBindingImpl implements com.l7tech.adminws.identity.Id
             com.l7tech.identity.User user = userManager.findByPrimaryKey(userId);
             userManager.delete(user);
         } catch (DeleteException e) {
-            throw new java.rmi.RemoteException("IdentityProviderConfigManager DeleteException : " + e.getMessage());
+            throw new java.rmi.RemoteException("DeleteException in deleteUser", e);
         } catch (FindException e) {
-            throw new java.rmi.RemoteException("IdentityProviderConfigManager FindException : " + e.getMessage());
+            throw new java.rmi.RemoteException("FindException in deleteUser", e);
         }
 
     }
@@ -92,7 +92,7 @@ public class IdentitiesSoapBindingImpl implements com.l7tech.adminws.identity.Id
         try {
             return userManager.save(TypeTranslator.serviceUserToGenUser(user));
         } catch (SaveException e) {
-            throw new java.rmi.RemoteException("IdentityProviderConfigManager SaveException : " + e.getMessage());
+            throw new java.rmi.RemoteException("SaveException in saveUser", e);
         }
     }
 
@@ -101,7 +101,7 @@ public class IdentitiesSoapBindingImpl implements com.l7tech.adminws.identity.Id
             UserManager userManager = retrieveUserManager(identityProviderConfigId);
             return TypeTranslator.collectionToServiceHeaders(userManager.findAllHeaders());
         } catch (FindException e) {
-            throw new RemoteException( e.toString(), e );
+            throw new RemoteException("FindException in findAllUsers", e);
         }
     }
 
@@ -110,7 +110,7 @@ public class IdentitiesSoapBindingImpl implements com.l7tech.adminws.identity.Id
         try {
             return TypeTranslator.collectionToServiceHeaders(userManager.findAllHeaders(offset, windowSize));
         } catch (FindException e) {
-            throw new RemoteException( e.toString(), e );
+            throw new RemoteException("FindException in findAllUsersByOffset", e);
         }
     }
 
@@ -119,7 +119,7 @@ public class IdentitiesSoapBindingImpl implements com.l7tech.adminws.identity.Id
         try {
             return TypeTranslator.genGroupToServiceGroup(groupManager.findByPrimaryKey(groupId));
         } catch (FindException e) {
-            throw new RemoteException( e.toString(), e );
+            throw new RemoteException("FindException in findGroupByPrimaryKey", e);
         }
     }
 
@@ -130,7 +130,7 @@ public class IdentitiesSoapBindingImpl implements com.l7tech.adminws.identity.Id
             if (grp == null) throw new java.rmi.RemoteException("Group does not exist");
             groupManager.delete(grp);
         } catch (ObjectModelException e) {
-            throw new RemoteException( e.toString(), e );
+            throw new RemoteException("ObjectModelException in deleteGroup", e);
         }
 
     }
@@ -140,7 +140,7 @@ public class IdentitiesSoapBindingImpl implements com.l7tech.adminws.identity.Id
             GroupManager groupManager = retrieveGroupManager(identityProviderConfigId);
             return groupManager.save(TypeTranslator.serviceGroupToGenGroup(group));
         } catch (SaveException e) {
-            throw new RemoteException( e.toString(), e );
+            throw new RemoteException("SaveException in saveGroup", e);
         }
     }
 
@@ -149,7 +149,7 @@ public class IdentitiesSoapBindingImpl implements com.l7tech.adminws.identity.Id
         try {
             return TypeTranslator.collectionToServiceHeaders(groupManager.findAllHeaders());
         } catch (FindException e) {
-            throw new RemoteException( e.toString(), e );
+            throw new RemoteException("FindException in findAllGroups", e);
         }
     }
 
@@ -157,8 +157,8 @@ public class IdentitiesSoapBindingImpl implements com.l7tech.adminws.identity.Id
         try {
             GroupManager groupManager = retrieveGroupManager(identityProviderConfigId);
             return TypeTranslator.collectionToServiceHeaders(groupManager.findAllHeaders(offset, windowSize));
-        } catch ( FindException e ) {
-            throw new RemoteException( e.toString(), e );
+        } catch (FindException e) {
+            throw new RemoteException("FindException in findAllGroupsByOffset", e);
         }
     }
 
@@ -166,22 +166,23 @@ public class IdentitiesSoapBindingImpl implements com.l7tech.adminws.identity.Id
     // PRIVATES
     // ************************************************
 
-    private IdentityProviderConfigManager getIdentityProviderConfigManager() {
+    private IdentityProviderConfigManager getIdentityProviderConfigManager() throws java.rmi.RemoteException {
         if (identityProviderConfigManager == null){
             // instantiate the server-side manager
             identityProviderConfigManager = (IdentityProviderConfigManager)Locator.getDefault().lookup(com.l7tech.identity.IdentityProviderConfigManager.class);
+            if (identityProviderConfigManager == null) throw new java.rmi.RemoteException("Cannot instantiate the IdentityProviderConfigManager");
         }
         return identityProviderConfigManager;
     }
 
     private UserManager retrieveUserManager(long identityProviderConfigId) throws java.rmi.RemoteException {
         throw new java.rmi.RemoteException("Cannot instantiate UserManager");
-        // todo (it)
+        // todo (how do i get the User Manager?)
     }
 
     private GroupManager retrieveGroupManager(long identityProviderConfigId) throws java.rmi.RemoteException {
         throw new java.rmi.RemoteException("Cannot instantiate GroupManager");
-        // todo (it)
+        // todo (how do i get the Group Manager?)
     }
 
     IdentityProviderConfigManager identityProviderConfigManager = null;
