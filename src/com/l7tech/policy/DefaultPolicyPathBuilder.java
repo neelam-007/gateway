@@ -103,7 +103,8 @@ public class DefaultPolicyPathBuilder extends PolicyPathBuilder {
             }
         }
         pathStack.pop();
-        return pruneEmptyComposites(assertionPaths);
+        // return pruneEmptyComposites(assertionPaths);
+        return assertionPaths; 
     }
     private Stack pathStack = new Stack();
 
