@@ -69,9 +69,8 @@ public abstract class AbstractLdapUserManagerServer implements UserManager {
                 if (tmp != null) out.setLastName(tmp.toString());
                 tmp = _ldapManager.extractOneAttributeValue(attributes, constants.userLoginAttribute() );
                 if (tmp != null) out.setLogin(tmp.toString());
-                // this would override the dn
-                // tmp = extractOneAttributeValue(attributes, NAME_ATTR_NAME);
-                // if (tmp != null) out.setName(tmp.toString());
+                tmp = _ldapManager.extractOneAttributeValue(attributes, constants.userNameAttribute());
+                if (tmp != null) out.setCn(tmp.toString());
                 tmp = _ldapManager.extractOneAttributeValue(attributes, constants.userPasswordAttribute() );
                 if (tmp != null) {
                     byte[] tmp2 = (byte[])tmp;
