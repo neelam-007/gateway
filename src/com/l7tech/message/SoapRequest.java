@@ -1,11 +1,15 @@
 package com.l7tech.message;
 
 import com.l7tech.common.RequestId;
-import com.l7tech.policy.assertion.credential.PrincipalCredentials;
+import com.l7tech.policy.assertion.credential.LoginCredentials;
+import com.l7tech.policy.assertion.RoutingStatus;
 import com.l7tech.server.MessageProcessor;
 import com.l7tech.server.RequestIdGenerator;
+import com.l7tech.identity.User;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
+import org.xmlpull.v1.XmlPullParser;
+import org.xmlpull.v1.XmlPullParserException;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -51,6 +55,10 @@ public abstract class SoapRequest extends XmlMessageAdapter implements SoapMessa
         return _document;
     }
 
+    public XmlPullParser getPullParser() throws IOException, XmlPullParserException {
+        return pullParser( getRequestXml() );
+    }
+
     public String getRequestXml() throws IOException {
         // TODO: Attachments
         if (_requestXml == null && _document != null) {
@@ -73,11 +81,11 @@ public abstract class SoapRequest extends XmlMessageAdapter implements SoapMessa
         _document = null;
     }
 
-    public PrincipalCredentials getPrincipalCredentials() {
+    public LoginCredentials getPrincipalCredentials() {
         return _principalCredentials;
     }
 
-    public void setPrincipalCredentials( PrincipalCredentials pc ) {
+    public void setPrincipalCredentials( LoginCredentials pc ) {
         _principalCredentials = pc;
     }
 
@@ -89,12 +97,20 @@ public abstract class SoapRequest extends XmlMessageAdapter implements SoapMessa
         _authenticated = authenticated;
     }
 
-    public synchronized boolean isRouted() {
-        return _routed;
+    public User getUser() {
+        return _user;
     }
 
-    public synchronized void setRouted(boolean routed) {
-        _routed = routed;
+    public void setUser( User user ) {
+        _user = user;
+    }
+
+    public void setRoutingStatus( RoutingStatus status ) {
+        _routingStatus = status;
+    }
+
+    public RoutingStatus getRoutingStatus() {
+        return _routingStatus;
     }
 
     /**
@@ -124,10 +140,11 @@ public abstract class SoapRequest extends XmlMessageAdapter implements SoapMessa
 
     protected RequestId _id;
     protected boolean _authenticated;
-    protected boolean _routed;
     protected Reader _requestReader;
+    protected User _user;
+    protected RoutingStatus _routingStatus = RoutingStatus.UNKNOWN;
 
     /** The cached XML document. */
     protected String _requestXml;
-    protected PrincipalCredentials _principalCredentials;
+    protected LoginCredentials _principalCredentials;
 }
