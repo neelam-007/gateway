@@ -6,6 +6,7 @@ import javax.swing.table.TableColumnModel;
 import javax.swing.table.JTableHeader;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.util.Vector;
 
 /**
  * <p> Copyright (C) 2004 Layer 7 Technologies Inc.</p>
@@ -32,6 +33,11 @@ public class MimePartsTable extends JTable {
      */
     public MimePartsTableSorter getTableSorter() {
         return tableSorter;
+    }
+
+    public void removeAll() {
+        super.removeAll();        
+        tableSorter.setData(new Vector());
     }
 
     /**

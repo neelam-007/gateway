@@ -22,6 +22,8 @@ import javax.swing.*;
 import javax.swing.table.TableCellRenderer;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.event.EventListenerList;
+import javax.swing.event.ListSelectionListener;
+import javax.swing.event.ListSelectionEvent;
 import javax.wsdl.Binding;
 import javax.wsdl.BindingOperation;
 import javax.wsdl.WSDLException;
@@ -30,10 +32,7 @@ import javax.wsdl.extensions.mime.MIMEMultipartRelated;
 import javax.wsdl.extensions.mime.MIMEPart;
 import javax.wsdl.extensions.soap.SOAPBody;
 import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.awt.event.WindowAdapter;
-import java.awt.event.WindowEvent;
+import java.awt.event.*;
 import java.rmi.RemoteException;
 import java.util.*;
 import java.util.List;
@@ -90,6 +89,18 @@ public class RequestSwAAssertionDialog extends JDialog {
         operationsScrollPane.setViewportView(bindingOperationsTable);
 
         bindingsListComboxBox.setRenderer(bindingListRender);
+        bindingsListComboxBox.addItemListener(new ItemListener() {
+            /**
+             * Invoked when an item has been selected or deselected.
+             * The code written for this method performs the operations
+             * that need to occur when an item is selected (or deselected).
+             */
+            public void itemStateChanged(ItemEvent e) {
+                if (e.getStateChange() == ItemEvent.SELECTED) {
+                    populateBindingOperationsData((BindingInfo) e.getItem());
+                }
+            }
+        });
 
         multipartScrollPane.setViewportView(getMimePartsTable());
         multipartScrollPane.getViewport().setBackground(Color.white);
@@ -148,15 +159,22 @@ public class RequestSwAAssertionDialog extends JDialog {
             bindingsListComboxBox.addItem(binding);
 
             if(firstEntry) {
-                populateData(binding);
+                populateBindingOperationsData(binding);
                 firstEntry = false;
             }
         }
 
     }
 
-    private void populateData(BindingInfo binding) {
+    private void populateBindingOperationsData(BindingInfo binding) {
         if(binding == null) throw new RuntimeException("binding info is NULL");
+
+        // clear the operation table
+        getBindingOperationsTableModel().removeRows(getBindingOperationsTableModel().getDataSet());
+        getBindingOperationsTableModel().clearDataSet();
+
+        // clear the MIME part table
+        getMimePartsTable().removeAll();
 
         Iterator bindingOperationsItr = binding.getBindingOperations().keySet().iterator();
         while(bindingOperationsItr.hasNext()) {
@@ -164,17 +182,31 @@ public class RequestSwAAssertionDialog extends JDialog {
             // add the entry to the binding operation table
             BindingOperationInfo bo = (BindingOperationInfo) binding.getBindingOperations().get(bindingOperationName);
             getBindingOperationsTableModel().addRow(bo);
-
-            Iterator parts = bo.getMultipart().keySet().iterator();
-            Vector pv = new Vector();
-            while (parts.hasNext()) {
-                String partName = (String) parts.next();
-                pv.add(bo.getMultipart().get(partName));
-
-            }
-            getMimePartsTable().getTableSorter().setData(pv);
         }
         getBindingOperationsTableModel().fireTableDataChanged();
+
+        // show the mime parts of the first operation
+        if(getBindingOperationsTableModel().getRowCount() > 0) {
+            getBindingOperationsTable().setRowSelectionInterval(0,0);
+            getBindingOperationsTableModel().fireTableCellUpdated(0,0);
+            populateMimePartsData(((BindingOperationInfo) getBindingOperationsTableModel().getDataSet()[0]).getMultipart());
+        }
+    }
+
+    public void populateMimePartsData(Map mimeParts) {
+        if(mimeParts == null) throw new RuntimeException("mimeParts is NULL");
+
+        // clear the MIME part table
+        getMimePartsTable().removeAll();
+
+        Iterator parts = mimeParts.keySet().iterator();
+        Vector pv = new Vector();
+        while (parts.hasNext()) {
+            String partName = (String) parts.next();
+            pv.add(mimeParts.get(partName));
+
+        }
+        getMimePartsTable().getTableSorter().setData(pv);
     }
 
     private void loadMIMEPartsInfoFromWSDL() {
@@ -301,6 +333,22 @@ public class RequestSwAAssertionDialog extends JDialog {
         }
 
         bindingOperationsTable = new JTable();
+        bindingOperationsTable.getSelectionModel().setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+        bindingOperationsTable.getSelectionModel().
+                addListSelectionListener(new ListSelectionListener() {
+                    /**
+                     * Called whenever the value of the selection changes.
+                     * @param e the event that characterizes the change.
+                     */
+                    public void valueChanged(ListSelectionEvent e) {
+                        int row = bindingOperationsTable.getSelectedRow();
+                        if(row >= 0) {
+                            BindingOperationInfo boInfo = (BindingOperationInfo) bindingOperationsTable.getModel().getValueAt(row, 0);
+                            populateMimePartsData(boInfo.getMultipart());
+                        }
+                    }
+                });
+
         return bindingOperationsTable;
     }
 
@@ -318,12 +366,11 @@ public class RequestSwAAssertionDialog extends JDialog {
 
                 return e1.getName().compareToIgnoreCase(e2.getName());
             }
-        }) {
 
             public boolean isCellEditable(int row, int col) {
                 return false;
             }
-        };
+        });
 
         // add a new column without a column title
         bindingOperationsTableModel.addColumn("");
@@ -361,20 +408,15 @@ public class RequestSwAAssertionDialog extends JDialog {
         public Component
                 getTableCellRendererComponent(JTable table,
                                               Object value,
-                                              boolean iss,
+                                              boolean isSelected,
                                               boolean hasFocus,
                                               int row, int column) {
-            if (!table.isEnabled()) {
-                this.setEnabled(false);
+            if (isSelected) {
+                this.setBackground(table.getSelectionBackground());
+                this.setForeground(table.getSelectionForeground());
             } else {
-                this.setEnabled(true);
-                if (iss) {
-                    this.setBackground(table.getSelectionBackground());
-                    this.setForeground(table.getSelectionForeground());
-                } else {
-                    this.setBackground(table.getBackground());
-                    this.setForeground(table.getForeground());
-                }
+                this.setBackground(table.getBackground());
+                this.setForeground(table.getForeground());
             }
 
             this.setFont(new Font("Dialog", Font.PLAIN, 12));
