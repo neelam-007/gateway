@@ -156,8 +156,8 @@
       ** Then deploy a package into the ${tomcat.home}/webapps ($TOMCAT_HOME/webapps)
       -->
     <target name="deploy" depends="init-dev">
-        <antcall target="package">
-        </antcall>
+        <antcall target="package"/>
+        <antcall target="ssm-webstart"/>
 
         <!--
         <delete dir="${tomcat.home}/webapps/${app.name}"/>
@@ -275,7 +275,9 @@
             <lib dir="${build.dir}/lib"
                 excludes="commons-logging.jar, jh.jar, kunststoff.jar, servlet.jar, catalina.jar, jedit-syntax.jar, forms_rt.jar, mockobjects*, systray*, Phaos*">
             </lib>
-            <classes dir="${build.classes}"/>
+            <classes dir="${build.classes}">
+               <exclude name="com/l7tech/console/**/*"/>
+            </classes>
 
             <zipfileset dir="${src.root}/etc" prefix="WEB-INF">
                 <include name="server-config.wsdd"/>
@@ -342,6 +344,7 @@
             <arg line="make_installers.pl" />
             <arg line="-N" />
         </exec>
+        <!-- invoke the dssm webstart target (conditional) -->
     </target>
 
 
@@ -365,6 +368,33 @@
             <arg line="etc/Agent.mf" />
         </exec>
     </target>
+
+    <!--
+      ** The SSM Webstart target. Signs the SSM components, and adds the bundle into the applicaiton (war)
+      ** The target is conditional, set the ssm.webstart property to enable it.
+      -->
+    <target name="ssm-webstart" if="ssm.webstart">
+      <!-- sign the ssm jar  -->  
+      <signjar  keystore="${src.root}/etc/ssgKeyStore" alias="signer" storepass="password">
+        <fileset dir="${build.dir}/lib" includes= "jini-core.jar,jini-ext.jar,reggie-dl.jar,reggie.jar,jh.jar,kunststoff.jar,
+                                                   looks-1.1.3.jar,odmg.jar,hibernate2.jar,oswego-concurrent.jar,wsdl4j.jar,qname.jar, xercesImpl.jar,xml-apis.jar,
+                                                   axis.jar,commons-httpclient-2.0-rc2.jar,commons-lang.jar,commons-collections.jar,forms_rt.jar,jedit-syntax.jar,
+                                                   jaxen-core.jar,jaxen-dom.jar,saxpath.jar,jaxrpc.jar,saaj.jar"/>
+      </signjar>
+      <signjar jar="${build.dir}/Manager.jar" keystore="${src.root}/etc/ssgKeyStore" alias="signer" storepass="password"/>
+
+      <war warfile="${build.dir}/${war}" update="true">
+        <!-- SSM webstart -->
+        <zipfileset dir="${src.root}/etc/jnlp" includes="ssm.jnlp" prefix="ssm"/>
+        <zipfileset dir="${src.root}/src/com/l7tech/console/resources" includes="layer7_logo_small_64x64.png" prefix="ssm/images"/>
+        <zipfileset dir="${build.dir}/lib" includes="jini-core.jar,jini-ext.jar,reggie-dl.jar,reggie.jar,jh.jar,kunststoff.jar,
+                                                     looks-1.1.3.jar,odmg.jar,hibernate2.jar,oswego-concurrent.jar,wsdl4j.jar,qname.jar, xercesImpl.jar,xml-apis.jar,
+                                                     axis.jar,commons-httpclient-2.0-rc2.jar,commons-lang.jar,commons-collections.jar,forms_rt.jar,jedit-syntax.jar,
+                                                     jaxen-core.jar,jaxen-dom.jar,saxpath.jar,jaxrpc.jar,saaj.jar " prefix="ssm/lib"/>
+        <zipfileset dir="${build.dir}" includes="Manager.jar" prefix="ssm"/>
+      </war>
+    </target>
+
 
     <!--
       ** Create the directory structure, copy the resources, libs and
@@ -924,6 +954,7 @@ ssgadmin.md5 = '${install.pass.ssgadmin.md5}'
         <antcall target="test"/>
         <antcall target="clean" />
         <antcall target="package" />
+        <antcall target="ssm-webstart" />
         <antcall target="deploy"/>
         <antcall target="testpackage" />
 
