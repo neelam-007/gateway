@@ -123,8 +123,7 @@ public class HibernatePersistenceContext extends PersistenceContext {
         Connection conn = null;
         ResultSet rs = null;
         Statement pingStmt = null;
-        SQLException sqlException = null;
-        HibernateException hibernateException = null;
+        Exception lastException = null;
 
         try {
             for ( int i = 0; i < MAXRETRIES; i++ ) {
@@ -137,26 +136,21 @@ public class HibernatePersistenceContext extends PersistenceContext {
                     return _session;
                 } catch ( SQLException se ) {
                     logger.log( Level.WARNING, "Try #" + (i+1) + " caught SQLException", se );
-                    sqlException = se;
+                    lastException = se;
                 } catch ( HibernateException he ) {
                     logger.log( Level.WARNING, "Try #" + (i+1) + " caught HibernateException", he );
-                    hibernateException = he;
+                    lastException = he;
                 }
-                // if the connection did not work, do something with it instead of
-                // just retrying the same thing
                 try {
-                    if (conn != null) {
-                        _session.reconnect(conn);
-                    } else {
-                        _session.reconnect();
-                    }
-                } catch (SQLException e) {
-                    logger.log(Level.WARNING, "Exception trying to reconnect session", e);
-                    _session = null;
-                } catch (HibernateException e) {
-                    logger.log(Level.WARNING, "Exception trying to reconnect session", e);
-                    _session = null;
+                    _session.close();
+                } catch ( SQLException se ) {
+                    logger.log( Level.WARNING, "Try #" + (i+1) + " caught SQLException", se );
+                    lastException = se;
+                } catch ( HibernateException he ) {
+                    logger.log( Level.WARNING, "Try #" + (i+1) + " caught HibernateException", he );
+                    lastException = he;
                 }
+                _session = null;
             }
         } finally {
             try {
@@ -172,24 +166,16 @@ public class HibernatePersistenceContext extends PersistenceContext {
             }
         }
 
-        Exception e;
-        if ( sqlException == null )
-            e = hibernateException;
-        else
-            e = sqlException;
+        String err = "Tried " + MAXRETRIES + " times to obtain a valid Session and failed with exception " + lastException;
+        logger.log( Level.SEVERE, err, lastException );
 
-        String err = "Tried " + MAXRETRIES + " times to obtain a valid Session and failed with exception " + e;
-        logger.log( Level.SEVERE, err, e );
-
-        if ( sqlException != null )
-            throw sqlException;
-        else if ( hibernateException != null )
-            throw hibernateException;
-        else {
-            err = "Some other failure has occurred!";
-            logger.log( Level.SEVERE, err, e );
-            throw new RuntimeException( err );
+        if (lastException instanceof SQLException) {
+            throw (SQLException)lastException;
         }
+        if (lastException instanceof HibernateException) {
+            throw (HibernateException)lastException;
+        }
+        throw new RuntimeException("should not get here");
     }
 
     public void beginTransaction() throws TransactionException {
