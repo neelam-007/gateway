@@ -38,7 +38,7 @@ public class HttpBasic extends HttpCredentialSourceAssertion {
         String username = request.getSsg().getUsername();
         String password = request.getSsg().getPassword();
         if (username == null || password == null || username.length() < 1)
-            return AssertionError.FAILED;
+            return AssertionError.NOT_FOUND;
         request.setBasicAuthRequired(true);
         request.setHttpBasicUsername(username);
         request.setHttpBasicPassword(password);
