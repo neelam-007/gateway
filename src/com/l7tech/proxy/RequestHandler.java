@@ -11,16 +11,13 @@ import org.mortbay.http.HttpException;
 import org.mortbay.http.HttpRequest;
 import org.mortbay.http.HttpResponse;
 import org.mortbay.http.handler.AbstractHttpHandler;
-import org.mortbay.util.LineInput;
 import org.xml.sax.SAXException;
-import org.w3c.dom.Element;
 
-import javax.xml.soap.SOAPException;
-import javax.xml.soap.SOAPBody;
 import javax.xml.soap.Name;
+import javax.xml.soap.SOAPBody;
 import javax.xml.soap.SOAPElement;
+import javax.xml.soap.SOAPException;
 import java.io.IOException;
-import java.util.Enumeration;
 import java.util.Iterator;
 
 /**
@@ -208,6 +205,12 @@ public class RequestHandler extends AbstractHttpHandler {
         } catch (SOAPException e) {
             interceptor.onMessageError(e);
             throw new HttpException(500, "Unable to find request body: " + e.toString());
+        } catch (ConfigurationException e) {
+            interceptor.onMessageError(e);
+            throw new HttpException(500, "Invalid SSG configuration: " + e.toString());
+        } catch (SAXException e) {
+            interceptor.onMessageError(e);
+            throw new HttpException(500, "The server's response was not a valid SOAP envelope: " + e.toString());
         }
     }
 
