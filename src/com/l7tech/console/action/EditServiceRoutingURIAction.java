@@ -82,7 +82,7 @@ public class EditServiceRoutingURIAction extends NodeAction {
                         svc.setRoutingUri(null);
                     } else {
                         if (newURI.startsWith("/")) newURI = newURI.substring(1);
-                        new URL(ssgUrl + PublishedService.ROUTINGURI_PREFIX+ newURI);
+                        new URL(ssgUrl + PublishedService.ROUTINGURI_PREFIX + newURI);
                         svc.setRoutingUri(PublishedService.ROUTINGURI_PREFIX + newURI);
                     }
                     Registry.getDefault().getServiceManager().savePublishedService(svc);
@@ -104,7 +104,7 @@ public class EditServiceRoutingURIAction extends NodeAction {
         } catch (MalformedURLException e) {
             JOptionPane.showMessageDialog(mw, "Invalid URL " + prefix + newURI);
         } catch (Exception e) {
-            JOptionPane.showMessageDialog(mw, "Error while changing routin URI " + e.getMessage());
+            JOptionPane.showMessageDialog(mw, "Error while changing routinG URI " + e.getMessage());
         } finally {
             // go back to previous value if something was aborted
             if (!updated && svc != null) {
