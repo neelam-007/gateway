@@ -68,10 +68,15 @@ public class WssDecoratorImpl implements WssDecorator {
         addEncryptedKey(c, securityHeader, recipientCertificate, elementsToEncrypt);
 
         // todo sign
-        Element signature = addSignature(senderCertificate, senderPrivateKey);
+        Element signature = addSignature(c, senderCertificate, senderPrivateKey, elementsToSign, securityHeader);
     }
 
-    private Element addSignature(X509Certificate senderCertificate, PrivateKey senderPrivateKey) {
+    private Element addSignature(Context c, X509Certificate senderCertificate, PrivateKey senderPrivateKey,
+                                 Element[] elementsToSign, Element securityHeader) {
+        // make sure all elements already have an id
+        for (int i = 0; i < elementsToSign.length; i++) {
+            getOrCreateWsuId(c, elementsToSign[i]);
+        }
         return null;
     }
 
@@ -123,7 +128,7 @@ public class WssDecoratorImpl implements WssDecorator {
             Element element = elementsToEncrypt[i];
             Element dataReference = soapMsg.createElementNS(xencNs, "DataReference");
             dataReference.setPrefix(xenc);
-            dataReference.setAttribute("URI", "#" + getWsuId(c, element));
+            dataReference.setAttribute("URI", "#" + getOrCreateWsuId(c, element));
             referenceList.appendChild(dataReference);
 
             // todo go and encrypt this element now
@@ -139,12 +144,11 @@ public class WssDecoratorImpl implements WssDecorator {
      * @param element
      * @return
      */
-    private String getWsuId(Context c, Element element) {
-        String id = element.getAttributeNS(SoapUtil.WSU_NAMESPACE, "Id");
-        if (id == null || id.length() < 1)
-            id = element.getAttributeNS(SoapUtil.WSU_NAMESPACE2, "Id");
-        if (id == null || id.length() < 1)
+    private String getOrCreateWsuId(Context c, Element element) {
+        String id = SoapUtil.getElementWsuId(element);
+        if (id == null) {
             id = createWsuId(c, element);
+        }
         return id;
     }
 
