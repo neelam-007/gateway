@@ -46,9 +46,12 @@ public class DefaultPolicyPathBuilder extends PolicyPathBuilder {
      */
     public PolicyPathResult generate(Assertion assertion) {
         Set paths = generatePaths(assertion);
-        if (log.isLoggable(Level.FINEST)) {
-            for (Iterator iterator = paths.iterator(); iterator.hasNext();) {
-                printPath((AssertionPath)iterator.next());
+        int pathOrder = 0;
+        for (Iterator iterator = paths.iterator(); iterator.hasNext(); pathOrder++) {
+            AssertionPath path = (AssertionPath)iterator.next();
+            path.setPathOrder(pathOrder);
+            if (log.isLoggable(Level.FINEST)) {
+                printPath(path);
             }
         }
         return new DefaultPolicyPathResult(paths);

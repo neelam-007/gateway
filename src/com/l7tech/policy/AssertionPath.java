@@ -19,6 +19,7 @@ public class AssertionPath implements Serializable {
     private AssertionPath parentPath;
     /** Last path assertion. */
     private Assertion lastPathComponent;
+    private int pathOrder;
 
     /**
      * Construct the new assertion path from the given <code>Assertion</code>
@@ -195,6 +196,7 @@ public class AssertionPath implements Serializable {
      * @return true if this path contains the assertion, false otheriwse
      */
     public boolean contains(Assertion a) {
+        if (a == null) return false;
         Assertion[] path = getPath();
         for (int i = 0; i < path.length; i++) {
            Assertion assertion = path[i];
@@ -257,4 +259,11 @@ public class AssertionPath implements Serializable {
         return tempSpot.toString();
     }
 
+    public int getPathOrder() {
+        return pathOrder;
+    }
+
+    public void setPathOrder(int pathOrder) {
+        this.pathOrder = pathOrder;
+    }
 }

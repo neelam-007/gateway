@@ -50,6 +50,7 @@ public abstract class PolicyValidator {
      * @return the result of the validation
      */
     public PolicyValidatorResult validate(Assertion assertion) {
+        assertion.treeChanged();
         if (assertion == null) {
             throw new IllegalArgumentException();
         }

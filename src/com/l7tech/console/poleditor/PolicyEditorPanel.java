@@ -15,6 +15,8 @@ import com.l7tech.console.util.Registry;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.PolicyValidator;
 import com.l7tech.policy.PolicyValidatorResult;
+import com.l7tech.policy.wsp.WspWriter;
+import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.service.PublishedService;
 import com.l7tech.common.gui.util.Utilities;
 
@@ -468,8 +470,9 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
                     PolicyValidatorResult result = PolicyValidator.getDefault().
                                                         validate(rootAssertion.asAssertion());
                     try {
+                        String policyXml = WspWriter.getPolicyXml(rootAssertion.asAssertion());
                         PolicyValidatorResult result2 = Registry.getDefault().getServiceManager().
-                                                            validatePolicy(rootAssertion.asAssertion());
+                                                            validatePolicy(policyXml);
                         if (result2.getErrorCount() > 0) {
                             for (Iterator i = result2.getErrors().iterator(); i.hasNext();) {
                                 result.addError((com.l7tech.policy.PolicyValidatorResult.Error)i.next());
@@ -564,11 +567,12 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
      */
     private String getValidateMessageIntro(PolicyValidatorResult.Message pe) {
         String msg = null;
-        if (pe.getAssertion() != null) {
+        Assertion assertion = rootAssertion.asAssertion().getAssertionWithOrdinal(pe.getAssertionOrdinal());
+        if (assertion != null) {
             msg = "Assertion: " +
               "<a href=\"file://assertion#" +
-              pe.getAssertion().hashCode() + "\">" +
-              Descriptions.getDescription(pe.getAssertion()).getShortDescription() + "</a>";
+              assertion.hashCode() + "\">" +
+              Descriptions.getDescription(assertion).getShortDescription() + "</a>";
         } else {
             msg = ""; // supplied message (non single assertion related)
         }

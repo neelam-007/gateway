@@ -7,25 +7,21 @@ import com.l7tech.console.tree.PolicyTemplateNode;
 import com.l7tech.console.tree.ServiceNode;
 import com.l7tech.console.util.Cookie;
 import com.l7tech.console.util.TopComponents;
-import com.l7tech.policy.PolicyValidatorResult;
-import com.l7tech.policy.wsp.WspWriter;
-import com.l7tech.policy.wsp.InvalidPolicyStreamException;
-import com.l7tech.policy.exporter.PolicyImporter;
-import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.policy.PolicyValidatorResult;
+import com.l7tech.policy.assertion.Assertion;
+import com.l7tech.policy.exporter.PolicyImporter;
+import com.l7tech.policy.wsp.InvalidPolicyStreamException;
+import com.l7tech.policy.wsp.WspWriter;
 
 import javax.swing.*;
 import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.TreeNode;
 import javax.swing.tree.TreePath;
-import java.io.ByteArrayOutputStream;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStream;
+import java.rmi.RemoteException;
 import java.text.MessageFormat;
 import java.util.*;
 import java.util.logging.Level;
-import java.rmi.RemoteException;
 
 /**
  * Class <code>AssertionTreeNode</code> is the base superclass for the
@@ -109,7 +105,7 @@ public abstract class AssertionTreeNode extends AbstractTreeNode {
                 IdentityPolicyTreeNode in = (IdentityPolicyTreeNode)path[1];
                 for (Iterator it = validatorMessages.iterator(); it.hasNext();) {
                     PolicyValidatorResult.Message message = (PolicyValidatorResult.Message)it.next();
-                    if (in.contains(message.getAssertionPath())) {
+                    if (in.contains(message.getAssertionPathOrder())) {
                         pathMessages.add(message);
                     }
                 }

@@ -2,7 +2,6 @@ package com.l7tech.service;
 
 import com.l7tech.objectmodel.*;
 import com.l7tech.policy.PolicyValidatorResult;
-import com.l7tech.policy.assertion.Assertion;
 
 import java.rmi.Remote;
 import java.rmi.RemoteException;
@@ -27,5 +26,5 @@ public interface ServiceAdmin extends Remote {
 
     void deletePublishedService(long oid) throws RemoteException, DeleteException;
 
-    PolicyValidatorResult validatePolicy(Assertion assertion) throws RemoteException;
+    PolicyValidatorResult validatePolicy(String policyXml) throws RemoteException;
 }

@@ -73,7 +73,7 @@ public class PolicyValidatorResult implements Serializable {
      */
     public void addError(Error err) {
         errors.add(err);
-        final Assertion assertion = err.getAssertion();
+        final Integer assertion = new Integer(err.getAssertionOrdinal());
         List list = (List)assertionMessages.get(assertion);
         if (list == null) {
             list = new ArrayList();
@@ -89,7 +89,7 @@ public class PolicyValidatorResult implements Serializable {
      */
     public void addWarning(Warning w) {
         warnings.add(w);
-        final Assertion assertion = w.getAssertion();
+        final Integer assertion = new Integer(w.getAssertionOrdinal());
         List list = (List)assertionMessages.get(assertion);
         if (list == null) {
             list = new ArrayList();
@@ -105,7 +105,7 @@ public class PolicyValidatorResult implements Serializable {
      * @return the list of assertion messages
      */
     public List messages(Assertion a) {
-        List messages = (List)assertionMessages.get(a);
+        List messages = (List)assertionMessages.get(new Integer(a.getOrdinal()));
         if (messages !=null) {
             return messages;
         }
@@ -116,23 +116,23 @@ public class PolicyValidatorResult implements Serializable {
      * todo: add warning and info levels
      */
     public static class Message implements Serializable {
-        private Assertion assertion;
+        private int assertionOrdinal;
         private String message;
         private Throwable throwable;
-        private AssertionPath assertionPath;
+        private int assertionPathOrder;
 
-        Message(Assertion errorAssertion, AssertionPath ap, String message, Throwable throwable) {
+        Message(int errorAssertionOrdinal, int apOrder, String message, Throwable throwable) {
             if (message == null) {
                 throw new IllegalArgumentException();
             }
-            this.assertion = errorAssertion;
+            this.assertionOrdinal = errorAssertionOrdinal;
             this.message = message;
             this.throwable = throwable;
-            this.assertionPath = ap;
+            this.assertionPathOrder = apOrder;
         }
 
-        public Assertion getAssertion() {
-            return assertion;
+        public int getAssertionOrdinal() {
+            return assertionOrdinal;
         }
 
         public String getMessage() {
@@ -143,40 +143,46 @@ public class PolicyValidatorResult implements Serializable {
             return throwable;
         }
 
-        public AssertionPath getAssertionPath() {
-            return assertionPath;
+        public int getAssertionPathOrder() {
+            return assertionPathOrder;
         }
 
         public boolean equals(Object o) {
             if (this == o) return true;
             if (!(o instanceof Message)) return false;
 
-            final Message message1 = (Message)o;
+            final Message message1 = (Message) o;
 
-            if (assertion != null ? !assertion.equals(message1.assertion) : message1.assertion != null) return false;
-            if (!message.equals(message1.message)) return false;
-
+            if (assertionOrdinal != message1.assertionOrdinal) return false;
+            if (message != null ? !message.equals(message1.message) : message1.message != null) return false;
             return true;
         }
 
         public int hashCode() {
             int result;
-            result = (assertion != null ? assertion.hashCode() : 0);
-            result = 29 * result + message.hashCode();
+            result = assertionOrdinal;
+            result = 29 * result + (message != null ? message.hashCode() : 0);
             return result;
         }
-
     }
 
     public static class Error extends Message implements Serializable {
-        public Error(Assertion errorAssertion, AssertionPath ap, String message, Throwable throwable) {
-            super(errorAssertion, ap, message, throwable);
+        public Error(int errorAssertionOrdinal, int apOrder, String message, Throwable throwable) {
+            super(errorAssertionOrdinal, apOrder, message, throwable);
+        }
+
+        public Error(Assertion error, AssertionPath ap, String message, Throwable throwable) {
+            super(error.getOrdinal(), ap.getPathOrder(), message, throwable);
         }
     }
 
     public static class Warning extends Message implements Serializable {
-        public Warning(Assertion errorAssertion, AssertionPath ap, String message, Throwable throwable) {
-            super(errorAssertion, ap, message, throwable);
+        public Warning(int warningAssertionOrdinal, int apOrder, String message, Throwable throwable) {
+            super(warningAssertionOrdinal, apOrder, message, throwable);
+        }
+
+        public Warning(Assertion warning, AssertionPath ap, String message, Throwable throwable) {
+            super(warning.getOrdinal(), ap.getPathOrder(), message, throwable);
         }
     }
 }

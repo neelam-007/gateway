@@ -84,6 +84,15 @@ public class IdentityPolicyTreeNode extends AssertionTreeNode {
         return false;
     }
 
+    protected boolean contains(int pathOrder) {
+        Set paths = getIdentityPath().getPaths();
+        for (Iterator i = paths.iterator(); i.hasNext();) {
+            AssertionPath ap = (AssertionPath)i.next();
+            if (ap.getPathOrder() == pathOrder) return true;
+        }
+        return false;
+    }
+
     protected boolean contains(AssertionPath a) {
         Set paths = getIdentityPath().getPaths();
         for (Iterator i = paths.iterator(); i.hasNext();) {
