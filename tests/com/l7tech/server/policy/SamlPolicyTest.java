@@ -103,7 +103,7 @@ public class SamlPolicyTest extends TestCase {
         // put tear down code here
     }
 
-    public void xtestSecurityElementCheck() throws Exception {
+    public void testSecurityElementCheck() throws Exception {
         for (int i = 0; i < soapRequests.length; i++) {
             MockServletApi servletApi = MockServletApi.defaultMessageProcessingServletApi();
             SoapRequestGenerator.SOAPRequest soapRequest = soapRequests[i];
@@ -112,6 +112,7 @@ public class SamlPolicyTest extends TestCase {
             Document samlHeader = getDocument("com/l7tech/common/security/saml/saml1.xml");
             SOAPMessage soapMessage = soapRequest.getSOAPMessage();
             attachAssertionHeader(soapMessage, samlHeader);
+//            soapMessage.writeTo(System.out);
             servletApi.setSoapRequest(soapMessage, soapRequest.getSOAPAction());
             HttpServletRequest mhreq = servletApi.getServletRequest();
             MockHttpServletResponse mhres = new MockHttpServletResponse();
