@@ -160,15 +160,20 @@ public class XpathBasedAssertionPropertiesDialog extends JDialog {
                     if (xpath == null || xpath.equals("")) {
                         xpath = "[empty]";
                     }
-                    JOptionPane.showMessageDialog(okButton, "The path " + xpath + " is not valid (" + res.getShortMessage() + ").");
-                } else {
-                    if (xpath == null || "".equals(xpath.trim())) {
-                        xmlSecAssertion.setXpathExpression(null);
-                    } else {
-                        xmlSecAssertion.setXpathExpression(new XpathExpression(xpath, namespaces));
+                    int rs2 = JOptionPane.showConfirmDialog(okButton, "The path " + xpath + " is not valid (" +
+                                                                      res.getShortMessage() + ").\nAre you sure " +
+                                                                      "you want to save?");
+                    if (rs2 != JOptionPane.YES_OPTION) {
+                        return;
                     }
-                    XpathBasedAssertionPropertiesDialog.this.dispose();
                 }
+                if (xpath == null || "".equals(xpath.trim())) {
+                    xmlSecAssertion.setXpathExpression(null);
+                } else {
+                    xmlSecAssertion.setXpathExpression(new XpathExpression(xpath, namespaces));
+                }
+                XpathBasedAssertionPropertiesDialog.this.dispose();
+
             }
         });
 
