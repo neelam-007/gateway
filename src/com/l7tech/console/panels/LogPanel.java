@@ -91,8 +91,8 @@ public class LogPanel extends JPanel {
 
                         //msg = "The selected row is: " + row + "\n";
                         msg = "";
-                        if (getMsgTable().getModel().getValueAt(row, 0) != null)
-                            msg = msg + "Message #: " + getMsgTable().getModel().getValueAt(row, 0).toString() + "\n";
+                        //if (getMsgTable().getModel().getValueAt(row, 0) != null)
+                        //    msg = msg + "Message #: " + getMsgTable().getModel().getValueAt(row, 0).toString() + "\n";
                         if (getMsgTable().getModel().getValueAt(row, 1) != null)
                             msg = msg + "Time     : " + getMsgTable().getModel().getValueAt(row, 1).toString() + "\n";
                         if (getMsgTable().getModel().getValueAt(row, 2) != null)
@@ -382,15 +382,35 @@ public class LogPanel extends JPanel {
         columnModel.addColumn(new TableColumn(0, 20));
         columnModel.addColumn(new TableColumn(1, 60));
         columnModel.addColumn(new TableColumn(2, 15));
-        columnModel.addColumn(new TableColumn(3, 200));
-        columnModel.addColumn(new TableColumn(4, 100));
-        columnModel.addColumn(new TableColumn(5, 30));
+        columnModel.addColumn(new TableColumn(3, 400));
+        columnModel.addColumn(new TableColumn(4, 0));   // min width is used
+        columnModel.addColumn(new TableColumn(5, 0));   // min width is used
         columnModel.getColumn(0).setHeaderValue(getLogTableModel().getColumnName(0));
         columnModel.getColumn(1).setHeaderValue(getLogTableModel().getColumnName(1));
         columnModel.getColumn(2).setHeaderValue(getLogTableModel().getColumnName(2));
         columnModel.getColumn(3).setHeaderValue(getLogTableModel().getColumnName(3));
         columnModel.getColumn(4).setHeaderValue(getLogTableModel().getColumnName(4));
         columnModel.getColumn(5).setHeaderValue(getLogTableModel().getColumnName(5));
+
+        String showMsgFlag = resapplication.getString("Show_Message_Number_Column");
+        if ((showMsgFlag != null) && showMsgFlag.equals(new String("true"))){
+            // show the message # column (mainly for debugging and testing purpose
+        }
+        else{
+            columnModel.getColumn(0).setMinWidth(0);
+            columnModel.getColumn(0).setMaxWidth(0);
+            columnModel.getColumn(0).setPreferredWidth(0);
+        }
+
+        // we don't show following columns including method, class
+        // but the data is retrieved for display in the detailed pane
+        columnModel.getColumn(4).setMinWidth(0);
+        columnModel.getColumn(4).setMaxWidth(0);
+        columnModel.getColumn(4).setPreferredWidth(0);
+        columnModel.getColumn(5).setMinWidth(0);
+        columnModel.getColumn(5).setMaxWidth(0);
+        columnModel.getColumn(5).setPreferredWidth(0);
+
 
         return columnModel;
     }
