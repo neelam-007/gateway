@@ -10,7 +10,7 @@ import com.l7tech.message.Request;
 import com.l7tech.message.Response;
 import com.l7tech.credential.*;
 import com.l7tech.policy.assertion.Assertion;
-import com.l7tech.policy.assertion.AssertionError;
+import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.util.Locator;
 import com.l7tech.proxy.datamodel.PendingRequest;
@@ -26,7 +26,7 @@ public abstract class CredentialSourceAssertion extends Assertion {
         super();
     }
 
-    public AssertionError checkRequest( Request request, Response response ) throws PolicyAssertionException {
+    public AssertionStatus checkRequest( Request request, Response response ) throws PolicyAssertionException {
         try {
             PrincipalCredentials pc = request.getPrincipalCredentials();
             if ( pc == null ) {
@@ -39,7 +39,8 @@ public abstract class CredentialSourceAssertion extends Assertion {
 
             if ( pc == null ) {
                 // TODO: Log something!
-                return AssertionError.AUTH_REQUIRED;
+                response.setAuthenticationMissing( true );
+                return AssertionStatus.AUTH_REQUIRED;
             } else {
                 request.setPrincipalCredentials( pc );
                 return doCheckRequest( request, response );
@@ -49,7 +50,7 @@ public abstract class CredentialSourceAssertion extends Assertion {
         }
     }
 
-    public abstract AssertionError doCheckRequest( Request request, Response response ) throws CredentialFinderException;
+    public abstract AssertionStatus doCheckRequest( Request request, Response response ) throws CredentialFinderException;
 
     public abstract Class getCredentialFinderClass();
 }
