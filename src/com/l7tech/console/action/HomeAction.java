@@ -90,7 +90,12 @@ public class HomeAction extends BaseAction {
                                 new PublishServiceAction().performAction();
                             }
                         });
-                    } else if (EDIT_POLICY.equals(url)) {
+                    } else if (CREATE_DEFINITION.equals(url)) {
+                            SwingUtilities.invokeLater(new Runnable() {
+                            public void run() {
+                                new CreateServiceWsdlAction().performAction();
+                            }
+                        });
                     } else if (ADD_USER.equals(url)) {
                         SwingUtilities.invokeLater(new Runnable() {
                             public void run() {
@@ -134,7 +139,7 @@ public class HomeAction extends BaseAction {
     }
 
     private static final String ADD_SERVICE = "file://add.service";
-    private static final String EDIT_POLICY = "file://edit.policy";
+    private static final String CREATE_DEFINITION = "file://create.definition";
     private static final String ADD_USER = "file://add.user";
     private static final String ADD_GROUP = "file://add.group";
 }
