@@ -8,6 +8,8 @@ import com.l7tech.console.table.LogTableModel;
 import com.l7tech.cluster.GatewayStatus;
 import com.l7tech.cluster.ClusterStatusAdmin;
 import com.l7tech.console.util.ArrowIcon;
+import com.l7tech.console.event.ConnectionListener;
+import com.l7tech.console.event.ConnectionEvent;
 import com.l7tech.common.gui.util.ImageCache;
 import com.l7tech.common.util.Locator;
 import com.l7tech.service.ServiceAdmin;
@@ -31,7 +33,7 @@ import java.rmi.RemoteException;
  * $Id$
  */
 
-public class ClusterStatusWindow extends JFrame {
+public class ClusterStatusWindow extends JFrame implements ConnectionListener {
 
     public static final int STATUS_TABLE_NODE_STATUS_COLUMN_INDEX = 0;
     public static final int STATUS_TABLE_NODE_NAME_COLUMN_INDEX = 1;
@@ -690,12 +692,12 @@ public class ClusterStatusWindow extends JFrame {
                         SimpleDateFormat sdf = new SimpleDateFormat("MMM d yyyy hh:mm:ss aaa");
                         Calendar cal = Calendar.getInstance();
                         cal.setTime(getCurrentClusterSystemTime());
-                        getLastUpdateLabel().setText("Last updated: " + sdf.format(cal.getTime()) + "      ");
+                        getLastUpdateLabel().setText("Last updated: " + sdf.format(cal.getTime()) + "   ");
                         getStatusRefreshTimer().start();
                     } else {
                         if (isRemoteExceptionCaught()) {
                             // the connection to the cluster is down
-                            onDisconnect();
+                            cleanUp();
                         }
                     }
                 }
@@ -716,24 +718,33 @@ public class ClusterStatusWindow extends JFrame {
     /**
      * Initialize the resources when the connection to the cluster is established.
      */
-    public void onConnect() {
+    public void onConnect(ConnectionEvent e) {
         initAdminConnection();
         initCaches();
         getStatusRefreshTimer().start();
         canceled = false;
     }
 
+
     /**
      * Clean up the resources when the connection to the cluster went down.
      */
-    public void onDisconnect() {
+    public void onDisconnect(ConnectionEvent e) {
+        cleanUp();
+    }
+
+    private void cleanUp() {
         getStatusRefreshTimer().stop();
+        if(!getLastUpdateLabel().getText().trim().endsWith("[Disconnected]")) {
+            getLastUpdateLabel().setText(getLastUpdateLabel().getText().trim() + " [Disconnected]   ");
+        }
 
         setNodeStatusUnknown();
         serviceManager = null;
         clusterStatusAdmin = null;
         canceled = true;
     }
+
 
     /**
      * Return the flag indicating whether the job has been cancelled or not.

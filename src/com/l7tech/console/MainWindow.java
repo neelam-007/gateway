@@ -1021,6 +1021,7 @@ public class MainWindow extends JFrame {
                 clusterStatusWindow = null;
             }
         });
+        addConnectionListener(clusterStatusWindow);
         Utilities.centerOnScreen(clusterStatusWindow);
         return clusterStatusWindow;
     }
@@ -1143,34 +1144,10 @@ public class MainWindow extends JFrame {
                 getClusterStatusWindow().show();
                 getClusterStatusWindow().setState(Frame.NORMAL);
             }
-
-            ConnectionListener listener = new ConnectionListener() {
-                public void onConnect(ConnectionEvent e) {
-                    setEnabled(true);
-                    if (getStatMenuItem().isSelected()) {
-                        if (clusterStatusWindow != null) {
-                            clusterStatusWindow.onConnect();
-                        }
-                    }
-                }
-
-                public void onDisconnect(ConnectionEvent e) {
-                    setEnabled(false);
-                    if (getStatMenuItem().isSelected()) {
-                        if (clusterStatusWindow != null) {
-                            clusterStatusWindow.onDisconnect();
-                        }
-                    }
-                }
-            };
-
-            {
-                MainWindow.this.addConnectionListener(listener);
-            }
-
         };
         toggleClusterStatusWindowAction.putValue(Action.SHORT_DESCRIPTION, actionDesc);
         toggleClusterStatusWindowAction.setEnabled(false);
+        enableActionWhileConnected(toggleClusterStatusWindowAction);
         return toggleClusterStatusWindowAction;
     }
 

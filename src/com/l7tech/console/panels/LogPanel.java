@@ -153,6 +153,11 @@ public class LogPanel extends JPanel {
     public void onDisconnect(){
         getLogsRefreshTimer().stop();
         getFilteredLogTableSorter().onDisconnect();
+
+        if(!getLastUpdateTimeLabel().getText().trim().endsWith("[Disconnected]")) {
+            getLastUpdateTimeLabel().setText(getLastUpdateTimeLabel().getText().trim() + " [Disconnected]   ");
+        }
+
     }
 
     /**
@@ -450,8 +455,7 @@ public class LogPanel extends JPanel {
     private FilteredLogTableSorter getFilteredLogTableSorter(){
         if(logTableSorter != null) return logTableSorter;
 
-        logTableSorter = new FilteredLogTableSorter();
-        logTableSorter.setRealModel(getLogTableModel());
+        logTableSorter = new FilteredLogTableSorter(this, getLogTableModel());
 
         return logTableSorter;
     }
@@ -607,7 +611,7 @@ public class LogPanel extends JPanel {
         SimpleDateFormat sdf = new SimpleDateFormat("MMM d yyyy hh:mm:ss aaa");
         Calendar cal = Calendar.getInstance();
         cal.setTime(time);
-        getLastUpdateTimeLabel().setText("Last updated: " + sdf.format(cal.getTime()) + "      ");
+        getLastUpdateTimeLabel().setText("Last updated: " + sdf.format(cal.getTime()) + "   ");
     }
 
     // This customized renderer can render objects of the type TextandIcon

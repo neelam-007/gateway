@@ -30,7 +30,7 @@ public class FilteredLogTableSorter extends FilteredLogTableModel {
     private ClusterStatusAdmin clusterStatusAdmin = null;
     private LogAdmin logService = null;
     private boolean canceled;
-    private String msgNumberOfSelectedRow = "-1";
+    private LogPanel logPanel;
 
 
     /**
@@ -42,9 +42,11 @@ public class FilteredLogTableSorter extends FilteredLogTableModel {
     /**
      * Constructor taking <CODE>DefaultTableModel</CODE> as the input parameter.
      *
+     * @param logPanel The panel of log browser.
      * @param model  A table model.
      */
-    public FilteredLogTableSorter(DefaultTableModel model) {
+    public FilteredLogTableSorter(LogPanel logPanel, DefaultTableModel model) {
+        this.logPanel = logPanel;
         setModel(model);
     }
 
@@ -483,6 +485,7 @@ public class FilteredLogTableSorter extends FilteredLogTableModel {
                     } else {
                         if (isRemoteExceptionCaught()) {
                             // the connection to the cluster is down
+                            logPanel.onDisconnect();
                             onDisconnect();
                         }
                     }
