@@ -806,15 +806,10 @@ public class WssProcessorImpl implements WssProcessor {
 
         // Remember which elements were covered
         for (int i = 0; i < validity.getNumberOfReferences(); i++) {
-            // Resolve each elements one by one. Use original document as the elements signed might no longer exist
-            // once the document is completly processed (signature might cover elements in the Security header that
-            // will later be purged).
+            // Resolve each elements one by one.
             String elementCoveredURI = validity.getReferenceURI(i);
-            Element elementCovered = SoapUtil.getElementByWsuId(cntx.originalDocument, elementCoveredURI);
-            if (elementCovered == null) {
-                // i guess the element might be in the processed document (something decrypted was later signed)
-                elementCovered = SoapUtil.getElementByWsuId(sigElement.getOwnerDocument(), elementCoveredURI);
-            }
+            Element elementCovered = SoapUtil.getElementByWsuId(sigElement.getOwnerDocument(), elementCoveredURI);
+            //elementCovered = SoapUtil.getElementByWsuId(cntx.originalDocument, elementCoveredURI);
             if (elementCovered == null) {
                 String msg = "Element covered by signature cannot be found in original document nor in " +
                              "processed document. URI: " + elementCoveredURI;
