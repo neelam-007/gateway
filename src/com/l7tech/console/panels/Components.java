@@ -6,7 +6,7 @@ import com.l7tech.policy.assertion.credential.http.HttpDigest;
 import com.l7tech.policy.assertion.credential.wss.WssBasic;
 import com.l7tech.policy.assertion.credential.wss.WssDigest;
 import com.l7tech.policy.assertion.TrueAssertion;
-import com.l7tech.policy.assertion.xmlsec.XmlDsigReqAssertion;
+import com.l7tech.policy.assertion.xmlsec.XmlRequestSecurity;
 
 import javax.swing.*;
 import java.util.Collections;
@@ -67,7 +67,7 @@ public class Components {
 
         credentialsLocationMap.put("WSS token basic", new WssBasic());
         credentialsLocationMap.put("WSS token digest", new WssDigest());
-        credentialsLocationMap.put("WSS signed request", new XmlDsigReqAssertion());
+        credentialsLocationMap.put("WSS signed request", new XmlRequestSecurity());
 
         credentialsLocationMap = Collections.unmodifiableMap(credentialsLocationMap);
     }
