@@ -369,11 +369,10 @@
 
         <!-- Resources -->
         <copy todir="${build.classes}">
-            <fileset dir="${src.root}/etc">
+            <fileset dir="${src.root}/etc/db/${database.type}">
                 <!-- <include name="hibernate.cfg.xml"/> -->
                 <include name="hibernate.properties"/>
                 <include name="SSG.hbm.xml"/>
-                <include name="com/l7tech/objectmodel/hibernatepersistence.properties"/>
             </fileset>
 
             <fileset dir="${src.root}/src">
@@ -426,6 +425,8 @@
         <echo message="The database url is '${database.password}'"/>
         -->
 
+        <replace file="${build.classes}/hibernate.properties"
+            token="DB_DRIVER" value="${database.driver}"/>
         <replace file="${build.classes}/hibernate.properties"
             token="DB_URL" value="${database.connection.url}"/>
         <replace file="${build.classes}/hibernate.properties"
