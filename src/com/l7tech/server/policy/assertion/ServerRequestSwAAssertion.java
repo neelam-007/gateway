@@ -101,7 +101,7 @@ public class ServerRequestSwAAssertion implements ServerAssertion {
 
                             if(type != Node.ELEMENT_NODE) {
                                 logger.info( "XPath pattern " + bo.getXpath() + " found some other node '" + operationNodeRequest.toString() + "'" );
-                                return AssertionStatus.FALSIFIED;
+                                return AssertionStatus.FAILED;
                             }
 
                             logger.fine("The operation " + bo.getName() + " is found in the request");
@@ -126,7 +126,7 @@ public class ServerRequestSwAAssertion implements ServerAssertion {
 
                                     if(type != Node.ELEMENT_NODE) {
                                         logger.info( "XPath pattern " + bo.getXpath() + "/" + part.getName() + " found some other node '" + parameterNodeRequest.toString() + "'" );
-                                        return AssertionStatus.FALSIFIED;
+                                        return AssertionStatus.FAILED;
                                     }
 
                                     logger.fine("The parameter " + part.getName() + " is found in the request");
