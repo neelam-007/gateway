@@ -2,9 +2,6 @@ package com.l7tech.policy.assertion.xmlsec;
 
 import com.l7tech.policy.assertion.Assertion;
 
-import java.util.ArrayList;
-import java.util.List;
-
 /**
  * Enforces XML security on the message elements or the entire message.
  * <p/>
@@ -16,38 +13,26 @@ import java.util.List;
  */
 public class XmlResponseSecurity extends Assertion implements XmlSecurityAssertion {
     /**
-     * default constructor
-     */
-    public XmlResponseSecurity() {
-        elements.add(new ElementSecurity());
-    }
-
-    /**
      * Return the array of security elements that are specified
      *
      * @return the array of XML security elements
      */
-    public ElementSecurity[] elements() {
-        return (ElementSecurity[])elements.toArray(new ElementSecurity[]{});
+    public ElementSecurity[] getElements() {
+        return elements;
     }
 
     /**
-     * Add the security element to the list of elements
+     * Set the array of XML security elements
      *
-     * @param xse the security element
+     * @param elements the new security elements
      */
-    public void addSecurityElement(XmlSecurityAssertion xse) {
-        elements.add(xse);
+    public void setElements(ElementSecurity[] elements) {
+        if (elements != null) {
+            this.elements = elements;
+        } else {
+            elements = new ElementSecurity[]{};
+        }
     }
 
-    /**
-     * Remove the security element from the list of elements
-     *
-     * @param xse the security element
-     */
-    public void removeSecurityElement(XmlSecurityAssertion xse) {
-        elements.remove(xse);
-    }
-
-    private List elements = new ArrayList();
+    private ElementSecurity[] elements = new ElementSecurity[]{};
 }

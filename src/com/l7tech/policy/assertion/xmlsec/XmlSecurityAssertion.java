@@ -6,6 +6,7 @@ package com.l7tech.policy.assertion.xmlsec;
  * security properties are specified with the array of <code>ElementSecurity</code>
  * elements.
  * <p/>
+ *
  * @see ElementSecurity
  */
 public interface XmlSecurityAssertion {
@@ -14,5 +15,13 @@ public interface XmlSecurityAssertion {
      *
      * @return the array of XML security elements
      */
-    ElementSecurity[] elements();
+    ElementSecurity[] getElements();
+
+    /**
+     * Set the array of XML security elements
+     *
+     * @param elements the new security elements
+     */
+    void setElements(ElementSecurity[] elements);
+
 }
