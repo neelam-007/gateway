@@ -63,7 +63,9 @@ public class FindDialog extends JDialog {
     private JPanel searchResultPanel = new JPanel();
 
     /** cancle search */
-    private JButton cancelSearchButton = null;
+    private JButton stopSearchButton = null;
+    /** find button */
+    private JButton findButton = null;
 
     /** result counter label */
     final JLabel resultCounter = new JLabel();
@@ -327,7 +329,6 @@ public class FindDialog extends JDialog {
      *         button controls
      */
     private JPanel getSearchButtonPanel() {
-        JButton findButton = null;
         JButton closeButton = null;
         // Button panel at the bottom
         JPanel buttonPanel = new JPanel();
@@ -346,17 +347,18 @@ public class FindDialog extends JDialog {
         buttonPanel.add(Box.createRigidArea(new Dimension(5, 5)));
 
         // cancel search button
-        cancelSearchButton = new JButton();
-        cancelSearchButton.setText(resources.getString("cancelSearchButton.label"));
-        cancelSearchButton.setToolTipText(resources.getString("cancelSearchButton.tooltip"));
+        stopSearchButton = new JButton();
+        stopSearchButton.setText(resources.getString("stopSearchButton.label"));
+        stopSearchButton.setToolTipText(resources.getString("stopSearchButton.tooltip"));
+        stopSearchButton.setEnabled(false);
 
-        cancelSearchButton.
+        stopSearchButton.
           addActionListener(new ActionListener() {
               public void actionPerformed(ActionEvent event) {
                   stopLoadingTableModel();
               }
           });
-        buttonPanel.add(cancelSearchButton);
+        buttonPanel.add(stopSearchButton);
 
         // space
         buttonPanel.add(Box.createRigidArea(new Dimension(5, 5)));
@@ -375,7 +377,7 @@ public class FindDialog extends JDialog {
 
 
         JButton[] buttons
-          = new JButton[]{findButton, cancelSearchButton, closeButton};
+          = new JButton[]{findButton, stopSearchButton, closeButton};
 
         Utilities.equalizeButtonSizes(buttons);
 
@@ -569,62 +571,69 @@ public class FindDialog extends JDialog {
      * object browser instance.
      */
     private void setTableModel(Enumeration enum) {
-        try {
-            stopLoadingTableModel();
+        stopLoadingTableModel();
 
-            DynamicTableModel.
-              ObjectRowAdapter oa =
-              new DynamicTableModel.ObjectRowAdapter() {
-                  public Object getValue(Object o, int col) {
-                      String text = "";
-                      if (o instanceof EntityHeader) {
-                          EntityHeader eh = (EntityHeader)o;
-                          if (col == 1) {
-                              text = eh.getDescription();
-                          } else {
-                              return eh;
-                          }
+        DynamicTableModel.
+          ObjectRowAdapter oa =
+          new DynamicTableModel.ObjectRowAdapter() {
+              public Object getValue(Object o, int col) {
+                  String text = "";
+                  if (o instanceof EntityHeader) {
+                      EntityHeader eh = (EntityHeader)o;
+                      if (col == 1) {
+                          text = eh.getDescription();
                       } else {
-                          throw new
-                            IllegalArgumentException("Invalid argument type: "
-                            + "\nExpected: EntityHeader"
-                            + "\nReceived: " + o.getClass().getName());
+                          return eh;
                       }
-                      if (text == null) {
-                          text = "";
-                      }
-                      return text;
+                  } else {
+                      throw new
+                        IllegalArgumentException("Invalid argument type: "
+                        + "\nExpected: EntityHeader"
+                        + "\nReceived: " + o.getClass().getName());
                   }
-              };
+                  if (text == null) {
+                      text = "";
+                  }
+                  return text;
+              }
+          };
 
-            String columns[] =
-              new String[]{"Name", "Description"};
+        String columns[] =
+          new String[]{"Name", "Description"};
 
-            tableModel =
-              new DynamicTableModel(enum, columns.length, columns, oa);
-            jTable.setModel(tableModel);
+        tableModel =
+          new DynamicTableModel(enum, columns.length, columns, oa);
+        jTable.setModel(tableModel);
 
-            tableModel.
-              addTableModelListener(
-                new TableModelListener() {
-                    int counter = 0;
+        tableModel.
+          addTableModelListener(
+            new TableModelListener() {
+                int counter = 0;
 
-                    /**
-                     * This fine grain notification tells listeners the exact range
-                     * of cells, rows, or columns that changed.
-                     */
-                    public void tableChanged(TableModelEvent e) {
-                        if (e.getType() == TableModelEvent.INSERT) {
-                            counter += e.getLastRow() - e.getFirstRow();
-                            resultCounter.setText("[ " + counter + " objects found]");
-                        }
+                /**
+                 * This fine grain notification tells listeners the exact range
+                 * of cells, rows, or columns that changed.
+                 */
+                public void tableChanged(TableModelEvent e) {
+                    if (e.getType() == TableModelEvent.INSERT) {
+                        counter += e.getLastRow() - e.getFirstRow();
+                        resultCounter.setText("[ " + counter + " objects found]");
+                        findButton.setEnabled(true);
+                        stopSearchButton.setEnabled(false);
                     }
-                });
-
-            tableModel.start();
-        } catch (Exception e) {
-            // log.error("setTableModel()", e);
-        }
+                }
+            });
+        findButton.setEnabled(false);
+        stopSearchButton.setEnabled(true);
+        SwingUtilities.invokeLater(new Runnable() {
+            public void run() {
+                try {
+                    tableModel.start();
+                } catch (InterruptedException e) {
+                    // swallow
+                }
+            }
+        });
     }
 
 
@@ -635,6 +644,8 @@ public class FindDialog extends JDialog {
     private void stopLoadingTableModel() {
         if (tableModel != null) {
             tableModel.stop();
+            findButton.setEnabled(true);
+            stopSearchButton.setEnabled(false);
         }
     }
 
