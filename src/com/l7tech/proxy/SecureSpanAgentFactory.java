@@ -93,7 +93,7 @@ public class SecureSpanAgentFactory {
         final MessageProcessor mp = new MessageProcessor(policyManager);
         final RequestInterceptor nri = NullRequestInterceptor.INSTANCE;
         return new SecureSpanAgent() {
-            public SecureSpanAgent.Result send(String soapAction, Document message) throws SendException, IOException, CausedBadCredentialsException {
+            public SecureSpanAgent.Result send(String soapAction, Document message) throws SendException, IOException, CausedBadCredentialsException, CausedCertificateAlreadyIssuedException {
                 PendingRequest pr = new PendingRequest(message, ssg, nri, new URL("http://foo.bar.baz"), null);
                 pr.setSoapAction(soapAction);
                 try {
@@ -107,9 +107,20 @@ public class SecureSpanAgentFactory {
                             return response.getResponseAsDocument();
                         }
                     };
+                } catch (com.l7tech.proxy.datamodel.exceptions.CertificateAlreadyIssuedException e) {
+                    throw new CausedCertificateAlreadyIssuedException(e);
                 } catch (ClientCertificateException e) {
                     throw new CausedSendException(e);
                 } catch (CredentialsUnavailableException e) {
+                    if (SsgKeyStoreManager.isPasswordWorkedForPrivateKey(ssg))
+                        destroyClientCertificate();
+                    else {
+                        try {
+                            getClientCertPrivateKey();
+                        } catch (CausedBadCredentialsException ee) {
+                            destroyClientCertificate();
+                        }
+                    }
                     throw new CausedBadCredentialsException(e);
                 } catch (OperationCanceledException e) {
                     throw new CausedSendException(e);
@@ -128,7 +139,7 @@ public class SecureSpanAgentFactory {
                 }
             }
 
-            public SecureSpanAgent.Result send(String soapAction, String message) throws SecureSpanAgent.SendException, IOException, SAXException, CausedBadCredentialsException {
+            public SecureSpanAgent.Result send(String soapAction, String message) throws SecureSpanAgent.SendException, IOException, SAXException, CausedBadCredentialsException, CausedCertificateAlreadyIssuedException {
                 return send(soapAction, XmlUtil.stringToDocument(message));
             }
 

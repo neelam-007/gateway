@@ -61,8 +61,10 @@ public interface SecureSpanAgent {
      * @throws BadCredentialsException      if the username or password was not accepted by the Gateway
      * @throws IOException                  if information couldn't be obtained from the SSG due to network trouble
      * @throws IOException                  if a certificate could not be saved to disk
+     * @throws CertificateAlreadyIssuedException if we need a client cert but the Gateway has already issued us one
      */
-    Result send(String soapAction, Document message) throws SendException, IOException, BadCredentialsException;
+    Result send(String soapAction, Document message) throws SendException, IOException, BadCredentialsException,
+                                                            CertificateAlreadyIssuedException;
 
     /**
      * As above, but takes the XML as a string.
@@ -74,8 +76,10 @@ public interface SecureSpanAgent {
      * @throws SendException see above
      * @throws BadCredentialsException see above
      * @throws IOException see above
+     * @throws CertificateAlreadyIssuedException if we need a client cert but the Gateway has already issued us one
      */
-    Result send(String soapAction, String message) throws SAXException, SendException, IOException, BadCredentialsException;
+    Result send(String soapAction, String message) throws SAXException, SendException, IOException, BadCredentialsException,
+                                                          CertificateAlreadyIssuedException;
 
     /**
      * Get the Gateway's CA certificate, or null if we don't yet know it.

@@ -409,7 +409,7 @@ public class MessageProcessor {
                         throw new PolicyRetryableException();
                     } else {
                         Managers.getCredentialManager().notifyCertificateAlreadyIssued(ssg);
-                        throw new OperationCanceledException();
+                        throw new CertificateAlreadyIssuedException(e);
                     }
                 }
             }
