@@ -366,6 +366,10 @@
             </fileset>
 
             <fileset dir="${src.root}/src">
+                <include name="com/l7tech/console/**/*.properties"/>
+            </fileset>
+
+            <fileset dir="${src.root}/src">
                 <include name="com/l7tech/proxy/resources/*"/>
             </fileset>
         </copy>
