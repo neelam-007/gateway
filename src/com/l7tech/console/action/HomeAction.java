@@ -101,7 +101,7 @@ public class HomeAction extends BaseAction {
                             }
                         });
                     } else if (ADD_USER.equals(url)) {
-                        new NewUserAction(null).actionPerformed(null);
+                        new NewInternalUserAction(null).actionPerformed(null);
                     } else if (ADD_GROUP.equals(url)) {
                         new NewGroupAction(null).actionPerformed(null);
                     } else if (ADD_ID_PROVIDER.equals(url)) {

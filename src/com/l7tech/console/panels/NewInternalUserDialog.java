@@ -31,7 +31,7 @@ import java.util.logging.Level;
  *
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  */
-public class NewUserDialog extends JDialog {
+public class NewInternalUserDialog extends JDialog {
     /** Resource bundle with default locale */
     private ResourceBundle resources = null;
 
@@ -61,11 +61,11 @@ public class NewUserDialog extends JDialog {
     private boolean passwordConfirmFieldFilled = false;
 
     /**
-     * Create a new NewUserDialog fdialog for a given Company
+     * Create a new NewInternalUserDialog fdialog for a given Company
      *
      * @param parent  the parent Frame. May be <B>null</B>
      */
-    public NewUserDialog(JFrame parent) {
+    public NewInternalUserDialog(JFrame parent) {
         super(parent, true);
         this.parent = parent;
         initResources();
@@ -109,7 +109,7 @@ public class NewUserDialog extends JDialog {
      */
     private void initResources() {
         Locale locale = Locale.getDefault();
-        resources = ResourceBundle.getBundle("com.l7tech.console.resources.NewUserDialog", locale);
+        resources = ResourceBundle.getBundle("com.l7tech.console.resources.NewInternalUserDialog", locale);
     }
 
     /**
@@ -490,7 +490,7 @@ public class NewUserDialog extends JDialog {
                               notify(Level.WARNING, e, "Error encountered while adding a user\n"+
                                      "The user has not been created.");
                         }
-                        NewUserDialog.this.dispose();
+                        NewInternalUserDialog.this.dispose();
                     }
                 });
 

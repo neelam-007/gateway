@@ -1,6 +1,6 @@
 package com.l7tech.console.action;
 
-import com.l7tech.console.panels.NewUserDialog;
+import com.l7tech.console.panels.NewInternalUserDialog;
 import com.l7tech.console.tree.AbstractTreeNode;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
@@ -9,15 +9,15 @@ import javax.swing.*;
 import java.util.logging.Logger;
 
 /**
- * The <code>NewUserAction</code> action adds the new user.
+ * The <code>NewInternalUserAction</code> action adds the new user.
  *
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  * @version 1.0
  */
-public class NewUserAction extends NodeAction {
-    static final Logger log = Logger.getLogger(NewUserAction.class.getName());
+public class NewInternalUserAction extends NodeAction {
+    static final Logger log = Logger.getLogger(NewInternalUserAction.class.getName());
 
-    public NewUserAction(AbstractTreeNode node) {
+    public NewInternalUserAction(AbstractTreeNode node) {
         super(node);
     }
 
@@ -53,7 +53,7 @@ public class NewUserAction extends NodeAction {
         SwingUtilities.invokeLater(new Runnable() {
             public void run() {
                 JFrame f = TopComponents.getInstance().getMainWindow();
-                NewUserDialog dialog = new NewUserDialog(f);
+                NewInternalUserDialog dialog = new NewInternalUserDialog(f);
                 dialog.setResizable(false);
                 dialog.show();
             }

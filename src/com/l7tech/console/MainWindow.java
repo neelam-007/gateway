@@ -591,7 +591,7 @@ public class MainWindow extends JFrame {
 
     private Action getNewInternalUserAction() {
         if (newInernalUserAction != null) return newInernalUserAction;
-        newInernalUserAction = new NewUserAction(null) {
+        newInernalUserAction = new NewInternalUserAction(null) {
             /**
              * specify the resource name for this action
              */

@@ -54,7 +54,7 @@ public class ProviderNode extends EntityHeaderNode {
             options.setInitialProvider(((EntityHeader)obj).getOid());
         }
         list.add(new FindIdentityAction(options));
-        final NewUserAction newUserAction = new NewUserAction(this);
+        final NewInternalUserAction newUserAction = new NewInternalUserAction(this);
         final NewGroupAction newGroupAction = new NewGroupAction(this);
 
         IdentityProvider iProvider = getProvider();
