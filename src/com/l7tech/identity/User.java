@@ -57,8 +57,16 @@ public class User extends NamedEntityImp implements Principal {
         _login = login;
     }
 
-    public void setPassword(String password) {
-        _password = password;
+    /**
+     * set the login before setting the password.
+     * if the password is not encoded, this will encode it.
+     */
+    public void setPassword(String password) throws  IllegalStateException {
+        if (!isAlreadyEncoded(password)) {
+            if (_login == null) throw new IllegalStateException("login must be set prior to encoding the password");
+            _password = encodePasswd(_login, password);
+        }
+        else _password = password;
     }
 
     public void setFirstName(String firstName) {
@@ -101,6 +109,48 @@ public class User extends NamedEntityImp implements Principal {
 
     public int hashCode() {
         return (int)getOid();
+    }
+
+    // ************************************************
+    // PRIVATES
+    // ************************************************
+
+    private String encodePasswd(String login, String passwd) {
+        String toEncode = login + ":" + passwd;
+
+        // MD5 IT
+        java.security.MessageDigest md5Helper = null;
+        try {
+            md5Helper = java.security.MessageDigest.getInstance("MD5");
+        } catch (java.security.NoSuchAlgorithmException e) {
+            throw new RuntimeException(e);
+        }
+        byte[] digest = md5Helper.digest(toEncode.getBytes());
+        // ENCODE IT
+        if (digest == null) return "";
+        char[] hexadecimal ={'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f'};
+        if (digest.length != 16) return "";
+        char[] buffer = new char[32];
+
+        for (int i = 0; i < 16; i++) {
+            int low = (int) (digest[i] & 0x0f);
+            int high = (int) ((digest[i] & 0xf0) >> 4);
+            buffer[i*2] = hexadecimal[high];
+            buffer[i*2 + 1] = hexadecimal[low];
+        }
+        return new String(buffer);
+    }
+
+    private boolean isAlreadyEncoded(String arg) {
+        if (arg == null || arg.length() != 32) return false;
+        String hexmembers = "0123456789abcdef";
+        for (int i = 0; i < arg.length(); i++) {
+            char toto = arg.charAt(i);
+            if (hexmembers.indexOf(toto) == -1) {
+                return false;
+            }
+        }
+        return true;
     }
 
     private String _login;
