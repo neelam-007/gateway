@@ -23,6 +23,9 @@ import org.xml.sax.SAXException;
 import java.io.IOException;
 import java.security.GeneralSecurityException;
 import java.security.PrivateKey;
+import java.security.cert.CertificateException;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Unimplemented on the client-side.
@@ -30,6 +33,7 @@ import java.security.PrivateKey;
  * @version 1.0
  */
 public class ClientSamlSecurity extends ClientAssertion {
+    private static final Logger logger = Logger.getLogger(ClientSamlSecurity.class.getName());
     private SamlSecurity data;
 
     public ClientSamlSecurity(SamlSecurity data) {
@@ -50,14 +54,27 @@ public class ClientSamlSecurity extends ClientAssertion {
         final SamlAssertion ass = context.getOrCreateSamlAssertion();
 
         context.getPendingDecorations().put(this, new ClientDecorator() {
-            public AssertionStatus decorateRequest(PolicyApplicationContext context) {
-                // todo fla, look at the recipient information of the assertion before assuming it's for default
-                // recipient
-                DecorationRequirements wssReqs = context.getDefaultWssRequirements();
-                wssReqs.setSignTimestamp(true);
-                wssReqs.setSenderSamlToken(ass.asElement());
-                wssReqs.setSenderPrivateKey(privateKey);
-                return AssertionStatus.NONE;
+            public AssertionStatus decorateRequest(PolicyApplicationContext context) throws PolicyAssertionException {
+                try {
+                    DecorationRequirements wssReqs;
+                    if (data.getRecipientContext().localRecipient()) {
+                        wssReqs = context.getDefaultWssRequirements();
+                    } else {
+                        wssReqs = context.getAlternateWssRequirements(data.getRecipientContext());
+                    }
+                    wssReqs.setSignTimestamp(true);
+                    wssReqs.setSenderSamlToken(ass.asElement());
+                    wssReqs.setSenderPrivateKey(privateKey);
+                    return AssertionStatus.NONE;
+                } catch (IOException e) {
+                    String msg = "Cannot initialize the recipient's  DecorationRequirements";
+                    logger.log(Level.WARNING, msg, e);
+                    throw new PolicyAssertionException(msg, e);
+                } catch (CertificateException e) {
+                    String msg = "Cannot initialize the recipient's  DecorationRequirements";
+                    logger.log(Level.WARNING, msg, e);
+                    throw new PolicyAssertionException(msg, e);
+                }
             }
         });
 

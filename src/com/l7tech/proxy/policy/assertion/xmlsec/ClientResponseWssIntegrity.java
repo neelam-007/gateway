@@ -69,6 +69,11 @@ public class ClientResponseWssIntegrity extends ClientAssertion {
     public AssertionStatus unDecorateReply(PolicyApplicationContext context)
             throws ServerCertificateUntrustedException, IOException, SAXException, ResponseValidationException, KeyStoreCorruptException, InvalidDocumentFormatException, PolicyAssertionException
     {
+        if (!data.getRecipientContext().localRecipient()) {
+            log.fine("This is intended for another recipient, there is nothing to validate here.");
+            return AssertionStatus.NONE;
+        }
+        
         final Message response = context.getResponse();
         final XmlKnob responseXml = response.getXmlKnob();
         Document soapmsg = responseXml.getDocumentReadOnly();

@@ -14,6 +14,7 @@ import com.l7tech.common.util.CausedIOException;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.XpathBasedAssertion;
+import com.l7tech.policy.assertion.xmlsec.SecurityHeaderAddressable;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.ServerAssertion;
 import org.w3c.dom.Document;
@@ -35,6 +36,14 @@ public abstract class ServerRequestWssOperation implements ServerAssertion {
     }
 
     public AssertionStatus checkRequest(PolicyEnforcementContext context) throws IOException, PolicyAssertionException {
+        if (data instanceof SecurityHeaderAddressable) {
+            SecurityHeaderAddressable sha = (SecurityHeaderAddressable)data;
+            if (!sha.getRecipientContext().localRecipient()) {
+                logger.fine("This is intended for another recipient, there is nothing to validate here.");
+                return AssertionStatus.NONE;
+            }
+        }
+
         ProcessorResult wssResults;
         try {
             if (!context.getRequest().isSoap()) {

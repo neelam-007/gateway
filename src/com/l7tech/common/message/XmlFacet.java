@@ -13,11 +13,18 @@ import com.l7tech.common.mime.PartIterator;
 import com.l7tech.common.security.xml.decorator.DecorationRequirements;
 import com.l7tech.common.security.xml.processor.ProcessorResult;
 import com.l7tech.common.util.XmlUtil;
+import com.l7tech.common.util.CertUtils;
+import com.l7tech.common.util.HexUtils;
+import com.l7tech.policy.assertion.xmlsec.XmlSecurityRecipientContext;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Map;
+import java.util.HashMap;
+import java.security.cert.CertificateException;
+import java.security.cert.X509Certificate;
 
 /**
  * Represents a MimeFacet whose first part is text/xml.
@@ -27,6 +34,7 @@ public class XmlFacet extends MessageFacet {
     private Document workingDocument = null;  // the working Document
     private ProcessorResult processorResult = null;
     private DecorationRequirements decorationRequirements = null;
+    private Map decorationRequirementsForAlternateRecipients = new HashMap();
 
     /** Can be assumed to be true if {@link #workingDocument} == null */
     private boolean firstPartValid;
@@ -192,6 +200,23 @@ public class XmlFacet extends MessageFacet {
 
         public DecorationRequirements getDecorationRequirements() {
             return decorationRequirements;
+        }
+
+        public DecorationRequirements getAlternateDecorationRequirements(XmlSecurityRecipientContext recipient) 
+                                            throws IOException, CertificateException {
+            if (recipient == null || recipient.localRecipient()) {
+                return getOrMakeDecorationRequirements();
+            }
+            String actor = recipient.getActor();
+            DecorationRequirements output = (DecorationRequirements)decorationRequirementsForAlternateRecipients.get(actor);
+            if (output == null) {
+                output = new DecorationRequirements();
+                X509Certificate clientCert;
+                clientCert = CertUtils.decodeCert(HexUtils.decodeBase64(recipient.getBase64edX509Certificate(), true));
+                output.setRecipientCertificate(clientCert);
+                decorationRequirementsForAlternateRecipients.put(actor, output);
+            }
+            return output;
         }
 
         public DecorationRequirements getOrMakeDecorationRequirements() {

@@ -51,7 +51,11 @@ public class ServerSamlSecurity implements ServerAssertion {
      *          something is wrong in the policy dont throw this if there is an issue with the request or the response
      */
     public AssertionStatus checkRequest(PolicyEnforcementContext context)
-            throws IOException, PolicyAssertionException {
+                                    throws IOException, PolicyAssertionException {
+        if (!assertion.getRecipientContext().localRecipient()) {
+            logger.fine("This is intended for another recipient, there is nothing to validate here.");
+            return AssertionStatus.NONE;
+        }
         ProcessorResult wssResults;
         try {
             if (!context.getRequest().isSoap()) {

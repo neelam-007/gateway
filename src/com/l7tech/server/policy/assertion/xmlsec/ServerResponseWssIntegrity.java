@@ -8,6 +8,7 @@ import com.l7tech.common.xml.XpathEvaluator;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.xmlsec.ResponseWssIntegrity;
+import com.l7tech.policy.assertion.xmlsec.XmlSecurityRecipientContext;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.ServerAssertion;
 import org.jaxen.JaxenException;
@@ -17,6 +18,7 @@ import org.xml.sax.SAXException;
 import java.io.IOException;
 import java.util.List;
 import java.util.logging.Logger;
+import java.security.cert.CertificateException;
 
 /**
  * XML Digital signature on the soap response sent from the ssg server to the requestor (probably proxy). Also does
@@ -53,6 +55,8 @@ public class ServerResponseWssIntegrity implements ServerAssertion {
         } catch (SAXException e) {
             throw new CausedIOException(e);
         }
+
+        final XmlSecurityRecipientContext recipient = responseWssIntegrity.getRecipientContext();
 
         context.addDeferredAssertion(this, new ServerAssertion() {
             public AssertionStatus checkRequest(PolicyEnforcementContext context)
@@ -97,9 +101,17 @@ public class ServerResponseWssIntegrity implements ServerAssertion {
                 SignerInfo si = KeystoreUtils.getInstance().getSignerInfo();
                 DecorationRequirements wssReq = null;
                 try {
-                    wssReq = context.getResponse().getXmlKnob().getOrMakeDecorationRequirements();
+                    if (!recipient.localRecipient()) {
+                        wssReq = context.getResponse().getXmlKnob().getAlternateDecorationRequirements(recipient);
+                    } else {
+                        wssReq = context.getResponse().getXmlKnob().getOrMakeDecorationRequirements();
+                    }
                 } catch (SAXException e) {
                     throw new RuntimeException(e); // can't happen, we did this before successfully
+                } catch (CertificateException e) {
+                    String msg = "cannot set the recipient cert.";
+                    logger.severe(msg);
+                    return AssertionStatus.SERVER_ERROR;
                 }
                 wssReq.setSenderCertificate(si.getCertificateChain()[0]);
                 wssReq.setSenderPrivateKey(si.getPrivate());

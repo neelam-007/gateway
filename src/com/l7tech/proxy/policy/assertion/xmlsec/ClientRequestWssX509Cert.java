@@ -16,6 +16,9 @@ import java.io.IOException;
 import java.security.GeneralSecurityException;
 import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
+import java.security.cert.CertificateException;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * This assertion means that the request must provide some xml signature.
@@ -27,6 +30,7 @@ import java.security.cert.X509Certificate;
  * $Id$<br/>
  */
 public class ClientRequestWssX509Cert extends ClientAssertion {
+    private final static Logger logger = Logger.getLogger(ClientRequestWssX509Cert.class.getName());
     private RequestWssX509Cert subject;
 
     public ClientRequestWssX509Cert(RequestWssX509Cert subject) {
@@ -47,18 +51,30 @@ public class ClientRequestWssX509Cert extends ClientAssertion {
 
         // add a pending decoration that will be applied only if the rest of this policy branch succeeds
         context.getPendingDecorations().put(this, new ClientDecorator() {
-            public AssertionStatus decorateRequest(PolicyApplicationContext context)
+            public AssertionStatus decorateRequest(PolicyApplicationContext context) throws PolicyAssertionException
             {
-                // get the client cert and private key
-                // We must have credentials to get the private key
-                // todo fla, look at the recipient information of the assertion before assuming it's for default
-                // recipient
-                DecorationRequirements wssReqs = context.getDefaultWssRequirements();
-                wssReqs.setRecipientCertificate(ssgCert);
-                wssReqs.setSenderCertificate(userCert);
-                wssReqs.setSenderPrivateKey(userPrivateKey);
-                wssReqs.setSignTimestamp(true);
-                return AssertionStatus.NONE;
+                try {
+                    DecorationRequirements wssReqs;
+                    if (subject.getRecipientContext().localRecipient()) {
+                        wssReqs = context.getDefaultWssRequirements();
+                        wssReqs.setRecipientCertificate(ssgCert);
+                    } else {
+                        wssReqs = context.getAlternateWssRequirements(subject.getRecipientContext());
+                    }
+                    wssReqs.setSenderCertificate(userCert);
+                    wssReqs.setSenderPrivateKey(userPrivateKey);
+                    wssReqs.setSignTimestamp(true);
+                    return AssertionStatus.NONE;
+
+                } catch (IOException e) {
+                    String msg = "Cannot initialize the recipient's  DecorationRequirements";
+                    logger.log(Level.WARNING, msg, e);
+                    throw new PolicyAssertionException(msg, e);
+                } catch (CertificateException e) {
+                    String msg = "Cannot initialize the recipient's  DecorationRequirements";
+                    logger.log(Level.WARNING, msg, e);
+                    throw new PolicyAssertionException(msg, e);
+                }
             }
         });
 

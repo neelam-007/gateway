@@ -47,6 +47,10 @@ public class ClientResponseWssConfidentiality extends ClientAssertion {
 
     public AssertionStatus unDecorateReply(PolicyApplicationContext context)
             throws ServerCertificateUntrustedException, IOException, SAXException, ResponseValidationException, KeyStoreCorruptException, PolicyAssertionException {
+        if (!data.getRecipientContext().localRecipient()) {
+            log.fine("This is intended for another recipient, there is nothing to validate here.");
+            return AssertionStatus.NONE;
+        }
         Document soapmsg = context.getResponse().getXmlKnob().getDocumentReadOnly();
         ProcessorResult wssRes = context.getResponse().getXmlKnob().getProcessorResult();
         if (wssRes == null) {

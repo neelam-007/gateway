@@ -18,8 +18,10 @@ import org.xml.sax.SAXException;
 import java.io.IOException;
 import java.security.GeneralSecurityException;
 import java.security.cert.X509Certificate;
+import java.security.cert.CertificateException;
 import java.util.List;
 import java.util.logging.Logger;
+import java.util.logging.Level;
 
 /**
  * XML Digital signature on the soap request sent from the proxy to the ssg server. Also does XML
@@ -75,20 +77,25 @@ public class ClientRequestWssConfidentiality extends ClientAssertion {
                                  "Will not sign any additional elements.");
                         return AssertionStatus.NONE;
                     }
-
-                    // get the client cert and private key
-                    // We must have credentials to get the private key
-                    // todo fla, look at the recipient information of the assertion before assuming it's for default
-                    // recipient
-                    DecorationRequirements wssReqs = context.getDefaultWssRequirements();
-                    if (serverCert != null)
-                        wssReqs.setRecipientCertificate(serverCert);
+                    DecorationRequirements wssReqs;
+                    if (requestWssConfidentiality.getRecipientContext().localRecipient()) {
+                        wssReqs = context.getDefaultWssRequirements();
+                        if (serverCert != null) {
+                            wssReqs.setRecipientCertificate(serverCert);
+                        }
+                    } else {
+                        wssReqs = context.getAlternateWssRequirements(requestWssConfidentiality.getRecipientContext());
+                    }
                     wssReqs.getElementsToEncrypt().addAll(elements);
                     return AssertionStatus.NONE;
                 } catch (JaxenException e) {
                     throw new PolicyAssertionException("ClientRequestWssConfidentiality: " +
                                                        "Unable to execute xpath expression \"" +
                                                        xpathExpression.getExpression() + "\"", e);
+                } catch (CertificateException e) {
+                    String msg = "Cannot initialize the recipient's  DecorationRequirements";
+                    log.log(Level.WARNING, msg, e);
+                    throw new PolicyAssertionException(msg, e);
                 }
             }
         });

@@ -35,6 +35,10 @@ public class ServerRequestWssX509Cert implements ServerAssertion {
         this.subject = subject;
     }
     public AssertionStatus checkRequest(PolicyEnforcementContext context) throws IOException, PolicyAssertionException {
+        if (!subject.getRecipientContext().localRecipient()) {
+            logger.fine("This is intended for another recipient, there is nothing to validate here.");
+            return AssertionStatus.NONE;
+        }
         ProcessorResult wssResults;
         try {
             if (!context.getRequest().isSoap()) {
