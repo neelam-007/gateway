@@ -27,13 +27,6 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * LAYER 7 TECHNOLOGIES, INC
- *
- * User: flascell
- * Date: Aug 26, 2003
- * Time: 3:15:22 PM
- * $Id$
- *
  * XML Digital signature on the soap request sent from a requestor (probably proxy) to the ssg server. Also does XML
  * Encryption of the request's body if the assertion's property dictates it.
  *
@@ -43,6 +36,13 @@ import java.util.logging.Logger;
  *
  * This extends ServerWssCredentialSource because once the validity of the signature if confirmed, the cert is used
  * as credentials.
+ * 
+ * <br/><br/>
+ * LAYER 7 TECHNOLOGIES, INC<br/>
+ *
+ * User: flascell<br/>
+ * Date: Aug 26, 2003<br/>
+ * $Id$
  */
 public class ServerXmlRequestSecurity implements ServerAssertion {
     public ServerXmlRequestSecurity(XmlRequestSecurity data ) {

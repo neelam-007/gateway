@@ -23,13 +23,6 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * LAYER 7 TECHNOLOGIES, INC
- *
- * User: flascell
- * Date: Nov 26, 2003
- * Time: 1:30:29 PM
- * $Id$
- *
  * Contains cached services, with corresponding pre-parsed server-side policies and
  * service statistics.
  *
@@ -37,6 +30,12 @@ import java.util.logging.Logger;
  *
  * Thread safe.
  *
+ * <br/><br/>
+ * LAYER 7 TECHNOLOGIES, INC<br/>
+ *
+ * User: flascell<br/>
+ * Date: Nov 26, 2003<br/>
+ * $Id$
  */
 public class ServiceCache {
 

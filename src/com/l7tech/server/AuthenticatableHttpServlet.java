@@ -26,15 +26,15 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * LAYER 7 TECHNOLOGIES, INC
- *
- * User: flascell
- * Date: Sep 15, 2003
- * Time: 4:42:59 PM
- * $Id$
- *
  * Base class for servlets that share the capability of authenticating requests against
  * id providers registered in this ssg server.
+ *
+ * <br/><br/>
+ * LAYER 7 TECHNOLOGIES, INC<br/>
+ *
+ * User: flascell<br/>
+ * Date: Sep 15, 2003<br/>
+ * $Id$
  */
 public abstract class AuthenticatableHttpServlet extends HttpServlet {
 

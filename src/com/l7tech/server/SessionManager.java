@@ -12,11 +12,11 @@ import java.security.SecureRandom;
 import java.security.NoSuchAlgorithmException;
 
 /**
- * User: flascell
- * Date: Aug 25, 2003
- * Time: 4:52:28 PM
+ * Holds sessions for xml encryption usage.
  *
- * holds sessions for xml encryption usage
+ * <br/><br/>
+ * User: flascell<br/>
+ * Date: Aug 25, 2003
  */
 public class SessionManager {
 

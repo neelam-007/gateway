@@ -32,14 +32,7 @@ import java.net.URL;
 
 
 /**
- * LAYER 7 TECHNOLOGIES, INC
- *
- * User: flascell
- * Date: Sep 15, 2003
- * Time: 4:20:19 PM
- * $Id$
- *
- * Provides access to WSDL for published services of this SSG
+ * Provides access to WSDL for published services of this SSG.
  *
  * When calling this without specifying a reference to a service, this servlet
  * will return a WSIL document containing URLs to actual WSDL resources.
@@ -57,6 +50,13 @@ import java.net.URL;
  * Authenticated requests must secured.
  *
  * For URL pattern, consult web.xml
+ *
+ * <br/><br/>
+ * LAYER 7 TECHNOLOGIES, INC<br/>
+ *
+ * User: flascell<br/>
+ * Date: Sep 15, 2003<br/>
+ * $Id$
  */
 public class WsdlProxyServlet extends AuthenticatableHttpServlet {
 

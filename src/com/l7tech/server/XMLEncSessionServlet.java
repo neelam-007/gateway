@@ -27,15 +27,14 @@ import java.util.Iterator;
 import java.sql.SQLException;
 
 /**
- * LAYER 7 TECHNOLOGIES, INC
+ * This servlet allows a client to get a set of 2 symmetric keys for use in the XML Enc assertion(s).
  *
- * User: flascell
- * Date: Aug 27, 2003
- * Time: 9:52:05 AM
+ * <br/><br/>
+ * LAYER 7 TECHNOLOGIES, INC<br/>
+ *
+ * User: flascell<br/>
+ * Date: Aug 27, 2003<br/>
  * $Id$
- *
- * This servlet allows a client to get a set of 2 symmetric keys for use in the XML Enc assertion(s)
- *
  */
 public class XMLEncSessionServlet extends HttpServlet {
     public void init( ServletConfig config ) throws ServletException {

@@ -16,10 +16,12 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * Layer 7 Technologies, inc.
- * User: flascelles
+ * Server side implementation of the ServiceAdmin admin api.
+ * 
+ * <br/><br/>
+ * Layer 7 Technologies, inc.<br/>
+ * User: flascelles<br/>
  * Date: Jun 6, 2003
- *
  */
 public class ServiceAdminImpl implements ServiceAdmin {
 
