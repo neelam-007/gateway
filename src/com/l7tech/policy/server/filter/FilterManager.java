@@ -79,7 +79,9 @@ public class FilterManager {
         } catch (IOException e) {
             throw new FilteringException(e);
         }
-        applyAllFilters(policyRequestor, rootassertion);
+        if (applyAllFilters(policyRequestor, rootassertion) == null) {
+            return null;
+        }
 
         localCopyOfService.setOid(policyToFilter.getOid());
         localCopyOfService.setPolicyXml(WspWriter.getPolicyXml(rootassertion));
