@@ -146,6 +146,7 @@ public class ClusterStatusWindow extends JFrame {
 
         clusterStatusScrollPane.setMinimumSize(new java.awt.Dimension(400, 220));
         clusterStatusScrollPane.setViewportView(getClusterStatusTable());
+        clusterStatusScrollPane.getViewport().setBackground(getClusterStatusTable().getBackground());
 
         clusterStatusPane.add(clusterStatusScrollPane, java.awt.BorderLayout.CENTER);
 
@@ -168,7 +169,6 @@ public class ClusterStatusWindow extends JFrame {
         serviceStatPane.add(serviceStatTitle, java.awt.BorderLayout.NORTH);
 
         serviceStatPane.add(getStatisticsPane(), java.awt.BorderLayout.CENTER);
-
         mainSplitPane.setBottomComponent(serviceStatPane);
 
         mainPane.add(mainSplitPane, java.awt.BorderLayout.CENTER);
