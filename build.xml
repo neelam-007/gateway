@@ -104,6 +104,11 @@
       ** configure and invoke developer's build
       -->
     <target name="dev" depends="init-dev">
+        <property file="build.number"/>
+        <property name="build.version" value="HEAD"/>
+
+        <antcall target="INTERNAL-buildinfo"/>
+
         <antcall target="compile">
         </antcall>
         <antcall target="compile-tests">
@@ -438,8 +443,10 @@
     </target>
 
     <target name="OFFICIAL-build" depends="init-dev">
-        <property name="buildnumber.file" value="build.number"/>
-        <property name="buildnumber.path" value="${src.root}/${buildnumber}.file"/>
+        <condition property="rightdir">
+            <equals arg1="${user.dir}" arg2="${src.root}"/>
+        </condition>
+        <fail unless="rightdir" message="You must run this target from the ${src.root} directory!"/>
 
         <input message="This will increment the OFFICIAL build count in CVS.  Are you sure you want to do this?" validargs="Y,y,N,n" addproperty="sure"/>
 
@@ -451,51 +458,16 @@
                 </or>
             </not>
         </condition>
-
         <fail if="die" message="Aborted at user request."/>
 
         <input message="Enter a version number" addproperty="build.version"/>
 
         <echo>Running cvs update ${buildnumber.file}</echo>
-        <cvs command="update -C -r HEAD ${buildnumber.path}"/>
+        <cvs command="update -A -C build.number"/>
 
         <buildnumber/>
 
         <property name="hostname" value="data.l7tech.com"/>
-
-        <tstamp>
-            <format property="build.date" pattern="yyyyMMdd"/>
-            <format property="build.time" pattern="HHmmss"/>
-        </tstamp>
-
-        <antcall target="INTERNAL-buildinfo">
-            <param name="param_name" value="BUILD_NUMBER"/>
-            <param name="param_value" value="${build.number}"/>
-        </antcall>
-        <antcall target="INTERNAL-buildinfo">
-            <param name="param_name" value="PRODUCT_VERSION"/>
-            <param name="param_value" value="${build.version}"/>
-        </antcall>
-        <antcall target="INTERNAL-buildinfo">
-            <param name="param_name" value="PRODUCT_NAME"/>
-            <param name="param_value" value="${app.name}"/>
-        </antcall>
-        <antcall target="INTERNAL-buildinfo">
-            <param name="param_name" value="BUILD_DATE"/>
-            <param name="param_value" value="${build.date}"/>
-        </antcall>
-        <antcall target="INTERNAL-buildinfo">
-            <param name="param_name" value="BUILD_TIME"/>
-            <param name="param_value" value="${build.time}"/>
-        </antcall>
-        <antcall target="INTERNAL-buildinfo">
-            <param name="param_name" value="BUILD_USER"/>
-            <param name="param_value" value="${user.name}"/>
-        </antcall>
-        <antcall target="INTERNAL-buildinfo">
-            <param name="param_name" value="BUILD_MACHINE"/>
-            <param name="param_value" value="${hostname}"/>
-        </antcall>
 
         <antcall target="clean"/>
         <antcall target="compile"/>
@@ -503,11 +475,47 @@
         <antcall target="test"/>
         <antcall target="deploy"/>
 
-        <echo message="commit -m 'Incremented build number to ${build.number}' ${buildnumber.file}"/>
-        <cvs command="commit -m 'Incremented build number to ${build.number}' ${buildnumber.file}"/>
+        <echo message="commit -m 'Incremented build number to ${build.number}' build.number"/>
+        <cvs command="commit -m 'Incremented build number to ${build.number}' build.number"/>
     </target>
 
     <target name="INTERNAL-buildinfo">
+        <tstamp>
+            <format property="build.date" pattern="yyyyMMdd"/>
+            <format property="build.time" pattern="HHmmss"/>
+        </tstamp>
+
+        <antcall target="INTERNAL-buildinfo-replace">
+            <param name="param_name" value="BUILD_NUMBER"/>
+            <param name="param_value" value="${build.number}"/>
+        </antcall>
+        <antcall target="INTERNAL-buildinfo-replace">
+            <param name="param_name" value="PRODUCT_VERSION"/>
+            <param name="param_value" value="${build.version}"/>
+        </antcall>
+        <antcall target="INTERNAL-buildinfo-replace">
+            <param name="param_name" value="PRODUCT_NAME"/>
+            <param name="param_value" value="${app.name}"/>
+        </antcall>
+        <antcall target="INTERNAL-buildinfo-replace">
+            <param name="param_name" value="BUILD_DATE"/>
+            <param name="param_value" value="${build.date}"/>
+        </antcall>
+        <antcall target="INTERNAL-buildinfo-replace">
+            <param name="param_name" value="BUILD_TIME"/>
+            <param name="param_value" value="${build.time}"/>
+        </antcall>
+        <antcall target="INTERNAL-buildinfo-replace">
+            <param name="param_name" value="BUILD_USER"/>
+            <param name="param_value" value="${user.name}"/>
+        </antcall>
+        <antcall target="INTERNAL-buildinfo-replace">
+            <param name="param_name" value="BUILD_MACHINE"/>
+            <param name="param_value" value="${hostname}"/>
+        </antcall>
+    </target>
+
+    <target name="INTERNAL-buildinfo-replace">
         <echo>Replacing ${param_name} with ${param_value}</echo>
         <replaceregexp match='${param_name} = ".*"' replace='${param_name} = "${param_value}"'>
             <fileset dir="${src.root}/src">
