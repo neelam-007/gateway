@@ -11,11 +11,15 @@ import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.composite.ExactlyOneAssertion;
 import com.l7tech.proxy.datamodel.PendingRequest;
 import com.l7tech.proxy.datamodel.SsgResponse;
-import com.l7tech.proxy.datamodel.exceptions.OperationCanceledException;
 import com.l7tech.proxy.datamodel.exceptions.BadCredentialsException;
-import com.l7tech.proxy.datamodel.exceptions.ServerCertificateUntrustedException;
+import com.l7tech.proxy.datamodel.exceptions.OperationCanceledException;
+import com.l7tech.proxy.datamodel.exceptions.ClientCertificateException;
 import com.l7tech.proxy.policy.assertion.ClientAssertion;
 import org.apache.log4j.Category;
+import org.xml.sax.SAXException;
+
+import java.security.GeneralSecurityException;
+import java.io.IOException;
 
 /**
  * @author alex
@@ -34,10 +38,13 @@ public class ClientExactlyOneAssertion extends ClientCompositeAssertion {
      * For ExactlyOneAssertion, we'll run children until one succeeds or we run out.
      * @param req
      * @return AssertionStatus.NONE, or the rightmost-child's error if all children failed.
-     * @throws PolicyAssertionException
      */
-    public AssertionStatus decorateRequest(PendingRequest req) throws PolicyAssertionException, OperationCanceledException, BadCredentialsException, ServerCertificateUntrustedException {
-        data.mustHaveChildren();
+    public AssertionStatus decorateRequest(PendingRequest req) throws OperationCanceledException, BadCredentialsException, GeneralSecurityException, IOException, ClientCertificateException, SAXException {
+        try {
+            data.mustHaveChildren();
+        } catch (PolicyAssertionException e) {
+            throw new RuntimeException(e);
+        }
         AssertionStatus result = AssertionStatus.FALSIFIED;
         for ( int i = 0; i < children.length; i++ ) {
             ClientAssertion assertion = children[i];
@@ -49,7 +56,7 @@ public class ClientExactlyOneAssertion extends ClientCompositeAssertion {
         return result;
     }
 
-    public AssertionStatus unDecorateReply(PendingRequest request, SsgResponse response) throws PolicyAssertionException {
+    public AssertionStatus unDecorateReply(PendingRequest request, SsgResponse response) {
         // no action on response
         return AssertionStatus.NONE;
     }

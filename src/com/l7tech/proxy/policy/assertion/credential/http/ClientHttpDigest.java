@@ -6,15 +6,14 @@
 
 package com.l7tech.proxy.policy.assertion.credential.http;
 
-import com.l7tech.proxy.policy.assertion.ClientAssertion;
+import com.l7tech.policy.assertion.AssertionStatus;
+import com.l7tech.policy.assertion.credential.http.HttpDigest;
+import com.l7tech.proxy.datamodel.Managers;
 import com.l7tech.proxy.datamodel.PendingRequest;
 import com.l7tech.proxy.datamodel.Ssg;
 import com.l7tech.proxy.datamodel.SsgResponse;
-import com.l7tech.proxy.datamodel.Managers;
 import com.l7tech.proxy.datamodel.exceptions.OperationCanceledException;
-import com.l7tech.policy.assertion.AssertionStatus;
-import com.l7tech.policy.assertion.PolicyAssertionException;
-import com.l7tech.policy.assertion.credential.http.HttpDigest;
+import com.l7tech.proxy.policy.assertion.ClientAssertion;
 
 /**
  * @author alex
@@ -29,10 +28,9 @@ public class ClientHttpDigest extends ClientAssertion {
      * ClientProxy client-side processing of the given request.
      * @param request    The request to decorate.
      * @return AssertionStatus.NONE if this Assertion was applied to the request successfully; otherwise, some error code
-     * @throws com.l7tech.policy.assertion.PolicyAssertionException if processing should not continue due to a serious error
      */
     public AssertionStatus decorateRequest(PendingRequest request)
-            throws PolicyAssertionException, OperationCanceledException
+            throws OperationCanceledException
     {
         Ssg ssg = request.getSsg();
         if (!ssg.isCredentialsConfigured())

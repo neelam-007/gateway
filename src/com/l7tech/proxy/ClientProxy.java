@@ -267,7 +267,8 @@ public class ClientProxy {
      * @throws OperationCanceledException if the user cancels the logon prompt
      */
     public void obtainClientCertificate(Ssg ssg)
-            throws GeneralSecurityException, IOException, OperationCanceledException, BadCredentialsException
+            throws  ServerCertificateUntrustedException, GeneralSecurityException, IOException,
+                    OperationCanceledException, BadCredentialsException
     {
         if (!ssg.isCredentialsConfigured())
             Managers.getCredentialManager().getCredentials(ssg);

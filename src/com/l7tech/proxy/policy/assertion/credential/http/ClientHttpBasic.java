@@ -7,7 +7,6 @@
 package com.l7tech.proxy.policy.assertion.credential.http;
 
 import com.l7tech.policy.assertion.AssertionStatus;
-import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.credential.http.HttpBasic;
 import com.l7tech.proxy.datamodel.Managers;
 import com.l7tech.proxy.datamodel.PendingRequest;
@@ -32,10 +31,9 @@ public class ClientHttpBasic extends ClientAssertion {
      * Set up HTTP Basic auth on the PendingRequest.
      * @param request    The request to decorate.
      * @return AssertionStatus.NONE if this Assertion was applied to the request successfully; otherwise, some error code
-     * @throws PolicyAssertionException if processing should not continue due to a serious error
      */
     public AssertionStatus decorateRequest(PendingRequest request)
-            throws PolicyAssertionException, OperationCanceledException
+            throws OperationCanceledException
     {
         Ssg ssg = request.getSsg();
         if (!ssg.isCredentialsConfigured())

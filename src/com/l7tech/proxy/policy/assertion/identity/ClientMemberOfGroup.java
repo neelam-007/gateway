@@ -22,11 +22,11 @@ public class ClientMemberOfGroup extends ClientAssertion {
         this.data = data;
     }
 
-    public AssertionStatus decorateRequest(PendingRequest request) throws PolicyAssertionException {
+    public AssertionStatus decorateRequest(PendingRequest request) {
         return AssertionStatus.NONE;
     }
 
-    public AssertionStatus unDecorateReply(PendingRequest request, SsgResponse response) throws PolicyAssertionException {
+    public AssertionStatus unDecorateReply(PendingRequest request, SsgResponse response) {
         // no action on response
         return AssertionStatus.NONE;
     }

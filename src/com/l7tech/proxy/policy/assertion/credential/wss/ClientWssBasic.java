@@ -6,15 +6,14 @@
 
 package com.l7tech.proxy.policy.assertion.credential.wss;
 
-import com.l7tech.policy.assertion.AssertionStatus;
-import com.l7tech.policy.assertion.PolicyAssertionException;
-import com.l7tech.policy.assertion.credential.wss.WssBasic;
-import com.l7tech.proxy.datamodel.PendingRequest;
-import com.l7tech.proxy.datamodel.SsgResponse;
-import com.l7tech.proxy.datamodel.Ssg;
-import com.l7tech.proxy.datamodel.Managers;
-import com.l7tech.proxy.datamodel.exceptions.OperationCanceledException;
 import com.l7tech.common.util.SoapUtil;
+import com.l7tech.policy.assertion.AssertionStatus;
+import com.l7tech.policy.assertion.credential.wss.WssBasic;
+import com.l7tech.proxy.datamodel.Managers;
+import com.l7tech.proxy.datamodel.PendingRequest;
+import com.l7tech.proxy.datamodel.Ssg;
+import com.l7tech.proxy.datamodel.SsgResponse;
+import com.l7tech.proxy.datamodel.exceptions.OperationCanceledException;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.xml.sax.InputSource;
@@ -23,8 +22,8 @@ import org.xml.sax.SAXException;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
-import java.io.IOException;
 import java.io.StringReader;
+import java.io.IOException;
 
 /**
  * decorates a request with a header that looks like that:
@@ -47,10 +46,9 @@ public class ClientWssBasic extends ClientWssCredentialSource {
      *
      * @param request
      * @return
-     * @throws PolicyAssertionException
      */
     public AssertionStatus decorateRequest(PendingRequest request)
-            throws PolicyAssertionException, OperationCanceledException
+            throws OperationCanceledException, IOException, SAXException
     {
         Document soapmsg = request.getSoapEnvelope();
         Element headerel = SoapUtil.getOrMakeHeader(soapmsg);
@@ -70,11 +68,7 @@ public class ClientWssBasic extends ClientWssCredentialSource {
             Document doc2 = builder.parse(new InputSource(new StringReader(secElStr)));
             secElement = doc2.getDocumentElement();
         } catch (ParserConfigurationException e) {
-            throw new PolicyAssertionException(e.getMessage(), e);
-        } catch (IOException e) {
-            throw new PolicyAssertionException(e.getMessage(), e);
-        } catch (SAXException e) {
-            throw new PolicyAssertionException(e.getMessage(), e);
+            throw new RuntimeException(e.getMessage(), e);  // can't happen
         }
 
         secElement = (Element)soapmsg.importNode(secElement, true);

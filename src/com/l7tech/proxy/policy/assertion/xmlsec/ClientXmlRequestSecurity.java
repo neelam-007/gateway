@@ -2,32 +2,31 @@ package com.l7tech.proxy.policy.assertion.xmlsec;
 
 import com.ibm.xml.dsig.SignatureStructureException;
 import com.ibm.xml.dsig.XSignatureException;
+import com.l7tech.common.security.xml.SecureConversationTokenHandler;
+import com.l7tech.common.security.xml.Session;
+import com.l7tech.common.security.xml.SoapMsgSigner;
+import com.l7tech.common.security.xml.XmlMangler;
 import com.l7tech.policy.assertion.AssertionStatus;
-import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.xmlsec.XmlRequestSecurity;
-import com.l7tech.proxy.datamodel.exceptions.BadCredentialsException;
+import com.l7tech.proxy.datamodel.Managers;
 import com.l7tech.proxy.datamodel.PendingRequest;
 import com.l7tech.proxy.datamodel.Ssg;
 import com.l7tech.proxy.datamodel.SsgKeyStoreManager;
 import com.l7tech.proxy.datamodel.SsgResponse;
-import com.l7tech.proxy.datamodel.Managers;
 import com.l7tech.proxy.datamodel.SsgSessionManager;
-import com.l7tech.proxy.policy.assertion.ClientAssertion;
-import com.l7tech.proxy.policy.assertion.credential.http.ClientHttpClientCert;
+import com.l7tech.proxy.datamodel.exceptions.BadCredentialsException;
 import com.l7tech.proxy.datamodel.exceptions.OperationCanceledException;
 import com.l7tech.proxy.datamodel.exceptions.ServerCertificateUntrustedException;
-import com.l7tech.common.security.xml.SoapMsgSigner;
-import com.l7tech.common.security.xml.SecureConversationTokenHandler;
-import com.l7tech.common.security.xml.XmlMangler;
-import com.l7tech.common.security.xml.Session;
-import org.w3c.dom.Document;
+import com.l7tech.proxy.policy.assertion.ClientAssertion;
+import com.l7tech.proxy.policy.assertion.credential.http.ClientHttpClientCert;
 import org.apache.log4j.Category;
+import org.w3c.dom.Document;
 
+import java.io.IOException;
+import java.security.GeneralSecurityException;
 import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
-import java.security.GeneralSecurityException;
 import java.security.cert.X509Certificate;
-import java.io.IOException;
 
 /**
  * User: flascell
@@ -55,19 +54,14 @@ public class ClientXmlRequestSecurity extends ClientAssertion {
      * ClientProxy client-side processing of the given request.
      * @param request    The request to decorate.
      * @return AssertionStatus.NONE if this Assertion was applied to the request successfully; otherwise, some error code
-     * @throws PolicyAssertionException if processing should not continue due to a serious error
      */
     public AssertionStatus decorateRequest(PendingRequest request)
-            throws PolicyAssertionException, OperationCanceledException, BadCredentialsException,
-                   ServerCertificateUntrustedException
+            throws OperationCanceledException, BadCredentialsException,
+            GeneralSecurityException, IOException
     {
         // GET THE SOAP DOCUMENT
         Document soapmsg = null;
-        try {
-            soapmsg = request.getSoapEnvelope(); // this will make a defensive copy as needed
-        } catch (Exception e) {
-            throw new PolicyAssertionException("cannot get request document", e);
-        }
+        soapmsg = request.getSoapEnvelope(); // this will make a defensive copy as needed
 
         // GET THE CLIENT CERT AND PRIVATE KEY
         // We must have credentials to get the private key
@@ -79,21 +73,13 @@ public class ClientXmlRequestSecurity extends ClientAssertion {
             if (!ssg.isCredentialsConfigured())
                 Managers.getCredentialManager().getCredentials(ssg);
 
-            try {
                 session = SsgSessionManager.getOrCreateSession(ssg);
-            } catch (IOException e) {
-                throw new PolicyAssertionException("Unable to establish session with SSG " + ssg, e);
-            }
 
             if (!SsgKeyStoreManager.isClientCertAvailabile(ssg)) {
                 try {
                     request.getClientProxy().obtainClientCertificate(ssg);
                 } catch (ServerCertificateUntrustedException e) {
                     throw e;
-                } catch (GeneralSecurityException e) {
-                    throw new PolicyAssertionException("Unable to obtain a client certificate with SSG " + ssg, e);
-                } catch (IOException e) {
-                    throw new PolicyAssertionException("Unable to obtain a client certificate with SSG " + ssg, e);
                 }
             }
 
@@ -114,15 +100,7 @@ public class ClientXmlRequestSecurity extends ClientAssertion {
 
         // ENCRYPTION
         if (data.isEncryption()) {
-            try {
-                XmlMangler.encryptXml(soapmsg, keyreq, Long.toString(sessId));
-            } catch (GeneralSecurityException e) {
-                throw new PolicyAssertionException("error encrypting document", e);
-            } catch (IOException e) {
-                throw new PolicyAssertionException("error encrypting document", e);
-            } catch (IllegalArgumentException e) {
-                throw new PolicyAssertionException("error encrypting document", e);
-            }
+            XmlMangler.encryptXml(soapmsg, keyreq, Long.toString(sessId));
             log.info("Encrypted request OK");
         }
 
@@ -131,9 +109,9 @@ public class ClientXmlRequestSecurity extends ClientAssertion {
         try {
             dsigHelper.signEnvelope(soapmsg, userPrivateKey, userCert);
         } catch (SignatureStructureException e) {
-            throw new PolicyAssertionException("error signing document", e);
+            throw new RuntimeException("error signing document", e);
         } catch (XSignatureException e) {
-            throw new PolicyAssertionException("error signing document", e);
+            throw new RuntimeException("error signing document", e);
         }
         log.info("Signed request OK");
 

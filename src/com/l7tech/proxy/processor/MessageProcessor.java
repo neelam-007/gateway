@@ -10,7 +10,6 @@ import com.l7tech.common.protocol.SecureSpanConstants;
 import com.l7tech.common.util.CertificateDownloader;
 import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.policy.assertion.AssertionStatus;
-import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.proxy.ConfigurationException;
 import com.l7tech.proxy.ssl.HostnameMismatchException;
 import com.l7tech.proxy.datamodel.Managers;
@@ -26,6 +25,7 @@ import com.l7tech.proxy.datamodel.exceptions.ClientCertificateException;
 import com.l7tech.proxy.datamodel.exceptions.OperationCanceledException;
 import com.l7tech.proxy.datamodel.exceptions.PolicyRetryableException;
 import com.l7tech.proxy.datamodel.exceptions.ServerCertificateUntrustedException;
+import com.l7tech.proxy.datamodel.exceptions.ResponseValidationException;
 import com.l7tech.proxy.util.CannedSoapFaults;
 import com.l7tech.common.util.XmlUtil;
 import org.apache.commons.httpclient.Header;
@@ -34,6 +34,7 @@ import org.apache.commons.httpclient.HttpState;
 import org.apache.commons.httpclient.UsernamePasswordCredentials;
 import org.apache.commons.httpclient.methods.PostMethod;
 import org.apache.log4j.Category;
+import org.xml.sax.SAXException;
 
 import javax.net.ssl.SSLException;
 import java.io.IOException;
@@ -72,8 +73,6 @@ public class MessageProcessor {
      * @return     the SsgResponse containing the response from the Ssg, if processing was successful, or if
      *             a SOAP fault is being returned to the client from either the CP or the SSG.
      * @throws ClientCertificateException   if a client certificate was required but could not be obtained
-     * @throws PolicyAssertionException     if the policy evaluation of request or response could not be completed due
-     *                                        to a serious error
      * @throws com.l7tech.proxy.datamodel.exceptions.OperationCanceledException   if the user declined to provide a username and password
      * @throws ConfigurationException       if a response could not be obtained from the SSG due to a problem with
      *                                      the client or server configuration, and retrying the operation
@@ -83,10 +82,13 @@ public class MessageProcessor {
      * @throws GeneralSecurityException     if the SSG SSL certificate could not be obtained or installed
      * @throws IOException                  if information couldn't be obtained from the SSG due to network trouble
      * @throws IOException                  if a certificate could not be saved to disk
+     * @throws SAXException                 if the client request needed to be parsed and wasn't well-formed XML
+     * @throws ResponseValidationException  if the response was signed, but the signature did not validate
      */
     public SsgResponse processMessage(PendingRequest req)
-            throws ClientCertificateException, PolicyAssertionException, OperationCanceledException,
-                   ConfigurationException, GeneralSecurityException, IOException
+            throws ClientCertificateException, OperationCanceledException,
+                   ConfigurationException, GeneralSecurityException, IOException, SAXException,
+                   ResponseValidationException
     {
         Ssg ssg = req.getSsg();
 
@@ -191,26 +193,18 @@ public class MessageProcessor {
      * associated Ssg.
      *
      * @param req   the PendingRequest to decorate
-     * @throws PolicyAssertionException     if the policy evaluation could not be completed due to a serious error
-     * @throws com.l7tech.proxy.datamodel.exceptions.OperationCanceledException   if the user declined to provide a username and password
-     * @throws com.l7tech.proxy.datamodel.exceptions.ServerCertificateUntrustedException  if the Ssg certificate needs to be (re)imported.
+     * @throws OperationCanceledException   if the user declined to provide a username and password
+     * @throws ServerCertificateUntrustedException  if the Ssg certificate needs to be (re)imported.
      */
     private Policy enforcePolicy(PendingRequest req)
-            throws PolicyAssertionException, OperationCanceledException,
-            ServerCertificateUntrustedException, BadCredentialsException
+            throws OperationCanceledException, GeneralSecurityException, BadCredentialsException, IOException, SAXException, ClientCertificateException
     {
         Policy policy = policyManager.getPolicy(req);
         if (policy == null)
             return null;
 
         AssertionStatus result;
-        try {
-            result = policy.getClientAssertion().decorateRequest(req);
-        } catch (PolicyAssertionException e) {
-            if (e.getCause() instanceof BadCredentialsException || e.getCause() instanceof UnrecoverableKeyException)
-                throw new BadCredentialsException(e);
-            throw e;
-        }
+        result = policy.getClientAssertion().decorateRequest(req);
         if (result != AssertionStatus.NONE)
             log.warn("Policy evaluated with an error: " + result + "; will attempt to continue anyway.");
         return policy;
@@ -223,11 +217,11 @@ public class MessageProcessor {
      * @param req
      * @param res
      * @param appliedPolicy                 the policy that was applied to the original request.
-     * @throws PolicyAssertionException     if the policy evaluation could not be completed due to a serious error
      */
     private void undecorateResponse(PendingRequest req, SsgResponse res, Policy appliedPolicy)
-            throws PolicyAssertionException, OperationCanceledException,
-                   ServerCertificateUntrustedException, BadCredentialsException
+            throws OperationCanceledException,
+                   GeneralSecurityException, BadCredentialsException, IOException,
+                   ResponseValidationException, SAXException
     {
         log.info(appliedPolicy == null ? "skipping undecorate step" : "undecorating response");
         if (appliedPolicy == null)

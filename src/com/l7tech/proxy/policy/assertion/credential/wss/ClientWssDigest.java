@@ -25,13 +25,12 @@ public class ClientWssDigest extends ClientWssCredentialSource {
      * ClientProxy client-side processing of the given request.
      * @param requst    The request to decorate.
      * @return AssertionStatus.NONE if this Assertion was applied to the request successfully; otherwise, some error code
-     * @throws PolicyAssertionException if processing should not continue due to a serious error
      */
-    public AssertionStatus decorateRequest(PendingRequest requst) throws PolicyAssertionException {
+    public AssertionStatus decorateRequest(PendingRequest requst) {
         return AssertionStatus.NOT_YET_IMPLEMENTED;
     }
 
-    public AssertionStatus unDecorateReply(PendingRequest request, SsgResponse response) throws PolicyAssertionException {
+    public AssertionStatus unDecorateReply(PendingRequest request, SsgResponse response) {
         // no action on response
         return AssertionStatus.NONE;
     }

@@ -11,11 +11,15 @@ import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.proxy.datamodel.PendingRequest;
 import com.l7tech.proxy.datamodel.SsgResponse;
-import com.l7tech.proxy.datamodel.exceptions.OperationCanceledException;
 import com.l7tech.proxy.datamodel.exceptions.BadCredentialsException;
-import com.l7tech.proxy.datamodel.exceptions.ServerCertificateUntrustedException;
+import com.l7tech.proxy.datamodel.exceptions.OperationCanceledException;
+import com.l7tech.proxy.datamodel.exceptions.ClientCertificateException;
 import com.l7tech.proxy.policy.assertion.ClientAssertion;
 import org.apache.log4j.Category;
+import org.xml.sax.SAXException;
+
+import java.security.GeneralSecurityException;
+import java.io.IOException;
 
 /**
  * @author alex
@@ -34,10 +38,13 @@ public class ClientAllAssertion extends ClientCompositeAssertion {
      * For an AllAssertion, we'll have all our children decorate the request.
      * @param req
      * @return the AssertionStatus.NONE if no child returned an error; the rightmost-child error otherwise.
-     * @throws PolicyAssertionException
      */
-    public AssertionStatus decorateRequest(PendingRequest req) throws PolicyAssertionException, OperationCanceledException, BadCredentialsException, ServerCertificateUntrustedException {
-        data.mustHaveChildren();
+    public AssertionStatus decorateRequest(PendingRequest req) throws OperationCanceledException, BadCredentialsException, GeneralSecurityException, IOException, ClientCertificateException, SAXException {
+        try {
+            data.mustHaveChildren();
+        } catch (PolicyAssertionException e) {
+            throw new RuntimeException(e);
+        }
         AssertionStatus result = AssertionStatus.NONE;
         for ( int i = 0; i < children.length; i++ ) {
             ClientAssertion assertion = children[i];

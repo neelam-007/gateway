@@ -1,7 +1,14 @@
 package com.l7tech.proxy.policy.assertion.xmlsec;
 
+import com.l7tech.common.security.AesKey;
+import com.l7tech.common.security.xml.InvalidSignatureException;
+import com.l7tech.common.security.xml.SecureConversationTokenHandler;
+import com.l7tech.common.security.xml.Session;
+import com.l7tech.common.security.xml.SignatureNotFoundException;
+import com.l7tech.common.security.xml.SoapMsgSigner;
+import com.l7tech.common.security.xml.XMLSecurityElementNotFoundException;
+import com.l7tech.common.security.xml.XmlMangler;
 import com.l7tech.policy.assertion.AssertionStatus;
-import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.xmlsec.XmlResponseSecurity;
 import com.l7tech.proxy.datamodel.PendingRequest;
 import com.l7tech.proxy.datamodel.Ssg;
@@ -10,17 +17,10 @@ import com.l7tech.proxy.datamodel.SsgResponse;
 import com.l7tech.proxy.datamodel.SsgSessionManager;
 import com.l7tech.proxy.datamodel.exceptions.BadCredentialsException;
 import com.l7tech.proxy.datamodel.exceptions.OperationCanceledException;
+import com.l7tech.proxy.datamodel.exceptions.ResponseValidationException;
 import com.l7tech.proxy.datamodel.exceptions.ServerCertificateUntrustedException;
 import com.l7tech.proxy.policy.assertion.ClientAssertion;
 import com.l7tech.proxy.policy.assertion.credential.http.ClientHttpClientCert;
-import com.l7tech.common.security.AesKey;
-import com.l7tech.common.security.xml.Session;
-import com.l7tech.common.security.xml.XmlMangler;
-import com.l7tech.common.security.xml.InvalidSignatureException;
-import com.l7tech.common.security.xml.SecureConversationTokenHandler;
-import com.l7tech.common.security.xml.SignatureNotFoundException;
-import com.l7tech.common.security.xml.SoapMsgSigner;
-import com.l7tech.common.security.xml.XMLSecurityElementNotFoundException;
 import org.apache.log4j.Category;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
@@ -63,14 +63,13 @@ public class ClientXmlResponseSecurity extends ClientAssertion {
      *
      * @param request might receive a header containing the xml-enc session
      * @return AssertionStatus.NONE if we are prepared to handle the eventual response
-     * @throws PolicyAssertionException if we had trouble establishing a session
      * @throws ServerCertificateUntrustedException if an updated SSG cert is needed
      * @throws OperationCanceledException if the user cancels the logon dialog
      * @throws BadCredentialsException if the SSG rejects the SSG username/password when establishing the session
      */
     public AssertionStatus decorateRequest(PendingRequest request)
-            throws PolicyAssertionException, ServerCertificateUntrustedException,
-                   OperationCanceledException, BadCredentialsException
+            throws ServerCertificateUntrustedException,
+                   OperationCanceledException, BadCredentialsException, IOException
     {
         Ssg ssg = request.getSsg();
 
@@ -84,11 +83,7 @@ public class ClientXmlResponseSecurity extends ClientAssertion {
         // If the response will be encrypted, we'll need to ensure that there's a session open
         if (data.isEncryption()) {
             log.info("According to policy, we're expecting an encrypted reply.  Verifying session.");
-            try {
-                request.setSession(SsgSessionManager.getOrCreateSession(ssg));
-            } catch (IOException e) {
-                throw new PolicyAssertionException("Unable to establish session with Gateway", e);
-            }
+            request.setSession(SsgSessionManager.getOrCreateSession(ssg));
         }
 
         return AssertionStatus.NONE;
@@ -99,26 +94,18 @@ public class ClientXmlResponseSecurity extends ClientAssertion {
      * @param request
      * @param response
      * @return
-     * @throws PolicyAssertionException
      */
-    public AssertionStatus unDecorateReply(PendingRequest request, SsgResponse response) throws PolicyAssertionException, ServerCertificateUntrustedException {
-        Document doc;
-        try {
-            doc = response.getResponseAsDocument();
-        } catch (IOException e) {
-            throw new PolicyAssertionException("Problem while reading response from SSG", e);
-        } catch (SAXException e) {
-            throw new PolicyAssertionException("SSG sent invalid XML", e);
-        }
+    public AssertionStatus unDecorateReply(PendingRequest request, SsgResponse response) throws ServerCertificateUntrustedException, IOException, SAXException, ResponseValidationException {
+        Document doc = response.getResponseAsDocument();
 
         // LOOK FOR NONCE IN WSSC TOKEN
         try {
             long responsenonce = SecureConversationTokenHandler.readNonceFromDocument(doc);
             if (responsenonce != request.getNonce())
-                throw new PolicyAssertionException("Response from SSG contained the wrong nonce value");
+                throw new ResponseValidationException("Response from SSG contained the wrong nonce value");
         } catch (XMLSecurityElementNotFoundException e) {
             // if the nonce is not there, we should note that this is subject to repeat attack
-            throw new PolicyAssertionException("Response from SSG did not contain a nonce", e);
+            throw new ResponseValidationException("Response from SSG did not contain a nonce", e);
         }
 
         // VERIFY SIGNATURE OF ENVELOPE
@@ -134,19 +121,19 @@ public class ClientXmlResponseSecurity extends ClientAssertion {
             serverCert = dsigHelper.validateSignature(doc);
             serverCert.verify(caCert.getPublicKey());
         } catch (SignatureNotFoundException e) {
-            throw new PolicyAssertionException("Response from SSG did not contain a signature as required by policy", e);
+            throw new ResponseValidationException("Response from SSG did not contain a signature as required by policy", e);
         } catch (InvalidSignatureException e) {
-            throw new PolicyAssertionException("Response from SSG contained an invalid signature", e);
+            throw new ResponseValidationException("Response from SSG contained an invalid signature", e);
         } catch (SignatureException e) {
-            throw new PolicyAssertionException("Response from SSG was signed, but not by the SSG CA key we expected", e);
+            throw new ResponseValidationException("Response from SSG was signed, but not by the SSG CA key we expected", e);
         } catch (CertificateException e) {
-            throw new PolicyAssertionException("Signature on response from SSG contained an invalid certificate", e);
+            throw new ResponseValidationException("Signature on response from SSG contained an invalid certificate", e);
         } catch (NoSuchAlgorithmException e) {
-            throw new PolicyAssertionException("Signature on response from SSG required an unsupported algorithm", e);
+            throw new ResponseValidationException("Signature on response from SSG required an unsupported algorithm", e);
         } catch (InvalidKeyException e) {
-            throw new PolicyAssertionException("Our copy of the SSG public key is corrupt", e); // can't happen
+            throw new ResponseValidationException("Our copy of the SSG public key is corrupt", e); // can't happen
         } catch (NoSuchProviderException e) {
-            throw new PolicyAssertionException("VM is misconfigured", e); // can't happen
+            throw new RuntimeException("VM is misconfigured", e); // can't happen
         }
         log.info("signature of response message verified");
 
@@ -161,15 +148,11 @@ public class ClientXmlResponseSecurity extends ClientAssertion {
                 Key keyres = new AesKey(session.getKeyRes());
                 XmlMangler.decryptXml(doc, keyres);
             } catch (GeneralSecurityException e) {
-                throw new PolicyAssertionException("failure decrypting document", e);
+                throw new ResponseValidationException("failure decrypting document", e);
             } catch (ParserConfigurationException e) {
-                throw new PolicyAssertionException("failure decrypting document", e);
-            } catch (IOException e) {
-                throw new PolicyAssertionException("failure decrypting document", e);
-            } catch (SAXException e) {
-                throw new PolicyAssertionException("failure decrypting document", e);
+                throw new RuntimeException("failure decrypting document", e); // can't happen
             } catch (XMLSecurityElementNotFoundException e) {
-                throw new PolicyAssertionException("failure decrypting document", e);
+                throw new ResponseValidationException("failure decrypting document", e);
             }
             log.info("response message decrypted");
         }

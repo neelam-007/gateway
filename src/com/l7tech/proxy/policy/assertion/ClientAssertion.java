@@ -7,12 +7,17 @@
 package com.l7tech.proxy.policy.assertion;
 
 import com.l7tech.policy.assertion.AssertionStatus;
-import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.proxy.datamodel.PendingRequest;
 import com.l7tech.proxy.datamodel.SsgResponse;
 import com.l7tech.proxy.datamodel.exceptions.BadCredentialsException;
+import com.l7tech.proxy.datamodel.exceptions.ClientCertificateException;
 import com.l7tech.proxy.datamodel.exceptions.OperationCanceledException;
-import com.l7tech.proxy.datamodel.exceptions.ServerCertificateUntrustedException;
+import com.l7tech.proxy.datamodel.exceptions.ResponseValidationException;
+
+import java.security.GeneralSecurityException;
+import java.io.IOException;
+
+import org.xml.sax.SAXException;
 
 /**
  * @author alex
@@ -25,7 +30,9 @@ public abstract class ClientAssertion {
      * @return AssertionStatus.NONE if this Assertion was applied to the request successfully; otherwise, some error code
      *
      */
-    public abstract AssertionStatus decorateRequest(PendingRequest request) throws PolicyAssertionException, BadCredentialsException, OperationCanceledException, ServerCertificateUntrustedException;
+    public abstract AssertionStatus decorateRequest(PendingRequest request)
+            throws BadCredentialsException, OperationCanceledException, GeneralSecurityException,
+                   ClientCertificateException, IOException, SAXException;
 
     /**
      * ClientProxy clinet-side processing of the given response.
@@ -33,5 +40,7 @@ public abstract class ClientAssertion {
      * @param response  The response we received.
      * @return AssertionStatus.NONE if this Assertion was applied to the response successfully; otherwise, some error conde
      */
-    public abstract AssertionStatus unDecorateReply(PendingRequest request, SsgResponse response) throws PolicyAssertionException, BadCredentialsException, OperationCanceledException, ServerCertificateUntrustedException;
+    public abstract AssertionStatus unDecorateReply(PendingRequest request, SsgResponse response)
+            throws BadCredentialsException, OperationCanceledException, GeneralSecurityException, IOException,
+                   SAXException, ResponseValidationException;
 }
