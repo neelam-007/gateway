@@ -1,10 +1,10 @@
 package com.l7tech.adminws;
 
-import org.apache.axis.client.Call;
 import com.l7tech.util.Locator;
-import java.net.MalformedURLException;
-import java.net.URL;
+import org.apache.axis.client.Call;
+
 import java.io.IOException;
+import java.net.URL;
 import java.rmi.RemoteException;
 
 /**
