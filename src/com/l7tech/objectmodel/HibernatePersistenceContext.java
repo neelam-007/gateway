@@ -120,50 +120,50 @@ public class HibernatePersistenceContext extends PersistenceContext {
      * @throws HibernateException if MAXRETRIES have been made, the HibernateException resulting from the last connection attempt.
      */
     public synchronized Session getSession() throws SQLException, HibernateException {
-        Connection conn = null;
-        ResultSet rs = null;
-        Statement pingStmt = null;
         Exception lastException = null;
 
-        try {
-            for ( int i = 0; i < MAXRETRIES; i++ ) {
-                try {
-                    if ( _session == null || !_session.isOpen() || !_session.isConnected() )
-                        _session = _manager.makeSession();
-                    conn = _session.connection();
-                    pingStmt = conn.createStatement();
-                    rs = pingStmt.executeQuery( PINGSQL );
-                    return _session;
-                } catch ( SQLException se ) {
-                    logger.log( Level.WARNING, "Try #" + (i+1) + " caught SQLException", se );
-                    lastException = se;
-                } catch ( HibernateException he ) {
-                    logger.log( Level.WARNING, "Try #" + (i+1) + " caught HibernateException", he );
-                    lastException = he;
-                }
-                try {
-                    _session.close();
-                } catch ( SQLException se ) {
-                    logger.log( Level.WARNING, "Try #" + (i+1) + " caught SQLException", se );
-                    lastException = se;
-                } catch ( HibernateException he ) {
-                    logger.log( Level.WARNING, "Try #" + (i+1) + " caught HibernateException", he );
-                    lastException = he;
-                }
-                _session = null;
-            }
-        } finally {
+        for ( int i = 0; i < MAXRETRIES; i++ ) {
+            Connection conn = null;
+            ResultSet rs = null;
+            Statement pingStmt = null;
             try {
-                if ( pingStmt != null ) pingStmt.close();
+                if ( _session == null || !_session.isOpen() || !_session.isConnected() )
+                    _session = _manager.makeSession();
+                conn = _session.connection();
+                pingStmt = conn.createStatement();
+                rs = pingStmt.executeQuery( PINGSQL );
+                return _session;
             } catch ( SQLException se ) {
-                logger.log( Level.WARNING, "SQLException closing pingStmt", se );
+                logger.log( Level.WARNING, "Try #" + (i+1) + " caught SQLException", se );
+                lastException = se;
+            } catch ( HibernateException he ) {
+                logger.log( Level.WARNING, "Try #" + (i+1) + " caught HibernateException", he );
+                lastException = he;
+            } finally {
+                // clean stuff
+                try {
+                    if (pingStmt != null) pingStmt.close();
+                } catch (SQLException se) {
+                    logger.log(Level.WARNING, "SQLException closing pingStmt", se);
+                }
+                try {
+                    if (rs != null) rs.close();
+                } catch (SQLException se) {
+                    logger.log(Level.WARNING, "SQLException closing rs", se);
+                }
             }
 
+            // if jdbc connection failure, close the session and null it
             try {
-                if ( rs != null ) rs.close();
+                _session.close();
             } catch ( SQLException se ) {
-                logger.log( Level.WARNING, "SQLException closing rs", se );
+                logger.log( Level.WARNING, "Try #" + (i+1) + " caught SQLException", se );
+                lastException = se;
+            } catch ( HibernateException he ) {
+                logger.log( Level.WARNING, "Try #" + (i+1) + " caught HibernateException", he );
+                lastException = he;
             }
+            _session = null;
         }
 
         String err = "Tried " + MAXRETRIES + " times to obtain a valid Session and failed with exception " + lastException;
