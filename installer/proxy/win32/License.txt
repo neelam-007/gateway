@@ -1,0 +1,3 @@
+This pre-release software should be considered confidential.  
+
+You may not use or distribute this software unless you possess written permission from Layer 7 Technologies.
