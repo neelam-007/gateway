@@ -39,7 +39,11 @@ public class LdapIdentityProviderServer implements com.l7tech.identity.IdentityP
         try {
             realUser = userManager.findByLogin(pc.getUser().getLogin());
         } catch (FindException e) {
-            LogManager.getInstance().getSystemLogger().log(Level.SEVERE, "invalid user", e);
+            LogManager.getInstance().getSystemLogger().log(Level.INFO, "invalid user", e);
+            return false;
+        }
+        if (realUser == null) {
+            LogManager.getInstance().getSystemLogger().log(Level.INFO, "invalid user");
             return false;
         }
         if ( pc.getFormat() == CredentialFormat.CLEARTEXT ) {
