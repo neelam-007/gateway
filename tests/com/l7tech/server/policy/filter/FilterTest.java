@@ -50,7 +50,6 @@ public class FilterTest extends TestCase {
     }
 
     public void testSimpleFilter() throws Exception {
-        HibernatePersistenceManager.initialize();
 
         long providerid = IdentityProviderConfigManager.INTERNALPROVIDER_SPECIAL_OID;
         Assertion pol = new AllAssertion(Arrays.asList(new Assertion[] {
