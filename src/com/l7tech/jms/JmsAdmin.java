@@ -4,14 +4,13 @@ import com.l7tech.objectmodel.*;
 
 import java.rmi.Remote;
 import java.rmi.RemoteException;
-import java.util.Collection;
 
 /**
  * @author alex
  * @version $Revision$
  */
 public interface JmsAdmin extends Remote {
-    Collection findAllProviders() throws RemoteException, FindException;
+    EntityHeader[] findAllProviders() throws RemoteException, FindException;
     JmsProvider findProviderByPrimaryKey( long oid ) throws RemoteException, FindException;
     long saveProvider( JmsProvider provider ) throws RemoteException, UpdateException, SaveException, VersionException;
     void deleteProvider( long providerOid ) throws RemoteException, DeleteException;
