@@ -490,6 +490,7 @@
                 <include name="com/l7tech/console/**/*"/>
                 <include name="com/l7tech/remote/jini/lookup/*ServiceLookup*"/>
                 <include name="com/l7tech/remote/jini/lookup/ServiceFactory.class"/>
+                <include name="com/l7tech/remote/jini/lookup/AccessILFactory*.class"/>
                 <include name="com/l7tech/remote/jini/export/RemoteService.class" />
                 <include name="com/l7tech/logging/**/*"/>
                 <!-- <include name="com/l7tech/message/**/*"/> -->
