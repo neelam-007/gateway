@@ -156,7 +156,7 @@ public class PolicyServlet extends HttpServlet {
     /**
      * Look up our certificate and transmit it to the client in PKCS#7 format.
      * If a username is given, we'll include a "Cert-Check: " header containing
-     * SHA1(cert . H(A1)).  (where H(A1) is the SHA1 of the Base64'ed "username:password".)
+     * MD5(cert . H(A1)).  (where H(A1) is the MD5 of "username:realm:password".)
      */
     private void doCertDownload(HttpServletRequest request, HttpServletResponse response,
                                 String username, String nonce)
@@ -179,7 +179,8 @@ public class PolicyServlet extends HttpServlet {
                 md5.update(String.valueOf(info.idProvider).getBytes());
                 md5.update(cert);
                 md5.update(info.ha1.getBytes());
-                response.addHeader("Cert-Check-" + info.idProvider, HexUtils.encodeMd5Digest(md5.digest()));
+                response.addHeader(SecureSpanConstants.HttpHeaders.CERT_CHECK_PREFIX + info.idProvider,
+                                   HexUtils.encodeMd5Digest(md5.digest()) + "; " + info.realm);
             }
         }
 
@@ -219,9 +220,10 @@ public class PolicyServlet extends HttpServlet {
     }
 
     private class CheckInfo {
-        public CheckInfo(long idp, String h) { idProvider = idp; ha1 = h; }
+        public CheckInfo(long idp, String h, String r) { idProvider = idp; ha1 = h; realm = r; }
         public final long idProvider;
         public final String ha1;
+        public final String realm;
     }
 
     /**
@@ -243,7 +245,7 @@ public class PolicyServlet extends HttpServlet {
                 try {
                     User user = provider.getUserManager().findByLogin(username.trim());
                     if (user != null)
-                        checkInfos.add(new CheckInfo(provider.getConfig().getOid(), user.getPassword()));
+                        checkInfos.add(new CheckInfo(provider.getConfig().getOid(), user.getPassword(), provider.getAuthRealm()));
                 } catch (FindException e) {
                     // Log it and continue
                     logger.log(Level.WARNING, null, e);
