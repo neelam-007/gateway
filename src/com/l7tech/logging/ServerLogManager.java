@@ -1,10 +1,7 @@
 package com.l7tech.logging;
 
-import com.l7tech.server.ServerConfig;
-
-import java.util.logging.Level;
-import java.util.logging.LogRecord;
-import java.util.logging.Logger;
+import java.util.logging.*;
+import java.io.File;
 
 /**
  * Layer 7 technologies, inc.
@@ -38,7 +35,8 @@ public class ServerLogManager extends LogManager {
      * @param startMsgNumber the message number to locate the start point.
      *                       Start from beginning of the message buffer if it equals to -1.
      * @param endMsgNumber   the message number to locate the end point.
-     *                       Retrieve messages until the end of the message buffer is hit if it equals to -1.
+     *                       Retrieve messages until the end of the message buffer is hit
+     *                       if it equals to -1.
      * @param size  the max. number of messages retrieved
      * @return LogRecord[] the array of log records retrieved
      */
@@ -54,35 +52,25 @@ public class ServerLogManager extends LogManager {
     private synchronized void initialize() {
         // create systemLogger
         if (systemLogger == null) {
-            systemLogger = java.util.logging.Logger.getLogger(SYSTEM_LOGGER_NAME);
+            systemLogger = Logger.getLogger(SYSTEM_LOGGER_NAME);
+            systemLogger.setLevel(Level.ALL);
             systemLogMemHandler = new MemHandler();
             systemLogger.addHandler(systemLogMemHandler);
-            /* add our own logging file (instead of catalina.out
+            // add our own file handler
             try {
-                FileHandler fileHandler = new FileHandler("ssglog");
+                FileHandler fileHandler = new FileHandler(System.getProperties().getProperty("user.home") +
+                                              File.separator + "ssg.log", 50000, 4);
                 fileHandler.setFormatter(new SimpleFormatter());
                 systemLogger.addHandler(fileHandler);
             } catch (Exception e) {
                 // dont use normal logger here
                 e.printStackTrace(System.err);
                 throw new RuntimeException(e);
-            }*/
-            Level level = getLogLevel();
-            systemLogger.setLevel(level);
-            // add other log handlers here as necessary
+            }
         }
     }
 
-    private Level getLogLevel() {
-        // default level is INFO but is customizable through web.xml
-        String level = ServerConfig.getInstance().getLogLevel();
-        if (level != null && level.length() > 0)
-            return Level.parse(level);
-
-        return Level.INFO;
-    }
-
     private Logger systemLogger = null;
-    private static final String SYSTEM_LOGGER_NAME = "SSG System Log";
+    private static final String SYSTEM_LOGGER_NAME = "com.l7tech.server.log";
     private MemHandler systemLogMemHandler = null;
 }
