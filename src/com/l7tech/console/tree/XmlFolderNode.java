@@ -35,6 +35,7 @@ public class XmlFolderNode extends AbstractTreeNode {
         insert( new ResponseXpathPaletteNode(), index++ );
         insert(new SchemaValidationPaletteNode(), index++);
         insert(new XslTransformationPaletteNode(), index++);
+        insert(new RequestSwAAssertionPaletteNode(), index++);        
     }
 
     /**
