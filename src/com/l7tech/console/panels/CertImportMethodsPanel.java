@@ -4,6 +4,7 @@ import com.l7tech.common.security.TrustedCertAdmin;
 import com.l7tech.common.security.TrustedCert;
 import com.l7tech.common.util.Locator;
 import com.l7tech.common.util.HexUtils;
+import com.l7tech.common.util.CertUtils;
 
 import javax.swing.*;
 import javax.swing.event.ChangeListener;
@@ -215,10 +216,10 @@ public class CertImportMethodsPanel extends WizardStepPanel {
 
             // retrieve the value of cn
             String subjectName = cert.getSubjectDN().getName();
-            String cn = null;
+            String cn = CertUtils.extractUsernameFromClientCertificate(cert);
 
             // use the subjectDN name if the CN attribute not found
-            if ((cn = retrieveSubjectCommonName(subjectName)) == null) {
+            if (cn.length() == 0) {
                 cn = subjectName;
             }
 
@@ -301,36 +302,6 @@ public class CertImportMethodsPanel extends WizardStepPanel {
         return true;
     }
 
-    /**
-     * Extract the value of the CN attribute from the subject DN.
-     *
-     * @return  The value of CN attribute. NULL if not found.
-     */
-    private String retrieveSubjectCommonName(String subjectDN) {
-        String cn = null;
-
-        int index1 = subjectDN.indexOf("cn=");
-        int index2 = subjectDN.indexOf("CN=");
-        int startIndex = -1;
-        int endIndex = -1;
-
-        if (index1 >= 0) {
-            startIndex = index1 + 3;
-        } else if (index2 >= 0) {
-            startIndex = index2 + 3;
-        }
-
-        if (startIndex >= 0) {
-            endIndex = subjectDN.indexOf(",", startIndex);
-            if (endIndex > 0) {
-                cn = subjectDN.substring(startIndex, endIndex);
-            } else {
-                cn = subjectDN.substring(startIndex, subjectDN.length());
-            }
-        }
-
-        return cn;
-    }
 
     /**
      * Store the values of all fields on the panel to the wizard object which is a used for
@@ -408,14 +379,14 @@ public class CertImportMethodsPanel extends WizardStepPanel {
         final JRadioButton _3;
         _3 = new JRadioButton();
         urlConnRadioButton = _3;
-        _3.setSelected(false);
         _3.setText("Retrieve via SSL Connection");
+        _3.setSelected(false);
         _2.add(_3, new com.intellij.uiDesigner.core.GridConstraints(0, 0, 1, 1, 8, 0, 3, 0, null, null, null));
         final JRadioButton _4;
         _4 = new JRadioButton();
         fileRadioButton = _4;
-        _4.setSelected(false);
         _4.setText("Import from a File");
+        _4.setSelected(false);
         _4.setEnabled(true);
         _2.add(_4, new com.intellij.uiDesigner.core.GridConstraints(1, 0, 1, 1, 8, 0, 3, 0, null, null, null));
         final JRadioButton _5;

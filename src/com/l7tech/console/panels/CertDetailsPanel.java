@@ -1,6 +1,7 @@
 package com.l7tech.console.panels;
 
 import com.l7tech.common.security.TrustedCert;
+import com.l7tech.common.util.CertUtils;
 import com.intellij.uiDesigner.core.GridLayoutManager;
 import com.intellij.uiDesigner.core.GridConstraints;
 import com.intellij.uiDesigner.core.Spacer;
@@ -91,8 +92,9 @@ public class CertDetailsPanel extends WizardStepPanel {
 
                         // retrieve the value of cn
                         String subjectName = cert.getSubjectDN().getName();
-                        String cn = null;
-                        if((cn = retrieveSubjectCommonName(subjectName)) != null) {
+                        String cn = CertUtils.extractUsernameFromClientCertificate(cert);
+
+                        if(cn.length() > 0) {
                              certNameTextField.setText(cn);
                         }
                         else {
@@ -131,36 +133,6 @@ public class CertDetailsPanel extends WizardStepPanel {
         }
     }
 
-    /**
-     * Extract the value of the CN attribute from the subject DN.
-     *
-     * @return  The value of CN attribute. NULL if not found.
-     */
-    private String retrieveSubjectCommonName(String subjectDN) {
-        String cn = null;
-
-        int index1 = subjectDN.indexOf("cn=");
-        int index2 = subjectDN.indexOf("CN=");
-        int startIndex = -1;
-        int endIndex = -1;
-
-        if (index1 >= 0) {
-            startIndex = index1 + 3;
-        } else if (index2 >= 0) {
-            startIndex = index2 + 3;
-        }
-
-        if (startIndex >= 0) {
-            endIndex = subjectDN.indexOf(",", startIndex);
-            if (endIndex > 0) {
-                cn = subjectDN.substring(startIndex, endIndex);
-            } else {
-                cn = subjectDN.substring(startIndex, subjectDN.length());
-            }
-        }
-
-        return cn;
-    }
 
     /**
      * Store the values of all fields on the panel to the wizard object which is a used for
