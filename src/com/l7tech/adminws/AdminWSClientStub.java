@@ -3,6 +3,9 @@ package com.l7tech.adminws;
 import org.apache.axis.client.Call;
 import com.l7tech.util.Locator;
 import java.net.MalformedURLException;
+import java.net.URL;
+import java.io.IOException;
+import java.rmi.RemoteException;
 
 /**
  * User: flascell
@@ -13,8 +16,7 @@ import java.net.MalformedURLException;
  */
 public abstract class AdminWSClientStub {
 
-    public AdminWSClientStub(String targetURL) {
-        this.url = targetURL;
+    public AdminWSClientStub() {
     }
 
     // ************************************************
@@ -27,22 +29,42 @@ public abstract class AdminWSClientStub {
      */
     protected abstract void registerTypeMappings(Call call);
 
-    protected Call createStubCall() throws java.rmi.RemoteException {
+    protected abstract String getFullServiceTarget() throws IOException;
+
+    protected Call createStubCall() throws RemoteException {
         ClientCredentialManager credentialManager = (ClientCredentialManager)Locator.getDefault().lookup(ClientCredentialManager.class);
         Call call = credentialManager.getAxisSession();
-        call.clearOperation();
-        try {
-            call.setTargetEndpointAddress(new java.net.URL(url));
-        } catch (MalformedURLException e) {
-            throw new java.rmi.RemoteException(e.getMessage(), e);
+        if (call == null) {
+            throw new RemoteException("Trying to initiate an admin ws call when ClientCredentialManager does not have a session ready.");
         }
+        call.clearOperation();
+        URL url = cachedurl;
+        // check if this is new session
         if (call != typeSetOnCall) {
             registerTypeMappings(call);
+            // remember that types are set on this object
             typeSetOnCall = call;
+            // the base url could have changed since last login
+            try {
+                url = new URL(getFullServiceTarget());
+            } catch (IOException e) {
+                throw new RemoteException(e.getMessage(), e);
+            }
+            cachedurl = url;
         }
+        // always set the target since this call object is shared across different service clients
+        call.setTargetEndpointAddress(url);
         return call;
     }
 
-    protected String url = null;
+    protected String getServiceBaseURL() throws IOException {
+        String prefUrl = com.l7tech.console.util.Preferences.getPreferences().getServiceUrl();
+        if (prefUrl == null || prefUrl.length() < 1 || prefUrl.equals("null/ssg")) {
+            throw new IOException("com.l7tech.console.util.Preferences.getPreferences does not resolve a server address");
+        }
+        return prefUrl;
+    }
+
+    protected URL cachedurl = null;
     private Call typeSetOnCall = null;
 }
