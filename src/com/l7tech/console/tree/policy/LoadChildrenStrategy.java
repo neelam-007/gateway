@@ -6,8 +6,8 @@ import com.l7tech.policy.assertion.composite.CompositeAssertion;
 import java.util.Iterator;
 
 /**
- * Subclasses provide strategies of adding the children nodes to the policy.
- * Strategies allow to customize how is the policy tree is rendered,
+ * Subclasses provide strategies of adding the children nodes to the policy
+ * composite nodes.
  *
  * @author emil
  * @version 18-Apr-2004
