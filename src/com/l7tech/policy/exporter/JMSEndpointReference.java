@@ -16,6 +16,8 @@ import org.w3c.dom.Text;
 import java.rmi.RemoteException;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Collection;
+import java.util.ArrayList;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -185,26 +187,47 @@ public class JMSEndpointReference extends ExternalReference {
      * system without administrator interaction.
      */
     boolean verifyReference() {
+        Collection tempMatches = new ArrayList(); // contains JmsAdmin.JmsTuple objects that have partial match
         List jmsQueues = JmsUtilities.loadJmsQueues(false);
         for (Iterator iterator = jmsQueues.iterator(); iterator.hasNext();) {
             JmsAdmin.JmsTuple jmsTuple = (JmsAdmin.JmsTuple) iterator.next();
             // what makes a jms queue the same?
             // let's say a combination of JndiUrl, CONTEXT_EL_NAME, QUEUE_EL_NAME and TOPIC_EL_NAME
-            if (!jmsTuple.getConnection().getJndiUrl().equals(jndiUrl)) {
+            if (jmsTuple.getEndpoint().isMessageSource()) {
+                continue;
+            } else if (!jmsTuple.getConnection().getJndiUrl().equals(jndiUrl)) {
                 continue;
             } else if (!jmsTuple.getConnection().getInitialContextFactoryClassname().equals(initialContextFactoryClassname)) {
                 continue;
             } else if (!jmsTuple.getConnection().getQueueFactoryUrl().equals(queueFactoryUrl)) {
                 continue;
             }
-            // WE HAVE A MATCH!
+            // we have a partial match
+            tempMatches.add(jmsTuple);
+
+        }
+        if (tempMatches.isEmpty()) {
+            logger.warning("The JMS endpoint cannot be resolved.");
+            return false;
+        } else {
+            // Try to discriminate using name property
+            for (Iterator i = tempMatches.iterator(); i.hasNext();) {
+                JmsAdmin.JmsTuple jmsTuple = (JmsAdmin.JmsTuple)i.next();
+                if (jmsTuple.getEndpoint().getName().equals(endpointName)) {
+                    // WE HAVE A PERFECT MATCH!
+                    logger.fine("The local JMS endpoint was resolved from oid " + oid + " to " + localEndpointId);
+                    localEndpointId = jmsTuple.getEndpoint().getOid();
+                    localizeType = LocaliseAction.REPLACE;
+                    return true;
+                }
+            }
+            // Otherwise, use first partial match
+            JmsAdmin.JmsTuple jmsTuple = (JmsAdmin.JmsTuple)tempMatches.iterator().next();
             logger.fine("The local JMS endpoint was resolved from oid " + oid + " to " + localEndpointId);
             localEndpointId = jmsTuple.getEndpoint().getOid();
             localizeType = LocaliseAction.REPLACE;
             return true;
         }
-        logger.warning("The JMS endpoint cannot be resolved.");
-        return false;
     }
 
     boolean localizeAssertion(Assertion assertionToLocalize) {
