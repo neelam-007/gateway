@@ -239,6 +239,8 @@ public class XmlMangler {
         if (security == null)
             security = XmlUtil.findFirstChildElementByName(header, SoapUtil.SECURITY_NAMESPACE, "Security");
         if (security == null)
+            security = XmlUtil.findFirstChildElementByName(header, SoapUtil.SECURITY_NAMESPACE3, "Security");
+        if (security == null)
             throw new XMLSecurityElementNotFoundException("EncryptedData is present, but there is no security element");
 
         List referenceListList = XmlUtil.findChildElementsByName(security, SoapUtil.XMLENC_NS, "ReferenceList");
@@ -381,7 +383,7 @@ public class XmlMangler {
                 } catch (Exception e) {
                     logger.log(Level.WARNING, "decryption error", e);
                 }
-                output.add(new AesKey(decrypted, decrypted.length*8));
+                output.add(new AesKey(decrypted, 128));
                 //todo, fix problem with AES key length not supported (?)
             }
         }
