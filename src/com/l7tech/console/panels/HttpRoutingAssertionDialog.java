@@ -22,6 +22,7 @@ import java.awt.event.ActionListener;
 import java.util.EventListener;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.rmi.RemoteException;
 
 
 /**
@@ -201,7 +202,15 @@ public class HttpRoutingAssertionDialog extends JDialog {
                 updateEnableDisable();
             }
         });
-
+        try {
+            if (!service.getPublishedService().isSoap()) {
+                samlMethod.setEnabled(false);
+            }
+        } catch (FindException e) {
+            log.log(Level.WARNING, "cannot get corresponding service", e);
+        } catch (RemoteException e) {
+            log.log(Level.WARNING, "cannot get corresponding service", e);
+        }
     }
 
     private void updateEnableDisable() {
