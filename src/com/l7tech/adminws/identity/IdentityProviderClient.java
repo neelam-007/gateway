@@ -32,7 +32,7 @@ public class IdentityProviderClient implements com.l7tech.identity.IdentityProvi
     }
 
     public boolean authenticate( PrincipalCredentials pc ) {
-        return false;
+        throw new RuntimeException("not supported in this impl");
     }
 
     public boolean isReadOnly() { return true; }
