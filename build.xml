@@ -234,6 +234,15 @@
             <fileset dir="${src.root}/etc" includes="web.xml"/>
         </copy>
 
+        <!-- Resources -->
+        <copy todir="${build.classes}">
+            <fileset dir="${src.root}/etc">
+                <include name="hibernate.cfg.xml"/>
+                <include name="SSG.hbm.xml"/>
+                <include name="com/l7tech/objectmodel/hibernatepersistence.properties"/>
+            </fileset>
+        </copy>
+
         <!-- html and other static web files -->
         <copy todir="${doc.root}">
             <fileset dir="${src.root}/web" includes="**/*"
