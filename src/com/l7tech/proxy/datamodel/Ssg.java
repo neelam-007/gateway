@@ -2,8 +2,6 @@ package com.l7tech.proxy.datamodel;
 
 import org.apache.log4j.Category;
 
-import java.text.Collator;
-
 /**
  * In-core representation of an SSG.
  * User: mike
@@ -134,5 +132,4 @@ public class Ssg implements Cloneable, Comparable {
     public void setPassword(String password) {
         this.password = password;
     }
-
 }
