@@ -17,7 +17,7 @@ import java.util.EventListener;
  */
 public abstract class WizardStepPanel extends JPanel {
 
-    private JDialog owner;
+    protected JDialog owner;
     private EventListenerList listenerList = new WeakEventListenerList();
     private WizardStepPanel nextPanel;
     private Object[] skippedPanels;
