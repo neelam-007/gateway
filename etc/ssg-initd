@@ -20,13 +20,14 @@ fi
 ssg="$TOMCAT_HOME/bin/catalina.sh"
 
 ssguser="gateway"
+prog="ssg"
 
 # The semantics of these two functions differ from the way apachectl does
 # things -- attempting to start while running is a failure, and shutdown
 # when not running is also a failure.  So we just do it the way init scripts
 # are expected to behave here.
 start() {
-#        echo -n $"Starting $prog: "
+        echo -n $"Starting $prog: "
         su - $ssguser -c "$ssg start -security"
         RETVAL=$?
         echo
@@ -34,7 +35,7 @@ start() {
         return $RETVAL
 }
 stop() {
-#	echo -n $"Stopping $prog: "
+	echo -n $"Stopping $prog: "
 	su - $ssguser -c "$ssg stop "
 	RETVAL=$?
 	echo
