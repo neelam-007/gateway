@@ -1,6 +1,7 @@
 package com.l7tech.console.logging;
 
 import java.util.logging.*;
+import java.util.Enumeration;
 
 /**
  * Class DefaultHandler.
@@ -11,14 +12,35 @@ public class DefaultHandler extends Handler {
 
     public DefaultHandler() {
         String cname = DefaultHandler.class.getName();
-        setLevel(getLevelProperty(cname + ".level", Level.ALL));
+        setLevel(getLevelProperty(cname + ".level", Level.INFO));
         setFilter(getFilterProperty(cname + ".filter", null));
         setFormatter(getFormatterProperty(cname + ".formatter", new SimpleFormatter()));
     }
 
     /**
-     * Format and publish a <tt>LogRecord</tt>.
+     * Returnd the installed <code>DefaultHandler</code> or null if
+     * the handler has not been installed.
+     *
+     * @return the installed <code>DefaultHandler</code> or null
+     */
+    static Handler getInstalledHandler() {
+        for (Enumeration e = LogManager.getLogManager().getLoggerNames();
+             e.hasMoreElements();) {
+            String name = (String) e.nextElement();
+            Logger.getLogger(name);
+            Handler[] handlers = Logger.getLogger(name).getHandlers();
 
+            for (int i = 0; i < handlers.length; i++) {
+                if (handlers[i] instanceof DefaultHandler) {
+                    return handlers[i];
+                }
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Format and publish a <tt>LogRecord</tt>.
      * <p>
      * If this is the first <tt>LogRecord</tt> to be written to a given
      * <tt>OutputStream</tt>, the <tt>Formatter</tt>'s "head" string is
