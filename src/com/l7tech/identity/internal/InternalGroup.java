@@ -1,14 +1,8 @@
 package com.l7tech.identity.internal;
 
-import com.l7tech.common.util.Locator;
-import com.l7tech.identity.*;
-import com.l7tech.objectmodel.FindException;
-import com.l7tech.objectmodel.EntityHeader;
+import com.l7tech.identity.Group;
+import com.l7tech.identity.GroupBean;
 import com.l7tech.objectmodel.imp.NamedEntityImp;
-
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.Set;
 
 public class InternalGroup extends NamedEntityImp implements Group {
     public InternalGroup() {
@@ -39,29 +33,6 @@ public class InternalGroup extends NamedEntityImp implements Group {
 
     public String getName() {
         return _groupBean.getName();
-    }
-
-    public Set getMembers() {
-        UserManager uman = getUserManager();
-        try {
-            Set out = new HashSet();
-            for (Iterator i = getMemberHeaders().iterator(); i.hasNext();) {
-                EntityHeader header = (EntityHeader) i.next();
-                out.add( uman.findByPrimaryKey( header.getStrId() ) );
-            }
-            return out;
-        } catch (FindException e) {
-            throw new RuntimeException( "Couldn't get group members!", e );
-        }
-    }
-
-    public Set getMemberHeaders() {
-        GroupManager gman = getGroupManager();
-        try {
-            return gman.getUserHeaders( this );
-        } catch (FindException e) {
-            throw new RuntimeException( "Couldn't get group's members", e );
-        }
     }
 
     public void setDescription(String description) {
@@ -136,47 +107,5 @@ public class InternalGroup extends NamedEntityImp implements Group {
         return _groupBean;
     }
 
-    private GroupManager getGroupManager() {
-        if ( _groupManager == null ) {
-            IdentityProviderConfig config = null;
-            long providerId = _groupBean.getProviderId();
-            try {
-                config = getConfigManager().findByPrimaryKey( providerId );
-            } catch (FindException e) {
-                throw new IllegalStateException( "Group " + this._name + "'s IdentityProviderConfig (id = " + providerId + ") has ceased to exist!" );
-            }
-            IdentityProvider provider = IdentityProviderFactory.makeProvider( config );
-            _groupManager = provider.getGroupManager();
-        }
-        return _groupManager;
-    }
-
-    private UserManager getUserManager() {
-        if ( _userManager == null ) {
-            IdentityProviderConfig config = null;
-            long providerId = _groupBean.getProviderId();
-            try {
-                config = getConfigManager().findByPrimaryKey( providerId );
-            } catch (FindException e) {
-                throw new IllegalStateException( "Group " + this._name + "'s IdentityProviderConfig (id = " + providerId + ") has ceased to exist!" );
-            }
-            IdentityProvider provider = IdentityProviderFactory.makeProvider( config );
-            _userManager = provider.getUserManager();
-        }
-        return _userManager;
-    }
-
-    private IdentityProviderConfigManager getConfigManager() {
-        IdentityProviderConfigManager ipc =
-          (IdentityProviderConfigManager)Locator.
-          getDefault().lookup(IdentityProviderConfigManager.class);
-        if (ipc == null) {
-            throw new RuntimeException("Could not find " + IdentityProviderConfigManager.class);
-        }
-        return ipc;
-    }
-
     private GroupBean _groupBean;
-    private GroupManager _groupManager;
-    private UserManager _userManager;
 }

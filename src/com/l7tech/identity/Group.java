@@ -1,7 +1,6 @@
 package com.l7tech.identity;
 
 import java.security.Principal;
-import java.util.Set;
 
 public interface Group extends Principal {
     static final String ADMIN_GROUP_NAME = "Gateway Administrators";
@@ -16,9 +15,6 @@ public interface Group extends Principal {
     long getProviderId();
 
     String getDescription();
-
-    Set getMembers();
-    Set getMemberHeaders();
 
     GroupBean getGroupBean();
 }

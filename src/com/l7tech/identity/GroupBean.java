@@ -1,6 +1,5 @@
 package com.l7tech.identity;
 
-import java.util.Set;
 import java.io.Serializable;
 
 public class GroupBean implements Group, Serializable {
@@ -14,14 +13,6 @@ public class GroupBean implements Group, Serializable {
 
     public String getDescription() {
         return _description;
-    }
-
-    public Set getMembers() {
-        throw new UnsupportedOperationException();
-    }
-
-    public Set getMemberHeaders() {
-        throw new UnsupportedOperationException();
     }
 
     public GroupBean getGroupBean() {
