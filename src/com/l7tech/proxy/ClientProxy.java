@@ -2,33 +2,36 @@ package com.l7tech.proxy;
 
 import com.l7tech.proxy.datamodel.Ssg;
 import com.l7tech.proxy.datamodel.SsgFinder;
+import org.apache.commons.httpclient.protocol.Protocol;
+import org.apache.commons.httpclient.protocol.SecureProtocolSocketFactory;
 import org.apache.log4j.Category;
 import org.mortbay.http.HttpContext;
 import org.mortbay.http.HttpServer;
 import org.mortbay.http.SocketListener;
 import org.mortbay.util.MultiException;
 
-import javax.net.ssl.SSLContext;
-import javax.net.ssl.X509KeyManager;
-import javax.net.ssl.KeyManager;
 import javax.net.ssl.KeyManagerFactory;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLSocket;
+import javax.net.ssl.X509KeyManager;
+import javax.net.ssl.X509TrustManager;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.net.InetAddress;
 import java.net.MalformedURLException;
+import java.net.Socket;
 import java.net.URL;
 import java.net.UnknownHostException;
-import java.net.Socket;
-import java.net.InetAddress;
+import java.security.KeyManagementException;
 import java.security.KeyStore;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
-import java.security.PrivateKey;
 import java.security.Principal;
-import java.security.KeyManagementException;
+import java.security.PrivateKey;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
@@ -134,7 +137,57 @@ public class ClientProxy {
         }
     }
 
-    public synchronized void init() throws NoSuchAlgorithmException, NoSuchProviderException, KeyManagementException {
+    private class ClientProxyTrustManager implements X509TrustManager {
+        public X509Certificate[] getAcceptedIssuers() {
+            log.info("ClientProxyTrustManager.getAcceptedIssuers()");
+            return new X509Certificate[0];
+        }
+
+        public void checkClientTrusted(X509Certificate[] x509Certificates, String s) throws CertificateException {
+            log.info("ClientProxyTrustManager.checkClientTrusted()");
+        }
+
+        public void checkServerTrusted(X509Certificate[] x509Certificates, String s) throws CertificateException {
+            log.info("ClientProxyTrustManager.checkServerTrusted()");
+        }
+    }
+
+    private class ClientProxySecureProtocolSocketFactory implements SecureProtocolSocketFactory {
+        private SSLContext sslContext;
+
+        ClientProxySecureProtocolSocketFactory(SSLContext ctx) {
+            this.sslContext = ctx;
+        }
+
+        public Socket createSocket(Socket socket, String host, int port, boolean autoClose)
+                throws IOException, UnknownHostException
+        {
+            log.info("ClientProxySecureProtocolSocketFactory.createSocket1(): host=" + host);
+            final SSLSocket sock = (SSLSocket) sslContext.getSocketFactory().createSocket(socket, host, port, autoClose);
+            log.info("Socket is type: " + sock.getClass());
+            return sock;
+        }
+
+        public Socket createSocket(String host, int port, InetAddress clientHost, int clientPort)
+                throws IOException, UnknownHostException
+        {
+            log.info("ClientProxySecureProtocolSocketFactory.createSocket2(): host=" + host);
+            final SSLSocket sock = (SSLSocket) sslContext.getSocketFactory().createSocket(host, port, clientHost, clientPort);
+            log.info("Socket is type: " + sock.getClass());
+            return sock;
+        }
+
+        public Socket createSocket(String host, int port) throws IOException, UnknownHostException {
+            log.info("ClientProxySecureProtocolSocketFactory.createSocket3(): host=" + host);
+            final SSLSocket sock = (SSLSocket) sslContext.getSocketFactory().createSocket(host, port);
+            log.info("Socket is type: " + sock.getClass());
+            return sock;
+        }
+    }
+
+    public synchronized void init()
+            throws NoSuchAlgorithmException, NoSuchProviderException, KeyManagementException
+    {
         if (isInitialized)
             return;
 
@@ -145,7 +198,13 @@ public class ClientProxy {
         props.put("javax.net.ssl.trustStore", TRUST_STORE_FILE.getAbsolutePath());
         props.put("javax.net.ssl.trustStorePassword", TRUST_STORE_PASSWORD);
         ClientProxyKeyManager keyManager = new ClientProxyKeyManager();
-        SSLContext.getInstance("SSL", "SunJSSE").init(new KeyManager[] {keyManager}, null, null);
+        ClientProxyTrustManager trustManager = new ClientProxyTrustManager();
+        SSLContext sslContext = SSLContext.getInstance("SSL", "SunJSSE");
+        sslContext.init(new X509KeyManager[] {keyManager},
+                        new X509TrustManager[] {trustManager},
+                        null);
+        Protocol https = new Protocol("https", new ClientProxySecureProtocolSocketFactory(sslContext), 443);
+        Protocol.registerProtocol("https", https);
         isInitialized = true;
     }
 
@@ -278,7 +337,5 @@ public class ClientProxy {
             if (ksfos != null)
                 ksfos.close();
         }
-
-        ssg.setHasCertificate(true);
     }
 }

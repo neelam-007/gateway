@@ -1,14 +1,17 @@
 package com.l7tech.proxy.datamodel;
 
 import com.l7tech.policy.assertion.Assertion;
+import com.l7tech.proxy.ClientProxy;
 import org.apache.log4j.Category;
 
 import java.io.Serializable;
+import java.io.File;
 import java.util.HashMap;
 import java.util.Set;
 import java.util.TreeSet;
 import java.net.URL;
 import java.net.MalformedURLException;
+import java.security.KeyStore;
 
 /**
  * In-core representation of an SSG.
@@ -22,6 +25,7 @@ public class Ssg implements Serializable, Cloneable, Comparable {
     private static final String SSG_FILE = "/ssg/servlet/soap";
     private static final int SSG_SSL_PORT = 8443;
     private static final int SSG_PORT = 8080;
+    private static final String KEY_FILE = ClientProxy.PROXY_CONFIG + File.separator + "keyStore";
 
     private long id = 0;
     private String name = "";
@@ -32,12 +36,13 @@ public class Ssg implements Serializable, Cloneable, Comparable {
     private int sslPort = SSG_SSL_PORT;
     private String username = null;
     private transient char[] password = null;
-    private HashMap policyMap = new HashMap();
     private boolean defaultSsg = false;
-    private boolean hasCertificate = false;
 
+    private transient HashMap policyMap = new HashMap();
     private transient boolean promptForUsernameAndPassword = true;
     private transient int numTimesLogonDialogCanceled = 0;
+    private transient KeyStore keyStore = null;
+    private transient Boolean haveClientCert = null;
 
     public int compareTo(final Object o) {
         long id0 = getId();
@@ -338,11 +343,34 @@ public class Ssg implements Serializable, Cloneable, Comparable {
         this.defaultSsg = defaultSsg;
     }
 
-    public boolean isHasCertificate() {
-        return hasCertificate;
+    /** Key store file.  Package private; used by ClientKeyManager. */
+    File getKeyStoreFile() {
+        return new File(KEY_FILE + getId());
     }
 
-    public void setHasCertificate(boolean hasCertificate) {
-        this.hasCertificate = hasCertificate;
+    /** Transient in-core cache of KeyStore.  Package private; used by ClientKeyManager. */
+    KeyStore getKeyStore() {
+        return keyStore;
+    }
+
+    /** Transient in-core cache of KeyStore.  Package private; used by ClientKeyManager. */
+    void setKeyStore(KeyStore keyStore) {
+        this.keyStore = keyStore;
+    }
+
+    /**
+     * Transient quick check of whether we have a client cert or not.
+     * Package-private; used by ClientKeyManager.
+     */
+    Boolean getHaveClientCert() {
+        return haveClientCert;
+    }
+
+    /**
+     * Transient quick check of whether we have a client cert or not.
+     * Package-private; used by ClientKeyManager.
+     */
+    void setHaveClientCert(Boolean haveClientCert) {
+        this.haveClientCert = haveClientCert;
     }
 }

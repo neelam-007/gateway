@@ -30,6 +30,7 @@ public class PendingRequest {
     // Policy settings, filled in by traversing poliy tree
     private static class PolicySettings {
         private boolean isSslRequired = false;
+        private boolean isClientCertRequired = false;
         private boolean isBasicAuthRequired = false;
         private String httpBasicUsername = "";
         private char[] httpBasicPassword = "".toCharArray();
@@ -37,6 +38,7 @@ public class PendingRequest {
         private String httpDigestUsername = "";
         private char[] httpDigestPassword = "".toCharArray();
         private boolean credentialsWouldHaveHelped = false;
+        private boolean clientCertWouldHaveHelped = false;
     }
     private PolicySettings policySettings = new PolicySettings();
 
@@ -97,6 +99,14 @@ public class PendingRequest {
 
     public void setSslRequired(boolean sslRequired) {
         policySettings.isSslRequired = sslRequired;
+    }
+
+    public boolean isClientCertRequired() {
+        return policySettings.isClientCertRequired;
+    }
+
+    public void setClientCertRequired(boolean clientCertRequired) {
+        policySettings.isClientCertRequired = clientCertRequired;
     }
 
     public boolean isBasicAuthRequired() {
@@ -173,5 +183,13 @@ public class PendingRequest {
 
     public void setCredentialsWouldHaveHelped(boolean credentialsWouldHaveHelped) {
         this.policySettings.credentialsWouldHaveHelped = credentialsWouldHaveHelped;
+    }
+
+    public boolean isClientCertWouldHaveHelped() {
+        return policySettings.clientCertWouldHaveHelped;
+    }
+
+    public void setClientCertWouldHaveHelped(boolean clientCertWouldHaveHelped) {
+        this.policySettings.clientCertWouldHaveHelped = clientCertWouldHaveHelped;
     }
 }

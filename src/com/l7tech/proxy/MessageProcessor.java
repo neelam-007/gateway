@@ -70,10 +70,14 @@ public class MessageProcessor {
         AssertionStatus result = policy.decorateRequest(pendingRequest);
         if (result != AssertionStatus.NONE) {
             if (pendingRequest.isCredentialsWouldHaveHelped()) {
-                log.info("Policy failed, possibly due to lack of credentials.  Will ask for some, then trying again");
+                log.info("Policy failed, possibly due to lack of credentials.  Will ask for some, then try again");
                 Managers.getCredentialManager().getCredentials(pendingRequest.getSsg());
                 pendingRequest.reset();
                 result = policy.decorateRequest(pendingRequest);
+            }
+            if (pendingRequest.isClientCertWouldHaveHelped()) {
+                log.info("Policy failed, possibly due to lack of a client certificate.  Will request one, then try again.");
+                // TODO: make CSR, send to server over SSL, download cert, and store it.
             }
         }
         if (result != AssertionStatus.NONE)
