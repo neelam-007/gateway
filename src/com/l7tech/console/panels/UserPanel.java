@@ -1,12 +1,12 @@
 package com.l7tech.console.panels;
 
+import com.l7tech.console.event.EntityEvent;
+import com.l7tech.console.event.EntityListener;
+import com.l7tech.console.event.EntityListenerAdapter;
+import com.l7tech.console.logging.ErrorManager;
 import com.l7tech.console.text.MaxLengthDocument;
 import com.l7tech.console.util.IconManager2;
 import com.l7tech.console.util.Registry;
-import com.l7tech.console.event.EntityListener;
-import com.l7tech.console.event.EntityListenerAdapter;
-import com.l7tech.console.event.EntityEvent;
-import com.l7tech.console.logging.ErrorManager;
 import com.l7tech.identity.User;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
@@ -19,8 +19,8 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.HierarchyEvent;
 import java.awt.event.HierarchyListener;
-import java.util.logging.Logger;
 import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * UserPanel - edits the <CODE>User/CODE> instances.
@@ -47,7 +47,7 @@ public class UserPanel extends EntityEditorPanel {
 
     private JTabbedPane tabbedPane;
     private final UserGroupsPanel groupPanel = new UserGroupsPanel(this); // membership
-
+    private CertificatePanel certPanel = new CertificatePanel(this); //certificate
     // Apply/Revert buttons
     private JButton okButton;
     private JButton cancelButton;
@@ -61,6 +61,7 @@ public class UserPanel extends EntityEditorPanel {
     // Titles/Labels
     private static final String DETAILS_LABEL = "General";
     private static final String MEMBERSHIP_LABEL = "Membership";
+    private static final String CERTIFICATE_LABEL = "Certificate";
 
     private static final String OK_BUTTON = "OK";
     private static final String CANCEL_BUTTON = "Cancel";
@@ -208,7 +209,7 @@ public class UserPanel extends EntityEditorPanel {
         // Add all tabs
         tabbedPane.add(getDetailsPanel(), DETAILS_LABEL);
         tabbedPane.add(groupPanel, MEMBERSHIP_LABEL);
-
+        tabbedPane.add(certPanel, CERTIFICATE_LABEL);
 
         // Return tabbed pane
         return tabbedPane;
