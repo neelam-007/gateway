@@ -1,20 +1,21 @@
 package com.l7tech.console.panels;
 
+import com.l7tech.common.gui.util.Utilities;
+import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.console.event.EntityEvent;
 import com.l7tech.console.event.EntityListener;
 import com.l7tech.console.util.Registry;
+import com.l7tech.objectmodel.DuplicateObjectException;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
-import com.l7tech.objectmodel.SaveException;
 import com.l7tech.policy.assertion.Assertion;
-import com.l7tech.policy.assertion.TrueAssertion;
 import com.l7tech.policy.assertion.RoutingAssertion;
+import com.l7tech.policy.assertion.TrueAssertion;
 import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.assertion.composite.CompositeAssertion;
 import com.l7tech.policy.wsp.WspWriter;
 import com.l7tech.service.PublishedService;
 import com.l7tech.service.Wsdl;
-import com.l7tech.common.gui.util.Utilities;
 
 import javax.swing.*;
 import javax.swing.border.CompoundBorder;
@@ -26,7 +27,12 @@ import javax.swing.event.ChangeListener;
 import javax.swing.event.EventListenerList;
 import javax.wsdl.WSDLException;
 import java.awt.*;
-import java.awt.event.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.event.HierarchyEvent;
+import java.awt.event.HierarchyListener;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
 import java.io.ByteArrayOutputStream;
 import java.util.ArrayList;
 import java.util.EventListener;
@@ -247,11 +253,21 @@ public class PublishServiceWizard extends JDialog {
                     header.setOid(oid);
                     PublishServiceWizard.this.notify(header);
                 } catch (Exception e) {
-                    e.printStackTrace();
-                    JOptionPane.showMessageDialog(null,
-                      "Unable to save the service '" + saBundle.service.getName() + "'\n",
-                      "Error",
-                      JOptionPane.ERROR_MESSAGE);
+                    if (ExceptionUtils.causedBy(e, DuplicateObjectException.class)) {
+                        JOptionPane.showMessageDialog(null,
+                                                      "Unable to save the service '" + saBundle.service.getName() + "'\n" +
+                                                      "because there an existing service already using that namespace URI\n" +
+                                                      "and SOAPAction combination.",
+                                                      "Service already exists",
+                                                      JOptionPane.ERROR_MESSAGE);
+                    } else {
+                        e.printStackTrace();
+                        JOptionPane.showMessageDialog(null,
+                                                      "Unable to save the service '" + saBundle.service.getName() + "'\n",
+                                                      "Error",
+                                                      JOptionPane.ERROR_MESSAGE);
+                    }
+                    return;
                 }
                 setVisible(false);
                 dispose();
