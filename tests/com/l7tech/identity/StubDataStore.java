@@ -31,7 +31,9 @@ import java.util.*;
  */
 public class StubDataStore {
     private static StubDataStore defaultStore = null;
-    /** default data store patch */
+    /**
+     * default data store patch
+     */
     public static final String DEFAULT_STORE_PATH = "stubdata.xml";
 
     StubDataStore() {
@@ -170,7 +172,7 @@ public class StubDataStore {
 
     private void initialGroupMemberships(XMLEncoder encoder) {
         Iterator groups = getGroups().values().iterator();
-        for (;groups.hasNext();) {
+        for (; groups.hasNext();) {
             InternalGroup g = (InternalGroup)groups.next();
             for (Iterator i = users.values().iterator(); i.hasNext();) {
                 InternalUser u = (InternalUser)i.next();
@@ -183,25 +185,31 @@ public class StubDataStore {
 
     private void initialServices(XMLEncoder encoder, IdentityProviderConfig pc)
       throws IOException, WSDLException, MalformedURLException {
-        Wsdl wsdl = Wsdl.newInstance(null, new WsdlTest("blah").getWsdlReader(WsdlTest.WSDL));
+        String[] wsdls = {WsdlTest.WSDL, WsdlTest.WSDL_DOC_STYLE};
+        for (int i = 0; i < wsdls.length; i++) {
+            String fileName = wsdls[i];
+            Wsdl wsdl = Wsdl.newInstance(null, new WsdlTest("blah").getWsdlReader(fileName));
 
-        ClassLoader cl = getClass().getClassLoader();
-        String wsdlUrl = cl.getResource(WsdlTest.WSDL).toString();
+            ClassLoader cl = getClass().getClassLoader();
+            String wsdlUrl = cl.getResource(fileName).toString();
 
-        PublishedService service = new PublishedService();
-        service.setName(wsdl.getDefinition().getTargetNamespace());
-        StringWriter sw = new StringWriter();
-        wsdl.toWriter(sw);
-        service.setWsdlXml(sw.toString());
-        service.setWsdlUrl(wsdlUrl);
-        service.setOid(nextObjectId());
-        Assertion assertion = sampleAssertion(pc);
-        ByteArrayOutputStream bo = new ByteArrayOutputStream();
-        WspWriter.writePolicy(assertion, bo);
+            PublishedService service = new PublishedService();
+            service.setName(wsdl.getDefinition().getTargetNamespace());
+            StringWriter sw = new StringWriter();
+            wsdl.toWriter(sw);
+            service.setWsdlXml(sw.toString());
+            service.setWsdlUrl(wsdlUrl);
+            service.setOid(nextObjectId());
+            Assertion assertion = sampleAssertion(pc);
+            ByteArrayOutputStream bo = new ByteArrayOutputStream();
+            WspWriter.writePolicy(assertion, bo);
 
-        service.setPolicyXml(bo.toString());
-        encoder.writeObject(service);
-        populate(service);
+            service.setPolicyXml(bo.toString());
+            encoder.writeObject(service);
+            populate(service);
+
+        }
+
     }
 
     private Assertion sampleAssertion(IdentityProviderConfig pc) {
@@ -220,9 +228,7 @@ public class StubDataStore {
         }
         OneOrMoreAssertion oom = new OneOrMoreAssertion(identities);
         AllAssertion assertion =
-          new AllAssertion(
-            Arrays.asList(new Assertion[]{new HttpBasic(), oom})
-          );
+          new AllAssertion(Arrays.asList(new Assertion[]{new HttpBasic(), oom}));
         return assertion;
     }
 
@@ -236,9 +242,7 @@ public class StubDataStore {
       throws FileNotFoundException {
         XMLDecoder decoder = null;
         try {
-            decoder = new XMLDecoder(
-              new BufferedInputStream(
-                new FileInputStream(path)));
+            decoder = new XMLDecoder(new BufferedInputStream(new FileInputStream(path)));
             while (true) {
                 populate(decoder.readObject());
                 this.nextObjectId();
@@ -276,9 +280,8 @@ public class StubDataStore {
             File target = new File(storePath);
             if (target.exists()) target.delete();
             encoder =
-              new XMLEncoder(
-                new BufferedOutputStream(new FileOutputStream(storePath)));
-            IdentityProviderConfig providerConfig  = initialInternalProvider(encoder);
+              new XMLEncoder(new BufferedOutputStream(new FileOutputStream(storePath)));
+            IdentityProviderConfig providerConfig = initialInternalProvider(encoder);
             initialUsers(encoder);
             initialGroups(encoder);
             initialGroupMemberships(encoder);

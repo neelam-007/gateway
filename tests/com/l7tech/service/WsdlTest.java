@@ -27,6 +27,7 @@ public class WsdlTest extends TestCase {
     public static final String WSDL = "com/l7tech/service/resources/StockQuoteService.wsdl";
     public static final String WSDL2PORTS = "com/l7tech/service/resources/xmltoday-delayed-quotes-2ports.wsdl";
     public static final String WSDL2SERVICES = "com/l7tech/service/resources/xmltoday-delayed-quotes-2services.wsdl";
+    public static final String WSDL_DOC_STYLE = "com/l7tech/service/resources/GeoServe.wsdl";
 
     /**
      * test <code>AbstractLocatorTest</code> constructor
