@@ -2,11 +2,6 @@ package com.l7tech.identity.ldap;
 
 import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.identity.UserManager;
-import com.l7tech.identity.UserBean;
-import com.l7tech.objectmodel.DeleteException;
-import com.l7tech.objectmodel.SaveException;
-import com.l7tech.objectmodel.UpdateException;
-
 
 /**
  * Layer 7 Technologies, inc.
