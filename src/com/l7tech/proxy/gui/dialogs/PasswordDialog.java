@@ -38,10 +38,16 @@ public class PasswordDialog extends JDialog {
     private boolean passwordValid = false;
     private DocumentListener passwordDocumentListener;
     private JLabel capsMessage = new JLabel();
+    private boolean singleInputOnly;
+
+    public PasswordDialog(Frame owner, String title, boolean singleInputOnly) {
+        super(owner, title, true);
+        this.singleInputOnly = singleInputOnly;
+        setContentPane(getMainPanel());
+    }
 
     public PasswordDialog(Frame owner, String title) {
-        super(owner, title, true);
-        setContentPane(getMainPanel());
+        this(owner, title, false);
     }
 
     private JPanel getMainPanel() {
@@ -103,6 +109,8 @@ public class PasswordDialog extends JDialog {
     }
 
     private boolean isPasswordValid() {
+        if (singleInputOnly)
+            return true;
         char[] p1 = getFieldPassword().getPassword();
         char[] p2 = getFieldPasswordVerify().getPassword();
         return Arrays.equals(p1, p2);
@@ -113,8 +121,10 @@ public class PasswordDialog extends JDialog {
             widgetPanel = new JPanel(new GridLayout(2, 2, 4, 4));
             widgetPanel.add(new JLabel("Password:"));
             widgetPanel.add(getFieldPassword());
-            widgetPanel.add(new JLabel("Verify password:"));
-            widgetPanel.add(getFieldPasswordVerify());
+            if (!singleInputOnly) {
+                widgetPanel.add(new JLabel("Verify password:"));
+                widgetPanel.add(getFieldPasswordVerify());
+            }
         }
         return widgetPanel;
     }
@@ -193,15 +203,19 @@ public class PasswordDialog extends JDialog {
      * @param title
      * @return The password the user typed, or null if the dialog was canceled.
      */
-    public static char[] getPassword(Frame parent, String title) {
-        PasswordDialog pd = new PasswordDialog(parent, title);
+    public static char[] getPassword(Frame parent, String title, boolean singleInputOnly) {
+        PasswordDialog pd = new PasswordDialog(parent, title, singleInputOnly);
         char[] word = pd.runPasswordPrompt();
         pd.dispose();
         return word;
     }
 
+    public static char[] getPassword(Frame parent, String title) {
+        return getPassword(parent, title, false);
+    }
+
     public static void main(String[] argv) {
-        char[] word = PasswordDialog.getPassword(null, "Get Password");
+        char[] word = PasswordDialog.getPassword(null, "Get Password", true);
         System.out.println("Got password: \"" + (word == null ? "<none>" : new String(word)) + "\"");
         System.exit(0);
     }

@@ -17,6 +17,7 @@ import com.l7tech.proxy.gui.policy.PolicyTreeModel;
 import com.l7tech.proxy.gui.util.IconManager;
 
 import javax.swing.*;
+import javax.swing.filechooser.FileFilter;
 import javax.swing.border.BevelBorder;
 import javax.swing.event.*;
 import javax.swing.table.AbstractTableModel;
@@ -25,12 +26,16 @@ import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.security.NoSuchAlgorithmException;
+import java.security.UnrecoverableKeyException;
 import java.security.cert.CertificateEncodingException;
 import java.security.cert.X509Certificate;
+import java.security.cert.CertificateException;
 import java.util.*;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.io.File;
+import java.io.IOException;
 
 /**
  * Panel for editing properties of an SSG object.
@@ -264,22 +269,29 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
         });
 
         identityPane.getClientCertButton().addActionListener(new ActionListener() {
-                public void actionPerformed(ActionEvent e) {
-                    try {
-                        X509Certificate cert = SsgKeyStoreManager.getClientCert(ssg);
-                        if (cert == null) {
-                            JOptionPane.showMessageDialog(Gui.getInstance().getFrame(),
-                                                          "We don't currently have a client certificate\n" +
-                                                          "for the Gateway " + ssgName(),
-                                                          "No client certificate",
-                                                          JOptionPane.INFORMATION_MESSAGE);
-                            return;
-                        }
-                        new CertDialog(cert, "Client Certificate", "Client Certificate for Gateway " + ssgName()).show();
-                    } catch (Exception e1) {
-                        log.log(Level.SEVERE, "Unable to access client certificate", e1);
-                        e1.printStackTrace();
-                        Gui.errorMessage("Unable to access client certificate",
+            public void actionPerformed(ActionEvent e) {
+                try {
+                    X509Certificate cert = SsgKeyStoreManager.getClientCert(ssg);
+                    if (cert == null) {
+                        final String close = "   Close   ";
+                        int r = JOptionPane.showOptionDialog(Gui.getInstance().getFrame(),
+                                                             "We don't currently have a client certificate\n" +
+                                                             "for the Gateway " + ssgName(),
+                                                             "No client certificate",
+                                                             JOptionPane.YES_NO_OPTION,
+                                                             JOptionPane.INFORMATION_MESSAGE,
+                                                             null,
+                                                             new String[] {"Import client certificate", close},
+                                                             close);
+                        if (r == 0)
+                            importClientCertificate();
+                        return;
+                    }
+                    new CertDialog(cert, "Client Certificate", "Client Certificate for Gateway " + ssgName()).show();
+                } catch (Exception e1) {
+                    log.log(Level.SEVERE, "Unable to access client certificate", e1);
+                    e1.printStackTrace();
+                    Gui.errorMessage("Unable to access client certificate",
                                          "Unable to access client certificate for Gateway " + ssgName(),
                                          e1);
                     }
@@ -316,6 +328,53 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
             });
 
         return identityPane;
+    }
+
+    private void importClientCertificate() {
+        char[] ssgPass = identityPane.getUserPasswordField().getPassword();
+        if (ssgPass == null || ssgPass.length < 1) {
+            ssgPass = PasswordDialog.getPassword(Gui.getInstance().getFrame(),
+                                                 "Enter new password for Gateway " + ssgName());
+            identityPane.getUserPasswordField().setText(new String(ssgPass));
+        }
+
+        JFileChooser fc = new JFileChooser();
+        fc.setDialogTitle("Select client certificate");
+        fc.setDialogType(JFileChooser.OPEN_DIALOG);
+        FileFilter fileFilter = new FileFilter() {
+            public boolean accept(File f) {
+                return (f.getName().endsWith(".p12") || f.getName().endsWith(".P12"));
+            }
+
+            public String getDescription() {
+                return "(*.p12) PKCS#12 Personal Digital Certificate";
+            }
+        };
+        fc.setFileFilter(fileFilter);
+        fc.setMultiSelectionEnabled(false);
+        int r = fc.showDialog(Gui.getInstance().getFrame(), "Import certificate");
+        if (r != JFileChooser.APPROVE_OPTION)
+            return;
+        File certFile = fc.getSelectedFile();
+        if (certFile == null)
+            return;
+        char[] pass = PasswordDialog.getPassword(Gui.getInstance().getFrame(),
+                                                 "Enter pass phrase for this PKCS#12 file",
+                                                 true);
+        try {
+            SsgKeyStoreManager.importClientCertificate(ssg, certFile, pass, null, ssgPass);
+        } catch (Exception e) {
+            log.log(Level.WARNING, "Unable to import certificate", e);
+            Gui.errorMessage("Unable to import certificate\n\n" + (e.getMessage() != null ? e.getMessage() : e.getClass().getName()));
+        }
+
+        String clientCertUsername = lookupClientCertUsername(ssg);
+        if (clientCertUsername != null)
+            identityPane.getUsernameTextField().setText(clientCertUsername);
+        updateIdentityEnableState();
+
+        JOptionPane.showMessageDialog(Gui.getInstance().getFrame(),
+                                      "Client certificate imported successfully.");
     }
 
     private void updateIdentityEnableState() {
@@ -724,20 +783,8 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
                 ssg.setTrustedGatewayId(selectedSsg.getId());
 
                 // clear the old stuff in trusted SSG
-                ssg.setUsername("");
                 ssg.setSavePasswordToDisk(false);
                 ssg.setChainCredentialsFromClient(false);
-
-                // also delete the client cert
-                try {
-                    SsgKeyStoreManager.deleteClientCert(ssg);
-                } catch (Exception e) {
-                    log.log(Level.SEVERE, "Unable to delete client certificate", e);
-                        e.printStackTrace();
-                        Gui.errorMessage("Unable to delete client certificate",
-                                         "Unable to delete client certificate for Gateway " + ssgName(),
-                                         e);
-                }
 
             } else {
                 ssg.setTrustedGatewayId(0);
