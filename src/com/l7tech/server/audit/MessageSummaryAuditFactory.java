@@ -8,14 +8,17 @@ package com.l7tech.server.audit;
 
 import com.l7tech.cluster.ClusterInfoManager;
 import com.l7tech.common.audit.MessageSummaryAuditRecord;
+import com.l7tech.common.util.HexUtils;
 import com.l7tech.identity.User;
-import com.l7tech.message.*;
+import com.l7tech.message.Request;
+import com.l7tech.message.Response;
+import com.l7tech.message.XmlMessage;
+import com.l7tech.message.XmlRequest;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.server.MessageProcessor;
 import com.l7tech.service.PublishedService;
 
-import java.io.IOException;
 import java.util.logging.Level;
 
 /**
@@ -48,8 +51,10 @@ public class MessageSummaryAuditFactory {
             if ( currentRequest instanceof XmlRequest ) {
                 XmlRequest xreq = (XmlRequest)currentRequest;
                 try {
-                    requestXml = xreq.getXml();
-                } catch (IOException e) {
+                    byte[] req = HexUtils.slurpStream(xreq.getFirstPart().getInputStream(true));
+                    String encoding = xreq.getFirstPart().getContentType().getEncoding();
+                    requestXml = new String(req, encoding);
+                } catch (Throwable t) {
                     requestXml = null;
                 }
             }
@@ -102,8 +107,10 @@ public class MessageSummaryAuditFactory {
             if ( currentResponse instanceof XmlMessage ) {
                 XmlMessage xresp = (XmlMessage)currentResponse;
                 try {
-                    responseXml = xresp.getXml();
-                } catch (IOException e) {
+                    byte[] resp = HexUtils.slurpStream(xresp.getFirstPart().getInputStream(false));
+                    String encoding = xresp.getFirstPart().getContentType().getEncoding();
+                    responseXml = new String(resp, encoding);
+                } catch (Throwable t) {
                     responseXml = null;
                 }
             }

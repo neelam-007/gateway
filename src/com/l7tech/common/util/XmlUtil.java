@@ -173,7 +173,7 @@ public class XmlUtil {
                 found = (Element)n;
             }
         }
-        return null;
+        return found;
     }
 
     /**

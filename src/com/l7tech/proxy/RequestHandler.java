@@ -1,6 +1,8 @@
 package com.l7tech.proxy;
 
-import com.l7tech.common.mime.*;
+import com.l7tech.common.mime.ContentTypeHeader;
+import com.l7tech.common.mime.MimeUtil;
+import com.l7tech.common.mime.MultipartMessage;
 import com.l7tech.common.util.HexUtils;
 import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.util.XmlUtil;
@@ -19,7 +21,10 @@ import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
 import javax.wsdl.Port;
-import java.io.*;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.io.PrintStream;
 import java.net.MalformedURLException;
 import java.net.PasswordAuthentication;
 import java.net.URL;
@@ -60,7 +65,7 @@ public class RequestHandler extends AbstractHttpHandler {
 
     private PolicyAttachmentKey gatherPolicyAttachmentKey(final HttpRequest request, Document requestEnvelope, URL originalUrl) {
         String sa = request.getField("SOAPAction");
-        String namespaceUri = SoapUtil.getNamespaceUri(requestEnvelope);
+        String namespaceUri = SoapUtil.getPayloadNamespaceUri(requestEnvelope);
         PolicyAttachmentKey pak = new PolicyAttachmentKey(namespaceUri, sa, originalUrl.getFile());
         return pak;
     }

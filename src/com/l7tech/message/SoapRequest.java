@@ -3,20 +3,13 @@ package com.l7tech.message;
 import com.l7tech.cluster.DistributedMessageIdManager;
 import com.l7tech.common.RequestId;
 import com.l7tech.common.security.xml.processor.ProcessorResult;
-import com.l7tech.common.util.XmlUtil;
 import com.l7tech.identity.User;
 import com.l7tech.policy.assertion.RoutingStatus;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.server.MessageProcessor;
 import com.l7tech.server.RequestIdGenerator;
 import com.l7tech.server.util.MessageIdManager;
-import org.w3c.dom.Document;
-import org.xml.sax.SAXException;
-import org.xmlpull.v1.XmlPullParser;
-import org.xmlpull.v1.XmlPullParserException;
 
-import java.io.IOException;
-import java.io.InputStream;
 import java.util.logging.Level;
 
 /**
@@ -43,57 +36,7 @@ public abstract class SoapRequest extends XmlMessageAdapter implements SoapMessa
         wssRes = res;
     }
 
-    /**
-     * the new valid xml payload for this request
-     */
-    public void setDocument(Document doc) {
-        if (doc == null) throw new IllegalArgumentException("Document cannot be null");
-        _document = doc;
-        _requestXml = null;
-    }
-
     public RequestId getId() {return _id;}
-
-    /**
-     * Returns a DOM Document, getting the requestXml and thereby consuming the
-     * requestStream if necessary.
-     *
-     * @return a "lazy dom" implementation -- hopefully
-     * @throws SAXException if an exception occurs during parsing
-     * @throws IOException if the whole document can't be read due to an IOException
-     */
-    public synchronized Document getDocument() throws SAXException, IOException {
-        if ( _document == null ) {
-            String xml = getXml();
-            if ( xml == null ) {
-                throw new NoDocumentPresentException();
-            } else {
-                _document = XmlUtil.stringToDocument(xml);
-            }
-        }
-        return _document;
-    }
-
-    public XmlPullParser getPullParser() throws IOException, XmlPullParserException {
-        return pullParser( getXml() );
-    }
-
-    public String getXml() throws IOException {
-        if (_requestXml == null && _document != null) {
-            // serialize the document
-            _requestXml = XmlUtil.nodeToString(_document);
-        } else if ( _requestXml == null ) {
-            // multipart/related; type="text/xml"; boundary="----=Multipart-SOAP-boundary=----"
-            _requestXml = getMessageXml(getRequestInputStream(), getId().toString());
-        }
-        return _requestXml;
-    }
-
-    public void setXml( String xml ) {
-        if (xml == null) throw new IllegalArgumentException("Can't set null XML");
-        _requestXml = xml;
-        _document = null;
-    }
 
     public LoginCredentials getPrincipalCredentials() {
         return _principalCredentials;
@@ -153,19 +96,8 @@ public abstract class SoapRequest extends XmlMessageAdapter implements SoapMessa
         this.auditSaveRequest = auditSaveRequest;
     }
 
-    protected InputStream getRequestInputStream() throws IOException {
-        if ( _requestInputStream == null )
-            _requestInputStream = doGetRequestInputStream();
-        return _requestInputStream;
-    }
-
-//    private static final MessageIdManager _messageIdManager = SingleNodeMessageIdManager.getInstance();
-
-    protected abstract InputStream doGetRequestInputStream() throws IOException;
-
     protected RequestId _id;
     protected boolean _authenticated;
-    protected InputStream _requestInputStream;
     protected User _user;
     protected RoutingStatus _routingStatus = RoutingStatus.NONE;
 
@@ -175,9 +107,7 @@ public abstract class SoapRequest extends XmlMessageAdapter implements SoapMessa
     protected boolean auditSaveResponse = false;
 
     /** The cached XML document. */
-    protected String _requestXml;
     protected LoginCredentials _principalCredentials;
     
     protected ProcessorResult wssRes = null;
-
 }

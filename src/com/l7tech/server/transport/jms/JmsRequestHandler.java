@@ -7,6 +7,7 @@
 package com.l7tech.server.transport.jms;
 
 import com.l7tech.common.util.SoapFaultUtils;
+import com.l7tech.common.util.XmlUtil;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.server.MessageProcessor;
 import com.l7tech.server.policy.PolicyVersionException;
@@ -57,17 +58,23 @@ class JmsRequestHandler {
         Message jmsResponse = null;
         String faultMessage = null;
         String faultCode = null;
-        JmsSoapRequest soapRequest = new JmsSoapRequest( jmsMetadata );
-        JmsSoapResponse soapResponse = new JmsSoapResponse( jmsMetadata );
+
+        JmsSoapRequest soapRequest = null;
+        JmsSoapResponse soapResponse = null;
 
         try {
+            soapRequest = new JmsSoapRequest( jmsMetadata );
+            soapResponse = new JmsSoapResponse( jmsMetadata );
+
             // WebSphere MQ doesn't like this with AUTO_ACKNOWLEDGE
             // jmsRequest.acknowledge(); // TODO parameterize acknowledge semantics?
 
+            String responseXml = null;
             try {
                 status = MessageProcessor.getInstance().processMessage( soapRequest, soapResponse );
                 _logger.finest("Policy resulted in status " + status);
                 jmsResponse = jmsMetadata.getResponse();
+                responseXml = XmlUtil.nodeToString(soapResponse.getDocument());
             } catch ( PolicyVersionException pve ) {
                 String msg = "Request referred to an outdated version of policy";
                 _logger.log( Level.INFO, msg );
@@ -79,7 +86,6 @@ class JmsRequestHandler {
                 if ( faultMessage == null ) faultMessage = t.toString();
             }
 
-            String responseXml = soapResponse.getXml();
             if ( responseXml == null || responseXml.length() == 0 ) {
                 if ( faultMessage == null ) faultMessage = status.getMessage();
                 try {
@@ -106,6 +112,21 @@ class JmsRequestHandler {
             _logger.log( Level.WARNING, e.toString(), e );
         } catch (JMSException e) {
             _logger.log( Level.WARNING, "Couldn't acknowledge message!", e );
+        } finally {
+            if (soapRequest != null) {
+                try {
+                    soapRequest.close();
+                } catch (Throwable t) {
+                    _logger.log(Level.SEVERE, "soapRequest cleanup threw", t);
+                }
+            }
+            if (soapResponse != null) {
+                try {
+                    soapResponse.close();
+                } catch (Throwable t) {
+                    _logger.log(Level.SEVERE, "soapResponse cleanup threw", t);
+                }
+            }
         }
     }
 

@@ -235,7 +235,6 @@ public class ServerRequestSwAAssertion implements ServerAssertion {
                         logger.info("Unexpected attachment(s) found in the request.");
                         return AssertionStatus.FALSIFIED;
                     } else {
-
                         PartIterator pi = xreq.getParts();
                         while (pi.hasNext()) {
                             PartInfo attachment =  pi.next();

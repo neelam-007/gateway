@@ -99,11 +99,19 @@ public class FileStashManager implements StashManager {
         return size == null ? -2 : size.longValue();
     }
 
-    public synchronized InputStream recall(int ordinal) throws IOException {
+    public synchronized InputStream recall(int ordinal) throws IOException, NoSuchPartException {
         FileInfo fi = getFileInfo(ordinal);
         if (fi == null)
-            return null;
+            throw new NoSuchPartException("No part stashed with ordinal " + ordinal);
         return fi.getInputStream();
+    }
+
+    public boolean isByteArrayAvailable(int ordinal) {
+        return false;
+    }
+
+    public byte[] recallBytes(int ordinal) throws NoSuchPartException {
+        throw new NoSuchPartException("Parts cached in files do not keep the byte array in memory");
     }
 
     public synchronized boolean peek(int ordinal) throws IOException {

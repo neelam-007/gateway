@@ -12,9 +12,11 @@ import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
 
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Arrays;
 import java.util.logging.Logger;
 
 /**
@@ -39,7 +41,11 @@ public class StashManagerTest extends TestCase {
         StashManager createNewStashManager() throws IOException;
     }
 
-    private void stashAndRecall(StashManager sm, int num, long size) throws IOException {
+    private void stashAndRecall(StashManager sm, int num, long size) throws IOException, NoSuchPartException {
+        stashAndRecall(sm, num, size, false);
+    }
+
+    private void stashAndRecall(StashManager sm, int num, long size, boolean recallBytesMustWork) throws IOException, NoSuchPartException {
         final long seed = 1000 * 8000 + 9737 + num + size;
 
         for (int i = 0; i < num; ++i) {
@@ -53,6 +59,30 @@ public class StashManagerTest extends TestCase {
             assertEquals(size, sm.getSize(i));
             InputStream is = sm.recall(i);
             assertTrue(HexUtils.compareInputStreams(is, true, new RandomInputStream(seed + i, size), true));
+        }
+
+        for (int i = 0; i < num; ++i) {
+            assertTrue(sm.peek(i));
+            assertEquals(size, sm.getSize(i));
+
+
+            final boolean byteArrayAvailable = sm.isByteArrayAvailable(i);
+            if (recallBytesMustWork || byteArrayAvailable) {
+                assertTrue(byteArrayAvailable);
+                byte[] got = sm.recallBytes(i); // must not throw
+
+                ByteArrayOutputStream out = new ByteArrayOutputStream();
+                HexUtils.copyStream(new RandomInputStream(seed + i, size), out);
+                assertTrue(Arrays.equals(out.toByteArray(), got));
+
+            } else if (!byteArrayAvailable) {
+                try {
+                    sm.recallBytes(i);
+                    fail("Failed to throw on recallBytes() after isByteArrayAvailable() returned false");
+                } catch (NoSuchPartException e) {
+                    log.info("Caught expected exception on recallBytes after !isBytes: " + e.getMessage());
+                }
+            }
         }
 
         if (num > 0) {
@@ -77,7 +107,7 @@ public class StashManagerTest extends TestCase {
             assertFalse(sm.peek(i));
     }
 
-    private void doTestStashManager(boolean isLimitedByRam, StashManagerFactory factory) throws IOException {
+    private void doTestStashManager(boolean isLimitedByRam, StashManagerFactory factory) throws IOException, NoSuchPartException {
         StashManager sm = factory.createNewStashManager();
         stashAndRecall(sm, 20, 2048);
         sm.close();
@@ -102,7 +132,7 @@ public class StashManagerTest extends TestCase {
         }
     }
 
-    public void testByteArrayStashManager() throws IOException {
+    public void testByteArrayStashManager() throws Exception {
         // this is limited by RAM, so should not attempt to test the 30mb part
         doTestStashManager(true, new StashManagerFactory() {
             public StashManager createNewStashManager() {
@@ -111,7 +141,7 @@ public class StashManagerTest extends TestCase {
         });
     }
 
-    public void testFileStashManager() throws IOException {
+    public void testFileStashManager() throws Exception {
         // this is not limited by ram, so go ahead and test the 30mb part
         doTestStashManager(false, new StashManagerFactory() {
             public StashManager createNewStashManager() throws IOException {
@@ -120,7 +150,7 @@ public class StashManagerTest extends TestCase {
         });
     }
 
-    public void testHybridStashManager() throws IOException {
+    public void testHybridStashManager() throws Exception {
         // this is not limited by ram, so go ahead and test the 30mb part
         doTestStashManager(false, new StashManagerFactory() {
             public StashManager createNewStashManager() {

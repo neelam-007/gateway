@@ -260,10 +260,8 @@ public class MessageProcessor {
         } finally {
             try {
                 EventManager.fire(new MessageProcessed(request, response, status));
-            } finally {
-                // clean up the mulitpart reader cache if exists
-                request.close();
-                response.close();
+            } catch (Throwable t) {
+                logger.log(Level.WARNING, "EventManager threw exception logging message processing result", t);
             }
         }
     }

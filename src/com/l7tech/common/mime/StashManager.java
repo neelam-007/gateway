@@ -68,10 +68,35 @@ public interface StashManager {
      * ordinal is currently stashed in this StashManager.
      *
      * @param ordinal the ordinal that was used in a previous call to stash().
-     * @return an InputStream ready to play back the exact bytes that were previously stashed, followed by EOF.
+     * @return an InputStream ready to play back the exact bytes that were previously stashed, followed by EOF.  Never null.
      * @throws IOException if there is a problem producing the InputStream.
+     * @throws NoSuchPartException if no InputStream is currently stashed using this ordinal
      */
-    InputStream recall(int ordinal) throws IOException;
+    InputStream recall(int ordinal) throws IOException, NoSuchPartException;
+
+    /**
+     * Check if recallBytes() on the specified ordinal would be able to return a byte array.  The general
+     * contract is that a StashManager will only return a byte array if it already has one available; otherwise,
+     * it should require you to recall the InputStream instead.
+     *
+     * @param ordinal the ordinal that was used in a previous call to stash()
+     * @return true if a call to {@link #recallBytes} would succeed; otherwise, false
+     */
+    boolean isByteArrayAvailable(int ordinal);
+
+    /**
+     * Get the specified previously-stashed part as a byte array, if possible.  The general contract is that
+     * a StashManager will only return a byte array if it already has one available; otherwise, it
+     * should require you to recall the InputStream instead.
+     * <p>
+     * Because this is only allowed to work if a byte array is already available, this method does not
+     * need to throw IOException.
+     *
+     * @param ordinal the ordinal that was used in a previous call to stash()
+     * @return the byte array content of the stashed part.  Never null.
+     * @throws NoSuchPartException if no byte array is currently on hand for this ordinal
+     */
+    byte[] recallBytes(int ordinal) throws NoSuchPartException;
 
     /**
      * Check to see if an InputStream with the specified ordinal is currently available in the stash.

@@ -6,27 +6,26 @@
 
 package com.l7tech.message;
 
+import com.l7tech.common.io.EmptyInputStream;
 import com.l7tech.common.mime.ContentTypeHeader;
-import com.l7tech.common.mime.MultipartMessage;
 import com.l7tech.common.mime.NoSuchPartException;
-import com.l7tech.common.mime.PartInfo;
 import com.l7tech.common.util.CausedIOException;
+import com.l7tech.common.util.CausedIllegalStateException;
 import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.util.XmlUtil;
-import com.l7tech.server.MessageProcessor;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
-import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
-import org.xmlpull.v1.XmlPullParser;
-import org.xmlpull.v1.XmlPullParserException;
 
-import java.io.*;
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.Iterator;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
+ * Manage an XML message.  Not even close to thread-safe.
  * @author alex
  * @version $Revision$
  */
@@ -35,61 +34,11 @@ public abstract class XmlMessageAdapter extends MessageAdapter implements XmlMes
 
     public XmlMessageAdapter( TransportMetadata tm ) {
         super(tm);
-    }
-
-    synchronized void parse( String xml ) throws SAXException, IOException {
-        // TODO: Ensure this is a lazy parser
-        _document = XmlUtil.getDocumentBuilder().parse( new InputSource( new StringReader( xml ) ) );
-    }
-
-    public synchronized XmlPullParser pullParser( String xml ) throws XmlPullParserException {
-        XmlPullParser xpp = MessageProcessor.getInstance().getPullParser();
-        xpp.setInput( new StringReader( xml ) );
-        return xpp;
-    }
-
-    /**
-     * Gets the XML part of the message from the provided reader.
-     * <p>
-     * Works with both multipart/related (SOAP with Attachments) as long as the first part is text/xml,
-     * and of course without attachments.
-     * <p>
-     * @param is the underlying input stream for the message
-     * @param id the String representation of the request id (or response Id - not supported yet) for forming part
-     *           of the file name for storing the raw attachments if buffer limit exceeded.
-     * @return the XML as a String.  Never null.
-     * @throws IOException if a multipart message has an invalid format, or the content cannot be read
-     */
-    protected String getMessageXml(InputStream is, String id) throws IOException {
-
-        setInputStream(is);
-        MultipartMessage mm = getMultipartMessage();
-
-        final PartInfo soapPart;
         try {
-            soapPart = mm.getPart(0);
-        } catch (NoSuchPartException e) {
-            throw new CausedIOException("Incoming message was missing the first multipart part");
+            initialize(new EmptyInputStream(), ContentTypeHeader.XML_DEFAULT);
+        } catch (IOException e) {
+            throw new RuntimeException(e); // can't happen
         }
-
-        // First part must be XML currently
-        if (!soapPart.getContentType().getType().equalsIgnoreCase("text") ||
-            !soapPart.getContentType().getSubtype().equalsIgnoreCase("xml"))
-            throw new IOException("Incoming message did not have text/xml as first part");
-
-        InputStream soapStream = soapPart.getInputStream(true); // don't bother saving soap part, since we will be parsing it immediately
-
-        BufferedReader reader = new BufferedReader(
-                new InputStreamReader(soapStream, soapPart.getContentType().getEncoding()));
-
-        StringBuffer xml = new StringBuffer();
-        char[] buf = new char[4096];
-        int read = reader.read(buf);
-        while (read > 0) {
-            xml.append(buf, 0, read);
-            read = reader.read(buf);
-        }
-        return xml.toString();
     }
 
     public boolean isSoap() {
@@ -138,6 +87,40 @@ public abstract class XmlMessageAdapter extends MessageAdapter implements XmlMes
         } catch (SAXException e) {
             throw new CausedIOException("Unable to serialize message XML", e);
         }
+    }
+
+    protected void invalidateFirstBodyPart() {
+        super.invalidateFirstBodyPart();
+        _document = null;
+    }
+
+    public Document getDocument() throws SAXException, IOException {
+        if (_document != null)
+            return _document;
+
+        InputStream in;
+        try {
+            in = getFirstPart().getInputStream(false);  // TODO should be no problem consuming document here
+        } catch (NoSuchPartException e) {
+            throw new CausedIllegalStateException("First part's body was already destructively read", e);
+        }
+
+        invalidateFirstBodyPart();
+        _document = XmlUtil.parse(in);
+        return _document;
+    }
+
+    public void setDocument(Document doc) {
+        if (!isInitialized()) {
+            try {
+                // TODO remove this if possible; hopefully we don't really need auto-init after all
+                initialize(new ByteArrayInputStream(XmlUtil.nodeToString(doc).getBytes()), ContentTypeHeader.XML_DEFAULT);
+            } catch (IOException e) {
+                throw new RuntimeException(e); // can't happen
+            }
+        }
+        invalidateFirstBodyPart();
+        _document = doc;
     }
 
     protected Document _document;

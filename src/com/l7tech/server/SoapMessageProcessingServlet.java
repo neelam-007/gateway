@@ -6,8 +6,9 @@
 
 package com.l7tech.server;
 
-import com.l7tech.common.mime.MimeUtil;
+import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.common.protocol.SecureSpanConstants;
+import com.l7tech.common.util.HexUtils;
 import com.l7tech.common.util.SoapFaultUtils;
 import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.xml.SoapFaultDetail;
@@ -28,7 +29,10 @@ import javax.servlet.ServletOutputStream;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import java.io.*;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.io.PrintWriter;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -90,54 +94,62 @@ public class SoapMessageProcessingServlet extends HttpServlet {
 
     public void doPost(HttpServletRequest hrequest, HttpServletResponse hresponse) throws ServletException, IOException {
         HttpTransportMetadata htm = new HttpTransportMetadata(hrequest, hresponse);
-        HttpSoapRequest sreq = new HttpSoapRequest(htm);
         HttpSoapResponse sresp = new HttpSoapResponse(htm);
+        HttpSoapRequest sreq = new HttpSoapRequest(htm);
 
-        BufferedWriter respWriter = null;
-        OutputStream os = hresponse.getOutputStream();
+        // Initialize request
+        String rawct = hrequest.getContentType();
+        ContentTypeHeader ctype;
+        if (rawct != null && rawct.length() > 0)
+            ctype = ContentTypeHeader.parseValue(rawct);
+        else
+            ctype = ContentTypeHeader.XML_DEFAULT;
+        sreq.initialize(hrequest.getInputStream(), ctype);
+
         AssertionStatus status = AssertionStatus.UNDEFINED;
         try {
             try {
                 status = MessageProcessor.getInstance().processMessage(sreq, sresp);
 
                 sresp.setHeadersIn(hresponse, sresp, status);
-                String protRespXml = sresp.getXml();
 
                 if (status == AssertionStatus.NONE) {
                     logger.fine("servlet transport returning 200");
-                    if (protRespXml == null) {
-                        logger.fine("Sending empty response");
-                    } else {
-                        String ctype = (String)sresp.getParameter(Response.PARAM_HTTP_CONTENT_TYPE);
-                        if (ctype == null || ctype.length() == 0) {
-                            ctype = DEFAULT_CONTENT_TYPE;
-                            hresponse.setContentType(ctype);
+                    if (sresp.isInitialized()) {
+                        String rctype = (String)sresp.getParameter(Response.PARAM_HTTP_CONTENT_TYPE);
+                        if (rctype == null || rctype.length() == 0) {
+                            rctype = DEFAULT_CONTENT_TYPE;
+                            hresponse.setContentType(rctype);
                         }
 
-                        // TODO verify proper behaviour of attachments here
-                        respWriter = new BufferedWriter(new OutputStreamWriter(os, ENCODING));
-                        respWriter.write(protRespXml);
+                        HexUtils.copyStream(sresp.getEntireMessageBody(), hresponse.getOutputStream());
+                        return;
                     }
                 } else if (sresp.isAuthenticationMissing() || status.isAuthProblem()) {
                     logger.fine("servlet transport returning challenge");
                     sendChallenge(sreq, sresp, hrequest, hresponse);
+                    return;
                 } else if (sresp.getFaultDetail() != null) {
                     logger.fine("returning special soap fault");
                     sendFault(sreq, sresp, sresp.getFaultDetail(), hrequest, hresponse);
+                    return;
                 } else {
                     logger.fine("servlet transport returning 500");
                     sendFault(sreq, sresp, hrequest, hresponse, HttpServletResponse.SC_INTERNAL_SERVER_ERROR,
                               status.getSoapFaultCode(), status.getMessage());
+                    return;
                 }
             } catch (PolicyAssertionException pae) {
                 logger.log(Level.SEVERE, pae.getMessage(), pae);
                 sendFault(sreq, sresp, hrequest, hresponse, HttpServletResponse.SC_INTERNAL_SERVER_ERROR,
                           SoapFaultUtils.FC_SERVER, pae.toString());
+                return;
             } catch (PolicyVersionException pve) {
                 String msg = "Request referred to an outdated version of policy";
                 logger.log(Level.INFO, msg );
                 sendFault(sreq, sresp, hrequest, hresponse, HttpServletResponse.SC_EXPECTATION_FAILED,
                           SoapFaultUtils.FC_CLIENT, msg);
+                return;
             }
         } catch (Throwable e) {
             logger.log(Level.SEVERE, e.getMessage(), e);
@@ -166,8 +178,6 @@ public class SoapMessageProcessingServlet extends HttpServlet {
                 pc.close();
             }
 
-            try { if (respWriter != null) respWriter.close(); } catch (Throwable t) {}
-
             try {
                 InputStream reqInput = htm.getRequest().getInputStream();
                 if (reqInput != null) reqInput.close();
@@ -180,6 +190,22 @@ public class SoapMessageProcessingServlet extends HttpServlet {
                 if (respOutput != null) respOutput.close();
             } catch (IOException e) {
 //                logger.log(Level.INFO, "Caught IOException closing response output stream", e);
+            }
+
+            if (sreq != null) {
+                try {
+                    sreq.close();
+                } catch (Throwable t) {
+                    logger.log(Level.SEVERE, "Unexpected exception from SoapRequest.close()", t);
+                }
+            }
+
+            if (sresp != null) {
+                try {
+                    sresp.close();
+                } catch (Throwable t) {
+                    logger.log(Level.SEVERE, "Unexpected exception from SoapRequest.close()", t);
+                }
             }
         }
     }

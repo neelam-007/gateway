@@ -79,11 +79,20 @@ public interface Message {
     ContentTypeHeader getOuterContentType() throws IOException;
 
     /**
-     * Attach an InputStream to this message.
+     * Initialize or reinitialize this Message with the specified InputStream, whose bytes are to be interpreted
+     * according to the specified outer Content-Type.  Once initialized, this Message takes ownership of the
+     * InputStream but does not close it.
      *
-     * @param stream An <code>InputStream</code> pointing to the response from the protected service.
+     * @param messageBody       the InputStream that will be read as needed to discover message parts.  Not null.
+     * @param outerContentType  the content type to use to interpret this InputStream.  Not null.
+     *                          See {@link ContentTypeHeader} for some default value.
+     * @throws IOException      if the Content Type was multipart, but the opening multipart boundary was not found.
+     * @throws IOException      if there was a problem reading from the messageBody InputStream.
      */
-    void setInputStream( InputStream stream );
+    void initialize( InputStream messageBody, ContentTypeHeader outerContentType ) throws IOException;
+
+    /** @return true if initialize() has been successfully called on this Message */
+    boolean isInitialized();
 
     /** Adds a Runnable to a list of operations to be run when the message is closed (i.e. closing sockets or database connections) */
     void runOnClose( Runnable runMe );
@@ -95,6 +104,14 @@ public interface Message {
      * @throws IOException
      */
     boolean isMultipart() throws IOException;
+
+    /**
+     * Get the first part of this message, if it's been initialized.
+     *
+     * @return PartInfo describing the first part.  Never null.
+     * @throws IllegalStateException if this message has not been initialized 
+     */
+    PartInfo getFirstPart();
 
     /**
      * Obtain an iterator that can be used to lazily iterate some or all parts in the MultipartMessage.

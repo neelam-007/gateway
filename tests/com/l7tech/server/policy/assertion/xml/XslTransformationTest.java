@@ -1,19 +1,19 @@
 package com.l7tech.server.policy.assertion.xml;
 
+import com.l7tech.common.util.HexUtils;
+import com.l7tech.common.util.XmlUtil;
+import com.l7tech.policy.assertion.xml.XslTransformation;
+import junit.framework.Test;
+import junit.framework.TestCase;
+import junit.framework.TestSuite;
+import org.w3c.dom.Document;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
-import org.w3c.dom.Document;
 
-import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
 import java.io.IOException;
 import java.io.InputStream;
-
-import com.l7tech.common.util.HexUtils;
-import com.l7tech.policy.assertion.xml.XslTransformation;
-import junit.framework.TestCase;
-import junit.framework.Test;
-import junit.framework.TestSuite;
 
 /**
  * Tests ServerXslTransformation and XslTransformation classes.
@@ -43,7 +43,7 @@ public class XslTransformationTest extends TestCase {
         assertion.setXslSrc(xslStr);
         assertion.setDirection(XslTransformation.APPLY_TO_REQUEST);
         ServerXslTransformation transformer = new ServerXslTransformation(assertion);
-        String res = transformer.transform(getResAsDoc(SOAPMSG_WITH_WSSE));
+        String res = XmlUtil.nodeToString(transformer.transform(getResAsDoc(SOAPMSG_WITH_WSSE)));
         // visual inspection - todo automate the verification of the transformation
         System.out.println(res);
     }
@@ -54,7 +54,7 @@ public class XslTransformationTest extends TestCase {
         assertion.setXslSrc(xslStr);
         assertion.setDirection(XslTransformation.APPLY_TO_REQUEST);
         ServerXslTransformation transformer = new ServerXslTransformation(assertion);
-        String res = transformer.transform(getResAsDoc(SOAPMSG_WITH_WSSE));
+        String res = XmlUtil.nodeToString(transformer.transform(getResAsDoc(SOAPMSG_WITH_WSSE)));
         // visual inspection - todo automate the verification of the transformation
         System.out.println(res);
     }

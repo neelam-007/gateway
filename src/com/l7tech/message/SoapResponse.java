@@ -1,16 +1,11 @@
 package com.l7tech.message;
 
 import com.l7tech.common.security.xml.decorator.DecorationRequirements;
-import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.xml.SoapFaultDetail;
 import com.l7tech.policy.assertion.AssertionResult;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.server.MessageProcessor;
-import org.w3c.dom.Document;
-import org.xml.sax.SAXException;
 
-import java.io.IOException;
-import java.io.InputStream;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -28,43 +23,6 @@ public abstract class SoapResponse extends XmlMessageAdapter implements SoapMess
     public SoapResponse( TransportMetadata tm ) {
         super(tm);
         MessageProcessor.setCurrentResponse( this );
-    }
-
-    public synchronized void setXml( String xml ) {
-        _responseXml = xml;
-        _document = null;
-    }
-
-    // TODO check handling of attachments; perhaps return stream here instead of String
-    public synchronized String getXml() throws IOException {
-        if (_responseXml == null && _document != null) {
-            // serialize the document
-            _responseXml = XmlUtil.nodeToString(_document);
-        } else if ( _responseXml == null ) {
-            // TODO: Encoding?
-            InputStream protectedResponseStream = getInputStream();
-            if ( protectedResponseStream != null ) {
-                _responseXml = getMessageXml(protectedResponseStream, null);
-            }
-        }
-        return _responseXml;
-    }
-
-    public void setDocument(Document doc) {
-        _document = doc;
-        _responseXml = null;
-    }
-
-    public synchronized Document getDocument() throws IOException, SAXException {
-        if (_document == null) {
-            String xml = getXml();
-            if (xml == null || xml.length() == 0) {
-                throw new NoDocumentPresentException();
-            } else {
-                _document = XmlUtil.stringToDocument(xml);
-            }
-        }
-        return _document;
     }
 
     public synchronized void addResult( AssertionResult result ) {
@@ -151,7 +109,6 @@ public abstract class SoapResponse extends XmlMessageAdapter implements SoapMess
     }
 
     private List _assertionResults = Collections.EMPTY_LIST;
-    private String _responseXml;
     private boolean _authMissing;
     private boolean _policyViolated;
     private DecorationRequirements _decorationRequirements = null;

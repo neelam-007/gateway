@@ -6,6 +6,7 @@
 
 package com.l7tech.server.transport.jms;
 
+import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.message.SoapRequest;
 
 import javax.jms.BytesMessage;
@@ -29,9 +30,11 @@ public class JmsSoapRequest extends SoapRequest {
 
     private final Logger _logger = Logger.getLogger(getClass().getName());
 
-    public JmsSoapRequest( JmsTransportMetadata mt ) {
+    public JmsSoapRequest( JmsTransportMetadata mt ) throws IOException {
         super( mt );
         _jms = mt;
+        // Initialize myself
+        initialize(doGetRequestInputStream(), ContentTypeHeader.XML_DEFAULT);
     }
 
     protected InputStream doGetRequestInputStream() throws IOException {

@@ -90,6 +90,9 @@ public class XmlUtilTest extends TestCase {
 
         Element nil = XmlUtil.findOnlyOneChildElementByName( security, "Foo", "Bar" );
         assertNull(nil);
+
+        Element sec2 = XmlUtil.findOnlyOneChildElement(header);
+        assertEquals(security, sec2);
     }
 
 
@@ -149,6 +152,14 @@ public class XmlUtilTest extends TestCase {
         assertTrue(SoapUtil.SECURITY_NAMESPACE4.equals(sec1.getNamespaceURI()));
         assertTrue(SoapUtil.SECURITY_NAMESPACE2.equals(sec2.getNamespaceURI()));
         assertTrue(SoapUtil.SECURITY_NAMESPACE.equals(sec3.getNamespaceURI()));
+    }
+
+    public void testGetPayloadNamespaceUri() throws Exception {
+        Document d = XmlUtil.stringToDocument(DOC_WITH_SEC_HEADERS);
+        assertNull(SoapUtil.getPayloadNamespaceUri(d));
+
+        d = TestDocuments.getTestDocument(TestDocuments.DOTNET_SIGNED_REQUEST);
+        assertEquals("http://warehouse.acme.com/ws", SoapUtil.getPayloadNamespaceUri(d));
     }
 
     public void testFindActivePrefixForNamespace() throws Exception {

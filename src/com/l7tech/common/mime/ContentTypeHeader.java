@@ -27,7 +27,9 @@ public class ContentTypeHeader extends MimeHeader {
     static {
         try {
             XML_DEFAULT = parseValue("text/xml; charset=utf8");
+            XML_DEFAULT.getEncoding();
             OCTET_STREAM_DEFAULT = parseValue("application/octet-stream");
+            OCTET_STREAM_DEFAULT.getEncoding();
         } catch (IOException e) {
             throw new Error(e);
         }
@@ -35,6 +37,8 @@ public class ContentTypeHeader extends MimeHeader {
 
     private final String type;
     private final String subtype;
+
+    private String encoding = null; // figured out lazy-like
 
     /**
      * Create a new ContentTypeHeader with the specified type, subtype, and parameters.  Currently
@@ -66,7 +70,7 @@ public class ContentTypeHeader extends MimeHeader {
 
     /**
      * Parse a MIME Content-Type: header, not including the header name and colon.
-     * Example: <code>parseHeader("text/html; charset=\"UTF-8\"")</code>
+     * Example: <code>{@link #parseValue}("text/html; charset=\"UTF-8\"")</code>
      *
      * @param contentTypeHeaderValue the header value to parse
      * @return a ContentTypeHeader instance.  Never null.
@@ -152,15 +156,18 @@ public class ContentTypeHeader extends MimeHeader {
      *         is not guaranteed to be meaningful on this system, however.
      */
     public String getEncoding() {
-        String mimeCharset = (String)getParam("charset");
-        String javaCharset = null;
-        if (mimeCharset == null) {
-            logger.info("No charset value found in Content-Type header; assuming UTF-8");
-            javaCharset = "UTF-8";
-        } else {
-            javaCharset = MimeUtility.javaCharset(mimeCharset);
+        if (encoding == null) {
+            String mimeCharset = (String)getParam("charset");
+            String javaCharset = null;
+            if (mimeCharset == null) {
+                logger.info("No charset value found in Content-Type header; assuming UTF-8");
+                javaCharset = "UTF-8";
+            } else {
+                javaCharset = MimeUtility.javaCharset(mimeCharset);
+            }
+            encoding = javaCharset;
         }
-        return javaCharset;
+        return encoding;
     }
 
     /** @return the type, ie "text".  never null */

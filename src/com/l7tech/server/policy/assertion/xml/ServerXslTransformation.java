@@ -15,10 +15,9 @@ import javax.xml.transform.Transformer;
 import javax.xml.transform.TransformerConfigurationException;
 import javax.xml.transform.TransformerException;
 import javax.xml.transform.TransformerFactory;
+import javax.xml.transform.dom.DOMResult;
 import javax.xml.transform.dom.DOMSource;
-import javax.xml.transform.stream.StreamResult;
 import javax.xml.transform.stream.StreamSource;
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.StringReader;
 import java.util.logging.Level;
@@ -70,7 +69,7 @@ public class ServerXslTransformation implements ServerAssertion {
         }
 
         // 2. Apply the transformation
-        String output = null;
+        Document output = null;
         try {
             output = transform(doctotransform);
         } catch (TransformerException e) {
@@ -82,21 +81,21 @@ public class ServerXslTransformation implements ServerAssertion {
         // 3. Replace original document with output from transformation
         switch (subject.getDirection()) {
             case XslTransformation.APPLY_TO_REQUEST:
-                ((SoapRequest)req).setXml(output);
+                ((SoapRequest)req).setDocument(output);
                 break;
             case XslTransformation.APPLY_TO_RESPONSE:
-                ((SoapResponse)res).setXml(output);
+                ((SoapResponse)res).setDocument(output);
                 break;
         }
 
         return AssertionStatus.NONE;
     }
 
-    String transform(Document source) throws TransformerException {
+    Document transform(Document source) throws TransformerException {
         Transformer transformer = makeTransformer(subject.getXslSrc());
-        ByteArrayOutputStream output = new ByteArrayOutputStream();
-        transformer.transform(new DOMSource(source), new StreamResult(output));
-        return output.toString();
+        final DOMResult outputTarget = new DOMResult();
+        transformer.transform(new DOMSource(source), outputTarget);
+        return outputTarget.getNode().getOwnerDocument();
     }
 
     /**

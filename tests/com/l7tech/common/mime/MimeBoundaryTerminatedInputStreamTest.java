@@ -476,4 +476,9 @@ public class MimeBoundaryTerminatedInputStreamTest extends TestCase {
             log.info("Received expected IOException when trying to read preamble with no CRLF before initial boundary: " + e.getMessage());
         }
     }
+
+    public void testEmptyPart() throws Exception {
+        String mess = "\r\n--foo\r\nContent-Type: application/octet-stream\r\nContent-Length: 0\r\n\r\n--foo--";
+        readParts(mess.getBytes(), 1, 512);
+    }
 }

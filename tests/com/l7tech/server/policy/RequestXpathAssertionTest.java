@@ -1,10 +1,9 @@
 package com.l7tech.server.policy;
 
 import com.l7tech.common.RequestId;
-import com.l7tech.common.mime.PartInfo;
 import com.l7tech.common.mime.ContentTypeHeader;
+import com.l7tech.common.mime.PartInfo;
 import com.l7tech.common.mime.PartIterator;
-import com.l7tech.common.mime.NoSuchPartException;
 import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.xml.TestDocuments;
 import com.l7tech.common.xml.XpathEvaluator;
@@ -22,10 +21,8 @@ import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
 import org.w3c.dom.Document;
-import org.xml.sax.SAXException;
 
 import java.io.IOException;
-import java.io.Reader;
 import java.io.InputStream;
 import java.util.Collection;
 import java.util.HashMap;
@@ -64,7 +61,7 @@ public class RequestXpathAssertionTest extends TestCase {
         Map namespaces = new HashMap();
         namespaces.putAll(XpathEvaluator.getNamespaces(SoapUtil.asSOAPMessage(testDoc)));
         ServerRequestXpathAssertion serverAssertion = getAssertion(new XpathExpression(expression, namespaces));
-        XmlRequest req = getTestRequest(testDoc);
+        XmlRequest req = getTestRequest(testDoc); // TODO there must be a better way to do this
         return serverAssertion.checkRequest(req, null);
     }
 
@@ -123,10 +120,6 @@ public class RequestXpathAssertionTest extends TestCase {
                 return null;
             }
             public void setDocument(Document doc) {}
-            public String getXml() throws IOException {
-                return null;
-            }
-            public void setXml(String xml) {}
 
             public TransportMetadata getTransportMetadata() {
                 return null;
@@ -148,37 +141,46 @@ public class RequestXpathAssertionTest extends TestCase {
             public void addDeferredAssertion(ServerAssertion owner, ServerAssertion decoration) {}
             public void removeDeferredAssertion(ServerAssertion owner) {}
 
-            public ContentTypeHeader getOuterContentType() throws IOException {
+            public ContentTypeHeader getOuterContentType() {
                 return null;
             }
 
-            public void setInputStream(InputStream stream) {
+            public void initialize(InputStream messageBody, ContentTypeHeader outerContentType) throws IOException {
+
+            }
+
+            public boolean isInitialized() {
+                return true;
             }
 
             public void runOnClose(Runnable runMe) {
             }
 
-            public boolean isMultipart() throws IOException {
+            public boolean isMultipart() {
                 return false;
             }
 
-            public PartIterator getParts() throws IOException {
+            public PartInfo getFirstPart() {
                 return null;
             }
 
-            public PartInfo getPartByContentId(String contentId) throws IOException, NoSuchPartException {
+            public PartIterator getParts() {
                 return null;
             }
 
-            public boolean isAdditionalUnreadPartsPossible() throws IOException {
+            public PartInfo getPartByContentId(String contentId) {
+                return null;
+            }
+
+            public boolean isAdditionalUnreadPartsPossible() {
                 return false;
             }
 
-            public long getContentLength() throws IOException, SAXException {
+            public long getContentLength() {
                 return 0;
             }
 
-            public InputStream getEntireMessageBody() throws IOException, SAXException {
+            public InputStream getEntireMessageBody() {
                 return null;
             }
 

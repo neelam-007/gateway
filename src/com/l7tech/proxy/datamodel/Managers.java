@@ -6,8 +6,8 @@
 
 package com.l7tech.proxy.datamodel;
 
-import com.l7tech.common.mime.StashManager;
 import com.l7tech.common.mime.HybridStashManager;
+import com.l7tech.common.mime.StashManager;
 import com.l7tech.proxy.ClientProxy;
 
 import java.io.File;
@@ -61,6 +61,8 @@ public class Managers {
      */
     public static StashManager createStashManager() {
         final File dir = new File(ClientProxy.PROXY_CONFIG + "/attachments");
+        if (!dir.exists())
+            dir.mkdir();
         return new HybridStashManager(ClientProxy.ATTACHMENT_DISK_THRESHOLD, dir,
                                       "att" + getStashFileUnique());
     }

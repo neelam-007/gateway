@@ -151,7 +151,7 @@ public class SecureSpanBridgeFactory {
 
         public SecureSpanBridge.Result send(String soapAction, Document message) throws SendException, IOException, CausedBadCredentialsException, CausedCertificateAlreadyIssuedException {
             final URL origUrl = new URL("http://layer7tech.com" + localUri);
-            String namespaceUri = SoapUtil.getNamespaceUri(message);
+            String namespaceUri = SoapUtil.getPayloadNamespaceUri(message);
             PolicyAttachmentKey pak = new PolicyAttachmentKey(namespaceUri, soapAction, origUrl.getFile());
             PendingRequest pr = new PendingRequest(ssg, null, null, message, nri, pak, origUrl);
             try {

@@ -34,6 +34,7 @@ import org.xml.sax.SAXException;
 
 import javax.crypto.SecretKey;
 import javax.net.ssl.SSLException;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.MalformedURLException;
@@ -64,6 +65,7 @@ public class MessageProcessor {
 
     public static final String PROPERTY_LOGPOSTS = "com.l7tech.proxy.processor.logPosts";
     public static final String PROPERTY_LOGRESPONSE = "com.l7tech.proxy.processor.logResponses";
+    public static final String PROPERTY_LOGATTACHMENTS = "com.l7tech.proxy.processor.logAttachments";
     public static final String PROPERTY_REFORMATLOGGEDXML = "com.l7tech.proxy.processor.reformatLoggedXml";
     private static final Policy SSL_POLICY = new Policy(new SslAssertion(), null);
     private static Pattern findServiceid = Pattern.compile("^.*\\&?serviceoid=(.+?)(\\&.*|)", Pattern.DOTALL);
@@ -529,11 +531,22 @@ public class MessageProcessor {
                 postMethod.addRequestHeader(SecureSpanConstants.HttpHeaders.POLICY_VERSION, policy.getVersion());
 
             String postBody = XmlUtil.nodeToString(req.getDecoratedDocument());
-            if (logPosts()) {
-                if (reformatLogs())
-                    log.info("Posting to Gateway (reformatted): " + XmlUtil.nodeToFormattedString(req.getDecoratedDocument()));
-                else
-                    log.info("Posting to Gateway: " + postBody);
+
+            if (LogFlags.logPosts) {
+                if (LogFlags.reformatLoggedXml) {
+                    log.info("Posting to Gateway (reformatted):\n" +
+                             XmlUtil.nodeToFormattedString(req.getDecoratedDocument()));
+                } else {
+                    if (LogFlags.logAttachments && req.isMultipart()) {
+                        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+                        InputStream bodyStream = req.getEntireMessageBody();
+                        HexUtils.copyStream(bodyStream, baos);
+                        log.info("Posting to Gateway (unformatted, including attachments):\n" +
+                                 baos.toString(req.getOuterContentType().getEncoding()));
+                    } else {
+                        log.info("Posting to Gateway (unformatted):\n" + postBody);
+                    }
+                }
             }
 
             InputStream is = null;
@@ -626,9 +639,12 @@ public class MessageProcessor {
             final ContentTypeHeader outerContentType = ContentTypeHeader.parseValue(contentType.getValue());
             if (!(outerContentType.isXml() || outerContentType.isMultipart()))
                 throw new IOException("Response from Gateway was unsupported Content-Type " + outerContentType.getFullValue());
+
+            InputStream responseBodyAsStream = postMethod.getResponseBodyAsStream();
+            //responseBodyAsStream = new TeeInputStream(responseBodyAsStream, System.err);
             final MultipartMessage multipartMessage = new MultipartMessage(Managers.createStashManager(),
                                                                            outerContentType,
-                                                                           postMethod.getResponseBodyAsStream());
+                                                                           responseBodyAsStream);
 
             PartInfo firstPart = multipartMessage.getFirstPart();
             ContentTypeHeader firstPartContentType = firstPart.getContentType();
@@ -636,15 +652,26 @@ public class MessageProcessor {
                 throw new IOException("Multipart response from Gateway contained a non-XML first part of type " + firstPartContentType.getFullValue());
             // TODO pester Sun for a DocumentBuilder that will take an encoding hint along with the InputStream
             // we'll eat (destructively read) the first body part here; it will always be overwritten anyway by the undecorated XML
-            Document responseDocument = XmlUtil.parse(firstPart.getInputStream(true));
+            boolean destroyAsRead = !LogFlags.logResponse; // save it if we'll need to log it
+            Document responseDocument = XmlUtil.parse(firstPart.getInputStream(destroyAsRead));
 
-            if (logResponse()) {
-                if (reformatLogs()) {
-                    String logStr = XmlUtil.nodeToFormattedString(responseDocument);
-                    log.info("Got response from Gateway (reformatted): " + logStr);
+            if (LogFlags.logResponse) {
+                if (LogFlags.reformatLoggedXml) {
+                    String logStr = multipartMessage.getOuterContentType().toString() + "\r\n" +
+                            XmlUtil.nodeToFormattedString(responseDocument);
+                    log.info("Got response from Gateway (reformatted):\n" + logStr);
                 } else {
-                    String logStr = XmlUtil.nodeToString(responseDocument);
-                    log.info("Got response from Gateway: " + logStr);
+                    if (LogFlags.logAttachments && multipartMessage.isMultipart()) {
+                        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+                        InputStream bodyStream = multipartMessage.getEntireMessageBodyAsInputStream(false);
+                        HexUtils.copyStream(bodyStream, baos);
+                        log.info("Got response from Gateway (unformatted, including attachments):\n" +
+                                 baos.toString(multipartMessage.getOuterContentType().getEncoding()));
+                    } else {
+                        String logStr = multipartMessage.getOuterContentType().toString() + "\r\n" +
+                                XmlUtil.nodeToString(responseDocument);
+                        log.info("Got response from Gateway (unformatted):\n" + logStr);
+                    }
                 }
             }
 
@@ -729,19 +756,8 @@ public class MessageProcessor {
     private static class LogFlags {
         private static final boolean logPosts = Boolean.getBoolean(PROPERTY_LOGPOSTS);
         private static final boolean logResponse = Boolean.getBoolean(PROPERTY_LOGRESPONSE);
+        private static final boolean logAttachments = Boolean.getBoolean(PROPERTY_LOGATTACHMENTS);
         private static final boolean reformatLoggedXml = Boolean.getBoolean(PROPERTY_REFORMATLOGGEDXML);
-    }
-
-    private boolean logPosts() {
-        return LogFlags.logPosts;
-    }
-
-    private boolean logResponse() {
-        return LogFlags.logResponse;
-    }
-
-    private boolean reformatLogs() {
-        return LogFlags.reformatLoggedXml;
     }
 
     /**

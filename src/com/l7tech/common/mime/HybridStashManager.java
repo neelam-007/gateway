@@ -102,11 +102,21 @@ public class HybridStashManager implements StashManager {
         return -1;
     }
 
-    public InputStream recall(int ordinal) throws IOException {
-        InputStream ret = ramstash.recall(ordinal);
+    public InputStream recall(int ordinal) throws IOException, NoSuchPartException {
+        InputStream ret = null;
+        if (ramstash.peek(ordinal))
+            ret = ramstash.recall(ordinal);
         if (ret != null) return ret;
         if (filestash != null) return filestash.recall(ordinal);
         return null;
+    }
+
+    public boolean isByteArrayAvailable(int ordinal) {
+        return ramstash.isByteArrayAvailable(ordinal);
+    }
+
+    public byte[] recallBytes(int ordinal) throws NoSuchPartException {
+        return ramstash.recallBytes(ordinal);
     }
 
     public boolean peek(int ordinal) throws IOException {

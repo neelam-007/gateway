@@ -6,6 +6,7 @@
 
 package com.l7tech.message;
 
+import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.common.util.XmlUtil;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
@@ -27,9 +28,14 @@ public class TestSoapRequest extends SoapRequest {
     public TestSoapRequest(Document requestMessage) {
         super(new TestTransportMetadata());
         this.requestMessage = requestMessage;
+        try {
+            initialize(getInputStream(), ContentTypeHeader.XML_DEFAULT);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 
-    protected InputStream doGetRequestInputStream() throws IOException {
+    private InputStream getInputStream() throws IOException {
         return new ByteArrayInputStream((XmlUtil.nodeToString(requestMessage).getBytes()));
     }
 

@@ -57,14 +57,26 @@ public class ByteArrayStashManager implements StashManager {
         return buf.length;
     }
 
-    public InputStream recall(int ordinal) throws IOException {
+    public InputStream recall(int ordinal) throws IOException, NoSuchPartException {
+        return new ByteArrayInputStream(recallBytes(ordinal));
+    }
+
+    public boolean isByteArrayAvailable(int ordinal) {
+        try {
+            return peek(ordinal);
+        } catch (IOException e) {
+            throw new RuntimeException(e); // can't happen, it's a byte array
+        }
+    }
+
+    public byte[] recallBytes(int ordinal) throws NoSuchPartException {
         if (stashed.size() <= ordinal)
-            return null;
+            throw new NoSuchPartException("No part stashed with the ordinal " + ordinal);
         byte[] buf = (byte[])stashed.get(ordinal);
         if (buf == null)
-            return null;
+            throw new NoSuchPartException("No part stashed with the ordinal " + ordinal);
 
-        return new ByteArrayInputStream(buf);
+        return buf;
     }
 
     public boolean peek(int ordinal) throws IOException {

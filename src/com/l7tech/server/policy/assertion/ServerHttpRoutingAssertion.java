@@ -7,11 +7,11 @@
 package com.l7tech.server.policy.assertion;
 
 import com.l7tech.common.BuildInfo;
+import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.common.mime.MimeUtil;
 import com.l7tech.common.security.xml.SignerInfo;
 import com.l7tech.common.util.KeystoreUtils;
 import com.l7tech.common.util.SoapUtil;
-import com.l7tech.common.util.XmlUtil;
 import com.l7tech.identity.User;
 import com.l7tech.message.*;
 import com.l7tech.policy.assertion.AssertionStatus;
@@ -33,7 +33,8 @@ import javax.net.ssl.TrustManager;
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.wsdl.WSDLException;
-import java.io.*;
+import java.io.IOException;
+import java.io.InputStream;
 import java.net.*;
 import java.security.SignatureException;
 import java.security.cert.CertificateException;
@@ -213,9 +214,8 @@ public class ServerHttpRoutingAssertion extends ServerRoutingAssertion {
                     state.setCredentials(null, null, new UsernamePasswordCredentials(login, new String(password)));
                 }
 
-                String requestXml = request.getXml();
                 if (httpRoutingAssertion.isAttachSamlSenderVouches()) {
-                    Document document = XmlUtil.stringToDocument(requestXml);
+                    Document document = request.getDocument();
                     SamlAssertionGenerator ag = new SamlAssertionGenerator();
                     SignerInfo si = KeystoreUtils.getInstance().getSignerInfo();
                     SamlAssertionGenerator.Options samlOptions = new SamlAssertionGenerator.Options();
@@ -231,10 +231,6 @@ public class ServerHttpRoutingAssertion extends ServerRoutingAssertion {
                     }
                     samlOptions.setExpiryMinutes(httpRoutingAssertion.getSamlAssertionExpiry());
                     ag.attachSenderVouches(document, si, request.getPrincipalCredentials(), samlOptions);
-                    requestXml = XmlUtil.nodeToString(document);
-                    if (logger.isLoggable(Level.FINE)) {
-                        logger.fine(requestXml);
-                    }
                 }
                 attachCookies(client, request.getTransportMetadata(), url);
 
@@ -278,12 +274,9 @@ public class ServerHttpRoutingAssertion extends ServerRoutingAssertion {
             try {
                 InputStream responseStream = postMethod.getResponseBodyAsStream();
                 String ctype = postMethod.getResponseHeader(MimeUtil.CONTENT_TYPE).getValue();
+                ContentTypeHeader outerContentType = ContentTypeHeader.parseValue(ctype);
                 response.setParameter(Response.PARAM_HTTP_CONTENT_TYPE, ctype);
-                response.setInputStream(responseStream);
-
-                String responseXml = response.getXml();
-                response.setXml(responseXml);
-
+                response.initialize(responseStream, outerContentType);
             } catch (IOException e) {
                 logger.log(Level.FINE, "error reading response", e);
                 // here we dont return error because we already routed

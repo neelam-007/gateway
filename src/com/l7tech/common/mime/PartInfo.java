@@ -34,21 +34,43 @@ public interface PartInfo {
      *                      might not be saved and subsequent calls to getInputStream() on the same PartInfo will
      *                      fail.
      * @return the content of this part as an InputStream.  Never null.  Will return EOF at the end of the body part.
-     * @throws IOException if this PartInfo's InputStream has already been destructively read.
+     * @throws NoSuchPartException if this PartInfo's InputStream has already been destructively read.
      * @throws IOException if there is a problem retrieving a stashed InputStream.
      */
-    public InputStream getInputStream(boolean destroyAsRead) throws IOException;
+    public InputStream getInputStream(boolean destroyAsRead) throws IOException, NoSuchPartException;
+
+    /**
+     * Obtain this multipart part's content as a byte array.  Obviously, this will always require reading
+     * the entire part into memory, so only use this if you are certain you would have had to read the
+     * entire part anyway; in any other case, strongly prefer {@link #getInputStream}.
+     * <p>
+     * For parts that have already been stashed in a ByteArrayStashManager this will be more efficient than
+     * calling {@link #getInputStream}.
+     *
+     * @return the bytes that would have been returned by an InputStream from {@link #getInputStream}
+     * @throws NoSuchPartException if this PartInfo's InputStream has already been destructively read.
+     * @throws IOException if there is a problem retrieving a stashed InputStream.
+     */
+    public byte[] getBodyBytesUsingUpMemory() throws IOException, NoSuchPartException;
 
     /**
      * Completely replace the body content of this multipart part.  This may require reading and discarding the
      * old content, and will result in the new content being stashed.
+     * <p>
+     * The Content-Length will be updated with the new length.
      *
-     * @param newBody         the new body content to substitute
-     * @param newContentType  the content type that goes with the new part body
+     * @param newBody         the new body content to substitute.  May be empty but not null.
      * @throws IOException    if there is a problem reading past the original part body in the main InputStream
      * @throws IOException    if there is a problem stashing the new part body
      */
-    public void replaceBody(byte[] newBody, ContentTypeHeader newContentType) throws IOException;
+    public void setBodyBytes(byte[] newBody) throws IOException;
+
+    /**
+     * Replace the Content-Type, perhaps due to a change in body content.
+     *
+     * @param newContentType  the content type.  Must not be null.
+     */
+    public void setContentType(ContentTypeHeader newContentType);
 
     /** @return the MimeHeaders describing this Part.  Never null. */
     public MimeHeaders getHeaders();

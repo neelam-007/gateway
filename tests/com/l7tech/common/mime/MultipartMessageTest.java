@@ -6,6 +6,7 @@
 
 package com.l7tech.common.mime;
 
+import com.l7tech.common.io.EmptyInputStream;
 import com.l7tech.common.util.HexUtils;
 import junit.framework.Test;
 import junit.framework.TestCase;
@@ -15,9 +16,9 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.ArrayList;
 import java.util.logging.Logger;
 
 /**
@@ -36,6 +37,14 @@ public class MultipartMessageTest extends TestCase {
 
     public static void main(String[] args) {
         junit.textui.TestRunner.run(suite());
+    }
+
+    public void testEmptySinglePartMessage() throws Exception {
+        MultipartMessage mm = new MultipartMessage(new ByteArrayStashManager(), ContentTypeHeader.XML_DEFAULT, new EmptyInputStream());
+        assertEquals(-1, mm.getFirstPart().getContentLength()); // size of part not yet known
+        long len = mm.getEntireMessageBodyLength(); // force entire body to be read
+        assertEquals(0, len);
+        assertEquals(0, mm.getFirstPart().getContentLength()); // size now known
     }
 
     public void testSimple() throws Exception {
@@ -61,7 +70,7 @@ public class MultipartMessageTest extends TestCase {
         try {
             rubyStream = rubyPart.getInputStream(false);
             fail("Ruby part was read destructively, and is last part, but was stashed anyway");
-        } catch (IOException e) {
+        } catch (NoSuchPartException e) {
             log.info("The Ruby part was consumed successfully: " + e.getMessage());
         }
 
@@ -94,7 +103,7 @@ public class MultipartMessageTest extends TestCase {
         try {
             rubyStream = rubyPart.getInputStream(false);
             fail("Ruby part was read destructively, and is last part, but was stashed anyway");
-        } catch (IOException e) {
+        } catch (NoSuchPartException e) {
             log.info("The Ruby part was consumed successfully: " + e.getMessage());
         }
 
@@ -219,7 +228,7 @@ public class MultipartMessageTest extends TestCase {
         try {
             rubyStream = rubyPart.getInputStream(false);
             fail("Ruby part was read destructively, and is last part, but was stashed anyway");
-        } catch (IOException e) {
+        } catch (NoSuchPartException e) {
             log.info("The Ruby part was consumed successfully: " + e.getMessage());
         }
 

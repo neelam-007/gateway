@@ -1,15 +1,14 @@
 package com.l7tech.proxy.datamodel;
 
+import com.l7tech.common.mime.ContentTypeHeader;
+import com.l7tech.common.mime.MultipartMessage;
+import com.l7tech.common.mime.NoSuchPartException;
+import com.l7tech.common.util.SoapUtil;
+import com.l7tech.common.util.XmlUtil;
 import org.w3c.dom.Document;
 
 import java.io.IOException;
 import java.io.InputStream;
-
-import com.l7tech.common.util.XmlUtil;
-import com.l7tech.common.util.SoapUtil;
-import com.l7tech.common.mime.ContentTypeHeader;
-import com.l7tech.common.mime.MultipartMessage;
-import com.l7tech.common.mime.NoSuchPartException;
 
 /**
  * Base class for SSB pending requests and SSB responses from the Gateway.
@@ -90,7 +89,8 @@ public class ClientXmlMessage {
             return;
 
         byte[] xmlBytes = XmlUtil.nodeToString(getDecoratedDocument()).getBytes("UTF-8"); // agree with XML_DEFAULT about encoding
-        multipartMessage.getFirstPart().replaceBody(xmlBytes, ContentTypeHeader.XML_DEFAULT);
+        multipartMessage.getFirstPart().setBodyBytes(xmlBytes);
+        multipartMessage.getFirstPart().setContentType(ContentTypeHeader.XML_DEFAULT);
         firstPartBodyMatchesDecoratedDocument = true;
     }
 

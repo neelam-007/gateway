@@ -228,12 +228,14 @@ public class SoapUtil {
     }
 
     /**
-     * Find the Namespace URI of the given document, which might contain a SOAP Envelope.
+     * If the specified document is a valid SOAP message, this finds it's payload element's namespace URI.
+     * The SOAP payload is the first and only child element of the mandatory SOAP Body element.
      *
-     * @param request the Document to examine
-     * @return the body's namespace URI if it's a SOAP Envelope and has one, or null if not found, or the document isn't valid SOAP.
+     * @param request the Document to examine.  May not be null.
+     * @return the SOAP payload namespace URI if it's a SOAP Envelope and has one, or null if not found, or the document isn't valid SOAP.
      */
-    public static String getNamespaceUri(Document request) {
+    public static String getPayloadNamespaceUri(Document request) {
+        
         Element env = request.getDocumentElement();
         if (!ENVELOPE_EL_NAME.equals(env.getLocalName())) {
             log.finer("Request document element not " + ENVELOPE_EL_NAME + "; assuming non-SOAP request");
@@ -248,7 +250,7 @@ public class SoapUtil {
         try {
             body = XmlUtil.findOnlyOneChildElementByName(env, env.getNamespaceURI(), BODY_EL_NAME);
         } catch (TooManyChildElementsException e) {
-            log.info("Request is not a valid SOAP message (too many " + e.getName() + " elements); assuming non-SOAP request");
+            log.finer("Request is not a valid SOAP message (too many " + e.getName() + " elements); assuming non-SOAP request");
             return null;
         }
 
@@ -257,13 +259,17 @@ public class SoapUtil {
             return null;
         }
 
-        Node n = body.getFirstChild();
-        while (n != null) {
-            if (n.getNodeType() == Node.ELEMENT_NODE)
-                return n.getNamespaceURI();
-            n = n.getNextSibling();
+        try {
+            Element payload = XmlUtil.findOnlyOneChildElement(body);
+            if (payload == null) {
+                log.finer("Request is not a valid SOAP message (no payload element); assuming non-SOAP request");
+                return null;
+            }
+            return payload.getNamespaceURI();
+        } catch (TooManyChildElementsException e) {
+            log.finer("Request is not a valid SOAP message (too many payload " + e.getName() + " elements); assuming non-SOAP request");
+            return null;
         }
-        return null;
     }
 
     /**

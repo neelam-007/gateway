@@ -350,9 +350,9 @@ public class ServerConfig implements ComponentConfig {
     }
 
     public File getAttachmentDirectory() {
-        String propsPath = getProperty(PARAM_ATTACHMENT_DIRECTORY);
+        String attachmentsPath = getProperty(PARAM_ATTACHMENT_DIRECTORY);
 
-        if (propsPath == null || propsPath.length() <= 0) {
+        if (attachmentsPath == null || attachmentsPath.length() <= 0) {
             final String def = "/ssg/var/attachments";
             String errorMsg = "The property " + PARAM_ATTACHMENT_DIRECTORY + " is not defined. Please ensure the SecureSpan " +
                     "Gateway is properly configured.  (Will use default of " + def + ")";
@@ -360,24 +360,27 @@ public class ServerConfig implements ComponentConfig {
             return new File(def);
         }
 
-        File propsFile = new File(propsPath);
-        if (!propsFile.exists()) {
-            String errorMsg = "The property " + PARAM_ATTACHMENT_DIRECTORY + ", defined as the directory " + propsPath +
+        File attachmentsDir = new File(attachmentsPath);
+        if (!attachmentsDir.exists())
+            attachmentsDir.mkdir();
+
+        if (!attachmentsDir.exists()) {
+            String errorMsg = "The property " + PARAM_ATTACHMENT_DIRECTORY + ", defined as the directory " + attachmentsPath +
                     ", is required for caching large attachments but was not found. Please ensure the " +
                     "SecureSpan Gateway is properly installed.";
             logger.severe(errorMsg);
             throw new RuntimeException(errorMsg);
         }
 
-        if (!propsFile.canWrite()) {
-            String errorMsg = "The property " + PARAM_ATTACHMENT_DIRECTORY + ", defined as the directory " + propsPath +
+        if (!attachmentsDir.canWrite()) {
+            String errorMsg = "The property " + PARAM_ATTACHMENT_DIRECTORY + ", defined as the directory " + attachmentsPath +
                     ", is required for caching large attachments but was not writable by the Gateway process.  " +
                     "Please ensure the SecureSpan Gateway is properly installed.";
             logger.severe(errorMsg);
             throw new RuntimeException(errorMsg);
         }
 
-        return propsFile;
+        return attachmentsDir;
     }
 
     private int _serverId;

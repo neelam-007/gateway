@@ -1,5 +1,6 @@
 package com.l7tech.server.policy;
 
+import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.common.protocol.SecureSpanConstants;
 import com.l7tech.common.util.*;
 import com.l7tech.common.xml.InvalidDocumentFormatException;
@@ -382,8 +383,9 @@ public class PolicyServlet extends AuthenticatableHttpServlet {
         res.setContentType(XmlUtil.TEXT_XML);
         // fla changed this so that soap faults are always 500 to comply to WSI 1305
         res.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+        res.setContentType(ContentTypeHeader.XML_DEFAULT.getFullValue());
         OutputStream os = res.getOutputStream();
-        os.write(XmlUtil.nodeToString(fault).getBytes());
+        XmlUtil.nodeToOutputStream(fault, os);
         os.close();
     }
 

@@ -14,7 +14,7 @@ import java.io.InputStream;
  * @version $Revision$
  */
 public class HttpSoapRequest extends SoapRequest {
-    public HttpSoapRequest( HttpTransportMetadata htm ) throws IOException {
+    public HttpSoapRequest( HttpTransportMetadata htm ) {
         super( htm );
     }
 

@@ -15,6 +15,7 @@ import org.xml.sax.SAXException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.*;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -27,8 +28,12 @@ public abstract class MessageAdapter implements Message {
     protected MultipartMessage multipartMessage = null;
     private boolean firstPartBodyIsUpToDate = false; // if false, first part of multipartMessage might not be in sync with desired value ([un]decorated xml, say)
     private StashManager stashManager;
-    private InputStream _inputStream;
 
+    /**
+     * Create a new MessageAdapter that will remember the specified TransportMetadata.
+     *
+     * @param tm Transport metadata.  May not be null.
+     */
     public MessageAdapter( TransportMetadata tm ) {
         _transportMetadata = tm;
     }
@@ -74,12 +79,25 @@ public abstract class MessageAdapter implements Message {
         return _transportMetadata;
     }
 
-    protected synchronized InputStream getInputStream() {
-        return _inputStream;
+    public void initialize( InputStream messageBody, ContentTypeHeader outerContentType ) throws IOException {
+        if (messageBody == null || outerContentType == null) throw new NullPointerException();
+
+        if (multipartMessage != null) {
+            // Dispose of old message state
+            multipartMessage.close();
+            multipartMessage = null;
+            invalidateFirstBodyPart();
+        }
+
+        try {
+            multipartMessage = new MultipartMessage(getStashManager(), outerContentType, messageBody);
+        } catch (NoSuchPartException e) {
+            throw new CausedIOException(e);
+        }
     }
 
-    public synchronized void setInputStream( InputStream is ) {
-        _inputStream = is;
+    public boolean isInitialized() {
+        return multipartMessage != null;
     }
 
     public Collection getDeferredAssertions() {
@@ -104,7 +122,11 @@ public abstract class MessageAdapter implements Message {
         Iterator i = _runOnClose.iterator();
         while ( i.hasNext() ) {
             runMe = (Runnable)i.next();
-            runMe.run();
+            try {
+                runMe.run();
+            } catch (Throwable t) {
+                logger.log(Level.WARNING, "Cleanup runnable threw exception", t);
+            }
             i.remove();
         }
         if (multipartMessage != null)
@@ -124,34 +146,14 @@ public abstract class MessageAdapter implements Message {
     /**
      * Get or create a MultipartMessage for this message.  Requires that an InputStream be available.
      *
-     * @throws IOException if the mainInputStream cannot be read or a multipart message is not in valid MIME format
-     * @throws IOException if this message is multpart/related but does not have any parts
-     * @throws IllegalStateException if no InputStream has been attached to this message
+     * @throws IllegalStateException if this message has not yet been initialized
      */
-    protected MultipartMessage getMultipartMessage() throws IOException {
-        if (multipartMessage == null) {
-            InputStream is = getInputStream();
-            if (is == null)
-                throw new IllegalStateException("No InputStream has been attached to this message.");
-
-            String ctypeval = (String)getParameter(Message.PARAM_HTTP_CONTENT_TYPE);
-            ContentTypeHeader ctype;
-            try {
-                ctype = ContentTypeHeader.parseValue(ctypeval);
-            } catch (IOException e) {
-                ctype = ContentTypeHeader.XML_DEFAULT;
-                logger.warning("Incoming message had missing or invalid outer Content-Type header; assuming " + ctype.getValue());
-            }
-            try {
-                multipartMessage = new MultipartMessage(getStashManager(), ctype, is);
-            } catch (NoSuchPartException e) {
-                throw new CausedIOException("Incoming message had an invalid MIME multipart format", e);
-            }
-        }
+    private MultipartMessage getMultipartMessage() {
+        if (multipartMessage == null) throw new IllegalStateException("Not yet initialized");
         return multipartMessage;
     }
 
-    protected StashManager getStashManager() {
+    private StashManager getStashManager() {
         if (stashManager == null) {
             stashManager = new HybridStashManager(ServerConfig.getInstance().getAttachmentDiskThreshold(),
                                                   ServerConfig.getInstance().getAttachmentDirectory(),
@@ -204,7 +206,7 @@ public abstract class MessageAdapter implements Message {
         try {
             ensureFirstPartIsUpToDate();
             long len = 0;
-            len = multipartMessage.getEntireMessageBodyLength();
+            len = getMultipartMessage().getEntireMessageBodyLength();
             if (len < 0)
                 throw new IllegalStateException("At least one multipart part length could not be determinated"); // can't happen
             return len;
@@ -217,13 +219,14 @@ public abstract class MessageAdapter implements Message {
      * @return an InputStream which will, when read, produce the entire current message body including any applied
      *         decorations, all attachments, and any MIME boundaries; but not including any HTTP or other headers
      *         that would accompany this message over wire.
-     * @throws IOException if the main input stream could not be read, or a MIME syntax error was encountered.
-     * @throws IOException if any multipart part bodies were read destructively and not replaced
+     * @throws IOException if the mainInputStream cannot be read or a multipart message is not in valid MIME format
+     * @throws IOException if this message is multpart/related but does not have any parts
+     * @throws IllegalStateException if no InputStream has been attached to this message
      */
     public InputStream getEntireMessageBody() throws IOException, SAXException {
         try {
             ensureFirstPartIsUpToDate();
-            return multipartMessage.getEntireMessageBodyAsInputStream(false);
+            return getMultipartMessage().getEntireMessageBodyAsInputStream(false);
         } catch (NoSuchPartException e) {
             throw new IOException("At least one multipart part's body has been lost");
         }
@@ -232,13 +235,15 @@ public abstract class MessageAdapter implements Message {
     /**
      * Ensure that the first part is up-to-date with the decorated document.
      */
-    private void ensureFirstPartIsUpToDate() throws IOException {
+    protected void ensureFirstPartIsUpToDate() throws IOException {
         if (firstPartBodyIsUpToDate)
             return;
         final byte[] bytes = getUpToDateFirstPartBodyBytes();
         final ContentTypeHeader ctype = getUpToDateFirstPartContentType();
-        if (bytes != null && ctype != null)
-            getMultipartMessage().getFirstPart().replaceBody(bytes, ctype);
+        if (bytes != null && ctype != null) {
+            getMultipartMessage().getFirstPart().setBodyBytes(bytes);
+            getMultipartMessage().getFirstPart().setContentType(ctype);
+        }
         firstPartBodyIsUpToDate = true;
     }
 
@@ -249,9 +254,7 @@ public abstract class MessageAdapter implements Message {
      *
      * @return the content type of the byte array to use for the body of the first part, or null to leave it as is.
      */
-    protected ContentTypeHeader getUpToDateFirstPartContentType() throws IOException {
-        return null;
-    }
+    protected abstract ContentTypeHeader getUpToDateFirstPartContentType() throws IOException;
 
     /**
      * Get the byte array that will be used if the first part's body is to be replaced before this
@@ -260,9 +263,9 @@ public abstract class MessageAdapter implements Message {
      *
      * @return the byte array to use for the body of the first part, or null to leave it as is.
      */
-    protected byte[] getUpToDateFirstPartBodyBytes() throws IOException {
-        return null;
+    protected abstract byte[] getUpToDateFirstPartBodyBytes() throws IOException;
+
+    public PartInfo getFirstPart() {
+        return getMultipartMessage().getFirstPart();
     }
-
-
 }
