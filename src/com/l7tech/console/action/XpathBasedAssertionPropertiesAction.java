@@ -98,8 +98,19 @@ public abstract class XpathBasedAssertionPropertiesAction extends NodeAction {
             } else {
                 if (n instanceof RequestXpathPolicyTreeNode || n instanceof ResponseXpathPolicyTreeNode) {
                     XpathBasedAssertion xmlSecAssertion = (XpathBasedAssertion)node.asAssertion();
-                    String res = JOptionPane.showInputDialog("Please provide xpath value.",
-                                                             xmlSecAssertion.getXpathExpression().getExpression());
+                    String title = null;
+                    if (this instanceof RequestXpathPropertiesAction) {
+                        title = "Evaluate Request XPath Properties";
+                    } else if (this instanceof ResponseXpathPropertiesAction) {
+                        title = "Evaluate Response XPath Properties";
+                    } else {
+                        title = "piglet"; // can't happen
+                    }
+                    String question = "Please provide xpath value.";
+                    String initialValue = xmlSecAssertion.getXpathExpression().getExpression();
+                    String res = (String)JOptionPane.showInputDialog(null, question, title,
+                                                                     JOptionPane.QUESTION_MESSAGE,
+                                                                     null, null, initialValue);
                     if (isValidValue(res)) {
                         xmlSecAssertion.setXpathExpression(new XpathExpression(res));
                         okListener.actionPerformed(null);
