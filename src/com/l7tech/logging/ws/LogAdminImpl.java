@@ -40,7 +40,7 @@ public class LogAdminImpl implements LogAdmin {
      *    logs should be used as the startMsgNumber in the next call. The endMsgNumber should still be set to -1.</br>
      * <br>3. The client repeats the Step 2 above until:
      *   i) its allocated buffer is full; or
-     *   ii) the number of logs retrieved is zero.
+     *   ii) the number of logs retrieved is less than the specified size.</br>
      * <p>
      * <i>Log Retrieval Sequence II (Refresh):</i>
      * <br>This is a typical sequence of log retrievals for obtaining the latest logs after the initial retrieval
@@ -56,7 +56,7 @@ public class LogAdminImpl implements LogAdmin {
      *    in the Step 1 above should be used.</br>
      * <br>3. The client repeats the Step 2 above until:
      *   i) its allocated buffer is full; or
-     *   ii) the number of logs retrieved is zero.</br>
+     *   ii) the number of logs retrieved is less than the specified size.</br>
      * <p>
      * To get the information about what nodes exist in the cluster and what their nodeid is,
      * call the method {@link com.l7tech.cluster.ClusterStatusAdmin#getClusterStatus}.
