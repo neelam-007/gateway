@@ -1,6 +1,6 @@
 package com.l7tech.identity;
 
-import com.l7tech.policy.assertion.credential.PrincipalCredentials;
+import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.assertion.credential.http.HttpDigest;
 import com.l7tech.identity.*;
 import com.l7tech.objectmodel.EntityType;
@@ -37,7 +37,7 @@ public class IdentityProviderClient implements IdentityProvider {
         return groupManager;
     }
 
-    public void authenticate(PrincipalCredentials pc) throws AuthenticationException {
+    public User authenticate(LoginCredentials pc) throws AuthenticationException {
         throw new AuthenticationException("not supported in this impl");
     }
 

@@ -1,6 +1,6 @@
 package com.l7tech.identity;
 
-import com.l7tech.policy.assertion.credential.PrincipalCredentials;
+import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.FindException;
 
@@ -15,7 +15,7 @@ public interface IdentityProvider {
     UserManager getUserManager();
     GroupManager getGroupManager();
 
-    void authenticate( PrincipalCredentials pc ) throws AuthenticationException;
+    User authenticate( LoginCredentials pc ) throws AuthenticationException;
 
     /**
      * If true, the save, update and delete methods wont be supported on the usermanager and groupmanager objects
