@@ -1,4 +1,4 @@
-package com.l7tech.policy.validator;
+package com.l7tech.server.policy.validator;
 
 import com.l7tech.policy.AssertionPath;
 import com.l7tech.policy.PolicyValidator;

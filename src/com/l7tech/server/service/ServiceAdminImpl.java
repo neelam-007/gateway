@@ -9,6 +9,7 @@ import com.l7tech.policy.PolicyValidatorResult;
 import com.l7tech.policy.PolicyValidator;
 import com.l7tech.policy.wsp.WspReader;
 import com.l7tech.policy.assertion.Assertion;
+import com.l7tech.server.policy.validator.ServerPolicyValidator;
 import com.sun.jini.start.LifeCycle;
 import net.jini.config.ConfigurationException;
 
@@ -91,7 +92,7 @@ public class ServiceAdminImpl extends RemoteService implements ServiceAdmin {
     public PolicyValidatorResult validatePolicy(String policyXml) throws RemoteException {
         try {
             Assertion assertion = WspReader.parse(policyXml);
-            PolicyValidator validator = PolicyValidator.getServerValidator();
+            PolicyValidator validator = new ServerPolicyValidator();
             return validator.validate(assertion);
         } catch (IOException e) {
             logger.log(Level.WARNING, "cannot parse passed policy xml: " + policyXml, e);
