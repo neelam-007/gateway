@@ -125,7 +125,7 @@ public class XpathEvaluator {
      * this evaluator's Document.
      *
      * @param expression the XPath expression
-     * @return a List of Node - the nodes that are selectable by this XPath expression.
+     * @return a List of Object (hopefully Node) - the nodes that are selectable by this XPath expression.
      * @throws JaxenException thrown on evaluation error
      */
     public List select(String expression) throws JaxenException {
@@ -154,7 +154,10 @@ public class XpathEvaluator {
         if (nodes == null)
             return nodes;
         for (Iterator i = nodes.iterator(); i.hasNext();) {
-            Node node = (Node)i.next();
+            Object obj = i.next();
+            if (!(obj instanceof Node))  // fix for Bug #984
+                throw new JaxenException("Xpath evaluation produced a non-empty result, but it wasn't of type Node.  Type: " + obj.getClass().getName());
+            Node node = (Node)obj;
             if (node.getNodeType() != Node.ELEMENT_NODE)
                 throw new JaxenException("Xpath result included a non-Element Node of type " + node.getNodeType());
         }
