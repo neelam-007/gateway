@@ -155,7 +155,7 @@ System.out.println(requestXml);
 
             // TODO: Attachments
             InputStream responseStream = postMethod.getResponseBodyAsStream();
-            String ctype = postMethod.getRequestHeader(CONTENT_TYPE).getValue();
+            String ctype = postMethod.getResponseHeader(CONTENT_TYPE).getValue();
             response.setParameter(Response.PARAM_HTTP_CONTENT_TYPE, ctype);
             if (ctype.indexOf(TEXT_XML) > 0) {
                 // Note that this will consume the first part of the stream...
