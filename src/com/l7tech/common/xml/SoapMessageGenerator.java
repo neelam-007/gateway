@@ -78,7 +78,7 @@ public class SoapMessageGenerator {
         }
         InputStreamReader reader = new InputStreamReader(in);
 
-        Wsdl newWsdl = Wsdl.newInstance(null, reader);
+        Wsdl newWsdl = Wsdl.newInstance(Wsdl.extractBaseURI(wsdlResource), reader);
         return generateRequests(newWsdl);
     }
 
@@ -100,7 +100,7 @@ public class SoapMessageGenerator {
         }
         InputStreamReader reader = new InputStreamReader(in);
 
-        Wsdl newWsdl = Wsdl.newInstance(null, reader);
+        Wsdl newWsdl = Wsdl.newInstance(Wsdl.extractBaseURI(wsdlResource), reader);
         return generateResponses(newWsdl);
     }
 
@@ -113,7 +113,8 @@ public class SoapMessageGenerator {
     public Message[] generateRequests(Wsdl wsdl) throws SOAPException {
         this.wsdl = wsdl;
         List requests = new ArrayList();
-        Iterator it = wsdl.getBindings().iterator();
+        Map bindings = Wsdl.getElements(wsdl.getDefinition(), Wsdl.ELEMENT_TYPE_BINDING);
+        Iterator it = bindings.values().iterator();
         while (it.hasNext()) {
             Binding binding = (Binding)it.next();
             requests.addAll(generateMessages(binding, true));
@@ -129,7 +130,8 @@ public class SoapMessageGenerator {
     public Message[] generateResponses(Wsdl wsdl) throws SOAPException {
         this.wsdl = wsdl;
         List requests = new ArrayList();
-        Iterator it = wsdl.getBindings().iterator();
+        Map bindings = Wsdl.getElements(wsdl.getDefinition(), Wsdl.ELEMENT_TYPE_BINDING);
+        Iterator it = bindings.values().iterator();        
         while (it.hasNext()) {
             Binding binding = (Binding)it.next();
             requests.addAll(generateMessages(binding, false));

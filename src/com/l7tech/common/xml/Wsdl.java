@@ -39,6 +39,11 @@ import java.util.logging.Logger;
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  */
 public class Wsdl {
+    public static final int ELEMENT_TYPE_MESSAGE = 1;
+    public static final int ELEMENT_TYPE_BINDING = 2;
+    public static final int ELEMENT_TYPE_PORT_TYPE = 3;
+    public static final int ELEMENT_TYPE_SERVICE = 4;
+
     public static final String NS = "ns";
     /**
      * bitmask for soap bindings filtering
@@ -737,6 +742,76 @@ public class Wsdl {
             }
         }
         return null;
+    }
+
+    /**
+     * Retrieve the all elements of the specified type
+     *
+     * @param def         the wsdl defintion
+     * @param elementType the element type (ELEMENT_TYPE_MESSAGE, ELEMENT_TYPE_BINDING, & ELEMENT_TYPE_PORT_TYPE)
+     * @return Map the list of elements of the specified type. Never null.
+     */
+    public static Map getElements(Definition def, int elementType) {
+        Map allElements = new HashMap();
+        switch (elementType) {
+            case ELEMENT_TYPE_MESSAGE:
+                allElements = def.getMessages();
+
+                break;
+            case ELEMENT_TYPE_BINDING:
+                allElements = def.getBindings();
+
+                break;
+            case ELEMENT_TYPE_PORT_TYPE:
+                allElements = def.getPortTypes();
+                break;
+            case ELEMENT_TYPE_SERVICE:
+                allElements = def.getServices();
+                break;
+            default:
+                return new HashMap();
+        }
+        Import imp = null;
+        if (def.getImports().size() > 0) {
+            Iterator itr = def.getImports().keySet().iterator();
+            while (itr.hasNext()) {
+                Object importDef = itr.next();
+                Vector importList = (Vector) def.getImports().get(importDef);
+                for (int k = 0; k < importList.size(); k++) {
+                    imp = (Import) importList.elementAt(k);
+                    Map elements = null;
+                    switch (elementType) {
+                        case ELEMENT_TYPE_MESSAGE:
+                            elements = imp.getDefinition().getMessages();
+
+                            break;
+                        case ELEMENT_TYPE_BINDING:
+                            elements = imp.getDefinition().getBindings();
+
+                            break;
+                        case ELEMENT_TYPE_PORT_TYPE:
+                            elements = imp.getDefinition().getPortTypes();
+                            break;
+                        case ELEMENT_TYPE_SERVICE:
+                            elements = imp.getDefinition().getServices();
+                            break;
+                        default:
+                            return new HashMap();
+                    }
+                    if (elements.size() > 0) {
+                        allElements.putAll(elements);
+                    }
+                }
+            }
+        }
+
+        if (imp != null && imp.getDefinition() != null) {
+            Map moreElements = getElements(imp.getDefinition(), elementType);
+            if (moreElements.size() > 0) {
+                allElements.putAll(moreElements);
+            }
+        }
+        return allElements;
     }
 
     private Definition definition;
