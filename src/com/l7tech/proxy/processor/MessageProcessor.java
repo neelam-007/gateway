@@ -54,6 +54,9 @@ import java.security.cert.CertificateException;
  * Time: 9:51:36 AM
  */
 public class MessageProcessor {
+    public static final String PROPERTY_LOGPOSTS    = "com.l7tech.proxy.processor.logPosts";
+    public static final String PROPERTY_LOGRESPONSE = "com.l7tech.proxy.processor.logResponses";
+
     private static final Category log = Category.getInstance(MessageProcessor.class);
     private static final int MAX_TRIES = 8;
     private PolicyManager policyManager;
@@ -401,8 +404,6 @@ public class MessageProcessor {
     }
 
     private static class LogFlags {
-        public static final String PROPERTY_LOGPOSTS    = "com.l7tech.proxy.processor.logPosts";
-        public static final String PROPERTY_LOGRESPONSE = "com.l7tech.proxy.processor.logResponses";
         private static boolean logPosts = Boolean.getBoolean(PROPERTY_LOGPOSTS);
         private static boolean logResponse = Boolean.getBoolean(PROPERTY_LOGRESPONSE);
     }
