@@ -1,7 +1,6 @@
 package com.l7tech.console.panels;
 
-import com.l7tech.common.security.TrustedCertAdmin;
-import com.l7tech.common.util.Locator;
+import com.l7tech.common.security.TrustedCert;
 import com.intellij.uiDesigner.core.GridLayoutManager;
 import com.intellij.uiDesigner.core.GridConstraints;
 import com.intellij.uiDesigner.core.Spacer;
@@ -11,9 +10,9 @@ import java.awt.*;
 import java.security.cert.*;
 import java.security.NoSuchAlgorithmException;
 import java.io.*;
-import java.net.URL;
-import java.rmi.RemoteException;
-import java.util.logging.Level;
+import java.util.logging.Logger;
+import java.util.ResourceBundle;
+import java.util.Locale;
 
 /**
  * <p> Copyright (C) 2004 Layer 7 Technologies Inc.</p>
@@ -25,6 +24,8 @@ public class CertDetailsPanel extends WizardStepPanel {
     private JPanel mainPanel;
     private JScrollPane certScrollPane;
     private X509Certificate cert;
+    private static ResourceBundle resources = ResourceBundle.getBundle("com.l7tech.console.resources.CertificateDialog", Locale.getDefault());
+    private static Logger logger = Logger.getLogger(CertDetailsPanel.class.getName());
 
     public CertDetailsPanel(WizardStepPanel next) {
         super(next);
@@ -36,105 +37,55 @@ public class CertDetailsPanel extends WizardStepPanel {
         add(mainPanel);
     }
 
-     /**
+    /**
      * Test whether the step is finished and it is safe to finish the wizard.
      *
      * @return true if the panel is valid, false otherwis
      */
-     public boolean canFinish() {
+    public boolean canFinish() {
         return false;
     }
 
     public void readSettings(Object settings) throws IllegalArgumentException {
         if (settings != null) {
 
-            if (settings instanceof CertInfo) {
+            if (settings instanceof TrustedCert) {
+                TrustedCert tc = (TrustedCert) settings;
 
-                CertInfo ci = (CertInfo) settings;
-                InputStream is = null;
-                CertificateFactory cf = null;
+                if (tc != null) {
+                    try {
+                        cert = tc.getCertificate();
+                    } catch (CertificateException e) {
+                        e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+                    } catch (IOException e) {
+                        e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+                    }
 
-                try {
+                    try {
+                        JComponent certView = getCertView();
+                        if (certView == null) {
+                            certView = new JLabel();
+                        } else {
+                            certScrollPane.setViewportView(certView);
+                        }
 
-                    cf = CertificateFactory.getInstance("X.509");
+                        revalidate();
+                        repaint();
 
-                } catch (CertificateException e) {
+                    } catch (CertificateEncodingException ee) {
+                        logger.warning("Unable to decode the certificate issued to: " + cert.getSubjectDN().getName());
+                    } catch (NoSuchAlgorithmException ae) {
+                        logger.warning("Unable to decode the certificate issued to: " + cert.getSubjectDN().getName() + ", Algorithm is not supported:" + cert.getSigAlgName());
+                    }
+                } else {
                     //todo:
                 }
-
-
-                if (ci.getCertDataSource() instanceof File) {
-
-                    try {
-                        is = new FileInputStream(((File) ci.getCertDataSource()).getAbsolutePath());
-
-                        cert = (X509Certificate) cf.generateCertificate(is);
-
-                        is.close();
-                    } catch (FileNotFoundException fne) {
-
-                    } catch (CertificateException ce) {
-
-                    } catch (IOException ioe) {
-
-                    }
-                } else if (ci.getCertDataSource() instanceof URL) {
-                    try {
-
-                        URL url = (URL) ci.getCertDataSource();
-
-                        String urlStr = url.getProtocol() + ":" + "//" + url.getHost();
-
-                        if(url.getPort() > 0) {
-                            urlStr = urlStr +  ":" + url.getPort();
-                        }
-
-                        if(url.getPath() != null) {
-                            urlStr += url.getPath();
-                        }
-
-                        System.out.println("Retriving cert from URL: " + urlStr);
-
-                        X509Certificate[] certs = getTrustedCertAdmin().retrieveCertFromUrl(urlStr);
-                        cert = certs[0];
-
-                        // todo: ignore the rest?
-
-                    } catch (IOException e) {
-                        //todo:
-                        e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
-                    } catch ( TrustedCertAdmin.HostnameMismatchException e ) {
-                        //todo:
-                        e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
-                    }
-
-                } else if (ci.getCertDataSource() instanceof String) {
-
-                }
             }
-        }
-
-        try {
-            JComponent certView = getCertView();
-            if(certView == null) {
-                 certView = new JLabel();
-            } else {
-                //certScrollPane.setViewportBorder(BorderFactory.createLineBorder(Color.black));
-                certScrollPane.setViewportView(certView);;
-            }
-
-            revalidate();
-            repaint();
-
-        } catch (CertificateEncodingException ee) {
-            //todo:
-        } catch (NoSuchAlgorithmException ae) {
-            //todo:
         }
     }
 
 
-     /**
+    /**
      * Store the values of all fields on the panel to the wizard object which is a used for
      * keeping all the modified values. The wizard object will be used for providing the
      * updated values when updating the server.
@@ -145,30 +96,22 @@ public class CertDetailsPanel extends WizardStepPanel {
 
         if (settings != null) {
 
-            if (settings instanceof CertInfo) {
-                CertInfo ci = (CertInfo) settings;
+            if (settings instanceof TrustedCert) {
+                TrustedCert tc = (TrustedCert) settings;
 
-                try {
-                    ci.getTrustedCert().setCertificate(cert);
-                    ci.getTrustedCert().setName(cert.getSubjectDN().getName());
-                    ci.getTrustedCert().setSubjectDn(cert.getSubjectDN().getName());
+                if (cert != null) {
+                    try {
+                        tc.setCertificate(cert);
+                        tc.setName(cert.getSubjectDN().getName());
+                        tc.setSubjectDn(cert.getSubjectDN().getName());
 
-                } catch (CertificateEncodingException e) {
-                    //todo:
+                    } catch (CertificateEncodingException e) {
+                        logger.warning("Unable to decode the certificate issued to: " + cert.getSubjectDN().getName());
+                        cert = null;
+                    }
                 }
             }
         }
-    }
-
-    private TrustedCertAdmin getTrustedCertAdmin() throws RuntimeException {
-        TrustedCertAdmin tca =
-                (TrustedCertAdmin) Locator.
-                getDefault().lookup(TrustedCertAdmin.class);
-        if (tca == null) {
-            throw new RuntimeException("Could not find registered " + TrustedCertAdmin.class);
-        }
-
-        return tca;
     }
 
     /**

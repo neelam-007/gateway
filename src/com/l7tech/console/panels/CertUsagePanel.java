@@ -6,6 +6,9 @@ import com.l7tech.common.security.TrustedCert;
 
 import javax.swing.*;
 import java.awt.*;
+import java.util.ResourceBundle;
+import java.util.Locale;
+import java.util.logging.Logger;
 
 /**
  * <p> Copyright (C) 2004 Layer 7 Technologies Inc.</p>
@@ -19,6 +22,8 @@ public class CertUsagePanel extends WizardStepPanel{
     private JCheckBox signingSAMLTokenCheckBox;
     private JCheckBox signingClientCertCheckBox;
     private JCheckBox outboundSSLConnCheckBox;
+    private static Logger logger = Logger.getLogger(CertUsagePanel.class.getName());
+    private static ResourceBundle resources = ResourceBundle.getBundle("com.l7tech.console.resources.CertificateDialog", Locale.getDefault());
 
     public CertUsagePanel(WizardStepPanel next) {
         super(next);
@@ -41,10 +46,9 @@ public class CertUsagePanel extends WizardStepPanel{
 
         if (settings != null) {
 
-            if (settings instanceof CertInfo) {
-                CertInfo ci = (CertInfo) settings;
+            if (settings instanceof TrustedCert) {
+                TrustedCert tc = (TrustedCert) settings;
 
-                TrustedCert tc = ci.getTrustedCert();
                 tc.setTrustedForSigningClientCerts(signingClientCertCheckBox.isSelected());
                 tc.setTrustedForSigningSamlTokens(signingSAMLTokenCheckBox.isSelected());
                 tc.setTrustedForSigningServerCerts(signingCertOutboundSSLConnCheckBox.isSelected());

@@ -9,6 +9,7 @@ import com.l7tech.console.event.*;
 import com.l7tech.console.table.TrustedCertTableSorter;
 import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.common.security.TrustedCertAdmin;
+import com.l7tech.common.security.TrustedCert;
 import com.l7tech.common.util.Locator;
 import com.l7tech.objectmodel.*;
 
@@ -27,6 +28,7 @@ import java.awt.*;
 import java.util.ResourceBundle;
 import java.util.Locale;
 import java.util.Vector;
+import java.util.logging.Logger;
 import java.rmi.RemoteException;
 
 
@@ -50,8 +52,9 @@ public class CertManagerWindow extends JDialog {
     private static CertManagerWindow instance = null;
     private JTable trustedCertTable = null;
     private JScrollPane certTableScrollPane;
-    private static ResourceBundle resources = ResourceBundle.getBundle("com.l7tech.console.resources.CertificateDialog", Locale.getDefault());
     private TrustedCertTableSorter trustedCertTableSorter;
+    private static ResourceBundle resources = ResourceBundle.getBundle("com.l7tech.console.resources.CertificateDialog", Locale.getDefault());
+    private static Logger logger = Logger.getLogger(CertManagerWindow.class.getName());
 
     private CertManagerWindow(Frame owner) {
         super(owner, resources.getString("dialog.title"), true);
@@ -130,20 +133,22 @@ public class CertManagerWindow extends JDialog {
         removeButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent event) {
                 int sr = getTrustedCertTable().getSelectedRow();
-                Object o = getTrustedCertTable().getValueAt(sr, CERT_TABLE_CERT_OID_COLUMN_INDEX);
+
+                String certName = (String) getTrustedCertTable().getValueAt(sr, CERT_TABLE_CERT_NAME_COLUMN_INDEX);
+                Long oid = (Long) getTrustedCertTable().getValueAt(sr, CERT_TABLE_CERT_OID_COLUMN_INDEX);
 
                 try {
-                    getTrustedCertAdmin().deleteCert(((Long) o).longValue());
+                    getTrustedCertAdmin().deleteCert(oid.longValue());
                     
                     // reload all certs from server
                     loadTrustedCerts();
 
                 } catch (FindException e) {
-                    e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+                    logger.warning("Unable to find the trusted certificates in server");
                 } catch (DeleteException e) {
-                    e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+                    logger.warning("Unable to delete the certificate:" + certName);
                 } catch (RemoteException e) {
-                    e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+                    logger.severe("Unable to execute remote call due to remote exception");
                 }
             }
         });
@@ -170,9 +175,9 @@ public class CertManagerWindow extends JDialog {
             getTrustedCertTableModel().fireTableDataChanged();
 
         } catch (RemoteException re) {
-
+            logger.severe("Unable to execute remote call due to remote exception");
         } catch (FindException e) {
-            e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+            logger.warning("Unable to find the trusted certificates in server");
         }
     }
 
@@ -226,29 +231,29 @@ public class CertManagerWindow extends JDialog {
 
             Object o = w.getCollectedInformation();
 
-            if (o instanceof CertInfo) {
+            if (o instanceof TrustedCert) {
 
-                final CertInfo ci = (CertInfo) o;
+                final TrustedCert tc = (TrustedCert) o;
 
-                if (ci != null && ci.getTrustedCert() != null) {
+                if (tc != null) {
 
                     SwingUtilities.invokeLater(new Runnable() {
                         public void run() {
 
                             try {
-                                getTrustedCertAdmin().saveCert(ci.getTrustedCert());
+                                getTrustedCertAdmin().saveCert(tc);
 
                                 // reload all certs from server
                                 loadTrustedCerts();
 
                             } catch (SaveException e) {
-                                e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+                                logger.warning("Unable to save the trusted certificate in server");
                             } catch (RemoteException e) {
-                                e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+                                logger.severe("Unable to execute remote call due to remote exception");
                             } catch (VersionException e) {
-                                e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+                                logger.warning("Unable to save the trusted certificate: " + tc.getName() + "; version exception.");
                             } catch (UpdateException e) {
-                                e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+                                logger.warning("Unable to update the trusted certificate in server");
                             }
                         }
                     });

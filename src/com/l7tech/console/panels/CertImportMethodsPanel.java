@@ -1,14 +1,25 @@
 package com.l7tech.console.panels;
 
+import com.l7tech.common.security.TrustedCertAdmin;
+import com.l7tech.common.security.TrustedCert;
+import com.l7tech.common.util.Locator;
+
 import javax.swing.*;
 import javax.swing.event.ChangeListener;
 import javax.swing.event.ChangeEvent;
 import java.awt.*;
 import java.awt.event.ActionListener;
 import java.awt.event.ActionEvent;
-import java.io.File;
+import java.io.*;
 import java.net.URL;
 import java.net.MalformedURLException;
+import java.util.logging.Logger;
+import java.util.ResourceBundle;
+import java.util.Locale;
+import java.security.cert.CertificateFactory;
+import java.security.cert.CertificateException;
+import java.security.cert.X509Certificate;
+import java.security.cert.CertificateEncodingException;
 
 /**
  * <p> Copyright (C) 2004 Layer 7 Technologies Inc.</p>
@@ -26,7 +37,9 @@ public class CertImportMethodsPanel extends WizardStepPanel {
     private JTextField certFileName;
     private JTextArea copyAndPasteTextArea;
     private JTextField urlConnTextField;
-
+    private X509Certificate cert = null;
+    private static ResourceBundle resources = ResourceBundle.getBundle("com.l7tech.console.resources.CertificateDialog", Locale.getDefault());
+    private static Logger logger = Logger.getLogger(CertImportMethodsPanel.class.getName());
 
     public CertImportMethodsPanel(WizardStepPanel next) {
         super(next);
@@ -113,6 +126,63 @@ public class CertImportMethodsPanel extends WizardStepPanel {
         return "Enter Certificate Info";
     }
 
+    public boolean onNextButton() {
+        boolean rc = false;
+        InputStream is = null;
+        CertificateFactory cf = null;
+
+        try {
+            cf = CertificateFactory.getInstance("X.509");
+        } catch (CertificateException e) {
+            logger.severe("Unable to get certificate factory object");
+        }
+
+        if (fileRadioButton.isSelected()) {
+            try {
+                is = new FileInputStream(new File(certFileName.getText().trim()));
+                cert = (X509Certificate) cf.generateCertificate(is);
+                is.close();
+                rc = true;
+            } catch (FileNotFoundException fne) {
+                JOptionPane.showMessageDialog(this, resources.getString("view.error.filenotfound"),
+                        resources.getString("view.error.title"),
+                        JOptionPane.ERROR_MESSAGE);
+
+            } catch (IOException ioe) {
+                logger.warning("Unable to read the file: " + certFileName.getText().trim());
+            } catch (CertificateException ce) {
+                logger.warning("Unable to generate certificate. Certificate Exception caught.");
+            }
+        } else if (urlConnRadioButton.isSelected()) {
+            try {
+
+                // test if the URL is well formed first by creating a URL object
+                URL url = new URL(urlConnTextField.getText().trim());
+
+                X509Certificate[] certs = getTrustedCertAdmin().retrieveCertFromUrl(urlConnTextField.getText().trim(), true);
+                cert = certs[0];
+                rc = true;
+
+            } catch (TrustedCertAdmin.HostnameMismatchException e) {
+                logger.warning("Hostname does not match with the one the certificate is issued to");
+            } catch (MalformedURLException me) {
+                JOptionPane.showMessageDialog(this, resources.getString("view.error.urlMalformed"),
+                                       resources.getString("view.error.title"),
+                                       JOptionPane.ERROR_MESSAGE);
+            } catch (IOException e) {
+                logger.warning("Unable to retrieve certificate via SSL connection: " + urlConnTextField.getText().trim());
+            }
+
+        } else if (copyAndPasteRadioButton.isSelected()) {
+            //todo:
+
+        }
+
+
+        return rc;
+
+    }
+
     /**
      * Store the values of all fields on the panel to the wizard object which is a used for
      * keeping all the modified values. The wizard object will be used for providing the
@@ -124,34 +194,17 @@ public class CertImportMethodsPanel extends WizardStepPanel {
 
         if (settings != null) {
 
-            if (settings instanceof CertInfo) {
+            if (settings instanceof TrustedCert) {
 
-                CertInfo ci =  (CertInfo) settings;
+                TrustedCert tc = (TrustedCert) settings;
 
-                if (copyAndPasteRadioButton.isSelected()) {
-                    ci.setCertDataSource(new String(copyAndPasteTextArea.getText()));
-
-                } else if (fileRadioButton.isSelected()) {
-                    try {
-                       ci.setCertDataSource(new File(certFileName.getText().trim()));
-                    } finally {
-                        //do nothing
-                    }
-                } else if (urlConnRadioButton.isSelected()) {
-                    try {
-                        ci.setCertDataSource(new URL(urlConnTextField.getText().trim()));
-
-                    } catch (MalformedURLException e) {
-                        //todo:
-                    }
-
-                } else {
+                try {
+                    tc.setCertificate(cert);
+                } catch (CertificateEncodingException e) {
                     //todo:
                 }
-
             }
         }
-
     }
 
     /**
@@ -161,6 +214,17 @@ public class CertImportMethodsPanel extends WizardStepPanel {
      */
     public boolean canFinish() {
         return false;
+    }
+
+    private TrustedCertAdmin getTrustedCertAdmin() throws RuntimeException {
+        TrustedCertAdmin tca =
+                (TrustedCertAdmin) Locator.
+                getDefault().lookup(TrustedCertAdmin.class);
+        if (tca == null) {
+            throw new RuntimeException("Could not find registered " + TrustedCertAdmin.class);
+        }
+
+        return tca;
     }
 
     {
@@ -188,15 +252,15 @@ public class CertImportMethodsPanel extends WizardStepPanel {
         final JRadioButton _3;
         _3 = new JRadioButton();
         urlConnRadioButton = _3;
-        _3.setSelected(false);
         _3.setText("Retrieve via SSL Connection");
+        _3.setSelected(false);
         _2.add(_3, new com.intellij.uiDesigner.core.GridConstraints(0, 0, 1, 1, 8, 0, 3, 0, null, null, null));
         final JRadioButton _4;
         _4 = new JRadioButton();
         fileRadioButton = _4;
+        _4.setText("Import from a File");
         _4.setSelected(false);
         _4.setEnabled(true);
-        _4.setText("Import from a File");
         _2.add(_4, new com.intellij.uiDesigner.core.GridConstraints(1, 0, 1, 1, 8, 0, 3, 0, null, null, null));
         final JRadioButton _5;
         _5 = new JRadioButton();
