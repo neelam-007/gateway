@@ -49,6 +49,15 @@ public class SsgResponse {
     }
 
     /**
+     * Replace the response with a new document.
+     * @param newResponse
+     */
+    public void setResponse(Document newResponse) {
+        this.responseDoc = newResponse;
+        this.responseString = null;
+    }
+
+    /**
      * Returns the response as a Document, if one is already available, or as a String otherwise.  Use
      * to avoid parsing when possible, if you don't prefer either format.
      *
