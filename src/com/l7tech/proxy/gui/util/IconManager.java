@@ -21,6 +21,7 @@ public class IconManager {
     private static ImageIcon iconRemove;
     private static ImageIcon iconDefault;
     private static ImageIcon splashImage;
+    private static ImageIcon smallSplashImage;
     private static Image iconAppIcon;
 
     private static ImageIcon loadImageIcon(String path) {
@@ -69,5 +70,11 @@ public class IconManager {
         if (splashImage == null)
             splashImage = loadImageIcon(Gui.RESOURCE_PATH + "/agent_splash.png");
         return splashImage;
+    }
+
+    public static ImageIcon getSmallSplashImageIcon() {
+        if (smallSplashImage == null)
+            smallSplashImage = loadImageIcon(Gui.RESOURCE_PATH + "/small_splash.png");
+        return smallSplashImage;
     }
 }
