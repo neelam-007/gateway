@@ -3,6 +3,7 @@ package com.l7tech.identity;
 import com.l7tech.objectmodel.imp.NamedEntityImp;
 
 import java.util.Set;
+import java.util.Collections;
 import java.security.Principal;
 
 /**
@@ -46,12 +47,10 @@ public class User extends NamedEntityImp implements Principal {
     }
 
     public Set getGroups() {
-        if (_groups == null) return new java.util.HashSet();
         return _groups;
     }
 
     public Set getGroupHeaders() {
-        if (_groupHeaders == null) return new java.util.HashSet();
         return _groupHeaders;
     }
 
@@ -201,7 +200,7 @@ public class User extends NamedEntityImp implements Principal {
     private String _email;
     private String _title;
     private String _department;
-    private Set _groups;
-    private Set _groupHeaders;
+    private Set _groups = Collections.EMPTY_SET;
+    private Set _groupHeaders = Collections.EMPTY_SET;
     private long providerId = DEFAULT_OID;
 }
