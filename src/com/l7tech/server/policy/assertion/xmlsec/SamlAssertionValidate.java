@@ -5,9 +5,9 @@
  */
 package com.l7tech.server.policy.assertion.xmlsec;
 
-import com.l7tech.common.security.token.SecurityToken;
-import com.l7tech.common.security.token.SecurityTokenType;
+import com.l7tech.common.security.token.*;
 import com.l7tech.common.security.xml.processor.ProcessorResult;
+import com.l7tech.common.security.xml.processor.SecurityContext;
 import com.l7tech.common.xml.saml.SamlAssertion;
 import com.l7tech.policy.assertion.xmlsec.RequestWssSaml;
 import org.springframework.context.ApplicationContext;
@@ -16,6 +16,7 @@ import x0Assertion.oasisNamesTcSAML1.*;
 
 import java.util.*;
 import java.util.logging.Logger;
+import java.security.cert.X509Certificate;
 
 /**
  * Validates the SAML Assertion within the Document. The Document must represent a well formed
@@ -93,11 +94,32 @@ public class SamlAssertionValidate {
             validationResults.add(new Error("No SAML assertion found in security Header", soapMessageDoc, null, null));
             return;
         } else {
+
+            SignedElement[] signedElements = wssResults.getElementsThatWereSigned();
+            for (int i = 0; i < signedElements.length; i++) {
+                SignedElement signedElement = signedElements[i];
+                if (signedElement == assertion.asElement()) {
+                    // This assertion is included in the message signature.
+                    SigningSecurityToken signingToken = (SigningSecurityToken)signedElement.getSigningSecurityToken();
+                    if (signingToken instanceof X509SigningSecurityToken) {
+                        X509SigningSecurityToken x509SigningSecurityToken = (X509SigningSecurityToken)signingToken;
+                        X509Certificate signingCert = x509SigningSecurityToken.getMessageSigningCertificate();
+
+                        // Use the signing cert somehow
+                        // TODO use it here
+
+                    } else {
+                        validationResults.add(new Error("Unsupported signing security token type", soapMessageDoc, null, null));
+                        return;
+                    }
+                }
+            }
+
             if (!assertion.hasEmbeddedIssuerSignature()) {
                 validationResults.add(new Error("Unsigned SAML assertion found in security Header", soapMessageDoc, null, null));
                 return;
-
             }
+
             if (requestWssSaml.isRequireProofOfPosession()) {
                 if (!assertion.isPossessionProved()) {
                     validationResults.add(new Error("No Proof Of Possession found", soapMessageDoc, null, null));
