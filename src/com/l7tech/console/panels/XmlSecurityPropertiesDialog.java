@@ -115,7 +115,7 @@ public class XmlSecurityPropertiesDialog extends JDialog {
             throw new IllegalArgumentException("Unsupported security node: " + n.getClass());
         }
         node = n;
-        setTitle("XML security properties");
+        setTitle("XML Security Properties");
 
         okActionListener = okListener;
 

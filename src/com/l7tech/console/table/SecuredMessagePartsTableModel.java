@@ -169,7 +169,7 @@ public class SecuredMessagePartsTableModel extends AbstractTableModel {
         if (column == 0) {
             return "Operation";
         } else if (column == 1) {
-            return "XPath expression";
+            return "XPath Expression";
         } else if (column == 2) {
             return "Encrypt";
         } else if (column == 3) {
