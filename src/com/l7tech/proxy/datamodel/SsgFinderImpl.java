@@ -40,6 +40,15 @@ public class SsgFinderImpl implements SsgFinder {
     protected boolean init = false; // should be private; relaxed for performace
     private long nextId = 1;
 
+    private static class SsgFinderHolder {
+        private static final SsgFinderImpl ssgFinder = new SsgFinderImpl();
+    }
+
+    /** Get a singleton SsgFinderImpl. */
+    public static SsgFinderImpl getSsgFinderImpl() {
+        return SsgFinderHolder.ssgFinder;
+    }
+
     protected SsgFinderImpl() {
     }
 

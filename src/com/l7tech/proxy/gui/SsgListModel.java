@@ -18,22 +18,28 @@ import org.apache.log4j.Category;
  */
 public class SsgListModel extends AbstractListModel {
     private static final Category log = Category.getInstance(SsgListModel.class);
+    private SsgManager ssgManager;
+
+    public SsgListModel(SsgManager ssgManager) {
+        if (ssgManager == null)
+            throw new IllegalArgumentException("No SsgManager provided");
+        this.ssgManager = ssgManager;
+    }
 
     public int getSize() {
-        return Managers.getSsgManager().getSsgList().size();
+        return ssgManager.getSsgList().size();
     }
 
     public Object getElementAt(final int index) {
-        final SsgManager ssgManager = Managers.getSsgManager();
         synchronized (ssgManager) {
             if (index < 0 || index >= ssgManager.getSsgList().size())
                 return null;
-            return Managers.getSsgManager().getSsgList().get(index);
+            return ssgManager.getSsgList().get(index);
         }
     }
 
     public void addSsg(final Ssg ssg) {
-        if (Managers.getSsgManager().add(ssg)) {
+        if (ssgManager.add(ssg)) {
             saveSsgList();
             fireIntervalAdded(this, getSize(), getSize());
         }
@@ -41,7 +47,7 @@ public class SsgListModel extends AbstractListModel {
 
     public void removeSsg(final Ssg ssg) {
         try {
-            Managers.getSsgManager().remove(ssg);
+            ssgManager.remove(ssg);
             saveSsgList();
             fireContentsChanged(this, 0, getSize() + 1);
         } catch (SsgNotFoundException e) {
@@ -51,7 +57,7 @@ public class SsgListModel extends AbstractListModel {
 
     public void setDefaultSsg(Ssg ssg) {
         try {
-            Managers.getSsgManager().setDefaultSsg(ssg);
+            ssgManager.setDefaultSsg(ssg);
         } catch (SsgNotFoundException e) {
             log.error(e); // shouldn't ever happen
         }
@@ -63,7 +69,7 @@ public class SsgListModel extends AbstractListModel {
     }
 
     public Ssg createSsg() {
-        return Managers.getSsgManager().createSsg();
+        return ssgManager.createSsg();
     }
 
    /**
@@ -71,7 +77,7 @@ public class SsgListModel extends AbstractListModel {
     */
     private void saveSsgList() {
         try {
-            Managers.getSsgManager().save();
+            ssgManager.save();
         } catch (IOException e1) {
             JOptionPane.showMessageDialog(
                 Gui.getInstance().getFrame(),

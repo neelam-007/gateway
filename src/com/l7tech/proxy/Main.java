@@ -1,6 +1,7 @@
 package com.l7tech.proxy;
 
 import com.l7tech.proxy.datamodel.Managers;
+import com.l7tech.proxy.datamodel.SsgFinderImpl;
 import org.apache.log4j.Category;
 import org.mortbay.util.MultiException;
 
@@ -22,7 +23,7 @@ public class Main {
     public static void main(final String[] argv) {
         log.info("Starting Layer7 Client Proxy in daemon mode");
 
-        clientProxy = new ClientProxy(Managers.getSsgManager(),
+        clientProxy = new ClientProxy(SsgFinderImpl.getSsgFinderImpl(),
                                       new MessageProcessor(Managers.getPolicyManager()),
                                       DEFAULT_PORT,
                                       MIN_THREADS,

@@ -1,6 +1,7 @@
 package com.l7tech.proxy.gui;
 
 import com.l7tech.proxy.datamodel.Ssg;
+import com.l7tech.proxy.datamodel.SsgManager;
 import com.l7tech.proxy.gui.util.IconManager;
 import org.apache.log4j.Category;
 
@@ -25,11 +26,11 @@ public class SsgListPanel extends JPanel {
     private Action actionEditSsg;
     private Action actionDeleteSsg;
 
-    SsgListPanel() {
-        init();
+    SsgListPanel(SsgManager ssgManager) {
+        init(ssgManager);
     }
 
-    private void init() {
+    private void init(SsgManager ssgManager) {
         setLayout(new GridBagLayout());
 
         final JPanel ssgListPanel = new JPanel(new BorderLayout());
@@ -52,7 +53,7 @@ public class SsgListPanel extends JPanel {
                                    new Insets(0, 0, 0, 0),
                                    0, 0));
 
-        ssgListModel = new SsgListModel();
+        ssgListModel = new SsgListModel(ssgManager);
         ssgList = new JList(ssgListModel);
         ssgList.setSelectedIndex(0);
         ssgList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);

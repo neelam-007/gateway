@@ -2,9 +2,10 @@
 package com.l7tech.proxy.gui;
 
 import com.l7tech.console.panels.Utilities;
-import com.l7tech.proxy.RequestInterceptor;
 import com.l7tech.proxy.ClientProxy;
+import com.l7tech.proxy.RequestInterceptor;
 import com.l7tech.proxy.datamodel.Ssg;
+import com.l7tech.proxy.datamodel.SsgManager;
 import com.l7tech.proxy.gui.util.IconManager;
 import com.l7tech.proxy.util.JavaVersionChecker;
 import org.apache.log4j.Category;
@@ -18,16 +19,13 @@ import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.io.FileOutputStream;
-import java.security.cert.CertificateFactory;
-import java.security.cert.Certificate;
-import java.security.cert.CertificateException;
-import java.security.KeyStore;
+import java.security.GeneralSecurityException;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
-import java.security.GeneralSecurityException;
+import java.security.cert.Certificate;
+import java.security.cert.CertificateException;
+import java.security.cert.CertificateFactory;
 import java.util.Collection;
 import java.util.Iterator;
 
@@ -62,12 +60,23 @@ public class Gui {
     private JCheckBoxMenuItem showMessages;
     private SsgListPanel ssgListPanel;
     private JFileChooser jFileChooser = null;
+    private SsgManager ssgManager = null;
 
     /** Get the singleton Gui. */
-    public static Gui getInstance() {
+   public static Gui getInstance() {
         if (instance == null)
-            instance = new Gui();
+            throw new IllegalStateException("No Gui instance has been configured yet");
         return instance;
+    }
+
+    /** Set the singleton Gui. */
+    public static void setInstance(Gui instance) {
+        Gui.instance = instance;
+    }
+
+    /** Configure a Gui instance. */
+    public static Gui createGui(SsgManager ssgManager) {
+        return new Gui(ssgManager);
     }
 
     private static interface LnfSetter {
@@ -104,7 +113,9 @@ public class Gui {
     /**
      * Initialize the Gui.
      */
-    private Gui() {
+    private Gui(SsgManager ssgManager) {
+        this.ssgManager = ssgManager;
+
         boolean haveXpLnf = JavaVersionChecker.isJavaVersionAtLeast(new int[] {1, 4, 2});
         LnfSetter[] order = haveXpLnf ? new LnfSetter[] { windowsLnfSetter, kunststoffLnfSetter }
                                       : new LnfSetter[] { kunststoffLnfSetter, windowsLnfSetter };
@@ -197,7 +208,7 @@ public class Gui {
 
     private SsgListPanel getSsgListPanel() {
         if (ssgListPanel == null)
-            ssgListPanel = new SsgListPanel();
+            ssgListPanel = new SsgListPanel(ssgManager);
         return ssgListPanel;
     }
 

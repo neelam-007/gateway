@@ -14,7 +14,7 @@ import java.util.Iterator;
  * Date: Jun 2, 2003
  * Time: 1:51:56 PM
  */
-class SsgManagerImpl extends SsgFinderImpl implements SsgManager {
+public class SsgManagerImpl extends SsgFinderImpl implements SsgManager {
     private static final Category log = Category.getInstance(SsgManagerImpl.class);
 
     private static class SsgManagerHolder {
@@ -22,7 +22,7 @@ class SsgManagerImpl extends SsgFinderImpl implements SsgManager {
     }
 
     /** Get the singleton SsgManagerImpl. */
-    public static SsgManagerImpl getInstance() {
+    public static SsgManagerImpl getSsgManagerImpl() {
         return SsgManagerHolder.ssgManager;
     }
 
@@ -36,8 +36,8 @@ class SsgManagerImpl extends SsgFinderImpl implements SsgManager {
     /**
      * Save our SSG state to disk.  Caller is responsible for ensuring that only one process will be
      * calling this method at any given time.
-     */
-    /*
+     *
+     * <pre>
      *    oldFile   curFile  newFile  Description                    Action to take
      *    --------  -------  -------  -----------------------------  --------------------------------
      *  1    -         -        -     Newly created store file       (>newFile) => curFile
@@ -48,6 +48,7 @@ class SsgManagerImpl extends SsgFinderImpl implements SsgManager {
      *  6    +         -        +     Update was interrupted         -newFile; (do #5)
      *  7    +         +        -     Update was interrupted         -oldFile; (do #3)
      *  8    +         +        +     Invalid; can't happen          -newFile; -oldFile; (do #3)
+     *</pre>
      *
      *  We guarantee to end up in state #3 if we complete successfully.
      */

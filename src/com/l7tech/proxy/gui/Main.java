@@ -3,6 +3,8 @@ package com.l7tech.proxy.gui;
 import com.l7tech.proxy.ClientProxy;
 import com.l7tech.proxy.MessageProcessor;
 import com.l7tech.proxy.datamodel.Managers;
+import com.l7tech.proxy.datamodel.SsgManagerImpl;
+import com.l7tech.proxy.datamodel.SsgManager;
 import org.mortbay.util.MultiException;
 import org.apache.log4j.Category;
 
@@ -26,11 +28,16 @@ public class Main {
     public static void main(final String[] argv) {
         log.info("Starting Layer7 Client Proxy in GUI mode");
 
-        clientProxy = new ClientProxy(Managers.getSsgManager(),
+        SsgManager ssgManager = SsgManagerImpl.getSsgManagerImpl();
+
+        clientProxy = new ClientProxy(ssgManager,
                                       new MessageProcessor(Managers.getPolicyManager()),
                                       DEFAULT_PORT,
                                       MIN_THREADS,
                                       MAX_THREADS);
+
+        // Set up the GUI
+        Gui.setInstance(Gui.createGui(ssgManager));
 
         // Hook up the Message Viewer window
         clientProxy.getRequestHandler().setRequestInterceptor(Gui.getInstance().getRequestInterceptor());

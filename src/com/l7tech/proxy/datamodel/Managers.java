@@ -17,14 +17,6 @@ public class Managers {
     private static CredentialManager credentialManager = null;
 
     /**
-     * Get the SsgManager.
-     * @return the SsgManager instance.
-     */
-    public static SsgManager getSsgManager() {
-        return SsgManagerImpl.getInstance();
-    }
-
-    /**
      * Get the PolicyManager.
      * @return the PolicyManager instance.
      */

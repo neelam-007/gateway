@@ -72,7 +72,6 @@ public class PolicyManagerImpl implements PolicyManager {
             log.info("Policy download completed with HTTP status " + status);
             Assertion policy = WspReader.parse(getMethod.getResponseBodyAsStream());
             request.getSsg().attachPolicy(request.getUri(), request.getSoapAction(), policy);
-            Managers.getSsgManager().save(); // save changes
             log.info("New policy saved successfully");
         } catch (IllegalArgumentException e) {
             throw new ConfigurationException(
