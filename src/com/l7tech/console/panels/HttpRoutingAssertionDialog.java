@@ -10,7 +10,7 @@ import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.AssertionPath;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.HttpRoutingAssertion;
-import com.l7tech.policy.assertion.xmlsec.XmlSecurityAssertionBase;
+import com.l7tech.policy.assertion.xmlsec.SecurityHeaderAddressable;
 import com.l7tech.policy.assertion.composite.CompositeAssertion;
 
 import javax.swing.*;
@@ -623,8 +623,8 @@ public class HttpRoutingAssertionDialog extends JDialog {
                 Assertion a = (Assertion)i.next();
                 populateXmlSecurityRecipientContext(a, receptacle);
             }
-        } else if (toInspect instanceof XmlSecurityAssertionBase) {
-            XmlSecurityAssertionBase xsecass = (XmlSecurityAssertionBase)toInspect;
+        } else if (toInspect instanceof SecurityHeaderAddressable) {
+            SecurityHeaderAddressable xsecass = (SecurityHeaderAddressable)toInspect;
             if (!xsecass.getRecipientContext().localRecipient()) {
                 String existingactor = xsecass.getRecipientContext().getActor();
                 if (!receptacle.contains(existingactor)) {

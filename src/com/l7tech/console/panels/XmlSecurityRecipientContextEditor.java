@@ -6,9 +6,9 @@
  */
 package com.l7tech.console.panels;
 
-import com.l7tech.policy.assertion.xmlsec.XmlSecurityAssertionBase;
 import com.l7tech.policy.assertion.xmlsec.RequestWssIntegrity;
 import com.l7tech.policy.assertion.xmlsec.XmlSecurityRecipientContext;
+import com.l7tech.policy.assertion.xmlsec.SecurityHeaderAddressable;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.composite.CompositeAssertion;
 import com.l7tech.common.gui.util.Utilities;
@@ -52,14 +52,14 @@ public class XmlSecurityRecipientContextEditor extends JDialog {
     private JLabel label1;
     private JPanel detailsPanel;
 
-    private XmlSecurityAssertionBase assertion;
+    private SecurityHeaderAddressable assertion;
     // key string (actor), value X509Certificate (recipient)
     private HashMap xmlSecRecipientsFromOtherAssertions = new HashMap();
     private String locallyDefinedActor;
     private X509Certificate locallyDefinedRecipient;
     private boolean assertionChanged = false;
 
-    public XmlSecurityRecipientContextEditor(Frame owner, XmlSecurityAssertionBase assertion) {
+    public XmlSecurityRecipientContextEditor(Frame owner, SecurityHeaderAddressable assertion) {
         super(owner, true);
         this.assertion = assertion;
         initialize();
@@ -195,8 +195,8 @@ public class XmlSecurityRecipientContextEditor extends JDialog {
                 Assertion a = (Assertion)i.next();
                 populateRecipientsFromAssertionTree(a);
             }
-        } else if (toInspect instanceof XmlSecurityAssertionBase) {
-            XmlSecurityAssertionBase xsecass = (XmlSecurityAssertionBase)toInspect;
+        } else if (toInspect instanceof SecurityHeaderAddressable) {
+            SecurityHeaderAddressable xsecass = (SecurityHeaderAddressable)toInspect;
             if (!xsecass.getRecipientContext().localRecipient()) {
                 String existingactor = xsecass.getRecipientContext().getActor();
                 if (!xmlSecRecipientsFromOtherAssertions.containsKey(existingactor)) {
@@ -218,7 +218,7 @@ public class XmlSecurityRecipientContextEditor extends JDialog {
     private void setInitialValues() {
 
         // get to root of policy
-        Assertion root = assertion;
+        Assertion root = (Assertion)assertion;
         while (root.getParent() != null) {
             root = root.getParent();
         }

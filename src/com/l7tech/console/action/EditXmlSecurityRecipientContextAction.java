@@ -12,7 +12,7 @@ import com.l7tech.console.tree.policy.AssertionTreeNode;
 import com.l7tech.console.panels.XmlSecurityRecipientContextEditor;
 import com.l7tech.console.MainWindow;
 import com.l7tech.console.util.TopComponents;
-import com.l7tech.policy.assertion.xmlsec.XmlSecurityAssertionBase;
+import com.l7tech.policy.assertion.xmlsec.SecurityHeaderAddressable;
 import com.l7tech.common.gui.util.Utilities;
 
 import javax.swing.*;
@@ -20,16 +20,16 @@ import java.util.logging.Level;
 
 /**
  * Action that lets the manager admin change the {@link com.l7tech.policy.assertion.xmlsec.XmlSecurityRecipientContext}
- * for an assertion of type {@link com.l7tech.policy.assertion.xmlsec.XmlSecurityAssertionBase}.
+ * for an assertion of type {@link com.l7tech.policy.assertion.xmlsec.SecurityHeaderAddressable}.
  *
  * @author flascelles@layer7-tech.com
  */
 public class EditXmlSecurityRecipientContextAction extends NodeAction {
-    private XmlSecurityAssertionBase assertion;
+    private SecurityHeaderAddressable assertion;
 
     public EditXmlSecurityRecipientContextAction(XpathBasedAssertionTreeNode node) {
         super(node);
-        assertion = (XmlSecurityAssertionBase)node.asAssertion();
+        assertion = (SecurityHeaderAddressable)node.asAssertion();
     }
 
     public String getName() {

@@ -5,7 +5,7 @@ import com.l7tech.console.action.XpathBasedAssertionPropertiesAction;
 import com.l7tech.console.action.EditXmlSecurityRecipientContextAction;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.XpathBasedAssertion;
-import com.l7tech.policy.assertion.xmlsec.XmlSecurityAssertionBase;
+import com.l7tech.policy.assertion.xmlsec.SecurityHeaderAddressable;
 
 import javax.swing.*;
 import java.util.ArrayList;
@@ -40,7 +40,7 @@ public abstract class XpathBasedAssertionTreeNode extends LeafAssertionTreeNode 
         java.util.List list = new ArrayList();
         Action a = XpathBasedAssertionPropertiesAction.actionForNode(this);
         list.add(a);
-        if (assertion instanceof XmlSecurityAssertionBase) {
+        if (assertion instanceof SecurityHeaderAddressable) {
             list.add(new EditXmlSecurityRecipientContextAction(this));
         }
         list.addAll(Arrays.asList(super.getActions()));
