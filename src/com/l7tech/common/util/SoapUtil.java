@@ -62,6 +62,7 @@ public class SoapUtil {
     public static final String L7_MESSAGEID_NAMESPACE = "http://www.layer7tech.com/ws/addr";
     public static final String L7_MESSAGEID_PREFIX = "L7a";
     public static final String L7_SERVICEID_ELEMENT = "ServiceId";
+    public static final String L7_POLICYVERSION_ELEMENT = "PolicyVersion";
 
     public static final List SECURITY_URIS = new ArrayList();
 
