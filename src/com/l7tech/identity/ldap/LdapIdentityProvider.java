@@ -519,6 +519,7 @@ public class LdapIdentityProvider implements IdentityProvider {
             String userclass = userTypes[i].getObjClass();
             if (attrContainsCaseIndependent(objectclasses, userclass)) {
                 Object tmp = null;
+                String login = null;
                 try {
                     tmp = extractOneAttributeValue(atts, userTypes[i].getLoginAttrName());
                 } catch (NamingException e) {
@@ -526,7 +527,21 @@ public class LdapIdentityProvider implements IdentityProvider {
                     tmp = null;
                 }
                 if (tmp != null) {
-                    return new EntityHeader(dn, EntityType.USER, tmp.toString(), null);
+                    login = tmp.toString();
+                }
+                // if description attribute present, use it
+                String description = null;
+                try {
+                    tmp = extractOneAttributeValue(atts, DESCRIPTION_ATTRIBUTE_NAME);
+                } catch (NamingException e) {
+                    logger.log(Level.FINEST, "no description for this entry", e);
+                    tmp = null;
+                }
+                if (tmp != null) {
+                    description = tmp.toString();
+                }
+                if (login != null) {
+                    return new EntityHeader(dn, EntityType.USER, login, description);
                 } else {
                     return null;
                 }
@@ -546,7 +561,19 @@ public class LdapIdentityProvider implements IdentityProvider {
                     }
                 }
                 if (groupName == null) groupName = dn;
-                return new EntityHeader(dn, EntityType.GROUP, groupName, null);
+                // if description attribute present, use it
+                Object tmp = null;
+                String description = null;
+                try {
+                    tmp = extractOneAttributeValue(atts, DESCRIPTION_ATTRIBUTE_NAME);
+                } catch (NamingException e) {
+                    logger.log(Level.FINEST, "no description for this entry", e);
+                    tmp = null;
+                }
+                if (tmp != null) {
+                    description = tmp.toString();
+                }
+                return new EntityHeader(dn, EntityType.GROUP, groupName, description);
             }
         }
         return null;
@@ -566,6 +593,7 @@ public class LdapIdentityProvider implements IdentityProvider {
         return null;
     }
 
+    public static final String DESCRIPTION_ATTRIBUTE_NAME = "description";
     private LdapIdentityProviderConfig cfg;
     private final Logger logger = LogManager.getInstance().getSystemLogger();
     private MessageDigest _md5;
