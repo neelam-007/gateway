@@ -126,7 +126,9 @@ public class PolicyServiceTest extends TestCase {
     private Policy parsePolicyResponse(Document originalRequest, Document response) throws Exception {
         Policy policy = PolicyServiceClient.parseGetPolicyResponse(originalRequest,
                                                                    response,
-                                                                   TestDocuments.getDotNetServerCertificate());
+                                                                   TestDocuments.getDotNetServerCertificate(),
+                                                                   null,
+                                                                   null);
         assertNotNull(policy);
         return policy;
     }

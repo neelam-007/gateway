@@ -7,13 +7,17 @@
 package com.l7tech.proxy.datamodel;
 
 import com.l7tech.common.protocol.SecureSpanConstants;
+import com.l7tech.common.xml.InvalidDocumentFormatException;
+import com.l7tech.common.xml.saml.SamlHolderOfKeyAssertion;
+import com.l7tech.common.util.CausedIOException;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.wsp.WspReader;
 import com.l7tech.proxy.ConfigurationException;
+import com.l7tech.proxy.util.PolicyServiceClient;
+
 import java.util.logging.Logger;
-import com.l7tech.proxy.datamodel.exceptions.OperationCanceledException;
-import com.l7tech.proxy.datamodel.exceptions.ServerCertificateUntrustedException;
-import com.l7tech.proxy.datamodel.exceptions.HttpChallengeRequiredException;
+
+import com.l7tech.proxy.datamodel.exceptions.*;
 import org.apache.commons.httpclient.Header;
 import org.apache.commons.httpclient.HttpClient;
 import org.apache.commons.httpclient.HttpState;
@@ -24,6 +28,10 @@ import javax.net.ssl.SSLHandshakeException;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.net.PasswordAuthentication;
+import java.security.cert.X509Certificate;
+import java.security.GeneralSecurityException;
+import java.security.PrivateKey;
 
 /**
  * The ClientProxy's default PolicyManager.  Loads policies from the SSG on-demand
@@ -80,7 +88,7 @@ public class PolicyManagerImpl implements PolicyManager {
      * Notify the PolicyManager that a policy may be out-of-date.
      * The PolicyManager should attempt to update the policy if it needs to do so.
      * @param request The request that failed in a way suggestive that its policy may be out-of-date.
-     * @param policyUrl The URL to fetch the policy from
+     * @param serviceId The ID of the service for which to load policy.
      * @throws ConfigurationException if the PendingRequest did not contain enough information to construct a
      *                                valid PolicyAttachmentKey
      * @throws IOException if the policy could not be read from the SSG
@@ -88,8 +96,104 @@ public class PolicyManagerImpl implements PolicyManager {
      *                                             the SSG's SSL certificate being unrecognized
      * @throws com.l7tech.proxy.datamodel.exceptions.OperationCanceledException if credentials were required, but the user canceled the logon dialog
      */
-    public void updatePolicy(PendingRequest request, URL policyUrl)
-            throws ConfigurationException, IOException, ServerCertificateUntrustedException, OperationCanceledException, HttpChallengeRequiredException
+    public void updatePolicy(PendingRequest request, String serviceId)
+            throws ConfigurationException, IOException, GeneralSecurityException,
+                   OperationCanceledException, HttpChallengeRequiredException, KeyStoreCorruptException,
+                   ClientCertificateException, PolicyRetryableException
+    {
+        PolicyAttachmentKey pak = new PolicyAttachmentKey(request.getUri(), request.getSoapAction());
+        Ssg ssg = request.getSsg();
+        X509Certificate serverCert = SsgKeyStoreManager.getServerCert(ssg);
+        if (serverCert == null)
+            throw new ServerCertificateUntrustedException("Server certificate not yet known");
+
+        // Try anonymous download first
+        try {
+            log.info("Trying anonymous policy download from " + ssg);
+            Policy policy = PolicyServiceClient.downloadPolicyWithNoAuthentication(ssg, serviceId, serverCert);
+            request.getSsg().attachPolicy(pak, policy);
+            request.getRequestInterceptor().onPolicyUpdated(request.getSsg(), pak, policy);
+            log.info("New policy saved successfully");
+            return;
+        } catch (BadCredentialsException e) {
+            // FALLTHROUGH and try again using credentials
+        } catch (InvalidDocumentFormatException e) {
+            throw new CausedIOException("Unable to download new policy", e);
+        }
+
+        for (int attempts = 0; attempts < 10; ++attempts) {
+            // Anonymous download failed; need to try again with credentials.
+            try {
+                Policy policy = null;
+                if (ssg.getTrustedGateway() != null) {
+                    // Federated SSG -- use a SAML token for authentication.
+                    log.info("Trying SAML-authenticated policy download from Federated Gateway " + ssg);
+                    request.prepareClientCertificate();
+                    SamlHolderOfKeyAssertion samlHok = request.getOrCreateSamlHolderOfKeyAssertion();
+                    PrivateKey key = SsgKeyStoreManager.getClientCertPrivateKey(ssg);
+                    if (key == null) throw new ConfigurationException("Unable to obtain client cert private key"); // shouldn't happen
+                    policy = PolicyServiceClient.downloadPolicyWithSamlAssertion(ssg, serviceId, serverCert, samlHok, key);
+                } else if (SsgKeyStoreManager.isClientCertAvailabile(ssg)) {
+                    // Trusted SSG, but with a client cert -- use WSS signature for authentication.
+                    log.info("Trying WSS-signature-authenticated policy download from Trusted Gateway " + ssg);
+                    request.prepareClientCertificate();
+                    X509Certificate clientCert = SsgKeyStoreManager.getClientCert(ssg);
+                    PrivateKey key = SsgKeyStoreManager.getClientCertPrivateKey(ssg);
+                    policy = PolicyServiceClient.downloadPolicyWithWssSignature(ssg, serviceId, serverCert,
+                                                                                clientCert, key);
+                } else {
+                    // Trusted SSG, but with no client cert -- use HTTP Basic over SSL for authentication.
+                    log.info("Trying HTTP Basic-over-SSL authenticated policy download from Trusted Gateway " + ssg);
+                    PasswordAuthentication creds = request.getCredentials();
+                    policy = PolicyServiceClient.downloadPolicyWithHttpBasicOverSsl(ssg, serviceId, serverCert, creds);
+                }
+                if (policy == null)
+                    throw new ConfigurationException("Unable to obtain a policy."); // can't happen
+                request.getSsg().attachPolicy(pak, policy);
+                request.getRequestInterceptor().onPolicyUpdated(request.getSsg(), pak, policy);
+                log.info("New policy saved successfully");
+                return;
+            } catch (BadCredentialsException e) {
+                log.info("Policy service denies access to this policy with current credentials");
+                if (ssg.getTrustedGateway() != null) {
+                    final String msg = "Unable to obtain new credentials for federated Gateway; policy download therefore fails.";
+                    log.warning(msg);
+                    throw new ConfigurationException(msg);
+                }
+
+                log.info("Prompting for new credentials");
+                request.getNewCredentials();
+                log.info("Retrying policy download with new credentials");
+                // FALLTHROUGH and retry
+            } catch (InvalidDocumentFormatException e) {
+                throw new CausedIOException("Unable to download new policy", e);
+            } catch (SSLHandshakeException e) {
+                if (e.getCause() instanceof ServerCertificateUntrustedException)
+                    throw (ServerCertificateUntrustedException) e.getCause();
+                throw e;
+            }
+        }
+
+        throw new ConfigurationException("Too many unsuccessful attempts; policy download therefore fails");
+    }
+
+
+    /**
+     * Notify the PolicyManager that a policy may be out-of-date.
+     * The PolicyManager should attempt to update the policy if it needs to do so.
+     * @param request The request that failed in a way suggestive that its policy may be out-of-date.
+     * @param policyUrl The URL to fetch the policy from
+     * @throws ConfigurationException if the PendingRequest did not contain enough information to construct a
+     *                                valid PolicyAttachmentKey
+     * @throws IOException if the policy could not be read from the SSG
+     * @throws com.l7tech.proxy.datamodel.exceptions.ServerCertificateUntrustedException if an SSL handshake with the SSG could not be established due to
+     *                                             the SSG's SSL certificate being unrecognized
+     * @throws com.l7tech.proxy.datamodel.exceptions.OperationCanceledException if credentials were required, but the user canceled the logon dialog
+     * @deprecated replaced by new SOAPified policy download; see updatePolicy()
+     */
+    private void OLD_updatePolicy(PendingRequest request, URL policyUrl)
+            throws ConfigurationException, IOException, ServerCertificateUntrustedException,
+                   OperationCanceledException, HttpChallengeRequiredException
     {
         HttpClient client = new HttpClient();
         HttpState state = client.getState();

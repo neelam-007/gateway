@@ -35,6 +35,6 @@ public class PolicyManagerStub implements PolicyManager {
     public void flushPolicy(PendingRequest request) {
     }
 
-    public void updatePolicy(PendingRequest request, URL policyUrl) throws ConfigurationException, IOException {
+    public void updatePolicy(PendingRequest request, String serviceId) throws ConfigurationException, IOException {
     }
 }

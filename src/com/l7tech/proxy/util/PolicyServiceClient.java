@@ -9,10 +9,16 @@ package com.l7tech.proxy.util;
 import com.l7tech.common.security.xml.*;
 import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.util.XmlUtil;
+import com.l7tech.common.util.CausedIOException;
+import com.l7tech.common.util.HexUtils;
 import com.l7tech.common.xml.InvalidDocumentFormatException;
 import com.l7tech.common.xml.MissingRequiredElementException;
 import com.l7tech.common.xml.MessageNotSoapException;
+import com.l7tech.common.xml.saml.SamlHolderOfKeyAssertion;
+import com.l7tech.common.protocol.SecureSpanConstants;
 import com.l7tech.proxy.datamodel.Policy;
+import com.l7tech.proxy.datamodel.Ssg;
+import com.l7tech.proxy.datamodel.CurrentRequest;
 import com.l7tech.proxy.datamodel.exceptions.ServerCertificateUntrustedException;
 import com.l7tech.proxy.datamodel.exceptions.BadCredentialsException;
 import com.l7tech.policy.wsp.WspConstants;
@@ -30,6 +36,10 @@ import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
 import java.util.Arrays;
 import java.util.logging.Logger;
+import java.util.logging.Level;
+import java.net.URL;
+import java.net.URLConnection;
+import java.net.PasswordAuthentication;
 
 /**
  * Builds request messages for the PolicyService and helps parse the responses.
@@ -38,14 +48,33 @@ public class PolicyServiceClient {
     public static final Logger log = Logger.getLogger(PolicyServiceClient.class.getName());
 
 
-    public static Document createSignedGetPolicyRequest(String serviceId,
+    public static Document createSignedGetPolicyRequest(String serviceId,                                                  
                                                   X509Certificate clientCert,
                                                   PrivateKey clientKey)
+            throws GeneralSecurityException
+    {
+        return createSignedGetPolicyRequest(serviceId, null, clientCert, clientKey);
+    }
+
+    public static Document createSignedGetPolicyRequest(String serviceId,                                                  
+                                                  SamlHolderOfKeyAssertion samlAss,
+                                                  PrivateKey clientKey)
+            throws GeneralSecurityException
+    {
+        return createSignedGetPolicyRequest(serviceId, samlAss, null, clientKey);
+    }
+    
+    private static Document createSignedGetPolicyRequest(String serviceId,
+                                                         SamlHolderOfKeyAssertion samlAss,
+                                                         X509Certificate clientCert,
+                                                         PrivateKey clientKey)
             throws GeneralSecurityException
     {
         Document msg = createGetPolicyRequest(serviceId);
         WssDecorator decorator = new WssDecoratorImpl();
         WssDecorator.DecorationRequirements req = new WssDecorator.DecorationRequirements();
+        if (samlAss != null)
+            req.setSenderSamlToken(samlAss.asElement());
         req.setSenderCertificate(clientCert);
         req.setSenderPrivateKey(clientKey);
         req.setSignTimestamp(true);
@@ -104,18 +133,22 @@ public class PolicyServiceClient {
      * @param originalRequest the original request as sent to the policy service.
      *                        Used to verify that the correlation ID matches up in the reply (preventing replay attacks).
      * @param response the reponse from the policy service, which must by a SOAP message signed by serverCertificate.
+     * @param serverCertificate the serverCertificate.  Must match the certificate that signed the response.
+     * @param clientCert optional. if specified along with clientKey, encrypted responses can be processed.
+     * @param clientKey optional. if specified along with clientCert, encrypted responses can be processed.
      * @return the Policy retrieved from the policy service
      * @throws InvalidDocumentFormatException if the policy service response was not formatted correctly
      * @throws BadCredentialsException if the policy service denies access to this policy to your credentials
      */
-    public static Policy parseGetPolicyResponse(Document originalRequest, Document response, X509Certificate serverCertificate)
+    public static Policy parseGetPolicyResponse(Document originalRequest, Document response, X509Certificate serverCertificate,
+                                                X509Certificate clientCert, PrivateKey clientKey)
             throws InvalidDocumentFormatException, GeneralSecurityException, ProcessorException,
             ServerCertificateUntrustedException, BadCredentialsException
     {
         WssProcessor wssProcessor = new WssProcessorImpl();
         WssProcessor.ProcessorResult result;
         try {
-            result = wssProcessor.undecorateMessage(response, null, null, null);
+            result = wssProcessor.undecorateMessage(response, clientCert, clientKey, null);
         } catch (WssProcessor.BadContextException e) {
             throw new ProcessorException(e); // can't happen
         }
@@ -150,6 +183,7 @@ public class PolicyServiceClient {
      * @return the Policy retrieved from the policy service
      * @throws InvalidDocumentFormatException if the policy service response was not formatted correctly
      * @throws BadCredentialsException if the policy service denies access to this policy to your credentials
+     * @deprecated This method might not be needed.  If it isn't, we'll remove it completely.
      */
     private static Policy parseGetPolicyResponse(Document originalRequest, Document response)
             throws InvalidDocumentFormatException, BadCredentialsException
@@ -181,7 +215,6 @@ public class PolicyServiceClient {
             if (!requestMessageId.equals(idstr))
                 throw new InvalidDocumentFormatException("Policy server response did not include an L7a:RelatesTo matching our requests L7a:MessageID.");
         }
-
 
         // PGet metadata from header
         Element header = SoapUtil.getHeaderElement(response);
@@ -231,5 +264,174 @@ public class PolicyServiceClient {
         } catch (IOException e) {
             throw new InvalidDocumentFormatException(e);
         }
+    }
+
+    /**
+     * Connect to the specified URL and download policy using the specified already-decorated GetPolicy request.
+     * The URL is assumed to belong to the specified SSG.
+     *
+     * @param url
+     * @param ssg
+     * @param requestDoc
+     * @param httpBasicAuthorization optional.  If specified, the Authorization: HTTP header will be set to whatever is in this string.
+     * @param serverCertificate  required.  used to verify identity of signer of downloaded policy.
+     * @param clientCert         optional. if specified along with clientKey, an encrypted response can be processed.
+     * @param clientKey          optional. if specified along with clientCert, an encrypted response can be processed.
+     * @return
+     * @throws IOException
+     * @throws GeneralSecurityException
+     * @throws BadCredentialsException
+     */
+    private static Policy obtainResponse(URL url,
+                                         Ssg ssg,
+                                         Document requestDoc,
+                                         String httpBasicAuthorization,
+                                         X509Certificate serverCertificate,
+                                         X509Certificate clientCert,
+                                         PrivateKey clientKey)
+            throws IOException, GeneralSecurityException, BadCredentialsException, InvalidDocumentFormatException
+    {
+        log.log(Level.INFO, "Downloading policy from " + url.toString());
+
+        CurrentRequest.setPeerSsg(ssg);
+        URLConnection conn = url.openConnection();
+        if (httpBasicAuthorization != null)
+            conn.setRequestProperty("Authorization", httpBasicAuthorization); 
+        conn.setDoOutput(true);
+        conn.setAllowUserInteraction(false);
+        conn.setRequestProperty(XmlUtil.CONTENT_TYPE, XmlUtil.TEXT_XML);
+        XmlUtil.nodeToOutputStream(requestDoc, conn.getOutputStream());
+        int len = conn.getContentLength();
+        log.log(Level.FINEST, "Policy server response content length=" + len);
+        CurrentRequest.setPeerSsg(null);
+        String contentType = conn.getContentType();
+        if (contentType == null || contentType.indexOf(XmlUtil.TEXT_XML) < 0)
+            throw new IOException("Policy server returned unsupported content type " + conn.getContentType());
+        Document response = null;
+        try {
+            response = XmlUtil.parse(conn.getInputStream());
+        } catch (SAXException e) {
+            throw new CausedIOException("Unable to XML parse GetPolicyResponse", e);
+        }
+        Policy result = null;
+        try {
+            result = parseGetPolicyResponse(requestDoc,
+                                            response,
+                                            serverCertificate,
+                                            clientCert,
+                                            clientKey);
+        } catch (ProcessorException e) {
+            throw new CausedIOException("Unable to obtain policy from policy server", e);
+        }
+        return result;
+    }
+
+    /**
+     * Connect to the specified SSG over HTTP and download policy using a GetPolicy request, authenticating
+     * with a WSS Signature using the specified client certificate, and verifying that the reponse signature
+     * was valid and made by the specified serverCertificate.
+     *
+     * @param ssg                required. the Ssg from which we are downloading.  Used to keep CurrentRequest.getPeerSsg() up-to-date.
+     * @param serviceId          required. the identifier of the service whose policy we wish to download.  Opaque to the client.
+     * @param serverCertificate  required. used to verify identity of signer of downloaded policy.
+     * @param clientCert         required. used to sign the request (and to decyrpt any encrypted portion in a response)
+     * @param clientKey          required. used to sign the request (and to decyrpt any encrypted portion in a response)
+     * @return a new Policy.  Never null.
+     * @throws IOException if there is a network problem
+     * @throws GeneralSecurityException if there is a problem with a certificate or a crypto operation.
+     * @throws InvalidDocumentFormatException if the policy service response was not formatted correctly
+     * @throws BadCredentialsException if the policy service denies access to this policy to your credentials
+     */
+    public static Policy downloadPolicyWithWssSignature(Ssg ssg,
+                                                        String serviceId,
+                                                        X509Certificate serverCertificate,
+                                                        X509Certificate clientCert,
+                                                        PrivateKey clientKey)
+            throws IOException, GeneralSecurityException, BadCredentialsException, InvalidDocumentFormatException
+    {
+        URL url = new URL("http", ssg.getSsgAddress(), ssg.getSsgPort(), SecureSpanConstants.POLICY_SERVICE_FILE);
+        Document requestDoc = createSignedGetPolicyRequest(serviceId, clientCert, clientKey);
+        return obtainResponse(url, ssg, requestDoc, null, serverCertificate, clientCert, clientKey);
+    }
+
+    /**
+     * Connect to the specified SSG over HTTPS and download policy using a GetPolicy request, authenticating
+     * with HTTP Basic-over-SSL, and verifying that the response signature was valid and made by the specified
+     * serverCertificate.
+     *
+     * @param ssg                required. the Ssg from which we are downloading.  Used to keep CurrentRequest.getPeerSsg() up-to-date.
+     * @param serviceId          required. the identifier of the service whose policy we wish to download.  Opaque to the client.
+     * @param serverCertificate  required. used to verify identity of signer of downloaded policy.
+     * @param basicCredentials   required. the credentials to use for HTTP Basic-over-SSL authentication.
+     * @return a new Policy.  Never null.
+     * @throws IOException if there is a network problem
+     * @throws GeneralSecurityException if there is a problem with a certificate or a crypto operation.
+     * @throws InvalidDocumentFormatException if the policy service response was not formatted correctly
+     * @throws BadCredentialsException if the policy service denies access to this policy to your credentials
+     */
+    public static Policy downloadPolicyWithHttpBasicOverSsl(Ssg ssg,
+                                                            String serviceId,
+                                                            X509Certificate serverCertificate,
+                                                            PasswordAuthentication basicCredentials)
+            throws IOException, GeneralSecurityException, BadCredentialsException, InvalidDocumentFormatException
+    {
+        URL url = new URL("https", ssg.getSsgAddress(), ssg.getSslPort(), SecureSpanConstants.POLICY_SERVICE_FILE);
+        Document requestDoc = createGetPolicyRequest(serviceId);
+        String auth = "Basic " + HexUtils.encodeBase64(
+                (basicCredentials.getUserName() + ":" + basicCredentials.getPassword()).getBytes());        
+        return obtainResponse(url, ssg, requestDoc, auth, serverCertificate, null, null);
+    }
+    
+    /**
+     * Connect to the specified SSG over HTTP and download an anonymous policy using a GetPolicy request,
+     * authenticating using a signature using the specified SAML Holder-of-key asseriton + subject private key,
+     * and verifying that the response signature was valid and made by the specified serverCertificate.
+     *
+     * @param ssg                required. the Ssg from which we are downloading.  Used to keep CurrentRequest.getPeerSsg() up-to-date.
+     * @param serviceId          required. the identifier of the service whose policy we wish to download.  Opaque to the client.
+     * @param serverCertificate  required. used to verify identity of signer of downloaded policy.
+     * @param samlAss            required. a Saml holder-of-key assertion containing your client cert as the subject.
+     *                           The whole assertion must already be signed by an issuer trusted by this policy service.
+     * @param subjectPrivateKey  required. The private key corresponding to the subject certificate in samlAss.
+     * @return a new Policy.  Never null.
+     * @throws IOException if there is a network problem
+     * @throws GeneralSecurityException if there is a problem with a certificate or a crypto operation.
+     * @throws InvalidDocumentFormatException if the policy service response was not formatted correctly
+     * @throws BadCredentialsException if the policy service denies access to this policy to your (lack of) credentials
+     */
+    public static Policy downloadPolicyWithSamlAssertion(Ssg ssg,
+                                                         String serviceId,
+                                                         X509Certificate serverCertificate,
+                                                         SamlHolderOfKeyAssertion samlAss,
+                                                         PrivateKey subjectPrivateKey)
+            throws IOException, GeneralSecurityException, BadCredentialsException, InvalidDocumentFormatException
+    {
+        URL url = new URL("http", ssg.getSsgAddress(), ssg.getSsgPort(), SecureSpanConstants.POLICY_SERVICE_FILE);
+        Document requestDoc = createSignedGetPolicyRequest(serviceId, samlAss, subjectPrivateKey);
+        return obtainResponse(url, ssg, requestDoc, null, serverCertificate, samlAss.getSubjectCertificate(), subjectPrivateKey);
+    }
+
+    /**
+     * Connect to the specified SSG over HTTP and download an anonymous policy using a GetPolicy request with
+     * no client side authentication at all, but still verifying that the response signature was valid and made 
+     * by the specified serverCertificate.
+     *
+     * @param ssg                required. the Ssg from which we are downloading.  Used to keep CurrentRequest.getPeerSsg() up-to-date.
+     * @param serviceId          required. the identifier of the service whose policy we wish to download.  Opaque to the client.
+     * @param serverCertificate  required. used to verify identity of signer of downloaded policy.
+     * @return a new Policy.  Never null.
+     * @throws IOException if there is a network problem
+     * @throws GeneralSecurityException if there is a problem with a certificate or a crypto operation.
+     * @throws InvalidDocumentFormatException if the policy service response was not formatted correctly
+     * @throws BadCredentialsException if the policy service denies access to this policy to your (lack of) credentials
+     */
+    public static Policy downloadPolicyWithNoAuthentication(Ssg ssg,
+                                                            String serviceId,
+                                                            X509Certificate serverCertificate)
+            throws IOException, GeneralSecurityException, BadCredentialsException, InvalidDocumentFormatException
+    {
+        URL url = new URL("http", ssg.getSsgAddress(), ssg.getSsgPort(), SecureSpanConstants.POLICY_SERVICE_FILE);
+        Document requestDoc = createGetPolicyRequest(serviceId);
+        return obtainResponse(url, ssg, requestDoc, null, serverCertificate, null, null);        
     }
 }

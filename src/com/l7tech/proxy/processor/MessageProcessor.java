@@ -42,6 +42,8 @@ import java.security.*;
 import java.security.cert.CertificateException;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.regex.Pattern;
+import java.util.regex.Matcher;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -59,6 +61,7 @@ public class MessageProcessor {
     public static final String PROPERTY_LOGRESPONSE = "com.l7tech.proxy.processor.logResponses";
     public static final String PROPERTY_REFORMATLOGGEDXML = "com.l7tech.proxy.processor.reformatLoggedXml";
     private static final Policy SSL_POLICY = new Policy(new SslAssertion(), null);
+    private static Pattern findServiceid = Pattern.compile("^.*\\&?serviceoid=(.+?)(\\&.*|)", Pattern.DOTALL);
 
     private static final int MAX_TRIES = 8;
     private PolicyManager policyManager;
@@ -534,16 +537,23 @@ public class MessageProcessor {
                 // Have we already updated a policy while processing this request?
                 if (req.isPolicyUpdated())
                     throw new ConfigurationException("Policy was updated, but Gateway says it's still out-of-date");
-                URL policyUrl;
+                String serviceid = null;
                 try {
-                    policyUrl = new URL(policyUrlHeader.getValue());
+                    URL policyUrl = new URL(policyUrlHeader.getValue());
                     // force the policy URL to point at the SSG hostname the user typed
                     policyUrl = new URL(policyUrl.getProtocol(), ssg.getSsgAddress(), policyUrl.getPort(), policyUrl.getFile());
+                    String query = policyUrl.getQuery();
+                    Matcher m = findServiceid.matcher(query);
+                    if (m.matches())
+                        serviceid = m.group(1);
+                    if (serviceid == null || serviceid.length() < 1)
+                        throw new ConfigurationException("Gateway sent us a Policy URL from which we were unable to extract the service ID.");
+
                 } catch (MalformedURLException e) {
                     throw new ConfigurationException("Gateway sent us an invalid Policy URL.");
                 }
 
-                policyManager.updatePolicy(req, policyUrl);
+                policyManager.updatePolicy(req, serviceid);
                 req.setPolicyUpdated(true);
                 if (status != 200) {
                     log.info("Retrying request with the new policy");
