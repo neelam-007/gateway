@@ -39,7 +39,7 @@ public class UserManagerImp extends HibernateEntityManager implements UserManage
     }
 
     public Collection findAll() throws FindException {
-        return _manager.find( _context, "from user in class com.l7tech.identity.imp.UserImp");
+        return _manager.find( _context, "from user in class com.l7tech.identity.imp.UserImp where provider = ?", new Long( _identityProviderOid ), Long.TYPE );
     }
 
     public Collection findAll(int offset, int windowSize) throws FindException {
