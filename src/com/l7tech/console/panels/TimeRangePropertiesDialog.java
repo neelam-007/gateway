@@ -6,6 +6,9 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionListener;
 import java.awt.event.ActionEvent;
+import java.util.Collection;
+import java.util.ArrayList;
+import java.util.Iterator;
 
 /**
  * Dialog to view or edit the properties of a TimeRange assertion.
@@ -42,8 +45,11 @@ public class TimeRangePropertiesDialog extends JDialog {
         if (enableDayOfWeek.isSelected()) {
             enable = true;
         }
-        startDay.setEnabled(enable);
-        endDay.setEnabled(enable);
+        for (Iterator iterator = itemsToToggleForDayOfWeek.iterator(); iterator.hasNext();) {
+            JComponent component = (JComponent) iterator.next();
+            component.setEnabled(enable);
+
+        }
     }
 
     /**
@@ -54,22 +60,22 @@ public class TimeRangePropertiesDialog extends JDialog {
         if (enableTimeOfDay.isSelected()) {
             enable = true;
         }
-        startHr.setEnabled(enable);
-        endHr.setEnabled(enable);
-        startMin.setEnabled(enable);
-        endMin.setEnabled(enable);
-        startSec.setEnabled(enable);
-        endSec.setEnabled(enable);
+        for (Iterator iterator = itemsToToggleForTimeOfDay.iterator(); iterator.hasNext();) {
+            JComponent component = (JComponent) iterator.next();
+            component.setEnabled(enable);
+        }
     }
 
     /**
      * create controls and layout
      */
     private void initialize() {
+        itemsToToggleForTimeOfDay.clear();
+
         setTitle("Time Range Assertion Properties");
         Container contents = getContentPane();
         contents.setLayout(new BorderLayout(0,0));
-        contents.add(makeTabPanel(), BorderLayout.CENTER);
+        contents.add(makeGlobalPanel(), BorderLayout.CENTER);
         contents.add(makeBottomButtonsPanel(), BorderLayout.SOUTH);
 
         // create callbacks
@@ -102,11 +108,9 @@ public class TimeRangePropertiesDialog extends JDialog {
         });
     }
 
-    private JComponent makeTabPanel() {
-        JTabbedPane tabbedPane = new JTabbedPane(JTabbedPane.TOP, JTabbedPane.SCROLL_TAB_LAYOUT);
-        tabbedPane.addTab("Time of day restriction", makeTimeOfDayPanel());
-        tabbedPane.addTab("Day of week restriction", makeDayOfWeekPanel());
-        return wrapAroundBorders(tabbedPane, CONTROL_SPACING, CONTROL_SPACING, 0, BORDER_PADDING);
+    private JComponent makeGlobalPanel() {
+        JComponent globalPane = mainPanel();
+        return wrapAroundBorders(globalPane, CONTROL_SPACING, CONTROL_SPACING, 0, BORDER_PADDING);
     }
 
     private JPanel wrapAroundBorders(JComponent src, int top, int left, int bottom, int right) {
@@ -121,99 +125,123 @@ public class TimeRangePropertiesDialog extends JDialog {
         return bordered;
     }
 
-    private JComponent makeTimeOfDayPanel() {
+    private JComponent makeGriddedTimeOfDaySubPanel() {
         JPanel timeOfDayPanel = new JPanel();
-        timeOfDayPanel.setLayout(new GridLayout(3, 1, CONTROL_SPACING, CONTROL_SPACING));
+
+        timeOfDayPanel.setLayout(new GridBagLayout());
+
+        double weightx = 0.33;
+        int nfill = GridBagConstraints.NONE;
+        int fill = GridBagConstraints.HORIZONTAL;
+        int dir = GridBagConstraints.WEST;
+        Insets insets = new Insets(0, 0, 0, CONTROL_SPACING);
+
+        JLabel toto = new JLabel("between");
+        itemsToToggleForTimeOfDay.add(toto);
+        timeOfDayPanel.add(toto, new GridBagConstraints(0, 0, 1, 1, 0, 0, dir, nfill, insets, 0, 0));
+        startHr = new JSpinner(new SpinnerNumberModel(8, 0, 23, 1));
+        itemsToToggleForTimeOfDay.add(startHr);
+        itemsToToggleForTimeOfDay.add(startHr);
+        timeOfDayPanel.add(startHr, new GridBagConstraints(1, 0, 1, 1, weightx, 0, dir, fill, insets, 0, 0));
+        toto = new JLabel("hr");
+        itemsToToggleForTimeOfDay.add(toto);
+        timeOfDayPanel.add(toto, new GridBagConstraints(2, 0, 1, 1, 0, 0, dir, nfill, insets, 0, 0));
+        startMin = new JSpinner(new SpinnerNumberModel(0, 0, 59, 1));
+        itemsToToggleForTimeOfDay.add(startMin);
+        timeOfDayPanel.add(startMin, new GridBagConstraints(3, 0, 1, 1, weightx, 0, dir, fill, insets, 0, 0));
+        toto = new JLabel("min");
+        itemsToToggleForTimeOfDay.add(toto);
+        timeOfDayPanel.add(toto, new GridBagConstraints(4, 0, 1, 1, 0, 0, dir, nfill, insets, 0, 0));
+        startSec = new JSpinner(new SpinnerNumberModel(0, 0, 59, 1));
+        itemsToToggleForTimeOfDay.add(startSec);
+        timeOfDayPanel.add(startSec, new GridBagConstraints(5, 0, 1, 1, weightx, 0, dir, fill, insets, 0, 0));
+        toto = new JLabel("sec");
+        itemsToToggleForTimeOfDay.add(toto);
+        timeOfDayPanel.add(toto, new GridBagConstraints(6, 0, 1, 1, 0, 0, dir, nfill, insets, 0, 0));
+
+        toto = new JLabel("and");
+        itemsToToggleForTimeOfDay.add(toto);
+        timeOfDayPanel.add(toto, new GridBagConstraints(0, 1, 1, 1, 0, 0, dir, nfill, insets, 0, 0));
+        endHr = new JSpinner(new SpinnerNumberModel(17, 0, 23, 1));
+        itemsToToggleForTimeOfDay.add(endHr);
+        timeOfDayPanel.add(endHr, new GridBagConstraints(1, 1, 1, 1, weightx, 0, dir, fill, insets, 0, 0));
+        toto = new JLabel("hr");
+        itemsToToggleForTimeOfDay.add(toto);
+        timeOfDayPanel.add(toto, new GridBagConstraints(2, 1, 1, 1, 0, 0, dir, nfill, insets, 0, 0));
+        endMin = new JSpinner(new SpinnerNumberModel(0, 0, 59, 1));
+        itemsToToggleForTimeOfDay.add(endMin);
+        timeOfDayPanel.add(endMin, new GridBagConstraints(3, 1, 1, 1, weightx, 0, dir, fill, insets, 0, 0));
+        toto = new JLabel("min");
+        itemsToToggleForTimeOfDay.add(toto);
+        timeOfDayPanel.add(toto, new GridBagConstraints(4, 1, 1, 1, 0, 0, dir, nfill, insets, 0, 0));
+        endSec = new JSpinner(new SpinnerNumberModel(0, 0, 59, 1));
+        itemsToToggleForTimeOfDay.add(endSec);
+        timeOfDayPanel.add(endSec, new GridBagConstraints(5, 1, 1, 1, weightx, 0, dir, fill, insets, 0, 0));
+        toto = new JLabel("sec");
+        itemsToToggleForTimeOfDay.add(toto);
+        timeOfDayPanel.add(toto, new GridBagConstraints(6, 1, 1, 1, 0, 0, dir, nfill, insets, 0, 0));
+
+        return timeOfDayPanel;
+    }
+
+    public JPanel griddedDayOfWeekPanel() {
+        JPanel dayOfWeekPanel = new JPanel();
+        dayOfWeekPanel.setLayout(new GridBagLayout());
+
+        int nfill = GridBagConstraints.NONE;
+        int fill = GridBagConstraints.HORIZONTAL;
+        int dir = GridBagConstraints.WEST;
+        double weightx = 1.0;
+        Insets insets = new Insets(0, 0, 0, CONTROL_SPACING);
+
+        JLabel toto = new JLabel("between");
+        itemsToToggleForDayOfWeek.add(toto);
+        dayOfWeekPanel.add(toto, new GridBagConstraints(0, 0, 1, 1, 0, 0, dir, nfill, insets, 0, 0));
+        startDay = new JSpinner(weekModel());
+        itemsToToggleForDayOfWeek.add(startDay);
+        dayOfWeekPanel.add(startDay, new GridBagConstraints(1, 0, 1, 1, weightx, 0, dir, fill, insets, 0, 0));
+
+        toto = new JLabel("and");
+        itemsToToggleForDayOfWeek.add(toto);
+        dayOfWeekPanel.add(toto, new GridBagConstraints(0, 1, 1, 1, 0, 0, dir, nfill, insets, 0, 0));
+        endDay = new JSpinner(weekModel());
+        itemsToToggleForDayOfWeek.add(endDay);
+        dayOfWeekPanel.add(endDay, new GridBagConstraints(1, 1, 1, 1, weightx, 0, dir, fill, insets, 0, 0));
+
+        return dayOfWeekPanel;
+    }
+
+    private JComponent mainPanel() {
+
+        JPanel timeOfDayPanel = new JPanel();
+        timeOfDayPanel.setLayout(new GridLayout(5, 1, CONTROL_SPACING, 0));
         JPanel titlePanel = new JPanel();
         titlePanel.setLayout(new FlowLayout(FlowLayout.LEADING, CONTROL_SPACING, 0));
         enableTimeOfDay = new JCheckBox("Restrict time of day");
         titlePanel.add(enableTimeOfDay);
         enableTimeOfDay.setSelected(true);
         timeOfDayPanel.add(titlePanel);
-        timeOfDayPanel.add(startTimePanel());
-        timeOfDayPanel.add(endTimePanel());
-        // wrapper
-        GridBagConstraints constraints = new GridBagConstraints();
-        constraints.anchor = GridBagConstraints.NORTHWEST;
-        constraints.weightx = 1.0;
-        constraints.weighty = 1.0;
-        constraints.insets = new Insets(CONTROL_SPACING, CONTROL_SPACING, CONTROL_SPACING, CONTROL_SPACING);
-        JPanel bordered = new JPanel();
-        bordered.setLayout(new GridBagLayout());
-        bordered.add(timeOfDayPanel, constraints);
-        return bordered;
-    }
+        timeOfDayPanel.add(makeGriddedTimeOfDaySubPanel());
+        timeOfDayPanel.add(new JLabel(""));
 
-    private JPanel startTimePanel() {
-        JPanel startTimePanel = new JPanel();
-        startTimePanel.setLayout(new FlowLayout(FlowLayout.LEADING, CONTROL_SPACING, 0));
-        startTimePanel.add(new JLabel("between"));
-        startHr = new JSpinner(new SpinnerNumberModel(8, 0, 23, 1));
-        startTimePanel.add(startHr);
-        startTimePanel.add(new JLabel("hr"));
-        startMin = new JSpinner(new SpinnerNumberModel(0, 0, 59, 1));
-        startTimePanel.add(startMin);
-        startTimePanel.add(new JLabel("min"));
-        startSec = new JSpinner(new SpinnerNumberModel(0, 0, 59, 1));
-        startTimePanel.add(startSec);
-        startTimePanel.add(new JLabel("sec"));
-        return startTimePanel;
-    }
-
-    private JPanel endTimePanel() {
-        JPanel endTimePanel = new JPanel();
-        endTimePanel.setLayout(new FlowLayout(FlowLayout.LEADING, CONTROL_SPACING, 0));
-        endTimePanel.add(new JLabel("and"));
-        endHr = new JSpinner(new SpinnerNumberModel(17, 0, 23, 1));
-        endTimePanel.add(endHr);
-        endTimePanel.add(new JLabel("hr"));
-        endMin = new JSpinner(new SpinnerNumberModel(0, 0, 59, 1));
-        endTimePanel.add(endMin);
-        endTimePanel.add(new JLabel("min"));
-        endSec = new JSpinner(new SpinnerNumberModel(0, 0, 59, 1));
-        endTimePanel.add(endSec);
-        endTimePanel.add(new JLabel("sec"));
-        return endTimePanel;
-    }
-
-    private JPanel startDayPanel() {
-        JPanel startDayPanel = new JPanel();
-        startDayPanel.setLayout(new FlowLayout(FlowLayout.LEADING, CONTROL_SPACING, 0));
-        startDayPanel.add(new JLabel("between"));
-        startDay = new JSpinner(weekModel());
-        startDayPanel.add(startDay);
-        return startDayPanel;
-    }
-
-    private JPanel endDayPanel() {
-        JPanel endDayPanel = new JPanel();
-        endDayPanel.setLayout(new FlowLayout(FlowLayout.LEADING, CONTROL_SPACING, 0));
-        endDayPanel.add(new JLabel("and"));
-        endDay = new JSpinner(weekModel());
-        endDayPanel.add(endDay);
-        return endDayPanel;
-    }
-
-    private JComponent makeDayOfWeekPanel() {
-        JPanel dayOfWeekPanel = new JPanel();
-        dayOfWeekPanel.setLayout(new GridLayout(3, 1, CONTROL_SPACING, CONTROL_SPACING));
-        JPanel titlePanel = new JPanel();
+        titlePanel = new JPanel();
         titlePanel.setLayout(new FlowLayout(FlowLayout.LEADING, CONTROL_SPACING, 0));
         enableDayOfWeek = new JCheckBox("Restrict day of week");
         titlePanel.add(enableDayOfWeek);
         enableDayOfWeek.setSelected(true);
-        dayOfWeekPanel.add(titlePanel);
-        dayOfWeekPanel.add(startDayPanel());
-        dayOfWeekPanel.add(endDayPanel());
+        timeOfDayPanel.add(titlePanel);
+        timeOfDayPanel.add(griddedDayOfWeekPanel());
+
         // wrapper
         GridBagConstraints constraints = new GridBagConstraints();
         constraints.anchor = GridBagConstraints.NORTHWEST;
         constraints.weightx = 1.0;
         constraints.weighty = 1.0;
         constraints.insets = new Insets(CONTROL_SPACING, CONTROL_SPACING, CONTROL_SPACING, CONTROL_SPACING);
+        constraints.fill = GridBagConstraints.BOTH;
         JPanel bordered = new JPanel();
         bordered.setLayout(new GridBagLayout());
-        bordered.add(dayOfWeekPanel, constraints);
+        bordered.add(timeOfDayPanel, constraints);
         return bordered;
     }
 
@@ -280,6 +308,8 @@ public class TimeRangePropertiesDialog extends JDialog {
                                                        "Tuesday", "Wednesday",
                                                        "Thursday", "Friday",
                                                        "Saturday"};
+    private final Collection itemsToToggleForTimeOfDay = new ArrayList();
+    private final Collection itemsToToggleForDayOfWeek = new ArrayList();
 
     private final static int BORDER_PADDING = 20;
     private final static int CONTROL_SPACING = 5;
