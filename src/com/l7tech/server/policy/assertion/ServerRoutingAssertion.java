@@ -48,7 +48,7 @@ public class ServerRoutingAssertion implements ServerAssertion {
         int max = data.getMaxConnections();
         _connectionManager.setMaxConnectionsPerHost( max );
         _connectionManager.setMaxTotalConnections( max * 10 );
-        _connectionManager.setConnectionStaleCheckingEnabled( false );
+        //_connectionManager.setConnectionStaleCheckingEnabled( false );
     }
 
     public static final String PRODUCT = "Layer7-SecureSpan-Gateway";
