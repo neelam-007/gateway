@@ -35,7 +35,7 @@ public class SsgResponse {
     public SsgResponse(Document wssProcessedResponse, WssProcessor.ProcessorResult wssProcessorResult,
                        int httpStatus, HttpHeaders headers)
     {
-        if (responseDoc == null) throw new IllegalArgumentException("response document must be non-null");
+        if (wssProcessedResponse == null) throw new IllegalArgumentException("response document must be non-null");
         this.responseDoc = wssProcessedResponse;
         this.httpStatus = httpStatus;
         this.headers = headers;
