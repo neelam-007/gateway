@@ -62,7 +62,7 @@ public class CertDetailsPanel extends WizardStepPanel {
      * @return  String  The descritpion of the step.
      */
     public String getDescription() {
-        return "This panel shows the contents of certificate.";
+        return "Enter the certificate name and view certificate details.";
     }
 
     /**
@@ -209,7 +209,7 @@ public class CertDetailsPanel extends WizardStepPanel {
         panel1.setLayout(new GridLayoutManager(1, 2, new Insets(0, 0, 0, 0), -1, -1));
         mainPanel.add(panel1, new GridConstraints(0, 1, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null));
         final JLabel label1 = new JLabel();
-        label1.setText("Certificate Name");
+        label1.setText("Certificate Name:");
         panel1.add(label1, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null));
         certNameTextField = new JTextField();
         panel1.add(certNameTextField, new GridConstraints(0, 1, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_FIXED, null, new Dimension(150, -1), null));

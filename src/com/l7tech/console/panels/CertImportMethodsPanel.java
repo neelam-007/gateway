@@ -161,7 +161,8 @@ public class CertImportMethodsPanel extends WizardStepPanel {
      * @return  String  The descritpion of the step.
      */
     public String getDescription() {
-        return "This panel allows you to enter the information about where the certifcate can be retrieved from, or the certificate itself in PEM format.";
+        return "Enter the HTTPS URL of the certificate, import the certificate file," +
+               "or cut and paste the certificate in PEM format into the window.";
     }
 
     /**
@@ -392,15 +393,15 @@ public class CertImportMethodsPanel extends WizardStepPanel {
         mainPanel.add(panel1, new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null));
         urlConnRadioButton = new JRadioButton();
         urlConnRadioButton.setSelected(false);
-        urlConnRadioButton.setText("Retrieve via SSL Connection");
+        urlConnRadioButton.setText("Retrieve via SSL Connection (HTTPS URL):");
         panel1.add(urlConnRadioButton, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null));
         fileRadioButton = new JRadioButton();
         fileRadioButton.setEnabled(true);
         fileRadioButton.setSelected(false);
-        fileRadioButton.setText("Import from a File");
+        fileRadioButton.setText("Import from a File:");
         panel1.add(fileRadioButton, new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null));
         copyAndPasteRadioButton = new JRadioButton();
-        copyAndPasteRadioButton.setText("Copy and Paste (Base64 PEM)");
+        copyAndPasteRadioButton.setText("Copy and Paste (Base64 PEM):");
         panel1.add(copyAndPasteRadioButton, new GridConstraints(2, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null));
         urlConnTextField = new JTextField();
         panel1.add(urlConnTextField, new GridConstraints(0, 1, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_FIXED, null, new Dimension(150, -1), null));
@@ -420,7 +421,7 @@ public class CertImportMethodsPanel extends WizardStepPanel {
         panel2.setLayout(new GridLayoutManager(1, 1, new Insets(10, 0, 10, 0), -1, -1));
         mainPanel.add(panel2, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null));
         final JLabel label1 = new JLabel();
-        label1.setText("Select one of the following method for obtaining a certificate:");
+        label1.setText("Select one of the following methods for obtaining a certificate:");
         panel2.add(label1, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null));
     }
 }
