@@ -10,6 +10,7 @@ import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.TransactionException;
 import com.l7tech.objectmodel.PersistenceContext;
 import com.l7tech.common.security.xml.Session;
+import com.l7tech.common.protocol.SecureSpanConstants;
 
 import org.apache.axis.encoding.Base64;
 
@@ -37,12 +38,6 @@ import java.sql.SQLException;
  *
  */
 public class XMLEncSessionServlet extends HttpServlet {
-
-    // these header names are lower case for a good reason - fla
-    public static final String SESSION_ID_HEADER_NAME = "sessionid";
-    public static final String KEYREQ_HEADER_NAME = "keyreq";
-    public static final String KEYRES_HEADER_NAME = "keyres";
-
     public void init( ServletConfig config ) throws ServletException {
         logger = LogManager.getInstance().getSystemLogger();
         super.init( config );
@@ -81,11 +76,11 @@ public class XMLEncSessionServlet extends HttpServlet {
     }
 
     private void outputSession(Session sessionToOutput, HttpServletResponse response) throws IOException {
-        response.setHeader(SESSION_ID_HEADER_NAME, Long.toString(sessionToOutput.getId()));
+        response.setHeader(SecureSpanConstants.HttpHeaders.XML_SESSID_HEADER_NAME, Long.toString(sessionToOutput.getId()));
         String b64edkey = Base64.encode(sessionToOutput.getKeyReq());
-        response.setHeader(KEYREQ_HEADER_NAME, b64edkey);
+        response.setHeader(SecureSpanConstants.HttpHeaders.HEADER_KEYREQ, b64edkey);
         b64edkey = Base64.encode(sessionToOutput.getKeyRes());
-        response.setHeader(KEYRES_HEADER_NAME, b64edkey);
+        response.setHeader(SecureSpanConstants.HttpHeaders.HEADER_KEYRES, b64edkey);
         response.setStatus(HttpServletResponse.SC_OK);
         response.getOutputStream().println("ok");
         response.getOutputStream().close();

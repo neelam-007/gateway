@@ -103,15 +103,13 @@ public class SecureSpanConstants {
          * to the session server; both client and server then keep a copy of the session fields, and
          * the session exists as long as both sides agree to recognize it.
          *
-         * <p>This should not be confused with HEADER_SESSION_ID, which is the header used by the
-         * session manager servlet to return the new session ID.
-         *
          * <p>This session is used for XML message security and is <i>not</i> the same as the SSL-level
          * session, if any.
          *
          * <h3>Usages:<ul>
          * <li>Sent by the Agent to the Gateway along with every request that is either encrypted or that
          * is expecting a signed response.
+         * <li>Returned by the session servlet to the Agent in response to every successful session establishment request.
          * </ul>
          */
         public static final String XML_SESSID_HEADER_NAME = "L7-Session-Id";
@@ -229,17 +227,5 @@ public class SecureSpanConstants {
          * </ul>
          */
         public static final String HEADER_KEYRES = "keyres";
-
-        /**
-         * Returned by the session servlet, and contains the ID of the session established to hold security
-         * context information.  Not to be confused with XML_SESSID_HEADER_NAME, which is used during
-         * requests to the message processing servlet.
-         * See HttpHeaders.XML_SESSID_HEADER_NAME for additional information about the XML security session.
-         *
-         * <h3>Usages:<ul>
-         * <li>Returned by the session servlet to the Agent in response to every successful session establishment request.
-         * </ul>
-         */
-        public static final String HEADER_SESSION_ID = "sessionid";
     }
 }

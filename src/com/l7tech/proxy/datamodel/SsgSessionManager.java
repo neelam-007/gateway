@@ -110,7 +110,7 @@ public class SsgSessionManager {
             }
             log.info("Session establishment completed with status " + status);
 
-            String idstr = header(getMethod, SecureSpanConstants.HttpHeaders.HEADER_SESSION_ID);
+            String idstr = header(getMethod, SecureSpanConstants.HttpHeaders.XML_SESSID_HEADER_NAME);
             String b64keyreq = header(getMethod, SecureSpanConstants.HttpHeaders.HEADER_KEYREQ);
             byte[] keyreq = Base64.decode(b64keyreq);
             if (keyreq == null)
