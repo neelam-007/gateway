@@ -307,17 +307,11 @@ public class ServerHttpRoutingAssertion extends ServerRoutingAssertion {
                 InputStream responseStream = postMethod.getResponseBodyAsStream();
                 String ctype = postMethod.getResponseHeader(XmlUtil.CONTENT_TYPE).getValue();
                 response.setParameter(Response.PARAM_HTTP_CONTENT_TYPE, ctype);
-                // Note that this will consume the first part of the stream...
-                BufferedReader br = new BufferedReader(new InputStreamReader(responseStream, ENCODING));
-                StringBuffer responseXml = new StringBuffer();
-                char[] buf = new char[1024];
-                int read = br.read(buf);
-                while (read > 0) {
-                    responseXml.append(buf, 0, read);
-                    read = br.read(buf);
-                }
-                response.setResponseXml(responseXml.toString());
                 response.setProtectedResponseStream(responseStream);
+
+                String responseXml = response.getResponseXml();
+                response.setResponseXml(responseXml);
+
             } catch (IOException e) {
                 logger.log(Level.FINE, "error reading response", e);
                 // here we dont return error because we already routed
