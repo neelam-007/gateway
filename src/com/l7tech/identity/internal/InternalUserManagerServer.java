@@ -6,12 +6,18 @@ import com.l7tech.identity.User;
 import com.l7tech.identity.IdProvConfManagerServer;
 import com.l7tech.logging.LogManager;
 
-import java.sql.SQLException;
+import java.sql.*;
 import java.util.List;
 import java.util.Collection;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.logging.Level;
+import java.security.cert.Certificate;
+import java.security.cert.CertificateEncodingException;
+import java.security.cert.CertificateFactory;
+import java.io.ByteArrayInputStream;
+
+import cirrus.hibernate.HibernateException;
 
 /**
  * Layer 7 Technologies, inc.
@@ -86,23 +92,120 @@ public class InternalUserManagerServer extends HibernateEntityManager implements
      * if a cert is present and has never been user -> user can reset maximum of ten times
      */
     public boolean userCanResetCert(String oid) throws FindException{
-        /*try {
-            List result = _manager.find(getContext(), "select " + getTableName() + ".cert_reset_counter from " + getTableName() + " in class " + getImpClass().getName() + " where " + getTableName() + ".oid=" + oid);
-            for (Iterator i = result.iterator(); i.hasNext();) {
-                System.out.println("FIND RESULT FOR userCanResetCert : " + i.next().toString());
+        try {
+            // fla note, this will move to a seperate manager once we redesign persistence layer
+            String colname = "cert_reset_counter";
+            Connection connection = ((HibernatePersistenceContext)PersistenceContext.getCurrent()).getSession().connection();
+            Statement statement = connection.createStatement();
+            String sqlStr = "SELECT " + colname + " FROM " + getTableName() + " WHERE oid=" + oid;
+            ResultSet rs = statement.executeQuery(sqlStr);
+            if (!rs.next()) {
+                LogManager.getInstance().getSystemLogger().log(Level.WARNING, "cannot retrieve " + colname + " value for user " + oid + ". user deleted?");
+                return false; // this should not happen unless user no longer exist
+            }
+            int res = rs.getInt(colname);
+            LogManager.getInstance().getSystemLogger().log(Level.INFO, "cert_reset_counter value for user " + oid + " = " + res);
+            if (res < 10) return true;
+            else {
+                LogManager.getInstance().getSystemLogger().log(Level.SEVERE, "user " + oid + " not authorized to regen cert.");
+                return false;
             }
         } catch (SQLException e) {
+            LogManager.getInstance().getSystemLogger().log(Level.SEVERE, "error getting cert_reset_counter value for " + oid, e);
+            throw new FindException(e.toString(), e);
+        } catch (HibernateException e) {
             LogManager.getInstance().getSystemLogger().log(Level.SEVERE, "error getting cert_reset_counter value for " + oid, e);
             throw new FindException(e.toString(), e);
         } finally {
             try {
                 PersistenceContext.getCurrent().close();
             } catch (SQLException e) {
-                LogManager.getInstance().getSystemLogger().log(Level.SEVERE, "SQLException in finally ", e);
+                LogManager.getInstance().getSystemLogger().log(Level.SEVERE, e.getMessage(), e);
+                throw new FindException(e.toString(), e);
             }
-        }*/
-        // todo
-        return true;
+        }
+    }
+
+    /**
+     * records new cert and updates the reset counter accordingly
+     */
+    public void recordNewCert(String oid, Certificate cert) throws UpdateException {
+        try {
+            // fla note, this will move to a seperate manager once we redesign persistence layer
+            String colname = "cert";
+            Connection connection = ((HibernatePersistenceContext)PersistenceContext.getCurrent()).getSession().connection();
+            PreparedStatement statement = connection.prepareStatement("UPDATE " + getTableName() + " SET " + colname + "=? WHERE oid=?");
+            sun.misc.BASE64Encoder encoder = new sun.misc.BASE64Encoder();
+            String encodedcert = encoder.encode(cert.getEncoded());
+            //statement.setBinaryStream(1, new ByteArrayInputStream(certbytes), certbytes.length);
+            statement.setString(1, encodedcert);
+            statement.setString(2, oid);
+            statement.executeUpdate();
+
+            // get existing counter value from table
+            colname = "cert_reset_counter";
+            Statement statement2 = connection.createStatement();
+            String sqlStr = "SELECT " + colname + " FROM " + getTableName() + " WHERE oid=" + oid;
+            ResultSet rs = statement2.executeQuery(sqlStr);
+            if (!rs.next()) throw new UpdateException("cannot get value for " + colname);
+            int currentValue = rs.getInt(colname);
+
+            // update it
+            statement = connection.prepareStatement("UPDATE " + getTableName() + " SET " + colname + "=? WHERE oid=?");
+            statement.setInt(1, currentValue+1);
+            statement.setString(2, oid);
+            statement.executeUpdate();
+        } catch (SQLException e) {
+            LogManager.getInstance().getSystemLogger().log(Level.SEVERE, e.getMessage(), e);
+            throw new UpdateException(e.toString(), e);
+        } catch (HibernateException e) {
+            LogManager.getInstance().getSystemLogger().log(Level.SEVERE, e.getMessage(), e);
+            throw new UpdateException(e.toString(), e);
+        } catch (CertificateEncodingException e) {
+            LogManager.getInstance().getSystemLogger().log(Level.SEVERE, e.getMessage(), e);
+            throw new UpdateException(e.toString(), e);
+        } finally {
+            try {
+                PersistenceContext.getCurrent().close();
+            } catch (SQLException e) {
+                LogManager.getInstance().getSystemLogger().log(Level.SEVERE, e.getMessage(), e);
+                throw new UpdateException(e.toString(), e);
+            }
+        }
+    }
+
+    /**
+     * returns null if no certificate is registered for this user
+     */
+    public Certificate retrieveUserCert(String oid) throws FindException {
+        try {
+            // fla note, this will move to a seperate manager once we redesign persistence layer
+            String colname = "cert";
+            Connection connection = ((HibernatePersistenceContext)PersistenceContext.getCurrent()).getSession().connection();
+
+            Statement statement = connection.createStatement();
+            String sqlStr = "SELECT " + colname + " FROM " + getTableName() + " WHERE oid=" + oid;
+            ResultSet rs = statement.executeQuery(sqlStr);
+            if (!rs.next()) {
+                return null;
+            }
+            String dbcert = rs.getString(colname);
+            sun.misc.BASE64Decoder base64decoder = new sun.misc.BASE64Decoder();
+            byte[] certbytes = base64decoder.decodeBuffer(dbcert);
+            Certificate dledcert = CertificateFactory.getInstance("X.509").generateCertificate(new ByteArrayInputStream(certbytes));
+            return dledcert;
+
+        } catch (Exception e) {
+            LogManager.getInstance().getSystemLogger().log(Level.SEVERE, e.getMessage(), e);
+            throw new FindException(e.toString(), e);
+        } finally {
+            try {
+                PersistenceContext.getCurrent().close();
+            } catch (SQLException e) {
+                LogManager.getInstance().getSystemLogger().log(Level.SEVERE, e.getMessage(), e);
+                throw new FindException(e.toString(), e);
+            }
+        }
     }
 
     public void delete(User user) throws DeleteException {
