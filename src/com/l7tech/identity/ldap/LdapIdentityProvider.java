@@ -359,7 +359,7 @@ public class LdapIdentityProvider implements IdentityProvider {
     }
 
     public static DirContext getBrowseContext(LdapIdentityProviderConfig config) throws NamingException {
-        Hashtable env = new Hashtable();
+        UnsynchronizedNamingProperties env = new UnsynchronizedNamingProperties();
         env.put( "java.naming.ldap.version", "3" );
         env.put(Context.INITIAL_CONTEXT_FACTORY, "com.sun.jndi.ldap.LdapCtxFactory");
         Object temp = config.getLdapUrl();
@@ -374,6 +374,7 @@ public class LdapIdentityProvider implements IdentityProvider {
             env.put( Context.SECURITY_PRINCIPAL, dn );
             env.put( Context.SECURITY_CREDENTIALS, pass );
         }
+        env.lock();
         // Create the initial directory context.
         return new InitialDirContext(env);
     }
