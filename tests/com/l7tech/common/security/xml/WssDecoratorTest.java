@@ -80,6 +80,16 @@ public class WssDecoratorTest extends TestCase {
             accountid = (Element)message.getElementsByTagNameNS("", "accountid").item(0);
             assertNotNull(accountid);
         }
+
+        Context(Document message) {
+            this.message = message;
+            soapNs = message.getDocumentElement().getNamespaceURI();
+            body = (Element)message.getElementsByTagNameNS(soapNs, SoapUtil.BODY_EL_NAME).item(0);
+            assertNotNull(body);
+            payload = XmlUtil.findFirstChildElement(body);
+            assertNotNull(payload);
+            payloadNs = payload.getNamespaceURI();
+        }
     }
 
     public static class TestDocument {
@@ -420,5 +430,44 @@ public class WssDecoratorTest extends TestCase {
                                 new Element[] { empty },
                                 new Element[0]);
 
+    }
+
+    public void testEncryptedGooglesearchResponse() throws Exception {
+        runTest(getEncryptedGooglesearchResponseTestDocument());
+    }
+
+    public TestDocument getEncryptedGooglesearchResponseTestDocument() throws Exception {
+        final Context c = new Context(TestDocuments.getTestDocument(TestDocuments.GOOGLESEARCH_RESPONSE));
+        Element ret = XmlUtil.findFirstChildElement(c.payload);
+        assertNotNull(ret);
+        assertTrue(ret.getLocalName().equals("return")); // make sure we found the right one
+        return new TestDocument(c,
+                                TestDocuments.getEttkClientCertificate(),
+                                TestDocuments.getEttkClientPrivateKey(),
+                                TestDocuments.getDotNetServerCertificate(),
+                                TestDocuments.getDotNetServerPrivateKey(),
+                                true,
+                                new Element[] { ret },
+                                new Element[0]);
+    }
+
+
+    public void testSignedGooglesearchResponse() throws Exception {
+        runTest(getSignedGooglesearchResponseTestDocument());
+    }
+
+    public TestDocument getSignedGooglesearchResponseTestDocument() throws Exception {
+        final Context c = new Context(TestDocuments.getTestDocument(TestDocuments.GOOGLESEARCH_RESPONSE));
+        Element ret = XmlUtil.findFirstChildElement(c.payload);
+        assertNotNull(ret);
+        assertTrue(ret.getLocalName().equals("return")); // make sure we found the right one
+        return new TestDocument(c,
+                                TestDocuments.getEttkClientCertificate(),
+                                TestDocuments.getEttkClientPrivateKey(),
+                                TestDocuments.getDotNetServerCertificate(),
+                                TestDocuments.getDotNetServerPrivateKey(),
+                                true,
+                                new Element[0],
+                                new Element[] { ret });
     }
 }
