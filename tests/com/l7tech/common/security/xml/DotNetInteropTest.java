@@ -64,6 +64,18 @@ public class DotNetInteropTest extends TestCase {
         assertTrue(signatureFailed);
     }
 
+    public void testIssueSecurityContextToken() throws Exception {
+        Document sctRequest = getSCTRequest();
+        X509Certificate servercert = getRikerCert();
+        PrivateKey privateServerKey = getRikerPrivateKey();
+        XmlMangler.ProcessedEncryptedKey[] encryptionKeys = XmlMangler.getEncryptedKeyFromMessage(sctRequest,
+                                                                                                   privateServerKey,
+                                                                                                   servercert.getExtensionValue("2.5.29.14"));
+        assertTrue(encryptionKeys.length == 1);
+      //  assertTrue(Arrays.equals(DECRYPTED_KEY, encryptionKeys[0].decryptedKey.getEncoded()));
+      //  System.out.println("Symmetric key decrypted succesfully");
+    }
+
     public XmlMangler.ProcessedEncryptedKey testGetEncryptedKey() throws Exception {
         Document encryptedDoc = getEncryptedDoc();
         X509Certificate servercert = getRikerCert();
@@ -203,6 +215,10 @@ public class DotNetInteropTest extends TestCase {
 
     private Document getDerviedKeyEncryptedRequest() throws Exception {
             return TestDocuments.getTestDocument(TestDocuments.DOTNET_ENCRYPTED_USING_DERIVED_KEY_TOKEN);
+    }
+
+    private Document getSCTRequest() throws Exception {
+            return TestDocuments.getTestDocument(TestDocuments.DOTNET_SCT_REQUEST);
     }
 
     public static final byte[] DECRYPTED_KEY = {-54, 33,-19, 87, -46, 31, -86, 44, -10, 3, -37, 111, 125, -94, -64, 24};
