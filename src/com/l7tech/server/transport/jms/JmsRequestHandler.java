@@ -63,7 +63,8 @@ class JmsRequestHandler {
         JmsSoapResponse soapResponse = new JmsSoapResponse( jmsMetadata );
 
         try {
-            jmsRequest.acknowledge(); // TODO parameterize acknowledge semantics?
+            // MQSeries doesn't like this with AUTO_ACKNOWLEDGE
+            // jmsRequest.acknowledge(); // TODO parameterize acknowledge semantics?
 
             try {
                 status = MessageProcessor.getInstance().processMessage( soapRequest, soapResponse );
