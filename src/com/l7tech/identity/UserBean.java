@@ -162,8 +162,8 @@ public class UserBean implements User, Serializable {
         return _version;
     }
 
-    public void setVersion(int _version) {
-        this._version = _version;
+    public void setVersion( int version ) {
+        _version = version;
     }
 
     protected long _providerId;
