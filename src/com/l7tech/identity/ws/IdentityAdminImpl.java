@@ -415,6 +415,13 @@ public class IdentityAdminImpl implements IdentityAdmin {
       throws RemoteException, InvalidIdProviderCfgException {
         try {
             getIdProvCfgMan().test(identityProviderConfig);
+        } catch ( InvalidIdProviderCfgException e ) {
+            throw e;
+        } catch ( RemoteException e ) {
+            throw e;
+        } catch ( Throwable t ) {
+            logger.log(Level.INFO, "Identity Provider test failed because an exception was thrown", t);
+            throw new InvalidIdProviderCfgException(t);
         } finally {
             closeContext();
         }
