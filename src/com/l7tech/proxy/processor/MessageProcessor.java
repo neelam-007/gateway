@@ -70,7 +70,7 @@ public class MessageProcessor {
      * @param req  the PendingRequest to process
      * @return     the SsgResponse containing the response from the Ssg, if processing was successful, or if
      *             a SOAP fault is being returned to the client from either the CP or the SSG.
-     * @throws com.l7tech.proxy.datamodel.exceptions.ClientCertificateException   if a client certificate was required but could not be obtained
+     * @throws ClientCertificateException   if a client certificate was required but could not be obtained
      * @throws PolicyAssertionException     if the policy evaluation of request or response could not be completed due
      *                                        to a serious error
      * @throws com.l7tech.proxy.datamodel.exceptions.OperationCanceledException   if the user declined to provide a username and password
@@ -383,8 +383,8 @@ public class MessageProcessor {
      *
      * @throws IOException if there was a network problem downloading the server cert
      * @throws IOException if there was a problem reading or writing the keystore for this SSG
-     * @throws com.l7tech.proxy.datamodel.exceptions.BadCredentialsException if the downloaded cert could not be verified with the SSG username and password
-     * @throws com.l7tech.proxy.datamodel.exceptions.OperationCanceledException if credentials were needed but the user declined to enter them
+     * @throws BadCredentialsException if the downloaded cert could not be verified with the SSG username and password
+     * @throws OperationCanceledException if credentials were needed but the user declined to enter them
      * @throws GeneralSecurityException for miscellaneous and mostly unlikely certificate or key store problems
      */
     private void installSsgServerCertificate(Ssg ssg)
