@@ -66,6 +66,6 @@ class SoapRequestGenerator {
      */
     Document asSoapMessage(RequestDocument document)
       throws SOAPException, IOException, SAXException {
-        return Utilities.asSoapMessage(document);
+        return Utilities.asDomSoapMessage(document);
     }
 }

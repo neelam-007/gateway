@@ -11,12 +11,15 @@ import com.l7tech.common.xml.InvalidDocumentFormatException;
 import com.l7tech.common.xml.MessageNotSoapException;
 import org.w3c.dom.*;
 import org.w3c.dom.Node;
+import org.xml.sax.SAXException;
+import org.apache.xmlbeans.XmlException;
 
 import javax.xml.rpc.NamespaceConstants;
 import javax.xml.soap.*;
 import javax.xml.transform.dom.DOMSource;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.*;
 
 /**
@@ -581,6 +584,49 @@ public class SoapUtil {
     }
 
     /**
+     * Reads the SOAP message from the input stream as a DOM document. Performs
+     * some basic SOAP message structure validation
+     *
+     * @param in the input stream
+     * @return
+     * @throws MessageNotSoapException if the xml document does not represent the soap messagr
+     * @throws IOException on io parsing error
+     * @throws SAXException on oarsing error
+     */
+    public static Document parseSoapMessage(InputStream in)
+      throws MessageNotSoapException, IOException, SAXException {
+        if (in == null) {
+            throw new IllegalArgumentException();
+        }
+        final Document doc = XmlUtil.parse(in);
+        if (isSoapMessage(doc)) {
+            throw new MessageNotSoapException("Not Soap Message! \n"+XmlUtil.nodeToString(doc));
+        }
+        return doc;
+    }
+
+    /**
+     * Tests wheteher a given document is a SOAP message.
+     * Note: this should probably validate against SOAP message schema.
+     *
+     * @param doc the document to test whether it represents the SOAP message
+     * @return true if soap message, false otherwise
+     */
+    public static boolean isSoapMessage(Document doc) {
+        if (doc == null) {
+            throw new IllegalArgumentException();
+        }
+        try {
+            SoapUtil.getEnvelopeElement(doc);
+            SoapUtil.getBodyElement(doc);
+            return true;
+        } catch (InvalidDocumentFormatException e) {
+            // not SOAP
+        }
+        return false;
+    }
+
+    /**
      * There is no built-in provision in jax-rpc for adding a DOM document object (that
      * represents an XML document) as a SOAP body subelement in a SOAP message. The document
      * object needs to be 'unmarshalled' into a javax.xml.soap.SOAPElement object. In other
@@ -605,18 +651,16 @@ public class SoapUtil {
             throw new SOAPException("DOM Node must of type ELEMENT_NODE. received " + domNode.getNodeType());
 
         SOAPFactory sf = SOAPFactory.newInstance();
-        return domNodeToSoapElement(domNode,soapElement, sf);
-
+        return domNodeToSoapElement(domNode, soapElement, sf);
     }
 
 
     /**
      * Add the dom node, and its child nodes to the SOAP element.
      *
-     * @param node the node to add
+     * @param node        the node to add
      * @param soapElement the soap element (SOAPBody, SOAPHeader, SOAPElement etc)
      * @param soapFactory the soap factory
-     *
      * @throws SOAPException on soap error
      */
     private static SOAPElement domNodeToSoapElement(Node node, SOAPElement soapElement, SOAPFactory soapFactory)

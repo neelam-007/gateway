@@ -52,7 +52,7 @@ public class SamlProtocolServlet extends AuthenticatableHttpServlet {
             User user = authenticate(req);
             res.setContentType(XmlUtil.TEXT_XML);
             ResponseDocument response = authority.process(soapRequestGenerator.fromSoapInputStream(req.getInputStream()));
-            soapResponseGenerator.asSoapMessage(response);
+            soapResponseGenerator.streamSoapMessage(response, res.getOutputStream());
             // SAML SOAP processing error reporting as per SAML binding 3.1.3.6 Error Reporting
         } catch (SAXException e) {
             res.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);

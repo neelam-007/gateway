@@ -27,7 +27,6 @@ import java.io.IOException;
  * @version 5-Aug-2004
  */
 class Utilities {
-
     /**
      * Tests if the response document has a success status.
      *
@@ -63,13 +62,20 @@ class Utilities {
         return options;
     }
 
-    static Document asSoapMessage(XmlObject doc) throws SOAPException, IOException, SAXException {
+    static SOAPMessage asSoapMessage(XmlObject doc) throws SOAPException {
         SOAPMessage sm = SoapUtil.makeMessage();
         SOAPBody body = sm.getSOAPPart().getEnvelope().getBody();
 
         final Document document = (Document)doc.newDomNode(Utilities.xmlOptions());
         final Element documentElement = document.getDocumentElement();
+
         SoapUtil.domToSOAPElement(body, documentElement);
+
+        return sm;
+    }
+
+    static Document asDomSoapMessage(XmlObject doc) throws SOAPException, IOException, SAXException {
+        SOAPMessage sm = asSoapMessage(doc);
         String strMsg = SoapUtil.soapMessageToString(sm, "UTF-8");
         Document domDocument = XmlUtil.stringToDocument(strMsg);
 

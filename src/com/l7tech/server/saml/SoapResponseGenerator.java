@@ -12,6 +12,7 @@ import org.xml.sax.SAXException;
 import x0Protocol.oasisNamesTcSAML1.ResponseDocument;
 
 import javax.xml.soap.*;
+import javax.servlet.ServletOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -78,8 +79,16 @@ class SoapResponseGenerator {
         return ResponseDocument.Factory.parse(firstChild);
     }
 
-    Document asSoapMessage(ResponseDocument doc) throws SOAPException, IOException, SAXException {
-        return Utilities.asSoapMessage(doc);
+    Document streamSoapMessage(ResponseDocument doc)
+      throws SOAPException, IOException, SAXException {
+        return Utilities.asDomSoapMessage(doc);
+    }
+
+    public void streamSoapMessage(ResponseDocument response, ServletOutputStream outputStream)
+      throws IOException, SAXException, SOAPException {
+        final Document document = Utilities.asDomSoapMessage(response);
+
+        XmlUtil.nodeToOutputStream(document, outputStream);
     }
 
     /**
@@ -89,7 +98,7 @@ class SoapResponseGenerator {
      * @param os the outputr stream
      */
     void streamFault(String faultString, Exception e, OutputStream os) {
-        logger.log(Level.WARNING, "Returning SOAP fault "+faultString, e);
+        logger.log(Level.WARNING, "Returning SOAP fault " + faultString, e);
         try {
             SOAPMessage msg = msgFactory.createMessage();
             SoapUtil.addFaultTo(msg, SoapUtil.FC_SERVER, faultString, null);
@@ -104,5 +113,4 @@ class SoapResponseGenerator {
             throw new RuntimeException(se);
         }
     }
-
 }
