@@ -81,14 +81,14 @@ public class PublishedService extends NamedEntityImp {
         if ( _wsdlXml == null ) {
             // we must get the actual wsdl. delegate to the ServiceAdmin
             // this avoids resolving the wsdl on the client side
-            ServiceManager serviceManagerInstance = (ServiceManager)Locator.getDefault().
-                                        lookup(com.l7tech.service.ServiceManager.class);
-            if (serviceManagerInstance == null) {
-                String msg = "could not resolve a ServiceManager implementation.";
+            ServiceAdmin svcAdmin = (ServiceAdmin)Locator.getDefault().
+                                        lookup(com.l7tech.service.ServiceAdmin.class);
+            if (svcAdmin == null) {
+                String msg = "could not resolve a ServiceAdmin implementation.";
                 logger.severe(msg);
                 throw new IOException(msg);
             }
-            _wsdlXml = serviceManagerInstance.resolveWsdlTarget(_wsdlUrl);
+            _wsdlXml = svcAdmin.resolveWsdlTarget(_wsdlUrl);
         }
         return _wsdlXml;
     }
