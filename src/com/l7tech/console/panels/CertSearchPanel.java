@@ -78,6 +78,7 @@ public class CertSearchPanel extends JDialog {
         p.setLayout(new BorderLayout());
         p.add(mainPanel, BorderLayout.CENTER);
         stopButton.setEnabled(false);
+        viewButton.setEnabled(false);
 
         subjectSearchComboBox.setModel(new javax.swing.DefaultComboBoxModel(new String[] { STARTS_WITH, EQUALS }));
         issuerSearchComboBox.setModel(new javax.swing.DefaultComboBoxModel(new String[] { STARTS_WITH, EQUALS }));
