@@ -24,16 +24,22 @@ public class AuthorizationStatementWizardStepPanel extends WizardStepPanel {
     private JTextField textFieldAction;
     private JTextField textFieldActionNamespace;
     private JTextField textFieldResource;
+    private boolean showTitleLabel;
+
+    /**
+     * Creates new form WizardPanel
+     */
+    public AuthorizationStatementWizardStepPanel(WizardStepPanel next, boolean showTitleLabel) {
+        super(next);
+        this.showTitleLabel = showTitleLabel;
+        initialize();
+    }
 
     /**
      * Creates new form WizardPanel
      */
     public AuthorizationStatementWizardStepPanel(WizardStepPanel next) {
-        super(next);
-        setLayout(new BorderLayout());
-        /** Set content pane */
-        add(mainPanel, BorderLayout.CENTER);
-        initialize();
+        this(next, true);
     }
 
     /**
@@ -73,7 +79,15 @@ public class AuthorizationStatementWizardStepPanel extends WizardStepPanel {
     }
 
     private void initialize() {
-        titleLabel.setFont(titleLabel.getFont().deriveFont(Font.BOLD));
+        setLayout(new BorderLayout());
+        /** Set content pane */
+        add(mainPanel, BorderLayout.CENTER);
+        if (showTitleLabel) {
+            titleLabel.setFont(titleLabel.getFont().deriveFont(Font.BOLD));
+        } else {
+            titleLabel.getParent().remove(titleLabel);
+        }
+        
         textFieldResource.getDocument().addDocumentListener(new DocumentListener() {
             public void changedUpdate(DocumentEvent e) {
                 notifyListeners();

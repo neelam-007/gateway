@@ -4,6 +4,7 @@ package com.l7tech.console.tree.policy;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.xmlsec.SamlAuthorizationStatement;
 import com.l7tech.console.action.EditXmlSecurityRecipientContextAction;
+import com.l7tech.console.action.EditSamlStatementAction;
 
 import javax.swing.*;
 import java.util.ArrayList;
@@ -39,6 +40,7 @@ public class SamlAuthorizationStatementTreeNode extends LeafAssertionTreeNode {
      */
     public Action[] getActions() {
         java.util.List list = new ArrayList();
+        list.add(new EditSamlStatementAction(this));
         list.add(new EditXmlSecurityRecipientContextAction(this));
         list.addAll(Arrays.asList(super.getActions()));
         return (Action[])list.toArray(new Action[]{});
@@ -50,7 +52,7 @@ public class SamlAuthorizationStatementTreeNode extends LeafAssertionTreeNode {
      * @return <code>null</code> indicating there should be none default action
      */
     public Action getPreferredAction() {
-        return null;
+        return new EditSamlStatementAction(this);
     }
 
     /**
