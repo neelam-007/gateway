@@ -13,8 +13,10 @@ public class Session {
     /**
      * Create a new Session, if you are the SessionManager.  Otherwise, use the SessionManager if you are
      * running on the SSG, or the SsgSessionManager if you are running on the client proxy.
+     * @deprecated on the server this should be retrieved from the <code>SessionManager</code>, and
+     * on the client this should be retrieved from the server
      */
-    Session() {
+    public Session() {
         creationTimestamp = System.currentTimeMillis();
     }
 
