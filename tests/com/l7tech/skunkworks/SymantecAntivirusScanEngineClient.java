@@ -35,6 +35,10 @@ public class SymantecAntivirusScanEngineClient {
      * get a raw response from the sav scan engine
      */
     private String getSavseResponse(String scanEngineHostname, int scanEnginePort, byte[] stuffToScan, String filename) throws IOException, UnknownHostException {
+        // todo, test whether that get statement is required below is not required for us. if not, then just omit
+        // it and then the res-hdr would = 0
+        // todo, also, i need to change this code to allow to pass in here whichever headers came with the actual MIME part
+        // insted of hardcoding HTTP/1.0 200 OK
         String get = "GET http://scapi.symantec.com/" + filename + " HTTP/1.0\r\n\r\n";
         String header = "HTTP/1.0 200 OK\r\n\r\n";
 
