@@ -100,6 +100,7 @@ public class ServiceManagerImp extends HibernateEntityManager implements Service
                     resolverClass = Class.forName( className );
                     resolver = (ServiceResolver)resolverClass.newInstance();
                     resolver.setServices( _allServices );
+                    addServiceListener( resolver );
 
                     _resolvers.add( resolver );
                 } catch ( ClassNotFoundException cnfe ) {
@@ -123,7 +124,9 @@ public class ServiceManagerImp extends HibernateEntityManager implements Service
 
     public long save(PublishedService service) throws SaveException {
         try {
-            return _manager.save( getContext(), service );
+            long oid = _manager.save( getContext(), service );
+            fireCreated( service );
+            return oid;
         } catch ( SQLException se ) {
             throw new SaveException( se.toString(), se );
         }
@@ -132,6 +135,7 @@ public class ServiceManagerImp extends HibernateEntityManager implements Service
     public void update(PublishedService service) throws UpdateException {
         try {
             _manager.update( getContext(), service );
+            fireUpdated( service );
         } catch ( SQLException se ) {
             throw new UpdateException( se.toString(), se );
         }
@@ -140,8 +144,30 @@ public class ServiceManagerImp extends HibernateEntityManager implements Service
     public void delete( PublishedService service ) throws DeleteException {
         try {
             _manager.delete( getContext(), service );
+            fireDeleted( service );
         } catch ( SQLException se ) {
             throw new DeleteException( se.toString(), se );
+        }
+    }
+
+    void fireCreated( PublishedService service ) {
+        for (Iterator i = _serviceListeners.iterator(); i.hasNext();) {
+            ServiceListener listener = (ServiceListener) i.next();
+            listener.serviceCreated( service );
+        }
+    }
+
+    void fireUpdated( PublishedService service ) {
+        for (Iterator i = _serviceListeners.iterator(); i.hasNext();) {
+            ServiceListener listener = (ServiceListener)i.next();
+            listener.serviceUpdated( service );
+        }
+    }
+
+    void fireDeleted( PublishedService service ) {
+        for (Iterator i = _serviceListeners.iterator(); i.hasNext();) {
+            ServiceListener listener = (ServiceListener) i.next();
+            listener.serviceDeleted( service );
         }
     }
 
@@ -157,9 +183,15 @@ public class ServiceManagerImp extends HibernateEntityManager implements Service
         return "published_service";
     }
 
+    public synchronized void addServiceListener( ServiceListener listener ) {
+        _serviceListeners.add( listener );
+    }
+
     private static final Category log = Category.getInstance(ServiceManagerImp.class);
     protected SortedSet _resolvers;
+
     protected transient Set _allServices;
+    protected transient List _serviceListeners = new ArrayList();
     //protected transient Map _paramNameMap = new HashMap();
     //protected transient Map _paramToServiceMap = new HashMap();
 }
