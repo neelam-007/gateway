@@ -8,7 +8,9 @@ package com.l7tech.server;
 
 import com.l7tech.cluster.ServiceUsage;
 import com.l7tech.cluster.ServiceUsageManager;
+import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.service.ServiceAdmin;
 import org.springframework.web.context.WebApplicationContext;
 import org.springframework.web.context.support.WebApplicationContextUtils;
 
@@ -19,10 +21,11 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.Writer;
-import java.util.ArrayList;
+import java.rmi.RemoteException;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.Iterator;
-import java.util.List;
+import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
@@ -36,7 +39,7 @@ public class SnmpQueryServlet extends HttpServlet {
     private static final Logger logger = Logger.getLogger(SnmpQueryServlet.class.getName());
     private static final String BASE = ".1.3.6.1.4.1.17304";
     private static final String BASE_PUBLISHED_SERVICES = ".7.1";
-    private static final String CONTENT_TYPE_SNMP = "text/plain";
+    private static final String CONTENT_TYPE_SNMP = "application/x-snmp";
 
     private WebApplicationContext applicationContext;
     private ServiceUsage[] serviceTable = null;
@@ -61,7 +64,7 @@ public class SnmpQueryServlet extends HttpServlet {
         String uri = request.getRequestURI();
         final Matcher matcher = urlParser.matcher(uri);
         if (!matcher.matches()) {
-            badRequest(request, response);
+            badRequest(response);
             return;
         }
 
@@ -77,21 +80,20 @@ public class SnmpQueryServlet extends HttpServlet {
         } else if ("getnext".equalsIgnoreCase(sw)) {
             advance = true;
         } else {
-            badRequest(request, response);
+            badRequest(response);
             return;
         }
 
         try {
             if (id.startsWith(BASE_PUBLISHED_SERVICES)) {
-                respondToPublishedServiceRequest(request,
-                                                 response,
+                respondToPublishedServiceRequest(response,
                                                  id.substring(BASE_PUBLISHED_SERVICES.length()),
                                                  advance);
                 return;
             }
 
             // Unrecognized query
-            badRequest(request, response);
+            badRequest(response);
             return;
 
         } catch (IOException e) {
@@ -105,8 +107,7 @@ public class SnmpQueryServlet extends HttpServlet {
         }
     }
 
-    private void respondToPublishedServiceRequest(HttpServletRequest request,
-                                                  HttpServletResponse response,
+    private void respondToPublishedServiceRequest(HttpServletResponse response,
                                                   String id,
                                                   boolean advance)
             throws IOException, FindException
@@ -121,6 +122,9 @@ public class SnmpQueryServlet extends HttpServlet {
                 row = 1;
                 column = 1;
                 advance = false;
+            } else {
+                send(response, BASE_PUBLISHED_SERVICES, "string", "Service Usage");
+                return;
             }
         } else if (matcher.matches()) {
             row = Integer.parseInt(matcher.group(1));
@@ -128,7 +132,7 @@ public class SnmpQueryServlet extends HttpServlet {
         }
 
         if (row < 1 || column < 1 || column > maxColumn) {
-            badRequest(request, response);
+            badRequest(response);
             return;
         }
 
@@ -143,54 +147,53 @@ public class SnmpQueryServlet extends HttpServlet {
         ServiceUsage[] table = getCurrentServiceUsage();
 
         if (row > table.length) {
-            badRequest(request, response);
+            badRequest(response);
             return;
         }
 
-        String addr = BASE + BASE_PUBLISHED_SERVICES + "." + row + "." + column;
+        String addr = BASE_PUBLISHED_SERVICES + "." + row + "." + column;
 
         ServiceUsage su = table[row - 1]; // (row is still 1-based, not 0-based)
         switch (column) {
             case 1:
-                send(request, response, addr, "integer", su.getServiceid());
+                send(response, addr, "integer", su.getServiceid());
                 return;
             case 2:
-                final String serviceName = su.getServiceName();
-                send(request, response, addr, "string", serviceName != null ? serviceName : "null serviceName");
+                send(response, addr, "string", su.getServiceName());
                 return;
             case 3:
-                send(request, response, addr, "integer", su.getRequests());
+                send(response, addr, "counter", su.getRequests());
                 return;
             case 4:
-                send(request, response, addr, "integer", su.getAuthorized());
+                send(response, addr, "counter", su.getAuthorized());
                 return;
             case 5:
-                send(request, response, addr, "integer", su.getCompleted());
+                send(response, addr, "counter", su.getCompleted());
                 return;
             default:
-                badRequest(request, response);
+                badRequest(response);
                 return;
         }
     }
 
     /**
      * Get the ServiceUsage table.  This may return a cached version if one exists and has been previously used
-     * within the past ten seconds; otherwise, any cached version is discarded and a new copy is read from the
+     * within the past 3.5 seconds; otherwise, any cached version is discarded and a new copy is read from the
      * database.
      * <p>
-     * The cache timeout is restarted whenever the cached version of the table is used.  The only way to obtain
-     * fresh data is to avoid issuing any queries for ten seconds.  This is to work-around the problem that
+     * The 3.5s cache timeout is restarted whenever the cached version of the table is used.  The only way to obtain
+     * fresh data is to avoid issuing any queries for 3.5 seconds.  This is to work-around the problem that
      * SNMP queries are stateless and query for each cell of a table individually, and that the cells are addressed
      * by position in a virtual table rather than using unique identifiers.  If a cached table
-     * was discarded and refreshed for being over ten seconds old, while a client was still in the process of
+     * were discarded and refreshed for being over too old, while a client was still in the process of
      * sending queries iterating the table, the client might receive inconsistent data if rows were added or
-     * removed if the meantime since (say) row #3 might now correspond with what used to appear in row #4.
+     * removed in the meantime since (say) row #3 might now correspond with what used to appear in row #4.
      *
      * @return a complete ServiceUsage table.  May be empty but never null.
      */
-    private synchronized ServiceUsage[] getCurrentServiceUsage() throws FindException {
+    private synchronized ServiceUsage[] getCurrentServiceUsage() throws FindException, RemoteException {
         long now = System.currentTimeMillis();
-        if (serviceTable != null && now - serviceTableTime > 10000)
+        if (serviceTable != null && now - serviceTableTime > 3500)
             serviceTable = null;
 
         if (serviceTable != null) {
@@ -198,36 +201,49 @@ public class SnmpQueryServlet extends HttpServlet {
             return serviceTable;
         }
 
-        ServiceUsageManager serviceUsageManager = (ServiceUsageManager)applicationContext.getBean("serviceUsageManager");
-        List accum = new ArrayList();
-
-        Collection collection = serviceUsageManager.getAll();
+        ServiceUsageManager statsManager = (ServiceUsageManager)applicationContext.getBean("serviceUsageManager");
+        Map statsByOid = new HashMap();
+        Collection collection = statsManager.getAll();
         for (Iterator i = collection.iterator(); i.hasNext();) {
             ServiceUsage serviceUsage = (ServiceUsage)i.next();
-            accum.add(serviceUsage);
+            statsByOid.put(new Long(serviceUsage.getServiceid()), serviceUsage);
         }
 
-        serviceTable = (ServiceUsage[])accum.toArray(new ServiceUsage[0]);
+        ServiceAdmin serviceAdmin = (ServiceAdmin)applicationContext.getBean("serviceAdmin");
+        EntityHeader[] headers = serviceAdmin.findAllPublishedServices();
+        ServiceUsage[] fullTable = new ServiceUsage[headers.length];
+        for (int i = 0; i < headers.length; i++) {
+            EntityHeader header = headers[i];
+            ServiceUsage su = (ServiceUsage)statsByOid.get(new Long(header.getOid()));
+            if (su != null) {
+                fullTable[i] = su;
+            } else {
+                fullTable[i] = new ServiceUsage();
+                fullTable[i].setServiceid(header.getOid());
+            }
+            fullTable[i].setServiceName(header.getName());
+        }
+
+        serviceTable = fullTable;
         serviceTableTime = System.currentTimeMillis();
 
         return serviceTable;
     }
 
-    private void badRequest(HttpServletRequest request, HttpServletResponse response) throws IOException {
+    private void badRequest(HttpServletResponse response) throws IOException {
         response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
         response.getWriter().close();
     }
 
     /**
      *
-     * @param request
      * @param response
      * @param next  next MIB node, as a suffix which will be appended to BASE.  ie, ".1.2".
      * @param type
      * @param value
      * @throws IOException
      */
-    private void send(HttpServletRequest request, HttpServletResponse response, String next, String type, String value) throws IOException {
+    private void send(HttpServletResponse response, String next, String type, String value) throws IOException {
         response.setStatus(HttpServletResponse.SC_OK);
         response.setContentType(CONTENT_TYPE_SNMP);
         Writer out = response.getWriter();
@@ -236,18 +252,19 @@ public class SnmpQueryServlet extends HttpServlet {
         out.write(type != null && type.length() > 0 ? type : "string");
         out.write('\n');
         out.write(value);
+        out.write('\n');
         out.flush();
         out.close();
     }
 
-    /** Same as {@link #send(javax.servlet.http.HttpServletRequest, javax.servlet.http.HttpServletResponse, String, String, String)} but takes int value. */
-    private void send(HttpServletRequest request, HttpServletResponse response, String next, String type, int value) throws IOException {
-        send(request, response, next, type, String.valueOf(value));
+    /** Same as {@link #send(javax.servlet.http.HttpServletResponse,String,String,String)} but takes int value. */
+    private void send(HttpServletResponse response, String next, String type, int value) throws IOException {
+        send(response, next, type, String.valueOf(value));
     }
 
-    /** Same as {@link #send(javax.servlet.http.HttpServletRequest, javax.servlet.http.HttpServletResponse, String, String, String)} but takes long value. */
-    private void send(HttpServletRequest request, HttpServletResponse response, String next, String type, long value) throws IOException {
-        send(request, response, next, type, String.valueOf(value));
+    /** Same as {@link #send(javax.servlet.http.HttpServletResponse,String,String,String)} but takes long value. */
+    private void send(HttpServletResponse response, String next, String type, long value) throws IOException {
+        send(response, next, type, String.valueOf(value));
     }
 
 }
