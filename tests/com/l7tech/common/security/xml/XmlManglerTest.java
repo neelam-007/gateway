@@ -199,11 +199,21 @@ public class XmlManglerTest extends TestCase {
         element = (Element)list.item(0);
         XmlMangler.encryptXml(element, encryptionKey.getEncoded(), "MyKeyName", "ref2");
 
-        // XmlUtil.documentToOutputStream(soapDocument, System.out);
-        
+        // log.info("Document after encryption :\n" + documentToString(soapDocument));
+
         NodeList nl = soapDocument.getElementsByTagNameNS(xmlencNS, "CipherValue");
         assertTrue(nl != null);
         assertTrue(nl.getLength() == 2);
+
+        final int length = nl.getLength();
+        for (int i = 0; i < length; i++) {
+            element = (Element)nl.item(i);
+            XmlMangler.decryptXml(soapDocument, encryptionKey);
+            // log.info("Document after decryption "+i+" :\n" + documentToString(soapDocument));
+        }
+        nl = soapDocument.getElementsByTagNameNS(xmlencNS, "CipherValue");
+        assertTrue(nl != null);
+        assertTrue(nl.getLength() == 0);
     }
 
 
