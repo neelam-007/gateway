@@ -112,17 +112,6 @@ public class WorkBenchPanel extends JPanel {
     }
 
     /**
-     * create and returns the tab title for the given
-     * <CODE>object</CODE> instance.
-     *
-     * @param o     the <CODE>Object</CODE> to determine the label for
-     * @return the title for the BasicTreeNode instance
-     */
-    private String tabTitle(Object o) {
-        return o.toString();
-    }
-
-    /**
      * Return the ToolBarForTable instance for a given node or null.
      * @return ToolBarForTable
      */

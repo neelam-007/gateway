@@ -9,21 +9,22 @@ import java.util.*;
 
 
 /**
- * the Tree Node encapsulating a <code>BasicTreeNode</code>.
+ * the Tree Node encapsulating a <code>AbstractTreeNode</code>.
  *
+ * todo: eradicate this class.
  * @author <a href="mailto:emarceta@layer7-tech.com>Emil Marceta</a>
- * @see com.l7tech.console.tree.BasicTreeNode
+ * @see com.l7tech.console.tree.AbstractTreeNode
  */
 public class EntityTreeNode extends DefaultMutableTreeNode {
     private static final Category log = Category.getInstance(EntityTreeNode.class.getName());
 
     /**
-     * creates a <CODE>TreeNode</CODE> with the given BasicTreeNode
+     * creates a <CODE>TreeNode</CODE> with the given AbstractTreeNode
      * as a user object.
      *
      * @param treeNode the tree node this node points to
      */
-    public EntityTreeNode(BasicTreeNode treeNode) {
+    public EntityTreeNode(AbstractTreeNode treeNode) {
         super(treeNode);
         if (treeNode == null) {
             throw new NullPointerException("tree node");
@@ -31,21 +32,21 @@ public class EntityTreeNode extends DefaultMutableTreeNode {
     }
 
     /**
-     * Returns this node's <CODE>BasicTreeNode</CODE> that
+     * Returns this node's <CODE>AbstractTreeNode</CODE> that
      * is stored as user object.
      *
-     * @return the BasicTreeNode stored at this node
+     * @return the AbstractTreeNode stored at this node
      *         by the user
      */
-    public BasicTreeNode getBasicTreeNode() {
-        return (BasicTreeNode) getUserObject();
+    public AbstractTreeNode getAbstractTreeNode() {
+        return (AbstractTreeNode) getUserObject();
     }
 
     /**
      * a EntityTreeNode is a leaf if it cannot contain nodes
      */
     public boolean isLeaf() {
-        return getBasicTreeNode().isLeaf();
+        return getAbstractTreeNode().isLeaf();
     }
 
     /**
@@ -55,7 +56,7 @@ public class EntityTreeNode extends DefaultMutableTreeNode {
      * @return true if it allows children, false otherwise
      */
     public boolean getAllowsChildren() {
-        return getBasicTreeNode().getAllowsChildren();
+        return getAbstractTreeNode().getAllowsChildren();
     }
 
     /**
@@ -107,7 +108,7 @@ public class EntityTreeNode extends DefaultMutableTreeNode {
             return;
         }
         try {
-            Enumeration enum = getBasicTreeNode().children();
+            Enumeration enum = getAbstractTreeNode().children();
 
             List nodes = new ArrayList();
 
@@ -118,8 +119,8 @@ public class EntityTreeNode extends DefaultMutableTreeNode {
             int index = 0;
             while (iterator.hasNext()) {
                 Object o = iterator.next();
-                if (o instanceof BasicTreeNode)
-                    insert(new EntityTreeNode((BasicTreeNode) o), index++);
+                if (o instanceof AbstractTreeNode)
+                    insert(new EntityTreeNode((AbstractTreeNode) o), index++);
                 else if (o instanceof MutableTreeNode)
                     insert((MutableTreeNode) o, index++);
             }
@@ -212,7 +213,7 @@ public class EntityTreeNode extends DefaultMutableTreeNode {
      * that is, the folder is <I>always</I> lower value then
      * any other object.
      *
-     * @see String#compareTo()
+     * @see String#compareTo(String)
      */
     public static final Comparator
       DEFAULT_COMPARATOR = new Comparator() {
@@ -227,10 +228,10 @@ public class EntityTreeNode extends DefaultMutableTreeNode {
            */
           public int compare(Object o1, Object o2) {
               // Need to work with Entrys
-              BasicTreeNode n1 = null;
-              BasicTreeNode n2 = null;
-              n1 = ((EntityTreeNode) o1).getBasicTreeNode();
-              n2 = ((EntityTreeNode) o2).getBasicTreeNode();
+              AbstractTreeNode n1 = null;
+              AbstractTreeNode n2 = null;
+              n1 = ((EntityTreeNode) o1).getAbstractTreeNode();
+              n2 = ((EntityTreeNode) o2).getAbstractTreeNode();
               // need to add logic for folders
               return n1.getName().compareToIgnoreCase(n2.getName());
           }

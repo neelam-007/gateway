@@ -28,9 +28,9 @@ public class IconManager {
     }
 
     /**
-     * Get the Icon for the BasicTreeNode passed.
+     * Get the Icon for the AbstractTreeNode passed.
      *
-     * @param node   the BasicTreeNode instance
+     * @param node   the AbstractTreeNode instance
      * @return ImageIcon for the given node
      */
     public ImageIcon getIcon(AbstractTreeNode node) {

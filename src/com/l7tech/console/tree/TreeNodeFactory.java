@@ -62,11 +62,8 @@ public class TreeNodeFactory {
      * closure (Decorator pattern) over an Enumeration.
      * It is used to create AbstractTreeNode instances from enumerations
      * of Entry instances.
-     * For example the classes that are containers (ProvidersFolderNode,
-     * CompanyFolderTreeNode etc) may use this class to create special
-     * instances of BasicTreeNode for their respective children. This
-     * allows the feasibility to create a (gui) hierarchy that consist
-     * of folders and actual entries while preserving the same interface.
+     * For example the nodes that have children use this class to create special
+     * instances of AbstractTreeNode for their respective children.
      */
     private static final class
       TreeNodeEnumeration implements Enumeration {
@@ -108,7 +105,7 @@ public class TreeNodeFactory {
          * asTreeNode method if it is an Entry.
          *
          * @param element object the is the next requested enumeration element
-         * @return the  BasicTreeNode instance for a given Entry if the object
+         * @return the  AbstractTreeNode instance for a given Entry if the object
          *         is an Entry, or the same element otherwise.
          */
         private Object getEnumerationElement(Object element) {

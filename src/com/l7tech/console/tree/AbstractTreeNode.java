@@ -7,12 +7,10 @@ import javax.swing.*;
 import java.awt.*;
 
 /**
- * todo: remove the BasicTreeNode interface
  * @author <a href="mailto:emarceta@layer7-tech.com>Emil Marceta</a>
  * @version 1.0
  */
-public abstract class AbstractTreeNode
-  extends DefaultMutableTreeNode implements BasicTreeNode {
+public abstract class AbstractTreeNode extends DefaultMutableTreeNode {
     protected boolean hasLoadedChildren;
 
     public AbstractTreeNode(Object object) {
