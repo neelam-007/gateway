@@ -1,28 +1,25 @@
 package com.l7tech.console.panels;
 
-import com.l7tech.console.text.FilterDocument;
-import com.l7tech.console.event.EntityListener;
 import com.l7tech.console.event.EntityEvent;
+import com.l7tech.console.event.EntityListener;
 import com.l7tech.console.logging.ErrorManager;
-import com.l7tech.objectmodel.EntityHeader;
-import com.l7tech.objectmodel.SaveException;
-import com.l7tech.objectmodel.EntityType;
-import com.l7tech.objectmodel.FindException;
 import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.identity.IdentityProviderConfigManager;
 import com.l7tech.identity.IdentityProviderType;
 import com.l7tech.identity.ldap.LdapConfigSettings;
+import com.l7tech.objectmodel.EntityHeader;
+import com.l7tech.objectmodel.EntityType;
 import com.l7tech.util.Locator;
 
 import javax.swing.*;
-import javax.swing.event.EventListenerList;
-import javax.swing.event.DocumentListener;
 import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
+import javax.swing.event.EventListenerList;
 import java.awt.*;
 import java.awt.event.*;
+import java.util.EventListener;
 import java.util.Locale;
 import java.util.ResourceBundle;
-import java.util.EventListener;
 import java.util.logging.Level;
 
 /**
@@ -234,9 +231,9 @@ public class IdentityProviderDialog extends JDialog {
                     e.getDocument().getLength() > 0 &&
                     providerTypesCombo.getSelectedIndex() != -1;
                   enable = enable &&
-                        providerSettingsPanel != null;
+                    providerSettingsPanel != null;
                   enable = enable &&
-                        iProvider.getTypeVal() != IdentityProviderType.INTERNAL.toVal();
+                    iProvider.getTypeVal() != IdentityProviderType.INTERNAL.toVal();
 
                   return enable;
               }
@@ -255,7 +252,11 @@ public class IdentityProviderDialog extends JDialog {
     private JComboBox getProviderTypes() {
         if (providerTypesCombo == null) {
             IdentityProviderType[] types =
-              new IdentityProviderType[]{IdentityProviderType.LDAP};
+              new IdentityProviderType[]
+              {
+                  IdentityProviderType.UNDEFINED,
+                  IdentityProviderType.LDAP
+              };
 
             providerTypesCombo = new JComboBox(types);
             providerTypesCombo.setRenderer(providerTypeRenderer);
@@ -296,14 +297,14 @@ public class IdentityProviderDialog extends JDialog {
             found = true;
         }
 
-        if (found) {
-            saveButton.setEnabled(
-              providerSettingsPanel !=null&& providerNameTextField.getText().length() >0);
-            Dimension size = origDimension;
-            setSize((int)size.getWidth(), (int)(size.getHeight() * 1.5));
-            validate();
-            repaint();
-        }
+        saveButton.setEnabled(
+          providerSettingsPanel != null && providerNameTextField.getText().length() > 0);
+        Dimension size = origDimension;
+        // todo: fix the hardcoded multiply
+        setSize((int)size.getWidth(), (int)(size.getHeight() * (found ? 1.5 : 1.0 )));
+        validate();
+        repaint();
+
     }
 
     /**
@@ -379,7 +380,7 @@ public class IdentityProviderDialog extends JDialog {
     private void populateForm() {
         if (iProvider.getOid() != -1) {
             providerNameTextField.setText(iProvider.getName());
-            // kludge, we add the internal provider, as itmaay show only in
+            // kludge, we add the internal provider, as itmay show only in
             // edit dsabled mode
             providerTypesCombo.addItem(IdentityProviderType.INTERNAL);
             for (int i = providerTypesCombo.getModel().getSize() - 1; i >= 0; i--) {
@@ -598,7 +599,12 @@ public class IdentityProviderDialog extends JDialog {
                                                         int index,
                                                         boolean isSelected, boolean cellHasFocus) {
               IdentityProviderType type = (IdentityProviderType)value;
-              setText(type.description());
+              if (type == IdentityProviderType.UNDEFINED) {
+                  setText("Select the identity provider type");
+              } else {
+                  setText(type.description());
+              }
+
               return this;
           }
 
