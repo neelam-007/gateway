@@ -33,7 +33,13 @@
     </bean>
 
     <!-- server side service manager -->
+    <bean id="serviceCache" class="com.l7tech.server.service.ServiceCache">
+        <property name="serviceManager"><ref bean='serviceManager'/></property>
+    </bean>
+
+    <!-- server side service manager -->
     <bean id="serviceManager" class="com.l7tech.server.service.ServiceManagerImp">
+        <property name="serviceCache"><ref bean='serviceCache'/></property>
     </bean>
 
     <!-- server side trusted cert manager -->

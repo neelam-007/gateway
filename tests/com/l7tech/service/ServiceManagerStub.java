@@ -17,35 +17,21 @@ import java.rmi.RemoteException;
 import java.util.*;
 import java.util.logging.Logger;
 
+import org.springframework.context.support.ApplicationObjectSupport;
+import org.springframework.beans.factory.InitializingBean;
+
 /**
  * Class ServiceManagerStub.
  * 
  * @author <a href="mailto:emarceta@layer7-tech.com>Emil Marceta</a>
  */
-public class ServiceManagerStub implements ServiceManager {
+public class ServiceManagerStub extends ApplicationObjectSupport implements ServiceManager, InitializingBean {
     private Map services;
     private static Logger logger = Logger.getLogger(ServiceManagerStub.class.getName());
+    private ServiceCache serviceCache;
 
-    public ServiceManagerStub() throws ObjectModelException {
+    public ServiceManagerStub() {
         services = StubDataStore.defaultStore().getPublishedServices();
-        // build the cache if necessary
-        try {
-            if (ServiceCache.getInstance().size() > 0) {
-                logger.finest("cache already built (?)");
-            } else {
-                logger.finest("building service cache");
-                Collection services = findAll();
-                PublishedService service;
-                for (Iterator i = services.iterator(); i.hasNext();) {
-                    service = (PublishedService)i.next();
-                    ServiceCache.getInstance().cache(service);
-                }
-            }
-        } catch (InterruptedException e) {
-            throw new ObjectModelException("exception building cache", e);
-        } catch (FindException e) {
-            throw new ObjectModelException("exception building cache", e);
-        }
     }
 
     /**
@@ -106,6 +92,15 @@ public class ServiceManagerStub implements ServiceManager {
         throw new FindException("not implemented");
     }
 
+    public Map getServiceVersions() throws FindException {
+        HashMap versions = new HashMap();
+        for (Iterator iterator = services.values().iterator(); iterator.hasNext();) {
+            PublishedService publishedService = (PublishedService)iterator.next();
+            versions.put(new Long(publishedService.getOid()), new Integer(1));
+        }
+        return versions;
+    }
+
     /**
      * updates a policy service. call this instead of save if the service
      * has an history. on the console side implementation, you can call save
@@ -139,19 +134,19 @@ public class ServiceManagerStub implements ServiceManager {
 
     public ServerAssertion getServerPolicy(long serviceOid) throws FindException {
         try {
-            return ServiceCache.getInstance().getServerPolicy(serviceOid);
+            return serviceCache.getServerPolicy(serviceOid);
         } catch (InterruptedException e) {
             throw new FindException("error accessing policy from cache", e);
         }
     }
 
     public PublishedService resolve(Message req) throws ServiceResolutionException {
-        return ServiceCache.getInstance().resolve(req);
+        return serviceCache.resolve(req);
     }
 
     public ServiceStatistics getServiceStatistics(long serviceOid) throws FindException {
          try {
-            return ServiceCache.getInstance().getServiceStatistics(serviceOid);
+            return serviceCache.getServiceStatistics(serviceOid);
         } catch (InterruptedException e) {
             throw new FindException("error accessing statistics from cache", e);
         }
@@ -159,7 +154,7 @@ public class ServiceManagerStub implements ServiceManager {
 
     public Collection getAllServiceStatistics() throws FindException {
          try {
-            return ServiceCache.getInstance().getAllServiceStatistics();
+            return serviceCache.getAllServiceStatistics();
         } catch (InterruptedException e) {
             throw new FindException("error accessing statistics from cache", e);
         }
@@ -277,5 +272,31 @@ public class ServiceManagerStub implements ServiceManager {
 
     private EntityHeader fromService(PublishedService s) {
         return new EntityHeader(Long.toString(s.getOid()), EntityType.SERVICE, s.getName(), null);
+    }
+
+    public void setServiceCache(ServiceCache serviceCache) {
+        this.serviceCache = serviceCache;
+    }
+
+    public void afterPropertiesSet() throws Exception {
+        // build the cache if necessary
+        try {
+            if (serviceCache.size() > 0) {
+                logger.finest("cache already built (?)");
+            } else {
+                logger.finest("building service cache");
+                Collection services = findAll();
+                PublishedService service;
+                for (Iterator i = services.iterator(); i.hasNext();) {
+                    service = (PublishedService)i.next();
+                    serviceCache.cache(service);
+                }
+            }
+        } catch (InterruptedException e) {
+            throw new ObjectModelException("exception building cache", e);
+        } catch (FindException e) {
+            throw new ObjectModelException("exception building cache", e);
+        }
+
     }
 }

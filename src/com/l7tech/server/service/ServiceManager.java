@@ -9,10 +9,11 @@ import com.l7tech.service.ResolutionParameterTooLongException;
 import com.l7tech.service.ServiceStatistics;
 
 import java.util.Collection;
+import java.util.Map;
 
 /**
  * Service API. Get instance of this through the Locator class.
- *
+ * <p/>
  * <br/><br/>
  * Layer 7 Technologies, inc.<br/>
  * User: flascelles<br/>
@@ -26,11 +27,12 @@ public interface ServiceManager extends EntityManager {
      * @return
      * @throws FindException
      */
-    PublishedService findByPrimaryKey( long oid ) throws FindException;
+    PublishedService findByPrimaryKey(long oid) throws FindException;
 
     /**
      * Get what the server sees at that url.
      * Meant to be used by admin console entity.
+     *
      * @param url the url target to inspect.
      * @return the payload returned at that url (hopefully)
      * @throws java.rmi.RemoteException
@@ -39,11 +41,12 @@ public interface ServiceManager extends EntityManager {
 
     /**
      * saves a published service along with it's policy assertions
+     *
      * @param service
      * @return
      * @throws SaveException
      */
-    long save( PublishedService service ) throws SaveException, ResolutionParameterTooLongException;
+    long save(PublishedService service) throws SaveException, ResolutionParameterTooLongException;
 
     /**
      * updates a policy service. call this instead of save if the service
@@ -54,14 +57,15 @@ public interface ServiceManager extends EntityManager {
      * @param service
      * @throws UpdateException
      */
-    void update( PublishedService service ) throws UpdateException, VersionException, ResolutionParameterTooLongException;
+    void update(PublishedService service) throws UpdateException, VersionException, ResolutionParameterTooLongException;
 
     /**
      * deletes the service
+     *
      * @param service
      * @throws DeleteException
      */
-    void delete( PublishedService service ) throws DeleteException;
+    void delete(PublishedService service) throws DeleteException;
 
     /**
      * returns the parsed server-side policy for a specific PublishedService
@@ -84,4 +88,12 @@ public interface ServiceManager extends EntityManager {
     Collection getAllServiceStatistics() throws FindException;
 
     int getCurrentPolicyVersion(long policyId) throws FindException;
- }
+
+    /**
+     * get the service versions as currently recorded in database
+     *
+     * @return a map whose keys is a Long with service id and values is an Integer with the service version
+     * @throws FindException if the query fails for some reason
+     */
+    Map getServiceVersions() throws FindException;
+}

@@ -24,39 +24,25 @@ import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import org.springframework.context.ApplicationContextAware;
+import org.springframework.context.ApplicationContext;
+import org.springframework.beans.factory.InitializingBean;
+import org.springframework.beans.BeansException;
+
 /**
  * Manages PublishedService instances.
- * Note that this object has state, so it should be effectively a Singleton--only get one from the Locator!
+ * Note that this object has state, so it should be effectively a Singleton!
  *
  * @author alex
  * @version $Revision$
  */
-public class ServiceManagerImp extends HibernateEntityManager implements ServiceManager {
+public class ServiceManagerImp extends HibernateEntityManager
+  implements ServiceManager, ApplicationContextAware, InitializingBean {
+    private ServiceCache serviceCache;
+    private ApplicationContext applicationContext;
+
     public String resolveWsdlTarget(String url) throws RemoteException {
         throw new UnsupportedOperationException();
-    }
-
-    public ServiceManagerImp() throws ObjectModelException {
-        super();
-
-        // build the cache if necessary
-        try {
-            if (ServiceCache.getInstance().size() > 0) {
-                logger.finest("cache already built (?)");
-            } else {
-                logger.finest("building service cache");
-                Collection services = findAll();
-                PublishedService service;
-                for (Iterator i = services.iterator(); i.hasNext();) {
-                    service = (PublishedService)i.next();
-                    ServiceCache.getInstance().cache(service);
-                }
-            }
-            // make sure the integrity check is running
-            ServiceCache.getInstance().initiateIntegrityCheckProcess();
-        } catch (InterruptedException e) {
-            throw new ObjectModelException("Exception building cache", e);
-        }
     }
 
     public PublishedService findByPrimaryKey(long oid) throws FindException {
@@ -109,7 +95,7 @@ public class ServiceManagerImp extends HibernateEntityManager implements Service
                     }
                     if (svcnow != null) {
                         try {
-                            ServiceCache.getInstance().cache(svcnow);
+                            serviceCache.cache(svcnow);
                         } catch (InterruptedException e) {
                             logger.log(Level.WARNING, "could not update cache", e);
                         }
@@ -212,7 +198,7 @@ public class ServiceManagerImp extends HibernateEntityManager implements Service
                     }
                     if (svcnow != null) {
                         try {
-                            ServiceCache.getInstance().cache(svcnow);
+                            serviceCache.cache(svcnow);
                         } catch (InterruptedException e) {
                             logger.log(Level.WARNING, "could not update cache", e);
                         }
@@ -248,7 +234,7 @@ public class ServiceManagerImp extends HibernateEntityManager implements Service
             TransactionListener inlineListener = new TransactionListener() {
                 public void postCommit() {
                     try {
-                        ServiceCache.getInstance().removeFromCache(deletedService);
+                        serviceCache.removeFromCache(deletedService);
                     } catch (InterruptedException e) {
                         logger.log(Level.WARNING, "could not update cache", e);
                     }
@@ -268,19 +254,19 @@ public class ServiceManagerImp extends HibernateEntityManager implements Service
 
     public ServerAssertion getServerPolicy(long serviceOid) throws FindException {
         try {
-            return ServiceCache.getInstance().getServerPolicy(serviceOid);
+            return serviceCache.getServerPolicy(serviceOid);
         } catch (InterruptedException e) {
             throw new FindException("error accessing policy from cache", e);
         }
     }
 
     public PublishedService resolve(Message req) throws ServiceResolutionException {
-        return ServiceCache.getInstance().resolve(req);
+        return serviceCache.resolve(req);
     }
 
     public ServiceStatistics getServiceStatistics(long serviceOid) throws FindException {
         try {
-            return ServiceCache.getInstance().getServiceStatistics(serviceOid);
+            return serviceCache.getServiceStatistics(serviceOid);
         } catch (InterruptedException e) {
             throw new FindException("error accessing statistics from cache", e);
         }
@@ -288,7 +274,7 @@ public class ServiceManagerImp extends HibernateEntityManager implements Service
 
     public Collection getAllServiceStatistics() throws FindException {
         try {
-            return ServiceCache.getInstance().getAllServiceStatistics();
+            return serviceCache.getAllServiceStatistics();
         } catch (InterruptedException e) {
             throw new FindException("error accessing statistics from cache", e);
         }
@@ -342,9 +328,45 @@ public class ServiceManagerImp extends HibernateEntityManager implements Service
     }
 
     public void destroy() {
-        ServiceCache.getInstance().destroy();
+        serviceCache.destroy();
     }
 
+    public void setApplicationContext(ApplicationContext applicationContext)
+      throws BeansException {
+        this.applicationContext = applicationContext;
+    }
+
+    public void setServiceCache(ServiceCache serviceCache) {
+        this.serviceCache = serviceCache;
+    }
+
+    public void afterPropertiesSet() throws Exception {
+        if (serviceCache == null) {
+            throw new IllegalArgumentException("Service Cache is required");
+        }
+
+        // build the cache if necessary
+        try {
+            if (serviceCache.size() > 0) {
+                logger.finest("cache already built (?)");
+            } else {
+                logger.finest("building service cache");
+                Collection services = findAll();
+                PublishedService service;
+                for (Iterator i = services.iterator(); i.hasNext();) {
+                    service = (PublishedService)i.next();
+                    serviceCache.cache(service);
+                }
+            }
+            // make sure the integrity check is running
+            serviceCache.initiateIntegrityCheckProcess();
+        } catch (InterruptedException e) {
+            throw new ObjectModelException("Exception building cache", e);
+        }
+
+    }
     private static final Logger logger = Logger.getLogger(ServiceManagerImp.class.getName());
     private static final String F_VERSION = "version";
+
+
 }
