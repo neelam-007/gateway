@@ -32,5 +32,14 @@ public abstract class PersistenceContext {
         return context;
     }
 
+    /**
+     * called by implementing class when the context is being closed.
+     * this is done so that further calls to getCurrent will create a
+     * new context (this one is closed therefore unusable).
+     */
+    protected static void releaseContext() {
+        _contextLocal.set(null);
+    }
+
     static ThreadLocal _contextLocal = new ThreadLocal();
 }
