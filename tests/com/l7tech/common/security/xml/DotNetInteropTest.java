@@ -3,6 +3,7 @@ package com.l7tech.common.security.xml;
 import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.util.FileUtils;
 import com.l7tech.common.util.XmlUtil;
+import com.l7tech.common.util.HexUtils;
 import com.l7tech.common.xml.TestDocuments;
 import junit.framework.Test;
 import junit.framework.TestCase;
@@ -11,11 +12,14 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
 import java.security.cert.X509Certificate;
+import java.security.cert.Certificate;
+import java.security.cert.CertificateFactory;
 import java.security.PrivateKey;
 import java.security.KeyStore;
 import java.security.Key;
 import java.io.FileInputStream;
 import java.io.InputStream;
+import java.io.ByteArrayInputStream;
 import java.util.List;
 
 /**
@@ -62,11 +66,14 @@ public class DotNetInteropTest extends TestCase {
 
     public void testDecryptdotNetRequest() throws Exception {
         Document encryptedDoc = getEncryptedDoc();
+        X509Certificate servercert = getRikerCert();
+
         PrivateKey privateServerKey = getRikerPrivateKey();
-        XmlMangler.ProcessedEncryptedKey[] encryptionKeys = XmlMangler.getEncryptedKeyFromMessage(encryptedDoc, privateServerKey);
+        XmlMangler.ProcessedEncryptedKey[] encryptionKeys = XmlMangler.getEncryptedKeyFromMessage(encryptedDoc,
+                                                                                                  privateServerKey,
+                                                                                                  servercert.getExtensionValue("2.5.29.14"));
 
         Element body = SoapUtil.getBody(encryptedDoc);
-        Element encryptedPayload = (Element)((XmlUtil.findChildElementsByName(body, "http://www.w3.org/2001/04/xmlenc#", "EncryptedData")).get(0));
         XmlMangler.decryptElement(body, encryptionKeys[0].decryptedKey, encryptionKeys[0].referenceList);
         String result = XmlUtil.documentToString(encryptedDoc);
         System.out.println(result);
@@ -80,6 +87,19 @@ public class DotNetInteropTest extends TestCase {
         fis.close();
         PrivateKey output = (PrivateKey)keyStore.getKey("tomcat", "blahblah".toCharArray());
         return output;
+    }
+
+    private X509Certificate getRikerCert() throws Exception {
+        InputStream fis = TestDocuments.getInputStream(TestDocuments.SSL_CER);
+        byte[] certbytes;
+        try {
+            certbytes = HexUtils.slurpStream(fis, 16384);
+        } finally {
+            fis.close();
+        }
+        // construct the x509 based on the bytes
+        return (X509Certificate)(CertificateFactory.getInstance("X.509").
+                                 generateCertificate(new ByteArrayInputStream(certbytes)));
     }
 
     private Document getEncryptedDoc() throws Exception {
