@@ -58,7 +58,7 @@ public class ServerSchemaValidation implements ServerAssertion {
      * @param soapmsg the full soap envelope.
      */
     AssertionStatus checkRequest(Document soapmsg) throws IOException {
-        String bodystr = null;
+        String[] bodystr = null;
         try {
             bodystr = getRequestBodyChild(soapmsg);
         } catch (ParserConfigurationException e) {
@@ -66,7 +66,7 @@ public class ServerSchemaValidation implements ServerAssertion {
             logger.log(Level.WARNING, msg, e);
             throw new IOException(msg + "-" + e.getMessage());
         }
-        if (bodystr == null) {
+        if (bodystr == null || bodystr.length < 1) {
             logger.fine("empty body. nothing to validate");
             return AssertionStatus.FAILED;
         }
@@ -87,26 +87,27 @@ public class ServerSchemaValidation implements ServerAssertion {
         }
         SchameValidationErrorHandler reporter = new SchameValidationErrorHandler();
         db.setErrorHandler(reporter);
-        InputSource source = new InputSource(new ByteArrayInputStream(bodystr.getBytes()));
-        try {
-            db.parse(source);
-        } catch (SAXException e) {
-            String msg = "parsing exception";
-            logger.log(Level.WARNING, msg, e);
-            throw new IOException(msg + "-" + e.getMessage());
-        }
-        Collection errors = reporter.recordedErrors();
-        if (errors.isEmpty()) {
-            return AssertionStatus.NONE;
-        } else {
-            for (Iterator i = errors.iterator(); i.hasNext();) {
-                logger.fine("assertion failure: " + i.next().toString());
+        for (int i = 0; i < bodystr.length; i++) {
+            InputSource source = new InputSource(new ByteArrayInputStream(bodystr[i].getBytes()));
+            try {
+                db.parse(source);
+            } catch (SAXException e) {
+                String msg = "parsing exception";
+                logger.log(Level.WARNING, msg, e);
+                throw new IOException(msg + "-" + e.getMessage());
             }
-            return AssertionStatus.FAILED;
+            Collection errors = reporter.recordedErrors();
+            if (!errors.isEmpty()) {
+                for (Iterator it = errors.iterator(); it.hasNext();) {
+                    logger.fine("assertion failure: " + it.next().toString());
+                }
+                return AssertionStatus.FAILED;
+            }
         }
+        return AssertionStatus.NONE;
     }
 
-    private String getRequestBodyChild(Document soapenvelope) throws IOException, ParserConfigurationException {
+    private String[] getRequestBodyChild(Document soapenvelope) throws IOException, ParserConfigurationException {
         NodeList bodylist = soapenvelope.getElementsByTagNameNS(soapenvelope.getDocumentElement().getNamespaceURI(),
                                                                 SOAP_BODY_ELNAME);
         Element bodyel = null;
@@ -117,21 +118,29 @@ public class ServerSchemaValidation implements ServerAssertion {
             default:
                 return null;
         }
-        Element bodyschild = null;
+        //Element bodyschild = null;
         NodeList bodychildren = bodyel.getChildNodes();
+        ArrayList children = new ArrayList();
         for (int i = 0; i < bodychildren.getLength(); i++) {
             Node child = bodychildren.item(i);
             if (child instanceof Element) {
-                bodyschild = (Element)child;
-                break;
+                children.add(child);
+                //bodyschild = (Element)child;
+                //break;
             }
         }
-        if (bodyschild == null) {
+        /*if (bodyschild == null) {
             System.out.println("could not get body's child");
             return null;
+        }*/
+        String[] output = new String[children.size()];
+        int cnt = 0;
+        for (Iterator i = children.iterator(); i.hasNext(); cnt++) {
+            output[cnt] = SchemaValidation.elementToXml((Element)i.next());
         }
 
-        return SchemaValidation.elementToXml(bodyschild);
+        //return SchemaValidation.elementToXml(bodyschild);
+        return output;
     }
 
     private static class SchameValidationErrorHandler implements ErrorHandler {
