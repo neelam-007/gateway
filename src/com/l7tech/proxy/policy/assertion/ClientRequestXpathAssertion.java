@@ -33,16 +33,17 @@ public class ClientRequestXpathAssertion extends ClientAssertion {
 
     public AssertionStatus decorateRequest(PendingRequest request) throws PolicyAssertionException {
         final XpathExpression xpathExpression = requestXpathAssertion.getXpathExpression();
-        final XpathEvaluator eval = XpathEvaluator.newEvaluator(request.getDecoratedDocument(),
+        // Match the Original _undecorated_ document always, so operation-specific paths are deterministic
+        final XpathEvaluator eval = XpathEvaluator.newEvaluator(request.getOriginalDocument(),
                                                                 xpathExpression.getNamespaces());
         try {
             List nodes = eval.select(xpathExpression.getExpression());
             if (nodes == null || nodes.size() < 1) {
-                log.info("XPath expression did not match any nodes in response; assertion fails.");
+                log.info("XPath expression did not match any nodes in request; assertion fails.");
                 return AssertionStatus.FALSIFIED;
             }
 
-            log.info("XPath expression matched " + nodes.size() + " nodes in response; assertion succeeds");
+            log.info("XPath expression matched " + nodes.size() + " nodes in request; assertion succeeds");
             return AssertionStatus.NONE;
         } catch (JaxenException e) {
             log.warning("Invalid expath expression: " + e.getMessage());
