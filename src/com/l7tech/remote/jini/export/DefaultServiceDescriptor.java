@@ -295,33 +295,33 @@ public class DefaultServiceDescriptor
         if (classPath == null) classPath = "";
         newClassLoader = new PreferredClassLoader(oldClassLoader.getURLs(), oldClassLoader, codeBase, false);
 
-        synchronized (DefaultServiceDescriptor.class) {
-            // supplant global policy 1st time through
-            if (globalPolicy == null) {
-                initialGlobalPolicy = Policy.getPolicy();
-                globalPolicy =
-                  new AggregatePolicyProvider(initialGlobalPolicy);
-                Policy.setPolicy(globalPolicy);
-                logger.log(Level.FINEST,
-                           "Global policy set: {0}", globalPolicy);
-            }
-            DynamicPolicyProvider service_policy =
-              new DynamicPolicyProvider(
-                new PolicyFileProvider(getPolicy()));
-            LoaderSplitPolicyProvider split_service_policy =
-              new LoaderSplitPolicyProvider(
-                newClassLoader, service_policy,
-                new DynamicPolicyProvider(initialGlobalPolicy));
-            /* Grant "this" code enough permission to do its work
-             * under the service policy, which takes effect (below)
-             * after the context loader is (re)set.
-             */
-            split_service_policy.grant(
-              this.getClass(),
-              null, /* Principal[] */
-              new Permission[]{new AllPermission()});
-            globalPolicy.setPolicy(newClassLoader, split_service_policy);
-        }
+//        synchronized (DefaultServiceDescriptor.class) {
+//            // supplant global policy 1st time through
+//            if (globalPolicy == null) {
+//                initialGlobalPolicy = Policy.getPolicy();
+//                globalPolicy =
+//                  new AggregatePolicyProvider(initialGlobalPolicy);
+//                Policy.setPolicy(globalPolicy);
+//                logger.log(Level.FINEST,
+//                           "Global policy set: {0}", globalPolicy);
+//            }
+//            DynamicPolicyProvider service_policy =
+//              new DynamicPolicyProvider(
+//                new PolicyFileProvider(getPolicy()));
+//            LoaderSplitPolicyProvider split_service_policy =
+//              new LoaderSplitPolicyProvider(
+//                newClassLoader, service_policy,
+//                new DynamicPolicyProvider(initialGlobalPolicy));
+//            /* Grant "this" code enough permission to do its work
+//             * under the service policy, which takes effect (below)
+//             * after the context loader is (re)set.
+//             */
+//            split_service_policy.grant(
+//              this.getClass(),
+//              null, /* Principal[] */
+//              new Permission[]{new AllPermission()});
+//            globalPolicy.setPolicy(newClassLoader, split_service_policy);
+//        }
 
         curThread.setContextClassLoader(newClassLoader);
 
