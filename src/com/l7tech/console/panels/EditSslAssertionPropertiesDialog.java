@@ -69,6 +69,9 @@ public class EditSslAssertionPropertiesDialog extends JDialog {
 
         if (sslOption.equals(SslAssertion.REQUIRED)) {
               sslRequiredRadioButton.setSelected(true);
+            if (sslAssertion.isRequireClientAuthentication()) {
+                requireClientCertificateCheckBox.setSelected(true);
+            }
           } else if (sslOption.equals(SslAssertion.OPTIONAL)) {
               sslOptionalRadioButton.setSelected(true);
           } else if (sslOption.equals(SslAssertion.FORBIDDEN)) {
