@@ -177,7 +177,9 @@ public class ServiceNode extends EntityHeaderNode {
         try {
             PublishedService ps = getPublishedService();
             if (ps != null && ps.getRoutingUri() != null) {
-                nodeName = nodeName + " [on '" + ps.getRoutingUri() + "']";
+                nodeName = "<html>" +
+                              nodeName + " [on <a href=\"" + ps.getRoutingUri() + "\">" + ps.getRoutingUri() +
+                           "</a>]</html>";
             }
         } catch (FindException e) {
 
