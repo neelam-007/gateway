@@ -19,6 +19,20 @@ public class GatewayStatus {
     public static final int NUMBER_OF_SAMPLE_PER_MINUTE = 60 / REFRESH_INTERVAL;
     public static final int MAX_UPDATE_FAILURE_COUNT = 2;
 
+    private final ClusterNodeInfo clusterInfo;
+    private int status;
+    private int loadSharing;
+    private boolean addRequestCounterInCache;
+    private boolean addCompletedCounterInCache;
+    private Vector requestCounterCache = new Vector();
+    private Vector completedCounterCache = new Vector();
+    private long secondLastUpdateTimeStamp;
+    private int timeStampUpdateFailureCount;
+
+    /**
+     * Constructor
+     * @param clusterInfo  The node info of the gateway
+     */
     public GatewayStatus(ClusterNodeInfo clusterInfo) {
         this.clusterInfo = clusterInfo;
 
@@ -112,6 +126,11 @@ public class GatewayStatus {
         this.loadSharing = loadSharing;
     }
 
+    /**
+     * Update the request counter
+     *
+     * @param newCount  The new value of the request count.
+     */
     public void updateRequestCounterCache(long newCount) {
 
         //       System.out.println("Add new counter in requestCounterCache - flag: " + addRequestCounterInCache);
@@ -127,6 +146,11 @@ public class GatewayStatus {
 
     }
 
+    /**
+     * Update the completed counter
+     *
+     * @param newCount  The new value of the completed count.
+     */
     public void updateCompletedCounterCache(long newCount) {
 
         //       System.out.println("Add new counter in completedCounterCache - flag: " + addCompletedCounterInCache);
@@ -141,6 +165,13 @@ public class GatewayStatus {
         }
     }
 
+    /**
+     * Update the counter cache.
+     *
+     * @param cache   The cache to be updated.
+     * @param newCount   The new value of the count.
+     * @param newCounter   true if a new counter should be created in the cache, false otherwise.
+     */
     private void updateCounterCache(Vector cache, long newCount, boolean newCounter) {
 
         if (newCounter) {
@@ -161,6 +192,12 @@ public class GatewayStatus {
         }
     }
 
+    /**
+     * Get the total count from the counter cache.
+     *
+     * @param cache  The cache to be used.
+     * @return  long  The total count.
+     */
     private long getTotalCountFromCache(Vector cache) {
 
         long totalCount = 0;
@@ -175,67 +212,114 @@ public class GatewayStatus {
         return totalCount;
     }
 
+    /**
+     * Return the request count
+     *
+     * @return long  The request count.
+     */
     public long getRequestCount() {
         return getTotalCountFromCache(requestCounterCache);
     }
 
+    /**
+     * Set the reference to the request counter cache.
+     *
+     * @param cache  The reference to the request counter cache.
+     */
     public void setRequestCounterCache(Vector cache) {
         requestCounterCache = cache;
     }
 
+    /**
+     * Set the reference to the completed counter cache.
+     *
+     * @param cache  The reference to the completed counter cache.
+     */
     public void setCompletedCounterCache(Vector cache) {
         completedCounterCache = cache;
     }
 
+    /**
+     * Return the reference to the request counter cache.
+     *
+     * @return  Vector  The reference to the request counter cache.
+     */
     public Vector getRequestCounterCache() {
         return requestCounterCache;
     }
 
+    /**
+     * Return the reference to the completed counter cache.
+     *
+     * @return  Vector  The reference to the completed counter cache.
+     */
     public Vector getCompletedCounterCache() {
         return completedCounterCache;
     }
 
+    /**
+     * Reset the cache update flag.
+     */
     public void resetCacheUpdateFlag() {
         addRequestCounterInCache = true;
         addCompletedCounterInCache = true;
     }
 
+    /**
+     * Return the second last update timestamp.
+     *
+     * @return long  The second last update timestamp.
+     */
     public long getSecondLastUpdateTimeStamp() {
         return secondLastUpdateTimeStamp;
     }
 
+    /**
+     * Set the last update timestamp
+     *
+     * @param secondLastUpdateTime  The last update timestamp.
+     */
     public void setSecondLastUpdateTimeStamp(long secondLastUpdateTime) {
         this.secondLastUpdateTimeStamp = secondLastUpdateTime;
     }
 
+    /**
+     * Return Node Id.
+     *
+     * @return String  The node Id.
+     */
     public String getNodeId() {
         return clusterInfo.getMac();
     }
 
+    /**
+     * Increment the failure count of the timestamp update.
+     */
     public void incrementTimeStampUpdateFailureCount() {
         timeStampUpdateFailureCount++;
     }
 
+    /**
+     * Reset the failure count of the timestamp update.
+     */
     public void resetTimeStampUpdateFailureCount() {
         timeStampUpdateFailureCount = 0;
     }
 
+    /**
+     * Return the failure count of the timestamp update.
+     *
+     * @return int The failure count of the timestamp update.
+     */
     public int getTimeStampUpdateFailureCount() {
         return timeStampUpdateFailureCount;
     }
 
-    public int setTimeStampUpdateFailureCount(int count) {
-        return timeStampUpdateFailureCount = count;
+    /**
+     * Set the failure count of the timestamp update.
+     * @param count  The failure count of the timestamp update.
+     */
+    public void setTimeStampUpdateFailureCount(int count) {
+        timeStampUpdateFailureCount = count;
     }
-
-    private final ClusterNodeInfo clusterInfo;
-    private int status;
-    private int loadSharing;
-    boolean addRequestCounterInCache;
-    boolean addCompletedCounterInCache;
-    private Vector requestCounterCache = new Vector();
-    private Vector completedCounterCache = new Vector();
-    long secondLastUpdateTimeStamp;
-    int timeStampUpdateFailureCount;
-
 }
