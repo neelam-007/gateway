@@ -42,7 +42,7 @@ public class MainWindow extends JFrame {
 
     /** the resource bundle name */
     private static
-            ResourceBundle resapplication =
+    ResourceBundle resapplication =
             java.util.ResourceBundle.getBundle("com.l7tech.console.resources.console");
 
     private JMenuBar mainJMenuBar = null;
@@ -98,14 +98,14 @@ public class MainWindow extends JFrame {
 
     // panel that lists container
     private final
-            TreeFolderListPanel cListPanel = new TreeFolderListPanel();
+    TreeFolderListPanel cListPanel = new TreeFolderListPanel();
 
     /* this class classloader */
     private final ClassLoader cl = getClass().getClassLoader();
 
     /** the panel listener broker */
     private final
-            PanelListenerBroker listenerBroker = new PanelListenerBroker();
+    PanelListenerBroker listenerBroker = new PanelListenerBroker();
     private Component cachedOutlookBar;
     private Component cachedTreeViewPane;
 
@@ -288,29 +288,37 @@ public class MainWindow extends JFrame {
      * @return JMenu
      */
     private JMenu getViewMenu() {
-        if (viewMenu == null) {
-            viewMenu = new JMenu();
-            viewMenu.setText(resapplication.getString("View"));
-            // workaround to disable icon on the menu
-            viewMenu.add(getGotoSubmenu());
-            JMenuItem item = new JMenuItem(getRefreshAction());
-            // item.setIcon(null);
-            item.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_F5, 0));
-            viewMenu.add(item);
-            int mnemonic = viewMenu.getText().toCharArray()[0];
-            viewMenu.setMnemonic(mnemonic);
-            viewMenu.addSeparator();
+        if (viewMenu != null) return viewMenu;
 
-            JCheckBoxMenuItem jcm = new JCheckBoxMenuItem(getShortcutBarToggleAction());
-            jcm.setEnabled(true);
-            viewMenu.add(jcm);
+        viewMenu = new JMenu();
+        viewMenu.setText(resapplication.getString("View"));
+        // workaround to disable icon on the menu
+        viewMenu.add(getGotoSubmenu());
+        JMenuItem item = new JMenuItem(getRefreshAction());
+        // item.setIcon(null);
+        item.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_F5, 0));
+        viewMenu.add(item);
+        int mnemonic = viewMenu.getText().toCharArray()[0];
+        viewMenu.setMnemonic(mnemonic);
+        viewMenu.addSeparator();
 
-            jcm = new JCheckBoxMenuItem(getTreeViewToggleAction());
-            jcm.setEnabled(true);
-
-            viewMenu.add(jcm);
-
+        JCheckBoxMenuItem jcm = new JCheckBoxMenuItem(getShortcutBarToggleAction());
+        try {
+            jcm.setSelected(Preferences.getPreferences().isShortcutBarVisible());
+        } catch (IOException e) {
+            log.error("preferences retrieve error :", e);
         }
+        viewMenu.add(jcm);
+
+        jcm = new JCheckBoxMenuItem(getTreeViewToggleAction());
+        try {
+            jcm.setSelected(Preferences.getPreferences().isTreeViewVisible());
+        } catch (IOException e) {
+            log.error("preferences retrieve error :", e);
+        }
+
+        viewMenu.add(jcm);
+
         return viewMenu;
     }
 
@@ -319,28 +327,29 @@ public class MainWindow extends JFrame {
      * @return JMenuItem
      */
     private JMenu getGotoSubmenu() {
-        if (gotoMenu == null) {
-            gotoMenu = new JMenu("Go To");
-            int mnemonic = gotoMenu.getText().toCharArray()[0];
-            gotoMenu.setMnemonic(mnemonic);
+        if (gotoMenu != null) return gotoMenu;
 
-            JMenuItem menuItem;
+        gotoMenu = new JMenu("Go To");
+        int mnemonic = gotoMenu.getText().toCharArray()[0];
+        gotoMenu.setMnemonic(mnemonic);
 
-            menuItem = new JMenuItem(getGotoUsersAction());
-            gotoMenu.add(menuItem);
+        JMenuItem menuItem;
 
-            menuItem = new JMenuItem(getGotoGroupsAction());
-            gotoMenu.add(menuItem);
+        menuItem = new JMenuItem(getGotoUsersAction());
+        gotoMenu.add(menuItem);
 
-            menuItem = new JMenuItem(getGotoPoliciesAction());
-            gotoMenu.add(menuItem);
+        menuItem = new JMenuItem(getGotoGroupsAction());
+        gotoMenu.add(menuItem);
 
-            menuItem = new JMenuItem(getGotoServicesAction());
-            gotoMenu.add(menuItem);
+        menuItem = new JMenuItem(getGotoPoliciesAction());
+        gotoMenu.add(menuItem);
 
-            menuItem = new JMenuItem(getGotoProvidersAction());
-            gotoMenu.add(menuItem);
-        }
+        menuItem = new JMenuItem(getGotoServicesAction());
+        gotoMenu.add(menuItem);
+
+        menuItem = new JMenuItem(getGotoProvidersAction());
+        gotoMenu.add(menuItem);
+
         return gotoMenu;
     }
 
@@ -539,7 +548,7 @@ public class MainWindow extends JFrame {
                     public void actionPerformed(ActionEvent event) {
                         JTree tree = getJTreeView();
                         EntityTreeNode node =
-                                (EntityTreeNode)tree.getLastSelectedPathComponent();
+                                (EntityTreeNode) tree.getLastSelectedPathComponent();
 
                         if (node != null) {
                             refreshNode(node);
@@ -570,25 +579,37 @@ public class MainWindow extends JFrame {
                      * @see Action#removePropertyChangeListener
                      */
                     public void actionPerformed(ActionEvent event) {
-                        JCheckBoxMenuItem item = (JCheckBoxMenuItem)event.getSource();
+                        JCheckBoxMenuItem item = (JCheckBoxMenuItem) event.getSource();
                         Component[] comps = getMainLeftJPanel().getComponents();
                         for (int i = comps.length - 1; i >= 0; i--) {
                             if (comps[i] instanceof JSplitPane) {
-                                JSplitPane p = (JSplitPane)comps[i];
+                                JSplitPane p = (JSplitPane) comps[i];
 
                                 if (item.isSelected()) {
                                     if (cachedOutlookBar != null) {
                                         p.setLeftComponent(cachedOutlookBar);
+                                        if (getMainJSplitPane().getLeftComponent() == null) {
+                                            getMainJSplitPane().setLeftComponent(getMainLeftJPanel());
+                                        }
                                     }
                                 } else {
                                     cachedOutlookBar = p.getLeftComponent();
-                                    p.remove(cachedOutlookBar);
+                                    if (cachedOutlookBar !=null)
+                                        p.remove(cachedOutlookBar);
+                                    if (p.getComponents().length == 1) { //divider the only component
+                                        getMainJSplitPane().remove(getMainLeftJPanel());
+                                    }
                                 }
-
+                                try {
+                                    Preferences prefs = Preferences.getPreferences();
+                                    prefs.seShortcutBarVisible(item.isSelected());
+                                    prefs.store();
+                                    prefs.updateSystemProperties();
+                                } catch (IOException e) {
+                                    log.error("error updating properties :", e);
+                                }
                             }
-
                         }
-                        //outlookBar.setVisible(item.isEnabled());
                     }
                 };
         toggleShortcutBaAction.putValue(Action.SHORT_DESCRIPTION, atext);
@@ -614,25 +635,37 @@ public class MainWindow extends JFrame {
                      * @see Action#removePropertyChangeListener
                      */
                     public void actionPerformed(ActionEvent event) {
-                        JCheckBoxMenuItem item = (JCheckBoxMenuItem)event.getSource();
+                        JCheckBoxMenuItem item = (JCheckBoxMenuItem) event.getSource();
                         Component[] comps = getMainLeftJPanel().getComponents();
                         for (int i = comps.length - 1; i >= 0; i--) {
                             if (comps[i] instanceof JSplitPane) {
-                                JSplitPane p = (JSplitPane)comps[i];
+                                JSplitPane p = (JSplitPane) comps[i];
 
                                 if (item.isSelected()) {
                                     if (cachedTreeViewPane != null) {
                                         p.setRightComponent(cachedTreeViewPane);
+                                        if (getMainJSplitPane().getLeftComponent() == null) {
+                                            getMainJSplitPane().setLeftComponent(getMainLeftJPanel());
+                                        }
                                     }
                                 } else {
                                     cachedTreeViewPane = p.getRightComponent();
-                                    p.remove(cachedTreeViewPane);
+                                    if (cachedTreeViewPane !=null)
+                                        p.remove(cachedTreeViewPane);
+                                    if (p.getComponents().length == 1) { //divider the only component
+                                        getMainJSplitPane().remove(getMainLeftJPanel());
+                                    }
                                 }
-
+                                try {
+                                    Preferences prefs = Preferences.getPreferences();
+                                    prefs.setTreeViewVisible(item.isSelected());
+                                    prefs.store();
+                                    prefs.updateSystemProperties();
+                                } catch (IOException e) {
+                                    log.error("error updating properties :", e);
+                                }
                             }
-
                         }
-                        //outlookBar.setVisible(item.isEnabled());
                     }
                 };
         toggleTreeViewAction.putValue(Action.SHORT_DESCRIPTION, atext);
@@ -662,7 +695,7 @@ public class MainWindow extends JFrame {
                     public void actionPerformed(ActionEvent event) {
 
                         EntityTreeNode context =
-                                (EntityTreeNode)getJTreeView().getModel().getRoot();
+                                (EntityTreeNode) getJTreeView().getModel().getRoot();
                         JDialog d = new FindDialog(MainWindow.this, true, context, listenerBroker);
                         d.setLocation(MainWindow.this.getLocationOnScreen());
                         d.show();
@@ -713,7 +746,7 @@ public class MainWindow extends JFrame {
                     public void actionPerformed(ActionEvent event) {
                         JTree tree = getJTreeView();
                         EntityTreeNode node =
-                                (EntityTreeNode)tree.getLastSelectedPathComponent();
+                                (EntityTreeNode) tree.getLastSelectedPathComponent();
 
                         if (node != null) {
                             removeNode(node);
@@ -842,14 +875,16 @@ public class MainWindow extends JFrame {
      * @return JSplitPane
      */
     private JSplitPane getMainJSplitPane() {
-        if (mainJSplitPane == null) {
-            mainJSplitPane =
-                    new JSplitPane(JSplitPane.HORIZONTAL_SPLIT);
-            //mainJSplitPane.setDividerLocation(200);
-            getMainJSplitPane().add(getObjectBrowserPane(), "right");
+        if (mainJSplitPane != null)
+            return mainJSplitPane;
 
-            getMainJSplitPane().add(getMainLeftJPanel(), "left");
-        }
+        mainJSplitPane =
+                new JSplitPane(JSplitPane.HORIZONTAL_SPLIT);
+        //mainJSplitPane.setDividerLocation(200);
+        getMainJSplitPane().add(getObjectBrowserPane(), "right");
+
+        getMainJSplitPane().add(getMainLeftJPanel(), "left");
+
         return mainJSplitPane;
     }
 
@@ -938,31 +973,31 @@ public class MainWindow extends JFrame {
         toolBarPane.putClientProperty("JToolBar.isRollover", Boolean.TRUE);
         JButton b = toolBarPane.add(getConnectAction());
         b.setFont(new Font("Dialog", 1, 10));
-        b.setText((String)getConnectAction().getValue(Action.NAME));
+        b.setText((String) getConnectAction().getValue(Action.NAME));
         b.setMargin(new Insets(0, 0, 0, 0));
         b.setHorizontalTextPosition(SwingConstants.RIGHT);
 
         b = toolBarPane.add(getDisconnectAction());
         b.setFont(new Font("Dialog", 1, 10));
-        b.setText((String)getDisconnectAction().getValue(Action.NAME));
+        b.setText((String) getDisconnectAction().getValue(Action.NAME));
         b.setMargin(new Insets(0, 0, 0, 0));
         b.setHorizontalTextPosition(SwingConstants.RIGHT);
 
         b = toolBarPane.add(getRefreshAction());
         b.setFont(new Font("Dialog", 1, 10));
-        b.setText((String)getRefreshAction().getValue(Action.NAME));
+        b.setText((String) getRefreshAction().getValue(Action.NAME));
         b.setMargin(new Insets(0, 0, 0, 0));
         b.setHorizontalTextPosition(SwingConstants.RIGHT);
 
         b = toolBarPane.add(getFindAction());
         b.setFont(new Font("Dialog", 1, 10));
-        b.setText((String)getFindAction().getValue(Action.NAME));
+        b.setText((String) getFindAction().getValue(Action.NAME));
         b.setMargin(new Insets(0, 0, 0, 0));
         b.setHorizontalTextPosition(SwingConstants.RIGHT);
 
         b = toolBarPane.add(getPreferencesAction());
         b.setFont(new Font("Dialog", 1, 10));
-        b.setText((String)getPreferencesAction().getValue(Action.NAME));
+        b.setText((String) getPreferencesAction().getValue(Action.NAME));
         b.setMargin(new Insets(0, 0, 0, 0));
         b.setHorizontalTextPosition(SwingConstants.RIGHT);
 
@@ -977,38 +1012,52 @@ public class MainWindow extends JFrame {
      */
     private JPanel getMainLeftJPanel() {
 
-        if (mainLeftJPanel == null) {
-            JPanel treePanel = new JPanel();
-            treePanel.setLayout(new BorderLayout());
-            treePanel.add(getJTreeView(), "Center");
+        if (mainLeftJPanel != null)
+            return mainLeftJPanel;
 
-            JScrollPane js = new JScrollPane(treePanel);
-            int mInc = js.getVerticalScrollBar().getUnitIncrement();
-            // some arbitrary text to set the unit increment to the
-            // height of one line instead of default value
-            int vInc = (int)getStatusMsgLeft().getPreferredSize().getHeight();
-            js.getVerticalScrollBar().setUnitIncrement(Math.max(mInc, vInc));
+        JPanel treePanel = new JPanel();
+        treePanel.setLayout(new BorderLayout());
+        treePanel.add(getJTreeView(), "Center");
 
-            int hInc = (int)getStatusMsgLeft().getPreferredSize().getWidth();
-            js.getHorizontalScrollBar().setUnitIncrement(Math.max(mInc, hInc));
+        JScrollPane js = new JScrollPane(treePanel);
+        int mInc = js.getVerticalScrollBar().getUnitIncrement();
+        // some arbitrary text to set the unit increment to the
+        // height of one line instead of default value
+        int vInc = (int) getStatusMsgLeft().getPreferredSize().getHeight();
+        js.getVerticalScrollBar().setUnitIncrement(Math.max(mInc, vInc));
 
-            outlookBar = new JOutlookBar();
+        int hInc = (int) getStatusMsgLeft().getPreferredSize().getWidth();
+        js.getHorizontalScrollBar().setUnitIncrement(Math.max(mInc, hInc));
 
-            // here is the sequece of commands adding buttons to specific folders
-            // Folder "Internet"
-            outlookBar.addIcon("Shortcut Bar", getGotoServicesAction());
-            outlookBar.addIcon("Shortcut Bar", getGotoPoliciesAction());
-            outlookBar.addIcon("Shortcut Bar", getGotoUsersAction());
-            outlookBar.addIcon("Shortcut Bar", getGotoGroupsAction());
-            outlookBar.addIcon("Shortcut Bar", getGotoProvidersAction());
+        outlookBar = new JOutlookBar();
 
-            JSplitPane sections = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, outlookBar, js);
-            //sections.setDividerLocation(150);
-            sections.setOneTouchExpandable(true);
-            sections.setDividerSize(0);
-            mainLeftJPanel = new JPanel(new BorderLayout());
-            mainLeftJPanel.add(sections, "Center");
+        // here is the sequece of commands adding buttons to specific folders
+        // Folder "Internet"
+        outlookBar.addIcon("Shortcut Bar", getGotoServicesAction());
+        outlookBar.addIcon("Shortcut Bar", getGotoPoliciesAction());
+        outlookBar.addIcon("Shortcut Bar", getGotoUsersAction());
+        outlookBar.addIcon("Shortcut Bar", getGotoGroupsAction());
+        outlookBar.addIcon("Shortcut Bar", getGotoProvidersAction());
+        cachedOutlookBar = outlookBar;
+        cachedTreeViewPane = js;
+        JSplitPane sections = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT);
+        try {
+            if (Preferences.getPreferences().isShortcutBarVisible()) {
+                sections.setLeftComponent(outlookBar);
+            }
+            if (Preferences.getPreferences().isTreeViewVisible()) {
+                sections.setRightComponent(js);
+            }
+        } catch (IOException e) {
+            sections.setLeftComponent(outlookBar);
+            sections.setRightComponent(js);
         }
+        //sections.setDividerLocation(150);
+        // sections.setOneTouchExpandable(true);
+        sections.setDividerSize(0);
+        mainLeftJPanel = new JPanel(new BorderLayout());
+        mainLeftJPanel.add(sections, "Center");
+
         return mainLeftJPanel;
     }
 
@@ -1025,15 +1074,15 @@ public class MainWindow extends JFrame {
             /** Invoked when an action occurs. */
             public void actionPerformed(ActionEvent e) {
                 JPanel panel = null;
-                EntityTreeNode dNode = (EntityTreeNode)node;
+                EntityTreeNode dNode = (EntityTreeNode) node;
                 Object object = dNode.getUserObject();
                 DefaultMutableTreeNode parent =
-                        (DefaultMutableTreeNode)node.getParent();
+                        (DefaultMutableTreeNode) node.getParent();
 
                 if (TreeNodeMenu.DELETE.equals(e.getActionCommand())) {
                     removeNode(dNode);
                 } else if (TreeNodeMenu.NEW_ADMINISTRATOR.equals(e.getActionCommand())) {
-                    AdminFolderNode adminFolder = (AdminFolderNode)object;
+                    AdminFolderNode adminFolder = (AdminFolderNode) object;
                     NewAdminDialog dialog = new NewAdminDialog(MainWindow.this, adminFolder);
                     dialog.setResizable(false);
                     dialog.setPanelListener(listenerBroker);
@@ -1075,7 +1124,7 @@ public class MainWindow extends JFrame {
                 }
             }
         };
-        return TreeNodeMenu.forNode((EntityTreeNode)node, listener);
+        return TreeNodeMenu.forNode((EntityTreeNode) node, listener);
     }
 
 
@@ -1137,7 +1186,7 @@ public class MainWindow extends JFrame {
                  */
                 public void onInsert(Object object) {
                     BasicTreeNode newNode =
-                            TreeNodeFactory.getTreeNode((EntityHeader)object);
+                            TreeNodeFactory.getTreeNode((EntityHeader) object);
                     if (newNode.isLeaf()) return;
 
                     JTree tree = getJTreeView();
@@ -1146,12 +1195,12 @@ public class MainWindow extends JFrame {
                     if (!tree.hasBeenExpanded(path)) return;
 
                     EntityTreeNode pNode =
-                            (EntityTreeNode)tree.getLastSelectedPathComponent();
+                            (EntityTreeNode) tree.getLastSelectedPathComponent();
 
                     EntityTreeNode node = new EntityTreeNode(newNode);
                     pNode.add(node);
                     pNode.sortChildren(EntityTreeNode.DEFAULT_COMPARATOR);
-                    DefaultTreeModel model = (DefaultTreeModel)tree.getModel();
+                    DefaultTreeModel model = (DefaultTreeModel) tree.getModel();
                     model.nodeStructureChanged(pNode);
                 }
 
@@ -1163,12 +1212,12 @@ public class MainWindow extends JFrame {
                  */
                 public void onUpdate(Object object) {
                     BasicTreeNode newNode =
-                            TreeNodeFactory.getTreeNode((EntityHeader)object);
+                            TreeNodeFactory.getTreeNode((EntityHeader) object);
 
                     if (newNode.isLeaf() ||
                             !(newNode instanceof EntityHeader))
                         return;
-                    EntityHeader en = (EntityHeader)newNode;
+                    EntityHeader en = (EntityHeader) newNode;
 
                     JTree tree = getJTreeView();
                     TreePath path = tree.getSelectionPath();
@@ -1177,8 +1226,8 @@ public class MainWindow extends JFrame {
 
 
                     DefaultMutableTreeNode node =
-                            (DefaultMutableTreeNode)TreeNodeAction.
-                            nodeByName(en.getName(), (DefaultMutableTreeNode)path.getLastPathComponent());
+                            (DefaultMutableTreeNode) TreeNodeAction.
+                            nodeByName(en.getName(), (DefaultMutableTreeNode) path.getLastPathComponent());
 
                     if (node == null) {
                         throw new
@@ -1194,27 +1243,27 @@ public class MainWindow extends JFrame {
                  */
                 public void onDelete(Object object) {
                     BasicTreeNode newNode =
-                            TreeNodeFactory.getTreeNode((EntityHeader)object);
+                            TreeNodeFactory.getTreeNode((EntityHeader) object);
 
                     if (newNode.isLeaf() ||
                             !(newNode instanceof EntityHeader))
                         return;
 
-                    EntityHeader en = (EntityHeader)newNode;
+                    EntityHeader en = (EntityHeader) newNode;
 
                     JTree tree = getJTreeView();
                     TreePath path = tree.getSelectionPath().getParentPath();
 
                     if (tree.hasBeenExpanded(path)) {
                         DefaultMutableTreeNode node =
-                                (DefaultMutableTreeNode)TreeNodeAction.
-                                nodeByName(en.getName(), (DefaultMutableTreeNode)path.getLastPathComponent());
+                                (DefaultMutableTreeNode) TreeNodeAction.
+                                nodeByName(en.getName(), (DefaultMutableTreeNode) path.getLastPathComponent());
 
                         if (node == null) {
                             throw new
                                     IllegalStateException("Update of node that isn't in tree ( " + en.getName() + " )");
                         }
-                        ((DefaultTreeModel)tree.getModel()).removeNodeFromParent(node);
+                        ((DefaultTreeModel) tree.getModel()).removeNodeFromParent(node);
                     }
                 }
             };
@@ -1231,7 +1280,7 @@ public class MainWindow extends JFrame {
         // only if something is returned
         if (panel != null) {
             if (panel instanceof EntityEditorPanel) {
-                ((EntityEditorPanel)panel).setPanelListener(listenerBroker);
+                ((EntityEditorPanel) panel).setPanelListener(listenerBroker);
             }
             getObjectBrowserPane().removeAll();
             GridBagConstraints constraints
@@ -1282,7 +1331,7 @@ public class MainWindow extends JFrame {
         if (!(object instanceof EntityTreeNode)) {
             return;
         }
-        EntityTreeNode node = (EntityTreeNode)object;
+        EntityTreeNode node = (EntityTreeNode) object;
         // update actions for the node
         updateActions(node);
         activateBrowserPanel(node);
@@ -1310,9 +1359,9 @@ public class MainWindow extends JFrame {
         TreeNode node =
                 TreeNodeAction.
                 nodeByName(name,
-                        (DefaultMutableTreeNode)getJTreeView().getModel().getRoot());
+                        (DefaultMutableTreeNode) getJTreeView().getModel().getRoot());
         if (node != null) {
-            TreePath path = new TreePath(((DefaultMutableTreeNode)node).getPath());
+            TreePath path = new TreePath(((DefaultMutableTreeNode) node).getPath());
             getJTreeView().setSelectionPath(path);
         }
 
@@ -1325,7 +1374,7 @@ public class MainWindow extends JFrame {
      */
     private void removeNode(EntityTreeNode node) {
         // store the parent node to use as a panel for later
-        EntityTreeNode parentNode = (EntityTreeNode)node.getParent();
+        EntityTreeNode parentNode = (EntityTreeNode) node.getParent();
         if (!TreeNodeAction.deleteNode(node)) return;
         treeObjectListener.onDelete(node.getUserObject());
 
@@ -1358,8 +1407,8 @@ public class MainWindow extends JFrame {
             Utilities.equalizeComponentSizes(components);
             for (int i = 0; components != null && i < components.length; i++) {
                 if (components[i] instanceof JMenu &&
-                        ((JMenu)components[i]).getText().equals(TreeNodeMenu.NEW)) {
-                    JMenu menu = (JMenu)components[i];
+                        ((JMenu) components[i]).getText().equals(TreeNodeMenu.NEW)) {
+                    JMenu menu = (JMenu) components[i];
                     Component[] nItems = menu.getMenuComponents();
                     Utilities.equalizeComponentSizes(nItems);
                     for (int j = 0; nItems != null && j < nItems.length; j++) {
@@ -1408,7 +1457,7 @@ public class MainWindow extends JFrame {
                 if (!found) {
                     tree.setSelectionRow(closestRow);
                 }
-                TreeNode node = (TreeNode)tree.getLastSelectedPathComponent();
+                TreeNode node = (TreeNode) tree.getLastSelectedPathComponent();
 
                 JPopupMenu menu = getTreeNodeJPopupMenu(node);
                 if (menu != null) {
@@ -1572,14 +1621,14 @@ public class MainWindow extends JFrame {
                 if (path == null) return;
 
                 EntityTreeNode node =
-                        (EntityTreeNode)path.getLastPathComponent();
+                        (EntityTreeNode) path.getLastPathComponent();
                 if (node == null) return;
                 int keyCode = e.getKeyCode();
                 if (keyCode == KeyEvent.VK_DELETE) {
                     removeNode(node);
                 } else if (keyCode == KeyEvent.VK_BACK_SPACE) {
                     DefaultMutableTreeNode parent =
-                            (DefaultMutableTreeNode)node.getParent();
+                            (DefaultMutableTreeNode) node.getParent();
                     if (parent == null) return;
 
                     TreeNode[] nodes = parent.getPath();
@@ -1801,7 +1850,7 @@ public class MainWindow extends JFrame {
 
                         // AWT event listener
                         private final
-                                AWTEventListener listener =
+                        AWTEventListener listener =
                                 new AWTEventListener() {
                                     public void eventDispatched(AWTEvent e) {
                                         lastStamp = System.currentTimeMillis();
@@ -1887,7 +1936,7 @@ public class MainWindow extends JFrame {
         try {
             Object lafObject =
                     Class.forName(lookAndFeel).newInstance();
-            UIManager.setLookAndFeel((LookAndFeel)lafObject);
+            UIManager.setLookAndFeel((LookAndFeel) lafObject);
         } catch (Exception e) {
             lfSet = false;
         }
@@ -1944,7 +1993,7 @@ public class MainWindow extends JFrame {
     }
 
     private
-            LogonDialog.LogonListener logonListenr =
+    LogonDialog.LogonListener logonListenr =
             new LogonDialog.LogonListener() {
                 /* invoked on authentication success */
                 public void onAuthSuccess(String id) {

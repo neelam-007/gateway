@@ -89,7 +89,7 @@ public class Preferences extends PropertyChangeSupport {
             throws IOException {
         Iterator keys = p.keySet().iterator();
         while (keys.hasNext()) {
-            String key = (String)keys.next();
+            String key = (String) keys.next();
             if (append) {
                 putProperty(key, p.getProperty(key));
             } else {
@@ -213,9 +213,9 @@ public class Preferences extends PropertyChangeSupport {
 
         Iterator keys = knownProps.keySet().iterator();
         while (keys.hasNext()) {
-            String key = (String)keys.next();
+            String key = (String) keys.next();
             if (null == props.getProperty(key)) {
-                putProperty(key, (String)knownProps.get(key));
+                putProperty(key, (String) knownProps.get(key));
             }
         }
     }
@@ -474,8 +474,7 @@ public class Preferences extends PropertyChangeSupport {
     }
 
     /**
-     * Returns the inactivity timeout value. The method is a conveninece
-     * wrapper to deal with parsing.
+     * Returns the inactivity timeout value.
      *
      * @return the inactivity timeout value as an int.
      */
@@ -489,8 +488,7 @@ public class Preferences extends PropertyChangeSupport {
     }
 
     /**
-     * Returns the remeber login propery value. The method is a
-     * convenience wrapper to deal with parsing.
+     * Returns the remeber login propery value.
      *
      * @return the 'remember login ID' value as boolean.
      */
@@ -500,27 +498,50 @@ public class Preferences extends PropertyChangeSupport {
     }
 
     /**
-     * Returns the remeber shortcut bar  visible propery value. The method is a
-     * convenience wrapper to deal with parsing.
+     * Returns the shortcut bar  visible propery value.
      *
-     * @return the shortcut bar value as boolean.
+     * @return the shortcut bar visible value as boolean.
      */
-    public boolean shortcutBarVisible() {
+    public boolean isShortcutBarVisible() {
+        // default set
+        if (props.getProperty(OUTLOOK_BAR) == null) {
+            return true;
+        }
         return Boolean.
                 valueOf(props.getProperty(OUTLOOK_BAR)).booleanValue();
     }
 
     /**
-     * Returns the remeber tree view visible propery value. The method is a
-     * convenience wrapper to deal with parsing.
+     * Returns the tree view visible property value.
      *
-     * @return the tree view bar value as boolean.
+     * @return the tree view bar visible value as boolean.
      */
-    public boolean treeViewVisible() {
+    public boolean isTreeViewVisible() {
+        // default unset
+        if (props.getProperty(FOLDER_VIEW) == null) {
+            return false;
+        }
         return Boolean.
-                valueOf(props.getProperty(OUTLOOK_BAR)).booleanValue();
+                valueOf(props.getProperty(FOLDER_VIEW)).booleanValue();
     }
 
+    /**
+     * Set the tree view visible property value.
+     *
+     * @param b the tree view bar visible
+     */
+    public void setTreeViewVisible(boolean b) {
+        putProperty(FOLDER_VIEW, Boolean.toString(b));
+    }
+
+    /**
+     * Set the shortcut bar visible property value.
+     *
+     * @param b the shortcut bar visible
+     */
+    public void seShortcutBarVisible(boolean b) {
+        putProperty(OUTLOOK_BAR, Boolean.toString(b));
+    }
 
     /**
      * prints this property list out to the specified output
@@ -642,7 +663,7 @@ public class Preferences extends PropertyChangeSupport {
             System.getProperties().getProperty("user.home") + File.separator + ".ssg";
 
     private static final
-            String[] res =
+    String[] res =
             new String[]
             {
                 /*"log4j.properties",*/
