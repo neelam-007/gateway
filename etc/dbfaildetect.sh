@@ -3,7 +3,7 @@
 IFCONFIG="/sbin/ifconfig"
 GARP="/usr/local/bin/garp"
 WGET="/usr/bin/wget"
-NC=/usr/bin/nc
+NC="/usr/bin/nc"
 # globals and configuration
 
 EMAIL="jthorne@layer7tech.com"
@@ -11,7 +11,8 @@ EMAIL="jthorne@layer7tech.com"
 HOST="10.0.0.25"
 # cluster IP addresss
 
-INTERFACE="eth0:0"
+INTERFACE="eth0"
+INTERFACE_ALIAS="eth0:0"
 # alias interface
 
 # file on server to get
@@ -64,10 +65,9 @@ failure() {
 doiptakeover() {
 	# FIXME: currently Defanged
 	echo "Taking over IP $HOST";
-	$IFCONFIG $INTERFACE $HOST
+	$IFCONFIG $INTERFACE_ALIAS $HOST
 	echo "Sending gratuitous arp"
-	$GARP -i eth0 -a $HOST
-	$GARP -i eth0 -a $HOST
+	$GARP -i $INTERFACE -a $HOST
 	echo "echo 'SSG Failover' | mail -s 'SSG Failover' $EMAIL" 
 }
 
@@ -85,3 +85,5 @@ doget() {
 
 # after all those definitions now call the entry point.
 doget
+
+
