@@ -1,9 +1,3 @@
-/*
- * Created by IntelliJ IDEA.
- * User: emil
- * Date: 4-Feb-2004
- * Time: 12:18:20 PM
- */
 package com.l7tech.policy.assertion.xmlsec;
 
 import com.ibm.xml.dsig.SignatureStructureException;

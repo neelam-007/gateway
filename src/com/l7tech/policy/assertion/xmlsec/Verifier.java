@@ -32,7 +32,8 @@ class Verifier extends SecurityProcessor {
      * Create the new instance with the signer information, session, optional
      * encryption key and the security elements.
      *
-     * @param session  the sesion
+     * @param session  the sesion, this may be <b>null</b> in case simple sessionless
+     *                 signing is requested
      * @param key      the optional encryption key. May be null, that means
      *                 no encryption. The <code>KeyException</code> is trown
      *                 if the encryption is requested.
@@ -40,9 +41,6 @@ class Verifier extends SecurityProcessor {
      */
     Verifier(Session session, Key key, ElementSecurity[] elements) {
         super(elements);
-        if (session == null) {
-            throw new IllegalArgumentException();
-        }
         this.session = session;
         this.decryptionKey = key;
 
