@@ -84,9 +84,11 @@ public abstract class AssertionTreeNode extends AbstractTreeNode {
         da.setEnabled(canDelete());
         list.add(da);
 
+/*      commented out as it is currently NOT supported
         Action ea = new ExplainAssertionAction();
         ea.setEnabled(canDelete());
         list.add(ea);
+        */
 
         Action mu = new AssertionMoveUpAction(this);
         mu.setEnabled(canMoveUp());
