@@ -32,11 +32,15 @@ public abstract class IdentityAssertionTreeNode extends LeafAssertionTreeNode {
             long providerid = assertion.getIdentityProviderOid();
             IdentityProviderConfig cfg = null;
             try {
-                cfg = getProviderConfigManager().findByPrimaryKey(providerid);
-                if (cfg == null)
+                if (providerid == IdentityProviderConfig.DEFAULT_OID)
                     provName = NA;
-                else
-                    provName = cfg.getName();
+                else {
+                    cfg = getProviderConfigManager().findByPrimaryKey(providerid);
+                    if (cfg == null)
+                        provName = NA;
+                    else
+                        provName = cfg.getName();
+                }
             } catch (FindException e) {
                 provName = NA;
                 log.log(Level.SEVERE, "could not find provider associated with this assertion", e);
