@@ -96,11 +96,10 @@ public class SoapMsgSigner {
      */
     public X509Certificate validateSignature(Document soapMsg) throws SignatureNotFoundException, InvalidSignatureException, XSignatureException {
         // find signature element
-        NodeList tmpNodeList = soapMsg.getElementsByTagNameNS(XSignature.XMLDSIG_NAMESPACE, "Signature");
-        if (tmpNodeList.getLength() < 1) {
+        Element sigElement = getSignatureHeaderElement(soapMsg);
+        if (sigElement == null) {
             throw new SignatureNotFoundException("No signature element in this document");
         }
-        Element sigElement = (Element)tmpNodeList.item(0);
 
         SignatureContext sigContext = new SignatureContext();
         AdHocIDResolver idResolver = new AdHocIDResolver(soapMsg);
@@ -152,6 +151,15 @@ public class SoapMsgSigner {
         }
         // if we get here, the envelope uri reference was not verified
         throw new InvalidSignatureException("No reference to envelope was verified.");
+    }
+
+    public Element getSignatureHeaderElement(Document doc) {
+        // find signature element
+        NodeList tmpNodeList = doc.getElementsByTagNameNS(XSignature.XMLDSIG_NAMESPACE, "Signature");
+        if (tmpNodeList.getLength() < 1) {
+            return null;
+        }
+        return (Element)tmpNodeList.item(0);
     }
 
     // todo, move this to util class
