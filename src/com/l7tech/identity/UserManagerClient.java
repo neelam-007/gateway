@@ -48,7 +48,6 @@ public class UserManagerClient extends IdentityManagerClient implements UserMana
         } catch (RemoteException e) {
             throw new DeleteException(e.getMessage(), e);
         }
-
     }
 
     public String save(User user) throws SaveException {
