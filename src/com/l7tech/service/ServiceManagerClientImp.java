@@ -2,11 +2,9 @@ package com.l7tech.service;
 
 import com.l7tech.objectmodel.*;
 import com.l7tech.adminws.service.Client;
-import com.l7tech.adminws.ClientCredentialManager;
+import com.l7tech.adminws.service.Service;
 import com.l7tech.message.Request;
 import com.l7tech.service.resolution.ServiceResolutionException;
-import com.l7tech.util.Locator;
-
 import java.util.Collection;
 import java.io.IOException;
 import java.rmi.RemoteException;
@@ -121,27 +119,10 @@ public class ServiceManagerClientImp implements ServiceManager {
     // PRIVATES
     // ************************************************
 
-    /*
-    public static void main(String[] args) throws Exception {
-        com.l7tech.adminws.ClientCredentialManager.setCachedUsername("ssgadmin");
-        com.l7tech.adminws.ClientCredentialManager.setCachedPasswd("ssgadminpasswd");
-        ServiceManagerClientImp me = new ServiceManagerClientImp();
-        //System.out.println(me.resolveWsdlTarget("tralala"));
-        System.out.println(me.findByPrimaryKey(555));
-        Collection res = me.findAll();
-        System.out.println(res.toString());
-        res = me.findAll(21, 654);
-        System.out.println(res.toString());
-        me.save(me.findByPrimaryKey(555));
-        me.delete(me.findByPrimaryKey(555));
-        System.out.println("done");
-    }
-    */
-
     private Client getStub() throws java.rmi.RemoteException {
         if (localStub == null) {
             try {
-                localStub = new Client(getServiceURL(), getAdminUsername(), getAdminPassword());
+                localStub = new Client(getServiceURL()/*, getAdminUsername(), getAdminPassword()*/);
             }
             catch (Exception e) {
                 throw new java.rmi.RemoteException("Exception getting admin ws stub", e);
@@ -153,30 +134,12 @@ public class ServiceManagerClientImp implements ServiceManager {
     private String getServiceURL() throws IOException {
         String prefUrl = com.l7tech.console.util.Preferences.getPreferences().getServiceUrl();
         if (prefUrl == null || prefUrl.length() < 1 || prefUrl.equals("null/ssg")) {
-            System.err.println("com.l7tech.console.util.Preferences.getPreferences does not resolve a server address");
-            prefUrl = "http://localhost:8080/ssg";
+            throw new IOException("com.l7tech.console.util.Preferences.getPreferences does not resolve a server address");
+            //System.err.println("com.l7tech.console.util.Preferences.getPreferences does not resolve a server address");
+            //prefUrl = "http://localhost:8080/ssg";
         }
-        prefUrl += "/services/serviceAdmin";
+        prefUrl += Service.SERVICE_DEPENDENT_URL_PORTION;
         return prefUrl;
-        //return "http://localhost:8080/UneasyRooster/services/identities";
-    }
-
-    private String getAdminUsername() {
-        return getCredentialManager().getUsername();
-    }
-
-    private String getAdminPassword() {
-        return getCredentialManager().getPassword();
-    }
-
-
-    private ClientCredentialManager getCredentialManager() {
-        ClientCredentialManager credentialManager =
-          (ClientCredentialManager)Locator.getDefault().lookup(ClientCredentialManager.class);
-        if (credentialManager == null) { // bug
-            throw new RuntimeException("No credential manager configured in services");
-        }
-        return credentialManager;
     }
 
     private Client localStub = null;
