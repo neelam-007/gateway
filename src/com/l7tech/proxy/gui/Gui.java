@@ -50,9 +50,12 @@ public class Gui {
     private JFrame frame;
     private MessageViewer messageViewer;
 
+    private static final String WINDOW_TITLE = "Layer7 Client Proxy";
+    private static final String MESSAGE_WINDOW_TITLE = "Message Window";
     private static final String MENU_FILE = "File";
     private static final String MENU_FILE_QUIT = "Quit";
     private static final String MENU_OPTIONS = "Options";
+    private static final String MENU_OPTIONS_IMPORT_CERT = "Import SSG Certificate";
     private static final String MENU_WINDOW = "Window";
     private static final String MENU_MESSAGES = "Message Window";
     private JCheckBoxMenuItem showMessages;
@@ -154,7 +157,7 @@ public class Gui {
     /** Create the Message Viewer. */
     private MessageViewer getMessageViewer() {
         if (messageViewer == null) {
-            messageViewer = new MessageViewer("Message Window");
+            messageViewer = new MessageViewer(MESSAGE_WINDOW_TITLE);
             messageViewer.addWindowListener(new WindowAdapter() {
                 public void windowClosing(final WindowEvent e) {
                     showMessages.setSelected(false);
@@ -173,7 +176,7 @@ public class Gui {
     /** Get the main frame. */
     public JFrame getFrame() {
         if (frame == null) {
-            frame = new JFrame("Layer7 Client Proxy");
+            frame = new JFrame(WINDOW_TITLE);
             frame.setIconImage(IconManager.getAppImage());
             frame.addWindowListener(new WindowAdapter() {
                 public void windowClosing(final WindowEvent e) {
@@ -220,7 +223,7 @@ public class Gui {
         menus.add(fileMenu);
 
         final JMenu optionsMenu = new JMenu(MENU_OPTIONS);
-        final JMenuItem importCert = new JMenuItem("Import SSG Certificate");
+        final JMenuItem importCert = new JMenuItem(MENU_OPTIONS_IMPORT_CERT);
         importCert.addActionListener(getImportCertActionListener());
         optionsMenu.add(importCert);
 
