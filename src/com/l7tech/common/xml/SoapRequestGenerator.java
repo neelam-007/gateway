@@ -1,7 +1,10 @@
 package com.l7tech.common.xml;
 
+import org.w3c.dom.*;
+
 import javax.wsdl.*;
 import javax.wsdl.extensions.ExtensibilityElement;
+import javax.wsdl.extensions.UnknownExtensibilityElement;
 import javax.wsdl.extensions.soap.SOAPOperation;
 import javax.xml.namespace.QName;
 import javax.xml.soap.*;
@@ -49,8 +52,7 @@ public class SoapRequestGenerator {
     /**
      * @param wsdlResource the wsdl resource name
      * @return the array of <code>SoapRequest</code> instances
-     *
-     * @throws WSDLException on error parsing the wsdl
+     * @throws WSDLException         on error parsing the wsdl
      * @throws FileNotFoundException if wsdl cannot be found
      */
     public SOAPRequest[] generate(String wsdlResource)
@@ -70,12 +72,11 @@ public class SoapRequestGenerator {
     }
 
     /**
-      * @param wsdl the parsed wsdl instance
-      * @return the array of <code>SoapRequest</code> instances
-      *
-      * @throws SOAPException on error generating SOAP messages
-      */
-     public SOAPRequest[] generate(Wsdl wsdl) throws SOAPException {
+     * @param wsdl the parsed wsdl instance
+     * @return the array of <code>SoapRequest</code> instances
+     * @throws SOAPException on error generating SOAP messages
+     */
+    public SOAPRequest[] generate(Wsdl wsdl) throws SOAPException {
         this.wsdl = wsdl;
         List requests = new ArrayList();
         Iterator it = wsdl.getBindings().iterator();
@@ -124,7 +125,8 @@ public class SoapRequestGenerator {
         SOAPPart soapPart = soapMessage.getSOAPPart();
         SOAPEnvelope envelope = soapPart.getEnvelope();
 
-        String ns = wsdl.getDefinition().getTargetNamespace();
+        String targetNameSpace = wsdl.getDefinition().getTargetNamespace();
+
         BindingInput bi = bindingOperation.getBindingInput();
         if (bi != null) {
             Iterator eels = bi.getExtensibilityElements().iterator();
@@ -134,7 +136,7 @@ public class SoapRequestGenerator {
                 if (ee instanceof javax.wsdl.extensions.soap.SOAPBody) {
                     javax.wsdl.extensions.soap.SOAPBody body = (javax.wsdl.extensions.soap.SOAPBody)ee;
                     String uri = body.getNamespaceURI();
-                    if (uri != null) ns = uri;
+                    if (uri != null) targetNameSpace = uri;
                     List encodingStyles = body.getEncodingStyles();
                     if (encodingStyles != null && !encodingStyles.isEmpty()) {
                         envelope.setEncodingStyle(encodingStyles.get(0).toString());
@@ -143,9 +145,17 @@ public class SoapRequestGenerator {
             }
         }
 
-        Name name = envelope.createName(bindingOperation.getName(), "ns1", ns);
+        String bindingStyle = wsdl.getBindingStyle(bindingOperation);
         SOAPBody body = envelope.getBody();
-        SOAPBodyElement bodyElement = body.addBodyElement(name);
+        SOAPBodyElement bodyElement = null;
+
+        if ("rpc".equals(bindingStyle)) {
+            Name operationName = envelope.createName(bindingOperation.getName(), "ns1", targetNameSpace);
+            bodyElement = body.addBodyElement(operationName);
+        } else {
+            Name operationName = envelope.createName(bindingOperation.getName(), "ns1", targetNameSpace);
+            bodyElement = body.addBodyElement(operationName);
+        }
 
 
         Operation operation = bindingOperation.getOperation();
@@ -158,35 +168,82 @@ public class SoapRequestGenerator {
 
         for (Iterator iterator = parts.iterator(); iterator.hasNext();) {
             Part part = (Part)iterator.next();
-            Name partName = envelope.createName(part.getName());
-            SOAPElement partElement = bodyElement.addChildElement(partName);
-            QName typeName = part.getTypeName();
+            String elementName = "";
+            QName elementQName = part.getElementName();
+            String value = "value";
+            SOAPElement parameterElement = null;
 
-            if (typeName !=null) {
-                String typeNameLocalPart = typeName.getLocalPart();
-                String uri = typeName.getNamespaceURI();
-                if (uri !=null) {
-                    Iterator prefixes = envelope.getNamespacePrefixes();
-                    while(prefixes.hasNext()) {
-                        String prefix = (String)prefixes.next();
-                        String nsURI = envelope.getNamespaceURI(prefix);
-                        if (nsURI.equals(typeName.getNamespaceURI())) {
-                            typeNameLocalPart = prefix+":"+typeNameLocalPart;
+            if (elementQName != null) {
+                elementName = elementQName.getLocalPart();
+                browseTypes(elementName);
+                String uri = elementQName.getNamespaceURI();
+                String prefix = null;
+                if (uri != null) {
+                    prefix = wsdl.getDefinition().getPrefix(uri);
+                }
+                Name partName = envelope.createName(elementName, prefix, uri);
+                parameterElement = bodyElement.addChildElement(partName);
+
+            } else {
+                elementName = part.getName();
+                Name partName = envelope.createName(elementName);
+                parameterElement = bodyElement.addChildElement(partName);
+                QName typeName = part.getTypeName();
+                if (typeName != null) {
+                    String typeNameLocalPart = typeName.getLocalPart();
+                    String uri = typeName.getNamespaceURI();
+                    if (uri != null) {
+                        Iterator prefixes = envelope.getNamespacePrefixes();
+                        while (prefixes.hasNext()) {
+                            String prefix = (String)prefixes.next();
+                            String nsURI = envelope.getNamespaceURI(prefix);
+                            if (nsURI.equals(typeName.getNamespaceURI())) {
+                                typeNameLocalPart = prefix + ":" + typeNameLocalPart;
+                            }
                         }
                     }
+                    if ("rpc".equals(bindingStyle)) {
+                        parameterElement.addAttribute(envelope.createName("xsi:type"), typeNameLocalPart);
+                    }
+                    value = typeName.getLocalPart();
                 }
-                partElement.addAttribute(envelope.createName("xsi:type"), typeNameLocalPart);
             }
             if (messageInputGenerator != null) {
-                String value = messageInputGenerator.generate(partName.getLocalName(),
-                                                              bindingOperation.getName(),
-                                                              wsdl.getDefinition());
-                if (value !=null){
-                    partElement.addTextNode(value);
-                }
+                value = messageInputGenerator.generate(elementName,
+                  bindingOperation.getName(),
+                  wsdl.getDefinition());
+            }
+            if (value != null) {
+                parameterElement.addTextNode(value);
             }
         }
         return soapMessage;
+    }
+
+    private void browseTypes(String elementName) {
+        Types types = wsdl.getTypes();
+        if (types == null) return;
+        List l = types.getExtensibilityElements();
+        if (l == null || l.isEmpty()) return;
+
+        Iterator iter = l.iterator();
+        Element elem = null;
+        while (iter.hasNext()) {
+            ExtensibilityElement el = (ExtensibilityElement)iter.next();
+            if (el.getElementType().getLocalPart().equals("schema")) {
+                UnknownExtensibilityElement uee = (UnknownExtensibilityElement)el;
+                elem = uee.getElement();
+                NodeList nl = elem.getChildNodes();
+                for (int i = 0; i < nl.getLength(); i++) {
+                    Element child = (Element)nl.item(i);
+                    if ("element".equals(child.getNodeName())
+                        && elementName.equals(child.getAttribute("name"))) { {
+
+                        }
+                    }
+                }
+            }
+        }
     }
 
     /**
@@ -221,12 +278,12 @@ public class SoapRequestGenerator {
         public String toString() {
             StringBuffer sb = new StringBuffer("[");
             boolean coma = false;
-            if (soapOperation !=null) {
-                sb.append(" SOAP operation "+soapOperation);
+            if (soapOperation != null) {
+                sb.append(" SOAP operation " + soapOperation);
                 coma = true;
             }
             sb.append("]");
-            if (soapMessage !=null) {
+            if (soapMessage != null) {
                 sb.append("the message is\n");
                 ByteArrayOutputStream bos = new ByteArrayOutputStream();
                 try {
@@ -245,10 +302,9 @@ public class SoapRequestGenerator {
      */
     public interface MessageInputGenerator {
         /**
-         *
          * @param messagePartName the message part name
-         * @param operationName the operation the part name belongs to
-         * @param definition the wsdl definition (context)
+         * @param operationName   the operation the part name belongs to
+         * @param definition      the wsdl definition (context)
          * @return the user provided part value as a string
          */
         String generate(String messagePartName, String operationName, Definition definition);

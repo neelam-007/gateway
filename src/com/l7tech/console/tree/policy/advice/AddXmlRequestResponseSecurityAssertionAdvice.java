@@ -43,7 +43,7 @@ public class AddXmlRequestResponseSecurityAssertionAdvice implements Advice {
         XpathExpression xpathExpression = new XpathExpression(ENVELOPE_XPATH, namespaces);
         XmlSecurityAssertion a = (XmlSecurityAssertion)assertions[0];
         final ElementSecurity elementSecurity =
-          new ElementSecurity(xpathExpression, "*", false, ElementSecurity.DEFAULT_CIPHER, ElementSecurity.DEFAULT_KEYBITS);
+          new ElementSecurity(xpathExpression, null, false, ElementSecurity.DEFAULT_CIPHER, ElementSecurity.DEFAULT_KEYBITS);
         a.setElements(new ElementSecurity[]{elementSecurity});
         pc.proceed();
     }

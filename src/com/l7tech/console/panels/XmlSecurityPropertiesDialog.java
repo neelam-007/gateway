@@ -328,7 +328,6 @@ public class XmlSecurityPropertiesDialog extends JDialog {
         es.setKeyLength(sp.getKeyLength());
         XpathExpression xe = new XpathExpression(sp.getXpathExpression(), namespaces);
         es.setxPath(xe);
-        es.setOperation(sp.getOperation());
         return es;
     }
 
@@ -338,7 +337,6 @@ public class XmlSecurityPropertiesDialog extends JDialog {
         sp.setXpathExpression(es.getxPath().getExpression());
         sp.setEncrypt(es.isEncryption());
         sp.setKeyLength(es.getKeyLength());
-        sp.setOperation(es.getOperation());
         return sp;
     }
 

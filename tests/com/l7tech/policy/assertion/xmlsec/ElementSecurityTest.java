@@ -1,22 +1,27 @@
 package com.l7tech.policy.assertion.xmlsec;
 
+import com.l7tech.common.security.AesKey;
 import com.l7tech.common.security.Keys;
+import com.l7tech.common.security.xml.Session;
 import com.l7tech.common.security.xml.SignerInfo;
-import com.l7tech.common.security.xml.SoapMsgSigner;
 import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.xml.SoapRequestGenerator;
 import com.l7tech.common.xml.TestDocuments;
 import com.l7tech.common.xml.XpathEvaluator;
 import com.l7tech.common.xml.XpathExpression;
+import com.l7tech.server.SessionManager;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
 import org.w3c.dom.Document;
-import org.w3c.dom.Element;
+import org.xml.sax.SAXException;
 
+import javax.xml.soap.SOAPException;
 import java.io.ByteArrayOutputStream;
-import java.util.ArrayList;
-import java.util.List;
+import java.io.IOException;
+import java.security.Key;
+import java.security.KeyException;
+import java.security.SignatureException;
 import java.util.Map;
 
 /**
@@ -47,77 +52,139 @@ public class ElementSecurityTest extends TestCase {
         //
     }
 
-    public void testSignXpathSelectedEnvelope() throws Exception {
+
+
+    public void testSignerSignsBody() throws Exception {
         SoapRequestGenerator sg = new SoapRequestGenerator();
         SoapRequestGenerator.SOAPRequest[] requests = sg.generate(TestDocuments.WSDL);
 
-        signAndValidateXpathSelection(requests, "/soapenv:Envelope");
-    }
+        Map namespaces = XpathEvaluator.getNamespaces(requests[0].getSOAPMessage());
+        XpathExpression xpathExpression = new XpathExpression("/soapenv:Envelope/soapenv:Body", namespaces);
+        ElementSecurity[] data = new ElementSecurity[]{
+            new ElementSecurity(xpathExpression, null, false, ElementSecurity.DEFAULT_CIPHER, ElementSecurity.DEFAULT_KEYBITS)
+        };
+        Session session = SessionManager.getInstance().createNewSession();
+        final Key key = new AesKey(session.getKeyReq(), 128);
 
-    public void testSignXpathSelectedBody() throws Exception {
-        SoapRequestGenerator sg = new SoapRequestGenerator();
-        SoapRequestGenerator.SOAPRequest[] requests = sg.generate(TestDocuments.WSDL);
-        signAndValidateXpathSelection(requests, "/soapenv:Envelope/soapenv:Body");
-    }
-
-
-    private void signAndValidateXpathSelection(SoapRequestGenerator.SOAPRequest[] requests, String xp) throws Exception {
-        List securedElements = new ArrayList();
-
-        for (int i = 0; i < requests.length; i++) {
-            SoapRequestGenerator.SOAPRequest request = requests[i];
-            Map namespaces = XpathEvaluator.getNamespaces(request.getSOAPMessage());
-            XpathExpression xpathExpression = new XpathExpression(xp, namespaces);
-            final ElementSecurity elementSecurity =
-              new ElementSecurity(xpathExpression, null, false, ElementSecurity.DEFAULT_CIPHER, ElementSecurity.DEFAULT_KEYBITS);
-            securedElements.add(elementSecurity);
-        }
-        ElementSecurity[] data = (ElementSecurity[])securedElements.toArray(new ElementSecurity[]{});
-        String signReferenceId = "signref";
-        int signReferenceIdSuffix = 1;
-        SoapMsgSigner dsigHelper = new SoapMsgSigner();
-        Document[] documents = new Document[data.length];
-
-        for (int i = 0; i < data.length; i++) {
-            SoapRequestGenerator.SOAPRequest request = requests[i];
-            ByteArrayOutputStream bos = new ByteArrayOutputStream();
-            request.getSOAPMessage().writeTo(bos);
-            Document soapmsg = XmlUtil.stringToDocument(bos.toString());
-
-            ElementSecurity elementSecurity = data[i];
-            // XPath match?
-            XpathExpression xpath = elementSecurity.getxPath();
-
-            List nodes = XpathEvaluator.newEvaluator(soapmsg, xpath.getNamespaces()).select(xpath.getExpression());
-            if (nodes.isEmpty()) {
-                fail(xpath.getExpression() + " should have selected document element.");
-            }
-            Element element = (Element)nodes.get(0);
-            // digital sighnature
-            dsigHelper.signElement(soapmsg, element,
-              signReferenceId + signReferenceIdSuffix,
-              signerInfo.getPrivate(), signerInfo.getCertificate());
-// System.out.println(XmlUtil.documentToString(soapmsg));
-
-            ++signReferenceIdSuffix;
-            documents[i] = soapmsg;
-        }
+        Document[] documents = soapMessagesAsDocuments(requests);
 
         for (int i = 0; i < documents.length; i++) {
             Document document = documents[i];
-            ElementSecurity elementSecurity = data[i];
-            // XPath match?
-            XpathExpression xpath = elementSecurity.getxPath();
-
-            List nodes = XpathEvaluator.newEvaluator(document, xpath.getNamespaces()).select(xpath.getExpression());
-            if (nodes.isEmpty()) {
-                fail(xpath.getExpression() + " should have selected document element.");
-            }
-            Element element = (Element)nodes.get(0);
-            dsigHelper.validateSignature(document, element);
+            SecurityProcessor signer = SecurityProcessor.getSigner(session, signerInfo, key, data);
+            SecurityProcessor verifier = SecurityProcessor.getVerifier(session, signerInfo.getCertificate(), key, data);
+            Document secureDoc = signer.process(document);
+// System.out.println(XmlUtil.documentToString(secureDoc));
+            Document verifiedDoc = verifier.processInPlace(secureDoc);
+// System.out.println(XmlUtil.documentToString(verifiedDoc));
         }
     }
 
+    public void testSignerSignsAndEncryptsBody() throws Exception {
+        SoapRequestGenerator sg = new SoapRequestGenerator();
+        SoapRequestGenerator.SOAPRequest[] requests = sg.generate(TestDocuments.WSDL);
+        Document[] documents = soapMessagesAsDocuments(requests);
+
+        Map namespaces = XpathEvaluator.getNamespaces(requests[0].getSOAPMessage());
+        XpathExpression xpathExpression = new XpathExpression("/soapenv:Envelope/soapenv:Body", namespaces);
+
+        ElementSecurity[] data = new ElementSecurity[]{
+            new ElementSecurity(xpathExpression, null, true,
+              ElementSecurity.DEFAULT_CIPHER,
+              ElementSecurity.DEFAULT_KEYBITS)
+        };
+
+        Session session = SessionManager.getInstance().createNewSession();
+        final Key key = new AesKey(session.getKeyReq(), 128);
+
+
+        for (int i = 0; i < documents.length; i++) {
+            Document document = documents[i];
+            SecurityProcessor signer = SecurityProcessor.getSigner(session, signerInfo, key, data);
+            SecurityProcessor verifier = SecurityProcessor.getVerifier(session, signerInfo.getCertificate(), key, data);
+            Document secureDoc = signer.process(document);
+//System.out.println(XmlUtil.documentToString(secureDoc));
+            Document verifiedDoc = verifier.processInPlace(secureDoc);
+// System.out.println(XmlUtil.documentToString(verifiedDoc));
+        }
+    }
+
+    public void testKeyNotSpecifiedAndEncryptRequested() throws Exception {
+        SoapRequestGenerator sg = new SoapRequestGenerator();
+        SoapRequestGenerator.SOAPRequest[] requests = sg.generate(TestDocuments.WSDL);
+        Document[] documents = soapMessagesAsDocuments(requests);
+
+        Map namespaces = XpathEvaluator.getNamespaces(requests[0].getSOAPMessage());
+        XpathExpression xpathExpression = new XpathExpression("/soapenv:Envelope/soapenv:Body", namespaces);
+
+        ElementSecurity[] data = new ElementSecurity[]{
+            new ElementSecurity(xpathExpression, null, true,
+              ElementSecurity.DEFAULT_CIPHER,
+              ElementSecurity.DEFAULT_KEYBITS)
+        };
+
+        Session session = SessionManager.getInstance().createNewSession();
+        final Key key = new AesKey(session.getKeyReq(), 128);
+        Document document = documents[0];
+        try {
+            SecurityProcessor signer = SecurityProcessor.getSigner(session, signerInfo, null, data);
+            signer.process(document);
+            fail("KeyException expected");
+        } catch (KeyException e) {
+            // expected
+        }
+        SecurityProcessor signer = SecurityProcessor.getSigner(session, signerInfo, key, data);
+        Document securedDocument = signer.process(document);
+        try {
+            SecurityProcessor verifier = SecurityProcessor.getVerifier(session, signerInfo.getCertificate(), null, data);
+            verifier.process(securedDocument);
+            fail("KeyException expected");
+        } catch (KeyException e) {
+            // expected
+        }
+        SecurityProcessor verifier = SecurityProcessor.getVerifier(session, signerInfo.getCertificate(), key, data);
+        Document verifiedDocument = verifier.process(securedDocument);
+        // System.out.println(XmlUtil.documentToString(verifiedDocument));
+    }
+
+    public void testVerifyUnsecureDocument() throws Exception {
+        SoapRequestGenerator sg = new SoapRequestGenerator();
+        SoapRequestGenerator.SOAPRequest[] requests = sg.generate(TestDocuments.WSDL);
+        Document[] documents = soapMessagesAsDocuments(requests);
+
+        Map namespaces = XpathEvaluator.getNamespaces(requests[0].getSOAPMessage());
+        XpathExpression xpathExpression = new XpathExpression("/soapenv:Envelope/soapenv:Body", namespaces);
+
+        ElementSecurity[] data = new ElementSecurity[]{
+            new ElementSecurity(xpathExpression, null, true,
+              ElementSecurity.DEFAULT_CIPHER,
+              ElementSecurity.DEFAULT_KEYBITS)
+        };
+
+        Session session = SessionManager.getInstance().createNewSession();
+        final Key key = new AesKey(session.getKeyReq(), 128);
+        Document document = documents[0];
+        SecurityProcessor verifier = SecurityProcessor.getVerifier(session, signerInfo.getCertificate(), key, data);
+        try {
+            Document verifiedDocument = verifier.process(document);
+            fail("SignatureException expected");
+        }catch(SignatureException e) {
+            // expected
+        }
+    }
+
+
+    private Document[] soapMessagesAsDocuments(SoapRequestGenerator.SOAPRequest[] requests)
+      throws IOException, SOAPException, SAXException {
+        Document[] documents = new Document[requests.length];
+        for (int i = 0; i < requests.length; i++) {
+            SoapRequestGenerator.SOAPRequest request = requests[i];
+            ByteArrayOutputStream bos = new ByteArrayOutputStream();
+            request.getSOAPMessage().writeTo(bos);
+            documents[i] = XmlUtil.stringToDocument(bos.toString());
+        }
+        return documents;
+
+    }
 
     public static void main(String[] args) {
         junit.textui.TestRunner.run(suite());

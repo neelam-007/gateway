@@ -18,6 +18,8 @@ public class TestDocuments {
     public static final String TEST_SOAP_XML = "com/l7tech/service/resources/GetLastTradePriceSoapRequest.xml";
     public static final String WSDL2PORTS = "com/l7tech/service/resources/xmltoday-delayed-quotes-2ports.wsdl";
     public static final String WSDL = "com/l7tech/service/resources/StockQuoteService.wsdl";
+    public static final String WSDL_DOC_LITERAL = "com/l7tech/service/resources/GeoServe.wsdl";
+    public static final String WSDL_DOC_LITERAL2 = "com/l7tech/service/resources/QuoteService.wsdl";
     public static final String WSDL2SERVICES = "com/l7tech/service/resources/xmltoday-delayed-quotes-2services.wsdl";
 
     public Document getTestDocument(String resourcetoread)

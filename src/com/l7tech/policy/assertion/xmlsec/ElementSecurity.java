@@ -49,20 +49,20 @@ public class ElementSecurity {
     /**
      * Full constructor, instantiate the instances with all properties.
      *
-     * @param xpathExpression the xpath expression that is evaluated in the context
+     * @param xpath the xpath expression that is evaluated in the context
      *                        may be null
-     * @param operation       indicates the operation identifier
+     * @param precondition    the preconditino xpath, may be null
      * @param encryption      whether the element is encrypted or signed only
      * @param cipher          the cipher name for encryption, may not be null if encryption
      *                        is requested
      * @param keyLength       the key length, required if the encyption is requested
      */
-    public ElementSecurity(XpathExpression xpathExpression, String operation, boolean encryption, String cipher, int keyLength) {
+    public ElementSecurity(XpathExpression xpath, XpathExpression precondition, boolean encryption, String cipher, int keyLength) {
         this.encryption = encryption;
-        this.operation = operation;
         this.cipher = cipher;
         this.keyLength = keyLength;
-        this.xPath = xpathExpression;
+        this.xPath = xpath;
+        this.preconditionXPath = precondition;
     }
 
     /**
@@ -101,24 +101,6 @@ public class ElementSecurity {
      */
     public void setPreconditionXPath(XpathExpression preconditionXPath) {
         this.preconditionXPath = preconditionXPath;
-    }
-
-    /**
-     * Get the operation identifier, this is mainly for informational purposes.
-     *
-     * @return the operation identifier, may be <b>null</b>
-     */
-    public String getOperation() {
-        return operation;
-    }
-
-    /**
-     * Set the operation identifier
-     *
-     * @param operation the operation identifier
-     */
-    public void setOperation(String operation) {
-        this.operation = operation;
     }
 
     /**
