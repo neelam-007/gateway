@@ -23,7 +23,7 @@
 
         <property name="typeVal" type="int" column="type" />
 
-        <property name="serializedProps" type="string" column="properties" />
+        <property name="serializedProps" type="text" column="properties" />
     </class>
 
     <class name="com.l7tech.identity.internal.InternalGroup" table="internal_group">
