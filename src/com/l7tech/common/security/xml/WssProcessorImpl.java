@@ -27,6 +27,8 @@ import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
+import java.security.cert.CertificateExpiredException;
+import java.security.cert.CertificateNotYetValidException;
 import java.text.ParseException;
 import java.util.*;
 import java.util.logging.Level;
@@ -760,6 +762,15 @@ public class WssProcessorImpl implements WssProcessor {
             throw new ProcessorException("Signature KeyInfo does not reference a declared BinarySecurityToken");
 
         X509Certificate signingCert = signingCertToken.asX509Certificate();
+        try {
+            signingCert.checkValidity();
+        } catch ( CertificateExpiredException e ) {
+            logger.log( Level.WARNING, "Signing certificate expired " + signingCert.getNotAfter(), e );
+            throw new ProcessorException(e);
+        } catch ( CertificateNotYetValidException e ) {
+            logger.log( Level.WARNING, "Signing certificate is not valid until " + signingCert.getNotBefore(), e );
+            throw new ProcessorException(e);
+        }
 
         // Try to resolve embedded cert
         // can this ever happen?  If so under what circumstances?  --mike
