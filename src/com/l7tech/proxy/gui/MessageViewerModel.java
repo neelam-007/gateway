@@ -18,7 +18,6 @@ import java.util.List;
  * User: mike
  * Date: May 22, 2003
  * Time: 5:03:25 PM
- * To change this template use Options | File Templates.
  */
 public class MessageViewerModel extends AbstractListModel implements RequestInterceptor {
     private static final Category log = Category.getInstance(MessageViewerModel.class.getName());
