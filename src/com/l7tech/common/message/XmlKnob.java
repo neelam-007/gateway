@@ -56,6 +56,7 @@ public interface XmlKnob extends MessageKnob {
      * @throws SAXException if the XML in the first part's InputStream is not well formed
      * @throws IOException if there is a problem reading XML from the first part's InputStream
      * @throws IOException if there is a problem reading from or writing to a stash
+     * @throws UnsupportedOperationException if originalDocumentSupport is not enabled on this Message
      */
     Document getOriginalDocument() throws SAXException, IOException;
 

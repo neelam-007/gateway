@@ -24,8 +24,8 @@ import com.l7tech.proxy.RequestInterceptor;
 import com.l7tech.proxy.datamodel.*;
 import com.l7tech.proxy.datamodel.exceptions.*;
 import com.l7tech.proxy.util.TokenServiceClient;
-import org.xml.sax.SAXException;
 import org.w3c.dom.Document;
+import org.xml.sax.SAXException;
 
 import java.io.IOException;
 import java.net.MalformedURLException;
@@ -131,6 +131,13 @@ public class PolicyApplicationContext extends ProcessingContext {
 
     /**
      * Reset all policy settings in preperation for starting processing over again with a different policy.
+     *
+     * @throws SAXException if the first part's content type is not text/xml.
+     * @throws SAXException if the XML in the first part's InputStream is not well formed
+     * @throws IOException if there is a problem reading XML from the first part's InputStream
+     * @throws IOException if there is a problem reading from or writing to a stash
+     * @throws UnsupportedOperationException if originalDocumentSupport is not enabled on this Message
+     * @throws IllegalStateException if this Message has not yet been attached to an InputStream.
      */
     public void reset() throws SAXException, IOException {
         policySettings = new PolicySettings();
