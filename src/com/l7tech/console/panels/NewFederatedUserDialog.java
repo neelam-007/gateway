@@ -1,9 +1,12 @@
 package com.l7tech.console.panels;
 
+import com.intellij.uiDesigner.core.GridConstraints;
+import com.intellij.uiDesigner.core.GridLayoutManager;
+import com.intellij.uiDesigner.core.Spacer;
 import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.console.action.Actions;
-import com.l7tech.console.action.UserPropertiesAction;
 import com.l7tech.console.action.FederatedUserPropertiesAction;
+import com.l7tech.console.action.UserPropertiesAction;
 import com.l7tech.console.event.EntityEvent;
 import com.l7tech.console.event.EntityListener;
 import com.l7tech.console.logging.ErrorManager;
@@ -11,13 +14,10 @@ import com.l7tech.console.text.FilterDocument;
 import com.l7tech.console.tree.TreeNodeFactory;
 import com.l7tech.console.tree.UserNode;
 import com.l7tech.console.util.Registry;
-import com.l7tech.identity.UserBean;
 import com.l7tech.identity.IdentityProviderConfig;
+import com.l7tech.identity.UserBean;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
-import com.intellij.uiDesigner.core.GridLayoutManager;
-import com.intellij.uiDesigner.core.GridConstraints;
-import com.intellij.uiDesigner.core.Spacer;
 
 import javax.swing.*;
 import javax.swing.event.DocumentEvent;
@@ -178,10 +178,10 @@ public class NewFederatedUserDialog extends JDialog {
         });
 
         // Bugzilla #1090 - disable the fields that cannot be tested in rel 3.0        
-        emailTextField.setEnabled(false);
-        loginTextField.setEnabled(false);
-        loginLabel.setEnabled(false);
-        emailLabel.setEnabled(false);
+        //emailTextField.setEnabled(false);
+        //loginTextField.setEnabled(false);
+        //loginLabel.setEnabled(false);
+        //emailLabel.setEnabled(false);
     }
 
     /**

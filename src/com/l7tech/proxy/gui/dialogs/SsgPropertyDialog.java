@@ -5,6 +5,7 @@ import com.l7tech.common.gui.widgets.CertificatePanel;
 import com.l7tech.common.gui.widgets.ContextMenuTextField;
 import com.l7tech.common.gui.widgets.WrappingLabel;
 import com.l7tech.common.security.token.SecurityToken;
+import com.l7tech.common.util.HexUtils;
 import com.l7tech.proxy.ClientProxy;
 import com.l7tech.proxy.datamodel.*;
 import com.l7tech.proxy.gui.Gui;
@@ -171,7 +172,7 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
                                     strat.storeTokenServerCert(stratCopy.getTokenServerCert()); // copy it back out
                                     /* FALLTHROUGH and try again now that cert was imported */
                                 }
-                            }                            
+                            }
 
                             JOptionPane.showMessageDialog(Gui.getInstance().getFrame(),
                                                           "A " + token.getType().getName() +
@@ -182,7 +183,7 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
                             log.log(Level.INFO, "Unable to obtain token from WS-Trust server", e);
                             JOptionPane.showMessageDialog(Gui.getInstance().getFrame(),
                                                           "A security token could not be obtained using these WS-Trust settings.\n\n" +
-                                                          "The error was: " + e.getMessage(),
+                                                          "The error was: \n    " + HexUtils.wrapString(e.getMessage(), 80, 25, "\n    "),
                                                           "Unable to Obtain Token",
                                                           JOptionPane.ERROR_MESSAGE);
                         }

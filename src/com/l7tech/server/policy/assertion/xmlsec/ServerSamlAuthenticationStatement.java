@@ -9,6 +9,8 @@ import com.l7tech.common.xml.SoapFaultDetail;
 import com.l7tech.common.xml.SoapFaultDetailImpl;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
+import com.l7tech.policy.assertion.credential.CredentialFormat;
+import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.assertion.xmlsec.SamlAuthenticationStatement;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.ServerAssertion;
@@ -116,6 +118,12 @@ public class ServerSamlAuthenticationStatement implements ServerAssertion {
                 SoapFaultDetail sfd = new SoapFaultDetailImpl(SoapFaultUtils.FC_CLIENT, sb.toString(), null);
                 context.setFaultDetail(sfd);
             }
+            context.setCredentials(new LoginCredentials(samlAssertion.getNameIdentifierValue(),
+                                                        null,
+                                                        CredentialFormat.SAML,
+                                                        SamlAuthenticationStatement.class,
+                                                        null,
+                                                        samlAssertion));
             return AssertionStatus.NONE;
         } catch (SAXException e) {
             throw (IOException)new IOException().initCause(e);

@@ -439,7 +439,7 @@ public class XmlUtil {
         NodeList children = node.getChildNodes();
         for (int i = 0; i < children.getLength(); i++) {
             Node kid = children.item(i);
-            if (kid.getNodeType() == Node.TEXT_NODE) {
+            if (kid.getNodeType() == Node.TEXT_NODE || kid.getNodeType() == Node.CDATA_SECTION_NODE) {
                 String thisTxt = kid.getNodeValue();
                 if (thisTxt != null) {
                     thisTxt = thisTxt.trim();

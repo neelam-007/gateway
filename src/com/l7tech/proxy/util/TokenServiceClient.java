@@ -20,6 +20,8 @@ import com.l7tech.common.security.xml.processor.*;
 import com.l7tech.common.util.*;
 import com.l7tech.common.xml.InvalidDocumentFormatException;
 import com.l7tech.common.xml.MessageNotSoapException;
+import com.l7tech.common.xml.MissingRequiredElementException;
+import com.l7tech.common.xml.SoapFaultDetail;
 import com.l7tech.common.xml.saml.SamlAssertion;
 import com.l7tech.proxy.datamodel.Managers;
 import com.l7tech.proxy.datamodel.Ssg;
@@ -35,6 +37,8 @@ import javax.net.ssl.HttpsURLConnection;
 import javax.net.ssl.SSLException;
 import javax.xml.soap.SOAPConstants;
 import java.io.IOException;
+import java.io.InputStream;
+import java.net.HttpURLConnection;
 import java.net.PasswordAuthentication;
 import java.net.URL;
 import java.net.URLConnection;
@@ -50,6 +54,11 @@ import java.util.logging.Logger;
 
 /**
  * Builds request messages for TokenService and helps parse the responses.
+ * TODO this class needs much refactoring; it is full of cut-n-pasted code!
+ * TODO this class needs much refactoring; it is full of cut-n-pasted code!
+ * TODO this class needs much refactoring; it is full of cut-n-pasted code!
+ * TODO this class needs much refactoring; it is full of cut-n-pasted code!
+ * TODO this class needs much refactoring; it is full of cut-n-pasted code!
  */
 public class TokenServiceClient {
     public static final Logger log = Logger.getLogger(TokenServiceClient.class.getName());
@@ -252,6 +261,7 @@ public class TokenServiceClient {
                                          X509Certificate serverCertificate)
             throws IOException, GeneralSecurityException
     {
+        Document response = null;
         try {
             String clientName = "current user";
             if (clientCertificate != null)
@@ -270,33 +280,44 @@ public class TokenServiceClient {
             XmlUtil.nodeToOutputStream(requestDoc, conn.getOutputStream());
             int len = conn.getContentLength();
             log.log(Level.FINEST, "Token server response content length=" + len);
-            Object content = conn.getContent();
-            log.log(Level.FINEST, "Token server content class " + content.getClass());
             String contentType = conn.getContentType();
             if (contentType == null || contentType.indexOf(XmlUtil.TEXT_XML) < 0)
                 throw new IOException("Token server returned unsupported content type " + conn.getContentType());
-            Document response = null;
-            response = XmlUtil.parse(conn.getInputStream());
-            Object result = null;
-            if (clientCertificate != null && clientPrivateKey != null && serverCertificate != null) {
-                result = parseSignedRequestSecurityTokenResponse(response,
-                                                                 clientCertificate,
-                                                                 clientPrivateKey,
-                                                                 serverCertificate);
-            } else {
-                result = parseUnsignedRequestSecurityTokenResponse(response);
+            InputStream inputStream;
+            try {
+                inputStream = conn.getInputStream();
+            } catch (IOException e) {
+                if (!(conn instanceof HttpURLConnection))
+                    throw e;
+                inputStream = ((HttpURLConnection)conn).getErrorStream();
+                if (inputStream == null)
+                    throw e;
             }
-            return result;
+            response = XmlUtil.parse(inputStream);
         } catch (SAXException e) {
             throw new CausedIOException("Unable to parse RequestSecurityTokenResponse from security token service: " + e.getMessage(), e);
-        } catch (InvalidDocumentFormatException e) {
-            throw new CausedIOException("Unable to process response from security token service: " + e.getMessage(), e);
-        } catch (ProcessorException e) {
-            throw new CausedIOException("Unable to obtain a token from the security token server: " + e.getMessage(), e);
         } catch (SSLException e) {
             throw e; // rethrow as-is so server cert can be discovered if necessary
         } catch (IOException e) {
             throw new CausedIOException("Unable to obtain a token from the security token server: " + e.getMessage(), e);
+        }
+
+        //log.log(Level.FINE,  "Got response from token server (reformatted): " + XmlUtil.nodeToFormattedString(response));
+
+        try {
+            checkForSoapFault(response);
+            if (clientCertificate != null && clientPrivateKey != null && serverCertificate != null) {
+                return parseSignedRequestSecurityTokenResponse(response,
+                                                               clientCertificate,
+                                                               clientPrivateKey,
+                                                               serverCertificate);
+            } else {
+                return parseUnsignedRequestSecurityTokenResponse(response);
+            }
+        } catch (ProcessorException e) {
+            throw new CausedIOException("Unable to obtain a token from the security token server: " + e.getMessage(), e);
+        } catch (InvalidDocumentFormatException e) {
+            throw new CausedIOException(e.getMessage(), e);
         }
     }
 
@@ -305,9 +326,10 @@ public class TokenServiceClient {
      * @param url must be https
      */
     private static Object obtainResponse(URL url, Ssg ssg, Document requestDoc, X509Certificate serverCertificate)
-                                                                      throws IOException, GeneralSecurityException,
-                                                                             OperationCanceledException {
+            throws IOException, GeneralSecurityException,
+            OperationCanceledException {
         HttpsURLConnection sslConn = null;
+        Document response = null;
         try {
             log.log(Level.INFO, "Applying for new Security Token with token server " + url.toString());
 
@@ -336,22 +358,48 @@ public class TokenServiceClient {
             String contentType = conn.getContentType();
             if (contentType == null || contentType.indexOf(XmlUtil.TEXT_XML) < 0)
                 throw new IOException("Token server returned unsupported content type " + conn.getContentType());
-            Document response = null;
-            response = XmlUtil.parse(conn.getInputStream());
-            Object result = null;
-            result = parseSignedRequestSecurityTokenResponse(response, null, null, serverCertificate);
-            return result;
+            InputStream inputStream;
+            try {
+                inputStream = conn.getInputStream();
+            } catch (IOException e) {
+                if (!(conn instanceof HttpURLConnection))
+                    throw e;
+                inputStream = ((HttpURLConnection)conn).getErrorStream();
+                if (inputStream == null)
+                    throw e;
+            }
+            response = XmlUtil.parse(inputStream);
         } catch (SAXException e) {
             throw new CausedIOException("Unable to parse RequestSecurityTokenResponse from security token service: " + e.getMessage(), e);
-        } catch (InvalidDocumentFormatException e) {
-            throw new CausedIOException("Unable to process response from security token service: " + e.getMessage(), e);
-        } catch (ProcessorException e) {
-            throw new CausedIOException("Unable to obtain a token from the security token server: " + e.getMessage(), e);
         } catch (IOException e) {
             throw new CausedIOException("Unable to obtain a token from the security token server: " + e.getMessage(), e);
         } finally {
             sslConn.disconnect();
             sslConn = null;
+        }
+
+        //log.log(Level.FINE,  "Got response from token server (reformatted): " + XmlUtil.nodeToFormattedString(response));
+
+        try {
+            checkForSoapFault(response);
+            return parseSignedRequestSecurityTokenResponse(response, null, null, serverCertificate);
+        } catch (ProcessorException e) {
+            throw new CausedIOException("Unable to obtain a token from the security token server: " + e.getMessage(), e);
+        } catch (InvalidDocumentFormatException e) {
+            throw new CausedIOException(e.getMessage(), e);
+        }
+    }
+
+    private static void checkForSoapFault(Document response) throws InvalidDocumentFormatException {
+        {
+            // check for fault message from server
+            Element payload = SoapUtil.getPayloadElement(response);
+            if (payload == null)
+                throw new MissingRequiredElementException("Policy server response is missing SOAP Body or payload element");
+            if (response.getDocumentElement().getNamespaceURI().equals(payload.getNamespaceURI()) && "Fault".equals(payload.getLocalName())) {
+                SoapFaultDetail sfd = SoapFaultUtils.gatherSoapFaultDetail(response);
+                throw new InvalidDocumentFormatException("Unexpected SOAP fault from policy service: " + sfd.getFaultCode() + ": " + sfd.getFaultString());
+            }
         }
     }
 

@@ -95,10 +95,7 @@ public class PolicyServiceTest extends TestCase {
             requestDoc = PolicyServiceClient.createGetPolicyRequest("123");
         }
         else {
-            requestDoc = PolicyServiceClient.createSignedGetPolicyRequest("123",
-                                                                 TestDocuments.getEttkClientCertificate(),
-                                                                 TestDocuments.getEttkClientPrivateKey(),
-                                                                 null);
+            requestDoc = PolicyServiceClient.createDecoratedGetPolicyRequest("123", null, TestDocuments.getEttkClientCertificate(), TestDocuments.getEttkClientPrivateKey(), null);
         }
         assertNotNull(requestDoc);
         log.info("Request (pretty-printed): " + XmlUtil.nodeToFormattedString(requestDoc));

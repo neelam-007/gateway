@@ -82,13 +82,13 @@ public class PolicyDownloader {
                         request.prepareClientCertificate(); // TODO make client cert work with third-part WS-Trust
                         key = ssg.getClientCertificatePrivateKey();
                     }
-                    SamlAssertion samlHok = request.getOrCreateSamlAssertion();
-
-                    if (key == null) {
-                        policy = PolicyServiceClient.downloadPolicyWithSamlAssertion(ssg, serviceId, serverCert, true, samlHok, null);                        
-                    } else {
-                        policy = PolicyServiceClient.downloadPolicyWithSamlAssertion(ssg, serviceId, serverCert, useSsl, samlHok, key);
-                    }
+                    SamlAssertion saml = request.getOrCreateSamlAssertion();
+                    policy = PolicyServiceClient.downloadPolicyWithSamlAssertion(ssg,
+                                                                                 serviceId,
+                                                                                 serverCert,
+                                                                                 useSsl || key == null, 
+                                                                                 saml,
+                                                                                 key);
                 } else if (ssg.getClientCertificate() != null) {
                     // Trusted SSG, but with a client cert -- use WSS signature for authentication.
                     log.info("Trying WSS-signature-authenticated policy download from Trusted Gateway " + ssg);

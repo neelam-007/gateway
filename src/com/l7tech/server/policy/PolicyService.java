@@ -24,6 +24,7 @@ import com.l7tech.policy.assertion.composite.CompositeAssertion;
 import com.l7tech.policy.assertion.composite.OneOrMoreAssertion;
 import com.l7tech.policy.assertion.credential.CredentialSourceAssertion;
 import com.l7tech.policy.assertion.identity.IdentityAssertion;
+import com.l7tech.policy.assertion.xmlsec.SamlStatementAssertion;
 import com.l7tech.policy.wsp.WspWriter;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.ServerAssertion;
@@ -79,6 +80,15 @@ public class PolicyService extends ApplicationObjectSupport {
         allCredentialAssertions = new ArrayList();
         for (int i = 0; i < CredentialSourceAssertion.ALL_CREDENTIAL_ASSERTIONS_TYPES.length; i++) {
             CredentialSourceAssertion assertion = CredentialSourceAssertion.ALL_CREDENTIAL_ASSERTIONS_TYPES[i];
+
+            // TODO confirm this change
+            if (assertion instanceof SamlStatementAssertion) {
+                // Lighed saml requirements for policy download
+                SamlStatementAssertion samlAuth = (SamlStatementAssertion)assertion;
+                samlAuth.setRequireProofOfPosession(false);
+                samlAuth.setCheckAssertionValidity(false);
+            }
+
             allCredentialAssertions.add(assertion);
         }
         if (privateServerKey == null || serverCert == null) {

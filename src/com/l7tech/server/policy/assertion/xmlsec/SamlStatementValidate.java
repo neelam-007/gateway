@@ -124,7 +124,7 @@ public abstract class SamlStatementValidate {
             return;
         } else {
             if (!assertion.isSigned()) {
-
+                      // TODO what do we do if assertion isn't signed?
             }
             if (statementAssertionConstraints.isRequireProofOfPosession()) {
                 if (!assertion.isPossessionProved()) {

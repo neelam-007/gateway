@@ -17,6 +17,7 @@ import java.net.URLConnection;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.Map;
+import java.util.StringTokenizer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
@@ -535,6 +536,33 @@ public class HexUtils {
         if (closeRight) right.close();
 
         return match;
+    }
+
+    /** Insert carriage returns into the given string before every columns characters, preferring to insert them before new words begin. */
+    public static String wrapString(String in, int maxcol, int maxlines, String wrapSequence) {
+        StringBuffer out = new StringBuffer();
+        StringTokenizer tok = new StringTokenizer(in);
+        int col = 0;
+        int line = 0;
+        while (tok.hasMoreTokens()) {
+            String next = tok.nextToken();
+            int len = next.length();
+            if (col + len >= (maxcol - 1)) {
+                out.append(wrapSequence);
+                col = 0;
+                line++;
+                if (line > maxlines)
+                    return out.toString();
+
+            }
+            out.append(next);
+            col += len;
+            if (tok.hasMoreTokens()) {
+                out.append(" ");
+                col++;
+            }
+        }
+        return out.toString();
     }
 
     private static ThreadLocal md5s = new ThreadLocal();

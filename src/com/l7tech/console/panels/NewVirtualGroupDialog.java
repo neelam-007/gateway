@@ -1,31 +1,31 @@
 package com.l7tech.console.panels;
 
-import com.l7tech.identity.IdentityProviderConfig;
-import com.l7tech.identity.GroupBean;
-import com.l7tech.identity.fed.VirtualGroup;
+import com.intellij.uiDesigner.core.GridConstraints;
+import com.intellij.uiDesigner.core.GridLayoutManager;
+import com.intellij.uiDesigner.core.Spacer;
 import com.l7tech.common.gui.util.Utilities;
-import com.l7tech.console.event.EntityListener;
+import com.l7tech.console.action.Actions;
 import com.l7tech.console.event.EntityEvent;
+import com.l7tech.console.event.EntityListener;
+import com.l7tech.console.logging.ErrorManager;
 import com.l7tech.console.text.FilterDocument;
 import com.l7tech.console.util.Registry;
-import com.l7tech.console.logging.ErrorManager;
-import com.l7tech.console.action.Actions;
+import com.l7tech.identity.GroupBean;
+import com.l7tech.identity.IdentityProviderConfig;
+import com.l7tech.identity.fed.VirtualGroup;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
-import com.intellij.uiDesigner.core.GridLayoutManager;
-import com.intellij.uiDesigner.core.GridConstraints;
-import com.intellij.uiDesigner.core.Spacer;
 
 import javax.swing.*;
 import javax.swing.event.EventListenerList;
 import java.awt.*;
-import java.awt.event.ActionListener;
 import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
+import java.util.EventListener;
 import java.util.Locale;
 import java.util.ResourceBundle;
-import java.util.EventListener;
 import java.util.logging.Level;
 
 /**
@@ -125,8 +125,8 @@ public class NewVirtualGroupDialog extends JDialog {
         Utilities.equalizeButtonSizes(new JButton[]{createButton, cancelButton});
 
         // Bugzilla #1090 - disable the fields that cannot be tested in rel 3.0                
-        emailPatternTextField.setEnabled(false);
-        emailPatternLabel.setEnabled(false);
+        //emailPatternTextField.setEnabled(false);
+        //emailPatternLabel.setEnabled(false);
 
     }
 

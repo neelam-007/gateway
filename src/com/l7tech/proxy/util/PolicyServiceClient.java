@@ -59,26 +59,7 @@ import java.util.logging.Logger;
 public class PolicyServiceClient {
     public static final Logger log = Logger.getLogger(PolicyServiceClient.class.getName());
 
-
-    public static Document createSignedGetPolicyRequest(String serviceId,                                                  
-                                                  X509Certificate clientCert,
-                                                  PrivateKey clientKey,
-                                                  Date timestampCreatedDate)
-            throws GeneralSecurityException
-    {
-        return createSignedGetPolicyRequest(serviceId, null, clientCert, clientKey, timestampCreatedDate);
-    }
-
-    public static Document createSignedGetPolicyRequest(String serviceId,                                                  
-                                                  SamlAssertion samlAss,
-                                                  PrivateKey clientKey,
-                                                  Date timestampCreatedDate)
-            throws GeneralSecurityException
-    {
-        return createSignedGetPolicyRequest(serviceId, samlAss, null, clientKey, timestampCreatedDate);
-    }
-    
-    private static Document createSignedGetPolicyRequest(String serviceId,
+    public static Document createDecoratedGetPolicyRequest(String serviceId,
                                                          SamlAssertion samlAss,
                                                          X509Certificate clientCert,
                                                          PrivateKey clientKey,
@@ -88,14 +69,17 @@ public class PolicyServiceClient {
         Document msg = createGetPolicyRequest(serviceId);
         WssDecorator decorator = new WssDecoratorImpl();
         DecorationRequirements req = new DecorationRequirements();
-        if (clientCert != null && clientKey != null) {
+        boolean canSign = clientCert != null && clientKey != null;
+        if (samlAss != null) {
+            if (samlAss.isBearerToken())
+                canSign = false;
+            req.setSenderSamlToken(samlAss.asElement(), canSign);
+        }
+        if (canSign) {
             req.setSenderCertificate(clientCert);
             req.setSenderPrivateKey(clientKey);
             req.setSignTimestamp(true);
-            if (samlAss != null)
-                req.setSenderSamlToken(samlAss.asElement(), true);
-        } else if (samlAss != null)
-            req.setSenderSamlToken(samlAss.asElement(), false);
+        }
         try {
             Element header = SoapUtil.getHeaderElement(msg);
             if (header == null) throw new IllegalStateException("missing header"); // can't happen
@@ -106,12 +90,12 @@ public class PolicyServiceClient {
             if (sid == null) throw new IllegalStateException("missing sid"); // can't happen
             Element mid = SoapUtil.getL7aMessageIdElement(msg); // correlation ID
             if (mid == null) throw new IllegalStateException("missing mid"); // can't happen
-            if (clientCert != null && clientKey != null) {
+            if (canSign) {
                 req.getElementsToSign().add(sid);
                 req.getElementsToSign().add(body);
                 req.getElementsToSign().add(mid);
-                req.setTimestampCreatedDate(timestampCreatedDate);
             }
+            req.setTimestampCreatedDate(timestampCreatedDate);
             decorator.decorateMessage(msg, req);
         } catch (InvalidDocumentFormatException e) {
             throw new RuntimeException(e); // can't happen
@@ -457,7 +441,7 @@ public class PolicyServiceClient {
                           useSsl ? ssg.getSslPort() : ssg.getSsgPort(),
                           SecureSpanConstants.POLICY_SERVICE_FILE);
         Date timestampCreatedDate = ssg.getRuntime().getDateTranslatorToSsg().translate(new Date());
-        Document requestDoc = createSignedGetPolicyRequest(serviceId, clientCert, clientKey, timestampCreatedDate);
+        Document requestDoc = createDecoratedGetPolicyRequest(serviceId, null, clientCert, clientKey, timestampCreatedDate);
         return obtainResponse(url, ssg, requestDoc, null, serverCertificate, clientCert, clientKey);
     }
 
@@ -495,18 +479,19 @@ public class PolicyServiceClient {
      * and verifying that the response signature was valid and made by the specified serverCertificate.
      *
      * @param ssg                required. the Ssg from which we are downloading.  Used to keep CurrentSslPeer.getPeerSsg() up-to-date.
-     * @return a new Policy.  Never null.
-     * @throws IOException if there is a network problem
-     * @throws GeneralSecurityException if there is a problem with a certificate or a crypto operation.
-     * @throws InvalidDocumentFormatException if the policy service response was not formatted correctly
-     * @throws BadCredentialsException if the policy service denies access to this policy to your (lack of) credentials
      * @param serviceId          required. the identifier of the service whose policy we wish to download.  Opaque to the client.
      * @param serverCertificate  required. used to verify identity of signer of downloaded policy.
      * @param useSsl             If true, will use HTTPS instead of HTTP.  If we have a client cert for this Ssg it
      *                           will be presented to the Gateway if we are challenged for it during the handshake.
      * @param samlAss            required. a Saml holder-of-key assertion containing your client cert as the subject.
      *                           The whole assertion must already be signed by an issuer trusted by this policy service.
-     * @param subjectPrivateKey  required. The private key corresponding to the subject certificate in samlAss.
+     * @param subjectPrivateKey  The private key corresponding to the subject certificate in samlAss, or null if samlAss
+     *                           cannot be used for signing the request.  If null, SSL is recommended.
+     * @return a new Policy.  Never null.
+     * @throws IOException if there is a network problem
+     * @throws GeneralSecurityException if there is a problem with a certificate or a crypto operation.
+     * @throws InvalidDocumentFormatException if the policy service response was not formatted correctly
+     * @throws BadCredentialsException if the policy service denies access to this policy to your (lack of) credentials
      */
     public static Policy downloadPolicyWithSamlAssertion(Ssg ssg,
                                                          String serviceId,
@@ -521,7 +506,7 @@ public class PolicyServiceClient {
                           useSsl ? ssg.getSslPort() : ssg.getSsgPort(),
                           SecureSpanConstants.POLICY_SERVICE_FILE);
         Date timestampCreatedDate = ssg.getRuntime().getDateTranslatorToSsg().translate(new Date());
-        Document requestDoc = createSignedGetPolicyRequest(serviceId, samlAss, subjectPrivateKey, timestampCreatedDate);
+        Document requestDoc = createDecoratedGetPolicyRequest(serviceId, samlAss, null, subjectPrivateKey, timestampCreatedDate);
         return obtainResponse(url, ssg, requestDoc, null, serverCertificate, samlAss.getSubjectCertificate(), subjectPrivateKey);
     }
 
