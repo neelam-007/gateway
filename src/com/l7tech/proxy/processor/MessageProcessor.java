@@ -201,8 +201,8 @@ public class MessageProcessor {
     }
 
     private void handleBadCredentialsException(Ssg ssg, PendingRequest req, BadCredentialsException e)
-      throws KeyStoreCorruptException, IOException, OperationCanceledException, ConfigurationException,
-      KeyStoreException, HttpChallengeRequiredException {
+      throws KeyStoreCorruptException, IOException, OperationCanceledException,
+            KeyStoreException, HttpChallengeRequiredException {
         if (ssg.isChainCredentialsFromClient())
             throw new HttpChallengeRequiredException(e);
 
@@ -549,16 +549,30 @@ public class MessageProcessor {
                 }
             }
 
-            InputStream is = null;
             postMethod.addRequestHeader(MimeUtil.CONTENT_TYPE, req.getOuterContentType().getFullValue());
 
-            // Fix for Bug #1282 - Must set a content-length on PostMethod or it will try to buffer the whole thing
-            final long contentLength = req.getContentLength();
-            if (contentLength > Integer.MAX_VALUE)
-                throw new IOException("Body content is too long to be processed -- maximum is " + Integer.MAX_VALUE + " bytes");
-            postMethod.setRequestContentLength((int)contentLength);
-            final InputStream bodyInputStream = req.getEntireMessageBody();
+            // Fix for Bug #1376 - confine Commons HTTP client braindamage to multipart messages
+            if (req.isMultipart()) {
+                // For multipart messages, do the following:
+                // - set a content length, to prevent HTTP client from buffering
+                // - turn off automatic authentication challenge responses, since they won't work
+                //   - this will allow HTTP Basic to work normally (after policy faults in)
+                //   - but won't help HTTP Digest (since we have no code to handle the challenge ourselves)
+                postMethod.setDoAuthentication(false);
 
+                // Fix for Bug #1282 - Must set a content-length on PostMethod or it will try to buffer the whole thing
+                final long contentLength = req.getContentLength();
+                if (contentLength > Integer.MAX_VALUE)
+                    throw new IOException("Body content is too long to be processed -- maximum is " + Integer.MAX_VALUE + " bytes");
+                postMethod.setRequestContentLength((int)contentLength);
+            } else {
+                // For singlepart messages, do the following:
+                // - do not set a content-lenght, to allow HTTP client to buffer the request
+                // - allow HTTP client to respond to HTTP challenges automatically
+                postMethod.setDoAuthentication(true);
+            }
+
+            final InputStream bodyInputStream = req.getEntireMessageBody();
             postMethod.setRequestBody(bodyInputStream);
 
             log.info("Posting request to Gateway " + ssg + ", url " + url);
@@ -566,11 +580,6 @@ public class MessageProcessor {
             int status = client.executeMethod(postMethod);
             CurrentRequest.setPeerSsg(null);
             log.info("POST to Gateway completed with HTTP status code " + status);
-
-            if (is != null) {
-                is.close();
-                is = null;
-            }
 
             Header certStatusHeader = postMethod.getResponseHeader(SecureSpanConstants.HttpHeaders.CERT_STATUS);
             if (certStatusHeader != null && SecureSpanConstants.INVALID.equalsIgnoreCase(certStatusHeader.getValue())) {
