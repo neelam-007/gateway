@@ -226,6 +226,13 @@
                     <TargetPort intValue="162"/>
                     <TargetHostname stringValue=""/>
                 </SnmpTrap>
+                <EmailAlert>
+                    <SmtpPort intValue="25"/>
+                    <Subject stringValue="Layer 7 SecureSpan Gateway Email Alert"/>
+                    <Message stringValue="This is an alert message from a Layer 7 SecureSpan Gateway."/>
+                    <SmtpHost stringValue="mail"/>
+                    <TargetEmailAddress stringValue=""/>
+                </EmailAlert>
             </OneOrMore>
         </All>
         <ExactlyOne>

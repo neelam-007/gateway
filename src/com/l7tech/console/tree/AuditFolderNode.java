@@ -30,6 +30,7 @@ public class AuditFolderNode extends AbstractTreeNode {
         children = null;
         insert( new AuditAssertionPaletteNode(), index++ );
         insert( new SnmpTrapAssertionPaletteNode(), index++ );
+        insert( new EmailAlertAssertionPaletteNode(), index++ );
     }
 
     /**

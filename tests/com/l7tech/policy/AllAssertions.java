@@ -7,6 +7,7 @@
 package com.l7tech.policy;
 
 import com.l7tech.policy.assertion.*;
+import com.l7tech.policy.assertion.alert.EmailAlertAssertion;
 import com.l7tech.policy.assertion.alert.SnmpTrapAssertion;
 import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.assertion.composite.ExactlyOneAssertion;
@@ -106,6 +107,7 @@ public class AllAssertions {
         new Regex(),
         new UnknownAssertion(),
         new SnmpTrapAssertion(),
+        new EmailAlertAssertion(),
         // TODO new TimeOfDayAssertion(),
         // TODO new DateRangeAssertion(),
         // TODO new DayOfWeekAssertion(),
@@ -149,6 +151,7 @@ public class AllAssertions {
         new Regex(),
         new UnknownAssertion(),
         new SnmpTrapAssertion(),
+        new EmailAlertAssertion(),        
         // TODO new TimeOfDayAssertion(),
         // TODO new DateRangeAssertion(),
         // TODO new DayOfWeekAssertion(),

@@ -10,9 +10,10 @@ import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.wsdl.BindingInfo;
 import com.l7tech.common.wsdl.BindingOperationInfo;
 import com.l7tech.common.wsdl.MimePartInfo;
-import com.l7tech.common.xml.XpathExpression;
 import com.l7tech.common.xml.WsTrustRequestType;
+import com.l7tech.common.xml.XpathExpression;
 import com.l7tech.policy.assertion.*;
+import com.l7tech.policy.assertion.alert.EmailAlertAssertion;
 import com.l7tech.policy.assertion.alert.SnmpTrapAssertion;
 import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.assertion.composite.ExactlyOneAssertion;
@@ -144,6 +145,7 @@ public class WspConstants {
         new SerializedJavaClassMapping(CustomAssertionHolder.class, "CustomAssertion"),
         new AssertionMapping(new Regex(), "Regex"),
         new AssertionMapping(new SnmpTrapAssertion(), "SnmpTrap"),
+        new AssertionMapping(new EmailAlertAssertion(), "EmailAlert"),
         new AssertionMapping(new UnknownAssertion(), "UnknownAssertion"),
 
         // Special types
