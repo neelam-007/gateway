@@ -68,7 +68,6 @@ public class SslClientTrustManager implements X509TrustManager {
                 }
             } else {
                 // Check that signer is trusted
-                // TODO more than two levels?
                 try {
                     TrustedCert caTrust = manager.findBySubjectDn(issuerDn);
 
@@ -82,6 +81,7 @@ public class SslClientTrustManager implements X509TrustManager {
                         // TODO this might conceivably be normal
                         throw new CertificateException("Couldn't find CA Cert in chain");
                     } else if ( certs.length > 2 ) {
+                        // TODO support more than two levels?
                         throw new CertificateException("Certificate chains with more than two levels are not supported");
                     }
 
