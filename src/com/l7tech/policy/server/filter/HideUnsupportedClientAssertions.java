@@ -1,10 +1,7 @@
 package com.l7tech.policy.server.filter;
 
 import com.l7tech.identity.User;
-import com.l7tech.policy.assertion.Assertion;
-import com.l7tech.policy.assertion.FalseAssertion;
-import com.l7tech.policy.assertion.SslAssertion;
-import com.l7tech.policy.assertion.TrueAssertion;
+import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.assertion.composite.CompositeAssertion;
 import com.l7tech.policy.assertion.credential.http.HttpBasic;
 import com.l7tech.policy.assertion.credential.http.HttpClientCert;
@@ -82,5 +79,7 @@ public class HideUnsupportedClientAssertions extends Filter {
         RequestWssConfidentiality.class,
         ResponseWssIntegrity.class,
         ResponseWssConfidentiality.class,
+        RequestXpathAssertion.class,
+        ResponseXpathAssertion.class,
     };
 }
