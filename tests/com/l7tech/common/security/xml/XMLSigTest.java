@@ -165,11 +165,58 @@ public class XMLSigTest extends TestCase {
         return sw.toString();
     }
 
-    private String simpleDoc = "<?xml version=\"1.0\" encoding=\"utf-8\"?><S:Envelope xmlns:S=\"http://www.w3.org/2001/12/soap-envelope\"><S:Body><tru:StockSymbol xmlns:tru=\"http://fabrikam123.com/payloads\">QQQ</tru:StockSymbol></S:Body></S:Envelope>";
-    private String simpleDocWithComplexTextEl = "<?xml version=\"1.0\" encoding=\"utf-8\"?><S:Envelope xmlns:S=\"http://www.w3.org/2001/12/soap-envelope\"><S:Body><blah:BodyContent xmlns:blah=\"http://blah.com/blahns\">blahblah blahblah\n\t\t\tblahblah blahblah</blah:BodyContent></S:Body></S:Envelope>";
-    private String simpleDocWithHeader = "<?xml version=\"1.0\" encoding=\"utf-8\"?><S:Envelope xmlns:S=\"http://www.w3.org/2001/12/soap-envelope\"><S:Header></S:Header><S:Body><tru:StockSymbol xmlns:tru=\"http://fabrikam123.com/payloads\">QQQ</tru:StockSymbol></S:Body></S:Envelope>";
-    private String simpleDocWithSecurity = "<?xml version=\"1.0\" encoding=\"utf-8\"?><S:Envelope xmlns:S=\"http://www.w3.org/2001/12/soap-envelope\"><S:Header><wsse:Security xmlns:wsse=\"http://schemas.xmlsoap.org/ws/2002/12/secext\"></wsse:Security></S:Header><S:Body><tru:StockSymbol xmlns:tru=\"http://fabrikam123.com/payloads\">QQQ</tru:StockSymbol></S:Body></S:Envelope>";
-    private String simpleDocWithSecurityContext = "<?xml version=\"1.0\" encoding=\"utf-8\"?><S:Envelope xmlns:S=\"http://www.w3.org/2001/12/soap-envelope\"><S:Header><wsse:Security xmlns:wsse=\"http://schemas.xmlsoap.org/ws/2002/12/secext\"><wsse:SecurityContextToken></wsse:SecurityContextToken></wsse:Security></S:Header><S:Body><tru:StockSymbol xmlns:tru=\"http://fabrikam123.com/payloads\">QQQ</tru:StockSymbol></S:Body></S:Envelope>";
+    private String simpleDoc = "<?xml version=\"1.0\" encoding=\"utf-8\"?>" +
+                                "<S:Envelope xmlns:S=\"http://www.w3.org/2001/12/soap-envelope\">" +
+                                    "<S:Body>" +
+                                        "<tru:StockSymbol xmlns:tru=\"http://fabrikam123.com/payloads\">" +
+                                            "QQQ" +
+                                        "</tru:StockSymbol>" +
+                                    "</S:Body>" +
+                                "</S:Envelope>";
+
+    private String simpleDocWithComplexTextEl = "<?xml version=\"1.0\" encoding=\"utf-8\"?>" +
+                                                "<S:Envelope xmlns:S=\"http://www.w3.org/2001/12/soap-envelope\">" +
+                                                    "<S:Body>" +
+                                                        "<blah:BodyContent xmlns:blah=\"http://blah.com/blahns\">" +
+                                                        "blahblah blahblah\n\t\t\tblahblah blahblah</blah:BodyContent>" +
+                                                    "</S:Body>" +
+                                                "</S:Envelope>";
+
+    private String simpleDocWithHeader = "<?xml version=\"1.0\" encoding=\"utf-8\"?>" +
+                                            "<S:Envelope xmlns:S=\"http://www.w3.org/2001/12/soap-envelope\">" +
+                                                "<S:Header></S:Header>" +
+                                                "<S:Body>" +
+                                                    "<tru:StockSymbol xmlns:tru=\"http://fabrikam123.com/payloads\">" +
+                                                        "QQQ" +
+                                                    "</tru:StockSymbol>" +
+                                                "</S:Body>" +
+                                            "</S:Envelope>";
+
+    private String simpleDocWithSecurity = "<?xml version=\"1.0\" encoding=\"utf-8\"?>" +
+                                            "<S:Envelope xmlns:S=\"http://www.w3.org/2001/12/soap-envelope\">" +
+                                                "<S:Header>" +
+                                                    "<wsse:Security xmlns:wsse=\"http://schemas.xmlsoap.org/ws/2002/12/secext\">" +
+                                                    "</wsse:Security>" +
+                                                "</S:Header>" +
+                                                "<S:Body>" +
+                                                    "<tru:StockSymbol xmlns:tru=\"http://fabrikam123.com/payloads\">" +
+                                                        "QQQ" +
+                                                    "</tru:StockSymbol>" +
+                                                "</S:Body>" +
+                                            "</S:Envelope>";
+    private String simpleDocWithSecurityContext = "<?xml version=\"1.0\" encoding=\"utf-8\"?>" +
+                                                    "<S:Envelope xmlns:S=\"http://www.w3.org/2001/12/soap-envelope\">" +
+                                                        "<S:Header>" +
+                                                            "<wsse:Security xmlns:wsse=\"http://schemas.xmlsoap.org/ws/2002/12/secext\">" +
+                                                                "<wsse:SecurityContextToken></wsse:SecurityContextToken>" +
+                                                            "</wsse:Security>" +
+                                                        "</S:Header>" +
+                                                        "<S:Body>" +
+                                                            "<tru:StockSymbol xmlns:tru=\"http://fabrikam123.com/payloads\">" +
+                                                                "QQQ" +
+                                                            "</tru:StockSymbol>" +
+                                                        "</S:Body>" +
+                                                    "</S:Envelope>";
 
     private PrivateKey privateKey;
     private X509Certificate cert;
