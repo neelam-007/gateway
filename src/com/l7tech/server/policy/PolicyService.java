@@ -80,7 +80,9 @@ public class PolicyService {
      */
     public Document respondToPolicyDownloadRequest(String policyId,
                                                    User preAuthenticatedUser,
-                                                   PolicyGetter policyGetter) throws FilteringException, IOException, SAXException{
+                                                   PolicyGetter policyGetter) throws FilteringException,
+                                                                                     IOException,
+                                                                                     SAXException {
         Assertion targetPolicy = policyGetter.getPolicy(policyId);
         if (targetPolicy == null) {
             logger.info("cannot find target policy from id: " + policyId);
