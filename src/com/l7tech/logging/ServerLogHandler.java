@@ -1,25 +1,21 @@
 package com.l7tech.logging;
 
-import EDU.oswego.cs.dl.util.concurrent.ReadWriteLock;
-import EDU.oswego.cs.dl.util.concurrent.WriterPreferenceReadWriteLock;
-import EDU.oswego.cs.dl.util.concurrent.Sync;
-
-import java.util.logging.Handler;
-import java.util.logging.LogRecord;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
-import java.sql.SQLException;
-
-import com.l7tech.common.RequestId;
 import com.l7tech.cluster.ClusterInfoManager;
-import com.l7tech.server.MessageProcessor;
+import com.l7tech.common.RequestId;
 import com.l7tech.message.Request;
 import com.l7tech.objectmodel.HibernatePersistenceContext;
 import com.l7tech.objectmodel.PersistenceContext;
 import com.l7tech.objectmodel.TransactionException;
+import com.l7tech.server.MessageProcessor;
 import net.sf.hibernate.HibernateException;
+
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
+import java.util.logging.Handler;
+import java.util.logging.LogRecord;
 
 /**
  * A logging handler that records SSGLogRecord objects and stored them in a database table.
@@ -59,20 +55,13 @@ public class ServerLogHandler extends Handler {
     }
 
     public void flush() {
-        Sync ciWriteLock = rwlock.writeLock();
-        try {
-            ciWriteLock.acquire();
-        } catch (InterruptedException e) {
-            reportException("Exception locking. Log record lost", e);
-            return;
-        }
+    }
+
+    public void flushtodb() {
         Object[] data = null;
-        // only lock while extracting the data
-        try {
+        synchronized (cache) {
             data = cache.toArray();
             cache.clear();
-        } finally {
-            if (ciWriteLock != null) ciWriteLock.release();
         }
 
         // get the persistence context
@@ -156,22 +145,12 @@ public class ServerLogHandler extends Handler {
      * record a log record in tmp cache. it will eventually be flushed by a deamon thread
      */
     protected void add(SSGLogRecord arg) {
-        Sync ciWriteLock = rwlock.writeLock();
-        try {
-            ciWriteLock.acquire();
-        } catch (InterruptedException e) {
-            reportException("Exception locking. Log record lost", e);
-            return;
-        }
-        try {
-            // what is the deamon is not flushing fast enough?
+        synchronized (cache) {
             if (cache.size() >= MAX_CACHE_SIZE) {
                 // todo, maybe we should force a flush?
                 cache.remove(0);
             }
             cache.add(arg);
-        } finally {
-            if (ciWriteLock != null) ciWriteLock.release();
         }
     }
 
@@ -248,7 +227,7 @@ public class ServerLogHandler extends Handler {
                 context.beginTransaction();
             }
             // flush new records
-            flush();
+            flushtodb();
             context.commitTransaction();
         } catch (SQLException e) {
             reportException("error deleting old records", e);
@@ -277,9 +256,7 @@ public class ServerLogHandler extends Handler {
      * where log records are stored waiting to be flushed to the database
      */
     private ArrayList cache = new ArrayList();
-    // read-write lock for thread safety
-    private final ReadWriteLock rwlock = new WriterPreferenceReadWriteLock();
-    private static long MAX_CACHE_SIZE = 6000;
+    private static long MAX_CACHE_SIZE = 1000;
     private String nodeid;
     private Thread flusherDeamon = null;
     private static final long FLUSH_FREQUENCY = 6000;
