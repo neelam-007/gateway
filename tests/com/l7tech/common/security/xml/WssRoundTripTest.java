@@ -138,7 +138,8 @@ public class WssRoundTripTest extends TestCase {
                                td.senderKey,
                                td.signTimestamp,
                                td.elementsToEncrypt,
-                               td.elementsToSign);
+                               td.elementsToSign,
+                               null);
 
         log.info("Decorated message:\n\n" + XmlUtil.nodeToString(message));
 

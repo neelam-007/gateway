@@ -104,7 +104,7 @@ public class WssDecoratorTest extends TestCase {
                                   d.senderKey,
                                   d.signTimestamp,
                                   d.elementsToEncrypt,
-                                  d.elementsToSign);
+                                  d.elementsToSign, null);
         log.info("Decorated message:" + XmlUtil.nodeToFormattedString(d.c.message));
     }
 
