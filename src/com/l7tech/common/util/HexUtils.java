@@ -231,6 +231,26 @@ public class HexUtils {
         return out.toByteArray();
     }
 
+    /**
+     * String compare that treats null as being less than any other string.
+     *
+     * @param s1 a comparable object.  May be null.
+     * @param s2 a comparable object.  May be null.
+     * @return  a negative integer, zero, or a positive integer as s1
+     *		is less than, equal to, or greater than s2.
+     *
+     */
+    public static int compareNullable(Comparable s1, Comparable s2) {
+        if (s1 == null && s2 == null)
+            return 0;
+        else if (s1 == null)
+            return -1;
+        else if (s2 == null)
+            return 1;
+        else
+            return s1.compareTo(s2);
+    }
+
     /** Holds the result of a slurpUrl() call. */
     public static class Slurpage {
         public final Map headers;

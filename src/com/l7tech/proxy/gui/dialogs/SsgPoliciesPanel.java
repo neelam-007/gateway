@@ -20,7 +20,6 @@ import javax.swing.tree.TreeModel;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -31,7 +30,7 @@ import java.util.logging.Logger;
 class SsgPoliciesPanel extends JPanel {
     private static final Logger log = Logger.getLogger(SsgPoliciesPanel.class.getName());
 
-    private PolicyManager policyManager;
+    private PolicyManager policyCache; // transient policies
 
     //   View for Service Policies pane
     private JTree policyTree;
@@ -44,8 +43,8 @@ class SsgPoliciesPanel extends JPanel {
         init();
     }
 
-    public void setPolicyManager(PolicyManager pm) {
-        this.policyManager = pm;
+    public void setPolicyCache(PolicyManager policyCache) {
+        this.policyCache = policyCache;
         updatePolicyPanel();
     }
 
@@ -70,7 +69,7 @@ class SsgPoliciesPanel extends JPanel {
         buttonFlushPolicies = new JButton("Clear Policy Cache");
         buttonFlushPolicies.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
-                policyManager.clearPolicies();
+                policyCache.clearPolicies();
                 updatePolicyPanel();
             }
         });
@@ -91,6 +90,9 @@ class SsgPoliciesPanel extends JPanel {
         policyTable.getColumnModel().getColumn(0).setHeaderValue("Body Namespace");
         policyTable.getColumnModel().getColumn(1).setHeaderValue("SOAPAction");
         policyTable.getColumnModel().getColumn(2).setHeaderValue("Proxy URI");
+        policyTable.getColumnModel().getColumn(3).setHeaderValue("Locked");
+        policyTable.getColumnModel().getColumn(3).setCellRenderer(policyTable.getDefaultRenderer(Boolean.class));
+        policyTable.getColumnModel().getColumn(3).setCellEditor(policyTable.getDefaultEditor(Boolean.class));
         policyTable.getTableHeader().setReorderingAllowed(false);
         JScrollPane policyTableSp = new JScrollPane(policyTable);
         policyTableSp.setPreferredSize(new Dimension(120, 120));
@@ -129,7 +131,15 @@ class SsgPoliciesPanel extends JPanel {
         }
 
         public int getColumnCount() {
-            return 3;
+            return 4;
+        }
+
+        public boolean isCellEditable(int rowIndex, int columnIndex) {
+            switch (columnIndex) {
+                case 3:
+                    return true;
+            }
+            return false;
         }
 
         public Object getValueAt(int rowIndex, int columnIndex) {
@@ -140,9 +150,32 @@ class SsgPoliciesPanel extends JPanel {
                     return ((PolicyAttachmentKey)displayPolicies.get(rowIndex)).getSoapAction();
                 case 2:
                     return ((PolicyAttachmentKey)displayPolicies.get(rowIndex)).getProxyUri();
+                case 3:
+                    PolicyAttachmentKey pak = ((PolicyAttachmentKey)displayPolicies.get(rowIndex));
+                    Policy p = policyCache.getPolicy(pak);
+                    return p == null ? null : Boolean.valueOf(p.isPersistent());
             }
             log.log(Level.WARNING, "SsgPropertyDialog: policyTable: invalid columnIndex: " + columnIndex);
             return null;
+        }
+
+        public void setValueAt(Object aValue, int rowIndex, int columnIndex) {
+            switch (columnIndex) {
+                case 3:
+                    Boolean p = (Boolean)aValue;
+                    if (p != null) {
+                        PolicyAttachmentKey pak = ((PolicyAttachmentKey)displayPolicies.get(rowIndex));
+                        Policy policy = policyCache.getPolicy(pak);
+                        if (policy != null) {
+                            policy.setPersistent(p.booleanValue());
+                            if (!policy.isPersistent())
+                                policyCache.flushPolicy(pak); // clear any shadowed value
+                            policyCache.setPolicy(pak, policy);
+                            updatePolicyPanel();
+                        }
+                    }
+                    break;
+            }
         }
     }
 
@@ -151,12 +184,7 @@ class SsgPoliciesPanel extends JPanel {
         Policy policy = null;
         int row = policyTable.getSelectedRow();
         if (row >= 0 && row < displayPolicies.size())
-            try {
-                policy = policyManager.getPolicy((PolicyAttachmentKey)displayPolicies.get(row));
-            } catch (IOException e) {
-                log.log(Level.WARNING, "Unable to read policy: " + e.getMessage(), e); // TODO this should be an error dialog probably
-                policy = null;
-            }
+            policy = policyCache.getPolicy((PolicyAttachmentKey)displayPolicies.get(row));
         policyTree.setModel((policy == null || policy.getClientAssertion() == null) ? null : new PolicyTreeModel(policy.getClientAssertion()));
         int erow = 0;
         while (erow < policyTree.getRowCount()) {
@@ -167,7 +195,7 @@ class SsgPoliciesPanel extends JPanel {
     /** Update the policy display panel with information from the Ssg bean. */
     public void updatePolicyPanel() {
         displayPolicies.clear();
-        displayPolicies = new ArrayList(policyManager.getPolicyAttachmentKeys());
+        displayPolicies = new ArrayList(policyCache.getPolicyAttachmentKeys());
         displayPolicyTableModel.fireTableDataChanged();
         displaySelectedPolicy();
     }

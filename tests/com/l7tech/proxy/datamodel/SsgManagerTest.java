@@ -154,6 +154,9 @@ public class SsgManagerTest extends TestCase {
         final String SSG2P1_SA = "http://agarg.geqw.qrgq";
         SSG1.rootPolicyManager().setPolicy(new PolicyAttachmentKey(SSG1P1_URI, SSG1P1_SA, null), new Policy(policy1, "test"));
         SSG1.rootPolicyManager().setPolicy(new PolicyAttachmentKey(SSG1P2_URI, SSG1P2_SA, null), new Policy(policy2, "test"));
+        final Policy ppolicy = new Policy(policy2, "test");
+        ppolicy.setPersistent(true);
+        SSG1.rootPolicyManager().setPolicy(new PolicyAttachmentKey(SSG1P2_URI, SSG1P2_SA, null), ppolicy);
         SSG2.rootPolicyManager().setPolicy(new PolicyAttachmentKey(SSG2P2_URI, SSG2P2_SA, null), new Policy(policy2, "test"));
         SSG2.rootPolicyManager().setPolicy(new PolicyAttachmentKey(SSG2P1_URI, SSG2P1_SA, null), new Policy(policy1, "test"));
 
@@ -194,9 +197,13 @@ public class SsgManagerTest extends TestCase {
         assertTrue(loaded1 != null);
         assertTrue(loaded1.getSsgAddress() != null);
         assertTrue(loaded1.getLocalEndpoint().equals(SSG1.getLocalEndpoint()));
-        assertTrue(loaded1.rootPolicyManager().getPolicy(new PolicyAttachmentKey(SSG1P1_URI, SSG1P1_SA, null)) == null); // policies not persisted
-        assertTrue(loaded1.rootPolicyManager().getPolicy(new PolicyAttachmentKey(SSG1P2_URI, SSG1P2_SA, null)) == null);
-        assertTrue(loaded1.rootPolicyManager().getPolicy(new PolicyAttachmentKey("asdfasdf", "argaerg", null)) == null);
+
+        // policies tagged persistent get saved
+        assertTrue(loaded1.rootPolicyManager().getPolicy(new PolicyAttachmentKey(SSG1P2_URI, SSG1P2_SA, null)) != null);
+
+        // policies not tagged as persistent do not get persisted
+        assertTrue(loaded1.rootPolicyManager().getPolicy(new PolicyAttachmentKey(SSG1P1_URI, SSG1P1_SA, null)) == null);
+        assertTrue(loaded1.rootPolicyManager().getPolicy(new PolicyAttachmentKey("asdfasdf", "argaerg", null)) == null);        
 
         Ssg loaded2 = sm.getSsgByEndpoint(SSG2.getLocalEndpoint());
         assertTrue(loaded2 != null);

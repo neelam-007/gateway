@@ -6,17 +6,13 @@
 
 package com.l7tech.proxy.datamodel;
 
-import java.io.IOException;
+import java.io.Serializable;
 import java.util.Set;
 
 /**
  * Manages policies for SSGs.
- * User: mike
- * Date: Jun 17, 2003
- * Time: 10:19:51 AM
  */
-public interface PolicyManager {
-
+public interface PolicyManager extends Serializable {
     /**
      * Notify the PolicyManager that a policy may be out-of-date and should be flushed from the cache.
      * The PolicyManager will not attempt to obtain a replacement one at this time.
@@ -34,9 +30,17 @@ public interface PolicyManager {
      *
      * @param policyAttachmentKey the {@link PolicyAttachmentKey} describing the policy to locate.
      * @return the requested {@link Policy}, or null if it was not found.
-     * @throws java.io.IOException if a disk or network problem prevented the policy lookup.
      */
-    Policy getPolicy(PolicyAttachmentKey policyAttachmentKey) throws IOException;
+    Policy getPolicy(PolicyAttachmentKey policyAttachmentKey);
+
+    /**
+     * Set a policy, if this PolicyManager allows this.
+     *
+     * @param key    the {@link PolicyAttachmentKey} under which to file this {@link Policy}.  May not be null.
+     * @param policy the Policy to file.  May not be null.
+     * @throws UnsupportedOperationException if this PolicyManager is read-only.
+     */
+    void setPolicy(PolicyAttachmentKey key, Policy policy);
 
     /**
      * Get the set of PolicyAttachmentKey that we currently know about.  These are the ones that

@@ -6,12 +6,9 @@
 
 package com.l7tech.proxy.datamodel;
 
-import com.l7tech.proxy.ConfigurationException;
-import com.l7tech.proxy.message.PolicyApplicationContext;
-
-import java.io.IOException;
-import java.util.Set;
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.Set;
 
 /**
  * PolicyManager for testing.  Provides a fixed policy that is manually set.
@@ -19,7 +16,7 @@ import java.util.Collections;
  * Date: Jun 17, 2003
  * Time: 2:50:49 PM
  */
-public class PolicyManagerStub extends LocalPolicyManager {
+public class PolicyManagerStub implements PolicyManager {
     private Policy policy;
 
     public void setPolicy(Policy policy) {
@@ -34,11 +31,27 @@ public class PolicyManagerStub extends LocalPolicyManager {
         // ignore
     }
 
+    public PolicyManager getDelegate() {
+        return null;
+    }
+
+    public void setDelegate(PolicyManager delegate) {
+
+    }
+
+    public HashMap getPolicyMap() {
+        return null;
+    }
+
+    public void setPolicyMap(HashMap policyMap) {
+
+    }
+
     public void flushPolicy(PolicyAttachmentKey policyAttachmentKey) {
         // ignore
     }
 
-    public Policy getPolicy(PolicyAttachmentKey policyAttachmentKey) throws IOException {
+    public Policy getPolicy(PolicyAttachmentKey policyAttachmentKey) {
         return policy;
     }
 

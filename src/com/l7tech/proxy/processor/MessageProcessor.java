@@ -193,7 +193,7 @@ public class MessageProcessor {
             if (!succeeded) {
                 if (context.getActivePolicy() != null) {
                     log.log(Level.FINE, "Request failed to get a response from the SSG -- marking cached policy as invalid");
-                    context.getActivePolicy().invalidate();
+                    context.getActivePolicy().setValid(false);
                 }
             }
         }
@@ -389,7 +389,7 @@ public class MessageProcessor {
 
             } catch (PolicyAssertionException e) {
                 // Before rethrowing, make sure we deactivate this cached policy.
-                policy.invalidate();
+                policy.setValid(false);
                 throw e;
             }
             if (result != AssertionStatus.NONE) {

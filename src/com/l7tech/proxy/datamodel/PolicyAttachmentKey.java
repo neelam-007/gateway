@@ -6,6 +6,8 @@
 
 package com.l7tech.proxy.datamodel;
 
+import com.l7tech.common.util.HexUtils;
+
 import java.io.Serializable;
 
 /**
@@ -15,9 +17,18 @@ import java.io.Serializable;
  * Time: 6:29:56 PM
  */
 public class PolicyAttachmentKey implements Serializable, Cloneable, Comparable {
-    private final String uri;
-    private final String soapAction;
-    private final String proxyUri;
+    private String uri;
+    private String soapAction;
+    private String proxyUri;
+
+    /**
+     * No-arg constructor for bean deserializer.
+     */
+    public PolicyAttachmentKey() {
+        uri = "";
+        soapAction = "";
+        proxyUri = "";
+    }
 
     /**
      * Create a PolicyAttachmentKey using the specified namespace URI, soapAction, and proxy URI local part.
@@ -31,31 +42,19 @@ public class PolicyAttachmentKey implements Serializable, Cloneable, Comparable 
         this.proxyUri = proxyUri != null ? proxyUri : "";
     }
 
-    // String compare that treats null as being less than any other string
-    private static int compareStrings(String s1, String s2) {
-        if (s1 == null && s2 == null)
-            return 0;
-        else if (s1 == null)
-            return -1;
-        else if (s2 == null)
-            return 1;
-        else
-            return s1.compareTo(s2);
-    }
-
     public int compareTo(Object o) {
         int result;
         PolicyAttachmentKey other = (PolicyAttachmentKey)o;
 
-        result = compareStrings(uri, other.uri);
+        result = HexUtils.compareNullable(uri, other.uri);
         if (result != 0)
             return result;
 
-        result = compareStrings(soapAction, other.soapAction);
+        result = HexUtils.compareNullable(soapAction, other.soapAction);
         if (result != 0)
             return result;
 
-        result = compareStrings(proxyUri, other.proxyUri);
+        result = HexUtils.compareNullable(proxyUri, other.proxyUri);
         if (result != 0)
             return result;
 
@@ -91,5 +90,23 @@ public class PolicyAttachmentKey implements Serializable, Cloneable, Comparable 
     /** @return the local part of the original local URL for this request (see URL.getFile()). May be empty but never null. */
     public String getProxyUri() {
         return proxyUri;
+    }
+
+    /** Set the namespace URI. This is here for the xml bean deserializer. */
+    public void setUri(String uri) {
+        if (uri == null) uri = "";
+        this.uri = uri;
+    }
+
+    /** Set the SOAPAction. This is here for the xml bean deserializer. */
+    public void setSoapAction(String soapAction) {
+        if (soapAction == null) soapAction = "";
+        this.soapAction = soapAction;
+    }
+
+    /** Set the Proxy URI. This is here for the xml bean deserializer. */
+    public void setProxyUri(String proxyUri) {
+        if (proxyUri == null) proxyUri = "";
+        this.proxyUri = proxyUri;
     }
 }

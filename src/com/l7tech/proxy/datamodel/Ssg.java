@@ -13,7 +13,7 @@ import org.apache.commons.httpclient.MultiThreadedHttpConnectionManager;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.X509KeyManager;
 import javax.net.ssl.X509TrustManager;
-import javax.swing.SwingUtilities;
+import javax.swing.*;
 import java.io.File;
 import java.io.IOException;
 import java.io.Serializable;
@@ -73,11 +73,11 @@ public class Ssg implements Serializable, Cloneable, Comparable {
     private byte[] persistPassword = null;
     private boolean useOverrideIpAddresses = false;
     private String[] overrideIpAddresses = null;
-    private LocalPolicyManager persistentPolicyManager = new LocalPolicyManager(); // policy store that gets saved to disk
+    private PersistentPolicyManager persistentPolicyManager = new PersistentPolicyManager(); // policy store that gets saved to disk
 
     // These fields are transient.  To prevent the bean serializer from saving them anyway,
     // they do not use the getFoo() / setFoo() naming convention in their accessors and mutators.
-    private transient LocalPolicyManager rootPolicyManager = null; // policy store that is not saved to disk
+    private transient PolicyManager rootPolicyManager = null; // policy store that is not saved to disk
     private transient char[] password = null;
     private transient boolean promptForUsernameAndPassword = true;
     private transient KeyStore keyStore = null;
@@ -211,11 +211,11 @@ public class Ssg implements Serializable, Cloneable, Comparable {
     /**
      * @return the root PolicyManager for this SSG.  Never null.
      */
-    public LocalPolicyManager rootPolicyManager() {
+    public PolicyManager rootPolicyManager() {
         if (rootPolicyManager == null) {
             synchronized (this) {
                 if (rootPolicyManager == null) {
-                    rootPolicyManager = new LocalPolicyManager(getPersistentPolicyManager());
+                    rootPolicyManager = new TransientPolicyManager(getPersistentPolicyManager());
                 }
             }
         }
@@ -223,7 +223,7 @@ public class Ssg implements Serializable, Cloneable, Comparable {
     }
 
     /** Replace the root policy manager.  This should never be called by a production class; it is here only for test purposes. */
-    public void rootPolicyManager(LocalPolicyManager p) {
+    public void rootPolicyManager(PolicyManager p) {
         rootPolicyManager = p;
     }
 
@@ -233,13 +233,13 @@ public class Ssg implements Serializable, Cloneable, Comparable {
      *
      * @return the persistent policy manager.  Never null.
      */
-    public PolicyManager getPersistentPolicyManager() {
+    public PersistentPolicyManager getPersistentPolicyManager() {
         return persistentPolicyManager;
     }
 
-    /** @deprecated Needed for bean serializer only; do not use. */
-    public void setPersistentPolicyManager(LocalPolicyManager persistentPolicyManager) {
-        if (persistentPolicyManager == null) persistentPolicyManager = new LocalPolicyManager(); // just in case
+    /** Needed for bean serializer only; do not use. */
+    public void setPersistentPolicyManager(PersistentPolicyManager persistentPolicyManager) {
+        if (persistentPolicyManager == null) persistentPolicyManager = new PersistentPolicyManager(); // just in case
         this.persistentPolicyManager = persistentPolicyManager;
     }
 

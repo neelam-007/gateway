@@ -6,19 +6,18 @@
 
 package com.l7tech.proxy.datamodel;
 
-import java.io.IOException;
 import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.logging.Logger;
 
 /**
  * A {@link PolicyManager} that stores policies in memory.  This implementation is synchronized.
  */
 public class LocalPolicyManager implements PolicyManager, Serializable {
-
-    private PolicyManager delegate = null;
-    private transient HashMap policyMap = new HashMap(); /* Policy cache */
+    private static final Logger logger = Logger.getLogger(LocalPolicyManager.class.getName());
+    private HashMap policyMap = new HashMap(); /* Policy cache */
 
     /**
      * Create a LocalPolicyManager with no delegate.
@@ -26,37 +25,48 @@ public class LocalPolicyManager implements PolicyManager, Serializable {
     public LocalPolicyManager() {
     }
 
-    /**
-     * Create a LocalPolicyManager that will get policies from the specified delegate if there is a local cache miss.
-     *
-     * @param delegate PolicyManger to use if the current PolicyManager does not find a policy.
-     */
-    public LocalPolicyManager(PolicyManager delegate) {
-        this.delegate = delegate;
+    /** Policy map accessor, for xml bean serializer.  Do not call this method. */
+    protected synchronized HashMap getPolicyMap() {
+        return policyMap;
     }
 
-    public synchronized Set getPolicyAttachmentKeys() {
-        Set setCopy = new TreeSet(policyMap.keySet());
-        if (delegate != null) // mix in delegate's immediately available policies as immediately-available from us
-            setCopy.addAll(delegate.getPolicyAttachmentKeys());
-        return setCopy;
+    /** Policy map mutator, for xml bean deserializer.  Do not call this method. */
+    protected synchronized void setPolicyMap(HashMap policyMap) {
+        this.policyMap = policyMap;
     }
 
-    public synchronized void setPolicy(PolicyAttachmentKey key, Policy policy ) {
-        policyMap.put(key, policy);
+    public synchronized boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof LocalPolicyManager)) return false;
+
+        final LocalPolicyManager that = (LocalPolicyManager)o;
+
+        if (policyMap != null ? !policyMap.equals(that.policyMap) : that.policyMap != null) return false;
+
+        return true;
     }
 
-    public synchronized Policy getPolicy(PolicyAttachmentKey policyAttachmentKey) throws IOException {
-        Policy policy = (Policy) policyMap.get(policyAttachmentKey);
-        if (policy == null && delegate != null)
-            policy = delegate.getPolicy(policyAttachmentKey);
-        return policy;
+    public synchronized int hashCode() {
+        return (policyMap != null ? policyMap.hashCode() : 0);
     }
 
     public synchronized void flushPolicy(PolicyAttachmentKey policyAttachmentKey) {
         policyMap.remove(policyAttachmentKey);
-        if (delegate != null)
-            delegate.flushPolicy(policyAttachmentKey);
+    }
+
+    public synchronized Policy getPolicy(PolicyAttachmentKey policyAttachmentKey) {
+        return (Policy)policyMap.get(policyAttachmentKey);
+    }
+
+    public synchronized void setPolicy(PolicyAttachmentKey key, Policy policy) {
+        if (key == null) throw new NullPointerException();
+        if (policy == null) throw new NullPointerException();
+        policyMap.put(key, policy);
+    }
+
+    public synchronized Set getPolicyAttachmentKeys() {
+        Set setCopy = new TreeSet(policyMap.keySet());
+        return setCopy;
     }
 
     public synchronized void clearPolicies() {
