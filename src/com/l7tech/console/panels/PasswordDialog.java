@@ -293,6 +293,9 @@ public class PasswordDialog extends JDialog {
             confirmPasswordField.setText("");
             return false;
         }
+        if (JOptionPane.showConfirmDialog(null, "Changing the password will also revoke the client cert (if any).\nAre you sure you want to proceed?") != JOptionPane.YES_OPTION) {
+            return false;
+        }
         return true;
     }
 
