@@ -9,7 +9,7 @@ import com.l7tech.console.util.Registry;
 import com.l7tech.console.action.Actions;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
-import com.l7tech.objectmodel.DuplicateObjectException;
+import com.l7tech.objectmodel.TransactionException;
 import com.l7tech.service.PublishedService;
 import com.l7tech.common.util.ExceptionUtils;
 
@@ -56,28 +56,27 @@ public class PublishNonSoapServiceWizard extends Wizard {
         PublishedService service = new PublishedService();
         ArrayList allAssertions = new ArrayList();
         try {
-        // get the assertions from the all assertion
-        panel2.readSettings(allAssertions);
-        AllAssertion policy = new AllAssertion(allAssertions);
-        policy.addChild(new HttpRoutingAssertion(panel1.getDownstreamURL()));
-        ByteArrayOutputStream bo = new ByteArrayOutputStream();
-        WspWriter.writePolicy(policy, bo);
-        service.setPolicyXml(bo.toString());
-        service.setSoap(false);
-        service.setName(panel1.getPublishedServiceName());
-        service.setRoutingUri(panel1.getRoutingURI());
-        long oid = Registry.getDefault().getServiceManager().savePublishedService(service);
-        EntityHeader header = new EntityHeader();
-        header.setType(EntityType.SERVICE);
-        header.setName(service.getName());
-        header.setOid(oid);
-        PublishNonSoapServiceWizard.this.notify(header);
+            // get the assertions from the all assertion
+            panel2.readSettings(allAssertions);
+            AllAssertion policy = new AllAssertion(allAssertions);
+            policy.addChild(new HttpRoutingAssertion(panel1.getDownstreamURL()));
+            ByteArrayOutputStream bo = new ByteArrayOutputStream();
+            WspWriter.writePolicy(policy, bo);
+            service.setPolicyXml(bo.toString());
+            service.setSoap(false);
+            service.setName(panel1.getPublishedServiceName());
+            service.setRoutingUri(panel1.getRoutingURI());
+            long oid = Registry.getDefault().getServiceManager().savePublishedService(service);
+            EntityHeader header = new EntityHeader();
+            header.setType(EntityType.SERVICE);
+            header.setName(service.getName());
+            header.setOid(oid);
+            PublishNonSoapServiceWizard.this.notify(header);
         } catch (Exception e) {
-            if (ExceptionUtils.causedBy(e, DuplicateObjectException.class)) {
+            if (ExceptionUtils.causedBy(e, TransactionException.class)) {
                 JOptionPane.showMessageDialog(null,
                   "Unable to save the service '" + service.getName() + "'\n" +
-                  "because an existing service is already using that namespace URI\n" +
-                  "and SOAPAction combination.",
+                  "because an existing service is already using the URL " + service.getRoutingUri(),
                   "Service already exists",
                   JOptionPane.ERROR_MESSAGE);
             } else {
