@@ -164,6 +164,59 @@ public class SoapUtil {
         }
     }
 
+    /**
+     * @return null if element not present, the security element if it's in the doc
+     */
+    public static Element getSecurityElement(Document soapMsg) {
+        // look for the element
+        NodeList listSecurityElements = soapMsg.getElementsByTagNameNS(SECURITY_NAMESPACE, SECURITY_EL_NAME);
+        if (listSecurityElements.getLength() < 1) {
+            listSecurityElements = soapMsg.getElementsByTagNameNS(SECURITY_NAMESPACE2, SECURITY_EL_NAME);
+        }
+        // is it there ?
+        if (listSecurityElements.getLength() < 1) return null;
+        // we got it
+        return (Element)listSecurityElements.item(0);
+    }
+
+    public static void cleanEmptySecurityElement(Document soapMsg) {
+        Element secEl = getSecurityElement(soapMsg);
+        while (secEl != null) {
+            if (elHasChildrenElements(secEl)) {
+                return;
+            } else secEl.getParentNode().removeChild(secEl);
+            secEl = getSecurityElement(soapMsg);
+        }
+    }
+
+    public static void cleanEmptyHeaderElement(Document soapMsg) {
+        String soapEnvNS = soapMsg.getDocumentElement().getNamespaceURI();
+        NodeList list = soapMsg.getElementsByTagNameNS(soapEnvNS, HEADER_EL_NAME);
+        // is it there ?
+        if (list.getLength() < 1) return;
+        // we got it
+        Element headerEl = (Element)list.item(0);
+        if (!elHasChildrenElements(headerEl)) {
+            headerEl.getParentNode().removeChild(headerEl);
+        }
+    }
+
+    /**
+     * checks whether the passed element has any Element type children
+     * @return true if it does false if not
+     */
+    public static boolean elHasChildrenElements(Element el) {
+        NodeList children = el.getChildNodes();
+        for (int i = 0; i < children.getLength(); i++) {
+            Node thisChild = children.item(i);
+            // only consider element types
+            if (thisChild.getNodeType() == Node.ELEMENT_NODE) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     public static final String FC_CLIENT = "Client";
     public static final String FC_SERVER = "Server";
 }
