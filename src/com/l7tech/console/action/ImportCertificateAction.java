@@ -40,7 +40,7 @@ public class ImportCertificateAction extends BaseAction {
      * @return the aciton description
      */
     public String getDescription() {
-        return "Import the SSG Certificate";
+        return "Import the Gateway Certificate";
     }
 
     /**

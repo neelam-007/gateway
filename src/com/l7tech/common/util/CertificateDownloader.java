@@ -157,7 +157,7 @@ public class CertificateDownloader {
      */
     public boolean downloadCertificate() throws IOException, CertificateException {
         if (ssgUrl == null)
-            throw new IllegalStateException("No SSG url is set");
+            throw new IllegalStateException("No Gateway url is set");
         nonce = String.valueOf(Math.abs(new SecureRandom().nextLong()));
         String uri = ssgUrl.getPath() + "?" + "getcert=1&nonce=" + nonce;
         if (username != null)

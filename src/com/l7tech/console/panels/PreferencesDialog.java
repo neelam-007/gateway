@@ -375,8 +375,8 @@ public class PreferencesDialog extends JDialog {
             /** Make sure if they really want to change the service URL */
             if (!sUrl.equals(serviceUrl) && !connected) {
                 if ((JOptionPane.showConfirmDialog(null,
-                  "You have changed the Server URL. Changing the URL can cause the console to not connect\n" +
-                  " to the SSG. Do you want to continue and save this URL?",
+                  "You have changed the Server URL. Changing the URL can cause the console to be unable to connect\n" +
+                  " to the Gateway. Do you want to continue and save this URL?",
                   "Policy Editor - Preferences",
                   JOptionPane.YES_NO_OPTION)) == 1) {
                     return false;
@@ -384,8 +384,8 @@ public class PreferencesDialog extends JDialog {
             } else if (!sUrl.equals(serviceUrl) && connected) {
 
                 JOptionPane.showMessageDialog(null,
-                  "You cannot change the server URL while connected to console. In order to change the Server URL, \n" +
-                  "you need to disconnect from the SSG Console first.",
+                  "You cannot change the server URL while the Manager is connected to the Gateway. In order to change the Server URL, \n" +
+                  "you need to disconnect from the Gateway first.",
                   "Error Updating Server URL",
                   JOptionPane.ERROR_MESSAGE);
                 return false;
