@@ -7,6 +7,7 @@ import com.l7tech.service.resolution.ServiceResolutionException;
 
 import java.util.Collection;
 import java.io.IOException;
+import java.rmi.RemoteException;
 
 
 /**
@@ -29,19 +30,55 @@ public class ServiceManagerClientImp implements ServiceManager {
     }
 
     public Collection findAllHeaders() throws FindException {
-        return null;
+        com.l7tech.objectmodel.EntityHeader[] array = null;
+        try {
+            array = getStub().findAllPublishedServices();
+        } catch (RemoteException e) {
+            throw new FindException(e.getMessage(), e);
+        }
+        Collection output = new java.util.ArrayList();
+        for (int i = 0; i < array.length; i++) output.add(array[i]);
+        return output;
     }
 
     public Collection findAllHeaders(int offset, int windowSize) throws FindException {
-        return null;
+        com.l7tech.objectmodel.EntityHeader[] array = null;
+        try {
+            array = getStub().findAllPublishedServicesByOffset(offset, windowSize);
+        } catch (RemoteException e) {
+            throw new FindException(e.getMessage(), e);
+        }
+        Collection output = new java.util.ArrayList();
+        for (int i = 0; i < array.length; i++) output.add(array[i]);
+        return output;
     }
 
     public Collection findAll() throws FindException {
-        return null;
+        com.l7tech.objectmodel.EntityHeader[] array = null;
+        try {
+            array = getStub().findAllPublishedServices();
+            Collection output = new java.util.ArrayList();
+            for (int i = 0; i < array.length; i++) {
+                output.add(getStub().findServiceByPrimaryKey(array[i].getOid()));
+            }
+            return output;
+        } catch (RemoteException e) {
+            throw new FindException(e.getMessage(), e);
+        }
     }
 
     public Collection findAll(int offset, int windowSize) throws FindException {
-        return null;
+        com.l7tech.objectmodel.EntityHeader[] array = null;
+        try {
+            array = getStub().findAllPublishedServicesByOffset(offset, windowSize);
+            Collection output = new java.util.ArrayList();
+            for (int i = 0; i < array.length; i++) {
+                output.add(getStub().findServiceByPrimaryKey(array[i].getOid()));
+            }
+            return output;
+        } catch (RemoteException e) {
+            throw new FindException(e.getMessage(), e);
+        }
     }
 
     public long save(PublishedService service) throws SaveException {
@@ -66,8 +103,12 @@ public class ServiceManagerClientImp implements ServiceManager {
         com.l7tech.adminws.ClientCredentialManager.setCachedUsername("ssgadmin");
         com.l7tech.adminws.ClientCredentialManager.setCachedPasswd("ssgadminpasswd");
         ServiceManagerClientImp me = new ServiceManagerClientImp();
-        System.out.println(me.resolveWsdlTarget("tralala"));
+        //System.out.println(me.resolveWsdlTarget("tralala"));
         System.out.println(me.findByPrimaryKey(555));
+        Collection res = me.findAll();
+        System.out.println(res.toString());
+        res = me.findAll(21, 654);
+        System.out.println(res.toString());
     }
 
     private Client getStub() throws java.rmi.RemoteException {
