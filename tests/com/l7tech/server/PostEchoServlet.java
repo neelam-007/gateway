@@ -15,7 +15,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 
 /**
- * @author mike
+ * Echoes anything posted back to the response
  */
 public class PostEchoServlet extends HttpServlet {
     protected void doPost(HttpServletRequest servletRequest, HttpServletResponse servletResponse) throws ServletException, IOException {
