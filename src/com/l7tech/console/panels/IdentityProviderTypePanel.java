@@ -51,32 +51,6 @@ public class IdentityProviderTypePanel extends WizardStepPanel {
         add(panel);
         panel.setLayout(new GridBagLayout());
 
-        // Provider ID label
-/*        JLabel providerNameLabel = new JLabel();
-        providerNameLabel.setToolTipText(resources.getString("providerNameTextField.tooltip"));
-        providerNameLabel.setText(resources.getString("providerNameTextField.label"));
-
-        constraints = new GridBagConstraints();
-        constraints.gridx = 0;
-        constraints.gridy = 0;
-        constraints.weightx = 0.0;
-        constraints.gridwidth = 1;
-        constraints.fill = GridBagConstraints.NONE;
-        constraints.anchor = GridBagConstraints.WEST;
-        constraints.insets = new Insets(12, 12, 0, 0);
-        panel.add(providerNameLabel, constraints);
-
-        // Provider ID text field
-        constraints = new GridBagConstraints();
-        constraints.gridx = 1;
-        constraints.gridy = 0;
-        constraints.weightx = 0.0;
-        constraints.gridwidth = 1;
-        constraints.fill = GridBagConstraints.NONE;
-        constraints.anchor = GridBagConstraints.WEST;
-        constraints.insets = new Insets(12, 7, 0, 11);
-        panel.add(getProviderNameTextField(), constraints);*/
-
         // provider types
         JLabel providerTypesLabel = new JLabel();
         providerTypesLabel.setToolTipText(resources.getString("providerTypeTextField.tooltip"));
@@ -109,52 +83,6 @@ public class IdentityProviderTypePanel extends WizardStepPanel {
     public String getStepLabel() {
         return "Provider Type";
     }
-
-
-    /**
-     * A method that returns a JTextField containing provider information
-     *
-     * @return the ID textfield
-     */
-/*
-
-    public JTextField getProviderNameTextField() {
-        if (providerNameTextField != null) return providerNameTextField;
-
-        providerNameTextField = new JTextField();
-        providerNameTextField.setPreferredSize(new Dimension(217, 20));
-        providerNameTextField.setMinimumSize(new Dimension(217, 20));
-        providerNameTextField.setToolTipText(resources.getString("providerNameTextField.tooltip"));
-
-        providerNameTextField.getDocument().
-          addDocumentListener(new DocumentListener() {
-              public void insertUpdate(DocumentEvent e) {
-                  //saveButton.setEnabled(enableSaveButton(e));
-              }
-
-              public void removeUpdate(DocumentEvent e) {
-                  //saveButton.setEnabled(enableSaveButton(e));
-              }
-
-              public void changedUpdate(DocumentEvent e) {
-                  //saveButton.setEnabled(enableSaveButton(e));
-              }
-
-              private boolean enableSaveButton(DocumentEvent e) {
-                  boolean enable =
-                    e.getDocument().getLength() > 0 &&
-                    providerTypesCombo.getSelectedIndex() != -1;
-                  //enable = enable &&
-                  //  providerSettingsPanel != null;
-
-                  return enable;
-              }
-          });
-
-        return providerNameTextField;
-    }
-*/
-
 
     /**
      * A method that returns a JCheckBox that indicates
