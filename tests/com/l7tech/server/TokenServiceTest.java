@@ -19,6 +19,7 @@ import com.l7tech.common.xml.TestDocuments;
 import com.l7tech.common.xml.saml.SamlAssertion;
 import com.l7tech.identity.User;
 import com.l7tech.identity.UserBean;
+import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.proxy.util.TokenServiceClient;
 import com.l7tech.server.message.PolicyEnforcementContext;
@@ -27,8 +28,8 @@ import junit.extensions.TestSetup;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
-import org.springframework.context.ApplicationContext;
 import org.springframework.mock.web.MockHttpServletRequest;
+import org.springframework.context.ApplicationContext;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
@@ -94,7 +95,8 @@ public class TokenServiceTest extends TestCase {
         request.initialize(requestMsg);
         final PolicyEnforcementContext context = new PolicyEnforcementContext(request, response);
 
-        service.respondToSecurityTokenRequest(context, authenticator);
+        AssertionStatus status = service.respondToSecurityTokenRequest(context, authenticator);
+        assertEquals(status, AssertionStatus.NONE);
 
         Document responseMsg = response.getXmlKnob().getDocumentWritable();
 
@@ -146,7 +148,8 @@ public class TokenServiceTest extends TestCase {
 
         final PolicyEnforcementContext context = new PolicyEnforcementContext(request, response, getFakeServletRequest(), null);
 
-        service.respondToSecurityTokenRequest(context, authenticator);
+        AssertionStatus status = service.respondToSecurityTokenRequest(context, authenticator);
+        assertEquals(status, AssertionStatus.NONE);
 
         Document responseMsg = response.getXmlKnob().getDocumentWritable();
 
