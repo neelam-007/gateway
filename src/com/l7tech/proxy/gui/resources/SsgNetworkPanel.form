@@ -92,7 +92,7 @@
       <grid id="1d29b" row-count="10" column-count="7" same-size-horizontally="false" same-size-vertically="false" hgap="0" vgap="0">
         <margin top="5" left="5" bottom="5" right="5"/>
         <constraints>
-          <xy x="10" y="175" width="710" height="289"/>
+          <xy x="10" y="175" width="710" height="297"/>
           <grid row="2" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="1" fill="1"/>
         </constraints>
         <properties/>
@@ -186,7 +186,7 @@
           <grid id="ff69e" row-count="3" column-count="4" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
             <margin top="0" left="0" bottom="0" right="0"/>
             <constraints>
-              <xy x="11" y="198" width="688" height="60"/>
+              <xy x="11" y="198" width="688" height="68"/>
               <grid row="8" column="0" row-span="1" col-span="7" vsize-policy="3" hsize-policy="3" anchor="0" fill="1"/>
             </constraints>
             <properties/>
@@ -201,19 +201,20 @@
                   <text value="Manually Specify IP Addresses:"/>
                   <verticalAlignment value="1"/>
                   <verticalTextPosition value="1"/>
-                  <visible value="false"/>
+                  <visible value="true"/>
                 </properties>
               </component>
               <scrollpane id="a0918">
                 <constraints>
-                  <xy x="20" y="0" width="110" height="60"/>
+                  <xy x="175" y="0" width="110" height="68"/>
                   <grid row="0" column="1" row-span="3" col-span="1" vsize-policy="6" hsize-policy="0" anchor="9" fill="3">
                     <preferred-size width="110" height="60"/>
                   </grid>
                 </constraints>
                 <properties>
+                  <enabled value="true"/>
                   <verticalScrollBarPolicy value="20"/>
-                  <visible value="false"/>
+                  <visible value="true"/>
                 </properties>
                 <border type="none"/>
                 <children>
@@ -228,34 +229,34 @@
               </scrollpane>
               <component id="6ad30" class="javax.swing.JButton" binding="buttonAddIpAddress">
                 <constraints>
-                  <xy x="130" y="0" width="73" height="24"/>
+                  <xy x="285" y="0" width="73" height="24"/>
                   <grid row="0" column="2" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1"/>
                 </constraints>
                 <properties>
                   <text value="Add"/>
-                  <visible value="false"/>
+                  <visible value="true"/>
                 </properties>
               </component>
               <component id="aeb50" class="javax.swing.JButton" binding="buttonRemoveIpAddress">
                 <constraints>
-                  <xy x="130" y="20" width="73" height="24"/>
+                  <xy x="285" y="24" width="73" height="24"/>
                   <grid row="1" column="2" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1"/>
                 </constraints>
                 <properties>
                   <enabled value="false"/>
                   <text value="Remove"/>
-                  <visible value="false"/>
+                  <visible value="true"/>
                 </properties>
               </component>
               <vspacer id="cf0a0">
                 <constraints>
-                  <xy x="44" y="40" width="11" height="20"/>
+                  <xy x="316" y="48" width="11" height="20"/>
                   <grid row="2" column="2" row-span="1" col-span="1" vsize-policy="6" hsize-policy="1" anchor="0" fill="2"/>
                 </constraints>
               </vspacer>
               <hspacer id="e3b4c">
                 <constraints>
-                  <xy x="60" y="4" width="628" height="11"/>
+                  <xy x="358" y="6" width="330" height="11"/>
                   <grid row="0" column="3" row-span="1" col-span="1" vsize-policy="1" hsize-policy="6" anchor="0" fill="1"/>
                 </constraints>
               </hspacer>
@@ -337,7 +338,7 @@
                   <text value="Look Up IP Addresses In DNS"/>
                   <verticalAlignment value="3"/>
                   <verticalTextPosition value="3"/>
-                  <visible value="false"/>
+                  <visible value="true"/>
                 </properties>
               </component>
             </children>
@@ -355,7 +356,7 @@
       </grid>
       <vspacer id="8c9d1">
         <constraints>
-          <xy x="359" y="464" width="11" height="143"/>
+          <xy x="359" y="472" width="11" height="135"/>
           <grid row="3" column="0" row-span="1" col-span="1" vsize-policy="6" hsize-policy="1" anchor="0" fill="2"/>
         </constraints>
       </vspacer>

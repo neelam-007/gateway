@@ -6,9 +6,13 @@
 
 package com.l7tech.proxy.datamodel;
 
+import com.l7tech.common.http.FailoverHttpClient;
+import com.l7tech.common.http.GenericHttpClient;
 import com.l7tech.common.http.HttpCookie;
 import com.l7tech.common.http.SimpleHttpClient;
 import com.l7tech.common.http.prov.apache.CommonsHttpClient;
+import com.l7tech.common.io.failover.FailoverStrategy;
+import com.l7tech.common.io.failover.StickyFailoverStrategy;
 import com.l7tech.common.security.token.SecurityTokenType;
 import com.l7tech.common.util.DateTranslator;
 import com.l7tech.proxy.datamodel.exceptions.BadCredentialsException;
@@ -435,6 +439,7 @@ public class SsgRuntime {
             sslContext = createSslContext();
             serverCert = null;
             clientCert = null;
+            simpleHttpClient = null;
         }
     }
 
@@ -587,10 +592,29 @@ public class SsgRuntime {
      */
     public SimpleHttpClient getHttpClient() {
         synchronized (ssg) {
-            if (simpleHttpClient == null)
-                simpleHttpClient = new SimpleHttpClient(new SslPeerHttpClient(new CommonsHttpClient(getHttpConnectionManager()),
-                                                                              ssg,
-                                                                              ClientProxySecureProtocolSocketFactory.getInstance()));
+            if (simpleHttpClient == null) {
+                // Base it on commons
+                GenericHttpClient client = new CommonsHttpClient(getHttpConnectionManager());
+
+                // Make it use the right SSL
+                client = new SslPeerHttpClient(client,
+                                               ssg,
+                                               ClientProxySecureProtocolSocketFactory.getInstance());
+
+                // Add failover if so configured.
+                // Failover must be added last so requests can be downcast to FailoverHttpRequest in MP,
+                // so an InputStreamFactory can be set; otherwise all requests are buffered.
+                final String[] addrs = ssg.getOverrideIpAddresses();
+                if (addrs != null && addrs.length > 0) {
+                    log.fine("Enabling failover IP list for Gateway " + ssg);
+                    FailoverStrategy strategy = new StickyFailoverStrategy(addrs);
+                    int max = addrs.length;
+                    client = new FailoverHttpClient(client, strategy, max, log);
+                }
+
+                // (SimpleHttpClient passes-through requests, so it won't wrap FailoverHttpRequest instances.)
+                simpleHttpClient = new SimpleHttpClient(client);
+            }
             return simpleHttpClient;
         }
     }

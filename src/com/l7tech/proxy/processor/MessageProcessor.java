@@ -518,6 +518,10 @@ public class MessageProcessor {
         return url;
     }
 
+    private static class WrappedInputStreamFactoryException extends RuntimeException {
+        private WrappedInputStreamFactoryException(Throwable t) { initCause(t); };
+    }
+
     /**
      * Call the Ssg and obtain its response to the current message.
      *
@@ -603,6 +607,23 @@ public class MessageProcessor {
             params.setExtraHeaders((HttpHeader[])headers.toArray(new HttpHeader[0]));
             httpRequest = httpClient.createRequest(GenericHttpClient.POST, params);
             httpRequest.setInputStream(bodyInputStream);
+            
+            // If failover enabled, set an InputStreamFactory to prevent the failover client from buffering
+            // everything in RAM
+            if (httpRequest instanceof FailoverHttpClient.FailoverHttpRequest) {
+                FailoverHttpClient.FailoverHttpRequest failover = (FailoverHttpClient.FailoverHttpRequest)httpRequest;
+                failover.setInputStreamFactory(new FailoverHttpClient.InputStreamFactory() {
+                    public InputStream getInputStream() {
+                        try {
+                            return request.getMimeKnob().getEntireMessageBodyAsInputStream();
+                        } catch (IOException e) {
+                            throw new WrappedInputStreamFactoryException(e);
+                        } catch (NoSuchPartException e) {
+                            throw new WrappedInputStreamFactoryException(e);
+                        }
+                    }
+                });
+            }
 
             log.info("Posting request to Gateway " + ssg + ", url " + url);
             httpResponse = httpRequest.getResponse();
@@ -809,9 +830,10 @@ public class MessageProcessor {
             response.getXmlKnob().setProcessorResult(processorResult);
             response.getHttpResponseKnob().setStatus(status);
             checkStatus(status, responseHeaders, url, ssg);
-
+        } catch (WrappedInputStreamFactoryException e) {
+            throw new CausedIOException(e);
         } catch (NoSuchPartException e) {
-            throw new CausedIOException("Response from Gateway used invalid or unsupported MIME multipart syntax", e);
+            throw new CausedIOException(e);
         } finally {
             if (httpRequest != null || httpResponse != null) {
                 if (httpRequest != null)

@@ -49,7 +49,7 @@ public class UrlConnectionHttpClient implements GenericHttpClient {
                 httpsConn = null;
             }
 
-            if (method == POST)
+            if (method.needsRequestBody())
                 conn.setDoOutput(true);
             conn.setAllowUserInteraction(false);
             conn.setDefaultUseCaches(false);
@@ -78,8 +78,8 @@ public class UrlConnectionHttpClient implements GenericHttpClient {
                 private InputStream requestInputStream = null;
 
                 public void setInputStream(InputStream bodyInputStream) {
-                    if (method != POST)
-                        throw new UnsupportedOperationException("bodyInputStream only needed for POST request");
+                    if (!method.needsRequestBody())
+                        throw new UnsupportedOperationException("bodyInputStream not needed for request method: " + method);
                     if (completedRequest)
                         throw new IllegalStateException("This HTTP request is already closed");
                     requestInputStream = bodyInputStream;

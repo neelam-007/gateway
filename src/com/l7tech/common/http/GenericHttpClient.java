@@ -10,11 +10,25 @@ package com.l7tech.common.http;
  * A generic HTTP client interface.
  */
 public interface GenericHttpClient {
-    public static GenericHttpMethod GET = new GenericHttpMethod();
-    public static GenericHttpMethod POST = new GenericHttpMethod();
+    public static GenericHttpMethod GET = new GenericHttpMethod("GET", false);
+    public static GenericHttpMethod POST = new GenericHttpMethod("POST", true);
 
     public static class GenericHttpMethod {
-        private GenericHttpMethod() {}
+        private final String name;
+        private final boolean needsRequestBody;
+
+        private GenericHttpMethod(String name, boolean needsRequestBody) {
+            this.name = name;
+            this.needsRequestBody = needsRequestBody;
+        }
+
+        public boolean needsRequestBody() {
+            return needsRequestBody;
+        }
+
+        public String toString() {
+            return name;
+        }
     }
 
     /**
