@@ -404,7 +404,7 @@ public class SsgKeyStoreManager {
             log.info("Generating new RSA key pair (could take several seconds)...");
             Managers.getCredentialManager().notifyLengthyOperationStarting(ssg, "Generating new client certificate...");
             keyPair = JceProvider.generateRsaKeyPair();
-            csr = JceProvider.makeCsr(ssg.getUsername(), keyPair.getPublic(), keyPair.getPrivate());
+            csr = JceProvider.makeCsr(ssg.getUsername(), keyPair);
         } finally {
             Managers.getCredentialManager().notifyLengthyOperationFinished(ssg);
         }

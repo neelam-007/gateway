@@ -73,14 +73,15 @@ public class BouncyCastleJceProviderEngine implements JceProviderEngine {
     /**
      * Generate a CertificateRequest using the current Crypto provider.
      *
-     * @param username
-     * @param publicKey
-     * @param privateKey
+     * @param username  the username to put in the cert
+     * @param keyPair the public and private keys
      * @return
      */
-    public CertificateRequest makeCsr(String username, PublicKey publicKey, PrivateKey privateKey) throws InvalidKeyException, SignatureException {
+    public CertificateRequest makeCsr(String username, KeyPair keyPair) throws InvalidKeyException, SignatureException {
         X509Name subject = new X509Name("cn=" + username);
         ASN1Set attrs = null;
+        PublicKey publicKey = keyPair.getPublic();
+        PrivateKey privateKey = keyPair.getPrivate();
 
         // Generate request
         PKCS10CertificationRequest certReq = null;

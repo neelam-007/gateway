@@ -8,12 +8,10 @@ package com.l7tech.common.security;
 
 import com.l7tech.common.security.prov.bc.BouncyCastleJceProviderEngine;
 
+import java.security.InvalidKeyException;
 import java.security.KeyPair;
 import java.security.Provider;
-import java.security.PublicKey;
-import java.security.PrivateKey;
 import java.security.SignatureException;
-import java.security.InvalidKeyException;
 
 /**
  * Provide a single point where our JCE provider can be altered.
@@ -39,11 +37,9 @@ public abstract class JceProvider {
         return engine.generateRsaKeyPair();
     }
 
-    public static CertificateRequest makeCsr(String username,
-                                             PublicKey publicKey,
-                                             PrivateKey privateKey)
-            throws SignatureException, InvalidKeyException, RuntimeException
+    public static CertificateRequest makeCsr(String username, KeyPair keyPair)
+                 throws SignatureException, InvalidKeyException, RuntimeException
     {
-        return engine.makeCsr(username, publicKey, privateKey);
+        return engine.makeCsr(username, keyPair);
     }
 }

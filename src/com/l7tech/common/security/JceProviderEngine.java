@@ -6,11 +6,9 @@
 
 package com.l7tech.common.security;
 
-import java.security.Provider;
-import java.security.KeyPair;
-import java.security.PublicKey;
-import java.security.PrivateKey;
 import java.security.InvalidKeyException;
+import java.security.KeyPair;
+import java.security.Provider;
 import java.security.SignatureException;
 
 /**
@@ -46,10 +44,9 @@ public interface JceProviderEngine {
     /**
      * Generate a CertificateRequest using the current Crypto provider.
      *
-     * @param username
-     * @param publicKey
-     * @param privateKey
+     * @param username  the username, ie "lyonsm"
+     * @param keyPair  the public and private keys
      * @return
      */
-    CertificateRequest makeCsr(String username, PublicKey publicKey, PrivateKey privateKey) throws InvalidKeyException, SignatureException;
+    CertificateRequest makeCsr(String username, KeyPair keyPair) throws InvalidKeyException, SignatureException;
 }
