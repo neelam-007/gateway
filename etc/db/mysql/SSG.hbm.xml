@@ -26,7 +26,7 @@
         <property name="serializedProps" type="string" column="properties" />
     </class>
 
-    <class name="com.l7tech.identity.Group" table="internal_group">
+    <class name="com.l7tech.identity.internal.InternalGroup" table="internal_group">
         <id name="oid" column="oid" type="long" unsaved-value="-1">
             <generator class="hilo.long"/>
         </id>
@@ -36,13 +36,15 @@
         <property name="description" type="string"/>
         <property name="name" type="string"/>
 
+        <!--
         <set role="members" lazy="false" table="internal_user_group">
             <key column="internal_group"/>
             <many-to-many class="com.l7tech.identity.User" column="internal_user"/>
         </set>
+        -->
     </class>
 
-    <class name="com.l7tech.identity.User" table="internal_user">
+    <class name="com.l7tech.identity.internal.InternalUser" table="internal_user">
         <id name="oid" column="oid" type="long" unsaved-value="-1">
             <generator class="hilo.long"/>
         </id>
@@ -57,10 +59,22 @@
         <property name="email" type="string"/>
         <property name="title" type="string"/>
 
+        <!--
         <set role="groups" lazy="false" table="internal_user_group">
             <key column="internal_user"/>
             <many-to-many class="com.l7tech.identity.Group" column="internal_group"/>
         </set>
+        -->
+    </class>
+
+    <class name="com.l7tech.identity.internal.GroupMembership" table="internal_user_group">
+        <composite-id>
+            <key-property name="userOid"/>
+            <key-property name="groupOid"/>
+        </composite-id>
+
+        <property name="userOid" type="long" column="internal_user"/>
+        <property name="groupOid" type="long" column="internal_group"/>
     </class>
 
     <class name="com.l7tech.service.PublishedService" table="published_service">

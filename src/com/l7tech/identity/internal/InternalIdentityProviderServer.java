@@ -6,7 +6,7 @@ import com.l7tech.identity.cert.ClientCertManager;
 import com.l7tech.logging.LogManager;
 import com.l7tech.objectmodel.*;
 import com.l7tech.policy.assertion.credential.CredentialFormat;
-import com.l7tech.policy.assertion.credential.PrincipalCredentials;
+import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.assertion.credential.http.HttpDigest;
 import com.l7tech.common.util.KeystoreUtils;
 import com.l7tech.common.util.Locator;
@@ -59,15 +59,14 @@ public class InternalIdentityProviderServer implements IdentityProvider {
         return groupManager;
     }
 
-    public void authenticate( PrincipalCredentials pc ) throws AuthenticationException {
-        User authUser = pc.getUser();
+    public User authenticate( LoginCredentials pc ) throws AuthenticationException {
+        String login = pc.getLogin();
         byte[] credentials = pc.getCredentials();
 
-        String login = authUser.getLogin();
         try {
-            User dbUser = null;
+            InternalUser dbUser = null;
             try {
-                dbUser = userManager.findByLogin( login );
+                dbUser = (InternalUser)userManager.findByLogin( login );
             } catch (FindException e) {
                 logger.log(Level.SEVERE, "exception looking for user", e);
                 dbUser = null;
@@ -134,6 +133,7 @@ public class InternalIdentityProviderServer implements IdentityProvider {
                         logger.log(Level.SEVERE, "FindException exception looking for user cert", e);
                         dbCert = null;
                     }
+
                     if ( dbCert == null ) {
                         String err = "No certificate found for user " + login;
                         logger.warning(err);
@@ -147,19 +147,18 @@ public class InternalIdentityProviderServer implements IdentityProvider {
                         throw new AuthenticationException( err );
                     }
 
-
                     if ( maybeCert instanceof X509Certificate ) {
                         X509Certificate pcCert = (X509Certificate)maybeCert;
                         logger.fine("Request cert serial# is " + pcCert.getSerialNumber().toString());
                         if ( pcCert.equals( dbCertX509 ) ) {
                             logger.finest("Authenticated user " + login + " using a client certificate" );
-                            pc.getUser().copyFrom( dbUser );
                             // remember that this cert was used at least once successfully
                             try {
                                 PersistenceContext.getCurrent().beginTransaction();
                                 man.forbidCertReset(dbUser);
-                                PersistenceContext.getCurrent().flush();
+                                PersistenceContext.getCurrent().commitTransaction();
                                 // dont close context here. the message processor will do it
+                                return dbUser;
                             } catch (SQLException e) {
                                 logger.log(Level.WARNING, "transaction error around forbidCertReset", e);
                             } catch (TransactionException e) {
@@ -167,7 +166,6 @@ public class InternalIdentityProviderServer implements IdentityProvider {
                             } catch (ObjectModelException e) {
                                 logger.log(Level.WARNING, "transaction error around forbidCertReset", e);
                             }
-                            return;
                         } else {
                             String err = "Failed to authenticate user " + login + " using an SSL client certificate (request certificate doesn't match database)";
                             logger.warning(err);
@@ -183,11 +181,11 @@ public class InternalIdentityProviderServer implements IdentityProvider {
                     String authPassHash = null;
 
                     if ( format == CredentialFormat.CLEARTEXT ) {
-                        authPassHash = User.encodePasswd( login, new String( credentials, ENCODING ), HttpDigest.REALM );
+                        authPassHash = UserBean.encodePasswd( login, new String( credentials, ENCODING ), HttpDigest.REALM );
                     } else if ( format == CredentialFormat.DIGEST ) {
                         Map authParams = (Map)pc.getPayload();
                         if ( authParams == null ) {
-                            String err = "No Digest authentication parameters found in PrincipalCredentials payload!";
+                            String err = "No Digest authentication parameters found in LoginCredentials payload!";
                             logger.severe(err);
                             throw new MissingCredentialsException( err );
                         }
@@ -215,8 +213,7 @@ public class InternalIdentityProviderServer implements IdentityProvider {
                         String response = new String( credentials );
 
                         if ( response.equals( expectedResponse ) ) {
-                            authUser.copyFrom( dbUser );
-                            return;
+                            return dbUser;
                         } else {
                             throw new BadCredentialsException();
                         }
@@ -225,14 +222,14 @@ public class InternalIdentityProviderServer implements IdentityProvider {
                     }
 
                     if ( dbPassHash.equals( authPassHash ) ) {
-                        authUser.copyFrom( dbUser );
-                        return;
+                        return dbUser;
                     }
 
                     logger.info("Incorrect password for login " + login);
 
                     throw new BadCredentialsException();
                 }
+                return null;
             }
         } catch ( UnsupportedEncodingException uee ) {
             logger.log(Level.SEVERE, null, uee);

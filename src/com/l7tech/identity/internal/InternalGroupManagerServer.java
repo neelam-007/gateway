@@ -1,11 +1,10 @@
 package com.l7tech.identity.internal;
 
-import com.l7tech.objectmodel.*;
-import com.l7tech.identity.GroupManager;
-import com.l7tech.identity.Group;
-import com.l7tech.identity.IdProvConfManagerServer;
-import com.l7tech.identity.User;
+import cirrus.hibernate.*;
+import com.l7tech.identity.*;
 import com.l7tech.logging.LogManager;
+import com.l7tech.objectmodel.*;
+import com.l7tech.objectmodel.TransactionException;
 
 import java.sql.SQLException;
 import java.util.*;
@@ -30,7 +29,7 @@ public class InternalGroupManagerServer extends HibernateEntityManager implement
                 case 0:
                     return null;
                 case 1:
-                    Group g = (Group)groups.get(0);
+                    InternalGroup g = (InternalGroup)groups.get(0);
                     g.setProviderId(IdProvConfManagerServer.INTERNALPROVIDER_SPECIAL_OID);
                     return g;
                 default:
@@ -48,7 +47,7 @@ public class InternalGroupManagerServer extends HibernateEntityManager implement
 
     public Group findByPrimaryKey(String oid) throws FindException {
         try {
-            Group out = (Group)_manager.findByPrimaryKey(getContext(), getImpClass(), Long.parseLong(oid));
+            InternalGroup out = (InternalGroup)_manager.findByPrimaryKey(getContext(), getImpClass(), Long.parseLong(oid));
             out.setProviderId(IdProvConfManagerServer.INTERNALPROVIDER_SPECIAL_OID);
             return out;
         } catch (SQLException se) {
@@ -60,7 +59,7 @@ public class InternalGroupManagerServer extends HibernateEntityManager implement
 
     /**
      * Search for the group headers using the given search string.
-     * 
+     *
      * @param searchString the search string (supports '*' wildcards)
      * @return the never <b>null</b> collection of entitites
      * @throws FindException thrown if an SQL error is encountered
@@ -93,36 +92,55 @@ public class InternalGroupManagerServer extends HibernateEntityManager implement
 
     public void delete(Group group) throws DeleteException {
         try {
+            InternalGroup imp = (InternalGroup)group;
             // it is not allowed to delete the admin group
-            if (Group.ADMIN_GROUP_NAME.equals(group.getName())) {
+            if ( Group.ADMIN_GROUP_NAME.equals( imp.getName() ) ) {
                 logger.severe("an attempt to delete the admin group was made.");
                 throw new DeleteException("Cannot delete administrator group.");
             }
-            _manager.delete(getContext(), group);
+            _manager.delete(getContext(), imp);
         } catch (SQLException se) {
             throw new DeleteException(se.toString(), se);
         }
     }
 
-    public long save(Group group) throws SaveException {
+    public void delete(String identifier) throws DeleteException {
+        InternalGroup imp = new InternalGroup();
+        imp.setOid( Long.valueOf( identifier ).longValue() );
+        delete( imp );
+    }
+
+    public String save(Group group) throws SaveException {
         try {
+            InternalGroup imp;
+            if ( group instanceof GroupBean ) {
+                imp = new InternalGroup( (GroupBean)group );
+            } else {
+                imp = (InternalGroup)group;
+            }
             // check that no existing group have same name
             Group existingGrp = null;
             try {
-                existingGrp = findByName(group.getName());
+                existingGrp = findByPrimaryKey( group.getUniqueIdentifier() );
             } catch (FindException e) {
                 existingGrp = null;
             }
             if (existingGrp != null) {
                 throw new SaveException("This group cannot be saved because an existing group already uses the name '" + group.getName() + "'");
             }
-            return _manager.save(getContext(), group);
+            return new Long( _manager.save(getContext(), imp) ).toString();
         } catch (SQLException se) {
             throw new SaveException(se.toString(), se);
         }
     }
 
     public void update(Group group) throws UpdateException {
+        InternalGroup imp;
+        if ( group instanceof GroupBean ) {
+            imp = new InternalGroup( (GroupBean)group );
+        } else {
+            imp = (InternalGroup)group;
+        }
         try {
             // if this is the admin group, make sure that we are not removing all memberships
             if (Group.ADMIN_GROUP_NAME.equals(group.getName())) {
@@ -131,8 +149,8 @@ public class InternalGroupManagerServer extends HibernateEntityManager implement
                     throw new UpdateException("Cannot update admin group with no memberships!");
                 }
             }
-            Group originalGroup = findByPrimaryKey(Long.toString(group.getOid()));
-            originalGroup.copyFrom(group);
+            InternalGroup originalGroup = (InternalGroup)findByPrimaryKey( group.getUniqueIdentifier() );
+            originalGroup.copyFrom(imp);
             _manager.update(getContext(), originalGroup);
         } catch (FindException e) {
             throw new UpdateException("Update called on group that does not already exist", e);
@@ -142,7 +160,7 @@ public class InternalGroupManagerServer extends HibernateEntityManager implement
     }
 
     public EntityHeader groupToHeader(Group group) {
-        return new EntityHeader(group.getOid(), EntityType.GROUP, group.getName(), group.getDescription());
+        return new EntityHeader(group.getUniqueIdentifier(), EntityType.GROUP, group.getName(), group.getDescription());
     }
 
     public Group headerToGroup(EntityHeader header) throws FindException {
@@ -150,69 +168,244 @@ public class InternalGroupManagerServer extends HibernateEntityManager implement
     }
 
     public boolean isMember( User user, Group group ) throws FindException {
-        return false;
+        HibernatePersistenceContext hpc = null;
+        try {
+            hpc = context();
+            Session s = hpc.getSession();
+            Query query = s.createQuery( HQL_ISMEMBER );
+            return ( query.iterate().hasNext() );
+        } catch (SQLException e) {
+            throw new FindException( e.getMessage(), e );
+        } catch (HibernateException e) {
+            throw new FindException( e.getMessage(), e );
+        } finally {
+            if ( hpc != null ) hpc.close();
+        }
     }
 
     public void addUsers(Group group, Set users) throws FindException, UpdateException {
+        InternalGroup imp = (InternalGroup)group;
+        GroupMembership membership = new GroupMembership( -1, imp.getOid() );
+        HibernatePersistenceContext hpc = null;
+        try {
+            hpc = context();
+            Session s = hpc.getSession();
+            for (Iterator i = users.iterator(); i.hasNext();) {
+                InternalUser user = (InternalUser)i.next();
+                membership.setUserOid( user.getOid() );
+                s.save( membership );
+            }
+            s.flush();
+        } catch (SQLException e) {
+            throw new FindException( e.getMessage(), e );
+        } catch (HibernateException e) {
+            throw new FindException( e.getMessage(), e );
+        } finally {
+            if ( hpc != null ) hpc.close();
+        }
     }
 
-    public void removeUsers(Group group, Set users) throws FindException, UpdateException {
+    public void removeUsers( Group group, Set users ) throws FindException, UpdateException {
+        InternalGroup imp = (InternalGroup)group;
+        GroupMembership membership = new GroupMembership( -1, imp.getOid() );
+        HibernatePersistenceContext hpc = null;
+        try {
+            hpc = context();
+            Session s = hpc.getSession();
+            for (Iterator i = users.iterator(); i.hasNext();) {
+                InternalUser user = (InternalUser)i.next();
+                membership.setUserOid( user.getOid() );
+                s.delete( membership );
+            }
+            s.flush();
+        } catch (SQLException e) {
+            throw new FindException( e.getMessage(), e );
+        } catch (HibernateException e) {
+            throw new FindException( e.getMessage(), e );
+        } finally {
+            if ( hpc != null ) hpc.close();
+        }
     }
 
     public void addUser(User user, Set groups) throws FindException, UpdateException {
+        InternalUser imp = (InternalUser)user;
+        GroupMembership membership = new GroupMembership( imp.getOid(), -1 );
+        HibernatePersistenceContext hpc = null;
+        try {
+            hpc = context();
+            Session s = hpc.getSession();
+            for (Iterator i = groups.iterator(); i.hasNext();) {
+                InternalGroup group = (InternalGroup)i.next();
+                membership.setGroupOid( group.getOid() );
+                s.save( membership );
+            }
+            s.flush();
+        } catch (SQLException e) {
+            throw new FindException( e.getMessage(), e );
+        } catch (HibernateException e) {
+            throw new FindException( e.getMessage(), e );
+        } finally {
+            if ( hpc != null ) hpc.close();
+        }
     }
 
     public void removeUser(User user, Set groups) throws FindException, UpdateException {
-    }
-
-    public void addUser(User user, Group group) throws FindException, UpdateException {
-    }
-
-    public void removeUser(User user, Group group) throws FindException, UpdateException {
-    }
-
-    public Set getGroups(User user) throws FindException {
-        return null;
-    }
-
-    public Set getUsers(Group group) throws FindException {
-        return null;
-    }
-
-    public Set groupsToHeaders(Set groups) {
-        Group group;
-        EntityHeader header;
-        Set result = new HashSet();
-        for (Iterator i = groups.iterator(); i.hasNext();) {
-            group = (Group)i.next();
-            header = groupToHeader(group);
-            result.add(header);
-        }
-        return result;
-    }
-
-    public Set headersToGroups(Set headers) throws FindException {
-        Group group;
-        EntityHeader header;
-        Set result = new HashSet();
-        for (Iterator i = headers.iterator(); i.hasNext();) {
-            header = (EntityHeader)i.next();
-            if (header.getType() == EntityType.GROUP) {
-                group = headerToGroup(header);
-                result.add(group);
-            } else {
-                IllegalArgumentException iae = new IllegalArgumentException("EntityHeader " + header + " doesn't represent a Group!");
-                logger.throwing(getClass().getName(), "headersToGroups", iae);
-                throw iae;
+        InternalUser imp = (InternalUser)user;
+        GroupMembership membership = new GroupMembership( imp.getOid(), -1 );
+        HibernatePersistenceContext hpc = null;
+        try {
+            hpc = context();
+            Session s = hpc.getSession();
+            for (Iterator i = groups.iterator(); i.hasNext();) {
+                InternalGroup group = (InternalGroup)i.next();
+                membership.setGroupOid( group.getOid() );
+                s.delete( membership );
             }
+            s.flush();
+        } catch (SQLException e) {
+            throw new FindException( e.getMessage(), e );
+        } catch (HibernateException e) {
+            throw new FindException( e.getMessage(), e );
+        } finally {
+            if ( hpc != null ) hpc.close();
         }
-        return result;
     }
 
-    private void createMembership( User user, Group group ) throws UpdateException {
+    public void addUser( User user, Group group ) throws FindException, UpdateException {
+        InternalUser userImp = (InternalUser)user;
+        InternalGroup groupImp = (InternalGroup)group;
+        HibernatePersistenceContext hpc = null;
+        try {
+            hpc = context();
+            Session s = hpc.getSession();
+
+            s.save( new GroupMembership( userImp.getOid(), groupImp.getOid() ) );
+
+            s.flush();
+        } catch (SQLException e) {
+            throw new FindException( e.getMessage(), e );
+        } catch (HibernateException e) {
+            throw new FindException( e.getMessage(), e );
+        } finally {
+            if ( hpc != null ) hpc.close();
+        }
     }
 
-    private void removeMembership( User user, Group group ) throws UpdateException {
+    public void removeUser( User user, Group group ) throws FindException, UpdateException {
+        InternalUser userImp = (InternalUser)user;
+        InternalGroup groupImp = (InternalGroup)group;
+        HibernatePersistenceContext hpc = null;
+        try {
+            hpc = context();
+            Session s = hpc.getSession();
+            s.delete( new GroupMembership( userImp.getOid(), groupImp.getOid() ) );
+            s.flush();
+        } catch (SQLException e) {
+            throw new FindException( e.getMessage(), e );
+        } catch (HibernateException e) {
+            throw new FindException( e.getMessage(), e );
+        } finally {
+            if ( hpc != null ) hpc.close();
+        }
+    }
+
+    public Set getGroupHeaders(User user) throws FindException {
+        return getGroupHeaders( user.getUniqueIdentifier() );
+    }
+
+    public Set getGroupHeaders( String userId ) throws FindException {
+        HibernatePersistenceContext hpc = null;
+        Set headers = new HashSet();
+        try {
+            hpc = context();
+            Session s = hpc.getSession();
+            String hql = HQL_GETGROUPS;
+            Query query = s.createQuery( hql );
+            query.setString( 0, userId );
+            for (Iterator i = query.iterate(); i.hasNext();) {
+                InternalGroup group = (InternalGroup)i.next();
+                headers.add( new EntityHeader( group.getOid(), EntityType.GROUP, group.getName(), group.getDescription() ) );
+            }
+            return headers;
+        } catch (SQLException se ) {
+            throw new FindException( se.toString(), se );
+        } catch ( HibernateException he ) {
+            throw new FindException( he.toString(), he );
+        } finally {
+            if ( hpc != null ) hpc.close();
+        }
+
+    }
+
+    public void setGroupHeaders(User user, Set groupHeaders) throws FindException, UpdateException {
+        setGroupHeaders( user.getUniqueIdentifier(), groupHeaders );
+    }
+
+    public void setGroupHeaders(String userId, Set groupHeaders) throws FindException, UpdateException {
+        HibernatePersistenceContext hpc = null;
+        try {
+            hpc = context();
+            hpc.beginTransaction();
+
+            Session s = hpc.getSession();
+            String hql = HQL_SETGROUPS_DELETE;
+            s.delete( hql, new Long( userId ), Hibernate.LONG );
+
+            GroupMembership membership;
+            for (Iterator i = groupHeaders.iterator(); i.hasNext();) {
+                EntityHeader header = (EntityHeader) i.next();
+                membership = new GroupMembership( new Long( userId ).longValue(), header.getOid() );
+                s.save( membership );
+            }
+
+            hpc.commitTransaction();
+        } catch (SQLException se ) {
+            throw new FindException( se.toString(), se );
+        } catch ( TransactionException te ) {
+            throw new UpdateException( te.toString(), te );
+        } catch ( HibernateException he ) {
+            throw new FindException( he.toString(), he );
+        } finally {
+            if ( hpc != null ) hpc.close();
+        }
+
+    }
+
+    private HibernatePersistenceContext context() throws SQLException {
+        return (HibernatePersistenceContext)PersistenceContext.getCurrent();
+    }
+
+    public Set getUserHeaders(Group group) throws FindException {
+        return getUserHeaders( group.getUniqueIdentifier() );
+    }
+
+    public Set getUserHeaders(String groupId) throws FindException {
+        HibernatePersistenceContext hpc = null;
+        Set headers = new HashSet();
+        try {
+            hpc = context();
+            Session s = hpc.getSession();
+            String hql = HQL_GETUSERS;
+            Query query = s.createQuery( hql );
+            query.setString( 0, groupId );
+            for (Iterator i = query.iterate(); i.hasNext();) {
+                InternalUser user = (InternalUser)i.next();
+                headers.add( new EntityHeader( user.getOid(), EntityType.USER, user.getName(), null ) );
+            }
+            return headers;
+        } catch (SQLException se ) {
+            throw new FindException( se.toString(), se );
+        } catch ( HibernateException he ) {
+            throw new FindException( he.toString(), he );
+        } finally {
+            if ( hpc != null ) hpc.close();
+        }
+    }
+
+    public void setUserHeaders(Group group, Set groupHeaders) throws FindException, UpdateException {
+    }
+
+    public void setUserHeaders(String groupId, Set groupHeaders) throws FindException, UpdateException {
     }
 
     public String getTableName() {
@@ -220,7 +413,7 @@ public class InternalGroupManagerServer extends HibernateEntityManager implement
     }
 
     public Class getImpClass() {
-        return Group.class;
+        return InternalGroup.class;
     }
 
     public Class getInterfaceClass() {
@@ -228,4 +421,25 @@ public class InternalGroupManagerServer extends HibernateEntityManager implement
     }
 
     private Logger logger = null;
+
+    private static final String HQL_GETGROUPS = "select grp from grp in class com.l7tech.identity.Group, " +
+                             "membership in class com.l7tech.identity.internal.GroupMembership " +
+                             "where membership.groupOid = grp.oid " +
+                             "and membership.userOid = ?";
+
+    private static final String HQL_GETUSERS = "select user from user in class com.l7tech.identity.User, " +
+                             "membership in class com.l7tech.identity.internal.GroupMembership " +
+                             "where membership.userOid = user.oid " +
+                             "and membership.groupOid = ?";
+
+    public static final String HQL_ISMEMBER = "from membership in class com.l7tech.identity.internal.GroupMembership " +
+                             "where userOid = ? " +
+                             "and groupOid = ?";
+
+    public static final String HQL_SETGROUPS_DELETE = "from membership in class com.l7tech.identity.internal.GroupMembership " +
+            "where userOid = ?";
+
+    public static final String HQL_SETUSERS_DELETE = "from membership in class com.l7tech.identity.internal.GroupMembership " +
+            "where groupOid = ?";
+
 }
