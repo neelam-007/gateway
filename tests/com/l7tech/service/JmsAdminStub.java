@@ -69,7 +69,6 @@ public class JmsAdminStub implements JmsAdmin {
         connection.setOid(oid);
         Long key = new Long(oid);
         connections.put(key, connection);
-        System.out.println("Saved stub JmsConnection oid=" + oid);
         return oid;
     }
 
