@@ -14,6 +14,8 @@ import com.l7tech.policy.assertion.identity.IdentityAssertion;
 import com.l7tech.policy.assertion.identity.SpecificUser;
 import com.l7tech.policy.assertion.xml.XslTransformation;
 import com.l7tech.policy.assertion.xmlsec.RequestWssX509Cert;
+import com.l7tech.policy.assertion.xmlsec.RequestWssIntegrity;
+import com.l7tech.policy.assertion.xmlsec.ResponseWssConfidentiality;
 
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -237,6 +239,16 @@ class PathValidator {
             } else if (ass.getDirection() == XslTransformation.APPLY_TO_RESPONSE && !seenRouting) {
                 result.addError(new PolicyValidatorResult.Error(a, assertionPath,
                   "XSL transformation on the response must be positioned after routing.", null));
+            }
+        } else if (a instanceof RequestWssIntegrity) {
+            if (!seenWssSignature) {
+                result.addWarning(new PolicyValidatorResult.Warning(a, assertionPath,
+                  "This assertion should be preceeded by an WSS Signature assertion.", null));
+            }
+        } else if (a instanceof ResponseWssConfidentiality) {
+            if (!seenWssSignature) {
+                result.addWarning(new PolicyValidatorResult.Warning(a, assertionPath,
+                  "This assertion should be preceeded by a WSS Signature assertion.", null));
             }
         }
         seenPreconditions = true;
