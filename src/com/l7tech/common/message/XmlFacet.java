@@ -38,7 +38,7 @@ class XmlFacet extends MessageFacet {
      *                  Typically, this would be the Message's already-installed MimeFacet.
      * @throws IOException if there is a problem obtaining the first part.
      *                     (Typically, the delegate is the MimeFacet and this can't happen.)
-     * @throws SAXException if the outer content type is not text/xml.
+     * @throws SAXException if the first part's content type is not text/xml.
      */
     public XmlFacet(Message message, MessageFacet delegate) throws IOException, SAXException {
         super(message, delegate);
@@ -50,7 +50,7 @@ class XmlFacet extends MessageFacet {
         if (c == MimeKnob.class) {
             // Wrap it with one that DTRT
             final MimeKnob mk = (MimeKnob)super.getKnob(MimeKnob.class);
-            return new MimeKnobImpl(mk);
+            return new MimeKnobWrapper(mk);
         } else if (c == XmlKnob.class) {
             final MimeKnob mk = (MimeKnob)super.getKnob(MimeKnob.class);
             return new XmlKnobImpl(mk);
@@ -58,10 +58,10 @@ class XmlFacet extends MessageFacet {
         return super.getKnob(c);
     }
 
-    private class MimeKnobImpl implements MimeKnob {
+    private class MimeKnobWrapper implements MimeKnob {
         private final MimeKnob mk;
 
-        public MimeKnobImpl(MimeKnob mk) {
+        public MimeKnobWrapper(MimeKnob mk) {
             if (mk == null) throw new NullPointerException();
             this.mk = mk;
         }
