@@ -6,6 +6,9 @@
 
 package com.l7tech.skunkworks;
 
+import com.l7tech.common.gui.util.PauseListener;
+import com.l7tech.common.gui.util.TextComponentPauseListenerManager;
+
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JTextField;

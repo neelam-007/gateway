@@ -6,6 +6,8 @@
 
 package com.l7tech.skunkworks;
 
+import com.l7tech.common.gui.widgets.SquigglyTextField;
+
 import javax.swing.JFrame;
 
 /**
