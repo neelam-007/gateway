@@ -146,6 +146,7 @@ public class MainWindow extends JFrame {
     private ImportPolicyFromFileAction importPolicyAction;
     private SavePolicyAction savePolicyAction;
     private static MainWindow singleMainWindow = null;
+    private boolean disconnected = false;
 
     /**
      * MainWindow constructor comment.
@@ -192,6 +193,7 @@ public class MainWindow extends JFrame {
         for (int i = 0; i < listeners.length; i++) {
             ((LogonListener)listeners[i]).onLogon(event);
         }
+        disconnected = false;
     }
 
     /**
@@ -204,6 +206,11 @@ public class MainWindow extends JFrame {
         for (int i = 0; i < listeners.length; i++) {
             ((LogonListener)listeners[i]).onLogoff(event);
         }
+        disconnected = true;
+    }
+
+    public boolean isDisconnected() {
+        return disconnected;
     }
 
     /**
