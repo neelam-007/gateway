@@ -81,7 +81,6 @@ public class ServicePanel extends WizardStepPanel {
                     wsdlJTree.setCellRenderer(wsdlTreeRenderer);
 
                     service.setName(wsdl.getDefinition().getTargetNamespace());
-                    service.setUrn(wsdl.getDefinition().getTargetNamespace());
                     service.setWsdlXml(wsdlXml);
                     service.setWsdlUrl(wsdlUrljTextField.getText());
 
@@ -147,7 +146,6 @@ public class ServicePanel extends WizardStepPanel {
             PublishedService publishedService = sa.getService();
 
             publishedService.setName(service.getName());
-            publishedService.setUrn(service.getUrn());
             publishedService.setWsdlXml(service.getWsdlXml());
             publishedService.setWsdlUrl(service.getWsdlUrl());
         } catch (Exception e) {
