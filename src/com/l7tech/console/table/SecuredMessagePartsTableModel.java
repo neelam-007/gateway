@@ -108,7 +108,7 @@ public class SecuredMessagePartsTableModel extends AbstractTableModel {
      * @see #getRowCount
      */
     public int getColumnCount() {
-        return 5;
+        return 3;
     }
 
     /**
@@ -234,7 +234,7 @@ public class SecuredMessagePartsTableModel extends AbstractTableModel {
      * @return false
      */
     public boolean isCellEditable(int rowIndex, int columnIndex) {
-        return true;
+        return columnIndex == 2;
     }
 
     /**
