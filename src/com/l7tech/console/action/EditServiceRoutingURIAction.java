@@ -71,13 +71,12 @@ public class EditServiceRoutingURIAction extends NodeAction {
                         new URL(mw.ssgURL() + NonSoapServicePanel.DEF_PREFIX + res);
                         svc.setRoutingUri(NonSoapServicePanel.DEF_PREFIX + res);
                         Registry.getDefault().getServiceManager().savePublishedService(svc);
-
+                        ((ServiceNode)node).clearServiceHolder();
                         JTree tree = (JTree)TopComponents.getInstance().getComponent(ServicesTree.NAME);
                         if (tree != null) {
                             DefaultTreeModel model = (DefaultTreeModel)tree.getModel();
                             model.nodeChanged(node);
                         }
-                        
                     } catch (MalformedURLException e) {
                         JOptionPane.showMessageDialog(mw, "Invalid URL " + mw.ssgURL() + prefix + res);
                     }
