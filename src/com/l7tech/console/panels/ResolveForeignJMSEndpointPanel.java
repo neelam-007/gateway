@@ -141,7 +141,9 @@ public class ResolveForeignJMSEndpointPanel extends WizardStepPanel {
         try {
             JmsAdmin.JmsTuple[] tuples = admin.findAllTuples();
             for (int i = 0; i < tuples.length; i++) {
-                model.addElement(tuples[i].getEndpoint().getName());
+                if (!tuples[i].getEndpoint().isMessageSource()) {
+                    model.addElement(tuples[i].getEndpoint().getName());
+                }
             }
         } catch (RemoteException e) {
             logger.severe("Error geting tuples");
@@ -154,6 +156,11 @@ public class ResolveForeignJMSEndpointPanel extends WizardStepPanel {
         if (model.getSize() < 1) {
             // disable this option since there are no other options
             changeRadio.setEnabled(false);
+            // check if we need to deselect this option
+            if (changeRadio.isSelected()) {
+                changeRadio.setSelected(false);
+                deleteRadio.setSelected(true);
+            }
         } else {
             changeRadio.setEnabled(true);
         }
