@@ -254,7 +254,7 @@ public class WspTranslator21to30 implements WspTranslator {
             Assertion enforcement = enforcementOr.getChildren().size() > 0 ? (Assertion)enforcementOr : new TrueAssertion();
 
             AllAssertion root = new AllAssertion();
-            if (isCredentialSource || !isResponse)
+            if (isCredentialSource && !isResponse)
                 root.addChild(new RequestWssX509Cert());
             root.addChild(enforcement);
             return WspWriter.toElement(root);
@@ -278,6 +278,7 @@ public class WspTranslator21to30 implements WspTranslator {
                     return;
                 }
 
+                log.severe("Unable to interpret unknown property " + parameterName + " of " + deserializedObject.getClass());
                 super.unknownProperty(originalObject,
                                       problematicParameter,
                                       deserializedObject,
