@@ -15,6 +15,7 @@ import com.l7tech.message.XmlRequest;
 import com.l7tech.message.XmlResponse;
 import com.l7tech.service.PublishedService;
 import com.l7tech.logging.LogManager;
+import com.l7tech.common.BuildInfo;
 import org.apache.commons.httpclient.*;
 import org.apache.commons.httpclient.methods.PostMethod;
 
@@ -34,6 +35,7 @@ import java.util.logging.Logger;
  */
 public class ServerRoutingAssertion implements ServerAssertion {
     public static final String CONTENT_TYPE = "Content-Type";
+    public static final String USER_AGENT = "User-Agent";
     public static final String HOST = "Host";
     public static final String SOAPACTION = "SOAPAction";
     public static final String TEXT_XML = "text/xml";
@@ -46,6 +48,10 @@ public class ServerRoutingAssertion implements ServerAssertion {
         _connectionManager.setMaxConnectionsPerHost( max );
         _connectionManager.setMaxTotalConnections( max * 10 );
     }
+
+    public static final String PRODUCT = "Layer7-SecureSpan-Gateway";
+
+    public static final String DEFAULT_USER_AGENT = PRODUCT + "/v" + BuildInfo.getProductVersion() + "-b" + BuildInfo.getBuildNumber();
 
     /**
      * Forwards the request along to a ProtectedService at the configured URL.
@@ -82,6 +88,7 @@ public class ServerRoutingAssertion implements ServerAssertion {
 
             // TODO: Attachments
             postMethod.setRequestHeader(CONTENT_TYPE, TEXT_XML + "; charset=" + ENCODING.toLowerCase());
+            postMethod.setRequestHeader( USER_AGENT, DEFAULT_USER_AGENT );
             int port = wsdlUrl.getPort();
             StringBuffer hostValue = new StringBuffer(wsdlUrl.getHost());
             if (port != -1) {
@@ -95,7 +102,7 @@ public class ServerRoutingAssertion implements ServerAssertion {
             String password = _data.getPassword();
 
             if ( login != null && password != null) {
-                logger.fine( "Routing with login '" + login + "'" );
+                logger.fine( "Using login '" + login + "'" );
                 synchronized (this) {
                     if (_httpCredentials == null)
                         _httpCredentials = new UsernamePasswordCredentials( login, password );
