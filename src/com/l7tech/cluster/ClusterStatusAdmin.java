@@ -45,4 +45,11 @@ public interface ClusterStatusAdmin extends Remote {
      * @param nodeid the mac of the stale node to remove
      */
     void removeStaleNode(String nodeid) throws RemoteException, DeleteException;
+
+    /**
+     * gets the current system time
+     *
+     * @return java.util.Date  The current system time
+     */
+    java.util.Date getCurrentClusterSystemTime() throws RemoteException;
 }

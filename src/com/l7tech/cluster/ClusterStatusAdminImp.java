@@ -8,6 +8,7 @@ import net.jini.config.ConfigurationException;
 
 import java.io.IOException;
 import java.util.Collection;
+import java.util.Calendar;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.rmi.RemoteException;
@@ -126,6 +127,15 @@ public class ClusterStatusAdminImp extends RemoteService implements ClusterStatu
         } catch (SQLException e) {
             logger.log(Level.WARNING, "error closing context", e);
         }
+    }
+
+    /**
+     * gets the current system time
+     *
+     * @return long  The current system time in milli seconds
+     */
+    public java.util.Date getCurrentClusterSystemTime() throws RemoteException {
+        return Calendar.getInstance().getTime();
     }
 
     private final ClusterInfoManager ciman = ClusterInfoManager.getInstance();
