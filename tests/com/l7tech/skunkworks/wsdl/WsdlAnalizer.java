@@ -31,10 +31,12 @@ public class WsdlAnalizer {
 
     private WsdlAnalizer(Document wsdl) {
         this.wsdl = wsdl;
+        this.schemaElements = extractSchemaElementFromWsdl(wsdl);
     }
 
     public void parseInputOutputs() throws Exception {
-        NodeList inputlist = wsdl.getElementsByTagNameNS("http://schemas.xmlsoap.org/wsdl/", "input");
+        NodeList inputlist = wsdl.getElementsByTagNameNS(WSDL_NS, "input");
+        Collection intputQnames = new ArrayList();
         for (int i = 0; i < inputlist.getLength(); i++) {
             Element item = (Element)inputlist.item(i);
             String msg = item.getAttribute("message");
@@ -45,10 +47,16 @@ public class WsdlAnalizer {
                     QName qn = (QName) iterator.next();
                     System.out.println("\twith schema element: " + qn.getNamespaceURI() + " : " + qn.getLocalPart());
                 }
+                intputQnames.addAll(schemaElements);
             }
         }
+        Element[] schemas = trimSchemasForElements(intputQnames);
+        System.out.println("INPUT SCHEMAS:");
+        for (int i = 0; i < schemas.length; i++) {
+            System.out.println(XmlUtil.nodeToFormattedString(schemas[i]));
+        }
 
-        NodeList outputlist = wsdl.getElementsByTagNameNS("http://schemas.xmlsoap.org/wsdl/", "output");
+        NodeList outputlist = wsdl.getElementsByTagNameNS(WSDL_NS, "output");
         for (int i = 0; i < outputlist.getLength(); i++) {
             Element item = (Element)outputlist.item(i);
             String msg = item.getAttribute("message");
@@ -77,7 +85,7 @@ public class WsdlAnalizer {
 
     private Collection getMessagePartsElementNames(String messageName) {
         if (messages == null) {
-            messages = wsdl.getElementsByTagNameNS("http://schemas.xmlsoap.org/wsdl/", "message");
+            messages = wsdl.getElementsByTagNameNS(WSDL_NS, "message");
         }
         String msgnamewoutprefix = messageName;
         int prefixendpos = messageName.indexOf(':');
@@ -92,7 +100,7 @@ public class WsdlAnalizer {
             if (msgname == null) continue;
             if (msgname.equals(messageName) || msgname.equals(msgnamewoutprefix)) {
                 // add all parts elements
-                List parts = XmlUtil.findChildElementsByName(item, "http://schemas.xmlsoap.org/wsdl/", "part");
+                List parts = XmlUtil.findChildElementsByName(item, WSDL_NS, "part");
                 for (Iterator iterator = parts.iterator(); iterator.hasNext();) {
                     Element part = (Element) iterator.next();
                     String elementname = part.getAttribute("element");
@@ -127,8 +135,73 @@ public class WsdlAnalizer {
         }
     }
 
+    private NodeList extractSchemaElementFromWsdl(Document wsdl)  {
+        if (wsdl == null) return null;
+        NodeList potentiallists = wsdl.getDocumentElement().getElementsByTagName(WSDL_TYPES_ELNAME);
+        Element typesel = null;
+        switch (potentiallists.getLength()) {
+            case 1:
+                typesel = (Element)potentiallists.item(0);
+                break;
+            default:
+                break;
+        }
+        if (typesel == null) {
+            potentiallists = wsdl.getDocumentElement().getElementsByTagNameNS(WSDL_NS,
+                                                                              WSDL_TYPES_ELNAME);
+            typesel = null;
+            switch (potentiallists.getLength()) {
+                case 1:
+                    typesel = (Element)potentiallists.item(0);
+                    break;
+                default:
+                    break;
+            }
+        }
+
+        if (typesel == null) {
+            return null;
+        }
+        return typesel.getElementsByTagNameNS(W3C_XML_SCHEMA, TOP_SCHEMA_ELNAME);
+    }
+
+    private Element[] trimSchemasForElements(Collection qnames) {
+        Element[] output = new Element[schemaElements.getLength()];
+        for (int i = 0; i < schemaElements.getLength(); i++) {
+            // clone the schema
+            output[i] = (Element)(schemaElements.item(i).cloneNode(true));
+            // only keep the elements that are in the qnames passed
+            String tns = output[i].getAttribute("targetNamespace");
+            NodeList schemaElements = output[i].getElementsByTagNameNS(W3C_XML_SCHEMA, "element");
+            for (int ii = 0; ii < schemaElements.getLength(); ii++) {
+                Element element = (Element)schemaElements.item(ii);
+                if (element.getParentNode() != output[i]) continue;
+                String elName = element.getAttribute("name");
+                if (!qnames.contains(new QName(tns, elName))) {
+                    output[i].removeChild(element);
+                }
+            }
+            schemaElements = output[i].getElementsByTagNameNS(W3C_XML_SCHEMA, "complexType");
+            for (int ii = 0; ii < schemaElements.getLength(); ii++) {
+                Element element = (Element)schemaElements.item(ii);
+                if (element.getParentNode() != output[i]) continue;
+                String elName = element.getAttribute("name");
+                if (!qnames.contains(new QName(tns, elName))) {
+                    output[i].removeChild(element);
+                }
+            }
+        }
+        return output;
+    }
+
     private static final String RESOURCE_PATH = "/com/l7tech/server/policy/assertion/xml/";
     private static final String WAREHOUSE_WSDL_PATH = RESOURCE_PATH + "warehouse.wsdl";
+    public static final String W3C_XML_SCHEMA = "http://www.w3.org/2001/XMLSchema";
+    public static final String WSDL_TYPES_ELNAME = "types";
+    public static final String TOP_SCHEMA_ELNAME = "schema";
+    public static final String WSDL_NS = "http://schemas.xmlsoap.org/wsdl/";
+
     private Document wsdl;
     private NodeList messages = null;
+    private NodeList schemaElements = null;
 }
