@@ -11,8 +11,6 @@ import com.l7tech.console.icons.ArrowIcon;
 import com.l7tech.common.gui.util.ImageCache;
 import com.l7tech.common.util.Locator;
 import com.l7tech.service.ServiceAdmin;
-import com.l7tech.console.util.IconManager;
-import com.l7tech.objectmodel.UpdateException;
 import com.l7tech.objectmodel.DeleteException;
 
 import javax.swing.*;
@@ -274,9 +272,9 @@ public class ClusterStatusWindow extends JFrame {
      *
      * @return  JPanel
      */
-    private JPanel getMessagePane(){
+    private JPanel getMessagePane() {
 
-        if(messagePane != null) return messagePane;
+        if (messagePane != null) return messagePane;
 
         messagePane = new JPanel();
 
@@ -295,8 +293,8 @@ public class ClusterStatusWindow extends JFrame {
      *
      * @return  JLabel
      */
-    private JLabel getLastUpdateLabel(){
-        if(updateTimeStamp != null) return updateTimeStamp;
+    private JLabel getLastUpdateLabel() {
+        if (updateTimeStamp != null) return updateTimeStamp;
 
         updateTimeStamp = new JLabel();
         updateTimeStamp.setFont(new java.awt.Font("Dialog", 0, 12));
@@ -310,9 +308,9 @@ public class ClusterStatusWindow extends JFrame {
      *
      * @return  JTable
      */
-    private JTable getClusterStatusTable(){
+    private JTable getClusterStatusTable() {
 
-        if(clusterStatusTable != null) return clusterStatusTable;
+        if (clusterStatusTable != null) return clusterStatusTable;
 
         clusterStatusTable = new javax.swing.JTable();
         clusterStatusTable.setModel(getClusterStatusTableModel());
@@ -348,6 +346,7 @@ public class ClusterStatusWindow extends JFrame {
                             new ImageIcon(ImageCache.getInstance().getIcon(MainWindow.RESOURCE_PATH + "/disconnect.gif"));
                     private Icon unknownStatusIcon =
                             new ImageIcon(ImageCache.getInstance().getIcon(MainWindow.RESOURCE_PATH + "/unknownstatus.gif"));
+
                     public Component getTableCellRendererComponent(JTable table,
                                                                    Object value,
                                                                    boolean isSelected,
@@ -387,7 +386,7 @@ public class ClusterStatusWindow extends JFrame {
                     }
                 });
 
-        for (int i = 0; i < clusterStatusTable.getColumnModel().getColumnCount();  i++) {
+        for (int i = 0; i < clusterStatusTable.getColumnModel().getColumnCount(); i++) {
             clusterStatusTable.getColumnModel().getColumn(i).setHeaderRenderer(iconHeaderRenderer);
         }
 
@@ -448,7 +447,8 @@ public class ClusterStatusWindow extends JFrame {
             "Status", "Gateway", "Load Sharing %", "Request Routed %", "Load Avg", "Uptime", "IP Address", "Node Id"
         };
 
-        clusterStatusTableSorter = new ClusterStatusTableSorter(new LogTableModel(rows, cols)) {};
+        clusterStatusTableSorter = new ClusterStatusTableSorter(new LogTableModel(rows, cols)) {
+        };
 
         return clusterStatusTableSorter;
 
@@ -540,23 +540,21 @@ public class ClusterStatusWindow extends JFrame {
         for (Iterator i = currentNodeList.keySet().iterator(); i.hasNext();) {
             GatewayStatus su = (GatewayStatus) currentNodeList.get(i.next());
 
-            if(su.getLastUpdateTimeStamp() == su.getSecondLastUpdateTimeStamp()){
+            if (su.getLastUpdateTimeStamp() == su.getSecondLastUpdateTimeStamp()) {
                 su.incrementTimeStampUpdateFailureCount();
             }
             // the second last update time stamp is -1 the very first time when the node status is retrieved
             // the node status is unknown in this case
-            if (su.getSecondLastUpdateTimeStamp() == -1){
+            if (su.getSecondLastUpdateTimeStamp() == -1) {
                 su.setStatus(-1);
-            }
-            else if(su.getLastUpdateTimeStamp() != su.getSecondLastUpdateTimeStamp()) {
+            } else if (su.getLastUpdateTimeStamp() != su.getSecondLastUpdateTimeStamp()) {
                 su.setStatus(1);
                 su.resetTimeStampUpdateFailureCount();
             } else {
-                if(su.getTimeStampUpdateFailureCount() >= GatewayStatus.MAX_UPDATE_FAILURE_COUNT){
+                if (su.getTimeStampUpdateFailureCount() >= GatewayStatus.MAX_UPDATE_FAILURE_COUNT) {
                     su.setStatus(0);
-                    su.resetTimeStampUpdateFailureCount();
-                }
-                else{
+                    //su.resetTimeStampUpdateFailureCount();
+                } else {
                     // has not hit the limit, the node status is considered is active
                     su.setStatus(1);
                 }
@@ -640,8 +638,7 @@ public class ClusterStatusWindow extends JFrame {
         // save the number of selected message
         if (selectedRowIndexOld >= 0) {
             nodeIdSelected = (String) getClusterStatusTable().getValueAt(selectedRowIndexOld, STATUS_TABLE_NODE_NAME_COLUMN_INDEX);
-        }
-        else{
+        } else {
             nodeIdSelected = null;
         }
 
@@ -736,7 +733,7 @@ public class ClusterStatusWindow extends JFrame {
     /**
      * Set node status to unknown.
      */
-    public void setNodeStatusUnknown(){
+    public void setNodeStatusUnknown() {
         Vector cs = new Vector();
 
         for (Iterator i = currentNodeList.keySet().iterator(); i.hasNext();) {
@@ -842,12 +839,10 @@ public class ClusterStatusWindow extends JFrame {
                                 clusterStatusAdmin.removeStaleNode((String) getClusterStatusTable().getValueAt(selectedRowIndexOld, STATUS_TABLE_NODE_ID_COLUMN_INDEX));
                                 System.out.println("Delete the node: " + nodeNameSelected);
 
-                                //todo: update the display
-
-                            }catch (DeleteException e) {
-                                 logger.warning("Cannot delete the node: " + nodeNameSelected);
-                            }catch (RemoteException e) {
-                                 logger.warning("Remote Exception. Cannot delete the node: " + nodeNameSelected);
+                            } catch (DeleteException e) {
+                                logger.warning("Cannot delete the node: " + nodeNameSelected);
+                            } catch (RemoteException e) {
+                                logger.warning("Remote Exception. Cannot delete the node: " + nodeNameSelected);
                             }
                         }
                     });
@@ -871,16 +866,18 @@ public class ClusterStatusWindow extends JFrame {
          */
         public void actionPerformed(ActionEvent e) {
             // get the selected row index
-             final int selectedRowIndexOld = getClusterStatusTable().getSelectedRow();
-             final String nodeNameSelected;
+            final int selectedRowIndexOld = getClusterStatusTable().getSelectedRow();
+            final String nodeName;
+            final String nodeId;
 
-             // save the number of selected message
-             if (selectedRowIndexOld >= 0) {
-                 nodeNameSelected = (String) getClusterStatusTable().getValueAt(selectedRowIndexOld, STATUS_TABLE_NODE_NAME_COLUMN_INDEX);
+            // save the number of selected message
+            if (selectedRowIndexOld >= 0) {
+                nodeName = (String) getClusterStatusTable().getValueAt(selectedRowIndexOld, STATUS_TABLE_NODE_NAME_COLUMN_INDEX);
+                nodeId = (String) getClusterStatusTable().getValueAt(selectedRowIndexOld, STATUS_TABLE_NODE_ID_COLUMN_INDEX);
 
-            EditGatewayNameDialog dialog = new EditGatewayNameDialog(getClusterStatusWindow(), clusterStatusAdmin,  (String) getClusterStatusTable().getValueAt(selectedRowIndexOld, STATUS_TABLE_NODE_ID_COLUMN_INDEX), nodeNameSelected);
-            dialog.show();
-             }
+                EditGatewayNameDialog dialog = new EditGatewayNameDialog(getClusterStatusWindow(), clusterStatusAdmin, nodeId, nodeName);
+                dialog.show();
+            }
         }
     }
 

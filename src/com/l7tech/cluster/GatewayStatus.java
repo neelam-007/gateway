@@ -297,7 +297,12 @@ public class GatewayStatus {
      * Increment the failure count of the timestamp update.
      */
     public void incrementTimeStampUpdateFailureCount() {
-        timeStampUpdateFailureCount++;
+        if (timeStampUpdateFailureCount > MAX_UPDATE_FAILURE_COUNT) {
+            // prevent the counter overflow
+            timeStampUpdateFailureCount = MAX_UPDATE_FAILURE_COUNT;
+        } else {
+            timeStampUpdateFailureCount++;
+        }
     }
 
     /**
