@@ -22,6 +22,7 @@ public class SecureSpanAgentOptions {
     private String keyStorePath = null;
     private String trustStorePath = null;
     private Boolean useSslByDefault = null;
+    private SecureSpanAgentFactory.SecureSpanAgentImpl trustedGateway = null;
 
     /**
      * Create an object to hold settings that can be used to customize the SecureSpanAgent delivered
@@ -194,5 +195,30 @@ public class SecureSpanAgentOptions {
      */
     public void setUseSslByDefault(Boolean useSslByDefault) {
         this.useSslByDefault = useSslByDefault;
+    }
+
+    /**
+     * Check whether the created Agent will be configured to use a Federated Gateway, and if so, which
+     * Trusted Gateway will be providing the credentials.
+     * @return The SecureSpanAgent pointing at the Trusted Gateway if the new Agent will be configured to
+     *         work with a Federated Gateway; or null, if the new Agent will be working with a Trusted Gateway directly.
+     */
+    public SecureSpanAgent getTrustedGateway() {
+        return trustedGateway;
+    }
+
+    /**
+     * Specify whether the created Agent will be configured to use a Federated Gateway, and if so, which
+     * Trusted Gateway will be providing the credentials.
+     * @param trustedGateway A SecureSpanAgent pointing at the Trusted Gateway if the new Agent will be a
+     *                       Federated Gateway; or null, if the new Agent will be a Trusted Gateway.  The
+     *                       trustedGateway must be a SecureSpanAgent instance obtained from the
+     *                       SecureSpanAgentFactory.
+     */
+    public void setTrustedGateway(SecureSpanAgent trustedGateway) {
+        if (!(trustedGateway instanceof SecureSpanAgentFactory.SecureSpanAgentImpl))
+            throw new IllegalArgumentException("trustedGateway must be a SecureSpanAgent instance " +
+                                               "obtained from the SecureSpanAgentFactory.");
+        this.trustedGateway = (SecureSpanAgentFactory.SecureSpanAgentImpl)trustedGateway;
     }
 }

@@ -88,126 +88,156 @@ public class SecureSpanAgentFactory {
             ssg.setTrustStorePath(options.getCertStorePath());
         if (options.getUseSslByDefault() != null)
             ssg.setUseSslByDefault(options.getUseSslByDefault().booleanValue());
+        if (options.getTrustedGateway() != null) {
+            SecureSpanAgentImpl trustedAgent = (SecureSpanAgentImpl)options.getTrustedGateway();
+            ssg.setTrustedGateway(trustedAgent.getSsg());
+        }
         CurrentRequest.setCurrentSsg(ssg);
         final PolicyManager policyManager = PolicyManagerImpl.getInstance();
         final MessageProcessor mp = new MessageProcessor(policyManager);
         final RequestInterceptor nri = NullRequestInterceptor.INSTANCE;
-        return new SecureSpanAgent() {
-            public SecureSpanAgent.Result send(String soapAction, Document message) throws SendException, IOException, CausedBadCredentialsException, CausedCertificateAlreadyIssuedException {
-                PendingRequest pr = new PendingRequest(message, ssg, nri, new URL("http://foo.bar.baz"), null);
-                pr.setSoapAction(soapAction);
-                try {
-                    final SsgResponse response = mp.processMessage(pr);
-                    return new Result() {
-                        public int getHttpStatus() {
-                            return response.getHttpStatus();
-                        }
+        return new SecureSpanAgentImpl(ssg, nri, mp, pw);
+    }
 
-                        public Document getResponse() throws IOException, SAXException {
-                            return response.getResponseAsDocument();
-                        }
-                    };
-                } catch (com.l7tech.proxy.datamodel.exceptions.CertificateAlreadyIssuedException e) {
-                    throw new CausedCertificateAlreadyIssuedException(e);
-                } catch (ClientCertificateException e) {
-                    throw new CausedSendException(e);
-                } catch (CredentialsUnavailableException e) {
-                    throw new CausedBadCredentialsException(e);
-                } catch (OperationCanceledException e) {
-                    throw new CausedSendException(e);
-                } catch (ConfigurationException e) {
-                    throw new CausedSendException(e);
-                } catch (GeneralSecurityException e) {
-                    throw new CausedSendException(e);
-                } catch (IOException e) {
-                    throw new CausedSendException(e);
-                } catch (SAXException e) {
-                    throw new CausedSendException(e); // can't happen -- no parsing of request in embedded mode
-                } catch (ResponseValidationException e) {
-                    throw new CausedSendException(e);
-                } catch (HttpChallengeRequiredException e) {
-                    throw new CausedSendException(e); // can't happen -- no HTTP credential chaining in embedded mode
-                } catch (PolicyAssertionException e) {
-                    throw new CausedSendException(e);
-                } catch (InvalidDocumentFormatException e) {
-                    throw new CausedSendException(e);
-                } catch (ProcessorException e) {
-                    throw new CausedSendException(e);
-                } catch (WssProcessor.BadContextException e) {
-                    throw new CausedSendException(e);
-                }
+    static class SecureSpanAgentImpl implements SecureSpanAgent {
+        private final Ssg ssg;
+        private final RequestInterceptor nri;
+        private final MessageProcessor mp;
+        private final PasswordAuthentication pw;
+
+        SecureSpanAgentImpl(Ssg ssg, RequestInterceptor nri, MessageProcessor mp, PasswordAuthentication pw) {
+            this.ssg = ssg;
+            this.nri = nri;
+            this.mp = mp;
+            this.pw = pw;
+        }
+
+        Ssg getSsg() {
+            return ssg;
+        }
+
+        RequestInterceptor getRequestInterceptor() {
+            return nri;
+        }
+
+        MessageProcessor getMessageProcessor() {
+            return mp;
+        }
+
+        public SecureSpanAgent.Result send(String soapAction, Document message) throws SendException, IOException, CausedBadCredentialsException, CausedCertificateAlreadyIssuedException {
+            PendingRequest pr = new PendingRequest(message, ssg, nri, new URL("http://foo.bar.baz"), null);
+            pr.setSoapAction(soapAction);
+            try {
+                final SsgResponse response = mp.processMessage(pr);
+                return new Result() {
+                    public int getHttpStatus() {
+                        return response.getHttpStatus();
+                    }
+
+                    public Document getResponse() throws IOException, SAXException {
+                        return response.getResponseAsDocument();
+                    }
+                };
+            } catch (com.l7tech.proxy.datamodel.exceptions.CertificateAlreadyIssuedException e) {
+                throw new CausedCertificateAlreadyIssuedException(e);
+            } catch (ClientCertificateException e) {
+                throw new CausedSendException(e);
+            } catch (CredentialsUnavailableException e) {
+                throw new CausedBadCredentialsException(e);
+            } catch (OperationCanceledException e) {
+                throw new CausedSendException(e);
+            } catch (ConfigurationException e) {
+                throw new CausedSendException(e);
+            } catch (GeneralSecurityException e) {
+                throw new CausedSendException(e);
+            } catch (IOException e) {
+                throw new CausedSendException(e);
+            } catch (SAXException e) {
+                throw new CausedSendException(e); // can't happen -- no parsing of request in embedded mode
+            } catch (ResponseValidationException e) {
+                throw new CausedSendException(e);
+            } catch (HttpChallengeRequiredException e) {
+                throw new CausedSendException(e); // can't happen -- no HTTP credential chaining in embedded mode
+            } catch (PolicyAssertionException e) {
+                throw new CausedSendException(e);
+            } catch (InvalidDocumentFormatException e) {
+                throw new CausedSendException(e);
+            } catch (ProcessorException e) {
+                throw new CausedSendException(e);
+            } catch (WssProcessor.BadContextException e) {
+                throw new CausedSendException(e);
+            }
+        }
+
+        public SecureSpanAgent.Result send(String soapAction, String message) throws SecureSpanAgent.SendException, IOException, SAXException, CausedBadCredentialsException, CausedCertificateAlreadyIssuedException {
+            return send(soapAction, XmlUtil.stringToDocument(message));
+        }
+
+        public X509Certificate getServerCert() throws IOException {
+            try {
+                return SsgKeyStoreManager.getServerCert(ssg);
+            } catch (KeyStoreCorruptException e) {
+                throw new CausedIOException(e);
+            }
+        }
+
+        public X509Certificate getClientCert() throws IOException {
+            try {
+                return SsgKeyStoreManager.getClientCert(ssg);
+            } catch (KeyStoreCorruptException e) {
+                throw new CausedIOException(e);
+            }
+        }
+
+        public PrivateKey getClientCertPrivateKey() throws CausedBadCredentialsException, IOException {
+            try {
+                return SsgKeyStoreManager.getClientCertPrivateKey(ssg);
+            } catch (com.l7tech.proxy.datamodel.exceptions.BadCredentialsException e) {
+                throw new CausedBadCredentialsException(e);
+            } catch (OperationCanceledException e) {
+                throw new CausedBadCredentialsException(e);
+            } catch (KeyStoreCorruptException e) {
+                throw new CausedIOException(e);
+            } catch (NoSuchAlgorithmException e) {
+                throw new RuntimeException("Unable to read private key: no such algorithm", e);
+            }
+        }
+
+        public void ensureCertificatesAreAvailable() throws
+                IOException, CausedBadCredentialsException, GeneralSecurityException,
+                CausedCertificateAlreadyIssuedException
+        {
+            try {
+                if (SsgKeyStoreManager.getServerCert(ssg) == null)
+                    SsgKeyStoreManager.installSsgServerCertificate(ssg, pw);
+            } catch (com.l7tech.proxy.datamodel.exceptions.BadCredentialsException e) {
+                throw new CausedBadCredentialsException(e);
+            } catch (OperationCanceledException e) {
+                throw new CausedBadCredentialsException(e);
+            } catch (KeyStoreCorruptException e) {
+                throw new CausedIOException(e);
             }
 
-            public SecureSpanAgent.Result send(String soapAction, String message) throws SecureSpanAgent.SendException, IOException, SAXException, CausedBadCredentialsException, CausedCertificateAlreadyIssuedException {
-                return send(soapAction, XmlUtil.stringToDocument(message));
+            try {
+                if (SsgKeyStoreManager.getClientCert(ssg) == null)
+                    SsgKeyStoreManager.obtainClientCertificate(ssg, pw);
+            } catch (KeyStoreCorruptException e) {
+                throw new CausedIOException(e);
+            } catch (com.l7tech.proxy.datamodel.exceptions.BadCredentialsException e) {
+                throw new CausedBadCredentialsException(e);
+            } catch (com.l7tech.proxy.datamodel.exceptions.CertificateAlreadyIssuedException e) {
+                throw new CausedCertificateAlreadyIssuedException(e);
             }
+        }
 
-            public X509Certificate getServerCert() throws IOException {
-                try {
-                    return SsgKeyStoreManager.getServerCert(ssg);
-                } catch (KeyStoreCorruptException e) {
-                    throw new CausedIOException(e);
-                }
+        public void destroyClientCertificate() throws IOException {
+            try {
+                SsgKeyStoreManager.deleteClientCert(ssg);
+            } catch (KeyStoreException e) {
+                throw new CausedIOException(e);
+            } catch (KeyStoreCorruptException e) {
+                throw new CausedIOException(e);
             }
-
-            public X509Certificate getClientCert() throws IOException {
-                try {
-                    return SsgKeyStoreManager.getClientCert(ssg);
-                } catch (KeyStoreCorruptException e) {
-                    throw new CausedIOException(e);
-                }
-            }
-
-            public PrivateKey getClientCertPrivateKey() throws CausedBadCredentialsException, IOException {
-                try {
-                    return SsgKeyStoreManager.getClientCertPrivateKey(ssg);
-                } catch (com.l7tech.proxy.datamodel.exceptions.BadCredentialsException e) {
-                    throw new CausedBadCredentialsException(e);
-                } catch (OperationCanceledException e) {
-                    throw new CausedBadCredentialsException(e);
-                } catch (KeyStoreCorruptException e) {
-                    throw new CausedIOException(e);
-                } catch (NoSuchAlgorithmException e) {
-                    throw new RuntimeException("Unable to read private key: no such algorithm", e);
-                }
-            }
-
-            public void ensureCertificatesAreAvailable() throws
-                    IOException, CausedBadCredentialsException, GeneralSecurityException,
-                    CausedCertificateAlreadyIssuedException
-            {
-                try {
-                    if (SsgKeyStoreManager.getServerCert(ssg) == null)
-                        SsgKeyStoreManager.installSsgServerCertificate(ssg, pw);
-                } catch (com.l7tech.proxy.datamodel.exceptions.BadCredentialsException e) {
-                    throw new CausedBadCredentialsException(e);
-                } catch (OperationCanceledException e) {
-                    throw new CausedBadCredentialsException(e);
-                } catch (KeyStoreCorruptException e) {
-                    throw new CausedIOException(e);
-                }
-
-                try {
-                    if (SsgKeyStoreManager.getClientCert(ssg) == null)
-                        SsgKeyStoreManager.obtainClientCertificate(ssg, pw);
-                } catch (KeyStoreCorruptException e) {
-                    throw new CausedIOException(e);
-                } catch (com.l7tech.proxy.datamodel.exceptions.BadCredentialsException e) {
-                    throw new CausedBadCredentialsException(e);
-                } catch (com.l7tech.proxy.datamodel.exceptions.CertificateAlreadyIssuedException e) {
-                    throw new CausedCertificateAlreadyIssuedException(e);
-                }
-            }
-
-            public void destroyClientCertificate() throws IOException {
-                try {
-                    SsgKeyStoreManager.deleteClientCert(ssg);
-                } catch (KeyStoreException e) {
-                    throw new CausedIOException(e);
-                } catch (KeyStoreCorruptException e) {
-                    throw new CausedIOException(e);
-                }
-            }
-        };
+        }
     }
 }
