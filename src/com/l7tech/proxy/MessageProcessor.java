@@ -11,17 +11,23 @@ import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.proxy.datamodel.PendingRequest;
 import com.l7tech.proxy.datamodel.PolicyManager;
 import com.l7tech.proxy.datamodel.Ssg;
-import org.apache.axis.client.Call;
+import com.l7tech.proxy.util.ThreadLocalHttpClient;
 import org.apache.axis.message.SOAPEnvelope;
+import org.apache.commons.httpclient.HttpClient;
+import org.apache.commons.httpclient.HttpState;
+import org.apache.commons.httpclient.UsernamePasswordCredentials;
+import org.apache.commons.httpclient.Header;
+import org.apache.commons.httpclient.methods.PostMethod;
 import org.apache.log4j.Category;
-import org.mortbay.http.HttpException;
+import org.xml.sax.SAXException;
 
+import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.rmi.RemoteException;
 
 /**
  * Class that processes messages in request->response fashion.
+ *
  * User: mike
  * Date: Jun 17, 2003
  * Time: 10:12:25 AM
@@ -40,9 +46,14 @@ public class MessageProcessor {
      * returns the response.
      * @param pendingRequest
      * @return
-     * @throws HttpException
+     * @throws PolicyAssertionException if the policy could not be fulfilled for this request to this SSG
+     * @throws ConfigurationException if the SSG configuration is not valid
+     * @throws IOException if there was a problem obtaining the response from the server
+     * @throws SAXException if the response from the server was not a valid SOAP envelope
      */
-    public SOAPEnvelope processMessage(PendingRequest pendingRequest) throws PolicyAssertionException, RemoteException, HttpException {
+    public SOAPEnvelope processMessage(PendingRequest pendingRequest)
+            throws PolicyAssertionException, ConfigurationException, SAXException, IOException
+    {
         Assertion policy = policyManager.getPolicy(pendingRequest);
         policy.decorateRequest(pendingRequest);
         return callSsg(pendingRequest);
@@ -52,43 +63,78 @@ public class MessageProcessor {
      * Transmit the modified request to the SSG and return its response.
      * We may make more than one call to the SSG if we need to resolve a policy.
      * @param pendingRequest
-     * @return
-     * @throws HttpException
+     * @return SOAPEnvelope containing the response message from the server.
+     * @throws ConfigurationException if the SSG configuration is not valid
+     * @throws IOException if there was a problem obtaining the response from the server
+     * @throws SAXException if the response from the server was not a valid SOAP envelope
+     * @throws PolicyAssertionException if our internal recursive call to processMessage() threw it
      */
-    private SOAPEnvelope callSsg(PendingRequest pendingRequest) throws HttpException, RemoteException {
+    // You might want to close your eyes for this part
+    private SOAPEnvelope callSsg(PendingRequest pendingRequest)
+            throws ConfigurationException, IOException, SAXException, PolicyAssertionException
+    {
         Ssg ssg = pendingRequest.getSsg();
+
+        URL url = null;
         try {
-            URL url = new URL(ssg.getServerUrl());
+            url = new URL(ssg.getServerUrl());
             if (pendingRequest.isSslRequired()) {
                 if ("http".equalsIgnoreCase(url.getProtocol())) {
-                    log.info("Changing http to https per policy for this request (using SSL port " + ssg.getSslPort() + ")");
+                    log.info("Changing http to https per policy for this request (using SSL port " +
+                             ssg.getSslPort() + ")");
                     url = new URL("https", url.getHost(), ssg.getSslPort(), url.getFile());
                 } else
-                    throw new HttpException(500, "Couldn't find an SSL-enabled version of protocol " + url.getProtocol());
+                    throw new ConfigurationException("Couldn't find an SSL-enabled version of protocol " +
+                                                     url.getProtocol());
             }
-
-            Call call = new Call(url);
-            if (pendingRequest.isBasicAuthRequired()) {
-                call.setUsername(pendingRequest.getHttpBasicUsername());
-                call.setPassword(pendingRequest.getHttpBasicPassword());
-            } else if (pendingRequest.isDigestAuthRequired()) {
-                call.setUsername(pendingRequest.getHttpDigestPassword());
-                call.setPassword(pendingRequest.getHttpDigestPassword());
-            }
-
-            SOAPEnvelope result;
-            try {
-                result = call.invoke(pendingRequest.getSoapEnvelope());
-            } catch (RemoteException e) {
-                // TODO: check for specially-formatted SOAP fault and download policy if needed
-                log.error("callSsg(): Got back a RemoteException: " + e.toString());
-                log.error(e);
-                throw e;
-            }
-            // TODO: check for specially-formatted SOAP fault and download policy if needed
-            return result;
         } catch (MalformedURLException e) {
-            throw new HttpException(500, "Client Proxy: this SSG has an invalid server url: " + ssg.getServerUrl());
+            throw new ConfigurationException("Client Proxy: SSG \"" + ssg + "\" has an invalid server url: " +
+                                             ssg.getServerUrl());
+        }
+
+        HttpClient client = ThreadLocalHttpClient.getHttpClient();
+        HttpState state = client.getState();
+        PostMethod postMethod = new PostMethod(url.toString());
+
+        state.setAuthenticationPreemptive(false);
+        if (pendingRequest.isBasicAuthRequired()) {
+            postMethod.setDoAuthentication(true);
+            state.setAuthenticationPreemptive(true);
+            state.setCredentials(null, null, new UsernamePasswordCredentials(pendingRequest.getHttpBasicUsername(),
+                                                                             pendingRequest.getHttpBasicPassword()));
+        } else if (pendingRequest.isDigestAuthRequired()) {
+            postMethod.setDoAuthentication(true);
+            state.setCredentials(null, null, new UsernamePasswordCredentials(pendingRequest.getHttpBasicUsername(),
+                                                                             pendingRequest.getHttpBasicPassword()));
+        }
+
+        postMethod.setRequestBody(pendingRequest.getSoapEnvelope().toString());
+        try {
+            int status = client.executeMethod(postMethod);
+            log.info("POST to SSG completed with HTTP status code " + status);
+            Header policyUrlHeader = postMethod.getResponseHeader("PolicyUrl");
+            if (policyUrlHeader != null) {
+                // Have we already updated a policy while processing this request?
+                if (pendingRequest.isPolicyUpdated())
+                    throw new ConfigurationException("Policy was updated, but SSG says it's still out-of-date");
+                try {
+                    URL policyUrl = new URL(policyUrlHeader.getValue());
+                    postMethod.releaseConnection(); // free up our thread's HTTP client
+                    policyManager.updatePolicy(pendingRequest, policyUrl);
+                    // Recursively attempt message processing again, with the updated policy
+                    pendingRequest.setPolicyUpdated(true);
+                    pendingRequest.reset();
+                    return processMessage(pendingRequest);
+                } catch (MalformedURLException e) {
+                    throw new ConfigurationException("SSG gave us an invalid Policy URL");
+                }
+            }
+            SOAPEnvelope response = new SOAPEnvelope(postMethod.getResponseBodyAsStream());
+            return response;
+        } finally {
+            postMethod.releaseConnection();
         }
     }
+
+
 }
