@@ -23,10 +23,7 @@ import com.l7tech.server.policy.DefaultGatewayPolicies;
 import com.l7tech.server.service.ServiceManager;
 import com.l7tech.server.service.ServiceManagerImp;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStream;
+import java.io.*;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.sql.SQLException;
@@ -49,6 +46,22 @@ public class BootProcess implements ServerComponentLifecycle {
     private final Logger logger = Logger.getLogger(getClass().getName());
     private List _components = new ArrayList();
 
+    private void deleteOldAttachments(File attachmentDir) {
+        File[] goners = attachmentDir.listFiles(new FileFilter() {
+
+            public boolean accept(File pathname) {
+                String local = pathname.getName();
+                return local != null && local.startsWith("att") && local.endsWith(".part");
+            }
+        });
+
+        for (int i = 0; i < goners.length; i++) {
+            File goner = goners[i];
+            logger.info("Deleting leftover attachment cache file: " + goner.toString());
+            goner.delete();
+        }
+    }
+
     public void init(ComponentConfig config) throws LifecycleException {
         try {
             ipAddress = InetAddress.getLocalHost().getHostAddress();
@@ -56,6 +69,8 @@ public class BootProcess implements ServerComponentLifecycle {
             logger.log( Level.SEVERE, "Couldn't get local IP address. Will use 127.0.0.1 in audit records.", e );
             ipAddress = LOCALHOST_IP;
         }
+
+        deleteOldAttachments(((ServerConfig)config).getAttachmentDirectory());
         HibernatePersistenceContext context = null;
         try {
             // Initialize database stuff

@@ -9,6 +9,7 @@ import com.l7tech.proxy.datamodel.SsgFinderImpl;
 import com.l7tech.proxy.processor.MessageProcessor;
 
 import java.io.File;
+import java.io.FileFilter;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -59,6 +60,22 @@ public class Main {
         JceProvider.init();
     }
 
+    private static void deleteOldAttachments(File attachmentDir) {
+        File[] goners = attachmentDir.listFiles(new FileFilter() {
+
+            public boolean accept(File pathname) {
+                String local = pathname.getName();
+                return local != null && local.startsWith("att") && local.endsWith(".part");
+            }
+        });
+
+        for (int i = 0; i < goners.length; i++) {
+            File goner = goners[i];
+            log.info("Deleting leftover attachment cache file: " + goner.toString());
+            goner.delete();
+        }
+    }
+
     /**
      * Create the client proxy.  Uses the system properties for port and threads.
      * @param ssgFinder the SsgFinder to use for the new ClientProxy.
@@ -76,6 +93,11 @@ public class Main {
           port,
           minThreads,
           maxThreads);
+
+        // Clean out attachment directory after we've established that no other Client Proxy was running
+        if (!ClientProxy.ATTACHMENT_DIR.exists())
+            ClientProxy.ATTACHMENT_DIR.mkdir();
+        deleteOldAttachments(ClientProxy.ATTACHMENT_DIR);
 
         return clientProxy;
     }

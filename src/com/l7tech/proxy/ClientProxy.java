@@ -57,6 +57,7 @@ public class ClientProxy {
     private volatile boolean isRunning = false;
     private volatile boolean isDestroyed = false;
     private volatile boolean isInitialized = false;
+    public static final File ATTACHMENT_DIR = new File(PROXY_CONFIG + "/attachments");
 
     /**
      * Create a ClientProxy with the specified settings.

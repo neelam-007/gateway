@@ -10,8 +10,6 @@ import com.l7tech.common.mime.HybridStashManager;
 import com.l7tech.common.mime.StashManager;
 import com.l7tech.proxy.ClientProxy;
 
-import java.io.File;
-
 /**
  * Used to obtain datamodel classes.
  *
@@ -60,10 +58,7 @@ public class Managers {
      * @return a new StashManager reader to stash input stream to RAM or disk according to their size.
      */
     public static StashManager createStashManager() {
-        final File dir = new File(ClientProxy.PROXY_CONFIG + "/attachments");
-        if (!dir.exists())
-            dir.mkdir();
-        return new HybridStashManager(ClientProxy.ATTACHMENT_DISK_THRESHOLD, dir,
+        return new HybridStashManager(ClientProxy.ATTACHMENT_DISK_THRESHOLD, ClientProxy.ATTACHMENT_DIR,
                                       "att" + getStashFileUnique());
     }
 }
