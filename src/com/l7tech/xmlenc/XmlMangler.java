@@ -19,15 +19,19 @@ import com.ibm.xml.enc.type.EncryptionMethod;
 import com.ibm.xml.enc.type.KeyInfo;
 import com.ibm.xml.enc.type.KeyName;
 import com.ibm.xml.enc.util.AdHocIdResolver;
+import org.apache.log4j.Category;
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Text;
 import org.xml.sax.SAXException;
 
+import javax.crypto.SecretKey;
 import javax.xml.parsers.ParserConfigurationException;
 import java.io.IOException;
 import java.security.GeneralSecurityException;
 import java.security.Key;
+import java.security.Provider;
 
 /**
  * Class that encrypts and decrypts XML documents.
@@ -36,6 +40,13 @@ import java.security.Key;
  * Time: 11:07:41 AM
  */
 public class XmlMangler {
+    private static final Category log = Category.getInstance(XmlMangler.class);
+
+    private static final Provider bcp = new BouncyCastleProvider();
+    static {
+        java.security.Security.addProvider(bcp);
+    }
+
     // ID for EncryptedData element
     private static final String id = "bodyId";
 
@@ -64,24 +75,56 @@ public class XmlMangler {
         }
     }
 
+    private static class AesKey implements SecretKey {
+        private byte[] bytes;
+
+        public AesKey(byte[] bytes) {
+            if (bytes.length != 16 && bytes.length != 24 && bytes.length != 32)
+                throw new IllegalArgumentException("Byte array is wrong length for AES128, AES192 or AES256");
+            this.bytes = bytes;
+        }
+
+        public String getAlgorithm() {
+            return "AES";
+        }
+
+        public String getFormat() {
+            return "RAW";
+        }
+
+        public byte[] getEncoded() {
+            return bytes;
+        }
+    }
+
     /**
      * In-place encrypt of the specified SOAP document.  The document will be encrypted with AES256 using the specified
      * AES256 key, which will be tagged with the specified KeyName.
      *
      * @param soapMsg  the SOAP document to encrypt
-     * @param key    the 32 byte AES256 symmetric key to use to encrypt it
+     * @param keyBytes   the 32 byte AES256 symmetric key to use to encrypt it
      * @param keyName    an identifier for this Key that will be meaningful to a consumer of the encrypted message
+     * @throws IllegalArgumentException  if the key was not an array of exactly 32 bytes of key material
      * @throws GeneralSecurityException  if there was a problem with a key or a crypto provider
      * @throws IOException  if there was a problem reading or writing a key or a bit of xml
      */
-    public static void encryptXml(Document soapMsg, Key key, KeyName keyName)
-            throws GeneralSecurityException, IOException
+    public static void encryptXml(Document soapMsg, byte[] keyBytes, String keyName)
+            throws GeneralSecurityException, IOException, IllegalArgumentException
     {
+        if (keyBytes.length != 32)
+            throw new IllegalArgumentException("keyBytes must be 32 bytes long for AES256");
+
         Element body = (Element) soapMsg.getElementsByTagNameNS(soapNS, "Body").item(0);
+        if (body == null)
+            throw new IllegalArgumentException("Unable to find tag Body in document with namespace " + soapNS);
+
+
         CipherData cipherData = new CipherData();
         cipherData.setCipherValue(new CipherValue());
         KeyInfo keyInfo = new KeyInfo();
-        keyInfo.addKeyName(keyName);
+        KeyName kn = new KeyName();
+        kn.setName(keyName);
+        keyInfo.addKeyName(kn);
         EncryptionMethod encMethod = new EncryptionMethod();
         encMethod.setAlgorithm(EncryptionMethod.AES256_CBC);
         EncryptedData encData = new EncryptedData();
@@ -99,11 +142,12 @@ public class XmlMangler {
         // Create encryption context and encrypt the header subtree
         EncryptionContext ec = new EncryptionContext();
         AlgorithmFactoryExtn af = new AlgorithmFactoryExtn();
+        af.setProvider(bcp.getName());
         ec.setAlgorithmFactory(af);
         ec.setEncryptedType(encDataElement, EncryptedData.CONTENT,  null, null);
 
         ec.setData(body);
-        ec.setKey(key);
+        ec.setKey(new AesKey(keyBytes));
 
         try {
             ec.encrypt();
@@ -119,10 +163,31 @@ public class XmlMangler {
     }
 
     /**
+     * Create a SOAP header in the specified SOAP message if it doesn't already have one.  In any case, returns
+     * a reference to the SOAP header.
+     *
+     * @param soapMsg  the SOAP message to work with
+     * @return  the found or newly-added SOAP header element
+     */
+    private static Element findOrCreateSoapHeader(Document soapMsg) {
+        Element hdrEl = (Element) soapMsg.getElementsByTagNameNS(soapNS, "Header").item(0);
+        if (hdrEl == null) {
+            // No header.. need to add one
+            Element body = (Element) soapMsg.getElementsByTagNameNS(soapNS, "Body").item(0);
+            if (body == null)
+                throw new IllegalArgumentException("No body in this document"); // can't actually happen here
+            String prefix = body.getPrefix();
+            hdrEl = soapMsg.createElementNS(soapNS, prefix == null ? "Header" : prefix + ":Header");
+            soapMsg.getDocumentElement().insertBefore(hdrEl, body);
+        }
+        return hdrEl;
+    }
+
+    /**
      * Insert a WSS style header into the specified document referring to the EncryptedData element.
      * @param soapMsg
      */
-    public static void addWssHeader(Document soapMsg) {
+    private static void addWssHeader(Document soapMsg) {
         // Add new namespaces to Envelope element, as per spec.
         Element rootEl = soapMsg.getDocumentElement();
         rootEl.setAttributeNS("http://www.w3.org/2000/xmlns/", "xmlns:wsse", wsseNS);
@@ -139,7 +204,7 @@ public class XmlMangler {
         Element securityEl = soapMsg.createElementNS(wsseNS, "wsse:Security");
         securityEl.appendChild(refEl);
 
-        Element hdrEl = (Element) soapMsg.getElementsByTagNameNS(soapNS, "Header").item(0);
+        Element hdrEl = findOrCreateSoapHeader(soapMsg);
         hdrEl.appendChild(securityEl);
     }
 
@@ -188,7 +253,9 @@ public class XmlMangler {
         // Create decryption context and decrypt the EncryptedData subtree. Note that this effects the
         // soapMsg document
         DecryptionContext dc = new DecryptionContext();
-        dc.setAlgorithmFactory(new AlgorithmFactoryExtn());
+        AlgorithmFactoryExtn af = new AlgorithmFactoryExtn();
+        af.setProvider(bcp.getName());
+        dc.setAlgorithmFactory(af);
         dc.setEncryptedType(encryptedDataEl, EncryptedData.CONTENT, null, null);
         dc.setKey(key);
 
