@@ -44,7 +44,7 @@ public class SamlTreeNode extends LeafAssertionTreeNode {
             sb.append("no properties set");
         }
         sb.append("]");
-        return "SAML properties " + sb.toString();
+        return "SAML Properties " + sb.toString();
     }
 
     /**

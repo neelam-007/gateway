@@ -28,7 +28,7 @@ public class SamlPropertiesDialog extends JDialog {
 
     public SamlPropertiesDialog(Frame owner, SamlTreeNode n) {
         super(owner, false);
-        setTitle("SAML properties");
+        setTitle("SAML Properties");
         samlTreeNode = n;
         samlSecurity = (SamlSecurity)samlTreeNode.asAssertion();
         initialize();
@@ -89,7 +89,7 @@ public class SamlPropertiesDialog extends JDialog {
         _2.setBorder(BorderFactory.createTitledBorder(BorderFactory.createEtchedBorder(), null));
         final JLabel _3;
         _3 = new JLabel();
-        _3.setText("SAML constraints");
+        _3.setText("SAML Constraints:");
         _2.add(_3, new com.intellij.uiDesigner.core.GridConstraints(0, 0, 1, 1, 8, 0, 0, 0, null, null, null));
         final JPanel _4;
         _4 = new JPanel();
