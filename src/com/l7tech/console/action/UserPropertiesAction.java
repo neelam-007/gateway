@@ -60,7 +60,9 @@ public class UserPropertiesAction extends NodeAction {
             public void run() {
                 // fla note. make sure this user is internal. otherwise dont show panel
                 if (!isParentIdProviderInternal((EntityHeaderNode)node)) {
-                    JOptionPane.showMessageDialog(null, "This user is read-only.", "Read-only", JOptionPane.INFORMATION_MESSAGE);
+                    JOptionPane.showMessageDialog(null, "This user is read-only.",
+                                                        "Read-only",
+                                                        JOptionPane.INFORMATION_MESSAGE);
                     return;
                 }
                 EntityHeader header = ((EntityHeaderNode)node).getEntityHeader();
