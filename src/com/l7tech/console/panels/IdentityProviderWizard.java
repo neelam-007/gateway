@@ -45,7 +45,6 @@ public class IdentityProviderWizard extends Wizard {
         buttonPanel.setBorder(new EtchedBorder());
         buttonPanel.add(getButtonBack());
         buttonPanel.add(getButtonNext());
-        buttonPanel.add(getButtonTest());
         buttonPanel.add(getButtonFinish());
         buttonPanel.add(getButtonCancel());
         buttonPanel.add(getButtonHelp());
