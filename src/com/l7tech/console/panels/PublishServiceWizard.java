@@ -492,7 +492,7 @@ public class PublishServiceWizard extends JDialog {
 
     private JLabel[] stepLabels = new JLabel[0];
 
-    // TODO: remove me
+    // TODO: remove me, this is here for the benefit of the PublishServiceWizardTest
     public void setWsdlUrl(String newUrl) {
         ((ServicePanel)panels[0]).setWsdlUrl(newUrl);
     }
