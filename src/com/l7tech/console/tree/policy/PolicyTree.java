@@ -1,5 +1,7 @@
 package com.l7tech.console.tree.policy;
 
+import com.l7tech.common.Authorizer;
+import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.console.action.ActionManager;
 import com.l7tech.console.action.DeleteAssertionAction;
 import com.l7tech.console.action.EditServicePolicyAction;
@@ -7,14 +9,16 @@ import com.l7tech.console.action.SecureAction;
 import com.l7tech.console.poleditor.PolicyEditorPanel;
 import com.l7tech.console.tree.AbstractTreeNode;
 import com.l7tech.console.tree.AssertionsTree;
+import com.l7tech.console.tree.ServiceNode;
 import com.l7tech.console.tree.TransferableTreePath;
 import com.l7tech.console.util.ArrowImage;
 import com.l7tech.console.util.PopUpMouseListener;
 import com.l7tech.console.util.Refreshable;
+import com.l7tech.objectmodel.ObjectPermission;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.composite.CompositeAssertion;
-import com.l7tech.common.gui.util.Utilities;
 
+import javax.security.auth.Subject;
 import javax.swing.*;
 import javax.swing.event.TreeModelEvent;
 import javax.swing.event.TreeModelListener;
@@ -29,6 +33,7 @@ import java.awt.geom.AffineTransform;
 import java.awt.geom.Rectangle2D;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
+import java.security.AccessController;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.Iterator;
@@ -37,7 +42,7 @@ import java.util.logging.Logger;
 
 /**
  * Class PolicyTree is the extended <code>JTree</code> with addtional
- * 
+ *
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  */
 public class PolicyTree extends JTree implements DragSourceListener,
@@ -57,8 +62,8 @@ public class PolicyTree extends JTree implements DragSourceListener,
 
     /**
      * Create the new policy tree with the policy model.
-     * 
-     * @param newModel 
+     *
+     * @param newModel
      */
     public PolicyTree(PolicyTreeModel newModel) {
         super(newModel);
@@ -142,8 +147,8 @@ public class PolicyTree extends JTree implements DragSourceListener,
         /**
          * Handle the mouse click popup when the Tree item is right clicked. The context sensitive
          * menu is displayed if the right click was over an item.
-         * 
-         * @param mouseEvent 
+         *
+         * @param mouseEvent
          */
         protected void popUpMenuHandler(MouseEvent mouseEvent) {
             JTree tree = (JTree)mouseEvent.getSource();
@@ -235,7 +240,7 @@ public class PolicyTree extends JTree implements DragSourceListener,
     /**
      * Make a popup menu from actions.
      * The menu is constructed from the set of actions returned
-     * 
+     *
      * @return the popup menu
      */
     private JPopupMenu getPopupMenu(Action[] actions) {
@@ -291,12 +296,10 @@ public class PolicyTree extends JTree implements DragSourceListener,
     public void dragGestureRecognized(DragGestureEvent dge) {
         Point ptDragOrigin = dge.getDragOrigin();
         TreePath path = getPathForLocation(ptDragOrigin.x, ptDragOrigin.y);
-        if (path == null)
+        if (!canStartDrag(path)) {
             return;
-        if (isRootPath(path))
-            return;	// Ignore user trying to drag the root node
-        if (isIdentityView())
-            return; // Ignore if in identity view
+        }
+
         // Work out the offset of the drag point from the TreePath bounding rectangle origin
         Rectangle raPath = getPathBounds(path);
         ptOffset.setLocation(ptDragOrigin.x - raPath.x, ptDragOrigin.y - raPath.y);
@@ -344,6 +347,35 @@ public class PolicyTree extends JTree implements DragSourceListener,
 		
         // We pass our drag image just in case it IS supported by the platform
         dge.startDrag(null, imgGhost, new Point(5, 5), transferable, this);
+    }
+
+    private boolean canStartDrag(TreePath path) {
+        if (path == null)
+            return false;
+        if (isRootPath(path))
+            return false;	// Ignore user trying to drag the root node
+        if (isIdentityView())
+            return false; // Ignore if in identity view
+
+        return hasWriteAccess();
+
+    }
+
+    private boolean hasWriteAccess() {
+        Subject s = Subject.getSubject(AccessController.getContext());
+        AssertionTreeNode an = (AssertionTreeNode)getModel().getRoot();
+        final ServiceNode serviceNodeCookie = an.getServiceNodeCookie();
+        if (serviceNodeCookie == null) {
+            throw new IllegalStateException();
+        }
+        try {
+            ObjectPermission op = new ObjectPermission(serviceNodeCookie.getPublishedService(), ObjectPermission.WRITE);
+            return Authorizer.getAuthorizer().hasPermission(s, op);
+        } catch (Exception e) {
+            log.log(Level.WARNING, "Error performing permisison check", e);
+        }
+
+        return false;
     }
 
 
@@ -417,11 +449,13 @@ public class PolicyTree extends JTree implements DragSourceListener,
 
         // PolicyDropTargetListener interface
         public void dragEnter(DropTargetDragEvent e) {
+            if (!hasWriteAccess()) {
+                e.rejectDrag();
+                return;
+            }
             if (!isDragAcceptable(e)) {
                 e.rejectDrag();
-                log.fine("REJECTING DRAG:");
             } else {
-                log.fine("ACCEPT DRAG:");
                 e.acceptDrag(e.getDropAction());
             }
         }
@@ -433,6 +467,11 @@ public class PolicyTree extends JTree implements DragSourceListener,
         }
 
         public void dragOver(DropTargetDragEvent e) {
+            if (!hasWriteAccess()) {
+                e.rejectDrag();
+                return;
+            }
+
             if (isIdentityView()) {
                 e.rejectDrag();
                 return;
@@ -667,6 +706,8 @@ public class PolicyTree extends JTree implements DragSourceListener,
 
         // Helpers...
         public boolean isDragAcceptable(DropTargetDragEvent e) {
+            if (!hasWriteAccess()) return false;
+
             // Only accept COPY or MOVE gestures (ie LINK is not supported)
             if ((e.getDropAction() & DnDConstants.ACTION_COPY_OR_MOVE) == 0)
                 return false;
@@ -767,8 +808,8 @@ public class PolicyTree extends JTree implements DragSourceListener,
 
 // TreeModelListener interface implemntations
     public void treeNodesChanged(TreeModelEvent e) {
-     //   log.fine("treeNodesChanged");
-     //   sayWhat(e);
+        //   log.fine("treeNodesChanged");
+        //   sayWhat(e);
 // We dont need to reset the selection path, since it has not moved
     }
 
