@@ -30,7 +30,7 @@ public class ServiceAdminStub extends ApplicationObjectSupport implements Servic
      * @throws RemoteException
      */
     public PublishedService findServiceByID(String oid) throws RemoteException, FindException {
-        return serviceManager.findByPrimaryKey(Long.getLong(oid).longValue());
+        return serviceManager.findByPrimaryKey(toLong(oid));
     }
 
 
