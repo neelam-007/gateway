@@ -42,6 +42,7 @@ class ChangePasswordAction extends AbstractAction {
 
     public void actionPerformed(final ActionEvent e) {
         final Ssg ssg = ssgListPanel.getSelectedSsg();
+        if (ssg == null) return;
         final char[] currentCMPasswd = ssg.getRuntime().getCachedPassword();
         boolean cmPasswdPotentiallyChanged = false;
         boolean changeCompleted = false;
