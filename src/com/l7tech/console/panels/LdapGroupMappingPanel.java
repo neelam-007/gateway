@@ -59,7 +59,7 @@ public class LdapGroupMappingPanel extends IdentityProviderStepPanel {
      * @return  String  The descritpion of the step.
      */
     public String getDescription() {
-        return "The page shows the attribute mappings of the LDAP group object classes. You can add/delete/modify the attributes mappings on this page.";
+        return "Map the attributes for each group objectclass in the LDAP Identity Provider.";
     }
 
     /** @return the wizard step label    */
@@ -574,7 +574,10 @@ public class LdapGroupMappingPanel extends IdentityProviderStepPanel {
 
         memberStrategy.setToolTipText(resources.getString("groupMemberStrategy.tooltip"));
         memberStrategy.setFont(new java.awt.Font("Dialog", 0, 12));
-        memberStrategy.setModel(new javax.swing.DefaultComboBoxModel(new String[]{"MEMBERS_ARE_DN", "MEMBERS_ARE_LOGIN", "MEMBERS_ARE_NVPAIR", "MEMBERS_BY_OU"}));
+        memberStrategy.setModel(new javax.swing.DefaultComboBoxModel(new String[]{"Member is User DN",
+                                                                                  "Member is User Login",
+                                                                                  "Member is NV Pair",
+                                                                                  "OU Group"}));
         memberStrategy.setPreferredSize(new java.awt.Dimension(170, 20));
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 1;
