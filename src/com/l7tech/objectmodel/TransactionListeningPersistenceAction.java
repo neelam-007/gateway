@@ -7,11 +7,10 @@
 package com.l7tech.objectmodel;
 
 /**
- * A basic {@link Runnable}-like interface for persistence tasks
+ * Convenience interface for anonymous transactional persistence actions
  * @see HibernatePersistenceContext#doInTransaction(PersistenceAction)
  * @author alex
  * @version $Revision$
  */
-public interface PersistenceAction {
-    Object run() throws ObjectModelException;
+public interface TransactionListeningPersistenceAction extends PersistenceAction, TransactionListener {
 }
