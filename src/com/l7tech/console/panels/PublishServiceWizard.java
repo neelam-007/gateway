@@ -313,7 +313,7 @@ public class PublishServiceWizard extends JDialog {
                 stepLabels = new JLabel[panels.length];
 
                 for (int i = 0; i < panels.length; i++) {
-                    stepLabels[i] = new JLabel(panels[i].getStepLabel());
+                    stepLabels[i] = new JLabel(""+(i+1)+". "+panels[i].getStepLabel());
                     stepLabels[i].setFont(new java.awt.Font("Dialog", 1, 12));
                     stepLabels[i].setForeground(Color.WHITE);
                     stepsjPanel.add(stepLabels[i]);
