@@ -127,7 +127,12 @@ public class RSASigner {
         this.storePass = storePass;
         this.privateKeyAlias = privateKeyAlias;
         this.privateKeyPassString = privateKeyPass;
-        initClass();
+        try {
+            initClass();
+        } catch (Exception e) {
+            LogManager.getInstance().getSystemLogger().log(Level.SEVERE, e.getMessage(), e);
+            throw new IllegalArgumentException(e.getMessage());
+        }
     }
 
     /**
@@ -428,110 +433,105 @@ public class RSASigner {
     }
     // makeBCCertificate
 
-    private void initClass() {
-        try {
-            // Install BouncyCastle provider
+    private void initClass() throws Exception {
+        // Install BouncyCastle provider
+        Provider BCJce = new org.bouncycastle.jce.provider.BouncyCastleProvider();
 
-            Provider BCJce = new org.bouncycastle.jce.provider.BouncyCastleProvider();
+        int result = Security.addProvider(BCJce);
+        LogManager.getInstance().getSystemLogger().log(Level.FINE, "loaded provider at position " + result);
 
-            int result = Security.addProvider(BCJce);
-            LogManager.getInstance().getSystemLogger().log(Level.FINE, "loaded provider at position " + result);
+        // Get env variables and read in nessecary data
+        //KeyStore keyStore = KeyStore.getInstance("PKCS12", "BC");
+        // KeyStore keyStore = KeyStore.getInstance(keyStoreType); fla modif
+        KeyStore keyStore = KeyStore.getInstance("JCEKS");
+        InputStream is = new FileInputStream(keyStorePath);
 
-            // Get env variables and read in nessecary data
-            //KeyStore keyStore = KeyStore.getInstance("PKCS12", "BC");
-            // KeyStore keyStore = KeyStore.getInstance(keyStoreType); fla modif
-            KeyStore keyStore = KeyStore.getInstance("JCEKS");
-            InputStream is = new FileInputStream(keyStorePath);
-
-            char[] keyStorePass = getPassword(storePass, "Please enter your keystore password: ");
-            keyStore.load(is, keyStorePass);
-            LogManager.getInstance().getSystemLogger().log(Level.FINE, "privateKeyAlias: " + privateKeyAlias);
-            char[] privateKeyPass = getPassword(privateKeyPassString, "Please enter your private key password (may be blank depending on your keystore implementation)");
-            if ((new String(privateKeyPass)).equals("null")) {
-                privateKeyPass = null;
-            }
-            LogManager.getInstance().getSystemLogger().log(Level.FINE, "about to get private key from keystore");
-            privateKey = (PrivateKey) keyStore.getKey(privateKeyAlias, privateKeyPass);
-            if (privateKey == null) {
-                LogManager.getInstance().getSystemLogger().log(Level.SEVERE, "Cannot load key with alias '" + privateKeyAlias + "' from keystore '" + keyStorePath + "'");
-                throw new Exception("Cannot load key with alias '" + privateKeyAlias + "' from keystore '" + keyStorePath + "'");
-            }
-            Certificate[] certchain = keyStore.getCertificateChain(privateKeyAlias); // KeyTools.getCertChain(keyStore, privateKeyAlias);
-            if (certchain.length < 1) {
-                LogManager.getInstance().getSystemLogger().log(Level.SEVERE, "Cannot load certificate chain with alias '" + privateKeyAlias + "' from keystore '" + keyStorePath + "'");
-                throw new Exception("Cannot load certificate chain with alias '" + privateKeyAlias + "' from keystore '" + keyStorePath + "'");
-            }
-            // We only support a ca hierarchy with depth 2.
-            caCert = (X509Certificate) certchain[0];
-            LogManager.getInstance().getSystemLogger().log(Level.FINE, "cacertIssuer: " + caCert.getIssuerDN().toString());
-            LogManager.getInstance().getSystemLogger().log(Level.FINE, "cacertSubject: " + caCert.getSubjectDN().toString());
-
-            // We must keep the same order in the DN in the issuer field in created certificates as there
-            // is in the subject field of the CA-certificate.
-            // MODIFIDED Jul 2, 2003 (KSM) Added reverse=true to constructor because of issues with DN order for caSubject and the
-            // interaction with keytool. Keytool expects this to be in CN=, OU=, ...CA= order
-            caSubjectName = new X509Name(true, caCert.getSubjectDN().toString());
-            LogManager.getInstance().getSystemLogger().log(Level.FINE, "caSubjectName: " + caSubjectName.toString());
-            //caSubjectName = CertTools.stringToBcX509Name(caCert.getSubjectDN().toString());
-
-            // root cert is last cert in chain
-            rootCert = (X509Certificate) certchain[certchain.length - 1];
-            LogManager.getInstance().getSystemLogger().log(Level.FINE, "rootcertIssuer: " + rootCert.getIssuerDN().toString());
-            LogManager.getInstance().getSystemLogger().log(Level.FINE, "rootcertSubject: " + rootCert.getSubjectDN().toString());
-
-            // Should extensions be used? Critical or not?
-            if ((usebc = basicConstraints) == true) {
-                bccritical = basicConstraintsCritical;
-            }
-            if ((useku = keyUsage) == true) {
-                kucritical = keyUsageCritical;
-            }
-            if ((useski = subjectKeyIdentifier) == true) {
-                ;
-            }
-            skicritical = subjectKeyIdentifierCritical;
-            if ((useaki = authorityKeyIdentifier) == true) {
-                ;
-            }
-            akicritical = authorityKeyIdentifierCritical;
-            /*if ((usecrldist = cRLDistributionPoint) == true) {
-                crldistcritical = cRLDistributionPointCritical;
-                crldisturi = cRLDistURI;
-            }*/
-
-            // Init random number generator for random serialnumbers
-            random = SecureRandom.getInstance("SHA1PRNG");
-            // Using this seed we should get a different seed every time.
-            // We are not concerned about the security of the random bits, only that they are different every time.
-            // Extracting 64 bit random numbers out of this should give us 2^32 (4 294 967 296) serialnumbers before
-            // collisions (which are seriously BAD), well anyhow sufficien for pretty large scale installations.
-            // Design criteria: 1. No counter to keep track on. 2. Multiple thereads can generate numbers at once, in
-            // a clustered environment etc.
-            long seed = (new Date().getTime()) + this.hashCode();
-            random.setSeed(seed);
-            /*
-             *  Another possibility is to use SecureRandom's default seeding which is designed to be secure:
-             *  <p>The seed is produced by counting the number of times the VM
-             *  manages to loop in a given period. This number roughly
-             *  reflects the machine load at that point in time.
-             *  The samples are translated using a permutation (s-box)
-             *  and then XORed together. This process is non linear and
-             *  should prevent the samples from "averaging out". The s-box
-             *  was designed to have even statistical distribution; it's specific
-             *  values are not crucial for the security of the seed.
-             *  We also create a number of sleeper threads which add entropy
-             *  to the system by keeping the scheduler busy.
-             *  Twenty such samples should give us roughly 160 bits of randomness.
-             *  <P> These values are gathered in the background by a daemon thread
-             *  thus allowing the system to continue performing it's different
-             *  activites, which in turn add entropy to the random seed.
-             *  <p> The class also gathers miscellaneous system information, some
-             *  machine dependent, some not. This information is then hashed together
-             *  with the 20 seed bytes.
-             */
-        } catch (Exception e) {
-            e.printStackTrace();
+        char[] keyStorePass = getPassword(storePass, "Please enter your keystore password: ");
+        keyStore.load(is, keyStorePass);
+        LogManager.getInstance().getSystemLogger().log(Level.FINE, "privateKeyAlias: " + privateKeyAlias);
+        char[] privateKeyPass = getPassword(privateKeyPassString, "Please enter your private key password (may be blank depending on your keystore implementation)");
+        if ((new String(privateKeyPass)).equals("null")) {
+            privateKeyPass = null;
         }
+        LogManager.getInstance().getSystemLogger().log(Level.FINE, "about to get private key from keystore");
+        privateKey = (PrivateKey) keyStore.getKey(privateKeyAlias, privateKeyPass);
+        if (privateKey == null) {
+            LogManager.getInstance().getSystemLogger().log(Level.SEVERE, "Cannot load key with alias '" + privateKeyAlias + "' from keystore '" + keyStorePath + "'");
+            throw new Exception("Cannot load key with alias '" + privateKeyAlias + "' from keystore '" + keyStorePath + "'");
+        }
+        Certificate[] certchain = keyStore.getCertificateChain(privateKeyAlias); // KeyTools.getCertChain(keyStore, privateKeyAlias);
+        if (certchain.length < 1) {
+            LogManager.getInstance().getSystemLogger().log(Level.SEVERE, "Cannot load certificate chain with alias '" + privateKeyAlias + "' from keystore '" + keyStorePath + "'");
+            throw new Exception("Cannot load certificate chain with alias '" + privateKeyAlias + "' from keystore '" + keyStorePath + "'");
+        }
+        // We only support a ca hierarchy with depth 2.
+        caCert = (X509Certificate) certchain[0];
+        LogManager.getInstance().getSystemLogger().log(Level.FINE, "cacertIssuer: " + caCert.getIssuerDN().toString());
+        LogManager.getInstance().getSystemLogger().log(Level.FINE, "cacertSubject: " + caCert.getSubjectDN().toString());
+
+        // We must keep the same order in the DN in the issuer field in created certificates as there
+        // is in the subject field of the CA-certificate.
+        // MODIFIDED Jul 2, 2003 (KSM) Added reverse=true to constructor because of issues with DN order for caSubject and the
+        // interaction with keytool. Keytool expects this to be in CN=, OU=, ...CA= order
+        caSubjectName = new X509Name(true, caCert.getSubjectDN().toString());
+        LogManager.getInstance().getSystemLogger().log(Level.FINE, "caSubjectName: " + caSubjectName.toString());
+        //caSubjectName = CertTools.stringToBcX509Name(caCert.getSubjectDN().toString());
+
+        // root cert is last cert in chain
+        rootCert = (X509Certificate) certchain[certchain.length - 1];
+        LogManager.getInstance().getSystemLogger().log(Level.FINE, "rootcertIssuer: " + rootCert.getIssuerDN().toString());
+        LogManager.getInstance().getSystemLogger().log(Level.FINE, "rootcertSubject: " + rootCert.getSubjectDN().toString());
+
+        // Should extensions be used? Critical or not?
+        if ((usebc = basicConstraints) == true) {
+            bccritical = basicConstraintsCritical;
+        }
+        if ((useku = keyUsage) == true) {
+            kucritical = keyUsageCritical;
+        }
+        if ((useski = subjectKeyIdentifier) == true) {
+            ;
+        }
+        skicritical = subjectKeyIdentifierCritical;
+        if ((useaki = authorityKeyIdentifier) == true) {
+            ;
+        }
+        akicritical = authorityKeyIdentifierCritical;
+        /*if ((usecrldist = cRLDistributionPoint) == true) {
+            crldistcritical = cRLDistributionPointCritical;
+            crldisturi = cRLDistURI;
+        }*/
+
+        // Init random number generator for random serialnumbers
+        random = SecureRandom.getInstance("SHA1PRNG");
+        // Using this seed we should get a different seed every time.
+        // We are not concerned about the security of the random bits, only that they are different every time.
+        // Extracting 64 bit random numbers out of this should give us 2^32 (4 294 967 296) serialnumbers before
+        // collisions (which are seriously BAD), well anyhow sufficien for pretty large scale installations.
+        // Design criteria: 1. No counter to keep track on. 2. Multiple thereads can generate numbers at once, in
+        // a clustered environment etc.
+        long seed = (new Date().getTime()) + this.hashCode();
+        random.setSeed(seed);
+        /*
+         *  Another possibility is to use SecureRandom's default seeding which is designed to be secure:
+         *  <p>The seed is produced by counting the number of times the VM
+         *  manages to loop in a given period. This number roughly
+         *  reflects the machine load at that point in time.
+         *  The samples are translated using a permutation (s-box)
+         *  and then XORed together. This process is non linear and
+         *  should prevent the samples from "averaging out". The s-box
+         *  was designed to have even statistical distribution; it's specific
+         *  values are not crucial for the security of the seed.
+         *  We also create a number of sleeper threads which add entropy
+         *  to the system by keeping the scheduler busy.
+         *  Twenty such samples should give us roughly 160 bits of randomness.
+         *  <P> These values are gathered in the background by a daemon thread
+         *  thus allowing the system to continue performing it's different
+         *  activites, which in turn add entropy to the random seed.
+         *  <p> The class also gathers miscellaneous system information, some
+         *  machine dependent, some not. This information is then hashed together
+         *  with the 20 seed bytes.
+         */
     }
 
     /**
