@@ -1,16 +1,15 @@
 package com.l7tech.console.action;
 
-import com.l7tech.console.panels.NewUserDialog;
-import com.l7tech.console.panels.WorkSpacePanel;
-import com.l7tech.console.tree.AbstractTreeNode;
 import com.l7tech.console.MainWindow;
+import com.l7tech.console.panels.WorkSpacePanel;
+import com.l7tech.console.util.Registry;
 
 import javax.swing.*;
-import javax.swing.event.HyperlinkListener;
 import javax.swing.event.HyperlinkEvent;
+import javax.swing.event.HyperlinkListener;
 import javax.swing.text.html.HTMLDocument;
-import java.net.URL;
 import java.io.IOException;
+import java.net.URL;
 
 /**
  * The <code>HomeAction</code> displays the dds the new user.
@@ -22,8 +21,11 @@ public class HomeAction extends BaseAction {
    private WorkSpacePanel wpanel;
    private ClassLoader cl = getClass().getClassLoader();
 
-    public HomeAction(WorkSpacePanel panel) {
-        wpanel = panel;
+    public HomeAction() {
+        // Law of Demeter oh yeah
+        wpanel =
+          Registry.getDefault().
+          getWindowManager().getCurrentWorkspace();
     }
 
     /**

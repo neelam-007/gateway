@@ -7,6 +7,7 @@ import com.l7tech.console.panels.*;
 import com.l7tech.console.tree.*;
 import com.l7tech.console.util.Preferences;
 import com.l7tech.console.util.Registry;
+import com.l7tech.console.util.WindowManager;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.util.Locator;
@@ -89,7 +90,6 @@ public class MainWindow extends JFrame {
     private JPanel mainLeftJPanel = null;
 
     private JPanel mainSplitPaneRight = null;
-    private WorkSpacePanel workBenchPanel = null;
 
     /* progress bar indicator */
     private JProgressBar progressBar = null;
@@ -306,7 +306,7 @@ public class MainWindow extends JFrame {
 
         JMenuItem menuItem;
 
-        menuItem = new JMenuItem(new HomeAction(getWorkBenchPanel()));
+        menuItem = new JMenuItem(new HomeAction());
         gotoMenu.add(menuItem);
         return gotoMenu;
     }
@@ -588,11 +588,7 @@ public class MainWindow extends JFrame {
     }
 
     private WorkSpacePanel getWorkBenchPanel() {
-        if (workBenchPanel != null)
-            return workBenchPanel;
-        workBenchPanel = new WorkSpacePanel();
-        return workBenchPanel;
-
+        return WindowManager.getInstance().getCurrentWorkspace();
     }
 
     /**
@@ -1043,7 +1039,7 @@ public class MainWindow extends JFrame {
     private void connectHandler(ActionEvent event) {
         if (logon()) {
             toggleConnectedMenus(true);
-            new HomeAction(getWorkBenchPanel()).performAction();
+            new HomeAction().performAction();
 
         }
     }

@@ -1,15 +1,16 @@
 package com.l7tech.console.action;
 
-import com.l7tech.console.panels.NewUserDialog;
-import com.l7tech.console.panels.EditorDialog;
-import com.l7tech.console.panels.Utilities;
-import com.l7tech.console.panels.UserPanel;
+import com.l7tech.console.panels.*;
 import com.l7tech.console.tree.AbstractTreeNode;
 import com.l7tech.console.tree.UserNode;
 import com.l7tech.console.tree.EntityHeaderNode;
 import com.l7tech.console.tree.ServiceNode;
+import com.l7tech.console.tree.policy.PolicyTreeModel;
+import com.l7tech.console.util.Registry;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
+import com.l7tech.objectmodel.FindException;
+import com.l7tech.service.PublishedService;
 
 import javax.swing.*;
 
@@ -56,13 +57,20 @@ public class ServicePolicyPropertiesAction extends NodeAction {
         SwingUtilities.invokeLater(
           new Runnable() {
               public void run() {
-                  UserPanel panel = new UserPanel();
-                  EditorDialog dialog = new EditorDialog(null, panel);
+                  try {
+                      WorkSpacePanel wpanel =
+                        Registry.getDefault().
+                        getWindowManager().getCurrentWorkspace();
+                      PublishedService svc = ((ServiceNode)node).getPublishedService();
+                      PolicyTreeModel model = new PolicyTreeModel(svc.rootAssertion());
+                      JTree tree = new JTree(model);
+                      wpanel.setComponent(tree);
+                  } catch (FindException e) {
+                      //todo: ErroManager someday?
+                      e.printStackTrace();
 
-                  panel.edit(((EntityHeaderNode) node).getEntityHeader());
-                  dialog.pack();
-                  Utilities.centerOnScreen(dialog);
-                  dialog.show();
+                  }
+
               }
           });
     }

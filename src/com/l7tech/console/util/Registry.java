@@ -43,6 +43,13 @@ public abstract class Registry {
     }
 
     /**
+     * @return the current window manager
+     */
+    public WindowManager getWindowManager() {
+        return WindowManager.getInstance();
+    }
+
+    /**
      * @return the identity provider config manager
      */
     abstract public IdentityProviderConfigManager getProviderConfigManager();
