@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="utf-8"?>
+<definitions xmlns:http="http://schemas.xmlsoap.org/wsdl/http/" xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/" xmlns:s="http://www.w3.org/2001/XMLSchema" xmlns:s0="http://tempuri.org/" xmlns:soapenc="http://schemas.xmlsoap.org/soap/encoding/" xmlns:tm="http://microsoft.com/wsdl/mime/textMatching/" xmlns:mime="http://schemas.xmlsoap.org/wsdl/mime/" targetNamespace="http://tempuri.org/" xmlns="http://schemas.xmlsoap.org/wsdl/">
+  <types>
+    <s:schema elementFormDefault="qualified" targetNamespace="http://tempuri.org/">
+      <s:element name="GetQuote">
+        <s:complexType />
+      </s:element>
+      <s:element name="GetQuoteResponse">
+        <s:complexType>
+          <s:sequence>
+            <s:element minOccurs="0" maxOccurs="1" name="GetQuoteResult" type="s:string" />
+          </s:sequence>
+        </s:complexType>
+      </s:element>
+      <s:element name="string" nillable="true" type="s:string" />
+    </s:schema>
+  </types>
+  <message name="GetQuoteSoapIn">
+    <part name="parameters" element="s0:GetQuote" />
+  </message>
+  <message name="GetQuoteSoapOut">
+    <part name="parameters" element="s0:GetQuoteResponse" />
+  </message>
+  <message name="GetQuoteHttpGetIn" />
+  <message name="GetQuoteHttpGetOut">
+    <part name="Body" element="s0:string" />
+  </message>
+  <message name="GetQuoteHttpPostIn" />
+  <message name="GetQuoteHttpPostOut">
+    <part name="Body" element="s0:string" />
+  </message>
+  <portType name="QuotesSoap">
+    <operation name="GetQuote">
+      <input message="s0:GetQuoteSoapIn" />
+      <output message="s0:GetQuoteSoapOut" />
+    </operation>
+  </portType>
+  <portType name="QuotesHttpGet">
+    <operation name="GetQuote">
+      <input message="s0:GetQuoteHttpGetIn" />
+      <output message="s0:GetQuoteHttpGetOut" />
+    </operation>
+  </portType>
+  <portType name="QuotesHttpPost">
+    <operation name="GetQuote">
+      <input message="s0:GetQuoteHttpPostIn" />
+      <output message="s0:GetQuoteHttpPostOut" />
+    </operation>
+  </portType>
+  <binding name="QuotesSoap" type="s0:QuotesSoap">
+    <soap:binding transport="http://schemas.xmlsoap.org/soap/http" style="document" />
+    <operation name="GetQuote">
+      <soap:operation soapAction="http://tempuri.org/GetQuote" style="document" />
+      <input>
+        <soap:body use="literal" />
+      </input>
+      <output>
+        <soap:body use="literal" />
+      </output>
+    </operation>
+  </binding>
+  <binding name="QuotesHttpGet" type="s0:QuotesHttpGet">
+    <http:binding verb="GET" />
+    <operation name="GetQuote">
+      <http:operation location="/GetQuote" />
+      <input>
+        <http:urlEncoded />
+      </input>
+      <output>
+        <mime:mimeXml part="Body" />
+      </output>
+    </operation>
+  </binding>
+  <binding name="QuotesHttpPost" type="s0:QuotesHttpPost">
+    <http:binding verb="POST" />
+    <operation name="GetQuote">
+      <http:operation location="/GetQuote" />
+      <input>
+        <mime:content type="application/x-www-form-urlencoded" />
+      </input>
+      <output>
+        <mime:mimeXml part="Body" />
+      </output>
+    </operation>
+  </binding>
+  <service name="Quotes">
+    <port name="QuotesSoap" binding="s0:QuotesSoap">
+      <soap:address location="http://www.seshakiran.com/QuoteService/QuotesService.asmx" />
+    </port>
+    <port name="QuotesHttpGet" binding="s0:QuotesHttpGet">
+      <http:address location="http://www.seshakiran.com/QuoteService/QuotesService.asmx" />
+    </port>
+    <port name="QuotesHttpPost" binding="s0:QuotesHttpPost">
+      <http:address location="http://www.seshakiran.com/QuoteService/QuotesService.asmx" />
+    </port>
+  </service>
+</definitions>
