@@ -19,9 +19,12 @@ import java.util.Properties;
  * Time: 1:32:33 PM
  */
 public class ClientProxy {
-    private final Category log = Category.getInstance(ClientProxy.class);
-    private final String PROXY_CONFIG =
+    private static final Category log = Category.getInstance(ClientProxy.class);
+    public static final String PROXY_CONFIG =
             System.getProperties().getProperty("user.home") + File.separator + ".l7tech";
+    public static final File TRUST_STORE_FILE =
+            new File(PROXY_CONFIG + File.separator + "trustStore");
+    public static final String TRUST_STORE_PASSWORD = "password";
 
     private SsgFinder ssgFinder;
     private HttpServer httpServer;
@@ -68,9 +71,8 @@ public class ClientProxy {
         // TODO: we need better cert management than this grody hack
         Properties props = System.getProperties();
         props.put("java.protocol.handler.pkgs", "com.sun.net.ssl.internal.www.protocol");
-        props.put("javax.net.ssl.trustStore",
-                new File(PROXY_CONFIG + File.separator + "trustStore").getAbsolutePath());
-        props.put("javax.net.ssl.trustStorePassword", "password");
+        props.put("javax.net.ssl.trustStore", TRUST_STORE_FILE.getAbsolutePath());
+        props.put("javax.net.ssl.trustStorePassword", TRUST_STORE_PASSWORD);
 
         isInitialized = true;
     }
