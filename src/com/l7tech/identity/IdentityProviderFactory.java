@@ -7,10 +7,8 @@
 package com.l7tech.identity;
 
 import com.l7tech.objectmodel.FindException;
-import com.l7tech.identity.ldap.LdapIdentityProviderServer;
 import com.l7tech.identity.ldap.LdapIdentityProvider;
 import com.l7tech.identity.internal.InternalIdentityProviderServer;
-import com.l7tech.identity.msad.MsadIdentityProviderServer;
 
 import java.util.*;
 
