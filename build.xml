@@ -95,6 +95,7 @@
 
 
     <target name="cleandev" depends="clean, dev"/>
+    <target name="redeploy" depends="undeploy, deploy"/>
 
     <!--
       ** configure and invoke developer's build
@@ -196,6 +197,11 @@
             verbose="no">
             <classpath refid="project.class.path"/>
         </javac>
+    </target>
+
+    <target name="undeploy" depends="init-dev">
+        <delete dir="${tomcat.home}/webapps/${app.name}"/>
+        <delete file="${war}"/>
     </target>
 
     <!--
