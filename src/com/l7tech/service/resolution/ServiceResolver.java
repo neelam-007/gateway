@@ -46,7 +46,7 @@ public abstract class ServiceResolver implements Comparable, ServiceListener {
             matchService = (PublishedService)subset.get(oid);
             if ( matchService != null ) {
                 if ( candidateService.getOid() != matchService.getOid() ) {
-                    if ( matches( candidateService ) ) {
+                    if ( matches( candidateService, matchService ) ) {
                         // This candidateService matches one of "mine"
                         if ( result == null ) result = new HashMap();
                         result.put( oid, matchService );
@@ -61,7 +61,7 @@ public abstract class ServiceResolver implements Comparable, ServiceListener {
     }
 
     public abstract int getSpeed();
-    abstract boolean matches( PublishedService service );
+    abstract boolean matches( PublishedService candidateService, PublishedService matchService );
 
     /**
      * Could throw a ClassCastException.
