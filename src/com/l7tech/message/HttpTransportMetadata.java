@@ -27,6 +27,16 @@ public class HttpTransportMetadata extends TransportMetadata {
         return _response;
     }
 
+    public TransportProtocol getProtocol() {
+        if ( "http".equals( _request.getScheme() ) ) {
+            return TransportProtocol.HTTP;
+        } else if ( "https".equals( _request.getScheme() ) && _request.isSecure() ) {
+            return TransportProtocol.HTTPS;
+        } else {
+            return TransportProtocol.UNKNOWN;
+        }
+    }
+
     protected Object doGetParameter(String name) {
         Object value = null;
         value = _request.getAttribute( name );
