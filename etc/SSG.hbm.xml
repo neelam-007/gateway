@@ -57,7 +57,7 @@
         <property name="name" type="string"/>
 
         <set role="states" lazy="true" table="state">
-            <key column="country_oid"/>
+            <key column="country"/>
             <one-to-many class="com.l7tech.identity.internal.imp.StateImp"/>
         </set>
     </class>
