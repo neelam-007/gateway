@@ -34,10 +34,10 @@ public class HttpUriResolver extends NameValueServiceResolver {
     }
 
     protected Object getRequestValue(Request request) throws ServiceResolutionException {
-        String originalUrl = (String)request.getParameter( Request.PARAM_HTTP_ORIGINAL_URL );
-        if ( originalUrl == null ) {
-            String uri = (String)request.getParameter( Request.PARAM_HTTP_REQUEST_URI );
-            if (!uri.startsWith("/xml")) uri = "";
+        String originalUrl = (String)request.getParameter(Request.PARAM_HTTP_ORIGINAL_URL);
+        if (originalUrl == null) {
+            String uri = (String)request.getParameter(Request.PARAM_HTTP_REQUEST_URI);
+            if (uri == null || !uri.startsWith("/xml")) uri = "";
             logger.finest("returning uri " + uri);
             return uri;
         } else {
