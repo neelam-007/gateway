@@ -8,6 +8,7 @@ package com.l7tech.credential.http;
 
 import com.l7tech.credential.CredentialFinderException;
 import com.l7tech.credential.PrincipalCredentials;
+import com.l7tech.credential.CredentialFormat;
 import com.l7tech.message.Request;
 import com.l7tech.identity.User;
 import com.l7tech.logging.LogManager;
@@ -27,7 +28,7 @@ public class HttpBasicCredentialFinder extends HttpCredentialFinder {
         throw new CredentialFinderException( err );
     }
 
-    protected PrincipalCredentials doFindCredentials(Request request) throws IOException, CredentialFinderException {
+    public PrincipalCredentials findCredentials(Request request) throws IOException, CredentialFinderException {
         String wwwAuthorize = (String)request.getParameter( Request.PARAM_HTTP_AUTHORIZATION );
 
         if ( wwwAuthorize == null || wwwAuthorize.length() == 0 ) return null;
@@ -56,7 +57,7 @@ public class HttpBasicCredentialFinder extends HttpCredentialFinder {
             User u = new User();
             u.setLogin( login );
 
-            return new PrincipalCredentials( u, pass.getBytes(ENCODING), realm, this );
+            return new PrincipalCredentials( u, pass.getBytes(ENCODING), CredentialFormat.CLEARTEXT, realm );
         } else {
             // No colons
             String err = "Invalid HTTP Basic format!";
