@@ -456,4 +456,18 @@ public class Utilities {
         Graphics g = c.getGraphics();
         return metrics.getStringBounds(str, g);
     }
+
+    /**
+     * Remove tooltips from all menu items in the specified menu element.
+     */
+    public static void removeToolTipsFromMenuItems(MenuElement m) {
+        MenuElement[] subElements = m.getSubElements();
+        for (int i = 0; i < subElements.length; i++) {
+            MenuElement subElement = subElements[i];
+            removeToolTipsFromMenuItems(subElement);
+        }
+        
+        if (m instanceof JComponent)
+            ((JComponent)m).setToolTipText(null);
+    }
 }

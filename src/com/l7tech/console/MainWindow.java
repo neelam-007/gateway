@@ -998,6 +998,7 @@ public class MainWindow extends JFrame {
             mainJMenuBar.add(getViewMenu());
             //           mainJMenuBar.add(getWindowMenu());
             mainJMenuBar.add(getHelpMenu());
+            Utilities.removeToolTipsFromMenuItems(mainJMenuBar);
         }
         return mainJMenuBar;
     }
