@@ -89,7 +89,9 @@ public class ServiceManagerClientImp implements ServiceManager {
 
     public long save(PublishedService service) throws SaveException {
         try {
-            return getStub().savePublishedService(service);
+            long res = getStub().savePublishedService(service);
+            if (res > 0) service.setOid(res);
+            return res;
         } catch (RemoteException e) {
             throw new SaveException(e.getMessage(), e);
         }
