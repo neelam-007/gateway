@@ -107,6 +107,8 @@ public class TrustedCertTableSorter extends FilteredDefaultTableModel {
      */
     public Object getValueAt(int row, int col) {
         switch (col) {
+             case CertManagerWindow.CERT_TABLE_CERT_OID_COLUMN_INDEX:
+                return new Long(((TrustedCert) sortedData[row]).getOid());
             case CertManagerWindow.CERT_TABLE_CERT_NAME_COLUMN_INDEX:
                 return ((TrustedCert) sortedData[row]).getName();
             case CertManagerWindow.CERT_TABLE_CERT_SUBJECT_COLUMN_INDEX:

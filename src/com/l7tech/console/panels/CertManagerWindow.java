@@ -14,9 +14,15 @@ import com.l7tech.objectmodel.*;
 
 
 import javax.swing.table.DefaultTableModel;
+import javax.swing.table.TableColumnModel;
+import javax.swing.table.JTableHeader;
 import javax.swing.*;
+import javax.swing.event.ListSelectionListener;
+import javax.swing.event.ListSelectionEvent;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.awt.*;
 import java.util.ResourceBundle;
 import java.util.Locale;
@@ -31,9 +37,10 @@ import java.rmi.RemoteException;
  */
 public class CertManagerWindow extends JDialog {
 
-    public static final int CERT_TABLE_CERT_NAME_COLUMN_INDEX = 0;
-    public static final int CERT_TABLE_CERT_SUBJECT_COLUMN_INDEX = 1;
-    public static final int CERT_TABLE_CERT_USAGE_COLUMN_INDEX = 2;
+    public static final int CERT_TABLE_CERT_OID_COLUMN_INDEX = 0;
+    public static final int CERT_TABLE_CERT_NAME_COLUMN_INDEX = 1;
+    public static final int CERT_TABLE_CERT_SUBJECT_COLUMN_INDEX = 2;
+    public static final int CERT_TABLE_CERT_USAGE_COLUMN_INDEX = 3;
     private JPanel mainPanel;
     private JButton addButton;
     private JButton removeButton;
@@ -76,6 +83,7 @@ public class CertManagerWindow extends JDialog {
         p.setLayout(new BorderLayout());
         p.add(mainPanel, BorderLayout.CENTER);
         certTableScrollPane.setViewportView(getTrustedCertTable());
+        addMouseListenerToHeaderInTable(trustedCertTable);
 
 
         closeButton.addActionListener(new ActionListener() {
@@ -120,7 +128,18 @@ public class CertManagerWindow extends JDialog {
 
         removeButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent event) {
-                //todo:
+                int sr = getTrustedCertTable().getSelectedRow();
+                Object o = getTrustedCertTable().getValueAt(sr, CERT_TABLE_CERT_OID_COLUMN_INDEX);
+
+                try {
+                    getTrustedCertAdmin().deleteCert(((Long) o).longValue());
+                } catch (FindException e) {
+                    e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+                } catch (DeleteException e) {
+                    e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+                } catch (RemoteException e) {
+                    e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+                }
             }
         });
 
@@ -155,16 +174,38 @@ public class CertManagerWindow extends JDialog {
     private void enableOrDisableButtons() {
         boolean propsEnabled = false;
         boolean removeEnabled = false;
-/*        int row = getJmsQueueTable().getSelectedRow();
+        int row = getTrustedCertTable().getSelectedRow();
         if (row >= 0) {
-            JmsAdmin.JmsTuple i = (JmsAdmin.JmsTuple)getJmsQueueTableModel().getJmsQueues().get(row);
-            if (i != null) {
-                removeEnabled = true;
-                propsEnabled = true;
-            }
-        }*/
+            removeEnabled = true;
+            propsEnabled = true;
+        }
         removeButton.setEnabled(removeEnabled);
         propertiesButton.setEnabled(propsEnabled);
+    }
+
+    /**
+     *  Add a mouse listener to the Table to trigger a table sort
+     *  when a column heading is clicked in the JTable.
+     */
+    public void addMouseListenerToHeaderInTable(JTable table) {
+
+        final JTable tableView = table;
+        tableView.setColumnSelectionAllowed(false);
+        MouseAdapter listMouseListener = new MouseAdapter() {
+            public void mouseClicked(MouseEvent e) {
+                TableColumnModel columnModel = tableView.getColumnModel();
+                int viewColumn = columnModel.getColumnIndexAtX(e.getX());
+                int column = tableView.convertColumnIndexToModel(viewColumn);
+                if (e.getClickCount() == 1 && column != -1) {
+
+                    ((TrustedCertTableSorter) tableView.getModel()).sortData(column, true);
+                    ((TrustedCertTableSorter) tableView.getModel()).fireTableDataChanged();
+                    tableView.getTableHeader().resizeAndRepaint();
+                }
+            }
+        };
+        JTableHeader th = tableView.getTableHeader();
+        th.addMouseListener(listMouseListener);
     }
 
     private WizardListener wizardListener = new WizardAdapter() {
@@ -211,7 +252,7 @@ public class CertManagerWindow extends JDialog {
     /**
      * Return trustedCertTable property value
      *
-     * @return  JTable
+     * @return JTable
      */
     private JTable getTrustedCertTable() {
 
@@ -219,6 +260,24 @@ public class CertManagerWindow extends JDialog {
 
         trustedCertTable = new javax.swing.JTable();
         trustedCertTable.setModel(getTrustedCertTableModel());
+        trustedCertTable.getTableHeader().setReorderingAllowed(false);
+        trustedCertTable.getSelectionModel().setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+
+        // don't show the OID column
+        trustedCertTable.getColumnModel().getColumn(CERT_TABLE_CERT_OID_COLUMN_INDEX).setMinWidth(0);
+        trustedCertTable.getColumnModel().getColumn(CERT_TABLE_CERT_OID_COLUMN_INDEX).setMaxWidth(0);
+        trustedCertTable.getColumnModel().getColumn(CERT_TABLE_CERT_OID_COLUMN_INDEX).setPreferredWidth(0);
+
+        trustedCertTable.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
+                    /**
+                     * Called whenever the value of the selection changes.
+                     * @param e the event that characterizes the change.
+                     */
+                    public void valueChanged(ListSelectionEvent e) {
+                      
+                        enableOrDisableButtons();
+                    }
+        });
 
         return trustedCertTable;
     }
@@ -226,7 +285,7 @@ public class CertManagerWindow extends JDialog {
     /**
      * Return TrustedCertTableSorter property value
      *
-     * @return  TrustedCertTableSorter
+     * @return TrustedCertTableSorter
      */
     private TrustedCertTableSorter getTrustedCertTableModel() {
 
@@ -237,7 +296,7 @@ public class CertManagerWindow extends JDialog {
         Object[][] rows = new Object[][]{};
 
         String[] cols = new String[]{
-            "Name", "Subject", "Usage"
+            "OID", "Name", "Subject", "Usage"
         };
 
         trustedCertTableSorter = new TrustedCertTableSorter(new DefaultTableModel(rows, cols) {
