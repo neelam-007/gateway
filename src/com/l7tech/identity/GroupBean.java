@@ -2,6 +2,7 @@ package com.l7tech.identity;
 
 import java.io.Serializable;
 import java.util.Map;
+import java.util.HashMap;
 
 public class GroupBean implements Group, Serializable {
     public String getUniqueIdentifier() {
@@ -48,6 +49,7 @@ public class GroupBean implements Group, Serializable {
     }
 
     public Map getProperties() {
+        if ( properties == null ) properties = new HashMap();
         return properties;
     }
 
