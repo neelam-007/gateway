@@ -118,7 +118,7 @@ public class UserPanel extends EntityEditorPanel {
                 user.setName(userHeader.getName());
             } else {
                 user =
-                        Registry.getDefault().getInternalUserManager().findByPrimaryKey(userHeader.getOid());
+                        Registry.getDefault().getInternalUserManager().findByPrimaryKey(userHeader.getStrId());
                 if (user == null) {
                     throw new RuntimeException("User missing " + userHeader.getOid());
                 }

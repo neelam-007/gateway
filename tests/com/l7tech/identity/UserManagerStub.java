@@ -20,8 +20,8 @@ public class UserManagerStub implements UserManager {
         this.dataStore = dataStore;
     }
 
-    public User findByPrimaryKey(long oid) throws FindException {
-        return (User)dataStore.getUsers().get(new Long(oid));
+    public User findByPrimaryKey(String oid) throws FindException {
+        return (User)dataStore.getUsers().get(new Long(Long.parseLong(oid)));
     }
 
     public void delete(User user) throws DeleteException {

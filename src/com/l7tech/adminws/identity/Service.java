@@ -133,7 +133,7 @@ public class Service {
         UserManager userManager = retrieveUserManagerAndBeginTransaction(identityProviderConfigId);
         if (userManager == null) throw new java.rmi.RemoteException("Cannot retrieve the UserManager");
         try {
-            return userManager.findByPrimaryKey(userId);
+            return userManager.findByPrimaryKey(Long.toString(userId));
         } catch (FindException e) {
             throw new java.rmi.RemoteException("FindException in findUserByPrimaryKey", e);
         } finally {
@@ -144,7 +144,7 @@ public class Service {
         UserManager userManager = retrieveUserManagerAndBeginTransaction(identityProviderConfigId);
         if (userManager == null) throw new java.rmi.RemoteException("Cannot retrieve the UserManager");
         try {
-            com.l7tech.identity.User user = userManager.findByPrimaryKey(userId);
+            com.l7tech.identity.User user = userManager.findByPrimaryKey(Long.toString(userId));
             userManager.delete(user);
         } catch (DeleteException e) {
             throw new java.rmi.RemoteException("DeleteException in deleteUser", e);
@@ -193,7 +193,7 @@ public class Service {
     }
     public com.l7tech.identity.Group findGroupByPrimaryKey(long identityProviderConfigId, long groupId) throws java.rmi.RemoteException {
         try {
-            return retrieveGroupManagerAndBeginTransaction(identityProviderConfigId).findByPrimaryKey(groupId);
+            return retrieveGroupManagerAndBeginTransaction(identityProviderConfigId).findByPrimaryKey(Long.toString(groupId));
         } catch (FindException e) {
             throw new RemoteException("FindException in findGroupByPrimaryKey", e);
         } finally {
@@ -203,7 +203,7 @@ public class Service {
     public void deleteGroup(long identityProviderConfigId, long groupId) throws java.rmi.RemoteException {
         GroupManager groupManager = retrieveGroupManagerAndBeginTransaction(identityProviderConfigId);
         try {
-            com.l7tech.identity.Group grp = groupManager.findByPrimaryKey(groupId);
+            com.l7tech.identity.Group grp = groupManager.findByPrimaryKey(Long.toString(groupId));
             if (grp == null) throw new java.rmi.RemoteException("Group does not exist");
             groupManager.delete(grp);
         } catch (ObjectModelException e) {

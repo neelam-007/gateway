@@ -19,9 +19,9 @@ public class GroupManagerImp extends ProviderSpecificEntityManager implements Gr
         super();
     }
 
-    public Group findByPrimaryKey(long oid) throws FindException {
+    public Group findByPrimaryKey(String oid) throws FindException {
         try {
-            return (Group)_manager.findByPrimaryKey( getContext(), getImpClass(), oid );
+            return (Group)_manager.findByPrimaryKey( getContext(), getImpClass(), Long.parseLong(oid) );
         } catch ( SQLException se ) {
             throw new FindException( se.toString(), se );
         }

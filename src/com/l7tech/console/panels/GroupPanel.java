@@ -107,7 +107,7 @@ public class GroupPanel extends EntityEditorPanel {
                 group.setName(groupHeader.getName());
             } else {
                 group =
-                        Registry.getDefault().getInternalGroupManager().findByPrimaryKey(groupHeader.getOid());
+                        Registry.getDefault().getInternalGroupManager().findByPrimaryKey(groupHeader.getStrId());
                 if (group == null) {
                     throw new RuntimeException("Group missing " + groupHeader.getOid());
                 }

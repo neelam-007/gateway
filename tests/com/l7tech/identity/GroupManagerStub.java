@@ -17,8 +17,8 @@ public class GroupManagerStub implements GroupManager {
             this.dataStore = dataStore;
     }
 
-    public Group findByPrimaryKey(long oid) throws FindException {
-        return (Group) dataStore.getGroups().get(new Long(oid));
+    public Group findByPrimaryKey(String oid) throws FindException {
+        return (Group) dataStore.getGroups().get(new Long(Long.parseLong(oid)));
     }
 
     public void delete(Group group) throws DeleteException {

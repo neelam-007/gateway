@@ -20,9 +20,9 @@ public class UserManagerImp extends ProviderSpecificEntityManager implements Use
         super();
     }
 
-    public User findByPrimaryKey(long oid) throws FindException {
+    public User findByPrimaryKey(String oid) throws FindException {
         try {
-            return (User)_manager.findByPrimaryKey( getContext(), getImpClass(), oid );
+            return (User)_manager.findByPrimaryKey( getContext(), getImpClass(), Long.parseLong(oid));
         } catch ( SQLException se ) {
             throw new FindException( se.toString(), se );
         }

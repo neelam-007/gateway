@@ -111,7 +111,7 @@ public abstract class InternalIDSecurityAxisHandler extends org.apache.axis.hand
     protected com.l7tech.identity.User findUserByOid(long oid) {
         try {
             UserManager manager = getInternalUserManagerAndBeginTransaction();
-            return manager.findByPrimaryKey(oid);
+            return manager.findByPrimaryKey(Long.toString(oid));
         } catch (java.sql.SQLException e) {
             e.printStackTrace(System.err);
             return null;

@@ -22,9 +22,9 @@ public class InternalGroupManagerClient implements com.l7tech.identity.GroupMana
         this.identityProviderConfigId = identityProviderConfigId;
     }
 
-    public Group findByPrimaryKey(long oid) throws FindException {
+    public Group findByPrimaryKey(String oid) throws FindException {
         try {
-            return getStub().findGroupByPrimaryKey(identityProviderConfigId, oid);
+            return getStub().findGroupByPrimaryKey(identityProviderConfigId, Long.parseLong(oid));
         } catch (java.rmi.RemoteException e) {
             throw new FindException("RemoteException in findByPrimaryKey", e);
         }

@@ -21,9 +21,9 @@ public class InternalUserManagerClient implements com.l7tech.identity.UserManage
         this.identityProviderConfigId = identityProviderConfigId;
     }
 
-    public User findByPrimaryKey(long oid) throws FindException {
+    public User findByPrimaryKey(String oid) throws FindException {
         try {
-            return getStub().findUserByPrimaryKey(identityProviderConfigId, oid);
+            return getStub().findUserByPrimaryKey(identityProviderConfigId, Long.parseLong(oid));
         } catch (java.rmi.RemoteException e) {
             throw new FindException("RemoteException in findUserByPrimaryKey", e);
         }
