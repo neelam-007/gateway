@@ -20,7 +20,7 @@ public class Main {
 
     /** Start a GUI-equipped client proxy and run it until it's shut down. */
     public static void main(final String[] argv) {
-        log.info("Starting new daemon mode Client Proxy");
+        log.info("Starting Layer7 Client Proxy in daemon mode");
 
         clientProxy = new ClientProxy(Managers.getSsgManager(),
                                       new MessageProcessor(Managers.getPolicyManager()),
@@ -34,7 +34,7 @@ public class Main {
         try {
             clientProxy.start();
         } catch (MultiException e) {
-            log.error("Unable to start Client Proxy: " + e);
+            log.error("Unable to start Layer7 Client Proxy: " + e);
             log.error(e);
             System.exit(2);
         }
