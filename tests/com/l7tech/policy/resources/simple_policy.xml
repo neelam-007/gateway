@@ -130,7 +130,9 @@
                     <NamespaceMap mapValue="included"/>
                     <Bindings mapValue="included"/>
                 </RequestSwAAssertion>
-                <SamlSecurity/>
+                <SamlSecurity>
+                    <ConfirmationMethodType intValue="0"/>
+                </SamlSecurity>
                 <AuditAssertion>
                     <SaveRequest booleanValue="false"/>
                     <SaveResponse booleanValue="false"/>
