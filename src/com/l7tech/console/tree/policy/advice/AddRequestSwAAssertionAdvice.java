@@ -8,6 +8,7 @@ import com.l7tech.common.xml.Wsdl;
 import com.l7tech.common.xml.XpathEvaluator;
 import com.l7tech.console.tree.policy.PolicyChange;
 import com.l7tech.console.tree.policy.PolicyException;
+import com.l7tech.console.util.TopComponents;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.RequestSwAAssertion;
 import com.l7tech.service.PublishedService;
@@ -56,7 +57,7 @@ public class AddRequestSwAAssertionAdvice implements Advice {
         RequestSwAAssertion swaAssertion = (RequestSwAAssertion)assertions[0];
         final PublishedService service = pc.getService();
         if (!(service.isSoap())) {
-            JOptionPane.showMessageDialog(null, "The 'SOAP Request with Attachment' assertion is not supported by non-SOAP services.");
+            JOptionPane.showMessageDialog(TopComponents.getInstance().getMainWindow(), "The 'SOAP Request with Attachment' assertion is not supported by non-SOAP services.");
             return;
         }
 
