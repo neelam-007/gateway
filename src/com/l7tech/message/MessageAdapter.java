@@ -6,10 +6,9 @@
 
 package com.l7tech.message;
 
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Map;
+import com.l7tech.server.policy.assertion.ServerAssertion;
+
+import java.util.*;
 
 /**
  * @author alex
@@ -59,6 +58,19 @@ public abstract class MessageAdapter implements Message {
         return _transportMetadata;
     }
 
+    public Collection getDeferredAssertions() {
+        return _deferredAssertions.values();
+    }
+
+    public void addDeferredAssertion(ServerAssertion owner, ServerAssertion decoration) {
+        _deferredAssertions.put(owner, decoration);
+    }
+
+    public void removeDeferredAssertion(ServerAssertion owner) {
+        _deferredAssertions.remove(owner);
+    }
+
     protected TransportMetadata _transportMetadata;
     protected Map _params = new HashMap();
+    protected Map _deferredAssertions = new LinkedHashMap();
 }

@@ -6,7 +6,11 @@
 
 package com.l7tech.message;
 
+import com.l7tech.server.policy.assertion.ServerAssertion;
+
 import java.util.Iterator;
+import java.util.List;
+import java.util.Collection;
 
 /**
  * @author alex
@@ -34,4 +38,29 @@ public interface Message {
      * Returns the array of values for a parameter, or an array with one element if it has one value.
      */
     Object[] getParameterValues( String name );
+
+    /**
+     * Obtain the ordered list of ServerAssertion instances that should be applied to this message after
+     * policy tree traversal has completed.
+     *
+     * @return an ordered Collection of ServerAssertion instances.  May be null.
+     */
+    Collection getDeferredAssertions();
+
+    /**
+     * Schedule a deferred ServerAssertion to apply to the message after policy tree traversal has finished.
+     * Each real, policy-embedded ServerAssertion instance may schedule at most one deferred assertion per Message.
+     *
+     * @param owner       The real, policy-embedded ServerAssertion that wants to apply this deferred decoration
+     * @param decoration  The assertion to append to the list of deferred decorations.
+     */
+    void addDeferredAssertion(ServerAssertion owner, ServerAssertion decoration);
+
+    /**
+     * Cancel a deferred ServerAssertion, perhaps because its owner assertion (or some ancestor) was eventually
+     * falsified.
+     *
+     * @param owner The real, policy-embedded ServerAssertion whose deferred assertion (if any) should be canceled.
+     */
+    void removeDeferredAssertion(ServerAssertion owner);
 }
