@@ -379,9 +379,9 @@ public class SoapUtil {
         Element securityEl = soapMsg.createElementNS(preferredWsseNamespace, SECURITY_EL_NAME);
         securityEl.setPrefix(SECURITY_NAMESPACE_PREFIX);
         securityEl.setAttribute("xmlns:" + SECURITY_NAMESPACE_PREFIX, preferredWsseNamespace);
-        setSoapAttr(soapMsg, securityEl, MUSTUNDERSTAND_ATTR_NAME, "1");
+        // DONT SET MUST UNDERSTAND ON THIS SECURITY HEADER!
         if (actor != null) {
-            // todo, should we create this actor with a ns
+            // todo, should we create this actor with a ns ?
             securityEl.setAttribute(SoapUtil.ACTOR_ATTR_NAME, actor);
         }
         Element existing = XmlUtil.findFirstChildElement(header);
