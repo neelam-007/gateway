@@ -37,6 +37,7 @@ public class JMSEndpointReference extends ExternalReference {
         try {
             JmsEndpoint jmsEndpoint = admin.findEndpointByPrimaryKey(endpointOid);
             if (jmsEndpoint != null) {
+                endpointName = jmsEndpoint.getName();
                 jmsConnection = admin.findConnectionByPrimaryKey(jmsEndpoint.getConnectionOid());
             }
         } catch (RemoteException e) {
@@ -65,6 +66,7 @@ public class JMSEndpointReference extends ExternalReference {
         if (val != null) {
             output.oid = Long.parseLong(val);
         }
+        output.endpointName = getParamFromEl(el, EPNAME_EL_NAME);
         output.initialContextFactoryClassname = getParamFromEl(el, CONTEXT_EL_NAME);
         output.jndiUrl = getParamFromEl(el, JNDI_EL_NAME);
         output.queueFactoryUrl = getParamFromEl(el, QUEUE_EL_NAME);
@@ -75,6 +77,35 @@ public class JMSEndpointReference extends ExternalReference {
 
     private JMSEndpointReference() {
         super();
+    }
+
+    public String getEndpointName() {
+        return endpointName;
+    }
+
+    public String getInitialContextFactoryClassname() {
+        return initialContextFactoryClassname;
+    }
+
+    public String getJndiUrl() {
+        return jndiUrl;
+    }
+
+    public String getQueueFactoryUrl() {
+        return queueFactoryUrl;
+    }
+
+    public void setLocalizeReplace(long newEndpointId) {
+        localizeType = LocaliseAction.REPLACE;
+        localEndpointId = newEndpointId;
+    }
+
+    public void setLocalizeDelete() {
+        localizeType = LocaliseAction.DELETE;
+    }
+
+    public void setLocalizeIgnore() {
+        localizeType = LocaliseAction.IGNORE;
     }
 
     void serializeToRefElement(Element referencesParentElement) {
@@ -95,6 +126,8 @@ public class JMSEndpointReference extends ExternalReference {
         refEl.appendChild(tfuEl);
         Element dfuEl = referencesParentElement.getOwnerDocument().createElement(DESTINATION_EL_NAME);
         refEl.appendChild(dfuEl);
+        Element epnEl = referencesParentElement.getOwnerDocument().createElement(EPNAME_EL_NAME);
+        refEl.appendChild(epnEl);
         if (initialContextFactoryClassname != null) {
             txt = referencesParentElement.getOwnerDocument().createTextNode(initialContextFactoryClassname);
             icfcEl.appendChild(txt);
@@ -114,6 +147,10 @@ public class JMSEndpointReference extends ExternalReference {
         if (destinationFactoryUrl != null) {
             txt = referencesParentElement.getOwnerDocument().createTextNode(destinationFactoryUrl);
             dfuEl.appendChild(txt);
+        }
+        if (endpointName != null) {
+            txt = referencesParentElement.getOwnerDocument().createTextNode(endpointName);
+            epnEl.appendChild(txt);
         }
     }
 
@@ -162,6 +199,7 @@ public class JMSEndpointReference extends ExternalReference {
             // WE HAVE A MATCH!
             logger.fine("The local JMS endpoint was resolved from oid " + oid + " to " + localEndpointId);
             localEndpointId = jmsTuple.getEndpoint().getOid();
+            localizeType = LocaliseAction.REPLACE;
             return true;
         }
         logger.warning("The JMS endpoint cannot be resolved.");
@@ -169,28 +207,88 @@ public class JMSEndpointReference extends ExternalReference {
     }
 
     boolean localizeAssertion(Assertion assertionToLocalize) {
-        if (assertionToLocalize instanceof JmsRoutingAssertion) {
+        if (localizeType != LocaliseAction.IGNORE) {
+            if (assertionToLocalize instanceof JmsRoutingAssertion) {
             JmsRoutingAssertion jmsRoutingAssertion = (JmsRoutingAssertion) assertionToLocalize;
-            if (jmsRoutingAssertion.getEndpointOid() != null &&
-                jmsRoutingAssertion.getEndpointOid().longValue() == oid) {
-                jmsRoutingAssertion.setEndpointOid(new Long(localEndpointId));
-                logger.fine("Endpoint id was replaced from " + oid + " to " + localEndpointId);
+                if (jmsRoutingAssertion.getEndpointOid() != null &&
+                    jmsRoutingAssertion.getEndpointOid().longValue() == oid) {
+                    if (localizeType == LocaliseAction.REPLACE) {
+                        // replace endpoint id
+                        jmsRoutingAssertion.setEndpointOid(new Long(localEndpointId));
+                        // replace endpoint name
+                        jmsRoutingAssertion.setEndpointName(endpointNameFromOid(localEndpointId));
+                        logger.info("The endpoint id of the imported jms routing assertion has been changed " +
+                                    "from " + oid + " to " + localEndpointId);
+                    } else if (localizeType == LocaliseAction.DELETE) {
+                        logger.info("Deleted this assertin from the tree.");
+                        return false;
+                    }
+                }
             }
         }
         return true;
     }
 
+    private String endpointNameFromOid(long oid) {
+        JmsAdmin admin = Registry.getDefault().getJmsManager();
+        if (admin == null) {
+            logger.severe("Cannot get the JMSAdmin");
+            return null;
+        }
+        try {
+            JmsEndpoint endpoint = admin.findEndpointByPrimaryKey(oid);
+            if (endpoint != null) return endpoint.getName();
+        } catch (RemoteException e) {
+            logger.warning("could not retreive the JMS endpoint from oid " + oid);
+        } catch (FindException e) {
+            logger.warning("could not retreive the JMS endpoint from oid " + oid);
+        }
+        logger.warning("The oid " + oid + " could not be used to get an endpoint name.");
+        return null;
+    }
+
     private final Logger logger = Logger.getLogger(JMSEndpointReference.class.getName());
+
+    /**
+     * Enum-type class for the type of localization to use.
+     */
+    public static class LocaliseAction {
+        public static final LocaliseAction IGNORE = new LocaliseAction(1);
+        public static final LocaliseAction DELETE = new LocaliseAction(2);
+        public static final LocaliseAction REPLACE = new LocaliseAction(3);
+        private LocaliseAction(int val) {
+            this.val = val;
+        }
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (!(o instanceof LocaliseAction)) return false;
+
+            final LocaliseAction localiseAction = (LocaliseAction) o;
+
+            if (val != localiseAction.val) return false;
+
+            return true;
+        }
+
+        public int hashCode() {
+            return val;
+        }
+
+        private int val = 0;
+    }
 
     private long oid;
     private long localEndpointId;
+    private String endpointName;
     private String initialContextFactoryClassname;
     private String jndiUrl;
     private String queueFactoryUrl;
     private String topicFactoryUrl;
     private String destinationFactoryUrl;
+    private LocaliseAction localizeType = null;
     public static final String REF_EL_NAME = "JMSConnectionReference";
     public static final String OID_EL_NAME = "OID";
+    public static final String EPNAME_EL_NAME = "EndpointName";
     public static final String CONTEXT_EL_NAME = "InitialContextFactoryClassname";
     public static final String JNDI_EL_NAME = "JndiUrl";
     public static final String QUEUE_EL_NAME = "QueueFactoryUrl";
