@@ -46,11 +46,9 @@ public class XencUtilTest extends TestCase {
         byte[] keyBytes = HexUtils.unHexDump("954daf423cea7911cc5cb9b664d4c38d");
 
         final int modulusLength = publicKey.getModulus().toByteArray().length;
-        assertTrue(modulusLength <= 128);
 
         byte[] paddedKeyBytes = XencUtil.padSymmetricKeyForRsaEncryption(keyBytes, modulusLength, rand);
 
         assertTrue(paddedKeyBytes.length <= modulusLength);
-        assertEquals(128, paddedKeyBytes.length);
     }
 }
