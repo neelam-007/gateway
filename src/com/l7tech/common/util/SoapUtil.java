@@ -76,8 +76,16 @@ public class SoapUtil {
         return env;
     }
 
-    public static Element getHeaderElement(Document request) {
-        return getEnvelopePart(request, HEADER_EL_NAME);
+    public static Element getHeaderElement(Document soapMsg) {
+        Element envelope = soapMsg.getDocumentElement();
+        if (!"Envelope".equals(envelope.getLocalName())) {
+            throw new IllegalArgumentException("Invalid SOAP envelope: document element is not named 'Envelope'");
+        }
+        String envelopeNs = envelope.getNamespaceURI();
+        if (!SoapUtil.ENVELOPE_URIS.contains(envelopeNs)) {
+            throw new IllegalArgumentException("Invalid SOAP message: unrecognized envelope namespace \"" + envelopeNs + "\"");
+        }
+        return XmlUtil.findFirstChildElementByName(envelope, envelopeNs, HEADER_EL_NAME);
     }
 
 
