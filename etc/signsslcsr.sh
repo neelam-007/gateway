@@ -33,6 +33,7 @@ WAR_FILE="$TOMCAT_HOME/webapps/ROOT.war"
 ROOT_KEY_STORE="$TOMCAT_HOME/kstores/ssgroot"
 ROOT_KEY_ALIAS=ssgroot
 WEBAPPS_ROOT="$TOMCAT_HOME/webapps/ROOT"
+WEB_XML_FILE="$TOMCAT_HOME/webapps/ROOT/WEB-INF/web.xml"
 # =================================================================================
 
 # VERIFY THAT THE ROOT KEYSTORE IS PRESENT
@@ -65,3 +66,16 @@ CP=$WEBAPPS_ROOT/WEB-INF/classes:$WEBAPPS_ROOT/WEB-INF/lib/bcprov-jdk14-119.jar:
 
 # do it
 java -cp $CP com.l7tech.identity.cert.RSASigner $ROOT_KEY_STORE $ROOT_KSTORE_PASSWORD $ROOT_KEY_ALIAS $ROOT_KSTORE_PASSWORD $CSR_FILE $CERTIFICATE_FILE
+
+# CHECK IF THE CERT WAS CREATED
+if [ -e "$CERTIFICATE_FILE" ]; then
+        # SUCCESS, MAKE SURE IT'S REFERENCED IN WEB.XML
+        echo "SSL Cert created successfully with root ca"
+        echo "web.xml will be updated to use this cert"
+        SUBSTITUTE_FROM='..\/..\/kstores\/ssg.cer'
+        SUBSTITUTE_TO='..\/..\/kstores\/ssl_rootcerted.cer'
+        perl -pi.bak -e s/$SUBSTITUTE_FROM/$SUBSTITUTE_TO/ "$WEB_XML_FILE"
+else
+        # FAILURE
+        echo "ERROR WILE SIGNING SSL CERT WITH ROOT CA"
+fi
