@@ -88,6 +88,7 @@ public class ResolutionManager {
                 ResolutionParameters toadd = (ResolutionParameters)i.next();
                 session.save(toadd);
             }
+            logger.fine("saved " + distinctItemsToSave.size() + " parameters for service " + service.getOid());
         } catch (SQLException e) {
             String msg = "error adding resolution parameters. throwing duplicate exception";
             logger.log(Level.WARNING, msg, e);
