@@ -1,9 +1,6 @@
 package com.l7tech.service.ws;
 
-import com.l7tech.service.PublishedService;
-import com.l7tech.service.ServiceStatistics;
-import com.l7tech.service.ServiceAdmin;
-import com.l7tech.service.ServiceManager;
+import com.l7tech.service.*;
 import com.l7tech.objectmodel.*;
 import com.l7tech.common.util.Locator;
 import com.l7tech.logging.LogManager;
@@ -95,33 +92,75 @@ public class ServiceAdminImpl implements ServiceAdmin {
      */
     public long savePublishedService(PublishedService service) throws RemoteException,
                                     UpdateException, SaveException, VersionException {
+        com.l7tech.service.ServiceManagerImp manager = null;
+
         beginTransaction();
+        boolean exists = false;
+        long oid = PublishedService.DEFAULT_OID;
         try {
+            manager = getServiceManager();
+
             // does that object have a history?
             if (service.getOid() > 0) {
-                com.l7tech.service.ServiceManager manager = getServiceManager();
+                exists = true;
                 manager.update(service);
-                return service.getOid();
+                oid = service.getOid();
             } else { // ... or is it a new object
                 logger.info("Saving PublishedService: " + service.getOid());
-                return getServiceManager().save(service);
+                oid = manager.save(service);
             }
+            return oid;
         } finally {
-            endTransaction();
+            PersistenceContext pc = null;
+            try {
+                pc = PersistenceContext.getCurrent();
+                pc.commitTransaction();
+
+                if ( manager != null && oid != PublishedService.DEFAULT_OID ) {
+                    PublishedService newService = manager.findByPrimaryKey( service.getOid() );
+                    if ( exists )
+                        manager.fireUpdated( newService );
+                    else
+                        manager.fireCreated( newService );
+                }
+            } catch ( TransactionException te ) {
+                logger.log( Level.WARNING, te.getMessage(), te );
+                throw new RemoteException( te.getMessage(), te );
+            } catch ( SQLException se ) {
+                logger.log( Level.SEVERE, se.getMessage(), se );
+                throw new RemoteException( se.getMessage(), se );
+            } catch ( FindException fe ) {
+                logger.log( Level.SEVERE, fe.getMessage(), fe );
+                throw new RemoteException( fe.getMessage(), fe );
+            } finally {
+                if ( pc != null ) pc.close();
+            }
         }
     }
 
     public void deletePublishedService(long oid) throws RemoteException, DeleteException {
+        com.l7tech.service.ServiceManagerImp manager = null;
+        PublishedService service = null;
+
         beginTransaction();
         try {
-            com.l7tech.service.ServiceManager theManagerDude = getServiceManager();
-            PublishedService theExecutionee = theManagerDude.findByPrimaryKey(oid);
-            theManagerDude.delete(theExecutionee);
+            manager = getServiceManager();
+            service = manager.findByPrimaryKey(oid);
+            manager.delete(service);
             logger.info("Deleted PublishedService: " + oid);
         } catch (FindException e) {
             throw new DeleteException("Could not find object to delete.", e);
         } finally {
-            endTransaction();
+            try {
+                endTransaction();
+
+                if ( manager != null && service != null ) {
+                    manager.fireDeleted( service );
+                }
+            } catch ( TransactionException te ) {
+                logger.log( Level.WARNING, te.getMessage(), te );
+                throw new RemoteException( te.getMessage(), te );
+            }
         }
     }
 
@@ -133,7 +172,7 @@ public class ServiceAdminImpl implements ServiceAdmin {
     // PRIVATES
     // ************************************************
 
-    private ServiceManager getServiceManager() throws RemoteException {
+    private ServiceManagerImp getServiceManager() throws RemoteException {
         if (serviceManagerInstance == null) {
             initialiseServiceManager();
         }
@@ -160,15 +199,11 @@ public class ServiceAdminImpl implements ServiceAdmin {
         }
     }
 
-    private void endTransaction() {
+    private void endTransaction() throws TransactionException {
         try {
-            PersistenceContext.getCurrent().flush();
+            PersistenceContext.getCurrent().commitTransaction();
             PersistenceContext.getCurrent().close();
         } catch (SQLException e) {
-            logger.log(Level.WARNING, "Exception commiting", e);
-        } catch (TransactionException e) {
-            logger.log(Level.WARNING, "Exception commiting", e);
-        } catch (ObjectModelException e) {
             logger.log(Level.WARNING, "Exception commiting", e);
         }
     }
@@ -191,13 +226,13 @@ public class ServiceAdminImpl implements ServiceAdmin {
     }
 
     private synchronized void initialiseServiceManager() throws RemoteException {
-        serviceManagerInstance = (com.l7tech.service.ServiceManager)Locator.getDefault().
+        serviceManagerInstance = (com.l7tech.service.ServiceManagerImp)Locator.getDefault().
                                     lookup(com.l7tech.service.ServiceManager.class);
         if (serviceManagerInstance == null) {
             throw new RemoteException("Cannot instantiate the ServiceManager");
         }
     }
 
-    private ServiceManager serviceManagerInstance = null;
+    private ServiceManagerImp serviceManagerInstance = null;
     private Logger logger = null;
 }
