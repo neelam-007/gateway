@@ -119,7 +119,7 @@ public class AuditContext {
 
     static {
         systemMessageThreshold = getSystemMessageThreshold();
-        String adminLevel = ServerConfig.getInstance().getProperty(ServerConfig.PARAM_ADMIN_AUDIT_THRESHOLD);
+        String adminLevel = ServerConfig.getInstance().getProperty(ServerConfig.PARAM_AUDIT_ADMIN_THRESHOLD);
         if (adminLevel != null) {
             try {
                 systemAdminThreshold = Level.parse(adminLevel);
@@ -130,7 +130,7 @@ public class AuditContext {
     }
 
     public static Level getSystemMessageThreshold() {
-        String msgLevel = ServerConfig.getInstance().getProperty(ServerConfig.PARAM_MESSAGE_AUDIT_THRESHOLD);
+        String msgLevel = ServerConfig.getInstance().getProperty(ServerConfig.PARAM_AUDIT_MESSAGE_THRESHOLD);
         Level output = null;
         if (msgLevel != null) {
             try {

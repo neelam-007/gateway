@@ -14,7 +14,7 @@ import java.util.EventListener;
  * @author alex
  * @version $Revision$
  */
-public class Created extends AdminEvent {
+public class Created extends PersistenceEvent {
     public Created(Entity entity, String note ) {
         super(entity, note );
     }

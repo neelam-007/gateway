@@ -30,7 +30,7 @@ public interface AuditAdmin extends GenericLogAdmin {
     Collection find(AuditSearchCriteria criteria) throws FindException, RemoteException;
 
     /**
-     * Delete all sub-SEVERE AuditRecords that are more than 48 hours old, while producing new audit
+     * Delete all sub-SEVERE AuditRecords that are more than 168 hours old (by default), while producing new audit
      * record documenting that this action has been performed (and by which administrator).
      */
     void deleteOldAuditRecords() throws RemoteException;
@@ -49,4 +49,11 @@ public interface AuditAdmin extends GenericLogAdmin {
      * @throws RemoteException
      */
     Level serverMessageAuditThreshold() throws RemoteException;
+
+    /**
+     * The minimum age (in hours) that an Audit record must be before it can be purged.
+     * @return the number of hours old that an AuditRecord can be before it can be purged.
+     * @throws RemoteException
+     */
+    int serverMinimumPurgeAge() throws RemoteException;
 }

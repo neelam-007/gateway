@@ -13,6 +13,7 @@ import com.l7tech.objectmodel.Entity;
 import com.l7tech.objectmodel.NamedEntity;
 import com.l7tech.server.event.EntityChangeSet;
 import com.l7tech.server.event.Event;
+import com.l7tech.server.event.GenericListener;
 import com.l7tech.server.event.admin.*;
 import com.l7tech.server.service.ServiceEvent;
 import com.l7tech.service.PublishedService;
@@ -30,7 +31,14 @@ import java.util.logging.Logger;
  * @author alex
  * @version $Revision$
  */
-public class AdminAuditListener implements CreateListener, UpdateListener, DeleteListener {
+public class AdminAuditListener implements GenericListener, CreateListener, UpdateListener, DeleteListener {
+    public void receive(Event event) {
+        if (event instanceof PersistenceEvent) throw new IllegalArgumentException("PersistenceEvents should not be handled by receive()");
+        if (!(event instanceof AdminEvent)) throw new IllegalArgumentException("Invalid event received--only AdminEvents should be handled here");
+        AuditContext.getCurrent().add(makeAuditRecord((AdminEvent)event));
+        AuditContext.getCurrent().flush();
+    }
+
     private static String nodeId = ClusterInfoManager.getInstance().thisNodeId();
     public static final Level DEFAULT_LEVEL = Level.INFO;
 
@@ -74,6 +82,10 @@ public class AdminAuditListener implements CreateListener, UpdateListener, Delet
     }
 
     private Level level(AdminEvent event) {
+        return DEFAULT_LEVEL;
+    }
+
+    private Level level(PersistenceEvent event) {
         Entity ent = event.getEntity();
         LevelMapping lm = (LevelMapping) levelMappings.get(ent.getClass());
         Level level = DEFAULT_LEVEL;
@@ -85,8 +97,14 @@ public class AdminAuditListener implements CreateListener, UpdateListener, Delet
         return level;
     }
 
-
     private AdminAuditRecord makeAuditRecord(AdminEvent event) {
+        AdminInfo info = getAdminInfo();
+        if (info == null) return null;
+
+        return new AdminAuditRecord(level(event), nodeId, 0, "<none>", "", 'D', event.getNote(), info.login, info.ip);
+    }
+
+    private AdminAuditRecord makeAuditRecord(PersistenceEvent event) {
         final Entity entity = event.getEntity();
 
         String name = null;

@@ -7,7 +7,10 @@
 package com.l7tech.server.event.admin;
 
 import com.l7tech.objectmodel.Entity;
+import com.l7tech.server.audit.AdminAuditListener;
 import com.l7tech.server.event.Event;
+
+import java.util.logging.Level;
 
 /**
  * Implementations are events in the lifecycle of a persistent {@link Entity}.
@@ -15,25 +18,21 @@ import com.l7tech.server.event.Event;
  * @version $Revision$
  */
 public abstract class AdminEvent extends Event {
-    public AdminEvent(Entity entity) {
-        super(entity);
+    public AdminEvent(Object source) {
+        super(source);
     }
 
-    public AdminEvent(Entity entity, String note) {
-        this(entity);
+    public AdminEvent(Object source, String note) {
+        this(source);
         this.note = note;
-    }
-
-    public Entity getEntity() {
-        return (Entity)source;
     }
 
     public String getNote() {
         return note;
     }
 
-    public String toString() {
-        return this.getClass().getName() + " [" + source.getClass().getName() + " #" + ((Entity)source).getOid() + "]";
+    public Level getMinimumLevel() {
+        return AdminAuditListener.DEFAULT_LEVEL;
     }
 
     protected String note;

@@ -13,13 +13,15 @@ import com.l7tech.common.Component;
  * @version $Revision$
  */
 public class AuditPurgeEvent extends SystemEvent {
-    public AuditPurgeEvent( Object source ) {
+    public AuditPurgeEvent( Object source, int numDeleted ) {
         super( source, Component.GW_AUDIT_SYSTEM);
+        this.numDeleted = numDeleted;
     }
 
     public String getAction() {
-        return NAME;
+        return NAME + " " + numDeleted + " Audit records";
     }
 
     public static final String NAME = "Purged";
+    private int numDeleted;
 }

@@ -9,12 +9,16 @@ package com.l7tech.server.audit;
 import com.l7tech.common.audit.AuditRecord;
 import com.l7tech.common.audit.AuditSearchCriteria;
 import com.l7tech.objectmodel.*;
+import com.l7tech.server.ServerConfig;
 import com.l7tech.server.event.EventManager;
+import com.l7tech.server.event.admin.AuditPurgeInitiated;
 import com.l7tech.server.event.system.AuditPurgeEvent;
 import net.sf.hibernate.Criteria;
+import net.sf.hibernate.Hibernate;
 import net.sf.hibernate.HibernateException;
 import net.sf.hibernate.Session;
 import net.sf.hibernate.expression.Expression;
+import net.sf.hibernate.type.Type;
 
 import java.sql.SQLException;
 import java.util.*;
@@ -113,22 +117,35 @@ public class AuditRecordManagerImpl extends HibernateEntityManager implements Au
     }
 
     public void deleteOldAuditRecords() throws DeleteException {
-        EventManager.fire(new AuditPurgeEvent( this ));
-        throw new IllegalStateException("Not yet implemented");
-/*
+        EventManager.fire(new AuditPurgeInitiated(this));
+        HibernatePersistenceContext context = null;
         try {
-            HibernatePersistenceContext context = (HibernatePersistenceContext)HibernatePersistenceContext.getCurrent();
-            Session s = context.getSession();
-            StringBuffer query = new StringBuffer("FROM ").append(getTableName()).append(" IN CLASS ").append(getInterfaceClass().getName());
-            query.append("WHERE ").append(getTableName()).append(".").append(PROP_LEVEL).append("");
-            s.delete()
+            String sMinAgeHours = ServerConfig.getInstance().getProperty(ServerConfig.PARAM_AUDIT_PURGE_MINIMUM_AGE);
+            if (sMinAgeHours == null || sMinAgeHours.length() == 0) sMinAgeHours = "168";
+            int minAgeHours = 168;
+            try {
+                minAgeHours = Integer.valueOf(sMinAgeHours).intValue();
+            } catch (NumberFormatException e) {
+                logger.info(ServerConfig.PARAM_AUDIT_PURGE_MINIMUM_AGE + " value '" + sMinAgeHours +
+                            "' is not a valid number. Using " + minAgeHours + " instead." );
+            }
 
+            long maxTime = System.currentTimeMillis() - (minAgeHours * 60 * 60 * 1000);
+
+            context = (HibernatePersistenceContext)HibernatePersistenceContext.getCurrent();
+            Session s = context.getAuditSession();
+            StringBuffer query = new StringBuffer("FROM audit IN CLASS ").append(getInterfaceClass().getName());
+            query.append(" WHERE audit.").append(PROP_LEVEL).append(" <> ?");
+            query.append(" AND audit.").append(PROP_TIME).append(" < ?");
+            int numDeleted = s.delete( query.toString(),
+                                       new Object[] { Level.SEVERE.getName(), new Long(maxTime) },
+                                       new Type[] { Hibernate.STRING, Hibernate.LONG } );
+            EventManager.fire(new AuditPurgeEvent( this, numDeleted ));
         } catch ( SQLException e ) {
             throw new DeleteException("Couldn't purge audit events", e);
         } catch ( HibernateException e ) {
             throw new DeleteException("Couldn't purge audit events", e);
         }
-*/
     }
 
     public Class getImpClass() {

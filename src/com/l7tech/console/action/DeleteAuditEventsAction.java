@@ -6,9 +6,10 @@
 
 package com.l7tech.console.action;
 
+import com.l7tech.common.audit.AuditAdmin;
 import com.l7tech.console.util.Registry;
 
-import javax.swing.*;
+import javax.swing.JOptionPane;
 import java.rmi.RemoteException;
 
 /**
@@ -28,21 +29,26 @@ public class DeleteAuditEventsAction extends SecureAction {
     }
 
     protected void performAction() {
-        Object[] options  = new Object[] {"Delete Events", "Cancel"};
-        String title  ="Delete Audit Events";
-        String message = "You are about to cause this Gateway to delete\n" +
-                "all non-SEVERE audit events more than 48 hours old.\n" +
-                "This action will result in a permanent audit entry,\n" +
-                "and cannot be undone.\n\nDo you wish to proceed?\n";
-        int res2 = JOptionPane.showOptionDialog(null, message, title,
-                                                0, JOptionPane.WARNING_MESSAGE,
-                                                null, options, options[1]);
-        if (res2 != 0)
-            return;
+        final AuditAdmin auditAdmin = Registry.getDefault().getAuditAdmin();
 
         // Delete the audit events
         try {
-            Registry.getDefault().getAuditAdmin().deleteOldAuditRecords();
+            Object[] options  = new Object[] {"Delete Events", "Cancel"};
+            String title  ="Delete Audit Events";
+
+            final int age = auditAdmin.serverMinimumPurgeAge();
+            String message = "You are about to cause this Gateway to delete\n" +
+                    "all non-SEVERE audit events more than " + age + " hours\n" +
+                    "(approx. " + (double)(age/24) + " days) old.\n\n" +
+                    "This action will result in a permanent audit entry,\n" +
+                    "and cannot be undone.\n\nDo you wish to proceed?\n";
+            int res2 = JOptionPane.showOptionDialog(null, message, title,
+                                                    0, JOptionPane.WARNING_MESSAGE,
+                                                    null, options, options[1]);
+            if (res2 != 0)
+                return;
+
+            auditAdmin.deleteOldAuditRecords();
         } catch (RemoteException e1) {
             throw new RuntimeException("Unable to delete old audit events.", e1);
         }

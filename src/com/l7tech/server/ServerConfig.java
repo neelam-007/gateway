@@ -38,8 +38,10 @@ public class ServerConfig implements ComponentConfig {
     public static final String PARAM_JMS_THREAD_POOL_SIZE = "jmsThreadPoolSize";
     public static final String PARAM_MULTICAST_ADDRESS = "multicastAddress";
     public static final String PARAM_CONFIG_DIRECTORY = "configDirectory";
-    public static final String PARAM_MESSAGE_AUDIT_THRESHOLD = "messageAuditThreshold";
-    public static final String PARAM_ADMIN_AUDIT_THRESHOLD = "adminAuditThreshold";
+
+    public static final String PARAM_AUDIT_MESSAGE_THRESHOLD = "auditMessageThreshold";
+    public static final String PARAM_AUDIT_ADMIN_THRESHOLD = "auditAdminThreshold";
+    public static final String PARAM_AUDIT_PURGE_MINIMUM_AGE = "auditPurgeMinimumAge";
 
     public static final int DEFAULT_JMS_THREAD_POOL_SIZE = 200;
 

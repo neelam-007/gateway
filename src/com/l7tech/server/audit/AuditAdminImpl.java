@@ -14,6 +14,7 @@ import com.l7tech.common.util.Locator;
 import com.l7tech.logging.SSGLogRecord;
 import com.l7tech.objectmodel.*;
 import com.l7tech.remote.jini.export.RemoteService;
+import com.l7tech.server.ServerConfig;
 import com.sun.jini.start.LifeCycle;
 import net.jini.config.ConfigurationException;
 
@@ -135,6 +136,17 @@ public class AuditAdminImpl extends RemoteService implements AuditAdmin {
 
     public Level serverMessageAuditThreshold() throws RemoteException {
         return AuditContext.getSystemMessageThreshold();
+    }
+
+    public int serverMinimumPurgeAge() throws RemoteException {
+        String sAge = ServerConfig.getInstance().getProperty(ServerConfig.PARAM_AUDIT_PURGE_MINIMUM_AGE);
+        int age = 168;
+        try {
+            return Integer.valueOf(sAge).intValue();
+        } catch (NumberFormatException nfe) {
+            throw new RemoteException("Configured minimum age value '" + sAge +
+                                      "' is not a valid number. Using " + age + " (one week) by default" );
+        }
     }
 
     private AuditRecordManager auditRecordManager;

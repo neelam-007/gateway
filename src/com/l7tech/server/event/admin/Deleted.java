@@ -14,7 +14,7 @@ import java.util.EventListener;
  * @author alex
  * @version $Revision$
  */
-public class Deleted extends AdminEvent {
+public class Deleted extends PersistenceEvent {
     public Deleted(Entity entity, String note ) {
         super(entity, note );
     }

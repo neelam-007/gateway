@@ -20,7 +20,7 @@ import java.util.EventListener;
  * @author alex
  * @version $Revision$
  */
-public class Updated extends AdminEvent {
+public class Updated extends PersistenceEvent {
     public Updated(Entity entity, EntityChangeSet changes, String note ) {
         super(entity, note );
         this.changeSet = changes;
