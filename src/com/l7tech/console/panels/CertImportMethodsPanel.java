@@ -2,6 +2,9 @@ package com.l7tech.console.panels;
 
 import javax.swing.*;
 import java.awt.*;
+import java.awt.event.ActionListener;
+import java.awt.event.ActionEvent;
+import java.io.File;
 
 /**
  * <p> Copyright (C) 2004 Layer 7 Technologies Inc.</p>
@@ -15,6 +18,8 @@ public class CertImportMethodsPanel extends WizardStepPanel {
     private JRadioButton copyAndPasteRadioButton;
     private JRadioButton fileRadioButton;
     private JRadioButton urlConnRadioButton;
+    private JButton browseButton;
+    private JTextField certFileName;
 
     public CertImportMethodsPanel(WizardStepPanel next) {
         super(next);
@@ -24,6 +29,25 @@ public class CertImportMethodsPanel extends WizardStepPanel {
     private void initialize() {
         setLayout(new BorderLayout());
         add(mainPanel);
+
+        browseButton.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent event) {
+                //Create a file chooser
+                final JFileChooser fc = new JFileChooser();
+
+                int returnVal = fc.showOpenDialog(CertImportMethodsPanel.this);
+
+                File file = null;
+                if (returnVal == JFileChooser.APPROVE_OPTION) {
+                    file = fc.getSelectedFile();
+
+                    certFileName.setText(file.getAbsolutePath());
+                } else {
+                    // cancelled by user
+                }
+
+            }
+        });
     }
 
     /**
@@ -58,15 +82,15 @@ public class CertImportMethodsPanel extends WizardStepPanel {
         final JRadioButton _3;
         _3 = new JRadioButton();
         urlConnRadioButton = _3;
-        _3.setSelected(false);
         _3.setText("From SSL Connection");
+        _3.setSelected(false);
         _2.add(_3, new com.intellij.uiDesigner.core.GridConstraints(0, 0, 1, 1, 8, 0, 3, 0, null, null, null));
         final JRadioButton _4;
         _4 = new JRadioButton();
         fileRadioButton = _4;
         _4.setEnabled(true);
-        _4.setSelected(false);
         _4.setText("Imported from a File");
+        _4.setSelected(false);
         _2.add(_4, new com.intellij.uiDesigner.core.GridConstraints(1, 0, 1, 1, 8, 0, 3, 0, null, null, null));
         final JRadioButton _5;
         _5 = new JRadioButton();
@@ -78,9 +102,11 @@ public class CertImportMethodsPanel extends WizardStepPanel {
         _2.add(_6, new com.intellij.uiDesigner.core.GridConstraints(0, 1, 1, 1, 8, 1, 6, 0, null, new Dimension(150, -1), null));
         final JTextField _7;
         _7 = new JTextField();
+        certFileName = _7;
         _2.add(_7, new com.intellij.uiDesigner.core.GridConstraints(1, 1, 1, 1, 8, 1, 6, 0, null, new Dimension(150, -1), null));
         final JButton _8;
         _8 = new JButton();
+        browseButton = _8;
         _8.setText("Browse");
         _2.add(_8, new com.intellij.uiDesigner.core.GridConstraints(1, 2, 1, 1, 0, 1, 3, 0, null, null, null));
         final JScrollPane _9;
