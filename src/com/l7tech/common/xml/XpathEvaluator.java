@@ -116,7 +116,11 @@ public class XpathEvaluator {
         while (iterator.hasNext()) {
             String prefix = (String)iterator.next();
             String uri = element.getNamespaceURI(prefix);
-            namespaces.put(prefix, uri);
+            if (prefix != null && uri != null) {
+                if (prefix.length() > 0 && uri.length() > 0) {
+                    namespaces.put(prefix, uri);
+                }
+            }
         }
         Iterator itchildren = element.getChildElements();
         while(itchildren.hasNext()) {
