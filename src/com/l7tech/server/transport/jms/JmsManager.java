@@ -6,14 +6,14 @@
 
 package com.l7tech.server.transport.jms;
 
-import com.l7tech.objectmodel.DeleteException;
-import com.l7tech.objectmodel.HibernateEntityManager;
-import com.l7tech.objectmodel.SaveException;
-import com.l7tech.objectmodel.UpdateException;
+import com.l7tech.objectmodel.*;
 import com.l7tech.common.transport.jms.JmsEndpoint;
 import com.l7tech.common.transport.jms.JmsConnection;
 
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Collections;
 
 /**
  * Hibernate manager for JMS connections and endpoints.  Endpoints cannot be found
@@ -25,7 +25,7 @@ import java.sql.SQLException;
 public class JmsManager extends HibernateEntityManager {
     public long save( JmsConnection conn ) throws SaveException {
         try {
-            return _manager.save( getContext(), conn );
+            return PersistenceManager.save( getContext(), conn );
         } catch (SQLException e) {
             throw new SaveException(e.toString(), e);
         }
@@ -33,7 +33,7 @@ public class JmsManager extends HibernateEntityManager {
 
     public long save( JmsEndpoint endpoint ) throws SaveException {
         try {
-            return _manager.save( getContext(), endpoint );
+            return PersistenceManager.save( getContext(), endpoint );
         } catch (SQLException e) {
             throw new SaveException(e.toString(), e);
         }
@@ -41,7 +41,7 @@ public class JmsManager extends HibernateEntityManager {
 
     public void update( JmsConnection conn ) throws UpdateException {
         try {
-            _manager.update( getContext(), conn );
+            PersistenceManager.update( getContext(), conn );
         } catch (SQLException e) {
             throw new UpdateException(e.toString(), e);
         }
@@ -49,7 +49,7 @@ public class JmsManager extends HibernateEntityManager {
 
     public void update( JmsEndpoint endpoint ) throws UpdateException {
         try {
-            _manager.update( getContext(), endpoint );
+            PersistenceManager.update( getContext(), endpoint );
         } catch (SQLException e) {
             throw new UpdateException(e.toString(), e);
         }
@@ -57,7 +57,7 @@ public class JmsManager extends HibernateEntityManager {
 
     public void delete( JmsConnection connection ) throws DeleteException {
         try {
-            _manager.delete( getContext(), connection );
+            PersistenceManager.delete( getContext(), connection );
         } catch ( SQLException e ) {
             throw new DeleteException( e.toString(), e );
         }
@@ -65,7 +65,7 @@ public class JmsManager extends HibernateEntityManager {
 
     public void delete( JmsEndpoint endpoint ) throws DeleteException {
         try {
-            _manager.delete( getContext(), endpoint );
+            PersistenceManager.delete( getContext(), endpoint );
         } catch ( SQLException e ) {
             throw new DeleteException( e.toString(), e );
         }
@@ -82,4 +82,14 @@ public class JmsManager extends HibernateEntityManager {
     public String getTableName() {
         return "jms_connection";
     }
+
+    public void addCrudListener( JmsCrudListener listener ) {
+        _crudListeners.add( listener );
+    }
+
+    public void removeCrudListener( JmsCrudListener listener ) {
+        _crudListeners.remove( listener );
+    }
+
+    private List _crudListeners = Collections.synchronizedList( new ArrayList() );
 }
