@@ -160,7 +160,7 @@ public class XmlUtil {
     }
 
     /**
-     * Generates a Map of namespace URIs to prefixes.
+     * Generates a Map of the namespace URIs and prefixes of the specified Node and all of its ancestor Elements.
      * <p>
      * URIs that were default namespaces will get a prefix starting with "default".
      * @param n the node from which to gather namespaces
