@@ -49,7 +49,7 @@ public class SsgKeyStoreManagerTest extends TestCase {
         System.out.println("Using client cert:" + CertUtils.toString(cert));
 
         Ssg testSsg = new Ssg(1, "foo.bar.blortch.l7tech.com");
-        testSsg.setUsername(CertUtils.extractUsernameFromClientCertificate(cert));
+        testSsg.setUsername(CertUtils.extractCommonNameFromClientCertificate(cert));
         testSsg.cmPassword("tralala".toCharArray());
 
 
