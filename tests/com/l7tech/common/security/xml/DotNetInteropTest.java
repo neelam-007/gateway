@@ -75,7 +75,7 @@ public class DotNetInteropTest extends TestCase {
         return encryptionKeys[0];
     }
 
-        public void _testDerivedKeyToken() throws Exception {
+    public void _testDerivedKeyToken() throws Exception {
         Document derivedKeySignedDoc = getDerviedKeySignedRequest();
         Element header = SoapUtil.getHeaderElement(derivedKeySignedDoc);
 
