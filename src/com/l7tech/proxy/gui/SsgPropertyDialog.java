@@ -325,6 +325,7 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
                                            new Insets(0, 5, 0, 0), 0, 0));
 
             fieldLocalEndpoint = new WrappingLabel("");
+            fieldLocalEndpoint.setCopyMenuEnabled(true);
             epp.add(new JLabel("Proxy URL:"), new GridBagConstraints(0, gridY, 1, 1, 0.0, 0.0,
                                                               GridBagConstraints.EAST,
                                                               GridBagConstraints.NONE,
