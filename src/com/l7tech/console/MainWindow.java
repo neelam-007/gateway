@@ -7,10 +7,7 @@ import com.l7tech.console.action.*;
 import com.l7tech.console.event.ConnectionEvent;
 import com.l7tech.console.event.ConnectionListener;
 import com.l7tech.console.event.WeakEventListenerList;
-import com.l7tech.console.panels.LogonDialog;
-import com.l7tech.console.panels.PolicyEditorPanel;
-import com.l7tech.console.panels.PreferencesDialog;
-import com.l7tech.console.panels.WorkSpacePanel;
+import com.l7tech.console.panels.*;
 import com.l7tech.console.security.ClientCredentialManager;
 import com.l7tech.console.tree.*;
 import com.l7tech.console.tree.identity.IdentitiesRootNode;
@@ -25,6 +22,7 @@ import javax.help.HelpBroker;
 import javax.help.HelpSet;
 import javax.help.HelpSetException;
 import javax.swing.*;
+import javax.swing.Timer;
 import javax.swing.border.Border;
 import javax.swing.event.EventListenerList;
 import javax.swing.event.TreeSelectionEvent;
@@ -38,9 +36,7 @@ import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.io.IOException;
 import java.net.URL;
-import java.util.EventListener;
-import java.util.MissingResourceException;
-import java.util.ResourceBundle;
+import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -82,6 +78,7 @@ public class MainWindow extends JFrame {
     private JMenuItem menuItemPref = null;
     private JCheckBoxMenuItem logMenuItem = null;
     private JCheckBoxMenuItem statMenuItem = null;
+    private JCheckBoxMenuItem monitoredEndpointsMenuItem;
     private JMenuItem helpTopicsMenuItem = null;
 
     private Action refreshAction = null;
@@ -96,6 +93,7 @@ public class MainWindow extends JFrame {
     private Action createServiceAction = null;
     private Action toggleGatewayLogWindowAction = null;
     private Action toggleClusterStatusWindowAction = null;
+    private Action toggleMonitoredEndpointsAction;
     private JPanel frameContentPane = null;
     private JPanel mainPane = null;
     private JPanel statusBarPane = null;
@@ -130,6 +128,7 @@ public class MainWindow extends JFrame {
     Action monitorAction = null;
     private ClusterStatusWindow clusterStatusWindow = null;
     private GatewayLogWindow gatewayLogWindow = null;
+    private MonitoredEndpointsWindow monitoredEndpointsWindow;
 
     /**
      * MainWindow constructor comment.
@@ -346,6 +345,7 @@ public class MainWindow extends JFrame {
 
         viewMenu.add(getStatMenuItem());
         viewMenu.add(getLogMenuItem());
+        viewMenu.add(getMonitoredEndpointsMenuItem());
 
         return viewMenu;
     }
@@ -1021,20 +1021,73 @@ public class MainWindow extends JFrame {
         gatewayLogWindow = new GatewayLogWindow(resapplication.getString("SSG") + " - " + resapplication.getString("LogBrowserWindowTitle"));
         gatewayLogWindow.addWindowListener(new WindowAdapter() {
             public void windowClosing(final WindowEvent e) {
-                logMenuItem.setSelected(false);
-
-                gatewayLogWindow.dispose();
-                gatewayLogWindow = null;
+                destroyGatewayLogWindow();
             }
 
             public void windowClosed(final WindowEvent e) {
-                logMenuItem.setSelected(false);
-                gatewayLogWindow = null;
+                destroyGatewayLogWindow();
             }
 
         });
+        addConnectionListener(gatewayLogWindow);
 
         return gatewayLogWindow;
+    }
+
+    private void destroyGatewayLogWindow() {
+        if (gatewayLogWindow == null)
+            return;
+        getLogMenuItem().setSelected(false);
+        gatewayLogWindow.dispose();
+        removeConnectionListener(gatewayLogWindow);
+        gatewayLogWindow = null;
+    }
+
+    private Action getMonitoredEndpointsAction() {
+        if (toggleMonitoredEndpointsAction != null)
+            return toggleMonitoredEndpointsAction;
+
+        String atext = resapplication.getString("toggle.jms.monitored.endpoints.display");
+
+        toggleMonitoredEndpointsAction = new AbstractAction(atext) {
+            public void actionPerformed(ActionEvent e) {
+                JCheckBoxMenuItem item = (JCheckBoxMenuItem)e.getSource();
+                if (item.isSelected()) {
+                    getMonitoredEndpointsWindow().show();
+                } else {
+                    destroyMonitoredEndpointsWindow();
+                }
+             }
+        };
+        toggleMonitoredEndpointsAction.putValue(Action.SHORT_DESCRIPTION, atext);
+        toggleMonitoredEndpointsAction.setEnabled(false);
+        enableActionWhileConnected(toggleMonitoredEndpointsAction);
+        return toggleMonitoredEndpointsAction;
+    }
+
+    private MonitoredEndpointsWindow getMonitoredEndpointsWindow() {
+        if (monitoredEndpointsWindow != null)
+            return monitoredEndpointsWindow;
+        monitoredEndpointsWindow = new MonitoredEndpointsWindow(this);
+        monitoredEndpointsWindow.addWindowListener(new WindowAdapter() {
+            public void windowClosed(WindowEvent e) {
+                destroyMonitoredEndpointsWindow();
+            }
+
+            public void windowClosing(WindowEvent e) {
+                destroyMonitoredEndpointsWindow();
+            }
+        });
+        return monitoredEndpointsWindow;
+    }
+
+    private void destroyMonitoredEndpointsWindow() {
+        if (monitoredEndpointsWindow == null)
+            return;
+        getMonitoredEndpointsMenuItem().setSelected(false);
+        monitoredEndpointsWindow.dispose();
+        removeConnectionListener(monitoredEndpointsWindow);
+        monitoredEndpointsWindow = null;
     }
 
     private Action getGatewayLogWindowAction() {
@@ -1044,48 +1097,30 @@ public class MainWindow extends JFrame {
 
         toggleGatewayLogWindowAction =
           new AbstractAction(atext) {
-              /**
-               * Invoked when an action occurs.
-               * 
-               * @param event the event that occured
-               * @see Action#removePropertyChangeListener
-               */
               public void actionPerformed(ActionEvent event) {
                   JCheckBoxMenuItem item = (JCheckBoxMenuItem)event.getSource();
                   if (item.isSelected()) {
                       getGatewayLogWindow().show();
                   } else {
-                      if (gatewayLogWindow != null) {
-                          gatewayLogWindow.dispose();
-                          gatewayLogWindow = null;
-                      }
+                      destroyGatewayLogWindow();
                   }
               }
-
-              ConnectionListener listener = new ConnectionListener() {
-                  public void onConnect(ConnectionEvent e) {
-                      setEnabled(true);
-                      if (gatewayLogWindow != null) {
-                          gatewayLogWindow.onConnect();
-                      }
-                  }
-
-                  public void onDisconnect(ConnectionEvent e) {
-                      setEnabled(false);
-                      if (gatewayLogWindow != null) {
-                          gatewayLogWindow.onDisconnect();
-                      }
-                  }
-              };
-
-              {
-                  MainWindow.this.addConnectionListener(listener);
-              }
-
           };
         toggleGatewayLogWindowAction.putValue(Action.SHORT_DESCRIPTION, atext);
         toggleGatewayLogWindowAction.setEnabled(false);
+        enableActionWhileConnected(toggleGatewayLogWindowAction);
         return toggleGatewayLogWindowAction;
+    }
+
+    /** Configure the specified item to be enabled only while we are connected to a gateway. */
+    private ArrayList weakListenerListWorkAround = new ArrayList();
+    private void enableActionWhileConnected(final Action item) {
+        ConnectionListener myListener = new ConnectionListener() {
+            public void onConnect(ConnectionEvent e) { item.setEnabled(true); }
+            public void onDisconnect(ConnectionEvent e) { item.setEnabled(false); }
+        };
+        weakListenerListWorkAround.add(myListener); // bind lifecycle to lifespan of MainWindow instance
+        addConnectionListener(myListener);
     }
 
     private Action getClusterStatusWindowAction() {
@@ -1831,6 +1866,14 @@ public class MainWindow extends JFrame {
         logMenuItem = new JCheckBoxMenuItem(getGatewayLogWindowAction());
 
         return logMenuItem;
+    }
+
+    public JCheckBoxMenuItem getMonitoredEndpointsMenuItem() {
+        if (monitoredEndpointsMenuItem != null)
+            return monitoredEndpointsMenuItem;
+        monitoredEndpointsMenuItem = new JCheckBoxMenuItem(getMonitoredEndpointsAction());
+
+        return monitoredEndpointsMenuItem;
     }
 
     public JCheckBoxMenuItem getStatMenuItem() {

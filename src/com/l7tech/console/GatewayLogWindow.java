@@ -3,6 +3,8 @@ package com.l7tech.console;
 import com.l7tech.common.gui.util.ImageCache;
 import com.l7tech.console.panels.LogPanel;
 import com.l7tech.console.util.Registry;
+import com.l7tech.console.event.ConnectionListener;
+import com.l7tech.console.event.ConnectionEvent;
 
 
 import javax.swing.*;
@@ -18,7 +20,7 @@ import java.util.ResourceBundle;
  * $Id$
  */
 
-public class GatewayLogWindow extends JFrame {
+public class GatewayLogWindow extends JFrame implements ConnectionListener {
 
     public static final String RESOURCE_PATH = "com/l7tech/console/resources";
     private javax.swing.JLabel gatewayLogTitle = null;
@@ -217,14 +219,14 @@ public class GatewayLogWindow extends JFrame {
     /**
      * Intialization when the connection to the server is established.
      */
-    public void onConnect() {
+    public void onConnect(ConnectionEvent e) {
         getLogPane().onConnect();
     }
 
     /**
      * Clean up the resources when the connection to the server went down.
      */
-    public void onDisconnect() {
+    public void onDisconnect(ConnectionEvent e) {
         getLogPane().onDisconnect();
     }
 
