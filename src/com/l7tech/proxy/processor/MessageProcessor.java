@@ -243,7 +243,7 @@ public class MessageProcessor {
             url = ssg.getServerUrl();
             if (req.isSslRequired()) {
                 if (req.isSslForbidden())
-                    throw new ConfigurationException("SSL is both required and forbidden by policy");
+                    log.error("Error: SSL is both forbidden and required by policy -- leaving SSL enabled");
                 if ("http".equalsIgnoreCase(url.getProtocol())) {
                     log.info("Changing http to https per policy for this request (using SSL port " +
                              ssg.getSslPort() + ")");
