@@ -6,10 +6,8 @@
 
 package com.l7tech.common.gui.widgets;
 
-import com.l7tech.common.gui.util.TableUtil;
-
 import javax.swing.*;
-import javax.swing.table.AbstractTableModel;
+import javax.swing.border.Border;
 import java.awt.*;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -20,6 +18,7 @@ import java.security.interfaces.DSAParams;
 import java.security.interfaces.DSAPublicKey;
 import java.security.interfaces.RSAPublicKey;
 import java.util.ArrayList;
+import java.util.Iterator;
 
 /**
  * Panel that displays the fields of an X509Certificate.
@@ -29,15 +28,20 @@ import java.util.ArrayList;
  */
 public class CertificatePanel extends JPanel {
     private X509Certificate cert;
-    private AbstractTableModel certificateTableModel;
-    private JTable certificateTable;
-    private JScrollPane tableScrollPane;
+    private JPanel cp;
+    private boolean certBorderEnabled = true;
 
     /**
      * Create a new CertificatePanel
      */
     public CertificatePanel() {
-        initComponents();
+        setLayout(new GridBagLayout());
+        cp = new JPanel(new GridBagLayout());
+        GridBagConstraints c = new GridBagConstraints();
+        c.anchor = GridBagConstraints.NORTHWEST;
+        c.fill = GridBagConstraints.BOTH;
+        add(cp, c);
+        setCertBorderEnabled(certBorderEnabled);
     }
 
     public CertificatePanel(X509Certificate cert)
@@ -48,62 +52,45 @@ public class CertificatePanel extends JPanel {
         loadCertificateInfo();
     }
 
-    /**
-     * This method is called from within the constructor to
-     * initialize the dialog.
-     */
-    private void initComponents() {
-        certificateTable = new JTable();
-
-        tableScrollPane = new JScrollPane(certificateTable);
-        add(tableScrollPane,
-          new GridBagConstraints(0, 0, 1, 1, 0.0, 0.0,
-            GridBagConstraints.CENTER,
-            GridBagConstraints.NONE,
-            new Insets(15, 15, 0, 15), 0, 0));
+    public void setCertBorderEnabled(boolean certBorderEnabled) {
+        this.certBorderEnabled = certBorderEnabled;
+        if (certBorderEnabled) {
+            Color color = new JLabel().getForeground();
+            Border thin = BorderFactory.createLineBorder(color, 2);
+            Border thick = BorderFactory.createLineBorder(color, 6);
+            Border thickSpace = BorderFactory.createCompoundBorder(thick, BorderFactory.createEmptyBorder(4, 4, 4, 4));
+            Border thinSpace = BorderFactory.createCompoundBorder(thin, BorderFactory.createEmptyBorder(4, 4, 4, 4));
+            cp.setBorder(BorderFactory.createCompoundBorder(thickSpace, thinSpace));
+        } else
+            cp.setBorder(BorderFactory.createEmptyBorder());
     }
 
-    /**
-     * create the table model with certificate fields
-     *
-     * @return the <code>AbstractTableModel</code> for the
-     * user's certificate
-     * @throws java.security.NoSuchAlgorithmException
-     * @throws java.security.cert.CertificateEncodingException
-     */
-    private AbstractTableModel getCertificateTableModel()
-      throws NoSuchAlgorithmException, CertificateEncodingException {
-        if (certificateTableModel != null) {
-            return certificateTableModel;
+    public boolean getCertBorderEnabled() {
+        return certBorderEnabled;
+    }
+
+    private void loadCertificateInfo() throws CertificateEncodingException, NoSuchAlgorithmException {
+        ArrayList props = getCertProperties();
+        int y = 0;
+        cp.removeAll();
+        for (Iterator i = props.iterator(); i.hasNext();) {
+            String[] pair = (String[]) i.next();
+            JLabel key = new JLabel(pair[0] + ": ");
+            JLabel value = new JLabel(pair[1]);
+            GridBagConstraints c = new GridBagConstraints();
+            c.gridx = 0;
+            c.gridy = y++;
+            c.anchor = GridBagConstraints.WEST;
+            c.fill = GridBagConstraints.NONE;
+            cp.add(key, c);
+            c.gridx = 1;
+            cp.add(value, c);
         }
-
-        certificateTableModel = new AbstractTableModel() {
-            String[] cols = {"Certificate Field", "Value"};
-            ArrayList data = getCertProperties();
-
-            public String getColumnName(int col) {
-                return cols[col];
-            }
-
-            public int getColumnCount() {
-                return cols.length;
-            }
-
-            public int getRowCount() {
-                return data.size();
-            }
-
-            public Object getValueAt(int row, int col) {
-                return ((String[])data.get(row))[col];
-            }
-        };
-
-        Dimension size = new Dimension(500,
-                              (certificateTableModel.getRowCount() + 1) * certificateTable.getRowHeight() + 1);
-        tableScrollPane.setPreferredSize(size);
-        tableScrollPane.setMinimumSize(size);
-
-        return certificateTableModel;
+        cp.add(Box.createGlue(), new GridBagConstraints(0, y++, 1, 1, 1.0, 1.0,
+                                                        GridBagConstraints.NORTHWEST,
+                                                        GridBagConstraints.BOTH,
+                                                        new Insets(0, 0, 0, 0), 0, 0));
+        invalidate();
     }
 
     /** Returns a properties instance filled out with info about the certificate. */
@@ -129,7 +116,7 @@ public class CertificatePanel extends JPanel {
             RSAPublicKey rsaKey = (RSAPublicKey) publicKey;
             String modulus = rsaKey.getModulus().toString(16);
             l.add(new String[]{"RSA strength", (modulus.length() * 4) + " bits"});
-            l.add(new String[]{"RSA modulus", modulus});
+            //l.add(new String[]{"RSA modulus", modulus});
             l.add(new String[]{"RSA public exponent", rsaKey.getPublicExponent().toString(16)});
         } else if (publicKey != null && publicKey instanceof DSAPublicKey) {
             DSAPublicKey dsaKey = (DSAPublicKey) publicKey;
@@ -141,18 +128,6 @@ public class CertificatePanel extends JPanel {
 
         return l;
     }
-
-    /**
-     * load certificate info and updates the data and status of the
-     * form elements
-     */
-    private void loadCertificateInfo() throws CertificateEncodingException, NoSuchAlgorithmException {
-            AbstractTableModel
-              certificateTableModel = getCertificateTableModel();
-            certificateTable.setModel(certificateTableModel);
-        TableUtil.adjustColumnWidth(certificateTable, 0);
-    }
-
 
     /**
      * The method creates the fingerprint and returns it in a
