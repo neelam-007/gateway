@@ -6,24 +6,22 @@
 
 package com.l7tech.server.policy.assertion.credential.http;
 
-import com.l7tech.policy.assertion.credential.http.HttpBasic;
-import com.l7tech.policy.assertion.AssertionStatus;
-import com.l7tech.server.policy.assertion.ServerAssertion;
-import com.l7tech.policy.assertion.credential.PrincipalCredentials;
-import com.l7tech.policy.assertion.credential.CredentialFinderException;
-import com.l7tech.policy.assertion.credential.CredentialFormat;
-import com.l7tech.message.Request;
-import com.l7tech.message.Response;
 import com.l7tech.identity.User;
 import com.l7tech.logging.LogManager;
+import com.l7tech.message.Request;
+import com.l7tech.message.Response;
+import com.l7tech.policy.assertion.AssertionStatus;
+import com.l7tech.policy.assertion.credential.CredentialFinderException;
+import com.l7tech.policy.assertion.credential.CredentialFormat;
+import com.l7tech.policy.assertion.credential.PrincipalCredentials;
+import com.l7tech.policy.assertion.credential.http.HttpBasic;
+import com.l7tech.server.policy.assertion.ServerAssertion;
+import org.apache.axis.encoding.Base64;
 
 import java.io.IOException;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-import java.util.Map;
 import java.util.Collections;
-
-import org.apache.axis.encoding.Base64;
+import java.util.Map;
+import java.util.logging.Logger;
 
 /**
  * @author alex
@@ -79,11 +77,13 @@ public class ServerHttpBasic extends ServerHttpCredentialSource implements Serve
             User u = new User();
             u.setLogin( login );
 
+            logger.fine( "Found HTTP Basic credentials for user " + login );
+
             return new PrincipalCredentials( u, pass.getBytes(ENCODING), CredentialFormat.CLEARTEXT, realm );
         } else {
             // No colons
             String err = "Invalid HTTP Basic format!";
-            logger.severe(err);
+            logger.warning(err);
             throw new CredentialFinderException( err );
         }
     }
