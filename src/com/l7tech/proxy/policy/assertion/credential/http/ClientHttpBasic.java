@@ -11,6 +11,7 @@ import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.proxy.policy.assertion.ClientAssertion;
 import com.l7tech.proxy.datamodel.PendingRequest;
+import com.l7tech.proxy.datamodel.SsgResponse;
 import com.l7tech.logging.LogManager;
 
 import java.util.logging.Logger;
@@ -46,6 +47,11 @@ public class ClientHttpBasic implements ClientAssertion {
         request.setHttpBasicUsername(username);
         request.setHttpBasicPassword(password);
         log.info("HttpBasic: setting credentials for SSG " + request.getSsg());
+        return AssertionStatus.NONE;
+    }
+
+    public AssertionStatus unDecorateReply(PendingRequest request, SsgResponse response) throws PolicyAssertionException {
+        // no action on response
         return AssertionStatus.NONE;
     }
 

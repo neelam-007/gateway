@@ -10,6 +10,7 @@ import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.composite.ExactlyOneAssertion;
 import com.l7tech.proxy.datamodel.PendingRequest;
+import com.l7tech.proxy.datamodel.SsgResponse;
 import com.l7tech.proxy.policy.assertion.ClientAssertion;
 import org.apache.log4j.Category;
 
@@ -43,6 +44,11 @@ public class ClientExactlyOneAssertion extends ClientCompositeAssertion implemen
             result = thisResult;
         }
         return result;
+    }
+
+    public AssertionStatus unDecorateReply(PendingRequest request, SsgResponse response) throws PolicyAssertionException {
+        // no action on response
+        return AssertionStatus.NONE;
     }
 
     protected ExactlyOneAssertion data;

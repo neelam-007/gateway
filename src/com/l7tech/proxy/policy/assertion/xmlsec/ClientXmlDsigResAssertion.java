@@ -31,7 +31,6 @@ import java.security.cert.X509Certificate;
 public class ClientXmlDsigResAssertion implements ClientAssertion {
 
     public ClientXmlDsigResAssertion(XmlDsigResAssertion data) {
-
     }
 
     /**
@@ -52,7 +51,7 @@ public class ClientXmlDsigResAssertion implements ClientAssertion {
      * @return
      * @throws PolicyAssertionException
      */
-    AssertionStatus unDecorateReply(PendingRequest request, SsgResponse response) throws PolicyAssertionException {
+    public AssertionStatus unDecorateReply(PendingRequest request, SsgResponse response) throws PolicyAssertionException {
         SoapMsgSigner dsigHelper = new SoapMsgSigner();
         Document doc = null;
         //doc = response.getResponseAsSoapEnvelope();

@@ -8,6 +8,7 @@ package com.l7tech.proxy.policy.assertion.credential.wss;
 
 import com.l7tech.proxy.policy.assertion.ClientAssertion;
 import com.l7tech.proxy.datamodel.PendingRequest;
+import com.l7tech.proxy.datamodel.SsgResponse;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.credential.wss.WssDigest;
@@ -29,6 +30,11 @@ public class ClientWssDigest implements ClientAssertion {
      */
     public AssertionStatus decorateRequest(PendingRequest requst) throws PolicyAssertionException {
         return AssertionStatus.NOT_YET_IMPLEMENTED;
+    }
+
+    public AssertionStatus unDecorateReply(PendingRequest request, SsgResponse response) throws PolicyAssertionException {
+        // no action on response
+        return AssertionStatus.NONE;
     }
 
     protected WssDigest data;

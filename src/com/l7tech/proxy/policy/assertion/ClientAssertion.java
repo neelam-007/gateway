@@ -31,5 +31,5 @@ public interface ClientAssertion {
      * @return AssertionStatus.NONE if this Assertion was applied to the response successfully; otherwise, some error conde
      * @throws PolicyAssertionException if processing should not continue due to a serious error
      */
-    //TODO: AssertionStatus unDecorateReply(PendingRequest request, SsgResponse response) throws PolicyAssertionException;
+    AssertionStatus unDecorateReply(PendingRequest request, SsgResponse response) throws PolicyAssertionException;
 }

@@ -10,6 +10,7 @@ import com.l7tech.policy.assertion.RoutingAssertion;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.proxy.datamodel.PendingRequest;
+import com.l7tech.proxy.datamodel.SsgResponse;
 
 /**
  * @author alex
@@ -23,6 +24,11 @@ public class ClientRoutingAssertion implements ClientAssertion {
     /** Client-side doesn't know or care about server-side routing. */
     public AssertionStatus decorateRequest(PendingRequest request) throws PolicyAssertionException {
         return AssertionStatus.NOT_APPLICABLE;
+    }
+
+    public AssertionStatus unDecorateReply(PendingRequest request, SsgResponse response) throws PolicyAssertionException {
+        // no action on response
+        return AssertionStatus.NONE;
     }
 
     protected RoutingAssertion data;

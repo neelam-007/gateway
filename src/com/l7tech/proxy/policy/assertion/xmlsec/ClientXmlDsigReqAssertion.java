@@ -4,6 +4,7 @@ import com.l7tech.proxy.policy.assertion.ClientAssertion;
 import com.l7tech.proxy.datamodel.PendingRequest;
 import com.l7tech.proxy.datamodel.Ssg;
 import com.l7tech.proxy.datamodel.SsgKeyStoreManager;
+import com.l7tech.proxy.datamodel.SsgResponse;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.xmlsec.XmlDsigReqAssertion;
@@ -97,6 +98,11 @@ public class ClientXmlDsigReqAssertion implements ClientAssertion {
 
         request.setSoapEnvelope(soapmsg);
 
+        return AssertionStatus.NONE;
+    }
+
+    public AssertionStatus unDecorateReply(PendingRequest request, SsgResponse response) throws PolicyAssertionException {
+        // no action on response
         return AssertionStatus.NONE;
     }
 

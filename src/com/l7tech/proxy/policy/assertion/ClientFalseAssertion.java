@@ -10,6 +10,7 @@ import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.FalseAssertion;
 import com.l7tech.proxy.datamodel.PendingRequest;
+import com.l7tech.proxy.datamodel.SsgResponse;
 
 /**
  * @author alex
@@ -26,5 +27,10 @@ public class ClientFalseAssertion implements ClientAssertion {
 
     public AssertionStatus decorateRequest(PendingRequest request) throws PolicyAssertionException {
         return AssertionStatus.FALSIFIED;
+    }
+
+    public AssertionStatus unDecorateReply(PendingRequest request, SsgResponse response) throws PolicyAssertionException {
+        // no action on response
+        return AssertionStatus.NONE;
     }
 }

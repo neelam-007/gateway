@@ -11,6 +11,7 @@ import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.credential.http.HttpClientCert;
 import com.l7tech.proxy.datamodel.PendingRequest;
 import com.l7tech.proxy.datamodel.SsgKeyStoreManager;
+import com.l7tech.proxy.datamodel.SsgResponse;
 import com.l7tech.proxy.policy.assertion.ClientAssertion;
 import org.apache.log4j.Category;
 
@@ -43,6 +44,11 @@ public class ClientHttpClientCert implements ClientAssertion {
         request.setClientCertWouldHaveHelped(true);
         log.info("We do not appear to have a Client Certificate for this SSG.");
         return AssertionStatus.AUTH_REQUIRED;
+    }
+
+    public AssertionStatus unDecorateReply(PendingRequest request, SsgResponse response) throws PolicyAssertionException {
+        // no action on response
+        return AssertionStatus.NONE;
     }
 
     protected HttpClientCert data;

@@ -8,6 +8,7 @@ package com.l7tech.proxy.policy.assertion.credential.wss;
 
 import com.l7tech.proxy.policy.assertion.ClientAssertion;
 import com.l7tech.proxy.datamodel.PendingRequest;
+import com.l7tech.proxy.datamodel.SsgResponse;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.credential.wss.WssBasic;
@@ -76,6 +77,11 @@ public class ClientWssBasic extends ClientWssCredentialSource implements ClientA
         secElement = (Element)soapmsg.importNode(secElement, true);
         headerel.appendChild(secElement);
 
+        return AssertionStatus.NONE;
+    }
+
+    public AssertionStatus unDecorateReply(PendingRequest request, SsgResponse response) throws PolicyAssertionException {
+        // no action on response
         return AssertionStatus.NONE;
     }
 

@@ -9,6 +9,7 @@ package com.l7tech.proxy.policy.assertion.credential.http;
 import com.l7tech.proxy.policy.assertion.ClientAssertion;
 import com.l7tech.proxy.datamodel.PendingRequest;
 import com.l7tech.proxy.datamodel.Ssg;
+import com.l7tech.proxy.datamodel.SsgResponse;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.credential.http.HttpDigest;
@@ -37,6 +38,11 @@ public class ClientHttpDigest implements ClientAssertion {
         request.setDigestAuthRequired(true);
         request.setHttpDigestUsername(ssg.getUsername());
         request.setHttpDigestPassword(ssg.password());
+        return AssertionStatus.NONE;
+    }
+
+    public AssertionStatus unDecorateReply(PendingRequest request, SsgResponse response) throws PolicyAssertionException {
+        // no action on response
         return AssertionStatus.NONE;
     }
 

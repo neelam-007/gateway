@@ -10,6 +10,7 @@ import com.l7tech.policy.assertion.SslAssertion;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.proxy.datamodel.PendingRequest;
+import com.l7tech.proxy.datamodel.SsgResponse;
 import org.apache.log4j.Category;
 
 /**
@@ -31,6 +32,11 @@ public class ClientSslAssertion implements ClientAssertion {
      */
     public AssertionStatus decorateRequest(PendingRequest request) throws PolicyAssertionException {
         request.setSslRequired( data.getOption() == SslAssertion.REQUIRED );
+        return AssertionStatus.NONE;
+    }
+
+    public AssertionStatus unDecorateReply(PendingRequest request, SsgResponse response) throws PolicyAssertionException {
+        // no action on response
         return AssertionStatus.NONE;
     }
 
