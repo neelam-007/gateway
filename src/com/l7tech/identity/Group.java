@@ -20,7 +20,5 @@ public interface Group extends Principal {
     Set getMembers();
     Set getMemberHeaders();
 
-    void copyFrom(Group objToCopy);
-
     GroupBean getGroupBean();
 }
