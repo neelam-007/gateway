@@ -14,8 +14,11 @@ import java.util.Iterator;
 import java.util.List;
 
 /**
- * The class creates <code>SoapRequest</code> instances from the
- * given WSDL.
+ * The class creates and array of <code>SoapRequest</code> instances
+ * from the given WSDL.
+ * The SOAP message generation may be customized by optionally specifying
+ * the callback <code>MessageInputGenerator</code> for user supplied parameter
+ * values.
  * <p/>
  * Currently does only rpc requests.
  * 
@@ -44,10 +47,11 @@ public class SoapRequestGenerator {
     }
 
     /**
-     * @param wsdlResource 
-     * @return 
-     * @throws WSDLException         
-     * @throws FileNotFoundException 
+     * @param wsdlResource the wsdl resource name
+     * @return the array of <code>SoapRequest</code> instances
+     *
+     * @throws WSDLException on error parsing the wsdl
+     * @throws FileNotFoundException if wsdl cannot be found
      */
     public SOAPRequest[] parse(String wsdlResource)
       throws WSDLException, FileNotFoundException, SOAPException {
@@ -66,10 +70,12 @@ public class SoapRequestGenerator {
     }
 
     /**
-     * @param wsdl 
-     * @return 
-     */
-    public SOAPRequest[] generate(Wsdl wsdl) throws SOAPException {
+      * @param wsdl the parsed wsdl instance
+      * @return the array of <code>SoapRequest</code> instances
+      *
+      * @throws SOAPException on error generating SOAP messages
+      */
+     public SOAPRequest[] generate(Wsdl wsdl) throws SOAPException {
         List requests = new ArrayList();
         Iterator it = wsdl.getBindings().iterator();
         while (it.hasNext()) {
@@ -161,6 +167,9 @@ public class SoapRequestGenerator {
         return soapMessage;
     }
 
+    /**
+     * Represents the soap message and the soap action
+     */
     public static class SOAPRequest {
         private final SOAPMessage soapMessage;
         private final String soapAction;
