@@ -33,7 +33,18 @@ public interface Message {
 
         public Map getParams() {
             return params;
-        }                       
+        }
+
+        public String toString() {
+            StringBuffer strongbad = new StringBuffer();
+            strongbad.append(name).append(": ").append(value);
+            for ( Iterator i = params.keySet().iterator(); i.hasNext(); ) {
+                String key = (String)i.next();
+                String value = (String)params.get(key);
+                strongbad.append("; ").append(key).append("=\"").append(value).append("\"");
+            }
+            return strongbad.toString();
+        }
     }
 
     public static class Part {
