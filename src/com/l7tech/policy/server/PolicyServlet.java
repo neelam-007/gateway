@@ -13,7 +13,9 @@ import com.l7tech.service.ServiceManager;
 import com.l7tech.util.Locator;
 import com.l7tech.common.util.HexUtils;
 import com.l7tech.server.SoapMessageProcessingServlet;
-
+import com.l7tech.credential.http.HttpBasicCredentialFinder;
+import com.l7tech.credential.PrincipalCredentials;
+import com.l7tech.credential.CredentialFinderException;
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
@@ -88,6 +90,7 @@ public class PolicyServlet extends HttpServlet {
             newUrl += httpServletRequest.getRequestURI() + "?" + httpServletRequest.getQueryString();
             httpServletResponse.setHeader(SoapMessageProcessingServlet.POLICYURL_HEADER, newUrl);
             httpServletResponse.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Request must come through SSL. " + newUrl);
+            LogManager.getInstance().getSystemLogger().log(Level.INFO, "Non-anonymous policy requested on in-secure channel (http). Sending 401 back with secure URL to requestor: " + newUrl);
             return;
         }
         // get credentials and check that they are valid for this policy
@@ -96,11 +99,16 @@ public class PolicyServlet extends HttpServlet {
             user = authenticateRequest(httpServletRequest);
             if (user == null) {
                 // send error back with a hint that credentials should be provided
-                // todo
+                String newUrl = "https://"  + httpServletRequest.getServerName();
+                if (httpServletRequest.getServerPort() == 8080 || httpServletRequest.getServerPort() == 8443) newUrl += ":8443";
+                newUrl += httpServletRequest.getRequestURI() + "?" + httpServletRequest.getQueryString();
+                httpServletResponse.setHeader(SoapMessageProcessingServlet.POLICYURL_HEADER, newUrl);
+                httpServletResponse.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Must provide valid credentials.");
+                return;
             }
         }
 
-        // THE POLICY SHOULD BE STIPPED OUT OF ANYTHING THAT THE REQUESTOR SHOULD NOT BE ALLOWED TO SEE
+        // THE POLICY SHOULD BE STRIPPED OUT OF ANYTHING THAT THE REQUESTOR SHOULD NOT BE ALLOWED TO SEE
         targetService = reducePolicyToNeedToKnowBasicForUser(user, targetService);
 
         // OUTPUT THE POLICY
@@ -249,8 +257,54 @@ public class PolicyServlet extends HttpServlet {
         return false;
     }
 
-    private User authenticateRequest(HttpServletRequest req) {
-        // todo
+    /**
+     * look for basic creds in the request and authenticate them
+     */
+    private User authenticateRequest(HttpServletRequest req) throws IOException {
+        // get the credentials
+        String authorizationHeader = req.getHeader("Authorization");
+        if (authorizationHeader == null || authorizationHeader.length() < 1) {
+            LogManager.getInstance().getSystemLogger().log(Level.WARNING, "No authorization header found.");
+            return null;
+        }
+        HttpBasicCredentialFinder credsFinder = new HttpBasicCredentialFinder();
+        PrincipalCredentials creds = null;
+        try {
+            creds = credsFinder.findCredentials(authorizationHeader);
+        } catch (CredentialFinderException e) {
+            LogManager.getInstance().getSystemLogger().log(Level.SEVERE, "Exception looking for exception.", e);
+            return null;
+        }
+        if (creds == null) {
+            LogManager.getInstance().getSystemLogger().log(Level.WARNING, "No credentials found.");
+            return null;
+        }
+        // we have credentials, attempt to authenticate them
+        IdentityProviderConfigManager configManager = new IdProvConfManagerServer();
+        Collection providers = null;
+        try {
+            providers = configManager.findAllIdentityProviders();
+            for (Iterator i = providers.iterator(); i.hasNext();) {
+                IdentityProvider provider = (IdentityProvider) i.next();
+                if (provider.authenticate(creds)) {
+                    LogManager.getInstance().getSystemLogger().log(Level.INFO, "Authentication successful for user " + creds.getUser().getLogin() + " on identity provider " + provider.getConfig().getName());
+                    return creds.getUser();
+                }
+            }
+        } catch (FindException e) {
+            LogManager.getInstance().getSystemLogger().log(Level.SEVERE, "Exception getting id providers.", e);
+            return null;
+        } finally {
+            try {
+                endTransaction();
+            } catch ( SQLException se ) {
+                LogManager.getInstance().getSystemLogger().log(Level.WARNING, null, se);
+            } catch ( TransactionException te ) {
+                LogManager.getInstance().getSystemLogger().log(Level.WARNING, null, te);
+            }
+        }
+
+        LogManager.getInstance().getSystemLogger().log(Level.WARNING, "Creds do not authenticate against any registered id provider.");
         return null;
     }
 
