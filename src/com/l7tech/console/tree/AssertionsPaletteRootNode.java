@@ -1,6 +1,5 @@
 package com.l7tech.console.tree;
 
-import com.l7tech.console.action.NewProviderAction;
 import com.l7tech.console.util.Preferences;
 import com.l7tech.console.util.Registry;
 
@@ -87,9 +86,7 @@ public class AssertionsPaletteRootNode extends AbstractTreeNode {
      * @return actions appropriate to the node
      */
     public Action[] getActions() {
-        return new Action[]{
-            new NewProviderAction(this),
-            new RefreshTreeNodeAction(this)};
+        return new Action[]{new RefreshTreeNodeAction(this)};
     }
 
     /**

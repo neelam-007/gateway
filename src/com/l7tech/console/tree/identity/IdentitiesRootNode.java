@@ -1,6 +1,7 @@
 package com.l7tech.console.tree.identity;
 
 import com.l7tech.console.action.NewProviderAction;
+import com.l7tech.console.action.NewSamlProviderAction;
 import com.l7tech.console.tree.AbstractTreeNode;
 import com.l7tech.console.tree.EntitiesEnumeration;
 import com.l7tech.console.tree.RefreshTreeNodeAction;
@@ -15,7 +16,8 @@ import java.util.List;
 
 /**
  * The class represents an <code>AbstractTreeNode</code> specialization
- * element that represents the assertions palette root.
+ * element that represents the identity providers and SAML providers
+ * elements root.
  * 
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  * @version 1.1
@@ -90,6 +92,7 @@ public class IdentitiesRootNode extends AbstractTreeNode {
     public Action[] getActions() {
         return new Action[]{
             new NewProviderAction(this),
+            new NewSamlProviderAction(this),
             new RefreshTreeNodeAction(this)};
     }
 
@@ -106,7 +109,7 @@ public class IdentitiesRootNode extends AbstractTreeNode {
      * @param open for nodes that can be opened, can have children
      */
     protected String iconResource(boolean open) {
-        return "com/l7tech/console/resources/policy16.gif";
+        return "com/l7tech/console/resources/identity.png";
     }
 
     private String label;

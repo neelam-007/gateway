@@ -2,18 +2,15 @@ package com.l7tech.console.action;
 
 import com.l7tech.console.MainWindow;
 import com.l7tech.console.panels.WorkSpacePanel;
-import com.l7tech.console.tree.*;
 import com.l7tech.console.util.Registry;
-import com.l7tech.console.util.ComponentRegistry;
 
 import javax.swing.*;
 import javax.swing.event.HyperlinkEvent;
 import javax.swing.event.HyperlinkListener;
 import javax.swing.text.html.HTMLDocument;
-import javax.swing.tree.DefaultMutableTreeNode;
+import java.awt.*;
 import java.io.IOException;
 import java.net.URL;
-import java.awt.*;
 
 /**
  * The <code>HomeAction</code> displays the dds the new user.
@@ -103,35 +100,9 @@ public class HomeAction extends BaseAction {
                             }
                         });
                     } else if (ADD_USER.equals(url)) {
-                        SwingUtilities.invokeLater(new Runnable() {
-                            public void run() {
-                                JTree tree =
-                                  (JTree)ComponentRegistry.getInstance().getComponent(AssertionsTree.NAME);
-                                if (tree != null) {
-                                    AbstractTreeNode node =
-                                      (AbstractTreeNode)TreeNodeActions.
-                                      nodeByNamePath(new String[]{"Internal Identity Provider"},
-                                        (DefaultMutableTreeNode)tree.getModel().getRoot());
-                                    new NewUserAction(node).actionPerformed(null);
-                                }
-
-                            }
-                        });
+                        new NewUserAction(null).actionPerformed(null);
                     } else if (ADD_GROUP.equals(url)) {
-                        SwingUtilities.invokeLater(new Runnable() {
-                            public void run() {
-                                JTree tree =
-                                  (JTree)ComponentRegistry.getInstance().getComponent(AssertionsTree.NAME);
-                                if (tree != null) {
-                                    AbstractTreeNode node =
-                                      (AbstractTreeNode)TreeNodeActions.
-                                      nodeByNamePath(new String[]{"Internal Identity Provider"},
-                                        (DefaultMutableTreeNode)tree.getModel().getRoot());
-                                    new NewGroupAction(node).actionPerformed(null);
-                                }
-
-                            }
-                        });
+                        new NewGroupAction(null).actionPerformed(null);
                     }
                 }
             }

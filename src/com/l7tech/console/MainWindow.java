@@ -906,7 +906,7 @@ public class MainWindow extends JFrame {
         treeModel.setRoot(identitiesRootNode);
 
         final JTree identitiesTree = getIdentitiesTree();
-        identitiesTree.setRootVisible(false);
+        identitiesTree.setRootVisible(true);
         identitiesTree.setModel(treeModel);
 
         String rootTitle = "Services @ ";

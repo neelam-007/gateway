@@ -26,10 +26,10 @@ import java.util.logging.Logger;
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  * @version 1.0
  */
-public class NewProviderAction extends NodeAction {
+public class NewSamlProviderAction extends NodeAction {
     static final Logger log = Logger.getLogger(NewUserAction.class.getName());
 
-    public NewProviderAction(AbstractTreeNode node) {
+    public NewSamlProviderAction(AbstractTreeNode node) {
         super(node);
     }
 
@@ -37,14 +37,14 @@ public class NewProviderAction extends NodeAction {
      * @return the action name
      */
     public String getName() {
-        return "New provider";
+        return "New SAML Provider";
     }
 
     /**
      * @return the aciton description
      */
     public String getDescription() {
-        return "Create new identity provider";
+        return "Create new SAML provider";
     }
 
     /**
