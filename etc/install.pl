@@ -136,7 +136,6 @@ ONBOOT=yes
 BOOTPROTO=static
 IPADDR=$Conf{"net_back_ip"}
 NETMASK=$Conf{"net_back_mask"}
-GATEWAY=$Conf{"net_back_rt"}
 
 EOF
 		close OUT;
