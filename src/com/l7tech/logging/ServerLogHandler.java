@@ -1,133 +1,93 @@
 package com.l7tech.logging;
 
-import com.l7tech.cluster.ClusterInfoManager;
 import com.l7tech.common.RequestId;
 import com.l7tech.message.Request;
-import com.l7tech.objectmodel.DeleteException;
 import com.l7tech.objectmodel.HibernatePersistenceContext;
 import com.l7tech.objectmodel.PersistenceContext;
 import com.l7tech.objectmodel.TransactionException;
 import com.l7tech.server.MessageProcessor;
 import net.sf.hibernate.HibernateException;
-import net.sf.hibernate.Query;
 import net.sf.hibernate.Session;
 
 import java.sql.SQLException;
-import java.util.*;
-import java.util.logging.Handler;
-import java.util.logging.LogRecord;
+import java.util.ArrayList;
+import java.util.Timer;
+import java.util.TimerTask;
+import java.util.logging.*;
 
 
 /**
  * A logging handler that records SSGLogRecord objects and stored them in a database table.
- *
+ * <p/>
  * Initialization of this handler requires the node id which is retrieved through the ClusterInfoManager
  * and in turn requires the availability of the persistence context. Because the persistence context
  * makes use the log manager, initialization of this handler within the log manager potentially causes
  * a race condition and must be handled in a special way.
- *
+ * <p/>
  * The way this is achieved in the log manager involves initializing this handler in a seperate thread,
  * catch the IllegalStateException and retry until it works.
- *
+ * <p/>
  * <br/><br/>
  * LAYER 7 TECHNOLOGIES, INC<br/>
  * User: flascell<br/>
  * Date: Jan 13, 2004<br/>
  * $Id$<br/>
- *
  */
 public class ServerLogHandler extends Handler {
+    private LogManager manager = LogManager.getLogManager();
+    private final ServerLogManager serverLogManager = ServerLogManager.getInstance();
 
     /**
      * note the two phase construction ServerLogHandler.initialize()
      */
     public ServerLogHandler() {
         super();
+        initialize();
     }
 
     public void publish(LogRecord record) {
+        if (!isLoggable(record)) {
+            return;
+        }
+
         Request req = MessageProcessor.getCurrentRequest();
         RequestId reqid = null;
         if (req != null) {
             reqid = req.getId();
         }
-        SSGLogRecord newRecord = new SSGLogRecord(record, reqid, nodeid);
+        SSGLogRecord newRecord = new SSGLogRecord(record, reqid, serverLogManager.getNodeid());
         add(newRecord);
     }
 
     public void flush() {
     }
 
-    /**
-     * Retrieve the system logs in between the startMsgNumber and endMsgNumber specified
-     * up to the specified size.
-     * NOTE: the log messages whose message number equals to startMsgNumber and endMsgNumber
-     * are not returned.
-     *
-     * @param highMsgNumber the message number to locate the start point.
-     *                       Start from beginning of the message buffer if it equals to -1.
-     * @param lowMsgNumber   the message number to locate the end point.
-     *                       Retrieve messages until the end of the message buffer is hit
-     *                       if it equals to -1.
-     * @param nodeId         the node id for which to retrieve server logs on. if left null, retreives
-     *                       log records for this node.
-     * @param size  the max. number of messages retrieved
-     * @return LogRecord[] the array of log records retrieved
-     */
-    public Collection getLogRecords(String nodeId, long highMsgNumber, long lowMsgNumber, int size) {
-        HibernatePersistenceContext context = null;
-        boolean ok = false;
-        try {
-            context = (HibernatePersistenceContext)PersistenceContext.getCurrent();
-            context.beginTransaction();
-            ok = true;
-        } catch (SQLException e) {
-            reportException("cannot get persistence context", e);
-            return Collections.EMPTY_LIST;
-        } catch ( TransactionException e ) {
-            reportException("cannot get persistence context", e);
-            return Collections.EMPTY_LIST;
-        } finally {
-            if ( context != null && !ok ) context.close();
-        }
-
-        String reqnode = nodeId;
-        if (reqnode == null) reqnode = nodeid;
-        Collection res = null;
-        try {
-            if (lowMsgNumber < 0 && highMsgNumber >= 0) {
-                res = getRecordsBeforeLowId(reqnode, size, context, highMsgNumber);
-            } else if (lowMsgNumber >= 0 && highMsgNumber < 0) {
-                res = getRecordsBeyondHighId(reqnode, size, context, lowMsgNumber);
-            } else if (lowMsgNumber >= 0 && highMsgNumber >= 0) {
-                res = getRecordsInRange(reqnode, size, context, lowMsgNumber, highMsgNumber);
-            } else {
-                res = getLastRecords(reqnode, size, context);
-            }
-        } catch (HibernateException e) {
-            reportException("Error getting log records", e);
-            return Collections.EMPTY_LIST;
-        } catch (SQLException e) {
-            reportException("Error getting log records", e);
-            return Collections.EMPTY_LIST;
-        } finally {
-            try {
-                if ( context != null ) context.commitTransaction();
-            } catch ( TransactionException e ) {
-                reportException("Error getting log records", e);
-                return Collections.EMPTY_LIST;
-            }
-        }
-        if (res == null) return Collections.EMPTY_LIST;
-        return res;
-    }
 
     public void close() throws SecurityException {
         flusherDeamon.cancel();
     }
 
-    public synchronized void initialize() throws IllegalStateException {
-        nodeid = ClusterInfoManager.getInstance().thisNodeId();
+    // Private method to configure a FileHandler from LogManager
+    // properties and/or default values as specified in the class
+    private void initialize() throws IllegalStateException {
+
+        String cname = ServerLogHandler.class.getName();
+
+        setLevel(getLevelProperty(cname + ".level", Level.ALL));
+        setFilter(getFilterProperty(cname + ".filter", null));
+        setFormatter(getFormatterProperty(cname + ".formatter", new SimpleFormatter()));
+        try {
+            setEncoding(getStringProperty(cname + ".encoding", null));
+        } catch (Exception ex) {
+            try {
+                setEncoding(null);
+            } catch (Exception ex2) {
+                // doing a setEncoding with null should always work.
+                // assert false;
+            }
+        }
+
+
         // start the deamon
         if (flusherTask == null) {
             flusherTask = new TimerTask() {
@@ -135,29 +95,11 @@ public class ServerLogHandler extends Handler {
                     cleanAndFlush();
                 }
             };
+            // as configurable properties
             flusherDeamon.schedule(flusherTask, FLUSH_FREQUENCY, FLUSH_FREQUENCY);
         }
     }
 
-    /**
-     * this clears all recorded log records for a given node. it is called by
-     * ClusterStatusAdmin.removeStaleNode
-     * @deprecated This method should not be used as RemoteException (OutOfMemory) is thrown in the
-     *             case when the table contains a huge numbers of records.
-     */
-    public static void cleanAllRecordsForNode(HibernatePersistenceContext context, String nodeid)
-                                                throws DeleteException {
-        String deleteSQLStatement = "from " + TABLE_NAME + " in class " + SSGLogRecord.class.getName() +
-                                    " where " + TABLE_NAME + "." + NODEID_COLNAME +
-                                    " = \'" + nodeid + "\'";
-        try {
-            context.getSession().delete(deleteSQLStatement);
-        } catch (HibernateException e) {
-            throw new DeleteException("exception deleting logs for node " + nodeid, e);
-        } catch (SQLException e) {
-            throw new DeleteException("exception deleting logs for node " + nodeid, e);
-        }
-    }
 
     /**
      * record a log record in tmp cache. it will eventually be flushed by a deamon thread
@@ -177,7 +119,7 @@ public class ServerLogHandler extends Handler {
      * and flushing new cached log entries to database.
      * this method is responsible to manager its own persistence context.
      */
-    protected void cleanAndFlush() {
+    private void cleanAndFlush() {
         // get the persistence context
         HibernatePersistenceContext context = null;
         Session session = null;
@@ -186,34 +128,34 @@ public class ServerLogHandler extends Handler {
             session = context.getSession();
         } catch (SQLException e) {
             reportException("cannot get persistence context", e);
-            if ( context != null ) context.close();
+            if (context != null) context.close();
             return;
         } catch (HibernateException e) {
             reportException("cannot get session", e);
-            if ( context != null ) context.close();
+            if (context != null) context.close();
             return;
         }
 
         try {
             context.beginTransaction();
 
-            /*
-            This commented out code used to delete previous records for this node before first dump
-            we decided to make this the responsibility of an external cron job.
-            if (fullClean) {
-                String deleteSQLStatement = "from " + TABLE_NAME + " in class " + SSGLogRecord.class.getName() +
-                                            " where " + TABLE_NAME + "." + NODEID_COLNAME +
-                                            " = \'" + nodeid + "\'";
-                session.iterate(deleteSQLStatement);
-                session.flush();
-            }*/
-            // flush new records
+/*
+This commented out code used to delete previous records for this node before first dump
+we decided to make this the responsibility of an external cron job.
+if (fullClean) {
+    String deleteSQLStatement = "from " + TABLE_NAME + " in class " + SSGLogRecord.class.getName() +
+                                " where " + TABLE_NAME + "." + NODEID_COLNAME +
+                                " = \'" + nodeid + "\'";
+    session.iterate(deleteSQLStatement);
+    session.flush();
+}*/
+// flush new records
             flushtodb(session);
             context.commitTransaction();
-        }  catch(TransactionException e) {
+        } catch (TransactionException e) {
             reportException("Exception with hibernate transaction", e);
         } finally {
-            if ( context != null ) context.close();
+            if (context != null) context.close();
         }
     }
 
@@ -221,8 +163,9 @@ public class ServerLogHandler extends Handler {
      * the log handler does not use the normal logger because in case of an error,
      * that would cause some nasty loop.
      */
-    protected static void reportException(String msg, Throwable e) {
-        if (e == null) System.err.println(msg);
+    private void reportException(String msg, Throwable e) {
+        if (e == null)
+            System.err.println(msg);
         else {
             System.err.println(msg + " " + e.getMessage());
             e.printStackTrace(System.err);
@@ -236,7 +179,7 @@ public class ServerLogHandler extends Handler {
             data = cache.toArray();
             cache.clear();
         }
-        // save extracted data in the database
+// save extracted data in the database
         try {
             for (int i = 0; i < data.length; i++)
                 session.save(data[i]);
@@ -245,95 +188,95 @@ public class ServerLogHandler extends Handler {
         }
     }
 
-    private Collection getLastRecords(String nodeId, int maxSize, HibernatePersistenceContext context )
-    throws HibernateException, SQLException {
-        StringBuffer hql = new StringBuffer("FROM log IN CLASS " );
-        hql.append( SSGLogRecord.class.getName() );
-        hql.append( " WHERE log.");
-        hql.append( NODEID_COLNAME );
-        hql.append( " = ? " );
-        hql.append( " ORDER BY log." );
-        hql.append( OID_COLNAME );
-        hql.append( " DESC" );
-        Query q = context.getSession().createQuery(hql.toString());
-        q.setString(0,nodeId);
-        q.setMaxResults(maxSize);
-        Collection found = q.list();
-        return found;
+    // Package private method to get a Level property.
+    // If the property is not defined or cannot be parsed
+    // we return the given default value.
+    private Level getLevelProperty(String name, Level defaultValue) {
+        String val = manager.getProperty(name);
+        if (val == null) {
+            return defaultValue;
+        }
+        try {
+            return Level.parse(val.trim());
+        } catch (Exception ex) {
+            return defaultValue;
+        }
     }
 
-    private Collection getRecordsInRange(String nodeId, int maxSize, HibernatePersistenceContext context,
-                                        long startid, long endid) throws HibernateException, SQLException {
-        //
-        // NOTE
-        // it's ok to use order by limit here because we have other criteria before the node id
-        //
-        StringBuffer hql = new StringBuffer("FROM log IN CLASS " );
-        hql.append( SSGLogRecord.class.getName() );
-        hql.append( " WHERE log.").append( NODEID_COLNAME ).append( " = ? " );
-        hql.append( "AND log." ).append( OID_COLNAME ).append( " > ? " );
-        hql.append( "AND log." ).append( OID_COLNAME ).append( " < ? " );
-        hql.append( "ORDER BY log." ).append( OID_COLNAME ).append( " DESC" );
-        Query q = context.getSession().createQuery(hql.toString());
-        q.setString(0,nodeId);
-        q.setLong(1,startid);
-        q.setLong(2,endid);
-        q.setMaxResults(maxSize);
-        Collection found = q.list();
-        return found;
+    // Package private method to get a filter property.
+    // We return an instance of the class named by the "name"
+    // property. If the property is not defined or has problems
+    // we return the defaultValue.
+    private Filter getFilterProperty(String name, Filter defaultValue) {
+        String val = manager.getProperty(name);
+        try {
+            if (val != null) {
+                Class clz = ClassLoader.getSystemClassLoader().loadClass(val);
+                return (Filter)clz.newInstance();
+            }
+        } catch (Exception ex) {
+            // We got one of a variety of exceptions in creating the
+            // class or creating an instance.
+            // Drop through.
+        }
+        // We got an exception.  Return the defaultValue.
+        return defaultValue;
     }
 
-    /**
-     * we dont have to worry about this query here
-     */
-    private Collection getRecordsBeyondHighId(String nodeId, int maxSize, HibernatePersistenceContext context,
-                                             long startid) throws HibernateException, SQLException {
-        //
-        // NOTE
-        // it's ok to use order by limit here because we have a "low" criteria before the node id
-        //
-        StringBuffer hql = new StringBuffer("FROM log IN CLASS " );
-        hql.append( SSGLogRecord.class.getName() );
-        hql.append( " WHERE log.").append( NODEID_COLNAME ).append( " = ? " );
-        hql.append( "AND log." ).append( OID_COLNAME ).append( " > ? " );
-        hql.append( "ORDER BY log." ).append( OID_COLNAME ).append( " DESC" );
-        Query q = context.getSession().createQuery(hql.toString());
-        q.setString(0,nodeId);
-        q.setLong(1,startid);
-        q.setMaxResults(maxSize);
-        Collection found = q.list();
-        return found;
+
+    // Package private method to get a formatter property.
+    // We return an instance of the class named by the "name"
+    // property. If the property is not defined or has problems
+    // we return the defaultValue.
+    private Formatter getFormatterProperty(String name, Formatter defaultValue) {
+        String val = manager.getProperty(name);
+        try {
+            if (val != null) {
+                Class clz = ClassLoader.getSystemClassLoader().loadClass(val);
+                return (Formatter)clz.newInstance();
+            }
+        } catch (Exception ex) {
+            // We got one of a variety of exceptions in creating the
+            // class or creating an instance.
+            // Drop through.
+        }
+        // We got an exception.  Return the defaultValue.
+        return defaultValue;
     }
 
-    private Collection getRecordsBeforeLowId(String nodeId, int maxSize, HibernatePersistenceContext context, long endid) throws HibernateException, SQLException {
-        StringBuffer hql = new StringBuffer("FROM log IN CLASS " );
-        hql.append( SSGLogRecord.class.getName() );
-        hql.append( " WHERE log.").append( NODEID_COLNAME ).append( " = ? " );
-        hql.append( "AND log." ).append( OID_COLNAME ).append( " < ? " );
-        hql.append( "ORDER BY log." ).append( OID_COLNAME ).append( " DESC" );
-        Query q = context.getSession().createQuery(hql.toString());
-        q.setString(0,nodeId);
-        q.setLong(1,endid);
-        q.setMaxResults(maxSize);
-        Collection found = q.list();
-        return found;
+    // Package private method to get a String property.
+    // If the property is not defined we return the given
+    // default value.
+    private String getStringProperty(String name, String defaultValue) {
+        String val = manager.getProperty(name);
+        if (val == null) {
+            return defaultValue;
+        }
+        return val.trim();
     }
 
+    // Package private method to get an integer property.
+    // If the property is not defined or cannot be parsed
+    // we return the given default value.
+    private int getIntProperty(String name, int defaultValue) {
+        String val = manager.getProperty(name);
+        if (val == null) {
+            return defaultValue;
+        }
+        try {
+            return Integer.parseInt(val.trim());
+        } catch (Exception ex) {
+            return defaultValue;
+        }
+    }
 
     /**
      * where log records are stored waiting to be flushed to the database
      */
     private ArrayList cache = new ArrayList();
     private static long MAX_CACHE_SIZE = 1000;
-    private String nodeid;
     private static TimerTask flusherTask = null;
     private final Timer flusherDeamon = new Timer(true);
 
-    private static final long FLUSH_FREQUENCY = 6000;
-    //private static final long FLUSH_FREQUENCY = 10;
-    //private static final long HOW_LONG_WE_KEEP_LOGS = (48*3600*1000);
-
-    private static final String TABLE_NAME = "ssg_logs";
-    private static final String NODEID_COLNAME = "nodeId";
-    private static final String OID_COLNAME = "oid";
+    private static final long FLUSH_FREQUENCY = 15000;
 }

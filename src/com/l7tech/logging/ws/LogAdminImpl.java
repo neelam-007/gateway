@@ -11,7 +11,7 @@ import java.util.logging.Logger;
 
 /**
  * AdminWS for consulting the server system log.
- *
+ * <p/>
  * <br/><br/>
  * Layer 7 technologies, inc.<br/>
  * User: flascell<br/>
@@ -22,7 +22,7 @@ public class LogAdminImpl implements LogAdmin {
 
     public SSGLogRecord[] getSystemLog(String nodeid, long startMsgNumber, long endMsgNumber, int size) throws RemoteException {
         try {
-            return ServerLogManager.getInstance().getRecorded(nodeid, startMsgNumber, endMsgNumber, size);
+            return (SSGLogRecord[])ServerLogManager.getInstance().getLogRecords(nodeid, startMsgNumber, endMsgNumber, size).toArray(new SSGLogRecord[]{});
         } finally {
             try {
                 PersistenceContext.getCurrent().close();

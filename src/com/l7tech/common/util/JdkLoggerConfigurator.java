@@ -1,11 +1,14 @@
 package com.l7tech.common.util;
 
-import java.io.InputStream;
 import java.io.File;
 import java.io.IOException;
-import java.util.List;
+import java.io.InputStream;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.List;
+import java.util.logging.Handler;
+import java.util.logging.Level;
 import java.util.logging.LogManager;
 import java.util.logging.Logger;
 
@@ -23,19 +26,20 @@ import java.util.logging.Logger;
  */
 public class JdkLoggerConfigurator {
 
-    /** this class cannot be instantiated */
+    /**
+     * this class cannot be instantiated
+     */
     private JdkLoggerConfigurator() {}
 
     /**
      * initialize logging, try different strategies. First look for the system
      * property <code>java.util.logging.config.file</code>, then look for
-     * <code>logging.properties</code>. If that fails fall back to the 
+     * <code>logging.properties</code>. If that fails fall back to the
      * application-specified config file (ie,
      * <code>com/l7tech/console/resources/logging.properties</code>).
      *
-     * @param classname the classname to use for logging info about which logging.properties was found
+     * @param classname                the classname to use for logging info about which logging.properties was found
      * @param shippedLoggingProperties the logging.properties to use if no locally-customized file is found,
-     *                                 for example "com/l7tech/console/resources/logging.properties"
      */
     public static synchronized void configure(String classname, String shippedLoggingProperties) {
         InputStream in = null;
@@ -51,6 +55,7 @@ public class JdkLoggerConfigurator {
 
             boolean configFound = false;
             String configCandidate = null;
+            final LogManager logManager = LogManager.getLogManager();
             for (Iterator iterator = configCandidates.iterator(); iterator.hasNext();) {
                 configCandidate = (String)iterator.next();
                 final File file = new File(configCandidate);
@@ -58,15 +63,15 @@ public class JdkLoggerConfigurator {
                 if (file.exists()) {
                     in = file.toURL().openStream();
                     if (in != null) {
-                        LogManager.getLogManager().readConfiguration(in);
+                        logManager.readConfiguration(in);
                         configFound = true;
                         break;
                     }
                 }
                 ClassLoader cl = JdkLoggerConfigurator.class.getClassLoader();
-                in = cl.getResourceAsStream(configCandidate);
-                if (in != null) {
-                    LogManager.getLogManager().readConfiguration(in);
+                URL resource = cl.getResource(configCandidate);
+                if (resource != null) {
+                    logManager.readConfiguration(resource.openStream());
                     configFound = true;
                     break;
                 }
@@ -85,4 +90,108 @@ public class JdkLoggerConfigurator {
             }
         }
     }
+
+    /**
+     * initialize logging, try different strategies. First look for the system
+     * property <code>java.util.logging.config.file</code>, then look for
+     * <code>logging.properties</code>. If that fails fall back to the
+     * application-specified config file (ie,
+     * <code>com/l7tech/console/resources/logging.properties</code>).
+     *
+     * @param classname                the classname to use for logging info about which logging.properties was found
+     * @param shippedLoggingProperties the logging.properties to use if no locally-customized file is found,
+     */
+    public static synchronized void configure(String classname, String shippedLoggingProperties, boolean reloading) {
+    }
+
+
+    /**
+     * Add the log handler programatically
+     *
+     * @param handler
+     */
+    public static void addHandler(Handler handler) {
+        if (handler == null) {
+            throw new IllegalArgumentException();
+        }
+        Logger rootLogger = Logger.getLogger("");
+        rootLogger.addHandler(handler);
+    }
+
+    /**
+     * Thread to probe for config file changes and force reread
+     */
+    private class Probe extends Thread {
+        private LogManager logManager = LogManager.getLogManager();
+
+        /**
+         * Time in milliseconds between probes
+         */
+        private long interval;
+        /**
+         * The last file read
+         */
+        private File file;
+        /**
+         * The lastModified time of prevFile
+         */
+        private long prevModified;
+
+        Probe(File file) {
+            this(file, getInterval());
+        }
+
+        Probe(File file, long interval) {
+            super("Logging config file probe");
+            setDaemon(true);
+            this.interval = interval;
+            prevModified = this.file.lastModified();
+            this.file = file;
+        }
+
+        public void run() {
+            Logger logger = Logger.getLogger("com.l7tech");
+            try {
+                while (interval > 0) {
+                    Thread.sleep(interval);
+                    long lastModified = file.lastModified();
+                    if (lastModified > 0 &&
+                      (lastModified != prevModified)) {
+                        try {
+                            logManager.readConfiguration();
+                            interval = getInterval();
+                            logger.log(Level.CONFIG,
+                              "logging config file reread complete," +
+                              " new interval is {0}",
+                              new Long(interval));
+                        } catch (Throwable t) {
+                            logger.log(Level.WARNING,
+                              "exception reading logging config file",
+                              t);
+                        }
+                        prevModified = lastModified;
+                    }
+                }
+            } catch (InterruptedException e) {
+            } finally {
+                logger.config("logging config file probe terminating");
+            }
+        }
+    }
+
+    /**
+     * Return the probe interval.
+     */
+    private static long getInterval() {
+        LogManager logManager = LogManager.getLogManager();
+        String val = logManager.getProperty("com.l7tech.logging.interval");
+        if (val != null) {
+            try {
+                return Long.decode(val).longValue();
+            } catch (NumberFormatException e) {
+            }
+        }
+        return 10;
+    }
+
 }

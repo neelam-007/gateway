@@ -10,7 +10,7 @@ import com.l7tech.common.BuildInfo;
 import com.l7tech.common.security.JceProvider;
 import com.l7tech.common.util.JdkLoggerConfigurator;
 import com.l7tech.common.util.Locator;
-import com.l7tech.logging.ServerLogManager;
+import com.l7tech.logging.ServerLogHandler;
 import com.l7tech.objectmodel.HibernatePersistenceManager;
 import com.l7tech.objectmodel.PersistenceContext;
 import com.l7tech.objectmodel.TransactionException;
@@ -36,18 +36,22 @@ public class BootProcess implements ServerComponentLifecycle {
         JdkLoggerConfigurator.configure("com.l7tech", "com/l7tech/server/resources/logging.properties");
     }
 
-    private final ServerLogManager serverLogManager = ServerLogManager.getInstance();
     private final Logger logger = Logger.getLogger(getClass().getName());
     private List _components = new ArrayList();
-                                          
+
     public void init(ComponentConfig config) throws LifecycleException {
         PersistenceContext context = null;
         try {
             // Initialize database stuff
             HibernatePersistenceManager.initialize();
 
+            // add the server handler programatically after the hibernate is initialized.
+            // the handlers specified in the configuraiton get loaded by the system classloader and hibernate
+            // stuff lives in the web app classloader
+            JdkLoggerConfigurator.addHandler(new ServerLogHandler());
+
             context = PersistenceContext.getCurrent();
-            logger.info( "Initializing server" );
+            logger.info("Initializing server");
 
             setSystemProperties(config);
 
@@ -76,25 +80,25 @@ public class BootProcess implements ServerComponentLifecycle {
 
                 if (component != null) {
                     try {
-                        if ( component instanceof TransactionalComponent ) context.beginTransaction();
+                        if (component instanceof TransactionalComponent) context.beginTransaction();
                         component.init(config);
                         _components.add(component);
-                        if ( component instanceof TransactionalComponent ) context.commitTransaction();
+                        if (component instanceof TransactionalComponent) context.commitTransaction();
                     } catch (LifecycleException e) {
                         logger.log(Level.SEVERE, "Component " + component + " failed to initialize", e);
-                    } catch ( TransactionException e ) {
-                        logger.log(Level.SEVERE, "Component " + component + " could not commit its initialization process", e );
+                    } catch (TransactionException e) {
+                        logger.log(Level.SEVERE, "Component " + component + " could not commit its initialization process", e);
                     }
                 }
             }
 
-            logger.info( "Initialized server" );
+            logger.info("Initialized server");
         } catch (IOException e) {
             throw new LifecycleException(e.toString(), e);
         } catch (SQLException e) {
             throw new LifecycleException(e.toString(), e);
         } finally {
-            if ( context != null ) context.close();
+            if (context != null) context.close();
         }
     }
 
@@ -102,7 +106,7 @@ public class BootProcess implements ServerComponentLifecycle {
         PersistenceContext context = null;
         try {
             context = PersistenceContext.getCurrent();
-            logger.info( "Starting server" );
+            logger.info("Starting server");
 
             // make sure the ServiceManager is available. this will also build the service cache
             if (Locator.getDefault().lookup(ServiceManager.class) == null) {
@@ -111,26 +115,16 @@ public class BootProcess implements ServerComponentLifecycle {
 
             DefaultGatewayPolicies.getInstance();
 
-            try {
-                context.beginTransaction();
-                // initialize the log dumper
-                serverLogManager.suscribeDBHandler();
-                // initialize the process that updates the cluster status clusterInfo
-                context.commitTransaction();
-            } catch ( TransactionException e ) {
-                logger.log(Level.SEVERE, "The Server Log Manager could not be started", e );
-            }
-
             logger.info("Starting server components...");
             for (Iterator i = _components.iterator(); i.hasNext();) {
                 ServerComponentLifecycle component = (ServerComponentLifecycle)i.next();
                 logger.info("Starting component " + component);
                 try {
-                    if ( component instanceof TransactionalComponent ) context.beginTransaction();
+                    if (component instanceof TransactionalComponent) context.beginTransaction();
                     component.start();
-                    if ( component instanceof TransactionalComponent ) context.commitTransaction();
-                } catch ( TransactionException e ) {
-                    logger.log(Level.SEVERE, "Component " + component + " could not commit its startup process", e );
+                    if (component instanceof TransactionalComponent) context.commitTransaction();
+                } catch (TransactionException e) {
+                    logger.log(Level.SEVERE, "Component " + component + " could not commit its startup process", e);
                 }
             }
 
