@@ -12,6 +12,7 @@ import junit.framework.TestSuite;
 
 import java.util.logging.Logger;
 import java.security.MessageDigest;
+import java.io.ByteArrayInputStream;
 
 /**
  *
@@ -45,5 +46,69 @@ public class HexUtilsTest extends TestCase {
         log.info("result = " + result);
         assertTrue(result != null);
         assertTrue(result.equals("de615f787075c54bd19ba64da4128553"));
+    }
+
+    public void testSlurpStream() throws Exception {
+        String teststring = "alsdkfhasdfhasdflskdfalksdflakflaksflasdlaksdflaksflaskdslkqpweofihqpwoef";
+
+        {   // Test raw read into large-enough block
+            ByteArrayInputStream bais = new ByteArrayInputStream(teststring.getBytes());
+            byte[] hold32k = new byte[32768];
+            int gotLen = HexUtils.slurpStream(bais, hold32k);
+            assertTrue(gotLen == teststring.length());
+            assertTrue(new String(hold32k, 0, gotLen).equals(teststring));
+        }
+
+        {   // Test raw read into too-small block
+            ByteArrayInputStream bais = new ByteArrayInputStream(teststring.getBytes());
+            byte[] hold16 = new byte[16];
+            int gotLen = HexUtils.slurpStream(bais, hold16);
+            assertTrue(gotLen == 16);
+            assertTrue(new String(hold16, 0, gotLen).equals(teststring.substring(0, 16)));
+        }
+
+        {
+            // Test raw read into exactly-right block
+            ByteArrayInputStream bais = new ByteArrayInputStream(teststring.getBytes());
+            byte[] holdlen = new byte[teststring.length()];
+            int gotLen = HexUtils.slurpStream(bais, holdlen);
+            assertTrue(gotLen == teststring.length());
+            assertTrue(new String(holdlen).equals(teststring));
+        }
+
+        {
+            // Test raw read of empty stream
+            ByteArrayInputStream bais = new ByteArrayInputStream(new byte[0]);
+            byte[] hold32k = new byte[32768];
+            int num = HexUtils.slurpStream(bais, hold32k);
+            assertTrue(num == 0);
+        }
+
+        {   // Test size-copied read with large-enough cutoff size
+            ByteArrayInputStream bais = new ByteArrayInputStream(teststring.getBytes());
+            byte[] got = HexUtils.slurpStream(bais, 32768);
+            assertTrue(new String(got).equals(teststring));
+        }
+
+        {   // Test size-copied read with too-small cutoff size  (truncated)
+            ByteArrayInputStream bais = new ByteArrayInputStream(teststring.getBytes());
+            byte[] got = HexUtils.slurpStream(bais, 10);
+            assertTrue(new String(got).equals(teststring.substring(0, 10)));
+        }
+
+        {
+            // Test size-copied read with exactly-right cutoff size
+            ByteArrayInputStream bais = new ByteArrayInputStream(teststring.getBytes());
+            byte[] got = HexUtils.slurpStream(bais, teststring.length());
+            assertTrue(new String(got).equals(teststring));
+        }
+
+        {
+            // Test size-copied read of empty stream
+            ByteArrayInputStream bais = new ByteArrayInputStream(new byte[0]);
+            byte[] got = HexUtils.slurpStream(bais, 32768);
+            assertTrue(got != null);
+            assertTrue(got.length == 0);
+        }
     }
 }
