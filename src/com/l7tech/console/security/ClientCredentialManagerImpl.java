@@ -38,8 +38,7 @@ public class ClientCredentialManagerImpl extends ClientCredentialManager {
         if (!SecureSpanConstants.ADMIN_PROTOCOL_VERSION.equals(remoteVersion)) {
             throw new VersionException(SecureSpanConstants.ADMIN_PROTOCOL_VERSION, remoteVersion);
         }
-        serviceLookup =
-          (ServiceLookup)Locator.getDefault().lookup(ServiceLookup.class);
+        serviceLookup = (ServiceLookup)Locator.getDefault().lookup(ServiceLookup.class);
     }
 
 
@@ -48,7 +47,8 @@ public class ClientCredentialManagerImpl extends ClientCredentialManager {
      * @param e describing the dosconnect event
      */
     public void onDisconnect(ConnectionEvent e) {
-        logger.info("Disconnect message received, invalidating service lookup reference");
+        logger.finer("Disconnect message received, invalidating service lookup reference");
+        resetCredentials();
         // invalidate lookup
         serviceLookup = null;
         Locator.recycle();

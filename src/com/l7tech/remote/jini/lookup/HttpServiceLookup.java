@@ -113,7 +113,7 @@ public class HttpServiceLookup extends ServiceLookup {
         getMethod.setDoAuthentication(true);
         state.setAuthenticationPreemptive(true);
         setAuthorizationHeader(state);
-
+        client.setTimeout(5000);
         client.executeMethod(getMethod);
 
         int status = getMethod.getStatusCode();

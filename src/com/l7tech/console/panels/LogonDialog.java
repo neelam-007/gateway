@@ -3,6 +3,7 @@ package com.l7tech.console.panels;
 import com.l7tech.common.BuildInfo;
 import com.l7tech.common.VersionException;
 import com.l7tech.common.gui.util.ImageCache;
+import com.l7tech.common.gui.util.SwingWorker;
 import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.common.util.CertificateDownloader;
 import com.l7tech.common.util.ExceptionUtils;
@@ -51,9 +52,6 @@ public class LogonDialog extends JDialog {
 
     /* the PasswordAuthentication instance with user supplied credentials */
     private PasswordAuthentication authentication = null;
-
-    /* was the dialog aborted */
-    private boolean aborted = false;
 
     /**
      * True if "remember id" pref is enabled and a remembered ID was found.
@@ -104,6 +102,7 @@ public class LogonDialog extends JDialog {
     private Frame parentFrame;
     private History serverUrlHistory;
     private Preferences preferences;
+    private LogonListener logonListener;
 
     /** context field (company.realm)
      private JTextField contextField = null;*/
@@ -114,7 +113,7 @@ public class LogonDialog extends JDialog {
      * @param parent the parent Frame. May be <B>null</B>
      */
     public LogonDialog(Frame parent) {
-        super(parent, true);
+        super(parent, false);
         this.parentFrame = parent;
         setTitle("");
         initResources();
@@ -438,21 +437,101 @@ public class LogonDialog extends JDialog {
         if (actionCommand == null) {
             // do nothing
         } else if (actionCommand.equals(CMD_CANCEL)) {
-            aborted = true;
+            dispose();
         } else if (actionCommand.equals(CMD_LOGIN)) {
-            authentication = new PasswordAuthentication(userNameTextField.getText(),
-              passwordField.getPassword());
-            aborted = false;
+            hide();
+            SwingUtilities.invokeLater(new Runnable() {
+                public void run() {
+                    doLogon();
+                }
+            });
         }
-        setVisible(false);
     }
 
-    /**
-     * @return true if the logon was aborted, false otherwise
-     */
-    public boolean isAborted() {
-        return aborted;
+    private void doLogon() {
+        authentication = new PasswordAuthentication(userNameTextField.getText(),
+          passwordField.getPassword());
+
+
+        String serviceURL = null;
+        try {
+            sslHostNameMismatchUserNotified = false;
+            getParent().setCursor(Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR));
+
+            // service URL
+            final String serverURL = (String)serverComboBox.getSelectedItem();
+            serviceURL = serverURL + Preferences.SERVICE_URL_SUFFIX;
+
+            getParent().setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
+            final ClientCredentialManager credentialManager = getCredentialManager();
+            credentialManager.onDisconnect(new ConnectionEvent(this, ConnectionEvent.DISCONNECTED));
+
+            // if the service is not avail, format the message and show to te client (if not already notified)
+            if (!isServiceAvailable(serviceURL)) {
+                if (!sslHostNameMismatchUserNotified) {
+                    String msg = MessageFormat.format(resources.getString("logon.connect.error"),
+                      new Object[]{getHostPart(serviceURL)});
+                    JOptionPane.showMessageDialog(this, msg, "Error", JOptionPane.ERROR_MESSAGE);
+                }
+                return;
+            }
+            serverUrlHistory.add(serverURL);
+            final String serviceURL1 = serviceURL;
+            final SwingWorker sw =
+              new SwingWorker() {
+                  private Exception memoException = null;
+                  private LogonInProgressDialog progressDialog = showLogonInProgressDialog(this, LogonDialog.this, serverURL);
+
+                  public Object construct() {
+                      try {
+                          credentialManager.login(authentication);
+                      } catch (Exception e) {
+                          if (!Thread.currentThread().isInterrupted()) {
+                            memoException = e;
+                          }
+                      }
+                      if (!Thread.currentThread().isInterrupted() && memoException == null) {
+                          return new Boolean(true);
+                      }
+                      return null;
+                  }
+
+                  public void finished() {
+                      progressDialog.dispose();
+                      if (memoException != null) {
+                          handleLogonThrowable(memoException, LogonDialog.this, serviceURL1);
+                      }
+                      if (get() != null) {
+                          dispose();
+                          try {
+                              preferences.store();
+                          } catch (IOException e) {
+                              log.log(Level.WARNING, "error saving properties", e);
+                          }
+                          preferences.updateSystemProperties();
+                          // invoke the listener
+                          if (logonListener != null) {
+                              logonListener.onAuthSuccess(authentication.getUserName());
+                          }
+                      } else {
+                          if (logonListener != null) {
+                              logonListener.onAuthFailure();
+                          }
+                          if (!progressDialog.isCancelled()) {
+                            show();
+                          }
+                      }
+                  }
+              };
+
+            sw.start();
+        } catch (Exception e) {
+            handleLogonThrowable(e, this, serviceURL);
+        }
+
+        getParent().setCursor(Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR));
     }
+
 
     /**
      * invoke logon dialog
@@ -461,60 +540,21 @@ public class LogonDialog extends JDialog {
      */
     public static void logon(JFrame frame, LogonListener listener) {
         final LogonDialog dialog = new LogonDialog(frame);
+        dialog.logonListener = listener;
         dialog.setResizable(false);
         dialog.setSize(300, 275);
+        dialog.pack();
+        Utilities.centerOnScreen(dialog);
+        dialog.show();
 
-        // service available attempt authenticating
-        boolean authenticated = false;
-        PasswordAuthentication pw = null;
+    }
 
-
-        while (!dialog.isAborted() && !authenticated) {
-            String serviceURL = null;
-            try {
-                dialog.sslHostNameMismatchUserNotified = false;
-                frame.setCursor(Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR));
-                pw = dialog.getAuthentication();
-                // service URL
-                String serverURL = (String)dialog.serverComboBox.getSelectedItem();
-                serviceURL = serverURL + Preferences.SERVICE_URL_SUFFIX;
-
-                if (dialog.isAborted()) break;
-                frame.setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
-                ClientCredentialManager credentialManager = getCredentialManager();
-                getCredentialManager().onDisconnect(new ConnectionEvent(dialog, ConnectionEvent.DISCONNECTED));
-
-                // if the service is not avail, format the message and show to te client (if not already notified)
-                if (!dialog.isServiceAvailable(serviceURL)) {
-                    if (!dialog.sslHostNameMismatchUserNotified) {
-                        String msg = MessageFormat.format(dialog.resources.getString("logon.connect.error"),
-                          new Object[]{getHostPart(serviceURL)});
-                        JOptionPane.showMessageDialog(dialog, msg, "Error", JOptionPane.ERROR_MESSAGE);
-                    }
-                    continue;
-                }
-
-                dialog.serverUrlHistory.add(serverURL);
-                credentialManager.login(pw);
-                authenticated = true;
-                dialog.preferences.store();
-                dialog.preferences.updateSystemProperties();
-                break;
-            } catch (Exception e) {
-                handleLogonThrowable(e, dialog, serviceURL);
-            }
-        }
-
-        frame.setCursor(Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR));
-        // invoke the listener
-        if (listener != null) {
-            if (authenticated) {
-                listener.onAuthSuccess(pw.getUserName());
-            } else {
-                listener.onAuthFailure();
-            }
-        }
-        dialog.dispose();
+    private static LogonInProgressDialog showLogonInProgressDialog(SwingWorker sw, JDialog parent, String url) {
+        LogonInProgressDialog ld = new LogonInProgressDialog(parent, sw, url);
+        ld.pack();
+        Utilities.centerOnScreen(ld);
+        ld.show();
+        return ld;
     }
 
     private void showInvalidCredentialsMessage() {
@@ -743,17 +783,49 @@ public class LogonDialog extends JDialog {
         return hostPart;
     }
 
-    /**
-     * @return the <CODE>PasswordAuthentication</CODE> collected from
-     *         the dialog.
-     */
-    private PasswordAuthentication getAuthentication() {
-        pack();
-        Utilities.centerOnScreen(this);
-        show();
-        return authentication;
-    }
 
+    private static class LogonInProgressDialog extends JDialog {
+        private SwingWorker worker;
+        private String serviceUrl;
+        private boolean cancelled = false;
+
+        public LogonInProgressDialog(JDialog owner, SwingWorker sw, String url)
+          throws HeadlessException {
+            super(owner, false);
+            setTitle("Logon in progress");
+            worker = sw;
+            serviceUrl = url;
+            layoutComponents();
+        }
+
+        public boolean isCancelled() {
+            return cancelled;
+        }
+
+        private void layoutComponents() {
+            Container contentPane = getContentPane();
+            JPanel panel = new JPanel();
+            panel.setBorder(BorderFactory.createEmptyBorder(20, 5, 20, 5));
+            panel.setLayout(new BoxLayout(panel, BoxLayout.X_AXIS));
+            contentPane.setLayout(new BorderLayout());
+            JLabel label = new JLabel("Gateway " + serviceUrl);
+            panel.add(label);
+            panel.add(Box.createHorizontalStrut(100));
+            JButton cancelButton = new JButton("Cancel");
+            cancelButton.addActionListener(new ActionListener() {
+                public void actionPerformed(ActionEvent e) {
+                    worker.interrupt();
+                    dispose();
+                    cancelled = true;
+                }
+            });
+
+            panel.add(cancelButton);
+            getRootPane().setDefaultButton(cancelButton);
+
+            contentPane.add(panel);
+        }
+    }
 
     /**
      * validate the username and the gateway url
