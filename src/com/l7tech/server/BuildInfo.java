@@ -17,6 +17,7 @@ public class BuildInfo {
     private static final String BUILD_DATE = "20030916";
     private static final String BUILD_TIME = "150820";
     private static final String BUILD_TAG = "$Name$";
+    private static final String BUILD_USER = "$Author$";
 
     public static String getBuildString() {
         StringBuffer string = new StringBuffer();
@@ -24,7 +25,7 @@ public class BuildInfo {
         string.append( "version " ).append( PRODUCT_VERSION ).append( ", " );
         string.append( "build " ).append( BUILD_NUMBER ).append( ", " );
         string.append( "built on " ).append( BUILD_DATE ).append( " at " );
-        string.append( BUILD_TIME ).append( ", tag " ).append( BUILD_TAG );
+        string.append( BUILD_TIME ).append( ", tag " ).append( getBuildTag() );
         return string.toString();
     }
 
@@ -53,11 +54,19 @@ public class BuildInfo {
     }
 
     public static String getBuildTag() {
-        return stripCvsCrap( BUILD_TAG );
+        String tag = stripCvsCrap( BUILD_TAG );
+        if ( tag.length() == 0 ) tag = "HEAD";
+        return tag;
     }
 
     private static String stripCvsCrap( String crappy ) {
+        if ( crappy.startsWith("$") && crappy.endsWith("$") )
+            crappy = crappy.substring( 1, crappy.length()-1 );
+
         int cpos = crappy.indexOf(":");
-        return crappy.substring(cpos+1,crappy.length());
+        if ( cpos >= 0 )
+            return crappy.substring(cpos+1,crappy.length()).trim();
+        else
+            return "";
     }
 }
