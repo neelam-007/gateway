@@ -2,6 +2,7 @@ package com.l7tech.policy;
 
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.validator.DefaultPolicyValidator;
+import com.l7tech.policy.validator.ServerPolicyValidator;
 
 import java.util.Iterator;
 
@@ -36,6 +37,10 @@ public abstract class PolicyValidator {
      */
     public static PolicyValidator getDefault() {
         return new DefaultPolicyValidator();
+    }
+
+    public static PolicyValidator getServerValidator() {
+        return new ServerPolicyValidator();
     }
 
     /**

@@ -6,6 +6,7 @@ import com.l7tech.remote.jini.export.RemoteService;
 import com.l7tech.service.PublishedService;
 import com.l7tech.service.ServiceAdmin;
 import com.l7tech.policy.PolicyValidatorResult;
+import com.l7tech.policy.PolicyValidator;
 import com.l7tech.policy.assertion.Assertion;
 import com.sun.jini.start.LifeCycle;
 import net.jini.config.ConfigurationException;
@@ -87,8 +88,12 @@ public class ServiceAdminImpl extends RemoteService implements ServiceAdmin {
     }
 
     public PolicyValidatorResult validatePolicy(Assertion assertion) throws RemoteException {
-        // todo
-        return null;
+        try {
+            PolicyValidator validator = PolicyValidator.getServerValidator();
+            return validator.validate(assertion);
+        } finally {
+            closeContext();
+        }
     }
 
     /**
