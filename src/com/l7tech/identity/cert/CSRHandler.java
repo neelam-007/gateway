@@ -4,7 +4,6 @@ import com.l7tech.common.util.HexUtils;
 import com.l7tech.identity.User;
 import com.l7tech.identity.IdentityProviderConfigManager;
 import com.l7tech.identity.AuthenticationException;
-import com.l7tech.identity.internal.InternalUserManagerServer;
 import com.l7tech.logging.LogManager;
 import com.l7tech.common.util.Locator;
 import com.l7tech.common.util.KeystoreUtils;
@@ -91,19 +90,11 @@ public class CSRHandler extends HttpServlet {
         }
         logger.info("User " + authenticatedUser.getLogin() + " has authenticated for CSR");
 
-        // check if user is allowed to generate a new cert
-        InternalUserManagerServer userMan =
-                (InternalUserManagerServer)getConfigManager().getInternalIdentityProvider().getUserManager();
-        try {
-            if (!userMan.userCanResetCert(Long.toString(authenticatedUser.getOid()))) {
-                logger.log(Level.SEVERE, "user is refused csr: " + authenticatedUser.getLogin());
-                response.sendError(HttpServletResponse.SC_FORBIDDEN, "CSR Forbidden." +
-                                            " Contact your administrator for more info.");
-                return;
-            }
-        } catch (FindException e) {
-            response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, e.getMessage());
-            logger.log(Level.SEVERE, e.getMessage(), e);
+        ClientCertManager man = (ClientCertManager)Locator.getDefault().lookup(ClientCertManager.class);
+        if (!man.userCanGenCert(authenticatedUser)) {
+            logger.log(Level.SEVERE, "user is refused csr: " + authenticatedUser.getLogin());
+            response.sendError(HttpServletResponse.SC_FORBIDDEN, "CSR Forbidden." +
+                                        " Contact your administrator for more info.");
             return;
         }
 
@@ -121,7 +112,7 @@ public class CSRHandler extends HttpServlet {
 
         // record new cert
         try {
-            userMan.recordNewCert(Long.toString(authenticatedUser.getOid()), cert);
+            man.recordNewUserCert(authenticatedUser, cert);
         } catch (UpdateException e) {
             String msg = "Could not record cert. " + e.getMessage();
             response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, msg);
@@ -206,6 +197,7 @@ public class CSRHandler extends HttpServlet {
 
         try {
             try {
+                // todo, extend so that ldap and msad users now can do that too
                 getConfigManager().getInternalIdentityProvider().authenticate(creds);
                 return creds.getUser();
             } catch (AuthenticationException e) {

@@ -2,6 +2,7 @@ package com.l7tech.identity.internal;
 
 import com.l7tech.common.util.HexUtils;
 import com.l7tech.identity.*;
+import com.l7tech.identity.cert.ClientCertManager;
 import com.l7tech.logging.LogManager;
 import com.l7tech.objectmodel.EntityHeaderComparator;
 import com.l7tech.objectmodel.EntityType;
@@ -11,6 +12,7 @@ import com.l7tech.policy.assertion.credential.CredentialFormat;
 import com.l7tech.policy.assertion.credential.PrincipalCredentials;
 import com.l7tech.policy.assertion.credential.http.HttpDigest;
 import com.l7tech.common.util.KeystoreUtils;
+import com.l7tech.common.util.Locator;
 
 import java.io.*;
 import java.security.GeneralSecurityException;
@@ -127,8 +129,9 @@ public class InternalIdentityProviderServer implements IdentityProvider {
                     logger.finest("Verification OK - client cert is valid.");
                     // End of Check
 
+                    ClientCertManager man = (ClientCertManager)Locator.getDefault().lookup(ClientCertManager.class);
                     try {
-                        dbCert = userManager.retrieveUserCert(Long.toString(dbUser.getOid()));
+                        dbCert = man.getUserCert(dbUser);
                     } catch (FindException e) {
                         logger.log(Level.SEVERE, "FindException exception looking for user cert", e);
                         dbCert = null;
@@ -154,7 +157,7 @@ public class InternalIdentityProviderServer implements IdentityProvider {
                             logger.finest("Authenticated user " + login + " using a client certificate" );
                             pc.getUser().copyFrom( dbUser );
                             // remember that this cert was used at least once successfully
-                            userManager.setCertWasUsed(Long.toString(dbUser.getOid()));
+                            man.rememberCertWasUsedSuccessfully(dbUser);
                             return;
                         } else {
                             String err = "Failed to authenticate user " + login + " using an SSL client certificate (request certificate doesn't match database)";
