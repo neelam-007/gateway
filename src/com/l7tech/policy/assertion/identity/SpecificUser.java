@@ -39,6 +39,11 @@ public class SpecificUser extends IdentityAssertion {
         return _userLogin;
     }
 
+    /**
+     * Attempts to resolve a <code>User</code> based on this Assertion's <code>userLogin</code> property.
+     * @return a <code>User</code> that matches the login, or null if none could be found.
+     * @throws FindException if
+     */
     protected User getUser() throws FindException {
         if ( _user == null ) {
             UserManager uman = getIdentityProvider().getUserManager();
@@ -47,6 +52,11 @@ public class SpecificUser extends IdentityAssertion {
         return _user;
     }
 
+    /**
+     * Verifies that the authenticated <code>User</code> matches the <code>User</code> corresponding to this Assertion's <code>userLogin</code> property.
+     * @param u the <code>User</code> to check
+     * @return <code>AssertionStatus.NONE</code> if the <code>User</code> matches.
+     */
     public AssertionStatus doCheckUser( User u ) {
         try {
             if ( u.equals( getUser() ) )
