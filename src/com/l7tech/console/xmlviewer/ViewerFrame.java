@@ -35,7 +35,7 @@ public class ViewerFrame extends JFrame {
         ViewerMenuBar menu = new ViewerMenuBar(this, props);
         JPanel status = new StatusPanel(new BorderLayout(2, 0), menu, viewer);
 
-        ViewerToolBar toolbar = new ViewerToolBar(props, viewer);
+        ViewerToolBar toolbar = new ViewerToolBar(props, viewer, null);
         final Container contentPane = getContentPane();
         contentPane.setLayout(new BorderLayout());
         contentPane.add(toolbar, BorderLayout.NORTH);
