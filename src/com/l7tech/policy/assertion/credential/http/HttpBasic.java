@@ -6,6 +6,8 @@
 
 package com.l7tech.policy.assertion.credential.http;
 
+import com.l7tech.policy.assertion.Assertion;
+
 /**
  * @author alex
  * @version $Revision$

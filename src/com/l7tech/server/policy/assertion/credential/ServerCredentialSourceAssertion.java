@@ -6,17 +6,17 @@
 
 package com.l7tech.server.policy.assertion.credential;
 
-import com.l7tech.common.message.Message;
 import com.l7tech.common.audit.Auditor;
+import com.l7tech.common.message.Message;
+import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.AssertionResult;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.credential.CredentialFinderException;
-import com.l7tech.policy.assertion.credential.CredentialSourceAssertion;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
+import com.l7tech.server.AssertionMessages;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.ServerAssertion;
-import com.l7tech.server.AssertionMessages;
 
 import java.io.IOException;
 import java.util.HashMap;
@@ -28,7 +28,13 @@ import java.util.logging.Logger;
  * @version $Revision$
  */
 public abstract class ServerCredentialSourceAssertion implements ServerAssertion {
-    public ServerCredentialSourceAssertion( CredentialSourceAssertion data ) {
+    public ServerCredentialSourceAssertion( Assertion data ) {
+        if (data == null) {
+            throw new IllegalArgumentException();
+        }
+        if (!data.isCredentialSource())  {
+            throw new IllegalArgumentException("Not a credential source "+data);
+        }
         _data = data;
     }
 
@@ -114,6 +120,6 @@ public abstract class ServerCredentialSourceAssertion implements ServerAssertion
      */
     protected abstract void challenge( PolicyEnforcementContext context, Map authParams );
 
-    protected CredentialSourceAssertion _data;
+    protected Assertion _data;
     final Logger logger = Logger.getLogger(getClass().getName());
 }

@@ -118,6 +118,15 @@ public abstract class Assertion implements Cloneable, Serializable {
     }
 
     /**
+     * Test whether the assertion is a credential source. Defaults to <code>false</code>
+     *
+     * @return true if credential source, false otherwise
+     */
+    public boolean isCredentialSource() {
+        return false;
+    }
+    
+    /**
      * Creates and returns an iterator that traverses the assertion subtree
      * rooted at this assertion in preorder.  The first node returned by the
      * iterator's

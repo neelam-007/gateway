@@ -10,7 +10,6 @@ import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.assertion.composite.ExactlyOneAssertion;
 import com.l7tech.policy.assertion.composite.OneOrMoreAssertion;
-import com.l7tech.policy.assertion.credential.CredentialSourceAssertion;
 import com.l7tech.policy.assertion.credential.http.HttpBasic;
 import com.l7tech.policy.assertion.credential.http.HttpClientCert;
 import com.l7tech.policy.assertion.credential.http.HttpDigest;
@@ -155,7 +154,7 @@ public class AllAssertions {
         // TODO new InetAddressAssertion(),
     };
 
-    public static CredentialSourceAssertion[] CREDENTIAL_ASSERTIONS = new CredentialSourceAssertion[] {
+    public static Assertion[] CREDENTIAL_ASSERTIONS = new Assertion[] {
         new HttpBasic(),
         new HttpClientCert(),
         new HttpDigest(),

@@ -3,14 +3,21 @@
  *
  * $Id$
  */
-
 package com.l7tech.policy.assertion.credential.wss;
 
-import com.l7tech.policy.assertion.credential.CredentialSourceAssertion;
+import com.l7tech.policy.assertion.Assertion;
 
 /**
  * @author alex
  * @version $Revision$
  */
-public abstract class WssCredentialSourceAssertion extends CredentialSourceAssertion {
+public abstract class WssCredentialSourceAssertion extends Assertion {
+    /**
+     * Always an credential source
+     *
+     * @return always true
+     */
+    public boolean isCredentialSource() {
+        return true;
+    }
 }

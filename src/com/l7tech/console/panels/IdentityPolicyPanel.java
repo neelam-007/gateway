@@ -9,7 +9,6 @@ import com.l7tech.console.util.JmsUtilities;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.assertion.composite.AllAssertion;
-import com.l7tech.policy.assertion.credential.CredentialSourceAssertion;
 import com.l7tech.service.PublishedService;
 
 import javax.swing.*;
@@ -62,7 +61,7 @@ public class IdentityPolicyPanel extends JPanel {
     private AssertionTreeNode identityAssertionNode;
 
     private SslAssertion sslAssertion = null;
-    private CredentialSourceAssertion existingCredAssertion = null;
+    private Assertion existingCredAssertion = null;
 
     private RoutingAssertion existingRoutingAssertion = null;
     private boolean routeEdited;
@@ -213,12 +212,12 @@ public class IdentityPolicyPanel extends JPanel {
         Set othersCredAssertions = new HashSet();
         for (Iterator iterator = otherPaths.iterator(); iterator.hasNext();) {
             IdentityPath ip = (IdentityPath) iterator.next();
-            othersCredAssertions.addAll(ip.getAssignableAssertions(CredentialSourceAssertion.class));
+            othersCredAssertions.addAll(ip.getAssertions(IdentityPath.CREDENTIAL_SOURCE));
         }
 
-        Set principalCredAssertions = principalAssertionPaths.getAssignableAssertions(CredentialSourceAssertion.class);
+        Set principalCredAssertions = principalAssertionPaths.getAssertions(IdentityPath.CREDENTIAL_SOURCE);
         for (Iterator it = principalCredAssertions.iterator(); it.hasNext();) {
-            CredentialSourceAssertion credAssertion = (CredentialSourceAssertion)it.next();
+            Assertion credAssertion = (Assertion)it.next();
 
             existingCredAssertion = credAssertion;
 
@@ -348,7 +347,7 @@ public class IdentityPolicyPanel extends JPanel {
                 }
             }
 
-            CredentialSourceAssertion newCredAssertion = collectCredentialsAssertion();
+            Assertion newCredAssertion = collectCredentialsAssertion();
             if (newCredAssertion != null) {
                 if (existingCredAssertion != null) {
                     replaceAssertions.add(new Assertion[]{existingCredAssertion, newCredAssertion});
@@ -453,11 +452,11 @@ public class IdentityPolicyPanel extends JPanel {
         });
     }
 
-    private CredentialSourceAssertion collectCredentialsAssertion() {
+    private Assertion collectCredentialsAssertion() {
         if (!authMethodComboBox.isEnabled()) return null;
 
         Object key = authMethodComboBox.getSelectedItem();
-        CredentialSourceAssertion newCredAssertion = (CredentialSourceAssertion) credentialsLocationMap.get(key);
+        Assertion newCredAssertion = (Assertion) credentialsLocationMap.get(key);
         // TODO verify support for XML signing/encryption
         return newCredAssertion;
     }

@@ -318,6 +318,32 @@ public class IdentityPath {
     }
 
     /**
+     * return a set of assertion instances from this identity path
+     * that satisfy the condition specified by filter.
+     *
+     * @param af the assertion filter
+     * @return the <code>Set</code> of the filtered assertion instances.
+     * @see AssertionFilter
+     */
+    public Set getAssertions(AssertionFilter af) {
+        Set resultSet = new HashSet();
+        if (af == null) {
+            return resultSet;
+        }
+
+        for (Iterator iterator = identityPaths.iterator(); iterator.hasNext();) {
+            Assertion[] assertions = ((AssertionPath)iterator.next()).getPath();
+            for (int i = 0; i < assertions.length; i++) {
+                Assertion assertion = assertions[i];
+                if (af.accept(assertion)) {
+                    resultSet.add(assertion);
+                }
+            }
+        }
+        return resultSet;
+    }
+
+    /**
      * is the object passed an identity assertion
      *
      * @param assertion
@@ -418,4 +444,22 @@ public class IdentityPath {
         if (n != 0) return n;
         return g2.getName().compareTo(g1.getName());
     }
+
+    /**
+     * AssertionFilter implementations are passed to the corresponding methods
+     * that want to perform assertion filtering.
+     *
+     */
+    public static interface AssertionFilter {
+        boolean accept(Assertion a);
+    }
+
+    /**
+     * Assertion filter that accpets credential sources only.
+     */
+    public static final AssertionFilter CREDENTIAL_SOURCE = new AssertionFilter() {
+        public boolean accept(Assertion a) {
+            return a.isCredentialSource();
+        }
+    };
 }

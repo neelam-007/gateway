@@ -22,9 +22,15 @@ import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.assertion.composite.CompositeAssertion;
 import com.l7tech.policy.assertion.composite.OneOrMoreAssertion;
-import com.l7tech.policy.assertion.credential.CredentialSourceAssertion;
+import com.l7tech.policy.assertion.credential.http.HttpBasic;
+import com.l7tech.policy.assertion.credential.http.HttpClientCert;
+import com.l7tech.policy.assertion.credential.http.HttpDigest;
+import com.l7tech.policy.assertion.credential.wss.WssBasic;
 import com.l7tech.policy.assertion.identity.IdentityAssertion;
+import com.l7tech.policy.assertion.xmlsec.RequestWssX509Cert;
+import com.l7tech.policy.assertion.xmlsec.SamlAuthenticationStatement;
 import com.l7tech.policy.assertion.xmlsec.SamlStatementAssertion;
+import com.l7tech.policy.assertion.xmlsec.SecureConversation;
 import com.l7tech.policy.wsp.WspWriter;
 import com.l7tech.server.audit.AuditContext;
 import com.l7tech.server.message.PolicyEnforcementContext;
@@ -63,6 +69,20 @@ import java.util.logging.Logger;
  * $Id$<br/>
  */
 public class PolicyService extends ApplicationObjectSupport {
+    /**
+     * The supported credential sources used to determine whether the requester is
+     * allowd to download the policy */
+    private static final Assertion[] ALL_CREDENTIAL_ASSERTIONS_TYPES = new Assertion[] {
+        //new SamlAuthorizationStatement(),
+        new SamlAuthenticationStatement(),
+        //new SamlAttributeStatement(),
+        new RequestWssX509Cert(),
+        new SecureConversation(),
+        new HttpClientCert(),
+        new HttpDigest(),
+        new WssBasic(),
+        new HttpBasic()
+    };
 
     public interface ServiceInfo {
         Assertion getPolicy();
@@ -79,8 +99,8 @@ public class PolicyService extends ApplicationObjectSupport {
     public PolicyService(PrivateKey privateServerKey, X509Certificate serverCert, ServerPolicyFactory policyFactory, FilterManager filterManager) {
         // populate all possible credentials sources
         allCredentialAssertions = new ArrayList();
-        for (int i = 0; i < CredentialSourceAssertion.ALL_CREDENTIAL_ASSERTIONS_TYPES.length; i++) {
-            CredentialSourceAssertion assertion = CredentialSourceAssertion.ALL_CREDENTIAL_ASSERTIONS_TYPES[i];
+        for (int i = 0; i < ALL_CREDENTIAL_ASSERTIONS_TYPES.length; i++) {
+            Assertion assertion = ALL_CREDENTIAL_ASSERTIONS_TYPES[i];
 
             // TODO confirm this change
             if (assertion instanceof SamlStatementAssertion) {

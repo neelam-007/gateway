@@ -16,7 +16,7 @@ public interface IdentityProvider {
     /**
      * Called by {@link com.l7tech.server.policy.assertion.identity.ServerIdentityAssertion} to try to
      * identify a {@link User} based on a {@link LoginCredentials} that was previously attached to the
-     * message by a {@link com.l7tech.policy.assertion.credential.CredentialSourceAssertion}.
+     * message by a {@link com.l7tech.policy.assertion.Assertion} that is a credential source.
      * <p>
      * If this method returns a User, the authentication was successful, but whether that user is
      * authorized is then left up to the implementations of ServerIdentityAssertion, namely

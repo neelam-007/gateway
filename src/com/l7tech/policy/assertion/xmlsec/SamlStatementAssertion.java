@@ -1,20 +1,21 @@
 package com.l7tech.policy.assertion.xmlsec;
 
-import com.l7tech.policy.assertion.credential.CredentialSourceAssertion;
+import com.l7tech.policy.assertion.Assertion;
+
 
 /**
  * The <code>SamlStatementAssertion</code> assertion describes
  * the common SAML constraints shared by Authentication Statement constraints.
  */
-public abstract class SamlStatementAssertion extends CredentialSourceAssertion implements SecurityHeaderAddressable {
-    private String[] subjectConfirmations = new String[] {};
+public abstract class SamlStatementAssertion extends Assertion implements SecurityHeaderAddressable {
+    private String[] subjectConfirmations = new String[]{};
     private boolean noSubjectConfirmation = false;
-    private String nameQualifier  = null;
-    private String[] nameFormats  = new String[] {};
+    private String nameQualifier = null;
+    private String[] nameFormats = new String[]{};
     private String audienceRestriction;
     private XmlSecurityRecipientContext recipientContext = XmlSecurityRecipientContext.getLocalRecipient();
     private boolean requireProofOfPosession = true;
-    private boolean checkAssertionValidity  = true;
+    private boolean checkAssertionValidity = true;
 
     SamlStatementAssertion() {
     }
@@ -37,7 +38,7 @@ public abstract class SamlStatementAssertion extends CredentialSourceAssertion i
      */
     public void setSubjectConfirmations(String[] subjectConfirmations) {
         if (subjectConfirmations == null) {
-            this.subjectConfirmations = new String[] {};
+            this.subjectConfirmations = new String[]{};
         } else {
             this.subjectConfirmations = subjectConfirmations;
         }
@@ -51,10 +52,10 @@ public abstract class SamlStatementAssertion extends CredentialSourceAssertion i
     }
 
     /**
-     *  Set whther to check the assertion validity period.
-     *
-     * @param checkAssertionValidity true t ocheck assertion validity, false otherwise
-     */
+         * Set whther to check the assertion validity period.
+         *
+         * @param checkAssertionValidity true t ocheck assertion validity, false otherwise
+         */
     public void setCheckAssertionValidity(boolean checkAssertionValidity) {
         this.checkAssertionValidity = checkAssertionValidity;
     }
@@ -67,9 +68,10 @@ public abstract class SamlStatementAssertion extends CredentialSourceAssertion i
     }
 
     /**
-     * Set the audience restrictions SAML property
-     * @param audienceRestriction
-     */
+         * Set the audience restrictions SAML property
+         *
+         * @param audienceRestriction
+         */
     public void setAudienceRestriction(String audienceRestriction) {
         this.audienceRestriction = audienceRestriction;
     }
@@ -104,7 +106,7 @@ public abstract class SamlStatementAssertion extends CredentialSourceAssertion i
 
     public void setNameFormats(String[] nameFormats) {
         if (nameFormats == null) {
-            this.nameFormats = new String[] {};
+            this.nameFormats = new String[]{};
         } else {
             this.nameFormats = nameFormats;
         }
@@ -116,5 +118,15 @@ public abstract class SamlStatementAssertion extends CredentialSourceAssertion i
 
     public void setNoSubjectConfirmation(boolean noSubjectConfirmation) {
         this.noSubjectConfirmation = noSubjectConfirmation;
+    }
+
+    /**
+     * The SAML assertion is a credential source if the proof of posession has
+     * been requested.
+     *
+     * @return true if credential source, false otherwise
+     */
+    public boolean isCredentialSource() {
+        return isRequireProofOfPosession();
     }
 }

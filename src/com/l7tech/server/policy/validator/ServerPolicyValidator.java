@@ -12,7 +12,6 @@ import com.l7tech.policy.PolicyValidator;
 import com.l7tech.policy.PolicyValidatorResult;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.JmsRoutingAssertion;
-import com.l7tech.policy.assertion.credential.CredentialSourceAssertion;
 import com.l7tech.policy.assertion.credential.http.HttpClientCert;
 import com.l7tech.policy.assertion.credential.http.HttpDigest;
 import com.l7tech.policy.assertion.identity.IdentityAssertion;
@@ -86,7 +85,7 @@ public class ServerPolicyValidator extends PolicyValidator
                     break;
                 case ID_FIP:
                     for (Iterator iterator = pathContext.credentialSources.iterator(); iterator.hasNext();) {
-                        CredentialSourceAssertion credSrc = (CredentialSourceAssertion)iterator.next();
+                        Assertion credSrc = (Assertion)iterator.next();
                         if (credSrc instanceof SamlStatementAssertion || credSrc instanceof RequestWssX509Cert ||
                           credSrc instanceof SecureConversation || credSrc instanceof HttpClientCert)
                             ;
@@ -103,7 +102,7 @@ public class ServerPolicyValidator extends PolicyValidator
                     break;
                 case ID_SAMLONLY:
                     for (Iterator iterator = pathContext.credentialSources.iterator(); iterator.hasNext();) {
-                        CredentialSourceAssertion credSrc = (CredentialSourceAssertion)iterator.next();
+                        Assertion credSrc = (Assertion)iterator.next();
                         if (!(credSrc instanceof SamlStatementAssertion)) {
                             r.addError(new PolicyValidatorResult.Error(a,
                               ap,
@@ -118,7 +117,7 @@ public class ServerPolicyValidator extends PolicyValidator
                     break;
                 case ID_X509ONLY:
                     for (Iterator iterator = pathContext.credentialSources.iterator(); iterator.hasNext();) {
-                        CredentialSourceAssertion credSrc = (CredentialSourceAssertion)iterator.next();
+                        Assertion credSrc = (Assertion)iterator.next();
                         if (!(credSrc instanceof RequestWssX509Cert || credSrc instanceof SecureConversation ||
                           credSrc instanceof HttpClientCert)) {
                             r.addError(new PolicyValidatorResult.Error(a,
@@ -145,7 +144,7 @@ public class ServerPolicyValidator extends PolicyValidator
                     }
                     break;
             }
-        } else if (a instanceof CredentialSourceAssertion) {
+        } else if (a.isCredentialSource()) {
             pathContext.credentialSources.add(a);
         } else if (a instanceof JmsRoutingAssertion) {
             JmsRoutingAssertion jmsass = (JmsRoutingAssertion)a;

@@ -580,6 +580,7 @@ public class WspConstants {
         "Path", // getPath() is a utility method of Assertion; not a property
         "AssertionWithOrdinal", // getAssertionWithOrdinal() is a utility lookup method of Assertion; not a property
         "Ordinal", // ordinal is transient and is recomputed when policy is deserialized
+        "CredentialSource", // computed by an assertion to signal that is a credential source
     };
 
     static boolean isIgnorableProperty(String parm) {

@@ -3,7 +3,6 @@
  *
  * $Id$
  */
-
 package com.l7tech.policy.assertion.credential;
 
 import com.l7tech.common.util.CertUtils;
@@ -15,11 +14,11 @@ import java.util.Map;
 
 /**
  * Stores a reference to a User and its associated credentials (i.e. password).
- * <p>
+ * <p/>
  * Immutable.
- * <p>
+ * <p/>
  * Please don't ever make this class Serializable; we don't want to save anyone's password by accident.
- * <p> 
+ * <p/>
  * TODO move this to a better package
  *
  * @author alex
@@ -37,15 +36,15 @@ public class LoginCredentials {
     }
 
     public static LoginCredentials makePasswordCredentials(String login, char[] pass, Class credentialSource) {
-        return new LoginCredentials(login, pass, CredentialFormat.CLEARTEXT, credentialSource, null );
+        return new LoginCredentials(login, pass, CredentialFormat.CLEARTEXT, credentialSource, null);
     }
 
     public static LoginCredentials makeDigestCredentials(String login, char[] digest, String realm, Class credentialSource) {
-        return new LoginCredentials(login, digest, CredentialFormat.DIGEST, credentialSource, realm, null );
+        return new LoginCredentials(login, digest, CredentialFormat.DIGEST, credentialSource, realm, null);
     }
 
-    public LoginCredentials( String login, char[] credentials, CredentialFormat format,
-                             Class credentialSource, String realm, Object payload ) {
+    public LoginCredentials(String login, char[] credentials, CredentialFormat format,
+                            Class credentialSource, String realm, Object payload) {
         this.login = login;
         this.credentials = credentials;
         this.realm = realm;
@@ -56,16 +55,16 @@ public class LoginCredentials {
             throw new IllegalArgumentException("Must provide a certificate when creating client cert credentials");
     }
 
-    public LoginCredentials( String login, char[] credentials, CredentialFormat format, Class credentialSource, String realm ) {
-        this( login, credentials, format, credentialSource, realm, null );
+    public LoginCredentials(String login, char[] credentials, CredentialFormat format, Class credentialSource, String realm) {
+        this(login, credentials, format, credentialSource, realm, null);
     }
 
-    public LoginCredentials( String login, char[] credentials, CredentialFormat format, Class credentialSource ) {
-        this( login, credentials, format, credentialSource, null );
+    public LoginCredentials(String login, char[] credentials, CredentialFormat format, Class credentialSource) {
+        this(login, credentials, format, credentialSource, null);
     }
 
-    public LoginCredentials( String login, char[] credentials, Class credentialSource ) {
-        this( login, credentials, CredentialFormat.CLEARTEXT, credentialSource, null );
+    public LoginCredentials(String login, char[] credentials, Class credentialSource) {
+        this(login, credentials, CredentialFormat.CLEARTEXT, credentialSource, null);
     }
 
     public String getLogin() {
@@ -78,6 +77,7 @@ public class LoginCredentials {
 
     /**
      * Could be null.
+     *
      * @return
      */
     public String getRealm() {
@@ -90,6 +90,7 @@ public class LoginCredentials {
 
     /**
      * Could be null.
+     *
      * @return
      */
     public Object getPayload() {
@@ -97,23 +98,17 @@ public class LoginCredentials {
     }
 
     /**
-     * @return the Class of the {@link CredentialSourceAssertion} that found this set of credentials.
+     * @return the Class of the {@link com.l7tech.policy.assertion.Assertion} that found this set of credentials.
      */
     public Class getCredentialSourceAssertion() {
         return credentialSourceAssertion;
     }
 
     /**
-     * @param credentialSourceAssertion the Class of the {@link CredentialSourceAssertion} that found this set of credentials. Must be derived from {@link CredentialSourceAssertion}.
-     * @throws ClassCastException if the specified class is not derived from {@link CredentialSourceAssertion}.
+     * @param credentialSourceAssertion the Class of the {@link com.l7tech.policy.assertion.Assertion} that found this set of credentials.
      */
-    public void setCredentialSourceAssertion( Class credentialSourceAssertion ) throws ClassCastException {
-        if (credentialSourceAssertion == null ||
-            CredentialSourceAssertion.class.isAssignableFrom(credentialSourceAssertion))
-            this.credentialSourceAssertion = credentialSourceAssertion;
-        else throw new ClassCastException(credentialSourceAssertion.getName() +
-                                         " is not derived from " +
-                                         CredentialSourceAssertion.class.getName() );
+    public void setCredentialSourceAssertion(Class credentialSourceAssertion) {
+        this.credentialSourceAssertion = credentialSourceAssertion;
     }
 
     public long getAuthInstant() {
@@ -126,8 +121,8 @@ public class LoginCredentials {
 
     public String toString() {
         return getClass().getName() + "\n\t" +
-                "format: " + format.toString() + "\n\t" +
-                "login: " + login;
+          "format: " + format.toString() + "\n\t" +
+          "login: " + login;
     }
 
     public X509Certificate getClientCert() {

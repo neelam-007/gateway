@@ -6,7 +6,6 @@ import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.CustomAssertionHolder;
 import com.l7tech.policy.assertion.composite.CompositeAssertion;
-import com.l7tech.policy.assertion.credential.CredentialSourceAssertion;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.assertion.credential.http.HttpBasic;
 import com.l7tech.policy.assertion.ext.Category;
@@ -337,16 +336,16 @@ public abstract class AuthenticatableHttpServlet extends HttpServlet {
      * Returns null if not there.
      * (recursive method)
      */
-    private CredentialSourceAssertion findCredentialAssertion(Assertion arg) {
-        if (arg instanceof CredentialSourceAssertion) {
-            return (CredentialSourceAssertion)arg;
+    private Assertion findCredentialAssertion(Assertion arg) {
+        if (arg.isCredentialSource()) {
+            return arg;
         }
         if (arg instanceof CompositeAssertion) {
             CompositeAssertion root = (CompositeAssertion)arg;
             Iterator i = root.getChildren().iterator();
             while (i.hasNext()) {
                 Assertion child = (Assertion)i.next();
-                CredentialSourceAssertion res = findCredentialAssertion(child);
+                Assertion res = findCredentialAssertion(child);
                 if (res != null) return res;
             }
         }

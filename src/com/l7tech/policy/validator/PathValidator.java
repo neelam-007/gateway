@@ -5,7 +5,6 @@ import com.l7tech.policy.AssertionPath;
 import com.l7tech.policy.PolicyValidatorResult;
 import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.assertion.composite.CompositeAssertion;
-import com.l7tech.policy.assertion.credential.CredentialSourceAssertion;
 import com.l7tech.policy.assertion.credential.http.HttpBasic;
 import com.l7tech.policy.assertion.credential.http.HttpClientCert;
 import com.l7tech.policy.assertion.credential.http.HttpDigest;
@@ -66,7 +65,7 @@ class PathValidator {
 
         if (isComposite(a)) {
             processComposite((CompositeAssertion)a);
-        } else if (isCrendentialSource(a)) {
+        } else if (a.isCredentialSource()) {
             processCredentialSource(a);
         } else if (isAccessControl(a)) {
             processAccessControl((IdentityAssertion)a);
@@ -433,10 +432,6 @@ class PathValidator {
 
     private boolean isSpecificUser(Assertion a) {
         return a instanceof SpecificUser;
-    }
-
-    private boolean isCrendentialSource(Assertion a) {
-        return a instanceof CredentialSourceAssertion;
     }
 
     private boolean isComposite(Assertion a) {
