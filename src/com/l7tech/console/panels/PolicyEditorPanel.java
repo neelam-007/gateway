@@ -3,15 +3,18 @@ package com.l7tech.console.panels;
 import com.l7tech.console.action.SavePolicyAction;
 import com.l7tech.console.action.ValidatePolicyAction;
 import com.l7tech.console.action.PolicyIdentityViewAction;
-import com.l7tech.console.tree.policy.AssertionTreeNode;
-import com.l7tech.console.tree.policy.PolicyTreeModel;
+import com.l7tech.console.tree.policy.*;
+import com.l7tech.console.tree.FilteredTreeModel;
+import com.l7tech.console.tree.NodeFilter;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.WindowManager;
 import com.l7tech.policy.*;
 import com.l7tech.policy.assertion.Assertion;
+import com.l7tech.policy.assertion.identity.SpecificUser;
 import com.l7tech.service.PublishedService;
 
 import javax.swing.*;
+import javax.swing.tree.TreeNode;
 import javax.swing.text.EditorKit;
 import java.awt.*;
 import java.awt.event.ActionEvent;
@@ -31,6 +34,7 @@ public class PolicyEditorPanel extends JPanel {
     private PublishedService service;
     private JTextPane messagesTextPane;
     private AssertionTreeNode rootAssertion;
+    private JTree policyTree;
 
     public PolicyEditorPanel(PublishedService svc) {
         this.service = svc;
@@ -45,7 +49,7 @@ public class PolicyEditorPanel extends JPanel {
 
         JSplitPane splitPane = new JSplitPane(JSplitPane.VERTICAL_SPLIT);
 
-        splitPane.add(getPolicyTreePane(windowManager, service), "top");
+        splitPane.add(getPolicyTreePane(windowManager), "top");
         splitPane.add(getMessagePane(), "bottom");
         splitPane.setDividerSize(2);
         splitPane.setName(service.getName());
@@ -54,13 +58,13 @@ public class PolicyEditorPanel extends JPanel {
     }
 
 
-    private JComponent getPolicyTreePane(WindowManager windowManager, PublishedService svc) {
-        JTree tree = windowManager.getPolicyTree();
-        PolicyTreeModel model = PolicyTreeModel.make(svc);
+    private JComponent getPolicyTreePane(WindowManager windowManager) {
+        policyTree = windowManager.getPolicyTree();
+        PolicyTreeModel model = PolicyTreeModel.make(service);
         rootAssertion = (AssertionTreeNode)model.getRoot();
-        tree.setModel(model);
-        tree.setName(svc.getName());
-        JScrollPane scrollPane = new JScrollPane(tree);
+        policyTree.setModel(new FilteredTreeModel((TreeNode)model.getRoot()));
+        policyTree.setName(service.getName());
+        JScrollPane scrollPane = new JScrollPane(policyTree);
         return scrollPane;
 
     }
@@ -125,6 +129,36 @@ public class PolicyEditorPanel extends JPanel {
                   }
               });
             identityViewButton = new JToggleButton(new PolicyIdentityViewAction());
+            identityViewButton.addActionListener( new ActionListener() {
+                public void actionPerformed(ActionEvent e) {
+                    boolean selected = identityViewButton.isSelected();
+                    PolicyTreeModel model = PolicyTreeModel.make(service);
+                    FilteredTreeModel fm = new FilteredTreeModel((TreeNode)model.getRoot());
+                    policyTree.setModel(fm);
+                    if (selected) {
+                        fm.setFilter(new NodeFilter() {
+                            /**
+                             * @param node  the <code>TreeNode</code> to examine
+                             * @return  true if filter accepts the node, false otherwise
+                             */
+                            public boolean accept(TreeNode node) {
+                                if (node instanceof MemberOfGroupAssertionTreeNode ||
+                                    node instanceof SpecificUserAssertionTreeNode) {
+                                         return false;
+                                }
+                                if (node instanceof CompositeAssertionTreeNode) {
+                                    return ((CompositeAssertionTreeNode)node).getChildCount(this) >0;
+                                }
+                                return true;
+                            }
+
+
+                        });
+                    } else {
+                        fm.clearFilter();
+                    }
+                }
+            });
             this.add(identityViewButton);
             Utilities.
               equalizeComponentSizes(

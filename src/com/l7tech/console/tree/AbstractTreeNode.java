@@ -4,8 +4,10 @@ import com.l7tech.console.util.IconManager2;
 import com.l7tech.policy.assertion.Assertion;
 
 import javax.swing.tree.DefaultMutableTreeNode;
+import javax.swing.tree.TreeNode;
 import javax.swing.*;
 import java.awt.*;
+import java.util.Enumeration;
 
 /**
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
@@ -29,6 +31,60 @@ public abstract class AbstractTreeNode extends DefaultMutableTreeNode {
         }
         return super.getChildCount();
     }
+
+
+    /**
+     * @return the TreeNode in this node's child array at the specified
+     * index using the filter if specified
+     */
+    public TreeNode getChildAt(int index, NodeFilter filter) {
+        if (filter == null) {
+            return super.getChildAt(index);
+        }
+
+        if (children == null) {
+            throw new ArrayIndexOutOfBoundsException("node has no children");
+        }
+
+        int visibleIndex = -1;
+        int realIndex = -1;
+        Enumeration enum = children.elements();
+        while (enum.hasMoreElements()) {
+            if (filter.accept((javax.swing.tree.TreeNode)enum.nextElement())) {
+                visibleIndex++;
+            }
+            realIndex++;
+            if (visibleIndex == index) {
+                return (javax.swing.tree.TreeNode)children.elementAt(realIndex);
+            }
+        }
+        throw new ArrayIndexOutOfBoundsException("index unmatched");
+    }
+
+    /**
+     * @return returns the number of children of parent. Returns 0 if the
+     *         node is a leaf or if it has no children. parent must be a
+     *         node previously obtained from this data source.
+     */
+    public int getChildCount(NodeFilter filter) {
+        int realCount = getChildCount();
+        if (filter == null) {
+            return realCount;
+        }
+        if (children == null) {
+            return 0;
+        }
+
+        int count = 0;
+        Enumeration enum = children.elements();
+        while (enum.hasMoreElements()) {
+            if (filter.accept((TreeNode)enum.nextElement())) {
+                count++;
+            }
+        }
+        return count;
+    }
+
 
     /**
      * subclasses override this method
@@ -120,7 +176,6 @@ public abstract class AbstractTreeNode extends DefaultMutableTreeNode {
      */
     public abstract String getName();
 
-
     /**
      * subclasses override this method specifying the resource name
      *
@@ -132,6 +187,6 @@ public abstract class AbstractTreeNode extends DefaultMutableTreeNode {
      * @return the string representation of this node
      */
     public String toString() {
-        return "["+this.getClass() + ", "+getName()+"]";
+        return "[" + this.getClass() + ", " + getName() + "]";
     }
 }

@@ -11,7 +11,7 @@ import java.util.Arrays;
  * Class SpecificUserAssertionTreeNode.
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  */
-class SpecificUserAssertionTreeNode extends LeafAssertionTreeNode {
+public class SpecificUserAssertionTreeNode extends LeafAssertionTreeNode {
 
     public SpecificUserAssertionTreeNode(SpecificUser assertion) {
         super(assertion);

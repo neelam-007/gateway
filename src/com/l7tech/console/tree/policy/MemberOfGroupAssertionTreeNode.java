@@ -8,7 +8,7 @@ import com.l7tech.policy.assertion.identity.MemberOfGroup;
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  */
 
-class MemberOfGroupAssertionTreeNode extends LeafAssertionTreeNode {
+public class MemberOfGroupAssertionTreeNode extends LeafAssertionTreeNode {
     /**
      * The <code>MemberOfGroupAssertionTreeNode</code> is the composite
      * assertion node that represents the group membership.

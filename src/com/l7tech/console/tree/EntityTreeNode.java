@@ -3,10 +3,9 @@ package com.l7tech.console.tree;
 
 import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.MutableTreeNode;
-import javax.swing.tree.TreeNode;
 import java.util.*;
-import java.util.logging.Logger;
 import java.util.logging.Level;
+import java.util.logging.Logger;
 
 
 /**
@@ -139,58 +138,6 @@ public class EntityTreeNode extends DefaultMutableTreeNode {
      */
     public void sortChildren(Comparator c) {
         Collections.sort(children, c);
-    }
-
-    /**
-     * @return the TreeNode in this node's child array at the specified
-     * index using the filter if specified
-     */
-    TreeNode getChildAt(int index, NodeFilter filter) {
-        if (filter == null) {
-            return super.getChildAt(index);
-        }
-
-        if (children == null) {
-            throw new ArrayIndexOutOfBoundsException("node has no children");
-        }
-
-        int visibleIndex = -1;
-        int realIndex = -1;
-        Enumeration enum = children.elements();
-        while (enum.hasMoreElements()) {
-            if (filter.accept((TreeNode) enum.nextElement())) {
-                visibleIndex++;
-            }
-            realIndex++;
-            if (visibleIndex == index) {
-                return (TreeNode) children.elementAt(realIndex);
-            }
-        }
-        throw new ArrayIndexOutOfBoundsException("index unmatched");
-    }
-
-    /**
-     * @return returns the number of children of parent. Returns 0 if the
-     *         node is a leaf or if it has no children. parent must be a
-     *         node previously obtained from this data source.
-     */
-    int getChildCount(NodeFilter filter) {
-        int realCount = getChildCount();
-        if (filter == null) {
-            return realCount;
-        }
-        if (children == null) {
-            return 0;
-        }
-
-        int count = 0;
-        Enumeration enum = children.elements();
-        while (enum.hasMoreElements()) {
-            if (filter.accept((TreeNode) enum.nextElement())) {
-                count++;
-            }
-        }
-        return count;
     }
 
     /**
