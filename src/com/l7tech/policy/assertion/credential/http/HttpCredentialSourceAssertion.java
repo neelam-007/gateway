@@ -24,4 +24,7 @@ public abstract class HttpCredentialSourceAssertion extends CredentialSourceAsse
     public abstract String scheme();
 
     protected String _realm;
+
+    public static String PARAM_SCHEME = "scheme";
+    public static String PARAM_REALM = "realm";
 }
