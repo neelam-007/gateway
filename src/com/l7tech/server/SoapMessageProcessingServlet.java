@@ -52,9 +52,9 @@ public class SoapMessageProcessingServlet extends HttpServlet {
                 AssertionStatus stat = MessageProcessor.getInstance().processMessage( sreq, sresp );
 
                 if ( sresp.isAuthenticationMissing() ) {
-                    sendChallenge( sreq, hresponse );
+                    sendChallenge( sreq, sresp, hresponse );
                 } else if ( stat != AssertionStatus.NONE ) {
-                    sendFault( sreq, hresponse, stat.getSoapFaultCode(), stat.getMessage() );
+                    sendFault( sreq, sresp, hresponse, HttpServletResponse.SC_INTERNAL_SERVER_ERROR, stat.getSoapFaultCode(), stat.getMessage() );
                 } else {
                     hresponse.setContentType( "text/xml; charset=utf-8" );
                     protRespStream = new BufferedInputStream( sresp.getProtectedResponseStream() );
@@ -69,10 +69,10 @@ public class SoapMessageProcessingServlet extends HttpServlet {
 
             } catch ( PolicyAssertionException pae ) {
                 _log.error( pae );
-                sendFault( sreq, hresponse, SoapUtil.FC_SERVER, pae.toString() );
+                sendFault( sreq, sresp, hresponse, HttpServletResponse.SC_INTERNAL_SERVER_ERROR, SoapUtil.FC_SERVER, pae.toString() );
             } catch ( MessageProcessingException mpe ) {
                 _log.error( mpe );
-                sendFault( sreq, hresponse, SoapUtil.FC_SERVER, mpe.toString() );
+                sendFault( sreq, sresp, hresponse, HttpServletResponse.SC_INTERNAL_SERVER_ERROR, SoapUtil.FC_SERVER, mpe.toString() );
             }
         } catch ( SOAPException se ) {
             _log.error( se );
@@ -83,36 +83,37 @@ public class SoapMessageProcessingServlet extends HttpServlet {
         }
     }
 
-    private void sendFault( SoapRequest request, HttpServletResponse response, String faultCode, String faultString ) throws SOAPException, IOException {
+    private void sendFault( SoapRequest sreq, SoapResponse sresp, HttpServletResponse hresp, int httpStatus, String faultCode, String faultString ) throws SOAPException, IOException {
         OutputStream responseStream = null;
 
         try {
-            response.setContentType( "text/xml" );
+            hresp.setContentType( "text/xml" );
+            hresp.setStatus( httpStatus );
+
             SOAPMessage msg = SoapUtil.makeMessage();
             SOAPPart spart = msg.getSOAPPart();
             SOAPEnvelope senv = spart.getEnvelope();
             SOAPFault fault = SoapUtil.addFaultTo( msg, faultCode, faultString );
 
-            PublishedService pserv = (PublishedService)request.getParameter( Request.PARAM_SERVICE );
-            if ( pserv != null ) {
+            PublishedService pserv = (PublishedService)sreq.getParameter( Request.PARAM_SERVICE );
+            if ( pserv != null && sresp.isPolicyViolated() ) {
                 String soid = new Long( pserv.getOid() ).toString();
-                response.setHeader( "PublishedServiceOid", soid );
+                hresp.setHeader( "PublishedServiceOid", soid );
 
                 Detail detail = fault.addDetail();
                 DetailEntry entry = detail.addDetailEntry( senv.createName( "published-service-oid" ) );
                 entry.addTextNode( soid );
             }
 
-            responseStream = response.getOutputStream();
+            responseStream = hresp.getOutputStream();
             msg.writeTo( responseStream );
         } finally {
             if ( responseStream != null ) responseStream.close();
         }
     }
 
-    private void sendChallenge( SoapRequest request, HttpServletResponse response ) throws SOAPException, IOException {
-        response.setStatus( HttpServletResponse.SC_UNAUTHORIZED );
-        sendFault( request, response, SoapUtil.FC_CLIENT, "Authentication Required" );
+    private void sendChallenge( SoapRequest sreq, SoapResponse sresp, HttpServletResponse hresp ) throws SOAPException, IOException {
+        sendFault( sreq, sresp, hresp, HttpServletResponse.SC_UNAUTHORIZED, SoapUtil.FC_CLIENT, "Authentication Required" );
     }
 
     private Category _log = Category.getInstance( getClass() );
