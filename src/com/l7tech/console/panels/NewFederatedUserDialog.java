@@ -132,7 +132,7 @@ public class NewFederatedUserDialog extends JDialog {
         });
 
         x509SubjectDNTextField.setToolTipText(resources.getString("x509SubjectDNTextField.tooltip"));
-        x509SubjectDNTextField.setDocument(new FilterDocument(64,
+        x509SubjectDNTextField.setDocument(new FilterDocument(255,
                         new FilterDocument.Filter() {
                             public boolean accept(String str) {
                                 if (str == null) return false;
@@ -143,7 +143,7 @@ public class NewFederatedUserDialog extends JDialog {
         x509SubjectDNTextField.getDocument().addDocumentListener(documentListener);
 
         emailTextField.setToolTipText(resources.getString("emailTextField.tooltip"));
-        emailTextField.setDocument(new FilterDocument(24,
+        emailTextField.setDocument(new FilterDocument(128,
                         new FilterDocument.Filter() {
                             public boolean accept(String str) {
                                 if (str == null) return false;
@@ -154,7 +154,7 @@ public class NewFederatedUserDialog extends JDialog {
         emailTextField.getDocument().addDocumentListener(documentListener);
 
         loginTextField.setToolTipText(resources.getString("loginTextField.tooltip"));
-        loginTextField.setDocument(new FilterDocument(24,
+        loginTextField.setDocument(new FilterDocument(32,
                         new FilterDocument.Filter() {
                             public boolean accept(String str) {
                                 if (str == null) return false;
