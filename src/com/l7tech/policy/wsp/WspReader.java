@@ -26,6 +26,8 @@ public class WspReader {
      * @throws IOException if the stream did not contain a valid policy
      */
     public static Assertion parse(InputStream wspStream) throws IOException {
+        if (wspStream == null)
+            throw new IllegalArgumentException("wspStream may not be null");
         XMLDecoder decoder = new XMLDecoder(wspStream);
         try {
             return (Assertion)decoder.readObject();
@@ -43,6 +45,8 @@ public class WspReader {
      * @throws ArrayIndexOutOfBoundsException if the string contains no objects
      */
     public static Assertion parse(String wspXml) throws IOException {
+        if (wspXml == null)
+            throw new IllegalArgumentException("wspXml may not be null");
         return parse(new ByteArrayInputStream(wspXml.getBytes()));
     }
 }
