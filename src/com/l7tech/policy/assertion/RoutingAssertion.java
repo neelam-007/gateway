@@ -17,6 +17,31 @@ public abstract class RoutingAssertion extends Assertion implements Cloneable, S
     protected int samlAssertionExpiry = 5;
     protected boolean groupMembershipStatement;
     protected boolean taiCredentialChaining = false;
+    protected String xmlSecurityActorToPromote;
+
+    /**
+     * This is the value of the soap security header actor attribute that should be promoted to
+     * the default value (no actor value). If there is a soap security header present that has
+     * this actor attribute value, then that soap security header should be promoted to the
+     * default security header before it is routed downstream.
+     *
+     * @return null means there is no actor to promote, otherwise the actor to promote
+     */
+    public String getXmlSecurityActorToPromote() {
+        return xmlSecurityActorToPromote;
+    }
+
+    /**
+     * This is the value of the soap security header actor attribute that should be promoted to
+     * the default value (no actor value). If there is a soap security header present that has
+     * this actor attribute value, then that soap security header should be promoted to the
+     * default security header before it is routed downstream.
+     *
+     * @param xmlSecurityActorToPromote the actor to promote or null if no promotion is required
+     */
+    public void setXmlSecurityActorToPromote(String xmlSecurityActorToPromote) {
+        this.xmlSecurityActorToPromote = xmlSecurityActorToPromote;
+    }
 
     public boolean isAttachSamlSenderVouches() {
         return attachSamlSenderVouches;

@@ -25,6 +25,7 @@
                     <Option optionValue="Required"/>
                 </SslAssertion>
                 <HttpRoutingAssertion>
+                    <XmlSecurityActorToPromote stringValueNull="null"/>
                     <AttachSamlSenderVouches booleanValue="false"/>
                     <TaiCredentialChaining booleanValue="false"/>
                     <UserAgent stringValueNull="null"/>
@@ -37,6 +38,7 @@
                     <SamlAssertionExpiry intValue="5"/>
                 </HttpRoutingAssertion>
                 <JmsRoutingAssertion>
+                    <XmlSecurityActorToPromote stringValueNull="null"/>
                     <AttachSamlSenderVouches booleanValue="false"/>
                     <EndpointName stringValueNull="null"/>
                     <TaiCredentialChaining booleanValue="false"/>
@@ -186,6 +188,7 @@
             <TrueAssertion/>
             <FalseAssertion/>
             <HttpRoutingAssertion>
+                <XmlSecurityActorToPromote stringValueNull="null"/>
                 <AttachSamlSenderVouches booleanValue="false"/>
                 <TaiCredentialChaining booleanValue="false"/>
                 <UserAgent stringValueNull="null"/>
