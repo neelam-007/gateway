@@ -2,15 +2,9 @@ package com.l7tech.service;
 
 import java.io.Serializable;
 
-/**
- * Immutable.
- */
 public class ServiceStatistics implements Serializable {
-    public ServiceStatistics( long serviceOid, int attemptedRequestCount, int authorizedRequestCount, int completedRequestCount ) {
+    public ServiceStatistics( long serviceOid  ) {
         _serviceOid = serviceOid;
-        _attemptedRequestCount = attemptedRequestCount;
-        _authorizedRequestCount = authorizedRequestCount;
-        _completedRequestCount = completedRequestCount;
     }
 
     public long getServiceOid() {
@@ -21,12 +15,24 @@ public class ServiceStatistics implements Serializable {
         return _attemptedRequestCount;
     }
 
+    public void attemptedRequest() {
+        _attemptedRequestCount++;
+    }
+
     public int getAuthorizedRequestCount() {
         return _authorizedRequestCount;
     }
 
+    public void authorizedRequest() {
+        _authorizedRequestCount++;
+    }
+
     public int getCompletedRequestCount() {
         return _completedRequestCount;
+    }
+
+    public void completedRequest() {
+        _completedRequestCount++;
     }
 
     public boolean equals(Object o) {
@@ -52,8 +58,8 @@ public class ServiceStatistics implements Serializable {
         return result;
     }
 
-    private long _serviceOid;
-    private int _attemptedRequestCount;
-    private int _authorizedRequestCount;
-    private int _completedRequestCount;
+    private long _serviceOid = PublishedService.DEFAULT_OID;
+    private int _attemptedRequestCount = 0;
+    private int _authorizedRequestCount = 0;
+    private int _completedRequestCount = 0;
 }

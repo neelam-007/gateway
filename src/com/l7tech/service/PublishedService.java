@@ -194,22 +194,6 @@ public class PublishedService extends NamedEntityImp {
         return result;
     }
 
-    public void attemptedRequest() {
-        _attemptedRequestCount++;
-    }
-
-    public void authorizedRequest() {
-        _authorizedRequestCount++;
-    }
-
-    public void completedRequest() {
-        _completedRequestCount++;
-    }
-
-    public ServiceStatistics getStatistics() {
-        return new ServiceStatistics( _oid, _attemptedRequestCount, _authorizedRequestCount, _completedRequestCount );
-    }
-
     // ************************************************
     // PRIVATES
     // ************************************************
@@ -217,11 +201,6 @@ public class PublishedService extends NamedEntityImp {
     protected String _wsdlUrl;
     protected String _wsdlXml;
     protected boolean _disabled;
-
-    protected int _attemptedRequestCount = 0;
-    protected int _authorizedRequestCount = 0;
-    protected int _completedRequestCount = 0;
-    protected String attempedRequestCount_string = new String("9999");
 
     protected transient Logger logger = LogManager.getInstance().getSystemLogger();
     protected transient Wsdl _parsedWsdl;

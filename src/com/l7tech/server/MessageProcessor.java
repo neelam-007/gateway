@@ -20,6 +20,7 @@ import com.l7tech.server.policy.ServerPolicyFactory;
 import com.l7tech.service.PublishedService;
 import com.l7tech.service.ServiceManager;
 import com.l7tech.service.ServiceListener;
+import com.l7tech.service.ServiceStatistics;
 import com.l7tech.service.resolution.ServiceResolutionException;
 
 import java.io.IOException;
@@ -74,8 +75,7 @@ public class MessageProcessor implements ServiceListener {
                     return AssertionStatus.FALSIFIED;
                 }
 
-                // run the policy
-
+                // Get the server policy
                 Assertion genericPolicy = service.rootAssertion();
                 Long oid = new Long( service.getOid() );
                 ServerAssertion serverPolicy;
@@ -87,14 +87,15 @@ public class MessageProcessor implements ServiceListener {
                     }
                 }
 
-                service.attemptedRequest();
+                // Run the policy
+                getServiceStatistics( service.getOid() ).attemptedRequest();
                 status = serverPolicy.checkRequest( request, response );
 
                 if ( status == AssertionStatus.NONE ) {
-                    service.authorizedRequest();
+                    getServiceStatistics( service.getOid() ).authorizedRequest();
                     if ( request.isRouted() ) {
                         logger.info( "Request was routed with status " + " " + status.getMessage() + "(" + status.getNumeric() + ")" );
-                        service.completedRequest();
+                        getServiceStatistics( service.getOid() ).completedRequest();
                     } else {
                         logger.warning( "Request was not routed!");
                         status = AssertionStatus.FALSIFIED;
@@ -109,6 +110,19 @@ public class MessageProcessor implements ServiceListener {
             logger.log(Level.SEVERE, sre.getMessage(), sre);
             return AssertionStatus.SERVER_ERROR;
         }
+    }
+
+    public ServiceStatistics getServiceStatistics( long serviceOid ) {
+        Long oid = new Long( serviceOid );
+        ServiceStatistics stats;
+        synchronized( _serviceStatistics ) {
+            stats = (ServiceStatistics)_serviceStatistics.get(oid);
+            if ( stats == null ) {
+                stats = new ServiceStatistics( serviceOid );
+                _serviceStatistics.put( oid, stats );
+            }
+        }
+        return stats;
     }
 
     public static MessageProcessor getInstance() {
@@ -179,7 +193,9 @@ public class MessageProcessor implements ServiceListener {
     }
 
     public void serviceDeleted(PublishedService service) {
-        _serverPolicyCache.remove( new Long( service.getOid() ) );
+        Long oid = new Long( service.getOid() );
+        _serverPolicyCache.remove( oid );
+        _serviceStatistics.remove( oid );
     }
 
     public void serviceUpdated(PublishedService service) {
@@ -193,4 +209,5 @@ public class MessageProcessor implements ServiceListener {
     private Map _serverPolicyCache = new HashMap();
     private ServiceManager _serviceManager;
     private Logger logger = LogManager.getInstance().getSystemLogger();
+    private Map _serviceStatistics = new HashMap();
 }

@@ -5,6 +5,7 @@ import com.l7tech.service.ServiceStatistics;
 import com.l7tech.objectmodel.*;
 import com.l7tech.common.util.Locator;
 import com.l7tech.logging.LogManager;
+import com.l7tech.server.MessageProcessor;
 
 import java.util.Collection;
 import java.util.Map;
@@ -83,15 +84,8 @@ public class Service implements ServiceManager {
     }
 
     public ServiceStatistics getStatistics( long serviceOid ) throws RemoteException {
-        Map services = serviceManagerInstance.serviceMap();
-        PublishedService service = (PublishedService)services.get( new Long( serviceOid ) );
-
-        if(service != null){
-            return service.getStatistics();
-        }
-        else{
-            return null;
-        }
+        MessageProcessor proc = MessageProcessor.getInstance();
+        return proc.getServiceStatistics( serviceOid );
     }
 
     /**
