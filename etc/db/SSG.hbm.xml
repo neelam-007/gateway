@@ -88,9 +88,9 @@
         <version name="version" column="version" type="integer"/>
 
         <property name="name" column="name" type="string"/>
-        <property name="policyXml" column="policy_xml" type="string"/>
+        <property name="policyXml" column="policy_xml" type="text"/>
         <property name="wsdlUrl" column="wsdl_url" type="string"/>
-        <property name="wsdlXml" column="wsdl_xml" type="string"/>
+        <property name="wsdlXml" column="wsdl_xml" type="text"/>
         <property name="disabled" column="disabled" type="boolean"/>
     </class>
 
