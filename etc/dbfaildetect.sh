@@ -33,8 +33,8 @@ EMAIL="hchan@layer7tech.com"
 DBHOST="10.7.7.77"
 # cluster IP addresss
 
-INTERFACE="eth1"
-INTERFACE_ALIAS="$INTERFACE:MYSQLDB"
+INTERFACE="eth0"
+INTERFACE_ALIAS="$INTERFACE:1"
 # alias interface
 
 # file on server to get
@@ -62,7 +62,6 @@ SLEEPRETRY=10
 success() {
 	rm -f $TRYAGAINFILE
 	sleep $SLEEPRETRY
-	doget
 }
 
 failure() {
@@ -72,15 +71,12 @@ failure() {
 		echo
 		touch $TRYAGAINFILE
 		sleep $RETEST
-		doget
 	else
 		echo "Failed Twice. Time for action"
 		echo
 		doiptakeover
 		sleep $RETEST
 		rm $TRYAGAINFILE
-		doget	
-		# 
 	fi
 }
 
@@ -90,7 +86,7 @@ doiptakeover() {
 	$IFCONFIG $INTERFACE_ALIAS $DBHOST
 	echo "Sending gratuitous arp"
 	$GARP -i $INTERFACE -a $DBHOST
-	echo "echo 'SSG Failover' | mail -s 'SSG Failover' $EMAIL" 
+#	echo "echo 'SSG Failover' | mail -s 'SSG Failover' $EMAIL" 
 }
 
 doget() {
@@ -106,28 +102,26 @@ doget() {
 }
 
 
+loop() {
+	while (true)
+	do doget	
+	done
+}
 
 
 # See how we were called.
 case "$1" in
   start)
 	echo "Starting $0"
-	sh -c "$0 doget" &
+	loop >/var/log/dbfail.log 2>&1 &
 	echo $! > $PIDFILE
 	;;
   stop)
 	echo "Stopping $0"
 	kill -9 `cat $PIDFILE`
 	;;
-  restart)
-	stop
-	start
-	;;
-  doget)
-	doget
-	;;
   *)
-	echo "Usage: $0 {start|stop|restart}"
+	echo "Usage: $0 {start|stop}"
 	exit 1
 esac
 
