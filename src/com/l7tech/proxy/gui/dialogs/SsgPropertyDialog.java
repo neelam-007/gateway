@@ -5,6 +5,7 @@ import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.common.gui.widgets.CertificatePanel;
 import com.l7tech.common.gui.widgets.ContextMenuTextField;
 import com.l7tech.common.gui.widgets.WrappingLabel;
+import com.l7tech.common.util.CertUtils;
 import com.l7tech.proxy.ClientProxy;
 import com.l7tech.proxy.datamodel.*;
 import com.l7tech.proxy.datamodel.exceptions.KeyStoreCorruptException;
@@ -25,6 +26,7 @@ import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.security.NoSuchAlgorithmException;
+import java.security.Principal;
 import java.security.cert.CertificateEncodingException;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
@@ -696,15 +698,22 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
 
     /** Return the username in our client certificate, or null if we don't have an active client cert. */
     private String lookupClientCertUsername(Ssg ssg) {
+        boolean badKeystore = false;
+
         try {
             if (SsgKeyStoreManager.isClientCertAvailabile(ssg)) {
                 X509Certificate cert = null;
                 cert = SsgKeyStoreManager.getClientCert(ssg);
-                X500Principal certName = new X500Principal(cert.getSubjectDN().toString());
-                String certNameString = certName.getName(X500Principal.RFC2253);
-                return certNameString.substring(3);
+                return CertUtils.extractUsernameFromClientCertificate(cert);
             }
+        } catch (IllegalArgumentException e) {
+            // bad client certificate format
+            badKeystore = true;
         } catch (KeyStoreCorruptException e) {
+            badKeystore = true;
+        }
+
+        if (badKeystore) {
             try {
                 Managers.getCredentialManager().notifyKeyStoreCorrupt(ssg);
                 SsgKeyStoreManager.deleteKeyStore(ssg);
@@ -713,6 +722,7 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
                 // FALLTHROUGH -- continue, pretending we had no keystore
             }
         }
+
         return null;
     }
 

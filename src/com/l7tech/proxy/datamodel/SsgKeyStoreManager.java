@@ -23,14 +23,7 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.net.PasswordAuthentication;
-import java.security.GeneralSecurityException;
-import java.security.KeyPair;
-import java.security.KeyStore;
-import java.security.KeyStoreException;
-import java.security.NoSuchAlgorithmException;
-import java.security.PrivateKey;
-import java.security.PublicKey;
-import java.security.UnrecoverableKeyException;
+import java.security.*;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
@@ -52,6 +45,9 @@ public class SsgKeyStoreManager {
      * corruption when it is reloaded.
      */
     private static final char[] KEYSTORE_PASSWORD = "lwbnasudg".toCharArray();
+
+    /** Keystore type.  This is a read-write PKCS12 keystore provided by Bouncy Castle. */
+    private static final String KEYSTORE_TYPE = "JCEKS";
 
     /**
      * Very quickly check if a client certificate is available for the specified SSG.
@@ -215,7 +211,7 @@ public class SsgKeyStoreManager {
             if (ssg.keyStore() == null) {
                 KeyStore keyStore;
                 try {
-                    keyStore = KeyStore.getInstance(KeyStore.getDefaultType());
+                    keyStore = KeyStore.getInstance(KEYSTORE_TYPE);
                 } catch (KeyStoreException e) {
                     log.error("Security provider configuration problem", e);
                     throw new RuntimeException(e); // can't happen unless VM misconfigured

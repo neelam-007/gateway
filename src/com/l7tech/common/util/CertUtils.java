@@ -6,6 +6,7 @@
 
 package com.l7tech.common.util;
 
+import javax.security.auth.x500.X500Principal;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -191,5 +192,24 @@ public class CertUtils {
 
         // We probably just havne't talked to this Ssg before.  Trigger a reimport of the certificate.
         throw new CertificateUntrustedException("Couldn't find trusted certificate in peer's certificate chain");
+    }
+
+    /**
+     * Extract the username from the specified client certificate.  The certificate is expected to contain
+     * a distinguished name in the format "CN=username".  Other formats are not supported.
+     * @param cert the certificate to examine
+     * @return the username from the certificate.  Might be empty string, but won't be null.
+     * @throws IllegalArgumentException if the certificate does not contain DN of "CN=username"
+     * TODO: The certificate format restrictions will need to be relaxed to allow arbitrary client certificates
+     */
+    public static String extractUsernameFromClientCertificate(X509Certificate cert) throws IllegalArgumentException {
+        Principal principal = cert.getSubjectDN();
+        if (principal == null)
+            throw new IllegalArgumentException("Cert contains no subject DN");
+        X500Principal certName = new X500Principal(principal.toString());
+        String certNameString = certName.getName(X500Principal.RFC2253);
+        if (certNameString == null || !certNameString.substring(0, 3).equalsIgnoreCase("cn="))
+            throw new IllegalArgumentException("Cert subject DN is not in the format CN=username");
+        return certNameString.substring(3);
     }
 }

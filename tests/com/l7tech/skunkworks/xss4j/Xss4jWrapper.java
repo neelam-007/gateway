@@ -43,7 +43,7 @@ import java.util.List;
  */
 public class Xss4jWrapper {
 
-    Xss4jWrapper() {
+    public Xss4jWrapper() {
         dbf = DocumentBuilderFactory.newInstance();
         dbf.setNamespaceAware( true );
         dbf.setValidating( false );
@@ -388,7 +388,7 @@ public class Xss4jWrapper {
     }
 
 
-    RSAPrivateKey getClientCertPrivateKey() throws Exception {
+    public RSAPrivateKey getClientCertPrivateKey() throws Exception {
         final RSAPublicKey pubkey = getClientCertPublicKey();
         final BigInteger exp = getClientPrivateExponent();
         RSAPrivateKey privkey = new RSAPrivateKey() {
@@ -417,7 +417,7 @@ public class Xss4jWrapper {
     }
 
 
-    X509Certificate getClientCertificate() throws Exception {
+    public X509Certificate getClientCertificate() throws Exception {
         // Find KeyInfo bodyElement, and extract certificate from this
         Document keyInfoDoc = parse( KEYINFO );
         Element keyInfoElement = keyInfoDoc.getDocumentElement();

@@ -1,0 +1,76 @@
+/*
+ * Copyright (C) 2004 Layer 7 Technologies Inc.
+ *
+ * $Id$
+ */
+
+package com.l7tech.proxy.datamodel;
+
+import junit.framework.Test;
+import junit.framework.TestCase;
+import junit.framework.TestSuite;
+
+import java.util.logging.Logger;
+import java.security.cert.X509Certificate;
+import java.security.cert.Certificate;
+import java.security.interfaces.RSAPrivateKey;
+import java.security.KeyPair;
+
+import com.l7tech.skunkworks.xss4j.Xss4jWrapper;
+import com.l7tech.common.util.CertUtils;
+import com.l7tech.common.security.JceProvider;
+import com.l7tech.common.security.CertificateRequest;
+import com.l7tech.common.security.RsaSignerEngine;
+import org.bouncycastle.jce.provider.JCERSAPrivateKey;
+
+/**
+ * @author mike
+ */
+public class SsgKeyStoreManagerTest extends TestCase {
+    private static Logger log = Logger.getLogger(SsgKeyStoreManagerTest.class.getName());
+
+    public SsgKeyStoreManagerTest(String name) {
+        super(name);
+    }
+
+    public static Test suite() {
+        return new TestSuite(SsgKeyStoreManagerTest.class);
+    }
+
+    public static void main(String[] args) {
+        junit.textui.TestRunner.run(suite());
+    }
+
+    public void testKeyStore() {
+        try {
+            doTestKeyStore();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void doTestKeyStore() throws Exception {
+        final Xss4jWrapper x = new Xss4jWrapper();
+
+        KeyPair kp = JceProvider.generateRsaKeyPair();
+        CertificateRequest csr = JceProvider.makeCsr("mike", kp);
+        RsaSignerEngine rsaSigner = JceProvider.createRsaSignerEngine("/tomcat4.1/kstores/ca.ks", "tralala", "ssgroot", "tralala");
+        X509Certificate cert = (X509Certificate)rsaSigner.createCertificate(csr.getEncoded());
+
+        System.out.println("Using client cert:" + CertUtils.toString(cert));
+
+        Ssg testSsg = new Ssg(1, "foo.bar.blortch.l7tech.com");
+        testSsg.setUsername(CertUtils.extractUsernameFromClientCertificate(cert));
+        testSsg.cmPassword("tralala".toCharArray());
+
+
+        SsgKeyStoreManager.deleteKeyStore(testSsg);
+
+        SsgKeyStoreManager.saveClientCertificate(testSsg, kp.getPrivate(), cert);
+
+        X509Certificate haveCert = SsgKeyStoreManager.getClientCert(testSsg);
+        assertTrue(haveCert.equals(cert));
+
+        //SsgKeyStoreManager.deleteKeyStore(testSsg);
+    }
+}
