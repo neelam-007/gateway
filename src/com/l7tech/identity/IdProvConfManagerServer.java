@@ -2,6 +2,7 @@ package com.l7tech.identity;
 
 import com.l7tech.identity.internal.InternalIdentityProviderServer;
 import com.l7tech.identity.ldap.LdapIdentityProviderServer;
+import com.l7tech.identity.ldap.LdapConfigSettings;
 import com.l7tech.objectmodel.*;
 
 import java.sql.SQLException;
@@ -62,6 +63,12 @@ public class IdProvConfManagerServer extends HibernateEntityManager implements I
     public long save(IdentityProviderConfig identityProviderConfig) throws SaveException {
         // we should not accept saving an internal type
         if (identityProviderConfig.type() == IdentityProviderType.INTERNAL ) throw new SaveException("this type of config cannot be saved");
+        if (!LdapConfigSettings.isValidConfigObject(identityProviderConfig)) {
+            // not the food additive
+            String msg = "This IdentityProviderConfig object does not meet the requirements for the IdentityProviderType.LDAP type.";
+            logger.warning("Attempt to save invalid ldap id provider config. " + msg);
+            throw new SaveException(msg);
+        }
         try {
             return _manager.save(getContext(), identityProviderConfig);
         } catch (SQLException se) {
