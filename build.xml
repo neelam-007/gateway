@@ -308,14 +308,14 @@
                 <include name="xss4j.jar"/>
 
                 <!-- Include OpenJMS on dev builds -->
-                <include name="openjms-client-0.7.6.jar" if="dev.build, include.jms.openjms"/>
-                <include name="exolabcore-0.3.7.jar" if="dev.build, include.jms.openjms"/>
+                <include name="openjms-client-0.7.6.jar" if="include.jms.openjms"/>
+                <include name="exolabcore-0.3.7.jar" if="include.jms.openjms"/>
 
                 <!-- Include MQSeries on dev builds -->
-                <include name="com.ibm.mqbind.jar" if="dev.build, include.jms.mqseries"/>
-                <include name="com.ibm.mq.jar" if="dev.build, include.jms.mqseries"/>
-                <include name="com.ibm.mqjms.jar" if="dev.build, include.jms.mqseries"/>
-                <include name="connector.jar" if="dev.build, include.jms.mqseries"/>
+                <include name="com.ibm.mqbind.jar" if="include.jms.mqseries"/>
+                <include name="com.ibm.mq.jar" if="include.jms.mqseries"/>
+                <include name="com.ibm.mqjms.jar" if="include.jms.mqseries"/>
+                <include name="connector.jar" if="include.jms.mqseries"/>
 
             </lib>
 
@@ -488,21 +488,24 @@
         <antcall target="prepare.jms.mqseries"/>
     </target>
     
-    <target name="prepare.jms.openjms" if="include.jms.openjms, dev.build">
+    <target name="prepare.jms.openjms" if="include.jms.openjms">
+        <echo>Copying OpenJMS jars from ${src.root}/lib/gateway/jms/openjms to ${build.lib}...</echo>
         <copy todir="${build.lib}">
              <fileset dir="${src.root}/lib/gateway/jms/openjms">
-                 <include name="**/*.jar" if="dev.build, include.jms.openjms"/>
+                 <include name="*.jar"/>
              </fileset>
         </copy>
     </target>
 
-    <target name="prepare.jms.mqseries" if="include.jms.mqseries, dev.build">
+    <target name="prepare.jms.mqseries" if="include.jms.mqseries">
+        <echo>Copying MQSeries jars...</echo>
         <copy todir="${build.lib}">
             <fileset dir="${src.root}/lib/gateway/jms/mqseries">
-                <include name="**/*.jar" if="dev.build, include.jms.mqseries"/>
+                <include name="*.jar"/>
             </fileset>
         </copy>
     </target>
+
     <!--
       ** Create the directory structure, copy the resources, libs and
       ** update version tokens
