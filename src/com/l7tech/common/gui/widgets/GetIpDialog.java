@@ -104,6 +104,8 @@ public class GetIpDialog extends JDialog {
 
     private static final Pattern ipPattern = Pattern.compile("(\\d+)\\.(\\d+)\\.(\\d+)\\.(\\d+)");
     private static final Pattern badIpChars = Pattern.compile("[^0-9.]");
+
+    /** Check for valid IP, attempting to narrow in on the invalid portion if it isn't valid. */
     private boolean isValidIp(String s) {
         boolean ret = false;
         int pos = -1;
