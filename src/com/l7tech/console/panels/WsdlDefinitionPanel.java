@@ -52,6 +52,7 @@ public class WsdlDefinitionPanel extends WizardStepPanel {
         nameSpaceDetailsModel.addRow(new String[]{"xsd", XSD_NAME_SPACE});
         nameSpaceDetailsModel.addRow(new String[]{"soap", SOAP_NAME_SPACE});
         namespaceDetails.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+        namespaceDetails.getTableHeader().setReorderingAllowed(false);
         namespaceDetails.setModel(nameSpaceDetailsModel);
         namespaceDetailsScrollPane.getViewport().setBackground(namespaceDetails.getBackground());
         targetNameSpaceField.setText("http://tempuri.org/");

@@ -129,6 +129,7 @@ public class WsdlPortTypeBindingPanel extends WizardStepPanel {
           new WsdlBindingOperationsTableModel(definition, binding);
 
         bindingOperationsTable.setModel(model);
+        bindingOperationsTable.getTableHeader().setReorderingAllowed(false);
     }
 
     /**

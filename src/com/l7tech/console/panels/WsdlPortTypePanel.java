@@ -16,7 +16,7 @@ import java.util.Map;
 /**
  *
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
- * @version 
+ * @version
  */
 public class WsdlPortTypePanel extends WizardStepPanel {
     private JPanel mainPanel;
@@ -123,6 +123,8 @@ public class WsdlPortTypePanel extends WizardStepPanel {
         }
         operationsModel = new WsdlOperationsTableModel(definition, portType);
         operationsTable.setModel(operationsModel);
+        operationsTable.getTableHeader().setReorderingAllowed(false);
+
         Object[] messages = definition.getMessages().values().toArray();
         messagesComboBox.setModel(new DefaultComboBoxModel(messages));
         messagesComboBox.setRenderer(new DefaultListCellRenderer() {

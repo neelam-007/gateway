@@ -22,7 +22,7 @@ import java.util.logging.Logger;
 /**
  *
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
- * @version 
+ * @version
  */
 public class WsdlMessagesPanel extends WizardStepPanel {
     static Logger log = Logger.getLogger(WsdlMessagesPanel.class.getName());
@@ -182,6 +182,7 @@ public class WsdlMessagesPanel extends WizardStepPanel {
     private void updateMessageTable() {
         messagesTableModel = new WsdlMessagesTableModel(definition);
         messagesTable.setModel(messagesTableModel);
+        messagesTable.getTableHeader().setReorderingAllowed(false);
 
         DefaultCellEditor cellEditor =
           new DefaultCellEditor(new JTextField()) {
@@ -330,7 +331,7 @@ public class WsdlMessagesPanel extends WizardStepPanel {
 
     private ListSelectionListener
       messagesTableSelectionListener = new ListSelectionListener() {
-          /** 
+          /**
            * Called whenever the value of the selection changes.
            * @param e the event that characterizes the change.
            */
@@ -351,6 +352,7 @@ public class WsdlMessagesPanel extends WizardStepPanel {
               partsTableModel = new WsdlMessagePartsTableModel(m, definition);
               partsTable.setModel(partsTableModel);
               partsTable.setDefaultRenderer(Object.class, partsTableCellRenderer);
+              partsTable.getTableHeader().setReorderingAllowed(false);
 
               DefaultCellEditor cellEditor = new DefaultCellEditor(new JTextField());
               partsTable.setDefaultEditor(String.class, cellEditor);
