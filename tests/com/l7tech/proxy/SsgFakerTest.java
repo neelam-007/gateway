@@ -1,7 +1,5 @@
 package com.l7tech.proxy;
 
-import com.l7tech.proxy.datamodel.Ssg;
-import com.l7tech.proxy.datamodel.SsgManagerStub;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
@@ -10,7 +8,6 @@ import org.apache.axis.client.Call;
 import org.apache.axis.encoding.DeserializationContextImpl;
 import org.apache.axis.message.*;
 import org.apache.axis.soap.SOAPConstants;
-import org.mortbay.util.MultiException;
 import org.xml.sax.helpers.AttributesImpl;
 
 import javax.xml.soap.SOAPException;
@@ -23,26 +20,18 @@ import java.rmi.RemoteException;
  * Date: Jun 5, 2003
  * Time: 12:05:43 PM
  */
-public class FunctionalTest extends TestCase {
-    private static final String pingNamespace = "http://services.l7tech.com/soap/demos/Ping";
-    private static final String pingPrefix = "p";
-    private static final String ssg0ProxyEndpoint = "ssg0";
-    private static final int DEFAULT_PORT = 5555;
-    private static final int MIN_THREADS = 4;
-    private static final int MAX_THREADS = 20;
-
+public class SsgFakerTest extends TestCase {
     private SsgFaker ssgFaker;
-    private ClientProxy clientProxy;
-    private SsgManagerStub ssgManager;
     private String ssgUrl;
-    private String proxyUrl;
+    private String pingNamespace = "http://services.l7tech.com/soap/demos/Ping";
+    private String pingPrefix = "p";
 
-    public FunctionalTest(String name) {
+    public SsgFakerTest(String name) {
         super(name);
     }
 
     public static Test suite() {
-        return new TestSuite(FunctionalTest.class);
+        return new TestSuite(SsgFakerTest.class);
     }
 
     public static void main(String[] args) {
@@ -59,45 +48,25 @@ public class FunctionalTest extends TestCase {
         }
     }
 
-    private void destroyProxy() {
-        if (clientProxy != null)
-            clientProxy.destroy();
-        clientProxy = null;
-    }
-
-    /** Starts up the SSG Faker and the Client Proxy. */
-    protected void setUp() throws MultiException {
+    protected void setUp() {
         destroyFaker();
-        destroyProxy();
-
-        // Start the fake SSG
         ssgFaker = new SsgFaker();
         ssgUrl = ssgFaker.start();
-
-        // Configure the client proxy
-        ssgManager = new SsgManagerStub();
-        ssgManager.clear();
-        ssgManager.add(new Ssg("SSG Faker", ssg0ProxyEndpoint, ssgUrl, "", ""));
-
-        // Start the client proxy
-        clientProxy = new ClientProxy(ssgManager, DEFAULT_PORT, MIN_THREADS, MAX_THREADS);
-        proxyUrl = clientProxy.start().toString();
     }
 
-    /** Shuts down the SSG Faker and the Client Proxy. */
     protected void tearDown() {
         destroyFaker();
-        destroyProxy();
     }
 
+
     /**
-     * Bounce a message off of the echo server, going through the client proxy.
+     * Bounce a message off of the echo server, bypassing the client proxy, and verify that it worked.
      */
-    public void testSimplePing() throws RemoteException, SOAPException, MalformedURLException {
+    public void testSsgFaker() throws RemoteException, SOAPException, MalformedURLException {
         SOAPEnvelope reqEnvelope = new SOAPEnvelope();
 
         SOAPHeader reqHeader = new SOAPHeader(pingNamespace,
-                                              "/ssgFaker",
+                                              "/ping",
                                               pingPrefix,
                                               new AttributesImpl(),
                                               new DeserializationContextImpl(AxisEngine.getCurrentMessageContext(),
@@ -113,7 +82,7 @@ public class FunctionalTest extends TestCase {
         reqBe.addChildElement("pingData").addTextNode(payload);
         reqEnvelope.addBodyElement(reqBe);
 
-        Call call = new Call(proxyUrl + ssg0ProxyEndpoint);
+        Call call = new Call(ssgUrl);
         SOAPEnvelope responseEnvelope = call.invoke(reqEnvelope);
 
         System.out.println("Client:  I Sent: " + reqEnvelope);

@@ -32,7 +32,7 @@ public class SsgFaker {
     private int maxThreads = 4;
     private int minThreads = 1;
     private int localPort = 7566;
-    private String localEndpoint = "/soap/ssg";
+    private String localEndpoint = "soap/ssg";
     private String ssgUrl = "http://localhost:" + localPort + "/" + localEndpoint;
     private boolean destroyed = false;
 

@@ -50,4 +50,8 @@ public class SsgManagerStub implements SsgManager {
 
     public void save() throws IOException {
     }
+
+    public void clear() {
+        ssgs.clear();
+    }
 }
