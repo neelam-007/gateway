@@ -664,7 +664,6 @@ public class PolicyTree extends JTree implements DragSourceListener,
                         TreePath pathSource = (TreePath)transferable.getTransferData(flavor);
                         log.fine("DROPPING: " + pathSource.getLastPathComponent());
                         PolicyTreeModel model = (PolicyTreeModel)getModel();
-                        TreePath pathNewChild = null;
 
                         final AssertionTreeNode an = (AssertionTreeNode)pathSource.getLastPathComponent();
                         Assertion a = (Assertion)an.asAssertion().clone();
@@ -694,8 +693,7 @@ public class PolicyTree extends JTree implements DragSourceListener,
                             }
                         }
 
-                        if (pathNewChild != null)
-                            setSelectionPath(pathNewChild);	// Mark this as the selected path in the tree
+                        //setSelectionPath(new TreePath(assertionTreeNodeCopy.getPath()));	// Mark this as the selected path in the tree
                         break; // No need to check remaining flavors
                     } catch (UnsupportedFlavorException ufe) {
                         log.log(Level.WARNING, "Internal error", ufe);
@@ -880,23 +878,23 @@ public class PolicyTree extends JTree implements DragSourceListener,
         log.finer("children assertions = " + ca.getChildren().size());
         log.finer("nodes          tree = " + parent.getChildCount());
 
-        SwingUtilities.invokeLater(new Runnable() {
-            public void run() {
-                DefaultMutableTreeNode n = null;
-                int currentIndex = 0;
-                Enumeration e = parent.children();
-                for (; e.hasMoreElements() && lastIndex >= currentIndex;) {
-                    n = (DefaultMutableTreeNode)e.nextElement();
-                }
-                if (n != null) {
-                    setSelectionPath(new TreePath(n.getPath()));
-                } else {
-                    if (parent != parent.getRoot()) {
-                        setSelectionPath(new TreePath(parent.getPath()));
-                    }
-                }
-            }
-        });
+//        SwingUtilities.invokeLater(new Runnable() {
+//            public void run() {
+//                DefaultMutableTreeNode n = null;
+//                int currentIndex = 0;
+//                Enumeration e = parent.children();
+//                for (; e.hasMoreElements() && lastIndex >= currentIndex;) {
+//                    n = (DefaultMutableTreeNode)e.nextElement();
+//                }
+//                if (n != null) {
+//                    setSelectionPath(new TreePath(n.getPath()));
+//                } else {
+//                    if (parent != parent.getRoot()) {
+//                        setSelectionPath(new TreePath(parent.getPath()));
+//                    }
+//                }
+//            }
+//        });
     }
 
     public void treeStructureChanged(TreeModelEvent e) {
