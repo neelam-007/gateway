@@ -80,6 +80,7 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
 
     //   View for Agent Policy pane
     private JComponent agentPolicyPane;
+    private JCheckBox cbUseSslByDefault;
 
     //   View for Service Policies pane
     private JComponent policiesPane;
@@ -97,7 +98,7 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
         tabbedPane.add("General", getGeneralPane());
         tabbedPane.add("Identity", getIdentityPane());
         tabbedPane.add("Network", getNetworkPane());
-        //tabbedPane.add("Agent Policy", getAgentPolicyPane());
+        tabbedPane.add("Agent Policy", getAgentPolicyPane());
         tabbedPane.add("Service Policies", getPoliciesPane());
         ssg.addSsgListener(this);
         setSsg(ssg);
@@ -157,7 +158,12 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
                                                  GridBagConstraints.CENTER,
                                                  GridBagConstraints.BOTH,
                                                  new Insets(0, 0, 0, 0), 0, 0));
-
+            cbUseSslByDefault = new JCheckBox("Use SSL by default");
+            pane.add(cbUseSslByDefault,
+                     new GridBagConstraints(0, y++, 1, 1, 1.0, 0.0,
+                                            GridBagConstraints.WEST,
+                                            GridBagConstraints.HORIZONTAL,
+                                            new Insets(5, 15, 5, 0), 0, 0));
         }
         return agentPolicyPane;
     }
@@ -703,6 +709,7 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
             radioNonstandardPorts.setSelected(customPorts);
             cbSavePassword.setSelected(ssg.isSavePasswordToDisk());
             updateCustomPortsEnableState();
+            cbUseSslByDefault.setSelected(ssg.isUseSslByDefault());
 
             try {
                 if (SsgKeyStoreManager.isClientCertAvailabile(ssg)) {
@@ -738,6 +745,7 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
             ssg.setSsgAddress(fieldServerAddress.getText().trim().toLowerCase());
             ssg.setUsername(fieldUsername.getText().trim());
             ssg.setSavePasswordToDisk(cbSavePassword.isSelected());
+            ssg.setUseSslByDefault(cbUseSslByDefault.isSelected());
 
             // We'll treat a blank password as though it's unconfigured.  If the user really needs to use
             // a blank password to access a service, he can leave the password field blank in the logon

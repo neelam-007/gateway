@@ -11,6 +11,7 @@ import com.l7tech.common.util.CertificateDownloader;
 import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.common.util.XmlUtil;
 import com.l7tech.policy.assertion.AssertionStatus;
+import com.l7tech.policy.assertion.SslAssertion;
 import com.l7tech.proxy.ClientProxy;
 import com.l7tech.proxy.ConfigurationException;
 import com.l7tech.proxy.datamodel.HttpHeaders;
@@ -63,6 +64,7 @@ public class MessageProcessor {
 
     public static final String PROPERTY_LOGPOSTS    = "com.l7tech.proxy.processor.logPosts";
     public static final String PROPERTY_LOGRESPONSE = "com.l7tech.proxy.processor.logResponses";
+    private static final Policy SSL_POLICY = new Policy(new SslAssertion(), null);
 
     private static final int MAX_TRIES = 8;
     private PolicyManager policyManager;
@@ -240,8 +242,13 @@ public class MessageProcessor {
             throws OperationCanceledException, GeneralSecurityException, BadCredentialsException, IOException, SAXException, ClientCertificateException, KeyStoreCorruptException
     {
         Policy policy = policyManager.getPolicy(req);
-        if (policy == null)
-            return null;
+        if (policy == null) {
+            if (req.getSsg().isUseSslByDefault()) {
+                // Create a fake policy requiring SSL.
+                policy = SSL_POLICY;
+            } else
+                return null;
+        }
 
         AssertionStatus result;
         result = policy.getClientAssertion().decorateRequest(req);
@@ -345,7 +352,7 @@ public class MessageProcessor {
             if (req.getSession() != null)
                 postMethod.addRequestHeader(SecureSpanConstants.HttpHeaders.XML_SESSID_HEADER_NAME,
                                             Long.toString(req.getSession().getId()));
-            if (policy != null)
+            if (policy != null && policy.getVersion() != null)
                 postMethod.addRequestHeader(SecureSpanConstants.HttpHeaders.POLICY_VERSION, policy.getVersion());
 
             String postBody = XmlUtil.documentToString(req.getSoapEnvelopeDirectly());
@@ -408,14 +415,16 @@ public class MessageProcessor {
 
             HttpHeaders headers = new HttpHeaders(postMethod.getResponseHeaders());
 
+            String responseString = postMethod.getResponseBodyAsString();
+            if (logResponse())
+                log.info("Got response from Gateway: " + responseString);
+
             Header contentType = postMethod.getResponseHeader("Content-Type");
             log.info("Response Content-Type: " + contentType);
             if (contentType == null || contentType.getValue() == null || contentType.getValue().indexOf("text/xml") < 0)
                 return new SsgResponse(CannedSoapFaults.RESPONSE_NOT_XML, null);
 
-            SsgResponse response = new SsgResponse(postMethod.getResponseBodyAsString(), headers);
-            if (logResponse())
-                log.info("Got response from Gateway: " + response);
+            SsgResponse response = new SsgResponse(responseString, headers);
             if (status == 401) {
                 req.setLastErrorResponse(response);
                 Header authHeader = postMethod.getResponseHeader("WWW-Authenticate");
