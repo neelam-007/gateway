@@ -16,6 +16,7 @@ import java.awt.event.KeyEvent;
 import java.util.Comparator;
 import java.util.Locale;
 import java.util.ResourceBundle;
+import java.util.Iterator;
 
 /*
  * Copyright (C) 2003 Layer 7 Technologies Inc.
@@ -84,8 +85,24 @@ public class LdapUserMappingPanel extends WizardStepPanel {
                 }
 
                 // select the first row for display of attributes
-                if(getUserListModel().getSize() > 0) {
-                    getUserList().setSelectedIndex(0);
+                if (getUserListModel().getSize() > 0) {
+                    if (lastSelectedUser != null) {
+
+                        Iterator itr = getUserListModel().iterator();
+                        while (itr.hasNext()) {
+                            Object o = itr.next();
+                            if (o instanceof UserMappingConfig) {
+                                if (((UserMappingConfig) o).getObjClass().equals(lastSelectedUser.getObjClass())) {
+                                    // the selected group found
+                                    getUserList().setSelectedValue(o, true);
+                                    lastSelectedUser = (UserMappingConfig) o;
+                                    break;
+                                }
+                            }
+                        }
+                    } else {
+                        getUserList().setSelectedIndex(0);
+                    }
                 }
             }
         }
@@ -149,7 +166,7 @@ public class LdapUserMappingPanel extends WizardStepPanel {
                 newEntry.setPasswdType(PasswdStrategy.CLEAR);
                 getUserListModel().add(newEntry);
 
-                getUserList().setSelectedValue(newEntry, false);
+                getUserList().setSelectedValue(newEntry, true);
             }
         });
 
@@ -163,7 +180,21 @@ public class LdapUserMappingPanel extends WizardStepPanel {
         removeButton.setText("Remove");
         removeButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
+                Object o = getUserList().getSelectedValue();
+                 if(o != null) {
+                     // remove the item from the data model
+                     getUserListModel().removeElement(o);
 
+                     // clear the setting as it doesn't exist any more
+                     lastSelectedUser = null;
+
+                     getUserList().getSelectionModel().clearSelection();
+
+                     // select the first item for display
+                    if (getUserListModel().getSize() > 0) {
+                        getUserList().setSelectedIndex(0);
+                    }
+                 }
             }
         });
 
@@ -198,7 +229,7 @@ public class LdapUserMappingPanel extends WizardStepPanel {
                     } else {
                         currentEntry.setObjClass(objectClass.getText());
                     }
-                    getUserList().setSelectedValue(currentEntry, false);
+                    getUserList().setSelectedValue(currentEntry, true);
                 }
             }
 
@@ -272,42 +303,6 @@ public class LdapUserMappingPanel extends WizardStepPanel {
                     }
                 });
 
-        /*       userListModel.addListDataListener(new ListDataListener() {
-
-                   public void intervalAdded(ListDataEvent e) {
-                       if (!isLoading) {
-                           groupPanel.setModified(true);
-                           updateGroupMembers();
-                       }
-                   }
-
-
-                   public void intervalRemoved(ListDataEvent e) {
-                       if (!isLoading) {
-                           groupPanel.setModified(true);
-                           updateGroupMembers();
-                       }
-                   }
-
-
-                   public void contentsChanged(ListDataEvent e) {
-                       if (!isLoading) {
-                           groupPanel.setModified(true);
-                           updateGroupMembers();
-                       }
-                   }
-
-                   private void updateGroupMembers() {
-                       Set memberHeaders = groupPanel.getGroupMembers();
-                       memberHeaders.clear();
-                       for (int i = 0; i < userListModel.getSize(); i++) {
-                           EntityHeader g = (EntityHeader) userListModel.getElementAt(i);
-                           memberHeaders.add(g);
-                       }
-                   }
-
-               });
-       */
         return userListModel;
     }
 

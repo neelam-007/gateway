@@ -78,8 +78,25 @@ public class LdapGroupMappingPanel extends WizardStepPanel {
                 }
 
                 // select the first row for display of attributes
-                if(getGroupListModel().getSize() > 0) {
-                    getGroupList().setSelectedIndex(0);
+                if (getGroupListModel().getSize() > 0) {
+
+                    if (lastSelectedGroup != null) {
+
+                        Iterator itr = getGroupListModel().iterator();
+                        while (itr.hasNext()) {
+                            Object o = itr.next();
+                            if (o instanceof GroupMappingConfig) {
+                                if(((GroupMappingConfig) o).getObjClass().equals(lastSelectedGroup.getObjClass())) {
+                                    // the selected group found
+                                    getGroupList().setSelectedValue(o, true);
+                                    lastSelectedGroup = (GroupMappingConfig) o;
+                                    break;
+                                }
+                            }
+                        }
+                    } else {
+                        getGroupList().setSelectedIndex(0);
+                    }
                 }
             }
         }
@@ -139,7 +156,7 @@ public class LdapGroupMappingPanel extends WizardStepPanel {
                 newEntry.setMemberStrategy(MemberStrategy.MEMBERS_ARE_DN);
                 getGroupListModel().add(newEntry);
 
-                getGroupList().setSelectedValue(newEntry, false);
+                getGroupList().setSelectedValue(newEntry, true);
 
             }
         });
@@ -154,7 +171,22 @@ public class LdapGroupMappingPanel extends WizardStepPanel {
         removeButton.setText("Remove");
         removeButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
+                Object o = getGroupList().getSelectedValue();
+                if (o != null) {
 
+                    // remove the item from the data model
+                    getGroupListModel().removeElement(o);
+
+                    // clear the setting as it doesn't exist any more
+                    lastSelectedGroup = null;
+
+                    getGroupList().getSelectionModel().clearSelection();
+
+                    // select the first item for display
+                    if (getGroupListModel().getSize() > 0) {
+                        getGroupList().setSelectedIndex(0);
+                    }
+                }
             }
         });
 
@@ -189,7 +221,7 @@ public class LdapGroupMappingPanel extends WizardStepPanel {
                     } else {
                         currentEntry.setObjClass(objectClass.getText());
                     }
-                    getGroupList().setSelectedValue(currentEntry, false);
+                    getGroupList().setSelectedValue(currentEntry, true);
                 }
             }
 
@@ -222,8 +254,7 @@ public class LdapGroupMappingPanel extends WizardStepPanel {
                     public void valueChanged(ListSelectionEvent e) {
                         Object selectedGroup = groupList.getSelectedValue();
 
-                        if (selectedGroup != null)
-                        {
+                        if (selectedGroup != null) {
                              // save the changes in the data model
                              updateListModel(lastSelectedGroup);
 
@@ -265,42 +296,6 @@ public class LdapGroupMappingPanel extends WizardStepPanel {
                     }
                 });
 
-        /*       userListModel.addListDataListener(new ListDataListener() {
-
-                   public void intervalAdded(ListDataEvent e) {
-                       if (!isLoading) {
-                           groupPanel.setModified(true);
-                           updateGroupMembers();
-                       }
-                   }
-
-
-                   public void intervalRemoved(ListDataEvent e) {
-                       if (!isLoading) {
-                           groupPanel.setModified(true);
-                           updateGroupMembers();
-                       }
-                   }
-
-
-                   public void contentsChanged(ListDataEvent e) {
-                       if (!isLoading) {
-                           groupPanel.setModified(true);
-                           updateGroupMembers();
-                       }
-                   }
-
-                   private void updateGroupMembers() {
-                       Set memberHeaders = groupPanel.getGroupMembers();
-                       memberHeaders.clear();
-                       for (int i = 0; i < userListModel.getSize(); i++) {
-                           EntityHeader g = (EntityHeader) userListModel.getElementAt(i);
-                           memberHeaders.add(g);
-                       }
-                   }
-
-               });
-       */
         return groupListModel;
     }
 
