@@ -122,7 +122,7 @@ public class PolicyManagerImpl implements PolicyManager {
                             Managers.getCredentialManager().getCredentials(ssg);
                             continue;
                         } else
-                            break;
+                            throw new IOException("Got back unexpected HTTP status " + status + " from the policy server");
                     } catch (SSLHandshakeException e) {
                         if (e.getCause() instanceof ServerCertificateUntrustedException)
                             throw (ServerCertificateUntrustedException) e.getCause();
