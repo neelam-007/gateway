@@ -1,8 +1,13 @@
+/*
+ * Copyright (c) 2003 Layer 7 Technologies Inc.
+ *
+ * $Id$
+ */
+
 package com.l7tech.identity.internal.imp;
 
 import com.l7tech.identity.*;
 import com.l7tech.identity.internal.InternalIdentityProvider;
-import com.l7tech.objectmodel.PersistenceManager;
 
 import java.security.Principal;
 
