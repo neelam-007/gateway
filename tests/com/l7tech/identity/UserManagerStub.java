@@ -62,6 +62,14 @@ public class UserManagerStub implements UserManager {
 
     }
 
+    public EntityHeader userToHeader(User user) {
+        return null;
+    }
+
+    public User headerToUser(EntityHeader header) {
+        return null;
+    }
+
     public void setIdentityProviderOid(long oid) {
         // not implementes
     }
