@@ -9,7 +9,6 @@
 #
 # This is an attempt at self tuning
 # 
-echo "Experimental ssgruntime setup"
 release=`cat /etc/redhat-release`
 
 if [ "$release" = "Red Hat Linux release 8.0 (Psyche)" ]; then
@@ -39,28 +38,33 @@ default_java_opts="$default_java_opts -XX:NewSize=${maxnewsize}k -XX:MaxNewSize=
 
 if [ -e /ssg/etc/conf/JVM ]; then
 	JAVA_HOME=`cat /ssg/etc/conf/JVM`
-	if [ $cpucount = 1 ]; then
-		echo -n ""
-		# single cpu
-	else
-		# java 1.5 doesn't seem to want the other options
-		default_java_opts="$default_java_opts -XX:+UseParNewGC -XX:ParallelGCThreads=$cpucount "
-	fi
 else
-	# default is 1.4.2
-	export JAVA_HOME="/ssg/j2sdk1.4.2_05"
-	if [ "$old_rel" = 1 ]; then 
-		export LD_ASSUME_KERNEL="2.2.5"
-	fi
-	if [ $cpucount = 1 ]; then
-		echo -n ""
-		# single cpu
-	else
-		default_java_opts="$default_java_opts -XX:+UseParNewGC -XX:ParallelGCThreads=$cpucount "
-		default_java_opts="$default_java_opts -XX:+UseConcMarkSweepGC -XX:CMSInitiatingOccupancyFraction=90"
-		default_java_opts="$default_java_opts -XX:SurvivorRatio=128 -XX:MaxTenuringThreshold=0"
-	fi
+	JAVA_HOME="/ssg/jdk1.5.0_02"
 fi
+
+export JAVA_HOME
+
+if [ $cpucount = 1 ]; then
+	echo -n ""
+	# single cpu
+else
+	# java 1.5 doesn't seem to want the other options
+	default_java_opts="$default_java_opts -XX:+UseParNewGC -XX:ParallelGCThreads=$cpucount "
+fi
+if [ "$old_rel" = 1 ]; then 
+	export LD_ASSUME_KERNEL="2.2.5"
+fi
+
+#
+#	# default is 1.4.2
+#	if [ $cpucount = 1 ]; then
+#		echo -n ""
+#		# single cpu
+#	else
+#		default_java_opts="$default_java_opts -XX:+UseParNewGC -XX:ParallelGCThreads=$cpucount "
+#		default_java_opts="$default_java_opts -XX:+UseConcMarkSweepGC -XX:CMSInitiatingOccupancyFraction=90"
+#		default_java_opts="$default_java_opts -XX:SurvivorRatio=128 -XX:MaxTenuringThreshold=0"
+#	fi
 
 ulimit -s 2048
 

@@ -94,7 +94,7 @@ stop() {
 }
 
 find_tomcat() {
-	pid=`pidof /ssg/j2sdk1.4.2_05/bin/java`
+	pid=`pidof ${JAVA_HOME}/bin/java`
 }
 
 reallystop() {
