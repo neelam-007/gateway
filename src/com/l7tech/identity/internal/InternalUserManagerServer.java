@@ -210,8 +210,6 @@ public class InternalUserManagerServer extends HibernateEntityManager implements
                     logger.log(Level.FINE, "could not revoke cert for user " + originalUser.getLogin() +
                             " perhaps this user had no existing cert", e);
                 }
-                // transaction nightmare!
-                getContext().beginTransaction();
             }
             // update user
             originalUser.copyFrom(user);
@@ -221,9 +219,6 @@ public class InternalUserManagerServer extends HibernateEntityManager implements
             logger.log(Level.SEVERE, null, se);
             throw new UpdateException( se.toString(), se );
         } catch ( FindException e ) {
-            logger.log(Level.SEVERE, null, e);
-            throw new UpdateException( e.toString(), e );
-        }  catch ( TransactionException e ) {
             logger.log(Level.SEVERE, null, e);
             throw new UpdateException( e.toString(), e );
         }
